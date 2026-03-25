@@ -33,7 +33,7 @@ struct PlayerCounter[P0, P1] {
 
 ///|
 type PlayerCounterParam = PlayerCounter[
-  @ecs.Query1[Player],
+  @ecs.Query[@ecs.Comp[Player], @ecs.All],
   @app.ResMut[PlayerCount],
 ]
 

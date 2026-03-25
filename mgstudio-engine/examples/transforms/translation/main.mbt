@@ -85,15 +85,19 @@ fn setup(
 ///|
 fn move_cube(
   commands : @app.Commands,
-  cubes : @ecs.Query2ValueMutFiltered[Movable, @transform.Transform, @ecs.All],
+  cubes : @ecs.Query[
+    (@ecs.Comp[Movable], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_secs()
-  try! cubes.view_mut(fn(entity, movable, transform) {
+  try! cubes.view(fn(entity, data) {
+    let (movable, transform) = data
     let transform_ref = transform.get_ref()
-    let next_movable = movable
-    if movable.spawn.sub(transform_ref.val.translation).length() >
-      movable.max_distance {
+    let next_movable = movable.value()
+    if movable.value().spawn.sub(transform_ref.val.translation).length() >
+      movable.value().max_distance {
       next_movable.speed = -next_movable.speed
     }
 
@@ -101,7 +105,7 @@ fn move_cube(
     transform_ref.val.translation = transform_ref.val.translation.add(
       direction.mul_scalar(next_movable.speed * delta),
     )
-    if next_movable.speed != movable.speed {
+    if next_movable.speed != movable.value().speed {
       commands.entity(entity).insert_component(next_movable)
     }
   })

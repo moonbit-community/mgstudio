@@ -210,7 +210,7 @@ fn spawn_fake_player(
 
 ///|
 fn move_player(
-  players : @ecs.Query1Filtered[@transform.Transform, @ecs.With[MovePlayer]],
+  players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[MovePlayer]],
   time : @app.Res[@time.Time[Unit]],
   chunks : @ecs.Query1[@sprite.TilemapChunk],
 ) -> Unit {
@@ -222,7 +222,7 @@ fn move_player(
       @math.UVec2::new(CHUNK_SIDE - 1, 0),
     ).translation.x
 
-  try! players.view_mut(fn(_entity, player) {
+  try! players.view(fn(_entity, player) {
     let player_ref = player.get_ref()
     player_ref.val.translation.x = origin + (destination - origin) * t
   })
@@ -230,13 +230,13 @@ fn move_player(
 
 ///|
 fn update_tilemap(
-  timers : @ecs.Query1[UpdateTimer],
-  tile_data_query : @ecs.Query1[@sprite.TilemapChunkTileData],
+  timers : @ecs.Query[@ecs.Mut[UpdateTimer], @ecs.All],
+  tile_data_query : @ecs.Query[@ecs.Mut[@sprite.TilemapChunkTileData], @ecs.All],
   time : @app.Res[@time.Time[Unit]],
   rng : @app.ResMut[SeededRng],
 ) -> Unit {
   let rng_ref = rng.get_ref()
-  try! timers.view_mut(fn(entity, timer) {
+  try! timers.view(fn(entity, timer) {
     let timer_ref = timer.get_ref()
     timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
 
@@ -245,7 +245,7 @@ fn update_tilemap(
     }
 
     ignore(
-      try! tile_data_query.with_mut(entity, fn(tile_data) {
+      if (try! tile_data_query.get(entity)) is Some(tile_data) {
         let tile_data_ref = tile_data.get_ref()
         let tile_count = tile_data_ref.val.tile_data.length()
         if tile_count == 0 {
@@ -259,7 +259,7 @@ fn update_tilemap(
             ),
           )
         }
-      }),
+      },
     )
   })
 }

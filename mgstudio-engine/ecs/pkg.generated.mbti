@@ -194,12 +194,6 @@ pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
 pub fn[T] ComponentKey::debug_name(Self[T]) -> String
 pub fn[T] ComponentKey::id(Self[T]) -> Int
 
-pub struct ComponentMut[T] {
-  value_ref : @ref.Ref[T]
-}
-pub fn[T] ComponentMut::get(Self[T]) -> T
-pub fn[T] ComponentMut::get_ref(Self[T]) -> @ref.Ref[T]
-
 pub struct ComponentRef[T] {
   value : T
 }
@@ -251,6 +245,24 @@ pub impl Show for Disabled
 pub impl ToJson for Disabled
 pub impl @json.FromJson for Disabled
 
+pub struct EntityMut {
+  world : World
+  entity : @core.Entity
+}
+pub fn[T : Component] EntityMut::contains(Self, key? : ComponentKey[T]) -> Bool raise EcsError
+#callsite(autofill(loc))
+pub fn EntityMut::despawn(Self, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn[T : Component] EntityMut::get(Self) -> T? raise EcsError
+pub fn[T : Component] EntityMut::get_mut(Self, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
+pub fn EntityMut::id(Self) -> @core.Entity
+#callsite(autofill(loc))
+pub fn[B : Bundle] EntityMut::insert(Self, B, loc~ : SourceLoc) -> Self raise EcsError
+#callsite(autofill(loc))
+pub fn[T : Component] EntityMut::insert_component(Self, T, loc~ : SourceLoc) -> Self raise EcsError
+#callsite(autofill(loc))
+pub fn[T : Component] EntityMut::remove_component(Self, loc~ : SourceLoc) -> T? raise EcsError
+pub impl QueryData for EntityMut
+
 pub struct EntityQuery[F] {
   world : World
   filter : F
@@ -258,6 +270,16 @@ pub struct EntityQuery[F] {
 pub fn[F : QueryFilter] EntityQuery::count(Self[F]) -> Int
 pub fn[F : QueryFilter] EntityQuery::require_single(Self[F]) -> @core.Entity raise
 pub fn[F : QueryFilter] EntityQuery::view(Self[F], (@core.Entity) -> Unit) -> Unit
+
+pub struct EntityRef {
+  world : World
+  entity : @core.Entity
+}
+pub fn[T : Component] EntityRef::contains(Self, key? : ComponentKey[T]) -> Bool raise EcsError
+pub fn[T : Component] EntityRef::get(Self) -> T? raise EcsError
+pub fn[D : QueryData] EntityRef::get_components(Self) -> D? raise EcsError
+pub fn EntityRef::id(Self) -> @core.Entity
+pub impl QueryData for EntityRef
 
 type ErasedValue
 
@@ -373,6 +395,16 @@ pub fn[T] Messages::write_message(Self[T], MessageKey[T], T) -> Int
 pub fn[T] Messages::write_message_batch(Self[T], MessageKey[T], Array[T]) -> Unit
 pub fn[T : Default] Messages::write_message_default(Self[T], MessageKey[T]) -> Int
 
+pub struct Mut[T] {
+  value_ref : @ref.Ref[T]?
+}
+pub fn[T] Mut::get_ref(Self[T]) -> @ref.Ref[T]
+pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
+pub fn[T] Mut::set(Self[T], T) -> Unit
+pub fn[T] Mut::value(Self[T]) -> T
+pub impl[T : Component] QueryData for Mut[T]
+
 pub struct Name {
   name : String
 }
@@ -425,6 +457,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] Query::par_iter(Self[D, F]) -> QueryParallel[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::require_single(Self[D, F]) -> D raise
 pub fn[D : QueryData, F : QueryFilter] Query::single(Self[D, F]) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
@@ -436,21 +469,13 @@ pub struct Query1[A] {
 pub fn[A] Query1::count(Self[A]) -> Int
 pub fn[A] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A] Query1::get(Self[A], @core.Entity) -> A? raise EcsError
-pub fn[A] Query1::get_mut(Self[A], @core.Entity) -> ComponentMut[A]? raise EcsError
-pub fn[A] Query1::get_unchecked(Self[A], @core.Entity) -> ComponentMut[A]? raise EcsError
-pub fn[A] Query1::iter_many_mut(Self[A], Array[@core.Entity]) -> Query1FilteredManyMut[A, All]
 pub fn[A] Query1::iter_many_unique(Self[A], Array[@core.Entity]) -> Query1FilteredMany[A, All] raise EcsError
-pub fn[A] Query1::iter_many_unique_mut(Self[A], Array[@core.Entity]) -> Query1FilteredManyMut[A, All] raise EcsError
-pub fn[A] Query1::iter_many_unique_mut_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredManyMut[A, All]
 pub fn[A] Query1::iter_many_unique_ref(Self[A], Array[@core.Entity]) -> Query1FilteredManyRef[A, All] raise EcsError
 pub fn[A] Query1::iter_many_unique_ref_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredManyRef[A, All]
 pub fn[A] Query1::iter_many_unique_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredMany[A, All]
-pub fn[A] Query1::par_iter_mut(Self[A]) -> Query1FilteredParallelMut[A, All]
 pub fn[A] Query1::require_single(Self[A]) -> A raise
 pub fn[A] Query1::single(Self[A]) -> A? raise EcsError
 pub fn[A] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
-pub fn[A] Query1::view_mut(Self[A], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
-pub fn[A] Query1::with_mut(Self[A], @core.Entity, (ComponentMut[A]) -> Unit) -> Bool raise EcsError
 
 pub struct Query1Filtered[A, F] {
   world : World
@@ -460,25 +485,17 @@ pub struct Query1Filtered[A, F] {
 pub fn[A, F : QueryFilter] Query1Filtered::count(Self[A, F]) -> Int
 pub fn[A, F : QueryFilter] Query1Filtered::for_each(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::get(Self[A, F], @core.Entity) -> A? raise EcsError
-pub fn[A, F : QueryFilter] Query1Filtered::get_mut(Self[A, F], @core.Entity) -> ComponentMut[A]? raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::get_ref(Self[A, F], @core.Entity) -> ComponentRef[A]? raise EcsError
-pub fn[A, F : QueryFilter] Query1Filtered::get_unchecked(Self[A, F], @core.Entity) -> ComponentMut[A]? raise EcsError
 pub fn[A, F] Query1Filtered::iter_many(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F]
-pub fn[A, F] Query1Filtered::iter_many_mut(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyMut[A, F]
 pub fn[A, F] Query1Filtered::iter_many_ref(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F]
 pub fn[A, F] Query1Filtered::iter_many_unique(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F] raise EcsError
-pub fn[A, F] Query1Filtered::iter_many_unique_mut(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyMut[A, F] raise EcsError
-pub fn[A, F] Query1Filtered::iter_many_unique_mut_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyMut[A, F]
 pub fn[A, F] Query1Filtered::iter_many_unique_ref(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F] raise EcsError
 pub fn[A, F] Query1Filtered::iter_many_unique_ref_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F]
 pub fn[A, F] Query1Filtered::iter_many_unique_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F]
-pub fn[A, F] Query1Filtered::par_iter_mut(Self[A, F]) -> Query1FilteredParallelMut[A, F]
 pub fn[A, F : QueryFilter] Query1Filtered::require_single(Self[A, F]) -> A raise
 pub fn[A, F : QueryFilter] Query1Filtered::single(Self[A, F]) -> A? raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::view(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
-pub fn[A, F : QueryFilter] Query1Filtered::view_mut(Self[A, F], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::view_ref(Self[A, F], (@core.Entity, ComponentRef[A]) -> Unit) -> Unit raise EcsError
-pub fn[A, F : QueryFilter] Query1Filtered::with_mut(Self[A, F], @core.Entity, (ComponentMut[A]) -> Unit) -> Bool raise EcsError
 
 pub struct Query1FilteredMany[A, F] {
   query : Query1Filtered[A, F]
@@ -487,26 +504,12 @@ pub struct Query1FilteredMany[A, F] {
 }
 pub fn[A, F : QueryFilter] Query1FilteredMany::fetch_next(Self[A, F]) -> (@core.Entity, A)? raise EcsError
 
-pub struct Query1FilteredManyMut[A, F] {
-  query : Query1Filtered[A, F]
-  entities : Array[@core.Entity]
-  mut index : Int
-}
-pub fn[A, F : QueryFilter] Query1FilteredManyMut::fetch_next(Self[A, F]) -> (@core.Entity, ComponentMut[A])? raise EcsError
-
 pub struct Query1FilteredManyRef[A, F] {
   query : Query1Filtered[A, F]
   entities : Array[@core.Entity]
   mut index : Int
 }
 pub fn[A, F : QueryFilter] Query1FilteredManyRef::fetch_next(Self[A, F]) -> (@core.Entity, ComponentRef[A])? raise EcsError
-
-pub struct Query1FilteredParallelMut[A, F] {
-  query : Query1Filtered[A, F]
-  batching_strategy : BatchingStrategy
-}
-pub fn[A, F] Query1FilteredParallelMut::batching_strategy(Self[A, F], BatchingStrategy) -> Self[A, F]
-pub fn[A, F : QueryFilter] Query1FilteredParallelMut::for_each(Self[A, F], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
 
 pub struct Query2[A, B] {
   world : World
@@ -550,34 +553,6 @@ pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::for_each(Self[A, B,
 pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::get(Self[A, B, F], @core.Entity) -> (A, Bool)? raise EcsError
 pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::view(Self[A, B, F], (@core.Entity, A, Bool) -> Unit) -> Unit raise EcsError
 
-pub struct Query2MutMutFiltered[A, B, F] {
-  world : World
-  key_a : ComponentKey[A]
-  key_b : ComponentKey[B]
-  filter : F
-}
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::count(Self[A, B, F]) -> Int raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::get(Self[A, B, F], @core.Entity) -> (ComponentMut[A], ComponentMut[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (ComponentMut[A], ComponentMut[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::require_single(Self[A, B, F]) -> (ComponentMut[A], ComponentMut[B]) raise
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::single(Self[A, B, F]) -> (ComponentMut[A], ComponentMut[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::view_mut(Self[A, B, F], (@core.Entity, ComponentMut[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::with_mut(Self[A, B, F], @core.Entity, (ComponentMut[A], ComponentMut[B]) -> Unit) -> Bool raise EcsError
-
-pub struct Query2MutRefFiltered[A, B, F] {
-  world : World
-  key_a : ComponentKey[A]
-  key_b : ComponentKey[B]
-  filter : F
-}
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::count(Self[A, B, F]) -> Int raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::get(Self[A, B, F], @core.Entity) -> (ComponentMut[A], ComponentRef[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (ComponentMut[A], ComponentRef[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::require_single(Self[A, B, F]) -> (ComponentMut[A], ComponentRef[B]) raise
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::single(Self[A, B, F]) -> (ComponentMut[A], ComponentRef[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::view_mut(Self[A, B, F], (@core.Entity, ComponentMut[A], ComponentRef[B]) -> Unit) -> Unit raise EcsError
-pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::with_mut(Self[A, B, F], @core.Entity, (ComponentMut[A], ComponentRef[B]) -> Unit) -> Bool raise EcsError
-
 pub struct Query2Optional[A, B] {
   world : World
   key_a : ComponentKey[A]
@@ -598,72 +573,6 @@ pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::count(Self[A, 
 pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::for_each(Self[A, B, F], (@core.Entity, A, B?) -> Unit) -> Unit raise EcsError
 pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::get(Self[A, B, F], @core.Entity) -> (A, B?)? raise EcsError
 pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::view(Self[A, B, F], (@core.Entity, A, B?) -> Unit) -> Unit raise EcsError
-
-pub struct Query2RefMutFiltered[A, B, F] {
-  world : World
-  key_a : ComponentKey[A]
-  key_b : ComponentKey[B]
-  filter : F
-}
-pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::contiguous_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredContiguousMut[A, B, F]?
-pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::count(Self[A, B, F]) -> Int
-pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get(Self[A, B, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B])? raise EcsError
-pub fn[A, B, F] Query2RefMutFiltered::iter_many_mut(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F]
-pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F] raise EcsError
-pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut_unsafe(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F]
-pub fn[A, B, F] Query2RefMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredParallel[A, B, F]
-pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(Self[A, B, F], (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
-pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(Self[A, B, F], @core.Entity, (ComponentRef[A], ComponentMut[B]) -> Unit) -> Bool raise EcsError
-
-pub struct Query2RefMutFilteredContiguousMut[A, B, F] {
-  query : Query2RefMutFiltered[A, B, F]
-  chunks : Array[Array[@core.Entity]]
-  mut index : Int
-}
-pub fn[A, B, F : QueryFilter] Query2RefMutFilteredContiguousMut::fetch_next(Self[A, B, F]) -> (Array[ComponentRef[A]], Array[ComponentMut[B]])?
-
-pub struct Query2RefMutFilteredMany[A, B, F] {
-  query : Query2RefMutFiltered[A, B, F]
-  entities : Array[@core.Entity]
-  mut index : Int
-}
-pub fn[A, B, F : QueryFilter] Query2RefMutFilteredMany::fetch_next(Self[A, B, F]) -> (@core.Entity, ComponentRef[A], ComponentMut[B])? raise EcsError
-
-pub struct Query2RefMutFilteredParallel[A, B, F] {
-  query : Query2RefMutFiltered[A, B, F]
-  batching_strategy : BatchingStrategy
-}
-pub fn[A, B, F] Query2RefMutFilteredParallel::batching_strategy(Self[A, B, F], BatchingStrategy) -> Self[A, B, F]
-pub fn[A, B, F : QueryFilter] Query2RefMutFilteredParallel::for_each(Self[A, B, F], (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
-
-pub struct Query2ValueMutFiltered[A, B, F] {
-  world : World
-  key_a : ComponentKey[A]
-  key_b : ComponentKey[B]
-  filter : F
-}
-pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::contiguous_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredContiguousMut[A, B, F]?
-pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(Self[A, B, F]) -> Int
-pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
-pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
-pub fn[A, B, F] Query2ValueMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredParallel[A, B, F]
-pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(Self[A, B, F], (@core.Entity, A, ComponentMut[B]) -> Unit) -> Unit raise EcsError
-pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(Self[A, B, F], @core.Entity, (A, ComponentMut[B]) -> Unit) -> Bool raise EcsError
-
-pub struct Query2ValueMutFilteredContiguousMut[A, B, F] {
-  query : Query2ValueMutFiltered[A, B, F]
-  chunks : Array[Array[@core.Entity]]
-  mut index : Int
-}
-pub fn[A, B, F : QueryFilter] Query2ValueMutFilteredContiguousMut::fetch_next(Self[A, B, F]) -> (Array[A], Array[ComponentMut[B]])?
-
-pub struct Query2ValueMutFilteredParallel[A, B, F] {
-  query : Query2ValueMutFiltered[A, B, F]
-  batching_strategy : BatchingStrategy
-}
-pub fn[A, B, F] Query2ValueMutFilteredParallel::batching_strategy(Self[A, B, F], BatchingStrategy) -> Self[A, B, F]
-pub fn[A, B, F : QueryFilter] Query2ValueMutFilteredParallel::for_each(Self[A, B, F], (@core.Entity, A, ComponentMut[B]) -> Unit) -> Unit raise EcsError
 
 pub struct Query3[A, B, C] {
   world : World
@@ -688,40 +597,6 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::for_each(Self[A, B, C, F], (@co
 pub fn[A, B, C, F : QueryFilter] Query3Filtered::get(Self[A, B, C, F], @core.Entity) -> (A, B, C)? raise EcsError
 pub fn[A, B, C, F : QueryFilter] Query3Filtered::view(Self[A, B, C, F], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 
-pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
-  world : World
-  key_a : ComponentKey[A]
-  key_b : ComponentKey[B]
-  key_c : ComponentKey[C]
-  filter : F
-}
-pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::count(Self[A, B, C, F]) -> Int
-pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get(Self[A, B, C, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError
-pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get_unchecked(Self[A, B, C, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError
-pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(Self[A, B, C, F], (@core.Entity, ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit) -> Unit raise EcsError
-pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::with_mut(Self[A, B, C, F], @core.Entity, (ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit) -> Bool raise EcsError
-
-pub struct Query3ValueRefMutFiltered[A, B, C, F] {
-  world : World
-  key_a : ComponentKey[A]
-  key_b : ComponentKey[B]
-  key_c : ComponentKey[C]
-  filter : F
-}
-pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::count(Self[A, B, C, F]) -> Int
-pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get(Self[A, B, C, F], @core.Entity) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError
-pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get_unchecked(Self[A, B, C, F], @core.Entity) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError
-pub fn[A, B, C, F] Query3ValueRefMutFiltered::par_iter_mut(Self[A, B, C, F]) -> Query3ValueRefMutFilteredParallel[A, B, C, F]
-pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(Self[A, B, C, F], (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Unit raise EcsError
-pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(Self[A, B, C, F], @core.Entity, (A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Bool raise EcsError
-
-pub struct Query3ValueRefMutFilteredParallel[A, B, C, F] {
-  query : Query3ValueRefMutFiltered[A, B, C, F]
-  batching_strategy : BatchingStrategy
-}
-pub fn[A, B, C, F] Query3ValueRefMutFilteredParallel::batching_strategy(Self[A, B, C, F], BatchingStrategy) -> Self[A, B, C, F]
-pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFilteredParallel::for_each(Self[A, B, C, F], (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Unit raise EcsError
-
 pub struct QueryContiguousIter[D, F] {
   query : Query[D, F]
   entities : Array[@core.Entity]
@@ -729,12 +604,39 @@ pub struct QueryContiguousIter[D, F] {
 }
 pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(Self[D, F]) -> D? raise EcsError
 
+pub struct QueryDataAccess {
+  read_components : Array[Int]
+  write_components : Array[Int]
+}
+pub fn QueryDataAccess::add_read_component(Self, Int) -> Unit
+pub fn QueryDataAccess::add_write_component(Self, Int) -> Unit
+pub fn QueryDataAccess::new() -> Self
+
 pub struct QueryMany[D, F] {
   query : Query[D, F]
   entities : Array[@core.Entity]
   mut index : Int
 }
 pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(Self[D, F]) -> (@core.Entity, D)? raise EcsError
+
+pub struct QueryParallel[D, F] {
+  query : Query[D, F]
+  batching_strategy : BatchingStrategy
+}
+pub fn[D, F] QueryParallel::batching_strategy(Self[D, F], BatchingStrategy) -> Self[D, F]
+pub fn[D : QueryData, F : QueryFilter] QueryParallel::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
+
+pub struct QueryState[D, F] {
+  filter : F
+  data_marker : (D) -> Unit
+}
+pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
+pub fn[D : QueryData, F : QueryFilter] QueryState::count(Self[D, F], World) -> Int
+pub fn[D : QueryData, F : QueryFilter] QueryState::get(Self[D, F], World, @core.Entity) -> D? raise EcsError
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
+pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> D? raise EcsError
 
 pub struct Remove {
 }
@@ -819,13 +721,17 @@ pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
 pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
 pub fn[T : Component] World::component_typed(Self) -> ComponentAccess[T]
+pub fn[T : Component] World::contains(Self, @core.Entity, key? : ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_message(Self, MessageKey[T]) -> Bool
 #callsite(autofill(loc))
 pub fn World::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn World::entity(Self, @core.Entity) -> EntityRef raise EcsError
 pub fn World::entity_count(Self) -> Int
+pub fn World::entity_mut(Self, @core.Entity) -> EntityMut raise EcsError
 pub fn[T] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : Component] World::get_component(Self, @core.Entity) -> T? raise EcsError
 pub fn[T : Component] World::get_component_ref(Self, @core.Entity) -> ComponentRef[T]? raise EcsError
+pub fn[T : Component] World::get_mut(Self, @core.Entity, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
 pub fn[A] World::get_ref(Self, @core.Entity, ComponentKey[A]) -> ComponentRef[A]? raise EcsError
 pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
@@ -840,6 +746,7 @@ pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageM
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
 pub fn World::new() -> Self
+pub fn[D : QueryData] World::query(Self) -> QueryState[D, All]
 pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]
 pub fn[A, F] World::query1_filtered(Self, ComponentKey[A], F) -> Query1Filtered[A, F]
 pub fn[T : Component] World::query1_typed(Self) -> Query1[T]
@@ -848,17 +755,12 @@ pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, 
 pub fn[A, B, F] World::query2_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2Filtered[A, B, F]
 pub fn[A, B] World::query2_has(Self, ComponentKey[A], Has[B]) -> Query2Has[A, B]
 pub fn[A, B, F] World::query2_has_filtered(Self, ComponentKey[A], Has[B], F) -> Query2HasFiltered[A, B, F]
-pub fn[A, B, F] World::query2_mut_mut_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2MutMutFiltered[A, B, F]
-pub fn[A, B, F] World::query2_mut_ref_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2MutRefFiltered[A, B, F]
 pub fn[A, B] World::query2_optional(Self, ComponentKey[A], Optional[B]) -> Query2Optional[A, B]
 pub fn[A, B, F] World::query2_optional_filtered(Self, ComponentKey[A], Optional[B], F) -> Query2OptionalFiltered[A, B, F]
-pub fn[A, B, F] World::query2_ref_mut_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2RefMutFiltered[A, B, F]
-pub fn[A, B, F] World::query2_value_mut_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2ValueMutFiltered[A, B, F]
 pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C]) -> Query3[A, B, C]
 pub fn[A, B, C, F] World::query3_filtered(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C], F) -> Query3Filtered[A, B, C, F]
-pub fn[A, B, C, F] World::query3_ref_mut_optional_filtered(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C], F) -> Query3RefMutOptionalFiltered[A, B, C, F]
-pub fn[A, B, C, F] World::query3_value_ref_mut_filtered(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C], F) -> Query3ValueRefMutFiltered[A, B, C, F]
 pub fn[F] World::query_entities_filtered(Self, F) -> EntityQuery[F]
+pub fn[D : QueryData, F : QueryFilter] World::query_filtered(Self, F) -> QueryState[D, F]
 pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn World::read_sequence(Self) -> Int
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T] raise ComponentHooksError
@@ -894,6 +796,14 @@ pub fn World::world_id(Self) -> Int
 // Type aliases
 
 // Traits
+pub(open) trait Bundle {
+  insert_into(Self, World, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
+}
+pub impl[A : Component, B : Component] Bundle for (A, B)
+pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C)
+pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for (A, B, C, D)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component] Bundle for (A, B, C, D, E)
+
 pub(open) trait Component {
   component() -> ComponentKey[Self]
 }

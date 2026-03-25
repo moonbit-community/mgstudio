@@ -1541,13 +1541,15 @@ pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
   window_emit_native_theme_events(world)
   window_emit_native_occluded_events(world)
   window_emit_native_app_lifecycle_events(world)
-  let runtime_query = world.query1(ecs_key_window_runtime)
+  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+    world,
+  )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         window_sync_observed_state(world, entity, runtime_ref)
-      }),
+      },
     )
   }
 }
@@ -1560,13 +1562,15 @@ pub fn window_backend_apply_requested_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn window_backend_apply_changed_windows_system(world : @ecs.World) -> Unit {
-  let runtime_query = world.query1(ecs_key_window_runtime)
+  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+    world,
+  )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         window_sync_requested_window_state(world, entity, runtime_ref)
-      }),
+      },
     )
   }
 }
@@ -1576,23 +1580,26 @@ pub fn window_take_changed_mode_requests(
   world : @ecs.World,
 ) -> Array[WindowModeChangeRequest] {
   let requests : Array[WindowModeChangeRequest] = []
-  let runtime_query = world.query1(ecs_key_window_runtime)
+  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+    world,
+  )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
-        guard window_component(world, entity) is Some(window) else { return }
-        if window.mode != runtime_ref.val.last_applied_mode {
-          requests.push(
-            WindowModeChangeRequest::new(
-              entity,
-              runtime_ref.val.window,
-              window.mode,
-            ),
-          )
-          runtime_ref.val.last_applied_mode = window.mode
+        if window_component(world, entity) is Some(window) {
+          if window.mode != runtime_ref.val.last_applied_mode {
+            requests.push(
+              WindowModeChangeRequest::new(
+                entity,
+                runtime_ref.val.window,
+                window.mode,
+              ),
+            )
+            runtime_ref.val.last_applied_mode = window.mode
+          }
         }
-      }),
+      },
     )
   }
   requests
@@ -1602,13 +1609,15 @@ pub fn window_take_changed_mode_requests(
 pub fn window_backend_apply_changed_cursor_options_system(
   world : @ecs.World,
 ) -> Unit {
-  let runtime_query = world.query1(ecs_key_window_runtime)
+  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+    world,
+  )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         window_sync_requested_cursor_state(world, entity, runtime_ref)
-      }),
+      },
     )
   }
 }

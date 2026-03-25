@@ -223,8 +223,8 @@ fn rotate(
 ///|
 fn fit_canvas(
   resize_messages : @ecs.MessageReader[@window.WindowResized],
-  projection_query : @ecs.Query1Filtered[
-    @sprite.Projection,
+  projection_query : @ecs.Query[
+    @ecs.Mut[@sprite.Projection],
     @ecs.With[OuterCamera],
   ],
 ) -> Unit {
@@ -239,7 +239,7 @@ fn fit_canvas(
       continue
     }
     let projection_scale = 1.0F / rounded_scale
-    try! projection_query.view_mut(fn(_entity, projection) {
+    try! projection_query.view(fn(_entity, projection) {
       let projection_ref = projection.get_ref()
       match projection_ref.val {
         Orthographic(current) =>

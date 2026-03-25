@@ -1906,11 +1906,15 @@ impl @app.SystemParam for GamepadProcessedEventWriters with store(self, state) {
 
 ///|
 fn gamepad_event_processing_system(
-  gamepads : @ecs.Query2ValueMutFiltered[GamepadSettings, Gamepad, @ecs.All],
+  gamepads : @ecs.Query[
+    (@ecs.Comp[GamepadSettings], @ecs.Mut[Gamepad]),
+    @ecs.All,
+  ],
   raw_events : @ecs.MessageReader[RawGamepadEvent],
   outputs : GamepadProcessedEventWriters,
 ) -> Unit {
-  try! gamepads.view_mut(fn(_entity, _settings, gamepad_mut) {
+  try! gamepads.view(fn(_entity, data) {
+    let (_settings, gamepad_mut) = data
     let gamepad_ref = gamepad_mut.get_ref()
     let gamepad = gamepad_ref.val
     let digital = gamepad.digital
@@ -1924,7 +1928,9 @@ fn gamepad_event_processing_system(
         outputs.gamepad_events.write(GamepadEvent::Connection(connection_event))
         |> ignore
       Axis(axis_event) =>
-        try! (gamepads.with_mut(axis_event.gamepad, fn(settings, gamepad_mut) {
+        if (try! gamepads.get(axis_event.gamepad))
+          is Some((settings, gamepad_mut)) {
+          let settings = settings.value()
           let old_value = gamepad_mut.get_ref().val.analog.get(
             GamepadInput::Axis(axis_event.axis),
           )
@@ -1945,13 +1951,11 @@ fn gamepad_event_processing_system(
             outputs.axis_events.write(event) |> ignore
             outputs.gamepad_events.write(GamepadEvent::Axis(event)) |> ignore
           }
-        })
-        |> ignore)
+        }
       Button(button_event) =>
-        try! (gamepads.with_mut(button_event.gamepad, fn(
-          settings,
-          gamepad_mut,
-        ) {
+        if (try! gamepads.get(button_event.gamepad))
+          is Some((settings, gamepad_mut)) {
+          let settings = settings.value()
           let gamepad_ref = gamepad_mut.get_ref()
           let old_value = gamepad_ref.val.analog.get(
             GamepadInput::Button(button_event.button),
@@ -2014,8 +2018,7 @@ fn gamepad_event_processing_system(
             outputs.button_events.write(event) |> ignore
             outputs.gamepad_events.write(GamepadEvent::Button(event)) |> ignore
           }
-        })
-        |> ignore)
+        }
     }
   }
 }

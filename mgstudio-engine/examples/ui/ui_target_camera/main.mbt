@@ -125,7 +125,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn update_camera_orders(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   buttons : @ecs.Query2[@ui.Interaction, CameraOrderBox],
-  cameras : @ecs.Query1[@sprite.Camera],
+  cameras : @ecs.Query[@ecs.Mut[@sprite.Camera], @ecs.All],
   texts : @ecs.Query1[@text.Text],
 ) -> Unit {
   let delta = if mouse_buttons.just_pressed(Left) {
@@ -139,9 +139,7 @@ fn update_camera_orders(
 
   try! buttons.view(fn(_entity, interaction, box) {
     guard interaction == @ui.Interaction::Pressed else { return }
-    guard (try! cameras.get_mut(box.camera_entity)) is Some(camera) else {
-      return
-    }
+    guard (try! cameras.get(box.camera_entity)) is Some(camera) else { return }
     let camera_ref = camera.get_ref()
     let next_order = camera_ref.val.order + delta
     camera_ref.val = camera_ref.val.with_order(next_order)

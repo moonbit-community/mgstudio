@@ -157,7 +157,7 @@ fn display_instructions(commands : @app.Commands) -> Unit {
 fn disable_entities_on_click(
   commands : @app.Commands,
   click_events : @app.ResMut[@app.PickingEvents],
-  valid_query : @ecs.Query1[DisableOnClick],
+  valid_query : @ecs.Query[@ecs.Comp[DisableOnClick], @ecs.All],
 ) -> Unit {
   for event in @app.PickingEvents::drain(click_events.get_ref()) {
     if event.kind != @pointer_events.PointerEventKind::Click {
@@ -171,15 +171,14 @@ fn disable_entities_on_click(
 
 ///|
 fn list_all_named_entities(
-  query : @ecs.Query1[@ecs.Name],
-  name_text_query : @ecs.Query2ValueMutFiltered[
-    EntityNameText,
-    @text.Text,
+  query : @ecs.Query[@ecs.Comp[@ecs.Name], @ecs.All],
+  name_text_query : @ecs.Query[
+    (@ecs.Comp[EntityNameText], @ecs.Mut[@text.Text]),
     @ecs.All,
   ],
 ) -> Unit {
   let names : Array[String] = []
-  try! query.view(fn(_entity, name) { names.push(name.as_str()) })
+  try! query.view(fn(_entity, name) { names.push(name.value().as_str()) })
   sort_names(names)
 
   let text_string = Ref::new("Named entities found:\n")
@@ -187,7 +186,8 @@ fn list_all_named_entities(
     text_string.val = text_string.val + name + "\n"
   }
 
-  try! name_text_query.view_mut(fn(_entity, _marker, text) {
+  try! name_text_query.view(fn(_entity, data) {
+    let (_marker, text) = data
     text.get_ref().val = @text.Text::new(text_string.val)
   })
 }
@@ -208,13 +208,13 @@ fn sort_names(names : Array[String]) -> Unit {
 ///|
 fn reenable_entities_on_space(
   commands : @app.Commands,
-  disabled_entities : @ecs.EntityQuery[@ecs.With[@ecs.Disabled]],
+  disabled_entities : @ecs.Query[@core.Entity, @ecs.With[@ecs.Disabled]],
 ) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
   let entities : Array[@core.Entity] = []
-  disabled_entities.view(fn(entity) { entities.push(entity) })
+  try! disabled_entities.view(fn(entity, _value) { entities.push(entity) })
   for entity in entities {
     commands.entity(entity).remove_component(@ecs.ecs_key_disabled)
   }

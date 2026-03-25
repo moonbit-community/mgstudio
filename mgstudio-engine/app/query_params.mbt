@@ -91,6 +91,89 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
 }
 
 ///|
+pub struct Single[D, F] {
+  value : D
+  filter_marker : (F) -> Unit
+}
+
+///|
+pub fn[D, F] Single::get(self : Single[D, F]) -> D {
+  self.value
+}
+
+///|
+pub struct Populated[D, F] {
+  query : @ecs.Query[D, F]
+}
+
+///|
+pub fn[D, F] Populated::query(self : Populated[D, F]) -> @ecs.Query[D, F] {
+  self.query
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
+  D,
+  F,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
+  D,
+  F,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  let query : @ecs.Query[D, F] = @ecs.query_filtered(
+    world,
+    F::from_world(world),
+  )
+  let value = query.require_single()
+  Single::{ value, filter_marker: fn(_ : F) {  } }
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
+  D,
+  F,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
+  D,
+  F,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
+  D,
+  F,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  let query : @ecs.Query[D, F] = @ecs.query_filtered(
+    world,
+    F::from_world(world),
+  )
+  if query.count() == 0 {
+    raise @ecs.Skipped("Expected at least one matching entity")
+  }
+  Populated::{ query, }
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
+  D,
+  F,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
 pub impl[F : FromWorld] SystemParam for @ecs.EntityQuery[F] with init_state(
   world,
 ) {
@@ -403,147 +486,3 @@ pub impl[
 }
 
 ///|
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2RefMutFiltered[
-  A,
-  B,
-  F,
-] with init_state(world) {
-  system_param_empty_state(world)
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2RefMutFiltered[
-  A,
-  B,
-  F,
-] with get(_state) {
-  let world = system_param_abort_missing_world()
-  world.query2_ref_mut_filtered(
-    @ecs.Component::component(),
-    @ecs.Component::component(),
-    F::from_world(world),
-  )
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2RefMutFiltered[
-  A,
-  B,
-  F,
-] with store(self, state) {
-  system_param_store_no_state(self, state)
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2ValueMutFiltered[
-  A,
-  B,
-  F,
-] with init_state(world) {
-  system_param_empty_state(world)
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2ValueMutFiltered[
-  A,
-  B,
-  F,
-] with get(_state) {
-  let world = system_param_abort_missing_world()
-  world.query2_value_mut_filtered(
-    @ecs.Component::component(),
-    @ecs.Component::component(),
-    F::from_world(world),
-  )
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2ValueMutFiltered[
-  A,
-  B,
-  F,
-] with store(self, state) {
-  system_param_store_no_state(self, state)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  F : FromWorld,
-] SystemParam for @ecs.Query3ValueRefMutFiltered[A, B, C, F] with init_state(
-  world,
-) {
-  system_param_empty_state(world)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  F : FromWorld,
-] SystemParam for @ecs.Query3ValueRefMutFiltered[A, B, C, F] with get(_state) {
-  let world = system_param_abort_missing_world()
-  world.query3_value_ref_mut_filtered(
-    @ecs.Component::component(),
-    @ecs.Component::component(),
-    @ecs.Component::component(),
-    F::from_world(world),
-  )
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  F : FromWorld,
-] SystemParam for @ecs.Query3ValueRefMutFiltered[A, B, C, F] with store(
-  self,
-  state,
-) {
-  system_param_store_no_state(self, state)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  F : FromWorld,
-] SystemParam for @ecs.Query3RefMutOptionalFiltered[A, B, C, F] with init_state(
-  world,
-) {
-  system_param_empty_state(world)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  F : FromWorld,
-] SystemParam for @ecs.Query3RefMutOptionalFiltered[A, B, C, F] with get(_state) {
-  let world = system_param_abort_missing_world()
-  world.query3_ref_mut_optional_filtered(
-    @ecs.Component::component(),
-    @ecs.Component::component(),
-    @ecs.Component::component(),
-    F::from_world(world),
-  )
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  F : FromWorld,
-] SystemParam for @ecs.Query3RefMutOptionalFiltered[A, B, C, F] with store(
-  self,
-  state,
-) {
-  system_param_store_no_state(self, state)
-}

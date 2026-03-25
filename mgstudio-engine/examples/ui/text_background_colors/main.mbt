@@ -86,17 +86,17 @@ fn setup(commands : @app.Commands) -> Unit {
       span_commands
       .observe2(fn(
         _pointer : @app.OnPointer[@app.PointerEnter],
-        query : @ecs.Query1[@text.TextColor],
+        query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
       ) raise {
-        if (try! query.get_mut(span)) is Some(text_color) {
+        if (try! query.get(span)) is Some(text_color) {
           text_color.get_ref().val = @text.TextColor::white()
         }
       })
       .observe2(fn(
         _pointer : @app.OnPointer[@app.PointerLeave],
-        query : @ecs.Query1[@text.TextColor],
+        query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
       ) raise {
-        if (try! query.get_mut(span)) is Some(text_color) {
+        if (try! query.get(span)) is Some(text_color) {
           text_color.get_ref().val = @text.TextColor::black()
         }
       }),
@@ -111,13 +111,16 @@ fn cycle_text_background_colors(
     @hierarchy.Children,
     @ecs.With[@text.Text],
   ],
-  text_background_colors_query : @ecs.Query1[@text.TextBackgroundColor],
+  text_background_colors_query : @ecs.Query[
+    @ecs.Mut[@text.TextBackgroundColor],
+    @ecs.All,
+  ],
 ) -> Unit {
   let n = time.get().elapsed_secs().to_int()
   guard (try! children_query.single()) is Some(children) else { return }
   let entities = children.entities()
   for i in 0..<entities.length() {
-    if (try! text_background_colors_query.get_mut(entities[i]))
+    if (try! text_background_colors_query.get(entities[i]))
       is Some(background_color) {
       background_color.get_ref().val = @text.TextBackgroundColor::new(
         palette_color(i + n),

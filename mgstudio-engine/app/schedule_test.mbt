@@ -592,9 +592,15 @@ test "app: SystemParam Query2 injects typed query into update system" {
       try! startup_world.set(entity, ecs_position_key, EcsPosition::{ x: 1 })
       try! startup_world.set(entity, ecs_velocity_key, EcsVelocity::{ x: 41 })
     })
-    .add_system_param(fn(query : @ecs.Query2[EcsPosition, EcsVelocity]) {
-      try! query.for_each(fn(_entity, position, velocity) {
-        position.x = position.x + velocity.x
+    .add_system_param(fn(
+      query : @ecs.Query[
+        (@ecs.Mut[EcsPosition], @ecs.Comp[EcsVelocity]),
+        @ecs.All,
+      ],
+    ) {
+      try! query.for_each(fn(_entity, data) {
+        let (position, velocity) = data
+        position.get_ref().val.x = position.get_ref().val.x + velocity.value().x
       })
     })
     .run_startup()
@@ -602,8 +608,9 @@ test "app: SystemParam Query2 injects typed query into update system" {
 
   let query_world = app.world()
   let value_ref : Ref[Int] = Ref::new(0)
-  try! query_world
-  .query1(ecs_position_key)
-  .view(fn(_entity, position) { value_ref.val = position.x })
+  let query : @ecs.Query[@ecs.Comp[EcsPosition], @ecs.All] = @ecs.query(
+    query_world,
+  )
+  try! query.view(fn(_entity, position) { value_ref.val = position.value().x })
   inspect(value_ref.val, content="42")
 }

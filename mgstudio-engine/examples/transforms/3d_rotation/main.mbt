@@ -81,11 +81,15 @@ fn setup(
 
 ///|
 fn rotate_cube(
-  cubes : @ecs.Query2RefMutFiltered[Rotatable, @transform.Transform, @ecs.All],
+  cubes : @ecs.Query[
+    (@ecs.Comp[Rotatable], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_secs()
-  try! cubes.view_mut(fn(_entity, cube, transform) {
+  try! cubes.view(fn(_entity, data) {
+    let (cube, transform) = data
     let transform_ref = transform.get_ref()
     transform_ref.val.rotate_y(cube.value().speed * (@math.pi() * 2.0F) * delta)
   })

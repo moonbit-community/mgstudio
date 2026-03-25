@@ -128,15 +128,15 @@ fn setup(
 
 ///|
 fn move_cube(
-  cubes : @ecs.Query2RefMutFiltered[
-    CubeState,
-    @mgs_transform.Transform,
+  cubes : @ecs.Query[
+    (@ecs.Comp[CubeState], @ecs.Mut[@mgs_transform.Transform]),
     @ecs.Without[Center],
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_secs()
-  try! cubes.view_mut(fn(_entity, cube, transform) {
+  try! cubes.view(fn(_entity, data) {
+    let (cube, transform) = data
     let transform_ref = transform.get_ref()
     let forward = transform_ref.val.forward()
     transform_ref.val.translation = transform_ref.val.translation.add(
@@ -147,9 +147,8 @@ fn move_cube(
 
 ///|
 fn rotate_cube(
-  cubes : @ecs.Query2RefMutFiltered[
-    CubeState,
-    @mgs_transform.Transform,
+  cubes : @ecs.Query[
+    (@ecs.Comp[CubeState], @ecs.Mut[@mgs_transform.Transform]),
     @ecs.Without[Center],
   ],
   center_spheres : @ecs.Query1Filtered[
@@ -161,7 +160,8 @@ fn rotate_cube(
   guard (try! center_spheres.single()) is Some(center) else { return }
 
   let delta = time.get().delta_secs()
-  try! cubes.view_mut(fn(_entity, cube, transform) {
+  try! cubes.view(fn(_entity, data) {
+    let (cube, transform) = data
     let transform_ref = transform.get_ref()
     let look_at_sphere = transform_ref.val.looking_at(
       center.translation,
@@ -183,9 +183,8 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
     CubeState,
     @ecs.Without[Center],
   ],
-  centers : @ecs.Query2RefMutFiltered[
-    Center,
-    @mgs_transform.Transform,
+  centers : @ecs.Query[
+    (@ecs.Comp[Center], @ecs.Mut[@mgs_transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -194,7 +193,8 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
     distances.val = distances.val +
       cube_state.start_pos.sub(cube_transform.translation).length()
   })
-  try! centers.view_mut(fn(_entity, center, transform) {
+  try! centers.view(fn(_entity, data) {
+    let (center, transform) = data
     let center_state = center.value()
     let mut new_size = center_state.max_size -
       center_state.scale_factor * distances.val

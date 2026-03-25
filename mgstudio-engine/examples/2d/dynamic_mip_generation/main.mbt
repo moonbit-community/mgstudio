@@ -358,28 +358,34 @@ fn handle_widget_interactions(
 
 ///|
 fn update_radio_buttons(
-  radio_buttons : @ecs.Query2RefMutFiltered[
-    @widgets.WidgetClickSender[AppSetting],
-    @ui.BackgroundColor,
+  radio_buttons : @ecs.Query[
+    (
+      @ecs.Comp[@widgets.WidgetClickSender[AppSetting]],
+      @ecs.Mut[@ui.BackgroundColor],
+    ),
     @ecs.With[@widgets.RadioButton],
   ],
-  radio_button_texts : @ecs.Query2RefMutFiltered[
-    @widgets.WidgetClickSender[AppSetting],
-    @text.TextColor,
+  radio_button_texts : @ecs.Query[
+    (
+      @ecs.Comp[@widgets.WidgetClickSender[AppSetting]],
+      @ecs.Mut[@text.TextColor],
+    ),
     @ecs.With[@widgets.RadioButtonText],
   ],
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
 
-  try! radio_buttons.view_mut(fn(_entity, sender, background_color) {
+  try! radio_buttons.view(fn(_entity, data) {
+    let (sender, background_color) = data
     @widgets.update_ui_radio_button(
       background_color,
       app_setting_selected(sender.value().get(), status),
     )
   })
 
-  try! radio_button_texts.view_mut(fn(_entity, sender, text_color) {
+  try! radio_button_texts.view(fn(_entity, data) {
+    let (sender, text_color) = data
     @widgets.update_ui_radio_button_text(
       text_color,
       app_setting_selected(sender.value().get(), status),
@@ -489,8 +495,8 @@ fn regenerate_image_when_requested(
 
 ///|
 fn animate_image_scale(
-  animated_images : @ecs.Query1Filtered[
-    @transform.Transform,
+  animated_images : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
     @ecs.With[AnimatedImage],
   ],
   windows : @ecs.Query1Filtered[
@@ -505,7 +511,7 @@ fn animate_image_scale(
     triangle_wave(time.get().elapsed_seconds(), ANIMATION_PERIOD),
   )
 
-  try! animated_images.view_mut(fn(_entity, transform) {
+  try! animated_images.view(fn(_entity, transform) {
     transform.get_ref().val.scale = @math.Vec3::new(
       next_scale.x,
       next_scale.y,

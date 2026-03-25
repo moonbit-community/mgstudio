@@ -116,10 +116,11 @@ fn setup_system(commands : @app.Commands) -> Unit {
 ///|
 fn print_text_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query2RefMutFiltered[TextToPrint, PrinterTick, @ecs.All],
+  query : @ecs.Query[(@ecs.Comp[TextToPrint], @ecs.Mut[PrinterTick]), @ecs.All],
 ) -> Unit {
   let delta = time.get().delta()
-  try! query.view_mut(fn(_entity, text, timer) {
+  try! query.view(fn(_entity, data) {
+    let (text, timer) = data
     let timer_ref = timer.get_ref()
     timer_ref.val.timer = timer_ref.val.timer.tick(delta)
     if timer_ref.val.timer.just_finished() {
@@ -140,21 +141,21 @@ fn transition_to_in_game_system(
 ///|
 fn[T] cleanup_system(
   commands : @app.Commands,
-  query : @ecs.EntityQuery[@ecs.With[T]],
+  query : @ecs.Query[@ecs.EntityRef, @ecs.With[T]],
 ) -> Unit {
-  query.view(fn(entity) { commands.entity(entity).despawn() })
+  try! query.view(fn(entity, _value) { commands.entity(entity).despawn() })
 }
 
 ///|
 let cleanup_menu_close_system : (
   @app.Commands,
-  @ecs.EntityQuery[@ecs.With[MenuClose]],
+  @ecs.Query[@ecs.EntityRef, @ecs.With[MenuClose]],
 ) -> Unit = cleanup_system
 
 ///|
 let cleanup_level_unload_system : (
   @app.Commands,
-  @ecs.EntityQuery[@ecs.With[LevelUnload]],
+  @ecs.Query[@ecs.EntityRef, @ecs.With[LevelUnload]],
 ) -> Unit = cleanup_system
 
 ///|

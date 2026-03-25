@@ -76,9 +76,9 @@ fn remove_component(
 ///|
 fn react_on_removal(
   remove : @ecs.On[@ecs.Remove, MyComponent],
-  query : @ecs.Query1[@sprite.Sprite],
+  query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
 ) -> Unit {
-  if (try! query.get_mut(remove.entity)) is Some(sprite) {
+  if (try! query.get(remove.entity)) is Some(sprite) {
     sprite.get_ref().val.color = @sprite.Color::srgb(0.5F, 1.0F, 1.0F)
   }
 }

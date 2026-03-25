@@ -15,7 +15,7 @@ import {
 // Values
 pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
 
-pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.EntityQuery[@ecs.With[ClosingWindow]]) -> Unit
+pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.Query[@Milky2018/mgstudio/core.Entity, @ecs.With[ClosingWindow]]) -> Unit
 
 pub let ecs_key_app_lifecycle : @ecs.MessageKey[AppLifecycle]
 
@@ -103,9 +103,9 @@ pub let ecs_key_window_scale_factor_changed : @ecs.MessageKey[WindowScaleFactorC
 
 pub let ecs_key_window_theme_changed : @ecs.MessageKey[WindowThemeChanged]
 
-pub fn exit_on_all_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[@ecs.With[Window]]) -> Unit
+pub fn exit_on_all_closed(@ecs.MessageWriter[@app.AppExit], @ecs.Query[@Milky2018/mgstudio/core.Entity, @ecs.With[Window]]) -> Unit
 
-pub fn exit_on_primary_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[(@ecs.With[Window], @ecs.With[PrimaryWindow])]) -> Unit
+pub fn exit_on_primary_closed(@ecs.MessageWriter[@app.AppExit], @ecs.Query[@Milky2018/mgstudio/core.Entity, (@ecs.With[Window], @ecs.With[PrimaryWindow])]) -> Unit
 
 pub fn host_app_lifecycle_event_count() -> Int
 

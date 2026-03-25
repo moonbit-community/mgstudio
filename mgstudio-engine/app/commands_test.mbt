@@ -199,7 +199,7 @@ test "app: Commands spawn defers component tuple insertion until after system" {
   let mut app = App::new(@ecs.World::new())
     .add_system_param2(fn(
       commands : Commands,
-      query : @ecs.Query1[CommandsPosition],
+      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
     ) {
       counts.push(query.count())
       spawned.val = Some(
@@ -213,7 +213,9 @@ test "app: Commands spawn defers component tuple insertion until after system" {
       )
       counts.push(query.count())
     })
-    .add_system_param(fn(query : @ecs.Query1[CommandsPosition]) {
+    .add_system_param(fn(
+      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+    ) {
       counts.push(query.count())
     })
 
@@ -279,7 +281,7 @@ test "app: Commands spawn_component defers single component insertion until afte
   let mut app = App::new(@ecs.World::new())
     .add_system_param2(fn(
       commands : Commands,
-      query : @ecs.Query1[CommandsPosition],
+      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
     ) {
       counts.push(query.count())
       spawned.val = Some(
@@ -287,7 +289,9 @@ test "app: Commands spawn_component defers single component insertion until afte
       )
       counts.push(query.count())
     })
-    .add_system_param(fn(query : @ecs.Query1[CommandsPosition]) {
+    .add_system_param(fn(
+      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+    ) {
       counts.push(query.count())
     })
 
@@ -353,7 +357,7 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
   let mut app = App::new(@ecs.World::new())
     .add_system_param2(fn(
       commands : Commands,
-      query : @ecs.Query1[CommandsPosition],
+      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
     ) {
       counts.push(query.count())
       spawned.val = commands.spawn_batch([
@@ -375,7 +379,9 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
       ])
       counts.push(query.count())
     })
-    .add_system_param(fn(query : @ecs.Query1[CommandsPosition]) {
+    .add_system_param(fn(
+      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+    ) {
       counts.push(query.count())
     })
 
@@ -404,7 +410,7 @@ test "app: Commands entity insert defers component insertion until flush" {
   let mut app = App::new(@ecs.World::new())
     .add_system_param2(fn(
       commands : Commands,
-      query : @ecs.Query1[CommandsVelocity],
+      query : @ecs.Query[@ecs.Comp[CommandsVelocity], @ecs.All],
     ) {
       let entity = commands.spawn(
         (CommandsPosition::{ x: 7, y: 8 }, CommandsMarker::{  }),
@@ -416,7 +422,9 @@ test "app: Commands entity insert defers component insertion until flush" {
       .insert((CommandsVelocity::{ dx: 9, dy: 10 }, CommandsTagA::{  }))
       counts.push(query.count())
     })
-    .add_system_param(fn(query : @ecs.Query1[CommandsVelocity]) {
+    .add_system_param(fn(
+      query : @ecs.Query[@ecs.Comp[CommandsVelocity], @ecs.All],
+    ) {
       counts.push(query.count())
     })
 
@@ -625,11 +633,11 @@ test "app: EntityCommands::observe scopes pointer observers to the target entity
       .entity(target)
       .observe2(fn(
         pointer : OnPointer[PointerEnter],
-        query : @ecs.Query1[CommandsPosition],
+        query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
       ) raise {
         guard pointer.target() is Some(entity) else { return }
         if (try! query.get(entity)) is Some(position) {
-          hits.push("enter:" + position.x.to_string())
+          hits.push("enter:" + position.value().x.to_string())
         }
       })
       .observe(fn(_pointer : OnPointer[PointerEnter]) raise {
@@ -690,14 +698,14 @@ test "app: EntityCommands::observe4 accepts normal system params" {
       .observe4(fn(
         _pointer : OnPointer[PointerClick],
         resource : Res[CommandsCounterResource],
-        positions : @ecs.Query1[CommandsPosition],
-        markers : @ecs.Query1[CommandsMarker],
+        positions : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+        markers : @ecs.Query[@ecs.Comp[CommandsMarker], @ecs.All],
       ) raise {
         if (try! positions.get(target)) is Some(position) {
           hits.push(
             resource.get().value.to_string() +
             ":" +
-            position.x.to_string() +
+            position.value().x.to_string() +
             ":" +
             markers.count().to_string(),
           )

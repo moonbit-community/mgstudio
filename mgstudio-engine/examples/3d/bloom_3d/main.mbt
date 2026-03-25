@@ -346,11 +346,15 @@ fn update_bloom_settings(
 
 ///|
 fn bounce_spheres(
-  query : @ecs.Query2RefMutFiltered[Bouncing, @transform.Transform, @ecs.All],
+  query : @ecs.Query[
+    (@ecs.Comp[Bouncing], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
-  try! query.view_mut(fn(_entity, _bouncing, transform) {
+  try! query.view(fn(_entity, data) {
+    let (_bouncing, transform) = data
     let transform_ref = transform.get_ref()
     transform_ref.val.translation.y = @math.sin(
       transform_ref.val.translation.x +

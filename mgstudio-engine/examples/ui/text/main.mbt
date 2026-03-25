@@ -272,10 +272,10 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn text_color_system(
   time : @app.Res[@time.Time[@time.Real]],
-  query : @ecs.Query1Filtered[@mgtext.TextColor, @ecs.With[AnimatedText]],
+  query : @ecs.Query[@ecs.Mut[@mgtext.TextColor], @ecs.With[AnimatedText]],
 ) -> Unit {
   let seconds = time.get().elapsed_secs()
-  try! query.view_mut(fn(_entity, text_color) {
+  try! query.view(fn(_entity, text_color) {
     text_color.get_ref().val = @mgtext.TextColor::new(
       @sprite.Color::srgb(
         @math.sin(1.25F * seconds) / 2.0F + 0.5F,
@@ -289,7 +289,7 @@ fn text_color_system(
 ///|
 fn text_update_system(
   diagnostics : @app.Res[@diagnostic.DiagnosticsStore],
-  query : @ecs.Query1Filtered[@mgtext.TextSpan, @ecs.With[FpsText]],
+  query : @ecs.Query[@ecs.Mut[@mgtext.TextSpan], @ecs.With[FpsText]],
 ) -> Unit {
   let value = match
     diagnostics.get().get(@diagnostic.frame_time_diagnostic_fps) {
@@ -297,7 +297,7 @@ fn text_update_system(
     None => None
   }
   guard value is Some(fps) else { return }
-  try! query.view_mut(fn(_entity, span) {
+  try! query.view(fn(_entity, span) {
     span.get_ref().val.content = format_fps(fps)
   })
 }

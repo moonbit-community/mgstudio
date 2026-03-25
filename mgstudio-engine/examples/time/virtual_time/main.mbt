@@ -289,14 +289,14 @@ fn change_time_speed_down(world : @ecs.World) -> Unit {
 
 ///|
 fn move_real_time_sprites(
-  sprite_query : @ecs.Query2RefMutFiltered[
-    RealTime,
-    @transform.Transform,
+  sprite_query : @ecs.Query[
+    (@ecs.Comp[RealTime], @ecs.Mut[@transform.Transform]),
     @ecs.With[@sprite.Sprite],
   ],
   time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
-  try! sprite_query.view_mut(fn(_entity, _real_time, transform) {
+  try! sprite_query.view(fn(_entity, data) {
+    let (_real_time, transform) = data
     let transform_ref = transform.get_ref()
     transform_ref.val.translation.x = get_sprite_translation_x(
       time.get().elapsed_secs(),
@@ -306,14 +306,14 @@ fn move_real_time_sprites(
 
 ///|
 fn move_virtual_time_sprites(
-  sprite_query : @ecs.Query2RefMutFiltered[
-    VirtualTime,
-    @transform.Transform,
+  sprite_query : @ecs.Query[
+    (@ecs.Comp[VirtualTime], @ecs.Mut[@transform.Transform]),
     @ecs.With[@sprite.Sprite],
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  try! sprite_query.view_mut(fn(_entity, _virtual_time, transform) {
+  try! sprite_query.view(fn(_entity, data) {
+    let (_virtual_time, transform) = data
     let transform_ref = transform.get_ref()
     transform_ref.val.translation.x = get_sprite_translation_x(
       time.get().elapsed_secs(),

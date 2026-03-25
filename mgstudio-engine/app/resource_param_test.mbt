@@ -328,7 +328,7 @@ test "app: Query and ResMut compose in a single system signature" {
   let app = App::new(world)
     .insert_resource(CounterResource::{ value: 10 })
     .add_system_param2(fn(
-      query : @ecs.Query1[QueryPosition],
+      query : @ecs.Query[@ecs.Comp[QueryPosition], @ecs.All],
       resource : ResMut[CounterResource],
     ) {
       let mut count = 0

@@ -97,20 +97,24 @@ fn setup(
 ///|
 fn change_scale_direction(
   commands : @app.Commands,
-  cubes : @ecs.Query2ValueMutFiltered[Scaling, @transform.Transform, @ecs.All],
+  cubes : @ecs.Query[
+    (@ecs.Comp[Scaling], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
-  try! cubes.view_mut(fn(entity, cube, transform) {
+  try! cubes.view(fn(entity, data) {
+    let (cube, transform) = data
     let transform_ref = transform.get_ref()
-    let next_cube = cube
+    let next_cube = cube.value()
     let mut scaling_changed = false
 
-    if transform_ref.val.scale.max_element() > cube.max_element_size {
+    if transform_ref.val.scale.max_element() > cube.value().max_element_size {
       next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
       transform_ref.val.scale = transform_ref.val.scale.floor()
       scaling_changed = true
     }
 
-    if transform_ref.val.scale.min_element() < cube.min_element_size {
+    if transform_ref.val.scale.min_element() < cube.value().min_element_size {
       next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
       transform_ref.val.scale = transform_ref.val.scale.ceil()
       next_cube.scale_direction = next_cube.scale_direction.zxy()
@@ -125,14 +129,18 @@ fn change_scale_direction(
 
 ///|
 fn scale_cube(
-  cubes : @ecs.Query2ValueMutFiltered[Scaling, @transform.Transform, @ecs.All],
+  cubes : @ecs.Query[
+    (@ecs.Comp[Scaling], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_secs()
-  try! cubes.view_mut(fn(_entity, cube, transform) {
+  try! cubes.view(fn(_entity, data) {
+    let (cube, transform) = data
     let transform_ref = transform.get_ref()
     transform_ref.val.scale = transform_ref.val.scale.add(
-      cube.scale_direction.mul_scalar(cube.scale_speed * delta),
+      cube.value().scale_direction.mul_scalar(cube.value().scale_speed * delta),
     )
   })
 }

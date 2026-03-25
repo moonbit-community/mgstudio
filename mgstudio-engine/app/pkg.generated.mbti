@@ -698,17 +698,11 @@ pub struct PointerUp {
 }
 pub impl PointerObserverKind for PointerUp
 
-pub struct PopulatedQuery2MutMut[A, B] {
-  query : @ecs.Query2MutMutFiltered[A, B, @ecs.All]
+pub struct Populated[D, F] {
+  query : @ecs.Query[D, F]
 }
-pub fn[A, B] PopulatedQuery2MutMut::query(Self[A, B]) -> @ecs.Query2MutMutFiltered[A, B, @ecs.All]
-pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for PopulatedQuery2MutMut[A, B]
-
-pub struct PopulatedQuery2MutMutFiltered[A, B, F] {
-  query : @ecs.Query2MutMutFiltered[A, B, F]
-}
-pub fn[A, B, F] PopulatedQuery2MutMutFiltered::query(Self[A, B, F]) -> @ecs.Query2MutMutFiltered[A, B, F]
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld + @ecs.QueryFilter] SystemParam for PopulatedQuery2MutMutFiltered[A, B, F]
+pub fn[D, F] Populated::query(Self[D, F]) -> @ecs.Query[D, F]
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[D, F]
 
 pub struct PreviousState[S] {
   value : S
@@ -807,35 +801,12 @@ pub(all) enum ScheduleStage {
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
 
-pub struct SingleEntityFiltered[F] {
-  entity : @core.Entity
+pub struct Single[D, F] {
+  value : D
+  filter_marker : (F) -> Unit
 }
-pub fn[F] SingleEntityFiltered::get(Self[F]) -> @core.Entity
-pub impl[F : FromWorld + @ecs.QueryFilter] SystemParam for SingleEntityFiltered[F]
-
-pub struct SingleQuery1[A] {
-  value : A
-}
-pub fn[A] SingleQuery1::get(Self[A]) -> A
-pub impl[A : @ecs.Component] SystemParam for SingleQuery1[A]
-
-pub struct SingleQuery1Filtered[A, F] {
-  value : A
-}
-pub fn[A, F] SingleQuery1Filtered::get(Self[A, F]) -> A
-pub impl[A : @ecs.Component, F : FromWorld + @ecs.QueryFilter] SystemParam for SingleQuery1Filtered[A, F]
-
-pub struct SingleQuery2MutRef[A, B] {
-  value : (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
-}
-pub fn[A, B] SingleQuery2MutRef::get(Self[A, B]) -> (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
-pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for SingleQuery2MutRef[A, B]
-
-pub struct SingleQuery2MutRefFiltered[A, B, F] {
-  value : (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
-}
-pub fn[A, B, F] SingleQuery2MutRefFiltered::get(Self[A, B, F]) -> (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld + @ecs.QueryFilter] SystemParam for SingleQuery2MutRefFiltered[A, B, F]
+pub fn[D, F] Single::get(Self[D, F]) -> D
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[D, F]
 
 pub struct State[S] {
   value : S
@@ -1055,11 +1026,7 @@ pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Has[
 pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2HasFiltered[A, B, F]
 pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Optional[A, B]
 pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2OptionalFiltered[A, B, F]
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2RefMutFiltered[A, B, F]
-pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2ValueMutFiltered[A, B, F]
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] SystemParam for @ecs.Query3[A, B, C]
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query3Filtered[A, B, C, F]
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query3RefMutOptionalFiltered[A, B, C, F]
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query3ValueRefMutFiltered[A, B, C, F]
 pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T]
 

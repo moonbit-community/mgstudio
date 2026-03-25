@@ -316,14 +316,14 @@ fn setup(
 ///|
 fn update(
   camera_query : @ecs.Query1Filtered[SsaoCamera, @ecs.All],
-  sphere_query : @ecs.Query1Filtered[
-    @transform.Transform,
+  sphere_query : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
     @ecs.With[SphereMarker],
   ],
   keycode : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  try! sphere_query.view_mut(fn(_entity, transform) {
+  try! sphere_query.view(fn(_entity, transform) {
     transform.get_ref().val.translation.y = @math.sin(
         time.get().elapsed_secs() / 1.7F,
       ) *

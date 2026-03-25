@@ -220,12 +220,14 @@ fn move_or_resize_windows(
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let window_query = world.query1(@window.ecs_key_window)
+  let window_query : @ecs.Query[@ecs.Mut[@window.Window], @ecs.All] = @ecs.query(
+    world,
+  )
   world
   .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
   .view(fn(entity) {
     ignore(
-      try! window_query.with_mut(entity, fn(window_mut) {
+      if (try! window_query.get(entity)) is Some(window_mut) {
         let window_ref = window_mut.get_ref()
         match action.get() {
           Nothing => ()
@@ -235,7 +237,7 @@ fn move_or_resize_windows(
               direction_by_index(direction.get().index),
             )
         }
-      }),
+      },
     )
   })
 }

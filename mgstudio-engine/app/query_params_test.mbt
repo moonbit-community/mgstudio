@@ -137,10 +137,10 @@ test "app: Query1 system param exposes plain mutable query" {
 
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
-    query : @ecs.Query1[QueryPosition],
+    query : @ecs.Query[@ecs.Mut[QueryPosition], @ecs.All],
   ) {
     counts.push(query.count())
-    try! query.view_mut(fn(_entity, position) {
+    try! query.view(fn(_entity, position) {
       position.get_ref().val.x = position.get_ref().val.x + 10
     })
   })
@@ -173,17 +173,17 @@ test "app: filtered query system param builds filters from component owners" {
 
   let hit_counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
-    query : @ecs.Query2ValueMutFiltered[
-      QueryPosition,
-      QueryVelocity,
+    query : @ecs.Query[
+      (@ecs.Comp[QueryPosition], @ecs.Mut[QueryVelocity]),
       @ecs.Without[QueryMarker],
     ],
   ) {
     hit_counts.push(query.count())
     try! query
-    .par_iter_mut()
-    .for_each(fn(_entity, position, velocity) {
-      velocity.get_ref().val.dx = velocity.get_ref().val.dx + position.x
+    .par_iter()
+    .for_each(fn(_entity, data) {
+      let (position, velocity) = data
+      velocity.get_ref().val.dx = velocity.get_ref().val.dx + position.value().x
     })
   })
 
@@ -215,15 +215,18 @@ test "app: optional query system param preserves some and none branches" {
   let seen : Array[(Int, Bool)] = []
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
-    query : @ecs.Query3RefMutOptionalFiltered[
-      QueryPosition,
-      QueryVelocity,
-      QueryMarker,
+    query : @ecs.Query[
+      (
+        @ecs.Comp[QueryPosition],
+        @ecs.Mut[QueryVelocity],
+        @ecs.Comp[QueryMarker]?,
+      ),
       @ecs.All,
     ],
   ) {
     counts.push(query.count())
-    try! query.view_mut(fn(entity, position, velocity, marker) {
+    try! query.view(fn(entity, data) {
+      let (position, velocity, marker) = data
       seen.push((entity.id, marker is Some(_)))
       velocity.get_ref().val.dy = velocity.get_ref().val.dy + position.value().y
     })
@@ -261,15 +264,23 @@ test "app: Allow, Query2Has and Query2Optional system params honor disabling sem
     Update,
     system(
       system_param3(fn(
-        visible_entities : @ecs.EntityQuery[@ecs.Allow[@ecs.Disabled]],
-        has_query : @ecs.Query2Has[QueryPosition, @ecs.Disabled],
-        optional_query : @ecs.Query2Optional[QueryPosition, @ecs.Disabled],
+        visible_entities : @ecs.Query[@core.Entity, @ecs.Allow[@ecs.Disabled]],
+        has_query : @ecs.Query[
+          (@ecs.Comp[QueryPosition], @ecs.Has[@ecs.Disabled]),
+          @ecs.All,
+        ],
+        optional_query : @ecs.Query[
+          (@ecs.Comp[QueryPosition], @ecs.Comp[@ecs.Disabled]?),
+          @ecs.All,
+        ],
       ) {
         entity_counts.push(visible_entities.count())
-        try! has_query.view(fn(entity, _position, has_disabled) {
-          has_seen.push((entity.id, has_disabled))
+        try! has_query.view(fn(entity, data) {
+          let (_, has_disabled) = data
+          has_seen.push((entity.id, has_disabled.present()))
         })
-        try! optional_query.view(fn(entity, _position, maybe_disabled) {
+        try! optional_query.view(fn(entity, data) {
+          let (_, maybe_disabled) = data
           optional_seen.push((entity.id, maybe_disabled is Some(_)))
         })
       }),
@@ -299,17 +310,21 @@ test "app: validated single query params expose strict single access" {
     Update,
     system(
       system_param3(fn(
-        single_entity : SingleEntityFiltered[
+        single_entity : Single[
+          @core.Entity,
           (@ecs.With[QueryPosition], @ecs.With[QueryVelocity]),
         ],
-        single_position : SingleQuery1Filtered[
-          QueryPosition,
+        single_position : Single[
+          @ecs.Comp[QueryPosition],
           @ecs.With[QueryVelocity],
         ],
-        single_pair : SingleQuery2MutRef[QueryPosition, QueryVelocity],
+        single_pair : Single[
+          (@ecs.Mut[QueryPosition], @ecs.Comp[QueryVelocity]),
+          @ecs.All,
+        ],
       ) {
         entity_ids.push(single_entity.get().id)
-        xs.push(single_position.get().x)
+        xs.push(single_position.get().value().x)
         let (position_mut, velocity_ref) = single_pair.get()
         position_mut.get_ref().val.x = position_mut.get_ref().val.x +
           velocity_ref.value().dx
@@ -379,11 +394,15 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
     Update,
     system(
       fallible_system_param(fn(
-        query_param : PopulatedQuery2MutMut[QueryPosition, QueryVelocity],
+        query_param : Populated[
+          (@ecs.Mut[QueryPosition], @ecs.Mut[QueryVelocity]),
+          @ecs.All,
+        ],
       ) raise {
         let query = query_param.query()
         counts.push(query.count())
-        try! query.view_mut(fn(_entity, position_mut, velocity_mut) {
+        try! query.view(fn(_entity, data) {
+          let (position_mut, velocity_mut) = data
           velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
             position_mut.get_ref().val.x
         })

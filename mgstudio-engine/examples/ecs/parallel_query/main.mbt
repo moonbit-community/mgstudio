@@ -71,11 +71,15 @@ fn spawn_system(
 
 ///|
 fn move_system(
-  sprites : @ecs.Query2RefMutFiltered[Velocity, @transform.Transform, @ecs.All],
+  sprites : @ecs.Query[
+    (@ecs.Comp[Velocity], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
   try! sprites
-  .par_iter_mut()
-  .for_each(fn(_entity, velocity, transform) {
+  .par_iter()
+  .for_each(fn(_entity, data) {
+    let (velocity, transform) = data
     let transform_ref = transform.get_ref()
     transform_ref.val.translation = transform_ref.val.translation.add(
       @math.Vec3::new(
@@ -93,7 +97,10 @@ fn bounce_system(
     @window.Window,
     @ecs.With[@window.PrimaryWindow],
   ],
-  sprites : @ecs.Query2RefMutFiltered[@transform.Transform, Velocity, @ecs.All],
+  sprites : @ecs.Query[
+    (@ecs.Comp[@transform.Transform], @ecs.Mut[Velocity]),
+    @ecs.All,
+  ],
 ) -> Unit {
   guard (try! window_query.single()) is Some(window) else { return }
   let width = window.width()
@@ -103,9 +110,10 @@ fn bounce_system(
   let bottom = height / -2.0F
   let top = height / 2.0F
   try! sprites
-  .par_iter_mut()
+  .par_iter()
   .batching_strategy(@ecs.BatchingStrategy::fixed(32))
-  .for_each(fn(_entity, transform, velocity) {
+  .for_each(fn(_entity, data) {
+    let (transform, velocity) = data
     let translation = transform.value().translation
     if !(left < translation.x &&
       translation.x < right &&

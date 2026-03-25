@@ -204,7 +204,7 @@ fn setup(
 
 ///|
 fn move_target(
-  target : @ecs.Query1Filtered[@transform.Transform, @ecs.With[TargetSphere]],
+  target : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[TargetSphere]],
   target_speed : @app.Res[TargetSphereSpeed],
   target_pos : @app.ResMut[TargetPosition],
   time : @app.Res[@time.Time[Unit]],
@@ -214,7 +214,7 @@ fn move_target(
   let target_position = target_pos.get_ref()
   let random_source = rng.get_ref()
 
-  try! target.view_mut(fn(_entity, transform) {
+  try! target.view(fn(_entity, transform) {
     let transform_ref = transform.get_ref()
     let offset = target_position.val.value.sub(transform_ref.val.translation)
     let abs_delta = offset.length()
@@ -238,8 +238,8 @@ fn move_target(
 
 ///|
 fn move_follower(
-  following : @ecs.Query1Filtered[
-    @transform.Transform,
+  following : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
     @ecs.With[FollowingSphere],
   ],
   target : @ecs.Query1Filtered[
@@ -252,7 +252,7 @@ fn move_follower(
   guard (try! target.single()) is Some(target_transform) else { return }
 
   let delta_time = time.get().delta_secs()
-  try! following.view_mut(fn(_entity, transform) {
+  try! following.view(fn(_entity, transform) {
     let transform_ref = transform.get_ref()
     let next_translation = transform_ref.val.translation
     next_translation.smooth_nudge(

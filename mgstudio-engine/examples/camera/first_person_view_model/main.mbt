@@ -293,9 +293,8 @@ fn spawn_text(world : @ecs.World) -> Unit {
 ///|
 fn move_player(
   accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
-  player_query : @ecs.Query2RefMutFiltered[
-    CameraSensitivity,
-    @transform.Transform,
+  player_query : @ecs.Query[
+    (@ecs.Comp[CameraSensitivity], @ecs.Mut[@transform.Transform]),
     @ecs.With[Player],
   ],
 ) -> Unit {
@@ -304,7 +303,8 @@ fn move_player(
     return
   }
   let pitch_limit = @math.pi_half() - 0.01F
-  try! player_query.view_mut(fn(_entity, camera_sensitivity, player_transform) {
+  try! player_query.view(fn(_entity, data) {
+    let (camera_sensitivity, player_transform) = data
     let sensitivity = camera_sensitivity.value()
     let delta_yaw = -delta.x * sensitivity.x
     let delta_pitch = -delta.y * sensitivity.y
@@ -326,8 +326,8 @@ fn move_player(
 ///|
 fn change_fov(
   input : @input.ButtonInput[@window.KeyCode],
-  world_model_projection_query : @ecs.Query1Filtered[
-    @camera.Projection,
+  world_model_projection_query : @ecs.Query[
+    @ecs.Mut[@camera.Projection],
     @ecs.With[WorldModelCamera],
   ],
 ) -> Unit {
@@ -344,7 +344,7 @@ fn change_fov(
 
   let min_fov = degrees_to_radians(20.0F)
   let max_fov = degrees_to_radians(160.0F)
-  try! world_model_projection_query.view_mut(fn(_entity, projection) {
+  try! world_model_projection_query.view(fn(_entity, projection) {
     let projection_ref = projection.get_ref()
     match projection_ref.val {
       Perspective(perspective) =>

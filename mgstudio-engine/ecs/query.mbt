@@ -34,6 +34,12 @@ pub struct Query3[A, B, C] {
 }
 
 ///|
+pub struct QueryState[D, F] {
+  filter : F
+  data_marker : (D) -> Unit
+}
+
+///|
 pub struct Query[D, F] {
   world : World
   filter : F
@@ -52,6 +58,12 @@ pub struct QueryContiguousIter[D, F] {
   query : Query[D, F]
   entities : Array[@core.Entity]
   mut index : Int
+}
+
+///|
+pub struct QueryParallel[D, F] {
+  query : Query[D, F]
+  batching_strategy : BatchingStrategy
 }
 
 ///|
@@ -273,6 +285,21 @@ pub fn[A, B, C, F] World::query3_filtered(
 }
 
 ///|
+pub fn[D : QueryData] World::query(self : World) -> QueryState[D, All] {
+  ignore(self)
+  { filter: All::new(), data_marker: fn(_value : D) {  } }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] World::query_filtered(
+  self : World,
+  filter : F,
+) -> QueryState[D, F] {
+  ignore(self)
+  { filter, data_marker: fn(_value : D) {  } }
+}
+
+///|
 pub fn[D : QueryData] query(world : World) -> Query[D, All] {
   Query::{ world, filter: All::new(), data_marker: fn(_value : D) {  } }
 }
@@ -423,6 +450,95 @@ pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(
     anchor_component_id,
   )
   Some({ query: self, entities, index: 0 })
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::par_iter(
+  self : Query[D, F],
+) -> QueryParallel[D, F] {
+  { query: self, batching_strategy: BatchingStrategy::new() }
+}
+
+///|
+pub fn[D, F] QueryParallel::batching_strategy(
+  self : QueryParallel[D, F],
+  strategy : BatchingStrategy,
+) -> QueryParallel[D, F] {
+  { query: self.query, batching_strategy: strategy }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryParallel::for_each(
+  self : QueryParallel[D, F],
+  f : (@core.Entity, D) -> Unit,
+) -> Unit raise EcsError {
+  ignore(self.batching_strategy)
+  self.query.view(f)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::get(
+  self : QueryState[D, F],
+  world : World,
+  entity : @core.Entity,
+) -> D? raise EcsError {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.get(entity)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
+  self : QueryState[D, F],
+  world : World,
+) -> QueryMany[D, F] {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.iter_many(query_all_alive_entities(world))
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
+  self : QueryState[D, F],
+  world : World,
+  entities : Array[@core.Entity],
+) -> QueryMany[D, F] {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.iter_many(entities)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::single(
+  self : QueryState[D, F],
+  world : World,
+) -> D? raise EcsError {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.single()
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(
+  self : QueryState[D, F],
+  world : World,
+) -> D raise {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.require_single()
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::count(
+  self : QueryState[D, F],
+  world : World,
+) -> Int {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.count()
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(
+  self : QueryState[D, F],
+  world : World,
+) -> QueryContiguousIter[D, F]? {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.contiguous_iter()
 }
 
 ///|

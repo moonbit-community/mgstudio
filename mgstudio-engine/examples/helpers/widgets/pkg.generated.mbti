@@ -23,9 +23,9 @@ pub fn[T] spawn_option_buttons(@app.Commands, @core.Entity, String, Array[(T, St
 
 pub fn ui_text(String, @color.Color) -> (@text.Text, @text.TextFont, @text.TextColor)
 
-pub fn update_ui_radio_button(@ecs.ComponentMut[@ui.BackgroundColor], Bool) -> Unit
+pub fn update_ui_radio_button(@ecs.Mut[@ui.BackgroundColor], Bool) -> Unit
 
-pub fn update_ui_radio_button_text(@ecs.ComponentMut[@text.TextColor], Bool) -> Unit
+pub fn update_ui_radio_button_text(@ecs.Mut[@text.TextColor], Bool) -> Unit
 
 pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]]
 

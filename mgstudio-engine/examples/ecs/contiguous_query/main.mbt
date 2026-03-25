@@ -47,24 +47,22 @@ impl @ecs.Component for HealthDecay with component() {
 
 ///|
 fn apply_health_decay(
-  query : @ecs.Query2RefMutFiltered[HealthDecay, Health, @ecs.All],
+  query : @ecs.Query[(@ecs.Comp[HealthDecay], @ecs.Mut[Health]), @ecs.All],
 ) -> Unit {
-  guard query.contiguous_iter_mut() is Some(iter) else { return }
-  while iter.fetch_next() is Some((decay, health)) {
-    for i in 0..<health.length() {
-      health[i].get_ref().val.value = health[i].get_ref().val.value *
-        decay[i].value().factor
-    }
+  guard query.contiguous_iter() is Some(iter) else { return }
+  while (try! iter.fetch_next()) is Some((decay, health)) {
+    let health_ref = health.get_ref()
+    health_ref.val.value = health_ref.val.value * decay.value().factor
   }
 }
 
 ///|
 fn finish_off_first(
   commands : @app.Commands,
-  query : @ecs.Query1Filtered[Health, @ecs.All],
+  query : @ecs.Query[@ecs.Mut[Health], @ecs.All],
 ) -> Unit {
   let finished = Ref::new(false)
-  try! query.view_mut(fn(entity, health) {
+  try! query.view(fn(entity, health) {
     if finished.val {
       return
     }

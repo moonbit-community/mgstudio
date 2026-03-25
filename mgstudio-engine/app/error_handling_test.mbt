@@ -98,7 +98,9 @@ test "app error handling: skipped validated params do not invoke error handlers"
     .add_systems(
       Update,
       system(
-        system_param(fn(_marker : SingleQuery1[ErrorHandlingMarker]) {
+        system_param(fn(
+          _marker : Single[@ecs.Comp[ErrorHandlingMarker], @ecs.All],
+        ) {
           ran.val = true
         }),
       ),

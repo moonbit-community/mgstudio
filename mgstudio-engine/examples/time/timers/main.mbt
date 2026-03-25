@@ -69,10 +69,10 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn print_when_completed(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query1[PrintOnCompletionTimer],
+  query : @ecs.Query[@ecs.Mut[PrintOnCompletionTimer], @ecs.All],
 ) -> Unit {
   let delta = time.get().delta()
-  try! query.view_mut(fn(_entity, timer_component) {
+  try! query.view(fn(_entity, timer_component) {
     let timer_ref = timer_component.get_ref()
     timer_ref.val.timer = timer_ref.val.timer.tick(delta)
     if timer_ref.val.timer.just_finished() {

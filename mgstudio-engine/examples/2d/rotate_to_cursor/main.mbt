@@ -84,7 +84,7 @@ fn main_camera_entity(
 
 ///|
 fn player_movement_system(
-  players : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Player]],
+  players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
   main_camera_query : @ecs.Query1[MainCamera],
   camera_query : @ecs.Query1[@sprite.Camera],
   projection_query : @ecs.Query1[@sprite.Projection],
@@ -127,7 +127,7 @@ fn player_movement_system(
     return
   }
 
-  try! players.view_mut(fn(_entity, player) {
+  try! players.view(fn(_entity, player) {
     let player_ref = player.get_ref()
     player_ref.val.rotation = @math.Quat::from_rotation_z(
       @math.Vec2::new(

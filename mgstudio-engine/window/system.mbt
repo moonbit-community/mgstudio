@@ -15,7 +15,7 @@
 ///|
 pub fn close_when_requested(
   requested : @ecs.MessageReader[WindowCloseRequested],
-  _closing : @ecs.EntityQuery[@ecs.With[ClosingWindow]],
+  _closing : @ecs.Query[@core.Entity, @ecs.With[ClosingWindow]],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let events = try requested.read() catch {
@@ -56,7 +56,7 @@ pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
 ///|
 pub fn exit_on_all_closed(
   app_exit : @ecs.MessageWriter[@app.AppExit],
-  windows : @ecs.EntityQuery[@ecs.With[Window]],
+  windows : @ecs.Query[@core.Entity, @ecs.With[Window]],
 ) -> Unit {
   if windows.count() == 0 {
     ignore(app_exit.write(@app.AppExit::Success))
@@ -66,7 +66,10 @@ pub fn exit_on_all_closed(
 ///|
 pub fn exit_on_primary_closed(
   app_exit : @ecs.MessageWriter[@app.AppExit],
-  windows : @ecs.EntityQuery[(@ecs.With[Window], @ecs.With[PrimaryWindow])],
+  windows : @ecs.Query[
+    @core.Entity,
+    (@ecs.With[Window], @ecs.With[PrimaryWindow]),
+  ],
 ) -> Unit {
   if windows.count() == 0 {
     ignore(app_exit.write(@app.AppExit::Success))

@@ -13,10 +13,16 @@
 // limitations under the License.
 
 ///|
-type SimpleTransformChangedQuery = @ecs.Query2[Transform, GlobalTransform]
+type SimpleTransformChangedQuery = @ecs.Query[
+  (@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]),
+  @ecs.All,
+]
 
 ///|
-type SimpleTransformOrphanQuery = @ecs.Query2[Transform, GlobalTransform]
+type SimpleTransformOrphanQuery = @ecs.Query[
+  (@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]),
+  @ecs.All,
+]
 
 ///|
 fn sort_entities_by_id(entities : Array[@core.Entity]) -> Unit {

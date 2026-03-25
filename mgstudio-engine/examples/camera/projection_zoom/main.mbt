@@ -162,8 +162,8 @@ fn instructions(
 
 ///|
 fn switch_projection(
-  camera_query : @ecs.Query1Filtered[
-    @camera.Projection,
+  camera_query : @ecs.Query[
+    @ecs.Mut[@camera.Projection],
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
@@ -173,7 +173,7 @@ fn switch_projection(
     return
   }
   let settings = camera_settings.get()
-  try! camera_query.view_mut(fn(_entity, camera_projection) {
+  try! camera_query.view(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
     let next_projection = match projection_ref.val {
       @camera.Projection::Orthographic(_) =>
@@ -202,8 +202,8 @@ fn switch_projection(
 
 ///|
 fn zoom(
-  camera_query : @ecs.Query1Filtered[
-    @camera.Projection,
+  camera_query : @ecs.Query[
+    @ecs.Mut[@camera.Projection],
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
@@ -215,7 +215,7 @@ fn zoom(
   }
 
   let settings = camera_settings.get()
-  try! camera_query.view_mut(fn(_entity, camera_projection) {
+  try! camera_query.view(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
     match projection_ref.val {
       @camera.Projection::Orthographic(orthographic) => {

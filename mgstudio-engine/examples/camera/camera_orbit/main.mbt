@@ -157,8 +157,8 @@ fn instructions(
 
 ///|
 fn orbit(
-  camera_query : @ecs.Query1Filtered[
-    @transform.Transform,
+  camera_query : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
@@ -180,7 +180,7 @@ fn orbit(
   }
   delta_roll = delta_roll * settings.roll_speed * time.get().delta_seconds()
 
-  try! camera_query.view_mut(fn(_entity, camera_transform) {
+  try! camera_query.view(fn(_entity, camera_transform) {
     let transform_ref = camera_transform.get_ref()
     let (yaw, pitch, roll) = transform_ref.val.rotation.to_euler(
       @math.EulerRot::YXZ,

@@ -319,9 +319,8 @@ fn set_fixed_time_step_flag(
 ///|
 fn rotate_camera(
   accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
-  cameras : @ecs.Query2ValueMutFiltered[
-    CameraSensitivity,
-    @transform.Transform,
+  cameras : @ecs.Query[
+    (@ecs.Comp[CameraSensitivity], @ecs.Mut[@transform.Transform]),
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
@@ -330,10 +329,11 @@ fn rotate_camera(
     return
   }
 
-  try! cameras.view_mut(fn(_entity, sensitivity, transform) {
+  try! cameras.view(fn(_entity, data) {
+    let (sensitivity, transform) = data
     let transform_ref = transform.get_ref()
-    let delta_yaw = -delta.x * sensitivity.x
-    let delta_pitch = -delta.y * sensitivity.y
+    let delta_yaw = -delta.x * sensitivity.value().x
+    let delta_pitch = -delta.y * sensitivity.value().y
     let (yaw, pitch, roll) = transform_ref.val.rotation.to_euler(
       @math.EulerRot::YXZ,
     )
@@ -355,7 +355,10 @@ fn rotate_camera(
 fn accumulate_input(
   commands : @app.Commands,
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  players : @ecs.Query2ValueMutFiltered[AccumulatedInput, Velocity, @ecs.All],
+  players : @ecs.Query[
+    (@ecs.Comp[AccumulatedInput], @ecs.Mut[Velocity]),
+    @ecs.All,
+  ],
   cameras : @ecs.Query1Filtered[
     @transform.Transform,
     @ecs.With[@camera.Camera3d],
@@ -363,8 +366,9 @@ fn accumulate_input(
 ) -> Unit {
   guard (try! cameras.single()) is Some(camera_transform) else { return }
 
-  try! players.view_mut(fn(entity, input, velocity) {
-    let next_input = input
+  try! players.view(fn(entity, data) {
+    let (input, velocity) = data
+    let next_input = input.value()
     next_input.movement = @math.Vec2::zero()
     if keyboard_input.pressed(@window.KeyCode::KeyW) {
       next_input.movement.y = next_input.movement.y + 1.0F
@@ -401,9 +405,9 @@ fn did_fixed_timestep_run_this_frame(world : @ecs.World) -> Bool {
 
 ///|
 fn clear_input(
-  players : @ecs.Query1Filtered[AccumulatedInput, @ecs.All],
+  players : @ecs.Query[@ecs.Mut[AccumulatedInput], @ecs.All],
 ) -> Unit {
-  try! players.view_mut(fn(_entity, input) {
+  try! players.view(fn(_entity, input) {
     let input_ref = input.get_ref()
     input_ref.val.movement = @math.Vec2::zero()
   })
@@ -412,20 +416,18 @@ fn clear_input(
 ///|
 fn advance_physics(
   commands : @app.Commands,
-  players : @ecs.Query3ValueRefMutFiltered[
-    PreviousPhysicalTranslation,
-    Velocity,
-    PhysicalTranslation,
+  players : @ecs.Query[
+    (
+      @ecs.Comp[PreviousPhysicalTranslation],
+      @ecs.Comp[Velocity],
+      @ecs.Mut[PhysicalTranslation],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
   let delta_seconds = @time.time_fixed_delta_seconds()
-  try! players.view_mut(fn(
-    entity,
-    _previous_translation,
-    velocity,
-    current_translation,
-  ) {
+  try! players.view(fn(entity, data) {
+    let (_previous_translation, velocity, current_translation) = data
     let previous_value = current_translation.get_ref().val.value
     commands
     .entity(entity)
@@ -440,22 +442,20 @@ fn advance_physics(
 
 ///|
 fn interpolate_rendered_transform(
-  players : @ecs.Query3ValueRefMutFiltered[
-    PreviousPhysicalTranslation,
-    PhysicalTranslation,
-    @transform.Transform,
+  players : @ecs.Query[
+    (
+      @ecs.Comp[PreviousPhysicalTranslation],
+      @ecs.Comp[PhysicalTranslation],
+      @ecs.Mut[@transform.Transform],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
   let alpha = @time.time_fixed_overstep_fraction()
-  try! players.view_mut(fn(
-    _entity,
-    previous_translation,
-    current_translation,
-    transform,
-  ) {
+  try! players.view(fn(_entity, data) {
+    let (previous_translation, current_translation, transform) = data
     let transform_ref = transform.get_ref()
-    transform_ref.val.translation = previous_translation.value.interpolate(
+    transform_ref.val.translation = previous_translation.value().value.interpolate(
       current_translation.value().value,
       alpha,
     )
@@ -468,14 +468,14 @@ fn translate_camera(
     @transform.Transform,
     @ecs.With[AccumulatedInput],
   ],
-  cameras : @ecs.Query1Filtered[
-    @transform.Transform,
+  cameras : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
   guard (try! players.single()) is Some(player_transform) else { return }
 
-  try! cameras.view_mut(fn(_entity, transform) {
+  try! cameras.view(fn(_entity, transform) {
     let transform_ref = transform.get_ref()
     transform_ref.val.translation = player_transform.translation
   })

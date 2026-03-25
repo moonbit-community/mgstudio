@@ -195,7 +195,7 @@ fn setup(
 fn update_colors(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   config : @app.ResMut[@sprite.Wireframe2dConfig],
-  wireframe_colors : @ecs.Query1[@sprite.Wireframe2dColor],
+  wireframe_colors : @ecs.Query[@ecs.Mut[@sprite.Wireframe2dColor], @ecs.All],
   text : @ecs.Query2[WireframeHelpText, @text.Text],
 ) -> Unit {
   try! text.for_each(fn(_entity, _help_text, help_text) {
@@ -221,7 +221,7 @@ fn update_colors(
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyC) {
-    try! wireframe_colors.view_mut(fn(_entity, color) {
+    try! wireframe_colors.view(fn(_entity, color) {
       let color_ref = color.get_ref()
       let next = if color_close(color_ref.val.color, color_green()) {
         color_red()

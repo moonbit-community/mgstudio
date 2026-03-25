@@ -265,6 +265,19 @@ fn[T] @ecs.Query1::first_entity(self : @ecs.Query1[T]) -> @core.Entity? {
 }
 
 ///|
+fn[D : @ecs.QueryData, F : @ecs.QueryFilter] @ecs.Query::first_entity(
+  self : @ecs.Query[D, F],
+) -> @core.Entity? {
+  let result : Ref[@core.Entity?] = Ref::new(None)
+  try! self.view(fn(entity, _component) {
+    if result.val is None {
+      result.val = Some(entity)
+    }
+  })
+  result.val
+}
+
+///|
 fn[A, B] @ecs.Query2::first(self : @ecs.Query2[A, B]) -> (@core.Entity, A, B)? {
   let result : Ref[(@core.Entity, A, B)?] = Ref::new(None)
   try! self.view(fn(entity, first, second) {
@@ -576,7 +589,7 @@ fn setup_image_viewer_scene(
 ///|
 fn toggle_scene(
   keys : @input.ButtonInput[@window.KeyCode],
-  visibility_query : @ecs.Query1[@visibility.Visibility],
+  visibility_query : @ecs.Query[@ecs.Mut[@visibility.Visibility], @ecs.All],
   current_scene : @app.ResMut[CurrentScene],
   scene_query : @ecs.Query1[SceneNumber],
 ) -> Unit {
@@ -598,7 +611,7 @@ fn toggle_scene(
     } else {
       @visibility.Visibility::Hidden
     }
-    if (try! visibility_query.get_mut(entity)) is Some(component) {
+    if (try! visibility_query.get(entity)) is Some(component) {
       component.get_ref().val = visibility
     }
   })
@@ -607,8 +620,11 @@ fn toggle_scene(
 ///|
 fn toggle_tonemapping_method(
   keys : @input.ButtonInput[@window.KeyCode],
-  tonemapping_query : @ecs.Query1[@post_process.Tonemapping],
-  color_grading_query : @ecs.Query1[@post_process.ColorGrading],
+  tonemapping_query : @ecs.Query[@ecs.Mut[@post_process.Tonemapping], @ecs.All],
+  color_grading_query : @ecs.Query[
+    @ecs.Mut[@post_process.ColorGrading],
+    @ecs.All,
+  ],
   per_method_settings : @app.Res[PerMethodSettings],
 ) -> Unit {
   let next_method = if keys.just_pressed(Digit1) {
@@ -635,9 +651,9 @@ fn toggle_tonemapping_method(
     return
   }
 
-  let mut current_tonemapping = initial_tonemapping
+  let mut current_tonemapping = initial_tonemapping.value()
   if next_method is Some(tonemapper) {
-    if (try! tonemapping_query.get_mut(camera)) is Some(component) {
+    if (try! tonemapping_query.get(camera)) is Some(component) {
       component.get_ref().val = tonemapper
       current_tonemapping = tonemapper
     }
@@ -647,7 +663,7 @@ fn toggle_tonemapping_method(
     is Some(color_grading) else {
     return
   }
-  if (try! color_grading_query.get_mut(camera)) is Some(component) {
+  if (try! color_grading_query.get(camera)) is Some(component) {
     component.get_ref().val = color_grading
   }
 }
@@ -657,7 +673,7 @@ fn update_color_grading_settings(
   keys : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
   per_method_settings : @app.ResMut[PerMethodSettings],
-  tonemapping_query : @ecs.Query1[@post_process.Tonemapping],
+  tonemapping_query : @ecs.Query[@ecs.Mut[@post_process.Tonemapping], @ecs.All],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
@@ -665,6 +681,7 @@ fn update_color_grading_settings(
   guard (try! tonemapping_query.get(camera)) is Some(current_method) else {
     return
   }
+  let current_method = current_method.value()
 
   if keys.just_pressed(ArrowDown) {
     selected_parameter.get_ref().val.next()

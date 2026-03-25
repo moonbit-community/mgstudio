@@ -229,9 +229,9 @@ fn draw_cursor(
 ///|
 fn controls(
   main_camera : @ecs.Query1[MainCamera],
-  camera_query : @ecs.Query1[@sprite.Camera],
-  transform_query : @ecs.Query1[@transform.Transform],
-  projection_query : @ecs.Query1[@sprite.Projection],
+  camera_query : @ecs.Query[@ecs.Mut[@sprite.Camera], @ecs.All],
+  transform_query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
+  projection_query : @ecs.Query[@ecs.Mut[@sprite.Projection], @ecs.All],
   input : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[@time.Fixed]],
 ) -> Unit {
@@ -240,7 +240,7 @@ fn controls(
   let uspeed = fspeed.to_int()
 
   ignore(
-    try! transform_query.with_mut(camera_entity, fn(camera_transform) {
+    if (try! transform_query.get(camera_entity)) is Some(camera_transform) {
       let transform_ref = camera_transform.get_ref()
       let mut x = transform_ref.val.translation.x
       let mut y = transform_ref.val.translation.y
@@ -265,11 +265,11 @@ fn controls(
           z=transform_ref.val.translation.z,
         )
       }
-    }),
+    },
   )
 
   ignore(
-    try! projection_query.with_mut(camera_entity, fn(camera_projection) {
+    if (try! projection_query.get(camera_entity)) is Some(camera_projection) {
       let projection_ref = camera_projection.get_ref()
       match projection_ref.val {
         @sprite.Projection::Orthographic(orthographic) => {
@@ -287,7 +287,7 @@ fn controls(
           }
         }
       }
-    }),
+    },
   )
 
   let width = @window.window_width()
@@ -297,7 +297,7 @@ fn controls(
   }
 
   ignore(
-    try! camera_query.with_mut(camera_entity, fn(camera_component) {
+    if (try! camera_query.get(camera_entity)) is Some(camera_component) {
       let camera_ref = camera_component.get_ref()
       let window_size = @math.IVec2::new(width, height)
       let current_viewport = match camera_ref.val.viewport {
@@ -355,6 +355,6 @@ fn controls(
       if changed {
         camera_ref.val = camera_ref.val.with_viewport(next_viewport)
       }
-    }),
+    },
   )
 }

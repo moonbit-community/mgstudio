@@ -245,13 +245,13 @@ fn animate_cooldowns(
   commands : @app.Commands,
   cooldowns : @ecs.Query1[Cooldown],
   active_cooldowns : @ecs.Query1[ActiveCooldown],
-  nodes : @ecs.Query1[@ui.Node],
+  nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
 ) -> Unit {
   try! cooldowns.view(fn(entity, cooldown) {
     guard (try! active_cooldowns.get(entity)) is Some(_) else { return }
 
     cooldown.timer = cooldown.timer.tick(time.get().delta())
-    if (try! nodes.get_mut(cooldown.overlay_entity)) is Some(overlay_node) {
+    if (try! nodes.get(cooldown.overlay_entity)) is Some(overlay_node) {
       let overlay_node_ref = overlay_node.get_ref()
       if cooldown.timer.just_finished() {
         commands.entity(entity).remove_component(ActiveCooldown::component())

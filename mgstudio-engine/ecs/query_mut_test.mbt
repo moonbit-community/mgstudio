@@ -13,6 +13,74 @@
 // limitations under the License.
 
 ///|
+struct MutQueryPosition {
+  mut x : Int
+  y : Int
+} derive(Show, Eq)
+
+///|
+struct MutQueryVelocity {
+  mut dx : Int
+  mut dy : Int
+} derive(Show, Eq)
+
+///|
+struct MutQueryAcceleration {
+  ax : Int
+  ay : Int
+} derive(Show, Eq)
+
+///|
+struct MutQueryMarker {} derive(Show, Eq)
+
+///|
+let mut_query_position_key : ComponentKey[MutQueryPosition] = register_component(
+  debug_name="tests.ecs.mut_query.position",
+)
+
+///|
+let mut_query_velocity_key : ComponentKey[MutQueryVelocity] = register_component(
+  debug_name="tests.ecs.mut_query.velocity",
+)
+
+///|
+let mut_query_acceleration_key : ComponentKey[MutQueryAcceleration] = register_component(
+  debug_name="tests.ecs.mut_query.acceleration",
+)
+
+///|
+let mut_query_marker_key : ComponentKey[MutQueryMarker] = register_component(
+  debug_name="tests.ecs.mut_query.marker",
+)
+
+///|
+pub impl Component for MutQueryPosition with component() {
+  mut_query_position_key
+}
+
+///|
+pub impl Component for MutQueryVelocity with component() {
+  mut_query_velocity_key
+}
+
+///|
+pub impl Component for MutQueryAcceleration with component() {
+  mut_query_acceleration_key
+}
+
+///|
+pub impl Component for MutQueryMarker with component() {
+  mut_query_marker_key
+}
+
+///|
+fn set_test_sequence(world : World, last_run : Int, this_run : Int) -> Unit {
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(last_run, this_run))
+  world.set_sequence_context(ctx)
+}
+
+///|
 test "ecs batching strategy: calc batch size respects limits" {
   inspect(
     BatchingStrategy::new()
@@ -30,740 +98,236 @@ test "ecs batching strategy: calc batch size respects limits" {
 }
 
 ///|
-test "ecs query mut: iter_many_mut updates filtered components without change flags" {
+test "ecs mut query: generic Query applies disabled filters and updates components" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_iter_many_mut",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_iter_many_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-  let e2 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
-  try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
-  try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let iter = world
-    .query1_filtered(comp_position, With::new(comp_velocity))
-    .iter_many_mut([e0, e1, e2])
-  let seen : Array[Int] = []
-  while iter.fetch_next() is Some((entity, component_mut)) {
-    seen.push(entity.id)
-    component_mut.get_ref().val.x = component_mut.get_ref().val.x + 10
-  }
-
-  inspect(seen, content="[1, 2]")
-  inspect(try! world.get(e1, comp_position), content="Some({x: 12, y: 2})")
-  inspect(try! world.get(e2, comp_position), content="Some({x: 14, y: 4})")
-}
-
-///|
-test "ecs query mut: read-only view_mut leaves data accessible" {
-  let world = World::new()
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query_mut_read_only",
-  )
-  let entity = world.spawn()
-  let observed_velocity : Array[Velocity] = []
-
-  try! world.set(entity, comp_velocity, Velocity::{ dx: 1, dy: 2 })
-  let ctx1 = @core.SystemSequenceContext::new()
-  ctx1.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx1)
-  try! world
-  .query1_filtered(comp_velocity, All::new())
-  .view_mut(fn(_entity, component_mut) {
-    observed_velocity.push(component_mut.get())
-  })
-  inspect(observed_velocity, content="[{dx: 1, dy: 2}]")
-
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
-  let ctx2 = @core.SystemSequenceContext::new()
-  ctx2.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(ctx2)
-
-  inspect(world.query1_filtered(comp_velocity, All::new()).count(), content="1")
-}
-
-///|
-test "ecs query mut: default query filters also apply to mutable queries" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query_mut_disabled",
-  )
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set(enabled, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set(disabled, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(enabled, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 1,
+  })
+  try! world.set(disabled, mut_query_position_key, MutQueryPosition::{
+    x: 2,
+    y: 2,
+  })
   try! world.set(disabled, ecs_key_disabled, Disabled::new())
 
-  let seen_enabled : Array[Int] = []
-  try! world
-  .query1(comp_position)
-  .view_mut(fn(entity, position) {
-    seen_enabled.push(entity.id)
-    position.get_ref().val.x = position.get_ref().val.x + 10
+  set_test_sequence(world, 0, 1)
+
+  let visible_query : Query[Mut[MutQueryPosition], All] = query(world)
+  let seen_visible : Array[Int] = []
+  try! visible_query.view(fn(entity, position_mut) {
+    seen_visible.push(entity.id)
+    position_mut.get_ref().val.x = position_mut.get_ref().val.x + 10
   })
 
+  let disabled_query : Query[Mut[MutQueryPosition], With[Disabled]] = query_filtered(
+    world,
+    With::new(ecs_key_disabled),
+  )
   let seen_disabled : Array[Int] = []
-  try! world
-  .query1_filtered(comp_position, With::new(ecs_key_disabled))
-  .view_mut(fn(entity, position) {
+  try! disabled_query.view(fn(entity, position_mut) {
     seen_disabled.push(entity.id)
-    position.get_ref().val.x = position.get_ref().val.x + 100
+    position_mut.get_ref().val.x = position_mut.get_ref().val.x + 100
   })
 
-  inspect(seen_enabled, content="[0]")
+  inspect(seen_visible, content="[0]")
   inspect(seen_disabled, content="[1]")
-  inspect(try! world.get(enabled, comp_position), content="Some({x: 11, y: 1})")
   inspect(
-    try! world.get(disabled, comp_position),
+    try! world.get(enabled, mut_query_position_key),
+    content="Some({x: 11, y: 1})",
+  )
+  inspect(
+    try! world.get(disabled, mut_query_position_key),
     content="Some({x: 102, y: 2})",
   )
 }
 
 ///|
-test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
+test "ecs mut query: QueryState supports get, require_single, iter_many_unique and mixed data" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query2_ref_mut",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query2_ref_mut",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query2_ref_mut",
-  )
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 10 })
-  try! world.set(e1, comp_position, Position::{ x: 2, y: 3 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 20, dy: 30 })
-  try! world.set(e2, comp_position, Position::{ x: 4, y: 5 })
-  try! world.set(e2, comp_velocity, Velocity::{ dx: 40, dy: 50 })
-  try! world.set(e2, comp_accel, Acceleration::{ ax: 1, ay: 1 })
+  try! world.set(e0, mut_query_position_key, MutQueryPosition::{ x: 2, y: 3 })
+  try! world.set(e0, mut_query_velocity_key, MutQueryVelocity::{
+    dx: 10,
+    dy: 20,
+  })
+  try! world.set(e1, mut_query_position_key, MutQueryPosition::{ x: 7, y: 8 })
+  try! world.set(e1, mut_query_velocity_key, MutQueryVelocity::{
+    dx: 30,
+    dy: 40,
+  })
+  try! world.set(e1, mut_query_acceleration_key, MutQueryAcceleration::{
+    ax: 1,
+    ay: 1,
+  })
 
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
+  set_test_sequence(world, 0, 1)
 
-  let query = world.query2_ref_mut_filtered(
-    comp_position,
-    comp_velocity,
-    Without::new(comp_accel),
-  )
-  inspect(query.count(), content="2")
+  let state : QueryState[
+    (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
+    Without[MutQueryAcceleration],
+  ] = world.query_filtered(Without::new(mut_query_acceleration_key))
 
-  let iter = query.iter_many_mut([e2, e1, e0])
-  let seen : Array[Int] = []
-  while iter.fetch_next() is Some((entity, position_ref, velocity_mut)) {
-    seen.push(entity.id)
+  inspect(state.count(world), content="1")
+  if (try! state.get(world, e0)) is Some((position, velocity_mut)) {
+    inspect(position.value(), content="{x: 2, y: 3}")
     velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
-      position_ref.value().x
-  }
-
-  inspect(seen, content="[1, 0]")
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 10})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 30})")
-  inspect(try! world.get(e2, comp_velocity), content="Some({dx: 40, dy: 50})")
-
-  try! query
-  .par_iter_mut()
-  .batching_strategy(BatchingStrategy::fixed(32))
-  .for_each(fn(_entity, position_ref, velocity_mut) {
-    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
-      position_ref.value().y
-  })
-
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 11})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 33})")
-  inspect(try! world.get(e2, comp_velocity), content="Some({dx: 40, dy: 50})")
-}
-
-///|
-test "ecs query mut: query2 value mut contiguous_iter_mut yields dense chunks" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query2_value_mut_contiguous",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query2_value_mut_contiguous",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-  let e2 = world.spawn()
-  let e3 = world.spawn()
-
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 0 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 20, dy: 0 })
-  try! world.set(e2, comp_velocity, Velocity::{ dx: 30, dy: 0 })
-  try! world.set(e3, comp_velocity, Velocity::{ dx: 40, dy: 0 })
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 0 })
-  try! world.set(e1, comp_position, Position::{ x: 2, y: 0 })
-  try! world.set(e3, comp_position, Position::{ x: 4, y: 0 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query2_value_mut_filtered(
-    comp_position,
-    comp_velocity,
-    All::new(),
-  )
-  guard query.contiguous_iter_mut() is Some(iter) else {
-    fail("expected contiguous iterator for query2 value mut")
-  }
-
-  let chunk_lens : Array[Int] = []
-  while iter.fetch_next() is Some((positions, velocities)) {
-    chunk_lens.push(positions.length())
-    inspect(positions.length() == velocities.length(), content="true")
-    for i in 0..<positions.length() {
-      velocities[i].get_ref().val.dx = velocities[i].get_ref().val.dx +
-        positions[i].x
-    }
-  }
-
-  inspect(chunk_lens, content="[2, 1]")
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 0})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 0})")
-  inspect(try! world.get(e2, comp_velocity), content="Some({dx: 30, dy: 0})")
-  inspect(try! world.get(e3, comp_velocity), content="Some({dx: 44, dy: 0})")
-}
-
-///|
-test "ecs query mut: query2 ref mut contiguous_iter_mut preserves chunk shape" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query2_ref_mut_contiguous",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query2_ref_mut_contiguous",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-  let e2 = world.spawn()
-  let e3 = world.spawn()
-
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 0 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 20, dy: 0 })
-  try! world.set(e2, comp_velocity, Velocity::{ dx: 30, dy: 0 })
-  try! world.set(e3, comp_velocity, Velocity::{ dx: 40, dy: 0 })
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 0 })
-  try! world.set(e1, comp_position, Position::{ x: 2, y: 0 })
-  try! world.set(e3, comp_position, Position::{ x: 4, y: 0 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query2_ref_mut_filtered(
-    comp_position,
-    comp_velocity,
-    All::new(),
-  )
-  guard query.contiguous_iter_mut() is Some(iter) else {
-    fail("expected contiguous iterator for query2 ref mut")
-  }
-
-  let chunk_lens : Array[Int] = []
-  while iter.fetch_next() is Some((positions, velocities)) {
-    chunk_lens.push(positions.length())
-    inspect(positions.length() == velocities.length(), content="true")
-    for i in 0..<positions.length() {
-      velocities[i].get_ref().val.dx = velocities[i].get_ref().val.dx +
-        positions[i].value().x
-    }
-  }
-
-  inspect(chunk_lens, content="[2, 1]")
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 0})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 0})")
-  inspect(try! world.get(e2, comp_velocity), content="Some({dx: 30, dy: 0})")
-  inspect(try! world.get(e3, comp_velocity), content="Some({dx: 44, dy: 0})")
-}
-
-///|
-test "ecs query mut: plain query1 supports count and view_mut" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query1_plain_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 2 })
-  try! world.set(e1, comp_position, Position::{ x: 3, y: 4 })
-  inspect(world.query1(comp_position).count(), content="2")
-
-  let ctx1 = @core.SystemSequenceContext::new()
-  ctx1.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx1)
-  try! world.query1(comp_position).view_mut(fn(_entity, _position_mut) { () })
-  inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
-
-  world.advance_sequence() |> ignore
-  let ctx2 = @core.SystemSequenceContext::new()
-  ctx2.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(ctx2)
-  inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
-}
-
-///|
-test "ecs query mut: query2 value mut filtered matches required pair only" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query2_value_mut",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query2_value_mut",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query2_value_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-  let e2 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 20 })
-  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 30, dy: 40 })
-  try! world.set(e1, comp_accel, Acceleration::{ ax: 1, ay: 1 })
-  try! world.set(e2, comp_position, Position::{ x: 3, y: 3 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query2_value_mut_filtered(
-    comp_position,
-    comp_velocity,
-    Without::new(comp_accel),
-  )
-  inspect(query.count(), content="1")
-  if (try! query.get(e0)) is Some((position, velocity_mut)) {
-    inspect(position, content="{x: 1, y: 1}")
-    inspect(velocity_mut.get(), content="{dx: 10, dy: 20}")
+      position.value().x
   } else {
-    inspect(false, content="true")
-  }
-  try! query
-  .par_iter_mut()
-  .for_each(fn(_entity, position, velocity_mut) {
-    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx + position.x
-  })
-
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 20})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 30, dy: 40})")
-}
-
-///|
-test "ecs query mut: query3 value ref mut filtered supports mixed data shape" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query3_value_ref_mut",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query3_value_ref_mut",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query3_value_ref_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 2 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 3, dy: 4 })
-  try! world.set(e0, comp_accel, Acceleration::{ ax: 5, ay: 6 })
-  try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 9, dy: 10 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query3_value_ref_mut_filtered(
-    comp_position,
-    comp_velocity,
-    comp_accel,
-    All::new(),
-  )
-  inspect(query.count(), content="1")
-  try! query
-  .par_iter_mut()
-  .for_each(fn(_entity, position, velocity_ref, accel_mut) {
-    accel_mut.get_ref().val.ax = accel_mut.get_ref().val.ax +
-      position.x +
-      velocity_ref.value().dx
-  })
-
-  inspect(try! world.get(e0, comp_accel), content="Some({ax: 9, ay: 6})")
-  inspect(try! world.get(e1, comp_accel), content="None")
-}
-
-///|
-test "ecs query mut: query3 ref mut optional preserves optional ref semantics" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query3_ref_mut_optional",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query3_ref_mut_optional",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query3_ref_mut_optional",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 1, y: 2 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 3, dy: 4 })
-  try! world.set(e0, comp_accel, Acceleration::{ ax: 5, ay: 6 })
-  try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 9, dy: 10 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query3_ref_mut_optional_filtered(
-    comp_position,
-    comp_velocity,
-    comp_accel,
-    All::new(),
-  )
-  inspect(query.count(), content="2")
-
-  let seen : Array[Int] = []
-  try! query.view_mut(fn(entity, position_ref, velocity_mut, accel_ref) {
-    ignore(accel_ref)
-    seen.push(entity.id)
-    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
-      position_ref.value().y
-  })
-
-  inspect(seen, content="[0, 1]")
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 3, dy: 6})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 9, dy: 18})")
-}
-
-///|
-test "ecs query mut: get_mut mutates erased slot directly" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query1_get_mut_direct",
-  )
-  let entity = world.spawn()
-
-  try! world.set(entity, comp_position, Position::{ x: 1, y: 2 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  if (try! world.query1(comp_position).get_mut(entity)) is Some(position_mut) {
-    position_mut.get_ref().val.x = position_mut.get_ref().val.x + 5
-  } else {
-    inspect(false, content="true")
+    fail("expected matching entity")
   }
 
-  inspect(try! world.get(entity, comp_position), content="Some({x: 6, y: 2})")
-}
+  let (single_position, single_velocity) = try! state.require_single(world)
+  inspect(single_position.value(), content="{x: 2, y: 3}")
+  inspect(single_velocity.get_ref().val, content="{dx: 12, dy: 20}")
 
-///|
-test "ecs query mut: query2 value with_mut writes back random access updates" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query2_with_mut",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query2_with_mut",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query2_with_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 2, y: 3 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 20 })
-  try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 30, dy: 40 })
-  try! world.set(e1, comp_accel, Acceleration::{ ax: 1, ay: 1 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query2_value_mut_filtered(
-    comp_position,
-    comp_velocity,
-    Without::new(comp_accel),
-  )
-  inspect(
-    try! query.with_mut(e0, fn(position, velocity_mut) {
-      velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx + position.x
-    }),
-    content="true",
-  )
-  inspect(
-    try! query.with_mut(e1, fn(_position, _velocity_mut) {  }),
-    content="false",
-  )
-
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 12, dy: 20})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 30, dy: 40})")
-}
-
-///|
-test "ecs query mut: query3 with_mut writes back mixed random access updates" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query3_with_mut",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query3_with_mut",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query3_with_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-
-  try! world.set(e0, comp_position, Position::{ x: 2, y: 4 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 20 })
-  try! world.set(e0, comp_accel, Acceleration::{ ax: 1, ay: 2 })
-  try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 30, dy: 40 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let value_ref_mut_query = world.query3_value_ref_mut_filtered(
-    comp_position,
-    comp_velocity,
-    comp_accel,
-    All::new(),
-  )
-  inspect(
-    try! value_ref_mut_query.with_mut(e0, fn(
-      position,
-      velocity_ref,
-      accel_mut,
-    ) {
-      accel_mut.get_ref().val.ax = accel_mut.get_ref().val.ax +
-        position.x +
-        velocity_ref.value().dx
-    }),
-    content="true",
-  )
-  inspect(
-    try! value_ref_mut_query.with_mut(e1, fn(
-      _position,
-      _velocity_ref,
-      _accel_mut,
-    ) {
-
-    }),
-    content="false",
-  )
-  inspect(try! world.get(e0, comp_accel), content="Some({ax: 13, ay: 2})")
-  inspect(try! world.get(e1, comp_accel), content="None")
-
-  let ref_mut_optional_query = world.query3_ref_mut_optional_filtered(
-    comp_position,
-    comp_velocity,
-    comp_accel,
-    All::new(),
-  )
-  let saw_missing_optional_ref = Ref::new(false)
-  inspect(
-    try! ref_mut_optional_query.with_mut(e1, fn(
-      position_ref,
-      velocity_mut,
-      accel_ref,
-    ) {
-      saw_missing_optional_ref.val = accel_ref is None
-      velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
-        position_ref.value().y
-    }),
-    content="true",
-  )
-  inspect(saw_missing_optional_ref.val, content="true")
-  inspect(
-    try! ref_mut_optional_query.with_mut(world.spawn(), fn(
-      _position_ref,
-      _velocity_mut,
-      _accel_ref,
-    ) {
-
-    }),
-    content="false",
-  )
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 30, dy: 48})")
-}
-
-///|
-test "ecs query mut: get_unchecked supports transform-style random access" {
-  let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query3_get_unchecked",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query3_get_unchecked",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query3_get_unchecked",
-  )
-  let entity = world.spawn()
-
-  try! world.set(entity, comp_position, Position::{ x: 2, y: 4 })
-  try! world.set(entity, comp_velocity, Velocity::{ dx: 10, dy: 20 })
-  try! world.set(entity, comp_accel, Acceleration::{ ax: 1, ay: 2 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let query = world.query3_ref_mut_optional_filtered(
-    comp_position,
-    comp_velocity,
-    comp_accel,
-    All::new(),
-  )
-  if (try! query.get_unchecked(entity))
-    is Some((position_ref, velocity_mut, accel_ref)) {
-    inspect(position_ref.value(), content="{x: 2, y: 4}")
-    inspect(
-      match accel_ref {
-        Some(value) => value.value()
-        None => Acceleration::{ ax: -1, ay: -1 }
-      },
-      content="{ax: 1, ay: 2}",
-    )
-    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
-      position_ref.value().x
-  } else {
-    fail("expected query item for matching entity")
-  }
-
-  inspect(
-    try! world.get(entity, comp_velocity),
-    content="Some({dx: 12, dy: 20})",
-  )
-}
-
-///|
-test "ecs query mut: iter_many_unique_mut rejects duplicates and preserves order" {
-  let world = World::new()
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query1_iter_many_unique_mut",
-  )
-  let e0 = world.spawn()
-  let e1 = world.spawn()
-  let e2 = world.spawn()
-
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 10 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 2, dy: 20 })
-
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
-
-  let duplicate_result : Result[Query1FilteredManyMut[Velocity, All], EcsError] = try? world
-    .query1(comp_velocity)
-    .iter_many_unique_mut([e1, e1])
+  let query : Query[
+    (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
+    Without[MutQueryAcceleration],
+  ] = query_filtered(world, Without::new(mut_query_acceleration_key))
+  let duplicate_result : Result[
+    QueryMany[
+      (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
+      Without[MutQueryAcceleration],
+    ],
+    EcsError,
+  ] = try? query.iter_many_unique([e0, e0])
   guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
     fail("expected duplicate entity diagnostics")
   }
-  inspect(entity.id, content="1")
+  inspect(entity.id, content="0")
 
   let seen : Array[Int] = []
-  let iter = try! world.query1(comp_velocity).iter_many_unique_mut([e1, e2, e0])
-  while (try! iter.fetch_next()) is Some((entity, velocity_mut)) {
+  let iter = try! query.iter_many_unique([e1, e2, e0])
+  while (try! iter.fetch_next()) is Some((entity, data)) {
     seen.push(entity.id)
-    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + entity.id
+    let (position, velocity_mut) = data
+    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
+      position.value().y
   }
 
-  inspect(seen, content="[1, 0]")
-  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 1, dy: 10})")
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 2, dy: 21})")
+  inspect(seen, content="[0]")
+  inspect(
+    try! world.get(e0, mut_query_velocity_key),
+    content="Some({dx: 12, dy: 23})",
+  )
+  inspect(
+    try! world.get(e1, mut_query_velocity_key),
+    content="Some({dx: 30, dy: 40})",
+  )
 }
 
 ///|
-test "ecs query mut: Query2MutRefFiltered and Query2MutMutFiltered support strict single access" {
+test "ecs mut query: contiguous_iter and par_iter work with generic Mut query data" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query2_mutref_single",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query2_mutref_single",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_query2_mutref_single",
-  )
   let e0 = world.spawn()
   let e1 = world.spawn()
+  let e2 = world.spawn()
+  let e3 = world.spawn()
 
-  try! world.set(e0, comp_position, Position::{ x: 2, y: 4 })
-  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 20 })
-  try! world.set(e1, comp_position, Position::{ x: 7, y: 9 })
-  try! world.set(e1, comp_velocity, Velocity::{ dx: 1, dy: 2 })
-  try! world.set(e1, comp_accel, Acceleration::{ ax: 3, ay: 4 })
+  try! world.set(e0, mut_query_position_key, MutQueryPosition::{ x: 1, y: 1 })
+  try! world.set(e1, mut_query_position_key, MutQueryPosition::{ x: 2, y: 2 })
+  try! world.set(e3, mut_query_position_key, MutQueryPosition::{ x: 4, y: 4 })
+  try! world.set(e0, mut_query_velocity_key, MutQueryVelocity::{ dx: 10, dy: 0 })
+  try! world.set(e1, mut_query_velocity_key, MutQueryVelocity::{ dx: 20, dy: 0 })
+  try! world.set(e2, mut_query_velocity_key, MutQueryVelocity::{ dx: 30, dy: 0 })
+  try! world.set(e3, mut_query_velocity_key, MutQueryVelocity::{ dx: 40, dy: 0 })
 
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
+  set_test_sequence(world, 0, 1)
 
-  let mut_ref_query = world.query2_mut_ref_filtered(
-    comp_position,
-    comp_velocity,
-    Without::new(comp_accel),
-  )
-  inspect(mut_ref_query.count(), content="1")
-  let (position_mut, velocity_ref) = try! mut_ref_query.require_single()
-  inspect(position_mut.get_ref().val, content="{x: 2, y: 4}")
-  inspect(velocity_ref.value(), content="{dx: 10, dy: 20}")
-  position_mut.get_ref().val.x = position_mut.get_ref().val.x +
-    velocity_ref.value().dx
-  inspect(try! world.get(e0, comp_position), content="Some({x: 12, y: 4})")
-
-  let mut_mut_query = world.query2_mut_mut_filtered(
-    comp_position,
-    comp_velocity,
-    With::new(comp_accel),
-  )
-  inspect(mut_mut_query.count(), content="1")
-  try! mut_mut_query.view_mut(fn(_entity, position_mut2, velocity_mut2) {
-    velocity_mut2.get_ref().val.dy = velocity_mut2.get_ref().val.dy +
-      position_mut2.get_ref().val.y
-  })
-  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 1, dy: 11})")
-
-  let many_result = try? world
-    .query2_mut_ref_filtered(comp_position, comp_velocity, All::new())
-    .require_single()
-  guard many_result is Err(@ecs.Skipped(message)) else {
-    fail("expected skipped error for multi-match strict single query")
+  let state : QueryState[(Comp[MutQueryPosition], Mut[MutQueryVelocity]), All] = world.query()
+  guard state.contiguous_iter(world) is Some(iter) else {
+    fail("expected contiguous iterator for generic mut query")
   }
-  inspect(message, content="Expected exactly one matching entity")
+
+  let chunk_values : Array[Int] = []
+  while (try! iter.fetch_next()) is Some((position, velocity_mut)) {
+    chunk_values.push(position.value().x)
+    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
+      position.value().x
+  }
+  inspect(chunk_values, content="[1, 2, 4]")
+
+  let query : Query[(Comp[MutQueryPosition], Mut[MutQueryVelocity]), All] = query(
+    world,
+  )
+  try! query
+  .par_iter()
+  .batching_strategy(BatchingStrategy::fixed(32))
+  .for_each(fn(_entity, data) {
+    let (position, velocity_mut) = data
+    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
+      position.value().y
+  })
+
+  inspect(
+    try! world.get(e0, mut_query_velocity_key),
+    content="Some({dx: 11, dy: 1})",
+  )
+  inspect(
+    try! world.get(e1, mut_query_velocity_key),
+    content="Some({dx: 22, dy: 2})",
+  )
+  inspect(
+    try! world.get(e2, mut_query_velocity_key),
+    content="Some({dx: 30, dy: 0})",
+  )
+  inspect(
+    try! world.get(e3, mut_query_velocity_key),
+    content="Some({dx: 44, dy: 4})",
+  )
+}
+
+///|
+test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
+  let world = World::new()
+  let entity = world.spawn()
+  let other = world.spawn()
+
+  try! world.set(entity, mut_query_marker_key, MutQueryMarker::{  })
+  try! world.set(entity, mut_query_velocity_key, MutQueryVelocity::{
+    dx: 3,
+    dy: 4,
+  })
+  try! world.set(other, mut_query_velocity_key, MutQueryVelocity::{
+    dx: 9,
+    dy: 10,
+  })
+
+  set_test_sequence(world, 0, 1)
+
+  let entity_query : Query[EntityMut, With[MutQueryMarker]] = query_filtered(
+    world,
+    With::new(mut_query_marker_key),
+  )
+  let entity_mut = try! entity_query.require_single()
+  inspect(entity_mut.id().id, content="0")
+  inspect(try! entity_mut.contains(key=mut_query_velocity_key), content="true")
+  if (try! entity_mut.get_mut(key=mut_query_velocity_key)) is Some(velocity_mut) {
+    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + 5
+  } else {
+    fail("expected mutable velocity")
+  }
+  ignore(
+    try! entity_mut.insert_component(MutQueryAcceleration::{ ax: 7, ay: 8 }),
+  )
+  let other_mut = try! world.entity_mut(other)
+  try! other_mut.despawn()
+
+  inspect(
+    try! world.get(entity, mut_query_velocity_key),
+    content="Some({dx: 3, dy: 9})",
+  )
+  inspect(
+    try! world.get(entity, mut_query_acceleration_key),
+    content="Some({ax: 7, ay: 8})",
+  )
+  inspect(try! world.get(entity, mut_query_marker_key), content="Some({})")
+  let alive_query : Query[@core.Entity, All] = query(world)
+  inspect(alive_query.count(), content="1")
 }

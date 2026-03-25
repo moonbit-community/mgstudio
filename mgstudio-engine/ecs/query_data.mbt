@@ -27,6 +27,17 @@ pub struct Comp[T] {
 }
 
 ///|
+pub struct QueryDataAccess {
+  read_components : Array[Int]
+  write_components : Array[Int]
+}
+
+///|
+pub fn QueryDataAccess::new() -> QueryDataAccess {
+  { read_components: [], write_components: [] }
+}
+
+///|
 pub fn[T] Comp::new(key : ComponentKey[T]) -> Comp[T] {
   ignore(key)
   { value: None }
@@ -43,6 +54,26 @@ pub fn[T] Comp::value(self : Comp[T]) -> T {
   match self.value {
     Some(value) => value
     None => abort("Comp::value expected a fetched query item")
+  }
+}
+
+///|
+pub fn QueryDataAccess::add_read_component(
+  self : QueryDataAccess,
+  component_id : Int,
+) -> Unit {
+  if !self.read_components.contains(component_id) {
+    self.read_components.push(component_id)
+  }
+}
+
+///|
+pub fn QueryDataAccess::add_write_component(
+  self : QueryDataAccess,
+  component_id : Int,
+) -> Unit {
+  if !self.write_components.contains(component_id) {
+    self.write_components.push(component_id)
   }
 }
 
@@ -83,6 +114,18 @@ pub fn[T] query_data_component_optional(
   key : ComponentKey[T],
 ) -> T? raise EcsError {
   world.get(entity, key)
+}
+
+///|
+fn[T] query_data_require_component_mut(
+  world : World,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> Mut[T] raise EcsError {
+  match world_component_mut(world, entity, key) {
+    Some(value) => value
+    None => abort("QueryData::fetch expected component to exist after matches")
+  }
 }
 
 ///|
@@ -143,6 +186,83 @@ pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_component() 
 
 ///|
 pub impl[T : Component] QueryData for Comp[T] with contiguous_compatible() {
+  true
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with matches(world, entity) {
+  query_data_component_matches(world, entity, T::component())
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with fetch(world, entity) {
+  query_data_require_component_mut(world, entity, T::component())
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with mentions_component(
+  component_id,
+) {
+  component_id == T::component().id()
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with iteration_anchor_component() {
+  Some(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with contiguous_compatible() {
+  true
+}
+
+///|
+pub impl QueryData for EntityRef with matches(_world, _entity) {
+  true
+}
+
+///|
+pub impl QueryData for EntityRef with fetch(world, entity) {
+  try! world.entity(entity)
+}
+
+///|
+pub impl QueryData for EntityRef with mentions_component(_component_id) {
+  false
+}
+
+///|
+pub impl QueryData for EntityRef with iteration_anchor_component() {
+  None
+}
+
+///|
+pub impl QueryData for EntityRef with contiguous_compatible() {
+  true
+}
+
+///|
+pub impl QueryData for EntityMut with matches(_world, _entity) {
+  true
+}
+
+///|
+pub impl QueryData for EntityMut with fetch(world, entity) {
+  try! world.entity_mut(entity)
+}
+
+///|
+pub impl QueryData for EntityMut with mentions_component(_component_id) {
+  false
+}
+
+///|
+pub impl QueryData for EntityMut with iteration_anchor_component() {
+  None
+}
+
+///|
+pub impl QueryData for EntityMut with contiguous_compatible() {
   true
 }
 

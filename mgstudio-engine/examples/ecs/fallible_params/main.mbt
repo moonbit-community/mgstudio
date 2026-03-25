@@ -251,13 +251,17 @@ fn user_input(
 
 ///|
 fn move_targets(
-  enemies : @app.PopulatedQuery2MutMut[@transform.Transform, Enemy],
+  enemies : @app.Populated[
+    (@ecs.Mut[@transform.Transform], @ecs.Mut[Enemy]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! enemies
   .query()
-  .view_mut(fn(_entity, transform_mut, enemy_mut) {
+  .view(fn(_entity, data) {
+    let (transform_mut, enemy_mut) = data
     let transform_ref = transform_mut.get_ref()
     let enemy_ref = enemy_mut.get_ref()
     enemy_ref.val.rotation = enemy_ref.val.rotation +
@@ -274,9 +278,12 @@ fn move_targets(
 
 ///|
 fn track_targets(
-  player : @app.SingleQuery2MutRef[@transform.Transform, Player],
-  enemy_query : @ecs.Query1Filtered[
-    @transform.Transform,
+  player : @app.Single[
+    (@ecs.Mut[@transform.Transform], @ecs.Comp[Player]),
+    @ecs.All,
+  ],
+  enemy_query : @ecs.Query[
+    @ecs.Comp[@transform.Transform],
     (@ecs.With[Enemy], @ecs.Without[Player]),
   ],
   time : @app.Res[@time.Time[Unit]],
@@ -294,6 +301,7 @@ fn track_targets(
 
   match enemy_transform_opt {
     Some(enemy_transform) => {
+      let enemy_transform = enemy_transform.value()
       let delta = @math.Vec2::new(
         enemy_transform.translation.x - player_transform_ref.val.translation.x,
         enemy_transform.translation.y - player_transform_ref.val.translation.y,
@@ -326,7 +334,8 @@ fn track_targets(
 
 ///|
 fn do_nothing_fail_validation(
-  _never_matches : @app.SingleEntityFiltered[
+  _never_matches : @app.Single[
+    @core.Entity,
     (@ecs.With[Player], @ecs.With[Enemy]),
   ],
 ) -> Unit {

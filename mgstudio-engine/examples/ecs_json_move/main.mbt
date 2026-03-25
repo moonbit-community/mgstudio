@@ -64,9 +64,12 @@ fn main {
 }
 
 ///|
-fn move_system(query : @ecs.Query2[Position, Velocity]) -> Unit {
-  try! query.for_each(fn(_entity, position, velocity) {
-    position.x = position.x + velocity.x
-    position.y = position.y + velocity.y
+fn move_system(
+  query : @ecs.Query[(@ecs.Mut[Position], @ecs.Comp[Velocity]), @ecs.All],
+) -> Unit {
+  try! query.for_each(fn(_entity, data) {
+    let (position, velocity) = data
+    position.get_ref().val.x = position.get_ref().val.x + velocity.value().x
+    position.get_ref().val.y = position.get_ref().val.y + velocity.value().y
   })
 }

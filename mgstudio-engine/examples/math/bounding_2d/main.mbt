@@ -244,12 +244,12 @@ fn spawn_shape_entity(
   spinning : Bool,
 ) -> Unit {
   let entity = world.spawn_empty()
-  world.component(@transform.Transform::component()).insert(entity, transform)
-  world.component(shape_key).insert(entity, shape)
-  world.component(desired_volume_key).insert(entity, desired_volume)
-  world.component(intersects_key).insert(entity, false)
+  try! world.set(entity, @transform.Transform::component(), transform)
+  try! world.set(entity, shape_key, shape)
+  try! world.set(entity, desired_volume_key, desired_volume)
+  try! world.set(entity, intersects_key, false)
   if spinning {
-    world.component(spin_key).insert(entity, Spin::{  })
+    try! world.set(entity, spin_key, Spin::{  })
   }
 }
 
@@ -259,43 +259,48 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(overlay_text(read_current_test(world))))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set(
     text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(overlay_text(read_current_test(world))),
+  )
+  try! world.set(
+    text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(18.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(color_white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(color_white()),
+  )
+  try! world.set(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
   overlay_text_entity.val = Some(text_entity)
 }
 
@@ -319,10 +324,11 @@ fn update_test_state(world : @ecs.World) -> Unit {
 ///|
 fn update_text(world : @ecs.World) -> Unit {
   guard overlay_text_entity.val is Some(text_entity) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(text_entity) is Some(text_value) else { return }
+  guard (try! world.get(text_entity, @text.ecs_key_text)) is Some(text_value) else {
+    return
+  }
   text_value.content = overlay_text(read_current_test(world))
-  ignore(text_store.set(text_entity, text_value))
+  try! world.set(text_entity, @text.ecs_key_text, text_value)
 }
 
 ///|
@@ -376,20 +382,26 @@ fn spin(world : @ecs.World) -> Unit {
   }
 
   let rotation_step = @math.Quat::from_rotation_z(time.delta_secs() / 5.0F)
-  let query = world.query2_value_mut_filtered(
-    spin_key,
-    @transform.Transform::component(),
-    @ecs.All::new(),
-  )
-  try! query.view_mut(fn(_entity, _spin, transform) {
-    let next = transform.get_ref().val.rotation.mul(rotation_step).normalize()
-    transform.get_ref().val.rotation = next
+  let updates : Array[(@core.Entity, @math.Quat)] = []
+  let query = world.query2(spin_key, @transform.Transform::component())
+  try! query.view(fn(entity, _spin, transform) {
+    let next = transform.rotation.mul(rotation_step).normalize()
+    updates.push((entity, next))
   })
+  for update in updates {
+    let (entity, next_rotation) = update
+    ignore(
+      try! world.update(entity, @transform.Transform::component(), fn(
+        transform,
+      ) {
+        { ..transform, rotation: next_rotation }
+      }),
+    )
+  }
 }
 
 ///|
 fn update_volumes(world : @ecs.World) -> Unit {
-  let volumes = world.component(current_volume_key)
   let query = world.query3(
     desired_volume_key,
     shape_key,
@@ -402,7 +414,7 @@ fn update_volumes(world : @ecs.World) -> Unit {
       DesiredVolume::Circle =>
         CurrentVolume::Circle(shape_bounding_circle(shape, isometry))
     }
-    volumes.upsert(entity, volume)
+    try! world.set(entity, current_volume_key, volume)
   })
 }
 
@@ -457,18 +469,19 @@ fn aabb_intersection_system(world : @ecs.World) -> Unit {
     color_yellow(),
   )
 
-  let query = world.query2_value_mut_filtered(
-    current_volume_key,
-    intersects_key,
-    @ecs.All::new(),
-  )
-  try! query.view_mut(fn(_entity, volume, intersects) {
+  let updates : Array[(@core.Entity, Bool)] = []
+  let query = world.query2(current_volume_key, intersects_key)
+  try! query.view(fn(entity, volume, _intersects) {
     let hit = match volume {
       CurrentVolume::Aabb(other) => aabb.intersects_aabb(other)
       CurrentVolume::Circle(circle) => aabb.intersects_circle(circle)
     }
-    intersects.get_ref().val = hit
+    updates.push((entity, hit))
   })
+  for update in updates {
+    let (entity, hit) = update
+    try! world.set(entity, intersects_key, hit)
+  }
 }
 
 ///|
@@ -485,18 +498,19 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
   )
   |> ignore
 
-  let query = world.query2_value_mut_filtered(
-    current_volume_key,
-    intersects_key,
-    @ecs.All::new(),
-  )
-  try! query.view_mut(fn(_entity, volume, intersects) {
+  let updates : Array[(@core.Entity, Bool)] = []
+  let query = world.query2(current_volume_key, intersects_key)
+  try! query.view(fn(entity, volume, _intersects) {
     let hit = match volume {
       CurrentVolume::Aabb(aabb) => aabb.intersects_circle(circle)
       CurrentVolume::Circle(other) => circle.intersects_circle(other)
     }
-    intersects.get_ref().val = hit
+    updates.push((entity, hit))
   })
+  for update in updates {
+    let (entity, hit) = update
+    try! world.set(entity, intersects_key, hit)
+  }
 }
 
 ///|
@@ -505,21 +519,22 @@ fn ray_cast_system(world : @ecs.World) -> Unit {
 
   let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
-  let query = world.query2_value_mut_filtered(
-    current_volume_key,
-    intersects_key,
-    @ecs.All::new(),
-  )
-  try! query.view_mut(fn(_entity, volume, intersects) {
+  let updates : Array[(@core.Entity, Bool)] = []
+  let query = world.query2(current_volume_key, intersects_key)
+  try! query.view(fn(entity, volume, _intersects) {
     let toi = match volume {
       CurrentVolume::Aabb(aabb) => ray_cast.aabb_intersection_at(aabb)
       CurrentVolume::Circle(circle) => ray_cast.circle_intersection_at(circle)
     }
-    intersects.get_ref().val = toi is Some(_)
+    updates.push((entity, toi is Some(_)))
     if toi is Some(hit_time) {
       draw_filled_circle(gizmos, ray_cast.ray.get_point(hit_time), color_lime())
     }
   })
+  for update in updates {
+    let (entity, hit) = update
+    try! world.set(entity, intersects_key, hit)
+  }
 }
 
 ///|
@@ -534,17 +549,14 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
     ray_cast.max,
   )
 
-  let query = world.query2_value_mut_filtered(
-    current_volume_key,
-    intersects_key,
-    @ecs.All::new(),
-  )
-  try! query.view_mut(fn(_entity, volume, intersects) {
+  let updates : Array[(@core.Entity, Bool)] = []
+  let query = world.query2(current_volume_key, intersects_key)
+  try! query.view(fn(entity, volume, _intersects) {
     let toi = match volume {
       CurrentVolume::Aabb(aabb) => cast.aabb_collision_at(aabb)
       CurrentVolume::Circle(_) => None
     }
-    intersects.get_ref().val = toi is Some(_)
+    updates.push((entity, toi is Some(_)))
     if toi is Some(hit_time) {
       let center = cast.ray.ray.get_point(hit_time)
       let hit_aabb = @math.Aabb2d::new(center, cast.aabb.half_size())
@@ -555,6 +567,10 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
       )
     }
   })
+  for update in updates {
+    let (entity, hit) = update
+    try! world.set(entity, intersects_key, hit)
+  }
 }
 
 ///|
@@ -569,17 +585,14 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
     ray_cast.max,
   )
 
-  let query = world.query2_value_mut_filtered(
-    current_volume_key,
-    intersects_key,
-    @ecs.All::new(),
-  )
-  try! query.view_mut(fn(_entity, volume, intersects) {
+  let updates : Array[(@core.Entity, Bool)] = []
+  let query = world.query2(current_volume_key, intersects_key)
+  try! query.view(fn(entity, volume, _intersects) {
     let toi = match volume {
       CurrentVolume::Aabb(_) => None
       CurrentVolume::Circle(circle) => cast.circle_collision_at(circle)
     }
-    intersects.get_ref().val = toi is Some(_)
+    updates.push((entity, toi is Some(_)))
     if toi is Some(hit_time) {
       let center = cast.ray.ray.get_point(hit_time)
       gizmos.circle_2d(
@@ -590,6 +603,10 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
       |> ignore
     }
   })
+  for update in updates {
+    let (entity, hit) = update
+    try! world.set(entity, intersects_key, hit)
+  }
 }
 
 ///|

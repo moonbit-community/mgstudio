@@ -391,7 +391,7 @@ pub fn[T] handle_ui_interactions(
 
 ///|
 pub fn update_ui_radio_button(
-  background_color : @ecs.ComponentMut[@ui.BackgroundColor],
+  background_color : @ecs.Mut[@ui.BackgroundColor],
   selected : Bool,
 ) -> Unit {
   background_color.get_ref().val = @ui.BackgroundColor::new(
@@ -401,7 +401,7 @@ pub fn update_ui_radio_button(
 
 ///|
 pub fn update_ui_radio_button_text(
-  text_color : @ecs.ComponentMut[@text.TextColor],
+  text_color : @ecs.Mut[@text.TextColor],
   selected : Bool,
 ) -> Unit {
   text_color.get_ref().val = @text.TextColor::new(
