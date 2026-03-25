@@ -57,13 +57,13 @@ fn setup(world : @ecs.World) -> Unit {
 fn remove_component(
   time : @app.Res[@time.Time[Unit]],
   commands : @app.Commands,
-  query : @ecs.EntityQuery[@ecs.With[MyComponent]],
+  query : @ecs.Query[@core.Entity, @ecs.With[MyComponent]],
 ) -> Unit {
   if time.get().elapsed_seconds() <= 2.0F {
     return
   }
   let target_ref : Ref[@core.Entity?] = Ref::new(None)
-  query.view(fn(entity) {
+  try! query.view(fn(_query_entity, entity) {
     if target_ref.val is None {
       target_ref.val = Some(entity)
     }

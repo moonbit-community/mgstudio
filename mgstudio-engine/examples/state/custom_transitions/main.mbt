@@ -181,9 +181,11 @@ fn setup_game(
 ///|
 fn teardown_game(
   commands : @app.Commands,
-  sprites : @ecs.EntityQuery[@ecs.With[@sprite.Sprite]],
+  sprites : @ecs.Query[@core.Entity, @ecs.With[@sprite.Sprite]],
 ) -> Unit {
-  sprites.view(fn(entity) { commands.entity(entity).despawn() })
+  try! sprites.view(fn(_query_entity, entity) {
+    commands.entity(entity).despawn()
+  })
 }
 
 ///|

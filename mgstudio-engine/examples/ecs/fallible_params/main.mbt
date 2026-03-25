@@ -215,10 +215,10 @@ fn spawn_enemy(
 
 ///|
 fn first_enemy_entity(
-  enemies : @ecs.EntityQuery[@ecs.With[Enemy]],
+  enemies : @ecs.Query[@core.Entity, @ecs.With[Enemy]],
 ) -> @core.Entity? {
   let entity_ref : Ref[@core.Entity?] = Ref::new(None)
-  enemies.view(fn(entity) {
+  try! enemies.view(fn(_query_entity, entity) {
     if entity_ref.val is None {
       entity_ref.val = Some(entity)
     }
@@ -229,7 +229,7 @@ fn first_enemy_entity(
 ///|
 fn user_input(
   commands : @app.Commands,
-  enemies : @ecs.EntityQuery[@ecs.With[Enemy]],
+  enemies : @ecs.Query[@core.Entity, @ecs.With[Enemy]],
   asset_server : @app.Res[@asset.AssetServer],
   cursor : @app.ResMut[EnemySpawnCursor],
 ) -> Unit {
