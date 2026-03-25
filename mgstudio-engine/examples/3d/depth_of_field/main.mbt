@@ -104,10 +104,12 @@ fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
     ..@pbr.PerspectiveProjection3d::default(),
     fov,
   }
-  world
-  .component(@pbr.ecs_key_projection)
-  .set(camera, @pbr.Projection::Perspective(perspective))
-  |> ignore
+  try! (world.replace(
+    camera,
+    @pbr.ecs_key_projection,
+    @pbr.Projection::Perspective(perspective),
+  )
+  |> ignore)
 }
 
 ///|
@@ -219,20 +221,29 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::TonyMcMapface)
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::TonyMcMapface,
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::TonyMcMapface,
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::default(),
+  )
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     scene_entity,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -291,16 +302,14 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let directional = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 25_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 8.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -8.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -308,15 +317,16 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 120_000.0F, 40.0F, false),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(0.0F, 4.5F, 6.0F))
+  try! world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 4.5F, 6.0F),
+  )
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),

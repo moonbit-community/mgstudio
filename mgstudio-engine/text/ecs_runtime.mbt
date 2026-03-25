@@ -537,13 +537,13 @@ fn text_ecs_has_required_components(
   if !world.is_alive(entity) {
     return false
   }
-  if (try! world.get_component(entity) : Text2d?) is None {
+  if (try! world.entity(entity).get() : Text2d?) is None {
     return false
   }
-  if (try! world.get_component(entity) : TextFont?) is None {
+  if (try! world.entity(entity).get() : TextFont?) is None {
     return false
   }
-  if (try! world.get_component(entity) : @transform.Transform?) is None {
+  if (try! world.entity(entity).get() : @transform.Transform?) is None {
     return false
   }
   true
@@ -558,40 +558,39 @@ fn text_ecs_bundle_from_entity(
   local_transform : @transform.Transform,
 ) -> Text2dBundle {
   let transform = match
-    (try! world.get_component(entity) : @transform.GlobalTransform?) {
+    (try! world.entity(entity).get() : @transform.GlobalTransform?) {
     Some(global_transform) => global_transform.to_transform_approx()
     None => local_transform
   }
-  let color = match (try! world.get_component(entity) : TextColor?) {
+  let color = match (try! world.entity(entity).get() : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! world.get_component(entity)
-  let underline : Underline? = try! world.get_component(entity)
-  let strikethrough : Strikethrough? = try! world.get_component(entity)
-  let layout = match (try! world.get_component(entity) : TextLayout?) {
+  let background_color : TextBackgroundColor? = try! world.entity(entity).get()
+  let underline : Underline? = try! world.entity(entity).get()
+  let strikethrough : Strikethrough? = try! world.entity(entity).get()
+  let layout = match (try! world.entity(entity).get() : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
   }
-  let bounds = match (try! world.get_component(entity) : TextBounds?) {
+  let bounds = match (try! world.entity(entity).get() : TextBounds?) {
     Some(bounds) => bounds
     None => TextBounds::default()
   }
-  let line_height = match (try! world.get_component(entity) : LineHeight?) {
+  let line_height = match (try! world.entity(entity).get() : LineHeight?) {
     Some(line_height) => line_height
     None => LineHeight::default()
   }
-  let shadow : Text2dShadow? = try! world.get_component(entity)
-  let layers = match
-    (try! world.get_component(entity) : @sprite.RenderLayers?) {
+  let shadow : Text2dShadow? = try! world.entity(entity).get()
+  let layers = match (try! world.entity(entity).get() : @sprite.RenderLayers?) {
     Some(layers) => layers
     None => @sprite.RenderLayers::default()
   }
-  let anchor = match (try! world.get_component(entity) : @sprite.Anchor?) {
+  let anchor = match (try! world.entity(entity).get() : @sprite.Anchor?) {
     Some(anchor) => anchor
     None => @sprite.Anchor::default()
   }
-  let y_axis = match (try! world.get_component(entity) : YAxisOrientation?) {
+  let y_axis = match (try! world.entity(entity).get() : YAxisOrientation?) {
     Some(y_axis) => y_axis
     None => YAxisOrientation::TopToBottom
   }
@@ -621,22 +620,22 @@ fn text_ecs_span_bundle_from_entity(
   inherited_font : TextFont,
   inherited_line_height : LineHeight,
 ) -> TextSpanBundle? {
-  let span = match (try! world.get_component(entity) : TextSpan?) {
+  let span = match (try! world.entity(entity).get() : TextSpan?) {
     Some(span) => span
     None => return None
   }
-  let font = match (try! world.get_component(entity) : TextFont?) {
+  let font = match (try! world.entity(entity).get() : TextFont?) {
     Some(font) => font
     None => inherited_font
   }
-  let color = match (try! world.get_component(entity) : TextColor?) {
+  let color = match (try! world.entity(entity).get() : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! world.get_component(entity)
-  let underline : Underline? = try! world.get_component(entity)
-  let strikethrough : Strikethrough? = try! world.get_component(entity)
-  let line_height = match (try! world.get_component(entity) : LineHeight?) {
+  let background_color : TextBackgroundColor? = try! world.entity(entity).get()
+  let underline : Underline? = try! world.entity(entity).get()
+  let strikethrough : Strikethrough? = try! world.entity(entity).get()
+  let line_height = match (try! world.entity(entity).get() : LineHeight?) {
     Some(line_height) => line_height
     None => inherited_line_height
   }
@@ -658,7 +657,7 @@ fn text_ecs_collect_span_bundles_for_entity(
   bundle : Text2dBundle,
 ) -> Array[TextSpanBundle] {
   let span_bundles : Array[TextSpanBundle] = []
-  match (try! world.get_component(entity) : @hierarchy.Children?) {
+  match (try! world.entity(entity).get() : @hierarchy.Children?) {
     Some(children) =>
       for child in children.entities() {
         if text_ecs_span_bundle_from_entity(
@@ -884,7 +883,7 @@ fn ui_text_ecs_has_required_components(
   if !world.is_alive(entity) {
     return false
   }
-  (try! world.get_component(entity) : Text?) is Some(_)
+  (try! world.entity(entity).get() : Text?) is Some(_)
 }
 
 ///|
@@ -893,26 +892,26 @@ fn ui_text_ecs_bundle_from_entity(
   entity : @core.Entity,
   text : Text,
 ) -> Text2dBundle {
-  let font = match (try! world.get_component(entity) : TextFont?) {
+  let font = match (try! world.entity(entity).get() : TextFont?) {
     Some(font) => font
     None => TextFont::default()
   }
-  let color = match (try! world.get_component(entity) : TextColor?) {
+  let color = match (try! world.entity(entity).get() : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! world.get_component(entity)
-  let underline : Underline? = try! world.get_component(entity)
-  let strikethrough : Strikethrough? = try! world.get_component(entity)
-  let layout = match (try! world.get_component(entity) : TextLayout?) {
+  let background_color : TextBackgroundColor? = try! world.entity(entity).get()
+  let underline : Underline? = try! world.entity(entity).get()
+  let strikethrough : Strikethrough? = try! world.entity(entity).get()
+  let layout = match (try! world.entity(entity).get() : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
   }
-  let line_height = match (try! world.get_component(entity) : LineHeight?) {
+  let line_height = match (try! world.entity(entity).get() : LineHeight?) {
     Some(line_height) => line_height
     None => LineHeight::default()
   }
-  let shadow_component : TextShadow? = try! world.get_component(entity)
+  let shadow_component : TextShadow? = try! world.entity(entity).get()
   Text2dBundle::{
     text: Text2d::new(text.content),
     font,

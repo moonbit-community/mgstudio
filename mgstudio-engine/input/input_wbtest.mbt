@@ -218,8 +218,11 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
   let window_entity = world.spawn()
   let window = @window.Window::default()
   window.focused = false
-  try! world.set_component(window_entity, window)
-  try! world.set_component(window_entity, @window.PrimaryWindow::{  })
+  try! (world.entity_mut(window_entity).insert_component(window) |> ignore)
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
 
   let app = input_plugin(@time.time_plugin(@app.App::new(world)))
     .add_message(@window.WindowFocused::message())

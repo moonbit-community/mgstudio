@@ -18,7 +18,7 @@ fn[T] ecs_has_non_null_payload(
   entity : @core.Entity,
   key : @ecs.ComponentKey[T],
 ) -> Bool {
-  (try! world.get(entity, key)) is Some(_)
+  (try! world.get_by_key(entity, key)) is Some(_)
 }
 
 ///|
@@ -27,7 +27,9 @@ fn ecs_transform_matches(
   entity : @core.Entity,
   expected : @transform.Transform,
 ) -> Bool {
-  let actual_transform = try! world.get(entity, @transform.ecs_key_transform)
+  let actual_transform = try! world.get_by_key(
+    entity, @transform.ecs_key_transform,
+  )
   match actual_transform {
     Some(actual) => actual.to_json() == expected.to_json()
     None => false
@@ -332,12 +334,12 @@ test "render2d: tonemapping and deband components share post_process ownership" 
     .spawn(world)
 
   let tonemapping_ok = match
-    (try! world.get(entity, @post_process.ecs_key_tonemapping)) {
+    (try! world.get_by_key(entity, @post_process.ecs_key_tonemapping)) {
     Some(AgX) => true
     _ => false
   }
   let deband_ok = match
-    (try! world.get(entity, @post_process.ecs_key_deband_dither)) {
+    (try! world.get_by_key(entity, @post_process.ecs_key_deband_dither)) {
     Some(Enabled) => true
     _ => false
   }
@@ -355,7 +357,8 @@ test "render2d: bloom component shares post_process ownership" {
     .with_bloom(Some(Bloom::default().with_intensity(0.35F)))
     .spawn(world)
 
-  let bloom_ok = match (try! world.get(entity, @post_process.ecs_key_bloom)) {
+  let bloom_ok = match
+    (try! world.get_by_key(entity, @post_process.ecs_key_bloom)) {
     Some(bloom) => bloom.intensity == 0.35F
     None => false
   }
@@ -368,8 +371,9 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   try! register_render2d_required_components(world)
   let entity = world.spawn_empty()
 
-  try! (world.set(entity, ecs_key_camera2d, Camera2d::default()) |> ignore)
-  try! (world.set(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
+  try! (world.set_by_key(entity, ecs_key_camera2d, Camera2d::default())
+  |> ignore)
+  try! (world.set_by_key(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
 
   inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_camera),
@@ -401,11 +405,12 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   )
   inspect(ecs_has_non_null_payload(world, entity, ecs_key_hdr), content="true")
 
-  let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {
+  let tonemapping_ok = match
+    (try! world.get_by_key(entity, ecs_key_tonemapping)) {
     Some(None) => true
     _ => false
   }
-  let target_ok = match (try! world.get(entity, ecs_key_render_target)) {
+  let target_ok = match (try! world.get_by_key(entity, ecs_key_render_target)) {
     Some(Screen) => true
     _ => false
   }
@@ -424,7 +429,9 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
   )
   let entity = bundle.spawn(world)
 
-  let target : RenderTarget? = try! world.get(entity, ecs_key_render_target)
+  let target : RenderTarget? = try! world.get_by_key(
+    entity, ecs_key_render_target,
+  )
   inspect(
     target.map(fn(value) {
       value.to_json() ==
@@ -682,7 +689,8 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     let entity = world.spawn()
     entity_ref.val = Some(entity)
     let material_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()
-    try! (world.set(entity, material_key, MeshMaterial2d::new(handle)) |> ignore)
+    try! (world.set_by_key(entity, material_key, MeshMaterial2d::new(handle))
+    |> ignore)
   })
   app = app.run_once()
 

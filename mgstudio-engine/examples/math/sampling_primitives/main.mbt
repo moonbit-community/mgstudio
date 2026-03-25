@@ -489,16 +489,17 @@ fn spawn_instructions(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
-  world
-  .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
+  try! world.set_by_key(
+    overlay_camera,
+    @ui.IsDefaultUiCamera::component(),
+    @ui.IsDefaultUiCamera::default(),
+  )
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
@@ -507,41 +508,116 @@ fn spawn_instructions(
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text,
     @text.Text::new(
       "Controls:\nM: Toggle between sampling boundary and interior.\nA: Toggle automatic spawning & despawning of points.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning.\nZoom camera by scrolling via mouse or +/-.\nMove camera by L/R arrow keys.\nTab: Toggle this text",
     ),
   )
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
-  world
-  .component(@visibility.Visibility::component())
-  .insert(text_entity, @visibility.Visibility::Visible)
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(
+      "Controls:\nM: Toggle between sampling boundary and interior.\nA: Toggle automatic spawning & despawning of points.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning.\nZoom camera by scrolling via mouse or +/-.\nMove camera by L/R arrow keys.\nTab: Toggle this text",
+    ),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(
+      "Controls:\nM: Toggle between sampling boundary and interior.\nA: Toggle automatic spawning & despawning of points.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning.\nZoom camera by scrolling via mouse or +/-.\nMove camera by L/R arrow keys.\nTab: Toggle this text",
+    ),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @visibility.Visibility::component(),
+    @visibility.Visibility::Visible,
+  )
   world.insert_resource(InstructionText::resource(), InstructionText::{
     entity: text_entity,
   })
@@ -603,10 +679,9 @@ fn setup(
     |> ignore
 
     let firefly_light = world.spawn_empty()
-    world
-    .component(@pbr.PointLight::component())
-    .insert(
+    try! world.set_by_key(
       firefly_light,
+      @pbr.PointLight::component(),
       @pbr.PointLight::default()
       .with_range(4.0F)
       .with_radius(0.6F)
@@ -614,30 +689,30 @@ fn setup(
       .with_shadow_maps_enabled(false)
       .with_color(inside_point_color()),
     )
-    world
-    .component(@transform.Transform::component())
-    .insert(
+    try! world.set_by_key(
       firefly_light,
+      @transform.Transform::component(),
       @transform.Transform::from_translation(sampled_shape.translation),
     )
-    world
-    .component(FireflyLights::component())
-    .insert(firefly_light, FireflyLights::{  })
+    try! world.set_by_key(firefly_light, FireflyLights::component(), FireflyLights::{
+
+    })
   }
 
   let global_light = world.spawn_empty()
-  world
-  .component(@pbr.PointLight::component())
-  .insert(
+  try! world.set_by_key(
     global_light,
+    @pbr.PointLight::component(),
     @pbr.PointLight::default()
     .with_color(sky_color())
     .with_intensity(2_000.0F)
     .with_shadow_maps_enabled(false),
   )
-  world
-  .component(@transform.Transform::component())
-  .insert(global_light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    global_light,
+    @transform.Transform::component(),
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   let camera_entity = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(sky_color()),
@@ -649,9 +724,7 @@ fn setup(
     .with_tonemapping(Some(@pbr.Tonemapping::TonyMcMapface))
     .with_bloom(Some(@pbr.Bloom::default()))
     .spawn(world)
-  world
-  .component(CameraRig::component())
-  .insert(camera_entity, CameraRig::{
+  try! world.set_by_key(camera_entity, CameraRig::component(), CameraRig::{
     yaw: 0.56F,
     pitch: 0.45F,
     distance: 8.0F,
@@ -696,10 +769,10 @@ fn spawn_sample_point(
       @math.Vec3::zero(),
     ),
   ).spawn(world)
-  world.component(SamplePoint::component()).insert(entity, SamplePoint::{  })
-  world
-  .component(SpawningPoint::component())
-  .insert(entity, SpawningPoint::{ progress: 0.0F })
+  try! world.set_by_key(entity, SamplePoint::component(), SamplePoint::{  })
+  try! world.set_by_key(entity, SpawningPoint::component(), SpawningPoint::{
+    progress: 0.0F,
+  })
 }
 
 ///|
@@ -708,9 +781,9 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
 
   if keyboard.just_pressed(@window.KeyCode::KeyR) {
     let sample_entities : Array[@core.Entity] = []
-    world
-    .component(SamplePoint::component())
-    .for_each(fn(entity, _sample) { sample_entities.push(entity) })
+    world.for_each_component(SamplePoint::component(), fn(entity, _sample) {
+      sample_entities.push(entity)
+    })
     for entity in sample_entities {
       try! world.despawn(entity)
     }
@@ -764,9 +837,11 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
   }
   if keyboard.just_pressed(@window.KeyCode::Tab) {
-    let visibility_store = world.component(@visibility.Visibility::component())
     let current_visibility = match
-      visibility_store.get(instruction_ref.val.entity) {
+      (try! world.get_by_key(
+        instruction_ref.val.entity,
+        @visibility.Visibility::component(),
+      )) {
       Some(visibility) => visibility
       None => @visibility.Visibility::Visible
     }
@@ -774,18 +849,24 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
       @visibility.Visibility::Hidden => @visibility.Visibility::Visible
       _ => @visibility.Visibility::Hidden
     }
-    visibility_store.upsert(instruction_ref.val.entity, next_visibility)
+    try! world.set_by_key(
+      instruction_ref.val.entity,
+      @visibility.Visibility::component(),
+      next_visibility,
+    )
   }
 
-  let rig_store = world.component(CameraRig::component())
   let mut camera_entity : @core.Entity? = None
-  rig_store.for_each(fn(entity, _rig) {
+  world.for_each_component(CameraRig::component(), fn(entity, _rig) {
     if camera_entity is None {
       camera_entity = Some(entity)
     }
   })
   guard camera_entity is Some(camera_entity) else { return }
-  guard rig_store.get(camera_entity) is Some(rig) else { return }
+  guard (try! world.get_by_key(camera_entity, CameraRig::component()))
+    is Some(rig) else {
+    return
+  }
 
   if keyboard.just_pressed(@window.KeyCode::NumpadSubtract) ||
     keyboard.just_pressed(@window.KeyCode::Minus) {
@@ -796,7 +877,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     } else {
       rig.distance + MAX_CAMERA_DISTANCE / 15.0F
     }
-    ignore(rig_store.set(camera_entity, next_rig))
+    ignore(try! world.replace(camera_entity, CameraRig::component(), next_rig))
   }
   if keyboard.just_pressed(@window.KeyCode::NumpadAdd) {
     let next_rig = rig
@@ -806,7 +887,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     } else {
       rig.distance - MAX_CAMERA_DISTANCE / 15.0F
     }
-    ignore(rig_store.set(camera_entity, next_rig))
+    ignore(try! world.replace(camera_entity, CameraRig::component(), next_rig))
   }
 
   let left = keyboard.just_pressed(@window.KeyCode::ArrowLeft)
@@ -826,10 +907,14 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     let next_rig = rig
     if left && closest > 0 {
       next_rig.target = sampled_shapes_ref.val.shapes[closest - 1].translation
-      ignore(rig_store.set(camera_entity, next_rig))
+      ignore(
+        try! world.replace(camera_entity, CameraRig::component(), next_rig),
+      )
     } else if right && closest + 1 < sampled_shapes_ref.val.shapes.length() {
       next_rig.target = sampled_shapes_ref.val.shapes[closest + 1].translation
-      ignore(rig_store.set(camera_entity, next_rig))
+      ignore(
+        try! world.replace(camera_entity, CameraRig::component(), next_rig),
+      )
     }
   }
 }
@@ -850,15 +935,17 @@ fn handle_mouse(
   }
   mouse_pressed_ref.val.value = mouse_buttons.pressed(@window.MouseButton::Left)
 
-  let rig_store = world.component(CameraRig::component())
   let mut camera_entity : @core.Entity? = None
-  rig_store.for_each(fn(entity, _rig) {
+  world.for_each_component(CameraRig::component(), fn(entity, _rig) {
     if camera_entity is None {
       camera_entity = Some(entity)
     }
   })
   guard camera_entity is Some(camera_entity) else { return }
-  guard rig_store.get(camera_entity) is Some(rig) else { return }
+  guard (try! world.get_by_key(camera_entity, CameraRig::component()))
+    is Some(rig) else {
+    return
+  }
 
   let next_rig = rig
   let scroll_delta = accumulated_mouse_scroll.get().delta
@@ -889,7 +976,7 @@ fn handle_mouse(
       }
     }
   }
-  ignore(rig_store.set(camera_entity, next_rig))
+  ignore(try! world.replace(camera_entity, CameraRig::component(), next_rig))
 }
 
 ///|
@@ -980,9 +1067,9 @@ fn despawn_points(world : @ecs.World) -> Unit {
   }
 
   let sample_entities : Array[@core.Entity] = []
-  world
-  .component(SamplePoint::component())
-  .for_each(fn(entity, _sample) { sample_entities.push(entity) })
+  world.for_each_component(SamplePoint::component(), fn(entity, _sample) {
+    sample_entities.push(entity)
+  })
   if sample_entities.length() == 0 {
     return
   }
@@ -994,18 +1081,17 @@ fn despawn_points(world : @ecs.World) -> Unit {
     100
   }
 
-  let sample_store = world.component(SamplePoint::component())
-  let spawning_store = world.component(SpawningPoint::component())
-  let despawning_store = world.component(DespawningPoint::component())
   let mut removed = 0
   for i in skip..<sample_entities.length() {
     if removed >= despawn_amount {
       break
     }
     let entity = sample_entities[i]
-    despawning_store.insert(entity, DespawningPoint::{ progress: 0.0F })
-    sample_store.remove(entity) |> ignore
-    spawning_store.remove(entity) |> ignore
+    try! world.set_by_key(entity, DespawningPoint::component(), DespawningPoint::{
+      progress: 0.0F,
+    })
+    try! (world.take(entity, SamplePoint::component()) |> ignore)
+    try! (world.take(entity, SpawningPoint::component()) |> ignore)
     removed = removed + 1
   }
   point_counter_ref.val.count = point_counter_ref.val.count - removed
@@ -1017,15 +1103,19 @@ fn animate_spawning(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
   ignore(tick)
   let entities : Array[@core.Entity] = []
-  world
-  .component(SpawningPoint::component())
-  .for_each(fn(entity, _spawning) { entities.push(entity) })
+  world.for_each_component(SpawningPoint::component(), fn(entity, _spawning) {
+    entities.push(entity)
+  })
 
-  let transform_store = world.component(@transform.Transform::component())
-  let spawning_store = world.component(SpawningPoint::component())
   for entity in entities {
-    guard spawning_store.get(entity) is Some(spawning_point) else { continue }
-    guard transform_store.get(entity) is Some(transform) else { continue }
+    guard (try! world.get_by_key(entity, SpawningPoint::component()))
+      is Some(spawning_point) else {
+      continue
+    }
+    guard (try! world.get_by_key(entity, @transform.Transform::component()))
+      is Some(transform) else {
+      continue
+    }
     let next_point = spawning_point
     next_point.progress = next_point.progress + delta / ANIMATION_TIME
     let next_transform = transform.with_scale(
@@ -1037,11 +1127,17 @@ fn animate_spawning(world : @ecs.World) -> Unit {
         },
       ),
     )
-    ignore(transform_store.set(entity, next_transform))
+    ignore(
+      try! world.replace(
+        entity,
+        @transform.Transform::component(),
+        next_transform,
+      ),
+    )
     if next_point.progress >= 1.0F {
-      spawning_store.remove(entity) |> ignore
+      try! (world.take(entity, SpawningPoint::component()) |> ignore)
     } else {
-      ignore(spawning_store.set(entity, next_point))
+      ignore(try! world.replace(entity, SpawningPoint::component(), next_point))
     }
   }
 }
@@ -1052,17 +1148,22 @@ fn animate_despawning(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
   ignore(tick)
   let entities : Array[@core.Entity] = []
-  world
-  .component(DespawningPoint::component())
-  .for_each(fn(entity, _despawning) { entities.push(entity) })
+  world.for_each_component(DespawningPoint::component(), fn(
+    entity,
+    _despawning,
+  ) {
+    entities.push(entity)
+  })
 
-  let transform_store = world.component(@transform.Transform::component())
-  let despawning_store = world.component(DespawningPoint::component())
   for entity in entities {
-    guard despawning_store.get(entity) is Some(despawning_point) else {
+    guard (try! world.get_by_key(entity, DespawningPoint::component()))
+      is Some(despawning_point) else {
       continue
     }
-    guard transform_store.get(entity) is Some(transform) else { continue }
+    guard (try! world.get_by_key(entity, @transform.Transform::component()))
+      is Some(transform) else {
+      continue
+    }
     let next_point = despawning_point
     next_point.progress = next_point.progress + delta / ANIMATION_TIME
     let minimum_progress = 1.0F - transform.scale.x
@@ -1075,32 +1176,38 @@ fn animate_despawning(world : @ecs.World) -> Unit {
       0.0F
     }
     ignore(
-      transform_store.set(
+      try! world.replace(
         entity,
+        @transform.Transform::component(),
         transform.with_scale(@math.Vec3::splat(next_scale)),
       ),
     )
     if next_point.progress >= 1.0F {
       try! world.despawn(entity)
     } else {
-      ignore(despawning_store.set(entity, next_point))
+      ignore(
+        try! world.replace(entity, DespawningPoint::component(), next_point),
+      )
     }
   }
 }
 
 ///|
 fn update_camera(world : @ecs.World) -> Unit {
-  let rig_store = world.component(CameraRig::component())
-  let transform_store = world.component(@transform.Transform::component())
   let tick = world.advance_sequence()
   ignore(tick)
   let camera_entities : Array[@core.Entity] = []
-  rig_store.for_each(fn(entity, _rig) { camera_entities.push(entity) })
+  world.for_each_component(CameraRig::component(), fn(entity, _rig) {
+    camera_entities.push(entity)
+  })
   for entity in camera_entities {
-    guard rig_store.get(entity) is Some(rig) else { continue }
+    guard (try! world.get_by_key(entity, CameraRig::component())) is Some(rig) else {
+      continue
+    }
     ignore(
-      transform_store.set(
+      try! world.replace(
         entity,
+        @transform.Transform::component(),
         @transform.Transform::from_translation(camera_translation(rig)).looking_at(
           rig.target,
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -1125,15 +1232,23 @@ fn update_lights(world : @ecs.World) -> Unit {
   let intensity = 40_000.0F * saturation
   let tick = world.advance_sequence()
   ignore(tick)
-  let point_light_store = world.component(@pbr.PointLight::component())
   let firefly_entities : Array[@core.Entity] = []
-  world
-  .component(FireflyLights::component())
-  .for_each(fn(entity, _marker) { firefly_entities.push(entity) })
+  world.for_each_component(FireflyLights::component(), fn(entity, _marker) {
+    firefly_entities.push(entity)
+  })
   for entity in firefly_entities {
-    guard point_light_store.get(entity) is Some(light) else { continue }
+    guard (try! world.get_by_key(entity, @pbr.PointLight::component()))
+      is Some(light) else {
+      continue
+    }
     let next_intensity = light.intensity + (intensity - light.intensity) * 0.04F
-    ignore(point_light_store.set(entity, light.with_intensity(next_intensity)))
+    ignore(
+      try! world.replace(
+        entity,
+        @pbr.PointLight::component(),
+        light.with_intensity(next_intensity),
+      ),
+    )
   }
 }
 

@@ -62,7 +62,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     )
 
     let root = world.spawn()
-    try! world.set(
+    try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
       @scene.SceneRoot::new(scene_handle),
@@ -70,8 +70,10 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
 
     @scene.scene_spawn_roots_system_ecs(world)
 
-    let instance = (try! world.get(root, @scene.ecs_key_scene_instance)).unwrap()
-    let ready = (try! world.get(root, @scene.ecs_key_scene_instance_ready)).unwrap()
+    let instance = (try! world.get_by_key(root, @scene.ecs_key_scene_instance)).unwrap()
+    let ready = (try! world.get_by_key(
+      root, @scene.ecs_key_scene_instance_ready,
+    )).unwrap()
     instance_id.val = instance.instance_id
     spawned_entities.val = ready.spawned_entities
 
@@ -87,25 +89,34 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     child_count.val = children.length()
 
     let child = children[0]
-    has_mesh.val = (try! world.get(child, @pbr.ecs_key_mesh3d)) is Some(_)
-    has_material.val = (try! world.get(child, @pbr.ecs_key_mesh_material3d))
+    has_mesh.val = (try! world.get_by_key(child, @pbr.ecs_key_mesh3d))
       is Some(_)
-    has_transform.val = (try! world.get(child, @transform.ecs_key_transform))
+    has_material.val = (try! world.get_by_key(
+        child, @pbr.ecs_key_mesh_material3d,
+      ))
       is Some(_)
-    has_visibility.val = (try! world.get(
+    has_transform.val = (try! world.get_by_key(
+        child, @transform.ecs_key_transform,
+      ))
+      is Some(_)
+    has_visibility.val = (try! world.get_by_key(
         child, @visibility.ecs_key_visibility_range,
       ))
       is Some(_)
-    has_target.val = (try! world.get(
+    has_target.val = (try! world.get_by_key(
         child, @animation.ecs_key_animation_target_id,
       ))
       is Some(_)
-    has_animated_by.val = (try! world.get(child, @animation.ecs_key_animated_by))
+    has_animated_by.val = (try! world.get_by_key(
+        child, @animation.ecs_key_animated_by,
+      ))
       is Some(_)
 
     @scene.scene_spawn_roots_system_ecs(world)
-    let instance_second = (try! world.get(root, @scene.ecs_key_scene_instance)).unwrap()
-    let ready_second = (try! world.get(
+    let instance_second = (try! world.get_by_key(
+      root, @scene.ecs_key_scene_instance,
+    )).unwrap()
+    let ready_second = (try! world.get_by_key(
       root, @scene.ecs_key_scene_instance_ready,
     )).unwrap()
     instance_after_second_tick.val = instance_second.instance_id
@@ -202,14 +213,16 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     )
 
     let root = world.spawn()
-    try! world.set(
+    try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
       @scene.SceneRoot::new(first_handle),
     )
 
     @scene.scene_spawn_roots_system_ecs(world)
-    let first_instance = (try! world.get(root, @scene.ecs_key_scene_instance)).unwrap()
+    let first_instance = (try! world.get_by_key(
+      root, @scene.ecs_key_scene_instance,
+    )).unwrap()
     old_instance_id.val = first_instance.instance_id
 
     let first_children : Array[@core.Entity] = []
@@ -223,15 +236,19 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     })
     let first_child = first_children[0]
 
-    try! world.set(
+    try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
       @scene.SceneRoot::new(second_handle),
     )
     @scene.scene_spawn_roots_system_ecs(world)
 
-    let second_instance = (try! world.get(root, @scene.ecs_key_scene_instance)).unwrap()
-    let ready = (try! world.get(root, @scene.ecs_key_scene_instance_ready)).unwrap()
+    let second_instance = (try! world.get_by_key(
+      root, @scene.ecs_key_scene_instance,
+    )).unwrap()
+    let ready = (try! world.get_by_key(
+      root, @scene.ecs_key_scene_instance_ready,
+    )).unwrap()
     new_instance_id.val = second_instance.instance_id
     ready_instance_matches.val = ready.instance_id ==
       second_instance.instance_id
@@ -245,7 +262,9 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     })
     new_child_count.val = second_children.length()
     let second_child = second_children[0]
-    let transform = (try! world.get(second_child, @transform.ecs_key_transform)).unwrap()
+    let transform = (try! world.get_by_key(
+      second_child, @transform.ecs_key_transform,
+    )).unwrap()
     new_child_x.val = transform.translation.x.to_double()
   })
   .run_once()

@@ -87,19 +87,19 @@ pub fn[T] query_data_component_matches(
 }
 
 ///|
-fn[T] query_data_require_component(
+fn[T : Component] query_data_require_component(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T raise EcsError {
-  match world.get(entity, key) {
+  match world.get_by_key(entity, key) {
     Some(value) => value
     None => abort("QueryData::fetch expected component to exist after matches")
   }
 }
 
 ///|
-pub fn[T] query_data_component_fetch(
+pub fn[T : Component] query_data_component_fetch(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -108,16 +108,16 @@ pub fn[T] query_data_component_fetch(
 }
 
 ///|
-pub fn[T] query_data_component_optional(
+pub fn[T : Component] query_data_component_optional(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T? raise EcsError {
-  world.get(entity, key)
+  world.get_by_key(entity, key)
 }
 
 ///|
-fn[T] query_data_require_component_mut(
+fn[T : Component] query_data_require_component_mut(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -129,7 +129,7 @@ fn[T] query_data_require_component_mut(
 }
 
 ///|
-pub fn[T] query_data_component_has(
+pub fn[T : Component] query_data_component_has(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -329,7 +329,7 @@ pub impl[T : Component] QueryData for Optional[T] with matches(_world, _entity) 
 
 ///|
 pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
-  { value: world.get(entity, T::component()) }
+  { value: world.get_by_key(entity, T::component()) }
 }
 
 ///|

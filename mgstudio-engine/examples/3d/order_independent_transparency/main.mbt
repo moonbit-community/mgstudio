@@ -152,7 +152,7 @@ fn spawn_mesh_with_layer(
     @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  world.component(@sprite.ecs_key_render_layers).insert(entity, layers)
+  try! world.set_by_key(entity, @sprite.ecs_key_render_layers, layers)
   entity
 }
 
@@ -408,7 +408,6 @@ fn spawn_scene_instancing(
 
 ///|
 fn apply_scene_visibility(world : @ecs.World) -> Unit {
-  let visibility_store = world.component(@visibility.ecs_key_visibility)
   for i, entities in oit_state.val.scene_entities {
     let visibility = if i == oit_state.val.scene_index {
       @visibility.Visibility::Inherited
@@ -416,7 +415,8 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
       @visibility.Visibility::Hidden
     }
     for entity in entities {
-      visibility_store.set(entity, visibility) |> ignore
+      try! (world.replace(entity, @visibility.ecs_key_visibility, visibility)
+      |> ignore)
     }
   }
 }
@@ -424,16 +424,18 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 ///|
 fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
-    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
+    try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
     if oit_state.val.oit_enabled {
-      world
-      .component(@pbr.ecs_key_order_independent_transparency_settings)
-      .insert(camera, @pbr.OrderIndependentTransparencySettings::default())
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_order_independent_transparency_settings,
+        @pbr.OrderIndependentTransparencySettings::default(),
+      )
     } else {
-      world
-      .component(@pbr.ecs_key_order_independent_transparency_settings)
-      .remove(camera)
-      |> ignore
+      try! (world.take(
+        camera, @pbr.ecs_key_order_independent_transparency_settings,
+      )
+      |> ignore)
     }
   }
 }
@@ -456,20 +458,31 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@sprite.ecs_key_render_layers).insert(camera, layer)
-  world
-  .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default())
+  try! world.set_by_key(camera, @sprite.ecs_key_render_layers, layer)
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_depth_prepass,
+    @pbr.DepthPrepass::default(),
+  )
   oit_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(false))
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
-  world.component(@sprite.ecs_key_render_layers).insert(light, layer)
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_shadow_maps_enabled(false),
+  )
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_shadow_maps_enabled(false),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
+  try! world.set_by_key(light, @sprite.ecs_key_render_layers, layer)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),

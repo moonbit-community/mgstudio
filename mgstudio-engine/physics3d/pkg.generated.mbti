@@ -42,29 +42,11 @@ pub let ecs_res_key_physics3d_events : @ecs.ResourceKey[Physics3dEvents]
 
 pub let ecs_resources : Array[String]
 
-pub fn get_active_collision_types3d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveCollisionTypes3d]
-
-pub fn get_active_events3d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveEvents3d]
-
-pub fn get_active_hooks3d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveHooks3d]
-
-pub fn get_collider3d_store(@ecs.World) -> @ecs.ComponentAccess[Collider3d]
-
-pub fn get_contact_force_event_threshold3d_store(@ecs.World) -> @ecs.ComponentAccess[ContactForceEventThreshold3d]
-
 pub fn get_physics3d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dConfig]
 
 pub fn get_physics3d_context_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dContext]
 
 pub fn get_physics3d_events_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dEvents]
-
-pub fn get_rapier_body_handle3d_store(@ecs.World) -> @ecs.ComponentAccess[RapierBodyHandle3d]
-
-pub fn get_rapier_collider_handle3d_store(@ecs.World) -> @ecs.ComponentAccess[RapierColliderHandle3d]
-
-pub fn get_rigid_body3d_store(@ecs.World) -> @ecs.ComponentAccess[RigidBody3d]
-
-pub fn get_velocity3d_store(@ecs.World) -> @ecs.ComponentAccess[Velocity3d]
 
 pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @transform.Transform
 

@@ -647,13 +647,13 @@ fn camera3d_bundle_insert(
   entity : @core.Entity,
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
-  world.set(entity, ecs_key_camera3d, bundle.camera3d, loc~)
-  world.set(entity, ecs_key_projection, bundle.projection, loc~)
+  world.set_by_key(entity, ecs_key_camera3d, bundle.camera3d, loc~)
+  world.set_by_key(entity, ecs_key_projection, bundle.projection, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {
-    world.set(entity, ecs_key_sub_camera_view3d, sub_camera_view, loc~)
+    world.set_by_key(entity, ecs_key_sub_camera_view3d, sub_camera_view, loc~)
   }
   if bundle.screen_space_transmission is Some(screen_space_transmission) {
-    world.set(
+    world.set_by_key(
       entity,
       ecs_key_screen_space_transmission,
       screen_space_transmission,
@@ -661,7 +661,7 @@ fn camera3d_bundle_insert(
     )
   }
   if bundle.screen_space_reflections is Some(screen_space_reflections) {
-    world.set(
+    world.set_by_key(
       entity,
       ecs_key_screen_space_reflections,
       screen_space_reflections,
@@ -669,39 +669,44 @@ fn camera3d_bundle_insert(
     )
   }
   if bundle.bloom is Some(bloom) {
-    world.set(entity, ecs_key_bloom, bloom, loc~)
+    world.set_by_key(entity, ecs_key_bloom, bloom, loc~)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    world.set(entity, ecs_key_tonemapping, tonemapping, loc~)
+    world.set_by_key(entity, ecs_key_tonemapping, tonemapping, loc~)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
+    world.set_by_key(entity, ecs_key_deband_dither, deband_dither, loc~)
   }
   if bundle.chromatic_aberration is Some(chromatic_aberration) {
-    world.set(entity, ecs_key_chromatic_aberration, chromatic_aberration, loc~)
+    world.set_by_key(
+      entity,
+      ecs_key_chromatic_aberration,
+      chromatic_aberration,
+      loc~,
+    )
   }
   if bundle.vignette is Some(vignette) {
-    world.set(entity, ecs_key_vignette, vignette, loc~)
+    world.set_by_key(entity, ecs_key_vignette, vignette, loc~)
   }
   if bundle.motion_blur is Some(motion_blur) {
-    world.set(entity, ecs_key_motion_blur, motion_blur, loc~)
+    world.set_by_key(entity, ecs_key_motion_blur, motion_blur, loc~)
   }
   if bundle.exposure is Some(exposure) {
-    world.set(entity, ecs_key_exposure, exposure, loc~)
+    world.set_by_key(entity, ecs_key_exposure, exposure, loc~)
   }
   if bundle.color_grading is Some(color_grading) {
-    world.set(entity, ecs_key_color_grading, color_grading, loc~)
+    world.set_by_key(entity, ecs_key_color_grading, color_grading, loc~)
   }
-  world.set(entity, @sprite.ecs_key_camera, bundle.camera, loc~)
-  world.set(entity, @sprite.ecs_key_render_target, bundle.target, loc~)
-  world.set(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
-  world.set(
+  world.set_by_key(entity, @sprite.ecs_key_camera, bundle.camera, loc~)
+  world.set_by_key(entity, @sprite.ecs_key_render_target, bundle.target, loc~)
+  world.set_by_key(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(
     entity,
     ecs_key_frustum,
     bundle.projection.compute_frustum(bundle.transform),
     loc~,
   )
-  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
+  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -783,23 +788,28 @@ fn mesh_material3d_bundle_insert(
   entity : @core.Entity,
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
-  world.set(entity, ecs_key_mesh3d, bundle.mesh, loc~)
-  world.set(entity, ecs_key_mesh_material3d, bundle.material, loc~)
-  world.set(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
-  world.set(entity, @visibility.ecs_key_visibility, bundle.visibility, loc~)
-  world.set(
+  world.set_by_key(entity, ecs_key_mesh3d, bundle.mesh, loc~)
+  world.set_by_key(entity, ecs_key_mesh_material3d, bundle.material, loc~)
+  world.set_by_key(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(
+    entity,
+    @visibility.ecs_key_visibility,
+    bundle.visibility,
+    loc~,
+  )
+  world.set_by_key(
     entity,
     @visibility.ecs_key_inherited_visibility,
     bundle.inherited_visibility,
     loc~,
   )
-  world.set(
+  world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
     bundle.view_visibility,
     loc~,
   )
-  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
+  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -2083,14 +2093,13 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       ambient_brightness: ambient.brightness,
     }
   }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let directional_light_store = world.component(ecs_key_directional_light)
   let mut directional_found = false
-  directional_light_store.for_each(fn(entity, light) {
+  world.for_each_component(ecs_key_directional_light, fn(entity, light) {
     if directional_found {
       return
     }
-    let transform = match transform_store.get(entity) {
+    let transform = match
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
       Some(value) => value
       None => @transform.Transform::identity()
     }
@@ -2102,13 +2111,13 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_illuminance: light.illuminance,
     }
   })
-  let point_light_store = world.component(ecs_key_point_light)
   let mut point_found = false
-  point_light_store.for_each(fn(entity, light) {
+  world.for_each_component(ecs_key_point_light, fn(entity, light) {
     if point_found {
       return
     }
-    let transform = match transform_store.get(entity) {
+    let transform = match
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
       Some(value) => value
       None => @transform.Transform::identity()
     }
@@ -2137,13 +2146,13 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       },
     }
   })
-  let spot_light_store = world.component(ecs_key_spot_light)
   let mut spot_found = false
-  spot_light_store.for_each(fn(entity, light) {
+  world.for_each_component(ecs_key_spot_light, fn(entity, light) {
     if spot_found {
       return
     }
-    let transform = match transform_store.get(entity) {
+    let transform = match
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
       Some(value) => value
       None => @transform.Transform::identity()
     }
@@ -3321,25 +3330,26 @@ fn render3d_compose_transform(
 
 ///|
 fn render3d_entity_world_transform(
+  world : @ecs.World,
   entity : @core.Entity,
-  transform_store : @ecs.ComponentAccess[@transform.Transform],
-  parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
 ) -> @transform.Transform {
   let visited : Array[@core.Entity] = []
   let mut current = entity
-  let mut composed = match transform_store.get(entity) {
+  let mut composed = match
+    (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
     Some(value) => value
     None => @transform.Transform::identity()
   }
   while true {
-    match parent_store.get(current) {
+    match (try! world.get_by_key(current, @hierarchy.ecs_key_parent)) {
       Some(parent) => {
         let parent_entity = parent.entity()
         if render3d_entity_in_list(parent_entity, visited) {
           break
         }
         visited.push(parent_entity)
-        let parent_transform = match transform_store.get(parent_entity) {
+        let parent_transform = match
+          (try! world.get_by_key(parent_entity, @transform.ecs_key_transform)) {
           Some(value) => value
           None => @transform.Transform::identity()
         }
@@ -4018,23 +4028,17 @@ fn render3d_sort_gpu_preprocess_prequeued_items(
 fn render3d_collect_gpu_preprocess_mesh_candidates(
   world : @ecs.World,
 ) -> Array[GpuPreprocessMeshCandidate3d] {
-  let mesh_store = world.component(ecs_key_mesh3d)
-  let material_store = world.component(ecs_key_mesh_material3d)
-  let visibility_range_store = world.component(
-    @visibility.ecs_key_visibility_range,
-  )
-  let view_visibility_store = world.component(
-    @visibility.ecs_key_view_visibility,
-  )
-  let layers_store = world.component(@sprite.ecs_key_render_layers)
-  let transform_store = world.component(@transform.ecs_key_transform)
   let candidates : Array[GpuPreprocessMeshCandidate3d] = []
-  mesh_store.for_each(fn(entity, mesh3d) {
-    if view_visibility_store.get(entity) is Some(view_visibility) &&
+  world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
+    if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+      is Some(view_visibility) &&
       !view_visibility.is_visible() {
       return
     }
-    guard material_store.get(entity) is Some(material_handle) else { return }
+    guard (try! world.get_by_key(entity, ecs_key_mesh_material3d))
+      is Some(material_handle) else {
+      return
+    }
     guard standard_material_get(material_handle.material) is Some(base_material) else {
       return
     }
@@ -4042,11 +4046,14 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
       base_material,
       material_handle.extended_material,
     )
-    let transform = match transform_store.get(entity) {
+    let transform = match
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
       Some(value) => value
       None => @transform.Transform::identity()
     }
-    let visibility_range = visibility_range_store.get(entity)
+    let visibility_range = try! world.get_by_key(
+      entity, @visibility.ecs_key_visibility_range,
+    )
     let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
       match render3d_mesh_local_aabb_center(mesh3d) {
         Some(local_center) =>
@@ -4056,7 +4063,8 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
     } else {
       None
     }
-    let layers = match layers_store.get(entity) {
+    let layers = match
+      (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
       Some(value) => value
       None => @sprite.RenderLayers::default()
     }
@@ -5465,15 +5473,12 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let free_camera_store = world.component(ecs_key_free_camera)
-  let free_camera_state_store = get_free_camera_state_store(world)
   let mut system_state = free_camera_system_state.val
 
   let controlled_entities : Array[@core.Entity] = []
-  free_camera_store.for_each(fn(entity, _config) {
-    if camera_store.get(entity) is None || transform_store.get(entity) is None {
+  world.for_each_component(ecs_key_free_camera, fn(entity, _config) {
+    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is None ||
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) is None {
       return
     }
     controlled_entities.push(entity)
@@ -5483,16 +5488,23 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   }
   let controlled_entity = controlled_entities[0]
 
-  guard free_camera_store.get(controlled_entity) is Some(config) else { return }
-  guard transform_store.get(controlled_entity) is Some(initial_transform) else {
+  guard (try! world.get_by_key(controlled_entity, ecs_key_free_camera))
+    is Some(config) else {
+    return
+  }
+  guard (try! world.get_by_key(controlled_entity, @transform.ecs_key_transform))
+    is Some(initial_transform) else {
     return
   }
   let mut transform = initial_transform
-  let mut state = match free_camera_state_store.get(controlled_entity) {
+  let mut state = match
+    (try! world.get_by_key(controlled_entity, ecs_key_free_camera_state)) {
     Some(existing) => existing
     None => {
       let default_state = FreeCameraState::default()
-      free_camera_state_store.insert(controlled_entity, default_state)
+      try! world.set_by_key(
+        controlled_entity, ecs_key_free_camera_state, default_state,
+      )
       default_state
     }
   }
@@ -5513,7 +5525,8 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
       @window.window_set_cursor_visible(visible=true)
     }
     free_camera_system_state.val = system_state
-    free_camera_state_store.set(controlled_entity, state) |> ignore
+    try! (world.replace(controlled_entity, ecs_key_free_camera_state, state)
+    |> ignore)
     return
   }
 
@@ -5656,8 +5669,12 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   }
 
   free_camera_system_state.val = system_state
-  transform_store.set(controlled_entity, transform) |> ignore
-  free_camera_state_store.set(controlled_entity, state) |> ignore
+  try! (world.replace(
+    controlled_entity, @transform.ecs_key_transform, transform,
+  )
+  |> ignore)
+  try! (world.replace(controlled_entity, ecs_key_free_camera_state, state)
+  |> ignore)
 }
 
 ///|
@@ -5667,11 +5684,9 @@ pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
-  let camera3d_store = world.component(ecs_key_camera3d)
-  let camera_store = world.component(@sprite.ecs_key_camera)
   let entries : Array[Render3dCameraOrderEntry] = []
-  camera3d_store.for_each(fn(entity, _camera3d) {
-    let order = match camera_store.get(entity) {
+  world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
+    let order = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
       Some(camera) => camera.order
       None => @sprite.Camera::default().order
     }
@@ -5760,22 +5775,12 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
     return
   }
-  let mesh_store = source_world.component(ecs_key_mesh3d)
-  let view_visibility_store = source_world.component(
-    @visibility.ecs_key_view_visibility,
-  )
-  let layers_store = source_world.component(@sprite.ecs_key_render_layers)
-  let no_indirect_drawing_store = source_world.component(
-    ecs_key_no_indirect_drawing,
-  )
-  let occlusion_culling_store = source_world.component(
-    ecs_key_occlusion_culling,
-  )
-  let transform_store = source_world.component(@transform.ecs_key_transform)
-  let parent_store = source_world.component(@hierarchy.ecs_key_parent)
   let mut visible_mesh_count = 0
-  mesh_store.for_each(fn(entity, _mesh3d) {
-    if view_visibility_store.get(entity) is Some(view_visibility) &&
+  source_world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
+    if (try! source_world.get_by_key(
+        entity, @visibility.ecs_key_view_visibility,
+      ))
+      is Some(view_visibility) &&
       !view_visibility.is_visible() {
       return
     }
@@ -5792,14 +5797,19 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   )
   for prepared_camera in phase_state_ref.val.prepared_camera_order {
     let camera_entity = prepared_camera
-    let camera_layers = match layers_store.get(camera_entity) {
+    let camera_layers = match
+      (try! source_world.get_by_key(
+        camera_entity, @sprite.ecs_key_render_layers,
+      )) {
       Some(value) => value
       None => @sprite.RenderLayers::default()
     }
     let camera_transform = render3d_entity_world_transform(
-      camera_entity, transform_store, parent_store,
+      source_world, camera_entity,
     )
-    let no_indirect_drawing = no_indirect_drawing_store.get(camera_entity)
+    let no_indirect_drawing = (try! source_world.get_by_key(
+        camera_entity, ecs_key_no_indirect_drawing,
+      ))
       is Some(_)
     let camera_indirect_enabled = render3d_camera_indirect_enabled(
       runtime_config.use_gpu_instance_buffer_builder,
@@ -5807,7 +5817,8 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       no_indirect_drawing,
     )
     let gpu_occlusion_culling_enabled = camera_indirect_enabled &&
-      occlusion_culling_store.get(camera_entity) is Some(_)
+      (try! source_world.get_by_key(camera_entity, ecs_key_occlusion_culling))
+      is Some(_)
     phase_state_ref.val.gpu_preprocess_camera_queues.push(
       render3d_build_gpu_preprocess_camera_queue_entry(
         camera_entity, mesh_candidates, camera_layers, camera_transform, camera_indirect_enabled,
@@ -6180,52 +6191,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
-  let camera3d_store = source_world.component(ecs_key_camera3d)
-  let camera_store = source_world.component(@sprite.ecs_key_camera)
-  let projection_store = source_world.component(ecs_key_projection)
-  let projection_runtime_store = source_world.component(
-    ecs_key_projection_runtime3d,
-  )
-  let sub_camera_view_store = source_world.component(ecs_key_sub_camera_view3d)
-  let screen_space_transmission_store = source_world.component(
-    ecs_key_screen_space_transmission,
-  )
-  let bloom_store = source_world.component(ecs_key_bloom)
-  let tonemapping_store = source_world.component(ecs_key_tonemapping)
-  let deband_dither_store = source_world.component(ecs_key_deband_dither)
-  let chromatic_aberration_store = source_world.component(
-    ecs_key_chromatic_aberration,
-  )
-  let vignette_store = source_world.component(ecs_key_vignette)
-  let motion_blur_store = source_world.component(ecs_key_motion_blur)
-  let exposure_store = source_world.component(ecs_key_exposure)
-  let color_grading_store = source_world.component(ecs_key_color_grading)
-  let skybox_store = source_world.component(ecs_key_skybox)
-  let hdr_store = source_world.component(ecs_key_hdr)
-  let fxaa_store = source_world.component(ecs_key_fxaa)
-  let temporal_jitter_store = source_world.component(ecs_key_temporal_jitter)
-  let motion_vector_prepass_store = source_world.component(
-    ecs_key_motion_vector_prepass,
-  )
-  let temporal_anti_aliasing_store = source_world.component(
-    ecs_key_temporal_anti_aliasing,
-  )
-  let target_store = source_world.component(@sprite.ecs_key_render_target)
-  let layers_store = source_world.component(@sprite.ecs_key_render_layers)
-  let depth_prepass_store = source_world.component(ecs_key_depth_prepass)
-  let deferred_prepass_store = source_world.component(ecs_key_deferred_prepass)
-  let no_indirect_drawing_store = source_world.component(
-    ecs_key_no_indirect_drawing,
-  )
-  let occlusion_culling_store = source_world.component(
-    ecs_key_occlusion_culling,
-  )
-  let msaa_store = source_world.component(ecs_key_msaa)
-  let transform_store = source_world.component(@transform.ecs_key_transform)
-  let parent_store = source_world.component(@hierarchy.ecs_key_parent)
-  let view_visibility_store = source_world.component(
-    @visibility.ecs_key_view_visibility,
-  )
   let runtime_config = render3d_runtime_config_or_default(source_world)
   let prepass_enabled = standard_material_prepass_enabled(source_world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
@@ -6260,36 +6225,56 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   } else {
     PointLightShadowMap::default().size
   }
-  camera3d_store.for_each(fn(entity, camera3d) {
-    let camera = match camera_store.get(entity) {
+  source_world.for_each_component(ecs_key_camera3d, fn(entity, camera3d) {
+    let camera = match
+      (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
       Some(v) => v
       None => @sprite.Camera::default()
     }
-    let projection_component = projection_store.get(entity)
+    let projection_component = try! source_world.get_by_key(
+      entity, ecs_key_projection,
+    )
     let projection = match projection_component {
       Some(v) => v
       None => Projection::default()
     }
     let projection_changed = true
-    let sub_camera_view = sub_camera_view_store.get(entity)
-    let screen_space_transmission = screen_space_transmission_store.get(entity)
-    let bloom = bloom_store.get(entity)
-    let tonemapping = tonemapping_store.get(entity)
-    let deband_dither = deband_dither_store.get(entity)
-    let chromatic_aberration = chromatic_aberration_store.get(entity)
-    let vignette = vignette_store.get(entity)
-    let motion_blur = motion_blur_store.get(entity)
-    let exposure = exposure_store.get(entity)
-    let color_grading = color_grading_store.get(entity)
-    let skybox = skybox_store.get(entity)
-    let hdr_enabled = hdr_store.get(entity) is Some(_)
-    let fxaa = fxaa_store.get(entity)
-    let temporal_jitter = temporal_jitter_store.get(entity)
+    let sub_camera_view = try! source_world.get_by_key(
+      entity, ecs_key_sub_camera_view3d,
+    )
+    let screen_space_transmission = try! source_world.get_by_key(
+      entity, ecs_key_screen_space_transmission,
+    )
+    let bloom = try! source_world.get_by_key(entity, ecs_key_bloom)
+    let tonemapping = try! source_world.get_by_key(entity, ecs_key_tonemapping)
+    let deband_dither = try! source_world.get_by_key(
+      entity, ecs_key_deband_dither,
+    )
+    let chromatic_aberration = try! source_world.get_by_key(
+      entity, ecs_key_chromatic_aberration,
+    )
+    let vignette = try! source_world.get_by_key(entity, ecs_key_vignette)
+    let motion_blur = try! source_world.get_by_key(entity, ecs_key_motion_blur)
+    let exposure = try! source_world.get_by_key(entity, ecs_key_exposure)
+    let color_grading = try! source_world.get_by_key(
+      entity, ecs_key_color_grading,
+    )
+    let skybox = try! source_world.get_by_key(entity, ecs_key_skybox)
+    let hdr_enabled = (try! source_world.get_by_key(entity, ecs_key_hdr))
+      is Some(_)
+    let fxaa = try! source_world.get_by_key(entity, ecs_key_fxaa)
+    let temporal_jitter = try! source_world.get_by_key(
+      entity, ecs_key_temporal_jitter,
+    )
     let depth_prepass_enabled = prepass_enabled &&
-      depth_prepass_store.get(entity) is Some(_)
+      (try! source_world.get_by_key(entity, ecs_key_depth_prepass)) is Some(_)
     let deferred_prepass_enabled = prepass_enabled &&
-      deferred_prepass_store.get(entity) is Some(_)
-    let no_indirect_drawing = no_indirect_drawing_store.get(entity) is Some(_)
+      (try! source_world.get_by_key(entity, ecs_key_deferred_prepass))
+      is Some(_)
+    let no_indirect_drawing = (try! source_world.get_by_key(
+        entity, ecs_key_no_indirect_drawing,
+      ))
+      is Some(_)
     let camera_indirect_enabled = render3d_camera_indirect_enabled(
       runtime_config.use_gpu_instance_buffer_builder,
       indirect_first_instance_supported,
@@ -6297,25 +6282,29 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     )
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
       camera_indirect_enabled &&
-      occlusion_culling_store.get(entity) is Some(_)
+      (try! source_world.get_by_key(entity, ecs_key_occlusion_culling))
+      is Some(_)
     let motion_vector_prepass_enabled = prepass_enabled &&
       (
-        motion_vector_prepass_store.get(entity) is Some(_) ||
+        (try! source_world.get_by_key(entity, ecs_key_motion_vector_prepass))
+        is Some(_) ||
         gpu_occlusion_culling_enabled
       )
-    let temporal_anti_aliasing = temporal_anti_aliasing_store.get(entity)
-    let msaa = msaa_store.get(entity)
-    let target = match target_store.get(entity) {
+    let temporal_anti_aliasing = try! source_world.get_by_key(
+      entity, ecs_key_temporal_anti_aliasing,
+    )
+    let msaa = try! source_world.get_by_key(entity, ecs_key_msaa)
+    let target = match
+      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_target)) {
       Some(v) => v
       None => @sprite.RenderTarget::Screen
     }
-    let layers = match layers_store.get(entity) {
+    let layers = match
+      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform(
-      entity, transform_store, parent_store,
-    )
+    let transform = render3d_entity_world_transform(source_world, entity)
     let previous_camera_history = camera_motion_blur_history_get(entity)
     let previous_transform = match previous_camera_history {
       Some(v) => v.transform
@@ -6335,7 +6324,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           Some(component_projection) => {
             let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
               component_projection,
-              projection_runtime_store.get(entity),
+              try! source_world.get_by_key(entity, ecs_key_projection_runtime3d),
               projection_changed,
               camera_clamped,
               target_info.target_size,
@@ -6399,35 +6388,27 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       None => ()
     }
     if projection_component is None &&
-      projection_runtime_store.get(entity) is Some(_) {
+      (try! source_world.get_by_key(entity, ecs_key_projection_runtime3d))
+      is Some(_) {
       projection_runtime_removals.push(entity)
     }
   })
   for update in projection_updates {
-    projection_store.insert(update.0, update.1)
-    projection_runtime_store.insert(update.0, update.2)
+    try! source_world.set_by_key(update.0, ecs_key_projection, update.1)
+    try! source_world.set_by_key(
+      update.0,
+      ecs_key_projection_runtime3d,
+      update.2,
+    )
   }
   for entity in projection_runtime_removals {
-    projection_runtime_store.remove(entity) |> ignore
+    try! (source_world.take(entity, ecs_key_projection_runtime3d) |> ignore)
   }
   if cameras.length() == 0 {
     let phase_state_ref = render3d_phase_state_ref_or_abort(world)
     phase_state_ref.val.prepared_camera_order.clear()
     return
   }
-  let mesh_store = source_world.component(ecs_key_mesh3d)
-  let material_store = source_world.component(ecs_key_mesh_material3d)
-  let visibility_range_store = source_world.component(
-    @visibility.ecs_key_visibility_range,
-  )
-  let wireframe_store = source_world.component(ecs_key_wireframe)
-  let no_wireframe_store = source_world.component(ecs_key_no_wireframe)
-  let wireframe_color_store = source_world.component(ecs_key_wireframe_color)
-  let forward_decal_store = source_world.component(ecs_key_forward_decal)
-  let forward_decal_material_ext_store = source_world.component(
-    ecs_key_forward_decal_material_ext,
-  )
-  let clustered_decal_store = source_world.component(ecs_key_clustered_decal)
   let wireframe_config = if (try! source_world.get_resource(
       ecs_key_wireframe_config,
     ))
@@ -6436,12 +6417,18 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   } else {
     None
   }
-  mesh_store.for_each(fn(entity, mesh3d) {
-    if view_visibility_store.get(entity) is Some(view_visibility) &&
+  source_world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
+    if (try! source_world.get_by_key(
+        entity, @visibility.ecs_key_view_visibility,
+      ))
+      is Some(view_visibility) &&
       !view_visibility.is_visible() {
       return
     }
-    guard material_store.get(entity) is Some(material_handle) else { return }
+    guard (try! source_world.get_by_key(entity, ecs_key_mesh_material3d))
+      is Some(material_handle) else {
+      return
+    }
     guard standard_material_get(material_handle.material) is Some(base_material) else {
       return
     }
@@ -6449,18 +6436,19 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       base_material,
       material_handle.extended_material,
     )
-    let layers = match layers_store.get(entity) {
+    let layers = match
+      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform(
-      entity, transform_store, parent_store,
-    )
+    let transform = render3d_entity_world_transform(source_world, entity)
     let previous_transform = match motion_blur_history_get(entity) {
       Some(v) => v
       None => transform
     }
-    let visibility_range = visibility_range_store.get(entity)
+    let visibility_range = try! source_world.get_by_key(
+      entity, @visibility.ecs_key_visibility_range,
+    )
     let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
       match render3d_mesh_local_aabb_center(mesh3d) {
         Some(local_center) =>
@@ -6481,13 +6469,26 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         aabb_center_world,
         material,
         material_extension: material_handle.extended_material,
-        is_forward_decal: forward_decal_store.get(entity) is Some(_),
-        forward_decal_material_ext: forward_decal_material_ext_store.get(entity),
-        clustered_decal: clustered_decal_store.get(entity),
+        is_forward_decal: (try! source_world.get_by_key(
+          entity, ecs_key_forward_decal,
+        ))
+        is Some(_),
+        forward_decal_material_ext: try! source_world.get_by_key(
+          entity, ecs_key_forward_decal_material_ext,
+        ),
+        clustered_decal: try! source_world.get_by_key(
+          entity, ecs_key_clustered_decal,
+        ),
         layers,
-        has_wireframe: wireframe_store.get(entity) is Some(_),
-        has_no_wireframe: no_wireframe_store.get(entity) is Some(_),
-        wireframe_color: wireframe_color_store.get(entity),
+        has_wireframe: (try! source_world.get_by_key(entity, ecs_key_wireframe))
+        is Some(_),
+        has_no_wireframe: (try! source_world.get_by_key(
+          entity, ecs_key_no_wireframe,
+        ))
+        is Some(_),
+        wireframe_color: try! source_world.get_by_key(
+          entity, ecs_key_wireframe_color,
+        ),
       },
     })
   })
@@ -8280,26 +8281,22 @@ pub fn mesh_ray_cast(
   }
   let max_hits = if settings.max_hits <= 0 { 1 } else { settings.max_hits }
   let hits : Array[(@core.Entity, MeshRayCastHit)] = []
-  let mesh_store = world.component(ecs_key_mesh3d)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let view_visibility_store = world.component(
-    @visibility.ecs_key_view_visibility,
-  )
-
-  mesh_store.for_each(fn(entity, mesh3d) {
+  world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
     if settings.only_entities is Some(only_entities) &&
       !render3d_entity_in_list(entity, only_entities) {
       return
     }
     if !settings.include_invisible &&
-      view_visibility_store.get(entity) is Some(view_visibility) &&
+      (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+      is Some(view_visibility) &&
       !view_visibility.is_visible() {
       return
     }
     guard render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) else {
       return
     }
-    let transform = match transform_store.get(entity) {
+    let transform = match
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
       Some(value) => value
       None => @transform.Transform::identity()
     }

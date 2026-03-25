@@ -213,15 +213,16 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),

@@ -31,9 +31,10 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
-  get_node_store(world).insert(
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root,
+    ecs_key_node,
     Node::default()
     .with_display(Display::Grid)
     .with_grid_template_columns([
@@ -50,17 +51,24 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
     ]),
   )
   let a = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(a, @hierarchy.Parent::new(root))
-  get_node_store(world).insert(a, Node::default())
+  try! world.set_by_key(
+    a,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(a, ecs_key_node, Node::default())
   let b = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(b, @hierarchy.Parent::new(root))
-  get_node_store(world).insert(b, Node::default())
+  try! world.set_by_key(
+    b,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(b, ecs_key_node, Node::default())
 
   // Build Children from Parent before layout.
   ui_layout_system(world)
-  let layout_store = get_ui_layout_store(world)
-  let ra = layout_store.get(a).unwrap().rect
-  let rb = layout_store.get(b).unwrap().rect
+  let ra = try! world.get_by_key(a, ecs_key_ui_layout).unwrap().rect
+  let rb = try! world.get_by_key(b, ecs_key_ui_layout).unwrap().rect
   inspect(ra.min.x == 0.0F, content="true")
   inspect(ra.min.y == 0.0F, content="true")
   inspect(ra.max.x == 100.0F, content="true")

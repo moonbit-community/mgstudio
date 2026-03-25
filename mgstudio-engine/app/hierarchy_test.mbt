@@ -35,12 +35,12 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
-  try! world.set(
+  try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+  try! world.set_by_key(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
 
   })
 
@@ -64,15 +64,15 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
-  try! world.set(parent, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+  try! world.set_by_key(parent, hierarchy_validation_marker_key, HierarchyValidationMarker::{
 
   })
-  try! world.set(
+  try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+  try! world.set_by_key(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
 
   })
 
@@ -93,15 +93,15 @@ test "app hierarchy: validate-parent plugin rechecks on component replace" {
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
-  try! world.set(
+  try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+  try! world.set_by_key(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
 
   })
-  try! world.set(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+  try! world.set_by_key(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
 
   })
 

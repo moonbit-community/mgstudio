@@ -3658,34 +3658,39 @@ fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = pan_camera_world_time(world).delta_seconds()
-  let camera_store = world.component(ecs_key_camera)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let pan_camera_store = world.component(ecs_key_pan_camera)
   let accumulated_mouse_scroll = match
     (try! world.get_resource(@input.AccumulatedMouseScroll::resource())) {
     Some(value) => value
     None => @input.AccumulatedMouseScroll::new()
   }
   let controlled_entities : Array[@core.Entity] = []
-  pan_camera_store.for_each(fn(entity, _controller) {
-    if camera_store.get(entity) is Some(_) &&
-      transform_store.get(entity) is Some(_) {
+  world.for_each_component(ecs_key_pan_camera, fn(entity, _controller) {
+    if (try! world.get_by_key(entity, ecs_key_camera)) is Some(_) &&
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_) {
       controlled_entities.push(entity)
     }
   })
   for controlled_entity in controlled_entities {
-    guard pan_camera_store.get(controlled_entity) is Some(controller) else {
+    guard (try! world.get_by_key(controlled_entity, ecs_key_pan_camera))
+      is Some(controller) else {
       continue
     }
-    guard transform_store.get(controlled_entity) is Some(transform) else {
+    guard (try! world.get_by_key(
+        controlled_entity, @transform.ecs_key_transform,
+      ))
+      is Some(transform) else {
       continue
     }
     let key_input = pan_camera_key_input_snapshot(controller)
     let (next_transform, next_controller) = pan_camera_step(
       transform, controller, delta_seconds, key_input, accumulated_mouse_scroll,
     )
-    transform_store.set(controlled_entity, next_transform) |> ignore
-    pan_camera_store.set(controlled_entity, next_controller) |> ignore
+    try! (world.replace(
+      controlled_entity, @transform.ecs_key_transform, next_transform,
+    )
+    |> ignore)
+    try! (world.replace(controlled_entity, ecs_key_pan_camera, next_controller)
+    |> ignore)
   }
 }
 
@@ -4000,23 +4005,28 @@ fn sprite_bundle_insert(
   entity : @core.Entity,
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
-  world.set(entity, ecs_key_sprite, bundle.sprite, loc~)
-  world.set(entity, ecs_key_anchor, bundle.anchor, loc~)
-  world.set(entity, ecs_key_render_layers, bundle.layers, loc~)
-  world.set(entity, @visibility.ecs_key_visibility, bundle.visibility, loc~)
-  world.set(
+  world.set_by_key(entity, ecs_key_sprite, bundle.sprite, loc~)
+  world.set_by_key(entity, ecs_key_anchor, bundle.anchor, loc~)
+  world.set_by_key(entity, ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(
+    entity,
+    @visibility.ecs_key_visibility,
+    bundle.visibility,
+    loc~,
+  )
+  world.set_by_key(
     entity,
     @visibility.ecs_key_inherited_visibility,
     bundle.inherited_visibility,
     loc~,
   )
-  world.set(
+  world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
     bundle.view_visibility,
     loc~,
   )
-  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
+  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -4049,24 +4059,24 @@ fn camera2d_bundle_insert(
   entity : @core.Entity,
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
-  world.set(entity, ecs_key_camera2d, bundle.camera2d, loc~)
-  world.set(entity, ecs_key_camera, bundle.camera, loc~)
-  world.set(entity, ecs_key_projection, bundle.projection, loc~)
-  world.set(entity, ecs_key_render_target, bundle.target, loc~)
-  world.set(entity, ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(entity, ecs_key_camera2d, bundle.camera2d, loc~)
+  world.set_by_key(entity, ecs_key_camera, bundle.camera, loc~)
+  world.set_by_key(entity, ecs_key_projection, bundle.projection, loc~)
+  world.set_by_key(entity, ecs_key_render_target, bundle.target, loc~)
+  world.set_by_key(entity, ecs_key_render_layers, bundle.layers, loc~)
   if bundle.bloom is Some(bloom) {
-    world.set(entity, ecs_key_bloom, bloom, loc~)
+    world.set_by_key(entity, ecs_key_bloom, bloom, loc~)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    world.set(entity, ecs_key_tonemapping, tonemapping, loc~)
+    world.set_by_key(entity, ecs_key_tonemapping, tonemapping, loc~)
   }
   if bundle.color_grading is Some(color_grading) {
-    world.set(entity, ecs_key_color_grading, color_grading, loc~)
+    world.set_by_key(entity, ecs_key_color_grading, color_grading, loc~)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
+    world.set_by_key(entity, ecs_key_deband_dither, deband_dither, loc~)
   }
-  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
+  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -4098,19 +4108,25 @@ pub fn Mesh2dBundle::spawn(
   world : @ecs.World,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  try! (world.set(e, ecs_key_mesh2d, self.mesh) |> ignore)
-  try! (world.set(e, ecs_key_mesh_material2d, self.material) |> ignore)
-  try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
-  try! (world.set(e, @visibility.ecs_key_visibility, self.visibility) |> ignore)
-  try! (world.set(
+  try! (world.set_by_key(e, ecs_key_mesh2d, self.mesh) |> ignore)
+  try! (world.set_by_key(e, ecs_key_mesh_material2d, self.material) |> ignore)
+  try! (world.set_by_key(e, ecs_key_render_layers, self.layers) |> ignore)
+  try! (world.set_by_key(e, @visibility.ecs_key_visibility, self.visibility)
+  |> ignore)
+  try! (world.set_by_key(
     e,
     @visibility.ecs_key_inherited_visibility,
     self.inherited_visibility,
   )
   |> ignore)
-  try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
+  try! (world.set_by_key(
+    e,
+    @visibility.ecs_key_view_visibility,
+    self.view_visibility,
+  )
   |> ignore)
-  try! (world.set(e, @transform.ecs_key_transform, self.transform) |> ignore)
+  try! (world.set_by_key(e, @transform.ecs_key_transform, self.transform)
+  |> ignore)
   e
 }
 
@@ -4123,17 +4139,21 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
   loc~,
 ) {
   ignore(loc)
-  world.set(entity, ecs_key_mesh2d, self.mesh)
-  world.set(entity, ecs_key_mesh_material2d, self.material)
-  world.set(entity, ecs_key_render_layers, self.layers)
-  world.set(entity, @visibility.ecs_key_visibility, self.visibility)
-  world.set(
+  world.set_by_key(entity, ecs_key_mesh2d, self.mesh)
+  world.set_by_key(entity, ecs_key_mesh_material2d, self.material)
+  world.set_by_key(entity, ecs_key_render_layers, self.layers)
+  world.set_by_key(entity, @visibility.ecs_key_visibility, self.visibility)
+  world.set_by_key(
     entity,
     @visibility.ecs_key_inherited_visibility,
     self.inherited_visibility,
   )
-  world.set(entity, @visibility.ecs_key_view_visibility, self.view_visibility)
-  world.set(entity, @transform.ecs_key_transform, self.transform)
+  world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    self.view_visibility,
+  )
+  world.set_by_key(entity, @transform.ecs_key_transform, self.transform)
 }
 
 ///|
@@ -4633,11 +4653,7 @@ fn render2d_camera_target_info_from_render_target(
 }
 
 ///|
-fn render2d_target_component_changed(
-  target_store : @ecs.ComponentAccess[RenderTarget],
-  entity : @core.Entity,
-) -> Bool {
-  ignore(target_store)
+fn render2d_target_component_changed(entity : @core.Entity) -> Bool {
   ignore(entity)
   true
 }
@@ -4746,21 +4762,13 @@ fn render2d_camera_viewport_size(camera : Camera) -> @math.IVec2? {
 }
 
 ///|
-fn render2d_projection_changed(
-  projection_store : @ecs.ComponentAccess[Projection],
-  entity : @core.Entity,
-) -> Bool {
-  ignore(projection_store)
+fn render2d_projection_changed(entity : @core.Entity) -> Bool {
   ignore(entity)
   true
 }
 
 ///|
-fn render2d_camera_changed(
-  camera_store : @ecs.ComponentAccess[Camera],
-  entity : @core.Entity,
-) -> Bool {
-  ignore(camera_store)
+fn render2d_camera_changed(entity : @core.Entity) -> Bool {
   ignore(entity)
   true
 }
@@ -4800,8 +4808,7 @@ fn render2d_tonemapping_stage_enabled(
 
 ///|
 fn camera_tonemapping_mode(world : @ecs.World, camera : @core.Entity) -> Int {
-  let store = world.component(ecs_key_tonemapping)
-  match store.get(camera) {
+  match (try! world.get_by_key(camera, ecs_key_tonemapping)) {
     Some(mode) => render2d_tonemapping_mode_to_int(mode)
     None => 0
   }
@@ -4812,10 +4819,9 @@ fn camera_deband_dither_enabled(
   world : @ecs.World,
   camera : @core.Entity,
 ) -> Bool {
-  let store = world.component(ecs_key_deband_dither)
-  match store.get(camera) {
-    Some(Enabled) => true
-    Some(Disabled) => false
+  match (try! world.get_by_key(camera, ecs_key_deband_dither)) {
+    Some(@post_process.DebandDither::Enabled) => true
+    Some(@post_process.DebandDither::Disabled) => false
     None => false
   }
 }
@@ -4825,45 +4831,41 @@ fn camera_color_grading(
   world : @ecs.World,
   camera : @core.Entity,
 ) -> ColorGrading? {
-  let store = world.component(ecs_key_color_grading)
-  store.get(camera)
+  try! world.get_by_key(camera, ecs_key_color_grading)
 }
 
 ///|
 pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let ecs_world = world
-  let camera2d_store = get_camera2d_store(ecs_world)
-  let camera_store = get_camera_store(ecs_world)
-  let projection_store = get_projection_store(ecs_world)
-  let target_store = get_render_target_store(ecs_world)
   let render_state = render_state_ref_value
-  camera2d_store.for_each(fn(entity, _marker) {
-    let target = match target_store.get(entity) {
+  ecs_world.for_each_component(ecs_key_camera2d, fn(entity, _marker) {
+    let target = match
+      (try! ecs_world.get_by_key(entity, ecs_key_render_target)) {
       Some(value) => value
       None => RenderTarget::Screen
     }
-    let camera = match camera_store.get(entity) {
+    let camera = match (try! world.get_by_key(entity, ecs_key_camera)) {
       Some(value) => value
       None => Camera::default()
     }
-    projection_store.get(entity).unwrap_or(Projection::orthographic_2d())
-    |> ignore
+    try! (ecs_world
+    .get_by_key(entity, ecs_key_projection)
+    .unwrap_or(Projection::orthographic_2d())
+    |> ignore)
 
     let target_info = render2d_target_info(world, render_state, target)
     let next_target_info = render2d_camera_target_info_from_render_target(
       target_info,
     )
-    let target_changed = render2d_target_component_changed(target_store, entity) ||
+    let target_changed = render2d_target_component_changed(entity) ||
       !render2d_camera_target_info_eq(
         camera.computed.target_info,
         next_target_info,
       )
     let viewport_changed = render2d_viewport_size_changed(camera)
-    let camera_changed = render2d_camera_changed(camera_store, entity)
-    let projection_changed = render2d_projection_changed(
-      projection_store, entity,
-    )
+    let camera_changed = render2d_camera_changed(entity)
+    let projection_changed = render2d_projection_changed(entity)
     let mut scale_factor_changed = false
     if render2d_targets_host_window(target) &&
       camera.computed.target_info is Some(old_target_info) &&
@@ -4901,7 +4903,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
           old_viewport_size: render2d_camera_viewport_size(camera_value),
         },
       }
-      camera_store.set(entity, camera_value) |> ignore
+      try! (world.replace(entity, ecs_key_camera, camera_value) |> ignore)
     }
   })
 }
@@ -4913,7 +4915,7 @@ fn render2d_transform_from_parent_chain_ecs(
   max_depth : Int,
 ) -> @transform.Transform {
   max_depth |> ignore
-  (try! world.get(entity, @transform.ecs_key_transform)).unwrap_or(
+  (try! world.get_by_key(entity, @transform.ecs_key_transform)).unwrap_or(
     @transform.Transform::identity(),
   )
 }
@@ -4923,7 +4925,7 @@ fn render2d_resolve_transform_ecs(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @transform.Transform {
-  match (try! world.get(entity, @transform.ecs_key_global_transform)) {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
     Some(global) => global.to_transform_approx()
     None => render2d_transform_from_parent_chain_ecs(world, entity, 64)
   }
@@ -4936,7 +4938,7 @@ fn render2d_visibility_from_parent_chain_ecs(
   max_depth : Int,
 ) -> Bool {
   max_depth |> ignore
-  match (try! world.get(entity, @visibility.ecs_key_view_visibility)) {
+  match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
     Some(view_visibility) => view_visibility.is_visible()
     None => true
   }
@@ -4960,13 +4962,13 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
   )
   try! camera2d_query.view(fn(entity, _camera2d) { cameras.push(entity) })
   for entity in cameras {
-    let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
+    let target = (try! world.get_by_key(entity, ecs_key_render_target)).unwrap_or(
       RenderTarget::Screen,
     )
-    let camera = (try! world.get(entity, ecs_key_camera)).unwrap_or(
+    let camera = (try! world.get_by_key(entity, ecs_key_camera)).unwrap_or(
       Camera::default(),
     )
-    (try! world.get(entity, ecs_key_projection)).unwrap_or(
+    (try! world.get_by_key(entity, ecs_key_projection)).unwrap_or(
       Projection::orthographic_2d(),
     )
     |> ignore
@@ -5004,7 +5006,7 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
         old_viewport_size: render2d_camera_viewport_size(camera_value),
       },
     }
-    try! world.set(entity, ecs_key_camera, camera_value)
+    try! world.set_by_key(entity, ecs_key_camera, camera_value)
   }
 }
 
@@ -5041,15 +5043,17 @@ fn render2d_extract_camera_entity_ecs(
   rs : Ref[RenderState],
   entity : @core.Entity,
 ) -> Unit {
-  guard (try! world.get(entity, ecs_key_camera)) is Some(camera) else { return }
-  let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
+  guard (try! world.get_by_key(entity, ecs_key_camera)) is Some(camera) else {
+    return
+  }
+  let target = (try! world.get_by_key(entity, ecs_key_render_target)).unwrap_or(
     RenderTarget::Screen,
   )
-  let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+  let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
     RenderLayers::default(),
   )
-  let bloom = try! world.get(entity, ecs_key_bloom)
-  let projection = match (try! world.get(entity, ecs_key_projection)) {
+  let bloom = try! world.get_by_key(entity, ecs_key_bloom)
+  let projection = match (try! world.get_by_key(entity, ecs_key_projection)) {
     Some(Orthographic(p)) => p
     _ => OrthographicProjection::default_2d()
   }
@@ -5158,7 +5162,7 @@ fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
     if !render2d_entity_visible_ecs(world, entity) {
       return
     }
-    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+    let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
       RenderLayers::default(),
     )
     let transform = render2d_resolve_transform_ecs(world, entity)
@@ -5174,247 +5178,7 @@ fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render_extract_system(world : @ecs.World) -> Unit {
-  let source_world = @render.render_source_world(world)
-  let material_runtime_registry = material2d_runtime_registry_or_empty(world)
-  render_state_update(world, fn(rs) {
-    rs.val.draw_enabled = true
-    rs.val.primary_camera = @core.Entity::placeholder()
-    rs.val.sprites.clear()
-    rs.val.cameras.clear()
-    rs.val.meshes.clear()
-    let ecs_world = source_world
-    let camera2d_store = get_camera2d_store(ecs_world)
-    let camera_store = get_camera_store(ecs_world)
-    let projection_store = get_projection_store(ecs_world)
-    let target_store = get_render_target_store(ecs_world)
-    let layers_store = get_render_layers_store(ecs_world)
-    let bloom_store = get_bloom_store(ecs_world)
-    let view_visibility_store = @visibility.get_view_visibility_store(ecs_world)
-    let transform_store = @transform.get_transform_store(ecs_world)
-    let global_store = @transform.get_global_transform_store(ecs_world)
-    camera2d_store.for_each(fn(entity, _marker) {
-      let target = match target_store.get(entity) {
-        Some(t) => t
-        None => RenderTarget::Screen
-      }
-      let layers = match layers_store.get(entity) {
-        Some(v) => v
-        None => RenderLayers::default()
-      }
-      let bloom = bloom_store.get(entity)
-      let camera = match camera_store.get(entity) {
-        Some(v) => v
-        None => Camera::default()
-      }
-      let projection = match projection_store.get(entity) {
-        Some(Orthographic(p)) => p
-        None => OrthographicProjection::default_2d()
-      }
-      let transform = match global_store.get(entity) {
-        Some(gt) => gt.to_transform_approx()
-        None =>
-          match transform_store.get(entity) {
-            Some(t) => t
-            None => @transform.Transform::identity()
-          }
-      }
-      let mut computed = CameraComputed::{
-        target_size: @math.IVec2::new(0, 0),
-        scale_factor: 1.0F,
-      }
-      if camera.computed.target_info is Some(target_info) {
-        let scale_factor = if target_info.scale_factor <= 0.0F {
-          1.0F
-        } else {
-          target_info.scale_factor
-        }
-        computed = CameraComputed::{
-          target_size: target_info.physical_size,
-          scale_factor,
-        }
-      } else if render2d_target_info(source_world, rs.val, target) is Some(info) {
-        let scale_factor = if info.scale_factor <= 0.0F {
-          1.0F
-        } else {
-          info.scale_factor
-        }
-        computed = CameraComputed::{ target_size: info.size, scale_factor }
-      }
-      rs.val.cameras.push(ExtractedCamera2d::{
-        entity,
-        camera,
-        projection,
-        transform,
-        target,
-        layers,
-        bloom,
-        computed,
-      })
-    })
-    if rs.val.cameras.length() > 0 {
-      let order = render2d_sorted_camera_indices(rs.val.cameras)
-      if order.length() > 0 {
-        rs.val.primary_camera = rs.val.cameras[order[0]].entity
-      }
-    }
-    render2d_prune_postprocess_intermediate_targets(rs.val)
-    let sprite_store = get_sprite_store(ecs_world)
-    let anchor_store = get_anchor_store(ecs_world)
-    let scissor_store = get_scissor_rect_store(ecs_world)
-    sprite_store.for_each(fn(entity, sprite) {
-      if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
-        return
-      }
-      let anchor = match anchor_store.get(entity) {
-        Some(a) => a
-        None => Anchor::default()
-      }
-      let layers = match layers_store.get(entity) {
-        Some(v) => v
-        None => RenderLayers::default()
-      }
-      let transform = match global_store.get(entity) {
-        Some(gt) => gt.to_transform_approx()
-        None =>
-          match transform_store.get(entity) {
-            Some(t) => t
-            None => @transform.Transform::identity()
-          }
-      }
-      let mut uv_min = default_uv_min()
-      let mut uv_max = default_uv_max()
-      let mut region_size = @math.Vec2::new(1.0F, 1.0F)
-      if sprite_uv_from_sprite(sprite) is Some(info) {
-        uv_min = info.uv_min
-        uv_max = info.uv_max
-        region_size = info.region_size
-      }
-      let draw_scale = sprite_draw_scale(
-        sprite,
-        @math.Vec2::new(transform.scale.x, transform.scale.y),
-        region_size,
-      )
-      let scissor = match scissor_store.get(entity) {
-        Some(v) => Some(v.rect)
-        None => None
-      }
-      let has_custom_size = match sprite.custom_size {
-        Some(_) => true
-        None => false
-      }
-      let (
-        uv_draw_min,
-        uv_draw_max,
-        draw_scale_for_host,
-        local_offset,
-        needs_repeat_sampler,
-      ) = apply_sprite_image_mode(
-        uv_min,
-        uv_max,
-        draw_scale,
-        region_size,
-        sprite.image_mode,
-        has_custom_size,
-      )
-      let anchor_offset = sprite_anchor_offset(
-        anchor,
-        transform.rotation_z(),
-        draw_scale_for_host,
-        local_offset,
-      )
-      if needs_repeat_sampler {
-        @asset.asset_set_texture_sampler(
-          sprite.image,
-          @asset.ImageSampler::Descriptor(
-            @asset.ImageSamplerDescriptor::linear().set_address_mode(
-              @asset.ImageAddressMode::Repeat,
-            ),
-          ),
-        )
-      }
-      if !append_computed_sprite_slices(
-          rs.val.sprites,
-          entity,
-          sprite,
-          anchor,
-          transform,
-          layers,
-          scissor,
-          uv_min,
-          uv_max,
-          region_size,
-        ) {
-        rs.val.sprites.push(ExtractedSprite::{
-          entity: phase_entity_ref_for_main(entity),
-          payload: SpriteDrawPayload::{
-            transform,
-            anchor_offset,
-            draw_scale: draw_scale_for_host,
-            color: sprite.color,
-            texture: sprite.image,
-            layers,
-            uv_min: uv_draw_min,
-            uv_max: uv_draw_max,
-            scissor,
-          },
-        })
-      }
-    })
-    render2d_extract_tilemap_chunks(source_world)
-    let mesh_store = get_mesh2d_store(ecs_world)
-    let wireframe_store = get_wireframe2d_store(ecs_world)
-    let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
-    let wireframe_color_store = get_wireframe2d_color_store(ecs_world)
-    let wireframe_config = if get_wireframe2d_config_resource(ecs_world).get()
-      is Some(config) {
-      Some(config)
-    } else {
-      None
-    }
-    mesh_store.for_each(fn(entity, mesh2d) {
-      if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
-        return
-      }
-      if !material2d_runtime_registry_contains_entity(
-          source_world, material_runtime_registry, entity,
-        ) {
-        return
-      }
-      let layers = match layers_store.get(entity) {
-        Some(v) => v
-        None => RenderLayers::default()
-      }
-      let transform = match global_store.get(entity) {
-        Some(gt) => gt.to_transform_approx()
-        None =>
-          match transform_store.get(entity) {
-            Some(t) => t
-            None => @transform.Transform::identity()
-          }
-      }
-      let wireframe = wireframe2d_mesh_should_draw(
-        wireframe_store.get(entity) is Some(_),
-        no_wireframe_store.get(entity) is Some(_),
-        wireframe_config,
-      )
-      let wireframe_color = wireframe2d_mesh_color(
-        wireframe_color_store.get(entity),
-        wireframe_config,
-      )
-      let mesh_id = render2d_upload_mesh_handle(mesh2d.mesh)
-      rs.val.meshes.push(ExtractedMesh2d::{
-        entity: phase_entity_ref_for_main(entity),
-        payload: Mesh2dDrawPayload::{
-          mesh_id,
-          transform,
-          layers,
-          wireframe,
-          wireframe_color,
-        },
-      })
-    })
-  })
-  |> ignore
+  render_extract_system_ecs(world)
 }
 
 ///|
@@ -5452,10 +5216,10 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         return
       }
       let sprite = sprite.value()
-      let anchor = (try! source_world.get(entity, ecs_key_anchor)).unwrap_or(
+      let anchor = (try! source_world.get_by_key(entity, ecs_key_anchor)).unwrap_or(
         Anchor::default(),
       )
-      let layers = (try! source_world.get(entity, ecs_key_render_layers)).unwrap_or(
+      let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
       let transform = render2d_resolve_transform_ecs(source_world, entity)
@@ -5473,7 +5237,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         region_size,
       )
       let scissor = match
-        (try! source_world.get(entity, ecs_key_scissor_rect)) {
+        (try! source_world.get_by_key(entity, ecs_key_scissor_rect)) {
         Some(v) => Some(v.rect)
         None => None
       }
@@ -5561,17 +5325,18 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         ) {
         return
       }
-      let layers = (try! source_world.get(entity, ecs_key_render_layers)).unwrap_or(
+      let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
       let transform = render2d_resolve_transform_ecs(source_world, entity)
       let wireframe = wireframe2d_mesh_should_draw(
-        (try! source_world.get(entity, ecs_key_wireframe2d)) is Some(_),
-        (try! source_world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
+        (try! source_world.get_by_key(entity, ecs_key_wireframe2d)) is Some(_),
+        (try! source_world.get_by_key(entity, ecs_key_no_wireframe2d))
+        is Some(_),
         wireframe_config,
       )
       let wireframe_color = wireframe2d_mesh_color(
-        try! source_world.get(entity, ecs_key_wireframe2d_color),
+        try! source_world.get_by_key(entity, ecs_key_wireframe2d_color),
         wireframe_config,
       )
       let mesh2d = mesh2d.value()
@@ -6568,7 +6333,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   ensure_render_state_resource(world)
   let layers = RenderLayers::default()
   let camera = world.spawn_empty()
-  try! (world.set(camera, ecs_key_camera, Camera::default()) |> ignore)
+  try! (world.set_by_key(camera, ecs_key_camera, Camera::default()) |> ignore)
 
   render_state_update(world, fn(rs) {
     rs.val.extra_ui_sprites.clear()
@@ -6923,7 +6688,7 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
 
   app = app.add_system(fn(world : @ecs.World) {
     let entity = world.spawn_empty()
-    try! (world.set(
+    try! (world.set_by_key(
       entity,
       ecs_key_tilemap_chunk,
       TilemapChunk::new(
@@ -6934,7 +6699,7 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
       ),
     )
     |> ignore)
-    try! (world.set(
+    try! (world.set_by_key(
       entity,
       ecs_key_tilemap_chunk_tile_data,
       TilemapChunkTileData::new([

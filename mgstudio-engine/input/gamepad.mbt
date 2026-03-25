@@ -1858,15 +1858,22 @@ fn gamepad_connection_system(
     guard world.is_alive(entity) else { continue }
     match connection_event.connection {
       Connected(info) => {
-        try! world.set_component(entity, @ecs.Name::new(info.name))
-        try! world.set_component(entity, Gamepad::{
+        try! (world
+        .entity_mut(entity)
+        .insert_component(@ecs.Name::new(info.name))
+        |> ignore)
+        try! (world
+        .entity_mut(entity)
+        .insert_component(Gamepad::{
           vendor_id: info.vendor_id,
           product_id: info.product_id,
           digital: ButtonInput::new(),
           analog: default_gamepad_analog(),
         })
+        |> ignore)
       }
-      Disconnected => try! (world.remove(entity, ecs_key_gamepad) |> ignore)
+      Disconnected =>
+        try! (world.remove_by_key(entity, ecs_key_gamepad) |> ignore)
     }
   }
 }

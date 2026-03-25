@@ -68,12 +68,12 @@ fn read_monitor_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @window.Monitor? {
-  try! world.get_component(entity)
+  try! world.entity(entity).get()
 }
 
 ///|
 fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
-  match (try! world.get_component(entity) : @window.PrimaryMonitor?) {
+  match (try! world.entity(entity).get() : @window.PrimaryMonitor?) {
     Some(_) => true
     None => false
   }
@@ -491,8 +491,11 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
   let window_entity = world.spawn()
   let window = @window.Window::default()
   window.focused = false
-  try! world.set_component(window_entity, window)
-  try! world.set_component(window_entity, @window.PrimaryWindow::{  })
+  try! (world.entity_mut(window_entity).insert_component(window) |> ignore)
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
 
   let mut app = winit_plugin(@window.window_plugin(@app.App::new(world)))
     .add_message(@window.ecs_key_keyboard_focus_lost)
@@ -529,7 +532,10 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
 test "winit: close request is despawned by Last-stage winit system" {
   let world = @ecs.World::new()
   let window_entity = world.spawn()
-  try! world.set_component(window_entity, @window.Window::default())
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.Window::default())
+  |> ignore)
 
   let mut app = winit_plugin(
     @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{

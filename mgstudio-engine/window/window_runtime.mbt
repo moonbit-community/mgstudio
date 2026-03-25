@@ -75,7 +75,7 @@ fn[T] window_remove_component(
   key : @ecs.ComponentKey[T],
 ) -> Unit {
   ignore(
-    try world.remove(entity, key) catch {
+    try world.remove_by_key(entity, key) catch {
       _ => false
     } noraise {
       value => value
@@ -85,7 +85,7 @@ fn[T] window_remove_component(
 
 ///|
 fn window_component(world : @ecs.World, entity : @core.Entity) -> Window? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -97,7 +97,7 @@ fn window_runtime_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> WindowRuntime? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -109,7 +109,7 @@ fn window_cursor_options_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> CursorOptions? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -121,7 +121,7 @@ fn window_cursor_icon_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> CursorIcon? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -133,7 +133,7 @@ fn window_closing_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> ClosingWindow? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -146,7 +146,7 @@ fn window_set_component(
   entity : @core.Entity,
   value : Window,
 ) -> Unit {
-  try! world.set_component(entity, value)
+  try! (world.entity_mut(entity).insert_component(value) |> ignore)
 }
 
 ///|
@@ -155,7 +155,7 @@ fn window_set_runtime_component(
   entity : @core.Entity,
   value : WindowRuntime,
 ) -> Unit {
-  try! world.set_component(entity, value)
+  try! (world.entity_mut(entity).insert_component(value) |> ignore)
 }
 
 ///|
@@ -163,7 +163,7 @@ fn window_set_primary_window_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  try! world.set_component(entity, PrimaryWindow::{  })
+  try! (world.entity_mut(entity).insert_component(PrimaryWindow::{  }) |> ignore)
 }
 
 ///|
@@ -172,7 +172,7 @@ fn window_set_cursor_options_component(
   entity : @core.Entity,
   value : CursorOptions,
 ) -> Unit {
-  try! world.set_component(entity, value)
+  try! (world.entity_mut(entity).insert_component(value) |> ignore)
 }
 
 ///|
@@ -181,7 +181,7 @@ fn window_set_cursor_icon_component(
   entity : @core.Entity,
   value : CursorIcon,
 ) -> Unit {
-  try! world.set_component(entity, value)
+  try! (world.entity_mut(entity).insert_component(value) |> ignore)
 }
 
 ///|
@@ -189,7 +189,7 @@ fn window_raw_handle_holder_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> RawHandleWrapperHolder? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -202,7 +202,7 @@ fn window_set_raw_handle_wrapper_component(
   entity : @core.Entity,
   value : RawHandleWrapper,
 ) -> Unit {
-  try! world.set_component(entity, value)
+  try! (world.entity_mut(entity).insert_component(value) |> ignore)
 }
 
 ///|
@@ -211,7 +211,7 @@ fn window_set_raw_handle_holder_component(
   entity : @core.Entity,
   value : RawHandleWrapperHolder,
 ) -> Unit {
-  try! world.set_component(entity, value)
+  try! (world.entity_mut(entity).insert_component(value) |> ignore)
 }
 
 ///|
@@ -219,7 +219,7 @@ fn window_set_closing_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  try! world.set_component(entity, ClosingWindow::{  })
+  try! (world.entity_mut(entity).insert_component(ClosingWindow::{  }) |> ignore)
 }
 
 ///|
@@ -228,10 +228,18 @@ fn window_update_component(
   entity : @core.Entity,
   update : (Window) -> Window,
 ) -> Bool {
-  try world.update_component(entity, update) catch {
+  try {
+    let entity_mut = world.entity_mut(entity)
+    let window = entity_mut.get_mut(key=ecs_key_window)
+    match window {
+      Some(window) => {
+        window.set(update(window.value()))
+        true
+      }
+      None => false
+    }
+  } catch {
     _ => false
-  } noraise {
-    value => value
   }
 }
 
@@ -272,14 +280,13 @@ pub fn window_entity_for_host(
   host_window : HostWindow,
 ) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
-  let runtime_store = world.component(ecs_key_window_runtime)
   try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
   .view(fn(_query_entity, entity) {
     if result.val is Some(_) {
       return
     }
-    if runtime_store.get(entity) is Some(runtime) {
+    if (try! world.get_by_key(entity, ecs_key_window_runtime)) is Some(runtime) {
       if runtime.window == host_window {
         result.val = Some(entity)
       }
@@ -335,11 +342,10 @@ pub fn window_host_window_for_ref(
 ///|
 pub fn window_host_entries(world : @ecs.World) -> Array[WindowHostEntry] {
   let entries : Array[WindowHostEntry] = []
-  let runtime_store = world.component(ecs_key_window_runtime)
   try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
   .view(fn(_query_entity, entity) {
-    if runtime_store.get(entity) is Some(runtime) {
+    if (try! world.get_by_key(entity, ecs_key_window_runtime)) is Some(runtime) {
       entries.push(WindowHostEntry::new(entity, runtime.window))
     }
   })

@@ -152,9 +152,9 @@ fn camera_screen_space_transmission(
 ) -> @post_process.ScreenSpaceTransmission {
   if transmission_state.val.camera is Some(camera_entity) {
     match
-      world
-      .component(@post_process.ecs_key_screen_space_transmission)
-      .get(camera_entity) {
+      (try! world.get_by_key(
+        camera_entity, @post_process.ecs_key_screen_space_transmission,
+      )) {
       Some(value) => value
       None => @post_process.ScreenSpaceTransmission::default()
     }
@@ -169,11 +169,17 @@ fn camera_set_screen_space_transmission(
   value : @post_process.ScreenSpaceTransmission,
 ) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let store = world.component(@post_process.ecs_key_screen_space_transmission)
-    if store.contains(camera_entity) {
-      store.set(camera_entity, value) |> ignore
+    if (try! world.contains_by_key(
+        camera_entity, @post_process.ecs_key_screen_space_transmission,
+      )) {
+      try! (world.replace(
+        camera_entity, @post_process.ecs_key_screen_space_transmission, value,
+      )
+      |> ignore)
     } else {
-      store.insert(camera_entity, value)
+      try! world.set_by_key(
+        camera_entity, @post_process.ecs_key_screen_space_transmission, value,
+      )
     }
   }
 }
@@ -181,7 +187,7 @@ fn camera_set_screen_space_transmission(
 ///|
 fn camera_hdr_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.component(@pbr.ecs_key_hdr).contains(camera_entity)
+    try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
   } else {
     false
   }
@@ -190,7 +196,7 @@ fn camera_hdr_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.component(@pbr.ecs_key_depth_prepass).contains(camera_entity)
+    try! world.contains_by_key(camera_entity, @pbr.ecs_key_depth_prepass)
   } else {
     false
   }
@@ -199,9 +205,9 @@ fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_taa_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world
-    .component(@post_process.ecs_key_temporal_jitter)
-    .contains(camera_entity)
+    try! world.contains_by_key(
+      camera_entity, @post_process.ecs_key_temporal_jitter,
+    )
   } else {
     false
   }
@@ -210,11 +216,14 @@ fn camera_taa_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_toggle_hdr(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let store = world.component(@pbr.ecs_key_hdr)
-    if store.contains(camera_entity) {
-      store.remove(camera_entity) |> ignore
+    if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)) {
+      try! (world.take(camera_entity, @pbr.ecs_key_hdr) |> ignore)
     } else {
-      store.insert(camera_entity, @pbr.Hdr::default())
+      try! world.set_by_key(
+        camera_entity,
+        @pbr.ecs_key_hdr,
+        @pbr.Hdr::default(),
+      )
     }
   }
 }
@@ -222,11 +231,14 @@ fn camera_toggle_hdr(world : @ecs.World) -> Unit {
 ///|
 fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let store = world.component(@pbr.ecs_key_depth_prepass)
-    if store.contains(camera_entity) {
-      store.remove(camera_entity) |> ignore
+    if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_depth_prepass)) {
+      try! (world.take(camera_entity, @pbr.ecs_key_depth_prepass) |> ignore)
     } else {
-      store.insert(camera_entity, @pbr.DepthPrepass::default())
+      try! world.set_by_key(
+        camera_entity,
+        @pbr.ecs_key_depth_prepass,
+        @pbr.DepthPrepass::default(),
+      )
     }
   }
 }
@@ -234,20 +246,24 @@ fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
 ///|
 fn camera_toggle_taa(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let jitter_store = world.component(@post_process.ecs_key_temporal_jitter)
-    let taa_store = world.component(
-      @post_process.ecs_key_temporal_anti_aliasing,
-    )
-    if jitter_store.contains(camera_entity) {
-      jitter_store.remove(camera_entity) |> ignore
-      taa_store.remove(camera_entity) |> ignore
+    if (try! world.contains_by_key(
+        camera_entity, @post_process.ecs_key_temporal_jitter,
+      )) {
+      try! (world.take(camera_entity, @post_process.ecs_key_temporal_jitter)
+      |> ignore)
+      try! (world.take(
+        camera_entity, @post_process.ecs_key_temporal_anti_aliasing,
+      )
+      |> ignore)
     } else {
-      jitter_store.insert(
+      try! world.set_by_key(
         camera_entity,
+        @post_process.ecs_key_temporal_jitter,
         @post_process.TemporalJitter::default(),
       )
-      taa_store.insert(
+      try! world.set_by_key(
         camera_entity,
+        @post_process.ecs_key_temporal_anti_aliasing,
         @post_process.TemporalAntiAliasing::default(),
       )
     }
@@ -537,9 +553,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.1F, 0.2F, 0.1F),
     ),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(flame_mesh_entity, @pbr.NotShadowCaster::default())
+  try! world.set_by_key(
+    flame_mesh_entity,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
   transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
   let white_glass = @pbr.standard_material_add(
@@ -670,18 +688,21 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
     .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_transmitted_shadow_receiver)
-  .insert(paper_entity, @pbr.TransmittedShadowReceiver::default())
+  try! world.set_by_key(
+    paper_entity,
+    @pbr.ecs_key_transmitted_shadow_receiver,
+    @pbr.TransmittedShadowReceiver::default(),
+  )
 
   let flame_light = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(flame_light, @transform.Transform::from_xyz(-1.0F, 1.7F, 0.0F))
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     flame_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(-1.0F, 1.7F, 0.0F),
+  )
+  try! world.set_by_key(
+    flame_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
       4_000.0F,
@@ -709,30 +730,35 @@ fn setup_camera(world : @ecs.World) -> Unit {
       Some(@post_process.ScreenSpaceTransmission::default()),
     )
     .spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default())
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_temporal_jitter)
-  .insert(camera, @post_process.TemporalJitter::default())
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default())
-  world
-  .component(@pbr.ecs_key_exposure)
-  .insert(camera, @pbr.Exposure::new(6.0F))
-  world
-  .component(@post_process.ecs_key_color_grading)
-  .insert(camera, color_grading)
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::TonyMcMapface)
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
     camera,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_jitter,
+    @post_process.TemporalJitter::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_exposure, @pbr.Exposure::new(6.0F))
+  try! world.set_by_key(
+    camera, @post_process.ecs_key_color_grading, color_grading,
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::TonyMcMapface,
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
@@ -779,16 +805,15 @@ fn set_hud_text(world : @ecs.World) -> Unit {
 fn apply_camera_transform(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let camera_pos = transmission_state.val.camera_translation
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       camera_entity,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -1061,31 +1086,29 @@ fn flicker_system(world : @ecs.World) -> Unit {
   let c = @math.cos(s * 7.0F) * 0.0125F + @math.cos(s * 2.0F) * 0.025F
 
   if transmission_state.val.flame_light is Some(light_entity) {
-    if world.component(@pbr.ecs_key_point_light).get(light_entity)
+    if (try! world.get_by_key(light_entity, @pbr.ecs_key_point_light))
       is Some(point_light) {
-      world
-      .component(@pbr.ecs_key_point_light)
-      .set(
+      try! (world.replace(
         light_entity,
+        @pbr.ecs_key_point_light,
         point_light.with_intensity(4_000.0F + 3_000.0F * (a + b + c)),
       )
-      |> ignore
+      |> ignore)
     }
 
-    if world.component(@transform.ecs_key_transform).get(light_entity)
+    if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
       is Some(light_transform) {
-      world
-      .component(@transform.ecs_key_transform)
-      .set(
+      try! (world.replace(
         light_entity,
+        @transform.ecs_key_transform,
         light_transform.with_translation(@math.Vec3::new(-1.0F - c, 1.7F, -a)),
       )
-      |> ignore
+      |> ignore)
     }
   }
 
   if transmission_state.val.flame_mesh is Some(flame_entity) {
-    if world.component(@transform.ecs_key_transform).contains(flame_entity) {
+    if (try! world.contains_by_key(flame_entity, @transform.ecs_key_transform)) {
       let base_transform = @transform.Transform::from_xyz(-1.0F - c, 1.23F, -a).looking_at(
         @math.Vec3::new(-1.0F - c, 1.7F - b, -a),
         @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -1095,13 +1118,12 @@ fn flicker_system(world : @ecs.World) -> Unit {
         .mul(@math.Quat::from_rotation_z(PI / 2.0F))
         .normalize(),
       )
-      world
-      .component(@transform.ecs_key_transform)
-      .set(
+      try! (world.replace(
         flame_entity,
+        @transform.ecs_key_transform,
         rotated_flame.with_scale(@math.Vec3::new(0.1F, 0.2F, 0.1F)),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }

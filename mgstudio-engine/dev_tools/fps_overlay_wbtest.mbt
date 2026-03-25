@@ -39,15 +39,15 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
 
   inspect(state.bar_entities.length(), content="0")
   inspect(
-    try! (app.world().get(root_entity, @ui.ecs_key_ui_root) is Some(_)),
+    try! (app.world().get_by_key(root_entity, @ui.ecs_key_ui_root) is Some(_)),
     content="true",
   )
   inspect(
-    try! (app.world().get(text_entity, @text.ecs_key_text) is Some(_)),
+    try! (app.world().get_by_key(text_entity, @text.ecs_key_text) is Some(_)),
     content="true",
   )
   inspect(
-    try! (app.world().get(graph_entity, @ui.ecs_key_node) is Some(_)),
+    try! (app.world().get_by_key(graph_entity, @ui.ecs_key_node) is Some(_)),
     content="true",
   )
 }
@@ -74,8 +74,14 @@ test "dev_tools: fps overlay hides text and graph when disabled" {
     abort("missing overlay graph")
   }
 
-  let text_node = try! app.world().get(text_entity, @ui.ecs_key_node).unwrap()
-  let graph_node = try! app.world().get(graph_entity, @ui.ecs_key_node).unwrap()
+  let text_node = try! app
+    .world()
+    .get_by_key(text_entity, @ui.ecs_key_node)
+    .unwrap()
+  let graph_node = try! app
+    .world()
+    .get_by_key(graph_entity, @ui.ecs_key_node)
+    .unwrap()
   inspect(text_node.display, content="None")
   inspect(graph_node.display, content="None")
 }
@@ -97,7 +103,7 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
     abort("missing overlay text entity")
   }
   inspect(
-    app.world().get(text_entity, @text.ecs_key_text).unwrap().content.contains(
+    app.world().get_by_key(text_entity, @text.ecs_key_text).unwrap().content.contains(
       "FPS: ",
     ),
     content="true",
@@ -107,7 +113,10 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
     abort("missing frame time graph bars")
   }
   let first_bar = state.bar_entities[state.bar_entities.length() - 1]
-  let bar_node = try! app.world().get(first_bar, @ui.ecs_key_node).unwrap()
+  let bar_node = try! app
+    .world()
+    .get_by_key(first_bar, @ui.ecs_key_node)
+    .unwrap()
   match bar_node.height {
     @ui.Val::Px(value) => inspect(value > 0.0F, content="true")
     _ => inspect(false, content="true")

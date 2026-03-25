@@ -1497,16 +1497,11 @@ fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
-fn ui_collect_root_entities(
-  world : @ecs.World,
-  node_store : @ecs.ComponentAccess[Node],
-  parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
-) -> Array[@core.Entity] {
-  let root_store = get_ui_root_store(world)
+fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
   let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   let roots : Array[@core.Entity] = []
-  node_store.for_each(fn(entity, _node) {
-    if parent_store.contains(entity) {
+  world.for_each_component(ecs_key_node, fn(entity, _node) {
+    if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
       return
     }
     let key = ui_entity_key(entity)
@@ -1516,7 +1511,7 @@ fn ui_collect_root_entities(
     visited.set(key, true)
     roots.push(entity)
   })
-  root_store.for_each(fn(entity, _marker) {
+  world.for_each_component(ecs_key_ui_root, fn(entity, _marker) {
     let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
@@ -1685,12 +1680,9 @@ fn ui_render_target_targets_primary_window(
 
 ///|
 fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
-  let camera_store = @sprite.get_camera_store(world)
-  let target_store = @sprite.get_render_target_store(world)
-  let default_ui_camera_store = get_is_default_ui_camera_store(world)
   let marked : Array[@core.Entity] = []
-  default_ui_camera_store.for_each(fn(entity, _marker) {
-    if camera_store.contains(entity) {
+  world.for_each_component(ecs_key_is_default_ui_camera, fn(entity, _marker) {
+    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
       marked.push(entity)
     }
   })
@@ -1700,8 +1692,9 @@ fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
 
   let mut best_entity : @core.Entity? = None
   let mut best_order = 0
-  camera_store.for_each(fn(entity, camera) {
-    let target = match target_store.get(entity) {
+  world.for_each_component(@sprite.ecs_key_camera, fn(entity, camera) {
+    let target = match
+      (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) {
       Some(value) => value
       None => @sprite.RenderTarget::Screen
     }
@@ -1729,17 +1722,16 @@ fn ui_camera_transform_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> @transform.Transform {
-  let projection_store = @sprite.get_projection_store(world)
-  match projection_store.get(camera_entity) {
+  match (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
     Some(@sprite.Orthographic(_)) => ()
     _ => return @transform.Transform::identity()
   }
-  let transform_store = @transform.get_transform_store(world)
-  let global_store = @transform.get_global_transform_store(world)
-  match global_store.get(camera_entity) {
+  match
+    (try! world.get_by_key(camera_entity, @transform.ecs_key_global_transform)) {
     Some(global_transform) => global_transform.to_transform_approx()
     None =>
-      match transform_store.get(camera_entity) {
+      match
+        (try! world.get_by_key(camera_entity, @transform.ecs_key_transform)) {
         Some(transform) => transform
         None => @transform.Transform::identity()
       }
@@ -1751,8 +1743,7 @@ fn ui_camera_scale_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Float {
-  let projection_store = @sprite.get_projection_store(world)
-  match projection_store.get(camera_entity) {
+  match (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
     Some(@sprite.Orthographic(projection)) =>
       safe_camera_scale(projection.scale)
     _ => 1.0F
@@ -1780,22 +1771,21 @@ fn ui_compute_render_target_info(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> ComputedUiRenderTargetInfo {
-  let camera_store = @sprite.get_camera_store(world)
-  let target_store = @sprite.get_render_target_store(world)
   let ui_scale = ensure_ui_scale_resource(world)
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
   } else {
     ui_scale.value
   }
-  match camera_store.get(camera_entity) {
+  match (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera)) {
     Some(camera) => {
       let (target_physical_size, target_scale_factor) = match
         camera.computed.target_info {
         Some(target_info) =>
           (target_info.physical_size, target_info.scale_factor)
         None => {
-          let target = match target_store.get(camera_entity) {
+          let target = match
+            (try! world.get_by_key(camera_entity, @sprite.ecs_key_render_target)) {
             Some(value) => value
             None => @sprite.RenderTarget::Screen
           }
@@ -1872,12 +1862,11 @@ fn ui_resolved_camera_state_from_computed(
   camera_entity : @core.Entity?,
   render_target_info : ComputedUiRenderTargetInfo,
 ) -> UiResolvedCameraState {
-  let camera_store = @sprite.get_camera_store(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
   let mut camera_transform = @transform.Transform::identity()
   let mut camera_scale = 1.0F
   if camera_entity is Some(entity) {
-    if camera_store.get(entity) is Some(camera) {
+    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
       viewport_origin = ui_camera_viewport_origin(camera)
     }
     camera_transform = ui_camera_transform_for_entity(world, entity)
@@ -1898,16 +1887,14 @@ fn ui_root_resolved_camera_state(
   root : @core.Entity,
   legacy_ctx : UiContext?,
 ) -> UiResolvedCameraState {
-  let computed_camera_store = get_computed_ui_target_camera_store(world)
-  let render_target_info_store = get_computed_ui_render_target_info_store(world)
-  match render_target_info_store.get(root) {
+  match (try! world.get_by_key(root, ecs_key_computed_ui_render_target_info)) {
     Some(render_target_info) =>
       ui_resolved_camera_state_from_computed(
         world,
-        computed_camera_store
-        .get(root)
-        .map(fn(value) { value.get() })
-        .unwrap_or(None),
+        match (try! world.get_by_key(root, ecs_key_computed_ui_target_camera)) {
+          Some(value) => value.get()
+          None => None
+        },
         render_target_info,
       )
     None =>
@@ -1924,16 +1911,16 @@ fn ui_entity_resolved_camera_state(
   entity : @core.Entity,
   legacy_ctx : UiContext?,
 ) -> UiResolvedCameraState {
-  let computed_camera_store = get_computed_ui_target_camera_store(world)
-  let render_target_info_store = get_computed_ui_render_target_info_store(world)
-  match render_target_info_store.get(entity) {
+  match
+    (try! world.get_by_key(entity, ecs_key_computed_ui_render_target_info)) {
     Some(render_target_info) =>
       ui_resolved_camera_state_from_computed(
         world,
-        computed_camera_store
-        .get(entity)
-        .map(fn(value) { value.get() })
-        .unwrap_or(None),
+        match
+          (try! world.get_by_key(entity, ecs_key_computed_ui_target_camera)) {
+          Some(value) => value.get()
+          None => None
+        },
         render_target_info,
       )
     None =>
@@ -1951,12 +1938,14 @@ fn ui_propagate_target_camera_subtree(
   computed_camera : ComputedUiTargetCamera,
   render_target_info : ComputedUiRenderTargetInfo,
 ) -> Unit {
-  let computed_camera_store = get_computed_ui_target_camera_store(world)
-  let render_target_info_store = get_computed_ui_render_target_info_store(world)
-  let children_store = @hierarchy.get_children_store(world)
-  computed_camera_store.upsert(entity, computed_camera)
-  render_target_info_store.upsert(entity, render_target_info)
-  if children_store.get(entity) is Some(children) {
+  try! world.set_by_key(
+    entity, ecs_key_computed_ui_target_camera, computed_camera,
+  )
+  try! world.set_by_key(
+    entity, ecs_key_computed_ui_render_target_info, render_target_info,
+  )
+  if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+    is Some(children) {
     for child in children.entities {
       ui_propagate_target_camera_subtree(
         world, child, computed_camera, render_target_info,
@@ -1967,13 +1956,11 @@ fn ui_propagate_target_camera_subtree(
 
 ///|
 pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
-  let node_store = get_node_store(world)
-  let parent_store = @hierarchy.get_parent_store(world)
-  let roots = ui_collect_root_entities(world, node_store, parent_store)
-  let target_camera_store = get_ui_target_camera_store(world)
+  let roots = ui_collect_root_entities(world)
   let default_camera_entity = ui_select_default_camera_entity(world)
   for root in roots {
-    let camera_entity = match target_camera_store.get(root) {
+    let camera_entity = match
+      (try! world.get_by_key(root, ecs_key_ui_target_camera)) {
       Some(target_camera) => Some(target_camera.entity())
       None => default_camera_entity
     }
@@ -2002,7 +1989,6 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   // Legacy singleton UI context remains tied to the default UI camera so
   // existing consumers keep working while per-root routing migrates to
   // `UiTargetCamera`.
-  let camera_store = @sprite.get_camera_store(world)
   let best_entity = ui_select_default_camera_entity(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
   let mut viewport_size = @math.Vec2::new(
@@ -2014,7 +2000,8 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   if best_entity is Some(cam_entity) {
     camera_transform = ui_camera_transform_for_entity(world, cam_entity)
     camera_scale = ui_camera_scale_for_entity(world, cam_entity)
-    if camera_store.get(cam_entity) is Some(camera) {
+    if (try! world.get_by_key(cam_entity, @sprite.ecs_key_camera))
+      is Some(camera) {
       viewport_origin = ui_camera_viewport_origin(camera)
       if camera.logical_viewport_size() is Some(size) {
         viewport_size = size
@@ -2059,17 +2046,28 @@ fn ensure_visibility_defaults(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  let vis_store = @visibility.get_visibility_store(world)
-  if !vis_store.contains(entity) {
-    vis_store.insert(entity, @visibility.Visibility::Inherited)
+  if !(try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
+    try! world.set_by_key(
+      entity,
+      @visibility.ecs_key_visibility,
+      @visibility.Visibility::Inherited,
+    )
   }
-  let inherited_store = @visibility.get_inherited_visibility_store(world)
-  if !inherited_store.contains(entity) {
-    inherited_store.insert(entity, @visibility.InheritedVisibility::new(true))
+  if !(try! world.contains_by_key(
+      entity, @visibility.ecs_key_inherited_visibility,
+    )) {
+    try! world.set_by_key(
+      entity,
+      @visibility.ecs_key_inherited_visibility,
+      @visibility.InheritedVisibility::new(true),
+    )
   }
-  let view_store = @visibility.get_view_visibility_store(world)
-  if !view_store.contains(entity) {
-    view_store.insert(entity, @visibility.ViewVisibility::new(true))
+  if !(try! world.contains_by_key(entity, @visibility.ecs_key_view_visibility)) {
+    try! world.set_by_key(
+      entity,
+      @visibility.ecs_key_view_visibility,
+      @visibility.ViewVisibility::new(true),
+    )
   }
 }
 
@@ -2078,12 +2076,11 @@ fn ensure_layers_default(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @sprite.RenderLayers {
-  let store = @sprite.get_render_layers_store(world)
-  match store.get(entity) {
+  match (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
     Some(v) => v
     None => {
       let layers = @sprite.RenderLayers::default()
-      store.insert(entity, layers)
+      try! world.set_by_key(entity, @sprite.ecs_key_render_layers, layers)
       layers
     }
   }
@@ -2146,14 +2143,7 @@ fn image_measure_size_px(
 pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   guard res.get() is Some(_) else { return }
-  let render_target_info_store = get_computed_ui_render_target_info_store(world)
   let ui_scale = ensure_ui_scale_resource(world)
-  let node_store = get_node_store(world)
-  let text_store = world.component(@text.ecs_key_text)
-  let ui_image_store = get_ui_image_store(world)
-  let image_node_store = get_image_node_store(world)
-  let image_size_store = get_image_node_size_store(world)
-  let content_size_store = get_content_size_store(world)
   let sf = safe_scale_factor(@window.window_scale_factor())
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
@@ -2190,21 +2180,22 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
     if size_px.x <= 0.0F || size_px.y <= 0.0F {
       return
     }
-    let inv_px_scale = match render_target_info_store.get(entity) {
+    let inv_px_scale = match
+      (try! world.get_by_key(entity, ecs_key_computed_ui_render_target_info)) {
       Some(render_target_info) => 1.0F / render_target_info.scale_factor()
       None => legacy_inv_px_scale
     }
     let next = ContentSize::new(
       @math.Vec2::new(size_px.x * inv_px_scale, size_px.y * inv_px_scale),
     )
-    match content_size_store.get(entity) {
+    match (try! world.get_by_key(entity, ecs_key_content_size)) {
       Some(prev) =>
         if prev.size.x == next.size.x && prev.size.y == next.size.y {
           ()
         } else {
-          content_size_store.set(entity, next) |> ignore
+          try! (world.replace(entity, ecs_key_content_size, next) |> ignore)
         }
-      None => content_size_store.insert(entity, next)
+      None => try! world.set_by_key(entity, ecs_key_content_size, next)
     }
   }
 
@@ -2213,20 +2204,21 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
     size_px : @math.Vec2,
   ) -> Unit {
     let next = ImageNodeSize::{ size: uvec2_from_size_px(size_px) }
-    match image_size_store.get(entity) {
+    match (try! world.get_by_key(entity, ecs_key_image_node_size)) {
       Some(prev) =>
         if prev.size.x == next.size.x && prev.size.y == next.size.y {
           ()
         } else {
-          image_size_store.set(entity, next) |> ignore
+          try! (world.replace(entity, ecs_key_image_node_size, next) |> ignore)
         }
-      None => image_size_store.insert(entity, next)
+      None => try! world.set_by_key(entity, ecs_key_image_node_size, next)
     }
   }
 
   // ImageNode (Bevy-aligned).
-  image_node_store.for_each(fn(entity, image_node) {
-    if !node_store.contains(entity) || text_store.contains(entity) {
+  world.for_each_component(ecs_key_image_node, fn(entity, image_node) {
+    if !((try! world.contains_by_key(entity, ecs_key_node)) ||
+      (try! world.contains_by_key(entity, @text.ecs_key_text))) {
       return
     }
     let is_auto = match image_node.image_mode {
@@ -2234,8 +2226,8 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
       _ => false
     }
     if image_node.image.id() == transparent_id || !is_auto {
-      if content_size_store.contains(entity) {
-        content_size_store.remove(entity) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_content_size)) {
+        try! (world.take(entity, ecs_key_content_size) |> ignore)
       }
       return
     }
@@ -2251,16 +2243,17 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   })
 
   // Legacy UiImage compatibility: treat as Auto-sized content when ImageNode is absent.
-  ui_image_store.for_each(fn(entity, ui_image) {
-    if image_node_store.contains(entity) {
+  world.for_each_component(ecs_key_ui_image, fn(entity, ui_image) {
+    if (try! world.contains_by_key(entity, ecs_key_image_node)) {
       return
     }
-    if !node_store.contains(entity) || text_store.contains(entity) {
+    if !((try! world.contains_by_key(entity, ecs_key_node)) ||
+      (try! world.contains_by_key(entity, @text.ecs_key_text))) {
       return
     }
     if ui_image.image.id() == transparent_id {
-      if content_size_store.contains(entity) {
-        content_size_store.remove(entity) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_content_size)) {
+        try! (world.take(entity, ecs_key_content_size) |> ignore)
       }
       return
     }
@@ -2279,20 +2272,9 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
 pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   let legacy_ctx = res.get()
-  let root_store = get_ui_root_store(world)
-  let node_store = get_node_store(world)
-  let content_size_store = get_content_size_store(world)
-  let scroll_store = get_scroll_position_store(world)
-  let layout_store = get_ui_layout_store(world)
-  let children_store = @hierarchy.get_children_store(world)
-  let parent_store = @hierarchy.get_parent_store(world)
-  let sprite_store = @sprite.get_sprite_store(world)
-  let img_store = get_ui_image_store(world)
-  let text_store = world.component(@text.ecs_key_text)
-  let transform_store = @transform.get_transform_store(world)
-  let roots = ui_collect_root_entities(world, node_store, parent_store)
+  let roots = ui_collect_root_entities(world)
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
-    match content_size_store.get(entity) {
+    match (try! world.get_by_key(entity, ecs_key_content_size)) {
       Some(v) => v.size
       None =>
         match @text.ui_text_ecs_handle(world, entity) {
@@ -2653,7 +2635,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     entity : @core.Entity,
     is_root : Bool,
   ) -> @moon_taffy.Style {
-    let node = match node_store.get(entity) {
+    let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
       None => Node::default()
     }
@@ -2738,7 +2720,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn layout_root(root : @core.Entity) -> Unit {
     let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
     root_viewport_size.val = root_ctx.viewport_size
-    let explicit_root = root_store.contains(root)
+    let explicit_root = try! world.contains_by_key(root, ecs_key_ui_root)
     let root_rect = @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
@@ -2748,7 +2730,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     fn build(entity : @core.Entity, is_root : Bool) -> Int {
       let style = style_for_entity(entity, is_root)
       let child_ids : Array[Int] = []
-      if children_store.get(entity) is Some(children) {
+      if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+        is Some(children) {
         for child in children.entities {
           child_ids.push(build(child, false))
         }
@@ -2758,7 +2741,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       } else {
         taffy.new_with_children(style, child_ids)
       }
-      if content_size_store.contains(entity) || text_store.contains(entity) {
+      if (try! world.contains_by_key(entity, ecs_key_content_size)) ||
+        (try! world.contains_by_key(entity, @text.ecs_key_text)) {
         try! taffy.set_node_context(id, entity)
       }
       entity_to_node.set(entity_key(entity), id)
@@ -2915,25 +2899,27 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let max = @math.Vec2::new(min.x + size.x, min.y + size.y)
       let rect = @math.Rect::new(min, max)
       let layout = UiLayout::new(rect)
-      if layout_store.contains(entity) {
-        layout_store.set(entity, layout) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_ui_layout)) {
+        try! (world.replace(entity, ecs_key_ui_layout, layout) |> ignore)
       } else {
-        layout_store.insert(entity, layout)
+        try! world.set_by_key(entity, ecs_key_ui_layout, layout)
       }
 
       // Update render2d / transform for UI nodes (Node component required).
-      if node_store.contains(entity) {
+      if (try! world.contains_by_key(entity, ecs_key_node)) {
         let transform = ui_world_transform(root_ctx, rect, 0.0F)
-        if transform_store.contains(entity) {
-          transform_store.set(entity, transform) |> ignore
+        if (try! world.contains_by_key(entity, @transform.ecs_key_transform)) {
+          try! (world.replace(entity, @transform.ecs_key_transform, transform)
+          |> ignore)
         } else {
-          transform_store.insert(entity, transform)
+          try! world.set_by_key(entity, @transform.ecs_key_transform, transform)
         }
         let layers = ensure_layers_default(world, entity)
         ensure_visibility_defaults(world, entity)
-        if img_store.contains(entity) && sprite_store.contains(entity) {
+        if (try! world.contains_by_key(entity, ecs_key_ui_image)) &&
+          (try! world.contains_by_key(entity, @sprite.ecs_key_sprite)) {
           // UiImage rendering is handled by the UI pipeline, not the Sprite pipeline.
-          sprite_store.remove(entity) |> ignore
+          try! (world.take(entity, @sprite.ecs_key_sprite) |> ignore)
         }
 
         // Sync text handles (state-based text pipeline) for UI text nodes.
@@ -2943,7 +2929,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
             text_handle,
             Some(root_ctx.viewport_size),
           )
-          let node = match node_store.get(entity) {
+          let node = match (try! world.get_by_key(entity, ecs_key_node)) {
             Some(v) => v
             None => Node::default()
           }
@@ -3000,11 +2986,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           @text.text_set_layers(text_handle, layers)
         }
       }
-      let scroll_raw = match scroll_store.get(entity) {
+      let scroll_raw = match
+        (try! world.get_by_key(entity, ecs_key_scroll_position)) {
         Some(v) => v
         None => ScrollPosition::default()
       }
-      let scroll = match node_store.get(entity) {
+      let scroll = match (try! world.get_by_key(entity, ecs_key_node)) {
         Some(node) => {
           let x = if node.overflow.x == OverflowAxis::Scroll &&
             scroll_raw.offset_x > 0.0F {
@@ -3032,7 +3019,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           rect.max.y - scroll.offset_y,
         ),
       )
-      if children_store.get(entity) is Some(children) {
+      if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+        is Some(children) {
         for child in children.entities {
           apply_layout(child, child_rect)
         }
@@ -3066,19 +3054,19 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   if delta.x == 0.0F && delta.y == 0.0F {
     return
   }
-  let node_store = get_node_store(world)
-  let layout_store = get_ui_layout_store(world)
-  let scroll_store = get_scroll_position_store(world)
-  let children_store = @hierarchy.get_children_store(world)
   let mut target : @core.Entity? = None
   for i in 0..<stack0.uinodes.length() {
     let idx = stack0.uinodes.length() - 1 - i
     let entity = stack0.uinodes[idx]
-    if !scroll_store.contains(entity) {
+    if !(try! world.contains_by_key(entity, ecs_key_scroll_position)) {
       continue
     }
-    guard layout_store.get(entity) is Some(layout) else { continue }
-    guard node_store.get(entity) is Some(node) else { continue }
+    guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
+      continue
+    }
+    guard (try! world.get_by_key(entity, ecs_key_node)) is Some(node) else {
+      continue
+    }
     if !layout.rect.contains(pointer) {
       continue
     }
@@ -3091,11 +3079,13 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
     break
   }
   guard target is Some(target_e) else { return }
-  let prev = match scroll_store.get(target_e) {
+  let prev = match (try! world.get_by_key(target_e, ecs_key_scroll_position)) {
     Some(v) => v
     None => ScrollPosition::default()
   }
-  guard node_store.get(target_e) is Some(target_node) else { return }
+  guard (try! world.get_by_key(target_e, ecs_key_node)) is Some(target_node) else {
+    return
+  }
   let scrolls_x = target_node.overflow.x == OverflowAxis::Scroll
   let scrolls_y = target_node.overflow.y == OverflowAxis::Scroll
   let abs_dx = if delta.x < 0.0F { 0.0F - delta.x } else { delta.x }
@@ -3113,15 +3103,17 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   }
   let mut max_offset_x = 0.0F
   let mut max_offset_y = 0.0F
-  if layout_store.get(target_e) is Some(target_layout) &&
-    children_store.get(target_e) is Some(children) {
+  if (try! world.get_by_key(target_e, ecs_key_ui_layout)) is Some(target_layout) &&
+    (try! world.get_by_key(target_e, @hierarchy.ecs_key_children))
+    is Some(children) {
     let target_size = target_layout.rect.size()
     if target_size.x > 0.0F && target_size.y > 0.0F {
       let mut content_min : @math.Vec2? = None
       let mut content_max : @math.Vec2? = None
       for i in 0..<children.entities.length() {
         let child = children.entities[i]
-        if layout_store.get(child) is Some(child_layout) {
+        if (try! world.get_by_key(child, ecs_key_ui_layout))
+          is Some(child_layout) {
           let unscrolled_min = @math.Vec2::new(
             child_layout.rect.min.x + prev.offset_x,
             child_layout.rect.min.y + prev.offset_y,
@@ -3208,10 +3200,10 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
     next_y = max_offset_y
   }
   let next = ScrollPosition::{ offset_x: next_x, offset_y: next_y }
-  if scroll_store.contains(target_e) {
-    scroll_store.set(target_e, next) |> ignore
+  if (try! world.contains_by_key(target_e, ecs_key_scroll_position)) {
+    try! (world.replace(target_e, ecs_key_scroll_position, next) |> ignore)
   } else {
-    scroll_store.insert(target_e, next)
+    try! world.set_by_key(target_e, ecs_key_scroll_position, next)
   }
 }
 
@@ -3220,13 +3212,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   let legacy_ctx = res.get()
-  let node_store = get_node_store(world)
-  let layout_store = get_ui_layout_store(world)
-  let clip_store = get_calculated_clip_store(world)
-  let scissor_store = @sprite.get_scissor_rect_store(world)
-  let children_store = @hierarchy.get_children_store(world)
-  let parent_store = @hierarchy.get_parent_store(world)
-  let roots = ui_collect_root_entities(world, node_store, parent_store)
+  let roots = ui_collect_root_entities(world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
       0.0F
@@ -3319,20 +3305,21 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     // Default to viewport clip if this node does not have layout yet.
     let self_clip = inherited_clip
     let calc = CalculatedClip::{ clip: self_clip }
-    if clip_store.contains(entity) {
-      clip_store.set(entity, calc) |> ignore
+    if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
+      try! (world.replace(entity, ecs_key_calculated_clip, calc) |> ignore)
     } else {
-      clip_store.insert(entity, calc)
+      try! world.set_by_key(entity, ecs_key_calculated_clip, calc)
     }
     if clipped_by_parent && !rect_is_full_viewport(self_clip, viewport_rect) {
       let scissor = @sprite.ScissorRect::new(self_clip)
-      if scissor_store.contains(entity) {
-        scissor_store.set(entity, scissor) |> ignore
+      if (try! world.contains_by_key(entity, @sprite.ecs_key_scissor_rect)) {
+        try! (world.replace(entity, @sprite.ecs_key_scissor_rect, scissor)
+        |> ignore)
       } else {
-        scissor_store.insert(entity, scissor)
+        try! world.set_by_key(entity, @sprite.ecs_key_scissor_rect, scissor)
       }
-    } else if scissor_store.contains(entity) {
-      scissor_store.remove(entity) |> ignore
+    } else if (try! world.contains_by_key(entity, @sprite.ecs_key_scissor_rect)) {
+      try! (world.take(entity, @sprite.ecs_key_scissor_rect) |> ignore)
     }
     if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
       let text_scissor = if clipped_by_parent &&
@@ -3343,13 +3330,13 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
       }
       @text.text_set_ui_scissor(text_handle, text_scissor)
     }
-    let node = match node_store.get(entity) {
+    let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
       None => Node::default()
     }
     let mut child_clip = self_clip
     let mut child_clipped = clipped_by_parent
-    if layout_store.get(entity) is Some(layout) {
+    if (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) {
       let overflow_clips = node.overflow.x != OverflowAxis::Visible ||
         node.overflow.y != OverflowAxis::Visible
       if overflow_clips {
@@ -3403,7 +3390,8 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
         child_clipped = true
       }
     }
-    if children_store.get(entity) is Some(children) {
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
       for child in children.entities {
         walk(child, child_clip, child_clipped, viewport_rect, viewport_size)
       }
@@ -3434,13 +3422,6 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let res = get_ui_stack_resource(world)
   let stack = Ref::new(res.get().unwrap_or(UiStack::default()))
   UiStack::clear(stack)
-  let root_store = get_ui_root_store(world)
-  let layout_store = get_ui_layout_store(world)
-  let z_store = get_z_index_store(world)
-  let gz_store = get_global_z_index_store(world)
-  let children_store = @hierarchy.get_children_store(world)
-  let parent_store = @hierarchy.get_parent_store(world)
-  let transform_store = @transform.get_transform_store(world)
   fn cmp_int(a : Int, b : Int) -> Int {
     if a < b {
       -1
@@ -3451,21 +3432,15 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     }
   }
 
-  fn local_z(
-    z_store : @ecs.ComponentAccess[ZIndex],
-    entity : @core.Entity,
-  ) -> Int {
-    match z_store.get(entity) {
+  fn local_z(entity : @core.Entity) -> Int {
+    match (try! world.get_by_key(entity, ecs_key_z_index)) {
       Some(v) => v.value
       None => 0
     }
   }
 
-  fn global_z(
-    gz_store : @ecs.ComponentAccess[GlobalZIndex],
-    entity : @core.Entity,
-  ) -> Int {
-    match gz_store.get(entity) {
+  fn global_z(entity : @core.Entity) -> Int {
+    match (try! world.get_by_key(entity, ecs_key_global_z_index)) {
       Some(v) => v.value
       None => 0
     }
@@ -3476,8 +3451,8 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
 
   // Root candidates: unparented UI layout nodes.
   let mut root_tie = 0
-  layout_store.for_each(fn(entity, _layout) {
-    if parent_store.contains(entity) {
+  world.for_each_component(ecs_key_ui_layout, fn(entity, _layout) {
+    if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
       return
     }
     let key = ui_entity_key(entity)
@@ -3485,37 +3460,35 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       return
     }
     visited.set(key, true)
-    roots.push(
-      (entity, global_z(gz_store, entity), local_z(z_store, entity), root_tie),
-    )
+    roots.push((entity, global_z(entity), local_z(entity), root_tie))
     root_tie = root_tie + 1
   })
 
   // Compat roots: explicit UiRoot markers.
-  root_store.for_each(fn(entity, _marker) {
-    guard layout_store.contains(entity) else { return }
+  world.for_each_component(ecs_key_ui_root, fn(entity, _marker) {
+    guard (try! world.contains_by_key(entity, ecs_key_ui_layout)) else {
+      return
+    }
     let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
     }
     visited.set(key, true)
-    roots.push(
-      (entity, global_z(gz_store, entity), local_z(z_store, entity), root_tie),
-    )
+    roots.push((entity, global_z(entity), local_z(entity), root_tie))
     root_tie = root_tie + 1
   })
 
   // Global-z roots (even if parented).
-  gz_store.for_each(fn(entity, _gz) {
-    guard layout_store.contains(entity) else { return }
+  world.for_each_component(ecs_key_global_z_index, fn(entity, _gz) {
+    guard (try! world.contains_by_key(entity, ecs_key_ui_layout)) else {
+      return
+    }
     let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
     }
     visited.set(key, true)
-    roots.push(
-      (entity, global_z(gz_store, entity), local_z(z_store, entity), root_tie),
-    )
+    roots.push((entity, global_z(entity), local_z(entity), root_tie))
     root_tie = root_tie + 1
   })
 
@@ -3531,28 +3504,26 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     }
     cmp_int(a.3, b.3)
   })
-  fn visit(
-    entity : @core.Entity,
-    layout_store : @ecs.ComponentAccess[UiLayout],
-    z_store : @ecs.ComponentAccess[ZIndex],
-    gz_store : @ecs.ComponentAccess[GlobalZIndex],
-    children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    stack : Ref[UiStack],
-  ) -> Unit {
-    guard layout_store.contains(entity) else { return }
+  fn visit(entity : @core.Entity, stack : Ref[UiStack]) -> Unit {
+    guard (try! world.contains_by_key(entity, ecs_key_ui_layout)) else {
+      return
+    }
     stack.val.uinodes.push(entity)
-    guard children_store.get(entity) is Some(children) else { return }
+    guard (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) else {
+      return
+    }
     let buf : Array[(@core.Entity, Int, Int)] = []
     for i in 0..<children.entities.length() {
       let child = children.entities[i]
-      if !layout_store.contains(child) {
+      if !(try! world.contains_by_key(child, ecs_key_ui_layout)) {
         continue
       }
       // Avoid revisiting nodes that will be treated as separate roots.
-      if gz_store.contains(child) {
+      if (try! world.contains_by_key(child, ecs_key_global_z_index)) {
         continue
       }
-      buf.push((child, local_z(z_store, child), i))
+      buf.push((child, local_z(child), i))
     }
     buf.sort_by(fn(a, b) {
       let cz = cmp_int(a.1, b.1)
@@ -3562,12 +3533,12 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       cmp_int(a.2, b.2)
     })
     for item in buf {
-      visit(item.0, layout_store, z_store, gz_store, children_store, stack)
+      visit(item.0, stack)
     }
   }
 
   for root in roots {
-    visit(root.0, layout_store, z_store, gz_store, children_store, stack)
+    visit(root.0, stack)
   }
 
   // Convert the Bevy-style UiStack ordering into a stable render z for the
@@ -3577,7 +3548,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     let entity = stack.val.uinodes[i]
     let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
     let z = z_base + UI_STACK_Z_CONTENT
-    match transform_store.get(entity) {
+    match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
       Some(t0) => {
         let pos = @math.Vec2::new(t0.translation.x, t0.translation.y)
         let scale = @math.Vec2::new(t0.scale.x, t0.scale.y)
@@ -3587,10 +3558,10 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
           scale,
           z~,
         )
-        if transform_store.contains(entity) {
-          transform_store.set(entity, t) |> ignore
+        if (try! world.contains_by_key(entity, @transform.ecs_key_transform)) {
+          try! (world.replace(entity, @transform.ecs_key_transform, t) |> ignore)
         } else {
-          transform_store.insert(entity, t)
+          try! world.set_by_key(entity, @transform.ecs_key_transform, t)
         }
       }
       None => ()
@@ -3633,18 +3604,6 @@ pub fn ui_build_a11y_tree_update(
     update.set_tree(@moon_accesskit.Tree::new(root))
     update
   }
-  let layout_store = get_ui_layout_store(world)
-  let button_store = get_button_store(world)
-  let label_widget_store = get_label_store(world)
-  let image_node_store = get_image_node_store(world)
-  let label_store = get_accessibility_label_store(world)
-  let text_store = world.component(@text.ecs_key_text)
-  let text_span_store = world.component(@text.ecs_key_text_span)
-  let scroll_store = get_scroll_position_store(world)
-  let parent_store = @hierarchy.get_parent_store(world)
-  let children_store = @hierarchy.get_children_store(world)
-  let clip_store = get_calculated_clip_store(world)
-  let view_visibility_store = @visibility.get_view_visibility_store(world)
   let a11y_state_res = @a11y.get_a11y_state_resource(world)
 
   // Build the set of required nodes (focusables + their ancestor chain), so
@@ -3656,13 +3615,11 @@ pub fn ui_build_a11y_tree_update(
 
   fn mark_required(
     required : @hashmap.HashMap[(Int, Int), Bool],
-    parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
-    layout_store : @ecs.ComponentAccess[UiLayout],
     entity : @core.Entity,
   ) -> Unit {
     let mut cur = Some(entity)
     while cur is Some(e) {
-      if !layout_store.contains(e) {
+      if !(try! world.contains_by_key(e, ecs_key_ui_layout)) {
         break
       }
       let k = key(e)
@@ -3670,7 +3627,7 @@ pub fn ui_build_a11y_tree_update(
         break
       }
       required.set(k, true)
-      cur = match parent_store.get(e) {
+      cur = match (try! world.get_by_key(e, @hierarchy.ecs_key_parent)) {
         Some(p) => Some(p.entity)
         None => None
       }
@@ -3678,14 +3635,14 @@ pub fn ui_build_a11y_tree_update(
   }
 
   for entity in stack0.uinodes {
-    if layout_store.get(entity) is None {
+    if (try! world.get_by_key(entity, ecs_key_ui_layout)) is None {
       continue
     }
-    if button_store.contains(entity) ||
-      label_widget_store.contains(entity) ||
-      image_node_store.contains(entity) ||
-      label_store.contains(entity) {
-      mark_required(required, parent_store, layout_store, entity)
+    if (try! world.contains_by_key(entity, ecs_key_button)) ||
+      (try! world.contains_by_key(entity, ecs_key_label)) ||
+      (try! world.contains_by_key(entity, ecs_key_image_node)) ||
+      (try! world.contains_by_key(entity, ecs_key_accessibility_label)) {
+      mark_required(required, entity)
     }
   }
   fn push_nonempty(parts : Ref[Array[String]], text : String) -> Unit {
@@ -3697,26 +3654,21 @@ pub fn ui_build_a11y_tree_update(
 
   fn collect_subtree_text(
     entity : @core.Entity,
-    children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    text_store : @ecs.ComponentAccess[@text.Text],
-    text_span_store : @ecs.ComponentAccess[@text.TextSpan],
     out : Ref[Array[String]],
   ) -> Unit {
-    if text_store.get(entity) is Some(text_root) {
+    if (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_root) {
       push_nonempty(out, text_root.content)
     }
-    if text_span_store.get(entity) is Some(text_span) {
+    if (try! world.get_by_key(entity, @text.ecs_key_text_span))
+      is Some(text_span) {
       push_nonempty(out, text_span.content)
     }
-    guard children_store.get(entity) is Some(children) else { return }
+    guard (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) else {
+      return
+    }
     for i in 0..<children.entities.length() {
-      collect_subtree_text(
-        children.entities[i],
-        children_store,
-        text_store,
-        text_span_store,
-        out,
-      )
+      collect_subtree_text(children.entities[i], out)
     }
   }
 
@@ -3734,21 +3686,17 @@ pub fn ui_build_a11y_tree_update(
     sb.to_string()
   }
 
-  fn calc_label_from_children(
-    entity : @core.Entity,
-    children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    text_store : @ecs.ComponentAccess[@text.Text],
-    text_span_store : @ecs.ComponentAccess[@text.TextSpan],
-  ) -> String? {
-    guard children_store.get(entity) is Some(children) else { return None }
+  fn calc_label_from_children(entity : @core.Entity) -> String? {
+    guard (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) else {
+      return None
+    }
     let mut name : String? = None
     for i in 0..<children.entities.length() {
       let child = children.entities[i]
       let parts : Array[String] = []
       let out = Ref::new(parts)
-      collect_subtree_text(
-        child, children_store, text_store, text_span_store, out,
-      )
+      collect_subtree_text(child, out)
       if out.val.length() > 0 {
         name = Some(join_with_space(out.val))
       }
@@ -3756,17 +3704,10 @@ pub fn ui_build_a11y_tree_update(
     name
   }
 
-  fn calc_value_from_self(
-    entity : @core.Entity,
-    children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    text_store : @ecs.ComponentAccess[@text.Text],
-    text_span_store : @ecs.ComponentAccess[@text.TextSpan],
-  ) -> String {
+  fn calc_value_from_self(entity : @core.Entity) -> String {
     let parts : Array[String] = []
     let out = Ref::new(parts)
-    collect_subtree_text(
-      entity, children_store, text_store, text_span_store, out,
-    )
+    collect_subtree_text(entity, out)
     join_with_space(out.val)
   }
 
@@ -3801,7 +3742,9 @@ pub fn ui_build_a11y_tree_update(
     if !required.contains(key(entity)) {
       continue
     }
-    guard layout_store.get(entity) is Some(layout) else { continue }
+    guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
+      continue
+    }
     let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
     let size = layout.rect.size()
     let x0 = (entity_ctx.viewport_origin.x + layout.rect.min.x).to_double()
@@ -3838,9 +3781,11 @@ pub fn ui_build_a11y_tree_update(
     if !required.contains(key(entity)) {
       continue
     }
-    let parent_required = match parent_store.get(entity) {
+    let parent_required = match
+      (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
       Some(p) =>
-        required.contains(key(p.entity)) && layout_store.contains(p.entity)
+        required.contains(key(p.entity)) &&
+        (try! world.contains_by_key(p.entity, ecs_key_ui_layout))
       None => false
     }
     if !parent_required {
@@ -3852,22 +3797,25 @@ pub fn ui_build_a11y_tree_update(
     if !required.contains(key(entity)) {
       continue
     }
-    guard layout_store.get(entity) is Some(layout) else { continue }
+    guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
+      continue
+    }
     let node_id = @a11y.node_id_for_entity(entity)
-    let explicit_label = match label_store.get(entity) {
+    let explicit_label = match
+      (try! world.get_by_key(entity, ecs_key_accessibility_label)) {
       Some(v) => v.text
       None => ""
     }
-    let is_editable = label_widget_store.contains(entity) &&
-      text_store.contains(entity) &&
+    let is_editable = (try! world.contains_by_key(entity, ecs_key_label)) &&
+      (try! world.contains_by_key(entity, @text.ecs_key_text)) &&
       explicit_label != ""
-    let role = if button_store.contains(entity) {
+    let role = if (try! world.contains_by_key(entity, ecs_key_button)) {
       @moon_accesskit.Role::Button
     } else if is_editable {
       @moon_accesskit.Role::TextInput
-    } else if label_widget_store.contains(entity) {
+    } else if (try! world.contains_by_key(entity, ecs_key_label)) {
       @moon_accesskit.Role::Label
-    } else if image_node_store.contains(entity) {
+    } else if (try! world.contains_by_key(entity, ecs_key_image_node)) {
       @moon_accesskit.Role::Image
     } else {
       @moon_accesskit.Role::GenericContainer
@@ -3875,7 +3823,8 @@ pub fn ui_build_a11y_tree_update(
     let node = @moon_accesskit.Node::new(role)
 
     // Children in hierarchy order (filtered to required set).
-    if children_store.get(entity) is Some(children) {
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
       for i in 0..<children.entities.length() {
         let child = children.entities[i]
         if required.contains(key(child)) {
@@ -3891,10 +3840,10 @@ pub fn ui_build_a11y_tree_update(
     let x1 = (entity_ctx.viewport_origin.x + rect.min.x + size.x).to_double()
     let y1 = (entity_ctx.viewport_origin.y + rect.min.y + size.y).to_double()
     node.set_bounds(@moon_accesskit.Rect::new(x0, y0, x1, y1))
-    if clip_store.contains(entity) {
+    if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
       node.set_clips_children()
     }
-    match view_visibility_store.get(entity) {
+    match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
       Some(vv) => if !vv.is_visible() { node.set_hidden() }
       None => ()
     }
@@ -3903,7 +3852,7 @@ pub fn ui_build_a11y_tree_update(
       node.add_action(@moon_accesskit.Action::Focus)
       node.add_action(@moon_accesskit.Action::Click)
     }
-    if scroll_store.contains(entity) {
+    if (try! world.contains_by_key(entity, ecs_key_scroll_position)) {
       node.add_action(@moon_accesskit.Action::ScrollUp)
       node.add_action(@moon_accesskit.Action::ScrollDown)
       node.add_action(@moon_accesskit.Action::ScrollLeft)
@@ -3918,18 +3867,14 @@ pub fn ui_build_a11y_tree_update(
       let name = if explicit_label != "" {
         Some(explicit_label)
       } else {
-        calc_label_from_children(
-          entity, children_store, text_store, text_span_store,
-        )
+        calc_label_from_children(entity)
       }
       match name {
         Some(s) => if s != "" { node.set_label(s) }
         None => ()
       }
     } else if role == @moon_accesskit.Role::Label {
-      let value = calc_value_from_self(
-        entity, children_store, text_store, text_span_store,
-      )
+      let value = calc_value_from_self(entity)
       if explicit_label != "" {
         node.set_label(explicit_label)
       }
@@ -3939,11 +3884,7 @@ pub fn ui_build_a11y_tree_update(
       if explicit_label != "" {
         node.set_label(explicit_label)
       }
-      node.set_value(
-        calc_value_from_self(
-          entity, children_store, text_store, text_span_store,
-        ),
-      )
+      node.set_value(calc_value_from_self(entity))
     } else if explicit_label != "" {
       node.set_label(explicit_label)
     }
@@ -3965,13 +3906,6 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   guard res.get() is Some(ctx0) else { return }
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  let layout_store = get_ui_layout_store(world)
-  let button_store = get_button_store(world)
-  let state_store = get_interaction_store(world)
-  let cursor_store = get_relative_cursor_position_store(world)
-  let focus_store = get_focus_policy_store(world)
-  let clip_store = get_calculated_clip_store(world)
-  let vv_store = @visibility.get_view_visibility_store(world)
   let pointer = ctx0.pointer_pos
   let down = ctx0.pointer_down
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
@@ -3991,13 +3925,15 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   // - Anything that already has `Interaction`
   // - Anything tagged as `Button` (we auto-initialize `Interaction` for convenience)
   let candidates : Array[@core.Entity] = []
-  state_store.for_each(fn(entity, _interaction) { candidates.push(entity) })
-  button_store.for_each(fn(entity, _button) {
+  world.for_each_component(ecs_key_interaction, fn(entity, _interaction) {
+    candidates.push(entity)
+  })
+  world.for_each_component(ecs_key_button, fn(entity, _button) {
     if !candidates_contains(candidates, entity) {
       candidates.push(entity)
     }
-    if !state_store.contains(entity) {
-      state_store.insert(entity, Interaction::None)
+    if !(try! world.contains_by_key(entity, ecs_key_interaction)) {
+      try! world.set_by_key(entity, ecs_key_interaction, Interaction::None)
     }
   })
   fn rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
@@ -4036,15 +3972,20 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       if !candidates_contains(candidates, entity) {
         continue
       }
-      if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
+      if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+        is Some(vv) &&
+        !vv.is_visible() {
         continue
       }
-      guard layout_store.get(entity) is Some(layout) else { continue }
+      guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
+        continue
+      }
       let node_rect = layout.rect
       if !node_rect.contains(p) {
         continue
       }
-      let clip_rect = match clip_store.get(entity) {
+      let clip_rect = match
+        (try! world.get_by_key(entity, ecs_key_calculated_clip)) {
         Some(v) => v.clip
         None => node_rect
       }
@@ -4080,19 +4021,20 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
         normalized_visible_node_rect: normalized_visible,
         normalized,
       }
-      if cursor_store.contains(entity) {
-        cursor_store.set(entity, rcp) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_relative_cursor_position)) {
+        try! (world.replace(entity, ecs_key_relative_cursor_position, rcp)
+        |> ignore)
       } else {
-        cursor_store.insert(entity, rcp)
+        try! world.set_by_key(entity, ecs_key_relative_cursor_position, rcp)
       }
       let next = if down { Interaction::Pressed } else { Interaction::Hovered }
-      if state_store.contains(entity) {
-        state_store.set(entity, next) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_interaction)) {
+        try! (world.replace(entity, ecs_key_interaction, next) |> ignore)
       } else {
-        state_store.insert(entity, next)
+        try! world.set_by_key(entity, ecs_key_interaction, next)
       }
       active.push(entity)
-      let focus = match focus_store.get(entity) {
+      let focus = match (try! world.get_by_key(entity, ecs_key_focus_policy)) {
         Some(v) => v
         None => FocusPolicy::Block
       }
@@ -4107,15 +4049,21 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
     if candidates_contains(active, entity) {
       continue
     }
-    let prev = match state_store.get(entity) {
+    let prev = match (try! world.get_by_key(entity, ecs_key_interaction)) {
       Some(v) => v
       None => Interaction::None
     }
     if prev != Interaction::None {
-      state_store.set(entity, Interaction::None) |> ignore
+      try! (world.replace(entity, ecs_key_interaction, Interaction::None)
+      |> ignore)
     }
-    if cursor_store.contains(entity) {
-      cursor_store.set(entity, RelativeCursorPosition::default()) |> ignore
+    if (try! world.contains_by_key(entity, ecs_key_relative_cursor_position)) {
+      try! (world.replace(
+        entity,
+        ecs_key_relative_cursor_position,
+        RelativeCursorPosition::default(),
+      )
+      |> ignore)
     }
   }
 }

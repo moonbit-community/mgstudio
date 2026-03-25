@@ -27,42 +27,38 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
-  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
-  let impulse_joint_store = get_impulse_joint2d_store(ecs_world)
-  let multibody_joint_store = get_multibody_joint2d_store(ecs_world)
-  let impulse_handle_store = get_rapier_impulse_joint_handle2d_store(ecs_world)
-  let multibody_handle_store = get_rapier_multibody_joint_handle2d_store(
-    ecs_world,
-  )
 
   // Drop stale handles (e.g. when Rapier removed the joint because a body was removed).
   let drop_impulse : Array[@core.Entity] = []
-  impulse_handle_store.for_each(fn(e, h) {
+  ecs_world.for_each_component(ecs_key_rapier_impulse_joint_handle2d, fn(e, h) {
     if !ctx.impulse_joints.contains(h.handle) {
       drop_impulse.push(e)
     }
   })
   for e in drop_impulse {
-    impulse_handle_store.remove(e) |> ignore
+    try! (ecs_world.take(e, ecs_key_rapier_impulse_joint_handle2d) |> ignore)
     ctx.entity_to_impulse_joint.remove(entity_key(e))
   }
   let drop_multibody : Array[@core.Entity] = []
-  multibody_handle_store.for_each(fn(e, h) {
+  ecs_world.for_each_component(ecs_key_rapier_multibody_joint_handle2d, fn(
+    e,
+    h,
+  ) {
     // moon_rapier doesn't expose `contains` for multibody joints, so use `get`.
     if ctx.multibody_joints.get(h.handle) is None {
       drop_multibody.push(e)
     }
   })
   for e in drop_multibody {
-    multibody_handle_store.remove(e) |> ignore
+    try! (ecs_world.take(e, ecs_key_rapier_multibody_joint_handle2d) |> ignore)
     ctx.entity_to_multibody_joint.remove(entity_key(e))
   }
 
   // If the authoring "other" entity changes or bodies are missing, reset and reinsert later.
   let reset_impulse : Array[@core.Entity] = []
-  impulse_handle_store.for_each(fn(e, h) {
-    let bh1 = body_handle_store.get(e)
-    let author = impulse_joint_store.get(e)
+  ecs_world.for_each_component(ecs_key_rapier_impulse_joint_handle2d, fn(e, h) {
+    let bh1 = try! ecs_world.get_by_key(e, ecs_key_rapier_body_handle2d)
+    let author = try! ecs_world.get_by_key(e, ecs_key_impulse_joint2d)
     if bh1 is None || author is None {
       reset_impulse.push(e)
       return
@@ -72,22 +68,27 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
       reset_impulse.push(e)
       return
     }
-    if body_handle_store.get(j.other) is None {
+    if (try! ecs_world.get_by_key(j.other, ecs_key_rapier_body_handle2d))
+      is None {
       reset_impulse.push(e)
       return
     }
   })
   for e in reset_impulse {
-    if impulse_handle_store.get(e) is Some(h) {
+    if (try! ecs_world.get_by_key(e, ecs_key_rapier_impulse_joint_handle2d))
+      is Some(h) {
       ctx.impulse_joints.remove(h.handle, true) |> ignore
     }
-    impulse_handle_store.remove(e) |> ignore
+    try! (ecs_world.take(e, ecs_key_rapier_impulse_joint_handle2d) |> ignore)
     ctx.entity_to_impulse_joint.remove(entity_key(e))
   }
   let reset_multibody : Array[@core.Entity] = []
-  multibody_handle_store.for_each(fn(e, h) {
-    let bh1 = body_handle_store.get(e)
-    let author = multibody_joint_store.get(e)
+  ecs_world.for_each_component(ecs_key_rapier_multibody_joint_handle2d, fn(
+    e,
+    h,
+  ) {
+    let bh1 = try! ecs_world.get_by_key(e, ecs_key_rapier_body_handle2d)
+    let author = try! ecs_world.get_by_key(e, ecs_key_multibody_joint2d)
     if bh1 is None || author is None {
       reset_multibody.push(e)
       return
@@ -97,46 +98,63 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
       reset_multibody.push(e)
       return
     }
-    if body_handle_store.get(j.other) is None {
+    if (try! ecs_world.get_by_key(j.other, ecs_key_rapier_body_handle2d))
+      is None {
       reset_multibody.push(e)
       return
     }
   })
   for e in reset_multibody {
-    if multibody_handle_store.get(e) is Some(h) {
+    if (try! ecs_world.get_by_key(e, ecs_key_rapier_multibody_joint_handle2d))
+      is Some(h) {
       ctx.multibody_joints.remove(h.handle, true)
     }
-    multibody_handle_store.remove(e) |> ignore
+    try! (ecs_world.take(e, ecs_key_rapier_multibody_joint_handle2d) |> ignore)
     ctx.entity_to_multibody_joint.remove(entity_key(e))
   }
 
   // Insert missing impulse joints.
-  impulse_joint_store.for_each(fn(e, j) {
-    if impulse_handle_store.contains(e) {
+  ecs_world.for_each_component(ecs_key_impulse_joint2d, fn(e, j) {
+    if (try! ecs_world.contains_by_key(e, ecs_key_rapier_impulse_joint_handle2d)) {
       return
     }
-    guard body_handle_store.get(e) is Some(bh1) else { return }
-    guard body_handle_store.get(j.other) is Some(bh2) else { return }
+    guard (try! ecs_world.get_by_key(e, ecs_key_rapier_body_handle2d))
+      is Some(bh1) else {
+      return
+    }
+    guard (try! ecs_world.get_by_key(j.other, ecs_key_rapier_body_handle2d))
+      is Some(bh2) else {
+      return
+    }
     let handle = ctx.impulse_joints.insert(
       bh1.handle,
       bh2.handle,
       j.data,
       j.wake_up,
     )
-    impulse_handle_store.insert(
+    try! ecs_world.set_by_key(
       e,
+      ecs_key_rapier_impulse_joint_handle2d,
       RapierImpulseJointHandle2d::new(handle, j.other),
     )
     ctx.entity_to_impulse_joint.set(entity_key(e), handle)
   })
 
   // Insert missing multibody joints.
-  multibody_joint_store.for_each(fn(e, j) {
-    if multibody_handle_store.contains(e) {
+  ecs_world.for_each_component(ecs_key_multibody_joint2d, fn(e, j) {
+    if (try! ecs_world.contains_by_key(
+        e, ecs_key_rapier_multibody_joint_handle2d,
+      )) {
       return
     }
-    guard body_handle_store.get(e) is Some(bh1) else { return }
-    guard body_handle_store.get(j.other) is Some(bh2) else { return }
+    guard (try! ecs_world.get_by_key(e, ecs_key_rapier_body_handle2d))
+      is Some(bh1) else {
+      return
+    }
+    guard (try! ecs_world.get_by_key(j.other, ecs_key_rapier_body_handle2d))
+      is Some(bh2) else {
+      return
+    }
     let handle = if j.kinematic {
       ctx.multibody_joints.insert_kinematic(
         bh1.handle,
@@ -149,8 +167,9 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
     }
     match handle {
       Some(h) => {
-        multibody_handle_store.insert(
+        try! ecs_world.set_by_key(
           e,
+          ecs_key_rapier_multibody_joint_handle2d,
           RapierMultibodyJointHandle2d::new(h, j.other),
         )
         ctx.entity_to_multibody_joint.set(entity_key(e), h)

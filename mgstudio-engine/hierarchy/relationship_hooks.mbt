@@ -51,8 +51,7 @@ fn hierarchy_add_child(
   if !world.is_alive(parent) {
     return
   }
-  let children_access = world.component(children_key)
-  let entities = match children_access.get(parent) {
+  let entities = match (try! world.get_by_key(parent, children_key)) {
     Some(children) => children.entities()
     None => []
   }
@@ -60,10 +59,10 @@ fn hierarchy_add_child(
     return
   }
   entities.push(child)
-  if children_access.contains(parent) {
-    children_access.set(parent, Children::new(entities)) |> ignore
+  if world.contains_by_key(parent, children_key) {
+    try! (world.replace(parent, children_key, Children::new(entities)) |> ignore)
   } else {
-    children_access.insert(parent, Children::new(entities))
+    try! world.set_by_key(parent, children_key, Children::new(entities))
   }
 }
 
@@ -77,15 +76,16 @@ fn hierarchy_remove_child(
   if !world.is_alive(parent) {
     return
   }
-  let children_access = world.component(children_key)
-  guard children_access.get(parent) is Some(children) else { return }
+  guard (try! world.get_by_key(parent, children_key)) is Some(children) else {
+    return
+  }
   let entities = children.entities()
   guard hierarchy_child_index(entities, child) is Some(index) else { return }
   entities.remove(index) |> ignore
   if entities.length() == 0 {
-    children_access.remove(parent) |> ignore
+    try! (world.take(parent, children_key) |> ignore)
   } else {
-    children_access.set(parent, Children::new(entities)) |> ignore
+    try! (world.replace(parent, children_key, Children::new(entities)) |> ignore)
   }
 }
 
@@ -115,12 +115,12 @@ fn hierarchy_parent_on_insert(
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
 ) -> Unit {
-  guard (try! world.get(child, parent_key)) is Some(parent_component) else {
+  guard (try! world.get_by_key(child, parent_key)) is Some(parent_component) else {
     return
   }
   let parent = parent_component.entity()
   if !hierarchy_parent_target_valid(world, child, parent) {
-    try! (world.remove(child, parent_key) |> ignore)
+    try! (world.remove_by_key(child, parent_key) |> ignore)
     return
   }
   hierarchy_add_child(world, children_key, parent, child)
@@ -133,7 +133,7 @@ fn hierarchy_parent_on_replace(
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
 ) -> Unit {
-  guard (try! world.get(child, parent_key)) is Some(old_parent_component) else {
+  guard (try! world.get_by_key(child, parent_key)) is Some(old_parent_component) else {
     return
   }
   let old_parent = old_parent_component.entity()
@@ -147,7 +147,7 @@ fn hierarchy_parent_on_remove(
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
 ) -> Unit {
-  guard (try! world.get(child, parent_key)) is Some(parent_component) else {
+  guard (try! world.get_by_key(child, parent_key)) is Some(parent_component) else {
     return
   }
   let parent = parent_component.entity()
@@ -190,7 +190,8 @@ fn hierarchy_register_component_hooks(
   let children_hooks = @ecs.register_component_hooks_for_key(children_key)
   ignore(
     try! children_hooks.on_despawn(fn(world, context) {
-      guard (try! world.get(context.entity, children_key)) is Some(children) else {
+      guard (try! world.get_by_key(context.entity, children_key))
+        is Some(children) else {
         return
       }
       for child in children.entities() {

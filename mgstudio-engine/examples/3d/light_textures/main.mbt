@@ -190,7 +190,7 @@ fn set_proxy_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  world.component(@visibility.ecs_key_visibility).insert(proxy, value)
+  try! world.set_by_key(proxy, @visibility.ecs_key_visibility, value)
 }
 
 ///|
@@ -198,7 +198,7 @@ fn update_directional_light(world : @ecs.World) -> Unit {
   guard light_textures_state.val.directional_light is Some(entity) else {
     return
   }
-  guard world.component(@pbr.ecs_key_directional_light).get(entity)
+  guard (try! world.get_by_key(entity, @pbr.ecs_key_directional_light))
     is Some(light) else {
     return
   }
@@ -211,50 +211,58 @@ fn update_directional_light(world : @ecs.World) -> Unit {
   } else {
     MAIN_LIGHT_INTENSITY
   }
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .set(entity, light.with_illuminance(next_illuminance))
-  |> ignore
+  try! (world.replace(
+    entity,
+    @pbr.ecs_key_directional_light,
+    light.with_illuminance(next_illuminance),
+  )
+  |> ignore)
 
   if light_textures_state.val.directional_visible {
     if light_textures_state.val.directional_texture is Some(texture) {
-      world
-      .component(@pbr.ecs_key_directional_light_texture)
-      .insert(entity, @pbr.DirectionalLightTexture::new(Some(texture), true))
+      try! world.set_by_key(
+        entity,
+        @pbr.ecs_key_directional_light_texture,
+        @pbr.DirectionalLightTexture::new(Some(texture), true),
+      )
     }
   } else {
-    world.component(@pbr.ecs_key_directional_light_texture).remove(entity)
-    |> ignore
+    try! (world.take(entity, @pbr.ecs_key_directional_light_texture) |> ignore)
   }
 }
 
 ///|
 fn apply_light_visibility(world : @ecs.World) -> Unit {
   if light_textures_state.val.spot_light is Some(spot_entity) {
-    if world.component(@pbr.ecs_key_spot_light).get(spot_entity) is Some(spot) {
+    if (try! world.get_by_key(spot_entity, @pbr.ecs_key_spot_light))
+      is Some(spot) {
       let intensity = if light_textures_state.val.spot_visible {
         SPOT_LIGHT_INTENSITY
       } else {
         0.0F
       }
-      world
-      .component(@pbr.ecs_key_spot_light)
-      .set(spot_entity, spot.with_intensity(intensity))
-      |> ignore
+      try! (world.replace(
+        spot_entity,
+        @pbr.ecs_key_spot_light,
+        spot.with_intensity(intensity),
+      )
+      |> ignore)
     }
   }
   if light_textures_state.val.point_light is Some(point_entity) {
-    if world.component(@pbr.ecs_key_point_light).get(point_entity)
+    if (try! world.get_by_key(point_entity, @pbr.ecs_key_point_light))
       is Some(point) {
       let intensity = if light_textures_state.val.point_visible {
         POINT_LIGHT_INTENSITY
       } else {
         0.0F
       }
-      world
-      .component(@pbr.ecs_key_point_light)
-      .set(point_entity, point.with_intensity(intensity))
-      |> ignore
+      try! (world.replace(
+        point_entity,
+        @pbr.ecs_key_point_light,
+        point.with_intensity(intensity),
+      )
+      |> ignore)
     }
   }
   set_proxy_visibility(
@@ -322,20 +330,18 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   light_textures_state.val.directional_light = Some(directional)
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       MAIN_LIGHT_INTENSITY,
       true,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(8.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -344,10 +350,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let spot = world.spawn_empty()
   light_textures_state.val.spot_light = Some(spot)
-  world
-  .component(@pbr.ecs_key_spot_light)
-  .insert(
+  try! world.set_by_key(
     spot,
+    @pbr.ecs_key_spot_light,
     @pbr.SpotLight::new(
       @sprite.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
       SPOT_LIGHT_INTENSITY,
@@ -357,16 +362,14 @@ fn setup(world : @ecs.World) -> Unit {
       true,
     ),
   )
-  world
-  .component(@pbr.ecs_key_spot_light_texture)
-  .insert(
+  try! world.set_by_key(
     spot,
+    @pbr.ecs_key_spot_light_texture,
     @pbr.SpotLightTexture::new(Some(asset_server.load("branding/icon.png"))),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     spot,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(6.0F, 1.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -375,10 +378,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let point = world.spawn_empty()
   light_textures_state.val.point_light = Some(point)
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       POINT_LIGHT_INTENSITY,
@@ -386,18 +388,19 @@ fn setup(world : @ecs.World) -> Unit {
       true,
     ),
   )
-  world
-  .component(@pbr.ecs_key_point_light_texture)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light_texture,
     @pbr.PointLightTexture::new(
       Some(asset_server.load("branding/icon.png")),
       @pbr.CubemapLayout3d::CrossVertical,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F))
+  try! world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F),
+  )
 
   let spot_proxy_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -480,22 +483,21 @@ fn apply_camera_drag(
   camera_entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  guard world.component(@transform.ecs_key_transform).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
   let next_translation = transform.translation.add(
     @math.Vec3::new(-delta.x * MOVE_SPEED, delta.y * MOVE_SPEED, 0.0F),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     camera_entity,
+    @transform.ecs_key_transform,
     transform
     .with_translation(next_translation)
     .looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -504,7 +506,7 @@ fn apply_selection_drag(
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  guard world.component(@transform.ecs_key_transform).get(entity)
+  guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -513,44 +515,45 @@ fn apply_selection_drag(
       let next_translation = transform.translation.add(
         @math.Vec3::new(delta.x * MOVE_SPEED, -delta.y * MOVE_SPEED, 0.0F),
       )
-      world
-      .component(@transform.ecs_key_transform)
-      .set(entity, transform.with_translation(next_translation))
-      |> ignore
+      try! (world.replace(
+        entity,
+        @transform.ecs_key_transform,
+        transform.with_translation(next_translation),
+      )
+      |> ignore)
       if light_textures_state.val.selection == Selection::SpotLight {
         if light_textures_state.val.spot_proxy is Some(proxy) {
-          world
-          .component(@transform.ecs_key_transform)
-          .set(
+          try! (world.replace(
             proxy,
+            @transform.ecs_key_transform,
             @transform.Transform::from_xyz(
               next_translation.x,
               next_translation.y,
               next_translation.z,
             ),
           )
-          |> ignore
+          |> ignore)
         }
       }
       if light_textures_state.val.selection == Selection::PointLight {
         if light_textures_state.val.point_proxy is Some(proxy) {
-          world
-          .component(@transform.ecs_key_transform)
-          .set(
+          try! (world.replace(
             proxy,
+            @transform.ecs_key_transform,
             @transform.Transform::from_xyz(
               next_translation.x,
               next_translation.y,
               next_translation.z,
             ),
           )
-          |> ignore
+          |> ignore)
         }
       }
     }
     DragMode::Scale =>
       if light_textures_state.val.selection == Selection::SpotLight {
-        guard world.component(@pbr.ecs_key_spot_light).get(entity) is Some(spot) else {
+        guard (try! world.get_by_key(entity, @pbr.ecs_key_spot_light))
+          is Some(spot) else {
           return
         }
         let next_angle = clampf(
@@ -558,31 +561,31 @@ fn apply_selection_drag(
           0.01F,
           0.78539816339F,
         )
-        world
-        .component(@pbr.ecs_key_spot_light)
-        .set(
+        try! (world.replace(
           entity,
+          @pbr.ecs_key_spot_light,
           spot.with_outer_angle(next_angle).with_inner_angle(next_angle),
         )
-        |> ignore
+        |> ignore)
       } else {
         let next = maxf(0.20F, transform.scale.x + delta.y * SCALE_SPEED)
-        world
-        .component(@transform.ecs_key_transform)
-        .set(
+        try! (world.replace(
           entity,
+          @transform.ecs_key_transform,
           transform.with_scale(@math.Vec3::new(next, next, transform.scale.z)),
         )
-        |> ignore
+        |> ignore)
       }
     DragMode::Roll => {
       let rotation = transform.rotation
         .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
         .normalize()
-      world
-      .component(@transform.ecs_key_transform)
-      .set(entity, transform.with_rotation(rotation))
-      |> ignore
+      try! (world.replace(
+        entity,
+        @transform.ecs_key_transform,
+        transform.with_rotation(rotation),
+      )
+      |> ignore)
     }
   }
 }
@@ -682,7 +685,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   guard light_textures_state.val.rotating_cube is Some(cube_entity) else {
     return
   }
-  guard world.component(@transform.ecs_key_transform).get(cube_entity)
+  guard (try! world.get_by_key(cube_entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -690,10 +693,12 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED * delta * 60.0F))
     .normalize()
-  world
-  .component(@transform.ecs_key_transform)
-  .set(cube_entity, transform.with_rotation(rotation))
-  |> ignore
+  try! (world.replace(
+    cube_entity,
+    @transform.ecs_key_transform,
+    transform.with_rotation(rotation),
+  )
+  |> ignore)
 }
 
 ///|

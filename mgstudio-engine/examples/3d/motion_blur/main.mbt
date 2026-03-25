@@ -167,8 +167,10 @@ fn set_camera_fov(
   camera_entity : @core.Entity,
   fov : Float,
 ) -> Unit {
-  let projection_store = world.component(@pbr.ecs_key_projection)
-  guard projection_store.get(camera_entity) is Some(current) else { return }
+  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
+    is Some(current) else {
+    return
+  }
   let next_projection = match current {
     Perspective(p) => {
       p.fov = fov
@@ -178,7 +180,8 @@ fn set_camera_fov(
     Custom(_) => None
   }
   guard next_projection is Some(projection) else { return }
-  projection_store.set(camera_entity, projection) |> ignore
+  try! (world.replace(camera_entity, @pbr.ecs_key_projection, projection)
+  |> ignore)
 }
 
 ///|
@@ -188,11 +191,17 @@ fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
   )
-  let store = world.component(@post_process.ecs_key_motion_blur)
-  if store.contains(camera_entity) {
-    store.set(camera_entity, motion_blur) |> ignore
+  if (try! world.contains_by_key(
+      camera_entity, @post_process.ecs_key_motion_blur,
+    )) {
+    try! (world.replace(
+      camera_entity, @post_process.ecs_key_motion_blur, motion_blur,
+    )
+    |> ignore)
   } else {
-    store.insert(camera_entity, motion_blur)
+    try! world.set_by_key(
+      camera_entity, @post_process.ecs_key_motion_blur, motion_blur,
+    )
   }
 }
 
@@ -214,7 +223,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       ),
     )
     .spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   motion_blur_state.val.camera = Some(camera)
 }
 
@@ -268,9 +277,11 @@ fn spawn_car(
       @math.Vec3::new(1.0F, 1.0F, 0.5F),
     ),
   ).spawn(world)
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(cabin, @hierarchy.Parent::new(body))
+  try! world.set_by_key(
+    cabin,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(body),
+  )
 
   let wheel_start = motion_blur_state.val.wheels.length()
   let wheel_offsets = [
@@ -287,9 +298,11 @@ fn spawn_car(
       .with_scale(@math.Vec3::new(0.15F, 0.04F, 0.15F))
       .with_rotation(@math.Quat::from_rotation_z(@math.pi_half())),
     ).spawn(world)
-    world
-    .component(@hierarchy.ecs_key_parent)
-    .insert(wheel, @hierarchy.Parent::new(body))
+    try! world.set_by_key(
+      wheel,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(body),
+    )
     motion_blur_state.val.wheels.push({ entity: wheel, radius: 0.15F })
   }
 
@@ -369,16 +382,14 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
 
   let directional_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 3000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-1.0F, -0.7F, -1.0F),
       @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -579,10 +590,10 @@ fn move_cars(world : @ecs.World) -> Unit {
   if motion_blur_state.val.car_bodies.length() == 0 {
     return
   }
-  let transform_store = world.component(@transform.ecs_key_transform)
   let now = world_time(world).elapsed_seconds() * 0.25F
   for car in motion_blur_state.val.car_bodies {
-    guard transform_store.get(car.entity) is Some(current_transform) else {
+    guard (try! world.get_by_key(car.entity, @transform.ecs_key_transform))
+      is Some(current_transform) else {
       continue
     }
     let t0 = now + 0.5F * car.phase
@@ -602,12 +613,18 @@ fn move_cars(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       )
     }
-    transform_store.set(car.entity, next_transform) |> ignore
+    try! (world.replace(
+      car.entity,
+      @transform.ecs_key_transform,
+      next_transform,
+    )
+    |> ignore)
 
     let distance = delta.length()
     for i in car.wheel_start..<(car.wheel_start + car.wheel_count) {
       let wheel = motion_blur_state.val.wheels[i]
-      guard transform_store.get(wheel.entity) is Some(wheel_transform) else {
+      guard (try! world.get_by_key(wheel.entity, @transform.ecs_key_transform))
+        is Some(wheel_transform) else {
         continue
       }
       if wheel.radius <= 1.0e-6F {
@@ -617,11 +634,12 @@ fn move_cars(world : @ecs.World) -> Unit {
       let next_rotation = wheel_transform.rotation
         .mul(@math.Quat::from_rotation_y(angle))
         .normalize()
-      transform_store.set(
+      try! (world.replace(
         wheel.entity,
+        @transform.ecs_key_transform,
         wheel_transform.with_rotation(next_rotation),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }
@@ -632,11 +650,12 @@ fn move_camera(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.tracked_car is Some(tracked_entity) else {
     return
   }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(tracked_entity) is Some(tracked_transform) else {
+  guard (try! world.get_by_key(tracked_entity, @transform.ecs_key_transform))
+    is Some(tracked_transform) else {
     return
   }
-  guard transform_store.get(camera_entity) is Some(current_camera_transform) else {
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(current_camera_transform) else {
     return
   }
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
@@ -645,7 +664,10 @@ fn move_camera(world : @ecs.World) -> Unit {
       let next_transform = current_camera_transform
         .with_translation(@math.Vec3::new(15.0F, -0.5F, 0.0F))
         .looking_at(tracked_transform.translation, up)
-      transform_store.set(camera_entity, next_transform) |> ignore
+      try! (world.replace(
+        camera_entity, @transform.ecs_key_transform, next_transform,
+      )
+      |> ignore)
       set_camera_fov(world, camera_entity, 0.05F)
     }
     Chase => {
@@ -657,7 +679,10 @@ fn move_camera(world : @ecs.World) -> Unit {
           .sub(forward.mul_scalar(0.6F)),
         )
         .looking_at(tracked_transform.translation.add(forward), up)
-      transform_store.set(camera_entity, next_transform) |> ignore
+      try! (world.replace(
+        camera_entity, @transform.ecs_key_transform, next_transform,
+      )
+      |> ignore)
       set_camera_fov(world, camera_entity, 1.0F)
     }
   }

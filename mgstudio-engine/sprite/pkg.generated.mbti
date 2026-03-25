@@ -90,53 +90,9 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
 
 pub let ecs_resources : Array[String]
 
-pub fn get_anchor_store(@ecs.World) -> @ecs.ComponentAccess[Anchor]
-
-pub fn get_bloom_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Bloom]
-
-pub fn get_camera2d_store(@ecs.World) -> @ecs.ComponentAccess[Camera2d]
-
-pub fn get_camera_store(@ecs.World) -> @ecs.ComponentAccess[Camera]
-
-pub fn get_clear_color_config_store(@ecs.World) -> @ecs.ComponentAccess[ClearColorConfig]
-
-pub fn get_color_grading_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ColorGrading]
-
-pub fn get_color_material_store(@ecs.World) -> @ecs.ComponentAccess[ColorMaterial]
-
-pub fn get_deband_dither_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.DebandDither]
-
-pub fn get_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh2d]
-
-pub fn[M] get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial2d[M]]
-
-pub fn get_no_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe2d]
-
-pub fn get_pan_camera_store(@ecs.World) -> @ecs.ComponentAccess[PanCamera]
-
-pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[Projection]
-
-pub fn get_render_layers_store(@ecs.World) -> @ecs.ComponentAccess[RenderLayers]
-
 pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
-pub fn get_render_target_store(@ecs.World) -> @ecs.ComponentAccess[RenderTarget]
-
-pub fn get_scissor_rect_store(@ecs.World) -> @ecs.ComponentAccess[ScissorRect]
-
-pub fn get_sprite_store(@ecs.World) -> @ecs.ComponentAccess[Sprite]
-
-pub fn get_tilemap_chunk_store(@ecs.World) -> @ecs.ComponentAccess[TilemapChunk]
-
-pub fn get_tilemap_chunk_tile_data_store(@ecs.World) -> @ecs.ComponentAccess[TilemapChunkTileData]
-
-pub fn get_tonemapping_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Tonemapping]
-
-pub fn get_wireframe2d_color_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe2dColor]
-
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]
-
-pub fn get_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe2d]
 
 pub fn gizmo_config() -> GizmoConfig
 

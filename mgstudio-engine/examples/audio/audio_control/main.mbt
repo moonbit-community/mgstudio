@@ -55,9 +55,12 @@ fn maxf(a : Float, b : Float) -> Float {
 }
 
 ///|
-fn[T] first_marked_entity(store : @ecs.ComponentAccess[T]) -> @core.Entity? {
+fn[T] first_marked_entity(
+  world : @ecs.World,
+  key : @ecs.ComponentKey[T],
+) -> @core.Entity? {
   let mut found : @core.Entity? = None
-  store.for_each(fn(entity : @core.Entity, _component : T) {
+  world.for_each_component(key, fn(entity : @core.Entity, _component : T) {
     if found is None {
       found = Some(entity)
     }
@@ -67,12 +70,12 @@ fn[T] first_marked_entity(store : @ecs.ComponentAccess[T]) -> @core.Entity? {
 
 ///|
 fn find_music_entity(world : @ecs.World) -> @core.Entity? {
-  first_marked_entity(world.component(my_music_component_key))
+  first_marked_entity(world, my_music_component_key)
 }
 
 ///|
 fn find_progress_text_entity(world : @ecs.World) -> @core.Entity? {
-  first_marked_entity(world.component(progress_text_marker_component_key))
+  first_marked_entity(world, progress_text_marker_component_key)
 }
 
 ///|
@@ -88,9 +91,11 @@ fn spawn_ui_text(
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(entity, @hierarchy.Parent::new(root))
+  try! world.set_by_key(
+    entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
   let mut node = @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
@@ -100,35 +105,37 @@ fn spawn_ui_text(
   if bottom is Some(value) {
     node = node.with_bottom(@ui.Val::Px(value))
   }
-  world.component(@ui.ecs_key_node).insert(entity, node)
-  world.component(@text.ecs_key_text).insert(entity, @text.Text::new(content))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(entity, @ui.ecs_key_node, node)
+  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
+  try! world.set_by_key(
     entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
   if marker is Some(progress_text_marker) {
-    world
-    .component(progress_text_marker_component_key)
-    .insert(entity, progress_text_marker)
+    try! world.set_by_key(
+      entity, progress_text_marker_component_key, progress_text_marker,
+    )
   }
 }
 
 ///|
 fn spawn_ui_overlay(world : @ecs.World) -> Unit {
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
@@ -160,10 +167,12 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let music = world.spawn_empty()
-  world
-  .component(@audio.ecs_key_audio_source_player)
-  .insert(music, @audio.AudioPlayer::new(track))
-  world.component(my_music_component_key).insert(music, MyMusic::{  })
+  try! world.set_by_key(
+    music,
+    @audio.ecs_key_audio_source_player,
+    @audio.AudioPlayer::new(track),
+  )
+  try! world.set_by_key(music, my_music_component_key, MyMusic::{  })
 
   spawn_ui_overlay(world)
 
@@ -186,19 +195,20 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn update_progress_text(world : @ecs.World) -> Unit {
   guard find_music_entity(world) is Some(music) else { return }
   guard find_progress_text_entity(world) is Some(entity) else { return }
-  guard world.component(@audio.ecs_key_audio_sink).get(music) is Some(sink) else {
+  guard (try! world.get_by_key(music, @audio.ecs_key_audio_sink)) is Some(sink) else {
     return
   }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(entity) is Some(text_value) else { return }
+  guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_value) else {
+    return
+  }
   text_value.content = "Progress: \{sink.position().as_secs_f32()}s"
-  ignore(text_store.set(entity, text_value))
+  ignore(try! world.replace(entity, @text.ecs_key_text, text_value))
 }
 
 ///|
 fn update_speed(world : @ecs.World) -> Unit {
   guard find_music_entity(world) is Some(music) else { return }
-  guard world.component(@audio.ecs_key_audio_sink).get(music) is Some(sink) else {
+  guard (try! world.get_by_key(music, @audio.ecs_key_audio_sink)) is Some(sink) else {
     return
   }
   if sink.is_paused() {
@@ -209,12 +219,12 @@ fn update_speed(world : @ecs.World) -> Unit {
     @math.sin(world_time(world).elapsed_seconds() / 5.0F) + 1.0F,
     0.1F,
   )
-  world
-  .component(@audio.ecs_key_audio_sink)
-  .update(music, fn(current : @audio.AudioSink) {
+  try! (world.update_by_key(music, @audio.ecs_key_audio_sink, fn(
+    current : @audio.AudioSink,
+  ) {
     current.set_speed(next_speed)
   })
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -223,7 +233,7 @@ fn pause(world : @ecs.World) -> Unit {
     return
   }
   guard find_music_entity(world) is Some(music) else { return }
-  guard world.component(@audio.ecs_key_audio_sink).get(music) is Some(sink) else {
+  guard (try! world.get_by_key(music, @audio.ecs_key_audio_sink)) is Some(sink) else {
     return
   }
   sink.toggle_playback()
@@ -235,10 +245,12 @@ fn mute(world : @ecs.World) -> Unit {
     return
   }
   guard find_music_entity(world) is Some(music) else { return }
-  world
-  .component(@audio.ecs_key_audio_sink)
-  .update(music, fn(sink : @audio.AudioSink) { sink.toggle_mute() })
-  |> ignore
+  try! (world.update_by_key(music, @audio.ecs_key_audio_sink, fn(
+    sink : @audio.AudioSink,
+  ) {
+    sink.toggle_mute()
+  })
+  |> ignore)
 }
 
 ///|
@@ -252,11 +264,11 @@ fn volume(world : @ecs.World) -> Unit {
   }
 
   guard find_music_entity(world) is Some(music) else { return }
-  world
-  .component(@audio.ecs_key_audio_sink)
-  .update(music, fn(sink : @audio.AudioSink) {
+  try! (world.update_by_key(music, @audio.ecs_key_audio_sink, fn(
+    sink : @audio.AudioSink,
+  ) {
     let next_volume = sink.volume().increase_by_percentage(direction)
     sink.set_volume(next_volume)
   })
-  |> ignore
+  |> ignore)
 }

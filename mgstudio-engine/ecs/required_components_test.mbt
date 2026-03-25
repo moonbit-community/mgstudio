@@ -92,10 +92,16 @@ test "ecs: required components insert recursively on set_component" {
 
   try! world.register_required_components(required_a_key, required_b_key)
   try! world.register_required_components(required_b_key, required_c_key)
-  try! world.set_component(entity, RequiredA::{  })
+  try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
-  inspect(try! world.get(entity, required_b_key), content="Some({value: 10})")
-  inspect(try! world.get(entity, required_c_key), content="Some({value: 20})")
+  inspect(
+    try! world.get_by_key(entity, required_b_key),
+    content="Some({value: 10})",
+  )
+  inspect(
+    try! world.get_by_key(entity, required_c_key),
+    content="Some({value: 20})",
+  )
 }
 
 ///|
@@ -114,10 +120,10 @@ test "ecs: direct required constructor overrides indirect constructor" {
     required_counter_key,
     fn() { RequiredCounter::{ value: 2 } },
   )
-  try! world.set_component(entity, RequiredA::{  })
+  try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
   inspect(
-    try! world.get(entity, required_counter_key),
+    try! world.get_by_key(entity, required_counter_key),
     content="Some({value: 2})",
   )
 }
@@ -128,10 +134,14 @@ test "ecs: explicit component value beats required insertion" {
   let entity = world.spawn()
 
   try! world.register_required_components(required_a_key, required_b_key)
-  try! world.set_component(entity, RequiredB::{ value: 99 })
-  try! world.set_component(entity, RequiredA::{  })
+  try! (world.entity_mut(entity).insert_component(RequiredB::{ value: 99 })
+  |> ignore)
+  try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
-  inspect(try! world.get(entity, required_b_key), content="Some({value: 99})")
+  inspect(
+    try! world.get_by_key(entity, required_b_key),
+    content="Some({value: 99})",
+  )
 }
 
 ///|
@@ -181,7 +191,8 @@ test "ecs: try register required components reports duplicate cycle and archetyp
 
   let archetype_world = World::new()
   let entity = archetype_world.spawn()
-  try! archetype_world.set_component(entity, RequiredA::{  })
+  try! (archetype_world.entity_mut(entity).insert_component(RequiredA::{  })
+  |> ignore)
   let archetype_result = archetype_world.try_register_required_components(
     required_a_key, required_b_key,
   )

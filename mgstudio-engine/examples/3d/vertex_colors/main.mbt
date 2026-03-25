@@ -135,16 +135,14 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light_entity = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     light_entity,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(4.0F, 5.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

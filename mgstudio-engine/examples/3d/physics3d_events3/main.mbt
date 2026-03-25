@@ -42,47 +42,59 @@ fn setup_graphics(world : @ecs.World) -> Unit {
 ///|
 fn setup_physics(world : @ecs.World) -> Unit {
   let ground = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(ground, @transform.Transform::from_xyz(0.0F, -1.2F, 0.0F))
-  @physics3d.get_collider3d_store(world).insert(
+  try! world.set_by_key(
     ground,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, -1.2F, 0.0F),
+  )
+  try! world.set_by_key(
+    ground,
+    @physics3d.ecs_key_collider3d,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(4.0F, 1.0F, 1.0F),
     ),
   )
 
   let sensor = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(sensor, @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F))
-  @physics3d.get_collider3d_store(world).insert(
+  try! world.set_by_key(
     sensor,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
+  )
+  try! world.set_by_key(
+    sensor,
+    @physics3d.ecs_key_collider3d,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(4.0F, 1.5F, 1.0F),
     ).sensor(true),
   )
 
   let dynamic_cube = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(dynamic_cube, @transform.Transform::from_xyz(0.0F, 13.0F, 0.0F))
-  @physics3d.get_rigid_body3d_store(world).insert(
+  try! world.set_by_key(
     dynamic_cube,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 13.0F, 0.0F),
+  )
+  try! world.set_by_key(
+    dynamic_cube,
+    @physics3d.ecs_key_rigid_body3d,
     @physics3d.RigidBody3d::dynamic(),
   )
-  @physics3d.get_collider3d_store(world).insert(
+  try! world.set_by_key(
     dynamic_cube,
+    @physics3d.ecs_key_collider3d,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(0.5F, 0.5F, 0.5F),
     ),
   )
-  @physics3d.get_active_events3d_store(world).insert(
+  try! world.set_by_key(
     dynamic_cube,
+    @physics3d.ecs_key_active_events3d,
     @physics3d.ActiveEvents3d::new(@collision.ActiveEvents::collision_events()),
   )
-  @physics3d.get_contact_force_event_threshold3d_store(world).insert(
+  try! world.set_by_key(
     dynamic_cube,
+    @physics3d.ecs_key_contact_force_event_threshold3d,
     @physics3d.ContactForceEventThreshold3d::new(30.0F),
   )
 }

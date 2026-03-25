@@ -81,8 +81,7 @@ fn[S : States] despawn_on_exit_entities(world : @ecs.World, state : S) -> Unit {
   let transition_key = state_transition_registration_key(state)
   let exited_debug = exited.to_string()
   let entities : Array[@core.Entity] = []
-  let store = world.component(ecs_key_despawn_on_exit)
-  store.for_each(fn(entity, marker) {
+  world.for_each_component(ecs_key_despawn_on_exit, fn(entity, marker) {
     if marker.transition_key() == transition_key &&
       marker.state_debug() == exited_debug {
       entities.push(entity)
@@ -100,8 +99,7 @@ fn[S : States] despawn_on_enter_entities(world : @ecs.World, state : S) -> Unit 
   let transition_key = state_transition_registration_key(state)
   let entered_debug = entered.to_string()
   let entities : Array[@core.Entity] = []
-  let store = world.component(ecs_key_despawn_on_enter)
-  store.for_each(fn(entity, marker) {
+  world.for_each_component(ecs_key_despawn_on_enter, fn(entity, marker) {
     if marker.transition_key() == transition_key &&
       marker.state_debug() == entered_debug {
       entities.push(entity)

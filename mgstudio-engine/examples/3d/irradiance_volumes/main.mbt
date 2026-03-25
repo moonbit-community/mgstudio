@@ -280,7 +280,7 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  world.component(@visibility.ecs_key_visibility).insert(target, value)
+  try! world.set_by_key(target, @visibility.ecs_key_visibility, value)
 }
 
 ///|
@@ -295,9 +295,11 @@ fn spawn_main_scene(
     ),
   )
   let entity = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(entity, @scene.SceneRoot::new(scene))
+  try! world.set_by_key(
+    entity,
+    @scene.ecs_key_scene_root,
+    @scene.SceneRoot::new(scene),
+  )
 }
 
 ///|
@@ -310,10 +312,9 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   ).spawn(world)
   irradiance_volumes_state.val.camera = Some(camera)
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       150.0F,
@@ -328,22 +329,22 @@ fn spawn_irradiance_volume(
 ) -> Unit {
   let entity = world.spawn_empty()
   irradiance_volumes_state.val.light_probe = Some(entity)
-  world
-  .component(@pbr.ecs_key_light_probe)
-  .insert(entity, @pbr.LightProbe::default())
-  world
-  .component(@pbr.ecs_key_irradiance_volume)
-  .insert(
+  try! world.set_by_key(
     entity,
+    @pbr.ecs_key_light_probe,
+    @pbr.LightProbe::default(),
+  )
+  try! world.set_by_key(
+    entity,
+    @pbr.ecs_key_irradiance_volume,
     @pbr.IrradianceVolume::new(
       Some(irradiance_texture),
       IRRADIANCE_VOLUME_INTENSITY,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(
       VOXEL_VOLUME_CENTER_X,
       VOXEL_VOLUME_CENTER_Y,
@@ -361,15 +362,16 @@ fn spawn_irradiance_volume(
 ///|
 fn spawn_light(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 250_000.0F, 100.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0762F, 5.9039F, 1.0055F))
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0762F, 5.9039F, 1.0055F),
+  )
 }
 
 ///|
@@ -393,10 +395,9 @@ fn spawn_sphere(world : @ecs.World) -> Unit {
 fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let fox = world.spawn_empty()
   irradiance_volumes_state.val.fox = Some(fox)
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     fox,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -404,10 +405,9 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     fox,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(FOX_SCALE),
     ),
@@ -450,9 +450,11 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
             @math.Vec3::splat(VOXEL_CUBE_SCALE),
           ),
         ).spawn(world)
-        world
-        .component(@pbr.ecs_key_not_shadow_caster)
-        .insert(entity, @pbr.NotShadowCaster::default())
+        try! world.set_by_key(
+          entity,
+          @pbr.ecs_key_not_shadow_caster,
+          @pbr.NotShadowCaster::default(),
+        )
         irradiance_volumes_state.val.voxel_cubes.push(entity)
       }
     }
@@ -523,7 +525,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
   guard irradiance_volumes_state.val.camera is Some(camera) else { return }
-  guard world.component(@transform.ecs_key_transform).get(camera)
+  guard (try! world.get_by_key(camera, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -536,7 +538,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  world.component(@transform.ecs_key_transform).set(camera, next) |> ignore
+  try! (world.replace(camera, @transform.ecs_key_transform, next) |> ignore)
 }
 
 ///|
@@ -565,8 +567,7 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
     return
   }
   if irradiance_volumes_state.val.irradiance_volume_present {
-    world.component(@pbr.ecs_key_irradiance_volume).remove(light_probe)
-    |> ignore
+    try! (world.take(light_probe, @pbr.ecs_key_irradiance_volume) |> ignore)
     set_global_ambient_light(
       world,
       AMBIENT_LIGHT_BRIGHTNESS * IRRADIANCE_VOLUME_INTENSITY,
@@ -576,10 +577,9 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
     guard irradiance_volumes_state.val.irradiance_texture is Some(texture) else {
       return
     }
-    world
-    .component(@pbr.ecs_key_irradiance_volume)
-    .insert(
+    try! world.set_by_key(
       light_probe,
+      @pbr.ecs_key_irradiance_volume,
       @pbr.IrradianceVolume::new(Some(texture), IRRADIANCE_VOLUME_INTENSITY),
     )
     set_global_ambient_light(world, 0.0F)
@@ -635,19 +635,18 @@ fn move_entity_on_ground(
   point : @math.Vec3,
 ) -> Unit {
   guard entity is Some(target) else { return }
-  guard world.component(@transform.ecs_key_transform).get(target)
+  guard (try! world.get_by_key(target, @transform.ecs_key_transform))
     is Some(current) else {
     return
   }
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     target,
+    @transform.ecs_key_transform,
     current.with_translation(
       @math.Vec3::new(point.x, current.translation.y, point.z),
     ),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -660,15 +659,15 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  guard world.component(@sprite.ecs_key_camera).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
     is Some(camera) else {
     return
   }
-  guard world.component(@pbr.ecs_key_projection).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
     is Some(projection) else {
     return
   }
-  guard world.component(@transform.ecs_key_transform).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
     is Some(camera_transform) else {
     return
   }

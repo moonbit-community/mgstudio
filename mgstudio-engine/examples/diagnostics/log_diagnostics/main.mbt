@@ -200,12 +200,21 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),

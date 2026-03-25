@@ -139,11 +139,11 @@ test "app: RemovedComponents typed system param observes fresh removals" {
     .add_startup_system(fn(world) {
       let entity = world.spawn()
       entity_ref.val = entity
-      try! world.set(entity, removed_marker_key, RemovedMarker::{  })
+      try! world.set_by_key(entity, removed_marker_key, RemovedMarker::{  })
     })
     .add_system(fn(world) {
       if !entity_ref.val.is_placeholder() {
-        try! (world.remove(entity_ref.val, removed_marker_key) |> ignore)
+        try! (world.remove_by_key(entity_ref.val, removed_marker_key) |> ignore)
       }
     })
     .add_system_param(fn(removed : @ecs.RemovedComponents[RemovedMarker]) {

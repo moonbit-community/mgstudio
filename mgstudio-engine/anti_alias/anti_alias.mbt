@@ -59,27 +59,3 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 
 ///|
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
-
-///|
-pub fn get_msaa_store(world : @ecs.World) -> @ecs.ComponentAccess[Msaa] {
-  world.component(ecs_key_msaa)
-}
-
-///|
-pub fn get_fxaa_store(world : @ecs.World) -> @ecs.ComponentAccess[Fxaa] {
-  world.component(ecs_key_fxaa)
-}
-
-///|
-pub fn get_temporal_anti_aliasing_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[TemporalAntiAliasing] {
-  world.component(ecs_key_temporal_anti_aliasing)
-}
-
-///|
-pub fn get_temporal_jitter_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[TemporalJitter] {
-  world.component(ecs_key_temporal_jitter)
-}

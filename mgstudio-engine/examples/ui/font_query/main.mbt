@@ -21,10 +21,12 @@ fn spawn_node(
   node : @ui.Node,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(entity, @hierarchy.Parent::new(parent))
-  world.component(@ui.ecs_key_node).insert(entity, node)
+  try! world.set_by_key(
+    entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(entity, @ui.ecs_key_node, node)
   entity
 }
 
@@ -37,15 +39,19 @@ fn spawn_text_line(
   underline? : Bool = false,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(entity, @hierarchy.Parent::new(parent))
-  world.component(@text.ecs_key_text).insert(entity, @text.Text::new(content))
-  world.component(@text.ecs_key_text_font).insert(entity, font)
+  try! world.set_by_key(
+    entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
+  try! world.set_by_key(entity, @text.ecs_key_text_font, font)
   if underline {
-    world
-    .component(@text.ecs_key_text_underline)
-    .insert(entity, @text.Underline::default())
+    try! world.set_by_key(
+      entity,
+      @text.ecs_key_text_underline,
+      @text.Underline::default(),
+    )
   }
   entity
 }
@@ -72,11 +78,10 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))

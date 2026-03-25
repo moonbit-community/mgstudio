@@ -25,9 +25,9 @@ test "ecs removed components: remove emits entity in tick range" {
   )
   let entity = world.spawn()
 
-  try! world.set(entity, key, TestMarker::{ value: 1 })
+  try! world.set_by_key(entity, key, TestMarker::{ value: 1 })
   world.advance_sequence() |> ignore
-  inspect(try! world.remove(entity, key), content="true")
+  inspect(try! world.remove_by_key(entity, key), content="true")
 
   let removed = world
     .removed_components(key, @core.SystemSequence::new(0, 1))
@@ -44,7 +44,7 @@ test "ecs removed components: despawn emits removed entity for attached componen
   )
   let entity = world.spawn()
 
-  try! world.set(entity, key, TestMarker::{ value: 7 })
+  try! world.set_by_key(entity, key, TestMarker::{ value: 7 })
   world.advance_sequence() |> ignore
   try! world.despawn(entity)
 
@@ -64,11 +64,11 @@ test "ecs removed components: len, is_empty and clear match unread messages" {
   let entity0 = world.spawn()
   let entity1 = world.spawn()
 
-  try! world.set(entity0, key, TestMarker::{ value: 1 })
-  try! world.set(entity1, key, TestMarker::{ value: 2 })
+  try! world.set_by_key(entity0, key, TestMarker::{ value: 1 })
+  try! world.set_by_key(entity1, key, TestMarker::{ value: 2 })
   world.advance_sequence() |> ignore
-  inspect(try! world.remove(entity0, key), content="true")
-  inspect(try! world.remove(entity1, key), content="true")
+  inspect(try! world.remove_by_key(entity0, key), content="true")
+  inspect(try! world.remove_by_key(entity1, key), content="true")
 
   let removed = world.removed_components(key, @core.SystemSequence::new(0, 1))
   inspect(removed.len(), content="2")

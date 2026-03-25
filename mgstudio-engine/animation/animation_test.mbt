@@ -424,19 +424,19 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   let player = AnimationPlayer::default()
   player.play(node).seek_to(0.5F) |> ignore
 
-  try! world.set(player_entity, ecs_key_animation_player, player)
-  try! world.set(
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
     player_entity,
     ecs_key_animation_graph_handle,
     AnimationGraphHandle::new(graph_handle),
   )
-  try! world.set(target_entity, ecs_key_animation_target_id, target_id)
-  try! world.set(
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
     target_entity,
     ecs_key_animated_by,
     AnimatedBy::new(player_entity),
   )
-  try! world.set(
+  try! world.set_by_key(
     target_entity,
     @transform.ecs_key_transform,
     @transform.Transform::identity(),
@@ -446,10 +446,12 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
 
   let transform = (try! app
   .world()
-  .get(target_entity, @transform.ecs_key_transform)).unwrap()
+  .get_by_key(target_entity, @transform.ecs_key_transform)).unwrap()
   inspect(approx_eq_animation(transform.translation.x, 1.0F), content="true")
 
-  let weights = (try! app.world().get(target_entity, ecs_key_animation_weights)).unwrap()
+  let weights = (try! app
+  .world()
+  .get_by_key(target_entity, ecs_key_animation_weights)).unwrap()
   inspect(weights.values(), content="[0.5, 0.5]")
 }
 
@@ -492,14 +494,14 @@ test "animation runtime: trigger_events emits root and target messages" {
   let player = AnimationPlayer::default()
   player.play(node).repeat() |> ignore
 
-  try! world.set(player_entity, ecs_key_animation_player, player)
-  try! world.set(
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
     player_entity,
     ecs_key_animation_graph_handle,
     AnimationGraphHandle::new(graph_handle),
   )
-  try! world.set(target_entity, ecs_key_animation_target_id, target_id)
-  try! world.set(
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
     target_entity,
     ecs_key_animated_by,
     AnimatedBy::new(player_entity),

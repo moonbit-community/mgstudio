@@ -136,29 +136,34 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
     @sprite.MeshMaterial2d[CheckerMaterialAsset],
   ] = @sprite.MeshMaterial2d::component()
   let transform = @transform.Transform::identity()
-  try! (world.set(entity, @sprite.ecs_key_mesh2d, mesh) |> ignore)
-  try! (world.set(entity, material_key, @sprite.MeshMaterial2d::new(handle))
+  try! (world.set_by_key(entity, @sprite.ecs_key_mesh2d, mesh) |> ignore)
+  try! (world.set_by_key(
+    entity,
+    material_key,
+    @sprite.MeshMaterial2d::new(handle),
+  )
   |> ignore)
-  try! (world.set(entity, @transform.ecs_key_transform, transform) |> ignore)
-  try! (world.set(
+  try! (world.set_by_key(entity, @transform.ecs_key_transform, transform)
+  |> ignore)
+  try! (world.set_by_key(
     entity,
     @sprite.ecs_key_render_layers,
     @sprite.RenderLayers::default(),
   )
   |> ignore)
-  try! (world.set(
+  try! (world.set_by_key(
     entity,
     @visibility.ecs_key_visibility,
     @visibility.Visibility::Inherited,
   )
   |> ignore)
-  try! (world.set(
+  try! (world.set_by_key(
     entity,
     @visibility.ecs_key_inherited_visibility,
     @visibility.InheritedVisibility::new(true),
   )
   |> ignore)
-  try! (world.set(
+  try! (world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),

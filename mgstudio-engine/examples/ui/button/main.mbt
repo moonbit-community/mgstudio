@@ -47,14 +47,8 @@ fn button_system(world : @ecs.World) -> Unit {
   if a11y_state_resource.get() is Some(a11y_state) {
     a11y_state_ref = Some(Ref::new(a11y_state))
   }
-  let button_store = world.component(@ui.ecs_key_button)
-  let interaction_store = world.component(@ui.ecs_key_interaction)
-  let background_store = world.component(@ui.ecs_key_background_color)
-  let border_store = world.component(@ui.ecs_key_border_color)
-  let children_store = world.component(@hierarchy.ecs_key_children)
-  let text_store = world.component(@text.ecs_key_text)
-  interaction_store.for_each(fn(entity, interaction) {
-    if !button_store.contains(entity) {
+  world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
+    if !(try! world.contains_by_key(entity, @ui.ecs_key_button)) {
       return
     }
     if a11y_state_ref is Some(a11y_state) {
@@ -87,26 +81,47 @@ fn button_system(world : @ecs.World) -> Unit {
       @ui.Interaction::None => @sprite.Color::black()
     }
     if interaction != @ui.Interaction::None {
-      if button_store.get(entity) is Some(button) {
-        button_store.set(entity, button) |> ignore
+      if (try! world.get_by_key(entity, @ui.ecs_key_button)) is Some(button) {
+        try! (world.replace(entity, @ui.ecs_key_button, button) |> ignore)
       }
     }
-    if background_store.contains(entity) {
-      background_store.set(entity, @ui.BackgroundColor::new(bg_color)) |> ignore
+    if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
+      try! (world.replace(
+        entity,
+        @ui.ecs_key_background_color,
+        @ui.BackgroundColor::new(bg_color),
+      )
+      |> ignore)
     } else {
-      background_store.insert(entity, @ui.BackgroundColor::new(bg_color))
+      try! world.set_by_key(
+        entity,
+        @ui.ecs_key_background_color,
+        @ui.BackgroundColor::new(bg_color),
+      )
     }
-    if border_store.contains(entity) {
-      border_store.set(entity, @ui.BorderColor::new(border_color)) |> ignore
+    if (try! world.contains_by_key(entity, @ui.ecs_key_border_color)) {
+      try! (world.replace(
+        entity,
+        @ui.ecs_key_border_color,
+        @ui.BorderColor::new(border_color),
+      )
+      |> ignore)
     } else {
-      border_store.insert(entity, @ui.BorderColor::new(border_color))
+      try! world.set_by_key(
+        entity,
+        @ui.ecs_key_border_color,
+        @ui.BorderColor::new(border_color),
+      )
     }
-    if children_store.get(entity) is Some(children) {
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
       if children.entities.length() > 0 {
         let label_entity = children.entities[0]
-        if text_store.get(label_entity) is Some(text_value) {
+        if (try! world.get_by_key(label_entity, @text.ecs_key_text))
+          is Some(text_value) {
           text_value.content = text.to_string()
-          text_store.set(label_entity, text_value) |> ignore
+          try! (world.replace(label_entity, @text.ecs_key_text, text_value)
+          |> ignore)
         }
       }
     }
@@ -133,11 +148,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Root node.
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
@@ -147,14 +161,15 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Button node.
   let button = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(button, @hierarchy.Parent::new(root))
-  world.component(@ui.ecs_key_button).insert(button, @ui.Button::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     button,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Px(150.0F))
     .with_height(@ui.Val::Px(65.0F))
@@ -162,41 +177,85 @@ fn setup(world : @ecs.World) -> Unit {
     .with_justify_content(@ui.JustifyContent::Center)
     .with_align_items(@ui.AlignItems::Center),
   )
-  world
-  .component(@ui.ecs_key_border_radius)
-  .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
-  world
-  .component(@ui.ecs_key_border_color)
-  .insert(button, @ui.BorderColor::new(@sprite.Color::white()))
-  world
-  .component(@ui.ecs_key_background_color)
-  .insert(button, @ui.BackgroundColor::new(@sprite.Color::black()))
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_radius,
+    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+  )
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(150.0F))
+    .with_height(@ui.Val::Px(65.0F))
+    .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
+    .with_justify_content(@ui.JustifyContent::Center)
+    .with_align_items(@ui.AlignItems::Center),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_radius,
+    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_color,
+    @ui.BorderColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(150.0F))
+    .with_height(@ui.Val::Px(65.0F))
+    .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
+    .with_justify_content(@ui.JustifyContent::Center)
+    .with_align_items(@ui.AlignItems::Center),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_radius,
+    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_color,
+    @ui.BorderColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_background_color,
+    @ui.BackgroundColor::new(@sprite.Color::black()),
+  )
 
   // Button label.
   let label = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(label, @hierarchy.Parent::new(button))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     label,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(button),
+  )
+  try! world.set_by_key(
+    label,
+    @ui.ecs_key_node,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
-  world.component(@text.ecs_key_text).insert(label, @text.Text::new("Button"))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(label, @text.ecs_key_text, @text.Text::new("Button"))
+  try! world.set_by_key(
     label,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(33.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(
+  try! world.set_by_key(
     label,
+    @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
   )
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(label, @text.TextLayout::new_with_justify(@text.Justify::Center))
+  try! world.set_by_key(
+    label,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Center),
+  )
 }

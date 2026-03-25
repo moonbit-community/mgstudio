@@ -143,15 +143,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Light
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   let perspective_stretched_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(10, 10),
@@ -245,11 +246,12 @@ fn move_camera_view(world : @ecs.World) -> Unit {
   let wrapped = sweep - float_from_int((sweep / cycle).to_int()) * cycle
   let offset = wrapped - 50.0F
 
-  let sub_camera_view_store = world.component(@pbr.ecs_key_sub_camera_view3d)
   for entity in camera_sub_view_state.val.moving_cameras {
-    if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
+    if (try! world.get_by_key(entity, @pbr.ecs_key_sub_camera_view3d))
+      is Some(sub_camera_view) {
       let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))
-      sub_camera_view_store.set(entity, next) |> ignore
+      try! (world.replace(entity, @pbr.ecs_key_sub_camera_view3d, next)
+      |> ignore)
     }
   }
 }
@@ -277,8 +279,6 @@ fn resize_viewports(world : @ecs.World) -> Unit {
   let small_size = @math.IVec2::new(small_dim, small_dim)
   let small_wide_size = @math.IVec2::new(small_dim * 2, small_dim)
 
-  let camera_store = world.component(@sprite.ecs_key_camera)
-
   for pair in camera_sub_view_state.val.cameras {
     let entity = pair.0
     let viewport_kind = pair.1
@@ -296,13 +296,14 @@ fn resize_viewports(world : @ecs.World) -> Unit {
       OrthographicControl =>
         (small_wide_size, @math.IVec2::new(small_width * 6, 0))
     }
-    if camera_store.get(entity) is Some(camera) {
+    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
       let viewport = match camera.viewport {
         Some(viewport) => viewport
         None => @sprite.Viewport::default()
       }
-      camera_store.set(
+      try! (world.replace(
         entity,
+        @sprite.ecs_key_camera,
         camera.with_viewport(
           @sprite.Viewport::new_with_depth(
             position,
@@ -312,7 +313,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
           ),
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }

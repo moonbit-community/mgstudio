@@ -16,17 +16,22 @@
 test "window: duplicate screenshot targets are despawned during queueing" {
   let world = @ecs.World::new()
   let primary_window = world.spawn()
-  try! world.set_component(primary_window, Window::default())
-  try! world.set_component(primary_window, PrimaryWindow::{  })
+  try! (world.entity_mut(primary_window).insert_component(Window::default())
+  |> ignore)
+  try! (world.entity_mut(primary_window).insert_component(PrimaryWindow::{  })
+  |> ignore)
 
   let first_request = world.spawn()
-  try! world.set_component(first_request, Screenshot::primary_window())
+  try! (world
+  .entity_mut(first_request)
+  .insert_component(Screenshot::primary_window())
+  |> ignore)
 
   let duplicate_request = world.spawn()
-  try! world.set_component(
-    duplicate_request,
-    Screenshot::window(primary_window),
-  )
+  try! (world
+  .entity_mut(duplicate_request)
+  .insert_component(Screenshot::window(primary_window))
+  |> ignore)
 
   screenshot_queue_capture_requests(world)
 
@@ -38,16 +43,20 @@ test "window: duplicate screenshot targets are despawned during queueing" {
 test "window: non-primary window screenshot target still deduplicates" {
   let world = @ecs.World::new()
   let secondary_window = world.spawn()
-  try! world.set_component(secondary_window, Window::default())
+  try! (world.entity_mut(secondary_window).insert_component(Window::default())
+  |> ignore)
 
   let first_request = world.spawn()
-  try! world.set_component(first_request, Screenshot::window(secondary_window))
+  try! (world
+  .entity_mut(first_request)
+  .insert_component(Screenshot::window(secondary_window))
+  |> ignore)
 
   let duplicate_request = world.spawn()
-  try! world.set_component(
-    duplicate_request,
-    Screenshot::window(secondary_window),
-  )
+  try! (world
+  .entity_mut(duplicate_request)
+  .insert_component(Screenshot::window(secondary_window))
+  |> ignore)
 
   screenshot_queue_capture_requests(world)
 
@@ -60,10 +69,16 @@ test "window: duplicate texture-view screenshot targets are despawned during que
   let world = @ecs.World::new()
 
   let first_request = world.spawn()
-  try! world.set_component(first_request, Screenshot::texture_view(42))
+  try! (world
+  .entity_mut(first_request)
+  .insert_component(Screenshot::texture_view(42))
+  |> ignore)
 
   let duplicate_request = world.spawn()
-  try! world.set_component(duplicate_request, Screenshot::texture_view(42))
+  try! (world
+  .entity_mut(duplicate_request)
+  .insert_component(Screenshot::texture_view(42))
+  |> ignore)
 
   screenshot_queue_capture_requests(world)
 

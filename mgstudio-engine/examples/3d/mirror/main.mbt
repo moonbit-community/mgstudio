@@ -245,10 +245,12 @@ fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
     position.z,
   ).looking_at(target, @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
-  world
-  .component(@transform.ecs_key_transform)
-  .set(mirror_state.val.main_camera, transform)
-  |> ignore
+  try! (world.replace(
+    mirror_state.val.main_camera,
+    @transform.ecs_key_transform,
+    transform,
+  )
+  |> ignore)
 }
 
 ///|
@@ -340,10 +342,9 @@ fn setup(world : @ecs.World) -> Unit {
   // Fox scene.
   let asset_server = @asset.AssetServer::new()
   let fox = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     fox,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -351,9 +352,11 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(fox, @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F))
+  try! world.set_by_key(
+    fox,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F),
+  )
   mirror_state.val.fox = fox
 
   // Mirror plane.
@@ -377,23 +380,23 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(mirror_material),
     mirror_transform,
   ).spawn(world)
-  world
-  .component(@sprite.ecs_key_render_layers)
-  .insert(mirror_entity, @sprite.RenderLayers::layer(LAYER_MIRROR_SURFACE))
+  try! world.set_by_key(
+    mirror_entity,
+    @sprite.ecs_key_render_layers,
+    @sprite.RenderLayers::layer(LAYER_MIRROR_SURFACE),
+  )
   mirror_state.val.mirror_plane = mirror_entity
 
   // Lighting.
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 5000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
       @math.Vec3::new(-50.0F, 0.0F, 100.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -415,10 +418,9 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
-  world
-  .component(@sprite.ecs_key_render_layers)
-  .insert(
+  try! world.set_by_key(
     main_camera,
+    @sprite.ecs_key_render_layers,
     @sprite.RenderLayers::from_layers([LAYER_MAIN_SCENE, LAYER_MIRROR_SURFACE]),
   )
   mirror_state.val.main_camera = main_camera
@@ -437,12 +439,16 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
-  world
-  .component(@sprite.ecs_key_render_target)
-  .insert(mirror_camera, @sprite.RenderTarget::Image(mirror_target))
-  world
-  .component(@sprite.ecs_key_render_layers)
-  .insert(mirror_camera, @sprite.RenderLayers::layer(LAYER_MAIN_SCENE))
+  try! world.set_by_key(
+    mirror_camera,
+    @sprite.ecs_key_render_target,
+    @sprite.RenderTarget::Image(mirror_target),
+  )
+  try! world.set_by_key(
+    mirror_camera,
+    @sprite.ecs_key_render_layers,
+    @sprite.RenderLayers::layer(LAYER_MAIN_SCENE),
+  )
   mirror_state.val.mirror_camera = mirror_camera
 
   // Help text.
@@ -528,18 +534,26 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   }
 
   guard @input.mouse_position() is Some(screen_pos) else { return }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  let projection_store = world.component(@pbr.ecs_key_projection)
 
-  guard transform_store.get(mirror_state.val.main_camera)
+  guard (try! world.get_by_key(
+      mirror_state.val.main_camera,
+      @transform.ecs_key_transform,
+    ))
     is Some(camera_transform) else {
     return
   }
-  guard camera_store.get(mirror_state.val.main_camera) is Some(camera) else {
+  guard (try! world.get_by_key(
+      mirror_state.val.main_camera,
+      @sprite.ecs_key_camera,
+    ))
+    is Some(camera) else {
     return
   }
-  guard projection_store.get(mirror_state.val.main_camera) is Some(projection) else {
+  guard (try! world.get_by_key(
+      mirror_state.val.main_camera,
+      @pbr.ecs_key_projection,
+    ))
+    is Some(projection) else {
     return
   }
 
@@ -565,14 +579,16 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
     return
   }
 
-  if transform_store.get(mirror_state.val.fox) is Some(fox_transform) {
-    transform_store.set(
+  if (try! world.get_by_key(mirror_state.val.fox, @transform.ecs_key_transform))
+    is Some(fox_transform) {
+    try! (world.replace(
       mirror_state.val.fox,
+      @transform.ecs_key_transform,
       fox_transform.with_translation(
         @math.Vec3::new(hit.x, fox_transform.translation.y, hit.z),
       ),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -599,16 +615,20 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
   )
   mirror_state.val.mirror_target_size = size
 
-  let target_store = world.component(@sprite.ecs_key_render_target)
-  if target_store.contains(mirror_state.val.mirror_camera) {
-    target_store.set(
+  if (try! world.contains_by_key(
       mirror_state.val.mirror_camera,
+      @sprite.ecs_key_render_target,
+    )) {
+    try! (world.replace(
+      mirror_state.val.mirror_camera,
+      @sprite.ecs_key_render_target,
       @sprite.RenderTarget::Image(mirror_target),
     )
-    |> ignore
+    |> ignore)
   } else {
-    target_store.insert(
+    try! world.set_by_key(
       mirror_state.val.mirror_camera,
+      @sprite.ecs_key_render_target,
       @sprite.RenderTarget::Image(mirror_target),
     )
   }
@@ -634,18 +654,25 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(mirror_state.val.main_camera)
+  guard (try! world.get_by_key(
+      mirror_state.val.main_camera,
+      @transform.ecs_key_transform,
+    ))
     is Some(main_camera_transform) else {
     return
   }
-  guard transform_store.get(mirror_state.val.mirror_plane)
+  guard (try! world.get_by_key(
+      mirror_state.val.mirror_plane,
+      @transform.ecs_key_transform,
+    ))
     is Some(mirror_transform) else {
     return
   }
 
-  let projection_store = world.component(@pbr.ecs_key_projection)
-  guard projection_store.get(mirror_state.val.main_camera)
+  guard (try! world.get_by_key(
+      mirror_state.val.main_camera,
+      @pbr.ecs_key_projection,
+    ))
     is Some(main_camera_projection_component) else {
     return
   }
@@ -657,13 +684,18 @@ fn update_mirror_camera_on_main_camera_transform_change(
     main_camera_transform, main_projection, mirror_transform,
   )
 
-  transform_store.set(mirror_state.val.mirror_camera, mirror_camera_transform)
-  |> ignore
-  projection_store.set(
+  try! (world.replace(
     mirror_state.val.mirror_camera,
+    @transform.ecs_key_transform,
+    mirror_camera_transform,
+  )
+  |> ignore)
+  try! (world.replace(
+    mirror_state.val.mirror_camera,
+    @pbr.ecs_key_projection,
     @pbr.Projection::Perspective(mirror_camera_projection),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|

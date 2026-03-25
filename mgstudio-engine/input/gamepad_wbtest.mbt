@@ -81,7 +81,7 @@ fn[T] read_messages(world : @ecs.World, key : @ecs.MessageKey[T]) -> Array[T] {
 
 ///|
 fn world_gamepad(world : @ecs.World, entity : @core.Entity) -> Gamepad? {
-  let gamepad : Gamepad? = try! @ecs.World::get_component(world, entity)
+  let gamepad : Gamepad? = try! @ecs.World::get(world, entity)
   gamepad
 }
 
@@ -90,9 +90,7 @@ fn world_gamepad_settings(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> GamepadSettings? {
-  let settings : GamepadSettings? = try! @ecs.World::get_component(
-    world, entity,
-  )
+  let settings : GamepadSettings? = try! @ecs.World::get(world, entity)
   settings
 }
 
@@ -169,9 +167,7 @@ test "input gamepad: reconnection preserves settings component state" {
   app = app.run_once()
 
   inspect(
-    try! @ecs.World::update_component(world, entity, fn(
-      settings : GamepadSettings,
-    ) {
+    try! @ecs.World::update(world, entity, fn(settings : GamepadSettings) {
       GamepadSettings::{ ..settings, default_button_settings: button_settings }
     }),
     content="true",

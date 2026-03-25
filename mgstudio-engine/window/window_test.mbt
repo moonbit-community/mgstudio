@@ -29,7 +29,7 @@ fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
 
 ///|
 fn window_component_value(world : @ecs.World, entity : @core.Entity) -> Window? {
-  try! world.get_component(entity)
+  try! world.entity(entity).get()
 }
 
 ///|
@@ -37,12 +37,12 @@ fn cursor_options_value(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> CursorOptions? {
-  try! world.get_component(entity)
+  try! world.entity(entity).get()
 }
 
 ///|
 fn cursor_icon_value(world : @ecs.World, entity : @core.Entity) -> CursorIcon? {
-  try! world.get_component(entity)
+  try! world.entity(entity).get()
 }
 
 ///|
@@ -50,12 +50,12 @@ fn raw_handle_holder_value(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> RawHandleWrapperHolder? {
-  try! world.get_component(entity)
+  try! world.entity(entity).get()
 }
 
 ///|
 fn has_closing_window(world : @ecs.World, entity : @core.Entity) -> Bool {
-  match (try! world.get_component(entity) : ClosingWindow?) {
+  match (try! world.entity(entity).get() : ClosingWindow?) {
     Some(_) => true
     None => false
   }
@@ -66,12 +66,12 @@ fn monitor_component_value(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Monitor? {
-  try! world.get_component(entity)
+  try! world.entity(entity).get()
 }
 
 ///|
 fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
-  match (try! world.get_component(entity) : PrimaryMonitor?) {
+  match (try! world.entity(entity).get() : PrimaryMonitor?) {
     Some(_) => true
     None => false
   }
@@ -266,8 +266,8 @@ test "window: compatibility helpers read and write ECS primary window state" {
   configured_window.position = WindowPosition::new(3, 4)
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, configured_window)
-  try! world.set_component(entity, PrimaryWindow::{  })
+  try! (world.entity_mut(entity).insert_component(configured_window) |> ignore)
+  try! (world.entity_mut(entity).insert_component(PrimaryWindow::{  }) |> ignore)
 
   let seen_width : Ref[Int] = Ref::new(0)
   let seen_height : Ref[Int] = Ref::new(0)
@@ -377,10 +377,11 @@ test "window: window refs resolve entity-backed metrics" {
 
   let world = @ecs.World::new()
   let primary = world.spawn()
-  try! world.set_component(primary, primary_window)
-  try! world.set_component(primary, PrimaryWindow::{  })
+  try! (world.entity_mut(primary).insert_component(primary_window) |> ignore)
+  try! (world.entity_mut(primary).insert_component(PrimaryWindow::{  })
+  |> ignore)
   let secondary = world.spawn()
-  try! world.set_component(secondary, secondary_window)
+  try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
   inspect(
     window_entity_for_ref(world, WindowRef::Primary) == Some(primary),
@@ -411,7 +412,7 @@ test "window: primary refs do not fall back to secondary windows" {
 
   let world = @ecs.World::new()
   let secondary = world.spawn()
-  try! world.set_component(secondary, secondary_window)
+  try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
   inspect(
     window_entity_for_ref(world, WindowRef::Primary) is None,
@@ -430,7 +431,7 @@ test "window: singleton helpers no-op when no primary window exists" {
   let secondary_window = Window::default()
   secondary_window.title = "Secondary"
   secondary_window.resolution.set_physical_resolution(640, 360)
-  try! world.set_component(secondary, secondary_window)
+  try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
   let width = Ref::new(-1)
   let height = Ref::new(-1)
   let scale_factor = Ref::new(-1.0F)
@@ -523,7 +524,7 @@ test "window: plugin does not own backend window synchronization" {
 test "window: close_when_requested marks windows without immediate despawn" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, Window::default())
+  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
   let mut app = @app.App::new(world)
     .add_message(ecs_key_window_close_requested)
     .add_message(ecs_key_window_closing)
@@ -566,9 +567,11 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
   let world = @ecs.World::new()
   let primary = world.spawn()
   let secondary = world.spawn()
-  try! world.set_component(primary, Window::default())
-  try! world.set_component(primary, PrimaryWindow::{  })
-  try! world.set_component(secondary, Window::default())
+  try! (world.entity_mut(primary).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(primary).insert_component(PrimaryWindow::{  })
+  |> ignore)
+  try! (world.entity_mut(secondary).insert_component(Window::default())
+  |> ignore)
   let mut app = @app.App::new(world)
     .add_message(@app.AppExit::message())
     .add_message(ecs_key_window_closed)
@@ -612,8 +615,9 @@ test "window: monitor ECS types align with bevy monitor data model" {
     video_modes: [video_mode],
   }
 
-  try! world.set_component(monitor_entity, monitor)
-  try! world.set_component(monitor_entity, PrimaryMonitor::{  })
+  try! (world.entity_mut(monitor_entity).insert_component(monitor) |> ignore)
+  try! (world.entity_mut(monitor_entity).insert_component(PrimaryMonitor::{  })
+  |> ignore)
 
   let stored_monitor = match monitor_component_value(world, monitor_entity) {
     Some(value) => value
@@ -652,8 +656,8 @@ test "window: app lifecycle active states align with bevy semantics" {
 test "window: aggregate event bus mirrors window-owned emit helpers" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, Window::default())
-  try! world.set_component(entity, PrimaryWindow::{  })
+  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(PrimaryWindow::{  }) |> ignore)
 
   let app = window_plugin(@app.App::new(world)).run_once()
   let world0 = app.world()

@@ -118,10 +118,9 @@ fn setup(world : @ecs.World) -> Unit {
   set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
 
   let scene_root = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     scene_root,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -142,16 +141,45 @@ fn setup(world : @ecs.World) -> Unit {
       @pbr.ecs_key_default_opaque_renderer_method,
       @pbr.DefaultOpaqueRendererMethod::deferred(),
     )
-    world
-    .component(@pbr.ecs_key_depth_prepass)
-    .insert(camera, @pbr.DepthPrepass::default())
-    world
-    .component(@pbr.ecs_key_motion_vector_prepass)
-    .insert(camera, @pbr.MotionVectorPrepass::default())
-    world
-    .component(@pbr.ecs_key_deferred_prepass)
-    .insert(camera, @pbr.DeferredPrepass::default())
-    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_depth_prepass,
+      @pbr.DepthPrepass::default(),
+    )
+    world.insert_resource(
+      @pbr.ecs_key_default_opaque_renderer_method,
+      @pbr.DefaultOpaqueRendererMethod::deferred(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_depth_prepass,
+      @pbr.DepthPrepass::default(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_motion_vector_prepass,
+      @pbr.MotionVectorPrepass::default(),
+    )
+    world.insert_resource(
+      @pbr.ecs_key_default_opaque_renderer_method,
+      @pbr.DefaultOpaqueRendererMethod::deferred(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_depth_prepass,
+      @pbr.DepthPrepass::default(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_motion_vector_prepass,
+      @pbr.MotionVectorPrepass::default(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_deferred_prepass,
+      @pbr.DeferredPrepass::default(),
+    )
+    try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   }
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -183,7 +211,9 @@ fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
   }
 
   guard lightmaps_state.val.scene_root is Some(scene_root) else { return }
-  if !world.component(@scene.ecs_key_scene_instance_ready).contains(scene_root) {
+  if !(try! world.contains_by_key(
+      scene_root, @scene.ecs_key_scene_instance_ready,
+    )) {
     return
   }
 

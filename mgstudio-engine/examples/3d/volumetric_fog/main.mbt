@@ -267,16 +267,19 @@ fn setup_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::TonyMcMapface)
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default())
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::TonyMcMapface,
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       1000.0F,
@@ -288,31 +291,30 @@ fn setup_camera(world : @ecs.World) -> Unit {
 ///|
 fn setup_lights(world : @ecs.World) -> Unit {
   let directional_light = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(1.0F, 4.3F, -1.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
   )
   volumetric_fog_state.val.directional_light = Some(directional_light)
 
   let point_light = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(-0.4F, 1.9F, 1.0F))
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(-0.4F, 1.9F, 1.0F),
+  )
+  try! world.set_by_key(
+    point_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
       10_000.0F,
@@ -323,19 +325,17 @@ fn setup_lights(world : @ecs.World) -> Unit {
   volumetric_fog_state.val.point_light = Some(point_light)
 
   let spot_light = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     spot_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(-1.8F, 3.9F, -2.7F).looking_at(
       @math.Vec3::new(-1.5F, 0.7F, 3.5F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_spot_light)
-  .insert(
+  try! world.set_by_key(
     spot_light,
+    @pbr.ecs_key_spot_light,
     @pbr.SpotLight::new(
       @sprite.Color::white(),
       50_000.0F,
@@ -376,11 +376,11 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
 ///|
 fn apply_light_switches(world : @ecs.World) -> Unit {
   if volumetric_fog_state.val.point_light is Some(point_light) {
-    if world.component(@pbr.ecs_key_point_light).get(point_light) is Some(light) {
-      world
-      .component(@pbr.ecs_key_point_light)
-      .set(
+    if (try! world.get_by_key(point_light, @pbr.ecs_key_point_light))
+      is Some(light) {
+      try! (world.replace(
         point_light,
+        @pbr.ecs_key_point_light,
         @pbr.PointLight::new(
           light.color,
           if volumetric_fog_state.val.volumetric_pointlight {
@@ -392,16 +392,16 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           volumetric_fog_state.val.volumetric_pointlight,
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 
   if volumetric_fog_state.val.spot_light is Some(spot_light) {
-    if world.component(@pbr.ecs_key_spot_light).get(spot_light) is Some(light) {
-      world
-      .component(@pbr.ecs_key_spot_light)
-      .set(
+    if (try! world.get_by_key(spot_light, @pbr.ecs_key_spot_light))
+      is Some(light) {
+      try! (world.replace(
         spot_light,
+        @pbr.ecs_key_spot_light,
         @pbr.SpotLight::new(
           light.color,
           if volumetric_fog_state.val.volumetric_spotlight {
@@ -415,7 +415,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           volumetric_fog_state.val.volumetric_spotlight,
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }
@@ -426,9 +426,9 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
 
   if volumetric_fog_state.val.camera is Some(camera_entity) {
     if volumetric_fog_state.val.directional_light is Some(light_entity) {
-      if world.component(@transform.ecs_key_transform).get(camera_entity)
+      if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
         is Some(camera_transform) {
-        if world.component(@transform.ecs_key_transform).get(light_entity)
+        if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
           is Some(light_transform) {
           let light_dir = transform_forward(light_transform).neg()
           let view_dir = scene_focus()
@@ -468,12 +468,16 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
     @pbr.FogFalloff3d::exponential_squared(density),
   )
   guard volumetric_fog_state.val.camera is Some(camera) else { return }
-  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
-  let camera3d = match camera3d_store.get(camera) {
+  let camera3d = match (try! world.get_by_key(camera, @pbr.ecs_key_camera3d)) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog))) |> ignore
+  try! (world.replace(
+    camera,
+    @pbr.ecs_key_camera3d,
+    camera3d.with_distance_fog(Some(fog)),
+  )
+  |> ignore)
 }
 
 ///|
@@ -512,17 +516,19 @@ fn move_directional_light(world : @ecs.World) -> Unit {
   }
 
   if volumetric_fog_state.val.directional_light is Some(light_entity) {
-    if world.component(@transform.ecs_key_transform).get(light_entity)
+    if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
       is Some(light_transform) {
       let next_rotation = @math.Quat::from_rotation_y(delta_x)
         .mul(@math.Quat::from_rotation_x(delta_y))
         .mul(light_transform.rotation)
         .normalize()
 
-      world
-      .component(@transform.ecs_key_transform)
-      .set(light_entity, light_transform.with_rotation(next_rotation))
-      |> ignore
+      try! (world.replace(
+        light_entity,
+        @transform.ecs_key_transform,
+        light_transform.with_rotation(next_rotation),
+      )
+      |> ignore)
     }
   }
 
@@ -532,7 +538,7 @@ fn move_directional_light(world : @ecs.World) -> Unit {
 ///|
 fn move_point_light(world : @ecs.World) -> Unit {
   if volumetric_fog_state.val.point_light is Some(point_entity) {
-    if world.component(@transform.ecs_key_transform).get(point_entity)
+    if (try! world.get_by_key(point_entity, @transform.ecs_key_transform))
       is Some(point_transform) {
       let mut x = point_transform.translation.x +
         volumetric_fog_state.val.point_light_speed *
@@ -546,10 +552,9 @@ fn move_point_light(world : @ecs.World) -> Unit {
         volumetric_fog_state.val.point_light_speed = -volumetric_fog_state.val.point_light_speed
       }
 
-      world
-      .component(@transform.ecs_key_transform)
-      .set(
+      try! (world.replace(
         point_entity,
+        @transform.ecs_key_transform,
         point_transform.with_translation(
           @math.Vec3::new(
             x,
@@ -558,7 +563,7 @@ fn move_point_light(world : @ecs.World) -> Unit {
           ),
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 

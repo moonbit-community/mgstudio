@@ -58,11 +58,14 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, -200.0F, 0.0F),
   )
   let floor = floor_bundle.spawn(world)
-  let rb_store = @physics3d.get_rigid_body3d_store(world)
-  let col_store = @physics3d.get_collider3d_store(world)
-  rb_store.insert(floor, @physics3d.RigidBody3d::fixed())
-  col_store.insert(
+  try! world.set_by_key(
     floor,
+    @physics3d.ecs_key_rigid_body3d,
+    @physics3d.RigidBody3d::fixed(),
+  )
+  try! world.set_by_key(
+    floor,
+    @physics3d.ecs_key_collider3d,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(320.0F, 16.0F, 16.0F),
     ),
@@ -85,9 +88,14 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 200.0F, 0.0F),
   )
   let ball = ball_bundle.spawn(world)
-  rb_store.insert(ball, @physics3d.RigidBody3d::dynamic())
-  col_store.insert(
+  try! world.set_by_key(
     ball,
+    @physics3d.ecs_key_rigid_body3d,
+    @physics3d.RigidBody3d::dynamic(),
+  )
+  try! world.set_by_key(
+    ball,
+    @physics3d.ecs_key_collider3d,
     @physics3d.Collider3d::new(@physics3d.ColliderShape3d::ball(12.0F)),
   )
   state.val.ball = Some(ball)
@@ -100,15 +108,16 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     ),
   )
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 100000.0F, 2000.0F, false),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(220.0F, 360.0F, 220.0F))
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(220.0F, 360.0F, 220.0F),
+  )
 
   let camera = @sprite.Camera::default()
   @pbr.Camera3dBundle::new(
@@ -126,8 +135,7 @@ fn physics3d_sanity_print(world : @ecs.World) -> Unit {
   match state.val.ball {
     None => ()
     Some(ball) => {
-      let transform_store = world.component(@transform.ecs_key_transform)
-      match transform_store.get(ball) {
+      match (try! world.get_by_key(ball, @transform.ecs_key_transform)) {
         None => ()
         Some(t) => println("ball.y=\{t.translation.y}")
       }

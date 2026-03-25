@@ -109,16 +109,22 @@ test "ecs: spawn set get update and despawn cleanup" {
   )
   let entity = world.spawn()
 
-  try! world.set(entity, comp_counter, Counter::{ value: 3 })
-  inspect(try! world.get(entity, comp_counter), content="Some({value: 3})")
+  try! world.set_by_key(entity, comp_counter, Counter::{ value: 3 })
+  inspect(
+    try! world.get_by_key(entity, comp_counter),
+    content="Some({value: 3})",
+  )
 
   inspect(
-    try! world.update(entity, comp_counter, fn(counter) {
+    try! world.update_by_key(entity, comp_counter, fn(counter) {
       Counter::{ value: counter.value + 9 }
     }),
     content="true",
   )
-  inspect(try! world.get(entity, comp_counter), content="Some({value: 12})")
+  inspect(
+    try! world.get_by_key(entity, comp_counter),
+    content="Some({value: 12})",
+  )
 
   try! world.despawn(entity)
   inspect(world.is_alive(entity), content="false")
@@ -133,9 +139,9 @@ test "ecs: type mismatch includes context" {
   let comp_broken : ComponentKey[BrokenCounter] = comp_counter.cast()
   let entity = world.spawn()
 
-  try! world.set(entity, comp_counter, Counter::{ value: 7 })
+  try! world.set_by_key(entity, comp_counter, Counter::{ value: 7 })
 
-  let result : Result[BrokenCounter?, EcsError] = try? world.get(
+  let result : Result[BrokenCounter?, EcsError] = try? world.get_by_key(
     entity, comp_broken,
   )
   guard result is Err(ComponentTypeMismatch(key_id, _name, _entity, _actual)) else {
@@ -153,7 +159,7 @@ test "ecs: dead entity fails fast" {
   let entity = world.spawn()
   try! world.despawn(entity)
 
-  let set_result : Result[Unit, EcsError] = try? world.set(
+  let set_result : Result[Unit, EcsError] = try? world.set_by_key(
     entity,
     comp_counter,
     Counter::{ value: 1 },
@@ -174,19 +180,22 @@ test "ecs: typed component api uses component ownership" {
   inspect(counter_key.id() == typed_counter_key.id(), content="true")
   inspect(marker_key.id() == typed_marker_key.id(), content="true")
 
-  try! world.set_component(e0, TypedCounter::{ value: 10 })
-  try! world.set_component(e1, TypedCounter::{ value: 20 })
-  try! world.set_component(e1, TypedMarker::{ enabled: true })
+  try! (world.entity_mut(e0).insert_component(TypedCounter::{ value: 10 })
+  |> ignore)
+  try! (world.entity_mut(e1).insert_component(TypedCounter::{ value: 20 })
+  |> ignore)
+  try! (world.entity_mut(e1).insert_component(TypedMarker::{ enabled: true })
+  |> ignore)
 
-  let initial_counter : TypedCounter? = try! World::get_component(world, e0)
+  let initial_counter : TypedCounter? = try! World::get(world, e0)
   inspect(initial_counter, content="Some({value: 10})")
   inspect(
-    try! World::update_component(world, e0, fn(counter : TypedCounter) {
+    try! World::update(world, e0, fn(counter : TypedCounter) {
       TypedCounter::{ value: counter.value + 5 }
     }),
     content="true",
   )
-  let updated_counter : TypedCounter? = try! World::get_component(world, e0)
+  let updated_counter : TypedCounter? = try! World::get(world, e0)
   inspect(updated_counter, content="Some({value: 15})")
 
   let without_marker : Without[TypedMarker] = Without::new(marker_key)
@@ -212,7 +221,7 @@ test "ecs: typed component api uses component ownership" {
   let tick = world.advance_sequence()
   ignore(tick)
   inspect(tick == 1, content="true")
-  inspect(try! world.remove(e0, counter_key), content="true")
+  inspect(try! world.remove_by_key(e0, counter_key), content="true")
   let removed : Array[@core.Entity] = world
     .removed_components(counter_key, @core.SystemSequence::new(0, 1))
     .read()

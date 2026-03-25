@@ -220,7 +220,6 @@ pub fn Projection::compute_frustum(
 
 ///|
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
-  let frustum_store = get_frustum_store(world)
   let query : @ecs.Query[
     (@ecs.Comp[@transform.Transform], @ecs.Comp[Projection]),
     @ecs.All,
@@ -228,16 +227,12 @@ pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   try! query.view(fn(entity, data) {
     let (transform, projection) = data
     let next = projection.value().compute_frustum(transform.value())
-    if frustum_store.contains(entity) {
-      if frustum_store.get(entity) is Some(current) {
-        if current != next {
-          frustum_store.set(entity, next) |> ignore
-        }
-      } else {
-        frustum_store.insert(entity, next)
+    if (try! world.get_by_key(entity, ecs_key_frustum)) is Some(current) {
+      if current != next {
+        try! (world.replace(entity, ecs_key_frustum, next) |> ignore)
       }
     } else {
-      frustum_store.insert(entity, next)
+      try! world.set_by_key(entity, ecs_key_frustum, next)
     }
   })
 }

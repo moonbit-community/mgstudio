@@ -60,18 +60,21 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   ignore(tick)
 
   let fallback = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     fallback,
+    @sprite.ecs_key_camera,
     camera_with_target_info(10, @math.IVec2::new(800, 600), 1.0F),
   )
 
   let marked = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     marked,
+    @sprite.ecs_key_camera,
     camera_with_target_info(-5, @math.IVec2::new(640, 360), 1.0F),
   )
-  get_is_default_ui_camera_store(world).insert(
+  try! world.set_by_key(
     marked,
+    ecs_key_is_default_ui_camera,
     IsDefaultUiCamera::default(),
   )
 
@@ -92,50 +95,63 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   primary_window.resolution.set_physical_resolution(960, 540)
   primary_window.resolution.set_scale_factor(1.0F)
   let primary_window_entity = world.spawn()
-  try! world.set_component(primary_window_entity, primary_window)
-  try! world.set_component(primary_window_entity, @window.PrimaryWindow::{  })
+  try! (world.entity_mut(primary_window_entity).insert_component(primary_window)
+  |> ignore)
+  try! (world
+  .entity_mut(primary_window_entity)
+  .insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
 
   let marked_a = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     marked_a,
+    @sprite.ecs_key_camera,
     camera_with_target_info(2, @math.IVec2::new(960, 540), 1.0F),
   )
-  get_is_default_ui_camera_store(world).insert(
+  try! world.set_by_key(
     marked_a,
+    ecs_key_is_default_ui_camera,
     IsDefaultUiCamera::default(),
   )
 
   let marked_b = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     marked_b,
+    @sprite.ecs_key_camera,
     camera_with_target_info(20, @math.IVec2::new(512, 512), 1.0F),
   )
-  @sprite.get_render_target_store(world).insert(
+  try! world.set_by_key(
     marked_b,
+    @sprite.ecs_key_render_target,
     @sprite.RenderTarget::Image(@asset.Handle::new(7)),
   )
-  get_is_default_ui_camera_store(world).insert(
+  try! world.set_by_key(
     marked_b,
+    ecs_key_is_default_ui_camera,
     IsDefaultUiCamera::default(),
   )
 
   let primary_ref = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     primary_ref,
+    @sprite.ecs_key_camera,
     camera_with_target_info(5, @math.IVec2::new(960, 540), 1.0F),
   )
-  @sprite.get_render_target_store(world).insert(
+  try! world.set_by_key(
     primary_ref,
+    @sprite.ecs_key_render_target,
     @sprite.RenderTarget::Window(@window.WindowRef::Primary),
   )
 
   let primary_entity = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     primary_entity,
+    @sprite.ecs_key_camera,
     camera_with_target_info(9, @math.IVec2::new(960, 540), 1.0F),
   )
-  @sprite.get_render_target_store(world).insert(
+  try! world.set_by_key(
     primary_entity,
+    @sprite.ecs_key_render_target,
     @sprite.RenderTarget::Window(
       @window.WindowRef::Entity(primary_window_entity),
     ),
@@ -157,49 +173,64 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
   get_ui_scale_resource(world).insert(UiScale::new(2.0F))
 
   let target_camera = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     target_camera,
+    @sprite.ecs_key_camera,
     camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
   )
 
   let ignored_child_target = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     ignored_child_target,
+    @sprite.ecs_key_camera,
     camera_with_target_info(1, @math.IVec2::new(320, 180), 1.0F),
   )
 
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
 
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(child, @hierarchy.Parent::new(root))
-  @hierarchy.get_children_store(world).insert(
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
     root,
+    @hierarchy.ecs_key_children,
     @hierarchy.Children::new([child]),
   )
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(ignored_child_target),
   )
 
   ui_propagate_target_cameras_system(world)
 
   inspect(
-    get_computed_ui_target_camera_store(world).get(root).unwrap().get() ==
-    Some(target_camera),
+    try! (world
+    .get_by_key(root, ecs_key_computed_ui_target_camera)
+    .unwrap()
+    .get() ==
+    Some(target_camera)),
     content="true",
   )
   inspect(
-    get_computed_ui_target_camera_store(world).get(child).unwrap().get() ==
-    Some(target_camera),
+    try! (world
+    .get_by_key(child, ecs_key_computed_ui_target_camera)
+    .unwrap()
+    .get() ==
+    Some(target_camera)),
     content="true",
   )
-  let child_target_info = get_computed_ui_render_target_info_store(world)
-    .get(child)
+  let child_target_info = try! world
+    .get_by_key(child, ecs_key_computed_ui_render_target_info)
     .unwrap()
   inspect(child_target_info.scale_factor() == 4.0F, content="true")
   let logical_size = child_target_info.logical_size()
@@ -217,26 +248,32 @@ test "ui: propagated target info falls back to camera target when computed info 
   primary_window.resolution.set_physical_resolution(960, 540)
   primary_window.resolution.set_scale_factor(1.5F)
   let primary_window_entity = world.spawn()
-  try! world.set_component(primary_window_entity, primary_window)
-  try! world.set_component(primary_window_entity, @window.PrimaryWindow::{  })
+  try! (world.entity_mut(primary_window_entity).insert_component(primary_window)
+  |> ignore)
+  try! (world
+  .entity_mut(primary_window_entity)
+  .insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
 
   let target_camera = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     target_camera,
+    @sprite.ecs_key_camera,
     @sprite.Camera::default(),
   )
 
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
 
   ui_propagate_target_cameras_system(world)
 
-  let target_info = get_computed_ui_render_target_info_store(world)
-    .get(root)
+  let target_info = try! world
+    .get_by_key(root, ecs_key_computed_ui_render_target_info)
     .unwrap()
   inspect(target_info.scale_factor() == 1.5F, content="true")
   let logical_size = target_info.logical_size()
@@ -250,27 +287,32 @@ test "ui: perspective target camera keeps overlays in screen space" {
   ignore(tick)
 
   let target_camera = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     target_camera,
+    @sprite.ecs_key_camera,
     camera_with_target_info(0, @math.IVec2::new(640, 360), 1.0F),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     target_camera,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(123.0F, 456.0F, 789.0F),
   )
 
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
-  get_node_store(world).insert(root, Node::default())
+  try! world.set_by_key(root, ecs_key_node, Node::default())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)
 
-  let transform = @transform.get_transform_store(world).get(root).unwrap()
+  let transform = try! world
+    .get_by_key(root, @transform.ecs_key_transform)
+    .unwrap()
   inspect(
     transform.translation.x == 0.0F && transform.translation.y == 0.0F,
     content="true",
@@ -284,37 +326,41 @@ test "ui: layout resolves each root against its propagated target viewport" {
   ignore(tick)
 
   let camera_a = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     camera_a,
+    @sprite.ecs_key_camera,
     camera_with_target_info(0, @math.IVec2::new(200, 100), 1.0F),
   )
   let camera_b = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     camera_b,
+    @sprite.ecs_key_camera,
     camera_with_target_info(1, @math.IVec2::new(600, 300), 2.0F),
   )
 
   let root_a = world.spawn_empty()
-  get_ui_root_store(world).insert(root_a, UiRoot::default())
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(root_a, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root_a,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(camera_a),
   )
-  get_node_store(world).insert(root_a, Node::default())
+  try! world.set_by_key(root_a, ecs_key_node, Node::default())
 
   let root_b = world.spawn_empty()
-  get_ui_root_store(world).insert(root_b, UiRoot::default())
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(root_b, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root_b,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(camera_b),
   )
-  get_node_store(world).insert(root_b, Node::default())
+  try! world.set_by_key(root_b, ecs_key_node, Node::default())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)
 
-  let rect_a = get_ui_layout_store(world).get(root_a).unwrap().rect
-  let rect_b = get_ui_layout_store(world).get(root_b).unwrap().rect
+  let rect_a = try! world.get_by_key(root_a, ecs_key_ui_layout).unwrap().rect
+  let rect_b = try! world.get_by_key(root_b, ecs_key_ui_layout).unwrap().rect
   inspect(
     rect_a.size().x == 200.0F && rect_a.size().y == 100.0F,
     content="true",

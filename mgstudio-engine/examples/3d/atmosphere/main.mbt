@@ -107,7 +107,7 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn read_camera_exposure_ev100(world : @ecs.World) -> Float {
   if atmosphere_state.val.camera is Some(camera_entity) {
-    if world.component(@pbr.ecs_key_exposure).get(camera_entity)
+    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_exposure))
       is Some(exposure) {
       return exposure.ev100
     }
@@ -218,9 +218,9 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   let mut sun_mix = 0.0F
   if state.camera is Some(camera_entity) {
     if state.sun is Some(sun_entity) {
-      if world.component(@transform.ecs_key_transform).get(camera_entity)
+      if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
         is Some(camera_transform) {
-        if world.component(@transform.ecs_key_transform).get(sun_entity)
+        if (try! world.get_by_key(sun_entity, @transform.ecs_key_transform))
           is Some(sun_transform) {
           let light_dir = transform_forward(sun_transform).neg()
           let view_dir = scene_focus()
@@ -328,19 +328,27 @@ fn setup_camera(world : @ecs.World) -> Unit {
     )
     .spawn(world)
 
-  world
-  .component(@pbr.ecs_key_deferred_prepass)
-  .insert(camera, @pbr.DeferredPrepass::default())
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted)
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default())
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default())
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_deferred_prepass,
+    @pbr.DeferredPrepass::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::AcesFitted,
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
 
   atmosphere_state.val.camera = Some(camera)
 }
@@ -353,19 +361,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .build()
 
   let sun = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     sun,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(1.0F, 0.4F, 0.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     sun,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       100_000.0F,
@@ -519,14 +525,16 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
   }
   if exposure_delta != 0.0F {
     if atmosphere_state.val.camera is Some(camera_entity) {
-      if world.component(@pbr.ecs_key_exposure).get(camera_entity)
+      if (try! world.get_by_key(camera_entity, @pbr.ecs_key_exposure))
         is Some(exposure) {
         let next = clampf(exposure.ev100 + exposure_delta, 6.0F, 20.0F)
         if next != exposure.ev100 {
-          world
-          .component(@pbr.ecs_key_exposure)
-          .set(camera_entity, exposure.with_ev100(next))
-          |> ignore
+          try! (world.replace(
+            camera_entity,
+            @pbr.ecs_key_exposure,
+            exposure.with_ev100(next),
+          )
+          |> ignore)
           atmosphere_state.val.exposure_ev100 = next
           exposure_changed = true
         }
@@ -563,16 +571,15 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
       0.4F * @math.cos(atmosphere_state.val.sun_pitch),
       0.4F * @math.sin(atmosphere_state.val.sun_pitch),
     )
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       sun_entity,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xyz(sun_pos.x, sun_pos.y, sun_pos.z).looking_at(
         @math.Vec3::new(0.0F, 0.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    |> ignore
+    |> ignore)
   }
 
   if atmosphere_state.val.water_material is Some(material_handle) {

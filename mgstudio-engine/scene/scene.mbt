@@ -606,7 +606,7 @@ fn scene_instance_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> SceneInstance? {
-  try world.get(entity, ecs_key_scene_instance) catch {
+  try world.get_by_key(entity, ecs_key_scene_instance) catch {
     _ => None
   } noraise {
     value => value
@@ -619,7 +619,7 @@ fn scene_remove_ready_component(
   entity : @core.Entity,
 ) -> Unit {
   ignore(
-    try world.remove(entity, ecs_key_scene_instance_ready) catch {
+    try world.remove_by_key(entity, ecs_key_scene_instance_ready) catch {
       _ => false
     } noraise {
       value => value
@@ -668,7 +668,7 @@ fn scene_instance_on_remove(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (try! world.get(context.entity, ecs_key_scene_instance))
+  guard (try! world.get_by_key(context.entity, ecs_key_scene_instance))
     is Some(instance) else {
     return
   }
@@ -751,7 +751,7 @@ fn scene_attach_pending_instance(
 ) -> Int {
   let instance_id = scene_runtime_allocate_instance(world, root.scene)
   scene_remove_ready_component(world, root_entity)
-  try! world.set(
+  try! world.set_by_key(
     root_entity,
     ecs_key_scene_instance,
     SceneInstance::new(instance_id),
@@ -770,8 +770,9 @@ fn scene_spawn_instance_when_ready(
     return
   }
   if instance.ready {
-    if (try! world.get(root_entity, ecs_key_scene_instance_ready)) is None {
-      try! world.set(
+    if (try! world.get_by_key(root_entity, ecs_key_scene_instance_ready))
+      is None {
+      try! world.set_by_key(
         root_entity,
         ecs_key_scene_instance_ready,
         SceneInstanceReady::new(instance_id, instance.spawned_entities.length()),
@@ -786,8 +787,9 @@ fn scene_spawn_instance_when_ready(
     return
   }
 
-  if (try! world.get(root_entity, @animation.ecs_key_animation_player)) is None {
-    try! world.set(
+  if (try! world.get_by_key(root_entity, @animation.ecs_key_animation_player))
+    is None {
+    try! world.set_by_key(
       root_entity,
       @animation.ecs_key_animation_player,
       @animation.AnimationPlayer::default(),
@@ -797,20 +799,22 @@ fn scene_spawn_instance_when_ready(
   let spawned_entities : Array[@core.Entity] = []
   for node in scene.nodes3d {
     let child = world.spawn_empty()
-    try! world.set(child, @pbr.ecs_key_mesh3d, node.mesh)
-    try! world.set(child, @pbr.ecs_key_mesh_material3d, node.material)
-    try! world.set(child, @transform.ecs_key_transform, node.transform)
-    try! world.set(
+    try! world.set_by_key(child, @pbr.ecs_key_mesh3d, node.mesh)
+    try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, node.material)
+    try! world.set_by_key(child, @transform.ecs_key_transform, node.transform)
+    try! world.set_by_key(
       child,
       @hierarchy.ecs_key_parent,
       @hierarchy.Parent::new(root_entity),
     )
     if node.visibility_range is Some(range) {
-      try! world.set(child, @visibility.ecs_key_visibility_range, range)
+      try! world.set_by_key(child, @visibility.ecs_key_visibility_range, range)
     }
     if node.animation_target is Some(target_id) {
-      try! world.set(child, @animation.ecs_key_animation_target_id, target_id)
-      try! world.set(
+      try! world.set_by_key(
+        child, @animation.ecs_key_animation_target_id, target_id,
+      )
+      try! world.set_by_key(
         child,
         @animation.ecs_key_animated_by,
         @animation.AnimatedBy::new(root_entity),
@@ -820,7 +824,7 @@ fn scene_spawn_instance_when_ready(
   }
 
   scene_runtime_mark_ready(world, instance_id, spawned_entities) |> ignore
-  try! world.set(
+  try! world.set_by_key(
     root_entity,
     ecs_key_scene_instance_ready,
     SceneInstanceReady::new(instance_id, spawned_entities.length()),

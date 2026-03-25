@@ -15,7 +15,7 @@
 ///|
 fn seed_ui_context(world : @ecs.World) -> Unit {
   let mut camera_entity : @core.Entity? = None
-  @sprite.get_camera_store(world).for_each(fn(entity, _camera) {
+  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
     if camera_entity is None {
       camera_entity = Some(entity)
     }
@@ -40,8 +40,9 @@ fn seed_primary_window(world : @ecs.World) -> Unit {
   let window = @window.Window::default()
   window.resolution.set_physical_resolution(1280, 720)
   window.resolution.set_scale_factor(1.0F)
-  try! world.set_component(entity, window)
-  try! world.set_component(entity, @window.PrimaryWindow::{  })
+  try! (world.entity_mut(entity).insert_component(window) |> ignore)
+  try! (world.entity_mut(entity).insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
 }
 
 ///|
@@ -70,7 +71,7 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
   seed_ui_context(world)
 
   let camera_count = Ref::new(0)
-  @sprite.get_camera2d_store(world).for_each(fn(_entity, _camera) {
+  world.for_each_component(@sprite.ecs_key_camera2d, fn(_entity, _camera) {
     camera_count.val = camera_count.val + 1
   })
   inspect(camera_count.val, content="1")
@@ -119,8 +120,9 @@ test "examples ui button: scheduled update queues ui draw items" {
   try! world
   .query_entities_filtered(@ecs.With::new(@ui.ecs_key_button))
   .view(fn(_query_entity, entity) { button_entities.push(entity) })
-  let layout_store = @ui.get_ui_layout_store(world)
-  let layout = layout_store.get(button_entities[0]).unwrap()
+  let layout = try! world
+    .get_by_key(button_entities[0], @ui.ecs_key_ui_layout)
+    .unwrap()
   let layout_size = layout.rect.size()
   inspect(@sprite.render2d_diagnostic_prepared_camera_count(), content="1")
   inspect(

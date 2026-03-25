@@ -135,69 +135,6 @@ pub impl @ecs.Component for ContactForceEventThreshold3d with component() {
 }
 
 ///|
-pub fn get_collider3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Collider3d] {
-  world.component(ecs_key_collider3d)
-}
-
-///|
-pub fn get_velocity3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Velocity3d] {
-  world.component(ecs_key_velocity3d)
-}
-
-///|
-pub fn get_rigid_body3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[RigidBody3d] {
-  world.component(ecs_key_rigid_body3d)
-}
-
-///|
-pub fn get_active_hooks3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[ActiveHooks3d] {
-  world.component(ecs_key_active_hooks3d)
-}
-
-///|
-pub fn get_active_events3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[ActiveEvents3d] {
-  world.component(ecs_key_active_events3d)
-}
-
-///|
-pub fn get_rapier_body_handle3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[RapierBodyHandle3d] {
-  world.component(ecs_key_rapier_body_handle3d)
-}
-
-///|
-pub fn get_active_collision_types3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[ActiveCollisionTypes3d] {
-  world.component(ecs_key_active_collision_types3d)
-}
-
-///|
-pub fn get_rapier_collider_handle3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[RapierColliderHandle3d] {
-  world.component(ecs_key_rapier_collider_handle3d)
-}
-
-///|
-pub fn get_contact_force_event_threshold3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[ContactForceEventThreshold3d] {
-  world.component(ecs_key_contact_force_event_threshold3d)
-}
-
-///|
 pub fn get_physics3d_config_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[Physics3dConfig] {

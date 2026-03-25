@@ -27,9 +27,9 @@ test "hierarchy: inserting Parent immediately inserts Children on target" {
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
-  try! world.set(child, ecs_key_parent, Parent::new(parent))
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(parent))
 
-  let children = (try! world.get(parent, ecs_key_children)).unwrap()
+  let children = (try! world.get_by_key(parent, ecs_key_children)).unwrap()
   inspect(hierarchy_child_ids(children), content="[1]")
 }
 
@@ -40,11 +40,14 @@ test "hierarchy: replacing Parent moves child between parents" {
   let parent_b = world.spawn_empty()
   let child = world.spawn_empty()
 
-  try! world.set(child, ecs_key_parent, Parent::new(parent_a))
-  try! world.set(child, ecs_key_parent, Parent::new(parent_b))
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(parent_a))
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(parent_b))
 
-  inspect((try! world.get(parent_a, ecs_key_children)) is None, content="true")
-  let children = (try! world.get(parent_b, ecs_key_children)).unwrap()
+  inspect(
+    (try! world.get_by_key(parent_a, ecs_key_children)) is None,
+    content="true",
+  )
+  let children = (try! world.get_by_key(parent_b, ecs_key_children)).unwrap()
   inspect(hierarchy_child_ids(children), content="[2]")
 }
 
@@ -54,10 +57,13 @@ test "hierarchy: removing Parent removes child from Children" {
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
-  try! world.set(child, ecs_key_parent, Parent::new(parent))
-  try! (world.remove(child, ecs_key_parent) |> ignore)
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(parent))
+  try! (world.remove_by_key(child, ecs_key_parent) |> ignore)
 
-  inspect((try! world.get(parent, ecs_key_children)) is None, content="true")
+  inspect(
+    (try! world.get_by_key(parent, ecs_key_children)) is None,
+    content="true",
+  )
 }
 
 ///|
@@ -67,8 +73,8 @@ test "hierarchy: despawning parent recursively despawns descendants" {
   let child = world.spawn_empty()
   let grandchild = world.spawn_empty()
 
-  try! world.set(child, ecs_key_parent, Parent::new(root))
-  try! world.set(grandchild, ecs_key_parent, Parent::new(child))
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(root))
+  try! world.set_by_key(grandchild, ecs_key_parent, Parent::new(child))
   try! world.despawn(root)
 
   inspect(world.is_alive(root), content="false")
@@ -81,9 +87,12 @@ test "hierarchy: invalid self parent is removed immediately" {
   let world = @ecs.World::new()
   let entity = world.spawn_empty()
 
-  try! world.set(entity, ecs_key_parent, Parent::new(entity))
+  try! world.set_by_key(entity, ecs_key_parent, Parent::new(entity))
 
-  inspect((try! world.get(entity, ecs_key_parent)) is None, content="true")
+  inspect(
+    (try! world.get_by_key(entity, ecs_key_parent)) is None,
+    content="true",
+  )
 }
 
 ///|
@@ -92,7 +101,10 @@ test "hierarchy: missing parent target is removed immediately" {
   let child = world.spawn_empty()
   let missing_parent = @core.Entity::new(999, 1)
 
-  try! world.set(child, ecs_key_parent, Parent::new(missing_parent))
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(missing_parent))
 
-  inspect((try! world.get(child, ecs_key_parent)) is None, content="true")
+  inspect(
+    (try! world.get_by_key(child, ecs_key_parent)) is None,
+    content="true",
+  )
 }

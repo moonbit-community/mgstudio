@@ -32,7 +32,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let entity = world.spawn_empty()
-  world
-  .component(@engine_audio.ecs_key_audio_source_player)
-  .insert(entity, @engine_audio.AudioPlayer::new(track))
+  try! world.set_by_key(
+    entity,
+    @engine_audio.ecs_key_audio_source_player,
+    @engine_audio.AudioPlayer::new(track),
+  )
 }

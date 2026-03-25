@@ -117,7 +117,7 @@ fn screenshot_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Screenshot? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -129,7 +129,7 @@ fn screenshot_captured_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> ScreenshotCaptured? {
-  try world.get_component(entity) catch {
+  try world.entity(entity).get() catch {
     _ => None
   } noraise {
     value => value
@@ -227,7 +227,7 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
     if capture_id <= 0 {
       continue
     }
-    try! world.set_component(entity, Capturing::{  })
+    try! (world.entity_mut(entity).insert_component(Capturing::{  }) |> ignore)
     pending_screenshot_entity_captures.val.push(PendingScreenshotEntityCapture::{
       capture_id,
       entity,
@@ -246,11 +246,15 @@ pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
       remaining.push(pending_capture)
       continue
     }
-    try! world.set_component(entity, ScreenshotCaptured::{
-      entity,
-      image: @asset.Image::new(capture.width, capture.height, capture.pixels),
-    })
-    try! world.set_component(entity, Captured::{  })
+    ignore(
+      try! world
+      .entity_mut(entity)
+      .insert_component(ScreenshotCaptured::{
+        entity,
+        image: @asset.Image::new(capture.width, capture.height, capture.pixels),
+      }),
+    )
+    try! (world.entity_mut(entity).insert_component(Captured::{  }) |> ignore)
   }
   pending_screenshot_entity_captures.val = remaining
 }

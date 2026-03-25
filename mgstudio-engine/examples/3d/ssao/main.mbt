@@ -157,13 +157,17 @@ fn set_ssao_component(
   camera_entity : @core.Entity,
   ssao : @post_process.ScreenSpaceAmbientOcclusion,
 ) -> Unit {
-  let store = world.component(
-    @post_process.ecs_key_screen_space_ambient_occlusion,
-  )
-  if store.contains(camera_entity) {
-    store.set(camera_entity, ssao) |> ignore
+  if (try! world.contains_by_key(
+      camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion,
+    )) {
+    try! (world.replace(
+      camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion, ssao,
+    )
+    |> ignore)
   } else {
-    store.insert(camera_entity, ssao)
+    try! world.set_by_key(
+      camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion, ssao,
+    )
   }
 }
 
@@ -186,18 +190,41 @@ fn setup(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default())
-  world
-  .component(@post_process.ecs_key_temporal_jitter)
-  .insert(camera, @post_process.TemporalJitter::default())
-  world.component(SsaoCamera::component()).insert(camera, SsaoCamera::{  })
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+    @post_process.ScreenSpaceAmbientOcclusion::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+    @post_process.ScreenSpaceAmbientOcclusion::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+    @post_process.ScreenSpaceAmbientOcclusion::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_jitter,
+    @post_process.TemporalJitter::default(),
+  )
+  try! world.set_by_key(camera, SsaoCamera::component(), SsaoCamera::{  })
 
   let base_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
@@ -261,13 +288,12 @@ fn setup(
     ),
     @transform.Transform::identity(),
   ).spawn(world)
-  world.component(SphereMarker::component()).insert(sphere, SphereMarker::{  })
+  try! world.set_by_key(sphere, SphereMarker::component(), SphereMarker::{  })
 
   let light = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_rotation(
       @math.Quat::from_euler(
         @math.EulerRot::ZYX,
@@ -277,10 +303,9 @@ fn setup(
       ),
     ),
   )
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
   )
 
@@ -332,13 +357,9 @@ fn update(
 
   guard ssao_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
-  let ssao_store = world.component(
-    @post_process.ecs_key_screen_space_ambient_occlusion,
+  let current_ssao = try! world.get_by_key(
+    camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion,
   )
-  let temporal_jitter_store = world.component(
-    @post_process.ecs_key_temporal_jitter,
-  )
-  let current_ssao = ssao_store.get(camera_entity)
   let base_ssao = current_ssao_value(current_ssao)
 
   if keycode.just_pressed(@window.KeyCode::Digit2) {
@@ -410,15 +431,22 @@ fn update(
   }
 
   if keycode.just_pressed(@window.KeyCode::Digit1) {
-    ssao_store.remove(camera_entity) |> ignore
+    try! (world.take(
+      camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion,
+    )
+    |> ignore)
   }
 
   if keycode.just_pressed(@window.KeyCode::Space) {
-    if temporal_jitter_store.contains(camera_entity) {
-      temporal_jitter_store.remove(camera_entity) |> ignore
+    if (try! world.contains_by_key(
+        camera_entity, @post_process.ecs_key_temporal_jitter,
+      )) {
+      try! (world.take(camera_entity, @post_process.ecs_key_temporal_jitter)
+      |> ignore)
     } else {
-      temporal_jitter_store.insert(
+      try! world.set_by_key(
         camera_entity,
+        @post_process.ecs_key_temporal_jitter,
         @post_process.TemporalJitter::default(),
       )
     }
@@ -432,8 +460,12 @@ fn update(
   @text.text_set_content(
     instructions.handle,
     ssao_ui_text(
-      ssao_store.get(camera_entity),
-      temporal_jitter_store.contains(camera_entity),
+      try! world.get_by_key(
+        camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion,
+      ),
+      try! world.contains_by_key(
+        camera_entity, @post_process.ecs_key_temporal_jitter,
+      ),
     ),
   )
 }

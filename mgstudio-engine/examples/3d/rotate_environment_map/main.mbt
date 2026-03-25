@@ -125,9 +125,11 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default().with_intensity(100_000.0F))
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_intensity(100_000.0F),
+  )
   let camera = @pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
     @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::{
@@ -137,23 +139,23 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   rotate_env_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted)
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
     camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::AcesFitted,
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
   )
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
@@ -178,18 +180,23 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
   let rotation = @math.Quat::from_rotation_y(angle)
 
   if rotate_env_state.val.camera is Some(camera_entity) {
-    if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {
-      world
-      .component(@pbr.ecs_key_skybox)
-      .set(camera_entity, skybox.with_rotation(rotation))
-      |> ignore
+    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_skybox))
+      is Some(skybox) {
+      try! (world.replace(
+        camera_entity,
+        @pbr.ecs_key_skybox,
+        skybox.with_rotation(rotation),
+      )
+      |> ignore)
     }
-    if world.component(@pbr.ecs_key_environment_map_light).get(camera_entity)
+    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_environment_map_light))
       is Some(environment_map_light) {
-      world
-      .component(@pbr.ecs_key_environment_map_light)
-      .set(camera_entity, environment_map_light.with_rotation(rotation))
-      |> ignore
+      try! (world.replace(
+        camera_entity,
+        @pbr.ecs_key_environment_map_light,
+        environment_map_light.with_rotation(rotation),
+      )
+      |> ignore)
     }
   }
 }

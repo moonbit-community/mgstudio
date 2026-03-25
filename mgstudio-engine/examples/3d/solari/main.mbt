@@ -230,10 +230,12 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_free_camera,
+    @pbr.FreeCamera::default(),
+  )
   solari_state.val.camera = Some(camera)
 }
 
@@ -247,20 +249,18 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   )
 
   let directional_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       DIRECTIONAL_ILLUMINANCE,
       false,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_rotation(
       @math.Quat::new(-0.13334629F, -0.86597735F, -0.3586996F, 0.3219264F),
     ),
@@ -268,10 +268,9 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   solari_state.val.directional_light = Some(directional_light)
 
   let robot_emissive_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     robot_emissive_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
       ROBOT_EMISSIVE_INTENSITY,
@@ -279,10 +278,9 @@ fn spawn_lights(world : @ecs.World) -> Unit {
       false,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     robot_emissive_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(-2.0F, 1.7F, -2.1F),
   )
   solari_state.val.robot_emissive_light = Some(robot_emissive_light)
@@ -341,10 +339,9 @@ fn spawn_pica_scene(
   asset_server : @asset.AssetServer,
 ) -> Unit {
   let diorama = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     diorama,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -352,19 +349,17 @@ fn spawn_pica_scene(
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     diorama,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(10.0F)),
   )
   solari_state.val.pica_entities.push(diorama)
 
   let robot = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     robot,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -372,10 +367,9 @@ fn spawn_pica_scene(
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     robot,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(-2.0F, 0.05F, -2.1F)
     .with_scale(@math.Vec3::splat(2.0F))
     .with_rotation(@math.Quat::from_rotation_y(PI / 2.0F)),
@@ -483,18 +477,19 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
   }
 
   if solari_state.val.camera is Some(camera) {
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       camera,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
         @math.Quat::new(-0.18394549F, 0.0019948867F, 0.0003733214F, 0.98293436F),
       ),
     )
-    |> ignore
-    world
-    .component(@post_process.ecs_key_bloom)
-    .insert(camera, @post_process.Bloom::default().with_intensity(0.1F))
+    |> ignore)
+    try! world.set_by_key(
+      camera,
+      @post_process.ecs_key_bloom,
+      @post_process.Bloom::default().with_intensity(0.1F),
+    )
   }
 }
 
@@ -518,16 +513,15 @@ fn apply_scene_mode(
     SolariSceneMode::PicaPica => {
       spawn_pica_scene(world, asset_server)
       if solari_state.val.camera is Some(camera) {
-        world
-        .component(@transform.ecs_key_transform)
-        .set(
+        try! (world.replace(
           camera,
+          @transform.ecs_key_transform,
           @transform.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
             @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
           ),
         )
-        |> ignore
-        world.component(@post_process.ecs_key_bloom).remove(camera) |> ignore
+        |> ignore)
+        try! (world.take(camera, @post_process.ecs_key_bloom) |> ignore)
       }
     }
     SolariSceneMode::ManyLights => spawn_many_lights_scene(world)
@@ -537,7 +531,7 @@ fn apply_scene_mode(
 ///|
 fn apply_light_switches(world : @ecs.World) -> Unit {
   if solari_state.val.directional_light is Some(light) {
-    if world.component(@pbr.ecs_key_directional_light).get(light)
+    if (try! world.get_by_key(light, @pbr.ecs_key_directional_light))
       is Some(current) {
       let updated = current.with_illuminance(
         if solari_state.val.directional_enabled {
@@ -546,13 +540,13 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world.component(@pbr.ecs_key_directional_light).set(light, updated)
-      |> ignore
+      try! (world.replace(light, @pbr.ecs_key_directional_light, updated)
+      |> ignore)
     }
   }
 
   if solari_state.val.robot_emissive_light is Some(light) {
-    if world.component(@pbr.ecs_key_point_light).get(light) is Some(current) {
+    if (try! world.get_by_key(light, @pbr.ecs_key_point_light)) is Some(current) {
       let updated = current.with_intensity(
         if solari_state.val.robot_emissive_enabled {
           ROBOT_EMISSIVE_INTENSITY
@@ -560,7 +554,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world.component(@pbr.ecs_key_point_light).set(light, updated) |> ignore
+      try! (world.replace(light, @pbr.ecs_key_point_light, updated) |> ignore)
     }
   }
 }
@@ -653,7 +647,7 @@ fn patrol_path(world : @ecs.World) -> Unit {
     return
   }
   guard solari_state.val.robot_entity is Some(robot) else { return }
-  guard world.component(@transform.ecs_key_transform).get(robot)
+  guard (try! world.get_by_key(robot, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -677,24 +671,25 @@ fn patrol_path(world : @ecs.World) -> Unit {
   let max_step = PATROL_SPEED * world_time(world).delta_seconds()
 
   if distance <= max_step || distance < 0.01F {
-    world
-    .component(@transform.ecs_key_transform)
-    .set(robot, transform.with_translation(target.0).with_rotation(target.1))
-    |> ignore
+    try! (world.replace(
+      robot,
+      @transform.ecs_key_transform,
+      transform.with_translation(target.0).with_rotation(target.1),
+    )
+    |> ignore)
     solari_state.val.patrol_index = (solari_state.val.patrol_index + 1) %
       path.length()
   } else {
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       robot,
+      @transform.ecs_key_transform,
       transform.with_translation(
         transform.translation.add(
           to_target.normalize_or_zero().mul_scalar(max_step),
         ),
       ),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -702,22 +697,21 @@ fn patrol_path(world : @ecs.World) -> Unit {
 fn sync_robot_emissive_light(world : @ecs.World) -> Unit {
   guard solari_state.val.robot_entity is Some(robot) else { return }
   guard solari_state.val.robot_emissive_light is Some(light) else { return }
-  guard world.component(@transform.ecs_key_transform).get(robot)
+  guard (try! world.get_by_key(robot, @transform.ecs_key_transform))
     is Some(robot_transform) else {
     return
   }
 
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(
       robot_transform.translation.x,
       robot_transform.translation.y + 1.6F,
       robot_transform.translation.z,
     ),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|

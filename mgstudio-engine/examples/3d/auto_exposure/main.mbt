@@ -218,16 +218,17 @@ fn apply_example_auto_exposure_to_camera(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
-  let camera3d = match camera3d_store.get(camera_entity) {
+  let camera3d = match
+    (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d)) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(
+  try! (world.replace(
     camera_entity,
+    @pbr.ecs_key_camera3d,
     camera3d.with_auto_exposure(Some(example_auto_exposure_settings())),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -258,10 +259,9 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     )
     .spawn(world)
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       100_000.0F,
@@ -287,15 +287,16 @@ fn setup(world : @ecs.World) -> Unit {
   set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
 
   let point_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::identity())
+  try! world.set_by_key(
+    point_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
 
   // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
   @sprite.Camera2dBundle::new(
@@ -314,9 +315,11 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
     @transform.Transform::identity(),
   ).spawn(world)
-  world
-  .component(@visibility.ecs_key_visibility)
-  .insert(mask_overlay, @visibility.Visibility::Hidden)
+  try! world.set_by_key(
+    mask_overlay,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
   auto_exposure_state.val.mask_overlay = Some(mask_overlay)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -403,29 +406,27 @@ fn example_control_system(world : @ecs.World) -> Unit {
   }
 
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       camera_entity,
+      @transform.ecs_key_transform,
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
     )
-    |> ignore
+    |> ignore)
     apply_example_auto_exposure_to_camera(world, camera_entity)
   }
 
   if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
     let show_mask = @input.key_pressed(@window.KeyCode::KeyV)
-    world
-    .component(@visibility.ecs_key_visibility)
-    .set(
+    try! (world.replace(
       mask_entity,
+      @visibility.ecs_key_visibility,
       if show_mask {
         @visibility.Visibility::Visible
       } else {
         @visibility.Visibility::Hidden
       },
     )
-    |> ignore
+    |> ignore)
   }
 
   update_display_text()

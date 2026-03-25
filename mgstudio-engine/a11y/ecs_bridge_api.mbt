@@ -77,13 +77,6 @@ pub impl @app.Resource for A11yState with resource() {
 }
 
 ///|
-pub fn get_accessibility_node_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[AccessibilityNode] {
-  world.component(ecs_key_accessibility_node)
-}
-
-///|
 pub fn get_accessibility_requested_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[AccessibilityRequested] {

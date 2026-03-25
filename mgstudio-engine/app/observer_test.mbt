@@ -78,7 +78,9 @@ test "app observer: add_observer2 exposes On<Insert, C> with MessageWriter" {
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 7 })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 7,
+  })
 
   let reader = world.message_reader(message_key, Ref::new(0))
   let messages = try! reader.read()
@@ -96,8 +98,10 @@ test "app observer: add_observer2 exposes On<Remove, C> with MessageWriter" {
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 11 })
-  ignore(try! world.remove(entity, observer_marker_key))
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 11,
+  })
+  ignore(try! world.remove_by_key(entity, observer_marker_key))
 
   let reader = world.message_reader(message_key, Ref::new(0))
   let messages = try! reader.read()
@@ -123,7 +127,9 @@ test "app observer: fallible insert observers route errors through the default h
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 5 })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 5,
+  })
 
   inspect(kinds.length(), content="1")
   inspect(kinds[0] == ErrorContextKind::Observer, content="true")
@@ -143,8 +149,10 @@ test "app observer: fallible remove observers route errors through the default h
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 6 })
-  ignore(try! world.remove(entity, observer_marker_key))
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 6,
+  })
+  ignore(try! world.remove_by_key(entity, observer_marker_key))
 
   inspect(kinds.length(), content="1")
   inspect(kinds[0] == ErrorContextKind::Observer, content="true")

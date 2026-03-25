@@ -187,11 +187,11 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let visibility_store = world.component(@visibility.ecs_key_visibility)
-  if visibility_store.contains(entity) {
-    visibility_store.set(entity, visibility) |> ignore
+  if (try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
+    try! (world.replace(entity, @visibility.ecs_key_visibility, visibility)
+    |> ignore)
   } else {
-    visibility_store.insert(entity, visibility)
+    try! world.set_by_key(entity, @visibility.ecs_key_visibility, visibility)
   }
 }
 
@@ -205,7 +205,7 @@ fn scene_for_mesh_entity(
     return Some(SceneKind::Sphere)
   }
   if anisotropy_state.val.barn_lamp_scene is Some(root_entity) &&
-    world.component(@hierarchy.ecs_key_parent).get(entity) is Some(parent) &&
+    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) is Some(parent) &&
     same_entity(parent.entity(), root_entity) {
     return Some(SceneKind::BarnLamp)
   }
@@ -242,17 +242,21 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 ///|
 fn spawn_directional_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(entity, @pbr.DirectionalLight::default().with_illuminance(3000.0F))
+  try! world.set_by_key(
+    entity,
+    @pbr.ecs_key_directional_light,
+    @pbr.DirectionalLight::default().with_illuminance(3000.0F),
+  )
 }
 
 ///|
 fn spawn_point_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(entity, @pbr.PointLight::default().with_intensity(200_000.0F))
+  try! world.set_by_key(
+    entity,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_intensity(200_000.0F),
+  )
 }
 
 ///|
@@ -261,16 +265,17 @@ fn add_skybox_and_environment_map(
   camera_entity : @core.Entity,
 ) -> Unit {
   if anisotropy_state.val.environment_specular_map is Some(specular_map) {
-    world
-    .component(@pbr.ecs_key_skybox)
-    .insert(camera_entity, @pbr.Skybox::new(specular_map, SKYBOX_BRIGHTNESS))
+    try! world.set_by_key(
+      camera_entity,
+      @pbr.ecs_key_skybox,
+      @pbr.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
+    )
   }
   if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
     anisotropy_state.val.environment_specular_map is Some(specular_map) {
-    world
-    .component(@pbr.ecs_key_environment_map_light)
-    .insert(
+    try! world.set_by_key(
       camera_entity,
+      @pbr.ecs_key_environment_map_light,
       @pbr.EnvironmentMapLight::new(
         Some(diffuse_map),
         Some(specular_map),
@@ -285,20 +290,19 @@ fn remove_skybox_and_environment_map(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  world.component(@pbr.ecs_key_skybox).remove(camera_entity) |> ignore
-  world.component(@pbr.ecs_key_environment_map_light).remove(camera_entity)
-  |> ignore
+  try! (world.take(camera_entity, @pbr.ecs_key_skybox) |> ignore)
+  try! (world.take(camera_entity, @pbr.ecs_key_environment_map_light) |> ignore)
 }
 
 ///|
 fn despawn_all_lights(world : @ecs.World) -> Unit {
   let lights : Array[@core.Entity] = []
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .for_each(fn(entity, _light) { lights.push(entity) })
-  world
-  .component(@pbr.ecs_key_point_light)
-  .for_each(fn(entity, _light) { lights.push(entity) })
+  world.for_each_component(@pbr.ecs_key_directional_light, fn(entity, _light) {
+    lights.push(entity)
+  })
+  world.for_each_component(@pbr.ecs_key_point_light, fn(entity, _light) {
+    lights.push(entity)
+  })
   for light in lights {
     try! (world.despawn(light) |> ignore)
   }
@@ -396,10 +400,9 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_directional_light(world)
 
   let barn_lamp = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     barn_lamp,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -409,9 +412,11 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(barn_lamp, @transform.Transform::from_xyz(0.0F, 0.07F, -0.13F))
+  try! world.set_by_key(
+    barn_lamp,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 0.07F, -0.13F),
+  )
   anisotropy_state.val.barn_lamp_scene = Some(barn_lamp)
 
   let sphere_material = @pbr.standard_material_add(
@@ -457,16 +462,16 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn create_material_variants(world : @ecs.World) -> Unit {
-  let mesh_material_store = world.component(@pbr.ecs_key_mesh_material3d)
   let pending_entities : Array[@core.Entity] = []
-  mesh_material_store.for_each(fn(entity, _material) {
+  world.for_each_component(@pbr.ecs_key_mesh_material3d, fn(entity, _material) {
     if !has_material_variant(entity) {
       pending_entities.push(entity)
     }
   })
 
   for entity in pending_entities {
-    guard mesh_material_store.get(entity) is Some(anisotropic_component) else {
+    guard (try! world.get_by_key(entity, @pbr.ecs_key_mesh_material3d))
+      is Some(anisotropic_component) else {
       continue
     }
     let anisotropic = anisotropic_component.material
@@ -509,15 +514,11 @@ fn animate_light(world : @ecs.World) -> Unit {
     @math.sin(now) * 3.0F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .for_each(fn(entity, _light) {
-    world.component(@transform.ecs_key_transform).insert(entity, next_transform)
+  world.for_each_component(@pbr.ecs_key_directional_light, fn(entity, _light) {
+    try! world.set_by_key(entity, @transform.ecs_key_transform, next_transform)
   })
-  world
-  .component(@pbr.ecs_key_point_light)
-  .for_each(fn(entity, _light) {
-    world.component(@transform.ecs_key_transform).insert(entity, next_transform)
+  world.for_each_component(@pbr.ecs_key_point_light, fn(entity, _light) {
+    try! world.set_by_key(entity, @transform.ecs_key_transform, next_transform)
   })
 }
 
@@ -539,10 +540,8 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     rotated_position.y,
     rotated_position.z,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  world
-  .component(@sprite.ecs_key_camera)
-  .for_each(fn(entity, _camera) {
-    world.component(@transform.ecs_key_transform).insert(entity, next_transform)
+  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+    try! world.set_by_key(entity, @transform.ecs_key_transform, next_transform)
   })
 }
 
@@ -555,10 +554,12 @@ fn toggle_anisotropy(world : @ecs.World) -> Unit {
     } else {
       variants.isotropic
     }
-    world
-    .component(@pbr.ecs_key_mesh_material3d)
-    .set(variants.entity, @pbr.MeshMaterial3d::new(next_material))
-    |> ignore
+    try! (world.replace(
+      variants.entity,
+      @pbr.ecs_key_mesh_material3d,
+      @pbr.MeshMaterial3d::new(next_material),
+    )
+    |> ignore)
   }
 }
 
@@ -575,17 +576,13 @@ fn handle_input(world : @ecs.World) -> Unit {
       LightMode::Point => {
         anisotropy_state.val.light_mode = LightMode::EnvironmentMap
         despawn_all_lights(world)
-        world
-        .component(@sprite.ecs_key_camera)
-        .for_each(fn(entity, _camera) {
+        world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
           add_skybox_and_environment_map(world, entity)
         })
       }
       LightMode::EnvironmentMap => {
         anisotropy_state.val.light_mode = LightMode::Directional
-        world
-        .component(@sprite.ecs_key_camera)
-        .for_each(fn(entity, _camera) {
+        world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
           remove_skybox_and_environment_map(world, entity)
         })
         spawn_directional_light(world)

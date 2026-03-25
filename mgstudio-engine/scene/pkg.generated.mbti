@@ -17,21 +17,11 @@ import {
 // Values
 pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
 
-pub let ecs_components : Array[String]
-
 pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 
 pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
-
-pub let ecs_resources : Array[String]
-
-pub fn get_scene_instance_ready_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstanceReady]
-
-pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstance]
-
-pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 

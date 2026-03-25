@@ -46,9 +46,9 @@ test "ecs entity disabling: default queries skip disabled entities" {
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set(enabled, dummy_key, Dummy::{ label: "enabled" })
-  try! world.set(disabled, dummy_key, Dummy::{ label: "disabled" })
-  try! world.set(disabled, ecs_key_disabled, Disabled::new())
+  try! world.set_by_key(enabled, dummy_key, Dummy::{ label: "enabled" })
+  try! world.set_by_key(disabled, dummy_key, Dummy::{ label: "disabled" })
+  try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   let dummy_query : @ecs.Query[@ecs.Comp[Dummy], @ecs.All] = @ecs.query(world)
   inspect(dummy_query.count(), content="1")
@@ -91,9 +91,9 @@ test "ecs entity disabling: has counts as explicit mention but optional does not
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set(enabled, dummy_key, Dummy::{ label: "enabled" })
-  try! world.set(disabled, dummy_key, Dummy::{ label: "disabled" })
-  try! world.set(disabled, ecs_key_disabled, Disabled::new())
+  try! world.set_by_key(enabled, dummy_key, Dummy::{ label: "enabled" })
+  try! world.set_by_key(disabled, dummy_key, Dummy::{ label: "disabled" })
+  try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   let has_query : @ecs.Query[(@ecs.Comp[Dummy], @ecs.Has[Disabled]), @ecs.All] = @ecs.query(
     world,
@@ -125,15 +125,15 @@ test "ecs entity disabling: multiple disabling components require explicit menti
   let custom_only = world.spawn()
   let both = world.spawn()
 
-  try! world.set(plain, dummy_key, Dummy::{ label: "plain" })
-  try! world.set(disabled_only, dummy_key, Dummy::{ label: "disabled" })
-  try! world.set(custom_only, dummy_key, Dummy::{ label: "custom" })
-  try! world.set(both, dummy_key, Dummy::{ label: "both" })
+  try! world.set_by_key(plain, dummy_key, Dummy::{ label: "plain" })
+  try! world.set_by_key(disabled_only, dummy_key, Dummy::{ label: "disabled" })
+  try! world.set_by_key(custom_only, dummy_key, Dummy::{ label: "custom" })
+  try! world.set_by_key(both, dummy_key, Dummy::{ label: "both" })
 
-  try! world.set(disabled_only, ecs_key_disabled, Disabled::new())
-  try! world.set(custom_only, custom_disabled_key, CustomDisabled::{  })
-  try! world.set(both, ecs_key_disabled, Disabled::new())
-  try! world.set(both, custom_disabled_key, CustomDisabled::{  })
+  try! world.set_by_key(disabled_only, ecs_key_disabled, Disabled::new())
+  try! world.set_by_key(custom_only, custom_disabled_key, CustomDisabled::{  })
+  try! world.set_by_key(both, ecs_key_disabled, Disabled::new())
+  try! world.set_by_key(both, custom_disabled_key, CustomDisabled::{  })
 
   let dummy_query : @ecs.Query[@ecs.Comp[Dummy], @ecs.All] = @ecs.query(world)
   inspect(dummy_query.count(), content="1")

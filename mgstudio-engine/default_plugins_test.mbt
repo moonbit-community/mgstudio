@@ -118,7 +118,7 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     None => abort("missing primary window entity")
   }
   let stored_window : @window.Window = match
-    (try! app.world().get_component(entity) : @window.Window?) {
+    (try! app.world().entity(entity).get() : @window.Window?) {
     Some(window) => window
     None => abort("missing window component")
   }

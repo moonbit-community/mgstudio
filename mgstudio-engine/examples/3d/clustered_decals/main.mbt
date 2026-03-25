@@ -133,10 +133,11 @@ fn create_help_text() -> String {
 fn update_help_text() -> Unit {
   guard clustered_decals_state.val.help_text is Some(entity) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(entity) is Some(text_value) else { return }
+  guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_value) else {
+    return
+  }
   text_value.content = create_help_text()
-  ignore(text_store.set(entity, text_value))
+  ignore(try! world.replace(entity, @text.ecs_key_text, text_value))
 }
 
 ///|
@@ -174,14 +175,15 @@ fn spawn_button(
   label : String,
 ) -> @core.Entity {
   let button = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(button, @hierarchy.Parent::new(parent))
-  world.component(@ui.ecs_key_button).insert(button, @ui.Button::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     button,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_padding(
@@ -195,36 +197,78 @@ fn spawn_button(
     .with_justify_content(@ui.JustifyContent::Center)
     .with_align_items(@ui.AlignItems::Center),
   )
-  world
-  .component(@ui.ecs_key_border_radius)
-  .insert(button, @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)))
-  world
-  .component(@ui.ecs_key_background_color)
-  .insert(button, button_background(false))
-  world.component(@ui.ecs_key_border_color).insert(button, button_border(false))
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_radius,
+    @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+  )
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
+    .with_padding(
+      @ui.UiRect::new(
+        @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
+        @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
+        @ui.Val::Px(BUTTON_VERTICAL_PADDING),
+        @ui.Val::Px(BUTTON_VERTICAL_PADDING),
+      ),
+    )
+    .with_justify_content(@ui.JustifyContent::Center)
+    .with_align_items(@ui.AlignItems::Center),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_border_radius,
+    @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+  )
+  try! world.set_by_key(
+    button,
+    @ui.ecs_key_background_color,
+    button_background(false),
+  )
+  try! world.set_by_key(button, @ui.ecs_key_border_color, button_border(false))
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(button))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(button),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(button),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(label))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(label))
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(button),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(label))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
 
   button
 }
@@ -238,52 +282,67 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
 
   let help_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(help_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     help_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
   )
-  world.component(@text.ecs_key_text).insert(help_entity, @text.Text::new(""))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(help_entity, @text.ecs_key_text, @text.Text::new(""))
+  try! world.set_by_key(
     help_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(help_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(help_entity, @text.ecs_key_text, @text.Text::new(""))
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
   clustered_decals_state.val.help_text = Some(help_entity)
 
   let selection_panel = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(selection_panel, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     selection_panel,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    selection_panel,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(10.0F))
@@ -294,29 +353,55 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   )
 
   let hint_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(hint_entity, @hierarchy.Parent::new(selection_panel))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     hint_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(selection_panel),
+  )
+  try! world.set_by_key(
+    hint_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(selection_panel),
+  )
+  try! world.set_by_key(
+    hint_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Px(125.0F))
     .with_height(@ui.Val::Auto),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(hint_entity, @text.Text::new("Drag to Move"))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     hint_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Drag to Move"),
+  )
+  try! world.set_by_key(
+    hint_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(selection_panel),
+  )
+  try! world.set_by_key(
+    hint_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(125.0F))
+    .with_height(@ui.Val::Auto),
+  )
+  try! world.set_by_key(
+    hint_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Drag to Move"),
+  )
+  try! world.set_by_key(
+    hint_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(hint_entity, @text.TextColor::new(@sprite.Color::white()))
+  try! world.set_by_key(
+    hint_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
 
   let camera_button = spawn_button(world, selection_panel, font, "Camera")
   clustered_decals_state.val.selection_widgets.push({
@@ -337,13 +422,14 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   })
 
   let drag_mode_panel = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(drag_mode_panel, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     drag_mode_panel,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    drag_mode_panel,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_right(@ui.Val::Px(10.0F))
@@ -368,44 +454,77 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
 
 ///|
 fn update_ui_state(world : @ecs.World) -> Unit {
-  let background_store = world.component(@ui.ecs_key_background_color)
-  let border_store = world.component(@ui.ecs_key_border_color)
-
   for widget in clustered_decals_state.val.selection_widgets {
     let selected = widget.selection == clustered_decals_state.val.selection
-    if background_store.contains(widget.button) {
-      background_store.set(widget.button, button_background(selected)) |> ignore
+    if (try! world.contains_by_key(widget.button, @ui.ecs_key_background_color)) {
+      try! (world.replace(
+        widget.button,
+        @ui.ecs_key_background_color,
+        button_background(selected),
+      )
+      |> ignore)
     } else {
-      background_store.insert(widget.button, button_background(selected))
+      try! world.set_by_key(
+        widget.button,
+        @ui.ecs_key_background_color,
+        button_background(selected),
+      )
     }
-    if border_store.contains(widget.button) {
-      border_store.set(widget.button, button_border(selected)) |> ignore
+    if (try! world.contains_by_key(widget.button, @ui.ecs_key_border_color)) {
+      try! (world.replace(
+        widget.button,
+        @ui.ecs_key_border_color,
+        button_border(selected),
+      )
+      |> ignore)
     } else {
-      border_store.insert(widget.button, button_border(selected))
+      try! world.set_by_key(
+        widget.button,
+        @ui.ecs_key_border_color,
+        button_border(selected),
+      )
     }
   }
 
   for widget in clustered_decals_state.val.drag_mode_widgets {
     let selected = clustered_decals_state.val.drag_mode == widget.mode
-    if background_store.contains(widget.button) {
-      background_store.set(widget.button, button_background(selected)) |> ignore
+    if (try! world.contains_by_key(widget.button, @ui.ecs_key_background_color)) {
+      try! (world.replace(
+        widget.button,
+        @ui.ecs_key_background_color,
+        button_background(selected),
+      )
+      |> ignore)
     } else {
-      background_store.insert(widget.button, button_background(selected))
+      try! world.set_by_key(
+        widget.button,
+        @ui.ecs_key_background_color,
+        button_background(selected),
+      )
     }
-    if border_store.contains(widget.button) {
-      border_store.set(widget.button, button_border(selected)) |> ignore
+    if (try! world.contains_by_key(widget.button, @ui.ecs_key_border_color)) {
+      try! (world.replace(
+        widget.button,
+        @ui.ecs_key_border_color,
+        button_border(selected),
+      )
+      |> ignore)
     } else {
-      border_store.insert(widget.button, button_border(selected))
+      try! world.set_by_key(
+        widget.button,
+        @ui.ecs_key_border_color,
+        button_border(selected),
+      )
     }
   }
 
   if clustered_decals_state.val.drag_mode_panel is Some(panel) {
-    let node_store = world.component(@ui.ecs_key_node)
-    if node_store.get(panel) is Some(node) {
+    if (try! world.get_by_key(panel, @ui.ecs_key_node)) is Some(node) {
       let show_drag_buttons = clustered_decals_state.val.selection !=
         Selection::Camera
-      node_store.set(
+      try! (world.replace(
         panel,
+        @ui.ecs_key_node,
         node.with_display(
           if show_drag_buttons {
             @ui.Display::Flex
@@ -414,7 +533,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
           },
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 
@@ -479,13 +598,14 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
+    @pbr.DirectionalLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -525,10 +645,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(1.1F, 1.1F),
     ),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_clustered_decal)
-  .insert(
+  try! world.set_by_key(
     decal_a,
+    @pbr.ecs_key_clustered_decal,
     @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(1),
@@ -550,10 +669,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(2.0F, 2.0F),
     ),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_clustered_decal)
-  .insert(
+  try! world.set_by_key(
     decal_b,
+    @pbr.ecs_key_clustered_decal,
     @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(2),
@@ -633,7 +751,7 @@ fn apply_drag_translation(
   phi_factor : Float,
   theta_factor : Float,
 ) -> Unit {
-  guard world.component(@transform.ecs_key_transform).get(entity)
+  guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -643,10 +761,12 @@ fn apply_drag_translation(
     phi_factor,
     theta_factor,
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .set(entity, orient_towards_center_preserve_roll(transform, next_translation))
-  |> ignore
+  try! (world.replace(
+    entity,
+    @transform.ecs_key_transform,
+    orient_towards_center_preserve_roll(transform, next_translation),
+  )
+  |> ignore)
 }
 
 ///|
@@ -664,7 +784,7 @@ fn apply_decal_drag(
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  guard world.component(@transform.ecs_key_transform).get(entity)
+  guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -676,22 +796,23 @@ fn apply_decal_drag(
       } else {
         1.0F + delta.x * SCALE_SPEED
       }
-      world
-      .component(@transform.ecs_key_transform)
-      .set(
+      try! (world.replace(
         entity,
+        @transform.ecs_key_transform,
         transform.with_scale(transform.scale.mul_scalar(scale_factor)),
       )
-      |> ignore
+      |> ignore)
     }
     DragMode::Roll => {
       let rotation = transform.rotation
         .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
         .normalize()
-      world
-      .component(@transform.ecs_key_transform)
-      .set(entity, transform.with_rotation(rotation))
-      |> ignore
+      try! (world.replace(
+        entity,
+        @transform.ecs_key_transform,
+        transform.with_rotation(rotation),
+      )
+      |> ignore)
     }
   }
 }
@@ -699,8 +820,7 @@ fn apply_decal_drag(
 ///|
 fn handle_selection_change(world : @ecs.World) -> Bool {
   let mut changed = false
-  let interaction_store = world.component(@ui.ecs_key_interaction)
-  interaction_store.for_each(fn(entity, interaction) {
+  world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
     if interaction != @ui.Interaction::Pressed {
       return
     }
@@ -722,9 +842,9 @@ fn switch_drag_mode(world : @ecs.World) -> Bool {
   let mut hover_resize_cursor = false
   if clustered_decals_state.val.selection != Selection::Camera &&
     !@input.mouse_button_pressed(@window.MouseButton::Left) {
-    let interaction_store = world.component(@ui.ecs_key_interaction)
     for widget in clustered_decals_state.val.drag_mode_widgets {
-      if interaction_store.get(widget.button) is Some(interaction) {
+      if (try! world.get_by_key(widget.button, @ui.ecs_key_interaction))
+        is Some(interaction) {
         if interaction == @ui.Interaction::Hovered {
           next_mode = widget.mode
           hover_resize_cursor = true
@@ -792,17 +912,19 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   guard clustered_decals_state.val.rotating_cube is Some(cube_entity) else {
     return
   }
-  guard world.component(@transform.ecs_key_transform).get(cube_entity)
+  guard (try! world.get_by_key(cube_entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED))
     .normalize()
-  world
-  .component(@transform.ecs_key_transform)
-  .set(cube_entity, transform.with_rotation(rotation))
-  |> ignore
+  try! (world.replace(
+    cube_entity,
+    @transform.ecs_key_transform,
+    transform.with_rotation(rotation),
+  )
+  |> ignore)
 }
 
 ///|

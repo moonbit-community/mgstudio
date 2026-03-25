@@ -80,65 +80,11 @@ pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex]
 
 pub let ecs_resources : Array[String]
 
-pub fn get_accessibility_label_store(@ecs.World) -> @ecs.ComponentAccess[AccessibilityLabel]
-
-pub fn get_background_color_store(@ecs.World) -> @ecs.ComponentAccess[BackgroundColor]
-
-pub fn get_border_color_store(@ecs.World) -> @ecs.ComponentAccess[BorderColor]
-
-pub fn get_border_radius_store(@ecs.World) -> @ecs.ComponentAccess[BorderRadius]
-
-pub fn get_box_shadow_store(@ecs.World) -> @ecs.ComponentAccess[BoxShadow]
-
-pub fn get_button_colors_store(@ecs.World) -> @ecs.ComponentAccess[ButtonColors]
-
-pub fn get_button_store(@ecs.World) -> @ecs.ComponentAccess[Button]
-
-pub fn get_calculated_clip_store(@ecs.World) -> @ecs.ComponentAccess[CalculatedClip]
-
-pub fn get_computed_ui_render_target_info_store(@ecs.World) -> @ecs.ComponentAccess[ComputedUiRenderTargetInfo]
-
-pub fn get_computed_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[ComputedUiTargetCamera]
-
-pub fn get_content_size_store(@ecs.World) -> @ecs.ComponentAccess[ContentSize]
-
-pub fn get_focus_policy_store(@ecs.World) -> @ecs.ComponentAccess[FocusPolicy]
-
-pub fn get_global_z_index_store(@ecs.World) -> @ecs.ComponentAccess[GlobalZIndex]
-
-pub fn get_image_node_size_store(@ecs.World) -> @ecs.ComponentAccess[ImageNodeSize]
-
-pub fn get_image_node_store(@ecs.World) -> @ecs.ComponentAccess[ImageNode]
-
-pub fn get_interaction_store(@ecs.World) -> @ecs.ComponentAccess[Interaction]
-
-pub fn get_is_default_ui_camera_store(@ecs.World) -> @ecs.ComponentAccess[IsDefaultUiCamera]
-
-pub fn get_label_store(@ecs.World) -> @ecs.ComponentAccess[Label]
-
-pub fn get_node_store(@ecs.World) -> @ecs.ComponentAccess[Node]
-
-pub fn get_outline_store(@ecs.World) -> @ecs.ComponentAccess[Outline]
-
-pub fn get_relative_cursor_position_store(@ecs.World) -> @ecs.ComponentAccess[RelativeCursorPosition]
-
-pub fn get_scroll_position_store(@ecs.World) -> @ecs.ComponentAccess[ScrollPosition]
-
 pub fn get_ui_context_resource(@ecs.World) -> @ecs.ResourceAccess[UiContext]
-
-pub fn get_ui_image_store(@ecs.World) -> @ecs.ComponentAccess[UiImage]
-
-pub fn get_ui_layout_store(@ecs.World) -> @ecs.ComponentAccess[UiLayout]
-
-pub fn get_ui_root_store(@ecs.World) -> @ecs.ComponentAccess[UiRoot]
 
 pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
 pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
-
-pub fn get_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[UiTargetCamera]
-
-pub fn get_z_index_store(@ecs.World) -> @ecs.ComponentAccess[ZIndex]
 
 pub fn ui_a11y_update_system(@ecs.World) -> Unit
 

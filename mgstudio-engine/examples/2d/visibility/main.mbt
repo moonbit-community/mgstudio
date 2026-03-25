@@ -37,18 +37,22 @@ fn main {
 fn visibility_setup(world : @ecs.World) -> Unit {
   let parent = world.spawn_empty()
   parent_entity_state.val = Some(parent)
-  try! world.set(
+  try! world.set_by_key(
     parent,
     @transform.ecs_key_transform,
     @transform.Transform::identity(),
   )
-  try! world.set(parent, @vis.ecs_key_visibility, @vis.Visibility::Visible)
-  try! world.set(
+  try! world.set_by_key(
+    parent,
+    @vis.ecs_key_visibility,
+    @vis.Visibility::Visible,
+  )
+  try! world.set_by_key(
     parent,
     @vis.ecs_key_inherited_visibility,
     @vis.InheritedVisibility::new(true),
   )
-  try! world.set(
+  try! world.set_by_key(
     parent,
     @vis.ecs_key_view_visibility,
     @vis.ViewVisibility::new(true),
@@ -60,7 +64,7 @@ fn visibility_setup(world : @ecs.World) -> Unit {
     sprite,
     @transform.Transform::identity(),
   ).spawn(world)
-  try! world.set(
+  try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
@@ -81,13 +85,13 @@ fn visibility_toggle_system(world : @ecs.World) -> Unit {
     return
   }
   guard parent_entity_state.val is Some(parent) else { return }
-  let next = match (try! world.get(parent, @vis.ecs_key_visibility)) {
+  let next = match (try! world.get_by_key(parent, @vis.ecs_key_visibility)) {
     Some(@vis.Visibility::Hidden) => @vis.Visibility::Visible
     Some(@vis.Visibility::Visible) => @vis.Visibility::Hidden
     Some(@vis.Visibility::Inherited) => @vis.Visibility::Hidden
     None => @vis.Visibility::Hidden
   }
-  try! world.set(parent, @vis.ecs_key_visibility, next)
+  try! world.set_by_key(parent, @vis.ecs_key_visibility, next)
   let msg = match next {
     @vis.Visibility::Hidden => "Parent Visibility: Hidden"
     @vis.Visibility::Visible => "Parent Visibility: Visible"

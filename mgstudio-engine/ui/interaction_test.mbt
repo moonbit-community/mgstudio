@@ -29,9 +29,10 @@ test "ui: interaction updates component state" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  get_button_store(world).insert(e, Button::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(e, ecs_key_button, Button::default())
+  try! world.set_by_key(
     e,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(40.0F, 50.0F),
@@ -41,8 +42,10 @@ test "ui: interaction updates component state" {
   )
   ui_stack_system(world)
   ui_interaction_system(world)
-  let s0 = get_interaction_store(world).get(e).unwrap()
-  let cursor0 = get_relative_cursor_position_store(world).get(e).unwrap()
+  let s0 = try! world.get_by_key(e, ecs_key_interaction).unwrap()
+  let cursor0 = try! world
+    .get_by_key(e, ecs_key_relative_cursor_position)
+    .unwrap()
   inspect(s0 == Interaction::Hovered, content="true")
   inspect(cursor0.cursor_over(), content="true")
 
@@ -60,8 +63,10 @@ test "ui: interaction updates component state" {
   get_ui_context_resource(world).insert(ctx2)
   ui_stack_system(world)
   ui_interaction_system(world)
-  let s1 = get_interaction_store(world).get(e).unwrap()
-  let cursor1 = get_relative_cursor_position_store(world).get(e).unwrap()
+  let s1 = try! world.get_by_key(e, ecs_key_interaction).unwrap()
+  let cursor1 = try! world
+    .get_by_key(e, ecs_key_relative_cursor_position)
+    .unwrap()
   inspect(s1 == Interaction::Pressed, content="true")
   inspect(cursor1.cursor_over(), content="true")
 
@@ -79,8 +84,10 @@ test "ui: interaction updates component state" {
   get_ui_context_resource(world).insert(ctx3)
   ui_stack_system(world)
   ui_interaction_system(world)
-  let s2 = get_interaction_store(world).get(e).unwrap()
-  let cursor2 = get_relative_cursor_position_store(world).get(e).unwrap()
+  let s2 = try! world.get_by_key(e, ecs_key_interaction).unwrap()
+  let cursor2 = try! world
+    .get_by_key(e, ecs_key_relative_cursor_position)
+    .unwrap()
   inspect(s2 == Interaction::None, content="true")
   inspect(cursor2.cursor_over(), content="false")
   inspect(cursor2.normalized is None, content="true")

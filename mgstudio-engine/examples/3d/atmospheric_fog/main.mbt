@@ -126,13 +126,16 @@ fn make_fog() -> @pbr.DistanceFog {
 ///|
 fn apply_fog(world : @ecs.World) -> Unit {
   guard atmospheric_fog_state.val.camera is Some(camera) else { return }
-  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
-  let camera3d = match camera3d_store.get(camera) {
+  let camera3d = match (try! world.get_by_key(camera, @pbr.ecs_key_camera3d)) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(make_fog())))
-  |> ignore
+  try! (world.replace(
+    camera,
+    @pbr.ecs_key_camera3d,
+    camera3d.with_distance_fog(Some(make_fog())),
+  )
+  |> ignore)
 }
 
 ///|
@@ -187,19 +190,17 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     .with_maximum_distance(3.0F)
     .build()
   let sun = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     sun,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-0.15F, -0.05F, 0.25F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     sun,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       10_000.0F,
@@ -254,9 +255,11 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(sky_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(sky, @pbr.NotShadowCaster::default())
+  try! world.set_by_key(
+    sky,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
 }
 
 ///|

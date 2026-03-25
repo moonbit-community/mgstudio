@@ -71,12 +71,16 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(decal_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_forward_decal)
-  .insert(decal, @pbr.ForwardDecal::default())
-  world
-  .component(@pbr.ecs_key_forward_decal_material_ext)
-  .insert(decal, @pbr.ForwardDecalMaterialExt::new(1.0F))
+  try! world.set_by_key(
+    decal,
+    @pbr.ecs_key_forward_decal,
+    @pbr.ForwardDecal::default(),
+  )
+  try! world.set_by_key(
+    decal,
+    @pbr.ecs_key_forward_decal_material_ext,
+    @pbr.ForwardDecalMaterialExt::new(1.0F),
+  )
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -85,16 +89,22 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default())
-  world
-  .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default())
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_fxaa)
-  .insert(camera, @post_process.Fxaa::default())
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_free_camera,
+    @pbr.FreeCamera::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_depth_prepass,
+    @pbr.DepthPrepass::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_fxaa,
+    @post_process.Fxaa::default(),
+  )
 
   let white_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white()),
@@ -135,12 +145,21 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 }
 
 ///|

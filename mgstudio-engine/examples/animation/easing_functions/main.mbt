@@ -104,9 +104,6 @@ fn setup(world : @ecs.World) -> Unit {
   let half_extent_y = EXTENT_Y / 2.0F
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
-  let parent_store = world.component(@hierarchy.ecs_key_parent)
-  let plot_store = world.component(ease_function_plot_key)
-  let transform_store = world.component(@transform.ecs_key_transform)
 
   for row in 0..<rows.length() {
     let functions = rows[row]
@@ -137,19 +134,25 @@ fn setup(world : @ecs.World) -> Unit {
         color,
         @math.Vec2::new(-half_size_x, -half_size_y),
       )
-      parent_store.insert(value_bar_entity, @hierarchy.Parent::new(plot_entity))
-      parent_store.insert(
-        progress_dot_entity,
+      try! world.set_by_key(
+        value_bar_entity,
+        @hierarchy.ecs_key_parent,
         @hierarchy.Parent::new(plot_entity),
       )
-      plot_store.insert(plot_entity, EaseFunctionPlot::{
+      try! world.set_by_key(
+        progress_dot_entity,
+        @hierarchy.ecs_key_parent,
+        @hierarchy.Parent::new(plot_entity),
+      )
+      try! world.set_by_key(plot_entity, ease_function_plot_key, EaseFunctionPlot::{
         function: spec.function,
         color,
         value_bar_entity,
         progress_dot_entity,
       })
-      transform_store.insert(
+      try! world.set_by_key(
         plot_entity,
+        @transform.ecs_key_transform,
         transform_from_position(center, PLOT_Z),
       )
 
@@ -165,7 +168,6 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn display_curves(world : @ecs.World) -> Unit {
-  let plot_store = world.component(ease_function_plot_key)
   let cycle_seconds = DURATION_SECONDS + TIME_MARGIN_SECONDS * 2.0F
   let elapsed = default_time_or_default(world).elapsed_seconds()
   let loops = (elapsed / cycle_seconds).to_int()
@@ -174,21 +176,23 @@ fn display_curves(world : @ecs.World) -> Unit {
   let now = clamp01((cycle_elapsed - TIME_MARGIN_SECONDS) / DURATION_SECONDS)
 
   if progress_text_entity.val is Some(text_entity) {
-    let text_store = world.component(@text.ecs_key_text)
-    if text_store.get(text_entity) is Some(text_value) {
+    if (try! world.get_by_key(text_entity, @text.ecs_key_text))
+      is Some(text_value) {
       text_value.content = format_progress(now)
-      ignore(text_store.set(text_entity, text_value))
+      ignore(try! world.replace(text_entity, @text.ecs_key_text, text_value))
     }
   }
 
   let gizmos = @sprite.Gizmos::get()
-  let transform_store = world.component(@transform.ecs_key_transform)
   world.advance_sequence() |> ignore
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
 
-  plot_store.for_each(fn(entity, plot) {
-    guard transform_store.get(entity) is Some(transform) else { return }
+  world.for_each_component(ease_function_plot_key, fn(entity, plot) {
+    guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(transform) else {
+      return
+    }
     let center = @math.Vec2::new(
       transform.translation.x,
       transform.translation.y,
@@ -235,7 +239,7 @@ fn display_curves(world : @ecs.World) -> Unit {
     gizmos.curve_2d(curve_points, plot.color)
 
     let y_progress = curve.sample_clamped(now) * PLOT_SIZE_Y
-    try! world.set(
+    try! world.set_by_key(
       plot.value_bar_entity,
       @transform.ecs_key_transform,
       transform_from_position(
@@ -243,7 +247,7 @@ fn display_curves(world : @ecs.World) -> Unit {
         MARKER_Z,
       ),
     )
-    try! world.set(
+    try! world.set_by_key(
       plot.progress_dot_entity,
       @transform.ecs_key_transform,
       transform_from_position(
@@ -277,44 +281,100 @@ fn spawn_progress_overlay(
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new("Progress: 0.00"))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Progress: 0.00"),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Progress: 0.00"),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Progress: 0.00"),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
   progress_text_entity.val = Some(text_entity)
 }
 

@@ -192,13 +192,14 @@ fn setup(world : @ecs.World) -> Unit {
   viewport_to_world_3d_state.val.ground = Some(ground)
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
+    @pbr.DirectionalLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -227,10 +228,12 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
-  world
-  .component(@visibility.ecs_key_visibility)
-  .set(cursor_marker, @visibility.Visibility::Hidden)
-  |> ignore
+  try! (world.replace(
+    cursor_marker,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  |> ignore)
 }
 
 ///|
@@ -245,15 +248,16 @@ fn draw_cursor(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  let projection_store = world.component(@pbr.ecs_key_projection)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
   if @input.mouse_position() is Some(screen_pos) {
-    if transform_store.get(camera_entity) is Some(camera_transform) {
-      if camera_store.get(camera_entity) is Some(camera) {
-        if projection_store.get(camera_entity) is Some(projection) {
-          if transform_store.get(ground_entity) is Some(ground_transform) {
+    if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+      is Some(camera_transform) {
+      if (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+        is Some(camera) {
+        if (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
+          is Some(projection) {
+          if (try! world.get_by_key(ground_entity, @transform.ecs_key_transform))
+            is Some(ground_transform) {
             let target_size = @math.IVec2::new(
               @window.window_width(),
               @window.window_height(),
@@ -281,24 +285,29 @@ fn draw_cursor(world : @ecs.World) -> Unit {
   }
 
   if cursor_hit is Some((point, ground_up)) {
-    transform_store.set(
+    try! (world.replace(
       cursor_entity,
+      @transform.ecs_key_transform,
       @transform.Transform::new(
         point.add(ground_up.mul_scalar(CURSOR_HEIGHT_OFFSET)),
         quat_from_rotation_arc(@math.Vec3::new(0.0F, 0.0F, 1.0F), ground_up),
         @math.Vec3::splat(1.0F),
       ),
     )
-    |> ignore
-    world
-    .component(@visibility.ecs_key_visibility)
-    .set(cursor_entity, @visibility.Visibility::Visible)
-    |> ignore
+    |> ignore)
+    try! (world.replace(
+      cursor_entity,
+      @visibility.ecs_key_visibility,
+      @visibility.Visibility::Visible,
+    )
+    |> ignore)
   } else {
-    world
-    .component(@visibility.ecs_key_visibility)
-    .set(cursor_entity, @visibility.Visibility::Hidden)
-    |> ignore
+    try! (world.replace(
+      cursor_entity,
+      @visibility.ecs_key_visibility,
+      @visibility.Visibility::Hidden,
+    )
+    |> ignore)
   }
 }
 

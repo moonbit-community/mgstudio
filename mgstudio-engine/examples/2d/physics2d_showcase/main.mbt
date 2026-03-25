@@ -118,24 +118,12 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   |> ignore
   physics2d_showcase_spawn_controls_overlay()
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let sprite_store = world.component(@sprite.ecs_key_sprite)
-  let rb_store = @physics2d.get_rigid_body2d_store(world)
-  let col_store = @physics2d.get_collider2d_store(world)
-  let vel_store = @physics2d.get_velocity2d_store(world)
-  let friction_store = @physics2d.get_friction2d_store(world)
-  let restitution_store = @physics2d.get_restitution2d_store(world)
-  let active_hooks_store = @physics2d.get_active_hooks2d_store(world)
-  let kcc_store = @physics2d.get_kinematic_character_controller2d_store(world)
-  let kcc_out_store = @physics2d.get_kinematic_character_controller_output2d_store(
-    world,
-  )
-  let impulse_joint_store = @physics2d.get_impulse_joint2d_store(world)
 
   // Static world bounds.
   let floor = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     floor,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -260.0F),
       0.0F,
@@ -143,23 +131,34 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=0.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     floor,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(800.0F, 40.0F))),
   )
-  rb_store.insert(floor, @physics2d.RigidBody2d::fixed())
-  col_store.insert(
+  try! world.set_by_key(
     floor,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::fixed(),
+  )
+  try! world.set_by_key(
+    floor,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(400.0F, 20.0F),
     ),
   )
-  friction_store.insert(floor, @physics2d.Friction2d::new(1.0F))
+  try! world.set_by_key(
+    floor,
+    @physics2d.ecs_key_friction2d,
+    @physics2d.Friction2d::new(1.0F),
+  )
   let left_wall = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     left_wall,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-410.0F, 0.0F),
       0.0F,
@@ -167,16 +166,22 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=0.0F,
     ),
   )
-  rb_store.insert(left_wall, @physics2d.RigidBody2d::fixed())
-  col_store.insert(
+  try! world.set_by_key(
     left_wall,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::fixed(),
+  )
+  try! world.set_by_key(
+    left_wall,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(20.0F, 400.0F),
     ),
   )
   let right_wall = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     right_wall,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(410.0F, 0.0F),
       0.0F,
@@ -184,9 +189,14 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=0.0F,
     ),
   )
-  rb_store.insert(right_wall, @physics2d.RigidBody2d::fixed())
-  col_store.insert(
+  try! world.set_by_key(
     right_wall,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::fixed(),
+  )
+  try! world.set_by_key(
+    right_wall,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(20.0F, 400.0F),
     ),
@@ -194,8 +204,9 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 
   // A sensor zone: only the player triggers it (via hooks intersection filtering).
   let sensor_zone = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     sensor_zone,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -140.0F),
       0.0F,
@@ -203,20 +214,23 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=0.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     sensor_zone,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(0.0F, 0.8F, 0.9F, 0.35F))
     .with_custom_size(Some(@math.Vec2::new(260.0F, 120.0F))),
   )
-  col_store.insert(
+  try! world.set_by_key(
     sensor_zone,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(130.0F, 60.0F),
     ).sensor(true),
   )
-  active_hooks_store.insert(
+  try! world.set_by_key(
     sensor_zone,
+    @physics2d.ecs_key_active_hooks2d,
     @physics2d.ActiveHooks2d::new(
       @collision.ActiveHooks::filter_intersection_pair(),
     ),
@@ -224,8 +238,9 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 
   // Player character controller (no rigid body, collider moved via KCC each fixed step).
   let player = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     player,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -40.0F),
       0.0F,
@@ -233,25 +248,33 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=2.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     player,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.9F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 56.0F))),
   )
-  col_store.insert(
+  try! world.set_by_key(
     player,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::capsule_y(14.0F, 14.0F),
     ),
   )
-  kcc_store.insert(player, @physics2d.KinematicCharacterController2d::default())
-  kcc_out_store.insert(
+  try! world.set_by_key(
     player,
+    @physics2d.ecs_key_kinematic_character_controller2d,
+    @physics2d.KinematicCharacterController2d::default(),
+  )
+  try! world.set_by_key(
+    player,
+    @physics2d.ecs_key_kinematic_character_controller_output2d,
     @physics2d.KinematicCharacterControllerOutput2d::new(),
   )
-  active_hooks_store.insert(
+  try! world.set_by_key(
     player,
+    @physics2d.ecs_key_active_hooks2d,
     @physics2d.ActiveHooks2d::new(
       @collision.ActiveHooks::filter_intersection_pair(),
     ),
@@ -263,8 +286,9 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     let x = -220.0F + i_f * 90.0F
     let y = -180.0F + i_f * 45.0F
     let box = world.spawn_empty()
-    transform_store.insert(
+    try! world.set_by_key(
       box,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(x, y),
         0.0F,
@@ -272,28 +296,43 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
         z=1.0F,
       ),
     )
-    sprite_store.insert(
+    try! world.set_by_key(
       box,
+      @sprite.ecs_key_sprite,
       @sprite.Sprite::from_image(texture)
       .with_color(@sprite.Color::new(0.9F, 0.6F, 0.2F, 1.0F))
       .with_custom_size(Some(@math.Vec2::new(56.0F, 56.0F))),
     )
-    rb_store.insert(box, @physics2d.RigidBody2d::dynamic())
-    col_store.insert(
+    try! world.set_by_key(
       box,
+      @physics2d.ecs_key_rigid_body2d,
+      @physics2d.RigidBody2d::dynamic(),
+    )
+    try! world.set_by_key(
+      box,
+      @physics2d.ecs_key_collider2d,
       @physics2d.Collider2d::new(
         @physics2d.ColliderShape2d::cuboid(28.0F, 28.0F),
       ),
     )
-    friction_store.insert(box, @physics2d.Friction2d::new(0.8F))
+    try! world.set_by_key(
+      box,
+      @physics2d.ecs_key_friction2d,
+      @physics2d.Friction2d::new(0.8F),
+    )
     let r = if i % 2 == 0 { 0.0F } else { 0.8F }
-    restitution_store.insert(box, @physics2d.Restitution2d::new(r))
+    try! world.set_by_key(
+      box,
+      @physics2d.ecs_key_restitution2d,
+      @physics2d.Restitution2d::new(r),
+    )
   }
 
   // Rope joint pendulum.
   let anchor = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     anchor,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(260.0F, 220.0F),
       0.0F,
@@ -301,14 +340,20 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=0.0F,
     ),
   )
-  rb_store.insert(anchor, @physics2d.RigidBody2d::fixed())
-  col_store.insert(
+  try! world.set_by_key(
     anchor,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::fixed(),
+  )
+  try! world.set_by_key(
+    anchor,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(6.0F)),
   )
   let bob = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     bob,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(260.0F, 120.0F),
       0.0F,
@@ -316,19 +361,26 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=1.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     bob,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(0.8F, 0.2F, 0.9F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(32.0F, 32.0F))),
   )
-  rb_store.insert(bob, @physics2d.RigidBody2d::dynamic())
-  col_store.insert(
+  try! world.set_by_key(
     bob,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::dynamic(),
+  )
+  try! world.set_by_key(
+    bob,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(16.0F)),
   )
-  impulse_joint_store.insert(
+  try! world.set_by_key(
     bob,
+    @physics2d.ecs_key_impulse_joint2d,
     @physics2d.ImpulseJoint2d::new(
       anchor,
       @physics2d.joint2d_rope(
@@ -341,8 +393,9 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 
   // A "ghost" ball pair: hooks can disable contacts for this specific pair.
   let ghost_a = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     ghost_a,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-260.0F, 160.0F),
       0.0F,
@@ -350,30 +403,39 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=1.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     ghost_a,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(0.2F, 0.9F, 0.2F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
   )
-  rb_store.insert(ghost_a, @physics2d.RigidBody2d::dynamic())
-  col_store.insert(
+  try! world.set_by_key(
     ghost_a,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::dynamic(),
+  )
+  try! world.set_by_key(
+    ghost_a,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(14.0F)),
   )
-  vel_store.insert(
+  try! world.set_by_key(
     ghost_a,
+    @physics2d.ecs_key_velocity2d,
     @physics2d.Velocity2d::new(@math.Vec2::new(280.0F, 0.0F), 0.0F),
   )
-  active_hooks_store.insert(
+  try! world.set_by_key(
     ghost_a,
+    @physics2d.ecs_key_active_hooks2d,
     @physics2d.ActiveHooks2d::new(
       @collision.ActiveHooks::filter_contact_pairs(),
     ),
   )
   let ghost_b = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     ghost_b,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(260.0F, 160.0F),
       0.0F,
@@ -381,23 +443,31 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       z=1.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     ghost_b,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(0.2F, 0.3F, 1.0F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
   )
-  rb_store.insert(ghost_b, @physics2d.RigidBody2d::dynamic())
-  col_store.insert(
+  try! world.set_by_key(
     ghost_b,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::dynamic(),
+  )
+  try! world.set_by_key(
+    ghost_b,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(14.0F)),
   )
-  vel_store.insert(
+  try! world.set_by_key(
     ghost_b,
+    @physics2d.ecs_key_velocity2d,
     @physics2d.Velocity2d::new(@math.Vec2::new(-280.0F, 0.0F), 0.0F),
   )
-  active_hooks_store.insert(
+  try! world.set_by_key(
     ghost_b,
+    @physics2d.ecs_key_active_hooks2d,
     @physics2d.ActiveHooks2d::new(
       @collision.ActiveHooks::filter_contact_pairs(),
     ),
@@ -469,8 +539,12 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
     )
   }
   guard showcase_entities.val.player is Some(player) else { return }
-  let kcc_store = @physics2d.get_kinematic_character_controller2d_store(world)
-  guard kcc_store.get(player) is Some(kcc) else { return }
+  guard (try! world.get_by_key(
+      player, @physics2d.ecs_key_kinematic_character_controller2d,
+    ))
+    is Some(kcc) else {
+    return
+  }
   let mut axis = @math.Vec2::new(0.0F, 0.0F)
   if @input.key_pressed(@window.KeyCode::KeyA) ||
     @input.key_pressed(@window.KeyCode::ArrowLeft) {
@@ -491,7 +565,10 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
   let speed = 320.0F
   let delta = @math.Vec2::new(axis.x * speed * dt, axis.y * speed * dt)
   let next = kcc.reset_translation().add_translation(delta)
-  kcc_store.set(player, next) |> ignore
+  try! (world.replace(
+    player, @physics2d.ecs_key_kinematic_character_controller2d, next,
+  )
+  |> ignore)
 }
 
 ///|
@@ -506,14 +583,10 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
   }
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let sprite_store = world.component(@sprite.ecs_key_sprite)
-  let rb_store = @physics2d.get_rigid_body2d_store(world)
-  let col_store = @physics2d.get_collider2d_store(world)
-  let vel_store = @physics2d.get_velocity2d_store(world)
   let ball = world.spawn_empty()
-  transform_store.insert(
+  try! world.set_by_key(
     ball,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(p.x, p.y),
       0.0F,
@@ -521,19 +594,26 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
       z=3.0F,
     ),
   )
-  sprite_store.insert(
+  try! world.set_by_key(
     ball,
+    @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(1.0F, 0.2F, 0.2F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(24.0F, 24.0F))),
   )
-  rb_store.insert(ball, @physics2d.RigidBody2d::dynamic())
-  col_store.insert(
+  try! world.set_by_key(
     ball,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::dynamic(),
+  )
+  try! world.set_by_key(
+    ball,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(12.0F)),
   )
-  vel_store.insert(
+  try! world.set_by_key(
     ball,
+    @physics2d.ecs_key_velocity2d,
     @physics2d.Velocity2d::new(@math.Vec2::new(0.0F, -80.0F), 0.0F),
   )
   println("[physics2d_showcase] spawned ball at (\{p.x}, \{p.y})")

@@ -59,20 +59,6 @@ pub impl @ecs.Component for BoxShadowSamples with component() {
 }
 
 ///|
-fn get_ui_anti_alias_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[UiAntiAlias] {
-  world.component(ecs_key_ui_anti_alias)
-}
-
-///|
-fn get_ui_box_shadow_samples_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[BoxShadowSamples] {
-  world.component(ecs_key_ui_box_shadow_samples)
-}
-
-///|
 pub let ui_render_set_extract : @app.SystemSet = @app.system_set(
   "bevy.ui.render.extract",
 )
@@ -211,17 +197,15 @@ fn ui_entity_resolved_camera_state(
   entity : @core.Entity,
   legacy_ctx : @ui.UiContext?,
 ) -> UiResolvedCameraState {
-  let computed_camera_store = @ui.get_computed_ui_target_camera_store(world)
-  let render_target_info_store = @ui.get_computed_ui_render_target_info_store(
-    world,
-  )
-  match render_target_info_store.get(entity) {
+  match
+    (try! world.get_by_key(entity, @ui.ecs_key_computed_ui_render_target_info)) {
     Some(render_target_info) =>
       ui_resolved_camera_state_from_computed(
-        computed_camera_store
-        .get(entity)
-        .map(fn(value) { value.get() })
-        .unwrap_or(None),
+        match
+          (try! world.get_by_key(entity, @ui.ecs_key_computed_ui_target_camera)) {
+          Some(value) => value.get()
+          None => None
+        },
         render_target_info,
       )
     None =>
@@ -465,23 +449,6 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   @sprite_render.render2d_clear_overlay_ui_rects(world)
   @sprite_render.render2d_clear_overlay_ui_box_shadows(world)
   @sprite_render.render2d_clear_overlay_ui_texture_slices(world)
-  let layout_store = @ui.get_ui_layout_store(source_world)
-  let node_store = @ui.get_node_store(source_world)
-  let bg_store = @ui.get_background_color_store(source_world)
-  let img_store = @ui.get_ui_image_store(source_world)
-  let image_node_store = @ui.get_image_node_store(source_world)
-  let button_store = @ui.get_button_colors_store(source_world)
-  let interaction_store = @ui.get_interaction_store(source_world)
-  let outline_store = @ui.get_outline_store(source_world)
-  let shadow_store = @ui.get_box_shadow_store(source_world)
-  let shadow_samples_store = get_ui_box_shadow_samples_store(source_world)
-  let border_color_store = @ui.get_border_color_store(source_world)
-  let radius_store = @ui.get_border_radius_store(source_world)
-  let aa_store = get_ui_anti_alias_store(source_world)
-  let layers_store = @sprite.get_render_layers_store(source_world)
-  let scissor_store = @sprite.get_scissor_rect_store(source_world)
-  let transform_store = @transform.get_transform_store(source_world)
-  let vv_store = @visibility.get_view_visibility_store(source_world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
       0.0F
@@ -601,19 +568,35 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let uv_max = @math.Vec2::new(1.0F, 1.0F)
   for i in 0..<stack0.uinodes.length() {
     let entity = stack0.uinodes[i]
-    if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
+    if (try! source_world.get_by_key(
+        entity, @visibility.ecs_key_view_visibility,
+      ))
+      is Some(vv) &&
+      !vv.is_visible() {
       continue
     }
-    guard layout_store.get(entity) is Some(layout) else { continue }
-    guard node_store.get(entity) is Some(node) else { continue }
-    guard transform_store.get(entity) is Some(t0) else { continue }
+    guard (try! source_world.get_by_key(entity, @ui.ecs_key_ui_layout))
+      is Some(layout) else {
+      continue
+    }
+    guard (try! source_world.get_by_key(entity, @ui.ecs_key_node)) is Some(node) else {
+      continue
+    }
+    guard (try! source_world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(t0) else {
+      continue
+    }
     let entity_ctx = ui_entity_resolved_camera_state(
       source_world, entity, legacy_ctx,
     )
     let viewport_size = entity_ctx.viewport_size
     let shadow_samples = match entity_ctx.camera_entity {
       Some(camera_entity) =>
-        match shadow_samples_store.get(camera_entity) {
+        match
+          (
+            try! source_world.get_by_key(
+              camera_entity, ecs_key_ui_box_shadow_samples,
+            ) : BoxShadowSamples?) {
           Some(v) => v.samples
           None => BoxShadowSamples::default().samples
         }
@@ -624,11 +607,13 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     if size.x <= 0.0F || size.y <= 0.0F {
       continue
     }
-    let layers = match layers_store.get(entity) {
+    let layers = match
+      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let scissor = match scissor_store.get(entity) {
+    let scissor = match
+      (try! source_world.get_by_key(entity, @sprite.ecs_key_scissor_rect)) {
       Some(v) => Some(v.rect)
       None => None
     }
@@ -655,7 +640,8 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     let border = @sprite.UiBorderRect::new(
       border_left, border_top, border_right, border_bottom,
     )
-    let radius = match radius_store.get(entity) {
+    let radius = match
+      (try! source_world.get_by_key(entity, @ui.ecs_key_border_radius)) {
       Some(r) => {
         let tl = resolve_radius_single(r.top_left, size, viewport_size) *
           scale_min
@@ -670,7 +656,10 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       None => @sprite.UiCornerRadii::zero()
     }
     let mut flags = 0
-    let aa_enabled = match aa_store.get(entity) {
+    let aa_enabled = match
+      (
+        try! source_world.get_by_key(entity, ecs_key_ui_anti_alias) :
+        UiAntiAlias?) {
       Some(UiAntiAlias::Off) => false
       _ => true
     }
@@ -683,7 +672,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
 
     // BoxShadow (behind background/content/border/text).
-    match shadow_store.get(entity) {
+    match (try! source_world.get_by_key(entity, @ui.ecs_key_box_shadow)) {
       Some(shadow) =>
         if shadow.color.a > 0.0F {
           let spread_x = resolve_axis(
@@ -731,7 +720,8 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 @math.Vec2::new(t0.scale.x, t0.scale.y),
                 z=z_base + UI_STACK_Z_SHADOW,
               )
-              let radius_shadow = match radius_store.get(entity) {
+              let radius_shadow = match
+                (try! source_world.get_by_key(entity, @ui.ecs_key_border_radius)) {
                 Some(r) => {
                   let tl = resolve_radius_single(
                       r.top_left,
@@ -795,11 +785,18 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     }
 
     // Background color.
-    let bg_color_opt = match button_store.get(entity) {
+    let bg_color_opt = match
+      (try! source_world.get_by_key(entity, @ui.ecs_key_button_colors)) {
       Some(colors) =>
-        Some(button_color_for_state(colors, interaction_store.get(entity)))
+        Some(
+          button_color_for_state(
+            colors,
+            try! source_world.get_by_key(entity, @ui.ecs_key_interaction),
+          ),
+        )
       None =>
-        match bg_store.get(entity) {
+        match
+          (try! source_world.get_by_key(entity, @ui.ecs_key_background_color)) {
           Some(v) => Some(v.color)
           None => None
         }
@@ -829,7 +826,8 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     }
 
     // Image content (Bevy `ImageNode`, with `UiImage` compatibility).
-    let image_info = match image_node_store.get(entity) {
+    let image_info = match
+      (try! source_world.get_by_key(entity, @ui.ecs_key_image_node)) {
       Some(img) =>
         Some(
           (
@@ -843,7 +841,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
           ),
         )
       None =>
-        match img_store.get(entity) {
+        match (try! source_world.get_by_key(entity, @ui.ecs_key_ui_image)) {
           Some(img) =>
             Some(
               (
@@ -981,7 +979,8 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       border_top > 0.0F ||
       border_bottom > 0.0F
     if has_border &&
-      border_color_store.get(entity) is Some(bc) &&
+      (try! source_world.get_by_key(entity, @ui.ecs_key_border_color))
+      is Some(bc) &&
       bc.color.a > 0.0F {
       let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
       @sprite_render.render2d_push_ui_rect_uv_scissor(
@@ -1003,7 +1002,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     }
 
     // Outline.
-    match outline_store.get(entity) {
+    match (try! source_world.get_by_key(entity, @ui.ecs_key_outline)) {
       Some(outline) =>
         if outline.color.a > 0.0F {
           let outline_width = clamp_nonneg(
@@ -1032,7 +1031,8 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 outline_width * scale_x,
                 outline_width * scale_y,
               )
-              let outline_radius = match radius_store.get(entity) {
+              let outline_radius = match
+                (try! source_world.get_by_key(entity, @ui.ecs_key_border_radius)) {
                 Some(r) => {
                   let tl = clamp_radius_nonneg(
                       resolve_radius_single(r.top_left, size, viewport_size) +

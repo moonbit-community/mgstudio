@@ -48,18 +48,24 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   let floor = @sprite.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
-  let rb_store = @physics2d.get_rigid_body2d_store(world)
-  let col_store = @physics2d.get_collider2d_store(world)
-  let cf_store = @physics2d.get_contact_force_event_threshold2d_store(world)
-  rb_store.insert(floor, @physics2d.RigidBody2d::fixed())
-  col_store.insert(
+  try! world.set_by_key(
     floor,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::fixed(),
+  )
+  try! world.set_by_key(
+    floor,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(320.0F, 16.0F),
     ),
   )
   // Enable contact force events for the floor/ball interaction.
-  cf_store.insert(floor, @physics2d.ContactForceEventThreshold2d::new(0.0F))
+  try! world.set_by_key(
+    floor,
+    @physics2d.ecs_key_contact_force_event_threshold2d,
+    @physics2d.ContactForceEventThreshold2d::new(0.0F),
+  )
 
   // Ball.
   let ball_sprite = @sprite.Sprite::from_image(texture)
@@ -70,14 +76,26 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
     z=1.0F,
   )
   let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
-  let vel_store = @physics2d.get_velocity2d_store(world)
-  rb_store.insert(ball, @physics2d.RigidBody2d::dynamic())
-  col_store.insert(
+  try! world.set_by_key(
     ball,
+    @physics2d.ecs_key_rigid_body2d,
+    @physics2d.RigidBody2d::dynamic(),
+  )
+  try! world.set_by_key(
+    ball,
+    @physics2d.ecs_key_collider2d,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(12.0F)),
   )
-  cf_store.insert(ball, @physics2d.ContactForceEventThreshold2d::new(0.0F))
-  vel_store.insert(ball, @physics2d.Velocity2d::zero())
+  try! world.set_by_key(
+    ball,
+    @physics2d.ecs_key_contact_force_event_threshold2d,
+    @physics2d.ContactForceEventThreshold2d::new(0.0F),
+  )
+  try! world.set_by_key(
+    ball,
+    @physics2d.ecs_key_velocity2d,
+    @physics2d.Velocity2d::zero(),
+  )
 
   // Camera.
   let camera = @sprite.Camera::default()

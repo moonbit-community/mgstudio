@@ -187,35 +187,24 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
-  let rb_store = get_rigid_body2d_store(ecs_world)
-  let col_store = get_collider2d_store(ecs_world)
-  let impulse_joint_store = get_impulse_joint2d_store(ecs_world)
-  let multibody_joint_store = get_multibody_joint2d_store(ecs_world)
-  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
-  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
-  let impulse_joint_handle_store = get_rapier_impulse_joint_handle2d_store(
-    ecs_world,
-  )
-  let multibody_joint_handle_store = get_rapier_multibody_joint_handle2d_store(
-    ecs_world,
-  )
 
   // 1) Remove handles/rapier state when the authoring component is removed.
   let remove_bodies : Array[@core.Entity] = []
-  body_handle_store.for_each(fn(e, _h) {
-    if !rb_store.contains(e) {
+  ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(e, _h) {
+    if !(try! ecs_world.contains_by_key(e, ecs_key_rigid_body2d)) {
       remove_bodies.push(e)
     }
   })
   for e in remove_bodies {
-    if body_handle_store.get(e) is Some(h) {
+    if (try! ecs_world.get_by_key(e, ecs_key_rapier_body_handle2d)) is Some(h) {
       // Remove and detach all colliders attached to this body (including
       // colliders authored by other entities).
       let attached = ctx.colliders.colliders_with_parent(h.handle)
       for ch in attached {
         let raw = ch.into_raw_parts()
         if ctx.collider_to_entity.get(raw) is Some(owner) {
-          collider_handle_store.remove(owner) |> ignore
+          try! (ecs_world.take(owner, ecs_key_rapier_collider_handle2d)
+          |> ignore)
           ctx.entity_to_collider.remove(entity_key(owner))
           ctx.collider_to_entity.remove(raw)
         }
@@ -231,44 +220,49 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
         true,
       )
       |> ignore
-      body_handle_store.remove(e) |> ignore
+      try! (ecs_world.take(e, ecs_key_rapier_body_handle2d) |> ignore)
       ctx.entity_to_body.remove(entity_key(e))
 
       // If this entity also authored a collider, the collider was removed by
       // `remove_rigid_body`. Drop the handle so it can be reinserted as a
       // standalone collider (if Collider2d still exists).
-      if collider_handle_store.get(e) is Some(ch) {
-        collider_handle_store.remove(e) |> ignore
+      if (try! ecs_world.get_by_key(e, ecs_key_rapier_collider_handle2d))
+        is Some(ch) {
+        try! (ecs_world.take(e, ecs_key_rapier_collider_handle2d) |> ignore)
         ctx.entity_to_collider.remove(entity_key(e))
         ctx.collider_to_entity.remove(ch.handle.into_raw_parts())
       }
 
       // Drop joint handles authored by this entity; `remove_rigid_body` removes
       // all attached joints in Rapier.
-      if impulse_joint_handle_store.get(e) is Some(jh) {
-        impulse_joint_handle_store.remove(e) |> ignore
+      if (try! ecs_world.get_by_key(e, ecs_key_rapier_impulse_joint_handle2d))
+        is Some(jh) {
+        try! (ecs_world.take(e, ecs_key_rapier_impulse_joint_handle2d) |> ignore)
         ctx.entity_to_impulse_joint.remove(entity_key(e))
         // Best-effort remove: the joint may already be gone.
         ctx.impulse_joints.remove(jh.handle, true) |> ignore
       }
-      if multibody_joint_handle_store.get(e) is Some(jh) {
-        multibody_joint_handle_store.remove(e) |> ignore
+      if (try! ecs_world.get_by_key(e, ecs_key_rapier_multibody_joint_handle2d))
+        is Some(jh) {
+        try! (ecs_world.take(e, ecs_key_rapier_multibody_joint_handle2d)
+        |> ignore)
         ctx.entity_to_multibody_joint.remove(entity_key(e))
         ctx.multibody_joints.remove(jh.handle, true)
       }
     }
   }
   let remove_colliders : Array[@core.Entity] = []
-  collider_handle_store.for_each(fn(e, _h) {
-    if !col_store.contains(e) {
+  ecs_world.for_each_component(ecs_key_rapier_collider_handle2d, fn(e, _h) {
+    if !(try! ecs_world.contains_by_key(e, ecs_key_collider2d)) {
       remove_colliders.push(e)
     }
   })
   for e in remove_colliders {
-    if collider_handle_store.get(e) is Some(h) {
+    if (try! ecs_world.get_by_key(e, ecs_key_rapier_collider_handle2d))
+      is Some(h) {
       ctx.colliders.remove(h.handle, ctx.islands, ctx.rigid_bodies, true)
       |> ignore
-      collider_handle_store.remove(e) |> ignore
+      try! (ecs_world.take(e, ecs_key_rapier_collider_handle2d) |> ignore)
       ctx.entity_to_collider.remove(entity_key(e))
       ctx.collider_to_entity.remove(h.handle.into_raw_parts())
     }
@@ -276,40 +270,60 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
 
   // Remove joints when the authoring component is removed or bodies are missing.
   let remove_impulse_joints : Array[@core.Entity] = []
-  impulse_joint_handle_store.for_each(fn(e, _h) {
-    if !impulse_joint_store.contains(e) || !body_handle_store.contains(e) {
+  ecs_world.for_each_component(ecs_key_rapier_impulse_joint_handle2d, fn(
+    e,
+    _h,
+  ) {
+    if !((try! ecs_world.contains_by_key(e, ecs_key_impulse_joint2d)) ||
+      !(try! ecs_world.contains_by_key(e, ecs_key_rapier_body_handle2d))) {
       remove_impulse_joints.push(e)
     }
   })
   for e in remove_impulse_joints {
-    if impulse_joint_handle_store.get(e) is Some(h) {
+    if (try! ecs_world.get_by_key(e, ecs_key_rapier_impulse_joint_handle2d))
+      is Some(h) {
       ctx.impulse_joints.remove(h.handle, true) |> ignore
-      impulse_joint_handle_store.remove(e) |> ignore
+      try! (ecs_world.take(e, ecs_key_rapier_impulse_joint_handle2d) |> ignore)
       ctx.entity_to_impulse_joint.remove(entity_key(e))
     }
   }
   let remove_multibody_joints : Array[@core.Entity] = []
-  multibody_joint_handle_store.for_each(fn(e, _h) {
-    if !multibody_joint_store.contains(e) || !body_handle_store.contains(e) {
+  ecs_world.for_each_component(ecs_key_rapier_multibody_joint_handle2d, fn(
+    e,
+    _h,
+  ) {
+    if !((try! ecs_world.contains_by_key(e, ecs_key_multibody_joint2d)) ||
+      !(try! ecs_world.contains_by_key(e, ecs_key_rapier_body_handle2d))) {
       remove_multibody_joints.push(e)
     }
   })
   for e in remove_multibody_joints {
-    if multibody_joint_handle_store.get(e) is Some(h) {
+    if (try! ecs_world.get_by_key(e, ecs_key_rapier_multibody_joint_handle2d))
+      is Some(h) {
       ctx.multibody_joints.remove(h.handle, true)
-      multibody_joint_handle_store.remove(e) |> ignore
+      try! (ecs_world.take(e, ecs_key_rapier_multibody_joint_handle2d) |> ignore)
       ctx.entity_to_multibody_joint.remove(entity_key(e))
     }
   }
 
   // 2) Remove rapier state when entities are despawned (handle components gone).
   let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
-  body_handle_store.for_each(fn(e, _h) { alive.set(entity_key(e), true) })
-  collider_handle_store.for_each(fn(e, _h) { alive.set(entity_key(e), true) })
-  impulse_joint_handle_store.for_each(fn(e, _h) {
+  ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(e, _h) {
     alive.set(entity_key(e), true)
   })
-  multibody_joint_handle_store.for_each(fn(e, _h) {
+  ecs_world.for_each_component(ecs_key_rapier_collider_handle2d, fn(e, _h) {
+    alive.set(entity_key(e), true)
+  })
+  ecs_world.for_each_component(ecs_key_rapier_impulse_joint_handle2d, fn(
+    e,
+    _h,
+  ) {
+    alive.set(entity_key(e), true)
+  })
+  ecs_world.for_each_component(ecs_key_rapier_multibody_joint_handle2d, fn(
+    e,
+    _h,
+  ) {
     alive.set(entity_key(e), true)
   })
   let dead_body_keys : Array[(Int, Int)] = []
@@ -327,7 +341,8 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
       for ch in attached {
         let raw = ch.into_raw_parts()
         if ctx.collider_to_entity.get(raw) is Some(owner) {
-          collider_handle_store.remove(owner) |> ignore
+          try! (ecs_world.take(owner, ecs_key_rapier_collider_handle2d)
+          |> ignore)
           ctx.entity_to_collider.remove(entity_key(owner))
           ctx.collider_to_entity.remove(raw)
         }
@@ -400,56 +415,16 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
-  let transform_store = @transform.get_transform_store(ecs_world)
-  let vel_store = get_velocity2d_store(ecs_world)
-  let damping_store = get_damping2d_store(ecs_world)
-  let gravity_scale_store = get_gravity_scale2d_store(ecs_world)
-  let locked_axes_store = get_locked_axes2d_store(ecs_world)
-  let ccd_store = get_ccd2d_store(ecs_world)
-  let dominance_store = get_dominance2d_store(ecs_world)
-  let sleeping_store = get_sleeping2d_store(ecs_world)
-  let rb_enabled_store = get_rigid_body_enabled2d_store(ecs_world)
-  let additional_mass_props_store = get_additional_mass_properties2d_store(
-    ecs_world,
-  )
-  let additional_solver_iter_store = get_additional_solver_iterations2d_store(
-    ecs_world,
-  )
-  let contact_force_threshold_store = get_contact_force_event_threshold2d_store(
-    ecs_world,
-  )
-  let density_store = get_collider_density2d_store(ecs_world)
-  let friction_store = get_friction2d_store(ecs_world)
-  let friction_rule_store = get_friction_combine_rule2d_store(ecs_world)
-  let restitution_store = get_restitution2d_store(ecs_world)
-  let restitution_rule_store = get_restitution_combine_rule2d_store(ecs_world)
-  let collision_groups_store = get_collision_groups2d_store(ecs_world)
-  let solver_groups_store = get_solver_groups2d_store(ecs_world)
-  let collider_enabled_store = get_collider_enabled2d_store(ecs_world)
-  let active_collision_types_store = get_active_collision_types2d_store(
-    ecs_world,
-  )
-  let active_events_store = get_active_events2d_store(ecs_world)
-  let active_hooks_store = get_active_hooks2d_store(ecs_world)
-  let contact_skin_store = get_contact_skin2d_store(ecs_world)
-  let collider_mass_props_store = get_collider_mass_properties2d_store(
-    ecs_world,
-  )
-  let rb_store = get_rigid_body2d_store(ecs_world)
-  let col_store = get_collider2d_store(ecs_world)
-  let col_parent_store = get_collider_parent2d_store(ecs_world)
-  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
-  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
   let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
 
   // Insert rigid bodies.
-  rb_store.for_each(fn(entity, rb2d) {
-    if body_handle_store.contains(entity) {
+  ecs_world.for_each_component(ecs_key_rigid_body2d, fn(entity, rb2d) {
+    if (try! ecs_world.contains_by_key(entity, ecs_key_rapier_body_handle2d)) {
       return
     }
-    let transform = transform_store
-      .get(entity)
-      .unwrap_or(@transform.Transform::identity())
+    let transform = (try! ecs_world.get_by_key(
+      entity, @transform.ecs_key_transform,
+    )).unwrap_or(@transform.Transform::identity())
     let iso = mg_transform_to_iso2(transform)
     let builder = match rb2d.body_type {
       @dynamics.RigidBodyType::Dynamic => @dynamics.RigidBodyBuilder::dynamic()
@@ -460,16 +435,16 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
         @dynamics.RigidBodyBuilder::kinematic_velocity_based()
     }
     let mut builder = builder.position(iso)
-    if vel_store.get(entity) is Some(v) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_velocity2d)) is Some(v) {
       builder = builder.linvel(mg_vec2_to_rapier(v.linvel)).angvel(v.angvel)
     }
-    if damping_store.get(entity) is Some(d) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_damping2d)) is Some(d) {
       builder = builder.linear_damping(d.linear).angular_damping(d.angular)
     }
-    if gravity_scale_store.get(entity) is Some(gs) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_gravity_scale2d)) is Some(gs) {
       builder = builder.gravity_scale(gs.scale)
     }
-    if locked_axes_store.get(entity) is Some(la) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_locked_axes2d)) is Some(la) {
       if la.lock_translations {
         builder = builder.lock_translations()
       }
@@ -477,54 +452,69 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
         builder = builder.lock_rotations()
       }
     }
-    if ccd_store.get(entity) is Some(ccd) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_ccd2d)) is Some(ccd) {
       builder = builder
         .ccd_enabled(ccd.enabled)
         .soft_ccd_prediction(ccd.soft_prediction)
     }
-    if dominance_store.get(entity) is Some(dom) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_dominance2d)) is Some(dom) {
       builder = builder.dominance_group(dom.group)
     }
-    if sleeping_store.get(entity) is Some(s) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_sleeping2d)) is Some(s) {
       builder = builder.sleeping(s.sleeping)
     }
-    if rb_enabled_store.get(entity) is Some(e) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_rigid_body_enabled2d))
+      is Some(e) {
       builder = builder.enabled(e.enabled)
     }
-    if additional_mass_props_store.get(entity) is Some(m) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_additional_mass_properties2d))
+      is Some(m) {
       builder = builder.additional_mass_properties(m.props)
     }
-    if additional_solver_iter_store.get(entity) is Some(it) {
+    if (try! ecs_world.get_by_key(
+        entity, ecs_key_additional_solver_iterations2d,
+      ))
+      is Some(it) {
       builder = builder.additional_solver_iterations(it.iterations)
     }
     let rb = builder.build()
     let handle = ctx.rigid_bodies.insert(rb)
-    body_handle_store.insert(entity, RapierBodyHandle2d::new(handle))
+    try! ecs_world.set_by_key(
+      entity,
+      ecs_key_rapier_body_handle2d,
+      RapierBodyHandle2d::new(handle),
+    )
     ctx.entity_to_body.set(entity_key(entity), handle)
   })
 
   // Insert colliders.
-  col_store.for_each(fn(entity, col2d) {
-    if collider_handle_store.contains(entity) {
+  ecs_world.for_each_component(ecs_key_collider2d, fn(entity, col2d) {
+    if (try! ecs_world.contains_by_key(entity, ecs_key_rapier_collider_handle2d)) {
       return
     }
     let mut builder = make_collider_builder(col2d.shape).sensor(col2d.sensor)
-    if collider_enabled_store.get(entity) is Some(e) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collider_enabled2d))
+      is Some(e) {
       builder = builder.enabled(e.enabled)
     }
-    if active_collision_types_store.get(entity) is Some(t) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_active_collision_types2d))
+      is Some(t) {
       builder = builder.active_collision_types(t.types)
     }
-    if active_hooks_store.get(entity) is Some(h) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_active_hooks2d)) is Some(h) {
       builder = builder.active_hooks(h.hooks)
     }
-    if contact_skin_store.get(entity) is Some(s) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_contact_skin2d)) is Some(s) {
       builder = builder.contact_skin(s.skin)
     }
-    let active_events = match active_events_store.get(entity) {
+    let active_events = match
+      (try! ecs_world.get_by_key(entity, ecs_key_active_events2d)) {
       Some(a) => a.events
       None =>
-        if contact_force_threshold_store.get(entity) is Some(_) {
+        if (try! ecs_world.get_by_key(
+            entity, ecs_key_contact_force_event_threshold2d,
+          ))
+          is Some(_) {
           @collision.ActiveEvents::collision_events().insert(
             @collision.ActiveEvents::contact_force_events(),
           )
@@ -535,35 +525,46 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
     // No workaround policy: do NOT set a default density here.
     // If moon_rapier defaults are incorrect, users must opt-in via
     // `ColliderDensity2d` until upstream fixes the default behavior.
-    if density_store.get(entity) is Some(d) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collider_density2d))
+      is Some(d) {
       builder = builder.density(d.density)
     }
-    if friction_store.get(entity) is Some(f) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_friction2d)) is Some(f) {
       builder = builder.friction(f.coefficient)
     }
-    if friction_rule_store.get(entity) is Some(r) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_friction_combine_rule2d))
+      is Some(r) {
       builder = builder.friction_combine_rule(r.rule)
     }
-    if restitution_store.get(entity) is Some(r) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_restitution2d)) is Some(r) {
       builder = builder.restitution(r.coefficient)
     }
-    if restitution_rule_store.get(entity) is Some(r) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_restitution_combine_rule2d))
+      is Some(r) {
       builder = builder.restitution_combine_rule(r.rule)
     }
-    if collision_groups_store.get(entity) is Some(g) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collision_groups2d))
+      is Some(g) {
       builder = builder.collision_groups(collision_groups_to_rapier(g))
     }
-    if solver_groups_store.get(entity) is Some(g) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_solver_groups2d)) is Some(g) {
       builder = builder.solver_groups(solver_groups_to_rapier(g))
     }
-    if contact_force_threshold_store.get(entity) is Some(th) {
+    if (try! ecs_world.get_by_key(
+        entity, ecs_key_contact_force_event_threshold2d,
+      ))
+      is Some(th) {
       builder = builder.contact_force_event_threshold(th.threshold)
     }
     builder = builder.active_events(active_events).user_data(entity.id)
-    let handle = match body_handle_store.get(entity) {
+    let handle = match
+      (try! ecs_world.get_by_key(entity, ecs_key_rapier_body_handle2d)) {
       Some(bodyh) => {
         let mut collider = builder.build()
-        if collider_mass_props_store.get(entity) is Some(mp) {
+        if (try! ecs_world.get_by_key(
+            entity, ecs_key_collider_mass_properties2d,
+          ))
+          is Some(mp) {
           collider = collider.set_mass_properties(mp.mass_properties)
         }
         let handle = ctx.colliders.insert_with_parent(
@@ -575,19 +576,23 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
         handle
       }
       None =>
-        match col_parent_store.get(entity) {
+        match (try! ecs_world.get_by_key(entity, ecs_key_collider_parent2d)) {
           Some(p) =>
-            match body_handle_store.get(p.parent) {
+            match
+              (try! ecs_world.get_by_key(p.parent, ecs_key_rapier_body_handle2d)) {
               Some(parent_bh) => {
-                let transform = transform_store
-                  .get(entity)
-                  .unwrap_or(@transform.Transform::identity())
+                let transform = (try! ecs_world.get_by_key(
+                  entity, @transform.ecs_key_transform,
+                )).unwrap_or(@transform.Transform::identity())
                 let iso = mg_transform_to_iso2(transform)
                 let mut collider = builder
                   .translation(iso.translation)
                   .rotation(iso.rotation.angle())
                   .build()
-                if collider_mass_props_store.get(entity) is Some(mp) {
+                if (try! ecs_world.get_by_key(
+                    entity, ecs_key_collider_mass_properties2d,
+                  ))
+                  is Some(mp) {
                   collider = collider.set_mass_properties(mp.mass_properties)
                 }
                 let handle = ctx.colliders.insert_with_parent(
@@ -599,37 +604,47 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
                 handle
               }
               None => {
-                let transform = transform_store
-                  .get(entity)
-                  .unwrap_or(@transform.Transform::identity())
+                let transform = (try! ecs_world.get_by_key(
+                  entity, @transform.ecs_key_transform,
+                )).unwrap_or(@transform.Transform::identity())
                 let iso = mg_transform_to_iso2(transform)
                 let mut collider = builder
                   .translation(iso.translation)
                   .rotation(iso.rotation.angle())
                   .build()
-                if collider_mass_props_store.get(entity) is Some(mp) {
+                if (try! ecs_world.get_by_key(
+                    entity, ecs_key_collider_mass_properties2d,
+                  ))
+                  is Some(mp) {
                   collider = collider.set_mass_properties(mp.mass_properties)
                 }
                 ctx.colliders.insert(collider)
               }
             }
           None => {
-            let transform = transform_store
-              .get(entity)
-              .unwrap_or(@transform.Transform::identity())
+            let transform = (try! ecs_world.get_by_key(
+              entity, @transform.ecs_key_transform,
+            )).unwrap_or(@transform.Transform::identity())
             let iso = mg_transform_to_iso2(transform)
             let mut collider = builder
               .translation(iso.translation)
               .rotation(iso.rotation.angle())
               .build()
-            if collider_mass_props_store.get(entity) is Some(mp) {
+            if (try! ecs_world.get_by_key(
+                entity, ecs_key_collider_mass_properties2d,
+              ))
+              is Some(mp) {
               collider = collider.set_mass_properties(mp.mass_properties)
             }
             ctx.colliders.insert(collider)
           }
         }
     }
-    collider_handle_store.insert(entity, RapierColliderHandle2d::new(handle))
+    try! ecs_world.set_by_key(
+      entity,
+      ecs_key_rapier_collider_handle2d,
+      RapierColliderHandle2d::new(handle),
+    )
     ctx.entity_to_collider.set(entity_key(entity), handle)
     ctx.collider_to_entity.set(handle.into_raw_parts(), entity)
   })
@@ -664,104 +679,74 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   }
   ctx.integration = cfg.integration.set_dt(dt)
   physics2d_apply_global_hooks(ctx)
-  let transform_store = @transform.get_transform_store(ecs_world)
-  let rb2d_store = get_rigid_body2d_store(ecs_world)
-  let col2d_store = get_collider2d_store(ecs_world)
-  let col_parent_store = get_collider_parent2d_store(ecs_world)
-  let vel_store = get_velocity2d_store(ecs_world)
-  let damping_store = get_damping2d_store(ecs_world)
-  let gravity_scale_store = get_gravity_scale2d_store(ecs_world)
-  let locked_axes_store = get_locked_axes2d_store(ecs_world)
-  let ccd_store = get_ccd2d_store(ecs_world)
-  let dominance_store = get_dominance2d_store(ecs_world)
-  let sleeping_store = get_sleeping2d_store(ecs_world)
-  let rb_enabled_store = get_rigid_body_enabled2d_store(ecs_world)
-  let additional_mass_props_store = get_additional_mass_properties2d_store(
-    ecs_world,
-  )
-  let additional_solver_iter_store = get_additional_solver_iterations2d_store(
-    ecs_world,
-  )
-  let external_force_store = get_external_force2d_store(ecs_world)
-  let external_impulse_store = get_external_impulse2d_store(ecs_world)
-  let contact_force_threshold_store = get_contact_force_event_threshold2d_store(
-    ecs_world,
-  )
-  let density_store = get_collider_density2d_store(ecs_world)
-  let friction_store = get_friction2d_store(ecs_world)
-  let friction_rule_store = get_friction_combine_rule2d_store(ecs_world)
-  let restitution_store = get_restitution2d_store(ecs_world)
-  let restitution_rule_store = get_restitution_combine_rule2d_store(ecs_world)
-  let collision_groups_store = get_collision_groups2d_store(ecs_world)
-  let solver_groups_store = get_solver_groups2d_store(ecs_world)
-  let collider_enabled_store = get_collider_enabled2d_store(ecs_world)
-  let active_collision_types_store = get_active_collision_types2d_store(
-    ecs_world,
-  )
-  let active_events_store = get_active_events2d_store(ecs_world)
-  let active_hooks_store = get_active_hooks2d_store(ecs_world)
-  let contact_skin_store = get_contact_skin2d_store(ecs_world)
-  let collider_mass_props_store = get_collider_mass_properties2d_store(
-    ecs_world,
-  )
-  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
-  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
 
   // Colliders: update authoring properties and keep standalone colliders
   // (no parent rigid body) following Transform.
-  collider_handle_store.for_each(fn(entity, ch) {
+  ecs_world.for_each_component(ecs_key_rapier_collider_handle2d, fn(
+    entity,
+    ch,
+  ) {
     guard ctx.colliders.get_mut_internal_with_modification_tracking(ch.handle)
       is Some(collider) else {
       return
     }
-    if col2d_store.get(entity) is Some(col2d) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collider2d)) is Some(col2d) {
       collider.set_sensor(col2d.sensor) |> ignore
       collider.set_shape(collider_shape2d_to_rapier(col2d.shape)) |> ignore
     }
     collider.set_enabled(
-      collider_enabled_store
-      .get(entity)
+      (try! ecs_world.get_by_key(entity, ecs_key_collider_enabled2d))
       .map(fn(e) { e.enabled })
       .unwrap_or(true),
     )
     |> ignore
-    if density_store.get(entity) is Some(d) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collider_density2d))
+      is Some(d) {
       collider.set_density(d.density) |> ignore
     }
-    if friction_store.get(entity) is Some(f) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_friction2d)) is Some(f) {
       collider.set_friction(f.coefficient) |> ignore
     }
-    if friction_rule_store.get(entity) is Some(r) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_friction_combine_rule2d))
+      is Some(r) {
       collider.set_friction_combine_rule(r.rule) |> ignore
     }
-    if restitution_store.get(entity) is Some(r) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_restitution2d)) is Some(r) {
       collider.set_restitution(r.coefficient) |> ignore
     }
-    if restitution_rule_store.get(entity) is Some(r) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_restitution_combine_rule2d))
+      is Some(r) {
       collider.set_restitution_combine_rule(r.rule) |> ignore
     }
-    if collision_groups_store.get(entity) is Some(g) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collision_groups2d))
+      is Some(g) {
       collider.set_collision_groups(collision_groups_to_rapier(g)) |> ignore
     }
-    if solver_groups_store.get(entity) is Some(g) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_solver_groups2d)) is Some(g) {
       collider.set_solver_groups(solver_groups_to_rapier(g)) |> ignore
     }
-    if active_collision_types_store.get(entity) is Some(t) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_active_collision_types2d))
+      is Some(t) {
       collider.set_active_collision_types(t.types) |> ignore
     }
-    if active_hooks_store.get(entity) is Some(h) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_active_hooks2d)) is Some(h) {
       collider.set_active_hooks(h.hooks) |> ignore
     }
-    if contact_skin_store.get(entity) is Some(s) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_contact_skin2d)) is Some(s) {
       collider.set_contact_skin(s.skin) |> ignore
     }
-    if collider_mass_props_store.get(entity) is Some(mp) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_collider_mass_properties2d))
+      is Some(mp) {
       collider.set_mass_properties(mp.mass_properties) |> ignore
     }
-    let active_events = match active_events_store.get(entity) {
+    let active_events = match
+      (try! ecs_world.get_by_key(entity, ecs_key_active_events2d)) {
       Some(a) => a.events
       None =>
-        if contact_force_threshold_store.get(entity) is Some(_) {
+        if (try! ecs_world.get_by_key(
+            entity, ecs_key_contact_force_event_threshold2d,
+          ))
+          is Some(_) {
           @collision.ActiveEvents::collision_events().insert(
             @collision.ActiveEvents::contact_force_events(),
           )
@@ -770,29 +755,36 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
         }
     }
     collider.set_active_events(active_events) |> ignore
-    if contact_force_threshold_store.get(entity) is Some(th) {
+    if (try! ecs_world.get_by_key(
+        entity, ecs_key_contact_force_event_threshold2d,
+      ))
+      is Some(th) {
       collider.set_contact_force_event_threshold(th.threshold) |> ignore
     }
-    if body_handle_store.contains(entity) {
+    if (try! ecs_world.contains_by_key(entity, ecs_key_rapier_body_handle2d)) {
       return
     }
-    if col_parent_store.get(entity) is Some(p) {
-      if body_handle_store.get(p.parent) is Some(_parent_bh) {
-        let transform = transform_store
-          .get(entity)
-          .unwrap_or(@transform.Transform::identity())
+    if (try! ecs_world.get_by_key(entity, ecs_key_collider_parent2d)) is Some(p) {
+      if (try! ecs_world.get_by_key(p.parent, ecs_key_rapier_body_handle2d))
+        is Some(_parent_bh) {
+        let transform = (try! ecs_world.get_by_key(
+          entity, @transform.ecs_key_transform,
+        )).unwrap_or(@transform.Transform::identity())
         collider.set_position_wrt_parent(mg_transform_to_iso2(transform))
         |> ignore
         return
       }
     }
-    let transform = transform_store
-      .get(entity)
-      .unwrap_or(@transform.Transform::identity())
+    let transform = (try! ecs_world.get_by_key(
+      entity, @transform.ecs_key_transform,
+    )).unwrap_or(@transform.Transform::identity())
     collider.set_position(mg_transform_to_iso2(transform)) |> ignore
   })
-  body_handle_store.for_each(fn(entity, bh) {
-    guard rb2d_store.get(entity) is Some(rb2d) else { return }
+  ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(entity, bh) {
+    guard (try! ecs_world.get_by_key(entity, ecs_key_rigid_body2d))
+      is Some(rb2d) else {
+      return
+    }
     guard ctx.rigid_bodies.get_mut_internal_with_modification_tracking(
         bh.handle,
       )
@@ -805,32 +797,35 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
 
     // Kinematic position-based bodies follow the ECS transform.
     if rb2d.body_type is @dynamics.RigidBodyType::KinematicPositionBased {
-      let transform = transform_store
-        .get(entity)
-        .unwrap_or(@transform.Transform::identity())
+      let transform = (try! ecs_world.get_by_key(
+        entity, @transform.ecs_key_transform,
+      )).unwrap_or(@transform.Transform::identity())
       let iso = mg_transform_to_iso2(transform)
       body.set_next_kinematic_translation(iso.translation) |> ignore
       body.set_next_kinematic_rotation(iso.rotation) |> ignore
     }
 
     // Apply user-driven velocity updates.
-    if vel_store.get(entity) is Some(v) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_velocity2d)) is Some(v) {
       body.set_linvel(mg_vec2_to_rapier(v.linvel), true) |> ignore
       body.set_angvel(v.angvel, true) |> ignore
     }
 
     // Bevy-like authoring components.
-    let damping = damping_store.get(entity)
+    let damping = try! ecs_world.get_by_key(entity, ecs_key_damping2d)
     body.set_linear_damping(damping.map(fn(d) { d.linear }).unwrap_or(0.0F))
     |> ignore
     body.set_angular_damping(damping.map(fn(d) { d.angular }).unwrap_or(0.0F))
     |> ignore
     body.set_gravity_scale(
-      gravity_scale_store.get(entity).map(fn(g) { g.scale }).unwrap_or(1.0F),
+      try! ecs_world
+      .get_by_key(entity, ecs_key_gravity_scale2d)
+      .map(fn(g) { g.scale })
+      .unwrap_or(1.0F),
       true,
     )
     |> ignore
-    let la = locked_axes_store.get(entity)
+    let la = try! ecs_world.get_by_key(entity, ecs_key_locked_axes2d)
     body.set_locked_translations(
       la.map(fn(x) { x.lock_translations }).unwrap_or(false),
       true,
@@ -841,27 +836,37 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
       true,
     )
     |> ignore
-    let ccd = ccd_store.get(entity)
+    let ccd = try! ecs_world.get_by_key(entity, ecs_key_ccd2d)
     body.enable_ccd(ccd.map(fn(c) { c.enabled }).unwrap_or(false)) |> ignore
     body.set_soft_ccd_prediction(
       ccd.map(fn(c) { c.soft_prediction }).unwrap_or(0.0F),
     )
     |> ignore
     body.set_dominance_group(
-      dominance_store.get(entity).map(fn(d) { d.group }).unwrap_or(0),
+      try! ecs_world
+      .get_by_key(entity, ecs_key_dominance2d)
+      .map(fn(d) { d.group })
+      .unwrap_or(0),
     )
     |> ignore
     body.set_enabled(
-      rb_enabled_store.get(entity).map(fn(e) { e.enabled }).unwrap_or(true),
+      try! ecs_world
+      .get_by_key(entity, ecs_key_rigid_body_enabled2d)
+      .map(fn(e) { e.enabled })
+      .unwrap_or(true),
     )
     |> ignore
-    if additional_mass_props_store.get(entity) is Some(m) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_additional_mass_properties2d))
+      is Some(m) {
       body.set_additional_mass_properties(m.props, true) |> ignore
     }
-    if additional_solver_iter_store.get(entity) is Some(it) {
+    if (try! ecs_world.get_by_key(
+        entity, ecs_key_additional_solver_iterations2d,
+      ))
+      is Some(it) {
       body.set_additional_solver_iterations(it.iterations) |> ignore
     }
-    match sleeping_store.get(entity) {
+    match (try! ecs_world.get_by_key(entity, ecs_key_sleeping2d)) {
       Some(s) =>
         if s.sleeping {
           body.sleep() |> ignore
@@ -872,20 +877,26 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     }
 
     // External forces (persistent, applied each fixed step).
-    if external_force_store.get(entity) is Some(f) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_external_force2d)) is Some(f) {
       body.add_force(mg_vec2_to_rapier(f.force), true) |> ignore
       body.add_torque(f.torque, true) |> ignore
     }
 
     // External impulses (one-shot, cleared after application).
-    if external_impulse_store.get(entity) is Some(imp) {
+    if (try! ecs_world.get_by_key(entity, ecs_key_external_impulse2d))
+      is Some(imp) {
       if imp.impulse.x != 0.0F || imp.impulse.y != 0.0F {
         body.apply_impulse(mg_vec2_to_rapier(imp.impulse), true) |> ignore
       }
       if imp.torque_impulse != 0.0F {
         body.apply_torque_impulse(imp.torque_impulse, true) |> ignore
       }
-      external_impulse_store.set(entity, ExternalImpulse2d::zero()) |> ignore
+      try! (ecs_world.replace(
+        entity,
+        ecs_key_external_impulse2d,
+        ExternalImpulse2d::zero(),
+      )
+      |> ignore)
     }
   })
 
@@ -894,7 +905,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
 
   // Ensure mass properties stay correct for multi-collider bodies when collider
   // authoring components (density, etc.) change.
-  body_handle_store.for_each(fn(_entity, bh) {
+  ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(_entity, bh) {
     recompute_body_mass_properties(ctx, bh.handle)
   })
   ctx_res.insert(ctx_ref.val)
@@ -988,28 +999,26 @@ pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
-  let transform_store = @transform.get_transform_store(ecs_world)
-  let vel_store = get_velocity2d_store(ecs_world)
-  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
-  body_handle_store.for_each(fn(entity, bh) {
+  ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(entity, bh) {
     guard ctx.rigid_bodies.get(bh.handle) is Some(body) else { return }
     let pos = body.position()
-    let current = transform_store
-      .get(entity)
-      .unwrap_or(@transform.Transform::identity())
+    let current = (try! ecs_world.get_by_key(
+      entity, @transform.ecs_key_transform,
+    )).unwrap_or(@transform.Transform::identity())
     let next = update_transform_from_iso2(current, pos)
-    if transform_store.contains(entity) {
-      transform_store.set(entity, next) |> ignore
+    if (try! ecs_world.contains_by_key(entity, @transform.ecs_key_transform)) {
+      try! (ecs_world.replace(entity, @transform.ecs_key_transform, next)
+      |> ignore)
     } else {
-      transform_store.insert(entity, next)
+      try! ecs_world.set_by_key(entity, @transform.ecs_key_transform, next)
     }
     let linvel = rapier_vec2_to_mg(body.linvel())
     let angvel = body.angvel()
     let next_vel = Velocity2d::{ linvel, angvel }
-    if vel_store.contains(entity) {
-      vel_store.set(entity, next_vel) |> ignore
+    if (try! ecs_world.contains_by_key(entity, ecs_key_velocity2d)) {
+      try! (ecs_world.replace(entity, ecs_key_velocity2d, next_vel) |> ignore)
     } else {
-      vel_store.insert(entity, next_vel)
+      try! ecs_world.set_by_key(entity, ecs_key_velocity2d, next_vel)
     }
   })
 }

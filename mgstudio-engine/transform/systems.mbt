@@ -108,25 +108,23 @@ fn global_transform_eq(a : GlobalTransform, b : GlobalTransform) -> Bool {
 
 ///|
 fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
-  let transform_access = world.component(ecs_key_transform)
-  let global_access = world.component(ecs_key_global_transform)
-  let parent_access = world.component(@hierarchy.ecs_key_parent)
-  let child_access = world.component(@hierarchy.ecs_key_children)
   let entities : Array[@core.Entity] = []
-  global_access.for_each(fn(entity, _global) {
-    if transform_access.contains(entity) &&
-      !parent_access.contains(entity) &&
-      !child_access.contains(entity) {
+  world.for_each_component(ecs_key_global_transform, fn(entity, _global) {
+    if (try! world.contains_by_key(entity, ecs_key_transform)) &&
+      !(try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) &&
+      !(try! world.contains_by_key(entity, @hierarchy.ecs_key_children)) {
       entities.push(entity)
     }
   })
   sort_entities_by_id(entities)
   for entity in entities {
-    if transform_access.get(entity) is Some(transform) {
+    if (try! world.get_by_key(entity, ecs_key_transform)) is Some(transform) {
       let next_global = GlobalTransform::from_transform(transform)
-      if global_access.get(entity) is Some(current_global) {
+      if (try! world.get_by_key(entity, ecs_key_global_transform))
+        is Some(current_global) {
         if !global_transform_eq(current_global, next_global) {
-          global_access.set(entity, next_global) |> ignore
+          try! (world.replace(entity, ecs_key_global_transform, next_global)
+          |> ignore)
         }
       }
     }
@@ -168,31 +166,36 @@ fn propagate_descendants(
   children : @hierarchy.Children,
   ancestors : Array[@core.Entity],
 ) -> Unit {
-  let transform_access = world.component(ecs_key_transform)
-  let global_access = world.component(ecs_key_global_transform)
-  let parent_access = world.component(@hierarchy.ecs_key_parent)
-  let children_access = world.component(@hierarchy.ecs_key_children)
   let child_entities = children.entities().copy()
   sort_entities_by_id(child_entities)
   for child in child_entities {
     if entity_array_contains(ancestors, child) {
       transform_abort_malformed_hierarchy()
     }
-    guard parent_access.get(child) is Some(child_parent) else {
+    guard (try! world.get_by_key(child, @hierarchy.ecs_key_parent))
+      is Some(child_parent) else {
       transform_abort_malformed_hierarchy()
     }
     if !entity_eq(child_parent.entity(), parent) {
       transform_abort_malformed_hierarchy()
     }
-    guard transform_access.get(child) is Some(local_transform) else { continue }
-    guard global_access.get(child) is Some(current_global) else { continue }
+    guard (try! world.get_by_key(child, ecs_key_transform))
+      is Some(local_transform) else {
+      continue
+    }
+    guard (try! world.get_by_key(child, ecs_key_global_transform))
+      is Some(current_global) else {
+      continue
+    }
     let next_global = parent_global.mul(
       GlobalTransform::from_transform(local_transform),
     )
     if !global_transform_eq(current_global, next_global) {
-      global_access.set(child, next_global) |> ignore
+      try! (world.replace(child, ecs_key_global_transform, next_global)
+      |> ignore)
     }
-    if children_access.get(child) is Some(grand_children) {
+    if (try! world.get_by_key(child, @hierarchy.ecs_key_children))
+      is Some(grand_children) {
       ancestors.push(child)
       propagate_descendants(
         world, child, next_global, grand_children, ancestors,
@@ -204,27 +207,30 @@ fn propagate_descendants(
 
 ///|
 pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
-  let transform_access = world.component(ecs_key_transform)
-  let global_access = world.component(ecs_key_global_transform)
-  let parent_access = world.component(@hierarchy.ecs_key_parent)
-  let children_access = world.component(@hierarchy.ecs_key_children)
   let roots : Array[@core.Entity] = []
-  global_access.for_each(fn(entity, _global) {
-    if transform_access.contains(entity) && !parent_access.contains(entity) {
+  world.for_each_component(ecs_key_global_transform, fn(entity, _global) {
+    if (try! world.contains_by_key(entity, ecs_key_transform)) &&
+      !(try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
       roots.push(entity)
     }
   })
   sort_entities_by_id(roots)
   for entity in roots {
-    guard transform_access.get(entity) is Some(local_transform) else {
+    guard (try! world.get_by_key(entity, ecs_key_transform))
+      is Some(local_transform) else {
       continue
     }
-    guard global_access.get(entity) is Some(current_global) else { continue }
+    guard (try! world.get_by_key(entity, ecs_key_global_transform))
+      is Some(current_global) else {
+      continue
+    }
     let next_global = GlobalTransform::from_transform(local_transform)
     if !global_transform_eq(current_global, next_global) {
-      global_access.set(entity, next_global) |> ignore
+      try! (world.replace(entity, ecs_key_global_transform, next_global)
+      |> ignore)
     }
-    if children_access.get(entity) is Some(children) {
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
       let ancestors = [entity]
       propagate_descendants(world, entity, next_global, children, ancestors)
     }

@@ -58,8 +58,9 @@ test "ui: unparented node acts as implicit root for layout" {
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
   let root = world.spawn_empty()
-  get_node_store(world).insert(
+  try! world.set_by_key(
     root,
+    ecs_key_node,
     Node::default()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(24.0F))
@@ -70,10 +71,12 @@ test "ui: unparented node acts as implicit root for layout" {
 
   ui_layout_system(world)
 
-  let rect = get_ui_layout_store(world).get(root).unwrap().rect
+  let rect = try! world.get_by_key(root, ecs_key_ui_layout).unwrap().rect
   inspect(rect.min.x == 24.0F && rect.min.y == 32.0F, content="true")
   inspect(rect.max.x == 144.0F && rect.max.y == 80.0F, content="true")
-  let transform = @transform.get_transform_store(world).get(root).unwrap()
+  let transform = try! world
+    .get_by_key(root, @transform.ecs_key_transform)
+    .unwrap()
   inspect(transform.translation.x == -316.0F, content="true")
   inspect(transform.translation.y == 244.0F, content="true")
 }
@@ -86,35 +89,48 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
   get_ui_scale_resource(world).insert(UiScale::new(2.0F))
 
   let target_camera = world.spawn_empty()
-  @sprite.get_camera_store(world).insert(
+  try! world.set_by_key(
     target_camera,
+    @sprite.ecs_key_camera,
     implicit_root_camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
   )
 
   let root = world.spawn_empty()
-  get_node_store(world).insert(root, Node::default())
-  get_ui_target_camera_store(world).insert(
+  try! world.set_by_key(root, ecs_key_node, Node::default())
+  try! world.set_by_key(
     root,
+    ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
 
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(child, @hierarchy.Parent::new(root))
-  @hierarchy.get_children_store(world).insert(
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
     root,
+    @hierarchy.ecs_key_children,
     @hierarchy.Children::new([child]),
   )
 
   ui_propagate_target_cameras_system(world)
 
   inspect(
-    get_computed_ui_target_camera_store(world).get(root).unwrap().get() ==
-    Some(target_camera),
+    try! (world
+    .get_by_key(root, ecs_key_computed_ui_target_camera)
+    .unwrap()
+    .get() ==
+    Some(target_camera)),
     content="true",
   )
   inspect(
-    get_computed_ui_target_camera_store(world).get(child).unwrap().get() ==
-    Some(target_camera),
+    try! (world
+    .get_by_key(child, ecs_key_computed_ui_target_camera)
+    .unwrap()
+    .get() ==
+    Some(target_camera)),
     content="true",
   )
 }

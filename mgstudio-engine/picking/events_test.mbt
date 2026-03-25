@@ -184,7 +184,7 @@ test "picking: a11y focus action maps to hovered interaction" {
   @a11y.A11yState::push_action(state, req)
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
-  let interaction = @ui.get_interaction_store(world).get(entity)
+  let interaction = try! world.get_by_key(entity, @ui.ecs_key_interaction)
   inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
 }
 
@@ -196,14 +196,16 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
-  @ui.get_node_store(world).insert(
+  try! world.set_by_key(
     entity,
+    @ui.ecs_key_node,
     @ui.Node::default().with_overflow(
       @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
     ),
   )
-  @ui.get_ui_layout_store(world).insert(
+  try! world.set_by_key(
     entity,
+    @ui.ecs_key_ui_layout,
     @ui.UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(0.0F, 0.0F),
@@ -211,13 +213,15 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
       ),
     ),
   )
-  @ui.get_scroll_position_store(world).insert(
+  try! world.set_by_key(
     entity,
+    @ui.ecs_key_scroll_position,
     @ui.ScrollPosition::default(),
   )
   let child = world.spawn_empty()
-  @ui.get_ui_layout_store(world).insert(
+  try! world.set_by_key(
     child,
+    @ui.ecs_key_ui_layout,
     @ui.UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(0.0F, 0.0F),
@@ -225,8 +229,9 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
       ),
     ),
   )
-  @hierarchy.get_children_store(world).insert(
+  try! world.set_by_key(
     entity,
+    @hierarchy.ecs_key_children,
     @hierarchy.Children::new([child]),
   )
   let packed = entity.id * 65536 + entity.generation + 1
@@ -247,7 +252,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   @a11y.A11yState::push_action(state, req_right)
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
-  let scroll = @ui.get_scroll_position_store(world).get(entity)
+  let scroll = try! world.get_by_key(entity, @ui.ecs_key_scroll_position)
   inspect(
     scroll is Some(v) && v.offset_x == 0.0F && v.offset_y == 24.0F,
     content="true",
@@ -264,7 +269,7 @@ test "picking: a11y set-value action updates Text content" {
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
-  world.component(@text.ecs_key_text).insert(entity, @text.Text::new("Old"))
+  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Old"))
   let packed = entity.id * 65536 + entity.generation + 1
   let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
   let req = @moon_accesskit.ActionRequest::new(
@@ -279,7 +284,7 @@ test "picking: a11y set-value action updates Text content" {
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
   inspect(
-    world.get(entity, @text.ecs_key_text).unwrap().content,
+    world.get_by_key(entity, @text.ecs_key_text).unwrap().content,
     content="Updated",
   )
   let events = drain_events(world)
@@ -311,7 +316,7 @@ test "picking: ignores a11y actions targeting non-alive entities" {
     content="true",
   )
   inspect(
-    @ui.get_interaction_store(world).get(dead_entity) is None,
+    try! (world.get_by_key(dead_entity, @ui.ecs_key_interaction) is None),
     content="true",
   )
   let events = drain_events(world)

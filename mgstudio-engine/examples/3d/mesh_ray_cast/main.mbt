@@ -106,11 +106,10 @@ fn set_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let visibility_store = world.component(@visibility.ecs_key_visibility)
-  if visibility_store.contains(entity) {
-    visibility_store.set(entity, value) |> ignore
+  if (try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
+    try! (world.replace(entity, @visibility.ecs_key_visibility, value) |> ignore)
   } else {
-    visibility_store.insert(entity, value)
+    try! world.set_by_key(entity, @visibility.ecs_key_visibility, value)
   }
 }
 
@@ -134,8 +133,8 @@ fn set_primitive_transform(
   primitive : BeamPrimitive,
   transform : @transform.Transform,
 ) -> Unit {
-  world.component(@transform.ecs_key_transform).set(primitive.entity, transform)
-  |> ignore
+  try! (world.replace(primitive.entity, @transform.ecs_key_transform, transform)
+  |> ignore)
 }
 
 ///|
@@ -332,16 +331,14 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let directional_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

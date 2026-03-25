@@ -72,11 +72,17 @@ fn apply_pccm_status(world : @ecs.World) -> Unit {
     PccmEnableStatus::Enabled => @pbr.ParallaxCorrection::Auto
     PccmEnableStatus::Disabled => @pbr.ParallaxCorrection::None
   }
-  let store = world.component(@pbr.ecs_key_parallax_correction)
-  if store.contains(light_probe_entity) {
-    store.set(light_probe_entity, correction) |> ignore
+  if (try! world.contains_by_key(
+      light_probe_entity, @pbr.ecs_key_parallax_correction,
+    )) {
+    try! (world.replace(
+      light_probe_entity, @pbr.ecs_key_parallax_correction, correction,
+    )
+    |> ignore)
   } else {
-    store.insert(light_probe_entity, correction)
+    try! world.set_by_key(
+      light_probe_entity, @pbr.ecs_key_parallax_correction, correction,
+    )
   }
 }
 
@@ -136,23 +142,23 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light_probe = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_light_probe)
-  .insert(light_probe, @pbr.LightProbe::default())
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     light_probe,
+    @pbr.ecs_key_light_probe,
+    @pbr.LightProbe::default(),
+  )
+  try! world.set_by_key(
+    light_probe,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       ENVIRONMENT_MAP_INTENSITY,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light_probe,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
   )
   pccm_state.val.light_probe = Some(light_probe)

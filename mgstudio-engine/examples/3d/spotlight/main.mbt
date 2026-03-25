@@ -200,10 +200,9 @@ fn setup(world : @ecs.World) -> Unit {
       let fx = float_from_int(x) - 2.0F
       let fz = float_from_int(z) - 2.0F
       let spotlight = world.spawn_empty()
-      world
-      .component(@pbr.ecs_key_spot_light)
-      .insert(
+      try! world.set_by_key(
         spotlight,
+        @pbr.ecs_key_spot_light,
         @pbr.SpotLight::new(
           @sprite.Color::white(),
           40_000.0F,
@@ -213,10 +212,9 @@ fn setup(world : @ecs.World) -> Unit {
           true,
         ),
       )
-      world
-      .component(@transform.ecs_key_transform)
-      .insert(
+      try! world.set_by_key(
         spotlight,
+        @transform.ecs_key_transform,
         @transform.Transform::from_xyz(1.0F + fx, 2.0F, fz).looking_at(
           @math.Vec3::new(1.0F + fx, 0.0F, fz),
           @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -229,21 +227,32 @@ fn setup(world : @ecs.World) -> Unit {
         @pbr.MeshMaterial3d::new(red_emissive),
         @transform.Transform::identity(),
       ).spawn(world)
-      world
-      .component(@hierarchy.ecs_key_parent)
-      .insert(marker, @hierarchy.Parent::new(spotlight))
+      try! world.set_by_key(
+        marker,
+        @hierarchy.ecs_key_parent,
+        @hierarchy.Parent::new(spotlight),
+      )
 
       let direction_marker = @pbr.MeshMaterial3dBundle::new(
         direction_marker_mesh,
         @pbr.MeshMaterial3d::new(maroon_emissive),
         @transform.Transform::from_xyz(0.0F, 0.0F, -0.1F),
       ).spawn(world)
-      world
-      .component(@hierarchy.ecs_key_parent)
-      .insert(direction_marker, @hierarchy.Parent::new(spotlight))
-      world
-      .component(@pbr.ecs_key_not_shadow_caster)
-      .insert(direction_marker, @pbr.NotShadowCaster::default())
+      try! world.set_by_key(
+        direction_marker,
+        @hierarchy.ecs_key_parent,
+        @hierarchy.Parent::new(spotlight),
+      )
+      try! world.set_by_key(
+        direction_marker,
+        @hierarchy.ecs_key_parent,
+        @hierarchy.Parent::new(spotlight),
+      )
+      try! world.set_by_key(
+        direction_marker,
+        @pbr.ecs_key_not_shadow_caster,
+        @pbr.NotShadowCaster::default(),
+      )
     }
   }
 
@@ -254,7 +263,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
   spotlight_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -291,8 +300,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 fn light_sway(world : @ecs.World) -> Unit {
   let elapsed = world_time(world).elapsed_seconds()
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let spot_light_store = world.component(@pbr.ecs_key_spot_light)
 
   let rotation_x = -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F
   let rotation_y = @math.sin(elapsed * 3.0F) * 0.5F
@@ -305,12 +312,19 @@ fn light_sway(world : @ecs.World) -> Unit {
   let inner = angle * 0.8F
 
   for entity in spotlight_state.val.spotlights {
-    if transform_store.get(entity) is Some(transform) {
-      transform_store.set(entity, transform.with_rotation(rotation)) |> ignore
-    }
-    if spot_light_store.get(entity) is Some(light) {
-      spot_light_store.set(
+    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(transform) {
+      try! (world.replace(
         entity,
+        @transform.ecs_key_transform,
+        transform.with_rotation(rotation),
+      )
+      |> ignore)
+    }
+    if (try! world.get_by_key(entity, @pbr.ecs_key_spot_light)) is Some(light) {
+      try! (world.replace(
+        entity,
+        @pbr.ecs_key_spot_light,
         @pbr.SpotLight::new(
           light.color,
           light.intensity,
@@ -320,7 +334,7 @@ fn light_sway(world : @ecs.World) -> Unit {
           light.shadow_maps_enabled,
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }
@@ -353,11 +367,11 @@ fn movement(world : @ecs.World) -> Unit {
   let delta = translation.mul_scalar(
     MOVE_SPEED * world_time(world).delta_seconds(),
   )
-  let transform_store = world.component(@transform.ecs_key_transform)
   for entity in spotlight_state.val.movables {
-    if transform_store.get(entity) is Some(transform) {
+    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(transform) {
       let next = transform.with_translation(transform.translation.add(delta))
-      transform_store.set(entity, next) |> ignore
+      try! (world.replace(entity, @transform.ecs_key_transform, next) |> ignore)
     }
   }
 }
@@ -378,8 +392,8 @@ fn rotation(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = world.component(@transform.ecs_key_transform)
-  if transform_store.get(camera_entity) is Some(transform) {
+  if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
       transform.translation,
@@ -389,7 +403,8 @@ fn rotation(world : @ecs.World) -> Unit {
       rotated_position.y,
       rotated_position.z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    transform_store.set(camera_entity, next) |> ignore
+    try! (world.replace(camera_entity, @transform.ecs_key_transform, next)
+    |> ignore)
   }
 }
 

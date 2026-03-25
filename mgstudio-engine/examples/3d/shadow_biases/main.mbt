@@ -148,12 +148,11 @@ fn apply_light_state(world : @ecs.World) -> Unit {
   let state = shadow_biases_state.val
 
   if state.point_light is Some(point_entity) {
-    world.component(@transform.ecs_key_transform).set(point_entity, transform)
-    |> ignore
-    world
-    .component(@pbr.ecs_key_point_light)
-    .set(
+    try! (world.replace(point_entity, @transform.ecs_key_transform, transform)
+    |> ignore)
+    try! (world.replace(
       point_entity,
+      @pbr.ecs_key_point_light,
       @pbr.PointLight::new(
         @sprite.Color::white(),
         if state.using_point_light {
@@ -167,18 +166,17 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       .with_shadow_depth_bias(state.point_depth_bias)
       .with_shadow_normal_bias(state.point_normal_bias),
     )
-    |> ignore
+    |> ignore)
   }
 
   if state.directional_light is Some(directional_entity) {
-    world
-    .component(@transform.ecs_key_transform)
-    .set(directional_entity, transform)
-    |> ignore
-    world
-    .component(@pbr.ecs_key_directional_light)
-    .set(
+    try! (world.replace(
+      directional_entity, @transform.ecs_key_transform, transform,
+    )
+    |> ignore)
+    try! (world.replace(
       directional_entity,
+      @pbr.ecs_key_directional_light,
       @pbr.DirectionalLight::new(
         @sprite.Color::white(),
         if state.using_point_light {
@@ -191,18 +189,26 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       .with_shadow_depth_bias(state.directional_depth_bias)
       .with_shadow_normal_bias(state.directional_normal_bias),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
 ///|
 fn apply_shadow_filtering_method(world : @ecs.World) -> Unit {
   guard shadow_biases_state.val.camera is Some(camera) else { return }
-  let store = world.component(@pbr.ecs_key_shadow_filtering_method)
-  if store.contains(camera) {
-    store.set(camera, shadow_biases_state.val.filter_method) |> ignore
+  if (try! world.contains_by_key(camera, @pbr.ecs_key_shadow_filtering_method)) {
+    try! (world.replace(
+      camera,
+      @pbr.ecs_key_shadow_filtering_method,
+      shadow_biases_state.val.filter_method,
+    )
+    |> ignore)
   } else {
-    store.insert(camera, shadow_biases_state.val.filter_method)
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_shadow_filtering_method,
+      shadow_biases_state.val.filter_method,
+    )
   }
 }
 
@@ -264,18 +270,21 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   shadow_biases_state.val.camera = Some(camera)
 
-  world
-  .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default())
-  world
-  .component(@pbr.ecs_key_shadow_filtering_method)
-  .insert(camera, shadow_biases_state.val.filter_method)
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_free_camera,
+    @pbr.FreeCamera::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_shadow_filtering_method,
+    shadow_biases_state.val.filter_method,
+  )
 
   let point = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::white(),
       0.0F,
@@ -285,14 +294,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_shadow_depth_bias(shadow_biases_state.val.point_depth_bias)
     .with_shadow_normal_bias(shadow_biases_state.val.point_normal_bias),
   )
-  world.component(@transform.ecs_key_transform).insert(point, light_transform())
+  try! world.set_by_key(point, @transform.ecs_key_transform, light_transform())
   shadow_biases_state.val.point_light = Some(point)
 
   let directional = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE,
@@ -301,9 +309,11 @@ fn setup(world : @ecs.World) -> Unit {
     .with_shadow_depth_bias(shadow_biases_state.val.directional_depth_bias)
     .with_shadow_normal_bias(shadow_biases_state.val.directional_normal_bias),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(directional, light_transform())
+  try! world.set_by_key(
+    directional,
+    @transform.ecs_key_transform,
+    light_transform(),
+  )
   shadow_biases_state.val.directional_light = Some(directional)
 
   let asset_server = @asset.AssetServer::new()

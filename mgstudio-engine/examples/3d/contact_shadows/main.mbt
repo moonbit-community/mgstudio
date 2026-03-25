@@ -182,26 +182,27 @@ fn light_transform(angle : Float) -> @transform.Transform {
 ///|
 fn apply_model_rotation(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.model is Some(model_entity) else { return }
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     model_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(contact_shadows_state.val.model_angle),
     ),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
 fn apply_camera_components(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.camera is Some(camera) else { return }
   if contact_shadows_state.val.contact_shadows == ContactShadowState::Enabled {
-    world
-    .component(@pbr.ecs_key_contact_shadows)
-    .insert(camera, @pbr.ContactShadows::default())
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_contact_shadows,
+      @pbr.ContactShadows::default(),
+    )
   } else {
-    world.component(@pbr.ecs_key_contact_shadows).remove(camera) |> ignore
+    try! (world.take(camera, @pbr.ecs_key_contact_shadows) |> ignore)
   }
 }
 
@@ -211,12 +212,13 @@ fn apply_ground_receive_shadows(world : @ecs.World) -> Unit {
   let receiving = contact_shadows_state.val.receive_shadows ==
     ReceiveShadowsState::Enabled
   if receiving {
-    world.component(@pbr.ecs_key_not_shadow_receiver).remove(ground_entity)
-    |> ignore
+    try! (world.take(ground_entity, @pbr.ecs_key_not_shadow_receiver) |> ignore)
   } else {
-    world
-    .component(@pbr.ecs_key_not_shadow_receiver)
-    .insert(ground_entity, @pbr.NotShadowReceiver::default())
+    try! world.set_by_key(
+      ground_entity,
+      @pbr.ecs_key_not_shadow_receiver,
+      @pbr.NotShadowReceiver::default(),
+    )
   }
 }
 
@@ -229,12 +231,11 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     ContactShadowState::Enabled
 
   if state.directional_light is Some(entity) {
-    world.component(@transform.ecs_key_transform).set(entity, transform)
-    |> ignore
-    world
-    .component(@pbr.ecs_key_directional_light)
-    .set(
+    try! (world.replace(entity, @transform.ecs_key_transform, transform)
+    |> ignore)
+    try! (world.replace(
       entity,
+      @pbr.ecs_key_directional_light,
       @pbr.DirectionalLight::new(
         @sprite.Color::white(),
         if state.light_type == LightType::Directional {
@@ -245,16 +246,15 @@ fn apply_light_state(world : @ecs.World) -> Unit {
         shadow_maps_enabled,
       ).with_contact_shadows_enabled(contact_shadows_enabled),
     )
-    |> ignore
+    |> ignore)
   }
 
   if state.point_light is Some(entity) {
-    world.component(@transform.ecs_key_transform).set(entity, transform)
-    |> ignore
-    world
-    .component(@pbr.ecs_key_point_light)
-    .set(
+    try! (world.replace(entity, @transform.ecs_key_transform, transform)
+    |> ignore)
+    try! (world.replace(
       entity,
+      @pbr.ecs_key_point_light,
       @pbr.PointLight::new(
         @sprite.Color::white(),
         if state.light_type == LightType::Point {
@@ -268,16 +268,15 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       .with_radius(0.35F)
       .with_contact_shadows_enabled(contact_shadows_enabled),
     )
-    |> ignore
+    |> ignore)
   }
 
   if state.spot_light is Some(entity) {
-    world.component(@transform.ecs_key_transform).set(entity, transform)
-    |> ignore
-    world
-    .component(@pbr.ecs_key_spot_light)
-    .set(
+    try! (world.replace(entity, @transform.ecs_key_transform, transform)
+    |> ignore)
+    try! (world.replace(
       entity,
+      @pbr.ecs_key_spot_light,
       @pbr.SpotLight::new(
         @sprite.Color::white(),
         if state.light_type == LightType::Spot {
@@ -293,7 +292,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       .with_radius(0.35F)
       .with_contact_shadows_enabled(contact_shadows_enabled),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -331,29 +330,40 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn(world)
 
   contact_shadows_state.val.camera = Some(camera)
-  world
-  .component(@pbr.ecs_key_contact_shadows)
-  .insert(camera, @pbr.ContactShadows::default())
-  world
-  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default())
-  world
-  .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default())
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default())
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted)
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_contact_shadows,
+    @pbr.ContactShadows::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+    @post_process.ScreenSpaceAmbientOcclusion::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_depth_prepass,
+    @pbr.DepthPrepass::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::AcesFitted,
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
       1000.0F,
@@ -367,22 +377,27 @@ fn setup(world : @ecs.World) -> Unit {
   contact_shadows_state.val.point_light = Some(point_light)
   contact_shadows_state.val.spot_light = Some(spot_light)
 
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(directional_light, @pbr.DirectionalLight::default())
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(point_light, @pbr.PointLight::default())
-  world
-  .component(@pbr.ecs_key_spot_light)
-  .insert(spot_light, @pbr.SpotLight::default())
+  try! world.set_by_key(
+    directional_light,
+    @pbr.ecs_key_directional_light,
+    @pbr.DirectionalLight::default(),
+  )
+  try! world.set_by_key(
+    point_light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default(),
+  )
+  try! world.set_by_key(
+    spot_light,
+    @pbr.ecs_key_spot_light,
+    @pbr.SpotLight::default(),
+  )
 
   let model = world.spawn_empty()
   contact_shadows_state.val.model = Some(model)
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     model,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -392,10 +407,9 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     model,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(PI),
     ),

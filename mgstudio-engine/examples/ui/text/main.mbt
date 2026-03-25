@@ -77,73 +77,79 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
 
   let animated = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(animated, @hierarchy.Parent::new(root))
-  world
-  .component(@mgtext.ecs_key_text)
-  .insert(animated, @mgtext.Text::new("hello\nbevy!"))
-  world
-  .component(@mgtext.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     animated,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    animated,
+    @mgtext.ecs_key_text,
+    @mgtext.Text::new("hello\nbevy!"),
+  )
+  try! world.set_by_key(
+    animated,
+    @mgtext.ecs_key_text_font,
     @mgtext.TextFont::default()
     .with_font(bold_font)
     .with_font_size(@mgtext.FontSize::Vh(20.0F)),
   )
-  world
-  .component(@mgtext.ecs_key_text_underline)
-  .insert(animated, @mgtext.Underline::default())
-  world
-  .component(@mgtext.ecs_key_text_shadow)
-  .insert(animated, @mgtext.TextShadow::default())
-  world
-  .component(@mgtext.ecs_key_text_layout)
-  .insert(
+  try! world.set_by_key(
     animated,
+    @mgtext.ecs_key_text_underline,
+    @mgtext.Underline::default(),
+  )
+  try! world.set_by_key(
+    animated,
+    @mgtext.ecs_key_text_shadow,
+    @mgtext.TextShadow::default(),
+  )
+  try! world.set_by_key(
+    animated,
+    @mgtext.ecs_key_text_layout,
     @mgtext.TextLayout::new_with_justify(@mgtext.Justify::Center),
   )
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     animated,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(5.0F))
     .with_right(@ui.Val::Px(5.0F)),
   )
-  world.component(animated_text_key).insert(animated, AnimatedText::{  })
+  try! world.set_by_key(animated, animated_text_key, AnimatedText::{  })
 
   let fps_root = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(fps_root, @hierarchy.Parent::new(root))
-  world
-  .component(@mgtext.ecs_key_text)
-  .insert(fps_root, @mgtext.Text::new("FPS: "))
-  world
-  .component(@mgtext.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     fps_root,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    fps_root,
+    @mgtext.ecs_key_text,
+    @mgtext.Text::new("FPS: "),
+  )
+  try! world.set_by_key(
+    fps_root,
+    @mgtext.ecs_key_text_font,
     @mgtext.TextFont::default()
     .with_font(bold_font)
     .with_font_size(@mgtext.FontSize::Px(42.0F)),
   )
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     fps_root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(5.0F))
@@ -151,46 +157,53 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let fps_span = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(fps_span, @hierarchy.Parent::new(fps_root))
-  world
-  .component(@mgtext.ecs_key_text_span)
-  .insert(fps_span, @mgtext.TextSpan::default())
-  world
-  .component(@mgtext.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     fps_span,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(fps_root),
+  )
+  try! world.set_by_key(
+    fps_span,
+    @mgtext.ecs_key_text_span,
+    @mgtext.TextSpan::default(),
+  )
+  try! world.set_by_key(
+    fps_span,
+    @mgtext.ecs_key_text_font,
     @mgtext.TextFont::default()
     .with_font(mono_font)
     .with_font_size(@mgtext.FontSize::Px(33.0F)),
   )
-  world
-  .component(@mgtext.ecs_key_text_color)
-  .insert(fps_span, @mgtext.TextColor::new(gold()))
-  world.component(fps_text_key).insert(fps_span, FpsText::{  })
+  try! world.set_by_key(
+    fps_span,
+    @mgtext.ecs_key_text_color,
+    @mgtext.TextColor::new(gold()),
+  )
+  try! world.set_by_key(fps_span, fps_text_key, FpsText::{  })
 
   let opentype = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(opentype, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     opentype,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    opentype,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(5.0F))
     .with_right(@ui.Val::Px(5.0F))
     .with_margin(@ui.UiRect::all(@ui.Val::Px(12.0F))),
   )
-  world
-  .component(@mgtext.ecs_key_text)
-  .insert(opentype, @mgtext.Text::new("Opentype features:\n"))
-  world
-  .component(@mgtext.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     opentype,
+    @mgtext.ecs_key_text,
+    @mgtext.Text::new("Opentype features:\n"),
+  )
+  try! world.set_by_key(
+    opentype,
+    @mgtext.ecs_key_text_font,
     @mgtext.TextFont::default()
     .with_font(opentype_font)
     .with_font_size(@mgtext.FontSize::Px(32.0F)),
@@ -215,32 +228,38 @@ fn setup(world : @ecs.World) -> Unit {
   ]
   for row in text_rows {
     let title_span = world.spawn_empty()
-    world
-    .component(@hierarchy.ecs_key_parent)
-    .insert(title_span, @hierarchy.Parent::new(opentype))
-    world
-    .component(@mgtext.ecs_key_text_span)
-    .insert(title_span, @mgtext.TextSpan::new(row.0))
-    world
-    .component(@mgtext.ecs_key_text_font)
-    .insert(
+    try! world.set_by_key(
       title_span,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(opentype),
+    )
+    try! world.set_by_key(
+      title_span,
+      @mgtext.ecs_key_text_span,
+      @mgtext.TextSpan::new(row.0),
+    )
+    try! world.set_by_key(
+      title_span,
+      @mgtext.ecs_key_text_font,
       @mgtext.TextFont::default()
       .with_font(opentype_font)
       .with_font_size(@mgtext.FontSize::Px(24.0F)),
     )
 
     let feature_span = world.spawn_empty()
-    world
-    .component(@hierarchy.ecs_key_parent)
-    .insert(feature_span, @hierarchy.Parent::new(opentype))
-    world
-    .component(@mgtext.ecs_key_text_span)
-    .insert(feature_span, @mgtext.TextSpan::new(row.2 + "\n"))
-    world
-    .component(@mgtext.ecs_key_text_font)
-    .insert(
+    try! world.set_by_key(
       feature_span,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(opentype),
+    )
+    try! world.set_by_key(
+      feature_span,
+      @mgtext.ecs_key_text_span,
+      @mgtext.TextSpan::new(row.2 + "\n"),
+    )
+    try! world.set_by_key(
+      feature_span,
+      @mgtext.ecs_key_text_font,
       @mgtext.TextFont::default()
       .with_font(opentype_font)
       .with_font_size(@mgtext.FontSize::Px(24.0F))
@@ -249,22 +268,22 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let default_font_text = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(default_font_text, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     default_font_text,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    default_font_text,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(5.0F))
     .with_left(@ui.Val::Px(15.0F)),
   )
-  world
-  .component(@mgtext.ecs_key_text)
-  .insert(
+  try! world.set_by_key(
     default_font_text,
+    @mgtext.ecs_key_text,
     @mgtext.Text::new("From a String into Text with the default font!"),
   )
 }

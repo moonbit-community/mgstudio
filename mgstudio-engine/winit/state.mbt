@@ -214,12 +214,14 @@ priv struct WinitAppRunnerState {
 fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
   let world = self.app_ref.val.world()
   let host_entries = @window.window_host_entries(world)
-  let window_store = world.component(@window.Window::component())
   let next_surfaces : Array[RunnerSurfaceBinding] = []
   let previous_surfaces = self.runner_surfaces_ref.val
   for entry in host_entries {
     let host_window = entry.host_window
-    let window_component = window_store.get(entry.entity)
+    let window_component = try! world.get_by_key(
+      entry.entity,
+      @window.Window::component(),
+    )
     let present_mode = runner_surface_present_mode(window_component)
     let composite_alpha_mode = runner_surface_composite_alpha_mode(
       window_component,

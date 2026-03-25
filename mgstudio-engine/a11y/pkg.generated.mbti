@@ -44,8 +44,6 @@ pub let ecs_resources : Array[String]
 
 pub fn get_a11y_state_resource(@ecs.World) -> @ecs.ResourceAccess[A11yState]
 
-pub fn get_accessibility_node_store(@ecs.World) -> @ecs.ComponentAccess[AccessibilityNode]
-
 pub fn get_accessibility_requested_resource(@ecs.World) -> @ecs.ResourceAccess[AccessibilityRequested]
 
 pub fn get_manage_accessibility_updates_resource(@ecs.World) -> @ecs.ResourceAccess[ManageAccessibilityUpdates]

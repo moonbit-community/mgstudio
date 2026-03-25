@@ -226,14 +226,17 @@ test "app: Commands spawn defers component tuple insertion until after system" {
     abort("expected Commands::spawn to return an entity")
   }
   inspect(
-    try! app.world().get(entity, commands_position_key),
+    try! app.world().get_by_key(entity, commands_position_key),
     content="Some({x: 3, y: 4})",
   )
   inspect(
-    try! app.world().get(entity, commands_velocity_key),
+    try! app.world().get_by_key(entity, commands_velocity_key),
     content="Some({dx: 5, dy: 6})",
   )
-  inspect(try! app.world().get(entity, commands_marker_key), content="Some({})")
+  inspect(
+    try! app.world().get_by_key(entity, commands_marker_key),
+    content="Some({})",
+  )
 }
 
 ///|
@@ -251,7 +254,10 @@ test "app: Commands spawn_empty reserves an entity without queued components" {
     abort("expected Commands::spawn_empty to return an entity")
   }
   inspect(app.world().is_alive(entity), content="true")
-  inspect(try! app.world().get(entity, commands_position_key), content="None")
+  inspect(
+    try! app.world().get_by_key(entity, commands_position_key),
+    content="None",
+  )
 }
 
 ///|
@@ -302,7 +308,7 @@ test "app: Commands spawn_component defers single component insertion until afte
     abort("expected Commands::spawn_component to return an entity")
   }
   inspect(
-    try! app.world().get(entity, commands_position_key),
+    try! app.world().get_by_key(entity, commands_position_key),
     content="Some({x: 8, y: 13})",
   )
 }
@@ -335,19 +341,37 @@ test "app: Commands spawn supports eight-component tuples" {
     abort("expected Commands::spawn to return an entity")
   }
   inspect(
-    try! app.world().get(entity, commands_position_key),
+    try! app.world().get_by_key(entity, commands_position_key),
     content="Some({x: 1, y: 2})",
   )
   inspect(
-    try! app.world().get(entity, commands_velocity_key),
+    try! app.world().get_by_key(entity, commands_velocity_key),
     content="Some({dx: 3, dy: 4})",
   )
-  inspect(try! app.world().get(entity, commands_marker_key), content="Some({})")
-  inspect(try! app.world().get(entity, commands_tag_a_key), content="Some({})")
-  inspect(try! app.world().get(entity, commands_tag_b_key), content="Some({})")
-  inspect(try! app.world().get(entity, commands_tag_c_key), content="Some({})")
-  inspect(try! app.world().get(entity, commands_tag_d_key), content="Some({})")
-  inspect(try! app.world().get(entity, commands_tag_e_key), content="Some({})")
+  inspect(
+    try! app.world().get_by_key(entity, commands_marker_key),
+    content="Some({})",
+  )
+  inspect(
+    try! app.world().get_by_key(entity, commands_tag_a_key),
+    content="Some({})",
+  )
+  inspect(
+    try! app.world().get_by_key(entity, commands_tag_b_key),
+    content="Some({})",
+  )
+  inspect(
+    try! app.world().get_by_key(entity, commands_tag_c_key),
+    content="Some({})",
+  )
+  inspect(
+    try! app.world().get_by_key(entity, commands_tag_d_key),
+    content="Some({})",
+  )
+  inspect(
+    try! app.world().get_by_key(entity, commands_tag_e_key),
+    content="Some({})",
+  )
 }
 
 ///|
@@ -390,15 +414,15 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
   inspect(counts, content="[0, 0, 3]")
   inspect(spawned.val.length(), content="3")
   inspect(
-    try! app.world().get(spawned.val[0], commands_position_key),
+    try! app.world().get_by_key(spawned.val[0], commands_position_key),
     content="Some({x: 21, y: 22})",
   )
   inspect(
-    try! app.world().get(spawned.val[1], commands_position_key),
+    try! app.world().get_by_key(spawned.val[1], commands_position_key),
     content="Some({x: 31, y: 32})",
   )
   inspect(
-    try! app.world().get(spawned.val[2], commands_position_key),
+    try! app.world().get_by_key(spawned.val[2], commands_position_key),
     content="Some({x: 41, y: 42})",
   )
 }
@@ -435,10 +459,13 @@ test "app: Commands entity insert defers component insertion until flush" {
     abort("expected Commands::spawn to return an entity")
   }
   inspect(
-    try! app.world().get(entity, commands_velocity_key),
+    try! app.world().get_by_key(entity, commands_velocity_key),
     content="Some({dx: 9, dy: 10})",
   )
-  inspect(try! app.world().get(entity, commands_tag_a_key), content="Some({})")
+  inspect(
+    try! app.world().get_by_key(entity, commands_tag_a_key),
+    content="Some({})",
+  )
 }
 
 ///|
@@ -462,7 +489,7 @@ test "app: Commands entity insert_component queues a single component" {
     abort("expected Commands::spawn to return an entity")
   }
   inspect(
-    try! app.world().get(entity, commands_velocity_key),
+    try! app.world().get_by_key(entity, commands_velocity_key),
     content="Some({dx: 15, dy: 16})",
   )
 }
@@ -522,11 +549,17 @@ test "app: Commands entity remove and remove_component defer component removal u
     abort("expected Commands::spawn to return an entity")
   }
   inspect(
-    try! app.world().get(entity, commands_position_key),
+    try! app.world().get_by_key(entity, commands_position_key),
     content="Some({x: 21, y: 22})",
   )
-  inspect(try! app.world().get(entity, commands_velocity_key), content="None")
-  inspect(try! app.world().get(entity, commands_marker_key), content="None")
+  inspect(
+    try! app.world().get_by_key(entity, commands_velocity_key),
+    content="None",
+  )
+  inspect(
+    try! app.world().get_by_key(entity, commands_marker_key),
+    content="None",
+  )
 }
 
 ///|
@@ -550,7 +583,7 @@ test "app: Commands preserve hook caller provenance across deferred spawn and re
   }
   inspect(app.world().is_alive(entity), content="true")
   inspect(
-    try! app.world().get(entity, commands_hook_component_key),
+    try! app.world().get_by_key(entity, commands_hook_component_key),
     content="None",
   )
   inspect(commands_hook_callers_ref.val.length(), content="2")

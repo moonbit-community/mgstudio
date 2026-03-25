@@ -281,15 +281,16 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_800_000.0F, 40.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F))
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F),
+  )
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -457,9 +458,12 @@ fn spin(world : @ecs.World) -> Unit {
   if delta <= 0.0F {
     return
   }
-  let transform_store = world.component(@transform.ecs_key_transform)
   for spin_target in parallax_state.val.spin_targets {
-    guard transform_store.get(spin_target.entity) is Some(transform) else {
+    guard (try! world.get_by_key(
+        spin_target.entity,
+        @transform.ecs_key_transform,
+      ))
+      is Some(transform) else {
       continue
     }
     let speed = spin_target.speed * delta
@@ -468,11 +472,12 @@ fn spin(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_x(speed))
       .mul(@math.Quat::from_rotation_z(-speed))
       .normalize()
-    transform_store.set(
+    try! (world.replace(
       spin_target.entity,
+      @transform.ecs_key_transform,
       transform.with_rotation(next_rotation),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -483,8 +488,8 @@ fn move_camera(world : @ecs.World) -> Unit {
       view_count()
   }
   guard parallax_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(camera_entity) is Some(current_transform) else {
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(current_transform) else {
     return
   }
   let target_transform = camera_view_transform(parallax_state.val.current_view)
@@ -503,7 +508,10 @@ fn move_camera(world : @ecs.World) -> Unit {
         CAMERA_LERP_FACTOR,
       ),
     )
-  transform_store.set(camera_entity, next_transform) |> ignore
+  try! (world.replace(
+    camera_entity, @transform.ecs_key_transform, next_transform,
+  )
+  |> ignore)
 }
 
 ///|

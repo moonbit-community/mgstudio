@@ -48,16 +48,17 @@ fn update_primary_cursor_options(
   update : (@window.CursorOptions) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let store = world.component(@window.ecs_key_cursor_options)
-  let options = match store.get(entity) {
+  let options = match
+    (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) {
     Some(options) => options
     None => @window.CursorOptions::default()
   }
   update(options)
-  if store.get(entity) is Some(_) {
-    store.set(entity, options) |> ignore
+  if (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) is Some(_) {
+    try! (world.replace(entity, @window.ecs_key_cursor_options, options)
+    |> ignore)
   } else {
-    store.insert(entity, options)
+    try! world.set_by_key(entity, @window.ecs_key_cursor_options, options)
   }
 }
 

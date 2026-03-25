@@ -25,11 +25,6 @@
 
 ///|
 pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
-  let visibility_access = world.component(ecs_key_visibility)
-  let inherited_access = world.component(ecs_key_inherited_visibility)
-  let view_access = world.component(ecs_key_view_visibility)
-  let parent_access = world.component(@hierarchy.ecs_key_parent)
-  let children_access = world.component(@hierarchy.ecs_key_children)
 
   // Identify roots: entities that either have no parent, or whose parent lacks
   // the required visibility components (Bevy fallback).
@@ -38,11 +33,12 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     world,
   )
   try! visibility_query.view(fn(entity, _visibility) {
-    match parent_access.get(entity) {
+    match (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
       None => roots.push(entity)
       Some(parent) => {
         let p = parent.entity()
-        if !visibility_access.contains(p) || !inherited_access.contains(p) {
+        if !(try! world.contains_by_key(p, ecs_key_visibility)) ||
+          !(try! world.contains_by_key(p, ecs_key_inherited_visibility)) {
           roots.push(entity)
         }
       }
@@ -56,7 +52,10 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   }
   while stack.length() > 0 {
     let (entity, parent_visible) = stack.pop().unwrap()
-    guard visibility_access.get(entity) is Some(visibility) else { continue }
+    guard (try! world.get_by_key(entity, ecs_key_visibility))
+      is Some(visibility) else {
+      continue
+    }
     let is_visible = match visibility {
       Visibility::Hidden => false
       Visibility::Visible => true
@@ -64,38 +63,41 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     }
 
     // Update InheritedVisibility (insert if missing).
-    let needs_inherited_update = match inherited_access.get(entity) {
+    let needs_inherited_update = match
+      (try! world.get_by_key(entity, ecs_key_inherited_visibility)) {
       Some(v) => v.is_visible() != is_visible
       None => true
     }
     if needs_inherited_update {
       let v = InheritedVisibility::new(is_visible)
-      if inherited_access.contains(entity) {
-        inherited_access.set(entity, v) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_inherited_visibility)) {
+        try! (world.replace(entity, ecs_key_inherited_visibility, v) |> ignore)
       } else {
-        inherited_access.insert(entity, v)
+        try! world.set_by_key(entity, ecs_key_inherited_visibility, v)
       }
     }
 
     // Stage-1: ViewVisibility == InheritedVisibility (no culling yet).
-    let needs_view_update = match view_access.get(entity) {
+    let needs_view_update = match
+      (try! world.get_by_key(entity, ecs_key_view_visibility)) {
       Some(v) => v.is_visible() != is_visible
       None => true
     }
     if needs_view_update {
       let v = ViewVisibility::new(is_visible)
-      if view_access.contains(entity) {
-        view_access.set(entity, v) |> ignore
+      if (try! world.contains_by_key(entity, ecs_key_view_visibility)) {
+        try! (world.replace(entity, ecs_key_view_visibility, v) |> ignore)
       } else {
-        view_access.insert(entity, v)
+        try! world.set_by_key(entity, ecs_key_view_visibility, v)
       }
     }
 
     // Recurse to children that participate in visibility (same as Bevy's query
     // constraints: With<Visibility>, With<InheritedVisibility>).
-    if children_access.get(entity) is Some(children) {
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
       for child in children.entities() {
-        if visibility_access.contains(child) {
+        if (try! world.contains_by_key(child, ecs_key_visibility)) {
           stack.push((child, is_visible))
         }
       }

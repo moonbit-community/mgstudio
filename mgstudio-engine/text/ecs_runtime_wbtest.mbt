@@ -49,16 +49,22 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
   }
-  try! world.set_component(entity, Text2d::new("Repeat On"))
-  try! world.set_component(entity, base_font)
-  try! world.set_component(entity, local_transform)
-  try! world.set_component(
+  try! (world.entity_mut(entity).insert_component(Text2d::new("Repeat On"))
+  |> ignore)
+  try! (world.entity_mut(entity).insert_component(base_font) |> ignore)
+  try! (world.entity_mut(entity).insert_component(local_transform) |> ignore)
+  try! world.set_by_key(
     entity,
+    @transform.ecs_key_global_transform,
     @transform.GlobalTransform::from_transform(global_transform),
   )
-  try! world.set_component(entity, TextBounds::new_horizontal(200.0F))
-  try! world.set_component(
+  try! (world
+  .entity_mut(entity)
+  .insert_component(TextBounds::new_horizontal(200.0F))
+  |> ignore)
+  try! world.set_by_key(
     entity,
+    ecs_key_text_layout,
     TextLayout::new_with_justify(Justify::Center),
   )
 
@@ -82,10 +88,12 @@ test "ecs text bridge cleanup removes dead entity entries" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, Text2d::new("Cleanup"))
-  try! world.set_component(entity, TextFont::default())
-  try! world.set_component(
+  try! (world.entity_mut(entity).insert_component(Text2d::new("Cleanup"))
+  |> ignore)
+  try! (world.entity_mut(entity).insert_component(TextFont::default()) |> ignore)
+  try! world.set_by_key(
     entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
   text_ecs_bridge_entries.val.push(EcsTextBridgeEntry::{
@@ -111,10 +119,11 @@ test "text ecs bridge registers Transform as a required component for Text2d" {
   let world = @ecs.World::new()
   try! register_text_required_components(world)
   let entity = world.spawn()
-  try! world.set_component(entity, Text2d::new("Auto transform"))
+  try! (world.entity_mut(entity).insert_component(Text2d::new("Auto transform"))
+  |> ignore)
 
   inspect(
-    (try! world.get_component(entity) : @transform.Transform?) is Some(_),
+    (try! world.entity(entity).get() : @transform.Transform?) is Some(_),
     content="true",
   )
 }
@@ -131,25 +140,35 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
     root_font,
     @transform.Transform::identity(),
   )
-  try! world.set_component(root, @hierarchy.Children::new([first, second]))
-  try! world.set_component(first, TextSpan::new("::"))
-  try! world.set_component(first, root_font)
-  try! world.set_component(
+  try! (world
+  .entity_mut(root)
+  .insert_component(@hierarchy.Children::new([first, second]))
+  |> ignore)
+  try! (world.entity_mut(first).insert_component(TextSpan::new("::")) |> ignore)
+  try! (world.entity_mut(first).insert_component(root_font) |> ignore)
+  try! world.set_by_key(
     first,
+    ecs_key_text_color,
     TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)),
   )
-  try! world.set_component(
+  try! world.set_by_key(
     first,
+    ecs_key_text_background_color,
     TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F)),
   )
-  try! world.set_component(second, TextSpan::new("Anchor(Vec2(-0.5, 0.5)) "))
-  try! world.set_component(second, root_font)
-  try! world.set_component(
+  try! (world
+  .entity_mut(second)
+  .insert_component(TextSpan::new("Anchor(Vec2(-0.5, 0.5)) |> ignore "))
+  |> ignore)
+  try! (world.entity_mut(second).insert_component(root_font) |> ignore)
+  try! world.set_by_key(
     second,
+    ecs_key_text_color,
     TextColor::new(@sprite.Color::srgb(1.0F, 0.63F, 0.48F)),
   )
-  try! world.set_component(
+  try! world.set_by_key(
     second,
+    ecs_key_text_background_color,
     TextBackgroundColor::new(@sprite.Color::srgb(0.7F, 0.441F, 0.336F)),
   )
 

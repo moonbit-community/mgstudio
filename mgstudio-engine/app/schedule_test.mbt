@@ -589,8 +589,12 @@ test "app: SystemParam Query2 injects typed query into update system" {
   let app = App::new(world)
     .add_startup_system(fn(startup_world) {
       let entity = startup_world.spawn()
-      try! startup_world.set(entity, ecs_position_key, EcsPosition::{ x: 1 })
-      try! startup_world.set(entity, ecs_velocity_key, EcsVelocity::{ x: 41 })
+      try! startup_world.set_by_key(entity, ecs_position_key, EcsPosition::{
+        x: 1,
+      })
+      try! startup_world.set_by_key(entity, ecs_velocity_key, EcsVelocity::{
+        x: 41,
+      })
     })
     .add_system_param(fn(
       query : @ecs.Query[

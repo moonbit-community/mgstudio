@@ -62,11 +62,10 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
@@ -74,49 +73,53 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let panel = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(panel, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     panel,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    panel,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Px(300.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
     .with_align_items(@ui.AlignItems::FlexEnd),
   )
-  world
-  .component(@ui.ecs_key_background_color)
-  .insert(
+  try! world.set_by_key(
     panel,
+    @ui.ecs_key_background_color,
     @ui.BackgroundColor::new(@sprite.Color::new(0.65F, 0.65F, 0.65F, 1.0F)),
   )
 
   let label = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(label, @hierarchy.Parent::new(panel))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     label,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(panel),
+  )
+  try! world.set_by_key(
+    label,
+    @ui.ecs_key_node,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(label, @text.Text::new(display_text(1.0F, false)))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     label,
+    @text.ecs_key_text,
+    @text.Text::new(display_text(1.0F, false)),
+  )
+  try! world.set_by_key(
+    label,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(36.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(label, @text.TextColor::new(@sprite.Color::black()))
-  world.component(custom_text_key).insert(label, CustomText::{  })
+  try! world.set_by_key(
+    label,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::black()),
+  )
+  try! world.set_by_key(label, custom_text_key, CustomText::{  })
 }
 
 ///|
@@ -156,19 +159,21 @@ fn update_primary_window(
   update : (@window.Window) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let window_store = world.component(@window.ecs_key_window)
-  guard window_store.get(entity) is Some(window) else { return }
+  guard (try! world.get_by_key(entity, @window.ecs_key_window)) is Some(window) else {
+    return
+  }
   update(window)
-  window_store.set(entity, window) |> ignore
+  try! (world.replace(entity, @window.ecs_key_window, window) |> ignore)
 }
 
 ///|
 fn set_custom_text(world : @ecs.World, text : String) -> Unit {
   guard custom_text_entity(world) is Some(entity) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(entity) is Some(text_value) else { return }
+  guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_value) else {
+    return
+  }
   text_value.content = text
-  ignore(text_store.set(entity, text_value))
+  ignore(try! world.replace(entity, @text.ecs_key_text, text_value))
 }
 
 ///|
@@ -188,8 +193,9 @@ fn display_text(scale_factor : Float, overridden : Bool) -> String {
 ///|
 fn display_override(world : @ecs.World) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let window_store = world.component(@window.ecs_key_window)
-  guard window_store.get(entity) is Some(window) else { return }
+  guard (try! world.get_by_key(entity, @window.ecs_key_window)) is Some(window) else {
+    return
+  }
   let text = display_text(
     window.scale_factor(),
     window.resolution.scale_factor_override() is Some(_),

@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub let ecs_components : Array[String]
-
 pub let ecs_key_inherited_visibility : @ecs.ComponentKey[InheritedVisibility]
 
 pub let ecs_key_view_visibility : @ecs.ComponentKey[ViewVisibility]
@@ -17,16 +15,6 @@ pub let ecs_key_view_visibility : @ecs.ComponentKey[ViewVisibility]
 pub let ecs_key_visibility : @ecs.ComponentKey[Visibility]
 
 pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange]
-
-pub let ecs_resources : Array[String]
-
-pub fn get_inherited_visibility_store(@ecs.World) -> @ecs.ComponentAccess[InheritedVisibility]
-
-pub fn get_view_visibility_store(@ecs.World) -> @ecs.ComponentAccess[ViewVisibility]
-
-pub fn get_visibility_range_store(@ecs.World) -> @ecs.ComponentAccess[VisibilityRange]
-
-pub fn get_visibility_store(@ecs.World) -> @ecs.ComponentAccess[Visibility]
 
 pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

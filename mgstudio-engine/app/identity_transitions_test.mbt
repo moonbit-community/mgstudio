@@ -110,9 +110,8 @@ test "app identity transition: DespawnOnExit removes scoped entities" {
   let entity = app.world().spawn_empty()
   app
   .world()
-  .component(ecs_key_despawn_on_exit)
-  .insert(entity, DespawnOnExit::new(TestState::A))
-  app.world().component(despawn_marker_key).insert(entity, DespawnMarker::{  })
+  .set_by_key(entity, ecs_key_despawn_on_exit, DespawnOnExit::new(TestState::A))
+  app.world().set_by_key(entity, despawn_marker_key, DespawnMarker::{  })
 
   app.run_startup() |> ignore
   app.run_once() |> ignore
@@ -120,7 +119,7 @@ test "app identity transition: DespawnOnExit removes scoped entities" {
 
   let result : Result[DespawnMarker?, @ecs.EcsError] = try? app
     .world()
-    .get(entity, despawn_marker_key)
+    .get_by_key(entity, despawn_marker_key)
   inspect(result is Err(_), content="true")
 }
 
@@ -138,9 +137,12 @@ test "app identity transition: DespawnOnEnter removes scoped entities" {
   let entity = app.world().spawn_empty()
   app
   .world()
-  .component(ecs_key_despawn_on_enter)
-  .insert(entity, DespawnOnEnter::new(TestState::B))
-  app.world().component(despawn_marker_key).insert(entity, DespawnMarker::{  })
+  .set_by_key(
+    entity,
+    ecs_key_despawn_on_enter,
+    DespawnOnEnter::new(TestState::B),
+  )
+  app.world().set_by_key(entity, despawn_marker_key, DespawnMarker::{  })
 
   app.run_startup() |> ignore
   app.run_once() |> ignore
@@ -148,6 +150,6 @@ test "app identity transition: DespawnOnEnter removes scoped entities" {
 
   let result : Result[DespawnMarker?, @ecs.EcsError] = try? app
     .world()
-    .get(entity, despawn_marker_key)
+    .get_by_key(entity, despawn_marker_key)
   inspect(result is Err(_), content="true")
 }

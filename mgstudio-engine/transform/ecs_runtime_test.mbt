@@ -55,7 +55,7 @@ test "transform ecs world: child global uses parent and local transforms" {
 
   prepare_transform_world_ecs(world)
   next_system_sequence_ecs(world)
-  try! world.set(
+  try! world.set_by_key(
     parent,
     ecs_key_transform,
     Transform::from_xy_rotation_scale(
@@ -64,7 +64,7 @@ test "transform ecs world: child global uses parent and local transforms" {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  try! world.set(
+  try! world.set_by_key(
     child,
     ecs_key_transform,
     Transform::from_xy_rotation_scale(
@@ -73,7 +73,7 @@ test "transform ecs world: child global uses parent and local transforms" {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  try! world.set(
+  try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
@@ -83,7 +83,7 @@ test "transform ecs world: child global uses parent and local transforms" {
   propagate_transforms_system_ecs(world)
   sync_simple_transforms_world(world)
 
-  let children = (try! world.get(parent, @hierarchy.ecs_key_children)).unwrap()
+  let children = (try! world.get_by_key(parent, @hierarchy.ecs_key_children)).unwrap()
   inspect(children.entities().length(), content="1")
   inspect(
     children.entities()[0].id == child.id &&
@@ -91,7 +91,7 @@ test "transform ecs world: child global uses parent and local transforms" {
     content="true",
   )
 
-  let child_global = (try! world.get(child, ecs_key_global_transform)).unwrap()
+  let child_global = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
   inspect(
     approx_eq_ecs(child_global.affine.tx, 1.0F) &&
     approx_eq_ecs(child_global.affine.ty, 2.0F),
@@ -105,19 +105,19 @@ test "transform ecs world: hierarchy hooks clear stale Children components" {
   let parent = world.spawn()
   let child = world.spawn()
 
-  try! world.set(
+  try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
   inspect(
-    (try! world.get(parent, @hierarchy.ecs_key_children)) is Some(_),
+    (try! world.get_by_key(parent, @hierarchy.ecs_key_children)) is Some(_),
     content="true",
   )
 
   try! world.despawn(child)
   inspect(
-    (try! world.get(parent, @hierarchy.ecs_key_children)) is None,
+    (try! world.get_by_key(parent, @hierarchy.ecs_key_children)) is None,
     content="true",
   )
 }

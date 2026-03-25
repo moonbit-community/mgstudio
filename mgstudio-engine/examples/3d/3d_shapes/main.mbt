@@ -1029,17 +1029,18 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let point_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true).with_shadow_depth_bias(
       0.2F,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F))
+  try! world.set_by_key(
+    point_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
+  )
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -1114,13 +1115,14 @@ fn rotate(world : @ecs.World) -> Unit {
   }
   let delta = world_time(world).delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
-  let transform_store = world.component(@transform.ecs_key_transform)
   for entry in shapes_state.val.entries {
-    if transform_store.get(entry.entity) is Some(transform) {
+    if (try! world.get_by_key(entry.entity, @transform.ecs_key_transform))
+      is Some(transform) {
       let next = transform.with_rotation(
         transform.rotation.mul(spin).normalize(),
       )
-      transform_store.set(entry.entity, next) |> ignore
+      try! (world.replace(entry.entity, @transform.ecs_key_transform, next)
+      |> ignore)
     }
   }
 }
@@ -1130,13 +1132,13 @@ fn advance_rows(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Tab) {
     return
   }
-  let transform_store = world.component(@transform.ecs_key_transform)
   let count = shapes_state.val.entries.length()
   for i in 0..<count {
     let entry = shapes_state.val.entries[i]
     let next_row = row_advance(entry.row)
     shapes_state.val.entries[i] = { ..entry, row: next_row }
-    if transform_store.get(entry.entity) is Some(transform) {
+    if (try! world.get_by_key(entry.entity, @transform.ecs_key_transform))
+      is Some(transform) {
       let next = transform.with_translation(
         @math.Vec3::new(
           transform.translation.x,
@@ -1144,7 +1146,8 @@ fn advance_rows(world : @ecs.World) -> Unit {
           row_z(next_row),
         ),
       )
-      transform_store.set(entry.entity, next) |> ignore
+      try! (world.replace(entry.entity, @transform.ecs_key_transform, next)
+      |> ignore)
     }
   }
 }

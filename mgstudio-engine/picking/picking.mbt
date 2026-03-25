@@ -437,11 +437,6 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
   let hits = Ref::new(hits_value)
   let ctx_res = @ui.get_ui_context_resource(world)
   guard ctx_res.get() is Some(ctx0) else { return }
-  let sprite_store = @sprite.get_sprite_store(world)
-  let anchor_store = @sprite.get_anchor_store(world)
-  let transform_store = @transform.get_transform_store(world)
-  let global_store = @transform.get_global_transform_store(world)
-  let vv_store = @visibility.get_view_visibility_store(world)
   let cam_translation = @math.Vec2::new(
     ctx0.camera_transform.translation.x,
     ctx0.camera_transform.translation.y,
@@ -479,14 +474,18 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
         cam_translation.x + world_offset.x,
         cam_translation.y + world_offset.y,
       )
-      sprite_store.for_each(fn(entity, sprite) {
-        if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
+      world.for_each_component(@sprite.ecs_key_sprite, fn(entity, sprite) {
+        if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+          is Some(vv) &&
+          !vv.is_visible() {
           return
         }
-        let transform = match global_store.get(entity) {
+        let transform = match
+          (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
           Some(gt) => gt.to_transform_approx()
           None =>
-            match transform_store.get(entity) {
+            match
+              (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
               Some(t) => t
               None => @transform.Transform::identity()
             }
@@ -510,7 +509,8 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
         if half.x <= 0.0F || half.y <= 0.0F {
           return
         }
-        let anchor = match anchor_store.get(entity) {
+        let anchor = match
+          (try! world.get_by_key(entity, @sprite.ecs_key_anchor)) {
           Some(a) => a
           None => @sprite.Anchor::default()
         }
@@ -554,12 +554,6 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(ctx0) else { return }
   let stack_res = @ui.get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  let layout_store = @ui.get_ui_layout_store(world)
-  let button_store = @ui.get_button_store(world)
-  let interaction_store = @ui.get_interaction_store(world)
-  let focus_store = @ui.get_focus_policy_store(world)
-  let clip_store = @ui.get_calculated_clip_store(world)
-  let vv_store = @visibility.get_view_visibility_store(world)
   for input in inputs0.pointers {
     let pointer_id = input.pointer
     let pointer_pos = match input.window_position {
@@ -580,18 +574,25 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
         }
         let idx = stack0.uinodes.length() - 1 - i
         let entity = stack0.uinodes[idx]
-        if !button_store.contains(entity) && !interaction_store.contains(entity) {
+        if !((try! world.contains_by_key(entity, @ui.ecs_key_button)) &&
+          !(try! world.contains_by_key(entity, @ui.ecs_key_interaction))) {
           continue
         }
-        if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
+        if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+          is Some(vv) &&
+          !vv.is_visible() {
           continue
         }
-        guard layout_store.get(entity) is Some(layout) else { continue }
+        guard (try! world.get_by_key(entity, @ui.ecs_key_ui_layout))
+          is Some(layout) else {
+          continue
+        }
         let node_rect = layout.rect
         if !node_rect.contains(p) {
           continue
         }
-        let clip_rect = match clip_store.get(entity) {
+        let clip_rect = match
+          (try! world.get_by_key(entity, @ui.ecs_key_calculated_clip)) {
           Some(v) => v.clip
           None => node_rect
         }
@@ -602,7 +603,8 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
         if hit_top is None {
           hit_top = Some(entity)
         }
-        let focus = match focus_store.get(entity) {
+        let focus = match
+          (try! world.get_by_key(entity, @ui.ecs_key_focus_policy)) {
           Some(v) => v
           None => @ui.FocusPolicy::Block
         }
@@ -656,30 +658,30 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     return
   }
   let events = Ref::new(events_value)
-  let interaction_store = @ui.get_interaction_store(world)
-  let scroll_store = @ui.get_scroll_position_store(world)
-  let node_store = @ui.get_node_store(world)
-  let layout_store = @ui.get_ui_layout_store(world)
-  let text_store = world.component(@text.ecs_key_text)
-  let children_store = @hierarchy.get_children_store(world)
   let scroll_step = 24.0F
   fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
-    guard node_store.get(entity) is Some(target_node) else { return }
-    let prev = match scroll_store.get(entity) {
+    guard (try! world.get_by_key(entity, @ui.ecs_key_node)) is Some(target_node) else {
+      return
+    }
+    let prev = match
+      (try! world.get_by_key(entity, @ui.ecs_key_scroll_position)) {
       Some(v) => v
       None => @ui.ScrollPosition::default()
     }
     let mut max_offset_x = 0.0F
     let mut max_offset_y = 0.0F
-    if layout_store.get(entity) is Some(target_layout) &&
-      children_store.get(entity) is Some(children) {
+    if (try! world.get_by_key(entity, @ui.ecs_key_ui_layout))
+      is Some(target_layout) &&
+      (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
       let target_size = target_layout.rect.size()
       if target_size.x > 0.0F && target_size.y > 0.0F {
         let mut content_min : @math.Vec2? = None
         let mut content_max : @math.Vec2? = None
         for i in 0..<children.entities.length() {
           let child = children.entities[i]
-          if layout_store.get(child) is Some(child_layout) {
+          if (try! world.get_by_key(child, @ui.ecs_key_ui_layout))
+            is Some(child_layout) {
             let unscrolled_min = @math.Vec2::new(
               child_layout.rect.min.x + prev.offset_x,
               child_layout.rect.min.y + prev.offset_y,
@@ -766,10 +768,10 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
       next_y = max_offset_y
     }
     let next = @ui.ScrollPosition::new(next_x, next_y)
-    if scroll_store.contains(entity) {
-      scroll_store.set(entity, next) |> ignore
+    if (try! world.contains_by_key(entity, @ui.ecs_key_scroll_position)) {
+      try! (world.replace(entity, @ui.ecs_key_scroll_position, next) |> ignore)
     } else {
-      scroll_store.insert(entity, next)
+      try! world.set_by_key(entity, @ui.ecs_key_scroll_position, next)
     }
   }
 
@@ -783,18 +785,36 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
         @a11y.A11yState::set_focused_node(state, req.target_node())
         // Map focus-driven navigation (tab / VO) to the hovered state so UI can
         // reflect focus without requiring pointer position.
-        if interaction_store.contains(entity) {
-          interaction_store.set(entity, @ui.Interaction::Hovered) |> ignore
+        if (try! world.contains_by_key(entity, @ui.ecs_key_interaction)) {
+          try! (world.replace(
+            entity,
+            @ui.ecs_key_interaction,
+            @ui.Interaction::Hovered,
+          )
+          |> ignore)
         } else {
-          interaction_store.insert(entity, @ui.Interaction::Hovered)
+          try! world.set_by_key(
+            entity,
+            @ui.ecs_key_interaction,
+            @ui.Interaction::Hovered,
+          )
         }
       }
       @moon_accesskit.Action::Click => {
         @a11y.A11yState::set_focused_node(state, req.target_node())
-        if interaction_store.contains(entity) {
-          interaction_store.set(entity, @ui.Interaction::Pressed) |> ignore
+        if (try! world.contains_by_key(entity, @ui.ecs_key_interaction)) {
+          try! (world.replace(
+            entity,
+            @ui.ecs_key_interaction,
+            @ui.Interaction::Pressed,
+          )
+          |> ignore)
         } else {
-          interaction_store.insert(entity, @ui.Interaction::Pressed)
+          try! world.set_by_key(
+            entity,
+            @ui.ecs_key_interaction,
+            @ui.Interaction::Pressed,
+          )
         }
         @app.PickingEvents::push(
           events,
@@ -815,11 +835,14 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
       @moon_accesskit.Action::ScrollRight =>
         apply_scroll_delta(entity, scroll_step, 0.0F)
       @moon_accesskit.Action::SetValue =>
-        if req.data() is Some(@moon_accesskit.ActionData::Value(value)) &&
-          text_store.get(entity) is Some(text_node) {
+        if req.data() is Some(@moon_accesskit.ActionData::Value(value)) {
+          guard (try! world.get_by_key(entity, @text.ecs_key_text))
+            is Some(text_node) else {
+            continue
+          }
           @a11y.A11yState::set_focused_node(state, req.target_node())
           text_node.content = value
-          ignore(text_store.set(entity, text_node))
+          ignore(try! world.replace(entity, @text.ecs_key_text, text_node))
         }
       _ => ()
     }

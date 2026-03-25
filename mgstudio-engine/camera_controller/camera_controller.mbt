@@ -37,17 +37,3 @@ pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub fn run_free_camera_controller(world : @ecs.World) -> Unit {
   @pbr.run_freecamera_controller(world)
 }
-
-///|
-pub fn get_free_camera_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[FreeCamera] {
-  @pbr.get_free_camera_store(world)
-}
-
-///|
-pub fn get_free_camera_state_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[FreeCameraState] {
-  @pbr.get_free_camera_state_store(world)
-}

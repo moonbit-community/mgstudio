@@ -27,7 +27,7 @@ fn winit_monitor_entry_index(
 
 ///|
 fn winit_has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
-  match (try! world.get_component(entity) : @window.PrimaryMonitor?) {
+  match (try! world.entity(entity).get() : @window.PrimaryMonitor?) {
     Some(_) => true
     None => false
   }
@@ -46,10 +46,13 @@ fn winit_sync_primary_monitor_marker(
   }
   if is_primary {
     if !winit_has_primary_monitor(world, entity) {
-      try! world.set_component(entity, @window.PrimaryMonitor::{  })
+      try! (world
+      .entity_mut(entity)
+      .insert_component(@window.PrimaryMonitor::{  })
+      |> ignore)
     }
   } else if winit_has_primary_monitor(world, entity) {
-    try! (world.remove(entity, @window.ecs_key_primary_monitor) |> ignore)
+    try! (world.remove_by_key(entity, @window.ecs_key_primary_monitor) |> ignore)
   }
 }
 
@@ -60,7 +63,10 @@ fn winit_sync_monitor_entity(
   monitor : @window_core.MonitorHandle,
   primary_monitor : @window_core.MonitorHandle?,
 ) -> Unit {
-  try! world.set_component(entity, convert_winit_monitor(monitor))
+  try! (world
+  .entity_mut(entity)
+  .insert_component(convert_winit_monitor(monitor))
+  |> ignore)
   winit_sync_primary_monitor_marker(world, entity, monitor, primary_monitor)
 }
 

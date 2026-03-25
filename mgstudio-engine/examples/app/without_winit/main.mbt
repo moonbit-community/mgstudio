@@ -19,7 +19,7 @@
 fn setup_system(world : @ecs.World) -> Unit {
   // Minimal placeholder entity for the ECS-json world path.
   let entity = world.spawn_empty()
-  try! world.set(
+  try! world.set_by_key(
     entity,
     @transform.ecs_key_transform,
     @transform.Transform::identity(),

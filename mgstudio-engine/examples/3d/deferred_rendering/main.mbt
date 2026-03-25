@@ -129,37 +129,65 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
   match deferred_state.val.mode {
     Deferred => {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Deferred)
-      world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
-      world
-      .component(@pbr.ecs_key_depth_prepass)
-      .insert(camera, @pbr.DepthPrepass::default())
-      world
-      .component(@pbr.ecs_key_motion_vector_prepass)
-      .insert(camera, @pbr.MotionVectorPrepass::default())
-      world
-      .component(@pbr.ecs_key_deferred_prepass)
-      .insert(camera, @pbr.DeferredPrepass::default())
+      try! (world.take(camera, @pbr.ecs_key_normal_prepass) |> ignore)
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_depth_prepass,
+        @pbr.DepthPrepass::default(),
+      )
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_motion_vector_prepass,
+        @pbr.MotionVectorPrepass::default(),
+      )
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_deferred_prepass,
+        @pbr.DeferredPrepass::default(),
+      )
     }
     Forward => {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
-      world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
-      world.component(@pbr.ecs_key_depth_prepass).remove(camera) |> ignore
-      world.component(@pbr.ecs_key_motion_vector_prepass).remove(camera)
-      |> ignore
-      world.component(@pbr.ecs_key_deferred_prepass).remove(camera) |> ignore
+      try! (world.take(camera, @pbr.ecs_key_normal_prepass) |> ignore)
+      try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
+      try! (world.take(camera, @pbr.ecs_key_motion_vector_prepass) |> ignore)
+      try! (world.take(camera, @pbr.ecs_key_deferred_prepass) |> ignore)
     }
     ForwardPrepass => {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
-      world
-      .component(@pbr.ecs_key_normal_prepass)
-      .insert(camera, @pbr.NormalPrepass::default())
-      world
-      .component(@pbr.ecs_key_depth_prepass)
-      .insert(camera, @pbr.DepthPrepass::default())
-      world
-      .component(@pbr.ecs_key_motion_vector_prepass)
-      .insert(camera, @pbr.MotionVectorPrepass::default())
-      world.component(@pbr.ecs_key_deferred_prepass).remove(camera) |> ignore
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_normal_prepass,
+        @pbr.NormalPrepass::default(),
+      )
+      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_normal_prepass,
+        @pbr.NormalPrepass::default(),
+      )
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_depth_prepass,
+        @pbr.DepthPrepass::default(),
+      )
+      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_normal_prepass,
+        @pbr.NormalPrepass::default(),
+      )
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_depth_prepass,
+        @pbr.DepthPrepass::default(),
+      )
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_motion_vector_prepass,
+        @pbr.MotionVectorPrepass::default(),
+      )
+      try! (world.take(camera, @pbr.ecs_key_deferred_prepass) |> ignore)
     }
   }
 }
@@ -200,14 +228,15 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   deferred_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_fxaa)
-  .insert(camera, @post_process.Fxaa::default())
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
     camera,
+    @post_process.ecs_key_fxaa,
+    @post_process.Fxaa::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
@@ -217,20 +246,18 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   deferred_state.val.directional_light = Some(directional_light)
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @pbr.CascadeShadowConfigBuilder::default()
       .with_num_cascades(3)
       .with_maximum_distance(10.0F),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-0.7853981634F),
     ),
@@ -250,17 +277,23 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let helmet_a = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(helmet_a, @scene.SceneRoot::new(helmet_scene))
+  try! world.set_by_key(
+    helmet_a,
+    @scene.ecs_key_scene_root,
+    @scene.SceneRoot::new(helmet_scene),
+  )
 
   let helmet_b = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(helmet_b, @scene.SceneRoot::new(helmet_scene))
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(helmet_b, @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F))
+  try! world.set_by_key(
+    helmet_b,
+    @scene.ecs_key_scene_root,
+    @scene.SceneRoot::new(helmet_scene),
+  )
+  try! world.set_by_key(
+    helmet_b,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F),
+  )
 
   let forward_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -315,20 +348,23 @@ fn setup(world : @ecs.World) -> Unit {
     emissive_material,
     @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(emissive_cube, @pbr.NotShadowCaster::default())
+  try! world.set_by_key(
+    emissive_cube,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
 
   let point_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(0.125F),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F))
+  try! world.set_by_key(
+    point_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F),
+  )
 
   for i in 0..<6 {
     let j = i % 3
@@ -389,12 +425,16 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::splat(1_000_000.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(sky, @pbr.NotShadowCaster::default())
-  world
-  .component(@pbr.ecs_key_not_shadow_receiver)
-  .insert(sky, @pbr.NotShadowReceiver::default())
+  try! world.set_by_key(
+    sky,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
+  try! world.set_by_key(
+    sky,
+    @pbr.ecs_key_not_shadow_receiver,
+    @pbr.NotShadowReceiver::default(),
+  )
 
   let parallax_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::default()
@@ -500,22 +540,21 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   guard deferred_state.val.directional_light is Some(light) else { return }
-  guard world.component(@transform.ecs_key_transform).get(light)
+  guard (try! world.get_by_key(light, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
   let delta_angle = LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     light,
+    @transform.ecs_key_transform,
     transform.with_rotation(
       transform.rotation
       .mul(@math.Quat::from_rotation_y(delta_angle))
       .normalize(),
     ),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -526,7 +565,7 @@ fn spin(world : @ecs.World) -> Unit {
   let delta = world_time(world).delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]
-    guard world.component(@transform.ecs_key_transform).get(target.entity)
+    guard (try! world.get_by_key(target.entity, @transform.ecs_key_transform))
       is Some(transform) else {
       continue
     }
@@ -536,10 +575,12 @@ fn spin(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_x(speed))
       .mul(@math.Quat::from_rotation_z(-speed))
       .normalize()
-    world
-    .component(@transform.ecs_key_transform)
-    .set(target.entity, transform.with_rotation(rotation))
-    |> ignore
+    try! (world.replace(
+      target.entity,
+      @transform.ecs_key_transform,
+      transform.with_rotation(rotation),
+    )
+    |> ignore)
   }
 }
 

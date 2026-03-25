@@ -82,10 +82,9 @@ fn setup(world : @ecs.World) -> Unit {
   // Bevy parity: use Fox scene as split-screen content.
   let asset_server = @asset.AssetServer::new()
   let fox_scene = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     fox_scene,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -96,16 +95,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Light
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(60.0F, 100.0F, 60.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -179,7 +176,6 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
     return
   }
 
-  let camera_store = world.component(@sprite.ecs_key_camera)
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
     let grid_pos = pair.1
@@ -187,8 +183,13 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
       @math.IVec2::new(grid_pos.x * half_size.x, grid_pos.y * half_size.y),
       half_size,
     )
-    if camera_store.get(entity) is Some(camera) {
-      camera_store.set(entity, camera.with_viewport(viewport)) |> ignore
+    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
+      try! (world.replace(
+        entity,
+        @sprite.ecs_key_camera,
+        camera.with_viewport(viewport),
+      )
+      |> ignore)
     }
   }
 
@@ -257,8 +258,8 @@ fn button_system(world : @ecs.World) -> Unit {
   }
   let camera_entity = split_screen_state.val.cameras[index].0
 
-  let transform_store = world.component(@transform.ecs_key_transform)
-  if transform_store.get(camera_entity) is Some(transform) {
+  if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
       transform.translation,
@@ -268,7 +269,8 @@ fn button_system(world : @ecs.World) -> Unit {
       rotated_position.y,
       rotated_position.z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    transform_store.set(camera_entity, next) |> ignore
+    try! (world.replace(camera_entity, @transform.ecs_key_transform, next)
+    |> ignore)
   }
 }
 

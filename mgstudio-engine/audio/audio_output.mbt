@@ -194,10 +194,10 @@ fn audio_entity_transform(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @transform.Transform {
-  match (try! world.get(entity, @transform.ecs_key_global_transform)) {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
     Some(global) => global.to_transform_approx()
     None =>
-      match (try! world.get(entity, @transform.ecs_key_transform)) {
+      match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
         Some(transform) => transform
         None => @transform.Transform::identity()
       }
@@ -276,7 +276,7 @@ fn audio_playback_settings_for_entity(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> PlaybackSettings {
-  match (try! world.get(entity, ecs_key_playback_settings)) {
+  match (try! world.get_by_key(entity, ecs_key_playback_settings)) {
     Some(settings) => settings
     None => PlaybackSettings::default()
   }
@@ -290,11 +290,11 @@ fn audio_insert_playback_markers(
 ) -> Unit {
   match mode {
     PlaybackMode::Despawn =>
-      try! world.set(entity, ecs_key_playback_despawn_marker, PlaybackDespawnMarker::{
+      try! world.set_by_key(entity, ecs_key_playback_despawn_marker, PlaybackDespawnMarker::{
 
       })
     PlaybackMode::Remove =>
-      try! world.set(entity, ecs_key_playback_remove_marker, PlaybackRemoveMarker::{
+      try! world.set_by_key(entity, ecs_key_playback_remove_marker, PlaybackRemoveMarker::{
 
       })
     _ => ()
@@ -341,7 +341,7 @@ fn audio_play_source_entity(
     } else {
       spatial_audio_sink_from_native(native_player)
     }
-    try! world.set(entity, ecs_key_spatial_audio_sink, sink)
+    try! world.set_by_key(entity, ecs_key_spatial_audio_sink, sink)
   } else {
     let native_player = output.new_player()
     native_player.append_bytes(source.bytes(), config~) catch {
@@ -357,7 +357,7 @@ fn audio_play_source_entity(
     } else {
       audio_sink_from_native(native_player)
     }
-    try! world.set(entity, ecs_key_audio_sink, sink)
+    try! world.set_by_key(entity, ecs_key_audio_sink, sink)
   }
   audio_insert_playback_markers(world, entity, settings.mode)
 }
@@ -406,7 +406,7 @@ fn audio_play_pitch_entity(
     } else {
       spatial_audio_sink_from_native(native_player)
     }
-    try! world.set(entity, ecs_key_spatial_audio_sink, sink)
+    try! world.set_by_key(entity, ecs_key_spatial_audio_sink, sink)
   } else {
     let native_player = output.new_player()
     native_player.append_sine(
@@ -427,7 +427,7 @@ fn audio_play_pitch_entity(
     } else {
       audio_sink_from_native(native_player)
     }
-    try! world.set(entity, ecs_key_audio_sink, sink)
+    try! world.set_by_key(entity, ecs_key_audio_sink, sink)
   }
   audio_insert_playback_markers(world, entity, settings.mode)
 }
@@ -438,10 +438,10 @@ fn play_queued_audio_source_system(world : @ecs.World) -> Unit {
     world,
   )
   try! player_query.view(fn(entity, player) {
-    if (try! world.get(entity, ecs_key_audio_sink)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_audio_sink)) is Some(_) {
       return
     }
-    if (try! world.get(entity, ecs_key_spatial_audio_sink)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_spatial_audio_sink)) is Some(_) {
       return
     }
     audio_play_source_entity(world, entity, player.value())
@@ -454,10 +454,10 @@ fn play_queued_pitch_system(world : @ecs.World) -> Unit {
     world,
   )
   try! player_query.view(fn(entity, player) {
-    if (try! world.get(entity, ecs_key_audio_sink)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_audio_sink)) is Some(_) {
       return
     }
-    if (try! world.get(entity, ecs_key_spatial_audio_sink)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_spatial_audio_sink)) is Some(_) {
       return
     }
     audio_play_pitch_entity(world, entity, player.value())
@@ -507,7 +507,7 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
     world,
   )
   try! sink_query.view(fn(entity, sink) {
-    if (try! world.get(entity, ecs_key_audio_source_player)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_audio_source_player)) is Some(_) {
       sinks.push((entity, sink.value()))
     }
   })
@@ -515,7 +515,7 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
     world,
   )
   try! spatial_sink_query.view(fn(entity, sink) {
-    if (try! world.get(entity, ecs_key_audio_source_player)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_audio_source_player)) is Some(_) {
       spatial_sinks.push((entity, sink.value()))
     }
   })
@@ -525,17 +525,20 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
     if !sink.empty() {
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_despawn_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_despawn_marker))
+      is Some(_) {
       audio_sink_registry_remove(sink.sink_id)
       try! world.despawn(entity)
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_remove_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_remove_marker))
+      is Some(_) {
       audio_sink_registry_remove(sink.sink_id)
-      try! (world.remove(entity, ecs_key_audio_source_player) |> ignore)
-      try! (world.remove(entity, ecs_key_audio_sink) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_settings) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_remove_marker) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_audio_source_player) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_audio_sink) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_settings) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_remove_marker)
+      |> ignore)
     }
   }
   for entry in spatial_sinks {
@@ -544,17 +547,20 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
     if !sink.empty() {
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_despawn_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_despawn_marker))
+      is Some(_) {
       spatial_audio_sink_registry_remove(sink.sink_id)
       try! world.despawn(entity)
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_remove_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_remove_marker))
+      is Some(_) {
       spatial_audio_sink_registry_remove(sink.sink_id)
-      try! (world.remove(entity, ecs_key_audio_source_player) |> ignore)
-      try! (world.remove(entity, ecs_key_spatial_audio_sink) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_settings) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_remove_marker) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_audio_source_player) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_spatial_audio_sink) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_settings) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_remove_marker)
+      |> ignore)
     }
   }
 }
@@ -567,7 +573,7 @@ fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
     world,
   )
   try! sink_query.view(fn(entity, sink) {
-    if (try! world.get(entity, ecs_key_pitch_player)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_pitch_player)) is Some(_) {
       sinks.push((entity, sink.value()))
     }
   })
@@ -575,7 +581,7 @@ fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
     world,
   )
   try! spatial_sink_query.view(fn(entity, sink) {
-    if (try! world.get(entity, ecs_key_pitch_player)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_pitch_player)) is Some(_) {
       spatial_sinks.push((entity, sink.value()))
     }
   })
@@ -585,17 +591,20 @@ fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
     if !sink.empty() {
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_despawn_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_despawn_marker))
+      is Some(_) {
       audio_sink_registry_remove(sink.sink_id)
       try! world.despawn(entity)
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_remove_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_remove_marker))
+      is Some(_) {
       audio_sink_registry_remove(sink.sink_id)
-      try! (world.remove(entity, ecs_key_pitch_player) |> ignore)
-      try! (world.remove(entity, ecs_key_audio_sink) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_settings) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_remove_marker) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_pitch_player) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_audio_sink) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_settings) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_remove_marker)
+      |> ignore)
     }
   }
   for entry in spatial_sinks {
@@ -604,17 +613,20 @@ fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
     if !sink.empty() {
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_despawn_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_despawn_marker))
+      is Some(_) {
       spatial_audio_sink_registry_remove(sink.sink_id)
       try! world.despawn(entity)
       continue
     }
-    if (try! world.get(entity, ecs_key_playback_remove_marker)) is Some(_) {
+    if (try! world.get_by_key(entity, ecs_key_playback_remove_marker))
+      is Some(_) {
       spatial_audio_sink_registry_remove(sink.sink_id)
-      try! (world.remove(entity, ecs_key_pitch_player) |> ignore)
-      try! (world.remove(entity, ecs_key_spatial_audio_sink) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_settings) |> ignore)
-      try! (world.remove(entity, ecs_key_playback_remove_marker) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_pitch_player) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_spatial_audio_sink) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_settings) |> ignore)
+      try! (world.remove_by_key(entity, ecs_key_playback_remove_marker)
+      |> ignore)
     }
   }
 }

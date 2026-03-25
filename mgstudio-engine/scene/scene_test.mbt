@@ -242,21 +242,26 @@ test "scene: SceneRoot spawns children and marks ready" {
     )
 
     let root = world.spawn_empty()
-    get_scene_root_store(world).insert(
+    try! world.set_by_key(
       root,
+      @scene.ecs_key_scene_root,
       @scene.SceneRoot::new(scene_handle),
     )
 
     @scene.scene_spawn_roots_system(world)
 
-    let instance = get_scene_instance_store(world).get(root).unwrap()
-    let ready = get_scene_instance_ready_store(world).get(root).unwrap()
+    let instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    let ready = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance_ready)
+      .unwrap()
     instance_id.val = instance.instance_id
     ready_instance_id.val = ready.instance_id
     spawned_entities.val = ready.spawned_entities
 
     let children : Array[@core.Entity] = []
-    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         children.push(entity)
       }
@@ -264,28 +269,38 @@ test "scene: SceneRoot spawns children and marks ready" {
     child_count.val = children.length()
 
     let child = children[0]
-    has_mesh.val = @pbr.get_mesh3d_store(world).contains(child)
-    has_material.val = @pbr.get_mesh_material3d_store(world).contains(child)
-    has_transform.val = @transform.get_transform_store(world).contains(child)
-    has_visibility.val = @visibility.get_visibility_range_store(world).contains(
-      child,
+    has_mesh.val = try! world.contains_by_key(child, @pbr.ecs_key_mesh3d)
+    has_material.val = try! world.contains_by_key(
+      child, @pbr.ecs_key_mesh_material3d,
     )
-    has_player.val = @animation.get_animation_player_store(world).contains(root)
-    has_target.val = @animation.get_animation_target_id_store(world).contains(
-      child,
+    has_transform.val = try! world.contains_by_key(
+      child, @transform.ecs_key_transform,
     )
-    has_animated_by.val = @animation.get_animated_by_store(world).contains(
-      child,
+    has_visibility.val = try! world.contains_by_key(
+      child, @visibility.ecs_key_visibility_range,
+    )
+    has_player.val = try! world.contains_by_key(
+      root, @animation.ecs_key_animation_player,
+    )
+    has_target.val = try! world.contains_by_key(
+      child, @animation.ecs_key_animation_target_id,
+    )
+    has_animated_by.val = try! world.contains_by_key(
+      child, @animation.ecs_key_animated_by,
     )
 
     @scene.scene_spawn_roots_system(world)
-    let instance_second = get_scene_instance_store(world).get(root).unwrap()
-    let ready_second = get_scene_instance_ready_store(world).get(root).unwrap()
+    let instance_second = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    let ready_second = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance_ready)
+      .unwrap()
     instance_after_second_tick.val = instance_second.instance_id
     ready_after_second_tick.val = ready_second.spawned_entities
 
     let children_second : Array[@core.Entity] = []
-    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         children_second.push(entity)
       }
@@ -367,46 +382,57 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )
 
     let root = world.spawn_empty()
-    get_scene_root_store(world).insert(
+    try! world.set_by_key(
       root,
+      @scene.ecs_key_scene_root,
       @scene.SceneRoot::new(first_handle),
     )
 
     @scene.scene_spawn_roots_system(world)
-    let first_instance = get_scene_instance_store(world).get(root).unwrap()
+    let first_instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
     old_instance_id.val = first_instance.instance_id
 
     let first_children : Array[@core.Entity] = []
-    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         first_children.push(entity)
       }
     })
     let first_child = first_children[0]
 
-    get_scene_root_store(world).set(root, @scene.SceneRoot::new(second_handle))
-    |> ignore
+    try! (world.replace(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(second_handle),
+    )
+    |> ignore)
 
     @scene.scene_spawn_roots_system(world)
 
-    let second_instance = get_scene_instance_store(world).get(root).unwrap()
-    let ready = get_scene_instance_ready_store(world).get(root).unwrap()
+    let second_instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    let ready = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance_ready)
+      .unwrap()
     new_instance_id.val = second_instance.instance_id
     ready_instance_id.val = ready.instance_id
     spawned_entities.val = ready.spawned_entities
     old_child_alive.val = world.is_alive(first_child)
 
     let second_children : Array[@core.Entity] = []
-    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         second_children.push(entity)
       }
     })
     new_child_count.val = second_children.length()
     let new_child = second_children[0]
-    let transform = @transform.get_transform_store(world)
-      .get(new_child)
-      .unwrap()
+    let transform = (try! world.get_by_key(
+      new_child, @transform.ecs_key_transform,
+    )).unwrap()
     new_child_x.val = transform.translation.x.to_double()
   })
   inspect(old_instance_id.val == new_instance_id.val, content="false")
@@ -463,12 +489,16 @@ test "scene: modified scene asset respawns SceneRoot children" {
     let handle = @scene.scene_register_gltf_scene(path, first_scene)
 
     let root = world.spawn_empty()
-    get_scene_root_store(world).insert(root, @scene.SceneRoot::new(handle))
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(handle),
+    )
 
     @scene.scene_spawn_roots_system(world)
 
     let first_children : Array[@core.Entity] = []
-    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         first_children.push(entity)
       }
@@ -484,16 +514,16 @@ test "scene: modified scene asset respawns SceneRoot children" {
 
     old_child_alive.val = world.is_alive(first_child)
     let second_children : Array[@core.Entity] = []
-    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         second_children.push(entity)
       }
     })
     new_child_count.val = second_children.length()
     let new_child = second_children[0]
-    let transform = @transform.get_transform_store(world)
-      .get(new_child)
-      .unwrap()
+    let transform = (try! world.get_by_key(
+      new_child, @transform.ecs_key_transform,
+    )).unwrap()
     new_child_x.val = transform.translation.x.to_double()
   })
 

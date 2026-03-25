@@ -56,7 +56,7 @@ pub fn[T] With::new(key : ComponentKey[T]) -> With[T] {
 
 ///|
 pub impl[T] QueryFilter for With[T] with matches(self, world, entity) {
-  world.component(self.key).contains(entity)
+  entity_has_component_id(world, self.key.id(), entity)
 }
 
 ///|
@@ -76,7 +76,7 @@ pub fn[T] Without::new(key : ComponentKey[T]) -> Without[T] {
 
 ///|
 pub impl[T] QueryFilter for Without[T] with matches(self, world, entity) {
-  !world.component(self.key).contains(entity)
+  !entity_has_component_id(world, self.key.id(), entity)
 }
 
 ///|

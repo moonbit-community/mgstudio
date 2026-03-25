@@ -83,13 +83,22 @@ fn[T] world_component_mut(
 }
 
 ///|
+pub fn[T] World::contains_by_key(
+  self : World,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> Bool raise EcsError {
+  try! self.ensure_entity_alive(entity)
+  entity_has_component_id(self, key.id(), entity)
+}
+
+///|
 pub fn[T : Component] World::contains(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
 ) -> Bool raise EcsError {
-  try! self.ensure_entity_alive(entity)
-  entity_has_component_id(self, key.id(), entity)
+  self.contains_by_key(entity, key)
 }
 
 ///|
@@ -129,13 +138,12 @@ pub fn[T : Component] EntityRef::contains(
   self : EntityRef,
   key? : ComponentKey[T] = T::component(),
 ) -> Bool raise EcsError {
-  try! self.world.ensure_entity_alive(self.entity)
-  entity_has_component_id(self.world, key.id(), self.entity)
+  try! self.world.contains_by_key(self.entity, key)
 }
 
 ///|
 pub fn[T : Component] EntityRef::get(self : EntityRef) -> T? raise EcsError {
-  self.world.get(self.entity, T::component())
+  self.world.get_by_key(self.entity, T::component())
 }
 
 ///|
@@ -159,13 +167,12 @@ pub fn[T : Component] EntityMut::contains(
   self : EntityMut,
   key? : ComponentKey[T] = T::component(),
 ) -> Bool raise EcsError {
-  try! self.world.ensure_entity_alive(self.entity)
-  entity_has_component_id(self.world, key.id(), self.entity)
+  try! self.world.contains_by_key(self.entity, key)
 }
 
 ///|
 pub fn[T : Component] EntityMut::get(self : EntityMut) -> T? raise EcsError {
-  self.world.get(self.entity, T::component())
+  self.world.get_by_key(self.entity, T::component())
 }
 
 ///|
@@ -184,8 +191,8 @@ pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
   loc~,
 ) {
   let (a, b) = self
-  try! world.set(entity, A::component(), a, loc~)
-  try! world.set(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
 }
 
 ///|
@@ -196,9 +203,9 @@ pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with 
   loc~,
 ) {
   let (a, b, c) = self
-  try! world.set(entity, A::component(), a, loc~)
-  try! world.set(entity, B::component(), b, loc~)
-  try! world.set(entity, C::component(), c, loc~)
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, C::component(), c, loc~)
 }
 
 ///|
@@ -209,10 +216,10 @@ pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for 
   D,
 ) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d) = self
-  try! world.set(entity, A::component(), a, loc~)
-  try! world.set(entity, B::component(), b, loc~)
-  try! world.set(entity, C::component(), c, loc~)
-  try! world.set(entity, D::component(), d, loc~)
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, C::component(), c, loc~)
+  try! world.set_by_key(entity, D::component(), d, loc~)
 }
 
 ///|
@@ -224,11 +231,11 @@ pub impl[
   E : Component,
 ] Bundle for (A, B, C, D, E) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e) = self
-  try! world.set(entity, A::component(), a, loc~)
-  try! world.set(entity, B::component(), b, loc~)
-  try! world.set(entity, C::component(), c, loc~)
-  try! world.set(entity, D::component(), d, loc~)
-  try! world.set(entity, E::component(), e, loc~)
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, C::component(), c, loc~)
+  try! world.set_by_key(entity, D::component(), d, loc~)
+  try! world.set_by_key(entity, E::component(), e, loc~)
 }
 
 ///|
@@ -249,7 +256,7 @@ pub fn[T : Component] EntityMut::insert_component(
   component : T,
   loc~ : SourceLoc,
 ) -> EntityMut raise EcsError {
-  try! self.world.set(self.entity, T::component(), component, loc~)
+  try! self.world.set_by_key(self.entity, T::component(), component, loc~)
   self
 }
 
@@ -259,9 +266,9 @@ pub fn[T : Component] EntityMut::remove_component(
   self : EntityMut,
   loc~ : SourceLoc,
 ) -> T? raise EcsError {
-  let previous = try! self.world.get(self.entity, T::component())
+  let previous = try! self.world.get_by_key(self.entity, T::component())
   if previous is Some(_) {
-    try! (self.world.remove(self.entity, T::component(), loc~) |> ignore)
+    try! (self.world.remove_by_key(self.entity, T::component(), loc~) |> ignore)
   }
   previous
 }

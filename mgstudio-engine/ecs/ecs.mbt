@@ -284,7 +284,7 @@ pub fn World::despawn(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::set(
+pub fn[T] World::set_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -300,7 +300,7 @@ pub fn[T] World::set(
 }
 
 ///|
-pub fn[T] World::get(
+pub fn[T] World::get_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -317,7 +317,7 @@ pub fn[T] World::get(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::update(
+pub fn[T] World::update_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -347,7 +347,7 @@ pub fn[T] World::update(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::remove(
+pub fn[T] World::remove_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -381,6 +381,50 @@ pub fn[T] World::remove(
       false
     }
   }
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Component] World::set(
+  self : World,
+  entity : @core.Entity,
+  key? : ComponentKey[T] = T::component(),
+  value : T,
+  loc~ : SourceLoc,
+) -> Unit raise EcsError {
+  self.set_by_key(entity, key, value, loc~)
+}
+
+///|
+pub fn[T : Component] World::get(
+  self : World,
+  entity : @core.Entity,
+  key? : ComponentKey[T] = T::component(),
+) -> T? raise EcsError {
+  self.get_by_key(entity, key)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Component] World::update(
+  self : World,
+  entity : @core.Entity,
+  key? : ComponentKey[T] = T::component(),
+  update : (T) -> T,
+  loc~ : SourceLoc,
+) -> Bool raise EcsError {
+  self.update_by_key(entity, key, update, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Component] World::remove(
+  self : World,
+  entity : @core.Entity,
+  key? : ComponentKey[T] = T::component(),
+  loc~ : SourceLoc,
+) -> Bool raise EcsError {
+  self.remove_by_key(entity, key, loc~)
 }
 
 ///|

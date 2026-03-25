@@ -178,12 +178,21 @@ fn setup(
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.PointLight::component())
-  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
-  world
-  .component(@transform.Transform::component())
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    light,
+    @pbr.PointLight::component(),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @pbr.PointLight::component(),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.Transform::component(),
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -221,16 +230,17 @@ fn spawn_instructions(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
-  world
-  .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
+  try! world.set_by_key(
+    overlay_camera,
+    @ui.IsDefaultUiCamera::component(),
+    @ui.IsDefaultUiCamera::default(),
+  )
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
@@ -239,38 +249,76 @@ fn spawn_instructions(
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text,
     @text.Text::new(
       "Controls:\nM: Toggle between sampling boundary and interior.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning left/right.",
     ),
   )
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(
+      "Controls:\nM: Toggle between sampling boundary and interior.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning left/right.",
+    ),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
 }
 
 ///|
@@ -310,15 +358,15 @@ fn spawn_sample_point(
     @pbr.MeshMaterial3d::new(point_material.handle),
     @transform.Transform::from_translation(sample),
   ).spawn(world)
-  world.component(SamplePoint::component()).insert(entity, SamplePoint::{  })
+  try! world.set_by_key(entity, SamplePoint::component(), SamplePoint::{  })
 }
 
 ///|
 fn clear_sample_points(world : @ecs.World) -> Unit {
   let points : Array[@core.Entity] = []
-  world
-  .component(SamplePoint::component())
-  .for_each(fn(entity, _sample_point) { points.push(entity) })
+  world.for_each_component(SamplePoint::component(), fn(entity, _sample_point) {
+    points.push(entity)
+  })
   for entity in points {
     try! world.despawn(entity)
   }
@@ -407,17 +455,14 @@ fn handle_mouse(
   }
 
   let mut camera_entity : @core.Entity? = None
-  world
-  .component(@pbr.Camera3d::component())
-  .for_each(fn(entity, _camera) {
+  world.for_each_component(@pbr.Camera3d::component(), fn(entity, _camera) {
     if camera_entity is None {
       camera_entity = Some(entity)
     }
   })
   guard camera_entity is Some(camera_entity) else { return }
-
-  let transform_store = world.component(@transform.Transform::component())
-  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+  guard (try! world.get_by_key(camera_entity, @transform.Transform::component()))
+    is Some(camera_transform) else {
     return
   }
   let next_transform = camera_transform
@@ -425,7 +470,13 @@ fn handle_mouse(
     @math.Vec3::zero(),
     @math.Quat::from_rotation_y(-delta.x / 150.0F),
   )
-  ignore(transform_store.set(camera_entity, next_transform))
+  ignore(
+    try! world.replace(
+      camera_entity,
+      @transform.Transform::component(),
+      next_transform,
+    ),
+  )
 }
 
 ///|

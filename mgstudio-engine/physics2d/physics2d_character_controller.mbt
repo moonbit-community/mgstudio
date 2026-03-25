@@ -204,22 +204,21 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
     None =>
       abort("Missing Time<Fixed> resource in physics2d character controller")
   }
-  let transform_store = @transform.get_transform_store(ecs_world)
-  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
-  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
-  let controller_store = get_kinematic_character_controller2d_store(ecs_world)
-  let output_store = get_kinematic_character_controller_output2d_store(
-    ecs_world,
-  )
-  controller_store.for_each(fn(entity, kcc) {
+  ecs_world.for_each_component(ecs_key_kinematic_character_controller2d, fn(
+    entity,
+    kcc,
+  ) {
     // Avoid conflicting with rigid-body driven motion for now.
-    if body_handle_store.contains(entity) {
+    if (try! ecs_world.contains_by_key(entity, ecs_key_rapier_body_handle2d)) {
       return
     }
     if kcc.translation.x == 0.0F && kcc.translation.y == 0.0F {
       return
     }
-    guard collider_handle_store.get(entity) is Some(ch) else { return }
+    guard (try! ecs_world.get_by_key(entity, ecs_key_rapier_collider_handle2d))
+      is Some(ch) else {
+      return
+    }
     guard ctx.colliders.get(ch.handle) is Some(col) else { return }
     if col.parent() is Some(_) {
       return
@@ -243,9 +242,9 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
     let eff = rapier_vec2_to_mg(movement.translation())
 
     // Apply to ECS transform.
-    let mut t = transform_store
-      .get(entity)
-      .unwrap_or(@transform.Transform::identity())
+    let mut t = (try! ecs_world.get_by_key(entity, @transform.ecs_key_transform)).unwrap_or(
+      @transform.Transform::identity(),
+    )
     t = @transform.Transform::new(
       @math.Vec3::new(
         t.translation.x + eff.x,
@@ -255,10 +254,10 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
       t.rotation,
       t.scale,
     )
-    if transform_store.contains(entity) {
-      transform_store.set(entity, t) |> ignore
+    if (try! ecs_world.contains_by_key(entity, @transform.ecs_key_transform)) {
+      try! (ecs_world.replace(entity, @transform.ecs_key_transform, t) |> ignore)
     } else {
-      transform_store.insert(entity, t)
+      try! ecs_world.set_by_key(entity, @transform.ecs_key_transform, t)
     }
 
     // Apply to Rapier collider immediately so the next physics step sees it.
@@ -275,16 +274,24 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
       sliding_down_slope: movement.is_sliding_down_slope(),
       collisions,
     }
-    if output_store.contains(entity) {
-      output_store.set(entity, out) |> ignore
+    if (try! ecs_world.contains_by_key(
+        entity, ecs_key_kinematic_character_controller_output2d,
+      )) {
+      try! (ecs_world.replace(
+        entity, ecs_key_kinematic_character_controller_output2d, out,
+      )
+      |> ignore)
     } else {
-      output_store.insert(entity, out)
+      try! ecs_world.set_by_key(
+        entity, ecs_key_kinematic_character_controller_output2d, out,
+      )
     }
-    controller_store.set(
+    try! (ecs_world.replace(
       entity,
+      ecs_key_kinematic_character_controller2d,
       KinematicCharacterController2d::{ ..kcc }.reset_translation(),
     )
-    |> ignore
+    |> ignore)
   })
 
   // Colliders moved; keep query pipeline consistent.

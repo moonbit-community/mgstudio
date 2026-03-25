@@ -273,11 +273,10 @@ fn setup(world : @ecs.World) -> Unit {
     .with_font_size(18.0F)
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
@@ -413,10 +412,14 @@ fn update_spline_mode_text(
   handle : @app.Res[SplineModeTextHandle],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(handle.get().entity) is Some(text_value) else { return }
+  guard (try! world.get_by_key(handle.get().entity, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
   text_value.content = "Spline: " + spline_mode_label(spline_mode.get())
-  ignore(text_store.set(handle.get().entity, text_value))
+  ignore(
+    try! world.replace(handle.get().entity, @text.ecs_key_text, text_value),
+  )
 }
 
 ///|
@@ -425,10 +428,14 @@ fn update_cycling_mode_text(
   handle : @app.Res[CyclingModeTextHandle],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(handle.get().entity) is Some(text_value) else { return }
+  guard (try! world.get_by_key(handle.get().entity, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
   text_value.content = cycling_mode_label(cycling_mode.get())
-  ignore(text_store.set(handle.get().entity, text_value))
+  ignore(
+    try! world.replace(handle.get().entity, @text.ecs_key_text, text_value),
+  )
 }
 
 ///|
@@ -574,23 +581,34 @@ fn spawn_ui_text_line(
   content : String,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(entity, @hierarchy.Parent::new(parent))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_node,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
-  world.component(@text.ecs_key_text).insert(entity, @text.Text::new(content))
-  world.component(@text.ecs_key_text_font).insert(entity, font)
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
+  try! world.set_by_key(entity, @text.ecs_key_text_font, font)
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(entity, @text.ecs_key_text_font, font)
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
   entity
 }
 

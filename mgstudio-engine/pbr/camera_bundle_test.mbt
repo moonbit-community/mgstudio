@@ -99,7 +99,7 @@ test "render3d: Camera3dBundle stores window render target" {
   )
   let entity = bundle.spawn(world)
 
-  let target : @sprite.RenderTarget? = try! world.get(
+  let target : @sprite.RenderTarget? = try! world.get_by_key(
     entity, @sprite.ecs_key_render_target,
   )
   inspect(
@@ -109,7 +109,7 @@ test "render3d: Camera3dBundle stores window render target" {
     }),
     content="Some(true)",
   )
-  let frustum : Frustum? = try! world.get(entity, ecs_key_frustum)
+  let frustum : Frustum? = try! world.get_by_key(entity, ecs_key_frustum)
   inspect(
     frustum.map(fn(value) { value.half_spaces.length() == 6 }),
     content="Some(true)",
@@ -126,7 +126,9 @@ test "render3d: Camera3dBundle stores custom projection payload" {
   )
   let entity = bundle.spawn(world)
 
-  let projection : Projection? = try! world.get(entity, ecs_key_projection)
+  let projection : Projection? = try! world.get_by_key(
+    entity, ecs_key_projection,
+  )
   let ok = match projection {
     Some(Projection::Custom(custom)) => {
       let payload : CameraBundleCustomProjection3d? = custom.get()
@@ -164,15 +166,15 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
     abort("expected Commands::spawn to return an entity")
   }
   inspect(
-    (try! app.world().get(entity, ecs_key_camera3d)) is Some(_),
+    (try! app.world().get_by_key(entity, ecs_key_camera3d)) is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get(entity, ecs_key_projection)) is Some(_),
+    (try! app.world().get_by_key(entity, ecs_key_projection)) is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get(entity, ecs_key_color_grading)) is Some(_),
+    (try! app.world().get_by_key(entity, ecs_key_color_grading)) is Some(_),
     content="true",
   )
 }
@@ -185,11 +187,12 @@ test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
     @transform.Transform::identity(),
   ).spawn(world)
 
-  let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {
+  let tonemapping_ok = match
+    (try! world.get_by_key(entity, ecs_key_tonemapping)) {
     Some(TonyMcMapface) => true
     _ => false
   }
-  let deband_ok = match (try! world.get(entity, ecs_key_deband_dither)) {
+  let deband_ok = match (try! world.get_by_key(entity, ecs_key_deband_dither)) {
     Some(Enabled) => true
     _ => false
   }
@@ -203,49 +206,57 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
   try! register_render3d_required_components(world)
   let entity = world.spawn_empty()
 
-  try! (world.set(entity, ecs_key_camera3d, Camera3d::default()) |> ignore)
+  try! (world.set_by_key(entity, ecs_key_camera3d, Camera3d::default())
+  |> ignore)
 
   inspect(
-    (try! world.get(entity, @sprite.ecs_key_camera)) is Some(_),
+    (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(_),
     content="true",
   )
   inspect(
-    (try! world.get(entity, ecs_key_projection)) is Some(_),
+    (try! world.get_by_key(entity, ecs_key_projection)) is Some(_),
     content="true",
   )
   inspect(
-    (try! world.get(entity, @transform.ecs_key_transform)) is Some(_),
+    (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_),
     content="true",
   )
   inspect(
-    (try! world.get(entity, @sprite.ecs_key_render_target)) is Some(_),
+    (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) is Some(_),
     content="true",
   )
   inspect(
-    (try! world.get(entity, @sprite.ecs_key_render_layers)) is Some(_),
+    (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) is Some(_),
     content="true",
   )
   inspect(
-    (try! world.get(entity, ecs_key_tonemapping)) is Some(_),
+    (try! world.get_by_key(entity, ecs_key_tonemapping)) is Some(_),
     content="true",
   )
   inspect(
-    (try! world.get(entity, ecs_key_deband_dither)) is Some(_),
+    (try! world.get_by_key(entity, ecs_key_deband_dither)) is Some(_),
     content="true",
   )
-  inspect((try! world.get(entity, ecs_key_exposure)) is Some(_), content="true")
-  inspect((try! world.get(entity, ecs_key_frustum)) is Some(_), content="true")
+  inspect(
+    (try! world.get_by_key(entity, ecs_key_exposure)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get_by_key(entity, ecs_key_frustum)) is Some(_),
+    content="true",
+  )
 
-  let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {
+  let tonemapping_ok = match
+    (try! world.get_by_key(entity, ecs_key_tonemapping)) {
     Some(TonyMcMapface) => true
     _ => false
   }
-  let deband_ok = match (try! world.get(entity, ecs_key_deband_dither)) {
+  let deband_ok = match (try! world.get_by_key(entity, ecs_key_deband_dither)) {
     Some(Enabled) => true
     _ => false
   }
   let target_ok = match
-    (try! world.get(entity, @sprite.ecs_key_render_target)) {
+    (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) {
     Some(@sprite.RenderTarget::Screen) => true
     _ => false
   }
@@ -271,19 +282,20 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
   }
 
   inspect(
-    (try! app.world().get(entity, ecs_key_camera3d)) is Some(_),
+    (try! app.world().get_by_key(entity, ecs_key_camera3d)) is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get(entity, @sprite.ecs_key_camera)) is Some(_),
+    (try! app.world().get_by_key(entity, @sprite.ecs_key_camera)) is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get(entity, ecs_key_projection)) is Some(_),
+    (try! app.world().get_by_key(entity, ecs_key_projection)) is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get(entity, @transform.ecs_key_transform)) is Some(_),
+    (try! app.world().get_by_key(entity, @transform.ecs_key_transform))
+    is Some(_),
     content="true",
   )
 }

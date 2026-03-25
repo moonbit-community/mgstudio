@@ -37,7 +37,7 @@ fn[T : @ecs.Component] insert_spawn_component(
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
   ignore(sequence)
-  world.set_component(entity, component, loc~)
+  world.set_by_key(entity, T::component(), component, loc~)
 }
 
 ///|
@@ -398,7 +398,7 @@ pub fn[T] EntityCommands::remove_component(
   self.commands.queue.push({
     run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
       if world.is_alive(entity) {
-        ignore(world.remove(entity, key, loc~))
+        ignore(world.remove_by_key(entity, key, loc~))
       }
     },
     error_handler: None,

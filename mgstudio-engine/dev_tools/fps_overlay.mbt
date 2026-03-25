@@ -412,26 +412,46 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   }
 
   let root = world.spawn_empty()
-  try! world.set_component(root, @ui.UiRoot::default())
-  try! world.set_component(
-    root,
+  try! (world.entity_mut(root).insert_component(@ui.UiRoot::default()) |> ignore)
+  try! (world
+  .entity_mut(root)
+  .insert_component(
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_flex_direction(@ui.FlexDirection::Column),
   )
-  try! world.set_component(root, @ui.GlobalZIndex::new(FPS_OVERLAY_ZINDEX))
+  |> ignore)
+  try! (world
+  .entity_mut(root)
+  .insert_component(@ui.GlobalZIndex::new(FPS_OVERLAY_ZINDEX))
+  |> ignore)
 
   let text_entity = world.spawn_empty()
-  try! world.set_component(text_entity, @hierarchy.Parent::new(root))
-  try! world.set_component(text_entity, @ui.Node::default())
-  try! world.set_component(text_entity, @text.Text::new(DEFAULT_OVERLAY_TEXT))
-  try! world.set_component(text_entity, config.text_config)
-  try! world.set_component(text_entity, @text.TextColor::new(config.text_color))
+  try! (world
+  .entity_mut(text_entity)
+  .insert_component(@hierarchy.Parent::new(root))
+  |> ignore)
+  try! (world.entity_mut(text_entity).insert_component(@ui.Node::default())
+  |> ignore)
+  try! (world
+  .entity_mut(text_entity)
+  .insert_component(@text.Text::new(DEFAULT_OVERLAY_TEXT))
+  |> ignore)
+  try! (world.entity_mut(text_entity).insert_component(config.text_config)
+  |> ignore)
+  try! (world
+  .entity_mut(text_entity)
+  .insert_component(@text.TextColor::new(config.text_color))
+  |> ignore)
 
   let graph_entity = world.spawn_empty()
-  try! world.set_component(graph_entity, @hierarchy.Parent::new(root))
-  try! world.set_component(
-    graph_entity,
+  try! (world
+  .entity_mut(graph_entity)
+  .insert_component(@hierarchy.Parent::new(root))
+  |> ignore)
+  try! (world
+  .entity_mut(graph_entity)
+  .insert_component(
     @ui.Node::default()
     .with_width(@ui.Val::Px(fps_overlay_graph_width(config)))
     .with_height(@ui.Val::Px(fps_overlay_graph_height(config)))
@@ -442,10 +462,13 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
       @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Hidden),
     ),
   )
-  try! world.set_component(
-    graph_entity,
+  |> ignore)
+  try! (world
+  .entity_mut(graph_entity)
+  .insert_component(
     @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
   )
+  |> ignore)
 
   state_ref.val.root_entity = Some(root)
   state_ref.val.text_entity = Some(text_entity)
@@ -460,7 +483,7 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
   if state_ref.val.text_entity is Some(text_entity) {
     ignore(
       try
-        world.update_component(text_entity, fn(node : @ui.Node) {
+        world.update(text_entity, fn(node : @ui.Node) {
           node.with_display(fps_overlay_text_display(config))
         })
       catch {
@@ -473,7 +496,10 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
 
   if state_ref.val.text_entity is Some(text_entity) {
     ignore(
-      try world.set_component(text_entity, config.text_config) catch {
+      try
+        world.entity_mut(text_entity).insert_component(config.text_config)
+        |> ignore
+      catch {
         _ => false
       } noraise {
         _ => true
@@ -481,8 +507,9 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
     )
     ignore(
       try
-        world.set_component(
+        world.replace(
           text_entity,
+          @text.ecs_key_text_color,
           @text.TextColor::new(config.text_color),
         )
       catch {
@@ -496,7 +523,7 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
   if state_ref.val.graph_entity is Some(graph_entity) {
     ignore(
       try
-        world.update_component(graph_entity, fn(node : @ui.Node) {
+        world.update(graph_entity, fn(node : @ui.Node) {
           node
           .with_width(@ui.Val::Px(fps_overlay_graph_width(config)))
           .with_height(@ui.Val::Px(fps_overlay_graph_height(config)))
@@ -520,12 +547,17 @@ fn fps_overlay_resize_bars(
 ) -> Unit {
   while state_ref.val.bar_entities.length() < count {
     let bar = world.spawn_empty()
-    try! world.set_component(bar, @hierarchy.Parent::new(graph_entity))
-    try! world.set_component(bar, @ui.Node::default())
-    try! world.set_component(
-      bar,
+    try! (world
+    .entity_mut(bar)
+    .insert_component(@hierarchy.Parent::new(graph_entity))
+    |> ignore)
+    try! (world.entity_mut(bar).insert_component(@ui.Node::default()) |> ignore)
+    try! (world
+    .entity_mut(bar)
+    .insert_component(
       @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
     )
+    |> ignore)
     state_ref.val.bar_entities.push(bar)
   }
   while state_ref.val.bar_entities.length() > count {
@@ -549,10 +581,10 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   }
   let next_text = fps_overlay_text_value(fps_value)
   if state_ref.val.text_entity is Some(text_entity) {
-    let text_store = world.component(@text.ecs_key_text)
-    if text_store.get(text_entity) is Some(text_value) {
+    if (try! world.get_by_key(text_entity, @text.ecs_key_text))
+      is Some(text_value) {
       text_value.content = next_text
-      ignore(text_store.set(text_entity, text_value))
+      ignore(try! world.replace(text_entity, @text.ecs_key_text, text_value))
     }
   }
 
@@ -582,7 +614,7 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
     )
     ignore(
       try
-        world.update_component(bar_entity, fn(node : @ui.Node) {
+        world.update(bar_entity, fn(node : @ui.Node) {
           node.with_width(@ui.Val::Px(width)).with_height(@ui.Val::Px(height))
         })
       catch {
@@ -591,11 +623,13 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
         value => value
       },
     )
-    try! world.set_component(
+    try! (world.replace(
       bar_entity,
+      @ui.ecs_key_background_color,
       @ui.BackgroundColor::new(
         fps_overlay_graph_color(values[i], config.frame_time_graph_config),
       ),
     )
+    |> ignore)
   }
 }

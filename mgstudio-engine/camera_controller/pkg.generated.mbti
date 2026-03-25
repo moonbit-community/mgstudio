@@ -14,10 +14,6 @@ pub let ecs_key_free_camera_state : @ecs.ComponentKey[@pbr.FreeCameraState]
 
 pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn get_free_camera_state_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.FreeCameraState]
-
-pub fn get_free_camera_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.FreeCamera]
-
 pub fn run_free_camera_controller(@ecs.World) -> Unit
 
 // Errors

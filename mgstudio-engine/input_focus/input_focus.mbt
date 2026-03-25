@@ -187,7 +187,7 @@ fn input_focus_parent_entity(
 ) -> @core.Entity? {
   match
     (
-      try world.get_component(entity) catch {
+      try world.entity(entity).get() catch {
         _ => None
       } noraise {
         value => value

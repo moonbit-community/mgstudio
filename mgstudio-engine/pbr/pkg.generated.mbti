@@ -191,123 +191,15 @@ pub fn fog_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn get_bloom_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Bloom]
-
-pub fn get_camera3d_store(@ecs.World) -> @ecs.ComponentAccess[Camera3d]
-
-pub fn get_chromatic_aberration_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ChromaticAberration]
-
-pub fn get_clustered_decal_store(@ecs.World) -> @ecs.ComponentAccess[ClusteredDecal]
-
-pub fn get_color_grading_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ColorGrading]
-
-pub fn get_contact_shadows_store(@ecs.World) -> @ecs.ComponentAccess[ContactShadows]
-
-pub fn get_deband_dither_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.DebandDither]
-
 pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[@material.DefaultOpaqueRendererMethod]
-
-pub fn get_deferred_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.DeferredPrepass]
-
-pub fn get_depth_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.DepthPrepass]
 
 pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.DirectionalLightShadowMap]
 
-pub fn get_directional_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.DirectionalLight]
-
-pub fn get_directional_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@light.DirectionalLightTexture]
-
-pub fn get_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.EnvironmentMapLight]
-
-pub fn get_exposure_store(@ecs.World) -> @ecs.ComponentAccess[Exposure]
-
-pub fn get_forward_decal_material_ext_store(@ecs.World) -> @ecs.ComponentAccess[@material.ForwardDecalMaterialExt]
-
-pub fn get_forward_decal_store(@ecs.World) -> @ecs.ComponentAccess[ForwardDecal]
-
-pub fn get_free_camera_state_store(@ecs.World) -> @ecs.ComponentAccess[FreeCameraState]
-
-pub fn get_free_camera_store(@ecs.World) -> @ecs.ComponentAccess[FreeCamera]
-
-pub fn get_frustum_store(@ecs.World) -> @ecs.ComponentAccess[Frustum]
-
-pub fn get_fxaa_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Fxaa]
-
-pub fn get_generated_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.GeneratedEnvironmentMapLight]
-
 pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@light.GlobalAmbientLight]
-
-pub fn get_hdr_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.Hdr]
-
-pub fn get_irradiance_volume_store(@ecs.World) -> @ecs.ComponentAccess[@light.IrradianceVolume]
-
-pub fn get_light_probe_store(@ecs.World) -> @ecs.ComponentAccess[@light.LightProbe]
-
-pub fn get_mesh3d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh3d]
-
-pub fn get_mesh_material3d_store(@ecs.World) -> @ecs.ComponentAccess[@material.MeshMaterial3d]
-
-pub fn get_motion_blur_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.MotionBlur]
-
-pub fn get_motion_vector_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.MotionVectorPrepass]
-
-pub fn get_msaa_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.Msaa]
-
-pub fn get_no_indirect_drawing_store(@ecs.World) -> @ecs.ComponentAccess[NoIndirectDrawing]
-
-pub fn get_no_wireframe_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe]
-
-pub fn get_normal_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.NormalPrepass]
-
-pub fn get_not_shadow_caster_store(@ecs.World) -> @ecs.ComponentAccess[NotShadowCaster]
-
-pub fn get_not_shadow_receiver_store(@ecs.World) -> @ecs.ComponentAccess[NotShadowReceiver]
-
-pub fn get_occlusion_culling_store(@ecs.World) -> @ecs.ComponentAccess[OcclusionCulling]
-
-pub fn get_order_independent_transparency_settings_store(@ecs.World) -> @ecs.ComponentAccess[OrderIndependentTransparencySettings]
-
-pub fn get_parallax_correction_store(@ecs.World) -> @ecs.ComponentAccess[@light.ParallaxCorrection]
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.PointLightShadowMap]
 
-pub fn get_point_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.PointLight]
-
-pub fn get_point_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@light.PointLightTexture]
-
-pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[Projection]
-
-pub fn get_screen_space_ambient_occlusion_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ScreenSpaceAmbientOcclusion]
-
-pub fn get_screen_space_reflections_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ScreenSpaceReflections]
-
-pub fn get_screen_space_transmission_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ScreenSpaceTransmission]
-
-pub fn get_shadow_filtering_method_store(@ecs.World) -> @ecs.ComponentAccess[ShadowFilteringMethod]
-
-pub fn get_skybox_store(@ecs.World) -> @ecs.ComponentAccess[Skybox]
-
-pub fn get_spot_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.SpotLight]
-
-pub fn get_spot_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@light.SpotLightTexture]
-
-pub fn get_sub_camera_view3d_store(@ecs.World) -> @ecs.ComponentAccess[SubCameraView3d]
-
-pub fn get_temporal_anti_aliasing_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.TemporalAntiAliasing]
-
-pub fn get_temporal_jitter_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.TemporalJitter]
-
-pub fn get_tonemapping_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Tonemapping]
-
-pub fn get_transmitted_shadow_receiver_store(@ecs.World) -> @ecs.ComponentAccess[TransmittedShadowReceiver]
-
-pub fn get_vignette_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Vignette]
-
-pub fn get_wireframe_color_store(@ecs.World) -> @ecs.ComponentAccess[WireframeColor]
-
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
-
-pub fn get_wireframe_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe]
 
 pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

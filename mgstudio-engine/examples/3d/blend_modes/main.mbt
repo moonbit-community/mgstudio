@@ -119,7 +119,7 @@ fn blend_modes_display_text(
   world : @ecs.World,
 ) -> String {
   let alpha_text = ((blend_modes_state.val.alpha * 100.0F).round() / 100.0F).to_string()
-  let hdr_on = world.component(@pbr.ecs_key_hdr).contains(camera_entity)
+  let hdr_on = try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
   "  HDR: " + (if hdr_on { "ON " } else { "OFF" }) + "\nAlpha: " + alpha_text
 }
 
@@ -140,87 +140,88 @@ fn setup_ui_overlay(
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
 
   let controls_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(controls_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     controls_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    controls_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    controls_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(controls_entity, @text.Text::new(CONTROL_TEXT))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     controls_entity,
+    @text.ecs_key_text,
+    @text.Text::new(CONTROL_TEXT),
+  )
+  try! world.set_by_key(
+    controls_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(14.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(
+  try! world.set_by_key(
     controls_entity,
+    @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(
+  try! world.set_by_key(
     controls_entity,
+    @text.ecs_key_text_layout,
     @text.TextLayout::new_with_justify(@text.Justify::Left),
   )
 
   guard blend_modes_state.val.camera is Some(camera_entity) else { return }
   let display_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(display_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     display_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    display_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_right(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(
+  try! world.set_by_key(
     display_entity,
+    @text.ecs_key_text,
     @text.Text::new(blend_modes_display_text(camera_entity, world)),
   )
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     display_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(14.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(
+  try! world.set_by_key(
     display_entity,
+    @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(
+  try! world.set_by_key(
     display_entity,
+    @text.ecs_key_text_layout,
     @text.TextLayout::new_with_justify(@text.Justify::Left),
   )
   blend_modes_state.val.display_text = Some(display_entity)
@@ -238,30 +239,49 @@ fn setup_ui_overlay(
     let target = pair.0
     let text = pair.1
     let label_node = world.spawn_empty()
-    world
-    .component(@hierarchy.ecs_key_parent)
-    .insert(label_node, @hierarchy.Parent::new(root))
-    world
-    .component(@ui.ecs_key_node)
-    .insert(
+    try! world.set_by_key(
       label_node,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(root),
+    )
+    try! world.set_by_key(
+      label_node,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(root),
+    )
+    try! world.set_by_key(
+      label_node,
+      @ui.ecs_key_node,
       @ui.Node::default()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(0.0F))
       .with_top(@ui.Val::Px(0.0F)),
     )
-    world
-    .component(@text.ecs_key_text)
-    .insert(label_node, @text.Text::new(text))
-    world
-    .component(@text.ecs_key_text_font)
-    .insert(
+    try! world.set_by_key(label_node, @text.ecs_key_text, @text.Text::new(text))
+    try! world.set_by_key(
       label_node,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(root),
+    )
+    try! world.set_by_key(
+      label_node,
+      @ui.ecs_key_node,
+      @ui.Node::default()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_left(@ui.Val::Px(0.0F))
+      .with_top(@ui.Val::Px(0.0F)),
+    )
+    try! world.set_by_key(label_node, @text.ecs_key_text, @text.Text::new(text))
+    try! world.set_by_key(
+      label_node,
+      @text.ecs_key_text_font,
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
     )
-    world
-    .component(@text.ecs_key_text_color)
-    .insert(label_node, @text.TextColor::new(label_color))
+    try! world.set_by_key(
+      label_node,
+      @text.ecs_key_text_color,
+      @text.TextColor::new(label_color),
+    )
     blend_modes_state.val.labels.push({ node: label_node, target })
   }
 }
@@ -350,17 +370,23 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
   let state = blend_modes_state.val
   guard state.camera is Some(camera_entity) else { return }
   guard state.display_text is Some(display_entity) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(display_entity) is Some(display_text) else { return }
+  guard (try! world.get_by_key(display_entity, @text.ecs_key_text))
+    is Some(display_text) else {
+    return
+  }
   display_text.content = blend_modes_display_text(camera_entity, world)
-  ignore(text_store.set(display_entity, display_text))
+  ignore(try! world.replace(display_entity, @text.ecs_key_text, display_text))
 
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = world.component(@pbr.ecs_key_projection)
-  guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+  guard (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+    is Some(camera) else {
+    return
+  }
+  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
+    is Some(projection) else {
+    return
+  }
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(camera_transform) else {
     return
   }
 
@@ -369,10 +395,10 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     @window.window_height(),
   )
   let scale_factor = @window.window_scale_factor()
-  let node_store = world.component(@ui.ecs_key_node)
 
   for label in state.labels {
-    guard transform_store.get(label.target) is Some(target_transform) else {
+    guard (try! world.get_by_key(label.target, @transform.ecs_key_transform))
+      is Some(target_transform) else {
       continue
     }
     let world_position = target_transform.translation.add(
@@ -384,14 +410,15 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
       is Some(screen_position) else {
       continue
     }
-    if node_store.get(label.node) is Some(node) {
-      node_store.set(
+    if (try! world.get_by_key(label.node, @ui.ecs_key_node)) is Some(node) {
+      try! (world.replace(
         label.node,
+        @ui.ecs_key_node,
         node
         .with_left(@ui.Val::Px(screen_position.x))
         .with_top(@ui.Val::Px(screen_position.y)),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }
@@ -517,12 +544,21 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -531,7 +567,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
   blend_modes_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -579,25 +615,27 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   guard state.camera is Some(camera_entity) else { return }
   if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    let hdr_store = world.component(@pbr.ecs_key_hdr)
-    if hdr_store.contains(camera_entity) {
-      hdr_store.remove(camera_entity) |> ignore
+    if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)) {
+      try! (world.take(camera_entity, @pbr.ecs_key_hdr) |> ignore)
     } else {
-      hdr_store.insert(camera_entity, @pbr.Hdr::default())
+      try! world.set_by_key(
+        camera_entity,
+        @pbr.ecs_key_hdr,
+        @pbr.Hdr::default(),
+      )
     }
   }
   let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
   let camera_z = @math.cos(state.camera_angle) * CAMERA_RADIUS
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     camera_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(camera_x, 2.5F, camera_z).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  |> ignore
+  |> ignore)
 
   for controlled in state.materials {
     if @pbr.standard_material_get(controlled.handle) is Some(material) {

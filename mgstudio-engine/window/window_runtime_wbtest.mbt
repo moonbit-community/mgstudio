@@ -44,7 +44,7 @@ test "window runtime: create pass is separated from prepare pass" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, Window::default())
+  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
 
   window_backend_prepare_system(world)
   inspect(window_host_entries(world).length(), content="0")
@@ -61,7 +61,7 @@ test "window runtime: minimize request is consumed during apply" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, Window::default())
+  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
 
   window_backend_create_windows_system(world)
   ignore(
@@ -73,7 +73,7 @@ test "window runtime: minimize request is consumed during apply" {
   )
   window_backend_apply_changed_windows_system(world)
 
-  let stored_window = match (try! world.get_component(entity) : Window?) {
+  let stored_window = match (try! world.entity(entity).get() : Window?) {
     Some(window) => window
     None => abort("missing window component")
   }
@@ -90,7 +90,7 @@ test "window runtime: unsupported transparent and canvas updates are reverted" {
   let entity = world.spawn()
   let initial_window = Window::default()
   initial_window.canvas = Some("#existing")
-  try! world.set_component(entity, initial_window)
+  try! (world.entity_mut(entity).insert_component(initial_window) |> ignore)
 
   window_backend_create_windows_system(world)
   ignore(
@@ -103,7 +103,7 @@ test "window runtime: unsupported transparent and canvas updates are reverted" {
   )
   window_backend_apply_changed_windows_system(world)
 
-  let stored_window = match (try! world.get_component(entity) : Window?) {
+  let stored_window = match (try! world.entity(entity).get() : Window?) {
     Some(window) => window
     None => abort("missing window component")
   }
@@ -122,7 +122,7 @@ test "window runtime: unsupported create-only name taskbar and clip updates are 
   initial_window.name = Some("main-window")
   initial_window.skip_taskbar = true
   initial_window.clip_children = false
-  try! world.set_component(entity, initial_window)
+  try! (world.entity_mut(entity).insert_component(initial_window) |> ignore)
 
   window_backend_create_windows_system(world)
   ignore(
@@ -136,7 +136,7 @@ test "window runtime: unsupported create-only name taskbar and clip updates are 
   )
   window_backend_apply_changed_windows_system(world)
 
-  let stored_window = match (try! world.get_component(entity) : Window?) {
+  let stored_window = match (try! world.entity(entity).get() : Window?) {
     Some(window) => window
     None => abort("missing window component")
   }
@@ -152,7 +152,7 @@ test "window runtime: iOS preference fields remain mutable at runtime" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set_component(entity, Window::default())
+  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
 
   window_backend_create_windows_system(world)
   ignore(
@@ -166,7 +166,7 @@ test "window runtime: iOS preference fields remain mutable at runtime" {
   )
   window_backend_apply_changed_windows_system(world)
 
-  let stored_window = match (try! world.get_component(entity) : Window?) {
+  let stored_window = match (try! world.entity(entity).get() : Window?) {
     Some(window) => window
     None => abort("missing window component")
   }

@@ -984,20 +984,6 @@ pub impl @ecs.Component for ForwardDecalMaterialExt with component() {
 }
 
 ///|
-pub fn get_mesh_material3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[MeshMaterial3d] {
-  world.component(ecs_key_mesh_material3d)
-}
-
-///|
-pub fn get_forward_decal_material_ext_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[ForwardDecalMaterialExt] {
-  world.component(ecs_key_forward_decal_material_ext)
-}
-
-///|
 pub fn get_default_opaque_renderer_method_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod] {

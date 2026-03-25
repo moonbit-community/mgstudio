@@ -121,20 +121,25 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
     .with_roundness(settings.vignette_roundness)
     .with_edge_compensation(settings.vignette_edge_compensation)
 
-  let chromatic_aberration_store = world.component(
-    @post_process.ecs_key_chromatic_aberration,
-  )
-  if chromatic_aberration_store.contains(camera_entity) {
-    chromatic_aberration_store.set(camera_entity, chromatic_aberration)
-    |> ignore
+  if (try! world.contains_by_key(
+      camera_entity, @post_process.ecs_key_chromatic_aberration,
+    )) {
+    try! (world.replace(
+      camera_entity, @post_process.ecs_key_chromatic_aberration, chromatic_aberration,
+    )
+    |> ignore)
   } else {
-    chromatic_aberration_store.insert(camera_entity, chromatic_aberration)
+    try! world.set_by_key(
+      camera_entity, @post_process.ecs_key_chromatic_aberration, chromatic_aberration,
+    )
   }
-  let vignette_store = world.component(@post_process.ecs_key_vignette)
-  if vignette_store.contains(camera_entity) {
-    vignette_store.set(camera_entity, vignette) |> ignore
+  if (try! world.contains_by_key(camera_entity, @post_process.ecs_key_vignette)) {
+    try! (world.replace(camera_entity, @post_process.ecs_key_vignette, vignette)
+    |> ignore)
   } else {
-    vignette_store.insert(camera_entity, vignette)
+    try! world.set_by_key(
+      camera_entity, @post_process.ecs_key_vignette, vignette,
+    )
   }
 }
 
@@ -185,11 +190,10 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_vignette(Some(@post_process.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
@@ -208,10 +212,9 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tonemapping_test = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     tonemapping_test,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -223,10 +226,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
 
   let flight_helmet = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     flight_helmet,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -236,26 +238,23 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     flight_helmet,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
     ),
   )
 
   let directional_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI).mul(
         @math.Quat::from_rotation_x(-0.15F * PI),

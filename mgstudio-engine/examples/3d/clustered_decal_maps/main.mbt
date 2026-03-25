@@ -185,15 +185,16 @@ fn spawn_plane(
 ///|
 fn spawn_light(world : @ecs.World) -> Unit {
   let point = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, false),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(8.0F, 16.0F, -8.0F))
+  try! world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(8.0F, 16.0F, -8.0F),
+  )
 }
 
 ///|
@@ -205,7 +206,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
 }
 
 ///|
@@ -312,7 +313,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
-  world.component(@pbr.ecs_key_clustered_decal).insert(entity, clustered_decal)
+  try! world.set_by_key(entity, @pbr.ecs_key_clustered_decal, clustered_decal)
   clustered_decal_maps_state.val.decals.push({
     entity,
     base_scale: size,
@@ -346,7 +347,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
       }
       continue
     }
-    if world.component(@transform.ecs_key_transform).get(decal.entity)
+    if (try! world.get_by_key(decal.entity, @transform.ecs_key_transform))
       is Some(transform) {
       let scale_factor = if age < DECAL_ANIMATE_IN_DURATION {
         clamp01(age / DECAL_ANIMATE_IN_DURATION)
@@ -357,10 +358,9 @@ fn animate_decals(world : @ecs.World) -> Unit {
           DECAL_ANIMATE_OUT_DURATION
         1.0F - clamp01(t)
       }
-      world
-      .component(@transform.ecs_key_transform)
-      .set(
+      try! (world.replace(
         decal.entity,
+        @transform.ecs_key_transform,
         transform.with_scale(
           @math.Vec3::new(
             decal.base_scale * scale_factor,
@@ -369,7 +369,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
           ),
         ),
       )
-      |> ignore
+      |> ignore)
     }
     alive.push({ ..decal, age, })
   }

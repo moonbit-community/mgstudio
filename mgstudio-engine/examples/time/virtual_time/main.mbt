@@ -159,7 +159,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.5F, 0.5F),
     ),
   ).spawn(world)
-  world.component(RealTime::component()).insert(real_sprite, RealTime::{  })
+  try! world.set_by_key(real_sprite, RealTime::component(), RealTime::{  })
 
   let virtual_sprite = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture)
@@ -171,9 +171,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.5F, 0.5F),
     ),
   ).spawn(world)
-  world
-  .component(VirtualTime::component())
-  .insert(virtual_sprite, VirtualTime::{  })
+  try! world.set_by_key(virtual_sprite, VirtualTime::component(), VirtualTime::{
+
+  })
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 

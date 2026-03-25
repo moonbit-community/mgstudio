@@ -129,8 +129,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_tonemapping(Some(@post_process.Tonemapping::TonyMcMapface))
     .with_bloom(Some(@post_process.Bloom::default()))
     .spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world.component(BloomCamera::component()).insert(camera, BloomCamera::{  })
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, BloomCamera::component(), BloomCamera::{  })
 
   let material_emissive1 = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
@@ -180,7 +180,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
           @math.Vec3::splat(scale),
         ),
       ).spawn(world)
-      world.component(Bouncing::component()).insert(entity, Bouncing::{  })
+      try! world.set_by_key(entity, Bouncing::component(), Bouncing::{  })
     }
   }
 
@@ -218,18 +218,23 @@ fn update_bloom_settings(
 ) -> Unit {
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
-  let bloom_store = world.component(@post_process.ecs_key_bloom)
-  let current_bloom = bloom_store.get(camera_entity)
+  let current_bloom = try! world.get_by_key(
+    camera_entity, @post_process.ecs_key_bloom,
+  )
   @text.text_set_content(instructions.get().handle, bloom_text(current_bloom))
 
   match current_bloom {
     None =>
       if keycode.just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @post_process.Bloom::default())
+        try! world.set_by_key(
+          camera_entity,
+          @post_process.ecs_key_bloom,
+          @post_process.Bloom::default(),
+        )
       }
     Some(bloom) => {
       if keycode.just_pressed(@window.KeyCode::Space) {
-        bloom_store.remove(camera_entity) |> ignore
+        try! (world.take(camera_entity, @post_process.ecs_key_bloom) |> ignore)
         return
       }
 
@@ -338,7 +343,8 @@ fn update_bloom_settings(
       }
 
       if changed {
-        bloom_store.set(camera_entity, next) |> ignore
+        try! (world.replace(camera_entity, @post_process.ecs_key_bloom, next)
+        |> ignore)
       }
     }
   }

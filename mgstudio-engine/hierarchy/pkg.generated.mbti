@@ -8,17 +8,9 @@ import {
 }
 
 // Values
-pub let ecs_components : Array[String]
-
 pub let ecs_key_children : @ecs.ComponentKey[Children]
 
 pub let ecs_key_parent : @ecs.ComponentKey[Parent]
-
-pub let ecs_resources : Array[String]
-
-pub fn get_children_store(@ecs.World) -> @ecs.ComponentAccess[Children]
-
-pub fn get_parent_store(@ecs.World) -> @ecs.ComponentAccess[Parent]
 
 // Errors
 

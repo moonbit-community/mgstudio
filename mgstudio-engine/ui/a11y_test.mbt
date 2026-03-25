@@ -29,9 +29,10 @@ test "ui: a11y derives button label from text children" {
   )
   get_ui_context_resource(world).insert(ctx)
   let btn = world.spawn_empty()
-  get_button_store(world).insert(btn, Button::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(btn, ecs_key_button, Button::default())
+  try! world.set_by_key(
     btn,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 10.0F),
@@ -40,13 +41,16 @@ test "ui: a11y derives button label from text children" {
     ),
   )
   let child = world.spawn_empty()
-  world.component(@text.ecs_key_text).insert(child, @text.Text::new("OK"))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(child, @text.TextFont::default())
-  @hierarchy.get_parent_store(world).insert(child, @hierarchy.Parent::new(btn))
-  @hierarchy.get_children_store(world).insert(
+  try! world.set_by_key(child, @text.ecs_key_text, @text.Text::new("OK"))
+  world.set_by_key(child, @text.ecs_key_text_font, @text.TextFont::default())
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(btn),
+  )
+  try! world.set_by_key(
     btn,
+    @hierarchy.ecs_key_children,
     @hierarchy.Children::new([child]),
   )
   ui_stack_system(world)
@@ -82,9 +86,10 @@ test "ui: a11y label widget sets value from self text" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  get_label_store(world).insert(e, Label::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(e, ecs_key_label, Label::default())
+  try! world.set_by_key(
     e,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(20.0F, 30.0F),
@@ -92,8 +97,8 @@ test "ui: a11y label widget sets value from self text" {
       ),
     ),
   )
-  world.component(@text.ecs_key_text).insert(e, @text.Text::new("Hello"))
-  world.component(@text.ecs_key_text_font).insert(e, @text.TextFont::default())
+  try! world.set_by_key(e, @text.ecs_key_text, @text.Text::new("Hello"))
+  try! world.set_by_key(e, @text.ecs_key_text_font, @text.TextFont::default())
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
   let target_id = @a11y.node_id_for_entity(e)
@@ -126,9 +131,10 @@ test "ui: a11y sets hidden when view visibility is false" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  get_button_store(world).insert(e, Button::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(e, ecs_key_button, Button::default())
+  try! world.set_by_key(
     e,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 10.0F),
@@ -136,8 +142,9 @@ test "ui: a11y sets hidden when view visibility is false" {
       ),
     ),
   )
-  @visibility.get_view_visibility_store(world).insert(
+  try! world.set_by_key(
     e,
+    @visibility.ecs_key_view_visibility,
     @visibility.ViewVisibility::new(false),
   )
   ui_stack_system(world)
@@ -170,9 +177,10 @@ test "ui: a11y sets clips_children when calculated clip exists" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  get_button_store(world).insert(e, Button::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(e, ecs_key_button, Button::default())
+  try! world.set_by_key(
     e,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 10.0F),
@@ -180,8 +188,9 @@ test "ui: a11y sets clips_children when calculated clip exists" {
       ),
     ),
   )
-  get_calculated_clip_store(world).insert(
+  try! world.set_by_key(
     e,
+    ecs_key_calculated_clip,
     CalculatedClip::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 10.0F),
@@ -219,9 +228,10 @@ test "ui: a11y label widget keeps empty value" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  get_label_store(world).insert(e, Label::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(e, ecs_key_label, Label::default())
+  try! world.set_by_key(
     e,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(20.0F, 30.0F),
@@ -261,9 +271,10 @@ test "ui: a11y focus follows A11yState instead of hover state" {
   get_ui_context_resource(world).insert(ctx)
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   let back = world.spawn_empty()
-  get_button_store(world).insert(back, Button::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(back, ecs_key_button, Button::default())
+  try! world.set_by_key(
     back,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 10.0F),
@@ -271,11 +282,12 @@ test "ui: a11y focus follows A11yState instead of hover state" {
       ),
     ),
   )
-  get_interaction_store(world).insert(back, Interaction::Hovered)
+  try! world.set_by_key(back, ecs_key_interaction, Interaction::Hovered)
   let front = world.spawn_empty()
-  get_button_store(world).insert(front, Button::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(front, ecs_key_button, Button::default())
+  try! world.set_by_key(
     front,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(20.0F, 20.0F),
@@ -283,12 +295,17 @@ test "ui: a11y focus follows A11yState instead of hover state" {
       ),
     ),
   )
-  get_interaction_store(world).insert(front, Interaction::Pressed)
-  @hierarchy.get_children_store(world).insert(
+  try! world.set_by_key(front, ecs_key_interaction, Interaction::Pressed)
+  try! world.set_by_key(
     back,
+    @hierarchy.ecs_key_children,
     @hierarchy.Children::new([front]),
   )
-  @hierarchy.get_parent_store(world).insert(front, @hierarchy.Parent::new(back))
+  try! world.set_by_key(
+    front,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(back),
+  )
   let a11y_state_res = @a11y.get_a11y_state_resource(world)
   let a11y_state = Ref::new(a11y_state_res.get().unwrap())
   @a11y.A11yState::set_focused_node(a11y_state, @a11y.node_id_for_entity(back))
@@ -316,13 +333,15 @@ test "ui: editable label node is exported as text input with SetValue" {
   get_ui_context_resource(world).insert(ctx)
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   let editable = world.spawn_empty()
-  get_label_store(world).insert(editable, Label::default())
-  get_accessibility_label_store(world).insert(
+  try! world.set_by_key(editable, ecs_key_label, Label::default())
+  try! world.set_by_key(
     editable,
+    ecs_key_accessibility_label,
     AccessibilityLabel::new("Status input"),
   )
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(
     editable,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(20.0F, 40.0F),
@@ -330,12 +349,12 @@ test "ui: editable label node is exported as text input with SetValue" {
       ),
     ),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(editable, @text.Text::new("Editable status"))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(editable, @text.TextFont::default())
+  try! world.set_by_key(
+    editable,
+    @text.ecs_key_text,
+    @text.Text::new("Editable status"),
+  )
+  world.set_by_key(editable, @text.ecs_key_text_font, @text.TextFont::default())
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
   let node_id = @a11y.node_id_for_entity(editable)

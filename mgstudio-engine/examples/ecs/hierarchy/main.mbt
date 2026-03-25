@@ -55,9 +55,11 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::splat(0.75F),
     ),
   ).spawn(world)
-  world
-  .component(@mg_hierarchy.ecs_key_parent)
-  .insert(first_child, @mg_hierarchy.Parent::new(parent))
+  try! world.set_by_key(
+    first_child,
+    @mg_hierarchy.ecs_key_parent,
+    @mg_hierarchy.Parent::new(parent),
+  )
 
   let second_child = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture).with_color(
@@ -67,9 +69,11 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::splat(0.75F),
     ),
   ).spawn(world)
-  world
-  .component(@mg_hierarchy.ecs_key_parent)
-  .insert(second_child, @mg_hierarchy.Parent::new(parent))
+  try! world.set_by_key(
+    second_child,
+    @mg_hierarchy.ecs_key_parent,
+    @mg_hierarchy.Parent::new(parent),
+  )
 }
 
 ///|
@@ -77,9 +81,6 @@ fn rotate(world : @ecs.World) -> Unit {
   let time = world_time(world)
   let delta = time.delta_seconds()
   let elapsed = time.elapsed_seconds()
-
-  let transform_store = @transform.get_transform_store(world)
-  let children_store = @mg_hierarchy.get_children_store(world)
   let parents = world.query_entities_filtered(
     (
       @ecs.With::new(@sprite.ecs_key_sprite),
@@ -88,19 +89,24 @@ fn rotate(world : @ecs.World) -> Unit {
   )
 
   try! parents.view(fn(_query_entity, parent) {
-    if transform_store.get(parent) is Some(transform) {
+    if (try! world.get_by_key(parent, @transform.ecs_key_transform))
+      is Some(transform) {
       let next = transform
       next.rotate_z(-@math.pi_half() * delta)
-      transform_store.set(parent, next) |> ignore
+      try! (world.replace(parent, @transform.ecs_key_transform, next) |> ignore)
     }
 
-    guard children_store.get(parent) is Some(children) else { return }
+    guard (try! world.get_by_key(parent, @mg_hierarchy.ecs_key_children))
+      is Some(children) else {
+      return
+    }
     let child_entities = children.entities()
     for child in child_entities {
-      if transform_store.get(child) is Some(transform) {
+      if (try! world.get_by_key(child, @transform.ecs_key_transform))
+        is Some(transform) {
         let next = transform
         next.rotate_z(@math.pi() * delta)
-        transform_store.set(child, next) |> ignore
+        try! (world.replace(child, @transform.ecs_key_transform, next) |> ignore)
       }
     }
 

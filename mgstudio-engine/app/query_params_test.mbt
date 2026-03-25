@@ -110,7 +110,7 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with matches(
   entity,
 ) {
   ignore(self)
-  world.component(query_marker_key).contains(entity)
+  try! world.contains_by_key(entity, query_marker_key)
 }
 
 ///|
@@ -132,8 +132,8 @@ test "app: Query1 system param exposes plain mutable query" {
   let world = @ecs.World::new()
   let e0 = world.spawn()
   let e1 = world.spawn()
-  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set(e1, query_position_key, QueryPosition::{ x: 3, y: 4 })
+  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 3, y: 4 })
 
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
@@ -150,11 +150,11 @@ test "app: Query1 system param exposes plain mutable query" {
 
   inspect(counts, content="[2, 2]")
   inspect(
-    try! app.world().get(e0, query_position_key),
+    try! app.world().get_by_key(e0, query_position_key),
     content="Some({x: 21, y: 2})",
   )
   inspect(
-    try! app.world().get(e1, query_position_key),
+    try! app.world().get_by_key(e1, query_position_key),
     content="Some({x: 23, y: 4})",
   )
 }
@@ -165,11 +165,17 @@ test "app: filtered query system param builds filters from component owners" {
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
-  try! world.set(e0, query_velocity_key, QueryVelocity::{ dx: 10, dy: 20 })
-  try! world.set(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
-  try! world.set(e1, query_velocity_key, QueryVelocity::{ dx: 30, dy: 40 })
-  try! world.set(e1, query_marker_key, QueryMarker::{  })
+  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, query_velocity_key, QueryVelocity::{
+    dx: 10,
+    dy: 20,
+  })
+  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, query_velocity_key, QueryVelocity::{
+    dx: 30,
+    dy: 40,
+  })
+  try! world.set_by_key(e1, query_marker_key, QueryMarker::{  })
 
   let hit_counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
@@ -191,11 +197,11 @@ test "app: filtered query system param builds filters from component owners" {
 
   inspect(hit_counts, content="[1]")
   inspect(
-    try! app.world().get(e0, query_velocity_key),
+    try! app.world().get_by_key(e0, query_velocity_key),
     content="Some({dx: 11, dy: 20})",
   )
   inspect(
-    try! app.world().get(e1, query_velocity_key),
+    try! app.world().get_by_key(e1, query_velocity_key),
     content="Some({dx: 30, dy: 40})",
   )
 }
@@ -206,11 +212,11 @@ test "app: optional query system param preserves some and none branches" {
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
-  try! world.set(e0, query_marker_key, QueryMarker::{  })
-  try! world.set(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
-  try! world.set(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
+  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  try! world.set_by_key(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
+  try! world.set_by_key(e0, query_marker_key, QueryMarker::{  })
+  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
+  try! world.set_by_key(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
 
   let seen : Array[(Int, Bool)] = []
   let counts : Array[Int] = []
@@ -237,11 +243,11 @@ test "app: optional query system param preserves some and none branches" {
   inspect(counts, content="[2]")
   inspect(seen, content="[(0, true), (1, false)]")
   inspect(
-    try! app.world().get(e0, query_velocity_key),
+    try! app.world().get_by_key(e0, query_velocity_key),
     content="Some({dx: 3, dy: 6})",
   )
   inspect(
-    try! app.world().get(e1, query_velocity_key),
+    try! app.world().get_by_key(e1, query_velocity_key),
     content="Some({dx: 7, dy: 14})",
   )
 }
@@ -252,9 +258,15 @@ test "app: Allow, Query2Has and Query2Optional system params honor disabling sem
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set(enabled, query_position_key, QueryPosition::{ x: 1, y: 1 })
-  try! world.set(disabled, query_position_key, QueryPosition::{ x: 2, y: 2 })
-  try! world.set(disabled, @ecs.ecs_key_disabled, @ecs.Disabled::new())
+  try! world.set_by_key(enabled, query_position_key, QueryPosition::{
+    x: 1,
+    y: 1,
+  })
+  try! world.set_by_key(disabled, query_position_key, QueryPosition::{
+    x: 2,
+    y: 2,
+  })
+  try! world.set_by_key(disabled, @ecs.ecs_key_disabled, @ecs.Disabled::new())
 
   let entity_counts : Array[Int] = []
   let has_seen : Array[(Int, Bool)] = []
@@ -300,9 +312,18 @@ test "app: validated single query params expose strict single access" {
   let entity = world.spawn()
   let other = world.spawn()
 
-  try! world.set(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set(entity, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
-  try! world.set(other, query_position_key, QueryPosition::{ x: 10, y: 20 })
+  try! world.set_by_key(entity, query_position_key, QueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  try! world.set_by_key(entity, query_velocity_key, QueryVelocity::{
+    dx: 3,
+    dy: 4,
+  })
+  try! world.set_by_key(other, query_position_key, QueryPosition::{
+    x: 10,
+    y: 20,
+  })
 
   let entity_ids : Array[Int] = []
   let xs : Array[Int] = []
@@ -337,11 +358,11 @@ test "app: validated single query params expose strict single access" {
   inspect(entity_ids, content="[0]")
   inspect(xs, content="[1]")
   inspect(
-    try! app.world().get(entity, query_position_key),
+    try! app.world().get_by_key(entity, query_position_key),
     content="Some({x: 4, y: 2})",
   )
   inspect(
-    try! app.world().get(other, query_position_key),
+    try! app.world().get_by_key(other, query_position_key),
     content="Some({x: 10, y: 20})",
   )
 }
@@ -353,12 +374,12 @@ test "app: generic Query[D, F] system param supports named data and named filter
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
-  try! world.set(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
-  try! world.set(e2, query_position_key, QueryPosition::{ x: 3, y: 3 })
-  try! world.set(e0, query_marker_key, QueryMarker::{  })
-  try! world.set(e1, query_marker_key, QueryMarker::{  })
-  try! world.set(e1, @ecs.ecs_key_disabled, @ecs.Disabled::new())
+  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
+  try! world.set_by_key(e2, query_position_key, QueryPosition::{ x: 3, y: 3 })
+  try! world.set_by_key(e0, query_marker_key, QueryMarker::{  })
+  try! world.set_by_key(e1, query_marker_key, QueryMarker::{  })
+  try! world.set_by_key(e1, @ecs.ecs_key_disabled, @ecs.Disabled::new())
 
   let counts : Array[Int] = []
   let seen : Array[(Int, Bool, Int)] = []
@@ -384,10 +405,10 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
-  try! world.set(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
-  try! world.set(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
+  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  try! world.set_by_key(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
+  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
+  try! world.set_by_key(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
 
   let counts : Array[Int] = []
   let mut app = App::new(world).add_systems(
@@ -414,11 +435,11 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
 
   inspect(counts, content="[2]")
   inspect(
-    try! app.world().get(e0, query_velocity_key),
+    try! app.world().get_by_key(e0, query_velocity_key),
     content="Some({dx: 4, dy: 4})",
   )
   inspect(
-    try! app.world().get(e1, query_velocity_key),
+    try! app.world().get_by_key(e1, query_velocity_key),
     content="Some({dx: 12, dy: 8})",
   )
 }

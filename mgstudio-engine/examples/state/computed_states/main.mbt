@@ -359,18 +359,21 @@ fn menu(world : @ecs.World) -> Unit {
     Some(state) => state.get() == TutorialState::Active
     None => true
   }
-  let button_store = world.component(@ui.ecs_key_button)
-  let interaction_store = world.component(@ui.ecs_key_interaction)
-  let background_store = world.component(@ui.ecs_key_background_color)
-  let menu_button_store = world.component(menu_button_key)
-  interaction_store.for_each(fn(entity, interaction) {
-    if !button_store.contains(entity) {
+  world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
+    if !(try! world.contains_by_key(entity, @ui.ecs_key_button)) {
       return
     }
-    guard menu_button_store.get(entity) is Some(button) else { return }
+    guard (try! world.get_by_key(entity, menu_button_key)) is Some(button) else {
+      return
+    }
     let color = button_color(interaction, tutorial_active, button)
-    if background_store.contains(entity) {
-      background_store.set(entity, @ui.BackgroundColor::new(color)) |> ignore
+    if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
+      try! (world.replace(
+        entity,
+        @ui.ecs_key_background_color,
+        @ui.BackgroundColor::new(color),
+      )
+      |> ignore)
     }
     if interaction != @ui.Interaction::Pressed {
       return

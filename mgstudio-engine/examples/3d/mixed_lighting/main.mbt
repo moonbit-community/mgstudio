@@ -249,17 +249,16 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
     lighting_mode_eq(mode, LightingMode::RealTime)
 
   if app_status.val.directional_light is Some(light_entity) {
-    world
-    .component(@pbr.ecs_key_directional_light)
-    .set(
+    try! (world.replace(
       light_entity,
+      @pbr.ecs_key_directional_light,
       @pbr.DirectionalLight::new(
         @sprite.Color::white(),
         mode_directional_illuminance(mode),
         scenery_is_lit_in_real_time,
       ),
     )
-    |> ignore
+    |> ignore)
   }
 
   let ambient_light = @pbr.GlobalAmbientLight::new(
@@ -282,12 +281,14 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
 ///|
 fn reset_sphere_position(world : @ecs.World) -> Unit {
   if app_status.val.sphere is Some(sphere_entity) {
-    if world.component(@transform.ecs_key_transform).get(sphere_entity)
+    if (try! world.get_by_key(sphere_entity, @transform.ecs_key_transform))
       is Some(transform) {
-      world
-      .component(@transform.ecs_key_transform)
-      .set(sphere_entity, transform.with_translation(initial_sphere_position()))
-      |> ignore
+      try! (world.replace(
+        sphere_entity,
+        @transform.ecs_key_transform,
+        transform.with_translation(initial_sphere_position()),
+      )
+      |> ignore)
     }
   }
 }
@@ -320,12 +321,16 @@ fn move_sphere(world : @ecs.World) -> Unit {
   guard app_status.val.sphere is Some(sphere_entity) else { return }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = world.component(@pbr.ecs_key_projection)
-  guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+  guard (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+    is Some(camera) else {
+    return
+  }
+  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
+    is Some(projection) else {
+    return
+  }
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(camera_transform) else {
     return
   }
 
@@ -346,13 +351,18 @@ fn move_sphere(world : @ecs.World) -> Unit {
     return
   }
 
-  guard transform_store.get(sphere_entity) is Some(current_transform) else {
+  guard (try! world.get_by_key(sphere_entity, @transform.ecs_key_transform))
+    is Some(current_transform) else {
     return
   }
 
   let target = point.add(@math.Vec3::new(0.0F, SPHERE_OFFSET, 0.0F))
-  transform_store.set(sphere_entity, current_transform.with_translation(target))
-  |> ignore
+  try! (world.replace(
+    sphere_entity,
+    @transform.ecs_key_transform,
+    current_transform.with_translation(target),
+  )
+  |> ignore)
 }
 
 ///|
@@ -412,10 +422,9 @@ fn setup(world : @ecs.World) -> Unit {
   app_status.val.camera = Some(camera)
 
   let scene_root = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     scene_root,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -446,16 +455,14 @@ fn setup(world : @ecs.World) -> Unit {
   app_status.val.sphere_material = Some(sphere_material)
 
   let directional_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(1.0F, 1.8F, 0.6F).looking_at(
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

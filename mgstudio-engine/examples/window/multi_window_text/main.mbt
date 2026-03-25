@@ -64,11 +64,10 @@ fn spawn_ui_label(
   font : @text.TextFont,
 ) -> Unit {
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
@@ -76,28 +75,40 @@ fn spawn_ui_label(
   )
 
   if ui_camera is Some(camera) {
-    world
-    .component(@ui.ecs_key_ui_target_camera)
-    .insert(root, @ui.UiTargetCamera::new(camera))
+    try! world.set_by_key(
+      root,
+      @ui.ecs_key_ui_target_camera,
+      @ui.UiTargetCamera::new(camera),
+    )
   }
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content))
-  world.component(@text.ecs_key_text_font).insert(text_entity, font)
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(content),
+  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_font, font)
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
   )
-  world
-  .component(@text.ecs_key_text_shadow)
-  .insert(text_entity, @text.TextShadow::default())
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_shadow,
+    @text.TextShadow::default(),
+  )
 }
 
 ///|
@@ -111,9 +122,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let secondary_window = world.spawn_empty()
-  world
-  .component(@window.ecs_key_window)
-  .insert(secondary_window, configured_secondary_window())
+  try! world.set_by_key(
+    secondary_window,
+    @window.ecs_key_window,
+    configured_secondary_window(),
+  )
 
   let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
     @sprite.Camera::default(),

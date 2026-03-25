@@ -208,8 +208,8 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
   } else {
     @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::default())
   }
-  world.component(@pbr.ecs_key_projection).set(camera_entity, projection)
-  |> ignore
+  try! (world.replace(camera_entity, @pbr.ecs_key_projection, projection)
+  |> ignore)
 }
 
 ///|
@@ -245,15 +245,12 @@ fn clear_temporal_aa_components(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .remove(camera_entity)
-  |> ignore
-  world.component(@post_process.ecs_key_temporal_jitter).remove(camera_entity)
-  |> ignore
-  world.component(@pbr.ecs_key_depth_prepass).remove(camera_entity) |> ignore
-  world.component(@pbr.ecs_key_motion_vector_prepass).remove(camera_entity)
-  |> ignore
+  try! (world.take(camera_entity, @post_process.ecs_key_temporal_anti_aliasing)
+  |> ignore)
+  try! (world.take(camera_entity, @post_process.ecs_key_temporal_jitter)
+  |> ignore)
+  try! (world.take(camera_entity, @pbr.ecs_key_depth_prepass) |> ignore)
+  try! (world.take(camera_entity, @pbr.ecs_key_motion_vector_prepass) |> ignore)
 }
 
 ///|
@@ -261,29 +258,27 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
   let aa_method = anti_aliasing_state.val.aa_method
   if aa_method_eq(aa_method, AAMethod::NoAA) {
-    world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
-    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
+    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::MSAA) {
-    world
-    .component(@pbr.ecs_key_msaa)
-    .insert(
+    try! world.set_by_key(
       camera_entity,
+      @pbr.ecs_key_msaa,
       msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
     )
-    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
+    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::FXAA) {
-    world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
+    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
     clear_temporal_aa_components(world, camera_entity)
-    world
-    .component(@post_process.ecs_key_fxaa)
-    .insert(
+    try! world.set_by_key(
       camera_entity,
+      @post_process.ecs_key_fxaa,
       @post_process.Fxaa::default().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
       ),
@@ -291,24 +286,32 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     return
   }
   if aa_method_eq(aa_method, AAMethod::TAA) {
-    world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
-    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
-    world
-    .component(@post_process.ecs_key_temporal_anti_aliasing)
-    .insert(camera_entity, @post_process.TemporalAntiAliasing::default())
-    world
-    .component(@post_process.ecs_key_temporal_jitter)
-    .insert(camera_entity, @post_process.TemporalJitter::default())
-    world
-    .component(@pbr.ecs_key_depth_prepass)
-    .insert(camera_entity, @pbr.DepthPrepass::default())
-    world
-    .component(@pbr.ecs_key_motion_vector_prepass)
-    .insert(camera_entity, @pbr.MotionVectorPrepass::default())
+    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
+    try! world.set_by_key(
+      camera_entity,
+      @post_process.ecs_key_temporal_anti_aliasing,
+      @post_process.TemporalAntiAliasing::default(),
+    )
+    try! world.set_by_key(
+      camera_entity,
+      @post_process.ecs_key_temporal_jitter,
+      @post_process.TemporalJitter::default(),
+    )
+    try! world.set_by_key(
+      camera_entity,
+      @pbr.ecs_key_depth_prepass,
+      @pbr.DepthPrepass::default(),
+    )
+    try! world.set_by_key(
+      camera_entity,
+      @pbr.ecs_key_motion_vector_prepass,
+      @pbr.MotionVectorPrepass::default(),
+    )
     return
   }
-  world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
-  world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
+  try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
   clear_temporal_aa_components(world, camera_entity)
 }
 
@@ -766,10 +769,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let helmet = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     helmet,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -781,16 +783,14 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -805,10 +805,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   anti_aliasing_state.val.camera = Some(camera_entity)
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     camera_entity,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),

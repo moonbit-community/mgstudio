@@ -2904,7 +2904,8 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
     world,
   )
   try! transitions_query.view(fn(entity, transitions) {
-    guard (try! world.get(entity, ecs_key_animation_player)) is Some(player) else {
+    guard (try! world.get_by_key(entity, ecs_key_animation_player))
+      is Some(player) else {
       return
     }
     let (next_transitions, next_player) = animation_transitions_advance(
@@ -2916,8 +2917,8 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
   })
 
   for update in updates {
-    try! world.set(update.0, ecs_key_animation_transitions, update.1)
-    try! world.set(update.0, ecs_key_animation_player, update.2)
+    try! world.set_by_key(update.0, ecs_key_animation_transitions, update.1)
+    try! world.set_by_key(update.0, ecs_key_animation_player, update.2)
   }
 }
 
@@ -2930,7 +2931,7 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
     world,
   )
   try! player_query.view(fn(entity, player) {
-    guard (try! world.get(entity, ecs_key_animation_graph_handle))
+    guard (try! world.get_by_key(entity, ecs_key_animation_graph_handle))
       is Some(graph_handle) else {
       return
     }
@@ -2943,7 +2944,7 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
   })
 
   for update in updates {
-    try! world.set(update.0, ecs_key_animation_player, update.1)
+    try! world.set_by_key(update.0, ecs_key_animation_player, update.1)
   }
 }
 
@@ -2956,15 +2957,16 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     world,
   )
   try! target_query.view(fn(entity, target_id) {
-    guard (try! world.get(entity, ecs_key_animated_by)) is Some(animated_by) else {
+    guard (try! world.get_by_key(entity, ecs_key_animated_by))
+      is Some(animated_by) else {
       return
     }
     let player_entity = animated_by.player()
-    guard (try! world.get(player_entity, ecs_key_animation_player))
+    guard (try! world.get_by_key(player_entity, ecs_key_animation_player))
       is Some(player) else {
       return
     }
-    guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
+    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
       is Some(graph_handle) else {
       return
     }
@@ -2979,8 +2981,8 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       target_mask,
       player,
       graph,
-      try! world.get(entity, @transform.ecs_key_transform),
-      try! world.get(entity, ecs_key_animation_weights),
+      try! world.get_by_key(entity, @transform.ecs_key_transform),
+      try! world.get_by_key(entity, ecs_key_animation_weights),
     )
 
     if next_transform is Some(transform) {
@@ -2992,11 +2994,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   })
 
   for update in transform_updates {
-    try! world.set(update.0, @transform.ecs_key_transform, update.1)
+    try! world.set_by_key(update.0, @transform.ecs_key_transform, update.1)
   }
 
   for update in weights_updates {
-    try! world.set(update.0, ecs_key_animation_weights, update.1)
+    try! world.set_by_key(update.0, ecs_key_animation_weights, update.1)
   }
 }
 
@@ -3011,7 +3013,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
     world,
   )
   try! player_query.view(fn(player_entity, player) {
-    guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
+    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
       is Some(graph_handle) else {
       return
     }
@@ -3051,16 +3053,16 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
     world,
   )
   try! target_query.view(fn(target_entity, target_id) {
-    guard (try! world.get(target_entity, ecs_key_animated_by))
+    guard (try! world.get_by_key(target_entity, ecs_key_animated_by))
       is Some(animated_by) else {
       return
     }
     let player_entity = animated_by.player()
-    guard (try! world.get(player_entity, ecs_key_animation_player))
+    guard (try! world.get_by_key(player_entity, ecs_key_animation_player))
       is Some(player) else {
       return
     }
-    guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
+    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
       is Some(graph_handle) else {
       return
     }
@@ -3111,7 +3113,8 @@ pub fn expire_transitions(world : @ecs.World) -> Unit {
     world,
   )
   try! transitions_query.view(fn(entity, transitions) {
-    guard (try! world.get(entity, ecs_key_animation_player)) is Some(player) else {
+    guard (try! world.get_by_key(entity, ecs_key_animation_player))
+      is Some(player) else {
       return
     }
     let (next_transitions, next_player) = animation_transitions_expire(
@@ -3122,8 +3125,8 @@ pub fn expire_transitions(world : @ecs.World) -> Unit {
   })
 
   for update in updates {
-    try! world.set(update.0, ecs_key_animation_transitions, update.1)
-    try! world.set(update.0, ecs_key_animation_player, update.2)
+    try! world.set_by_key(update.0, ecs_key_animation_transitions, update.1)
+    try! world.set_by_key(update.0, ecs_key_animation_player, update.2)
   }
 }
 

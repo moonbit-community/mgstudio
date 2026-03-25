@@ -130,7 +130,7 @@ test "app: any_with_component gates system execution on component presence" {
   let entity = app.world().spawn()
   try! app
   .world()
-  .set(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  .set_by_key(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
   app.run_once() |> ignore
 
   inspect(log.length(), content="1")
@@ -323,7 +323,10 @@ test "app: run condition combinators short-circuit and compose" {
 test "app: Query and ResMut compose in a single system signature" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set(entity, query_position_key, QueryPosition::{ x: 3, y: 7 })
+  try! world.set_by_key(entity, query_position_key, QueryPosition::{
+    x: 3,
+    y: 7,
+  })
 
   let app = App::new(world)
     .insert_resource(CounterResource::{ value: 10 })

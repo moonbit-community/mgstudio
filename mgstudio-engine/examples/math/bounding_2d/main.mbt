@@ -133,9 +133,7 @@ impl @ecs.QueryData for VolumeIntersectionData with fetch(world, entity) {
     volume: try! @ecs.query_data_component_fetch(
       world, entity, current_volume_key,
     ),
-    intersects: try! @ecs.query_data_component_fetch(
-      world, entity, intersects_key,
-    ),
+    intersects: (try! world.get_by_key(entity, intersects_key)).unwrap(),
   }
 }
 
@@ -305,12 +303,12 @@ fn spawn_shape_entity(
   spinning : Bool,
 ) -> Unit {
   let entity = world.spawn_empty()
-  try! world.set(entity, @transform.Transform::component(), transform)
-  try! world.set(entity, shape_key, shape)
-  try! world.set(entity, desired_volume_key, desired_volume)
-  try! world.set(entity, intersects_key, false)
+  try! world.set_by_key(entity, @transform.Transform::component(), transform)
+  try! world.set_by_key(entity, shape_key, shape)
+  try! world.set_by_key(entity, desired_volume_key, desired_volume)
+  try! world.set_by_key(entity, intersects_key, false)
   if spinning {
-    try! world.set(entity, spin_key, Spin::{  })
+    try! world.set_by_key(entity, spin_key, Spin::{  })
   }
 }
 
@@ -320,8 +318,8 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
-  try! world.set(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::default()
@@ -329,12 +327,12 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_height(@ui.Val::Percent(100.0F)),
   )
   let text_entity = world.spawn_empty()
-  try! world.set(
+  try! world.set_by_key(
     text_entity,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set(
+  try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::default()
@@ -342,22 +340,22 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
   )
-  try! world.set(
+  try! world.set_by_key(
     text_entity,
     @text.ecs_key_text,
     @text.Text::new(overlay_text(read_current_test(world))),
   )
-  try! world.set(
+  try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(18.0F),
   )
-  try! world.set(
+  try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
     @text.TextColor::new(color_white()),
   )
-  try! world.set(
+  try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
     @text.TextLayout::new_with_justify(@text.Justify::Left),
@@ -385,11 +383,12 @@ fn update_test_state(world : @ecs.World) -> Unit {
 ///|
 fn update_text(world : @ecs.World) -> Unit {
   guard overlay_text_entity.val is Some(text_entity) else { return }
-  guard (try! world.get(text_entity, @text.ecs_key_text)) is Some(text_value) else {
+  guard (try! world.get_by_key(text_entity, @text.ecs_key_text))
+    is Some(text_value) else {
     return
   }
   text_value.content = overlay_text(read_current_test(world))
-  try! world.set(text_entity, @text.ecs_key_text, text_value)
+  try! world.set_by_key(text_entity, @text.ecs_key_text, text_value)
 }
 
 ///|
@@ -456,7 +455,7 @@ fn spin(world : @ecs.World) -> Unit {
   for update in updates {
     let (entity, next_rotation) = update
     ignore(
-      try! world.update(entity, @transform.Transform::component(), fn(
+      try! world.update_by_key(entity, @transform.Transform::component(), fn(
         transform,
       ) {
         { ..transform, rotation: next_rotation }
@@ -484,7 +483,7 @@ fn update_volumes(world : @ecs.World) -> Unit {
       DesiredVolume::Circle =>
         CurrentVolume::Circle(shape_bounding_circle(shape.value(), isometry))
     }
-    try! world.set(entity, current_volume_key, volume)
+    try! world.set_by_key(entity, current_volume_key, volume)
   })
 }
 
@@ -554,7 +553,7 @@ fn aabb_intersection_system(world : @ecs.World) -> Unit {
   })
   for update in updates {
     let (entity, hit) = update
-    try! world.set(entity, intersects_key, hit)
+    try! world.set_by_key(entity, intersects_key, hit)
   }
 }
 
@@ -583,7 +582,7 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
   })
   for update in updates {
     let (entity, hit) = update
-    try! world.set(entity, intersects_key, hit)
+    try! world.set_by_key(entity, intersects_key, hit)
   }
 }
 
@@ -607,7 +606,7 @@ fn ray_cast_system(world : @ecs.World) -> Unit {
   })
   for update in updates {
     let (entity, hit) = update
-    try! world.set(entity, intersects_key, hit)
+    try! world.set_by_key(entity, intersects_key, hit)
   }
 }
 
@@ -643,7 +642,7 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
   })
   for update in updates {
     let (entity, hit) = update
-    try! world.set(entity, intersects_key, hit)
+    try! world.set_by_key(entity, intersects_key, hit)
   }
 }
 
@@ -679,7 +678,7 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
   })
   for update in updates {
     let (entity, hit) = update
-    try! world.set(entity, intersects_key, hit)
+    try! world.set_by_key(entity, intersects_key, hit)
   }
 }
 

@@ -179,39 +179,43 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
     ShadowFilter::NonTemporal => @pbr.ShadowFilteringMethod::Gaussian
     ShadowFilter::Temporal => @pbr.ShadowFilteringMethod::Temporal
   }
-  world
-  .component(@pbr.ecs_key_shadow_filtering_method)
-  .insert(camera, filter_mode)
+  try! world.set_by_key(
+    camera, @pbr.ecs_key_shadow_filtering_method, filter_mode,
+  )
   if pcss_state.val.shadow_filter == ShadowFilter::Temporal {
-    world
-    .component(@post_process.ecs_key_temporal_anti_aliasing)
-    .insert(camera, @post_process.TemporalAntiAliasing::default())
+    try! world.set_by_key(
+      camera,
+      @post_process.ecs_key_temporal_anti_aliasing,
+      @post_process.TemporalAntiAliasing::default(),
+    )
   } else {
-    world.component(@post_process.ecs_key_temporal_anti_aliasing).remove(camera)
-    |> ignore
+    try! (world.take(camera, @post_process.ecs_key_temporal_anti_aliasing)
+    |> ignore)
   }
 }
 
 ///|
 fn apply_light_type(world : @ecs.World) -> Unit {
   guard pcss_state.val.light is Some(light) else { return }
-  world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
-  world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
-  world.component(@pbr.ecs_key_spot_light).remove(light) |> ignore
+  try! (world.take(light, @pbr.ecs_key_directional_light) |> ignore)
+  try! (world.take(light, @pbr.ecs_key_point_light) |> ignore)
+  try! (world.take(light, @pbr.ecs_key_spot_light) |> ignore)
 
   match pcss_state.val.light_type {
     LightType::Directional =>
-      world
-      .component(@pbr.ecs_key_directional_light)
-      .insert(light, create_directional_light())
+      try! world.set_by_key(
+        light,
+        @pbr.ecs_key_directional_light,
+        create_directional_light(),
+      )
     LightType::Point =>
-      world
-      .component(@pbr.ecs_key_point_light)
-      .insert(light, create_point_light())
+      try! world.set_by_key(
+        light,
+        @pbr.ecs_key_point_light,
+        create_point_light(),
+      )
     LightType::Spot =>
-      world
-      .component(@pbr.ecs_key_spot_light)
-      .insert(light, create_spot_light())
+      try! world.set_by_key(light, @pbr.ecs_key_spot_light, create_spot_light())
   }
 }
 
@@ -241,23 +245,47 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   pcss_state.val.camera = Some(camera)
 
-  world
-  .component(@pbr.ecs_key_shadow_filtering_method)
-  .insert(camera, @pbr.ShadowFilteringMethod::Gaussian)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_temporal_jitter)
-  .insert(camera, @post_process.TemporalJitter::default())
-  world
-  .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default())
-  world
-  .component(@pbr.ecs_key_motion_vector_prepass)
-  .insert(camera, @pbr.MotionVectorPrepass::default())
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_shadow_filtering_method,
+    @pbr.ShadowFilteringMethod::Gaussian,
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_jitter,
+    @post_process.TemporalJitter::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_jitter,
+    @post_process.TemporalJitter::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_depth_prepass,
+    @pbr.DepthPrepass::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_jitter,
+    @post_process.TemporalJitter::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_depth_prepass,
+    @pbr.DepthPrepass::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_motion_vector_prepass,
+    @pbr.MotionVectorPrepass::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/sky_skybox.ktx2"),
       500.0F,
@@ -266,10 +294,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   pcss_state.val.light = Some(light)
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(57.693F, 34.334F, -6.422F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -278,10 +305,9 @@ fn setup(world : @ecs.World) -> Unit {
   apply_light_type(world)
 
   let scene_entity = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     scene_entity,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server, "models/PalmTree/PalmTree.gltf#Scene0",

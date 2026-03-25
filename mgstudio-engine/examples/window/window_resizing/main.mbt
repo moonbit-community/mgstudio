@@ -71,27 +71,49 @@ fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(root, @ui.Node::default().with_width(@ui.Val::Percent(100.0F)))
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
+    root,
+    @ui.ecs_key_node,
+    @ui.Node::default().with_width(@ui.Val::Percent(100.0F)),
+  )
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new("Resolution"))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Resolution"),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Resolution"),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(42.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
-  world.component(resolution_text_key).insert(text_entity, ResolutionText::{  })
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(text_entity, resolution_text_key, ResolutionText::{  })
 }
 
 ///|
@@ -114,10 +136,11 @@ fn update_resolution_text(
   height : Float,
 ) -> Unit {
   guard resolution_text_entity(world) is Some(entity) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(entity) is Some(text) else { return }
+  guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text) else {
+    return
+  }
   text.content = width.to_string() + " x " + height.to_string()
-  text_store.set(entity, text) |> ignore
+  try! (world.replace(entity, @text.ecs_key_text, text) |> ignore)
 }
 
 ///|
@@ -125,7 +148,6 @@ fn update_primary_window(
   world : @ecs.World,
   update : (@window.Window) -> Unit,
 ) -> Unit {
-  let window_store = world.component(@window.ecs_key_window)
   try! world
   .query_entities_filtered(
     (
@@ -134,9 +156,12 @@ fn update_primary_window(
     ),
   )
   .view(fn(_query_entity, entity) {
-    guard window_store.get(entity) is Some(window) else { return }
+    guard (try! world.get_by_key(entity, @window.ecs_key_window))
+      is Some(window) else {
+      return
+    }
     update(window)
-    window_store.set(entity, window) |> ignore
+    try! (world.replace(entity, @window.ecs_key_window, window) |> ignore)
   })
 }
 

@@ -21,10 +21,6 @@ pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d]
 
 pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
-pub fn get_forward_decal_material_ext_store(@ecs.World) -> @ecs.ComponentAccess[ForwardDecalMaterialExt]
-
-pub fn get_mesh_material3d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial3d]
-
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
 pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMaterial?

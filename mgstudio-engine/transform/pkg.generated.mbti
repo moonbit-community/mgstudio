@@ -10,19 +10,11 @@ import {
 }
 
 // Values
-pub let ecs_components : Array[String]
-
 pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
 
 pub let ecs_key_transform : @ecs.ComponentKey[Transform]
 
 pub let ecs_key_transform_tree_changed : @ecs.ComponentKey[TransformTreeChanged]
-
-pub let ecs_resources : Array[String]
-
-pub fn get_global_transform_store(@ecs.World) -> @ecs.ComponentAccess[GlobalTransform]
-
-pub fn get_transform_store(@ecs.World) -> @ecs.ComponentAccess[Transform]
 
 pub fn mark_dirty_trees(@ecs.World) -> Unit
 

@@ -931,14 +931,12 @@ fn[M] material2d_runtime_entry(
   probe : @asset.Handle[M],
 ) -> Material2dRuntimeEntry {
   let type_name = material2d_type_name(probe)
+  let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
   let contains_source_material = fn(
     source_world : @ecs.World,
     entity : @core.Entity,
   ) -> Bool {
-    let material_store : @ecs.ComponentAccess[MeshMaterial2d[M]] = get_mesh_material2d_store(
-      source_world,
-    )
-    material_store.get(entity) is Some(_)
+    (try! source_world.get_by_key(entity, material_key)) is Some(_)
   }
   Material2dRuntimeEntry::{
     type_name,
@@ -1018,15 +1016,13 @@ fn[M] extract_material2d_mesh_instances_system(
 ) -> Unit {
   _probe |> ignore
   let source_world = @render.render_source_world(world)
-  let material_store : @ecs.ComponentAccess[MeshMaterial2d[M]] = get_mesh_material2d_store(
-    source_world,
-  )
+  let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
   guard (try! world.get_resource_ref_mut(key)) is Some(instances_ref) else {
     return
   }
   instances_ref.val.clear()
-  material_store.for_each(fn(entity, material) {
+  source_world.for_each_component(material_key, fn(entity, material) {
     instances_ref.val.set(entity, material.handle)
   })
 }

@@ -134,28 +134,28 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::default().with_intensity(
       ENVIRONMENT_LIGHT_INTENSITY,
     ),
   )
-  world
-  .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default())
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_free_camera,
+    @pbr.FreeCamera::default(),
+  )
 
   let directional = world.spawn_empty()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_num_cascades(1)
     .with_maximum_distance(15.0F)
     .build()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       DIRECTIONAL_LIGHT_ILLUMINANCE,
@@ -165,10 +165,9 @@ fn setup(world : @ecs.World) -> Unit {
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_rotation(light_rot),
   )
 

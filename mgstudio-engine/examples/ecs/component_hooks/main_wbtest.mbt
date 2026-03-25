@@ -23,7 +23,7 @@ test "examples ecs component_hooks: hooks keep index and message queue in sync" 
   setup(world)
 
   let entity = world.spawn()
-  try! world.set(
+  try! world.set_by_key(
     entity,
     my_component_key,
     MyComponent::new(@window.KeyCode::KeyA),
@@ -39,7 +39,7 @@ test "examples ecs component_hooks: hooks keep index and message queue in sync" 
       abort("expected MyMessage queue to exist in component_hooks example")
   }
 
-  inspect(try! world.remove(entity, my_component_key), content="true")
+  inspect(try! world.remove_by_key(entity, my_component_key), content="true")
   inspect(world.is_alive(entity), content="false")
   inspect(
     my_component_index_or_abort(world).entities.contains(@window.KeyCode::KeyA),

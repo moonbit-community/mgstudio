@@ -193,12 +193,16 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
       @math.Vec3::splat(1.75F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(orb, @pbr.NotShadowCaster::default())
-  world
-  .component(@pbr.ecs_key_not_shadow_receiver)
-  .insert(orb, @pbr.NotShadowReceiver::default())
+  try! world.set_by_key(
+    orb,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
+  try! world.set_by_key(
+    orb,
+    @pbr.ecs_key_not_shadow_receiver,
+    @pbr.NotShadowReceiver::default(),
+  )
 
   for i in 0..<50 {
     let i_f = float_from_int(i)
@@ -249,15 +253,16 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let point_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::default().with_shadow_maps_enabled(true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F))
+  try! world.set_by_key(
+    point_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
+  )
 }
 
 ///|
@@ -326,8 +331,6 @@ fn update_system(world : @ecs.World) -> Unit {
   let delta = world_time(world).delta_seconds()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
-  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
-  let transform_store = world.component(@transform.ecs_key_transform)
   let mut fog = fog_example_state.val.fog
 
   let orbit_scale = 8.0F + @math.sin(now / 10.0F) * 7.0F
@@ -336,7 +339,8 @@ fn update_system(world : @ecs.World) -> Unit {
     12.0F - orbit_scale / 2.0F,
     @math.sin(now / 5.0F) * orbit_scale,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  transform_store.set(camera, camera_transform) |> ignore
+  try! (world.replace(camera, @transform.ecs_key_transform, camera_transform)
+  |> ignore)
 
   if @input.key_pressed(@window.KeyCode::Digit1) {
     fog = fog.with_falloff(@pbr.FogFalloff3d::linear(5.0F, 20.0F))
@@ -470,11 +474,16 @@ fn update_system(world : @ecs.World) -> Unit {
   }
   fog = fog.with_color(color)
 
-  let camera3d = match camera3d_store.get(camera) {
+  let camera3d = match (try! world.get_by_key(camera, @pbr.ecs_key_camera3d)) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog))) |> ignore
+  try! (world.replace(
+    camera,
+    @pbr.ecs_key_camera3d,
+    camera3d.with_distance_fog(Some(fog)),
+  )
+  |> ignore)
   fog_example_state.val.fog = fog
 
   if fog_example_state.val.help_text is Some(text_handle) {

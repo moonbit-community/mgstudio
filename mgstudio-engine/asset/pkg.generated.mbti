@@ -153,15 +153,7 @@ pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
 
 pub fn[T] assets_resource_key_of(T) -> @ecs.ResourceKey[Assets[T]]
 
-pub let ecs_components : Array[String]
-
-pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas]
-
-pub let ecs_resources : Array[String]
-
 pub fn[P : IntoAssetPath] embedded_asset(@app.App[@ecs.World], P, String) -> @app.App[@ecs.World]
-
-pub fn get_texture_atlas_store(@ecs.World) -> @ecs.ComponentAccess[TextureAtlas]
 
 pub fn gzip_decompress(Bytes) -> Bytes?
 
@@ -535,7 +527,6 @@ pub fn TextureAtlas::new(Handle[TextureAtlasLayout], Int) -> Self
 pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
 pub fn TextureAtlas::with_index(Self, Int) -> Self
 pub fn TextureAtlas::with_layout(Self, Handle[TextureAtlasLayout]) -> Self
-pub impl @ecs.Component for TextureAtlas
 pub impl ToJson for TextureAtlas
 pub impl @json.FromJson for TextureAtlas
 

@@ -357,23 +357,19 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
   }
 
   let ecs_world = world
-  let transform_store = @transform.get_transform_store(ecs_world)
-  let collider_store = get_collider3d_store(ecs_world)
-  let rigid_body_store = get_rigid_body3d_store(ecs_world)
-  let mesh_material_store = @pbr.get_mesh_material3d_store(ecs_world)
   let lines : Array[DebugLine3d] = []
 
-  collider_store.for_each(fn(entity, collider) {
+  ecs_world.for_each_component(ecs_key_collider3d, fn(entity, collider) {
     guard physics3d_debug_material_for(
-        rigid_body_store.get(entity),
+        try! ecs_world.get_by_key(entity, ecs_key_rigid_body3d),
         collider.sensor,
       )
       is Some(material) else {
       return
     }
-    let source_transform = transform_store
-      .get(entity)
-      .unwrap_or(@transform.Transform::identity())
+    let source_transform = (try! ecs_world.get_by_key(
+      entity, @transform.ecs_key_transform,
+    )).unwrap_or(@transform.Transform::identity())
     match collider.shape {
       Ball(radius) =>
         physics3d_debug_emit_ball_lines(
@@ -390,12 +386,14 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
   for i in 0..<lines.length() {
     let line = lines[i]
     let entity = state.line_entities[i]
-    transform_store.set(
+    try! (ecs_world.replace(
       entity,
+      @transform.ecs_key_transform,
       physics3d_debug_line_transform(line.start, line.end),
     )
-    |> ignore
-    mesh_material_store.set(entity, line.material) |> ignore
+    |> ignore)
+    try! (ecs_world.replace(entity, @pbr.ecs_key_mesh_material3d, line.material)
+    |> ignore)
   }
 }
 

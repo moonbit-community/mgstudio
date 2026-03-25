@@ -138,17 +138,17 @@ fn update_help_text() -> Unit {
 ///|
 fn apply_light_mode(world : @ecs.World) -> Unit {
   guard clearcoat_state.val.light is Some(light) else { return }
-  world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
-  world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
+  try! (world.take(light, @pbr.ecs_key_point_light) |> ignore)
+  try! (world.take(light, @pbr.ecs_key_directional_light) |> ignore)
 
   if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
-    world
-    .component(@pbr.ecs_key_point_light)
-    .insert(light, create_point_light())
+    try! world.set_by_key(light, @pbr.ecs_key_point_light, create_point_light())
   } else {
-    world
-    .component(@pbr.ecs_key_directional_light)
-    .insert(light, create_directional_light())
+    try! world.set_by_key(
+      light,
+      @pbr.ecs_key_directional_light,
+      create_directional_light(),
+    )
   }
 
   update_help_text()
@@ -228,10 +228,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let golf_ball_root = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     golf_ball_root,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -241,10 +240,9 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     golf_ball_root,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(1.0F, 1.0F, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
@@ -253,10 +251,9 @@ fn setup(world : @ecs.World) -> Unit {
   clearcoat_state.val.sphere_positions.push(@math.Vec3::new(1.0F, 1.0F, 0.0F))
 
   let light = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 4.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -274,23 +271,23 @@ fn setup(world : @ecs.World) -> Unit {
     }),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted)
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
     camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::AcesFitted,
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
   )
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
@@ -342,15 +339,14 @@ fn animate_light(world : @ecs.World) -> Unit {
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
 
   if clearcoat_state.val.light is Some(entity) {
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       entity,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z).looking_at(
         target, up,
       ),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -362,15 +358,14 @@ fn animate_spheres(world : @ecs.World) -> Unit {
   for i in 0..<count {
     let entity = clearcoat_state.val.sphere_entities[i]
     let position = clearcoat_state.val.sphere_positions[i]
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       entity,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xyz(position.x, position.y, position.z)
       .with_rotation(rotation)
       .with_scale(@math.Vec3::splat(SPHERE_SCALE)),
     )
-    |> ignore
+    |> ignore)
   }
 }
 

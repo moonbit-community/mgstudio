@@ -188,13 +188,15 @@ fn change_track(world : @ecs.World) -> Unit {
     changed: false,
   })
 
-  let audio_sinks = world.component(@audio.ecs_key_audio_sink)
-  audio_sinks.for_each(fn(entity : @core.Entity, _sink : @audio.AudioSink) {
-    if !world.component(fade_out_component_key).contains(entity) {
-      world.component(fade_out_component_key).insert(entity, FadeOut::{  })
+  world.for_each_component(@audio.ecs_key_audio_sink, fn(
+    entity : @core.Entity,
+    _sink : @audio.AudioSink,
+  ) {
+    if !(try! world.contains_by_key(entity, fade_out_component_key)) {
+      try! world.set_by_key(entity, fade_out_component_key, FadeOut::{  })
     }
-    if world.component(fade_in_component_key).contains(entity) {
-      world.component(fade_in_component_key).remove(entity) |> ignore
+    if (try! world.contains_by_key(entity, fade_in_component_key)) {
+      try! (world.take(entity, fade_in_component_key) |> ignore)
     }
   })
 
@@ -210,16 +212,17 @@ fn change_track(world : @ecs.World) -> Unit {
   }
 
   let entity = world.spawn_empty()
-  world
-  .component(@audio.ecs_key_audio_source_player)
-  .insert(entity, @audio.AudioPlayer::new(track))
-  world
-  .component(@audio.ecs_key_playback_settings)
-  .insert(
+  try! world.set_by_key(
     entity,
+    @audio.ecs_key_audio_source_player,
+    @audio.AudioPlayer::new(track),
+  )
+  try! world.set_by_key(
+    entity,
+    @audio.ecs_key_playback_settings,
     @audio.PlaybackSettings::looped().with_volume(@audio.Volume::silent()),
   )
-  world.component(fade_in_component_key).insert(entity, FadeIn::{  })
+  try! world.set_by_key(entity, fade_in_component_key, FadeIn::{  })
 }
 
 ///|
@@ -230,11 +233,12 @@ fn fade_in(world : @ecs.World) -> Unit {
   }
 
   let factor = timer_state.timer.elapsed_secs() / FADE_TIME
-  let fade_in_store = world.component(fade_in_component_key)
-  let sink_store = world.component(@audio.ecs_key_audio_sink)
   let entities : Array[@core.Entity] = []
-  fade_in_store.for_each(fn(entity : @core.Entity, _marker : FadeIn) {
-    if sink_store.contains(entity) {
+  world.for_each_component(fade_in_component_key, fn(
+    entity : @core.Entity,
+    _marker : FadeIn,
+  ) {
+    if (try! world.contains_by_key(entity, @audio.ecs_key_audio_sink)) {
       entities.push(entity)
     }
   })
@@ -244,7 +248,9 @@ fn fade_in(world : @ecs.World) -> Unit {
   }
 
   for entity in entities {
-    sink_store.update(entity, fn(sink : @audio.AudioSink) {
+    try! (world.update_by_key(entity, @audio.ecs_key_audio_sink, fn(
+      sink : @audio.AudioSink,
+    ) {
       sink.set_volume(
         @audio.Volume::silent().fade_towards(
           @audio.Volume::Linear(1.0F),
@@ -252,13 +258,15 @@ fn fade_in(world : @ecs.World) -> Unit {
         ),
       )
     })
-    |> ignore
+    |> ignore)
     if factor >= 1.0F {
-      sink_store.update(entity, fn(sink : @audio.AudioSink) {
+      try! (world.update_by_key(entity, @audio.ecs_key_audio_sink, fn(
+        sink : @audio.AudioSink,
+      ) {
         sink.set_volume(@audio.Volume::Linear(1.0F))
       })
-      |> ignore
-      fade_in_store.remove(entity) |> ignore
+      |> ignore)
+      try! (world.take(entity, fade_in_component_key) |> ignore)
     }
   }
 }
@@ -271,11 +279,12 @@ fn fade_out(world : @ecs.World) -> Unit {
   }
 
   let factor = timer_state.timer.elapsed_secs() / FADE_TIME
-  let fade_out_store = world.component(fade_out_component_key)
-  let sink_store = world.component(@audio.ecs_key_audio_sink)
   let entities : Array[@core.Entity] = []
-  fade_out_store.for_each(fn(entity : @core.Entity, _marker : FadeOut) {
-    if sink_store.contains(entity) {
+  world.for_each_component(fade_out_component_key, fn(
+    entity : @core.Entity,
+    _marker : FadeOut,
+  ) {
+    if (try! world.contains_by_key(entity, @audio.ecs_key_audio_sink)) {
       entities.push(entity)
     }
   })
@@ -285,7 +294,9 @@ fn fade_out(world : @ecs.World) -> Unit {
   }
 
   for entity in entities {
-    sink_store.update(entity, fn(sink : @audio.AudioSink) {
+    try! (world.update_by_key(entity, @audio.ecs_key_audio_sink, fn(
+      sink : @audio.AudioSink,
+    ) {
       sink.set_volume(
         @audio.Volume::Linear(1.0F).fade_towards(
           @audio.Volume::silent(),
@@ -293,7 +304,7 @@ fn fade_out(world : @ecs.World) -> Unit {
         ),
       )
     })
-    |> ignore
+    |> ignore)
     if factor >= 1.0F {
       world.despawn(entity) catch {
         _ => ()

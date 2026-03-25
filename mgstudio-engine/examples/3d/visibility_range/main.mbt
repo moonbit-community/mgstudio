@@ -149,7 +149,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn entity_is_descendant_of(
-  parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
+  world : @ecs.World,
   entity : @core.Entity,
   root : @core.Entity,
 ) -> Bool {
@@ -158,7 +158,8 @@ fn entity_is_descendant_of(
     if current.id == root.id {
       return true
     }
-    if parent_store.get(current) is Some(parent) {
+    if (try! world.get_by_key(current, @hierarchy.ecs_key_parent))
+      is Some(parent) {
       current = parent.entity()
     } else {
       return false
@@ -173,17 +174,19 @@ fn apply_visibility_range_for_scene_root(
   scene_root : @core.Entity,
   visibility_range : @visibility.VisibilityRange,
 ) -> Unit {
-  let parent_store = world.component(@hierarchy.ecs_key_parent)
-  let mesh_store = world.component(@pbr.ecs_key_mesh3d)
-  let visibility_range_store = world.component(
-    @visibility.ecs_key_visibility_range,
-  )
-  mesh_store.for_each(fn(entity, _mesh) {
-    if entity_is_descendant_of(parent_store, entity, scene_root) {
-      if visibility_range_store.contains(entity) {
-        visibility_range_store.set(entity, visibility_range) |> ignore
+  world.for_each_component(@pbr.ecs_key_mesh3d, fn(entity, _mesh) {
+    if entity_is_descendant_of(world, entity, scene_root) {
+      if (try! world.contains_by_key(
+          entity, @visibility.ecs_key_visibility_range,
+        )) {
+        try! (world.replace(
+          entity, @visibility.ecs_key_visibility_range, visibility_range,
+        )
+        |> ignore)
       } else {
-        visibility_range_store.insert(entity, visibility_range)
+        try! world.set_by_key(
+          entity, @visibility.ecs_key_visibility_range, visibility_range,
+        )
       }
     }
   })
@@ -224,10 +227,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let high_scene_root = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     high_scene_root,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(asset_server, high_poly_path),
     ),
@@ -235,10 +237,9 @@ fn setup(world : @ecs.World) -> Unit {
   visibility_range_state.val.high_scene_root = Some(high_scene_root)
 
   let low_scene_root = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     low_scene_root,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(asset_server, low_poly_path),
     ),
@@ -246,20 +247,18 @@ fn setup(world : @ecs.World) -> Unit {
   visibility_range_state.val.low_scene_root = Some(low_scene_root)
 
   let directional = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 20_000.0F, true),
   )
   let light_angle = -0.15F * PI
   let light_rotation = @math.Quat::from_rotation_z(0.0F)
     .mul(@math.Quat::from_rotation_y(light_angle))
     .mul(@math.Quat::from_rotation_x(light_angle))
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       light_rotation,
     ),
@@ -273,10 +272,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   visibility_range_state.val.camera = Some(camera)
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
@@ -311,8 +309,8 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn move_camera(world : @ecs.World) -> Unit {
   guard visibility_range_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
+    is Some(camera_transform) else {
     return
   }
 
@@ -346,15 +344,16 @@ fn move_camera(world : @ecs.World) -> Unit {
   let new_magnitude = maxf(MIN_ZOOM_DISTANCE, magnitude + zoom_delta)
   let new_translation = focal.add(new_direction.mul_scalar(new_magnitude))
 
-  transform_store.set(
+  try! (world.replace(
     camera_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(
       new_translation.x,
       new_translation.y,
       new_translation.z,
     ).looking_at(focal, @math.Vec3::new(0.0F, 1.0F, 0.0F)),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -384,15 +383,24 @@ fn toggle_prepass(world : @ecs.World) -> Unit {
 
   guard visibility_range_state.val.camera is Some(camera) else { return }
   if visibility_range_state.val.prepass_enabled {
-    world
-    .component(@pbr.ecs_key_depth_prepass)
-    .insert(camera, @pbr.DepthPrepass::default())
-    world
-    .component(@pbr.ecs_key_normal_prepass)
-    .insert(camera, @pbr.NormalPrepass::default())
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_depth_prepass,
+      @pbr.DepthPrepass::default(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_depth_prepass,
+      @pbr.DepthPrepass::default(),
+    )
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_normal_prepass,
+      @pbr.NormalPrepass::default(),
+    )
   } else {
-    world.component(@pbr.ecs_key_depth_prepass).remove(camera) |> ignore
-    world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
+    try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
+    try! (world.take(camera, @pbr.ecs_key_normal_prepass) |> ignore)
   }
   update_help_text()
 }

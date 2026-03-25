@@ -18,31 +18,44 @@ test "visibility: inherited child is hidden when parent is hidden" {
   let tick = world.advance_sequence()
   ignore(tick)
   let parent = world.spawn_empty()
-  get_visibility_store(world).insert(parent, @visibility.Visibility::Hidden)
-  get_inherited_visibility_store(world).insert(
+  try! world.set_by_key(
     parent,
+    ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_inherited_visibility,
     @visibility.InheritedVisibility::new(true),
   )
-  get_view_visibility_store(world).insert(
+  try! world.set_by_key(
     parent,
+    ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),
   )
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  get_visibility_store(world).insert(child, @visibility.Visibility::Inherited)
-  get_inherited_visibility_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_inherited_visibility,
     @visibility.InheritedVisibility::new(true),
   )
-  get_view_visibility_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),
   )
   @visibility.visibility_propagate_system(world)
-  let iv = get_inherited_visibility_store(world).get(child)
+  let iv = try! world.get_by_key(child, ecs_key_inherited_visibility)
   inspect(iv.unwrap().is_visible(), content="false")
 }
 
@@ -52,31 +65,44 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let tick = world.advance_sequence()
   ignore(tick)
   let parent = world.spawn_empty()
-  get_visibility_store(world).insert(parent, @visibility.Visibility::Hidden)
-  get_inherited_visibility_store(world).insert(
+  try! world.set_by_key(
     parent,
+    ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_inherited_visibility,
     @visibility.InheritedVisibility::new(true),
   )
-  get_view_visibility_store(world).insert(
+  try! world.set_by_key(
     parent,
+    ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),
   )
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  get_visibility_store(world).insert(child, @visibility.Visibility::Visible)
-  get_inherited_visibility_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_visibility,
+    @visibility.Visibility::Visible,
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_inherited_visibility,
     @visibility.InheritedVisibility::new(false),
   )
-  get_view_visibility_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_view_visibility,
     @visibility.ViewVisibility::new(false),
   )
   @visibility.visibility_propagate_system(world)
-  let iv = get_inherited_visibility_store(world).get(child)
+  let iv = try! world.get_by_key(child, ecs_key_inherited_visibility)
   inspect(iv.unwrap().is_visible(), content="true")
 }
 
@@ -89,21 +115,28 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
   // Parent intentionally has no Visibility/InheritedVisibility/ViewVisibility.
 
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  get_visibility_store(world).insert(child, @visibility.Visibility::Inherited)
-  get_inherited_visibility_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_inherited_visibility,
     @visibility.InheritedVisibility::new(false),
   )
-  get_view_visibility_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_view_visibility,
     @visibility.ViewVisibility::new(false),
   )
   @visibility.visibility_propagate_system(world)
-  let iv = get_inherited_visibility_store(world).get(child)
+  let iv = try! world.get_by_key(child, ecs_key_inherited_visibility)
   inspect(iv.unwrap().is_visible(), content="true")
 }
 

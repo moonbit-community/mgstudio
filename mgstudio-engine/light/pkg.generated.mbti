@@ -45,35 +45,9 @@ pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight]
 
 pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
 
-pub fn get_directional_light_store(@ecs.World) -> @ecs.ComponentAccess[DirectionalLight]
-
-pub fn get_directional_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[DirectionalLightTexture]
-
-pub fn get_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[EnvironmentMapLight]
-
-pub fn get_fog_volume_store(@ecs.World) -> @ecs.ComponentAccess[FogVolume]
-
-pub fn get_generated_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[GeneratedEnvironmentMapLight]
-
 pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLight]
 
-pub fn get_irradiance_volume_store(@ecs.World) -> @ecs.ComponentAccess[IrradianceVolume]
-
-pub fn get_light_probe_store(@ecs.World) -> @ecs.ComponentAccess[LightProbe]
-
-pub fn get_parallax_correction_store(@ecs.World) -> @ecs.ComponentAccess[ParallaxCorrection]
-
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
-
-pub fn get_point_light_store(@ecs.World) -> @ecs.ComponentAccess[PointLight]
-
-pub fn get_point_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[PointLightTexture]
-
-pub fn get_spot_light_store(@ecs.World) -> @ecs.ComponentAccess[SpotLight]
-
-pub fn get_spot_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[SpotLightTexture]
-
-pub fn get_volumetric_light_store(@ecs.World) -> @ecs.ComponentAccess[VolumetricLight]
 
 // Errors
 

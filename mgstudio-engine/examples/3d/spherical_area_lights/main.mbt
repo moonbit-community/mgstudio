@@ -190,10 +190,9 @@ fn setup(world : @ecs.World) -> Unit {
     ).spawn(world)
 
     let point_light = world.spawn_empty()
-    world
-    .component(@pbr.ecs_key_point_light)
-    .insert(
+    try! world.set_by_key(
       point_light,
+      @pbr.ecs_key_point_light,
       @pbr.PointLight::default()
       .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
@@ -201,12 +200,31 @@ fn setup(world : @ecs.World) -> Unit {
       .with_intensity(mapped_point_light_intensity(radius))
       .with_shadow_maps_enabled(false),
     )
-    world
-    .component(@hierarchy.ecs_key_parent)
-    .insert(point_light, @hierarchy.Parent::new(sphere))
-    world
-    .component(@transform.ecs_key_transform)
-    .insert(point_light, @transform.Transform::identity())
+    try! world.set_by_key(
+      point_light,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(sphere),
+    )
+    try! world.set_by_key(
+      point_light,
+      @pbr.ecs_key_point_light,
+      @pbr.PointLight::default()
+      .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
+      .with_radius(radius)
+      .with_range(mapped_point_light_range(radius))
+      .with_intensity(mapped_point_light_intensity(radius))
+      .with_shadow_maps_enabled(false),
+    )
+    try! world.set_by_key(
+      point_light,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(sphere),
+    )
+    try! world.set_by_key(
+      point_light,
+      @transform.ecs_key_transform,
+      @transform.Transform::identity(),
+    )
   }
 }
 

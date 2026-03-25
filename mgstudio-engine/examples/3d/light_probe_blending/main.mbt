@@ -184,11 +184,11 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let store = world.component(@visibility.ecs_key_visibility)
-  if store.contains(entity) {
-    store.set(entity, visibility) |> ignore
+  if (try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
+    try! (world.replace(entity, @visibility.ecs_key_visibility, visibility)
+    |> ignore)
   } else {
-    store.insert(entity, visibility)
+    try! world.set_by_key(entity, @visibility.ecs_key_visibility, visibility)
   }
 }
 
@@ -363,7 +363,7 @@ fn spawn_probe_gizmo_box(
 ///|
 fn sphere_position(world : @ecs.World) -> @math.Vec3 {
   if light_probe_blending_state.val.sphere is Some(entity) {
-    if world.component(@transform.ecs_key_transform).get(entity)
+    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
       is Some(transform) {
       return transform.translation
     }
@@ -388,16 +388,15 @@ fn write_orbit_camera_transform(world : @ecs.World) -> Unit {
     radius * @math.sin(inclination) * @math.sin(azimuth),
   ).add(target)
 
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     camera_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(translation.x, translation.y, translation.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -410,16 +409,15 @@ fn write_free_camera_transform(
   }
 
   let position = light_probe_blending_state.val.free_position
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     camera_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       position.add(forward),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -427,7 +425,7 @@ fn switch_to_free_camera(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
-  guard world.component(@transform.ecs_key_transform).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
     is Some(camera_transform) else {
     return
   }
@@ -455,7 +453,7 @@ fn switch_to_orbit_camera(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
-  guard world.component(@transform.ecs_key_transform).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
     is Some(camera_transform) else {
     return
   }
@@ -494,9 +492,11 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @gltf.GltfAssetLabel::Scene(0).from_asset(LIGHT_PROBE_SCENE_ASSET),
   )
   let room_scene_entity = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(room_scene_entity, @scene.SceneRoot::new(room_scene))
+  try! world.set_by_key(
+    room_scene_entity,
+    @scene.ecs_key_scene_root,
+    @scene.SceneRoot::new(room_scene),
+  )
 
   let reflective_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white())
@@ -532,16 +532,14 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.camera = Some(camera)
 
   let directional = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(3.0F, 6.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -5.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -554,36 +552,32 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   let specular_room2 = Some(asset_server.load(SPECULAR_ROOM2_ASSET))
 
   let probe_1 = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_light_probe)
-  .insert(
+  try! world.set_by_key(
     probe_1,
+    @pbr.ecs_key_light_probe,
     @pbr.LightProbe::default().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
   )
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     probe_1,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       diffuse_room1,
       specular_room1,
       LIGHT_PROBE_INTENSITY,
     ),
   )
-  world
-  .component(@pbr.ecs_key_parallax_correction)
-  .insert(
+  try! world.set_by_key(
     probe_1,
+    @pbr.ecs_key_parallax_correction,
     @pbr.ParallaxCorrection::Custom(
       @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     probe_1,
+    @transform.ecs_key_transform,
     @transform.Transform::identity()
     .with_scale(
       @math.Vec3::new(1.0F, -1.0F, 1.0F).mul_scalar(LIGHT_PROBE_SIDE_LENGTH),
@@ -592,36 +586,32 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
 
   let probe_2 = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_light_probe)
-  .insert(
+  try! world.set_by_key(
     probe_2,
+    @pbr.ecs_key_light_probe,
     @pbr.LightProbe::default().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
   )
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     probe_2,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       diffuse_room2,
       specular_room2,
       LIGHT_PROBE_INTENSITY,
     ),
   )
-  world
-  .component(@pbr.ecs_key_parallax_correction)
-  .insert(
+  try! world.set_by_key(
     probe_2,
+    @pbr.ecs_key_parallax_correction,
     @pbr.ParallaxCorrection::Custom(
       @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     probe_2,
+    @transform.ecs_key_transform,
     @transform.Transform::identity()
     .with_scale(
       @math.Vec3::new(1.0F, -1.0F, 1.0F).mul_scalar(LIGHT_PROBE_SIDE_LENGTH),
@@ -763,10 +753,12 @@ fn move_sphere(world : @ecs.World) -> Unit {
       1.0F
     ) *
     0.5F
-  world
-  .component(@transform.ecs_key_transform)
-  .set(entity, @transform.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t))
-  |> ignore
+  try! (world.replace(
+    entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t),
+  )
+  |> ignore)
 }
 
 ///|

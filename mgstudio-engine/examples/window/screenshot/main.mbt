@@ -70,12 +70,21 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @pbr.ecs_key_point_light,
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+  )
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -99,47 +108,82 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text,
     @text.Text::new("Press <spacebar> to save a screenshot to disk"),
   )
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(24.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new("Press <spacebar> to save a screenshot to disk"),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(24.0F),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
 }
 
 ///|
@@ -162,8 +206,9 @@ fn screenshot_on_spacebar(
   ignore(
     world.add_entity_observer(screenshot_entity, @window.save_to_disk(path)),
   )
-  try! world.set_component(
+  try! world.set_by_key(
     screenshot_entity,
+    @window.ecs_key_screenshot,
     @window.Screenshot::primary_window(),
   )
   counter.get_ref().val = counter.get_ref().val + 1
@@ -176,14 +221,14 @@ fn screenshot_saving(world : @ecs.World) -> Unit {
     return
   }
 
-  let cursor_store = world.component(@window.ecs_key_cursor_icon)
-  if world.component(@window.ecs_key_capturing).len() == 0 {
-    cursor_store.remove(window) |> ignore
+  if world.component_count(@window.ecs_key_capturing) == 0 {
+    try! (world.take(window, @window.ecs_key_cursor_icon) |> ignore)
     return
   }
 
-  cursor_store.insert(
+  try! world.set_by_key(
     window,
+    @window.ecs_key_cursor_icon,
     @window.CursorIcon::from(@window.SystemCursorIcon::Progress),
   )
 }

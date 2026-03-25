@@ -21,6 +21,9 @@ fn configure_fixed_time(world : @ecs.World, timestep_seconds : Float) -> Unit {
 }
 
 ///|
+let ecs_key_transform : @ecs.ComponentKey[@transform.Transform] = @transform.ecs_key_transform
+
+///|
 test "physics3d: falling body collides and writes back transform" {
   let world = @ecs.World::new()
   configure_fixed_time(world, 1.0F / 60.0F)
@@ -31,28 +34,32 @@ test "physics3d: falling body collides and writes back transform" {
   cfg_res.insert(cfg_ref.val)
   let floor = world.spawn()
   let ball = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(floor, RigidBody3d::fixed())
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body3d, RigidBody3d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(ball, RigidBody3d::dynamic())
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(ball, ecs_key_rigid_body3d, RigidBody3d::dynamic())
+  try! world.set_by_key(
     ball,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::ball(0.5F)),
   )
-  get_velocity3d_store(world).insert(ball, Velocity3d::zero())
+  try! world.set_by_key(ball, ecs_key_velocity3d, Velocity3d::zero())
   physics3d_clear_events_system(world)
   physics3d_sync_insertions_system(world)
-  let initial_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
+  let initial_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
   let mut i = 0
   while i < 120 {
     physics3d_sync_world_to_rapier_system(world)
@@ -61,7 +68,7 @@ test "physics3d: falling body collides and writes back transform" {
     world.advance_sequence() |> ignore
     i = i + 1
   }
-  let final_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
+  let final_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
   inspect(final_y < initial_y, content="true")
 }
 
@@ -76,27 +83,32 @@ test "physics3d: sensor collision events are emitted" {
   cfg_res.insert(cfg_ref.val)
   let floor = world.spawn()
   let ball = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(floor, RigidBody3d::fixed())
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body3d, RigidBody3d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(ball, RigidBody3d::dynamic())
+  try! world.set_by_key(ball, ecs_key_rigid_body3d, RigidBody3d::dynamic())
   // Mark the ball collider as a sensor so the 3DReal backend will emit Started/Stopped events.
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::ball(0.5F)).sensor(true),
   )
-  get_active_events3d_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_active_events3d,
     ActiveEvents3d::collision_events(),
   )
   physics3d_clear_events_system(world)
@@ -124,26 +136,31 @@ test "physics3d: contact force events are emitted" {
   cfg_res.insert(cfg_ref.val)
   let floor = world.spawn()
   let ball = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(floor, RigidBody3d::fixed())
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body3d, RigidBody3d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(ball, RigidBody3d::dynamic())
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(ball, ecs_key_rigid_body3d, RigidBody3d::dynamic())
+  try! world.set_by_key(
     ball,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::ball(0.5F)),
   )
-  get_contact_force_event_threshold3d_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_contact_force_event_threshold3d,
     ContactForceEventThreshold3d::new(0.0F),
   )
   physics3d_clear_events_system(world)
@@ -166,26 +183,30 @@ test "physics3d: active collision type and hook components are accepted" {
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let body = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     body,
+    ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
-  get_rigid_body3d_store(world).insert(body, RigidBody3d::dynamic())
-  get_collider3d_store(world).insert(
+  try! world.set_by_key(body, ecs_key_rigid_body3d, RigidBody3d::dynamic())
+  try! world.set_by_key(
     body,
+    ecs_key_collider3d,
     Collider3d::new(ColliderShape3d::ball(1.0F)),
   )
-  get_active_collision_types3d_store(world).insert(
+  try! world.set_by_key(
     body,
+    ecs_key_active_collision_types3d,
     ActiveCollisionTypes3d::new(@collision.ActiveCollisionTypes::all()),
   )
-  get_active_hooks3d_store(world).insert(
+  try! world.set_by_key(
     body,
+    ecs_key_active_hooks3d,
     ActiveHooks3d::new(@collision.ActiveHooks::all()),
   )
   physics3d_sync_insertions_system(world)
   inspect(
-    get_rapier_collider_handle3d_store(world).contains(body),
+    try! world.contains_by_key(body, ecs_key_rapier_collider_handle3d),
     content="true",
   )
 }

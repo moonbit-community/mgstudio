@@ -90,7 +90,7 @@ fn my_component_or_abort(
   world : @ecs.DeferredWorld,
   entity : @core.Entity,
 ) -> MyComponent {
-  match (try! world.get(entity, my_component_key)) {
+  match (try! world.get_by_key(entity, my_component_key)) {
     Some(component) => component
     None =>
       abort("Missing MyComponent on hook target in component_hooks example")

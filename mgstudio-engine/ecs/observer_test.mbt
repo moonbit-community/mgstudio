@@ -52,9 +52,15 @@ test "ecs observer: world add_observer is world-scoped and fires on replace" {
   let entity0 = world0.spawn()
   let entity1 = world1.spawn()
 
-  try! world0.set(entity0, observer_marker_key, ObserverMarker::{ value: 1 })
-  try! world0.set(entity0, observer_marker_key, ObserverMarker::{ value: 2 })
-  try! world1.set(entity1, observer_marker_key, ObserverMarker::{ value: 3 })
+  try! world0.set_by_key(entity0, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  try! world0.set_by_key(entity0, observer_marker_key, ObserverMarker::{
+    value: 2,
+  })
+  try! world1.set_by_key(entity1, observer_marker_key, ObserverMarker::{
+    value: 3,
+  })
 
   inspect(first_handle.world_id() == world0.world_id(), content="true")
   inspect(first_handle.id() > 0, content="true")
@@ -79,9 +85,15 @@ test "ecs observer: add_entity_observer only fires for the bound entity" {
     }),
   )
 
-  try! world.set(entity0, observer_marker_key, ObserverMarker::{ value: 1 })
-  try! world.set(entity1, observer_marker_key, ObserverMarker::{ value: 2 })
-  try! world.set(entity0, observer_marker_key, ObserverMarker::{ value: 3 })
+  try! world.set_by_key(entity0, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  try! world.set_by_key(entity1, observer_marker_key, ObserverMarker::{
+    value: 2,
+  })
+  try! world.set_by_key(entity0, observer_marker_key, ObserverMarker::{
+    value: 3,
+  })
 
   inspect(hits.val, content="2")
   inspect(seen_entities, content="[0, 0]")
@@ -101,9 +113,14 @@ test "ecs observer: world add_observer fires on remove" {
     }),
   )
 
-  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 1 })
-  inspect(try! world.remove(entity, observer_marker_key), content="true")
-  inspect(try! world.remove(entity, observer_marker_key), content="false")
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  inspect(try! world.remove_by_key(entity, observer_marker_key), content="true")
+  inspect(
+    try! world.remove_by_key(entity, observer_marker_key),
+    content="false",
+  )
 
   inspect(hits.val, content="1")
   inspect(seen_entities, content="[0]")
@@ -126,10 +143,20 @@ test "ecs observer: add_remove_entity_observer only fires for the bound entity" 
     }),
   )
 
-  try! world.set(entity0, observer_marker_key, ObserverMarker::{ value: 1 })
-  try! world.set(entity1, observer_marker_key, ObserverMarker::{ value: 2 })
-  inspect(try! world.remove(entity0, observer_marker_key), content="true")
-  inspect(try! world.remove(entity1, observer_marker_key), content="true")
+  try! world.set_by_key(entity0, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  try! world.set_by_key(entity1, observer_marker_key, ObserverMarker::{
+    value: 2,
+  })
+  inspect(
+    try! world.remove_by_key(entity0, observer_marker_key),
+    content="true",
+  )
+  inspect(
+    try! world.remove_by_key(entity1, observer_marker_key),
+    content="true",
+  )
 
   inspect(hits.val, content="1")
   inspect(seen_entities, content="[0]")

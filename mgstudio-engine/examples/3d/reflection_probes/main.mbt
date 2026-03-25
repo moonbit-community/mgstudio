@@ -206,11 +206,10 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let store = world.component(@visibility.ecs_key_visibility)
-  if store.contains(actual) {
-    store.set(actual, value) |> ignore
+  if (try! world.contains_by_key(actual, @visibility.ecs_key_visibility)) {
+    try! (world.replace(actual, @visibility.ecs_key_visibility, value) |> ignore)
   } else {
-    store.insert(actual, value)
+    try! world.set_by_key(actual, @visibility.ecs_key_visibility, value)
   }
 }
 
@@ -239,26 +238,28 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   let probe = world.spawn_empty()
   reflection_probes_state.val.reflection_probe = Some(probe)
 
-  world
-  .component(@pbr.ecs_key_light_probe)
-  .insert(probe, @pbr.LightProbe::default())
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     probe,
+    @pbr.ecs_key_light_probe,
+    @pbr.LightProbe::default(),
+  )
+  try! world.set_by_key(
+    probe,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       reflection_probes_state.val.diffuse_environment_map,
       reflection_probes_state.val.specular_reflection_probe,
       ENV_MAP_INTENSITY,
     ),
   )
-  world
-  .component(@pbr.ecs_key_parallax_correction)
-  .insert(probe, @pbr.ParallaxCorrection::None)
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     probe,
+    @pbr.ecs_key_parallax_correction,
+    @pbr.ParallaxCorrection::None,
+  )
+  try! world.set_by_key(
+    probe,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
   )
 }
@@ -268,9 +269,9 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
   guard reflection_probes_state.val.camera is Some(camera) else { return }
 
   remove_reflection_probe(world)
-  world.component(@pbr.ecs_key_environment_map_light).remove(camera) |> ignore
-  world.component(@pbr.ecs_key_generated_environment_map_light).remove(camera)
-  |> ignore
+  try! (world.take(camera, @pbr.ecs_key_environment_map_light) |> ignore)
+  try! (world.take(camera, @pbr.ecs_key_generated_environment_map_light)
+  |> ignore)
 
   match reflection_probes_state.val.reflection_mode {
     ReflectionMode::EnvironmentMap => {
@@ -279,9 +280,11 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         false,
       )
-      world
-      .component(@pbr.ecs_key_environment_map_light)
-      .insert(camera, create_camera_environment_map_light())
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_environment_map_light,
+        create_camera_environment_map_light(),
+      )
     }
     ReflectionMode::ReflectionProbe => {
       set_entity_visibility(
@@ -289,9 +292,11 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         true,
       )
-      world
-      .component(@pbr.ecs_key_environment_map_light)
-      .insert(camera, create_camera_environment_map_light())
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_environment_map_light,
+        create_camera_environment_map_light(),
+      )
       spawn_reflection_probe(world)
     }
     ReflectionMode::GeneratedEnvironmentMap => {
@@ -300,10 +305,9 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         false,
       )
-      world
-      .component(@pbr.ecs_key_generated_environment_map_light)
-      .insert(
+      try! world.set_by_key(
         camera,
+        @pbr.ecs_key_generated_environment_map_light,
         @pbr.GeneratedEnvironmentMapLight::new(
           reflection_probes_state.val.specular_environment_map,
           ENV_MAP_INTENSITY,
@@ -345,18 +349,30 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@pbr.ecs_key_exposure)
-  .insert(camera, @pbr.Exposure::new(11.0F))
-  world
-  .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted)
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_exposure,
+    @pbr.Exposure::new(11.0F),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_exposure,
+    @pbr.Exposure::new(11.0F),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_tonemapping,
+    @post_process.Tonemapping::AcesFitted,
+  )
   if reflection_probes_state.val.specular_environment_map
     is Some(specular_env_map) {
-    world
-    .component(@pbr.ecs_key_skybox)
-    .insert(camera, @pbr.Skybox::new(specular_env_map, ENV_MAP_INTENSITY))
+    try! world.set_by_key(
+      camera,
+      @pbr.ecs_key_skybox,
+      @pbr.Skybox::new(specular_env_map, ENV_MAP_INTENSITY),
+    )
   }
 
   let sphere_material = @pbr.standard_material_add(
@@ -373,10 +389,9 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let cubes_scene = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     cubes_scene,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -506,7 +521,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
   guard reflection_probes_state.val.camera is Some(camera) else { return }
-  guard world.component(@transform.ecs_key_transform).get(camera)
+  guard (try! world.get_by_key(camera, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -519,17 +534,16 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   let rotated_x = cos_v * x - sin_v * z
   let rotated_z = sin_v * x + cos_v * z
 
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     camera,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(
       rotated_x,
       transform.translation.y,
       rotated_z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|

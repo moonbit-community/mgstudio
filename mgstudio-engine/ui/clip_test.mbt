@@ -31,10 +31,11 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
   let container = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     container,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
   let container_node = Node::default()
@@ -55,19 +56,21 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     .with_overflow_clip_margin(
       OverflowClipMargin::content_box().with_margin(2.0F),
     )
-  get_node_store(world).insert(container, container_node)
+  try! world.set_by_key(container, ecs_key_node, container_node)
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  get_node_store(world).insert(child, Node::default())
+  try! world.set_by_key(child, ecs_key_node, Node::default())
 
   // Build Children from Parent before clip.
 
   // Seed UiLayout so the clip system doesn't depend on layout implementation.
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(
     container,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 20.0F),
@@ -75,15 +78,17 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
       ),
     ),
   )
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F)),
     ),
   )
   ui_clip_system(world)
-  let scissor_store = @sprite.get_scissor_rect_store(world)
-  let scissor = scissor_store.get(child).unwrap().rect
+  let scissor = try! world
+    .get_by_key(child, @sprite.ecs_key_scissor_rect)
+    .unwrap().rect
   // BorderBox: (10,20)-(110,120)
   // ContentBox inset: border(5)+padding(10)=15 => (25,35)-(95,105)
   // Margin inflate 2 => (23,33)-(97,107)
@@ -111,26 +116,30 @@ test "ui: overflow Visible disables clipping per-axis" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
   let container = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     container,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  get_node_store(world).insert(
+  try! world.set_by_key(
     container,
+    ecs_key_node,
     Node::default().with_overflow(
       Overflow::new(OverflowAxis::Visible, OverflowAxis::Hidden),
     ),
   )
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  get_node_store(world).insert(child, Node::default())
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(child, ecs_key_node, Node::default())
+  try! world.set_by_key(
     container,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 20.0F),
@@ -138,15 +147,17 @@ test "ui: overflow Visible disables clipping per-axis" {
       ),
     ),
   )
-  get_ui_layout_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F)),
     ),
   )
   ui_clip_system(world)
-  let scissor_store = @sprite.get_scissor_rect_store(world)
-  let scissor = scissor_store.get(child).unwrap().rect
+  let scissor = try! world
+    .get_by_key(child, @sprite.ecs_key_scissor_rect)
+    .unwrap().rect
   // X should not be clipped by container; Y should be.
   let ok_x = scissor.min.x == 0.0F && scissor.max.x == 800.0F
   let ok_y = scissor.min.y == 20.0F && scissor.max.y == 120.0F

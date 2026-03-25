@@ -42,7 +42,7 @@ fn setup(world : @ecs.World) -> Unit {
   // Keep minimal scene entities on the ECS world path until render3d ECS
   // bundle/runtime parity lands.
   let scene_entity = world.spawn_empty()
-  try! world.set(
+  try! world.set_by_key(
     scene_entity,
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, -5.0F),

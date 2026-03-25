@@ -21,14 +21,6 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.Tempora
 
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter]
 
-pub fn get_fxaa_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Fxaa]
-
-pub fn get_msaa_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.Msaa]
-
-pub fn get_temporal_anti_aliasing_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.TemporalAntiAliasing]
-
-pub fn get_temporal_jitter_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.TemporalJitter]
-
 // Errors
 
 // Types and methods

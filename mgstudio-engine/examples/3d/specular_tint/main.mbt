@@ -220,14 +220,15 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(camera, @pbr.Skybox::new(specular_env_map, 3000.0F))
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_skybox,
+    @pbr.Skybox::new(specular_env_map, 3000.0F),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(diffuse_env_map),
       Some(specular_env_map),
@@ -242,46 +243,71 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
   let help_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(help_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     help_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(help_entity, @text.Text::new(app_status_help_text(state.tint_type)))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     help_entity,
+    @text.ecs_key_text,
+    @text.Text::new(app_status_help_text(state.tint_type)),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_bottom(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text,
+    @text.Text::new(app_status_help_text(state.tint_type)),
+  )
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(ui_font).with_font_size(18.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(
+  try! world.set_by_key(
     help_entity,
+    @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(help_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    help_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
   state.help_text = Some(help_entity)
 }
 
@@ -289,7 +315,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn rotate_camera(world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.camera is Some(camera_entity) else { return }
-  guard world.component(@transform.ecs_key_transform).get(camera_entity)
+  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
     is Some(transform) else {
     return
   }
@@ -301,17 +327,16 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   let rotated_x = cos_v * x - sin_v * z
   let rotated_z = sin_v * x + cos_v * z
 
-  world
-  .component(@transform.ecs_key_transform)
-  .set(
+  try! (world.replace(
     camera_entity,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(
       rotated_x,
       transform.translation.y,
       rotated_z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
   )
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -367,10 +392,12 @@ fn update_help_text(_world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.help_text is Some(help_entity) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(help_entity) is Some(text_value) else { return }
+  guard (try! world.get_by_key(help_entity, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
   text_value.content = app_status_help_text(state.tint_type)
-  ignore(text_store.set(help_entity, text_value))
+  ignore(try! world.replace(help_entity, @text.ecs_key_text, text_value))
 }
 
 ///|

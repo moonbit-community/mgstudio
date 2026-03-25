@@ -40,10 +40,9 @@ let cfg = @physics2d.physics2d_hooks_config()
   },
 )
 
-@physics2d.get_active_hooks2d_store(world).insert(
+try! world.set(
   collider_entity,
   @physics2d.ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
-  tick,
 )
 ```
 

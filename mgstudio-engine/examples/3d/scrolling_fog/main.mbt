@@ -46,33 +46,43 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     )
     .spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default())
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::default(),
+  )
 
   let directional_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_volumetric_light)
-  .insert(directional_light, @pbr.VolumetricLight::default())
+  try! world.set_by_key(
+    directional_light,
+    @pbr.ecs_key_volumetric_light,
+    @pbr.VolumetricLight::default(),
+  )
 
   let black_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_perceptual_roughness(
@@ -116,18 +126,16 @@ fn setup(world : @ecs.World) -> Unit {
     },
   )
   let fog_volume = world.spawn_empty()
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     fog_volume,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 32.0F, 0.0F).with_scale(
       @math.Vec3::splat(64.0F),
     ),
   )
-  world
-  .component(@pbr.ecs_key_fog_volume)
-  .insert(
+  try! world.set_by_key(
     fog_volume,
+    @pbr.ecs_key_fog_volume,
     @pbr.FogVolume::default()
     .with_density_texture(Some(noise_texture))
     .with_density_factor(0.05F),
@@ -149,15 +157,15 @@ fn scroll_fog(world : @ecs.World) -> Unit {
     0.0F,
     FOG_DENSITY_TEXTURE_SCROLL_SPEED,
   ).mul_scalar(world_time(world).delta_seconds())
-  let fog_volume_store = world.component(@pbr.ecs_key_fog_volume)
-  fog_volume_store.for_each(fn(entity, fog_volume) {
-    fog_volume_store.set(
+  world.for_each_component(@pbr.ecs_key_fog_volume, fn(entity, fog_volume) {
+    try! (world.replace(
       entity,
+      @pbr.ecs_key_fog_volume,
       fog_volume.with_density_texture_offset(
         fog_volume.density_texture_offset.add(offset_delta),
       ),
     )
-    |> ignore
+    |> ignore)
   })
 }
 

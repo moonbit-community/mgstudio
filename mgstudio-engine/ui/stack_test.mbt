@@ -24,38 +24,46 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   }
 
   let global_root = world.spawn_empty()
-  get_ui_layout_store(world).insert(global_root, layout_dummy())
-  get_global_z_index_store(world).insert(global_root, GlobalZIndex::new(-1))
+  try! world.set_by_key(global_root, ecs_key_ui_layout, layout_dummy())
+  try! world.set_by_key(
+    global_root,
+    ecs_key_global_z_index,
+    GlobalZIndex::new(-1),
+  )
   let root = world.spawn_empty()
-  get_ui_layout_store(world).insert(root, layout_dummy())
+  try! world.set_by_key(root, ecs_key_ui_layout, layout_dummy())
   let child_b = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child_b,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  get_ui_layout_store(world).insert(child_b, layout_dummy())
-  get_z_index_store(world).insert(child_b, ZIndex::new(0))
+  try! world.set_by_key(child_b, ecs_key_ui_layout, layout_dummy())
+  try! world.set_by_key(child_b, ecs_key_z_index, ZIndex::new(0))
   let child_c = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child_c,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  get_ui_layout_store(world).insert(child_c, layout_dummy())
+  try! world.set_by_key(child_c, ecs_key_ui_layout, layout_dummy())
   // Same z as child_b: should preserve insertion order (b before c).
-  get_z_index_store(world).insert(child_c, ZIndex::new(0))
+  try! world.set_by_key(child_c, ecs_key_z_index, ZIndex::new(0))
   let child_a = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child_a,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  get_ui_layout_store(world).insert(child_a, layout_dummy())
-  get_z_index_store(world).insert(child_a, ZIndex::new(1))
+  try! world.set_by_key(child_a, ecs_key_ui_layout, layout_dummy())
+  try! world.set_by_key(child_a, ecs_key_z_index, ZIndex::new(1))
   let child_a0 = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
+  try! world.set_by_key(
     child_a0,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(child_a),
   )
-  get_ui_layout_store(world).insert(child_a0, layout_dummy())
+  try! world.set_by_key(child_a0, ecs_key_ui_layout, layout_dummy())
 
   // Build Children from Parent.
   ui_stack_system(world)

@@ -92,7 +92,7 @@ fn hook_test_reset() -> Unit {
 
 ///|
 fn hook_test_value_text(world : World, entity : @core.Entity) -> String {
-  let result : Result[HookTestComponent?, EcsError] = try? world.get(
+  let result : Result[HookTestComponent?, EcsError] = try? world.get_by_key(
     entity, hook_test_component_key,
   )
   match result {
@@ -167,7 +167,7 @@ test "ecs component hooks: first insert fires add then insert with readable payl
   let world = World::new()
   let entity = world.spawn()
 
-  try! world.set(entity, hook_test_component_key, HookTestComponent::{
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
     value: 1,
   })
 
@@ -184,12 +184,12 @@ test "ecs component hooks: replace fires replace then insert around the new payl
   let world = World::new()
   let entity = world.spawn()
 
-  try! world.set(entity, hook_test_component_key, HookTestComponent::{
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
     value: 1,
   })
   hook_test_reset()
 
-  try! world.set(entity, hook_test_component_key, HookTestComponent::{
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
     value: 2,
   })
 
@@ -206,18 +206,24 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
   let world = World::new()
   let entity = world.spawn()
 
-  try! world.set(entity, hook_test_component_key, HookTestComponent::{
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
     value: 7,
   })
   hook_test_reset()
 
-  inspect(try! world.remove(entity, hook_test_component_key), content="true")
+  inspect(
+    try! world.remove_by_key(entity, hook_test_component_key),
+    content="true",
+  )
   inspect(hook_event_log_ref.val, content="[\"replace:7\", \"remove:7\"]")
   inspect(hook_entity_ids_ref.val, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
-  inspect(try! world.get(entity, hook_test_component_key), content="None")
+  inspect(
+    try! world.get_by_key(entity, hook_test_component_key),
+    content="None",
+  )
 }
 
 ///|
@@ -226,7 +232,7 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
   let world = World::new()
   let entity = world.spawn()
 
-  try! world.set(entity, hook_test_component_key, HookTestComponent::{
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
     value: 9,
   })
   hook_test_reset()
@@ -249,16 +255,17 @@ test "ecs component hooks: component access mutation paths preserve caller prove
   hook_test_reset()
   let world = World::new()
   let entity = world.spawn()
-  let access = world.component(hook_test_component_key)
 
-  access.insert(entity, HookTestComponent::{ value: 3 })
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
+    value: 3,
+  })
 
   inspect(hook_event_log_ref.val, content="[\"add:3\", \"insert:3\"]")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
 
   hook_test_reset()
-  ignore(access.remove(entity))
+  ignore(try! world.take(entity, hook_test_component_key))
   inspect(hook_event_log_ref.val, content="[\"replace:3\", \"remove:3\"]")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
@@ -269,12 +276,12 @@ test "ecs component hooks: deferred hook commands flush after callback" {
   let world = World::new()
   let entity = world.spawn()
 
-  try! world.set(entity, hook_commands_test_component_key, HookCommandsTestComponent::{
+  try! world.set_by_key(entity, hook_commands_test_component_key, HookCommandsTestComponent::{
 
   })
   inspect(world.is_alive(entity), content="true")
 
-  ignore(try! world.remove(entity, hook_commands_test_component_key))
+  ignore(try! world.remove_by_key(entity, hook_commands_test_component_key))
   inspect(world.is_alive(entity), content="false")
 }
 
@@ -313,7 +320,7 @@ test "ecs component hooks: world-scoped registration rejects components already 
   let world1 = World::new()
   let entity = world0.spawn()
 
-  try! world0.set(entity, late_registration_hook_test_component_key, LateRegistrationHookTestComponent::{
+  try! world0.set_by_key(entity, late_registration_hook_test_component_key, LateRegistrationHookTestComponent::{
 
   })
 

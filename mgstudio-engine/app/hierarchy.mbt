@@ -99,12 +99,12 @@ fn[C : @ecs.Component] validate_parent_has_component(
   let world = current_world_abort_missing()
   let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
   let message_key = check_parent_has_component_message_key(component_key)
-  let child_of_result : Result[@hierarchy.Parent?, @ecs.EcsError] = try? world.get(
+  let child_of_result : Result[@hierarchy.Parent?, @ecs.EcsError] = try? world.get_by_key(
     event.entity,
     @hierarchy.ecs_key_parent,
   )
   guard child_of_result is Ok(Some(child_of)) else { return }
-  if world.component(component_key).contains(child_of.entity()) {
+  if (try! world.contains_by_key(child_of.entity(), component_key)) {
     return
   }
   ignore(
@@ -180,23 +180,21 @@ fn[C] check_parent_has_component(
   messages : @ecs.MessageReader[CheckParentHasComponent[C]],
 ) -> Unit {
   let world = current_world_abort_missing()
-  let component_access = world.component(component_key)
-  let name_access = world.component(@ecs.ecs_key_name)
   for message in (try! messages.read()) {
-    let child_of_result : Result[@hierarchy.Parent?, @ecs.EcsError] = try? world.get(
+    let child_of_result : Result[@hierarchy.Parent?, @ecs.EcsError] = try? world.get_by_key(
       message.entity,
       @hierarchy.ecs_key_parent,
     )
     guard child_of_result is Ok(Some(child_of)) else { continue }
-    if !component_access.contains(message.entity) {
+    if !(try! world.contains_by_key(message.entity, component_key)) {
       continue
     }
     let parent = child_of.entity()
-    if component_access.contains(parent) {
+    if (try! world.contains_by_key(parent, component_key)) {
       continue
     }
-    let child_name = name_access.get(message.entity)
-    let parent_name = name_access.get(parent)
+    let child_name = try! world.get_by_key(message.entity, @ecs.ecs_key_name)
+    let parent_name = try! world.get_by_key(parent, @ecs.ecs_key_name)
     println(
       validate_parent_has_component_warning(
         message.caller,

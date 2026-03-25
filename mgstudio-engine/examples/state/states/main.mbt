@@ -133,11 +133,8 @@ fn setup_menu(commands : @app.Commands) -> Unit {
 
 ///|
 fn menu(world : @ecs.World) -> Unit {
-  let button_store = world.component(@ui.ecs_key_button)
-  let interaction_store = world.component(@ui.ecs_key_interaction)
-  let background_store = world.component(@ui.ecs_key_background_color)
-  interaction_store.for_each(fn(entity, interaction) {
-    if !button_store.contains(entity) {
+  world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
+    if !(try! world.contains_by_key(entity, @ui.ecs_key_button)) {
       return
     }
     let color = match interaction {
@@ -148,8 +145,13 @@ fn menu(world : @ecs.World) -> Unit {
       @ui.Interaction::Hovered => hovered_button_color()
       @ui.Interaction::None => normal_button_color()
     }
-    if background_store.contains(entity) {
-      background_store.set(entity, @ui.BackgroundColor::new(color)) |> ignore
+    if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
+      try! (world.replace(
+        entity,
+        @ui.ecs_key_background_color,
+        @ui.BackgroundColor::new(color),
+      )
+      |> ignore)
     }
   })
 }

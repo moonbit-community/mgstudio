@@ -169,44 +169,100 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content))
-  world
-  .component(@text.ecs_key_text_font)
-  .insert(
+  try! world.set_by_key(
     text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(content),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_bottom(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(content),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
   )
-  world
-  .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
-  world
-  .component(@text.ecs_key_text_layout)
-  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_bottom(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(content),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::new(@sprite.Color::white()),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+  )
 }
 
 ///|
@@ -245,9 +301,11 @@ fn spawn_listener_ear(
     color,
     @transform.Transform::from_xyz(offset.x, offset.y, offset.z),
   )
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(ear, @hierarchy.Parent::new(listener))
+  try! world.set_by_key(
+    ear,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(listener),
+  )
 }
 
 ///|
@@ -269,21 +327,27 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   )
 
-  world
-  .component(@audio.ecs_key_audio_source_player)
-  .insert(emitter, @audio.AudioPlayer::new(track))
-  world
-  .component(@audio.ecs_key_playback_settings)
-  .insert(emitter, @audio.PlaybackSettings::looped().with_spatial(true))
+  try! world.set_by_key(
+    emitter,
+    @audio.ecs_key_audio_source_player,
+    @audio.AudioPlayer::new(track),
+  )
+  try! world.set_by_key(
+    emitter,
+    @audio.ecs_key_playback_settings,
+    @audio.PlaybackSettings::looped().with_spatial(true),
+  )
 
   let listener = world.spawn_empty()
   let listener_component = @audio.SpatialListener::new(LISTENER_GAP)
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(listener, @transform.Transform::identity())
-  world
-  .component(@audio.ecs_key_spatial_listener)
-  .insert(listener, listener_component)
+  try! world.set_by_key(
+    listener,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
+  try! world.set_by_key(
+    listener, @audio.ecs_key_spatial_listener, listener_component,
+  )
 
   spawn_listener_ear(
     world,
@@ -299,13 +363,14 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     light,
+    @pbr.ecs_key_directional_light,
+    @pbr.DirectionalLight::default(),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -348,13 +413,14 @@ fn update_positions(world : @ecs.World) -> Unit {
   let elapsed = spatial_audio_3d_state.val.emitter_stopwatch.elapsed_secs()
   let next_x = @math.sin(elapsed) * ORBIT_RADIUS
   let next_z = @math.cos(elapsed) * ORBIT_RADIUS
-  let transform_store = world.component(@transform.ecs_key_transform)
-  transform_store.update(spatial_audio_3d_state.val.emitter, fn(
-    transform : @transform.Transform,
-  ) {
-    transform.with_translation(@math.Vec3::new(next_x, 0.0F, next_z))
-  })
-  |> ignore
+  try! (world.update_by_key(
+    spatial_audio_3d_state.val.emitter,
+    @transform.ecs_key_transform,
+    fn(transform : @transform.Transform) {
+      transform.with_translation(@math.Vec3::new(next_x, 0.0F, next_z))
+    },
+  )
+  |> ignore)
 }
 
 ///|
@@ -379,16 +445,17 @@ fn update_listener(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = world.component(@transform.ecs_key_transform)
-  transform_store.update(spatial_audio_3d_state.val.listener, fn(
-    transform : @transform.Transform,
-  ) {
-    let translation = transform.translation
-    transform.with_translation(
-      @math.Vec3::new(translation.x + dx, translation.y, translation.z + dz),
-    )
-  })
-  |> ignore
+  try! (world.update_by_key(
+    spatial_audio_3d_state.val.listener,
+    @transform.ecs_key_transform,
+    fn(transform : @transform.Transform) {
+      let translation = transform.translation
+      transform.with_translation(
+        @math.Vec3::new(translation.x + dx, translation.y, translation.z + dz),
+      )
+    },
+  )
+  |> ignore)
 }
 
 ///|
@@ -397,9 +464,11 @@ fn mute(world : @ecs.World) -> Unit {
     return
   }
 
-  let sinks = world.component(@audio.ecs_key_spatial_audio_sink)
   let entities : Array[@core.Entity] = []
-  sinks.for_each(fn(entity : @core.Entity, _sink : @audio.SpatialAudioSink) {
+  world.for_each_component(@audio.ecs_key_spatial_audio_sink, fn(
+    entity : @core.Entity,
+    _sink : @audio.SpatialAudioSink,
+  ) {
     entities.push(entity)
   })
 
@@ -408,9 +477,11 @@ fn mute(world : @ecs.World) -> Unit {
   }
 
   for entity in entities {
-    sinks.update(entity, fn(sink : @audio.SpatialAudioSink) {
+    try! (world.update_by_key(entity, @audio.ecs_key_spatial_audio_sink, fn(
+      sink : @audio.SpatialAudioSink,
+    ) {
       sink.toggle_mute()
     })
-    |> ignore
+    |> ignore)
   }
 }

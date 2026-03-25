@@ -284,17 +284,16 @@ fn set_entity_visibility(
   visible : Bool,
 ) -> Unit {
   if entity is Some(value) {
-    world
-    .component(@visibility.ecs_key_visibility)
-    .set(
+    try! (world.replace(
       value,
+      @visibility.ecs_key_visibility,
       if visible {
         @visibility.Visibility::Inherited
       } else {
         @visibility.Visibility::Hidden
       },
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -323,16 +322,15 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
   if ssr_state.val.camera is Some(camera) {
     let x = @math.sin(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
     let z = @math.cos(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
-    world
-    .component(@transform.ecs_key_transform)
-    .set(
+    try! (world.replace(
       camera,
+      @transform.ecs_key_transform,
       @transform.Transform::from_xyz(x, CAMERA_HEIGHT, z).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    |> ignore
+    |> ignore)
   }
 }
 
@@ -403,13 +401,21 @@ fn build_ssr_settings() -> @post_process.ScreenSpaceReflections {
 fn apply_ssr_settings(world : @ecs.World) -> Unit {
   sanitize_ssr_ranges()
   if ssr_state.val.camera is Some(camera) {
-    let store = world.component(@post_process.ecs_key_screen_space_reflections)
     if ssr_state.val.ssr_on {
-      if !store.set(camera, build_ssr_settings()) {
-        store.insert(camera, build_ssr_settings())
+      if !(try! world.replace(
+          camera,
+          @post_process.ecs_key_screen_space_reflections,
+          build_ssr_settings(),
+        )) {
+        try! world.set_by_key(
+          camera,
+          @post_process.ecs_key_screen_space_reflections,
+          build_ssr_settings(),
+        )
       }
     } else {
-      store.remove(camera) |> ignore
+      try! (world.take(camera, @post_process.ecs_key_screen_space_reflections)
+      |> ignore)
     }
   }
 }
@@ -442,10 +448,9 @@ fn spawn_flight_helmet(
   asset_server : @asset.AssetServer,
 ) -> Unit {
   let entity = world.spawn_empty()
-  world
-  .component(@scene.ecs_key_scene_root)
-  .insert(
+  try! world.set_by_key(
     entity,
+    @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
@@ -455,15 +460,16 @@ fn spawn_flight_helmet(
       ),
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     entity,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(2.5F)),
   )
-  world
-  .component(@visibility.ecs_key_visibility)
-  .insert(entity, @visibility.Visibility::Hidden)
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
   ssr_state.val.flight_helmet_model = Some(entity)
 }
 
@@ -487,10 +493,12 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
       ),
     ).spawn(world)
 
-    world
-    .component(@visibility.ecs_key_visibility)
-    .set(entity, @visibility.Visibility::Hidden)
-    |> ignore
+    try! (world.replace(
+      entity,
+      @visibility.ecs_key_visibility,
+      @visibility.Visibility::Hidden,
+    )
+    |> ignore)
     ssr_state.val.capsule_models.push(entity)
   }
 }
@@ -513,10 +521,12 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @pbr.MeshMaterial3d::new(metallic_material),
     @transform.Transform::identity(),
   ).spawn(world)
-  world
-  .component(@visibility.ecs_key_visibility)
-  .set(metallic, @visibility.Visibility::Hidden)
-  |> ignore
+  try! (world.replace(
+    metallic,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  |> ignore)
   ssr_state.val.metallic_base = Some(metallic)
 
   let red_material = @pbr.standard_material_add(
@@ -535,10 +545,12 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @pbr.MeshMaterial3d::new(red_material),
     @transform.Transform::identity(),
   ).spawn(world)
-  world
-  .component(@visibility.ecs_key_visibility)
-  .set(red, @visibility.Visibility::Hidden)
-  |> ignore
+  try! (world.replace(
+    red,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  |> ignore)
   ssr_state.val.red_plane_base = Some(red)
 
   let water_material = @pbr.standard_material_add(
@@ -588,28 +600,36 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     .spawn(world)
   ssr_state.val.camera = Some(camera)
 
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default())
-  world
-  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
     camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_temporal_anti_aliasing,
+    @post_process.TemporalAntiAliasing::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+    @post_process.ScreenSpaceAmbientOcclusion::default(),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_environment_map_light,
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       5000.0F,
     ),
   )
-  world
-  .component(@pbr.ecs_key_skybox)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @pbr.ecs_key_skybox,
     @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
@@ -617,16 +637,14 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   )
 
   let directional = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(2.5F, 5.5F, 2.8F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -634,10 +652,9 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
       200_000.0F,
@@ -645,9 +662,11 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
       true,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(-3.0F, 3.5F, 2.0F))
+  try! world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(-3.0F, 3.5F, 2.0F),
+  )
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -694,22 +713,26 @@ fn rotate_models(world : @ecs.World) -> Unit {
   )
 
   if ssr_state.val.cube_model is Some(cube) {
-    if world.component(@transform.ecs_key_transform).get(cube)
+    if (try! world.get_by_key(cube, @transform.ecs_key_transform))
       is Some(transform) {
-      world
-      .component(@transform.ecs_key_transform)
-      .set(cube, transform.with_rotation(rotation))
-      |> ignore
+      try! (world.replace(
+        cube,
+        @transform.ecs_key_transform,
+        transform.with_rotation(rotation),
+      )
+      |> ignore)
     }
   }
 
   if ssr_state.val.flight_helmet_model is Some(helmet) {
-    if world.component(@transform.ecs_key_transform).get(helmet)
+    if (try! world.get_by_key(helmet, @transform.ecs_key_transform))
       is Some(transform) {
-      world
-      .component(@transform.ecs_key_transform)
-      .set(helmet, transform.with_rotation(rotation))
-      |> ignore
+      try! (world.replace(
+        helmet,
+        @transform.ecs_key_transform,
+        transform.with_rotation(rotation),
+      )
+      |> ignore)
     }
   }
 }

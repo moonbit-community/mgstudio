@@ -154,16 +154,14 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let directional = world.spawn_empty()
-  world
-  .component(@engine_pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @engine_pbr.ecs_key_directional_light,
     @engine_pbr.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -242,10 +240,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@engine_pbr.ecs_key_environment_map_light)
-  .insert(
+  try! world.set_by_key(
     camera,
+    @engine_pbr.ecs_key_environment_map_light,
     @engine_pbr.EnvironmentMapLight::new(
       Some(diffuse_env_map),
       Some(specular_env_map),

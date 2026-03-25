@@ -45,8 +45,6 @@ pub let animation_set_thread : String
 
 pub let animation_set_trigger_events : String
 
-pub let ecs_components : Array[String]
-
 pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy]
 
 pub let ecs_key_animation_graph_handle : @ecs.ComponentKey[AnimationGraphHandle]
@@ -59,21 +57,7 @@ pub let ecs_key_animation_transitions : @ecs.ComponentKey[AnimationTransitions]
 
 pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights]
 
-pub let ecs_resources : Array[String]
-
 pub fn expire_transitions(@ecs.World) -> Unit
-
-pub fn get_animated_by_store(@ecs.World) -> @ecs.ComponentAccess[AnimatedBy]
-
-pub fn get_animation_graph_handle_store(@ecs.World) -> @ecs.ComponentAccess[AnimationGraphHandle]
-
-pub fn get_animation_player_store(@ecs.World) -> @ecs.ComponentAccess[AnimationPlayer]
-
-pub fn get_animation_target_id_store(@ecs.World) -> @ecs.ComponentAccess[AnimationTargetId]
-
-pub fn get_animation_transitions_store(@ecs.World) -> @ecs.ComponentAccess[AnimationTransitions]
-
-pub fn get_animation_weights_store(@ecs.World) -> @ecs.ComponentAccess[AnimationWeights]
 
 pub fn thread_animation_graphs(@ecs.World) -> Unit
 

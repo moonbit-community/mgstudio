@@ -27,6 +27,9 @@ fn configure_fixed_time(world : @ecs.World, timestep_seconds : Float) -> Unit {
 }
 
 ///|
+let ecs_key_transform : @ecs.ComponentKey[@transform.Transform] = @transform.ecs_key_transform
+
+///|
 test "physics2d: falling body collides and writes back transform" {
   let world = @ecs.World::new()
   configure_fixed_time(world, 1.0F / 60.0F)
@@ -40,8 +43,9 @@ test "physics2d: falling body collides and writes back transform" {
   let ball = world.spawn()
 
   // Floor at y = -1 with half-height 0.5 => top at y = -0.5.
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -1.0F),
       0.0F,
@@ -49,17 +53,20 @@ test "physics2d: falling body collides and writes back transform" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(floor, RigidBody2d::fixed())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body2d, RigidBody2d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
   )
-  get_contact_force_event_threshold2d_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_contact_force_event_threshold2d,
     ContactForceEventThreshold2d::new(0.0F),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 5.0F),
       0.0F,
@@ -67,19 +74,21 @@ test "physics2d: falling body collides and writes back transform" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(ball, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(ball, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     ball,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_contact_force_event_threshold2d_store(world).insert(
+  try! world.set_by_key(
     ball,
+    ecs_key_contact_force_event_threshold2d,
     ContactForceEventThreshold2d::new(0.0F),
   )
-  get_velocity2d_store(world).insert(ball, Velocity2d::zero())
+  try! world.set_by_key(ball, ecs_key_velocity2d, Velocity2d::zero())
   physics2d_clear_events_system(world)
   physics2d_sync_insertions_system(world)
-  let initial_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
+  let initial_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
 
   // Step for ~2 seconds.
   let mut i = 0
@@ -90,7 +99,7 @@ test "physics2d: falling body collides and writes back transform" {
     world.advance_sequence() |> ignore
     i = i + 1
   }
-  let final_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
+  let final_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
   inspect(final_y < initial_y, content="true")
   let events = get_physics2d_events_resource(world).get().unwrap()
   inspect(events.collisions.length() > 0, content="true")
@@ -108,8 +117,9 @@ test "physics2d: gravity scale 0 disables gravity" {
   cfg_res.insert(cfg.val)
   let no_grav = world.spawn()
   let grav = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     no_grav,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-1.0F, 2.0F),
       0.0F,
@@ -117,8 +127,9 @@ test "physics2d: gravity scale 0 disables gravity" {
       z=0.0F,
     ),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     grav,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 2.0F),
       0.0F,
@@ -126,22 +137,28 @@ test "physics2d: gravity scale 0 disables gravity" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(no_grav, RigidBody2d::dynamic())
-  get_rigid_body2d_store(world).insert(grav, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(no_grav, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(grav, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     no_grav,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     grav,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_gravity_scale2d_store(world).insert(no_grav, GravityScale2d::new(0.0F))
-  get_velocity2d_store(world).insert(no_grav, Velocity2d::zero())
-  get_velocity2d_store(world).insert(grav, Velocity2d::zero())
+  try! world.set_by_key(
+    no_grav,
+    ecs_key_gravity_scale2d,
+    GravityScale2d::new(0.0F),
+  )
+  try! world.set_by_key(no_grav, ecs_key_velocity2d, Velocity2d::zero())
+  try! world.set_by_key(grav, ecs_key_velocity2d, Velocity2d::zero())
   physics2d_sync_insertions_system(world)
-  let y0 = @transform.get_transform_store(world).get(no_grav).unwrap().translation.y
-  let y1 = @transform.get_transform_store(world).get(grav).unwrap().translation.y
+  let y0 = try! world.get_by_key(no_grav, ecs_key_transform).unwrap().translation.y
+  let y1 = try! world.get_by_key(grav, ecs_key_transform).unwrap().translation.y
   let mut i = 0
   while i < 60 {
     physics2d_sync_world_to_rapier_system(world)
@@ -152,8 +169,8 @@ test "physics2d: gravity scale 0 disables gravity" {
   }
   // Debug (kept): this test asserts semantics via positions; keep the following
   // assertions focused and avoid relying on exact floating-point equality.
-  let y0_final = @transform.get_transform_store(world).get(no_grav).unwrap().translation.y
-  let y1_final = @transform.get_transform_store(world).get(grav).unwrap().translation.y
+  let y0_final = try! world.get_by_key(no_grav, ecs_key_transform).unwrap().translation.y
+  let y1_final = try! world.get_by_key(grav, ecs_key_transform).unwrap().translation.y
   inspect(y0_final > y0 - 0.01F, content="true")
   inspect(y1_final < y1, content="true")
 }
@@ -170,8 +187,9 @@ test "physics2d: damping reduces velocity" {
   let no_damp = world.spawn()
   let damp = world.spawn()
   for e in [no_damp, damp] {
-    @transform.get_transform_store(world).insert(
+    try! world.set_by_key(
       e,
+      ecs_key_transform,
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
@@ -179,17 +197,19 @@ test "physics2d: damping reduces velocity" {
         z=0.0F,
       ),
     )
-    get_rigid_body2d_store(world).insert(e, RigidBody2d::dynamic())
-    get_collider2d_store(world).insert(
+    try! world.set_by_key(e, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+    try! world.set_by_key(
       e,
+      ecs_key_collider2d,
       Collider2d::new(ColliderShape2d::ball(0.2F)),
     )
-    get_velocity2d_store(world).insert(
+    try! world.set_by_key(
       e,
+      ecs_key_velocity2d,
       Velocity2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
     )
   }
-  get_damping2d_store(world).insert(damp, Damping2d::new(10.0F, 0.0F))
+  try! world.set_by_key(damp, ecs_key_damping2d, Damping2d::new(10.0F, 0.0F))
   physics2d_sync_insertions_system(world)
   let mut i = 0
   while i < 120 {
@@ -199,8 +219,8 @@ test "physics2d: damping reduces velocity" {
     world.advance_sequence() |> ignore
     i = i + 1
   }
-  let v_no = get_velocity2d_store(world).get(no_damp).unwrap().linvel.x
-  let v_damp = get_velocity2d_store(world).get(damp).unwrap().linvel.x
+  let v_no = try! world.get_by_key(no_damp, ecs_key_velocity2d).unwrap().linvel.x
+  let v_damp = try! world.get_by_key(damp, ecs_key_velocity2d).unwrap().linvel.x
   inspect(v_damp < v_no, content="true")
 }
 
@@ -214,8 +234,9 @@ test "physics2d: external impulse applies once and clears" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let e = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     e,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -223,23 +244,25 @@ test "physics2d: external impulse applies once and clears" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(e, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(e, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     e,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_velocity2d_store(world).insert(e, Velocity2d::zero())
-  get_external_impulse2d_store(world).insert(
+  try! world.set_by_key(e, ecs_key_velocity2d, Velocity2d::zero())
+  try! world.set_by_key(
     e,
+    ecs_key_external_impulse2d,
     ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
   )
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
   physics2d_writeback_system(world)
-  let v = get_velocity2d_store(world).get(e).unwrap()
+  let v = try! world.get_by_key(e, ecs_key_velocity2d).unwrap()
   inspect(v.linvel.x > 0.0F, content="true")
-  let imp = get_external_impulse2d_store(world).get(e).unwrap()
+  let imp = try! world.get_by_key(e, ecs_key_external_impulse2d).unwrap()
   inspect(imp.impulse.x == 0.0F, content="true")
 }
 
@@ -253,8 +276,9 @@ test "physics2d: default collider density yields non-zero mass" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let e = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     e,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -262,26 +286,28 @@ test "physics2d: default collider density yields non-zero mass" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(e, RigidBody2d::dynamic())
+  try! world.set_by_key(e, ecs_key_rigid_body2d, RigidBody2d::dynamic())
   // No `ColliderDensity2d` here: this test asserts moon_rapier's default density
   // behaves like upstream Rapier (non-zero mass).
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     e,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_velocity2d_store(world).insert(e, Velocity2d::zero())
-  get_external_impulse2d_store(world).insert(
+  try! world.set_by_key(e, ecs_key_velocity2d, Velocity2d::zero())
+  try! world.set_by_key(
     e,
+    ecs_key_external_impulse2d,
     ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
   )
   physics2d_sync_insertions_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
-  let bh = get_rapier_body_handle2d_store(world).get(e).unwrap().handle
+  let bh = try! world.get_by_key(e, ecs_key_rapier_body_handle2d).unwrap().handle
   inspect(ctx.rigid_bodies.get(bh).unwrap().inv_mass() > 0.0F, content="true")
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
   physics2d_writeback_system(world)
-  let v = get_velocity2d_store(world).get(e).unwrap()
+  let v = try! world.get_by_key(e, ecs_key_velocity2d).unwrap()
   inspect(v.linvel.x > 0.0F, content="true")
 }
 
@@ -295,8 +321,9 @@ test "physics2d: external force persists" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let e = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     e,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -304,18 +331,20 @@ test "physics2d: external force persists" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(e, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(e, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     e,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_velocity2d_store(world).insert(e, Velocity2d::zero())
-  get_external_force2d_store(world).insert(
+  try! world.set_by_key(e, ecs_key_velocity2d, Velocity2d::zero())
+  try! world.set_by_key(
     e,
+    ecs_key_external_force2d,
     ExternalForce2d::new(@math.Vec2::new(50.0F, 0.0F), 0.0F),
   )
   physics2d_sync_insertions_system(world)
-  let x0 = @transform.get_transform_store(world).get(e).unwrap().translation.x
+  let x0 = try! world.get_by_key(e, ecs_key_transform).unwrap().translation.x
   let mut i = 0
   while i < 30 {
     physics2d_sync_world_to_rapier_system(world)
@@ -324,7 +353,7 @@ test "physics2d: external force persists" {
     world.advance_sequence() |> ignore
     i = i + 1
   }
-  let x1 = @transform.get_transform_store(world).get(e).unwrap().translation.x
+  let x1 = try! world.get_by_key(e, ecs_key_transform).unwrap().translation.x
   inspect(x1 > x0, content="true")
 }
 
@@ -340,8 +369,9 @@ test "physics2d: CCD prevents tunneling through thin floor" {
     cfg_res.insert(cfg.val)
     let floor = world.spawn()
     let ball = world.spawn()
-    @transform.get_transform_store(world).insert(
+    try! world.set_by_key(
       floor,
+      ecs_key_transform,
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
@@ -349,13 +379,15 @@ test "physics2d: CCD prevents tunneling through thin floor" {
         z=0.0F,
       ),
     )
-    get_rigid_body2d_store(world).insert(floor, RigidBody2d::fixed())
-    get_collider2d_store(world).insert(
+    try! world.set_by_key(floor, ecs_key_rigid_body2d, RigidBody2d::fixed())
+    try! world.set_by_key(
       floor,
+      ecs_key_collider2d,
       Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.01F)),
     )
-    @transform.get_transform_store(world).insert(
+    try! world.set_by_key(
       ball,
+      ecs_key_transform,
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 1.0F),
         0.0F,
@@ -363,23 +395,25 @@ test "physics2d: CCD prevents tunneling through thin floor" {
         z=0.0F,
       ),
     )
-    get_rigid_body2d_store(world).insert(ball, RigidBody2d::dynamic())
-    get_collider2d_store(world).insert(
+    try! world.set_by_key(ball, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+    try! world.set_by_key(
       ball,
+      ecs_key_collider2d,
       Collider2d::new(ColliderShape2d::ball(0.01F)),
     )
-    get_velocity2d_store(world).insert(
+    try! world.set_by_key(
       ball,
+      ecs_key_velocity2d,
       Velocity2d::new(@math.Vec2::new(0.0F, -200.0F), 0.0F),
     )
     if ccd_enabled {
-      get_ccd2d_store(world).insert(ball, Ccd2d::enabled())
+      try! world.set_by_key(ball, ecs_key_ccd2d, Ccd2d::enabled())
     }
     physics2d_sync_insertions_system(world)
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @transform.get_transform_store(world).get(ball).unwrap().translation.y
+    try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
   }
 
   let y_no_ccd = run(false)
@@ -400,8 +434,9 @@ test "physics2d: collision groups filter collision events" {
   let a = world.spawn()
   let b = world.spawn()
   for e in [a, b] {
-    @transform.get_transform_store(world).insert(
+    try! world.set_by_key(
       e,
+      ecs_key_transform,
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
@@ -409,28 +444,33 @@ test "physics2d: collision groups filter collision events" {
         z=0.0F,
       ),
     )
-    get_rigid_body2d_store(world).insert(e, RigidBody2d::dynamic())
-    get_collider2d_store(world).insert(
+    try! world.set_by_key(e, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+    try! world.set_by_key(
       e,
+      ecs_key_collider2d,
       Collider2d::new(ColliderShape2d::ball(0.5F)),
     )
-    get_velocity2d_store(world).insert(e, Velocity2d::zero())
+    try! world.set_by_key(e, ecs_key_velocity2d, Velocity2d::zero())
   }
   // Put them in disjoint groups so they never collide.
-  get_collision_groups2d_store(world).insert(
+  try! world.set_by_key(
     a,
+    ecs_key_collision_groups2d,
     CollisionGroups2d::new(1, 1, @dynamics.InteractionTestMode::And),
   )
-  get_collision_groups2d_store(world).insert(
+  try! world.set_by_key(
     b,
+    ecs_key_collision_groups2d,
     CollisionGroups2d::new(2, 2, @dynamics.InteractionTestMode::And),
   )
-  get_solver_groups2d_store(world).insert(
+  try! world.set_by_key(
     a,
+    ecs_key_solver_groups2d,
     SolverGroups2d::new(1, 1, @dynamics.InteractionTestMode::And),
   )
-  get_solver_groups2d_store(world).insert(
+  try! world.set_by_key(
     b,
+    ecs_key_solver_groups2d,
     SolverGroups2d::new(2, 2, @dynamics.InteractionTestMode::And),
   )
   physics2d_clear_events_system(world)
@@ -452,8 +492,9 @@ test "physics2d: collider material and active event properties sync to rapier" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let e_default = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     e_default,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -461,25 +502,33 @@ test "physics2d: collider material and active event properties sync to rapier" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(e_default, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(e_default, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     e_default,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_collider_density2d_store(world).insert(
+  try! world.set_by_key(
     e_default,
+    ecs_key_collider_density2d,
     ColliderDensity2d::new(2.5F),
   )
-  get_friction2d_store(world).insert(e_default, Friction2d::new(0.25F))
-  get_restitution2d_store(world).insert(e_default, Restitution2d::new(0.75F))
-  get_contact_force_event_threshold2d_store(world).insert(
+  try! world.set_by_key(e_default, ecs_key_friction2d, Friction2d::new(0.25F))
+  try! world.set_by_key(
     e_default,
+    ecs_key_restitution2d,
+    Restitution2d::new(0.75F),
+  )
+  try! world.set_by_key(
+    e_default,
+    ecs_key_contact_force_event_threshold2d,
     ContactForceEventThreshold2d::new(0.125F),
   )
 
   let e_override = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     e_override,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 0.0F),
       0.0F,
@@ -487,24 +536,32 @@ test "physics2d: collider material and active event properties sync to rapier" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(e_override, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     e_override,
+    ecs_key_rigid_body2d,
+    RigidBody2d::dynamic(),
+  )
+  try! world.set_by_key(
+    e_override,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_active_events2d_store(world).insert(
+  try! world.set_by_key(
     e_override,
+    ecs_key_active_events2d,
     ActiveEvents2d::new(@collision.ActiveEvents::collision_events()),
   )
-  get_contact_force_event_threshold2d_store(world).insert(
+  try! world.set_by_key(
     e_override,
+    ecs_key_contact_force_event_threshold2d,
     ContactForceEventThreshold2d::new(0.125F),
   )
   physics2d_sync_insertions_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
-  let store = get_rapier_collider_handle2d_store(world)
 
-  let ch0 = store.get(e_default).unwrap().handle
+  let ch0 = try! world
+    .get_by_key(e_default, ecs_key_rapier_collider_handle2d)
+    .unwrap().handle
   let collider0 = ctx.colliders.get(ch0).unwrap()
   inspect(approx_eq_f32(collider0.density(), 2.5F), content="true")
   inspect(approx_eq_f32(collider0.friction(), 0.25F), content="true")
@@ -526,7 +583,9 @@ test "physics2d: collider material and active event properties sync to rapier" {
     content="true",
   )
 
-  let ch1 = store.get(e_override).unwrap().handle
+  let ch1 = try! world
+    .get_by_key(e_override, ecs_key_rapier_collider_handle2d)
+    .unwrap().handle
   let collider1 = ctx.colliders.get(ch1).unwrap()
   inspect(
     collider1
@@ -552,8 +611,9 @@ test "physics2d: query pipeline sees inserted colliders" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let floor = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -561,9 +621,10 @@ test "physics2d: query pipeline sees inserted colliders" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(floor, RigidBody2d::fixed())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body2d, RigidBody2d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
   )
   physics2d_sync_insertions_system(world)
@@ -661,8 +722,9 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let convex = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     convex,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(5.0F, 0.0F),
       0.0F,
@@ -670,9 +732,10 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(convex, RigidBody2d::fixed())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(convex, ecs_key_rigid_body2d, RigidBody2d::fixed())
+  try! world.set_by_key(
     convex,
+    ecs_key_collider2d,
     Collider2d::new(
       ColliderShape2d::convex_polygon([
         @math.Vec2::new(-1.0F, -1.0F),
@@ -683,8 +746,9 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     ),
   )
   let compound = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     compound,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-5.0F, 0.0F),
       0.0F,
@@ -692,9 +756,10 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(compound, RigidBody2d::fixed())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(compound, ecs_key_rigid_body2d, RigidBody2d::fixed())
+  try! world.set_by_key(
     compound,
+    ecs_key_collider2d,
     Collider2d::new(
       ColliderShape2d::compound([
         (
@@ -761,8 +826,9 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   cfg_res.insert(cfg.val)
   let a = world.spawn()
   let b = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     a,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-0.49F, 0.0F),
       0.0F,
@@ -770,8 +836,9 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
       z=0.0F,
     ),
   )
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     b,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.49F, 0.0F),
       0.0F,
@@ -779,30 +846,36 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(a, RigidBody2d::dynamic())
-  get_rigid_body2d_store(world).insert(b, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(a, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(b, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     a,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     b,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_velocity2d_store(world).insert(
+  try! world.set_by_key(
     a,
+    ecs_key_velocity2d,
     Velocity2d::new(@math.Vec2::new(1.0F, 0.0F), 0.0F),
   )
-  get_velocity2d_store(world).insert(
+  try! world.set_by_key(
     b,
+    ecs_key_velocity2d,
     Velocity2d::new(@math.Vec2::new(-1.0F, 0.0F), 0.0F),
   )
-  get_active_hooks2d_store(world).insert(
+  try! world.set_by_key(
     a,
+    ecs_key_active_hooks2d,
     ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
   )
-  get_active_hooks2d_store(world).insert(
+  try! world.set_by_key(
     b,
+    ecs_key_active_hooks2d,
     ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
   )
   physics2d_clear_events_system(world)
@@ -827,8 +900,9 @@ test "physics2d: impulse joint is inserted and cleaned up" {
   cfg_res.insert(cfg.val)
   let a = world.spawn()
   let b = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     a,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -836,14 +910,16 @@ test "physics2d: impulse joint is inserted and cleaned up" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(a, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(a, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     a,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_velocity2d_store(world).insert(a, Velocity2d::zero())
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(a, ecs_key_velocity2d, Velocity2d::zero())
+  try! world.set_by_key(
     b,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
@@ -851,30 +927,35 @@ test "physics2d: impulse joint is inserted and cleaned up" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(b, RigidBody2d::dynamic())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(b, ecs_key_rigid_body2d, RigidBody2d::dynamic())
+  try! world.set_by_key(
     b,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_velocity2d_store(world).insert(b, Velocity2d::zero())
+  try! world.set_by_key(b, ecs_key_velocity2d, Velocity2d::zero())
   let fixed = @dynamics.FixedJointBuilder::new().build()
   let data = @dynamics.GenericJoint::from_fixed(fixed)
-  get_impulse_joint2d_store(world).insert(a, ImpulseJoint2d::new(b, data))
+  try! world.set_by_key(
+    a,
+    ecs_key_impulse_joint2d,
+    ImpulseJoint2d::new(b, data),
+  )
   physics2d_sync_insertions_system(world)
   physics2d_sync_joints_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
   inspect(ctx.impulse_joints.len() == 1, content="true")
   inspect(
-    get_rapier_impulse_joint_handle2d_store(world).contains(a),
+    try! world.contains_by_key(a, ecs_key_rapier_impulse_joint_handle2d),
     content="true",
   )
 
   // Remove authoring component and verify cleanup removes the Rapier joint.
-  get_impulse_joint2d_store(world).remove(a) |> ignore
+  try! (world.take(a, ecs_key_impulse_joint2d) |> ignore)
   physics2d_cleanup_despawned_system(world)
   inspect(ctx.impulse_joints.len() == 0, content="true")
   inspect(
-    !get_rapier_impulse_joint_handle2d_store(world).contains(a),
+    !(try! world.contains_by_key(a, ecs_key_rapier_impulse_joint_handle2d)),
     content="true",
   )
 }
@@ -889,8 +970,9 @@ test "physics2d: child collider attaches to parent body" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let body = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     body,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -898,10 +980,11 @@ test "physics2d: child collider attaches to parent body" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(body, RigidBody2d::dynamic())
+  try! world.set_by_key(body, ecs_key_rigid_body2d, RigidBody2d::dynamic())
   let child = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
@@ -909,15 +992,22 @@ test "physics2d: child collider attaches to parent body" {
       z=0.0F,
     ),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
-  get_collider_parent2d_store(world).insert(child, ColliderParent2d::new(body))
+  try! world.set_by_key(
+    child,
+    ecs_key_collider_parent2d,
+    ColliderParent2d::new(body),
+  )
   physics2d_sync_insertions_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
-  let bh = get_rapier_body_handle2d_store(world).get(body).unwrap().handle
-  let ch = get_rapier_collider_handle2d_store(world).get(child).unwrap().handle
+  let bh = try! world.get_by_key(body, ecs_key_rapier_body_handle2d).unwrap().handle
+  let ch = try! world
+    .get_by_key(child, ecs_key_rapier_collider_handle2d)
+    .unwrap().handle
   let collider = ctx.colliders.get(ch).unwrap()
   inspect(
     collider.parent().unwrap().into_raw_parts() == bh.into_raw_parts(),
@@ -938,8 +1028,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
   cfg_res.insert(cfg.val)
 
   let body_single = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     body_single,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-3.0F, 0.0F),
       0.0F,
@@ -947,10 +1038,15 @@ test "physics2d: multiple child colliders aggregate parent mass" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(body_single, RigidBody2d::dynamic())
+  try! world.set_by_key(
+    body_single,
+    ecs_key_rigid_body2d,
+    RigidBody2d::dynamic(),
+  )
   let child_single = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     child_single,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -958,18 +1054,21 @@ test "physics2d: multiple child colliders aggregate parent mass" {
       z=0.0F,
     ),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     child_single,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_collider_parent2d_store(world).insert(
+  try! world.set_by_key(
     child_single,
+    ecs_key_collider_parent2d,
     ColliderParent2d::new(body_single),
   )
 
   let body_double = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     body_double,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 0.0F),
       0.0F,
@@ -977,10 +1076,15 @@ test "physics2d: multiple child colliders aggregate parent mass" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(body_double, RigidBody2d::dynamic())
+  try! world.set_by_key(
+    body_double,
+    ecs_key_rigid_body2d,
+    RigidBody2d::dynamic(),
+  )
   let child_double_a = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     child_double_a,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-0.75F, 0.0F),
       0.0F,
@@ -988,17 +1092,20 @@ test "physics2d: multiple child colliders aggregate parent mass" {
       z=0.0F,
     ),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     child_double_a,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_collider_parent2d_store(world).insert(
+  try! world.set_by_key(
     child_double_a,
+    ecs_key_collider_parent2d,
     ColliderParent2d::new(body_double),
   )
   let child_double_b = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     child_double_b,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.75F, 0.0F),
       0.0F,
@@ -1006,23 +1113,25 @@ test "physics2d: multiple child colliders aggregate parent mass" {
       z=0.0F,
     ),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     child_double_b,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_collider_parent2d_store(world).insert(
+  try! world.set_by_key(
     child_double_b,
+    ecs_key_collider_parent2d,
     ColliderParent2d::new(body_double),
   )
 
   physics2d_sync_insertions_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
-  let bh_single = get_rapier_body_handle2d_store(world)
-    .get(body_single)
-    .unwrap().handle
-  let bh_double = get_rapier_body_handle2d_store(world)
-    .get(body_double)
-    .unwrap().handle
+  let bh_single = (try! world.get_by_key(
+      body_single, ecs_key_rapier_body_handle2d,
+    )).unwrap().handle
+  let bh_double = (try! world.get_by_key(
+      body_double, ecs_key_rapier_body_handle2d,
+    )).unwrap().handle
   let inv_single = ctx.rigid_bodies.get(bh_single).unwrap().inv_mass()
   let inv_double = ctx.rigid_bodies.get(bh_double).unwrap().inv_mass()
   inspect(inv_single > 0.0F, content="true")
@@ -1041,8 +1150,9 @@ test "physics2d: collision events use child collider entity mapping" {
   cfg_res.insert(cfg.val)
 
   let floor = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -1.0F),
       0.0F,
@@ -1050,15 +1160,17 @@ test "physics2d: collision events use child collider entity mapping" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(floor, RigidBody2d::fixed())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body2d, RigidBody2d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::cuboid(5.0F, 0.5F)),
   )
 
   let body = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     body,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -1066,10 +1178,11 @@ test "physics2d: collision events use child collider entity mapping" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(body, RigidBody2d::dynamic())
+  try! world.set_by_key(body, ecs_key_rigid_body2d, RigidBody2d::dynamic())
   let child = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.6F),
       0.0F,
@@ -1077,11 +1190,16 @@ test "physics2d: collision events use child collider entity mapping" {
       z=0.0F,
     ),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     child,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_collider_parent2d_store(world).insert(child, ColliderParent2d::new(body))
+  try! world.set_by_key(
+    child,
+    ecs_key_collider_parent2d,
+    ColliderParent2d::new(body),
+  )
 
   physics2d_sync_insertions_system(world)
   let mut seen_child = false
@@ -1119,8 +1237,9 @@ test "physics2d: kinematic character controller moves and outputs" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val)
   let floor = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     floor,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -1128,14 +1247,16 @@ test "physics2d: kinematic character controller moves and outputs" {
       z=0.0F,
     ),
   )
-  get_rigid_body2d_store(world).insert(floor, RigidBody2d::fixed())
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(floor, ecs_key_rigid_body2d, RigidBody2d::fixed())
+  try! world.set_by_key(
     floor,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
   )
   let character = world.spawn()
-  @transform.get_transform_store(world).insert(
+  try! world.set_by_key(
     character,
+    ecs_key_transform,
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
@@ -1143,12 +1264,14 @@ test "physics2d: kinematic character controller moves and outputs" {
       z=0.0F,
     ),
   )
-  get_collider2d_store(world).insert(
+  try! world.set_by_key(
     character,
+    ecs_key_collider2d,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
   )
-  get_kinematic_character_controller2d_store(world).insert(
+  try! world.set_by_key(
     character,
+    ecs_key_kinematic_character_controller2d,
     KinematicCharacterController2d::default().with_translation(
       @math.Vec2::new(0.0F, -2.0F),
     ),
@@ -1156,15 +1279,15 @@ test "physics2d: kinematic character controller moves and outputs" {
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_character_controller_system(world)
-  let y = @transform.get_transform_store(world).get(character).unwrap().translation.y
+  let y = try! world.get_by_key(character, ecs_key_transform).unwrap().translation.y
   inspect(y > 0.9F, content="true")
-  let kcc_after = get_kinematic_character_controller2d_store(world)
-    .get(character)
-    .unwrap()
+  let kcc_after = (try! world.get_by_key(
+    character, ecs_key_kinematic_character_controller2d,
+  )).unwrap()
   inspect(kcc_after.translation.y == 0.0F, content="true")
-  let out = get_kinematic_character_controller_output2d_store(world)
-    .get(character)
-    .unwrap()
+  let out = (try! world.get_by_key(
+    character, ecs_key_kinematic_character_controller_output2d,
+  )).unwrap()
   inspect(out.effective_translation.y <= 0.0F, content="true")
   inspect(out.collisions.length() > 0, content="true")
 }

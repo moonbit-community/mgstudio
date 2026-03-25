@@ -97,15 +97,37 @@ pub fn[T] DeferredWorld::get(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T? raise EcsError {
-  self.world.get(entity, key)
+  self.world.get_by_key(entity, key)
 }
 
 ///|
-pub fn[T] DeferredWorld::component(
+pub fn[T] DeferredWorld::get_by_key(
   self : DeferredWorld,
+  entity : @core.Entity,
   key : ComponentKey[T],
-) -> ComponentAccess[T] {
-  self.world.component(key)
+) -> T? raise EcsError {
+  self.get(entity, key)
+}
+
+///|
+pub fn[T] DeferredWorld::contains(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> Bool {
+  if !self.world.is_alive(entity) {
+    return false
+  }
+  entity_has_component_id(self.world, key.id(), entity)
+}
+
+///|
+pub fn[T] DeferredWorld::contains_by_key(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> Bool {
+  self.contains(entity, key)
 }
 
 ///|
@@ -125,7 +147,65 @@ pub fn[T] DeferredWorld::set(
   component : T,
   loc~ : SourceLoc,
 ) -> Unit raise EcsError {
-  self.world.set(entity, key, component, loc~)
+  self.world.set_by_key(entity, key, component, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::set_by_key(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  component : T,
+  loc~ : SourceLoc,
+) -> Unit raise EcsError {
+  self.set(entity, key, component, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::replace(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  component : T,
+  loc~ : SourceLoc,
+) -> Bool raise EcsError {
+  self.world.replace(entity, key, component, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::replace_by_key(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  component : T,
+  loc~ : SourceLoc,
+) -> Bool raise EcsError {
+  self.replace(entity, key, component, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::take(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  loc~ : SourceLoc,
+) -> T? raise EcsError {
+  self.world.take(entity, key, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::take_by_key(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  loc~ : SourceLoc,
+) -> T? raise EcsError {
+  self.take(entity, key, loc~)
 }
 
 ///|
@@ -136,7 +216,18 @@ pub fn[T] DeferredWorld::remove(
   key : ComponentKey[T],
   loc~ : SourceLoc,
 ) -> Bool raise EcsError {
-  self.world.remove(entity, key, loc~)
+  self.world.remove_by_key(entity, key, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::remove_by_key(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  loc~ : SourceLoc,
+) -> Bool raise EcsError {
+  self.remove(entity, key, loc~)
 }
 
 ///|

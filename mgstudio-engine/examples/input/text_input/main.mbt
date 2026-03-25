@@ -82,11 +82,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_font_size(100.0F)
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
     root,
+    @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
@@ -134,14 +133,18 @@ fn spawn_ui_text_line(
   font : @text.TextFont,
 ) -> @core.Entity {
   let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root))
-  world.component(@ui.ecs_key_node).insert(text_entity, @ui.Node::default())
-  world
-  .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content))
-  world.component(@text.ecs_key_text_font).insert(text_entity, font)
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(text_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text,
+    @text.Text::new(content),
+  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_font, font)
   text_entity
 }
 
@@ -150,7 +153,6 @@ fn update_primary_window(
   world : @ecs.World,
   update : (@window.Window) -> Unit,
 ) -> Unit {
-  let window_store = world.component(@window.ecs_key_window)
   try! world
   .query_entities_filtered(
     (
@@ -159,9 +161,12 @@ fn update_primary_window(
     ),
   )
   .view(fn(_query_entity, entity) {
-    guard window_store.get(entity) is Some(window) else { return }
+    guard (try! world.get_by_key(entity, @window.ecs_key_window))
+      is Some(window) else {
+      return
+    }
     update(window)
-    window_store.set(entity, window) |> ignore
+    try! (world.replace(entity, @window.ecs_key_window, window) |> ignore)
   })
 }
 
@@ -169,30 +174,38 @@ fn update_primary_window(
 fn set_ime_enabled_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(handles.ime_enabled) is Some(text_value) else { return }
+  guard (try! world.get_by_key(handles.ime_enabled, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
   text_value.content = "IME Enabled: \{value}\n"
-  ignore(text_store.set(handles.ime_enabled, text_value))
+  ignore(
+    try! world.replace(handles.ime_enabled, @text.ecs_key_text, text_value),
+  )
 }
 
 ///|
 fn set_ime_active_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(handles.ime_active) is Some(text_value) else { return }
+  guard (try! world.get_by_key(handles.ime_active, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
   text_value.content = "IME Active:  \{value}\n"
-  ignore(text_store.set(handles.ime_active, text_value))
+  ignore(try! world.replace(handles.ime_active, @text.ecs_key_text, text_value))
 }
 
 ///|
 fn set_ime_buffer_text(value : String) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let text_store = world.component(@text.ecs_key_text)
-  guard text_store.get(handles.ime_buffer) is Some(text_value) else { return }
+  guard (try! world.get_by_key(handles.ime_buffer, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
   text_value.content = "IME Buffer:  \{value}\n"
-  ignore(text_store.set(handles.ime_buffer, text_value))
+  ignore(try! world.replace(handles.ime_buffer, @text.ecs_key_text, text_value))
 }
 
 ///|

@@ -102,18 +102,18 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 ///|
 fn update_light_modes(world : @ecs.World) -> Unit {
   let state = shadow_caster_receiver_state.val
-  let point_store = world.component(@pbr.ecs_key_point_light)
-  let directional_store = world.component(@pbr.ecs_key_directional_light)
 
   if state.point_light is Some(point_entity) {
-    if point_store.get(point_entity) is Some(point_light) {
+    if (try! world.get_by_key(point_entity, @pbr.ecs_key_point_light))
+      is Some(point_light) {
       let intensity = if state.point_light_enabled {
         SHADOW_CASTER_RECEIVER_LIGHT_POINT_INTENSITY
       } else {
         0.0F
       }
-      point_store.set(
+      try! (world.replace(
         point_entity,
+        @pbr.ecs_key_point_light,
         @pbr.PointLight::new(
           point_light.color,
           intensity,
@@ -121,39 +121,41 @@ fn update_light_modes(world : @ecs.World) -> Unit {
           point_light.shadow_maps_enabled,
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 
   if state.directional_light is Some(directional_entity) {
-    if directional_store.get(directional_entity) is Some(directional_light) {
+    if (try! world.get_by_key(
+        directional_entity, @pbr.ecs_key_directional_light,
+      ))
+      is Some(directional_light) {
       let illuminance = if state.point_light_enabled {
         0.0F
       } else {
         SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE
       }
-      directional_store.set(
+      try! (world.replace(
         directional_entity,
+        @pbr.ecs_key_directional_light,
         @pbr.DirectionalLight::new(
           directional_light.color,
           illuminance,
           directional_light.shadow_maps_enabled,
         ),
       )
-      |> ignore
+      |> ignore)
     }
   }
 }
 
 ///|
 fn toggle_shadow_casters(world : @ecs.World) -> Unit {
-  let mesh_store = world.component(@pbr.ecs_key_mesh3d)
-  let not_shadow_caster_store = world.component(@pbr.ecs_key_not_shadow_caster)
   let make_shadow_caster : Array[@core.Entity] = []
   let make_not_shadow_caster : Array[@core.Entity] = []
 
-  mesh_store.for_each(fn(entity, _mesh) {
-    if not_shadow_caster_store.contains(entity) {
+  world.for_each_component(@pbr.ecs_key_mesh3d, fn(entity, _mesh) {
+    if (try! world.contains_by_key(entity, @pbr.ecs_key_not_shadow_caster)) {
       make_shadow_caster.push(entity)
     } else {
       make_not_shadow_caster.push(entity)
@@ -161,24 +163,24 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
   })
 
   for entity in make_shadow_caster {
-    not_shadow_caster_store.remove(entity) |> ignore
+    try! (world.take(entity, @pbr.ecs_key_not_shadow_caster) |> ignore)
   }
   for entity in make_not_shadow_caster {
-    not_shadow_caster_store.insert(entity, @pbr.NotShadowCaster::default())
+    try! world.set_by_key(
+      entity,
+      @pbr.ecs_key_not_shadow_caster,
+      @pbr.NotShadowCaster::default(),
+    )
   }
 }
 
 ///|
 fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
-  let mesh_store = world.component(@pbr.ecs_key_mesh3d)
-  let not_shadow_receiver_store = world.component(
-    @pbr.ecs_key_not_shadow_receiver,
-  )
   let make_shadow_receiver : Array[@core.Entity] = []
   let make_not_shadow_receiver : Array[@core.Entity] = []
 
-  mesh_store.for_each(fn(entity, _mesh) {
-    if not_shadow_receiver_store.contains(entity) {
+  world.for_each_component(@pbr.ecs_key_mesh3d, fn(entity, _mesh) {
+    if (try! world.contains_by_key(entity, @pbr.ecs_key_not_shadow_receiver)) {
       make_shadow_receiver.push(entity)
     } else {
       make_not_shadow_receiver.push(entity)
@@ -186,10 +188,14 @@ fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
   })
 
   for entity in make_shadow_receiver {
-    not_shadow_receiver_store.remove(entity) |> ignore
+    try! (world.take(entity, @pbr.ecs_key_not_shadow_receiver) |> ignore)
   }
   for entity in make_not_shadow_receiver {
-    not_shadow_receiver_store.insert(entity, @pbr.NotShadowReceiver::default())
+    try! world.set_by_key(
+      entity,
+      @pbr.ecs_key_not_shadow_receiver,
+      @pbr.NotShadowReceiver::default(),
+    )
   }
 }
 
@@ -235,9 +241,11 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(blue_material),
     @transform.Transform::from_xyz(1.0F, spawn_height, 0.0F),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(blue_sphere, @pbr.NotShadowCaster::default())
+  try! world.set_by_key(
+    blue_sphere,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
 
   let floating_plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -248,12 +256,16 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(lime_material),
     @transform.Transform::from_xyz(0.0F, 1.0F, -10.0F),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(floating_plane, @pbr.NotShadowCaster::default())
-  world
-  .component(@pbr.ecs_key_not_shadow_receiver)
-  .insert(floating_plane, @pbr.NotShadowReceiver::default())
+  try! world.set_by_key(
+    floating_plane,
+    @pbr.ecs_key_not_shadow_caster,
+    @pbr.NotShadowCaster::default(),
+  )
+  try! world.set_by_key(
+    floating_plane,
+    @pbr.ecs_key_not_shadow_receiver,
+    @pbr.NotShadowReceiver::default(),
+  )
 
   let ground_plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -267,15 +279,16 @@ fn setup(world : @ecs.World) -> Unit {
   ground_plane |> ignore
 
   let point_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     point_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 0.0F, 500.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(5.0F, 5.0F, 0.0F))
+  try! world.set_by_key(
+    point_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(5.0F, 5.0F, 0.0F),
+  )
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
@@ -283,20 +296,18 @@ fn setup(world : @ecs.World) -> Unit {
     .with_first_cascade_far_bound(7.0F)
     .with_maximum_distance(25.0F)
     .build()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional_light,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(PI / 2.0F).mul(
         @math.Quat::from_rotation_x(-PI / 4.0F),

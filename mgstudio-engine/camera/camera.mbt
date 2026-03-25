@@ -143,22 +143,3 @@ pub fn mesh_ray_cast_from_camera_first(
     render_scale, settings,
   )
 }
-
-///|
-pub fn get_camera3d_store(world : @ecs.World) -> @ecs.ComponentAccess[Camera3d] {
-  @pbr.get_camera3d_store(world)
-}
-
-///|
-pub fn get_projection_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Projection] {
-  @pbr.get_projection_store(world)
-}
-
-///|
-pub fn get_sub_camera_view3d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[SubCameraView3d] {
-  @pbr.get_sub_camera_view3d_store(world)
-}

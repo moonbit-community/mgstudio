@@ -29,22 +29,28 @@ test "ui: ContentSize drives auto measured size" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default())
-  get_node_store(world).insert(
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(
     root,
+    ecs_key_node,
     Node::default()
     .with_width(Val::Percent(100.0F))
     .with_height(Val::Percent(100.0F))
     .with_align_items(AlignItems::FlexStart),
   )
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(child, @hierarchy.Parent::new(root))
-  get_node_store(world).insert(child, Node::default())
-  get_content_size_store(world).insert(
+  try! world.set_by_key(
     child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(child, ecs_key_node, Node::default())
+  try! world.set_by_key(
+    child,
+    ecs_key_content_size,
     ContentSize::new(@math.Vec2::new(80.0F, 30.0F)),
   )
   ui_layout_system(world)
-  let rect = get_ui_layout_store(world).get(child).unwrap().rect
+  let rect = try! world.get_by_key(child, ecs_key_ui_layout).unwrap().rect
   inspect(rect.size().x == 80.0F && rect.size().y == 30.0F, content="true")
 }

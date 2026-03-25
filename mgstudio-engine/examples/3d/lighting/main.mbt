@@ -317,10 +317,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Red point light + emissive marker.
   let red_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     red_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
       100_000.0F,
@@ -328,9 +327,11 @@ fn setup(world : @ecs.World) -> Unit {
       true,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(red_light, @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F))
+  try! world.set_by_key(
+    red_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F),
+  )
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -345,10 +346,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Green spot light + emissive marker.
   let green_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_spot_light)
-  .insert(
+  try! world.set_by_key(
     green_light,
+    @pbr.ecs_key_spot_light,
     @pbr.SpotLight::new(
       @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
       100_000.0F,
@@ -358,10 +358,9 @@ fn setup(world : @ecs.World) -> Unit {
       true,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     green_light,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
       @math.Vec3::new(-1.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 0.0F, 1.0F),
@@ -389,10 +388,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Blue point light + emissive marker.
   let blue_light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
+  try! world.set_by_key(
     blue_light,
+    @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
       @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       100_000.0F,
@@ -400,9 +398,11 @@ fn setup(world : @ecs.World) -> Unit {
       true,
     ),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(blue_light, @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F))
+  try! world.set_by_key(
+    blue_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F),
+  )
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -417,16 +417,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Directional light.
   let directional = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_directional_light)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(
+  try! world.set_by_key(
     directional,
+    @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
@@ -541,12 +539,13 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   guard lighting_state.val.directional_light is Some(light_entity) else {
     return
   }
-  let transform_store = world.component(@transform.ecs_key_transform)
-  if transform_store.get(light_entity) is Some(transform) {
+  if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
+    is Some(transform) {
     let delta = world_time(world).delta_seconds() * 0.5F
     let spin = @math.Quat::from_rotation_y(delta)
     let next = transform.with_rotation(transform.rotation.mul(spin).normalize())
-    transform_store.set(light_entity, next) |> ignore
+    try! (world.replace(light_entity, @transform.ecs_key_transform, next)
+    |> ignore)
   }
 }
 
@@ -571,9 +570,9 @@ fn movement(world : @ecs.World) -> Unit {
   }
 
   let delta = world_time(world).delta_seconds() * MOVE_SPEED
-  let transform_store = world.component(@transform.ecs_key_transform)
   for entity in lighting_state.val.movables {
-    if transform_store.get(entity) is Some(transform) {
+    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(transform) {
       let next = transform.with_translation(
         @math.Vec3::new(
           transform.translation.x + delta * dx,
@@ -581,7 +580,7 @@ fn movement(world : @ecs.World) -> Unit {
           transform.translation.z,
         ),
       )
-      transform_store.set(entity, next) |> ignore
+      try! (world.replace(entity, @transform.ecs_key_transform, next) |> ignore)
     }
   }
 }

@@ -50,7 +50,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(asset_server.load_image("branding/icon.png")),
     @transform.Transform::identity(),
   ).spawn(world)
-  world.component(my_component_key).insert(sprite, MyComponent::{  })
+  try! world.set_by_key(sprite, my_component_key, MyComponent::{  })
 }
 
 ///|
