@@ -202,6 +202,8 @@ pub fn states_plugin(StatesPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
 
 pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
+pub fn[W, O] system_output((W) -> O) -> OutputSystemConfig[W, O]
+
 pub fn[W, P : SystemParam] system_param((P) -> Unit) -> (W) -> Unit
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2((P1, P2) -> Unit) -> (W) -> Unit
@@ -215,6 +217,8 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] system_param6((P1, P2, P3, P4, P5, P6) -> Unit) -> (W) -> Unit
 
 pub fn system_param_empty_state(@ecs.World) -> Json
+
+pub fn[W, P : SystemParam, O] system_param_output((P) -> O) -> OutputSystemConfig[W, O]
 
 pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
 
@@ -558,6 +562,12 @@ pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
 pub impl Eq for FixedMainScheduleOrder
 pub impl Show for FixedMainScheduleOrder
 
+pub struct In[T] {
+  value : T
+}
+pub fn[T] In::get(Self[T]) -> T
+pub fn[T] In::into_inner(Self[T]) -> T
+
 pub struct Local[T] {
   value_ref : @ref.Ref[T]
 }
@@ -677,6 +687,14 @@ pub struct OptionalStateSource[S] {
   state : S
 }
 pub fn[S] OptionalStateSource::state(Self[S]) -> S
+
+pub struct OutputSystemConfig[W, O] {
+  system : (W) -> O?
+}
+pub fn[W, O] OutputSystemConfig::map(Self[W, O], (O) -> Unit) -> SystemConfig[W]
+pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(Self[W, O], (O, P) -> Unit) -> SystemConfig[W]
+pub fn[W, O] OutputSystemConfig::pipe(Self[W, O], (In[O]) -> Unit) -> SystemConfig[W]
+pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(Self[W, O], (In[O], P) -> Unit) -> SystemConfig[W]
 
 pub struct ParamSet2[P0, P1] {
   param0 : P0

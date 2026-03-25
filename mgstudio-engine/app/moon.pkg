@@ -1,5 +1,6 @@
 import {
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/strconv",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",

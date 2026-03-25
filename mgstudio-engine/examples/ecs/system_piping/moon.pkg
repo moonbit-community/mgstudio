@@ -1,0 +1,10 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/strconv",
+}
+
+options(
+  "is-main": true,
+  "supported-targets": "native",
+)

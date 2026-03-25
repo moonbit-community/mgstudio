@@ -383,6 +383,116 @@ fn run_fallible_system_body(f : () -> Unit raise) -> Unit {
 }
 
 ///|
+pub struct In[T] {
+  value : T
+}
+
+///|
+pub fn[T] In::get(self : In[T]) -> T {
+  self.value
+}
+
+///|
+pub fn[T] In::into_inner(self : In[T]) -> T {
+  self.value
+}
+
+///|
+pub struct OutputSystemConfig[W, O] {
+  system : (W) -> O?
+}
+
+///|
+pub fn[W, O] system_output(system : (W) -> O) -> OutputSystemConfig[W, O] {
+  OutputSystemConfig::{ system: fn(world : W) { Some(system(world)) } }
+}
+
+///|
+pub fn[W, P : SystemParam, O] system_param_output(
+  system : (P) -> O,
+) -> OutputSystemConfig[W, O] {
+  let state = Ref::new(Json::null())
+  let state_initialized = Ref::new(false)
+  OutputSystemConfig::{
+    system: fn(_world : W) {
+      if !state_initialized.val {
+        state.val = P::init_state(system_param_abort_missing_world())
+        state_initialized.val = true
+      }
+      let param_opt : P? = system_param_get_or_record(state)
+      guard param_opt is Some(param) else { return None }
+      let output = system(param)
+      P::store(param, state)
+      Some(output)
+    },
+  }
+}
+
+///|
+pub fn[W, O] OutputSystemConfig::pipe(
+  self : OutputSystemConfig[W, O],
+  handler : (In[O]) -> Unit,
+) -> SystemConfig[W] {
+  system(fn(world : W) {
+    guard (self.system)(world) is Some(output) else { return }
+    handler(In::{ value: output })
+  })
+}
+
+///|
+pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
+  self : OutputSystemConfig[W, O],
+  handler : (In[O], P) -> Unit,
+) -> SystemConfig[W] {
+  let state = Ref::new(Json::null())
+  let state_initialized = Ref::new(false)
+  system(fn(world : W) {
+    guard (self.system)(world) is Some(output) else { return }
+    let current_world = system_param_abort_missing_world()
+    if !state_initialized.val {
+      state.val = P::init_state(current_world)
+      state_initialized.val = true
+    }
+    let param_opt : P? = system_param_get_or_record(state)
+    guard param_opt is Some(param) else { return }
+    handler(In::{ value: output }, param)
+    P::store(param, state)
+  })
+}
+
+///|
+pub fn[W, O] OutputSystemConfig::map(
+  self : OutputSystemConfig[W, O],
+  handler : (O) -> Unit,
+) -> SystemConfig[W] {
+  system(fn(world : W) {
+    guard (self.system)(world) is Some(output) else { return }
+    handler(output)
+  })
+}
+
+///|
+pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
+  self : OutputSystemConfig[W, O],
+  handler : (O, P) -> Unit,
+) -> SystemConfig[W] {
+  let state = Ref::new(Json::null())
+  let state_initialized = Ref::new(false)
+  system(fn(world : W) {
+    guard (self.system)(world) is Some(output) else { return }
+    let current_world = system_param_abort_missing_world()
+    if !state_initialized.val {
+      state.val = P::init_state(current_world)
+      state_initialized.val = true
+    }
+    let param_opt : P? = system_param_get_or_record(state)
+    guard param_opt is Some(param) else { return }
+    handler(output, param)
+    P::store(param, state)
+  })
+}
+
+///|
 pub fn[W] fallible_system(system : FallibleSystemFn[W]) -> SystemConfig[W] {
   let wrapped = fn(world : W) { run_fallible_system_body(() => system(world)) }
   SystemConfig::{
