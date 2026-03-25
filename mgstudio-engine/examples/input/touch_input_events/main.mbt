@@ -17,7 +17,7 @@
 ///
 /// Current parity state:
 /// - Uses `MessageReader<TouchInput>` with Bevy-like event iteration.
-/// - Native exact parity is blocked by missing native touch event source (`bd-6xp`).
+/// - Native exact parity is still limited by the missing native touch event source.
 
 ///|
 fn main {

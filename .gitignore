@@ -8,8 +8,3 @@ AGENTS.md
 .codex
 /mgstudio-runtime/web/mgstudio-runtime-web.js
 **/.mgstudio/run/
-
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key

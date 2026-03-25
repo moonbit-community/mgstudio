@@ -17,7 +17,7 @@
 ///
 /// Current parity state:
 /// - Uses `Res<Touches>` and follows Bevy's iteration flow.
-/// - Native exact parity is blocked by missing native touch event source (`bd-6xp`).
+/// - Native exact parity is still limited by the missing native touch event source.
 
 ///|
 fn main {

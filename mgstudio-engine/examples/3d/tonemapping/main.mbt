@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/3d/tonemapping.rs`.
 ///
 /// The Bevy resource/component/system structure is preserved here.
-/// The scene-2 custom material path remains blocked by `bd-iqd` because
+/// The scene-2 custom material path remains unavailable because
 /// mgstudio still lacks Bevy-equivalent custom 3D material APIs.
 
 ///|
