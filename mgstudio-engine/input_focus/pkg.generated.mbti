@@ -5,11 +5,17 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
 }
 
 // Values
 pub fn advance_tab_focus(@ecs.World, Bool) -> Unit
+
+pub fn auto_generate_navigation_edges(@ref.Ref[DirectionalNavigationMap], Array[FocusableArea], AutoNavigationConfig) -> Unit
+
+pub fn directional_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[M : @ecs.Message] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
 
@@ -32,8 +38,59 @@ pub fn set_initial_focus(@ecs.World) -> Unit
 pub fn tab_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
+pub(all) suberror DirectionalNavigationError {
+  NoFocus
+  NoNeighborInDirection(@core.Entity, @math.CompassOctant)
+}
 
 // Types and methods
+pub struct AutoNavigationConfig {
+  min_alignment_factor : Float
+  max_search_distance : Float?
+  prefer_aligned : Bool
+}
+pub fn AutoNavigationConfig::default() -> Self
+pub fn AutoNavigationConfig::max_search_distance(Self) -> Float?
+pub fn AutoNavigationConfig::min_alignment_factor(Self) -> Float
+pub fn AutoNavigationConfig::new(Float, Float?, Bool) -> Self
+pub fn AutoNavigationConfig::prefer_aligned(Self) -> Bool
+pub impl @app.Resource for AutoNavigationConfig
+
+pub struct DirectionalNavigation {
+  world : @ecs.World
+}
+pub fn DirectionalNavigation::input_focus(Self) -> @core.Entity?
+pub fn DirectionalNavigation::navigate(Self, @math.CompassOctant) -> @core.Entity raise DirectionalNavigationError
+pub impl @app.SystemParam for DirectionalNavigation
+
+pub struct DirectionalNavigationMap {
+  neighbors : @hashmap.HashMap[(Int, Int), NavNeighbors]
+}
+pub fn DirectionalNavigationMap::add_edge(Self, @core.Entity, @core.Entity, @math.CompassOctant) -> Unit
+pub fn DirectionalNavigationMap::add_edges(Self, Array[@core.Entity], @math.CompassOctant) -> Unit
+pub fn DirectionalNavigationMap::add_looping_edges(Self, Array[@core.Entity], @math.CompassOctant) -> Unit
+pub fn DirectionalNavigationMap::add_symmetrical_edge(Self, @core.Entity, @core.Entity, @math.CompassOctant) -> Unit
+pub fn DirectionalNavigationMap::clear(Self) -> Unit
+pub fn DirectionalNavigationMap::default() -> Self
+pub fn DirectionalNavigationMap::get_neighbor(Self, @core.Entity, @math.CompassOctant) -> @core.Entity?
+pub fn DirectionalNavigationMap::get_neighbors(Self, @core.Entity) -> NavNeighbors?
+pub fn DirectionalNavigationMap::remove(Self, @core.Entity) -> Unit
+pub impl @app.Resource for DirectionalNavigationMap
+
+pub struct DirectionalNavigationPlugin {
+}
+pub fn DirectionalNavigationPlugin::default() -> Self
+
+pub struct FocusableArea {
+  entity : @core.Entity
+  position : @math.Vec2
+  size : @math.Vec2
+}
+pub fn FocusableArea::entity(Self) -> @core.Entity
+pub fn FocusableArea::new(@core.Entity, @math.Vec2, @math.Vec2) -> Self
+pub fn FocusableArea::position(Self) -> @math.Vec2
+pub fn FocusableArea::size(Self) -> @math.Vec2
+
 pub struct FocusedInput[M] {
   focused_entity : @core.Entity
   input : M
@@ -77,6 +134,20 @@ pub struct IsFocusedHelper {
 pub impl @app.SystemParam for IsFocusedHelper
 pub impl IsFocused for IsFocusedHelper
 
+pub struct NavNeighbors {
+  north : @core.Entity?
+  north_east : @core.Entity?
+  east : @core.Entity?
+  south_east : @core.Entity?
+  south : @core.Entity?
+  south_west : @core.Entity?
+  west : @core.Entity?
+  north_west : @core.Entity?
+}
+pub fn NavNeighbors::default() -> Self
+pub fn NavNeighbors::get(Self, @math.CompassOctant) -> @core.Entity?
+pub fn NavNeighbors::set(Self, @math.CompassOctant, @core.Entity) -> Self
+
 pub struct TabGroup {
   modal : Bool
   order : Int
@@ -104,4 +175,8 @@ pub(open) trait IsFocused {
   is_focus_within_visible(Self, @core.Entity) -> Bool
 }
 pub impl IsFocused for @ecs.World
+
+pub(open) trait Navigable {
+  get_bounds(Self) -> (@math.Vec2, @math.Vec2)
+}
 

@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/input_focus",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_accesskit",
@@ -199,6 +200,21 @@ pub impl Eq for AlignSelf
 pub impl Show for AlignSelf
 pub impl ToJson for AlignSelf
 pub impl @json.FromJson for AlignSelf
+
+pub struct AutoDirectionalNavigation {
+  respect_tab_order : Bool
+}
+pub fn AutoDirectionalNavigation::default() -> Self
+pub impl @ecs.Component for AutoDirectionalNavigation
+pub impl ToJson for AutoDirectionalNavigation
+pub impl @json.FromJson for AutoDirectionalNavigation
+
+pub struct AutoDirectionalNavigator {
+  world : @ecs.World
+}
+pub fn AutoDirectionalNavigator::input_focus(Self) -> @core.Entity?
+pub fn AutoDirectionalNavigator::navigate(Self, @math.CompassOctant) -> @core.Entity raise @input_focus.DirectionalNavigationError
+pub impl @app.SystemParam for AutoDirectionalNavigator
 
 pub struct BackgroundColor {
   color : @color.Color

@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/navigation/directional_navigation_overrides"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type OverrideButton
+pub impl @ecs.Component for OverrideButton
+
+type OverrideFocusDisplay
+pub impl @ecs.Component for OverrideFocusDisplay
+
+type OverrideLastInputDisplay
+pub impl @ecs.Component for OverrideLastInputDisplay
+
+type OverrideState
+pub impl @ecs.Component for OverrideState
+
+type OverrideStatus
+pub impl @app.Resource for OverrideStatus
+
+// Type aliases
+
+// Traits
+

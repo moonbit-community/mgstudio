@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/navigation/directional_navigation"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ActivatedButton
+pub impl @ecs.Component for ActivatedButton
+
+type FocusDisplay
+pub impl @ecs.Component for FocusDisplay
+
+type LastInputDisplay
+pub impl @ecs.Component for LastInputDisplay
+
+type NavButton
+pub impl @ecs.Component for NavButton
+
+type NavigationStatus
+pub impl @app.Resource for NavigationStatus
+
+// Type aliases
+
+// Traits
+
