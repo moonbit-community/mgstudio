@@ -1,0 +1,35 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/animation_graph"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ClipNode
+pub impl @ecs.Component for ClipNode
+
+type ClipNodeFill
+pub impl @ecs.Component for ClipNodeFill
+
+type ClipNodeLabel
+pub impl @ecs.Component for ClipNodeLabel
+
+type ExampleAnimationGraph
+pub impl @app.Resource for ExampleAnimationGraph
+
+type ExampleAnimationWeights
+pub impl @ecs.Component for ExampleAnimationWeights
+pub impl Default for ExampleAnimationWeights
+
+type NodeRect
+
+// Type aliases
+
+// Traits
+

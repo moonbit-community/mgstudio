@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/scroll_and_overflow/drag_to_scroll"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ScrollDragState
+pub impl @app.Resource for ScrollDragState
+pub impl Default for ScrollDragState
+
+type ScrollableNode
+pub impl @ecs.Component for ScrollableNode
+
+// Type aliases
+
+// Traits
+
