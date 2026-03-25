@@ -220,6 +220,57 @@ pub fn Commands::entity(
 }
 
 ///|
+pub fn Commands::register_system(
+  self : Commands,
+  system : SystemConfig[@ecs.World],
+) -> SystemId {
+  register_system(self.world, system)
+}
+
+///|
+pub fn[P1 : SystemParam] Commands::register_system_param(
+  self : Commands,
+  system_fn : (P1) -> Unit,
+) -> SystemId {
+  self.register_system(system(system_param(system_fn)))
+}
+
+///|
+pub fn[P1 : SystemParam, P2 : SystemParam] Commands::register_system_param2(
+  self : Commands,
+  system_fn : (P1, P2) -> Unit,
+) -> SystemId {
+  self.register_system(system(system_param2(system_fn)))
+}
+
+///|
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] Commands::register_system_param3(
+  self : Commands,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> SystemId {
+  self.register_system(system(system_param3(system_fn)))
+}
+
+///|
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] Commands::register_system_param4(
+  self : Commands,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> SystemId {
+  self.register_system(system(system_param4(system_fn)))
+}
+
+///|
+pub fn Commands::run_system(self : Commands, system_id : SystemId) -> Unit {
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      try! run_system(world, system_id)
+    },
+    error_handler: None,
+    source: "Commands::run_system",
+  })
+}
+
+///|
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] Commands::spawn_component(
   self : Commands,

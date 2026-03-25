@@ -120,6 +120,18 @@ pub fn[A : States, B : States, C : States, Derived : States] register_computed_s
 
 pub fn[Source : States, Derived : SubStates] register_sub_state(Source, Derived, (Source) -> Derived?) -> Unit
 
+pub fn register_system(@ecs.World, SystemConfig[@ecs.World]) -> SystemId
+
+pub fn[P1 : SystemParam] register_system_param(@ecs.World, (P1) -> Unit) -> SystemId
+
+pub fn[P1 : SystemParam, P2 : SystemParam] register_system_param2(@ecs.World, (P1, P2) -> Unit) -> SystemId
+
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] register_system_param3(@ecs.World, (P1, P2, P3) -> Unit) -> SystemId
+
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] register_system_param4(@ecs.World, (P1, P2, P3, P4) -> Unit) -> SystemId
+
+pub fn register_world_system(@ecs.World, (@ecs.World) -> Unit) -> SystemId
+
 pub fn render_runtime_error() -> RenderRuntimeError?
 
 pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
@@ -149,6 +161,20 @@ pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
 pub fn run_registered_observer_system(@ecs.World, @ref.Ref[Int], (@ecs.World) -> Unit, context_kind? : ErrorContextKind, source? : String) -> Unit
+
+pub fn run_system(@ecs.World, SystemId) -> Unit raise
+
+pub fn run_system_once(@ecs.World, SystemConfig[@ecs.World]) -> Unit raise
+
+pub fn[P1 : SystemParam] run_system_once_param(@ecs.World, (P1) -> Unit) -> Unit raise
+
+pub fn[P1 : SystemParam, P2 : SystemParam] run_system_once_param2(@ecs.World, (P1, P2) -> Unit) -> Unit raise
+
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] run_system_once_param3(@ecs.World, (P1, P2, P3) -> Unit) -> Unit raise
+
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] run_system_once_param4(@ecs.World, (P1, P2, P3, P4) -> Unit) -> Unit raise
+
+pub fn run_world_system_once(@ecs.World, (@ecs.World) -> Unit) -> Unit raise
 
 pub fn schedule_label(String) -> ScheduleStage
 
@@ -211,6 +237,10 @@ pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 // Errors
 pub(all) suberror PluginGroupError {
   MissingPlugin(String)
+}
+
+pub(all) suberror RegisteredSystemError {
+  UnknownRegisteredSystem(SystemId)
 }
 
 // Types and methods
@@ -417,8 +447,14 @@ pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : Resource] Commands::insert_resource(Self, T) -> Unit
 pub fn Commands::queue(Self, (@ecs.World) -> Unit raise) -> Unit
 pub fn Commands::queue_handled(Self, (@ecs.World) -> Unit raise, (Error, ErrorContext) -> Unit) -> Unit
+pub fn Commands::register_system(Self, SystemConfig[@ecs.World]) -> SystemId
+pub fn[P1 : SystemParam] Commands::register_system_param(Self, (P1) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam] Commands::register_system_param2(Self, (P1, P2) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] Commands::register_system_param3(Self, (P1, P2, P3) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] Commands::register_system_param4(Self, (P1, P2, P3, P4) -> Unit) -> SystemId
 pub fn[T : Resource] Commands::remove_resource(Self) -> Unit
 pub fn[T] Commands::remove_world_resource(Self, @ecs.ResourceKey[T]) -> Unit
+pub fn Commands::run_system(Self, SystemId) -> Unit
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))
@@ -925,6 +961,12 @@ pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bool) -> Self[W]
+
+pub struct SystemId {
+  index : Int
+}
+pub impl Eq for SystemId
+pub impl Show for SystemId
 
 pub struct ValidateParentHasComponentPlugin[C] {
   schedule : ScheduleStage

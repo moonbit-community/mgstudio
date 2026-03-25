@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/one_shot_systems"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Callback
+pub impl @ecs.Component for Callback
+
+type CallbackA
+pub impl @ecs.Component for CallbackA
+
+type CallbackB
+pub impl @ecs.Component for CallbackB
+
+type LastTriggeredLabel
+pub impl @ecs.Component for LastTriggeredLabel
+
+type Triggered
+pub impl @ecs.Component for Triggered
+
+// Type aliases
+
+// Traits
+
