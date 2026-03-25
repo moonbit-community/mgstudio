@@ -25,7 +25,7 @@ Representative examples:
 - `examples/3d/pbr`
 - `examples/3d/3d_shapes`
 - `examples/3d/3d_scene`
-- `examples/ui/button`
+- `examples/ui/widgets/button`
 
 ### Common commands
 

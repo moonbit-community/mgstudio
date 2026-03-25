@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ui/widgets/button.rs`.
 fn normal_button_color() -> @sprite.Color {
   @sprite.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
 }

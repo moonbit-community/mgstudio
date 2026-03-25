@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio/examples/ui/text"
+package "Milky2018/mgstudio/examples/ui/text/text"
 
 import {
   "Milky2018/mgstudio/ecs",
