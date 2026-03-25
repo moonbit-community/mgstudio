@@ -1303,3 +1303,15 @@ pub fn[Config] Gizmos::curve_gradient_2d(
 ) -> Unit {
   gizmos_linestrip_gradient_with_config(self.config, points)
 }
+
+///|
+pub fn[Config] Gizmos::text_2d(
+  self : Gizmos[Config],
+  isometry : Isometry2d,
+  text : String,
+  font_size : Float,
+  anchor : @math.Vec2,
+  color : Color,
+) -> Unit {
+  stroke_text_emit_2d(self.config, isometry, text, font_size, anchor, color)
+}

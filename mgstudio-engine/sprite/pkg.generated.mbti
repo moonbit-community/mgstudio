@@ -501,6 +501,7 @@ pub fn[Config] Gizmos::ray_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @co
 pub fn[Config] Gizmos::rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Unit
 pub fn[Config] Gizmos::rounded_rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
 pub fn[Config] Gizmos::short_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
+pub fn[Config] Gizmos::text_2d(Self[Config], Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config]
 
 pub struct Grid2dBuilder {
