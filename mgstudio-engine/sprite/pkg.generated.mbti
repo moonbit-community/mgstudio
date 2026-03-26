@@ -483,18 +483,25 @@ pub struct Gizmos[Config] {
   config_group : Config
 }
 pub fn[Config] Gizmos::arc_2d(Self[Config], Isometry2d, Float, Float, @color.Color) -> Arc2dBuilder
+pub fn[Config] Gizmos::arc_3d(Self[Config], @math.Isometry3d, Float, Float, @color.Color) -> Unit
 pub fn[Config] Gizmos::arrow_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> ArrowBuilder
 pub fn[Config] Gizmos::arrow_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::axes_2d(Self[Config], Isometry2d, Float) -> Unit
 pub fn[Config] Gizmos::axes_3d(Self[Config], @transform.Transform, Float) -> Unit
 pub fn[Config] Gizmos::circle_2d(Self[Config], Isometry2d, Float, @color.Color) -> Ellipse2dBuilder
+pub fn[Config] Gizmos::circle_3d(Self[Config], @math.Isometry3d, Float, @color.Color) -> Unit
 pub fn[Config] Gizmos::config(Self[Config]) -> GizmoConfig
 pub fn[Config] Gizmos::config_group(Self[Config]) -> Config
 pub fn[Config] Gizmos::cross_2d(Self[Config], Isometry2d, Float, @color.Color) -> Unit
+pub fn[Config] Gizmos::cross_3d(Self[Config], @math.Vec3, Float, @color.Color) -> Unit
+pub fn[Config] Gizmos::cuboid_3d(Self[Config], @transform.Transform, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::curve_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
+pub fn[Config] Gizmos::curve_3d(Self[Config], Array[@math.Vec3], @color.Color) -> Unit
 pub fn[Config] Gizmos::curve_gradient_2d(Self[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
+pub fn[Config] Gizmos::curve_gradient_3d(Self[Config], Array[(@math.Vec3, @color.Color)]) -> Unit
 pub fn[Config] Gizmos::ellipse_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Ellipse2dBuilder
 pub fn[Config] Gizmos::grid_2d(Self[Config], Isometry2d, @math.IVec2, @math.Vec2, @color.Color) -> Grid2dBuilder
+pub fn[Config] Gizmos::grid_3d(Self[Config], @math.Isometry3d, @math.IVec2, @math.Vec2, @color.Color) -> Unit
 pub fn[Config] Gizmos::line_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn[Config] Gizmos::line_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::line_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
@@ -510,8 +517,10 @@ pub fn[Config] Gizmos::ray_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color
 pub fn[Config] Gizmos::ray_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::ray_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
 pub fn[Config] Gizmos::rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::rect_3d(Self[Config], @math.Isometry3d, @math.Vec2, @color.Color) -> Unit
 pub fn[Config] Gizmos::rounded_rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
 pub fn[Config] Gizmos::short_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
+pub fn[Config] Gizmos::sphere_3d(Self[Config], @math.Isometry3d, Float, @color.Color) -> Unit
 pub fn[Config] Gizmos::text_2d(Self[Config], Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
 pub fn[Config] Gizmos::text_3d(Self[Config], @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config]

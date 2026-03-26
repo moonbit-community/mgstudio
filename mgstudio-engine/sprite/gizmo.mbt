@@ -384,6 +384,29 @@ fn ellipse_points(
 }
 
 ///|
+fn isometry3_points_from_2d(
+  isometry : @math.Isometry3d,
+  points : Array[@math.Vec2],
+) -> Array[@math.Vec3] {
+  let out : Array[@math.Vec3] = []
+  for point in points {
+    out.push(isometry.transform_point3(@math.Vec3::new(point.x, point.y, 0.0F)))
+  }
+  out
+}
+
+///|
+fn transform_point_3d(
+  transform : @transform.Transform,
+  point : @math.Vec3,
+) -> @math.Vec3 {
+  transform.translation
+  .add(transform.right().mul_scalar(point.x * transform.scale.x))
+  .add(transform.up().mul_scalar(point.y * transform.scale.y))
+  .add(transform.back().mul_scalar(point.z * transform.scale.z))
+}
+
+///|
 priv struct GizmoLine {
   start : @math.Vec2
   end : @math.Vec2
@@ -1457,6 +1480,39 @@ pub fn[Config] Gizmos::axes_3d(
 }
 
 ///|
+pub fn[Config] Gizmos::cross_3d(
+  self : Gizmos[Config],
+  center : @math.Vec3,
+  half_size : Float,
+  color : Color,
+) -> Unit {
+  let axis_x = @math.Vec3::new(half_size, 0.0F, 0.0F)
+  let axis_y = @math.Vec3::new(0.0F, half_size, 0.0F)
+  let axis_z = @math.Vec3::new(0.0F, 0.0F, half_size)
+  gizmos_add_line_3d_with_config(
+    self.config,
+    center.sub(axis_x),
+    center.add(axis_x),
+    color,
+    color,
+  )
+  gizmos_add_line_3d_with_config(
+    self.config,
+    center.sub(axis_y),
+    center.add(axis_y),
+    color,
+    color,
+  )
+  gizmos_add_line_3d_with_config(
+    self.config,
+    center.sub(axis_z),
+    center.add(axis_z),
+    color,
+    color,
+  )
+}
+
+///|
 pub fn[Config] Gizmos::cross_2d(
   self : Gizmos[Config],
   isometry : Isometry2d,
@@ -1582,6 +1638,181 @@ pub fn[Config] Gizmos::curve_gradient_2d(
   points : Array[(@math.Vec2, Color)],
 ) -> Unit {
   gizmos_linestrip_gradient_with_config(self.config, points)
+}
+
+///|
+pub fn[Config] Gizmos::grid_3d(
+  self : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  cell_count : @math.IVec2,
+  spacing : @math.Vec2,
+  color : Color,
+) -> Unit {
+  let columns = max_int(cell_count.x, 1)
+  let rows = max_int(cell_count.y, 1)
+  let half_width = spacing.x * float_from_int(columns) * 0.5F
+  let half_height = spacing.y * float_from_int(rows) * 0.5F
+  for column in 0..<=columns {
+    let x = -half_width + spacing.x * float_from_int(column)
+    let start = isometry.transform_point3(
+      @math.Vec3::new(x, -half_height, 0.0F),
+    )
+    let end = isometry.transform_point3(@math.Vec3::new(x, half_height, 0.0F))
+    gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+  }
+  for row in 0..<=rows {
+    let y = -half_height + spacing.y * float_from_int(row)
+    let start = isometry.transform_point3(@math.Vec3::new(-half_width, y, 0.0F))
+    let end = isometry.transform_point3(@math.Vec3::new(half_width, y, 0.0F))
+    gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+  }
+}
+
+///|
+pub fn[Config] Gizmos::rect_3d(
+  self : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  size : @math.Vec2,
+  color : Color,
+) -> Unit {
+  let half_x = size.x * 0.5F
+  let half_y = size.y * 0.5F
+  let points = [
+    @math.Vec2::new(-half_x, -half_y),
+    @math.Vec2::new(half_x, -half_y),
+    @math.Vec2::new(half_x, half_y),
+    @math.Vec2::new(-half_x, half_y),
+    @math.Vec2::new(-half_x, -half_y),
+  ]
+  self.linestrip_3d(isometry3_points_from_2d(isometry, points), color)
+}
+
+///|
+pub fn[Config] Gizmos::circle_3d(
+  self : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : Color,
+) -> Unit {
+  self.linestrip_3d(
+    isometry3_points_from_2d(
+      isometry,
+      ellipse_points(@math.Vec2::new(radius, radius), DEFAULT_CIRCLE_RESOLUTION),
+    ),
+    color,
+  )
+}
+
+///|
+pub fn[Config] Gizmos::arc_3d(
+  self : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  arc_angle : Float,
+  radius : Float,
+  color : Color,
+) -> Unit {
+  self.linestrip_3d(
+    isometry3_points_from_2d(
+      isometry,
+      arc_points(arc_angle, radius, resolution_from_angle(arc_angle)),
+    ),
+    color,
+  )
+}
+
+///|
+pub fn[Config] Gizmos::sphere_3d(
+  self : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : Color,
+) -> Unit {
+  let circle = ellipse_points(
+    @math.Vec2::new(radius, radius),
+    DEFAULT_CIRCLE_RESOLUTION,
+  )
+  self.linestrip_3d(isometry3_points_from_2d(isometry, circle), color)
+  self.linestrip_3d(
+    isometry3_points_from_2d(
+      @math.Isometry3d::new(
+        isometry.translation,
+        isometry.rotation.mul(@math.Quat::from_rotation_x(HALF_PI)),
+      ),
+      circle,
+    ),
+    color,
+  )
+  self.linestrip_3d(
+    isometry3_points_from_2d(
+      @math.Isometry3d::new(
+        isometry.translation,
+        isometry.rotation.mul(@math.Quat::from_rotation_y(HALF_PI)),
+      ),
+      circle,
+    ),
+    color,
+  )
+}
+
+///|
+pub fn[Config] Gizmos::cuboid_3d(
+  self : Gizmos[Config],
+  transform : @transform.Transform,
+  size : @math.Vec3,
+  color : Color,
+) -> Unit {
+  let half = @math.Vec3::new(size.x * 0.5F, size.y * 0.5F, size.z * 0.5F)
+  let corners = [
+    transform_point_3d(transform, @math.Vec3::new(-half.x, -half.y, -half.z)),
+    transform_point_3d(transform, @math.Vec3::new(half.x, -half.y, -half.z)),
+    transform_point_3d(transform, @math.Vec3::new(half.x, half.y, -half.z)),
+    transform_point_3d(transform, @math.Vec3::new(-half.x, half.y, -half.z)),
+    transform_point_3d(transform, @math.Vec3::new(-half.x, -half.y, half.z)),
+    transform_point_3d(transform, @math.Vec3::new(half.x, -half.y, half.z)),
+    transform_point_3d(transform, @math.Vec3::new(half.x, half.y, half.z)),
+    transform_point_3d(transform, @math.Vec3::new(-half.x, half.y, half.z)),
+  ]
+  let edges = [
+    (0, 1),
+    (1, 2),
+    (2, 3),
+    (3, 0),
+    (4, 5),
+    (5, 6),
+    (6, 7),
+    (7, 4),
+    (0, 4),
+    (1, 5),
+    (2, 6),
+    (3, 7),
+  ]
+  for edge in edges {
+    let (start_id, end_id) = edge
+    gizmos_add_line_3d_with_config(
+      self.config,
+      corners[start_id],
+      corners[end_id],
+      color,
+      color,
+    )
+  }
+}
+
+///|
+pub fn[Config] Gizmos::curve_3d(
+  self : Gizmos[Config],
+  points : Array[@math.Vec3],
+  color : Color,
+) -> Unit {
+  gizmos_linestrip_3d_with_config(self.config, points, color)
+}
+
+///|
+pub fn[Config] Gizmos::curve_gradient_3d(
+  self : Gizmos[Config],
+  points : Array[(@math.Vec3, Color)],
+) -> Unit {
+  gizmos_linestrip_gradient_3d_with_config(self.config, points)
 }
 
 ///|

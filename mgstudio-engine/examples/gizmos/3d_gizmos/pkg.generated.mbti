@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/gizmos/3d_gizmos"
+
+// Values
+
+// Errors
+
+// Types and methods
+type MyRoundGizmos
+
+// Type aliases
+
+// Traits
+
