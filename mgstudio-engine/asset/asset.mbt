@@ -459,7 +459,7 @@ let asset_source_builder_registry : Ref[
 type AssetReloadHook = (@ecs.World, AssetServer, String) -> Unit
 
 ///|
-let asset_reload_hook_registry : Ref[Array[AssetReloadHook]] = Ref::new([])
+let asset_reload_hook_registry : Array[AssetReloadHook] = []
 
 ///|
 let asset_ready_checker_registry : Ref[
@@ -475,7 +475,7 @@ fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
 pub fn asset_register_reload_hook(
   hook : (@ecs.World, AssetServer, String) -> Unit,
 ) -> Unit {
-  asset_reload_hook_registry.val.push(hook)
+  asset_reload_hook_registry.push(hook)
 }
 
 ///|
@@ -2127,7 +2127,7 @@ fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
     return
   }
   for path in modified_paths {
-    for hook in asset_reload_hook_registry.val {
+    for hook in asset_reload_hook_registry {
       hook(world, asset_server, path)
     }
   }

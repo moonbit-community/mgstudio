@@ -13,16 +13,16 @@
 // limitations under the License.
 
 ///|
-let read_paths_ref : Ref[Array[String]] = Ref::new([])
+let read_paths : Array[String] = []
 
 ///|
-let printed_paths_ref : Ref[Array[String]] = Ref::new([])
+let printed_paths : Array[String] = []
 
 ///|
 fn custom_asset_reader(base_reader : @asset.AssetReader) -> @asset.AssetReader {
   @asset.AssetReader::new(
     fn(path) {
-      read_paths_ref.val.push(path)
+      read_paths.push(path)
       base_reader.read(path)
     },
     fn(path) { base_reader.read_meta(path) },
@@ -33,10 +33,10 @@ fn custom_asset_reader(base_reader : @asset.AssetReader) -> @asset.AssetReader {
 
 ///|
 fn print_reads(_world : @ecs.World) -> Unit {
-  for path in read_paths_ref.val {
-    if !printed_paths_ref.val.contains(path) {
+  for path in read_paths {
+    if !printed_paths.contains(path) {
       println("Reading \{path}")
-      printed_paths_ref.val.push(path)
+      printed_paths.push(path)
     }
   }
 }

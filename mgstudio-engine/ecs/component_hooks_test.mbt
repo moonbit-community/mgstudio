@@ -67,10 +67,10 @@ pub impl Component for HookCommandsTestComponent with component() {
 }
 
 ///|
-let hook_event_log_ref : Ref[Array[String]] = Ref::new([])
+let hook_event_log : Array[String] = []
 
 ///|
-let hook_entity_ids_ref : Ref[Array[Int]] = Ref::new([])
+let hook_entity_ids : Array[Int] = []
 
 ///|
 let hook_component_id_matches_ref : Ref[Bool] = Ref::new(true)
@@ -83,8 +83,8 @@ let hook_callers_match_test_file_ref : Ref[Bool] = Ref::new(true)
 
 ///|
 fn hook_test_reset() -> Unit {
-  hook_event_log_ref.val.clear()
-  hook_entity_ids_ref.val.clear()
+  hook_event_log.clear()
+  hook_entity_ids.clear()
   hook_component_id_matches_ref.val = true
   hook_callers_present_ref.val = true
   hook_callers_match_test_file_ref.val = true
@@ -109,10 +109,10 @@ fn hook_test_record(
   world : DeferredWorld,
   context : HookContext,
 ) -> Unit {
-  hook_event_log_ref.val.push(
+  hook_event_log.push(
     "\{kind}:\{hook_test_value_text(world.world(), context.entity)}",
   )
-  hook_entity_ids_ref.val.push(context.entity.id)
+  hook_entity_ids.push(context.entity.id)
   if context.component_id != hook_test_component_key.id() {
     hook_component_id_matches_ref.val = false
   }
@@ -171,8 +171,8 @@ test "ecs component hooks: first insert fires add then insert with readable payl
     value: 1,
   })
 
-  inspect(hook_event_log_ref.val, content="[\"add:1\", \"insert:1\"]")
-  inspect(hook_entity_ids_ref.val, content="[0, 0]")
+  inspect(hook_event_log, content="[\"add:1\", \"insert:1\"]")
+  inspect(hook_entity_ids, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
@@ -193,8 +193,8 @@ test "ecs component hooks: replace fires replace then insert around the new payl
     value: 2,
   })
 
-  inspect(hook_event_log_ref.val, content="[\"replace:1\", \"insert:2\"]")
-  inspect(hook_entity_ids_ref.val, content="[0, 0]")
+  inspect(hook_event_log, content="[\"replace:1\", \"insert:2\"]")
+  inspect(hook_entity_ids, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
@@ -215,8 +215,8 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
     try! world.remove_by_key(entity, hook_test_component_key),
     content="true",
   )
-  inspect(hook_event_log_ref.val, content="[\"replace:7\", \"remove:7\"]")
-  inspect(hook_entity_ids_ref.val, content="[0, 0]")
+  inspect(hook_event_log, content="[\"replace:7\", \"remove:7\"]")
+  inspect(hook_entity_ids, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
@@ -240,10 +240,10 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
   try! world.despawn(entity)
 
   inspect(
-    hook_event_log_ref.val,
+    hook_event_log,
     content="[\"despawn:9\", \"replace:9\", \"remove:9\"]",
   )
-  inspect(hook_entity_ids_ref.val, content="[0, 0, 0]")
+  inspect(hook_entity_ids, content="[0, 0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
@@ -260,13 +260,13 @@ test "ecs component hooks: component access mutation paths preserve caller prove
     value: 3,
   })
 
-  inspect(hook_event_log_ref.val, content="[\"add:3\", \"insert:3\"]")
+  inspect(hook_event_log, content="[\"add:3\", \"insert:3\"]")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
 
   hook_test_reset()
   ignore(try! world.take(entity, hook_test_component_key))
-  inspect(hook_event_log_ref.val, content="[\"replace:3\", \"remove:3\"]")
+  inspect(hook_event_log, content="[\"replace:3\", \"remove:3\"]")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
 }

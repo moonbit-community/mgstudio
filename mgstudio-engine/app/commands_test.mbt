@@ -158,11 +158,11 @@ suberror CommandsTestError {
 }
 
 ///|
-let commands_hook_callers_ref : Ref[Array[String]] = Ref::new([])
+let commands_hook_callers : Array[String] = []
 
 ///|
 fn commands_hook_test_reset() -> Unit {
-  commands_hook_callers_ref.val.clear()
+  commands_hook_callers.clear()
 }
 
 ///|
@@ -172,16 +172,16 @@ fn commands_install_hook_test_hooks() -> Unit {
     try! hooks
     .on_add(fn(_world, context) {
       if context.caller is Some(caller) {
-        commands_hook_callers_ref.val.push("add:" + caller)
+        commands_hook_callers.push("add:" + caller)
       } else {
-        commands_hook_callers_ref.val.push("add:none")
+        commands_hook_callers.push("add:none")
       }
     })
     .on_remove(fn(_world, context) {
       if context.caller is Some(caller) {
-        commands_hook_callers_ref.val.push("remove:" + caller)
+        commands_hook_callers.push("remove:" + caller)
       } else {
-        commands_hook_callers_ref.val.push("remove:none")
+        commands_hook_callers.push("remove:none")
       }
     }),
   )
@@ -586,13 +586,13 @@ test "app: Commands preserve hook caller provenance across deferred spawn and re
     try! app.world().get_by_key(entity, commands_hook_component_key),
     content="None",
   )
-  inspect(commands_hook_callers_ref.val.length(), content="2")
+  inspect(commands_hook_callers.length(), content="2")
   inspect(
-    commands_hook_callers_ref.val[0].contains("commands_test.mbt"),
+    commands_hook_callers[0].contains("commands_test.mbt"),
     content="true",
   )
   inspect(
-    commands_hook_callers_ref.val[1].contains("commands_test.mbt"),
+    commands_hook_callers[1].contains("commands_test.mbt"),
     content="true",
   )
 }

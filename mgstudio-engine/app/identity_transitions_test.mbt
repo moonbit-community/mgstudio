@@ -41,11 +41,11 @@ impl @ecs.Component for DespawnMarker with component() {
 }
 
 ///|
-let transition_entries : Ref[Array[String]] = Ref::new([])
+let transition_entries : Array[String] = []
 
 ///|
 fn push_transition_entry(entry : String) -> Unit {
-  transition_entries.val.push(entry)
+  transition_entries.push(entry)
 }
 
 ///|
@@ -78,7 +78,7 @@ fn trigger_identity_transition_once(step : ResMut[TriggerIdentityOnce]) -> Unit 
 
 ///|
 test "app identity transition: default enter and exit ignore same-state transitions" {
-  transition_entries.val.clear()
+  transition_entries.clear()
   let app = App::new(@ecs.World::new())
     .add_plugins([states_plugin(StatesPlugin::default())])
     .insert_resource(TriggerIdentityOnce::{ done: false })
@@ -90,13 +90,13 @@ test "app identity transition: default enter and exit ignore same-state transiti
     .add_systems(Update, system(system_param(trigger_identity_transition_once)))
 
   app.run_startup() |> ignore
-  inspect(transition_entries.val, content="[\"enter\"]")
-  transition_entries.val.clear()
+  inspect(transition_entries, content="[\"enter\"]")
+  transition_entries.clear()
 
   app.run_once() |> ignore
   app.run_once() |> ignore
 
-  inspect(transition_entries.val, content="[\"reexit\", \"reenter\"]")
+  inspect(transition_entries, content="[\"reexit\", \"reenter\"]")
 }
 
 ///|

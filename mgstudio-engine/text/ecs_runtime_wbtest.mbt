@@ -14,8 +14,8 @@
 
 ///|
 fn reset_text_ecs_test_state() -> Unit {
-  text_ecs_bridge_entries.val.clear()
-  ui_text_ecs_bridge_entries.val.clear()
+  text_ecs_bridge_entries.clear()
+  ui_text_ecs_bridge_entries.clear()
   text_runtime_world_id_ref.val = None
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
@@ -106,7 +106,7 @@ test "ecs text bridge cleanup removes dead entity entries" {
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
-  text_ecs_bridge_entries.val.push(EcsTextBridgeEntry::{
+  text_ecs_bridge_entries.push(EcsTextBridgeEntry::{
     world_id: world.world_id(),
     entity,
     handle: TextHandle::new(42),
@@ -121,7 +121,7 @@ test "ecs text bridge cleanup removes dead entity entries" {
   try! world.despawn(entity)
   text_ecs_cleanup_stale_entries(world)
 
-  inspect(text_ecs_bridge_entries.val.length(), content="0")
+  inspect(text_ecs_bridge_entries.length(), content="0")
 }
 
 ///|
@@ -239,7 +239,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     logical_viewport_size: None,
   }
   ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
-  let entry = ui_text_ecs_bridge_entries.val[0]
+  let entry = ui_text_ecs_bridge_entries[0]
   let runtime_transform = @transform.Transform::from_xyz(320.0F, -180.0F, 7.0F)
   let runtime_layers = @sprite.RenderLayers::layer(11)
   text_set_transform(entry.handle, runtime_transform)

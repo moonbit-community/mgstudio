@@ -271,15 +271,15 @@ pub fn AnimationClipEvent::new_callback(
 }
 
 ///|
-let animation_typed_event_dispatchers : Ref[
-  Array[(String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit)],
-] = Ref::new([])
+let animation_typed_event_dispatchers : Array[
+  (String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit),
+] = []
 
 ///|
 fn animation_typed_event_find_dispatcher(
   type_key : String,
 ) -> ((@ecs.World, @any.Any, @core.Entity, String?) -> Unit)? {
-  for entry in animation_typed_event_dispatchers.val {
+  for entry in animation_typed_event_dispatchers {
     if entry.0 == type_key {
       return Some(entry.1)
     }
@@ -299,7 +299,7 @@ fn[T : AnimationEvent + @ecs.TriggerEvent] animation_typed_event_register(
 ) -> String {
   let type_key = animation_typed_event_type_key(event)
   if animation_typed_event_find_dispatcher(type_key) is None {
-    animation_typed_event_dispatchers.val.push(
+    animation_typed_event_dispatchers.push(
       (
         type_key,
         fn(world, payload, entity, caller) {
@@ -1667,19 +1667,19 @@ fn[T] animation_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
 pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
 
 ///|
-let animation_event_callbacks : Ref[Array[AnimationEventCallback]] = Ref::new([])
+let animation_event_callbacks : Array[AnimationEventCallback] = []
 
 ///|
 pub fn animation_register_event_callback(
   callback : AnimationEventCallback,
 ) -> Int {
-  animation_event_callbacks.val.push(callback)
-  animation_event_callbacks.val.length() - 1
+  animation_event_callbacks.push(callback)
+  animation_event_callbacks.length() - 1
 }
 
 ///|
 fn animation_event_callback_get(callback_id : Int) -> AnimationEventCallback? {
-  animation_event_callbacks.val.get(callback_id)
+  animation_event_callbacks.get(callback_id)
 }
 
 ///|

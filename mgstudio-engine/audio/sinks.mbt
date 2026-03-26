@@ -13,55 +13,54 @@
 // limitations under the License.
 
 ///|
-let audio_sink_registry : Ref[Array[NativeAudioPlayer?]] = Ref::new([])
+let audio_sink_registry : Array[NativeAudioPlayer?] = []
 
 ///|
-let spatial_audio_sink_registry : Ref[Array[NativeSpatialAudioPlayer?]] = Ref::new([],
-)
+let spatial_audio_sink_registry : Array[NativeSpatialAudioPlayer?] = []
 
 ///|
 fn audio_sink_registry_insert(player : NativeAudioPlayer) -> Int {
-  let id = audio_sink_registry.val.length()
-  audio_sink_registry.val.push(Some(player))
+  let id = audio_sink_registry.length()
+  audio_sink_registry.push(Some(player))
   id
 }
 
 ///|
 fn spatial_audio_sink_registry_insert(player : NativeSpatialAudioPlayer) -> Int {
-  let id = spatial_audio_sink_registry.val.length()
-  spatial_audio_sink_registry.val.push(Some(player))
+  let id = spatial_audio_sink_registry.length()
+  spatial_audio_sink_registry.push(Some(player))
   id
 }
 
 ///|
 fn audio_sink_registry_get(id : Int) -> NativeAudioPlayer? {
-  if id < 0 || id >= audio_sink_registry.val.length() {
+  if id < 0 || id >= audio_sink_registry.length() {
     None
   } else {
-    audio_sink_registry.val[id]
+    audio_sink_registry[id]
   }
 }
 
 ///|
 fn spatial_audio_sink_registry_get(id : Int) -> NativeSpatialAudioPlayer? {
-  if id < 0 || id >= spatial_audio_sink_registry.val.length() {
+  if id < 0 || id >= spatial_audio_sink_registry.length() {
     None
   } else {
-    spatial_audio_sink_registry.val[id]
+    spatial_audio_sink_registry[id]
   }
 }
 
 ///|
 fn audio_sink_registry_remove(id : Int) -> Unit {
-  if id >= 0 && id < audio_sink_registry.val.length() {
-    audio_sink_registry.val[id] = None
+  if id >= 0 && id < audio_sink_registry.length() {
+    audio_sink_registry[id] = None
   }
 }
 
 ///|
 fn spatial_audio_sink_registry_remove(id : Int) -> Unit {
-  if id >= 0 && id < spatial_audio_sink_registry.val.length() {
-    spatial_audio_sink_registry.val[id] = None
+  if id >= 0 && id < spatial_audio_sink_registry.length() {
+    spatial_audio_sink_registry[id] = None
   }
 }
 
