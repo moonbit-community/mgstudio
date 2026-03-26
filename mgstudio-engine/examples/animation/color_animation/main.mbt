@@ -222,29 +222,24 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/icon.png")
-  spawn_curve_linear_rgba_sprite(world, texture, CURVE_LINEAR_Y, linear_points)
-  spawn_curve_xyza_sprite(world, texture, CURVE_XYZ_Y, xyza_points)
-  spawn_curve_oklaba_sprite(world, texture, CURVE_OKLAB_Y, oklaba_points)
-  spawn_mixed_hsla_sprite(world, texture, MIX_HSL_Y, hsla_points)
-  spawn_mixed_srgba_sprite(world, texture, MIX_SRGB_Y, srgba_points)
-  spawn_mixed_oklcha_sprite(world, texture, MIX_OKLCH_Y, oklcha_points)
+  spawn_curve_linear_rgba_sprite(world, CURVE_LINEAR_Y, linear_points)
+  spawn_curve_xyza_sprite(world, CURVE_XYZ_Y, xyza_points)
+  spawn_curve_oklaba_sprite(world, CURVE_OKLAB_Y, oklaba_points)
+  spawn_mixed_hsla_sprite(world, MIX_HSL_Y, hsla_points)
+  spawn_mixed_srgba_sprite(world, MIX_SRGB_Y, srgba_points)
+  spawn_mixed_oklcha_sprite(world, MIX_OKLCH_Y, oklcha_points)
 }
 
 ///|
 fn spawn_curve_linear_rgba_sprite(
   world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
   y : Float,
   points : Array[LinearRgba],
 ) -> Unit {
   if points.length() != 4 {
     abort("color_animation curve control points must contain 4 colors")
   }
-  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
-    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-  )
+  let sprite = @sprite.Sprite::sized(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE))
   let entity = @sprite.SpriteBundle::new(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),
@@ -255,16 +250,13 @@ fn spawn_curve_linear_rgba_sprite(
 ///|
 fn spawn_curve_xyza_sprite(
   world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
   y : Float,
   points : Array[Xyza],
 ) -> Unit {
   if points.length() != 4 {
     abort("color_animation curve control points must contain 4 colors")
   }
-  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
-    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-  )
+  let sprite = @sprite.Sprite::sized(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE))
   let entity = @sprite.SpriteBundle::new(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),
@@ -275,16 +267,13 @@ fn spawn_curve_xyza_sprite(
 ///|
 fn spawn_curve_oklaba_sprite(
   world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
   y : Float,
   points : Array[Oklaba],
 ) -> Unit {
   if points.length() != 4 {
     abort("color_animation curve control points must contain 4 colors")
   }
-  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
-    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-  )
+  let sprite = @sprite.Sprite::sized(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE))
   let entity = @sprite.SpriteBundle::new(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),
@@ -295,16 +284,13 @@ fn spawn_curve_oklaba_sprite(
 ///|
 fn spawn_mixed_hsla_sprite(
   world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
   y : Float,
   colors : Array[Hsla],
 ) -> Unit {
   if colors.length() != 4 {
     abort("color_animation mixed colors must contain 4 colors")
   }
-  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
-    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-  )
+  let sprite = @sprite.Sprite::sized(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE))
   let entity = @sprite.SpriteBundle::new(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),
@@ -315,16 +301,13 @@ fn spawn_mixed_hsla_sprite(
 ///|
 fn spawn_mixed_srgba_sprite(
   world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
   y : Float,
   colors : Array[Srgba],
 ) -> Unit {
   if colors.length() != 4 {
     abort("color_animation mixed colors must contain 4 colors")
   }
-  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
-    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-  )
+  let sprite = @sprite.Sprite::sized(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE))
   let entity = @sprite.SpriteBundle::new(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),
@@ -335,16 +318,13 @@ fn spawn_mixed_srgba_sprite(
 ///|
 fn spawn_mixed_oklcha_sprite(
   world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
   y : Float,
   colors : Array[Oklcha],
 ) -> Unit {
   if colors.length() != 4 {
     abort("color_animation mixed colors must contain 4 colors")
   }
-  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
-    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-  )
+  let sprite = @sprite.Sprite::sized(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE))
   let entity = @sprite.SpriteBundle::new(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),

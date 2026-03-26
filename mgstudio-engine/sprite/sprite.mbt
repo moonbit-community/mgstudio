@@ -137,6 +137,11 @@ pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
 }
 
 ///|
+pub fn Sprite::sized(size : @math.Vec2) -> Sprite {
+  Sprite::from_image(@asset.asset_white_texture()).with_custom_size(Some(size))
+}
+
+///|
 pub fn Sprite::from_atlas_image(
   image : @asset.Handle[@asset.Image],
   atlas : @asset.TextureAtlas,

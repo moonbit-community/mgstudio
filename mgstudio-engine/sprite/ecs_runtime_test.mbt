@@ -193,6 +193,19 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
 }
 
 ///|
+test "render2d: Sprite::sized uses the white texture handle" {
+  let size = @math.Vec2::new(24.0F, 16.0F)
+  let sprite = Sprite::sized(size)
+  let white = @asset.asset_white_texture()
+  let matches_size = match sprite.custom_size {
+    Some(custom_size) => custom_size.x == size.x && custom_size.y == size.y
+    None => false
+  }
+  inspect(matches_size, content="true")
+  inspect(sprite.image.id() == white.id(), content="true")
+}
+
+///|
 test "render2d: Commands can spawn SpriteBundle" {
   let spawned : Ref[@core.Entity?] = Ref::new(None)
   let bundle = SpriteBundle::new_with_layers(

@@ -787,6 +787,7 @@ pub(all) struct Sprite {
 }
 pub fn Sprite::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
 pub fn Sprite::from_image(@asset.Handle[@image.Image]) -> Self
+pub fn Sprite::sized(@math.Vec2) -> Self
 pub fn Sprite::with_color(Self, @color.Color) -> Self
 pub fn Sprite::with_custom_size(Self, @math.Vec2?) -> Self
 pub fn Sprite::with_flip_x(Self, Bool) -> Self

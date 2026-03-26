@@ -24,8 +24,6 @@ This folder tracks parity status for Bevy animation examples.
 
 1. General UI property animation parity:
    - Broader UI property targeting beyond the current `Transform` + `TextColor` coverage.
-2. 2D sprite parity gap:
-   - Pure color-only sized sprite without mandatory texture handle.
 
 ## Validation
 
