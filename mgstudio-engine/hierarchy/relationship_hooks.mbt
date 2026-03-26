@@ -194,7 +194,9 @@ fn hierarchy_register_component_hooks(
         is Some(children) else {
         return
       }
-      for child in children.entities() {
+      // Snapshot descendants before recursive despawn mutates the hierarchy.
+      let child_entities = children.entities().copy()
+      for child in child_entities {
         if world.is_alive(child) {
           try! world.despawn(child)
         }

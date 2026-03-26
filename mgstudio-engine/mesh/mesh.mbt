@@ -103,3 +103,23 @@ pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {
       }
   }
 }
+
+///|
+pub fn Mesh::morph_target_names(self : Mesh) -> Array[String]? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry3d(geometry3d) => geometry3d.morph_target_names()
+  }
+}
+
+///|
+pub fn Mesh::custom_attribute_vec3(
+  self : Mesh,
+  name : String,
+) -> Array[@math.Vec3]? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry3d(geometry3d) =>
+      geometry3d.custom_attribute_vec3(name)
+  }
+}

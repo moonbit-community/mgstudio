@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/custom_skinned_mesh"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AnimatedJoint
+pub impl @ecs.Component for AnimatedJoint
+
+// Type aliases
+
+// Traits
+

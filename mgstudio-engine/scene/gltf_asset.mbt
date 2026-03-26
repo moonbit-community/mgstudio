@@ -16,19 +16,28 @@
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
   default_scene : @asset.Handle[Scene]?
+  animations : Array[@asset.Handle[@animation.AnimationClip]]
+  named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
 }
 
 ///|
 pub fn Gltf::new(
   scenes : Array[@asset.Handle[Scene]],
   default_scene : @asset.Handle[Scene]?,
+  animations? : Array[@asset.Handle[@animation.AnimationClip]] = [],
+  named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])] = [],
 ) -> Gltf {
-  Gltf::{ scenes, default_scene }
+  Gltf::{ scenes, default_scene, animations, named_animations }
 }
 
 ///|
 fn gltf_asset_default() -> Gltf {
-  Gltf::{ scenes: [], default_scene: None }
+  Gltf::{
+    scenes: [],
+    default_scene: None,
+    animations: [],
+    named_animations: [],
+  }
 }
 
 ///|
@@ -55,6 +64,10 @@ fn scene_load_gltf_root_asset(
   }
   let (doc, _buffer_bytes) = parsed
   let scenes : Array[@asset.Handle[Scene]] = []
+  let animations : Array[@asset.Handle[@animation.AnimationClip]] = []
+  let named_animations : Array[
+    (String, @asset.Handle[@animation.AnimationClip]),
+  ] = []
   for scene_index in 0..<doc.scenes.length() {
     scenes.push(
       scene_load_gltf_scene(
@@ -69,7 +82,25 @@ fn scene_load_gltf_root_asset(
     let scene_index = gltf_select_scene_index(doc, doc.default_scene)
     Some(scenes[scene_index])
   }
-  Gltf::new(scenes, default_scene)
+  for animation_index, animation in doc.animations {
+    let handle = scene_load_gltf_animation(
+      asset_server,
+      @asset.asset_format_path(
+        root_path.with_label(Some("Animation" + animation_index.to_string())),
+      ),
+    )
+    animations.push(handle)
+    if animation.name != "" {
+      named_animations.push((animation.name, handle))
+    }
+  }
+  @gltf.gltf_extension_notify_animations_collected(
+    @asset.asset_format_path(root_path),
+    animations,
+    named_animations,
+    gltf_collect_animation_root_indices(doc),
+  )
+  Gltf::new(scenes, default_scene, animations~, named_animations~)
 }
 
 ///|

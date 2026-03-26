@@ -29,6 +29,11 @@ pub fn Mesh3d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh3d {
 }
 
 ///|
+pub fn Mesh3d::mesh(self : Mesh3d) -> @asset.Handle[@mesh.Mesh] {
+  self.mesh
+}
+
+///|
 pub impl ToJson for Mesh3d with to_json(self) {
   self.mesh.id().to_json()
 }

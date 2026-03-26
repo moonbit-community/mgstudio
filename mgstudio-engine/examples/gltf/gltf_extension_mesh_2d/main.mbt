@@ -1,0 +1,150 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+const GLTF_PATH : String = "models/barycentric/barycentric.gltf"
+
+///|
+fn barycentric_colors(values : Array[@math.Vec3]) -> Array[@math.Vec4] {
+  let colors : Array[@math.Vec4] = []
+  for value in values {
+    colors.push(@math.Vec4::new(value.x, value.y, value.z, 1.0F))
+  }
+  colors
+}
+
+///|
+fn mesh3d_to_mesh2d(mesh_asset : @mesh.Mesh) -> @mesh.Mesh? {
+  guard mesh_asset.as_3d_geometry() is Some(geometry) else { return None }
+  let positions2d : Array[@math.Vec2] = []
+  for position in geometry.positions {
+    positions2d.push(@math.Vec2::new(position.x, position.y))
+  }
+  let colors = match geometry.custom_attribute_vec3("Barycentric") {
+    Some(values) => barycentric_colors(values)
+    None =>
+      match geometry.colors {
+        Some(existing) => existing
+        None =>
+          [
+            @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
+            @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
+            @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
+          ]
+      }
+  }
+  Some(
+    @mesh.Mesh::from_2d_geometry(
+      @mesh.Mesh2dGeometry::new_with_colors(
+        positions2d,
+        geometry.uvs,
+        colors,
+        geometry.indices,
+      ),
+    ),
+  )
+}
+
+///|
+fn convert_mesh_to_2d(
+  asset_path : String,
+  mesh_index : Int,
+  primitive_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  if asset_path != GLTF_PATH || mesh_index != 0 || primitive_index != 0 {
+    return
+  }
+  guard (try! world.entity(entity).get() : @pbr.Mesh3d?) is Some(mesh3d) else {
+    return
+  }
+  let mesh_assets_ref : Ref[@asset.Assets[@mesh.Mesh]] = match
+    (try! world.get_resource_ref_mut(@asset.assets_resource_key())) {
+    Some(value) => value
+    None => return
+  }
+  guard mesh_assets_ref.val.get(mesh3d.mesh()) is Some(source_mesh) else {
+    return
+  }
+  guard mesh3d_to_mesh2d(source_mesh) is Some(mesh2d_asset) else { return }
+  let mesh2d_handle = mesh_assets_ref.val.add(mesh2d_asset)
+  let color_materials_ref : Ref[@asset.Assets[@sprite.ColorMaterialAsset]] = match
+    (try! world.get_resource_ref_mut(@asset.assets_resource_key())) {
+    Some(value) => value
+    None => return
+  }
+  let material_handle = color_materials_ref.val
+    |> @sprite.add_material(@sprite.Color::white())
+  ignore(try! world.remove(entity, key=@pbr.Mesh3d::component()))
+  ignore(try! world.remove(entity, key=@pbr.MeshMaterial3d::component()))
+  ignore(
+    try! world
+    .entity_mut(entity)
+    .insert(
+      (
+        @sprite.Mesh2d::new(mesh2d_handle),
+        @sprite.MeshMaterial2d::new(material_handle),
+      ),
+    ),
+  )
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  @gltf.gltf_clear_custom_vertex_attributes()
+  @gltf.gltf_clear_extension_handlers()
+  @gltf.gltf_add_custom_vertex_attribute("_BARYCENTRIC", "Barycentric")
+  @gltf.gltf_register_extension_handler(
+    @gltf.GltfExtensionHandler::new(
+      on_mesh_spawned=Some(fn(
+        asset_path : String,
+        mesh_index : Int,
+        primitive_index : Int,
+        entity : @core.Entity,
+        world : @ecs.World,
+      ) {
+        convert_mesh_to_2d(
+          asset_path, mesh_index, primitive_index, entity, world,
+        )
+      }),
+    ),
+  )
+  ignore(
+    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @scene.SceneRoot::new(
+          asset_server
+          .get()
+          .load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
+        ),
+        @transform.Transform::identity().with_scale(@math.Vec3::splat(180.0F)),
+      ),
+    ),
+  )
+}
+
+///|
+fn main {
+  @app.App::new(@ecs.World::new())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .run()
+}

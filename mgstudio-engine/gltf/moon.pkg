@@ -1,8 +1,10 @@
 import {
+  "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "moonbitlang/core/ref",
+  "moonbitlang/core/json",
 }
 
 options(

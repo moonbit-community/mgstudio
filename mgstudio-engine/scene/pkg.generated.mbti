@@ -62,8 +62,10 @@ pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
   default_scene : @asset.Handle[Scene]?
+  animations : Array[@asset.Handle[@animation.AnimationClip]]
+  named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
 }
-pub fn Gltf::new(Array[@asset.Handle[Scene]], @asset.Handle[Scene]?) -> Self
+pub fn Gltf::new(Array[@asset.Handle[Scene]], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])]) -> Self
 
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
@@ -105,12 +107,14 @@ pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneNode3d {
   name : @ecs.Name?
-  mesh : @pbr.Mesh3d
-  material : @material.MeshMaterial3d
+  parent_node_index : Int?
+  mesh : @pbr.Mesh3d?
+  material : @material.MeshMaterial3d?
   gltf_scene_index : @gltf.GltfSceneIndex?
   gltf_node_index : @gltf.GltfNodeIndex?
   gltf_mesh_index : @gltf.GltfMeshIndex?
   gltf_primitive_index : @gltf.GltfPrimitiveIndex?
+  gltf_skin_index : @gltf.GltfSkinIndex?
   gltf_material_name : @gltf.GltfMaterialName?
   gltf_extras : @gltf.GltfExtras?
   gltf_mesh_extras : @gltf.GltfMeshExtras?
@@ -118,8 +122,12 @@ pub struct SceneNode3d {
   transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
+  skinned_joint_node_indices : Array[Int]?
+  skinned_inverse_bindposes : Array[@mesh.SkinningMat4]?
+  default_morph_weights : Array[Float]?
 }
-pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, name? : @ecs.Name?, gltf_scene_index? : @gltf.GltfSceneIndex?, gltf_node_index? : @gltf.GltfNodeIndex?, gltf_mesh_index? : @gltf.GltfMeshIndex?, gltf_primitive_index? : @gltf.GltfPrimitiveIndex?, gltf_material_name? : @gltf.GltfMaterialName?, gltf_extras? : @gltf.GltfExtras?, gltf_mesh_extras? : @gltf.GltfMeshExtras?, gltf_material_extras? : @gltf.GltfMaterialExtras?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf.GltfSceneIndex?, gltf_node_index? : @gltf.GltfNodeIndex?, gltf_mesh_index? : @gltf.GltfMeshIndex?, gltf_primitive_index? : @gltf.GltfPrimitiveIndex?, gltf_skin_index? : @gltf.GltfSkinIndex?, gltf_material_name? : @gltf.GltfMaterialName?, gltf_extras? : @gltf.GltfExtras?, gltf_mesh_extras? : @gltf.GltfMeshExtras?, gltf_material_extras? : @gltf.GltfMaterialExtras?, skinned_joint_node_indices? : Array[Int]?, skinned_inverse_bindposes? : Array[@mesh.SkinningMat4]?, default_morph_weights? : Array[Float]?) -> Self
+pub fn SceneNode3d::new_empty(@transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf.GltfSceneIndex?, gltf_node_index? : @gltf.GltfNodeIndex?, gltf_skin_index? : @gltf.GltfSkinIndex?, gltf_extras? : @gltf.GltfExtras?) -> Self
 
 pub(all) struct ScenePlugin {
 }

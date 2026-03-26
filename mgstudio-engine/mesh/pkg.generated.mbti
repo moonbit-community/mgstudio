@@ -3,22 +3,40 @@ package "Milky2018/mgstudio/mesh"
 
 import {
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
 }
 
 // Values
 pub fn[S : IntoMeshAsset] add(@asset.Assets[Mesh], S) -> @asset.Handle[Mesh]
 
+pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[DynamicSkinnedMeshBounds]
+
+pub let ecs_key_morph_target_mesh : @ecs.ComponentKey[MorphTargetMesh]
+
+pub let ecs_key_morph_weights : @ecs.ComponentKey[MorphWeights]
+
+pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
+
 // Errors
 
 // Types and methods
+pub struct DynamicSkinnedMeshBounds {
+}
+pub fn DynamicSkinnedMeshBounds::new() -> Self
+pub impl @ecs.Component for DynamicSkinnedMeshBounds
+
 pub struct Mesh {
   geometry : MeshGeometry
 }
 pub fn Mesh::as_3d_geometry(Self) -> Mesh3dGeometry?
+pub fn Mesh::custom_attribute_vec3(Self, String) -> Array[@math.Vec3]?
 pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
 pub fn Mesh::from_3d_geometry(Mesh3dGeometry) -> Self
 pub fn Mesh::generate_tangents(Self) -> MeshGenerateTangentsError?
+pub fn Mesh::morph_target_names(Self) -> Array[String]?
 pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
 
 pub struct Mesh2dGeometry {
@@ -66,6 +84,11 @@ pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
   uvs : Array[@math.Vec2]
   colors : Array[@math.Vec4]?
+  joint_indices : Array[MeshJointIndices]?
+  joint_weights : Array[@math.Vec4]?
+  morph_target_positions : Array[Array[@math.Vec3]]?
+  morph_target_names : Array[String]?
+  custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
   indices : Array[Int]?
   topology : Mesh3dPrimitiveTopology
@@ -76,6 +99,8 @@ pub fn Mesh3dGeometry::clear_indices(Self) -> Unit
 pub fn Mesh3dGeometry::clear_tangents(Self) -> Unit
 pub fn Mesh3dGeometry::clear_vertices(Self) -> Unit
 pub fn Mesh3dGeometry::cuboid(@math.Cuboid) -> Self
+pub fn Mesh3dGeometry::custom_attribute_vec3(Self, String) -> Array[@math.Vec3]?
+pub fn Mesh3dGeometry::custom_attributes_vec3(Self) -> Array[MeshCustomAttributeVec3]
 pub fn Mesh3dGeometry::encode_interleaved_xyz_normal_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_triangle_interleaved_xyz_uv_rgba_csv(Self) -> String?
@@ -85,6 +110,10 @@ pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[D
 pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?
 pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
 pub fn Mesh3dGeometry::icosphere(Float, Int) -> Self
+pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
+pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
+pub fn Mesh3dGeometry::morph_target_names(Self) -> Array[String]?
+pub fn Mesh3dGeometry::morph_target_positions(Self) -> Array[Array[@math.Vec3]]?
 pub fn Mesh3dGeometry::new(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors_and_topology(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
@@ -95,6 +124,7 @@ pub fn Mesh3dGeometry::push_triangle_indices(Self, Int, Int, Int) -> Bool
 pub fn Mesh3dGeometry::push_vertex(Self, @math.Vec3, @math.Vec2) -> Int
 pub fn Mesh3dGeometry::push_vertex_with_color(Self, @math.Vec3, @math.Vec2, @math.Vec4) -> Bool
 pub fn Mesh3dGeometry::rectangle(Float, Float) -> Self
+pub fn Mesh3dGeometry::replace_positions(Self, Array[@math.Vec3]) -> Bool
 pub fn Mesh3dGeometry::replace_tangents(Self, Array[@math.Vec4]?) -> Bool
 pub fn Mesh3dGeometry::replace_uvs(Self, Array[@math.Vec2]) -> Bool
 pub fn Mesh3dGeometry::set_position(Self, Int, @math.Vec3) -> Bool
@@ -107,7 +137,10 @@ pub fn Mesh3dGeometry::uv(Self, Int) -> @math.Vec2?
 pub fn Mesh3dGeometry::validate(Self) -> Mesh3dValidationError?
 pub fn Mesh3dGeometry::vertex_count(Self) -> Int
 pub fn Mesh3dGeometry::with_colors(Self, Array[@math.Vec4]?) -> Self
+pub fn Mesh3dGeometry::with_custom_attribute_vec3(Self, String, Array[@math.Vec3]) -> Self
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
+pub fn Mesh3dGeometry::with_joint_data(Self, Array[MeshJointIndices]?, Array[@math.Vec4]?) -> Self
+pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
 pub impl IntoMeshAsset for Mesh3dGeometry
 
@@ -136,6 +169,14 @@ pub(all) enum Mesh3dValidationError {
 pub impl Eq for Mesh3dValidationError
 pub impl Show for Mesh3dValidationError
 
+pub struct MeshCustomAttributeVec3 {
+  name : String
+  values : Array[@math.Vec3]
+}
+pub fn MeshCustomAttributeVec3::name(Self) -> String
+pub fn MeshCustomAttributeVec3::new(String, Array[@math.Vec3]) -> Self
+pub fn MeshCustomAttributeVec3::values(Self) -> Array[@math.Vec3]
+
 pub(all) enum MeshGenerateTangentsError {
   Not3dGeometry
   GeometryError(Mesh3dGenerateTangentsError)
@@ -147,6 +188,66 @@ pub(all) enum MeshGeometry {
   Geometry2d(Mesh2dGeometry)
   Geometry3d(Mesh3dGeometry)
 }
+
+pub struct MeshJointIndices {
+  x : Int
+  y : Int
+  z : Int
+  w : Int
+}
+pub fn MeshJointIndices::new(Int, Int, Int, Int) -> Self
+
+pub struct MorphTargetMesh {
+  source_mesh : @asset.Handle[Mesh]
+}
+pub fn MorphTargetMesh::new(@asset.Handle[Mesh]) -> Self
+pub fn MorphTargetMesh::source_mesh(Self) -> @asset.Handle[Mesh]
+pub impl @ecs.Component for MorphTargetMesh
+
+pub struct MorphWeights {
+  values : Array[Float]
+}
+pub fn MorphWeights::new(Array[Float]) -> Self
+pub fn MorphWeights::values(Self) -> Array[Float]
+pub impl @ecs.Component for MorphWeights
+
+pub struct SkinnedMesh {
+  source_mesh : @asset.Handle[Mesh]
+  joints : Array[@core.Entity]
+  inverse_bindposes : Array[SkinningMat4]
+  mesh_root : @core.Entity?
+}
+pub fn SkinnedMesh::inverse_bindposes(Self) -> Array[SkinningMat4]
+pub fn SkinnedMesh::joints(Self) -> Array[@core.Entity]
+pub fn SkinnedMesh::mesh_root(Self) -> @core.Entity?
+pub fn SkinnedMesh::new(@asset.Handle[Mesh], Array[@core.Entity], Array[SkinningMat4], mesh_root? : @core.Entity?) -> Self
+pub fn SkinnedMesh::source_mesh(Self) -> @asset.Handle[Mesh]
+pub impl @ecs.Component for SkinnedMesh
+
+pub struct SkinningMat4 {
+  m00 : Float
+  m01 : Float
+  m02 : Float
+  m03 : Float
+  m10 : Float
+  m11 : Float
+  m12 : Float
+  m13 : Float
+  m20 : Float
+  m21 : Float
+  m22 : Float
+  m23 : Float
+  m30 : Float
+  m31 : Float
+  m32 : Float
+  m33 : Float
+}
+pub fn SkinningMat4::from_transform(@transform.Transform) -> Self
+pub fn SkinningMat4::from_values(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Self
+pub fn SkinningMat4::identity() -> Self
+pub fn SkinningMat4::inverse_transform(@transform.Transform) -> Self
+pub fn SkinningMat4::mul(Self, Self) -> Self
+pub fn SkinningMat4::transform_point3(Self, @math.Vec3) -> @math.Vec3
 
 // Type aliases
 

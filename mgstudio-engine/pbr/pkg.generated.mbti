@@ -668,6 +668,7 @@ pub struct MaterialsPluginState {
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
+pub fn Mesh3d::mesh(Self) -> @asset.Handle[@mesh.Mesh]
 pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh3d
 pub impl ToJson for Mesh3d

@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/morph_targets"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AnimationToPlay
+pub impl @ecs.Component for AnimationToPlay
+
+type MorphTargetAssetState
+pub impl @app.Resource for MorphTargetAssetState
+
+// Type aliases
+
+// Traits
+

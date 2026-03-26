@@ -84,7 +84,12 @@ priv struct GltfAccessorDef {
 priv struct GltfPrimitiveDef {
   primitive_index : Int
   position : Int?
+  normal : Int?
   uv0 : Int?
+  joint_indices : Int?
+  joint_weights : Int?
+  custom_attributes : Array[(String, Int)]
+  morph_targets : Array[Int?]
   indices : Int?
   material : Int?
   extras : String?
@@ -94,6 +99,8 @@ priv struct GltfPrimitiveDef {
 priv struct GltfMeshDef {
   name : String
   extras : String?
+  weights : Array[Float]
+  morph_target_names : Array[String]
   primitives : Array[GltfPrimitiveDef]
 }
 
@@ -101,9 +108,16 @@ priv struct GltfMeshDef {
 priv struct GltfNodeDef {
   name : String
   mesh : Int?
+  skin : Int?
   children : Array[Int]
   lod_nodes : Array[Int]
   transform : @transform.Transform
+}
+
+///|
+priv struct GltfSkinDef {
+  inverse_bind_matrices : Int?
+  joints : Array[Int]
 }
 
 ///|
@@ -174,6 +188,7 @@ priv struct GltfAnimationChannelDef {
 
 ///|
 priv struct GltfAnimationDef {
+  name : String
   samplers : Array[GltfAnimationSamplerDef]
   channels : Array[GltfAnimationChannelDef]
 }
@@ -186,6 +201,7 @@ priv struct ParsedGltfDocument {
   accessors : Array[GltfAccessorDef]
   meshes : Array[GltfMeshDef]
   nodes : Array[GltfNodeDef]
+  skins : Array[GltfSkinDef]
   scenes : Array[GltfSceneDef]
   materials : Array[GltfMaterialDef]
   samplers : Array[GltfSamplerDef]
@@ -1012,6 +1028,23 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     for entry in entries {
       if json_object(entry) is Some(obj) {
         let primitives : Array[GltfPrimitiveDef] = []
+        let weights : Array[Float] = []
+        let morph_target_names : Array[String] = []
+        if json_get_array(obj, "weights") is Some(weight_entries) {
+          for weight_entry in weight_entries {
+            if json_number(weight_entry) is Some(number) {
+              weights.push(number.to_float())
+            }
+          }
+        }
+        if json_get_object(obj, "extras") is Some(extras_obj) &&
+          json_get_array(extras_obj, "targetNames") is Some(target_name_entries) {
+          for target_name_entry in target_name_entries {
+            if json_string(target_name_entry) is Some(target_name) {
+              morph_target_names.push(target_name)
+            }
+          }
+        }
         if json_get_array(obj, "primitives") is Some(primitive_entries) {
           for primitive_index, primitive_entry in primitive_entries {
             if json_object(primitive_entry) is Some(primitive_obj) {
@@ -1020,14 +1053,59 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 Some(attr_obj) => json_get_int(attr_obj, "POSITION")
                 None => None
               }
+              let normal = match attributes {
+                Some(attr_obj) => json_get_int(attr_obj, "NORMAL")
+                None => None
+              }
               let uv0 = match attributes {
                 Some(attr_obj) => json_get_int(attr_obj, "TEXCOORD_0")
                 None => None
               }
+              let joint_indices = match attributes {
+                Some(attr_obj) => json_get_int(attr_obj, "JOINTS_0")
+                None => None
+              }
+              let joint_weights = match attributes {
+                Some(attr_obj) => json_get_int(attr_obj, "WEIGHTS_0")
+                None => None
+              }
+              let custom_attributes : Array[(String, Int)] = []
+              if attributes is Some(attr_obj) {
+                for entry in attr_obj.iter() {
+                  let (key, value) = entry
+                  if key != "POSITION" &&
+                    key != "NORMAL" &&
+                    key != "TEXCOORD_0" &&
+                    key != "TEXCOORD_1" &&
+                    key != "COLOR_0" &&
+                    key != "JOINTS_0" &&
+                    key != "WEIGHTS_0" &&
+                    key.has_prefix("_") &&
+                    json_number(value) is Some(number) {
+                    custom_attributes.push((key, number.to_int()))
+                  }
+                }
+              }
+              let morph_targets : Array[Int?] = []
+              if json_get_array(primitive_obj, "targets")
+                is Some(target_entries) {
+                for target_entry in target_entries {
+                  if json_object(target_entry) is Some(target_obj) {
+                    morph_targets.push(json_get_int(target_obj, "POSITION"))
+                  } else {
+                    morph_targets.push(None)
+                  }
+                }
+              }
               primitives.push({
                 primitive_index,
                 position,
+                normal,
                 uv0,
+                joint_indices,
+                joint_weights,
+                custom_attributes,
+                morph_targets,
                 indices: json_get_int(primitive_obj, "indices"),
                 material: json_get_int(primitive_obj, "material"),
                 extras: gltf_parse_extras(primitive_obj),
@@ -1036,7 +1114,12 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               primitives.push({
                 primitive_index,
                 position: None,
+                normal: None,
                 uv0: None,
+                joint_indices: None,
+                joint_weights: None,
+                custom_attributes: [],
+                morph_targets: [],
                 indices: None,
                 material: None,
                 extras: None,
@@ -1047,10 +1130,18 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         meshes.push({
           name: json_get_string(obj, "name").unwrap_or(""),
           extras: gltf_parse_extras(obj),
+          weights,
+          morph_target_names,
           primitives,
         })
       } else {
-        meshes.push({ name: "", extras: None, primitives: [] })
+        meshes.push({
+          name: "",
+          extras: None,
+          weights: [],
+          morph_target_names: [],
+          primitives: [],
+        })
       }
     }
   }
@@ -1073,6 +1164,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             None => ""
           },
           mesh: json_get_int(obj, "mesh"),
+          skin: json_get_int(obj, "skin"),
           children,
           lod_nodes: gltf_parse_node_lod_ids(obj),
           transform: gltf_parse_node_transform(obj),
@@ -1081,10 +1173,33 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         nodes.push({
           name: "",
           mesh: None,
+          skin: None,
           children: [],
           lod_nodes: [],
           transform: @transform.Transform::identity(),
         })
+      }
+    }
+  }
+
+  let skins : Array[GltfSkinDef] = []
+  if json_get_array(root, "skins") is Some(entries) {
+    for entry in entries {
+      if json_object(entry) is Some(obj) {
+        let joints : Array[Int] = []
+        if json_get_array(obj, "joints") is Some(joint_entries) {
+          for joint_entry in joint_entries {
+            if json_number(joint_entry) is Some(number) {
+              joints.push(number.to_int())
+            }
+          }
+        }
+        skins.push({
+          inverse_bind_matrices: json_get_int(obj, "inverseBindMatrices"),
+          joints,
+        })
+      } else {
+        skins.push({ inverse_bind_matrices: None, joints: [] })
       }
     }
   }
@@ -1341,9 +1456,13 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             }
           }
         }
-        animations.push({ samplers: animation_samplers, channels })
+        animations.push({
+          name: json_get_string(obj, "name").unwrap_or(""),
+          samplers: animation_samplers,
+          channels,
+        })
       } else {
-        animations.push({ samplers: [], channels: [] })
+        animations.push({ name: "", samplers: [], channels: [] })
       }
     }
   }
@@ -1355,6 +1474,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     accessors,
     meshes,
     nodes,
+    skins,
     scenes,
     materials,
     samplers,
@@ -1538,6 +1658,7 @@ fn gltf_component_count(accessor_type : String) -> Int? {
     "VEC2" => Some(2)
     "VEC3" => Some(3)
     "VEC4" => Some(4)
+    "MAT4" => Some(16)
     _ => None
   }
 }
@@ -1688,6 +1809,121 @@ fn gltf_read_accessor_vec2(
     guard bytes_read_f32_le(bytes, offset) is Some(x) else { return None }
     guard bytes_read_f32_le(bytes, offset + 4) is Some(y) else { return None }
     out.push(@math.Vec2::new(x, y))
+  }
+  Some(out)
+}
+
+///|
+fn gltf_read_accessor_joint_indices(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor_index : Int,
+) -> Array[@mesh.MeshJointIndices]? {
+  guard gltf_accessor_layout(doc, accessor_index) is Some(layout) else {
+    return None
+  }
+  let buffer_index = layout.0
+  let base_offset = layout.1
+  let stride = layout.2
+  let count = layout.3
+  let component_type = layout.4
+  let component_count = layout.5
+  guard buffer_index < buffer_bytes.length() else { return None }
+  let bytes = buffer_bytes[buffer_index]
+  guard component_count == 4 else { return None }
+  let out : Array[@mesh.MeshJointIndices] = []
+  for i in 0..<count {
+    let offset = base_offset + i * stride
+    match component_type {
+      5121 => {
+        guard bytes_read_u8(bytes, offset) is Some(x) else { return None }
+        guard bytes_read_u8(bytes, offset + 1) is Some(y) else { return None }
+        guard bytes_read_u8(bytes, offset + 2) is Some(z) else { return None }
+        guard bytes_read_u8(bytes, offset + 3) is Some(w) else { return None }
+        out.push(@mesh.MeshJointIndices::new(x, y, z, w))
+      }
+      5123 => {
+        guard bytes_read_u16_le(bytes, offset) is Some(x) else { return None }
+        guard bytes_read_u16_le(bytes, offset + 2) is Some(y) else {
+          return None
+        }
+        guard bytes_read_u16_le(bytes, offset + 4) is Some(z) else {
+          return None
+        }
+        guard bytes_read_u16_le(bytes, offset + 6) is Some(w) else {
+          return None
+        }
+        out.push(@mesh.MeshJointIndices::new(x, y, z, w))
+      }
+      _ => return None
+    }
+  }
+  Some(out)
+}
+
+///|
+fn gltf_read_accessor_vec4(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor_index : Int,
+) -> Array[@math.Vec4]? {
+  guard gltf_read_accessor_f32_components(doc, buffer_bytes, accessor_index)
+    is Some(decoded) else {
+    return None
+  }
+  guard decoded.0 == 4 else { return None }
+  guard decoded.1.length() % 4 == 0 else { return None }
+  let out : Array[@math.Vec4] = []
+  let vec_count = decoded.1.length() / 4
+  for i in 0..<vec_count {
+    out.push(
+      @math.Vec4::new(
+        decoded.1[i * 4],
+        decoded.1[i * 4 + 1],
+        decoded.1[i * 4 + 2],
+        decoded.1[i * 4 + 3],
+      ),
+    )
+  }
+  Some(out)
+}
+
+///|
+fn gltf_read_accessor_mat4(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor_index : Int,
+) -> Array[@mesh.SkinningMat4]? {
+  guard gltf_read_accessor_f32_components(doc, buffer_bytes, accessor_index)
+    is Some(decoded) else {
+    return None
+  }
+  guard decoded.0 == 16 else { return None }
+  guard decoded.1.length() % 16 == 0 else { return None }
+  let out : Array[@mesh.SkinningMat4] = []
+  let matrix_count = decoded.1.length() / 16
+  for i in 0..<matrix_count {
+    let base = i * 16
+    out.push(
+      @mesh.SkinningMat4::from_values(
+        decoded.1[base],
+        decoded.1[base + 1],
+        decoded.1[base + 2],
+        decoded.1[base + 3],
+        decoded.1[base + 4],
+        decoded.1[base + 5],
+        decoded.1[base + 6],
+        decoded.1[base + 7],
+        decoded.1[base + 8],
+        decoded.1[base + 9],
+        decoded.1[base + 10],
+        decoded.1[base + 11],
+        decoded.1[base + 12],
+        decoded.1[base + 13],
+        decoded.1[base + 14],
+        decoded.1[base + 15],
+      ),
+    )
   }
   Some(out)
 }
@@ -1870,6 +2106,50 @@ fn gltf_collect_node_name_paths(
   }
 
   paths
+}
+
+///|
+fn gltf_collect_node_parents(doc : ParsedGltfDocument) -> Array[Int?] {
+  let parents : Array[Int?] = []
+  for _ in doc.nodes {
+    parents.push(None)
+  }
+  for parent_index, node in doc.nodes {
+    for child in node.children {
+      if child >= 0 && child < parents.length() {
+        parents[child] = Some(parent_index)
+      }
+    }
+  }
+  parents
+}
+
+///|
+fn gltf_collect_animation_root_indices(doc : ParsedGltfDocument) -> Array[Int] {
+  let roots : Array[Int] = []
+  let parents = gltf_collect_node_parents(doc)
+  for animation in doc.animations {
+    for channel in animation.channels {
+      guard channel.target_node is Some(target_node) else { continue }
+      let mut root = target_node
+      while root >= 0 &&
+            root < parents.length() &&
+            parents[root] is Some(parent) {
+        root = parent
+      }
+      let mut duplicate = false
+      for existing in roots {
+        if existing == root {
+          duplicate = true
+          break
+        }
+      }
+      if !duplicate {
+        roots.push(root)
+      }
+    }
+  }
+  roots
 }
 
 ///|
@@ -2528,7 +2808,55 @@ fn scene_build_mesh_primitive_from_gltf(
       gltf_read_accessor_indices(doc, buffer_bytes, index_accessor)
     None => None
   }
-  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, indices)
+  let mut geometry = @mesh.Mesh3dGeometry::new(positions, uvs, indices)
+  if primitive.joint_indices is Some(joint_indices_accessor) &&
+    primitive.joint_weights is Some(joint_weights_accessor) &&
+    gltf_read_accessor_joint_indices(doc, buffer_bytes, joint_indices_accessor)
+    is Some(joint_indices) &&
+    gltf_read_accessor_vec4(doc, buffer_bytes, joint_weights_accessor)
+    is Some(joint_weights) {
+    geometry = geometry.with_joint_data(
+      Some(joint_indices),
+      Some(joint_weights),
+    )
+  }
+  if primitive.morph_targets.length() > 0 {
+    let morph_targets : Array[Array[@math.Vec3]] = []
+    for morph_target_position in primitive.morph_targets {
+      match morph_target_position {
+        Some(accessor_index) =>
+          if gltf_read_accessor_vec3(doc, buffer_bytes, accessor_index)
+            is Some(values) {
+            morph_targets.push(values)
+          }
+        None => ()
+      }
+    }
+    if morph_targets.length() > 0 {
+      let morph_target_names = if mesh.morph_target_names.length() ==
+        morph_targets.length() {
+        Some(mesh.morph_target_names)
+      } else {
+        None
+      }
+      geometry = geometry.with_morph_targets(
+        Some(morph_targets),
+        morph_target_names~,
+      )
+    }
+  }
+  for custom_attribute in primitive.custom_attributes {
+    let (attribute_name, accessor_index) = custom_attribute
+    if gltf_read_accessor_vec3(doc, buffer_bytes, accessor_index)
+      is Some(values) {
+      let mapped_name = match
+        @gltf.gltf_resolve_custom_vertex_attribute_name(attribute_name) {
+        Some(name) => name
+        None => attribute_name
+      }
+      geometry = geometry.with_custom_attribute_vec3(mapped_name, values)
+    }
+  }
   guard geometry.validate() is None else { return None }
   Some(@mesh.Mesh::from_3d_geometry(geometry))
 }
@@ -2556,13 +2884,18 @@ fn scene_build_from_gltf(
     visited_nodes.push(false)
   }
 
+  let scene_node_indices_for_gltf_nodes : Array[Int?] = []
+  for _ in doc.nodes {
+    scene_node_indices_for_gltf_nodes.push(None)
+  }
+
   let default_material_component = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(@pbr.StandardMaterial::default()),
   )
 
   fn walk_node(
     node_index : Int,
-    parent_transform : @transform.Transform,
+    parent_scene_node_index : Int?,
     lod_level : Int,
   ) -> Unit {
     guard node_index >= 0 && node_index < doc.nodes.length() else { return }
@@ -2571,7 +2904,6 @@ fn scene_build_from_gltf(
     }
     visited_nodes[node_index] = true
     let node = doc.nodes[node_index]
-    let world_transform = transform_compose(parent_transform, node.transform)
     let effective_lod_level = if lod_level >= 0 {
       lod_level
     } else if node.lod_nodes.length() > 0 {
@@ -2588,125 +2920,148 @@ fn scene_build_from_gltf(
       Some(path) => Some(@animation.AnimationTargetId::from_names(path))
       None => None
     }
+    let scene_node_index = nodes.length()
+    nodes.push(
+      SceneNode3d::new_empty(
+        node.transform,
+        visibility_range,
+        animation_target,
+        parent_node_index=parent_scene_node_index,
+        name=if node.name == "" {
+          None
+        } else {
+          Some(@ecs.Name::new(node.name))
+        },
+        gltf_scene_index=Some(@gltf.GltfSceneIndex::new(selected_scene_index)),
+        gltf_node_index=Some(@gltf.GltfNodeIndex::new(node_index)),
+        gltf_skin_index=node.skin.map(@gltf.GltfSkinIndex::new),
+      ),
+    )
+    scene_node_indices_for_gltf_nodes[node_index] = Some(scene_node_index)
 
-    if node.mesh is Some(mesh_index) {
-      if mesh_index >= 0 && mesh_index < doc.meshes.length() {
-        let mesh = doc.meshes[mesh_index]
-        for primitive in mesh.primitives {
-          guard primitive.position is Some(position_accessor) else { continue }
-          guard gltf_read_accessor_vec3(doc, buffer_bytes, position_accessor)
-            is Some(positions) else {
-            continue
+    if node.mesh is Some(mesh_index) &&
+      mesh_index >= 0 &&
+      mesh_index < doc.meshes.length() {
+      let mesh = doc.meshes[mesh_index]
+      let skin = match node.skin {
+        Some(skin_index) =>
+          if skin_index >= 0 && skin_index < doc.skins.length() {
+            Some(doc.skins[skin_index])
+          } else {
+            None
           }
-          if positions.length() == 0 {
-            continue
-          }
-
-          let mut uvs : Array[@math.Vec2] = []
-          if primitive.uv0 is Some(uv_accessor) {
-            if gltf_read_accessor_vec2(doc, buffer_bytes, uv_accessor)
-              is Some(decoded) {
-              uvs = decoded
+        None => None
+      }
+      let inverse_bindposes = match skin {
+        Some(skin_def) =>
+          match skin_def.inverse_bind_matrices {
+            Some(accessor_index) =>
+              gltf_read_accessor_mat4(doc, buffer_bytes, accessor_index)
+            None => {
+              let defaults : Array[@mesh.SkinningMat4] = []
+              for _ in skin_def.joints {
+                defaults.push(@mesh.SkinningMat4::identity())
+              }
+              Some(defaults)
             }
           }
-          if uvs.length() != positions.length() {
-            uvs.clear()
-            for _ in positions {
-              uvs.push(@math.Vec2::new(0.0F, 0.0F))
-            }
-          }
+        None => None
+      }
 
-          let indices = match primitive.indices {
-            Some(index_accessor) =>
-              gltf_read_accessor_indices(doc, buffer_bytes, index_accessor)
-            None => None
-          }
-
-          let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, indices)
-          if geometry.validate() is Some(_) {
-            continue
-          }
-
-          let material_component = match primitive.material {
-            Some(material_index) =>
-              match
-                scene_build_material_component(
-                  asset_server,
-                  request.gltf_path,
-                  doc,
-                  buffer_bytes,
-                  material_index,
-                  material_cache,
-                  image_cache,
-                ) {
-                Some(component) => component
-                None => default_material_component
-              }
-            None => default_material_component
-          }
-          let material_name = match primitive.material {
-            Some(material_index) =>
-              if material_index >= 0 &&
-                material_index < doc.materials.length() &&
-                doc.materials[material_index].name != "" {
-                Some(
-                  @gltf.GltfMaterialName::new(
-                    doc.materials[material_index].name,
-                  ),
-                )
-              } else {
-                None
-              }
-            None => None
-          }
-          let primitive_name = gltf_primitive_display_name(
-            mesh,
-            material_name.map(fn(name) { name.as_str() }),
+      for primitive in mesh.primitives {
+        guard scene_build_mesh_primitive_from_gltf(
+            doc,
+            buffer_bytes,
+            mesh_index,
+            primitive.primitive_index,
           )
-          let primitive_extras = primitive.extras.map(@gltf.GltfExtras::new)
-          let mesh_extras = mesh.extras.map(@gltf.GltfMeshExtras::new)
-          let material_extras = match primitive.material {
-            Some(material_index) =>
-              if material_index >= 0 && material_index < doc.materials.length() {
-                doc.materials[material_index].extras.map(
-                  @gltf.GltfMaterialExtras::new,
-                )
-              } else {
-                None
-              }
-            None => None
-          }
-
-          nodes.push(
-            SceneNode3d::new(
-              @pbr.Mesh3d::new(
-                @pbr.mesh_assets_mut_or_abort().val.add(
-                  @pbr.Mesh::from_3d_geometry(geometry),
-                ),
-              ),
-              material_component,
-              world_transform,
-              visibility_range,
-              animation_target,
-              name=primitive_name,
-              gltf_scene_index=Some(
-                @gltf.GltfSceneIndex::new(selected_scene_index),
-              ),
-              gltf_node_index=Some(@gltf.GltfNodeIndex::new(node_index)),
-              gltf_mesh_index=Some(@gltf.GltfMeshIndex::new(mesh_index)),
-              gltf_primitive_index=Some(
-                @gltf.GltfPrimitiveIndex::new(
-                  mesh_index,
-                  primitive.primitive_index,
-                ),
-              ),
-              gltf_material_name=material_name,
-              gltf_extras=primitive_extras,
-              gltf_mesh_extras=mesh_extras,
-              gltf_material_extras=material_extras,
-            ),
-          )
+          is Some(mesh_asset) else {
+          continue
         }
+        let material_component = match primitive.material {
+          Some(material_index) =>
+            match
+              scene_build_material_component(
+                asset_server,
+                request.gltf_path,
+                doc,
+                buffer_bytes,
+                material_index,
+                material_cache,
+                image_cache,
+              ) {
+              Some(component) => component
+              None => default_material_component
+            }
+          None => default_material_component
+        }
+        let material_name = match primitive.material {
+          Some(material_index) =>
+            if material_index >= 0 &&
+              material_index < doc.materials.length() &&
+              doc.materials[material_index].name != "" {
+              Some(
+                @gltf.GltfMaterialName::new(doc.materials[material_index].name),
+              )
+            } else {
+              None
+            }
+          None => None
+        }
+        let primitive_name = gltf_primitive_display_name(
+          mesh,
+          material_name.map(fn(name) { name.as_str() }),
+        )
+        let primitive_extras = primitive.extras.map(@gltf.GltfExtras::new)
+        let mesh_extras = mesh.extras.map(@gltf.GltfMeshExtras::new)
+        let material_extras = match primitive.material {
+          Some(material_index) =>
+            if material_index >= 0 && material_index < doc.materials.length() {
+              doc.materials[material_index].extras.map(
+                @gltf.GltfMaterialExtras::new,
+              )
+            } else {
+              None
+            }
+          None => None
+        }
+
+        nodes.push(
+          SceneNode3d::new(
+            @pbr.Mesh3d::new(
+              @pbr.mesh_assets_mut_or_abort().val.add(mesh_asset),
+            ),
+            material_component,
+            @transform.Transform::identity(),
+            visibility_range,
+            None,
+            parent_node_index=Some(scene_node_index),
+            name=primitive_name,
+            gltf_scene_index=Some(
+              @gltf.GltfSceneIndex::new(selected_scene_index),
+            ),
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(node_index)),
+            gltf_mesh_index=Some(@gltf.GltfMeshIndex::new(mesh_index)),
+            gltf_primitive_index=Some(
+              @gltf.GltfPrimitiveIndex::new(
+                mesh_index,
+                primitive.primitive_index,
+              ),
+            ),
+            gltf_skin_index=node.skin.map(@gltf.GltfSkinIndex::new),
+            gltf_material_name=material_name,
+            gltf_extras=primitive_extras,
+            gltf_mesh_extras=mesh_extras,
+            gltf_material_extras=material_extras,
+            skinned_joint_node_indices=skin.map(fn(value) { value.joints }),
+            skinned_inverse_bindposes=inverse_bindposes,
+            default_morph_weights=if mesh.weights.length() > 0 {
+              Some(mesh.weights)
+            } else {
+              None
+            },
+          ),
+        )
       }
     }
 
@@ -2718,20 +3073,19 @@ fn scene_build_from_gltf(
     for lod_index, lod_node_index in node.lod_nodes {
       walk_node(
         lod_node_index,
-        parent_transform,
+        parent_scene_node_index,
         lod_base_level + lod_index + 1,
       )
     }
 
     for child_index in node.children {
-      walk_node(child_index, world_transform, effective_lod_level)
+      walk_node(child_index, Some(scene_node_index), effective_lod_level)
     }
   }
 
-  let selected_scene_index = gltf_select_scene_index(doc, request.scene_index)
   if selected_scene_index >= 0 {
     for root_node in doc.scenes[selected_scene_index].nodes {
-      walk_node(root_node, @transform.Transform::identity(), -1)
+      walk_node(root_node, None, -1)
     }
   }
 

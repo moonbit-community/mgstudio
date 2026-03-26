@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/gltf/custom_gltf_vertex_attribute"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ConvertedMeshState
+pub impl @app.Resource for ConvertedMeshState
+
+// Type aliases
+
+// Traits
+

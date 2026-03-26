@@ -23,12 +23,14 @@
 ///|
 pub struct SceneNode3d {
   name : @ecs.Name?
-  mesh : @pbr.Mesh3d
-  material : @pbr.MeshMaterial3d
+  parent_node_index : Int?
+  mesh : @pbr.Mesh3d?
+  material : @pbr.MeshMaterial3d?
   gltf_scene_index : @gltf.GltfSceneIndex?
   gltf_node_index : @gltf.GltfNodeIndex?
   gltf_mesh_index : @gltf.GltfMeshIndex?
   gltf_primitive_index : @gltf.GltfPrimitiveIndex?
+  gltf_skin_index : @gltf.GltfSkinIndex?
   gltf_material_name : @gltf.GltfMaterialName?
   gltf_extras : @gltf.GltfExtras?
   gltf_mesh_extras : @gltf.GltfMeshExtras?
@@ -36,6 +38,9 @@ pub struct SceneNode3d {
   transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
+  skinned_joint_node_indices : Array[Int]?
+  skinned_inverse_bindposes : Array[@mesh.SkinningMat4]?
+  default_morph_weights : Array[Float]?
 }
 
 ///|
@@ -45,24 +50,31 @@ pub fn SceneNode3d::new(
   transform : @transform.Transform,
   visibility_range : @visibility.VisibilityRange?,
   animation_target : @animation.AnimationTargetId?,
+  parent_node_index? : Int? = None,
   name? : @ecs.Name? = None,
   gltf_scene_index? : @gltf.GltfSceneIndex? = None,
   gltf_node_index? : @gltf.GltfNodeIndex? = None,
   gltf_mesh_index? : @gltf.GltfMeshIndex? = None,
   gltf_primitive_index? : @gltf.GltfPrimitiveIndex? = None,
+  gltf_skin_index? : @gltf.GltfSkinIndex? = None,
   gltf_material_name? : @gltf.GltfMaterialName? = None,
   gltf_extras? : @gltf.GltfExtras? = None,
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
   gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
+  skinned_joint_node_indices? : Array[Int]? = None,
+  skinned_inverse_bindposes? : Array[@mesh.SkinningMat4]? = None,
+  default_morph_weights? : Array[Float]? = None,
 ) -> SceneNode3d {
   SceneNode3d::{
     name,
-    mesh,
-    material,
+    parent_node_index,
+    mesh: Some(mesh),
+    material: Some(material),
     gltf_scene_index,
     gltf_node_index,
     gltf_mesh_index,
     gltf_primitive_index,
+    gltf_skin_index,
     gltf_material_name,
     gltf_extras,
     gltf_mesh_extras,
@@ -70,6 +82,44 @@ pub fn SceneNode3d::new(
     transform,
     visibility_range,
     animation_target,
+    skinned_joint_node_indices,
+    skinned_inverse_bindposes,
+    default_morph_weights,
+  }
+}
+
+///|
+pub fn SceneNode3d::new_empty(
+  transform : @transform.Transform,
+  visibility_range : @visibility.VisibilityRange?,
+  animation_target : @animation.AnimationTargetId?,
+  parent_node_index? : Int? = None,
+  name? : @ecs.Name? = None,
+  gltf_scene_index? : @gltf.GltfSceneIndex? = None,
+  gltf_node_index? : @gltf.GltfNodeIndex? = None,
+  gltf_skin_index? : @gltf.GltfSkinIndex? = None,
+  gltf_extras? : @gltf.GltfExtras? = None,
+) -> SceneNode3d {
+  SceneNode3d::{
+    name,
+    parent_node_index,
+    mesh: None,
+    material: None,
+    gltf_scene_index,
+    gltf_node_index,
+    gltf_mesh_index: None,
+    gltf_primitive_index: None,
+    gltf_skin_index,
+    gltf_material_name: None,
+    gltf_extras,
+    gltf_mesh_extras: None,
+    gltf_material_extras: None,
+    transform,
+    visibility_range,
+    animation_target,
+    skinned_joint_node_indices: None,
+    skinned_inverse_bindposes: None,
+    default_morph_weights: None,
   }
 }
 
@@ -444,6 +494,130 @@ fn scene_mesh_assets_from_world_mut_or_abort(
       abort(
         "mesh assets resource is missing; Render2dPlugin must initialize Assets<Mesh> before scene glTF primitive loading runs",
       )
+  }
+}
+
+///|
+fn scene_registry_find_scene_path(handle : @asset.Handle[Scene]) -> String? {
+  if scene_registry_if_present() is Some(registry) {
+    for entry in registry.scene_registry {
+      if entry.1.id() == handle.id() {
+        return Some(entry.0)
+      }
+    }
+  }
+  None
+}
+
+///|
+fn scene_clone_mesh3d_geometry(
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  for position in geometry.positions {
+    positions.push(position)
+  }
+  let uvs : Array[@math.Vec2] = []
+  for uv in geometry.uvs {
+    uvs.push(uv)
+  }
+  let indices = match geometry.indices {
+    Some(existing) => {
+      let next : Array[Int] = []
+      for index in existing {
+        next.push(index)
+      }
+      Some(next)
+    }
+    None => None
+  }
+  let colors = match geometry.colors {
+    Some(existing) => {
+      let next : Array[@math.Vec4] = []
+      for color in existing {
+        next.push(color)
+      }
+      Some(next)
+    }
+    None => None
+  }
+  let mut cloned = @mesh.Mesh3dGeometry::new_with_topology(
+    positions,
+    uvs,
+    indices,
+    geometry.topology,
+  ).with_colors(colors)
+  if geometry.joint_indices is Some(joint_indices) {
+    let copied_indices : Array[@mesh.MeshJointIndices] = []
+    for joint_index in joint_indices {
+      copied_indices.push(joint_index)
+    }
+    let copied_weights = match geometry.joint_weights {
+      Some(existing) => {
+        let next : Array[@math.Vec4] = []
+        for weight in existing {
+          next.push(weight)
+        }
+        Some(next)
+      }
+      None => None
+    }
+    cloned = cloned.with_joint_data(Some(copied_indices), copied_weights)
+  } else if geometry.joint_weights is Some(existing) {
+    let next : Array[@math.Vec4] = []
+    for weight in existing {
+      next.push(weight)
+    }
+    cloned = cloned.with_joint_data(None, Some(next))
+  }
+  if geometry.morph_target_positions is Some(morph_targets) {
+    let copied_targets : Array[Array[@math.Vec3]] = []
+    for morph_target in morph_targets {
+      let copied_positions : Array[@math.Vec3] = []
+      for position in morph_target {
+        copied_positions.push(position)
+      }
+      copied_targets.push(copied_positions)
+    }
+    let copied_names = match geometry.morph_target_names {
+      Some(existing) => {
+        let next : Array[String] = []
+        for name in existing {
+          next.push(name)
+        }
+        Some(next)
+      }
+      None => None
+    }
+    cloned = cloned.with_morph_targets(
+      Some(copied_targets),
+      morph_target_names=copied_names,
+    )
+  }
+  for attribute in geometry.custom_attributes_vec3 {
+    let values : Array[@math.Vec3] = []
+    for value in attribute.values() {
+      values.push(value)
+    }
+    cloned = cloned.with_custom_attribute_vec3(attribute.name(), values)
+  }
+  if geometry.tangents is Some(existing) {
+    let copied : Array[@math.Vec4] = []
+    for tangent in existing {
+      copied.push(tangent)
+    }
+    ignore(cloned.replace_tangents(Some(copied)))
+  }
+  cloned
+}
+
+///|
+fn scene_clone_mesh_asset(mesh_asset : @mesh.Mesh) -> @mesh.Mesh {
+  match mesh_asset.geometry {
+    @mesh.MeshGeometry::Geometry2d(geometry2d) =>
+      @mesh.Mesh::from_2d_geometry(geometry2d)
+    @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+      @mesh.Mesh::from_3d_geometry(scene_clone_mesh3d_geometry(geometry3d))
   }
 }
 
@@ -848,13 +1022,26 @@ fn scene_spawn_instance_when_ready(
   }
 
   let spawned_entities : Array[@core.Entity] = []
+  let pending_skinned_meshes : Array[
+    (
+      Int,
+      @asset.Handle[@mesh.Mesh],
+      Array[Int],
+      Array[@mesh.SkinningMat4],
+      @core.Entity?,
+    ),
+  ] = []
+  let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
+  let gltf_scene_asset_path = match scene_registry_find_scene_path(root.scene) {
+    Some(path) => path
+    None => "scene#" + root.scene.id().to_string()
+  }
   for node in scene.nodes3d {
     let child = world.spawn_empty()
+    spawned_entities.push(child)
     if node.name is Some(name) {
       try! world.set_by_key(child, @ecs.Name::component(), name)
     }
-    try! world.set_by_key(child, @pbr.ecs_key_mesh3d, node.mesh)
-    try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, node.material)
     if node.gltf_scene_index is Some(scene_index) {
       try! world.set_by_key(
         child,
@@ -874,6 +1061,9 @@ fn scene_spawn_instance_when_ready(
         @gltf.GltfPrimitiveIndex::component(),
         primitive_index,
       )
+    }
+    if node.gltf_skin_index is Some(skin_index) {
+      try! world.set_by_key(child, @gltf.GltfSkinIndex::component(), skin_index)
     }
     if node.gltf_material_name is Some(material_name) {
       try! world.set_by_key(
@@ -899,12 +1089,75 @@ fn scene_spawn_instance_when_ready(
         material_extras,
       )
     }
+    if node.mesh is Some(mesh_component) {
+      let source_mesh_handle = mesh_component.mesh()
+      let source_mesh = mesh_assets_ref.val.get(source_mesh_handle)
+      let source_geometry = match source_mesh {
+        Some(mesh_asset) => mesh_asset.as_3d_geometry()
+        None => None
+      }
+      let has_morph_targets = match source_geometry {
+        Some(geometry) => geometry.morph_target_positions() is Some(_)
+        None => false
+      }
+      let needs_instance_mesh = node.skinned_joint_node_indices is Some(_) ||
+        has_morph_targets
+      let effective_mesh = if needs_instance_mesh {
+        match source_mesh {
+          Some(mesh_asset) => {
+            let cloned_handle = mesh_assets_ref.val.add(
+              scene_clone_mesh_asset(mesh_asset),
+            )
+            @pbr.Mesh3d::new(cloned_handle)
+          }
+          None => mesh_component
+        }
+      } else {
+        mesh_component
+      }
+      try! world.set_by_key(child, @pbr.ecs_key_mesh3d, effective_mesh)
+      if node.material is Some(material) {
+        try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, material)
+      }
+      if has_morph_targets {
+        try! world.set_by_key(
+          child,
+          @mesh.MorphTargetMesh::component(),
+          @mesh.MorphTargetMesh::new(source_mesh_handle),
+        )
+        let default_morph_weights = match node.default_morph_weights {
+          Some(weights) => weights
+          None => []
+        }
+        try! world.set_by_key(
+          child,
+          @mesh.MorphWeights::component(),
+          @mesh.MorphWeights::new(default_morph_weights),
+        )
+      }
+      if node.skinned_joint_node_indices is Some(joint_node_indices) &&
+        node.skinned_inverse_bindposes is Some(inverse_bindposes) {
+        let mesh_root = match node.parent_node_index {
+          Some(parent_index) =>
+            if parent_index >= 0 && parent_index < spawned_entities.length() {
+              Some(spawned_entities[parent_index])
+            } else {
+              Some(root_entity)
+            }
+          None => Some(root_entity)
+        }
+        pending_skinned_meshes.push(
+          (
+            spawned_entities.length() - 1,
+            source_mesh_handle,
+            joint_node_indices,
+            inverse_bindposes,
+            mesh_root,
+          ),
+        )
+      }
+    }
     try! world.set_by_key(child, @transform.ecs_key_transform, node.transform)
-    try! world.set_by_key(
-      child,
-      @hierarchy.ecs_key_parent,
-      @hierarchy.Parent::new(root_entity),
-    )
     if node.visibility_range is Some(range) {
       try! world.set_by_key(child, @visibility.ecs_key_visibility_range, range)
     }
@@ -918,7 +1171,80 @@ fn scene_spawn_instance_when_ready(
         @animation.AnimatedBy::new(root_entity),
       )
     }
-    spawned_entities.push(child)
+    if node.gltf_node_index is Some(node_index) {
+      @gltf.gltf_extension_notify_node_spawned(
+        gltf_scene_asset_path,
+        node_index.index(),
+        child,
+        world,
+      )
+    }
+    if node.gltf_mesh_index is Some(mesh_index) &&
+      node.gltf_primitive_index is Some(primitive_index) {
+      @gltf.gltf_extension_notify_mesh_spawned(
+        gltf_scene_asset_path,
+        mesh_index.index(),
+        primitive_index.primitive_index(),
+        child,
+        world,
+      )
+    }
+  }
+
+  for i in 0..<scene.nodes3d.length() {
+    let node = scene.nodes3d[i]
+    let child = spawned_entities[i]
+    let parent_entity = match node.parent_node_index {
+      Some(parent_index) =>
+        if parent_index >= 0 && parent_index < spawned_entities.length() {
+          spawned_entities[parent_index]
+        } else {
+          root_entity
+        }
+      None => root_entity
+    }
+    try! world.set_by_key(
+      child,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(parent_entity),
+    )
+  }
+
+  for pending in pending_skinned_meshes {
+    let (
+      entity_index,
+      source_mesh_handle,
+      joint_node_indices,
+      inverse_bindposes,
+      mesh_root,
+    ) = pending
+    if entity_index < 0 || entity_index >= spawned_entities.length() {
+      continue
+    }
+    let joint_entities : Array[@core.Entity] = []
+    for joint_node_index in joint_node_indices {
+      if joint_node_index >= 0 && joint_node_index < spawned_entities.length() {
+        joint_entities.push(spawned_entities[joint_node_index])
+      }
+    }
+    if joint_entities.length() == 0 {
+      continue
+    }
+    try! world.set_by_key(
+      spawned_entities[entity_index],
+      @mesh.SkinnedMesh::component(),
+      @mesh.SkinnedMesh::new(
+        source_mesh_handle,
+        joint_entities,
+        inverse_bindposes,
+        mesh_root~,
+      ),
+    )
+    try! world.set_by_key(
+      spawned_entities[entity_index],
+      @mesh.DynamicSkinnedMeshBounds::component(),
+      @mesh.DynamicSkinnedMeshBounds::new(),
+    )
   }
 
   scene_runtime_mark_ready(world, instance_id, spawned_entities) |> ignore
@@ -927,6 +1253,258 @@ fn scene_spawn_instance_when_ready(
     ecs_key_scene_instance_ready,
     SceneInstanceReady::new(instance_id, spawned_entities.length()),
   )
+  let spawned_scene_index = if scene.nodes3d.length() > 0 {
+    match scene.nodes3d[0].gltf_scene_index {
+      Some(scene_index) => scene_index.index()
+      None => 0
+    }
+  } else {
+    0
+  }
+  @gltf.gltf_extension_notify_scene_completed(
+    gltf_scene_asset_path, spawned_scene_index, root_entity, world,
+  )
+}
+
+///|
+fn scene_entity_local_transform_or_identity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+    Some(transform) => transform
+    None => @transform.Transform::identity()
+  }
+}
+
+///|
+fn scene_entity_global_matrix(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @mesh.SkinningMat4 {
+  let chain : Array[@core.Entity] = []
+  let mut current : @core.Entity? = Some(entity)
+  while current is Some(value) {
+    chain.push(value)
+    current = match (try! world.get_by_key(value, @hierarchy.ecs_key_parent)) {
+      Some(parent) => Some(parent.entity())
+      None => None
+    }
+  }
+  let mut matrix = @mesh.SkinningMat4::identity()
+  for i in 0..<chain.length() {
+    let entity_index = chain.length() - 1 - i
+    matrix = matrix.mul(
+      @mesh.SkinningMat4::from_transform(
+        scene_entity_local_transform_or_identity(world, chain[entity_index]),
+      ),
+    )
+  }
+  matrix
+}
+
+///|
+fn scene_entity_global_inverse_matrix(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @mesh.SkinningMat4 {
+  let mut matrix = @mesh.SkinningMat4::identity()
+  let mut current : @core.Entity? = Some(entity)
+  while current is Some(value) {
+    matrix = matrix.mul(
+      @mesh.SkinningMat4::inverse_transform(
+        scene_entity_local_transform_or_identity(world, value),
+      ),
+    )
+    current = match (try! world.get_by_key(value, @hierarchy.ecs_key_parent)) {
+      Some(parent) => Some(parent.entity())
+      None => None
+    }
+  }
+  matrix
+}
+
+///|
+fn scene_apply_morph_targets(
+  base_positions : Array[@math.Vec3],
+  morph_targets : Array[Array[@math.Vec3]],
+  weights : Array[Float],
+) -> Array[@math.Vec3] {
+  let positions : Array[@math.Vec3] = []
+  for position in base_positions {
+    positions.push(position)
+  }
+  let limit = if morph_targets.length() < weights.length() {
+    morph_targets.length()
+  } else {
+    weights.length()
+  }
+  for morph_index in 0..<limit {
+    let weight = weights[morph_index]
+    if weight == 0.0F {
+      continue
+    }
+    let morph_target = morph_targets[morph_index]
+    let vertex_limit = if morph_target.length() < positions.length() {
+      morph_target.length()
+    } else {
+      positions.length()
+    }
+    for vertex_index in 0..<vertex_limit {
+      positions[vertex_index] = @math.Vec3::add(
+        positions[vertex_index],
+        @math.Vec3::mul_scalar(morph_target[vertex_index], weight),
+      )
+    }
+  }
+  positions
+}
+
+///|
+fn scene_skin_positions(
+  positions : Array[@math.Vec3],
+  joint_indices : Array[@mesh.MeshJointIndices],
+  joint_weights : Array[@math.Vec4],
+  joint_matrices : Array[@mesh.SkinningMat4],
+) -> Array[@math.Vec3] {
+  let skinned_positions : Array[@math.Vec3] = []
+  let vertex_count = positions.length()
+  for vertex_index in 0..<vertex_count {
+    let indices = joint_indices[vertex_index]
+    let weights = joint_weights[vertex_index]
+    let mut value = @math.Vec3::zero()
+    let mut total_weight = 0.0F
+    let channels : Array[(Int, Float)] = [
+      (indices.x, weights.x),
+      (indices.y, weights.y),
+      (indices.z, weights.z),
+      (indices.w, weights.w),
+    ]
+    for channel in channels {
+      let (joint_index, joint_weight) = channel
+      if joint_weight == 0.0F {
+        continue
+      }
+      if joint_index < 0 || joint_index >= joint_matrices.length() {
+        continue
+      }
+      total_weight = total_weight + joint_weight
+      value = @math.Vec3::add(
+        value,
+        @math.Vec3::mul_scalar(
+          joint_matrices[joint_index].transform_point3(positions[vertex_index]),
+          joint_weight,
+        ),
+      )
+    }
+    if total_weight > 0.0F {
+      skinned_positions.push(value)
+    } else {
+      skinned_positions.push(positions[vertex_index])
+    }
+  }
+  skinned_positions
+}
+
+///|
+fn scene_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
+  let mesh_query : @ecs.Query[(@core.Entity, @ecs.Comp[@pbr.Mesh3d]), @ecs.All] = @ecs.query(
+    world,
+  )
+  let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
+
+  try! mesh_query.view(fn(_entity, data) {
+    let (entity, mesh_component) = data
+    let morph_target_mesh : @mesh.MorphTargetMesh? = try! world
+      .entity(entity)
+      .get()
+    let skinned_mesh : @mesh.SkinnedMesh? = try! world.entity(entity).get()
+    if morph_target_mesh is None && skinned_mesh is None {
+      return
+    }
+    let animation_weights : @animation.AnimationWeights? = try! world
+      .entity(entity)
+      .get()
+    let morph_weights_component : @mesh.MorphWeights? = try! world
+      .entity(entity)
+      .get()
+    let source_mesh_handle = match skinned_mesh {
+      Some(value) => value.source_mesh()
+      None =>
+        match morph_target_mesh {
+          Some(value) => value.source_mesh()
+          None => return
+        }
+    }
+    let instance_mesh_handle = mesh_component.value().mesh()
+    let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
+      Some(value) => value
+      None => return
+    }
+    let source_geometry = match source_mesh.as_3d_geometry() {
+      Some(value) => value
+      None => return
+    }
+
+    let active_morph_weights = match animation_weights {
+      Some(weights) => {
+        let values = weights.values()
+        try! world.set_by_key(
+          entity,
+          @mesh.MorphWeights::component(),
+          @mesh.MorphWeights::new(values),
+        )
+        values
+      }
+      None =>
+        match morph_weights_component {
+          Some(weights) => weights.values()
+          None => []
+        }
+    }
+
+    let mut positions = source_geometry.positions
+    if source_geometry.morph_target_positions() is Some(morph_targets) &&
+      active_morph_weights.length() > 0 {
+      positions = scene_apply_morph_targets(
+        positions, morph_targets, active_morph_weights,
+      )
+    }
+
+    if skinned_mesh is Some(skinned) &&
+      source_geometry.joint_indices() is Some(joint_indices) &&
+      source_geometry.joint_weights() is Some(joint_weights) {
+      let joint_matrices : Array[@mesh.SkinningMat4] = []
+      let mesh_root_inverse = match skinned.mesh_root() {
+        Some(mesh_root) => scene_entity_global_inverse_matrix(world, mesh_root)
+        None => @mesh.SkinningMat4::identity()
+      }
+      let joints = skinned.joints()
+      let inverse_bindposes = skinned.inverse_bindposes()
+      let joint_limit = if joints.length() < inverse_bindposes.length() {
+        joints.length()
+      } else {
+        inverse_bindposes.length()
+      }
+      for joint_index in 0..<joint_limit {
+        joint_matrices.push(
+          mesh_root_inverse
+          .mul(scene_entity_global_matrix(world, joints[joint_index]))
+          .mul(inverse_bindposes[joint_index]),
+        )
+      }
+      positions = scene_skin_positions(
+        positions, joint_indices, joint_weights, joint_matrices,
+      )
+    }
+
+    let updated_geometry = scene_clone_mesh3d_geometry(source_geometry)
+    guard updated_geometry.replace_positions(positions) else { return }
+    guard source_mesh.with_3d_geometry(updated_geometry) is Some(updated_mesh) else {
+      return
+    }
+    ignore(mesh_assets_ref.val.set(instance_mesh_handle, updated_mesh))
+  })
 }
 
 ///|
@@ -1018,6 +1596,7 @@ fn scene_runtime_plugin_base(
   .add_pre_update_system(scene_load_pending_system)
   .add_pre_update_system(scene_reload_modified_roots_system)
   .add_pre_update_system(scene_spawn_roots_system)
+  .add_pre_update_system(scene_sync_and_apply_deformed_meshes)
 }
 
 ///|

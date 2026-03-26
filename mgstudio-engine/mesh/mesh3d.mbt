@@ -17,6 +17,11 @@ pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
   uvs : Array[@math.Vec2]
   colors : Array[@math.Vec4]?
+  joint_indices : Array[MeshJointIndices]?
+  joint_weights : Array[@math.Vec4]?
+  morph_target_positions : Array[Array[@math.Vec3]]?
+  morph_target_names : Array[String]?
+  custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
   indices : Array[Int]?
   topology : Mesh3dPrimitiveTopology
@@ -70,6 +75,11 @@ pub fn Mesh3dGeometry::new(
     positions,
     uvs,
     colors: None,
+    joint_indices: None,
+    joint_weights: None,
+    morph_target_positions: None,
+    morph_target_names: None,
+    custom_attributes_vec3: [],
     tangents: None,
     indices,
     topology: Mesh3dPrimitiveTopology::TriangleList,
@@ -87,6 +97,11 @@ pub fn Mesh3dGeometry::new_with_colors(
     positions,
     uvs,
     colors: Some(colors),
+    joint_indices: None,
+    joint_weights: None,
+    morph_target_positions: None,
+    morph_target_names: None,
+    custom_attributes_vec3: [],
     tangents: None,
     indices,
     topology: Mesh3dPrimitiveTopology::TriangleList,
@@ -104,6 +119,11 @@ pub fn Mesh3dGeometry::new_with_topology(
     positions,
     uvs,
     colors: None,
+    joint_indices: None,
+    joint_weights: None,
+    morph_target_positions: None,
+    morph_target_names: None,
+    custom_attributes_vec3: [],
     tangents: None,
     indices,
     topology,
@@ -122,6 +142,11 @@ pub fn Mesh3dGeometry::new_with_colors_and_topology(
     positions,
     uvs,
     colors: Some(colors),
+    joint_indices: None,
+    joint_weights: None,
+    morph_target_positions: None,
+    morph_target_names: None,
+    custom_attributes_vec3: [],
     tangents: None,
     indices,
     topology,
@@ -137,6 +162,11 @@ pub fn Mesh3dGeometry::with_topology(
     positions: self.positions,
     uvs: self.uvs,
     colors: self.colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
     indices: self.indices,
     topology,
@@ -220,6 +250,22 @@ pub fn Mesh3dGeometry::replace_uvs(
 }
 
 ///|
+pub fn Mesh3dGeometry::replace_positions(
+  self : Mesh3dGeometry,
+  positions : Array[@math.Vec3],
+) -> Bool {
+  if positions.length() != self.positions.length() {
+    return false
+  }
+  self.positions.clear()
+  for position in positions {
+    self.positions.push(position)
+  }
+  self.tangents = None
+  true
+}
+
+///|
 pub fn Mesh3dGeometry::set_position(
   self : Mesh3dGeometry,
   index : Int,
@@ -244,6 +290,20 @@ pub fn Mesh3dGeometry::push_vertex(
   if self.colors is Some(colors) {
     colors.push(@math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
+  if self.joint_indices is Some(joint_indices) {
+    joint_indices.push(MeshJointIndices::new(0, 0, 0, 0))
+  }
+  if self.joint_weights is Some(joint_weights) {
+    joint_weights.push(@math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F))
+  }
+  if self.morph_target_positions is Some(morph_targets) {
+    for morph_target in morph_targets {
+      morph_target.push(position)
+    }
+  }
+  for custom_attribute in self.custom_attributes_vec3 {
+    custom_attribute.values().push(@math.Vec3::zero())
+  }
   if self.tangents is Some(tangents) {
     tangents.push(@math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F))
   }
@@ -262,6 +322,20 @@ pub fn Mesh3dGeometry::push_vertex_with_color(
   self.positions.push(position)
   self.uvs.push(uv)
   colors.push(color)
+  if self.joint_indices is Some(joint_indices) {
+    joint_indices.push(MeshJointIndices::new(0, 0, 0, 0))
+  }
+  if self.joint_weights is Some(joint_weights) {
+    joint_weights.push(@math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F))
+  }
+  if self.morph_target_positions is Some(morph_targets) {
+    for morph_target in morph_targets {
+      morph_target.push(position)
+    }
+  }
+  for custom_attribute in self.custom_attributes_vec3 {
+    custom_attribute.values().push(@math.Vec3::zero())
+  }
   if self.tangents is Some(tangents) {
     tangents.push(@math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F))
   }
@@ -275,6 +349,20 @@ pub fn Mesh3dGeometry::clear_vertices(self : Mesh3dGeometry) -> Unit {
   self.uvs.clear()
   if self.colors is Some(colors) {
     colors.clear()
+  }
+  if self.joint_indices is Some(joint_indices) {
+    joint_indices.clear()
+  }
+  if self.joint_weights is Some(joint_weights) {
+    joint_weights.clear()
+  }
+  if self.morph_target_positions is Some(morph_targets) {
+    for morph_target in morph_targets {
+      morph_target.clear()
+    }
+  }
+  for custom_attribute in self.custom_attributes_vec3 {
+    custom_attribute.values().clear()
   }
   if self.tangents is Some(tangents) {
     tangents.clear()
@@ -336,6 +424,11 @@ pub fn Mesh3dGeometry::with_indices(
     positions: self.positions,
     uvs: self.uvs,
     colors: self.colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
     indices,
     topology: self.topology,
@@ -351,10 +444,139 @@ pub fn Mesh3dGeometry::with_colors(
     positions: self.positions,
     uvs: self.uvs,
     colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
     indices: self.indices,
     topology: self.topology,
   }
+}
+
+///|
+pub fn Mesh3dGeometry::with_joint_data(
+  self : Mesh3dGeometry,
+  joint_indices : Array[MeshJointIndices]?,
+  joint_weights : Array[@math.Vec4]?,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::{
+    positions: self.positions,
+    uvs: self.uvs,
+    colors: self.colors,
+    joint_indices,
+    joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
+    tangents: self.tangents,
+    indices: self.indices,
+    topology: self.topology,
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::joint_indices(
+  self : Mesh3dGeometry,
+) -> Array[MeshJointIndices]? {
+  self.joint_indices
+}
+
+///|
+pub fn Mesh3dGeometry::joint_weights(
+  self : Mesh3dGeometry,
+) -> Array[@math.Vec4]? {
+  self.joint_weights
+}
+
+///|
+pub fn Mesh3dGeometry::with_morph_targets(
+  self : Mesh3dGeometry,
+  morph_target_positions : Array[Array[@math.Vec3]]?,
+  morph_target_names? : Array[String]? = None,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::{
+    positions: self.positions,
+    uvs: self.uvs,
+    colors: self.colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions,
+    morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
+    tangents: self.tangents,
+    indices: self.indices,
+    topology: self.topology,
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::morph_target_positions(
+  self : Mesh3dGeometry,
+) -> Array[Array[@math.Vec3]]? {
+  self.morph_target_positions
+}
+
+///|
+pub fn Mesh3dGeometry::morph_target_names(
+  self : Mesh3dGeometry,
+) -> Array[String]? {
+  self.morph_target_names
+}
+
+///|
+pub fn Mesh3dGeometry::with_custom_attribute_vec3(
+  self : Mesh3dGeometry,
+  name : String,
+  values : Array[@math.Vec3],
+) -> Mesh3dGeometry {
+  let next : Array[MeshCustomAttributeVec3] = []
+  let mut replaced = false
+  for attribute in self.custom_attributes_vec3 {
+    if attribute.name() == name {
+      next.push(MeshCustomAttributeVec3::new(name, values))
+      replaced = true
+    } else {
+      next.push(attribute)
+    }
+  }
+  if !replaced {
+    next.push(MeshCustomAttributeVec3::new(name, values))
+  }
+  Mesh3dGeometry::{
+    positions: self.positions,
+    uvs: self.uvs,
+    colors: self.colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: next,
+    tangents: self.tangents,
+    indices: self.indices,
+    topology: self.topology,
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::custom_attribute_vec3(
+  self : Mesh3dGeometry,
+  name : String,
+) -> Array[@math.Vec3]? {
+  for attribute in self.custom_attributes_vec3 {
+    if attribute.name() == name {
+      return Some(attribute.values())
+    }
+  }
+  None
+}
+
+///|
+pub fn Mesh3dGeometry::custom_attributes_vec3(
+  self : Mesh3dGeometry,
+) -> Array[MeshCustomAttributeVec3] {
+  self.custom_attributes_vec3
 }
 
 ///|
@@ -665,6 +887,48 @@ pub fn Mesh3dGeometry::validate(
     if color_count != vertex_count {
       return Some(
         Mesh3dValidationError::ColorLengthMismatch(vertex_count, color_count),
+      )
+    }
+  }
+  if self.joint_indices is Some(joint_indices) {
+    let joint_index_count = joint_indices.length()
+    if joint_index_count != vertex_count {
+      return Some(
+        Mesh3dValidationError::AttributeLengthMismatch(
+          vertex_count, joint_index_count,
+        ),
+      )
+    }
+  }
+  if self.joint_weights is Some(joint_weights) {
+    let joint_weight_count = joint_weights.length()
+    if joint_weight_count != vertex_count {
+      return Some(
+        Mesh3dValidationError::AttributeLengthMismatch(
+          vertex_count, joint_weight_count,
+        ),
+      )
+    }
+  }
+  if self.morph_target_positions is Some(morph_targets) {
+    for morph_target in morph_targets {
+      if morph_target.length() != vertex_count {
+        return Some(
+          Mesh3dValidationError::AttributeLengthMismatch(
+            vertex_count,
+            morph_target.length(),
+          ),
+        )
+      }
+    }
+  }
+  for custom_attribute in self.custom_attributes_vec3 {
+    if custom_attribute.values().length() != vertex_count {
+      return Some(
+        Mesh3dValidationError::AttributeLengthMismatch(
+          vertex_count,
+          custom_attribute.values().length(),
+        ),
       )
     }
   }

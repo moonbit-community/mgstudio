@@ -2,17 +2,42 @@
 package "Milky2018/mgstudio/gltf"
 
 import {
+  "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
+pub fn gltf_add_custom_vertex_attribute(String, String) -> Unit
+
+pub fn gltf_clear_custom_vertex_attributes() -> Unit
+
+pub fn gltf_clear_extension_handlers() -> Unit
+
+pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute]
+
+pub fn gltf_extension_handlers() -> GltfExtensionHandlers
+
+pub fn gltf_extension_notify_animations_collected(String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit
+
+pub fn gltf_extension_notify_mesh_spawned(String, Int, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_node_spawned(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.World) -> Unit
+
 pub fn gltf_install_loader_registration(() -> Unit) -> Unit
 
 pub fn gltf_pbr_material_handler_enabled() -> Bool
 
 pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gltf_register_extension_handler(GltfExtensionHandler) -> Unit
+
+pub fn gltf_resolve_custom_vertex_attribute_name(String) -> String?
 
 pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
 
@@ -34,6 +59,28 @@ pub(all) enum GltfAssetLabel {
 }
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
 pub fn GltfAssetLabel::to_label(Self) -> String
+
+pub struct GltfCustomVertexAttribute {
+  gltf_name : String
+  mapped_name : String
+}
+pub fn GltfCustomVertexAttribute::gltf_name(Self) -> String
+pub fn GltfCustomVertexAttribute::mapped_name(Self) -> String
+pub fn GltfCustomVertexAttribute::new(String, String) -> Self
+
+pub struct GltfExtensionHandler {
+  on_animations_collected : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?
+  on_node_spawned : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_mesh_spawned : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_scene_completed : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+}
+pub fn GltfExtensionHandler::new(on_animations_collected? : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?, on_node_spawned? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_mesh_spawned? : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?, on_scene_completed? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?) -> Self
+
+pub struct GltfExtensionHandlers {
+  handlers : Array[GltfExtensionHandler]
+}
+pub fn GltfExtensionHandlers::handlers(Self) -> Array[GltfExtensionHandler]
+pub fn GltfExtensionHandlers::new(Array[GltfExtensionHandler]) -> Self
 
 pub struct GltfExtras {
   value : String
@@ -99,6 +146,15 @@ pub struct GltfSceneIndex {
 pub fn GltfSceneIndex::index(Self) -> Int
 pub fn GltfSceneIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfSceneIndex
+
+pub struct GltfSkinIndex {
+  index : Int
+}
+pub fn GltfSkinIndex::index(Self) -> Int
+pub fn GltfSkinIndex::new(Int) -> Self
+pub impl @ecs.Component for GltfSkinIndex
+pub impl ToJson for GltfSkinIndex
+pub impl @json.FromJson for GltfSkinIndex
 
 // Type aliases
 pub type GltfLoaderRegistration = () -> Unit
