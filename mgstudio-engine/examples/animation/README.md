@@ -14,21 +14,17 @@ This folder tracks parity status for Bevy animation examples.
 | `animation_events.rs` | `examples/animation/animation_events` | Done | Typed clip events now drive the example through the public typed animation event surface. |
 | `animation_graph.rs` | `examples/animation/animation_graph` | Done | Blend graph runtime and interaction flow are implemented on the current graph/player model. |
 | `animation_masks.rs` | `examples/animation/animation_masks` | Done | Mask-group UI flow and graph mask toggling now run on the shared Fox scene/skinning path. |
-| `color_animation.rs` | `examples/animation/color_animation` | Partial | Runtime behavior is close, but not API-identical to Bevy color curve/mix stack. |
+| `color_animation.rs` | `examples/animation/color_animation` | Done | Bevy-style split between curve-based and mix-based color animation is now implemented with dedicated ECS components and typed query systems. |
 | `custom_skinned_mesh.rs` | `examples/animation/custom_skinned_mesh` | Done | Manual meshes can now provide joint indices/weights and run through the same CPU skinning runtime as imported glTF scenes. |
-| `eased_motion.rs` | `examples/animation/eased_motion` | Partial | Easing / curve reparameterization is implemented, but clip authoring still samples curves into keyframes instead of exposing Bevy-style direct curve-to-field clip APIs. |
+| `eased_motion.rs` | `examples/animation/eased_motion` | Done | Curve-to-target authoring is available through `AnimationClip::add_curve_to_target(...)`, and the example now uses that path directly. |
 | `easing_functions.rs` | `examples/animation/easing_functions` | Done | Grid/curve/progress behavior is implemented and compile-checked. |
 | `morph_targets.rs` | `examples/animation/morph_targets` | Done | Morph target import, naming, animation playback, and mesh asset event observation are implemented on the current glTF runtime. |
 
 ## Core Missing Runtime Modules (Consolidated)
 
-1. Direct curve-to-field clip authoring:
-   - Equivalent to Bevy `AnimatableCurve` / `animated_field!` flow without sampling through keyframes in the example.
-2. General UI property animation parity:
+1. General UI property animation parity:
    - Broader UI property targeting beyond the current `Transform` + `TextColor` coverage.
-3. Color curve/mix parity primitives:
-   - Built-in curve/mix abstractions for `LinearRgba/Oklaba/Xyza/Oklcha` style workflows.
-4. 2D sprite parity gap:
+2. 2D sprite parity gap:
    - Pure color-only sized sprite without mandatory texture handle.
 
 ## Validation

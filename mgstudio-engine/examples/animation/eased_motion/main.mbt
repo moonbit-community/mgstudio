@@ -25,42 +25,6 @@ const MOTION_SAMPLE_COUNT : Int = 121
 const ROTATION_SAMPLE_COUNT : Int = 81
 
 ///|
-fn curve_times(domain : @math.Interval, points : Int) -> Array[Float] {
-  match domain.spaced_points(points) {
-    Ok(times) => times
-    Err(_) => abort("eased motion example expects a bounded curve domain")
-  }
-}
-
-///|
-fn sampled_vec3_keyframes(
-  curve : @math.Curve[@math.Vec3],
-  points : Int,
-) -> Array[@animation.KeyframeVec3] {
-  let keyframes : Array[@animation.KeyframeVec3] = []
-  for time in curve_times(curve.domain(), points) {
-    keyframes.push(
-      @animation.KeyframeVec3::new(time, curve.sample_clamped(time)),
-    )
-  }
-  keyframes
-}
-
-///|
-fn sampled_quat_keyframes(
-  curve : @math.Curve[@math.Quat],
-  points : Int,
-) -> Array[@animation.KeyframeQuat] {
-  let keyframes : Array[@animation.KeyframeQuat] = []
-  for time in curve_times(curve.domain(), points) {
-    keyframes.push(
-      @animation.KeyframeQuat::new(time, curve.sample_clamped(time)),
-    )
-  }
-  keyframes
-}
-
-///|
 fn easing_translation_curve() -> @math.Curve[@math.Vec3] {
   let motion_domain = @math.Interval::new(0.0F, 3.0F).unwrap()
   let base = @math.EasingCurve::new(
@@ -104,13 +68,15 @@ fn easing_motion_clip() -> (
 ) {
   let target = @animation.AnimationTargetId::from_name(CUBE_NAME)
   let clip = @animation.AnimationClip::new()
-    .add_translation_curve(
+    .add_curve_to_target(
       target,
-      sampled_vec3_keyframes(easing_translation_curve(), MOTION_SAMPLE_COUNT),
+      @animation.AnimatableCurve::Translation(easing_translation_curve()),
+      sample_count=MOTION_SAMPLE_COUNT,
     )
-    .add_rotation_curve(
+    .add_curve_to_target(
       target,
-      sampled_quat_keyframes(easing_rotation_curve(), ROTATION_SAMPLE_COUNT),
+      @animation.AnimatableCurve::Rotation(easing_rotation_curve()),
+      sample_count=ROTATION_SAMPLE_COUNT,
     )
 
   let clip_handle = @animation.animation_clip_add(clip)

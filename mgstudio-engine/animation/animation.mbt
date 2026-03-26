@@ -197,6 +197,14 @@ pub fn KeyframeColor::new(time : Float, value : @sprite.Color) -> KeyframeColor 
 }
 
 ///|
+pub(all) enum AnimatableCurve {
+  Translation(@math.Curve[@math.Vec3])
+  Rotation(@math.Curve[@math.Quat])
+  Scale(@math.Curve[@math.Vec3])
+  TextColor(@math.Curve[@sprite.Color])
+}
+
+///|
 pub struct AnimationTargetCurves {
   translation : Array[KeyframeVec3]
   rotation : Array[KeyframeQuat]
@@ -529,6 +537,88 @@ fn animation_clip_update_duration_from_color(
     if keyframe.time > clip.duration_seconds {
       clip.duration_seconds = keyframe.time
     }
+  }
+}
+
+///|
+fn animation_curve_sample_times_or_abort(
+  domain : @math.Interval,
+  sample_count : Int,
+) -> Array[Float] {
+  let points = if sample_count < 2 { 2 } else { sample_count }
+  match domain.spaced_points(points) {
+    Ok(times) => times
+    Err(_) => abort("animation curve authoring expects a bounded domain")
+  }
+}
+
+///|
+fn animation_curve_sample_vec3_keyframes(
+  curve : @math.Curve[@math.Vec3],
+  sample_count : Int,
+) -> Array[KeyframeVec3] {
+  let keyframes : Array[KeyframeVec3] = []
+  for
+    time in animation_curve_sample_times_or_abort(curve.domain(), sample_count) {
+    keyframes.push(KeyframeVec3::new(time, curve.sample_clamped(time)))
+  }
+  keyframes
+}
+
+///|
+fn animation_curve_sample_quat_keyframes(
+  curve : @math.Curve[@math.Quat],
+  sample_count : Int,
+) -> Array[KeyframeQuat] {
+  let keyframes : Array[KeyframeQuat] = []
+  for
+    time in animation_curve_sample_times_or_abort(curve.domain(), sample_count) {
+    keyframes.push(KeyframeQuat::new(time, curve.sample_clamped(time)))
+  }
+  keyframes
+}
+
+///|
+fn animation_curve_sample_color_keyframes(
+  curve : @math.Curve[@sprite.Color],
+  sample_count : Int,
+) -> Array[KeyframeColor] {
+  let keyframes : Array[KeyframeColor] = []
+  for
+    time in animation_curve_sample_times_or_abort(curve.domain(), sample_count) {
+    keyframes.push(KeyframeColor::new(time, curve.sample_clamped(time)))
+  }
+  keyframes
+}
+
+///|
+pub fn AnimationClip::add_curve_to_target(
+  self : AnimationClip,
+  target_id : AnimationTargetId,
+  curve : AnimatableCurve,
+  sample_count? : Int = 121,
+) -> AnimationClip {
+  match curve {
+    Translation(translation_curve) =>
+      self.add_translation_curve(
+        target_id,
+        animation_curve_sample_vec3_keyframes(translation_curve, sample_count),
+      )
+    Rotation(rotation_curve) =>
+      self.add_rotation_curve(
+        target_id,
+        animation_curve_sample_quat_keyframes(rotation_curve, sample_count),
+      )
+    Scale(scale_curve) =>
+      self.add_scale_curve(
+        target_id,
+        animation_curve_sample_vec3_keyframes(scale_curve, sample_count),
+      )
+    TextColor(text_color_curve) =>
+      self.add_text_color_curve(
+        target_id,
+        animation_curve_sample_color_keyframes(text_color_curve, sample_count),
+      )
   }
 }
 

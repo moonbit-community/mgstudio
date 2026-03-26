@@ -91,45 +91,94 @@ priv struct Oklcha {
 }
 
 ///|
-pub(all) enum ColorAnimationMode {
-  CurveLinearRgba
-  CurveXyza
-  CurveOklaba
-  MixedHsla
-  MixedSrgba
-  MixedOklcha
+struct CurveLinearRgba {
+  points : Array[LinearRgba]
 }
 
 ///|
-priv struct AnimatedSprite {
-  entity : @core.Entity
-  y : Float
-  mode : ColorAnimationMode
+struct CurveXyza {
+  points : Array[Xyza]
 }
 
 ///|
-priv struct ColorAnimationState {
-  sprites : Array[AnimatedSprite]
-  mut texture : @asset.Handle[@asset.Image]?
-  mut linear_points : Array[LinearRgba]
-  mut xyza_points : Array[Xyza]
-  mut oklaba_points : Array[Oklaba]
-  mut hsla_points : Array[Hsla]
-  mut srgba_points : Array[Srgba]
-  mut oklcha_points : Array[Oklcha]
+struct CurveOklaba {
+  points : Array[Oklaba]
 }
 
 ///|
-let color_animation_state : Ref[ColorAnimationState] = Ref::new(ColorAnimationState::{
-  sprites: [],
-  texture: None,
-  linear_points: [],
-  xyza_points: [],
-  oklaba_points: [],
-  hsla_points: [],
-  srgba_points: [],
-  oklcha_points: [],
-})
+struct MixedHsla {
+  colors : Array[Hsla]
+}
+
+///|
+struct MixedSrgba {
+  colors : Array[Srgba]
+}
+
+///|
+struct MixedOklcha {
+  colors : Array[Oklcha]
+}
+
+///|
+let curve_linear_rgba_key : @ecs.ComponentKey[CurveLinearRgba] = @ecs.register_component(
+  debug_name="examples.animation.color_animation.CurveLinearRgba",
+)
+
+///|
+let curve_xyza_key : @ecs.ComponentKey[CurveXyza] = @ecs.register_component(
+  debug_name="examples.animation.color_animation.CurveXyza",
+)
+
+///|
+let curve_oklaba_key : @ecs.ComponentKey[CurveOklaba] = @ecs.register_component(
+  debug_name="examples.animation.color_animation.CurveOklaba",
+)
+
+///|
+let mixed_hsla_key : @ecs.ComponentKey[MixedHsla] = @ecs.register_component(
+  debug_name="examples.animation.color_animation.MixedHsla",
+)
+
+///|
+let mixed_srgba_key : @ecs.ComponentKey[MixedSrgba] = @ecs.register_component(
+  debug_name="examples.animation.color_animation.MixedSrgba",
+)
+
+///|
+let mixed_oklcha_key : @ecs.ComponentKey[MixedOklcha] = @ecs.register_component(
+  debug_name="examples.animation.color_animation.MixedOklcha",
+)
+
+///|
+impl @ecs.Component for CurveLinearRgba with component() {
+  curve_linear_rgba_key
+}
+
+///|
+impl @ecs.Component for CurveXyza with component() {
+  curve_xyza_key
+}
+
+///|
+impl @ecs.Component for CurveOklaba with component() {
+  curve_oklaba_key
+}
+
+///|
+impl @ecs.Component for MixedHsla with component() {
+  mixed_hsla_key
+}
+
+///|
+impl @ecs.Component for MixedSrgba with component() {
+  mixed_srgba_key
+}
+
+///|
+impl @ecs.Component for MixedOklcha with component() {
+  mixed_oklcha_key
+}
 
 ///|
 fn main {
@@ -137,22 +186,35 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(color_animation_setup))
-  .add_systems(@app.Update, @app.system(color_animation_update))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(animate_curve_linear)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param2(animate_curve_xyza)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(animate_curve_oklaba)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param2(animate_mixed_hsla)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(animate_mixed_srgba)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(animate_mixed_oklcha)),
+  )
   .run()
 }
 
 ///|
 fn color_animation_setup(world : @ecs.World) -> Unit {
-  color_animation_state.val.sprites.clear()
-  color_animation_state.val.texture = None
-
   let linear_points = default_linear_control_points()
-  color_animation_state.val.linear_points = linear_points
-  color_animation_state.val.xyza_points = to_xyza_points(linear_points)
-  color_animation_state.val.oklaba_points = to_oklaba_points(linear_points)
-  color_animation_state.val.hsla_points = to_hsla_points(linear_points)
-  color_animation_state.val.srgba_points = to_srgba_points(linear_points)
-  color_animation_state.val.oklcha_points = to_oklcha_points(linear_points)
+  let xyza_points = to_xyza_points(linear_points)
+  let oklaba_points = to_oklaba_points(linear_points)
+  let hsla_points = to_hsla_points(linear_points)
+  let srgba_points = to_srgba_points(linear_points)
+  let oklcha_points = to_oklcha_points(linear_points)
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
@@ -162,38 +224,24 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  color_animation_state.val.texture = Some(texture)
-
-  spawn_mode_sprite(
-    world,
-    texture,
-    CURVE_LINEAR_Y,
-    ColorAnimationMode::CurveLinearRgba,
-  )
-  spawn_mode_sprite(world, texture, CURVE_XYZ_Y, ColorAnimationMode::CurveXyza)
-  spawn_mode_sprite(
-    world,
-    texture,
-    CURVE_OKLAB_Y,
-    ColorAnimationMode::CurveOklaba,
-  )
-  spawn_mode_sprite(world, texture, MIX_HSL_Y, ColorAnimationMode::MixedHsla)
-  spawn_mode_sprite(world, texture, MIX_SRGB_Y, ColorAnimationMode::MixedSrgba)
-  spawn_mode_sprite(
-    world,
-    texture,
-    MIX_OKLCH_Y,
-    ColorAnimationMode::MixedOklcha,
-  )
+  spawn_curve_linear_rgba_sprite(world, texture, CURVE_LINEAR_Y, linear_points)
+  spawn_curve_xyza_sprite(world, texture, CURVE_XYZ_Y, xyza_points)
+  spawn_curve_oklaba_sprite(world, texture, CURVE_OKLAB_Y, oklaba_points)
+  spawn_mixed_hsla_sprite(world, texture, MIX_HSL_Y, hsla_points)
+  spawn_mixed_srgba_sprite(world, texture, MIX_SRGB_Y, srgba_points)
+  spawn_mixed_oklcha_sprite(world, texture, MIX_OKLCH_Y, oklcha_points)
 }
 
 ///|
-fn spawn_mode_sprite(
+fn spawn_curve_linear_rgba_sprite(
   world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   y : Float,
-  mode : ColorAnimationMode,
+  points : Array[LinearRgba],
 ) -> Unit {
+  if points.length() != 4 {
+    abort("color_animation curve control points must contain 4 colors")
+  }
   let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
     Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
   )
@@ -201,75 +249,256 @@ fn spawn_mode_sprite(
     sprite,
     @transform.Transform::from_xyz(0.0F, y, 0.0F),
   ).spawn(world)
-  color_animation_state.val.sprites.push(AnimatedSprite::{ entity, y, mode })
+  try! world.set(entity, CurveLinearRgba::{ points, })
 }
 
 ///|
-fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in color_animation example")
+fn spawn_curve_xyza_sprite(
+  world : @ecs.World,
+  texture : @asset.Handle[@asset.Image],
+  y : Float,
+  points : Array[Xyza],
+) -> Unit {
+  if points.length() != 4 {
+    abort("color_animation curve control points must contain 4 colors")
   }
+  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
+    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+  )
+  let entity = @sprite.SpriteBundle::new(
+    sprite,
+    @transform.Transform::from_xyz(0.0F, y, 0.0F),
+  ).spawn(world)
+  try! world.set(entity, CurveXyza::{ points, })
 }
 
 ///|
-fn color_animation_update(world : @ecs.World) -> Unit {
-  if color_animation_state.val.sprites.length() == 0 {
-    return
+fn spawn_curve_oklaba_sprite(
+  world : @ecs.World,
+  texture : @asset.Handle[@asset.Image],
+  y : Float,
+  points : Array[Oklaba],
+) -> Unit {
+  if points.length() != 4 {
+    abort("color_animation curve control points must contain 4 colors")
   }
-  guard color_animation_state.val.texture is Some(texture) else { return }
+  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
+    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+  )
+  let entity = @sprite.SpriteBundle::new(
+    sprite,
+    @transform.Transform::from_xyz(0.0F, y, 0.0F),
+  ).spawn(world)
+  try! world.set(entity, CurveOklaba::{ points, })
+}
 
-  let t = normalized_time(default_time_or_default(world).elapsed_seconds())
+///|
+fn spawn_mixed_hsla_sprite(
+  world : @ecs.World,
+  texture : @asset.Handle[@asset.Image],
+  y : Float,
+  colors : Array[Hsla],
+) -> Unit {
+  if colors.length() != 4 {
+    abort("color_animation mixed colors must contain 4 colors")
+  }
+  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
+    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+  )
+  let entity = @sprite.SpriteBundle::new(
+    sprite,
+    @transform.Transform::from_xyz(0.0F, y, 0.0F),
+  ).spawn(world)
+  try! world.set(entity, MixedHsla::{ colors, })
+}
+
+///|
+fn spawn_mixed_srgba_sprite(
+  world : @ecs.World,
+  texture : @asset.Handle[@asset.Image],
+  y : Float,
+  colors : Array[Srgba],
+) -> Unit {
+  if colors.length() != 4 {
+    abort("color_animation mixed colors must contain 4 colors")
+  }
+  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
+    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+  )
+  let entity = @sprite.SpriteBundle::new(
+    sprite,
+    @transform.Transform::from_xyz(0.0F, y, 0.0F),
+  ).spawn(world)
+  try! world.set(entity, MixedSrgba::{ colors, })
+}
+
+///|
+fn spawn_mixed_oklcha_sprite(
+  world : @ecs.World,
+  texture : @asset.Handle[@asset.Image],
+  y : Float,
+  colors : Array[Oklcha],
+) -> Unit {
+  if colors.length() != 4 {
+    abort("color_animation mixed colors must contain 4 colors")
+  }
+  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
+    Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+  )
+  let entity = @sprite.SpriteBundle::new(
+    sprite,
+    @transform.Transform::from_xyz(0.0F, y, 0.0F),
+  ).spawn(world)
+  try! world.set(entity, MixedOklcha::{ colors, })
+}
+
+///|
+fn animate_curve_linear(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Mut[@sprite.Sprite],
+      @ecs.Comp[CurveLinearRgba],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = normalized_time(time.get().elapsed_seconds())
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
-  let next_sprites : Array[AnimatedSprite] = []
-  for animated in color_animation_state.val.sprites {
-    let color = mode_color(animated.mode, t)
-    let sprite = @sprite.Sprite::from_image(texture)
-      .with_custom_size(Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)))
-      .with_color(color)
-    try! world.despawn(animated.entity)
-    let entity = @sprite.SpriteBundle::new(
-      sprite,
-      @transform.Transform::from_xyz(x, animated.y, 0.0F),
-    ).spawn(world)
-    next_sprites.push(AnimatedSprite::{
-      entity,
-      y: animated.y,
-      mode: animated.mode,
-    })
-  }
-  color_animation_state.val.sprites.clear()
-  for animated in next_sprites {
-    color_animation_state.val.sprites.push(animated)
-  }
+  try! query.view(fn(_entity, data) {
+    let (transform, sprite, curve) = data
+    let transform_ref = transform.get_ref()
+    let sprite_ref = sprite.get_ref()
+    let points = curve.value().points
+    sprite_ref.val.color = linear_to_color(bezier_linear(points, t))
+    transform_ref.val.translation.x = x
+  })
 }
 
 ///|
-fn mode_color(mode : ColorAnimationMode, t : Float) -> @sprite.Color {
-  match mode {
-    ColorAnimationMode::CurveLinearRgba =>
-      linear_to_color(bezier_linear(color_animation_state.val.linear_points, t))
-    ColorAnimationMode::CurveXyza =>
-      linear_to_color(
-        xyza_to_linear(bezier_xyza(color_animation_state.val.xyza_points, t)),
-      )
-    ColorAnimationMode::CurveOklaba =>
-      linear_to_color(
-        oklaba_to_linear(
-          bezier_oklaba(color_animation_state.val.oklaba_points, t),
-        ),
-      )
-    ColorAnimationMode::MixedHsla =>
-      linear_to_color(mix_hsla_points(color_animation_state.val.hsla_points, t))
-    ColorAnimationMode::MixedSrgba =>
-      linear_to_color(
-        mix_srgba_points(color_animation_state.val.srgba_points, t),
-      )
-    ColorAnimationMode::MixedOklcha =>
-      linear_to_color(
-        mix_oklcha_points(color_animation_state.val.oklcha_points, t),
-      )
-  }
+fn animate_curve_xyza(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Mut[@sprite.Sprite],
+      @ecs.Comp[CurveXyza],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = normalized_time(time.get().elapsed_seconds())
+  let x = HORIZONTAL_TRAVEL * (t - 0.5F)
+  try! query.view(fn(_entity, data) {
+    let (transform, sprite, curve) = data
+    let transform_ref = transform.get_ref()
+    let sprite_ref = sprite.get_ref()
+    sprite_ref.val.color = linear_to_color(
+      xyza_to_linear(bezier_xyza(curve.value().points, t)),
+    )
+    transform_ref.val.translation.x = x
+  })
+}
+
+///|
+fn animate_curve_oklaba(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Mut[@sprite.Sprite],
+      @ecs.Comp[CurveOklaba],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = normalized_time(time.get().elapsed_seconds())
+  let x = HORIZONTAL_TRAVEL * (t - 0.5F)
+  try! query.view(fn(_entity, data) {
+    let (transform, sprite, curve) = data
+    let transform_ref = transform.get_ref()
+    let sprite_ref = sprite.get_ref()
+    sprite_ref.val.color = linear_to_color(
+      oklaba_to_linear(bezier_oklaba(curve.value().points, t)),
+    )
+    transform_ref.val.translation.x = x
+  })
+}
+
+///|
+fn animate_mixed_hsla(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Mut[@sprite.Sprite],
+      @ecs.Comp[MixedHsla],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = normalized_time(time.get().elapsed_seconds())
+  let x = HORIZONTAL_TRAVEL * (t - 0.5F)
+  try! query.view(fn(_entity, data) {
+    let (transform, sprite, mixed) = data
+    let transform_ref = transform.get_ref()
+    let sprite_ref = sprite.get_ref()
+    sprite_ref.val.color = linear_to_color(
+      mix_hsla_points(mixed.value().colors, t),
+    )
+    transform_ref.val.translation.x = x
+  })
+}
+
+///|
+fn animate_mixed_srgba(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Mut[@sprite.Sprite],
+      @ecs.Comp[MixedSrgba],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = normalized_time(time.get().elapsed_seconds())
+  let x = HORIZONTAL_TRAVEL * (t - 0.5F)
+  try! query.view(fn(_entity, data) {
+    let (transform, sprite, mixed) = data
+    let transform_ref = transform.get_ref()
+    let sprite_ref = sprite.get_ref()
+    sprite_ref.val.color = linear_to_color(
+      mix_srgba_points(mixed.value().colors, t),
+    )
+    transform_ref.val.translation.x = x
+  })
+}
+
+///|
+fn animate_mixed_oklcha(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Mut[@sprite.Sprite],
+      @ecs.Comp[MixedOklcha],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = normalized_time(time.get().elapsed_seconds())
+  let x = HORIZONTAL_TRAVEL * (t - 0.5F)
+  try! query.view(fn(_entity, data) {
+    let (transform, sprite, mixed) = data
+    let transform_ref = transform.get_ref()
+    let sprite_ref = sprite.get_ref()
+    sprite_ref.val.color = linear_to_color(
+      mix_oklcha_points(mixed.value().colors, t),
+    )
+    transform_ref.val.translation.x = x
+  })
 }
 
 ///|

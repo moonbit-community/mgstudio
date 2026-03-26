@@ -6,14 +6,17 @@ package "Milky2018/mgstudio/examples/animation/color_animation"
 // Errors
 
 // Types and methods
-pub(all) enum ColorAnimationMode {
-  CurveLinearRgba
-  CurveXyza
-  CurveOklaba
-  MixedHsla
-  MixedSrgba
-  MixedOklcha
-}
+type CurveLinearRgba
+
+type CurveOklaba
+
+type CurveXyza
+
+type MixedHsla
+
+type MixedOklcha
+
+type MixedSrgba
 
 // Type aliases
 
