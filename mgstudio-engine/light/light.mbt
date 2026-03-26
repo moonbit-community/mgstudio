@@ -39,7 +39,7 @@ fn light_clamp01(value : Float) -> Float {
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `VolumetricLight`.
+/// Bevy-aligned marker component for directional volumetric lighting.
 pub struct VolumetricLight {}
 
 ///|
@@ -48,7 +48,7 @@ pub fn VolumetricLight::default() -> VolumetricLight {
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `VolumetricFog`.
+/// Bevy-aligned camera component that controls volumetric fog rendering.
 pub struct VolumetricFog {
   ambient_color : @sprite.Color
   ambient_intensity : Float
@@ -109,7 +109,7 @@ pub fn VolumetricFog::with_step_count(
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `FogVolume`.
+/// Bevy-aligned local fog volume component.
 pub struct FogVolume {
   fog_color : @sprite.Color
   density_factor : Float
@@ -232,7 +232,7 @@ pub fn AtmosphereMode::default() -> AtmosphereMode {
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `AtmosphereSettings`.
+/// Bevy-shaped atmosphere settings component.
 pub struct AtmosphereSettings {
   scene_units_to_m : Float
   sky_max_samples : Int
@@ -313,7 +313,7 @@ pub fn ScatteringMedium::with_density_multiplier(
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `Atmosphere`.
+/// Bevy-shaped atmosphere component.
 pub struct Atmosphere {
   bottom_radius : Float
   top_radius : Float
@@ -376,12 +376,71 @@ pub fn Atmosphere::with_medium(
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `AtmosphereEnvironmentMapLight`.
-pub struct AtmosphereEnvironmentMapLight {}
+/// Lets atmosphere contribute environment-map lighting (camera/probe-level).
+pub struct AtmosphereEnvironmentMapLight {
+  intensity : Float
+  affects_lightmapped_mesh_diffuse : Bool
+  size : @math.UVec2
+} derive(ToJson, FromJson)
 
 ///|
 pub fn AtmosphereEnvironmentMapLight::default() -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{  }
+  AtmosphereEnvironmentMapLight::{
+    intensity: 1.0F,
+    affects_lightmapped_mesh_diffuse: true,
+    size: @math.UVec2::new(512, 512),
+  }
+}
+
+///|
+pub fn AtmosphereEnvironmentMapLight::new(
+  intensity : Float,
+  affects_lightmapped_mesh_diffuse : Bool,
+  size : @math.UVec2,
+) -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::{
+    intensity: light_sanitize_non_negative(intensity),
+    affects_lightmapped_mesh_diffuse,
+    size: if size.x <= 0 || size.y <= 0 {
+      @math.UVec2::new(512, 512)
+    } else {
+      size
+    },
+  }
+}
+
+///|
+pub fn AtmosphereEnvironmentMapLight::with_intensity(
+  self : AtmosphereEnvironmentMapLight,
+  intensity : Float,
+) -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::{
+    ..self,
+    intensity: light_sanitize_non_negative(intensity),
+  }
+}
+
+///|
+pub fn AtmosphereEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
+  self : AtmosphereEnvironmentMapLight,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+}
+
+///|
+pub fn AtmosphereEnvironmentMapLight::with_size(
+  self : AtmosphereEnvironmentMapLight,
+  size : @math.UVec2,
+) -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::{
+    ..self,
+    size: if size.x <= 0 || size.y <= 0 {
+      @math.UVec2::new(512, 512)
+    } else {
+      size
+    },
+  }
 }
 
 ///|
@@ -1480,6 +1539,13 @@ pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[
 )
 
 ///|
+pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[
+  AtmosphereEnvironmentMapLight,
+] = @ecs.register_component(
+  debug_name="render3d.atmosphere_environment_map_light",
+)
+
+///|
 pub impl @ecs.Component for PointLight with component() {
   ecs_key_point_light
 }
@@ -1542,6 +1608,11 @@ pub impl @ecs.Component for EnvironmentMapLight with component() {
 ///|
 pub impl @ecs.Component for GeneratedEnvironmentMapLight with component() {
   ecs_key_generated_environment_map_light
+}
+
+///|
+pub impl @ecs.Component for AtmosphereEnvironmentMapLight with component() {
+  ecs_key_atmosphere_environment_map_light
 }
 
 ///|

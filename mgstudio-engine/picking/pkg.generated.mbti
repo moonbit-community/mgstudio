@@ -41,6 +41,8 @@ pub fn picking_collect_mouse_system(@ecs.World) -> Unit
 
 pub fn picking_generate_events_system(@ecs.World) -> Unit
 
+pub fn picking_mesh3d_hit_test_system(@ecs.World) -> Unit
+
 pub fn picking_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let picking_set : String
@@ -61,9 +63,12 @@ pub fn picking_ui_hit_test_system(@ecs.World) -> Unit
 pub struct PickingHits {
   ui : Array[@core.Entity?]
   sprite2d : Array[@core.Entity?]
+  mesh3d : Array[@core.Entity?]
 }
 pub fn PickingHits::default() -> Self
-pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?]) -> Self
+pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?], mesh3d? : Array[@core.Entity?]) -> Self
+pub fn PickingHits::mesh3d(Self, Int) -> @core.Entity?
+pub fn PickingHits::set_mesh3d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::set_sprite2d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::set_ui(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?

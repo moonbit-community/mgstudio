@@ -235,6 +235,11 @@ pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[
 ] = @light.ecs_key_generated_environment_map_light
 
 ///|
+pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[
+  AtmosphereEnvironmentMapLight,
+] = @light.ecs_key_atmosphere_environment_map_light
+
+///|
 pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
   OrderIndependentTransparencySettings,
 ] = @ecs.register_component(

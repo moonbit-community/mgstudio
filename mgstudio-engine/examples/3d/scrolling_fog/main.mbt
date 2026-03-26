@@ -15,7 +15,7 @@
 ///|
 ///
 /// Parity note:
-/// - `FogVolume` / `VolumetricLight` are currently data-model stubs in mgstudio.
+/// - `FogVolume` / `VolumetricLight` follow the Bevy-shaped component API in mgstudio.
 ///   The example keeps Bevy-equivalent scene/setup structure and update flow.
 
 ///|

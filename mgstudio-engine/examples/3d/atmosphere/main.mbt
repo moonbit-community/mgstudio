@@ -49,10 +49,10 @@ priv struct AtmosphereState {
   mut mode : Int
   mut exposure_ev100 : Float
   mut sun_pitch : Float
-  atmosphere_stub : @pbr.Atmosphere
-  mut atmosphere_settings_stub : @pbr.AtmosphereSettings
-  volumetric_fog_stub : @pbr.VolumetricFog
-  fog_volume_stub : @pbr.FogVolume
+  atmosphere : @pbr.Atmosphere
+  mut atmosphere_settings : @pbr.AtmosphereSettings
+  volumetric_fog : @pbr.VolumetricFog
+  fog_volume : @pbr.FogVolume
   mut camera : @core.Entity?
   mut sun : @core.Entity?
   mut water_material : @asset.Handle[@pbr.StandardMaterial]?
@@ -65,14 +65,12 @@ let atmosphere_state : Ref[AtmosphereState] = Ref::new({
   mode: 0,
   exposure_ev100: BASE_EXPOSURE_EV100,
   sun_pitch: 0.0F,
-  atmosphere_stub: @pbr.Atmosphere::earthlike(
+  atmosphere: @pbr.Atmosphere::earthlike(
     @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
   ),
-  atmosphere_settings_stub: @pbr.AtmosphereSettings::default(),
-  volumetric_fog_stub: @pbr.VolumetricFog::default().with_ambient_intensity(
-    0.0F,
-  ),
-  fog_volume_stub: @pbr.FogVolume::default()
+  atmosphere_settings: @pbr.AtmosphereSettings::default(),
+  volumetric_fog: @pbr.VolumetricFog::default().with_ambient_intensity(0.0F),
+  fog_volume: @pbr.FogVolume::default()
   .with_density_factor(0.1F)
   .with_scattering(0.3F)
   .with_absorption(0.3F),
@@ -167,22 +165,18 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn apply_atmosphere(world : @ecs.World) -> Unit {
   let state = atmosphere_state.val
   let medium_density = clampf(
-    state.atmosphere_stub.medium.density_multiplier,
+    state.atmosphere.medium.density_multiplier,
     0.1F,
     10.0F,
   )
   let scene_units_to_m = clampf(
-    state.atmosphere_settings_stub.scene_units_to_m,
+    state.atmosphere_settings.scene_units_to_m,
     0.1F,
     10.0F,
   )
-  let fog_density_factor = clampf(
-    state.fog_volume_stub.density_factor,
-    0.0F,
-    2.0F,
-  )
+  let fog_density_factor = clampf(state.fog_volume.density_factor, 0.0F, 2.0F)
   let ambient_intensity = clampf(
-    state.volumetric_fog_stub.ambient_intensity,
+    state.volumetric_fog.ambient_intensity,
     0.0F,
     2.0F,
   )
@@ -494,7 +488,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     atmosphere_state.val.mode = 0
-    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub.with_rendering_method(
+    atmosphere_state.val.atmosphere_settings = atmosphere_state.val.atmosphere_settings.with_rendering_method(
       @pbr.AtmosphereMode::LookupTexture,
     )
     changed = true
@@ -502,7 +496,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
     atmosphere_state.val.mode = 1
-    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub.with_rendering_method(
+    atmosphere_state.val.atmosphere_settings = atmosphere_state.val.atmosphere_settings.with_rendering_method(
       @pbr.AtmosphereMode::Raymarched,
     )
     changed = true
@@ -608,16 +602,14 @@ fn setup(world : @ecs.World) -> Unit {
     mode: 0,
     exposure_ev100: BASE_EXPOSURE_EV100,
     sun_pitch: 0.0F,
-    atmosphere_stub: @pbr.Atmosphere::earthlike(
+    atmosphere: @pbr.Atmosphere::earthlike(
       @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
     ),
-    atmosphere_settings_stub: @pbr.AtmosphereSettings::default()
+    atmosphere_settings: @pbr.AtmosphereSettings::default()
     .with_scene_units_to_m(1.0F)
     .with_rendering_method(@pbr.AtmosphereMode::LookupTexture),
-    volumetric_fog_stub: @pbr.VolumetricFog::default().with_ambient_intensity(
-      0.0F,
-    ),
-    fog_volume_stub: @pbr.FogVolume::default()
+    volumetric_fog: @pbr.VolumetricFog::default().with_ambient_intensity(0.0F),
+    fog_volume: @pbr.FogVolume::default()
     .with_density_factor(0.1F)
     .with_scattering(0.3F)
     .with_absorption(0.3F),

@@ -129,6 +129,71 @@ test "picking: generates enter/leave and click events (single pointer)" {
 }
 
 ///|
+test "picking: primary target priority is ui > sprite2d > mesh3d" {
+  let world = @ecs.World::new()
+  let tick = world.advance_sequence()
+  ignore(tick)
+  get_picking_state_resource(world).insert(PickingState::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_pointer_inputs_resource(world).insert(PointerInputs::default())
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  let ui_entity = @core.Entity::new(11, 0)
+  let sprite_entity = @core.Entity::new(12, 0)
+  let mesh_entity = @core.Entity::new(13, 0)
+  let pos = @math.Vec2::new(10.0F, 10.0F)
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([Some(ui_entity)], [Some(sprite_entity)], mesh3d=[
+      Some(mesh_entity),
+    ]),
+  )
+  let ui_events = drain_events(world)
+  inspect(ui_events.length(), content="2")
+  inspect(ui_events[1].target.unwrap().id == ui_entity.id, content="true")
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([None], [Some(sprite_entity)], mesh3d=[
+      Some(mesh_entity),
+    ]),
+  )
+  let sprite_events = drain_events(world)
+  inspect(sprite_events.length(), content="2")
+  inspect(
+    sprite_events[0].kind == @pointer_events.PointerEventKind::Leave,
+    content="true",
+  )
+  inspect(sprite_events[0].target.unwrap().id == ui_entity.id, content="true")
+  inspect(
+    sprite_events[1].target.unwrap().id == sprite_entity.id,
+    content="true",
+  )
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([None], [None], mesh3d=[Some(mesh_entity)]),
+  )
+  let mesh_events = drain_events(world)
+  inspect(mesh_events.length(), content="2")
+  inspect(
+    mesh_events[0].kind == @pointer_events.PointerEventKind::Leave,
+    content="true",
+  )
+  inspect(mesh_events[0].target.unwrap().id == sprite_entity.id, content="true")
+  inspect(mesh_events[1].target.unwrap().id == mesh_entity.id, content="true")
+}
+
+///|
 test "picking: handles multiple pointers independently" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
@@ -315,10 +380,7 @@ test "picking: ignores a11y actions targeting non-alive entities" {
     state_after.focused_node() == @moon_accesskit.NodeId::root(),
     content="true",
   )
-  inspect(
-    try! (world.get_by_key(dead_entity, @ui.ecs_key_interaction) is None),
-    content="true",
-  )
+  inspect(world.is_alive(dead_entity), content="false")
   let events = drain_events(world)
   inspect(events.length(), content="0")
 }

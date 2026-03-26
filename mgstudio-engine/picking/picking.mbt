@@ -13,9 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Picking framework (UI + 2D + 3D). Initial implementation focuses on UI.
-///
-/// TODO: Implement hit-testing and event generation.
+/// Picking framework (UI + 2D sprite + 3D mesh).
 
 ///|
 pub struct PointerInput {
@@ -73,19 +71,21 @@ pub fn PointerInputs::push(
 pub struct PickingHits {
   ui : Array[@core.Entity?]
   sprite2d : Array[@core.Entity?]
+  mesh3d : Array[@core.Entity?]
 } derive(ToJson, FromJson)
 
 ///|
 pub fn PickingHits::default() -> PickingHits {
-  PickingHits::{ ui: [], sprite2d: [] }
+  PickingHits::{ ui: [], sprite2d: [], mesh3d: [] }
 }
 
 ///|
 pub fn PickingHits::from_arrays(
   ui : Array[@core.Entity?],
   sprite2d : Array[@core.Entity?],
+  mesh3d? : Array[@core.Entity?] = [],
 ) -> PickingHits {
-  PickingHits::{ ui, sprite2d }
+  PickingHits::{ ui, sprite2d, mesh3d }
 }
 
 ///|
@@ -102,6 +102,9 @@ fn PickingHits::ensure_capacity(
   }
   while self.val.sprite2d.length() < need {
     self.val.sprite2d.push(None)
+  }
+  while self.val.mesh3d.length() < need {
+    self.val.mesh3d.push(None)
   }
 }
 
@@ -146,6 +149,28 @@ pub fn PickingHits::sprite2d(
     None
   } else {
     self.sprite2d[pointer]
+  }
+}
+
+///|
+pub fn PickingHits::set_mesh3d(
+  self : Ref[PickingHits],
+  pointer : @pointer_events.PointerId,
+  entity : @core.Entity?,
+) -> Unit {
+  PickingHits::ensure_capacity(self, pointer)
+  self.val.mesh3d[pointer] = entity
+}
+
+///|
+pub fn PickingHits::mesh3d(
+  self : PickingHits,
+  pointer : @pointer_events.PointerId,
+) -> @core.Entity? {
+  if pointer < 0 || pointer >= self.mesh3d.length() {
+    None
+  } else {
+    self.mesh3d[pointer]
   }
 }
 
@@ -426,6 +451,116 @@ fn sprite_region_size(sprite : @sprite.Sprite) -> @math.Vec2 {
 }
 
 ///|
+fn picking_camera_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(gt) => gt.to_transform_approx()
+    None =>
+      match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+        Some(value) => value
+        None => @transform.Transform::identity()
+      }
+  }
+}
+
+///|
+fn picking_camera_target_size(
+  camera : @sprite.Camera,
+  window_width : Int,
+  window_height : Int,
+) -> @math.IVec2 {
+  match camera.physical_target_size() {
+    Some(size) =>
+      if size.x > 0 && size.y > 0 {
+        size
+      } else {
+        @math.IVec2::new(window_width, window_height)
+      }
+    None => @math.IVec2::new(window_width, window_height)
+  }
+}
+
+///|
+fn picking_insert_camera_sorted(
+  cameras : Ref[Array[(@core.Entity, @sprite.Camera, @pbr.Projection)]],
+  camera : (@core.Entity, @sprite.Camera, @pbr.Projection),
+) -> Unit {
+  let mut insert_at = cameras.val.length()
+  for i in 0..<cameras.val.length() {
+    if camera.1.order > cameras.val[i].1.order {
+      insert_at = i
+      break
+    }
+  }
+  cameras.val.insert(insert_at, camera)
+}
+
+///|
+/// 3D mesh hit testing backend (ray cast against `Mesh3d`).
+pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
+  let inputs_res = get_pointer_inputs_resource(world)
+  let hits_res = get_picking_hits_resource(world)
+  guard inputs_res.get() is Some(inputs0) else { return }
+  guard hits_res.get() is Some(hits_value) else { return }
+  let hits = Ref::new(hits_value)
+  let scale_factor = @window.window_scale_factor()
+  let window_width = @window.window_width()
+  let window_height = @window.window_height()
+  let cameras : Ref[Array[(@core.Entity, @sprite.Camera, @pbr.Projection)]] = Ref::new([],
+  )
+  world.for_each_component(@pbr.ecs_key_camera3d, fn(entity, _camera3d) {
+    guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
+      is Some(camera) else {
+      return
+    }
+    if !camera.is_active {
+      return
+    }
+    let projection = match
+      (try! world.get_by_key(entity, @pbr.ecs_key_projection)) {
+      Some(value) => value
+      None => @pbr.Projection::default()
+    }
+    picking_insert_camera_sorted(cameras, (entity, camera, projection))
+  })
+  for input in inputs0.pointers {
+    let pointer_id = input.pointer
+    let mut hit_top : @core.Entity? = None
+    if input.window_position is Some(cursor) {
+      for entry in cameras.val {
+        if hit_top is Some(_) {
+          break
+        }
+        let camera_entity = entry.0
+        let camera = entry.1
+        let projection = entry.2
+        let camera_transform = picking_camera_transform(world, camera_entity)
+        let target_size = picking_camera_target_size(
+          camera, window_width, window_height,
+        )
+        if @pbr.mesh_ray_cast_from_camera_first(
+            world,
+            cursor,
+            camera,
+            projection,
+            camera_transform,
+            target_size,
+            scale_factor,
+            @pbr.MeshRayCastSettings::default().with_include_invisible(false),
+          )
+          is Some((entity, _hit)) {
+          hit_top = Some(entity)
+        }
+      }
+    }
+    PickingHits::set_mesh3d(hits, pointer_id, hit_top)
+  }
+  hits_res.insert(hits.val)
+}
+
+///|
 
 ///|
 /// 2D sprite hit testing backend (orthographic camera, clip-agnostic).
@@ -625,7 +760,11 @@ fn picking_primary_hit(
 ) -> @core.Entity? {
   match PickingHits::ui(hits, pointer) {
     Some(e) => Some(e)
-    None => PickingHits::sprite2d(hits, pointer)
+    None =>
+      match PickingHits::sprite2d(hits, pointer) {
+        Some(e) => Some(e)
+        None => PickingHits::mesh3d(hits, pointer)
+      }
   }
 }
 
@@ -1013,6 +1152,9 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_pre_update_system_config(
     @app.system(picking_sprite2d_hit_test_system).in_set(picking_set_hits),
+  )
+  .add_pre_update_system_config(
+    @app.system(picking_mesh3d_hit_test_system).in_set(picking_set_hits),
   )
   .add_pre_update_system_config(
     @app.system(picking_apply_a11y_actions_system).in_set(picking_set_events),

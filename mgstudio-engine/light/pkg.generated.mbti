@@ -18,6 +18,8 @@ pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @e
 
 pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
 
+pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
+
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight]
 
 pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[DirectionalLightShadowMap]
@@ -74,8 +76,18 @@ pub impl ToJson for Atmosphere
 pub impl @json.FromJson for Atmosphere
 
 pub struct AtmosphereEnvironmentMapLight {
+  intensity : Float
+  affects_lightmapped_mesh_diffuse : Bool
+  size : @math.UVec2
 }
 pub fn AtmosphereEnvironmentMapLight::default() -> Self
+pub fn AtmosphereEnvironmentMapLight::new(Float, Bool, @math.UVec2) -> Self
+pub fn AtmosphereEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
+pub fn AtmosphereEnvironmentMapLight::with_intensity(Self, Float) -> Self
+pub fn AtmosphereEnvironmentMapLight::with_size(Self, @math.UVec2) -> Self
+pub impl @ecs.Component for AtmosphereEnvironmentMapLight
+pub impl ToJson for AtmosphereEnvironmentMapLight
+pub impl @json.FromJson for AtmosphereEnvironmentMapLight
 
 pub(all) enum AtmosphereMode {
   LookupTexture

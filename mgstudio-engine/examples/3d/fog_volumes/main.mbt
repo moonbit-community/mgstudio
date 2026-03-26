@@ -16,7 +16,7 @@
 ///
 /// Parity notes:
 /// - Uses Bevy-like proxy volume geometry and camera/light motion.
-/// - Uses `VolumetricFog` / `FogVolume` data-model stubs for scene parameters.
+/// - Uses Bevy-shaped `VolumetricFog` / `FogVolume` scene parameters.
 /// - Backend still approximates voxel fog-volume rendering through distance fog.
 
 ///|
@@ -40,16 +40,16 @@ fn fog_center() -> @math.Vec3 {
 priv struct FogVolumesState {
   mut camera : @core.Entity?
   mut light : @core.Entity?
-  mut volumetric_fog_stub : @pbr.VolumetricFog
-  mut fog_volume_stub : @pbr.FogVolume
+  mut volumetric_fog : @pbr.VolumetricFog
+  mut fog_volume : @pbr.FogVolume
 }
 
 ///|
 let fog_volumes_state : Ref[FogVolumesState] = Ref::new({
   camera: None,
   light: None,
-  volumetric_fog_stub: @pbr.VolumetricFog::default(),
-  fog_volume_stub: @pbr.FogVolume::default(),
+  volumetric_fog: @pbr.VolumetricFog::default(),
+  fog_volume: @pbr.FogVolume::default(),
 })
 
 ///|
@@ -81,22 +81,18 @@ fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
 }
 
 ///|
-fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
-  let fog_volume_stub = fog_volumes_state.val.fog_volume_stub
-  let volumetric_fog_stub = fog_volumes_state.val.volumetric_fog_stub
+fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
+  let fog_volume = fog_volumes_state.val.fog_volume
+  let volumetric_fog = fog_volumes_state.val.volumetric_fog
   let visibility = clampf(
-    12.0F / (1.0F + fog_volume_stub.density_factor * 2.5F),
+    12.0F / (1.0F + fog_volume.density_factor * 2.5F),
     2.5F,
     20.0F,
   )
   let brightness = 0.55F + 0.45F * phase
-  let ambient_lift = clampf(
-    volumetric_fog_stub.ambient_intensity * 0.4F,
-    0.0F,
-    0.2F,
-  )
+  let ambient_lift = clampf(volumetric_fog.ambient_intensity * 0.4F, 0.0F, 0.2F)
   let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
-  let fog_color = fog_volume_stub.fog_color
+  let fog_color = fog_volume.fog_color
 
   let fog = @pbr.DistanceFog::default()
     .with_color(
@@ -256,10 +252,10 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   fog_volumes_state.val.camera = None
   fog_volumes_state.val.light = None
-  fog_volumes_state.val.volumetric_fog_stub = @pbr.VolumetricFog::default()
+  fog_volumes_state.val.volumetric_fog = @pbr.VolumetricFog::default()
     .with_step_count(64)
     .with_ambient_intensity(0.0F)
-  fog_volumes_state.val.fog_volume_stub = @pbr.FogVolume::default()
+  fog_volumes_state.val.fog_volume = @pbr.FogVolume::default()
     .with_density_factor(1.0F)
     .with_scattering(1.0F)
     .with_absorption(0.3F)
@@ -297,7 +293,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
   fog_volumes_state.val.camera = Some(camera)
-  apply_distance_fog_from_stub(world, 1.0F)
+  apply_distance_fog(world, 1.0F)
 }
 
 ///|
@@ -345,10 +341,10 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 
   // Approximate volumetric scattering with dynamic fog color and density.
   let density = 0.18F + 0.22F * (1.0F - phase)
-  fog_volumes_state.val.fog_volume_stub = fog_volumes_state.val.fog_volume_stub
+  fog_volumes_state.val.fog_volume = fog_volumes_state.val.fog_volume
     .with_density_factor(density)
     .with_scattering(1.0F)
-  apply_distance_fog_from_stub(world, phase)
+  apply_distance_fog(world, phase)
 }
 
 ///|

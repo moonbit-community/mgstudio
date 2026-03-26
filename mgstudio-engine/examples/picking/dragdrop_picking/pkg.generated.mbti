@@ -6,6 +6,13 @@ package "Milky2018/mgstudio/examples/picking/dragdrop_picking"
 // Errors
 
 // Types and methods
+type DragState
+
+type DraggableButton
+
+type DropArea
+
+type GhostPreview
 
 // Type aliases
 

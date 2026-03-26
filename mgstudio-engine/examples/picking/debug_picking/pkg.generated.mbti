@@ -6,6 +6,13 @@ package "Milky2018/mgstudio/examples/picking/debug_picking"
 // Errors
 
 // Types and methods
+pub(all) enum DebugPickingMode {
+  Disabled
+  Normal
+  Noisy
+}
+
+type DebugPickingState
 
 // Type aliases
 

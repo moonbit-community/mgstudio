@@ -49,6 +49,8 @@ pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World
 
 pub let ecs_components : Array[String]
 
+pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
+
 pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
