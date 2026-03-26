@@ -181,11 +181,23 @@ pub fn KeyframeWeights::new(
 }
 
 ///|
+pub struct KeyframeColor {
+  time : Float
+  value : @sprite.Color
+}
+
+///|
+pub fn KeyframeColor::new(time : Float, value : @sprite.Color) -> KeyframeColor {
+  KeyframeColor::{ time, value }
+}
+
+///|
 pub struct AnimationTargetCurves {
   translation : Array[KeyframeVec3]
   rotation : Array[KeyframeQuat]
   scale : Array[KeyframeVec3]
   weights : Array[KeyframeWeights]
+  text_color : Array[KeyframeColor]
 }
 
 ///|
@@ -195,6 +207,7 @@ fn animation_target_curves_new() -> AnimationTargetCurves {
     rotation: [],
     scale: [],
     weights: [],
+    text_color: [],
   }
 }
 
@@ -370,6 +383,21 @@ fn keyframe_weights_sort(keyframes : Array[KeyframeWeights]) -> Unit {
 }
 
 ///|
+fn keyframe_color_sort(keyframes : Array[KeyframeColor]) -> Unit {
+  let mut i = 1
+  while i < keyframes.length() {
+    let cur = keyframes[i]
+    let mut j = i
+    while j > 0 && keyframes[j - 1].time > cur.time {
+      keyframes[j] = keyframes[j - 1]
+      j = j - 1
+    }
+    keyframes[j] = cur
+    i = i + 1
+  }
+}
+
+///|
 fn animation_clip_update_duration_from_vec3(
   clip : AnimationClip,
   keyframes : Array[KeyframeVec3],
@@ -397,6 +425,18 @@ fn animation_clip_update_duration_from_quat(
 fn animation_clip_update_duration_from_weights(
   clip : AnimationClip,
   keyframes : Array[KeyframeWeights],
+) -> Unit {
+  for keyframe in keyframes {
+    if keyframe.time > clip.duration_seconds {
+      clip.duration_seconds = keyframe.time
+    }
+  }
+}
+
+///|
+fn animation_clip_update_duration_from_color(
+  clip : AnimationClip,
+  keyframes : Array[KeyframeColor],
 ) -> Unit {
   for keyframe in keyframes {
     if keyframe.time > clip.duration_seconds {
@@ -470,6 +510,23 @@ pub fn AnimationClip::add_weights_curve(
   }
   keyframe_weights_sort(curves.weights)
   animation_clip_update_duration_from_weights(self, curves.weights)
+  self
+}
+
+///|
+pub fn AnimationClip::add_text_color_curve(
+  self : AnimationClip,
+  target_id : AnimationTargetId,
+  keyframes : Array[KeyframeColor],
+) -> AnimationClip {
+  let target_index = animation_clip_get_or_insert_target(self, target_id)
+  let curves = self.targets[target_index].curves
+  curves.text_color.clear()
+  for keyframe in keyframes {
+    curves.text_color.push(keyframe)
+  }
+  keyframe_color_sort(curves.text_color)
+  animation_clip_update_duration_from_color(self, curves.text_color)
   self
 }
 
@@ -624,6 +681,7 @@ struct AnimationSample {
   rotation : @math.Quat?
   scale : @math.Vec3?
   weights : Array[Float]?
+  text_color : @sprite.Color?
 }
 
 ///|
@@ -644,6 +702,11 @@ pub fn AnimationSample::scale(self : AnimationSample) -> @math.Vec3? {
 ///|
 pub fn AnimationSample::weights(self : AnimationSample) -> Array[Float]? {
   self.weights
+}
+
+///|
+pub fn AnimationSample::text_color(self : AnimationSample) -> @sprite.Color? {
+  self.text_color
 }
 
 ///|
@@ -724,6 +787,22 @@ fn animation_weights_lerp(
     out.push(animation_float_lerp(av, bv, t))
   }
   out
+}
+
+///|
+fn animation_color_lerp(
+  a : @sprite.Color,
+  b : @sprite.Color,
+  t : Float,
+) -> @sprite.Color {
+  let alpha = animation_saturate(t)
+  let inv = 1.0F - alpha
+  @sprite.Color::new(
+    a.r * inv + b.r * alpha,
+    a.g * inv + b.g * alpha,
+    a.b * inv + b.b * alpha,
+    a.a * inv + b.a * alpha,
+  )
 }
 
 ///|
@@ -820,6 +899,37 @@ fn animation_sample_weights(
 }
 
 ///|
+fn animation_sample_color(
+  keyframes : Array[KeyframeColor],
+  time_seconds : Float,
+) -> @sprite.Color? {
+  if keyframes.length() == 0 {
+    return None
+  }
+  if keyframes.length() == 1 {
+    return Some(keyframes[0].value)
+  }
+  if time_seconds <= keyframes[0].time {
+    return Some(keyframes[0].value)
+  }
+  let mut i = 1
+  while i < keyframes.length() {
+    let right = keyframes[i]
+    let left = keyframes[i - 1]
+    if time_seconds <= right.time {
+      let span = right.time - left.time
+      if span <= 0.0F {
+        return Some(right.value)
+      }
+      let t = animation_saturate((time_seconds - left.time) / span)
+      return Some(animation_color_lerp(left.value, right.value, t))
+    }
+    i = i + 1
+  }
+  Some(keyframes[keyframes.length() - 1].value)
+}
+
+///|
 pub fn AnimationClip::sample_target(
   self : AnimationClip,
   target_id : AnimationTargetId,
@@ -833,11 +943,13 @@ pub fn AnimationClip::sample_target(
   let rotation = animation_sample_quat(curves.rotation, time_seconds)
   let scale = animation_sample_vec3(curves.scale, time_seconds)
   let weights = animation_sample_weights(curves.weights, time_seconds)
+  let text_color = animation_sample_color(curves.text_color, time_seconds)
   if translation is Some(_) ||
     rotation is Some(_) ||
     scale is Some(_) ||
-    weights is Some(_) {
-    Some(AnimationSample::{ translation, rotation, scale, weights })
+    weights is Some(_) ||
+    text_color is Some(_) {
+    Some(AnimationSample::{ translation, rotation, scale, weights, text_color })
   } else {
     None
   }
@@ -2580,16 +2692,19 @@ fn animation_apply_player_to_target(
   graph : AnimationGraph,
   base_transform : @transform.Transform?,
   base_weights : AnimationWeights?,
-) -> (@transform.Transform?, AnimationWeights?) {
+  base_text_color : @text.TextColor?,
+) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
   let mut has_translation = false
   let mut has_rotation = false
   let mut has_scale = false
   let mut has_weights = false
+  let mut has_text_color = false
 
   let mut translation_weight = 0.0F
   let mut rotation_weight = 0.0F
   let mut scale_weight = 0.0F
   let mut weights_weight = 0.0F
+  let mut text_color_weight = 0.0F
 
   let mut translation_acc = @math.Vec3::zero()
   let mut scale_acc = @math.Vec3::zero()
@@ -2600,6 +2715,10 @@ fn animation_apply_player_to_target(
   let mut rotation_acc_w = 0.0F
 
   let weights_acc : Array[Float] = []
+  let mut text_color_acc_r = 0.0F
+  let mut text_color_acc_g = 0.0F
+  let mut text_color_acc_b = 0.0F
+  let mut text_color_acc_a = 0.0F
 
   for pair in player.playing_animations() {
     let node_index = pair.0
@@ -2650,6 +2769,15 @@ fn animation_apply_player_to_target(
       weights_weight = weights_weight + combined_weight
       animation_weights_accumulate(weights_acc, weights, combined_weight)
     }
+
+    if sample.text_color is Some(text_color) {
+      has_text_color = true
+      text_color_weight = text_color_weight + combined_weight
+      text_color_acc_r = text_color_acc_r + text_color.r * combined_weight
+      text_color_acc_g = text_color_acc_g + text_color.g * combined_weight
+      text_color_acc_b = text_color_acc_b + text_color.b * combined_weight
+      text_color_acc_a = text_color_acc_a + text_color.a * combined_weight
+    }
   }
 
   let transform_out = if has_translation || has_rotation || has_scale {
@@ -2698,7 +2826,27 @@ fn animation_apply_player_to_target(
     None
   }
 
-  (transform_out, weights_out)
+  let text_color_out = if has_text_color {
+    let base = match base_text_color {
+      Some(color) => color.color
+      None => @sprite.Color::white()
+    }
+    let base_weight = animation_saturate(1.0F - text_color_weight)
+    Some(
+      @text.TextColor::new(
+        @sprite.Color::new(
+          base.r * base_weight + text_color_acc_r,
+          base.g * base_weight + text_color_acc_g,
+          base.b * base_weight + text_color_acc_b,
+          base.a * base_weight + text_color_acc_a,
+        ),
+      ),
+    )
+  } else {
+    None
+  }
+
+  (transform_out, weights_out, text_color_out)
 }
 
 ///|
@@ -2952,6 +3100,7 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
 pub fn animate_targets(world : @ecs.World) -> Unit {
   let transform_updates : Array[(@core.Entity, @transform.Transform)] = []
   let weights_updates : Array[(@core.Entity, AnimationWeights)] = []
+  let text_color_updates : Array[(@core.Entity, @text.TextColor)] = []
 
   let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
     world,
@@ -2976,13 +3125,14 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     let target_id = target_id.value()
     let target_mask = graph.target_mask(target_id)
 
-    let (next_transform, next_weights) = animation_apply_player_to_target(
+    let (next_transform, next_weights, next_text_color) = animation_apply_player_to_target(
       target_id,
       target_mask,
       player,
       graph,
       try! world.get_by_key(entity, @transform.ecs_key_transform),
       try! world.get_by_key(entity, ecs_key_animation_weights),
+      try! world.get_by_key(entity, @text.ecs_key_text_color),
     )
 
     if next_transform is Some(transform) {
@@ -2990,6 +3140,9 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     }
     if next_weights is Some(weights) {
       weights_updates.push((entity, weights))
+    }
+    if next_text_color is Some(text_color) {
+      text_color_updates.push((entity, text_color))
     }
   })
 
@@ -2999,6 +3152,10 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
 
   for update in weights_updates {
     try! world.set_by_key(update.0, ecs_key_animation_weights, update.1)
+  }
+
+  for update in text_color_updates {
+    try! world.set_by_key(update.0, @text.ecs_key_text_color, update.1)
   }
 }
 

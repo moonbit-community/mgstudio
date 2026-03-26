@@ -76,6 +76,34 @@ test "animation clip: duration tracks added trs/weights curves" {
 }
 
 ///|
+test "animation clip: text color curves sample and extend duration" {
+  let target = AnimationTargetId::from_name("Label")
+  let clip = AnimationClip::new().add_text_color_curve(target, [
+    KeyframeColor::new(0.0F, @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+    KeyframeColor::new(2.0F, @sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
+  ])
+
+  inspect(clip.duration(), content="2")
+  inspect(
+    if clip.sample_target(target, 1.0F) is Some(sample) {
+      if sample.text_color() is Some(color) {
+        color.r > 0.49F &&
+        color.r < 0.51F &&
+        color.b > 0.49F &&
+        color.b < 0.51F &&
+        approx_eq_animation(color.g, 0.0F) &&
+        approx_eq_animation(color.a, 1.0F)
+      } else {
+        false
+      }
+    } else {
+      false
+    },
+    content="true",
+  )
+}
+
+///|
 test "animation graph: from_clip/from_clips/add APIs" {
   let clips : @asset.Assets[AnimationClip] = @asset.Assets::new()
   let h0 = clips.add(AnimationClip::new())
@@ -526,4 +554,74 @@ test "animation runtime: trigger_events emits root and target messages" {
     },
     content="true",
   )
+}
+
+///|
+test "animation runtime: animate_targets updates text color" {
+  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+    @core.Duration::from_millis(500L),
+  )
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([animation_plugin])
+    .insert_resource(delta_time)
+  let world = app.world()
+  let player_entity = world.spawn()
+  let target_entity = world.spawn()
+  let target_id = AnimationTargetId::from_name("AnimatedText")
+  let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
+  let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
+  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
+  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+
+  let clip = AnimationClip::new()
+    .add_scale_curve(target_id, [
+      KeyframeVec3::new(0.0F, @math.Vec3::splat(1.0F)),
+      KeyframeVec3::new(1.0F, @math.Vec3::splat(3.0F)),
+    ])
+    .add_text_color_curve(target_id, [
+      KeyframeColor::new(0.0F, @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+      KeyframeColor::new(1.0F, @sprite.Color::srgb(0.0F, 1.0F, 0.0F)),
+    ])
+  let clip_handle = clip_assets.add(clip)
+  let (graph, node) = AnimationGraph::from_clip(clip_handle)
+  let graph_handle = graph_assets.add(graph)
+  let player = AnimationPlayer::default()
+  player.play(node).repeat() |> ignore
+
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
+    player_entity,
+    ecs_key_animation_graph_handle,
+    AnimationGraphHandle::new(graph_handle),
+  )
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
+    target_entity,
+    ecs_key_animated_by,
+    AnimatedBy::new(player_entity),
+  )
+  try! world.set_by_key(
+    target_entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
+  try! world.set_by_key(
+    target_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::white(),
+  )
+
+  app = app.run_once()
+
+  let transform = (try! app
+  .world()
+  .get_by_key(target_entity, @transform.ecs_key_transform)).unwrap()
+  let color = (try! app
+  .world()
+  .get_by_key(target_entity, @text.ecs_key_text_color)).unwrap()
+
+  inspect(transform.scale.x > 1.9F && transform.scale.x < 2.1F, content="true")
+  inspect(color.color.r > 0.49F && color.color.r < 0.51F, content="true")
+  inspect(color.color.g > 0.49F && color.color.g < 0.51F, content="true")
+  inspect(approx_eq_animation(color.color.b, 0.0F), content="true")
 }

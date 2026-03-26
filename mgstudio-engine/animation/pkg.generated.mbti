@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/animation"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
@@ -125,6 +126,7 @@ pub fn AnimationClip::add_event_fn_to_target(Self, AnimationTargetId, Float, Int
 pub fn AnimationClip::add_event_to_target(Self, AnimationTargetId, Float, String, String) -> Self
 pub fn AnimationClip::add_rotation_curve(Self, AnimationTargetId, Array[KeyframeQuat]) -> Self
 pub fn AnimationClip::add_scale_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
+pub fn AnimationClip::add_text_color_curve(Self, AnimationTargetId, Array[KeyframeColor]) -> Self
 pub fn AnimationClip::add_translation_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
 pub fn AnimationClip::add_weights_curve(Self, AnimationTargetId, Array[KeyframeWeights]) -> Self
 pub fn AnimationClip::duration(Self) -> Float
@@ -282,6 +284,7 @@ pub fn AnimationPlayerEntry::weight(Self) -> Float
 type AnimationSample
 pub fn AnimationSample::rotation(Self) -> @math.Quat?
 pub fn AnimationSample::scale(Self) -> @math.Vec3?
+pub fn AnimationSample::text_color(Self) -> @color.Color?
 pub fn AnimationSample::translation(Self) -> @math.Vec3?
 pub fn AnimationSample::weights(Self) -> Array[Float]?
 
@@ -295,6 +298,7 @@ pub struct AnimationTargetCurves {
   rotation : Array[KeyframeQuat]
   scale : Array[KeyframeVec3]
   weights : Array[KeyframeWeights]
+  text_color : Array[KeyframeColor]
 }
 
 pub struct AnimationTargetId {
@@ -363,6 +367,12 @@ pub fn AnimationWeights::values(Self) -> Array[Float]
 pub impl @ecs.Component for AnimationWeights
 pub impl ToJson for AnimationWeights
 pub impl @json.FromJson for AnimationWeights
+
+pub struct KeyframeColor {
+  time : Float
+  value : @color.Color
+}
+pub fn KeyframeColor::new(Float, @color.Color) -> Self
 
 pub struct KeyframeQuat {
   time : Float

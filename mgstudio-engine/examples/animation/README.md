@@ -10,7 +10,7 @@ This folder tracks parity status for Bevy animation examples.
 | `animated_mesh_control.rs` | `examples/animation/animated_mesh_control` | Partial | Keyboard transition / seek / repeat flow is implemented on the root animation player; full parity still depends on the same simplified Fox scene runtime. |
 | `animated_mesh_events.rs` | `examples/animation/animated_mesh_events` | Partial | Fox scene playback now installs target-specific clip events and spawns particles from `AnimationTriggeredEvent`; exact typed `AnimationEvent` observer parity is still not implemented. |
 | `animated_transform.rs` | `examples/animation/animated_transform` | Done | Runtime clip / graph / player / target flow is implemented and native-checkable. |
-| `animated_ui.rs` | N/A | Blocked | Requires UI animatable-property pipeline integrated with animation clip/graph/player. |
+| `animated_ui.rs` | `examples/animation/animated_ui` | Partial | UI text scale and `TextColor` are now driven by clip/graph/player through the standard animation runtime; this uses MoonBit-form `Transform` + `TextColor` targets instead of Bevy's exact `UiTransform` property API. |
 | `animation_events.rs` | `examples/animation/animation_events` | Partial | Root clip events now drive the message text example through `AnimationTriggeredEvent`; exact typed `AnimationEvent` observer parity is still not implemented. |
 | `animation_graph.rs` | `examples/animation/animation_graph` | Partial | Blend graph runtime and interaction flow are implemented without the remaining full Fox/skinned parity work. |
 | `animation_masks.rs` | `examples/animation/animation_masks` | Partial | Mask-group UI flow and graph mask toggling are implemented on the existing Fox scene path; parity still depends on the same simplified local scene/skinning runtime as other Fox-based examples. |
@@ -32,9 +32,11 @@ This folder tracks parity status for Bevy animation examples.
    - Equivalent to Bevy `AnimationEvent` derive + `On<T>` trigger flow.
 4. Direct curve-to-field clip authoring:
    - Equivalent to Bevy `AnimatableCurve` / `animated_field!` flow without sampling through keyframes in the example.
-5. Color curve/mix parity primitives:
+5. General UI property animation parity:
+   - Broader UI property targeting beyond the current `Transform` + `TextColor` coverage.
+6. Color curve/mix parity primitives:
    - Built-in curve/mix abstractions for `LinearRgba/Oklaba/Xyza/Oklcha` style workflows.
-6. 2D sprite parity gap:
+7. 2D sprite parity gap:
    - Pure color-only sized sprite without mandatory texture handle.
 
 ## Validation
