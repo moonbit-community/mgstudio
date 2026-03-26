@@ -92,6 +92,21 @@ pub fn SystemParamValidationError::is_skipped(Self) -> Bool
 pub fn SystemParamValidationError::message(Self) -> String
 
 // Types and methods
+pub struct Added[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Added::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for Added[T]
+
+pub struct AddedComponents[T] {
+  reader : @core.MessageReader[@core.Entity]
+  marker : T?
+}
+pub fn[T] AddedComponents::clear(Self[T]) -> Unit
+pub fn[T] AddedComponents::is_empty(Self[T]) -> Bool
+pub fn[T] AddedComponents::len(Self[T]) -> Int
+pub fn[T] AddedComponents::read(Self[T]) -> Array[@core.Entity]
+
 pub struct All {
 }
 pub fn All::new() -> Self
@@ -560,6 +575,7 @@ pub struct World {
   component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
+  added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[ErasedValue]]
@@ -573,6 +589,7 @@ pub fn[E : TriggerEvent] World::add_entity_observer(Self, @core.Entity, (On[E]) 
 pub fn[E : TriggerEvent] World::add_observer(Self, (On[E]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_remove_component_observer(Self, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.Entity, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
+pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemSequence) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::advance_sequence(Self) -> Int
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
@@ -598,6 +615,7 @@ pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]? rais
 pub fn World::get_sequence_context(Self) -> @core.SystemSequenceContext
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
+pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]

@@ -362,6 +362,10 @@ fn World::insert_component_with_requirements_unchecked(
   self.mark_component_used(component_id)
 
   if !replacing {
+    self.ensure_added_component_messages(component_id).val.send(
+      component_write_sequence(self),
+      entity,
+    )
     self.run_component_add_hooks(entity, component_id, caller~)
   }
   self.run_component_insert_hooks(entity, component_id, caller~)

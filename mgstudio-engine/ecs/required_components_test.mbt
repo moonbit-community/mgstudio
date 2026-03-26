@@ -145,6 +145,25 @@ test "ecs: explicit component value beats required insertion" {
 }
 
 ///|
+test "ecs: required component auto insertion is visible to Added filter" {
+  let world = World::new()
+  let entity = world.spawn()
+
+  try! world.register_required_components(required_a_key, required_b_key)
+  try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
+
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
+
+  let query : Query[Comp[RequiredB], Added[RequiredB]] = query_filtered(
+    world,
+    Added::new(required_b_key),
+  )
+  inspect(query.count(), content="1")
+}
+
+///|
 test "ecs: get_required_components returns recursive ids" {
   let world = World::new()
 

@@ -109,6 +109,30 @@ pub impl[T] QueryFilter for Allow[T] with mentions_component(self, component_id)
 }
 
 ///|
+pub struct Added[T] {
+  key : ComponentKey[T]
+}
+
+///|
+pub fn[T] Added::new(key : ComponentKey[T]) -> Added[T] {
+  { key, }
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with matches(self, world, entity) {
+  world.is_added_by_key(
+    entity,
+    self.key,
+    world.get_sequence_context().sequence(),
+  )
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with mentions_component(self, component_id) {
+  self.key.id() == component_id
+}
+
+///|
 pub struct Or[F] {
   filters : F
 }

@@ -574,6 +574,46 @@ test "ecs query: structural filters compose without change detection" {
 }
 
 ///|
+test "ecs query: added filter only matches entities inserted in the current sequence window" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  let ctx0 = @core.SystemSequenceContext::new()
+  ctx0.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx0)
+  let first_added_query : Query[Comp[Position], Added[Position]] = query_filtered(
+    world,
+    Added::new(position_key),
+  )
+  inspect(first_added_query.count(), content="1")
+
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  let ctx1 = @core.SystemSequenceContext::new()
+  ctx1.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(ctx1)
+  let second_added_query : Query[Comp[Position], Added[Position]] = query_filtered(
+    world,
+    Added::new(position_key),
+  )
+  inspect(second_added_query.count(), content="1")
+
+  let seen : Array[Int] = []
+  try! second_added_query.for_each(fn(entity, _position) {
+    seen.push(entity.id)
+  })
+  inspect(seen, content="[1]")
+
+  let ctx2 = @core.SystemSequenceContext::new()
+  ctx2.set(@core.SystemSequence::new(2, 3))
+  world.set_sequence_context(ctx2)
+  inspect(second_added_query.count(), content="0")
+}
+
+///|
 test "ecs query: iter_many_ref preserves filter order without change state" {
   let world = World::new()
   let comp_position = position_key

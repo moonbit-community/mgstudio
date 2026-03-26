@@ -182,6 +182,7 @@ pub struct World {
   component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
   required_components : Map[Int, Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
+  added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[ErasedValue]]
@@ -202,6 +203,7 @@ pub fn World::new() -> World {
     component_columns: {},
     required_components: {},
     used_components: {},
+    added_components: {},
     removed_components: {},
     resources: {},
     previous_events: {},
@@ -468,6 +470,29 @@ fn World::ensure_removed_component_messages(
       messages_ref
     }
   }
+}
+
+///|
+fn World::ensure_added_component_messages(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.Messages[@core.Entity]] {
+  match self.added_components.get(key_id) {
+    Some(messages_ref) => messages_ref
+    None => {
+      let messages_ref = Ref::new(@core.Messages::new())
+      self.added_components.set(key_id, messages_ref)
+      messages_ref
+    }
+  }
+}
+
+///|
+fn World::added_component_messages(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.Messages[@core.Entity]]? {
+  self.added_components.get(key_id)
 }
 
 ///|
