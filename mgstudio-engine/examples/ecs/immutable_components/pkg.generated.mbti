@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/immutable_components"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Name
+pub impl @ecs.Component for Name
+
+type NameIndex
+pub impl @app.Resource for NameIndex
+
+// Type aliases
+
+// Traits
+

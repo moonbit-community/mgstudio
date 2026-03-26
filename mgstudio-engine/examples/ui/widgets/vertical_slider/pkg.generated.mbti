@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/widgets/vertical_slider"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type HorizontalFill
+pub impl @ecs.Component for HorizontalFill
+
+type SliderValues
+pub impl @app.Resource for SliderValues
+
+type VerticalFill
+pub impl @ecs.Component for VerticalFill
+
+// Type aliases
+
+// Traits
+

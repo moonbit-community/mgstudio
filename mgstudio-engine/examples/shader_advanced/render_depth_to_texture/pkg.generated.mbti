@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader_advanced/render_depth_to_texture"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type OffscreenObject
+pub impl @ecs.Component for OffscreenObject
+
+// Type aliases
+
+// Traits
+

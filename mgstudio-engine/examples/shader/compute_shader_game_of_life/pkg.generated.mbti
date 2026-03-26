@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader/compute_shader_game_of_life"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Cell
+pub impl @ecs.Component for Cell
+
+type LifeState
+pub impl @app.Resource for LifeState
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/styling/gradients"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type GradientStop
+pub impl @ecs.Component for GradientStop
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader_advanced/compute_mesh"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ComputeMeshTarget
+pub impl @ecs.Component for ComputeMeshTarget
+
+// Type aliases
+
+// Traits
+

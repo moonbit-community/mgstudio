@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/widgets/virtual_keyboard"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type KeyCap
+pub impl @ecs.Component for KeyCap
+
+type KeyboardBuffer
+pub impl @app.Resource for KeyboardBuffer
+
+type KeyboardDisplay
+pub impl @ecs.Component for KeyboardDisplay
+
+type WasPressed
+pub impl @ecs.Component for WasPressed
+
+// Type aliases
+
+// Traits
+

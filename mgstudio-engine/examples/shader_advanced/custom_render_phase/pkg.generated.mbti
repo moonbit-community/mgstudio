@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader_advanced/custom_render_phase"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type PhaseA
+pub impl @ecs.Component for PhaseA
+
+type PhaseB
+pub impl @ecs.Component for PhaseB
+
+// Type aliases
+
+// Traits
+

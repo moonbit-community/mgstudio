@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/scroll_and_overflow/scrollbars"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AutoScrollArea
+pub impl @ecs.Component for AutoScrollArea
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/widgets/standard_widgets"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ToggleButton
+pub impl @ecs.Component for ToggleButton
+
+type ToggleLabel
+pub impl @ecs.Component for ToggleLabel
+
+type WidgetSlider
+pub impl @ecs.Component for WidgetSlider
+
+type WidgetSliderFill
+pub impl @ecs.Component for WidgetSliderFill
+
+type WidgetState
+pub impl @app.Resource for WidgetState
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/custom_query_param"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MovementParam[P]
+
+type Position
+pub impl @ecs.Component for Position
+
+type Velocity
+pub impl @ecs.Component for Velocity
+
+// Type aliases
+
+// Traits
+

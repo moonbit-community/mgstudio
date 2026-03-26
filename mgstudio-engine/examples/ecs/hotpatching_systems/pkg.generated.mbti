@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/hotpatching_systems"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ClickCount
+pub impl @app.Resource for ClickCount
+
+type HotText
+pub impl @ecs.Component for HotText
+
+type Mode
+pub impl @app.Resource for Mode
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/nondeterministic_system_order"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type A
+pub impl @app.Resource for A
+
+type B
+pub impl @app.Resource for B
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/widgets/viewport_node"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ViewportMesh
+pub impl @ecs.Component for ViewportMesh
+
+// Type aliases
+
+// Traits
+

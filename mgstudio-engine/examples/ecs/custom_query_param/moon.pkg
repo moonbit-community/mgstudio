@@ -1,0 +1,11 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+  "moonbitlang/core/ref",
+}
+
+options(
+  "is-main": true,
+  "supported-targets": "native",
+)

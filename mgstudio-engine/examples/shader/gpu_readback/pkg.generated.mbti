@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader/gpu_readback"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ReadbackSample
+pub impl @ecs.Component for ReadbackSample
+
+type ReadbackState
+pub impl @app.Resource for ReadbackState
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader/shader_material_screenspace_texture"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type OrbitCamera
+pub impl @ecs.Component for OrbitCamera
+
+// Type aliases
+
+// Traits
+

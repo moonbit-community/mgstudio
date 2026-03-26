@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader/storage_buffer"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type InstanceSlot
+pub impl @ecs.Component for InstanceSlot
+
+type StorageValues
+pub impl @app.Resource for StorageValues
+
+// Type aliases
+
+// Traits
+
