@@ -2,7 +2,10 @@
 package "Milky2018/mgstudio/examples/animation/animation_events"
 
 import {
+  "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -23,6 +26,10 @@ pub impl Show for MessagePalette
 
 type MessageText
 pub impl @ecs.Component for MessageText
+
+type SetMessage
+pub impl @animation.AnimationEvent for SetMessage
+pub impl @ecs.TriggerEvent for SetMessage
 
 // Type aliases
 

@@ -16,6 +16,13 @@
 struct MessageText {}
 
 ///|
+struct SetMessage {
+  mut observer_entity : @core.Entity?
+  value : String
+  palette : MessagePalette
+}
+
+///|
 pub(all) enum MessagePalette {
   None
   Hello
@@ -38,6 +45,11 @@ let message_fade_key : @ecs.ComponentKey[MessageFade] = @ecs.register_component(
 )
 
 ///|
+let set_message_event_key : @ecs.EventKey[SetMessage] = @ecs.register_event(
+  debug_name="examples.animation.animation_events.set_message",
+)
+
+///|
 pub impl @ecs.Component for MessageText with component() {
   message_text_key
 }
@@ -48,22 +60,51 @@ pub impl @ecs.Component for MessageFade with component() {
 }
 
 ///|
+pub impl @animation.AnimationEvent for SetMessage with animation_event_marker(
+  _self,
+) {
+
+}
+
+///|
+pub impl @ecs.TriggerEvent for SetMessage with observer_event() {
+  set_message_event_key
+}
+
+///|
+pub impl @ecs.TriggerEvent for SetMessage with observer_entity(self) {
+  self.observer_entity
+}
+
+///|
+pub impl @ecs.TriggerEvent for SetMessage with set_observer_entity(
+  event_ref,
+  entity,
+) {
+  event_ref.val.observer_entity = Some(entity)
+}
+
+///|
+pub impl @ecs.TriggerEvent for SetMessage with auto_propagate(_self) {
+  false
+}
+
+///|
+pub impl @ecs.TriggerEvent for SetMessage with debug_name() {
+  "SetMessage"
+}
+
+///|
+fn SetMessage::new(value : String, palette : MessagePalette) -> SetMessage {
+  { observer_entity: None, value, palette }
+}
+
+///|
 fn message_color(palette : MessagePalette, alpha : Float) -> @color.Color {
   match palette {
     None => @color.Color::srgba(0.0F, 0.0F, 0.0F, alpha)
     Hello => @color.Color::srgba(0.94F, 0.97F, 1.0F, alpha)
     Bye => @color.Color::srgba(0.86F, 0.08F, 0.24F, alpha)
-  }
-}
-
-///|
-fn event_palette(label : String) -> MessagePalette {
-  if label == "hello" {
-    MessagePalette::Hello
-  } else if label == "bye" {
-    MessagePalette::Bye
-  } else {
-    MessagePalette::None
   }
 }
 
@@ -97,8 +138,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let clip = @animation.AnimationClip::new()
     .set_duration(2.0F)
-    .add_event(0.0F, "hello", "HELLO")
-    .add_event(1.0F, "bye", "BYE")
+    .add_typed_event(0.0F, SetMessage::new("HELLO", MessagePalette::Hello))
+    .add_typed_event(1.0F, SetMessage::new("BYE", MessagePalette::Bye))
   let clip_handle = @animation.animation_clip_add(clip)
   let (graph, animation_index) = @animation.AnimationGraph::from_clip(
     clip_handle,
@@ -117,23 +158,17 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn on_set_message(
-  set_message : @core.MessageReader[@animation.AnimationTriggeredEvent],
+  set_message : @ecs.On[SetMessage],
   text : @app.Single[
     (@ecs.Mut[@text.Text2d], @ecs.Mut[@text.TextColor], @ecs.Mut[MessageFade]),
     @ecs.With[MessageText],
   ],
 ) -> Unit {
-  let latest_message : Ref[@animation.AnimationTriggeredEvent?] = Ref::new(None)
-  for event in set_message.read() {
-    latest_message.val = Some(event)
-  }
-  guard latest_message.val is Some(event) else { return }
-
-  let palette = event_palette(event.label())
+  let event = set_message.event()
   let (text2d, color, fade) = text.get()
-  text2d.set(@text.Text2d::new(event.payload()))
-  fade.get_ref().val.palette = palette
-  color.set(@text.TextColor::new(message_color(palette, 1.0F)))
+  text2d.set(@text.Text2d::new(event.value))
+  fade.get_ref().val.palette = event.palette
+  color.set(@text.TextColor::new(message_color(event.palette, 1.0F)))
 }
 
 ///|
@@ -168,11 +203,6 @@ fn main {
     @app.Update,
     @app.system(@app.system_param2(animate_text_opacity)),
   )
-  .add_systems(
-    @app.PostUpdate,
-    @app.system(@app.system_param2(on_set_message)).after(
-      @animation.animation_set_trigger_events,
-    ),
-  )
+  .add_observer2(on_set_message)
   .run()
 }

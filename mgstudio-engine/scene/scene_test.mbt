@@ -153,6 +153,11 @@ test "scene: register keeps stable handle" {
 test "scene: SceneRoot propagates gltf extras metadata" {
   let root_scene_extras = Ref::new("")
   let child_name = Ref::new("")
+  let child_scene_index = Ref::new(-1)
+  let child_node_index = Ref::new(-1)
+  let child_mesh_index = Ref::new(-1)
+  let child_primitive_mesh_index = Ref::new(-1)
+  let child_primitive_index = Ref::new(-1)
   let primitive_extras = Ref::new("")
   let mesh_extras = Ref::new("")
   let material_extras = Ref::new("")
@@ -182,6 +187,10 @@ test "scene: SceneRoot propagates gltf extras metadata" {
           None,
           None,
           name=Some(@ecs.Name::new("NamedMesh.Top")),
+          gltf_scene_index=Some(@gltf.GltfSceneIndex::new(2)),
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(3)),
+          gltf_mesh_index=Some(@gltf.GltfMeshIndex::new(4)),
+          gltf_primitive_index=Some(@gltf.GltfPrimitiveIndex::new(4, 5)),
           gltf_material_name=Some(@gltf.GltfMaterialName::new("Top")),
           gltf_extras=Some(@gltf.GltfExtras::new("{\"primitive\":1}")),
           gltf_mesh_extras=Some(@gltf.GltfMeshExtras::new("{\"mesh\":true}")),
@@ -211,6 +220,23 @@ test "scene: SceneRoot propagates gltf extras metadata" {
         if (try! world.entity(child).get() : @ecs.Name?) is Some(name) {
           child_name.val = name.as_str()
         }
+        if (try! world.entity(child).get() : @gltf.GltfSceneIndex?)
+          is Some(scene_index) {
+          child_scene_index.val = scene_index.index()
+        }
+        if (try! world.entity(child).get() : @gltf.GltfNodeIndex?)
+          is Some(node_index) {
+          child_node_index.val = node_index.index()
+        }
+        if (try! world.entity(child).get() : @gltf.GltfMeshIndex?)
+          is Some(mesh_index) {
+          child_mesh_index.val = mesh_index.index()
+        }
+        if (try! world.entity(child).get() : @gltf.GltfPrimitiveIndex?)
+          is Some(primitive_index) {
+          child_primitive_mesh_index.val = primitive_index.mesh_index()
+          child_primitive_index.val = primitive_index.primitive_index()
+        }
         if (try! world.entity(child).get() : @gltf.GltfExtras?) is Some(extras) {
           primitive_extras.val = extras.as_str()
         }
@@ -228,6 +254,11 @@ test "scene: SceneRoot propagates gltf extras metadata" {
 
   inspect(root_scene_extras.val, content="{\"scene\":\"root\"}")
   inspect(child_name.val, content="NamedMesh.Top")
+  inspect(child_scene_index.val, content="2")
+  inspect(child_node_index.val, content="3")
+  inspect(child_mesh_index.val, content="4")
+  inspect(child_primitive_mesh_index.val, content="4")
+  inspect(child_primitive_index.val, content="5")
   inspect(primitive_extras.val, content="{\"primitive\":1}")
   inspect(mesh_extras.val, content="{\"mesh\":true}")
   inspect(material_extras.val, content="{\"material\":\"value\"}")

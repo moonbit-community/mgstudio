@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
+  "tonyfettes/any",
 }
 
 // Values
@@ -128,6 +129,8 @@ pub fn AnimationClip::add_rotation_curve(Self, AnimationTargetId, Array[Keyframe
 pub fn AnimationClip::add_scale_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
 pub fn AnimationClip::add_text_color_curve(Self, AnimationTargetId, Array[KeyframeColor]) -> Self
 pub fn AnimationClip::add_translation_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
+pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event(Self, Float, T) -> Self
+pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event_to_target(Self, AnimationTargetId, Float, T) -> Self
 pub fn AnimationClip::add_weights_curve(Self, AnimationTargetId, Array[KeyframeWeights]) -> Self
 pub fn AnimationClip::duration(Self) -> Float
 pub fn AnimationClip::events(Self) -> Array[AnimationClipEvent]
@@ -143,13 +146,17 @@ pub struct AnimationClipEvent {
   label : String
   payload : String
   callback_id : Int?
+  typed_event_payload : @any.Any?
+  typed_event_type_key : String?
 }
 pub fn AnimationClipEvent::callback_id(Self) -> Int?
 pub fn AnimationClipEvent::label(Self) -> String
 pub fn AnimationClipEvent::new(Float, String, String) -> Self
 pub fn AnimationClipEvent::new_callback(Float, Int) -> Self
+pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(Float, T) -> Self
 pub fn AnimationClipEvent::payload(Self) -> String
 pub fn AnimationClipEvent::time(Self) -> Float
+pub fn AnimationClipEvent::typed_event_payload(Self) -> @any.Any?
 
 pub(all) enum AnimationEventTarget {
   Root
@@ -406,4 +413,7 @@ pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
 pub type AnimationMask = UInt
 
 // Traits
+pub(open) trait AnimationEvent {
+  animation_event_marker(Self) -> Unit
+}
 

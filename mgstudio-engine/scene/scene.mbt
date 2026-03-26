@@ -25,6 +25,10 @@ pub struct SceneNode3d {
   name : @ecs.Name?
   mesh : @pbr.Mesh3d
   material : @pbr.MeshMaterial3d
+  gltf_scene_index : @gltf.GltfSceneIndex?
+  gltf_node_index : @gltf.GltfNodeIndex?
+  gltf_mesh_index : @gltf.GltfMeshIndex?
+  gltf_primitive_index : @gltf.GltfPrimitiveIndex?
   gltf_material_name : @gltf.GltfMaterialName?
   gltf_extras : @gltf.GltfExtras?
   gltf_mesh_extras : @gltf.GltfMeshExtras?
@@ -42,6 +46,10 @@ pub fn SceneNode3d::new(
   visibility_range : @visibility.VisibilityRange?,
   animation_target : @animation.AnimationTargetId?,
   name? : @ecs.Name? = None,
+  gltf_scene_index? : @gltf.GltfSceneIndex? = None,
+  gltf_node_index? : @gltf.GltfNodeIndex? = None,
+  gltf_mesh_index? : @gltf.GltfMeshIndex? = None,
+  gltf_primitive_index? : @gltf.GltfPrimitiveIndex? = None,
   gltf_material_name? : @gltf.GltfMaterialName? = None,
   gltf_extras? : @gltf.GltfExtras? = None,
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
@@ -51,6 +59,10 @@ pub fn SceneNode3d::new(
     name,
     mesh,
     material,
+    gltf_scene_index,
+    gltf_node_index,
+    gltf_mesh_index,
+    gltf_primitive_index,
     gltf_material_name,
     gltf_extras,
     gltf_mesh_extras,
@@ -843,6 +855,26 @@ fn scene_spawn_instance_when_ready(
     }
     try! world.set_by_key(child, @pbr.ecs_key_mesh3d, node.mesh)
     try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, node.material)
+    if node.gltf_scene_index is Some(scene_index) {
+      try! world.set_by_key(
+        child,
+        @gltf.GltfSceneIndex::component(),
+        scene_index,
+      )
+    }
+    if node.gltf_node_index is Some(node_index) {
+      try! world.set_by_key(child, @gltf.GltfNodeIndex::component(), node_index)
+    }
+    if node.gltf_mesh_index is Some(mesh_index) {
+      try! world.set_by_key(child, @gltf.GltfMeshIndex::component(), mesh_index)
+    }
+    if node.gltf_primitive_index is Some(primitive_index) {
+      try! world.set_by_key(
+        child,
+        @gltf.GltfPrimitiveIndex::component(),
+        primitive_index,
+      )
+    }
     if node.gltf_material_name is Some(material_name) {
       try! world.set_by_key(
         child,

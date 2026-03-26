@@ -119,6 +119,11 @@ pub fn AnimationTargetId::from_name(name : String) -> AnimationTargetId {
 }
 
 ///|
+pub(open) trait AnimationEvent {
+  animation_event_marker(Self) -> Unit
+}
+
+///|
 pub struct AnimatedBy {
   player : @core.Entity
 }
@@ -230,6 +235,8 @@ pub struct AnimationClipEvent {
   label : String
   payload : String
   callback_id : Int?
+  typed_event_payload : @any.Any?
+  typed_event_type_key : String?
 }
 
 ///|
@@ -238,7 +245,14 @@ pub fn AnimationClipEvent::new(
   label : String,
   payload : String,
 ) -> AnimationClipEvent {
-  AnimationClipEvent::{ time, label, payload, callback_id: None }
+  AnimationClipEvent::{
+    time,
+    label,
+    payload,
+    callback_id: None,
+    typed_event_payload: None,
+    typed_event_type_key: None,
+  }
 }
 
 ///|
@@ -251,6 +265,72 @@ pub fn AnimationClipEvent::new_callback(
     label: "",
     payload: "",
     callback_id: Some(callback_id),
+    typed_event_payload: None,
+    typed_event_type_key: None,
+  }
+}
+
+///|
+let animation_typed_event_dispatchers : Ref[
+  Array[(String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit)],
+] = Ref::new([])
+
+///|
+fn animation_typed_event_find_dispatcher(
+  type_key : String,
+) -> ((@ecs.World, @any.Any, @core.Entity, String?) -> Unit)? {
+  for entry in animation_typed_event_dispatchers.val {
+    if entry.0 == type_key {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn[T : AnimationEvent] animation_typed_event_type_key(event : T) -> String {
+  event.animation_event_marker()
+  @any.of(Ref::new(event)).type_name()
+}
+
+///|
+fn[T : AnimationEvent + @ecs.TriggerEvent] animation_typed_event_register(
+  event : T,
+) -> String {
+  let type_key = animation_typed_event_type_key(event)
+  if animation_typed_event_find_dispatcher(type_key) is None {
+    animation_typed_event_dispatchers.val.push(
+      (
+        type_key,
+        fn(world, payload, entity, caller) {
+          match payload.try_to() {
+            Some(event_ref) => {
+              let event_ref : Ref[T] = event_ref
+              T::set_observer_entity(event_ref, entity)
+              world.trigger(event_ref.val, caller~)
+            }
+            None => abort("animation clip typed event payload type mismatch")
+          }
+        },
+      ),
+    )
+  }
+  type_key
+}
+
+///|
+pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
+  time : Float,
+  event : T,
+) -> AnimationClipEvent {
+  let type_key = animation_typed_event_register(event)
+  AnimationClipEvent::{
+    time,
+    label: "",
+    payload: "",
+    callback_id: None,
+    typed_event_payload: Some(@any.of(Ref::new(event))),
+    typed_event_type_key: Some(type_key),
   }
 }
 
@@ -272,6 +352,13 @@ pub fn AnimationClipEvent::payload(self : AnimationClipEvent) -> String {
 ///|
 pub fn AnimationClipEvent::callback_id(self : AnimationClipEvent) -> Int? {
   self.callback_id
+}
+
+///|
+pub fn AnimationClipEvent::typed_event_payload(
+  self : AnimationClipEvent,
+) -> @any.Any? {
+  self.typed_event_payload
 }
 
 ///|
@@ -583,6 +670,20 @@ pub fn AnimationClip::add_event(
 }
 
 ///|
+pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event(
+  self : AnimationClip,
+  time : Float,
+  event : T,
+) -> AnimationClip {
+  let event = AnimationClipEvent::new_typed(time, event)
+  animation_clip_event_insert_sorted(self.events_root, event)
+  if time > self.duration_seconds {
+    self.duration_seconds = time
+  }
+  self
+}
+
+///|
 pub fn AnimationClip::add_event_to_target(
   self : AnimationClip,
   target_id : AnimationTargetId,
@@ -593,6 +694,24 @@ pub fn AnimationClip::add_event_to_target(
   let event = AnimationClipEvent::new(time, label, payload)
   let events = animation_clip_target_events_get_or_insert(self, target_id)
   animation_clip_event_insert_sorted(events, event)
+  if time > self.duration_seconds {
+    self.duration_seconds = time
+  }
+  self
+}
+
+///|
+pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event_to_target(
+  self : AnimationClip,
+  target_id : AnimationTargetId,
+  time : Float,
+  event : T,
+) -> AnimationClip {
+  let events = animation_clip_target_events_get_or_insert(self, target_id)
+  animation_clip_event_insert_sorted(
+    events,
+    AnimationClipEvent::new_typed(time, event),
+  )
   if time > self.duration_seconds {
     self.duration_seconds = time
   }
@@ -2945,6 +3064,7 @@ fn animation_clip_collect_triggered_events(
 
 ///|
 fn animation_emit_triggered_events(
+  world : @ecs.World,
   writer : @core.MessageWriter[AnimationTriggeredEvent],
   player_entity : @core.Entity,
   target_entity : @core.Entity,
@@ -2957,6 +3077,13 @@ fn animation_emit_triggered_events(
       if animation_event_callback_get(callback_id) is Some(callback) {
         callback(target_entity, event.time, active.weight())
       }
+    }
+    if event.typed_event_type_key is Some(type_key) &&
+      event.typed_event_payload is Some(payload) {
+      guard animation_typed_event_find_dispatcher(type_key) is Some(dispatch) else {
+        abort("animation clip typed event dispatcher was not registered")
+      }
+      dispatch(world, payload, target_entity, Some("animation.trigger_events"))
     }
     writer.write({
       player: player_entity,
@@ -3195,6 +3322,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
         continue
       }
       animation_emit_triggered_events(
+        world,
         writer,
         player_entity,
         player_entity,
@@ -3252,6 +3380,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
         continue
       }
       animation_emit_triggered_events(
+        world,
         writer,
         player_entity,
         target_entity,

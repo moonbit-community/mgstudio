@@ -4,7 +4,9 @@ package "Milky2018/mgstudio/examples/animation/animated_mesh_events"
 import {
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -27,6 +29,10 @@ pub impl @ecs.Component for Particle
 
 type ParticleAssets
 pub impl @app.Resource for ParticleAssets
+
+type StepEvent
+pub impl @animation.AnimationEvent for StepEvent
+pub impl @ecs.TriggerEvent for StepEvent
 
 // Type aliases
 

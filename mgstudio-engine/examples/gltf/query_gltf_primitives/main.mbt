@@ -68,6 +68,7 @@ fn find_top_material_and_mesh(
     (
       @ecs.Comp[@pbr.MeshMaterial3d],
       @ecs.Comp[@pbr.Mesh3d],
+      @ecs.Comp[@gltf.GltfPrimitiveIndex],
       @ecs.Comp[@gltf.GltfMaterialName],
     ),
     @ecs.All,
@@ -80,10 +81,13 @@ fn find_top_material_and_mesh(
   let mesh_assets = meshes.get_ref()
 
   try! query.view(fn(_entity, data) {
-    let (material_comp, mesh_comp, material_name_comp) = data
+    let (material_comp, mesh_comp, primitive_index_comp, material_name_comp) = data
     if material_name_comp.value().as_str() != "Top" {
       return
     }
+    let primitive_offset = Float::from_double(
+      primitive_index_comp.value().primitive_index().to_double(),
+    )
 
     let material_handle = material_comp.value().material
     guard material_assets.val.get(material_handle) is Some(material) else {
@@ -103,7 +107,11 @@ fn find_top_material_and_mesh(
 
     for i in 0..<geometry.positions.length() {
       let position = geometry.positions[i]
-      geometry.positions[i] = @math.Vec3::new(position.x, target_y, position.z)
+      geometry.positions[i] = @math.Vec3::new(
+        position.x,
+        target_y + primitive_offset * 0.15F,
+        position.z,
+      )
     }
 
     if mesh_asset.with_3d_geometry(geometry) is Some(updated) {

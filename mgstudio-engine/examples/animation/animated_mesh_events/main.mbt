@@ -22,6 +22,13 @@ const FOX_PATH : String = "models/animated/Fox.glb"
 const PARTICLE_COUNT : Int = 14
 
 ///|
+struct StepEvent {
+  mut observer_entity : @core.Entity?
+  foot : String
+  phase : Float
+}
+
+///|
 struct AnimationSetup {
   clip_handle : @asset.Handle[@animation.AnimationClip]
   graph_handle : @asset.Handle[@animation.AnimationGraph]
@@ -67,6 +74,11 @@ let particle_key : @ecs.ComponentKey[Particle] = @ecs.register_component(
 )
 
 ///|
+let step_event_key : @ecs.EventKey[StepEvent] = @ecs.register_event(
+  debug_name="examples.animation.animated_mesh_events.step_event",
+)
+
+///|
 pub impl @app.Resource for AnimationSetup with resource() {
   animation_setup_key
 }
@@ -79,6 +91,46 @@ pub impl @app.Resource for ParticleAssets with resource() {
 ///|
 pub impl @ecs.Component for Particle with component() {
   particle_key
+}
+
+///|
+pub impl @animation.AnimationEvent for StepEvent with animation_event_marker(
+  _self,
+) {
+
+}
+
+///|
+pub impl @ecs.TriggerEvent for StepEvent with observer_event() {
+  step_event_key
+}
+
+///|
+pub impl @ecs.TriggerEvent for StepEvent with observer_entity(self) {
+  self.observer_entity
+}
+
+///|
+pub impl @ecs.TriggerEvent for StepEvent with set_observer_entity(
+  event_ref,
+  entity,
+) {
+  event_ref.val.observer_entity = Some(entity)
+}
+
+///|
+pub impl @ecs.TriggerEvent for StepEvent with auto_propagate(_self) {
+  false
+}
+
+///|
+pub impl @ecs.TriggerEvent for StepEvent with debug_name() {
+  "StepEvent"
+}
+
+///|
+fn StepEvent::new(foot : String, phase : Float) -> StepEvent {
+  { observer_entity: None, foot, phase }
 }
 
 ///|
@@ -109,10 +161,26 @@ fn install_step_events(
   feet_targets : FoxFeetTargets,
 ) -> @animation.AnimationClip {
   clip
-  .add_event_to_target(feet_targets.front_left, 0.625F, "step", "front_left")
-  .add_event_to_target(feet_targets.front_right, 0.5F, "step", "front_right")
-  .add_event_to_target(feet_targets.back_left, 0.0F, "step", "back_left")
-  .add_event_to_target(feet_targets.back_right, 0.125F, "step", "back_right")
+  .add_typed_event_to_target(
+    feet_targets.front_left,
+    0.625F,
+    StepEvent::new("front_left", 0.625F),
+  )
+  .add_typed_event_to_target(
+    feet_targets.front_right,
+    0.5F,
+    StepEvent::new("front_right", 0.5F),
+  )
+  .add_typed_event_to_target(
+    feet_targets.back_left,
+    0.0F,
+    StepEvent::new("back_left", 0.0F),
+  )
+  .add_typed_event_to_target(
+    feet_targets.back_right,
+    0.125F,
+    StepEvent::new("back_right", 0.125F),
+  )
 }
 
 ///|
@@ -248,50 +316,45 @@ fn setup_scene_once_loaded(
 
 ///|
 fn observe_on_step(
-  triggered_events : @core.MessageReader[@animation.AnimationTriggeredEvent],
+  step_event : @ecs.On[StepEvent],
   particle_assets : @app.Res[ParticleAssets],
   commands : @app.Commands,
   transforms : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
 ) -> Unit {
-  for event in triggered_events.read() {
-    if event.label() != "step" {
-      continue
-    }
-    guard (try! transforms.get(event.target())) is Some(transform) else {
-      continue
-    }
-    let translation = transform.value().translation
-    for i in 0..<PARTICLE_COUNT {
-      let i_float = Float::from_int(i)
-      let angle = event.time() * 8.0F +
-        i_float * (2.0F * PI / Float::from_int(PARTICLE_COUNT))
-      let speed = 8.0F + 0.25F * i_float
-      let vertical = 3.0F + 0.1F * i_float
-      let size = 0.2F + 0.05F * Float::from_int(i % 5)
-      ignore(
-        commands.spawn(
-          (
-            Particle::{
-              lifetime_timer: @time.Timer::from_seconds(
-                0.2F + 0.03F * i_float,
-                @time.TimerMode::Once,
-              ),
-              size,
-              velocity: @math.Vec3::new(
-                @math.cos(angle) * speed,
-                vertical,
-                @math.sin(angle) * speed,
-              ),
-            },
-            @pbr.Mesh3d::new(particle_assets.get().mesh),
-            @pbr.MeshMaterial3d::new(particle_assets.get().material),
-            @transform.Transform::from_translation(translation).with_scale(
-              @math.Vec3::splat(size),
+  let event = step_event.event()
+  guard step_event.entity() is Some(target_entity) else { return }
+  guard (try! transforms.get(target_entity)) is Some(transform) else { return }
+  let translation = transform.value().translation
+  for i in 0..<PARTICLE_COUNT {
+    let i_float = Float::from_int(i)
+    let angle = event.phase * 8.0F +
+      i_float * (2.0F * PI / Float::from_int(PARTICLE_COUNT))
+    let speed = 8.0F + 0.25F * i_float
+    let vertical = 3.0F + 0.1F * i_float
+    let size = 0.2F + 0.05F * Float::from_int(i % 5)
+    ignore(
+      commands.spawn(
+        (
+          Particle::{
+            lifetime_timer: @time.Timer::from_seconds(
+              0.2F + 0.03F * i_float,
+              @time.TimerMode::Once,
             ),
+            size,
+            velocity: @math.Vec3::new(
+              @math.cos(angle) * speed,
+              vertical,
+              @math.sin(angle) * speed,
+            ),
+          },
+          @pbr.Mesh3d::new(particle_assets.get().mesh),
+          @pbr.MeshMaterial3d::new(particle_assets.get().material),
+          @transform.Transform::from_translation(translation).with_scale(
+            @math.Vec3::splat(size),
           ),
         ),
-      )
-    }
+      ),
+    )
   }
 }
 
@@ -336,12 +399,7 @@ fn main {
   .add_plugins(@mgstudio.default_plugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_component_observer4(setup_scene_once_loaded)
-  .add_systems(
-    @app.PostUpdate,
-    @app.system(@app.system_param4(observe_on_step)).after(
-      @animation.animation_set_trigger_events,
-    ),
-  )
+  .add_observer4(observe_on_step)
   .add_systems(@app.Update, @app.system(@app.system_param3(simulate_particles)))
   .run()
 }

@@ -48,6 +48,89 @@ fn approx_eq_animation_slice(
 }
 
 ///|
+struct TestTypedAnimationEvent {
+  mut observer_entity : @core.Entity?
+  value : String
+}
+
+///|
+let test_typed_animation_event_key : @ecs.EventKey[TestTypedAnimationEvent] = @ecs.register_event(
+  debug_name="tests.animation.typed_event",
+)
+
+///|
+pub impl AnimationEvent for TestTypedAnimationEvent with animation_event_marker(
+  _self,
+) {
+
+}
+
+///|
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with observer_event() {
+  test_typed_animation_event_key
+}
+
+///|
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with observer_entity(
+  self,
+) {
+  self.observer_entity
+}
+
+///|
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with set_observer_entity(
+  event_ref,
+  entity,
+) {
+  event_ref.val.observer_entity = Some(entity)
+}
+
+///|
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with auto_propagate(
+  _self,
+) {
+  false
+}
+
+///|
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with debug_name() {
+  "TestTypedAnimationEvent"
+}
+
+///|
+struct ObservedTypedAnimationEvent {
+  entity_id : Int
+  value : String
+} derive(Eq, Show)
+
+///|
+let observed_typed_animation_events : Ref[
+  @core.Messages[ObservedTypedAnimationEvent],
+] = Ref::new(@core.Messages::new())
+
+///|
+pub impl @core.Message for ObservedTypedAnimationEvent with reader(sequence) {
+  observed_typed_animation_events.val.reader(sequence)
+}
+
+///|
+pub impl @core.Message for ObservedTypedAnimationEvent with writer(sequence) {
+  observed_typed_animation_events.val.writer(sequence)
+}
+
+///|
+fn observe_typed_animation_event(
+  event : @ecs.On[TestTypedAnimationEvent],
+  writer : @core.MessageWriter[ObservedTypedAnimationEvent],
+) -> Unit {
+  let entity_id = match event.entity() {
+    Some(entity) => entity.id
+    None => -1
+  }
+  writer.write({ entity_id, value: event.event().value })
+}
+
+///|
 test "animation target id: deterministic and path-sensitive" {
   let a = AnimationTargetId::from_names(["Root", "Arm", "Hand"])
   let b = AnimationTargetId::from_names(["Root", "Arm", "Hand"])
@@ -554,6 +637,66 @@ test "animation runtime: trigger_events emits root and target messages" {
     },
     content="true",
   )
+}
+
+///|
+test "animation runtime: trigger_events dispatches typed root and target observers" {
+  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+    @core.Duration::from_millis(250L),
+  )
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([animation_plugin])
+    .add_observer2(observe_typed_animation_event)
+    .insert_resource(delta_time)
+  let world = app.world()
+  let player_entity = world.spawn()
+  let target_entity = world.spawn()
+  let target_id = AnimationTargetId::from_name("Foot")
+  let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
+  let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
+  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
+  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+
+  let clip = AnimationClip::new()
+    .set_duration(1.0F)
+    .add_typed_event(0.1F, TestTypedAnimationEvent::{
+      observer_entity: None,
+      value: "root",
+    })
+    .add_typed_event_to_target(target_id, 0.2F, TestTypedAnimationEvent::{
+      observer_entity: None,
+      value: "target",
+    })
+  let clip_handle = clip_assets.add(clip)
+  let (graph, node) = AnimationGraph::from_clip(clip_handle)
+  let graph_handle = graph_assets.add(graph)
+  let player = AnimationPlayer::default()
+  player.play(node).repeat() |> ignore
+
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
+    player_entity,
+    ecs_key_animation_graph_handle,
+    AnimationGraphHandle::new(graph_handle),
+  )
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
+    target_entity,
+    ecs_key_animated_by,
+    AnimatedBy::new(player_entity),
+  )
+
+  app = app.run_once()
+
+  let reader = observed_typed_animation_events.val.reader(
+    @core.SystemSequence::new(0, world.read_sequence()),
+  )
+  let captured = reader.read()
+  inspect(captured.length(), content="2")
+  inspect(captured[0].entity_id, content="0")
+  inspect(captured[0].value, content="root")
+  inspect(captured[1].entity_id, content="1")
+  inspect(captured[1].value, content="target")
 }
 
 ///|

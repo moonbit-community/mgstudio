@@ -107,6 +107,10 @@ pub struct SceneNode3d {
   name : @ecs.Name?
   mesh : @pbr.Mesh3d
   material : @material.MeshMaterial3d
+  gltf_scene_index : @gltf.GltfSceneIndex?
+  gltf_node_index : @gltf.GltfNodeIndex?
+  gltf_mesh_index : @gltf.GltfMeshIndex?
+  gltf_primitive_index : @gltf.GltfPrimitiveIndex?
   gltf_material_name : @gltf.GltfMaterialName?
   gltf_extras : @gltf.GltfExtras?
   gltf_mesh_extras : @gltf.GltfMeshExtras?
@@ -115,7 +119,7 @@ pub struct SceneNode3d {
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
 }
-pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, name? : @ecs.Name?, gltf_material_name? : @gltf.GltfMaterialName?, gltf_extras? : @gltf.GltfExtras?, gltf_mesh_extras? : @gltf.GltfMeshExtras?, gltf_material_extras? : @gltf.GltfMaterialExtras?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, name? : @ecs.Name?, gltf_scene_index? : @gltf.GltfSceneIndex?, gltf_node_index? : @gltf.GltfNodeIndex?, gltf_mesh_index? : @gltf.GltfMeshIndex?, gltf_primitive_index? : @gltf.GltfPrimitiveIndex?, gltf_material_name? : @gltf.GltfMaterialName?, gltf_extras? : @gltf.GltfExtras?, gltf_mesh_extras? : @gltf.GltfMeshExtras?, gltf_material_extras? : @gltf.GltfMaterialExtras?) -> Self
 
 pub(all) struct ScenePlugin {
 }

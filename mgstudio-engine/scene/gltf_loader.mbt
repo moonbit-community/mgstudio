@@ -82,6 +82,7 @@ priv struct GltfAccessorDef {
 
 ///|
 priv struct GltfPrimitiveDef {
+  primitive_index : Int
   position : Int?
   uv0 : Int?
   indices : Int?
@@ -1012,7 +1013,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
       if json_object(entry) is Some(obj) {
         let primitives : Array[GltfPrimitiveDef] = []
         if json_get_array(obj, "primitives") is Some(primitive_entries) {
-          for primitive_entry in primitive_entries {
+          for primitive_index, primitive_entry in primitive_entries {
             if json_object(primitive_entry) is Some(primitive_obj) {
               let attributes = json_get_object(primitive_obj, "attributes")
               let position = match attributes {
@@ -1024,6 +1025,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 None => None
               }
               primitives.push({
+                primitive_index,
                 position,
                 uv0,
                 indices: json_get_int(primitive_obj, "indices"),
@@ -1032,6 +1034,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               })
             } else {
               primitives.push({
+                primitive_index,
                 position: None,
                 uv0: None,
                 indices: None,
@@ -2537,6 +2540,7 @@ fn scene_build_from_gltf(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
 ) -> Scene {
+  let selected_scene_index = gltf_select_scene_index(doc, request.scene_index)
   let nodes : Array[SceneNode3d] = []
   let node_paths = gltf_collect_node_name_paths(doc)
   let image_cache : Array[@asset.Handle[@asset.Image]?] = []
@@ -2685,6 +2689,17 @@ fn scene_build_from_gltf(
               visibility_range,
               animation_target,
               name=primitive_name,
+              gltf_scene_index=Some(
+                @gltf.GltfSceneIndex::new(selected_scene_index),
+              ),
+              gltf_node_index=Some(@gltf.GltfNodeIndex::new(node_index)),
+              gltf_mesh_index=Some(@gltf.GltfMeshIndex::new(mesh_index)),
+              gltf_primitive_index=Some(
+                @gltf.GltfPrimitiveIndex::new(
+                  mesh_index,
+                  primitive.primitive_index,
+                ),
+              ),
               gltf_material_name=material_name,
               gltf_extras=primitive_extras,
               gltf_mesh_extras=mesh_extras,
