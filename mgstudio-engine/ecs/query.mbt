@@ -13,16 +13,14 @@
 // limitations under the License.
 
 ///|
-pub struct QueryState[D, F] {
+pub struct QueryState[_, F] {
   filter : F
-  data_marker : (D) -> Unit
 }
 
 ///|
-pub struct Query[D, F] {
+pub struct Query[_, F] {
   world : World
   filter : F
-  data_marker : (D) -> Unit
 }
 
 ///|
@@ -54,7 +52,7 @@ pub struct QueryParallel[D, F] {
 }
 
 ///|
-pub struct Has[T] {
+pub struct Has[_] {
   present : Bool
 }
 
@@ -98,39 +96,36 @@ pub fn[T] Optional::value(self : Optional[T]) -> T? {
 }
 
 ///|
-pub fn[F : QueryFilter] World::query_entities_filtered(
+pub fn[F] World::query_entities_filtered(
   self : World,
   filter : F,
 ) -> Query[@core.Entity, F] {
-  Query::{ world: self, filter, data_marker: fn(_value : @core.Entity) {  } }
+  Query::{ world: self, filter }
 }
 
 ///|
-pub fn[D : QueryData] World::query(self : World) -> QueryState[D, All] {
+pub fn[D] World::query(self : World) -> QueryState[D, All] {
   ignore(self)
-  { filter: All::new(), data_marker: fn(_value : D) {  } }
+  { filter: All::new() }
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] World::query_filtered(
+pub fn[D, F] World::query_filtered(
   self : World,
   filter : F,
 ) -> QueryState[D, F] {
   ignore(self)
-  { filter, data_marker: fn(_value : D) {  } }
+  { filter, }
 }
 
 ///|
-pub fn[D : QueryData] query(world : World) -> Query[D, All] {
-  Query::{ world, filter: All::new(), data_marker: fn(_value : D) {  } }
+pub fn[D] query(world : World) -> Query[D, All] {
+  Query::{ world, filter: All::new() }
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] query_filtered(
-  world : World,
-  filter : F,
-) -> Query[D, F] {
-  Query::{ world, filter, data_marker: fn(_value : D) {  } }
+pub fn[D, F] query_filtered(world : World, filter : F) -> Query[D, F] {
+  Query::{ world, filter }
 }
 
 ///|
@@ -234,7 +229,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::require_single(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
+pub fn[D, F] Query::iter_many(
   self : Query[D, F],
   entities : Array[@core.Entity],
 ) -> QueryMany[D, F] {
@@ -242,7 +237,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(
+pub fn[D, F] Query::iter_many_unique(
   self : Query[D, F],
   entities : Array[@core.Entity],
 ) -> QueryMany[D, F] raise EcsError {
@@ -251,7 +246,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(
+pub fn[D, F] Query::iter_many_unique_unsafe(
   self : Query[D, F],
   entities : Array[@core.Entity],
 ) -> QueryMany[D, F] {
@@ -282,7 +277,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(
+pub fn[D : QueryData, F] Query::contiguous_iter(
   self : Query[D, F],
 ) -> QueryContiguousIter[D, F]? {
   guard D::contiguous_compatible() else { return None }
@@ -297,9 +292,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] Query::par_iter(
-  self : Query[D, F],
-) -> QueryParallel[D, F] {
+pub fn[D, F] Query::par_iter(self : Query[D, F]) -> QueryParallel[D, F] {
   { query: self, batching_strategy: BatchingStrategy::new() }
 }
 
@@ -331,7 +324,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::get(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
+pub fn[D, F] QueryState::iter(
   self : QueryState[D, F],
   world : World,
 ) -> QueryMany[D, F] {
@@ -340,7 +333,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
+pub fn[D, F] QueryState::iter_many(
   self : QueryState[D, F],
   world : World,
   entities : Array[@core.Entity],
@@ -386,7 +379,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
 }
 
 ///|
-pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(
+pub fn[D : QueryData, F] QueryState::contiguous_iter(
   self : QueryState[D, F],
   world : World,
 ) -> QueryContiguousIter[D, F]? {
@@ -421,12 +414,8 @@ pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(
     let left_entity = self.entities[self.left_index]
     let right_entity = self.entities[self.right_index]
     self.right_index = self.right_index + 1
-    guard (try! self.query.get(left_entity)) is Some(left_value) else {
-      continue
-    }
-    guard (try! self.query.get(right_entity)) is Some(right_value) else {
-      continue
-    }
+    guard self.query.get(left_entity) is Some(left_value) else { continue }
+    guard self.query.get(right_entity) is Some(right_value) else { continue }
     return Some((left_value, right_value))
   }
   None

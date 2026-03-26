@@ -101,19 +101,6 @@ fn default_query_filters_contains_component_id(
 }
 
 ///|
-fn query_mentions_component_id(
-  query_component_ids : Array[Int],
-  component_id : Int,
-) -> Bool {
-  for id in query_component_ids {
-    if id == component_id {
-      return true
-    }
-  }
-  false
-}
-
-///|
 fn entity_has_component_id(
   world : World,
   component_id : Int,
@@ -123,41 +110,4 @@ fn entity_has_component_id(
     Some(store_ref) => store_ref.val.contains(entity)
     None => false
   }
-}
-
-///|
-fn[F : QueryFilter] query_matches_with_default_filters(
-  world : World,
-  entity : @core.Entity,
-  filter : F,
-  query_component_ids : Array[Int],
-) -> Bool {
-  guard QueryFilter::matches(filter, world, entity) else { return false }
-  try world.get_resource(ecs_key_default_query_filters) catch {
-    _ => true
-  } noraise {
-    Some(default_query_filters) =>
-      default_query_filters_allow_entity(
-        default_query_filters, world, entity, filter, query_component_ids,
-      )
-    None => true
-  }
-}
-
-///|
-fn[F : QueryFilter] default_query_filters_allow_entity(
-  default_query_filters : DefaultQueryFilters,
-  world : World,
-  entity : @core.Entity,
-  filter : F,
-  query_component_ids : Array[Int],
-) -> Bool {
-  for component_id in default_query_filters.disabling_component_ids() {
-    if entity_has_component_id(world, component_id, entity) &&
-      !query_mentions_component_id(query_component_ids, component_id) &&
-      !QueryFilter::mentions_component(filter, component_id) {
-      return false
-    }
-  }
-  true
 }

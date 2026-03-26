@@ -422,7 +422,7 @@ fn update_text(
   label_query : @ecs.Query[(@ecs.Mut[TextData], @ecs.Mut[@text.Text]), @ecs.All],
 ) -> Unit raise {
   guard event.entity() is Some(entity) else { return }
-  guard (try! label_query.get(entity)) is Some((text_data_mut, text_mut)) else {
+  guard label_query.get(entity) is Some((text_data_mut, text_mut)) else {
     return
   }
 
@@ -452,7 +452,7 @@ fn update_text(
 fn on_trigger_image_group(
   event : @ecs.On[ImageGroupResize],
   groups : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[ImageGroup]],
-) -> Unit raise {
+) -> Unit {
   try! groups.view(fn(_entity, node_mut) {
     resize_group_node(node_mut.get_ref(), event.event())
   })
@@ -464,6 +464,6 @@ fn main {
   .add_plugins(@mgstudio.default_plugins())
   .add_startup_system_param2(setup)
   .add_system_param3(update)
-  .add_observer2_fallible(on_trigger_image_group)
+  .add_observer2(on_trigger_image_group)
   .run()
 }

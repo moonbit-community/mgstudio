@@ -66,34 +66,29 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) wi
 }
 
 ///|
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
-  D,
-  F,
-] with init_state(world) {
+pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with init_state(
+  world,
+) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
-  D,
-  F,
-] with get(_state) {
+pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with get(_state) {
   let world = system_param_abort_missing_world()
   @ecs.query_filtered(world, F::from_world(world))
 }
 
 ///|
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
-  D,
-  F,
-] with store(self, state) {
+pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with store(
+  self,
+  state,
+) {
   system_param_store_no_state(self, state)
 }
 
 ///|
-pub struct Single[D, F] {
+pub struct Single[D, _] {
   value : D
-  filter_marker : (F) -> Unit
 }
 
 ///|
@@ -130,7 +125,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
     F::from_world(world),
   )
   let value = query.require_single()
-  Single::{ value, filter_marker: fn(_ : F) {  } }
+  Single::{ value, }
 }
 
 ///|

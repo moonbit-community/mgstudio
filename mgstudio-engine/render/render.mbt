@@ -1579,6 +1579,7 @@ pub fn host_gpu_draw_mesh3d(
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
+  shader_path? : String? = None,
 ) -> Unit {
   @renderer.draw_mesh3d(
     mesh_id~,
@@ -1653,6 +1654,7 @@ pub fn host_gpu_draw_mesh3d(
     point_shadow_enabled~,
     point_shadow_depth_bias~,
     cull_mode~,
+    shader_path~,
   )
 }
 
@@ -1928,6 +1930,31 @@ pub fn host_gpu_draw_effect_stack(
     vignette_color_g~,
     vignette_color_b~,
     vignette_color_a~,
+    view_width~,
+    view_height~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_custom_postprocess3d(
+  scene_texture_id~ : Int,
+  shader_path~ : String,
+  fragment_entry~ : String,
+  uniform_x~ : Float,
+  uniform_y~ : Float,
+  uniform_z~ : Float,
+  uniform_w~ : Float,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit {
+  @renderer.draw_custom_postprocess3d(
+    scene_texture_id~,
+    shader_path~,
+    fragment_entry~,
+    uniform_x~,
+    uniform_y~,
+    uniform_z~,
+    uniform_w~,
     view_width~,
     view_height~,
   )

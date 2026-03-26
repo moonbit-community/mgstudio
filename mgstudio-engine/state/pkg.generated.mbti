@@ -11,7 +11,7 @@ pub fn[S : @app.States] in_state(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] insert_state_app(@app.App[@ecs.World], S) -> @app.App[@ecs.World]
 
-pub fn[S : @app.States] optional_state(S) -> @app.OptionalStateSource[S]
+pub fn[S] optional_state(S) -> @app.OptionalStateSource[S]
 
 pub fn[S : @app.States] state_changed(S) -> (@ecs.World) -> Bool
 

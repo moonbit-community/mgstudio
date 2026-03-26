@@ -186,9 +186,7 @@ fn block_attack(
   armor_query : @ecs.Query[(@ecs.Comp[Armor], @ecs.Comp[@ecs.Name]), @ecs.All],
 ) -> Unit raise {
   guard attack.entity() is Some(entity) else { return }
-  guard (try! armor_query.get(entity)) is Some((armor_comp, name_comp)) else {
-    return
-  }
+  guard armor_query.get(entity) is Some((armor_comp, name_comp)) else { return }
   let armor = armor_comp.value()
   let damage = attack.event().damage - armor.value
   if damage > 0 {
@@ -216,7 +214,7 @@ fn take_damage(
   commands : @app.Commands,
 ) -> Unit raise {
   guard attack.entity() is Some(entity) else { return }
-  guard (try! hit_points.get(entity)) is Some((hit_points_mut, name_comp)) else {
+  guard hit_points.get(entity) is Some((hit_points_mut, name_comp)) else {
     return
   }
   let hp_ref = hit_points_mut.get_ref()

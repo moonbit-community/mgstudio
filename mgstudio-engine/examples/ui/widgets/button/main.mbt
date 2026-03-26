@@ -28,7 +28,16 @@ fn pressed_button_color() -> @sprite.Color {
 }
 
 ///|
+fn touch_widget_button_wbtest_imports() -> Unit {
+  ignore(@core.Entity::new(0, 0))
+  ignore(@math.Vec2::new(0.0F, 0.0F))
+  ignore(@window.Window::default())
+  ignore(@ui_render.ui_render_extract_system)
+}
+
+///|
 fn main {
+  touch_widget_button_wbtest_imports()
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

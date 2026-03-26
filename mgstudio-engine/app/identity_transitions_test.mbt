@@ -36,11 +36,6 @@ impl Resource for TriggerIdentityOnce with resource() {
 }
 
 ///|
-impl @ecs.Component for DespawnMarker with component() {
-  despawn_marker_key
-}
-
-///|
 let transition_entries : Array[String] = []
 
 ///|

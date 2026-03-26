@@ -21,7 +21,7 @@ pub fn[T] World::replace(
   value : T,
   loc~ : SourceLoc,
 ) -> Bool raise EcsError {
-  try! self.ensure_entity_alive(entity)
+  self.ensure_entity_alive(entity)
   guard self.component_store(key.id()) is Some(store_ref) else { return false }
   guard store_ref.val.get(entity) is Some(_) else { return false }
   let payload = erased_value(value)
@@ -42,9 +42,9 @@ pub fn[T] World::take(
   key : ComponentKey[T],
   loc~ : SourceLoc,
 ) -> T? raise EcsError {
-  let previous = try! self.get_by_key(entity, key)
+  let previous = self.get_by_key(entity, key)
   if previous is Some(_) {
-    try! (self.remove_by_key(entity, key, loc~) |> ignore)
+    self.remove_by_key(entity, key, loc~) |> ignore
   }
   previous
 }

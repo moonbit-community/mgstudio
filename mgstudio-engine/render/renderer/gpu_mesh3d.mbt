@@ -2351,6 +2351,119 @@ fn mesh3d_surface_pipeline_cache_clear(backend : GpuBackend) -> Unit {
 }
 
 ///|
+fn mesh3d_custom_pipeline_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_custom_pipeline_cache {
+    entry.pipeline.release()
+  }
+  backend.mesh3d_custom_pipeline_cache.clear()
+}
+
+///|
+fn mesh3d_shader_path_or_default(shader_path : String?) -> String {
+  match shader_path {
+    Some(path) => if path == "" { MESH3D_FORWARD_SHADER_PATH } else { path }
+    None => MESH3D_FORWARD_SHADER_PATH
+  }
+}
+
+///|
+fn mesh3d_custom_pipeline_cache_get(
+  backend : GpuBackend,
+  shader_path : String,
+  surface_format : @wgpu.TextureFormat?,
+  topology : UInt,
+  transparent : Bool,
+  cull_mode : Int,
+) -> @wgpu.RenderPipeline? {
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  for entry in backend.mesh3d_custom_pipeline_cache {
+    if entry.shader_path != shader_path {
+      continue
+    }
+    if entry.topology != topology ||
+      entry.transparent != transparent ||
+      entry.cull_mode != safe_cull_mode {
+      continue
+    }
+    if entry.surface_format == surface_format {
+      return Some(entry.pipeline)
+    }
+  }
+  None
+}
+
+///|
+fn mesh3d_custom_pipeline_get_or_create(
+  backend : GpuBackend,
+  shader_path : String,
+  surface_format : @wgpu.TextureFormat?,
+  topology : UInt,
+  transparent : Bool,
+  cull_mode : Int,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let resolved_shader_path = mesh3d_shader_path_or_default(Some(shader_path))
+  if resolved_shader_path == MESH3D_FORWARD_SHADER_PATH {
+    return None
+  }
+  if mesh3d_custom_pipeline_cache_get(
+      backend, resolved_shader_path, surface_format, topology, transparent, cull_mode,
+    )
+    is Some(pipeline) {
+    return Some(pipeline)
+  }
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
+  guard backend.mesh3d_pipeline_layout is Some(pl) else { return None }
+  let shader_source = load_wgsl_from_assets_required(
+    backend, resolved_shader_path,
+  )
+  let shader_module = backend.device.create_shader_module_wgsl(shader_source)
+  let color_format = match surface_format {
+    Some(format) => format.to_u32()
+    None => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
+  }
+  let descriptor = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    shader_module,
+    color_format,
+    with_depth=true,
+    depth_write_enabled=!transparent,
+    position3d=true,
+    topology~,
+    cull_mode=cull_mode_wgpu,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(descriptor)
+  @wgpu_c.render_pipeline_descriptor_free(descriptor)
+  let label_prefix = if surface_format is Some(_) {
+    "mgstudio_mesh3d_custom_surface_"
+  } else {
+    "mgstudio_mesh3d_custom_rgba8_"
+  }
+  let transparent_suffix = if transparent { "1" } else { "0" }
+  pipeline.set_label(
+    label_prefix +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode) +
+    "_transparent_" +
+    transparent_suffix +
+    "_shader_" +
+    resolved_shader_path,
+  )
+  backend.mesh3d_custom_pipeline_cache.push(Mesh3dCustomPipelineCacheEntry::{
+    shader_path: resolved_shader_path,
+    surface_format,
+    topology,
+    transparent,
+    cull_mode: safe_cull_mode,
+    pipeline,
+  })
+  shader_module.release()
+  Some(pipeline)
+}
+
+///|
 fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
   topology : UInt,
@@ -2532,6 +2645,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       )
     }
     mesh3d_material_cache_clear(backend)
+    mesh3d_custom_pipeline_cache_clear(backend)
   }
   if backend.mesh3d_view_buf is None {
     backend.mesh3d_view_buf = Some(
@@ -2691,7 +2805,20 @@ fn mesh3d_pipeline_for_current_pass(
   transparent : Bool,
   topology : UInt,
   cull_mode : Int,
+  shader_path : String?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let resolved_shader_path = mesh3d_shader_path_or_default(shader_path)
+  if resolved_shader_path != MESH3D_FORWARD_SHADER_PATH {
+    let custom_surface_format = match current_pass_color_format(backend) {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) =>
+        Some(format)
+      _ => None
+    }
+    return mesh3d_custom_pipeline_get_or_create(
+      backend, resolved_shader_path, custom_surface_format, topology, transparent,
+      cull_mode,
+    )
+  }
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(backend, format, topology, cull_mode)
@@ -4609,6 +4736,7 @@ pub fn GpuBackend::draw_mesh3d(
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
   cull_mode : Int,
+  shader_path : String?,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -4775,11 +4903,13 @@ pub fn GpuBackend::draw_mesh3d(
     }
     return
   }
+  let draw_shader_path = if pass_kind == 0 { shader_path } else { None }
   guard mesh3d_pipeline_for_current_pass(
       self,
       transparent,
       mesh.primitive_topology,
       cull_mode,
+      draw_shader_path,
     )
     is Some(pipeline) else {
     return

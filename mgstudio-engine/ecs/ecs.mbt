@@ -27,10 +27,9 @@ pub(open) trait ResourceData {}
 pub(open) trait EventData {}
 
 ///|
-pub struct ComponentKey[T] {
+pub struct ComponentKey[_] {
   id : Int
   debug_name : String
-  marker : T?
 }
 
 ///|
@@ -45,14 +44,13 @@ pub fn[T] ComponentKey::debug_name(self : ComponentKey[T]) -> String {
 
 ///|
 pub fn[U, T] ComponentKey::cast(self : ComponentKey[T]) -> ComponentKey[U] {
-  ComponentKey::{ id: self.id, debug_name: self.debug_name, marker: None }
+  ComponentKey::{ id: self.id, debug_name: self.debug_name }
 }
 
 ///|
-pub struct ResourceKey[T] {
+pub struct ResourceKey[_] {
   id : Int
   debug_name : String
-  marker : T?
 }
 
 ///|
@@ -67,14 +65,13 @@ pub fn[T] ResourceKey::debug_name(self : ResourceKey[T]) -> String {
 
 ///|
 pub fn[U, T] ResourceKey::cast(self : ResourceKey[T]) -> ResourceKey[U] {
-  ResourceKey::{ id: self.id, debug_name: self.debug_name, marker: None }
+  ResourceKey::{ id: self.id, debug_name: self.debug_name }
 }
 
 ///|
-pub struct EventKey[T] {
+pub struct EventKey[_] {
   id : Int
   debug_name : String
-  marker : T?
 }
 
 ///|
@@ -89,7 +86,7 @@ pub fn[T] EventKey::debug_name(self : EventKey[T]) -> String {
 
 ///|
 pub fn[U, T] EventKey::cast(self : EventKey[T]) -> EventKey[U] {
-  EventKey::{ id: self.id, debug_name: self.debug_name, marker: None }
+  EventKey::{ id: self.id, debug_name: self.debug_name }
 }
 
 ///|
@@ -111,7 +108,7 @@ let resource_ids_by_debug_name : @hashmap.HashMap[String, Int] = @hashmap.HashMa
 pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
-  ComponentKey::{ id, debug_name, marker: None }
+  ComponentKey::{ id, debug_name }
 }
 
 ///|
@@ -119,14 +116,14 @@ pub fn[T] component_key_from_id(
   id : Int,
   debug_name? : String = "",
 ) -> ComponentKey[T] {
-  ComponentKey::{ id, debug_name, marker: None }
+  ComponentKey::{ id, debug_name }
 }
 
 ///|
 pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
   if debug_name != "" {
     if resource_ids_by_debug_name.get(debug_name) is Some(id) {
-      return ResourceKey::{ id, debug_name, marker: None }
+      return ResourceKey::{ id, debug_name }
     }
   }
   let id = next_resource_id_ref.val
@@ -134,7 +131,7 @@ pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
   if debug_name != "" {
     resource_ids_by_debug_name.set(debug_name, id)
   }
-  ResourceKey::{ id, debug_name, marker: None }
+  ResourceKey::{ id, debug_name }
 }
 
 ///|
@@ -142,19 +139,19 @@ pub fn[T] resource_key_from_id(
   id : Int,
   debug_name? : String = "",
 ) -> ResourceKey[T] {
-  ResourceKey::{ id, debug_name, marker: None }
+  ResourceKey::{ id, debug_name }
 }
 
 ///|
 pub fn[T] register_event(debug_name? : String = "") -> EventKey[T] {
   let id = next_event_id_ref.val
   next_event_id_ref.val = id + 1
-  EventKey::{ id, debug_name, marker: None }
+  EventKey::{ id, debug_name }
 }
 
 ///|
 pub fn[T] event_key_from_id(id : Int, debug_name? : String = "") -> EventKey[T] {
-  EventKey::{ id, debug_name, marker: None }
+  EventKey::{ id, debug_name }
 }
 
 ///|

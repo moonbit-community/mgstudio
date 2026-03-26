@@ -30,17 +30,17 @@ pub let ecs_key_name : ComponentKey[Name]
 
 pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
 
-pub fn[D : QueryData] query(World) -> Query[D, All]
+pub fn[D] query(World) -> Query[D, All]
 
-pub fn[T : Component] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T raise EcsError
+pub fn[T] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T raise EcsError
 
-pub fn[T : Component] query_data_component_has(World, @core.Entity, ComponentKey[T]) -> Bool
+pub fn[T] query_data_component_has(World, @core.Entity, ComponentKey[T]) -> Bool
 
 pub fn[T] query_data_component_matches(World, @core.Entity, ComponentKey[T]) -> Bool
 
-pub fn[T : Component] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 
-pub fn[D : QueryData, F : QueryFilter] query_filtered(World, F) -> Query[D, F]
+pub fn[D, F] query_filtered(World, F) -> Query[D, F]
 
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
@@ -98,9 +98,8 @@ pub struct Added[T] {
 pub fn[T] Added::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for Added[T]
 
-pub struct AddedComponents[T] {
+pub struct AddedComponents[_] {
   reader : @core.MessageReader[@core.Entity]
-  marker : T?
 }
 pub fn[T] AddedComponents::clear(Self[T]) -> Unit
 pub fn[T] AddedComponents::is_empty(Self[T]) -> Bool
@@ -167,10 +166,9 @@ pub fn[T] ComponentHooksBuilder::on_insert(Self[T], (DeferredWorld, HookContext)
 pub fn[T] ComponentHooksBuilder::on_remove(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
 pub fn[T] ComponentHooksBuilder::on_replace(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
 
-pub struct ComponentKey[T] {
+pub struct ComponentKey[_] {
   id : Int
   debug_name : String
-  marker : T?
 }
 pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
 pub fn[T] ComponentKey::debug_name(Self[T]) -> String
@@ -274,16 +272,15 @@ pub impl QueryData for EntityRef
 
 type ErasedValue
 
-pub struct EventKey[T] {
+pub struct EventKey[_] {
   id : Int
   debug_name : String
-  marker : T?
 }
 pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
 
-pub struct Has[T] {
+pub struct Has[_] {
   present : Bool
 }
 pub fn[T : Component] Has::key(Self[T]) -> ComponentKey[T]
@@ -301,9 +298,8 @@ pub struct Insert {
 }
 pub impl ComponentObserverEvent for Insert
 
-pub struct MessageCursor[T] {
+pub struct MessageCursor[_] {
   mut last_message_count : Int
-  marker : T?
 }
 pub fn[T] MessageCursor::clear(Self[T], Messages[T]) -> Unit
 pub fn[T] MessageCursor::is_empty(Self[T], Messages[T]) -> Bool
@@ -317,7 +313,6 @@ pub impl[T] @json.FromJson for MessageCursor[T]
 
 pub struct MessageKey[T] {
   queue_key : ResourceKey[Messages[T]]
-  marker : T?
 }
 pub fn[T] MessageKey::debug_name(Self[T]) -> String
 pub fn[T] MessageKey::id(Self[T]) -> Int
@@ -368,9 +363,8 @@ pub fn[T] MessageWriter::write(Self[T], T) -> Int
 pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
 pub fn[T : Default] MessageWriter::write_default(Self[T]) -> Int
 
-pub struct Messages[T] {
+pub struct Messages[_] {
   state : MessageQueueState
-  marker : T?
 }
 pub fn[T] Messages::clear(Self[T]) -> Unit
 pub fn[T] Messages::get_cursor(Self[T]) -> MessageCursor[T]
@@ -441,20 +435,19 @@ pub struct Or[F] {
 pub fn[F] Or::new(F) -> Self[F]
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
 
-pub struct Query[D, F] {
+pub struct Query[_, F] {
   world : World
   filter : F
-  data_marker : (D) -> Unit
 }
-pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
+pub fn[D : QueryData, F] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(Self[D, F]) -> QueryCombinations[D, F]
-pub fn[D : QueryData, F : QueryFilter] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
-pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError
-pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
-pub fn[D : QueryData, F : QueryFilter] Query::par_iter(Self[D, F]) -> QueryParallel[D, F]
+pub fn[D, F] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D, F] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError
+pub fn[D, F] Query::iter_many_unique_unsafe(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D, F] Query::par_iter(Self[D, F]) -> QueryParallel[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::require_single(Self[D, F]) -> D raise
 pub fn[D : QueryData, F : QueryFilter] Query::single(Self[D, F]) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
@@ -496,16 +489,15 @@ pub struct QueryParallel[D, F] {
 pub fn[D, F] QueryParallel::batching_strategy(Self[D, F], BatchingStrategy) -> Self[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryParallel::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 
-pub struct QueryState[D, F] {
+pub struct QueryState[_, F] {
   filter : F
-  data_marker : (D) -> Unit
 }
-pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
+pub fn[D : QueryData, F] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] QueryState::count(Self[D, F], World) -> Int
 pub fn[D : QueryData, F : QueryFilter] QueryState::get(Self[D, F], World, @core.Entity) -> D? raise EcsError
-pub fn[D : QueryData, F : QueryFilter] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
+pub fn[D, F] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::iter_combinations(Self[D, F], World) -> QueryCombinations[D, F]
-pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D, F] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
 pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> D? raise EcsError
 
@@ -513,9 +505,8 @@ pub struct Remove {
 }
 pub impl ComponentObserverEvent for Remove
 
-pub struct RemovedComponents[T] {
+pub struct RemovedComponents[_] {
   reader : @core.MessageReader[@core.Entity]
-  marker : T?
 }
 pub fn[T] RemovedComponents::clear(Self[T]) -> Unit
 pub fn[T] RemovedComponents::is_empty(Self[T]) -> Bool
@@ -544,10 +535,9 @@ pub fn[T] ResourceAccess::set(Self[T], T) -> Bool
 pub fn[T] ResourceAccess::update(Self[T], (T) -> T) -> Bool
 pub fn[T] ResourceAccess::upsert(Self[T], T) -> Unit
 
-pub struct ResourceKey[T] {
+pub struct ResourceKey[_] {
   id : Int
   debug_name : String
-  marker : T?
 }
 pub fn[U, T] ResourceKey::cast(Self[T]) -> Self[U]
 pub fn[T] ResourceKey::debug_name(Self[T]) -> String
@@ -621,9 +611,9 @@ pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageM
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
 pub fn World::new() -> Self
-pub fn[D : QueryData] World::query(Self) -> QueryState[D, All]
-pub fn[F : QueryFilter] World::query_entities_filtered(Self, F) -> Query[@core.Entity, F]
-pub fn[D : QueryData, F : QueryFilter] World::query_filtered(Self, F) -> QueryState[D, F]
+pub fn[D] World::query(Self) -> QueryState[D, All]
+pub fn[F] World::query_entities_filtered(Self, F) -> Query[@core.Entity, F]
+pub fn[D, F] World::query_filtered(Self, F) -> QueryState[D, F]
 pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn World::read_sequence(Self) -> Int
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T] raise ComponentHooksError

@@ -432,10 +432,9 @@ pub(all) enum AppLabel {
 pub impl Eq for AppLabel
 pub impl Show for AppLabel
 
-pub struct CheckParentHasComponent[C] {
+pub struct CheckParentHasComponent[_] {
   entity : @core.Entity
   caller : String?
-  marker : C?
 }
 pub fn[C] CheckParentHasComponent::caller(Self[C]) -> String?
 pub fn[C] CheckParentHasComponent::entity(Self[C]) -> @core.Entity
@@ -652,14 +651,14 @@ pub fn[S] OnExit::state(Self[S]) -> S
 pub impl[S : Eq] Eq for OnExit[S]
 pub impl[S : Show] Show for OnExit[S]
 
-pub struct OnPointer[K] {
+pub struct OnPointer[_] {
   event : @pointer_events.PointerEvent
 }
 pub fn[K] OnPointer::event(Self[K]) -> @pointer_events.PointerEvent
 pub fn[K] OnPointer::pointer(Self[K]) -> Int
 pub fn[K] OnPointer::position(Self[K]) -> @math.Vec2
 pub fn[K] OnPointer::target(Self[K]) -> @core.Entity?
-pub impl[K : PointerObserverKind] SystemParam for OnPointer[K]
+pub impl[K] SystemParam for OnPointer[K]
 
 pub struct OnReenter[S] {
   state : S
@@ -868,9 +867,8 @@ pub(all) enum ScheduleStage {
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
 
-pub struct Single[D, F] {
+pub struct Single[D, _] {
   value : D
-  filter_marker : (F) -> Unit
 }
 pub fn[D, F] Single::get(Self[D, F]) -> D
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[D, F]
@@ -1024,9 +1022,8 @@ pub(all) enum SystemSteppingBehavior {
 pub impl Eq for SystemSteppingBehavior
 pub impl Show for SystemSteppingBehavior
 
-pub struct ValidateParentHasComponentPlugin[C] {
+pub struct ValidateParentHasComponentPlugin[_] {
   schedule : ScheduleStage
-  marker : C?
 }
 pub fn[C] ValidateParentHasComponentPlugin::default() -> Self[C]
 pub fn[C] ValidateParentHasComponentPlugin::in_schedule(ScheduleStage) -> Self[C]
@@ -1136,6 +1133,6 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
 pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E]
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F]
+pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F]
 pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T]
 

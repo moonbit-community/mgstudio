@@ -439,6 +439,24 @@ struct GpuMesh3dPreprocessCameraUploadState {
 }
 
 ///|
+struct Mesh3dCustomPipelineCacheEntry {
+  shader_path : String
+  surface_format : @wgpu.TextureFormat?
+  topology : UInt
+  transparent : Bool
+  cull_mode : Int
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
+struct CustomPostProcessPipelineCacheEntry {
+  shader_path : String
+  fragment_entry : String
+  surface_format : @wgpu.TextureFormat
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
 
 ///|
 pub struct GpuBackend {
@@ -569,6 +587,7 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
+  mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
   mesh3d_draw_slots : Array[GpuStorageSlot]
@@ -643,6 +662,13 @@ pub struct GpuBackend {
   mut effect_stack_chromatic_settings_buf : @wgpu.Buffer?
   mut effect_stack_vignette_settings_buf : @wgpu.Buffer?
   mut effect_stack_default_lut_texture_id : Int
+  mut custom_postprocess3d_bgl : @wgpu.BindGroupLayout?
+  mut custom_postprocess3d_pipeline_layout : @wgpu.PipelineLayout?
+  mut custom_postprocess3d_sampler : @wgpu.Sampler?
+  mut custom_postprocess3d_uniform_buf : @wgpu.Buffer?
+  custom_postprocess3d_pipeline_cache : Array[
+    CustomPostProcessPipelineCacheEntry,
+  ]
   mut blit_bgl : @wgpu.BindGroupLayout?
   mut blit_pipeline_layout : @wgpu.PipelineLayout?
   mut blit_pipeline : @wgpu.RenderPipeline?
@@ -1003,6 +1029,7 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_surface_format: None,
     mesh3d_pipeline_rgba8_cull_mode: -1,
     mesh3d_pipeline_surface_cull_mode: -1,
+    mesh3d_custom_pipeline_cache: [],
     mesh3d_point_shadow_compare_sampler: None,
     mesh3d_view_buf: None,
     mesh3d_draw_slots: [],
@@ -1075,6 +1102,11 @@ pub fn GpuBackend::new(
     effect_stack_chromatic_settings_buf: None,
     effect_stack_vignette_settings_buf: None,
     effect_stack_default_lut_texture_id: -1,
+    custom_postprocess3d_bgl: None,
+    custom_postprocess3d_pipeline_layout: None,
+    custom_postprocess3d_sampler: None,
+    custom_postprocess3d_uniform_buf: None,
+    custom_postprocess3d_pipeline_cache: [],
     blit_bgl: None,
     blit_pipeline_layout: None,
     blit_pipeline: None,

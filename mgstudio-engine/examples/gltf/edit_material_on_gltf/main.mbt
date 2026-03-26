@@ -112,10 +112,10 @@ fn visit_descendants(
   entity : @core.Entity,
   f : (@core.Entity) -> Unit,
 ) -> Unit raise {
-  guard (try! children_query.get(entity)) is Some(children_comp) else { return }
+  guard children_query.get(entity) is Some(children_comp) else { return }
   for child in children_comp.value().entities() {
     f(child)
-    try! visit_descendants(children_query, child, f)
+    visit_descendants(children_query, child, f)
   }
 }
 

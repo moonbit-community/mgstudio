@@ -56,6 +56,11 @@ pub impl @ecs.Component for SystemPipingMarker with component() {
 }
 
 ///|
+fn touch_system_piping_types() -> Unit {
+  ignore(SystemPipingMarker::{  })
+}
+
+///|
 fn parse_piped_message(text : String) -> Result[Int, String] {
   try @strconv.parse_int(text[:], base=10) catch {
     _ => Err("invalid integer: " + text)
@@ -127,6 +132,7 @@ test "app system piping: map and pipe_param can use additional system params" {
 
 ///|
 test "app system piping: source validation skip prevents downstream handler" {
+  touch_system_piping_types()
   let ran = Ref::new(false)
   let errors : Array[String] = []
   let mut app = App::new(@ecs.World::new())

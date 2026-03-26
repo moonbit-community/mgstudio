@@ -82,6 +82,7 @@ pub(open) trait PointerObserverKind {
 
 ///|
 pub impl PointerObserverKind for PointerMove with event_kind() {
+  ignore(PointerMove::{  })
   @pointer_events.PointerEventKind::Move
 }
 
@@ -92,6 +93,7 @@ pub impl PointerObserverKind for PointerMove with source_label() {
 
 ///|
 pub impl PointerObserverKind for PointerEnter with event_kind() {
+  ignore(PointerEnter::{  })
   @pointer_events.PointerEventKind::Enter
 }
 
@@ -102,6 +104,7 @@ pub impl PointerObserverKind for PointerEnter with source_label() {
 
 ///|
 pub impl PointerObserverKind for PointerLeave with event_kind() {
+  ignore(PointerLeave::{  })
   @pointer_events.PointerEventKind::Leave
 }
 
@@ -112,6 +115,7 @@ pub impl PointerObserverKind for PointerLeave with source_label() {
 
 ///|
 pub impl PointerObserverKind for PointerDown with event_kind() {
+  ignore(PointerDown::{  })
   @pointer_events.PointerEventKind::Down
 }
 
@@ -122,6 +126,7 @@ pub impl PointerObserverKind for PointerDown with source_label() {
 
 ///|
 pub impl PointerObserverKind for PointerUp with event_kind() {
+  ignore(PointerUp::{  })
   @pointer_events.PointerEventKind::Up
 }
 
@@ -132,6 +137,7 @@ pub impl PointerObserverKind for PointerUp with source_label() {
 
 ///|
 pub impl PointerObserverKind for PointerClick with event_kind() {
+  ignore(PointerClick::{  })
   @pointer_events.PointerEventKind::Click
 }
 
@@ -141,7 +147,7 @@ pub impl PointerObserverKind for PointerClick with source_label() {
 }
 
 ///|
-pub struct OnPointer[K] {
+pub struct OnPointer[_] {
   event : @pointer_events.PointerEvent
 }
 
@@ -179,22 +185,17 @@ fn current_pointer_event_abort_missing() -> @pointer_events.PointerEvent {
 }
 
 ///|
-pub impl[K : PointerObserverKind] SystemParam for OnPointer[K] with init_state(
-  world,
-) {
+pub impl[K] SystemParam for OnPointer[K] with init_state(world) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[K : PointerObserverKind] SystemParam for OnPointer[K] with get(_state) {
+pub impl[K] SystemParam for OnPointer[K] with get(_state) {
   OnPointer::{ event: current_pointer_event_abort_missing() }
 }
 
 ///|
-pub impl[K : PointerObserverKind] SystemParam for OnPointer[K] with store(
-  self,
-  state,
-) {
+pub impl[K] SystemParam for OnPointer[K] with store(self, state) {
   system_param_store_no_state(self, state)
 }
 

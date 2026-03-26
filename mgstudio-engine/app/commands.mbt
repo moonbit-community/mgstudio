@@ -263,7 +263,7 @@ pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] C
 pub fn Commands::run_system(self : Commands, system_id : SystemId) -> Unit {
   self.queue.push({
     run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
-      try! run_system(world, system_id)
+      run_system(world, system_id)
     },
     error_handler: None,
     source: "Commands::run_system",
@@ -326,7 +326,7 @@ pub fn[T : Resource] Commands::insert_resource(
   resource : T,
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       world.insert_resource(T::resource(), resource)
     },
     error_handler: None,
@@ -338,7 +338,7 @@ pub fn[T : Resource] Commands::insert_resource(
 pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       ignore(try? world.remove_resource(key))
     },
     error_handler: None,
@@ -352,7 +352,7 @@ pub fn[T] Commands::remove_world_resource(
   key : @ecs.ResourceKey[T],
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       ignore(try? world.remove_resource(key))
     },
     error_handler: None,
@@ -396,7 +396,7 @@ pub fn[E : @ecs.TriggerEvent] Commands::trigger(
 ) -> Unit {
   let source = "Commands::trigger(" + E::debug_name() + ")"
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       world.trigger(event, caller=Some(source))
     },
     error_handler: None,
@@ -489,7 +489,7 @@ pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -512,7 +512,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointe
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -535,7 +535,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityComman
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -563,7 +563,7 @@ pub fn[
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,

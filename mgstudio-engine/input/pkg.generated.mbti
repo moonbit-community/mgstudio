@@ -140,7 +140,6 @@ pub impl @app.Resource for AccumulatedMouseScroll
 
 pub struct Axis[T] {
   axis_data : Array[(T, Float)]
-  marker : T?
 }
 pub fn[T] Axis::all_axes(Self[T]) -> Array[T]
 pub fn[T] Axis::all_axes_and_values(Self[T]) -> Array[(T, Float)]
@@ -195,7 +194,6 @@ pub struct ButtonInput[T] {
   pressed : Array[(String, T)]
   just_pressed : Array[(String, T)]
   just_released : Array[(String, T)]
-  marker : T?
 }
 pub fn[T : ButtonInputButton] ButtonInput::all_just_pressed(Self[T], Array[T]) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::all_just_released(Self[T], Array[T]) -> Bool

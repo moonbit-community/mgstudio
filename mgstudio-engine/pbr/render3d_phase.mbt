@@ -61,6 +61,7 @@ priv struct Camera3dViewPayload {
   tonemapping : Tonemapping?
   deband_dither : DebandDither?
   chromatic_aberration : ChromaticAberration?
+  custom_post_process3d : CustomPostProcess3d?
   vignette : Vignette?
   motion_blur : MotionBlur?
   exposure : Exposure?
@@ -195,6 +196,7 @@ priv struct MeshGpuDrawPayload3d {
   anisotropy_strength : Float
   max_relief_mapping_search_steps : Float
   cull_mode : Int
+  shader_path : String?
 }
 
 ///|

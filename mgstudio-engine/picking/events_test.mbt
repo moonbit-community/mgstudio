@@ -328,21 +328,21 @@ test "picking: pointer observers dispatch generated move enter and leave events"
   let seen : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new()).add_pointer_observer(fn(
     pointer : @app.OnPointer[@app.PointerMove],
-  ) raise {
+  ) {
     if pointer.target() is Some(target) {
       seen.push("move:" + target.id.to_string())
     }
   })
   app = app.add_pointer_observer(fn(
     pointer : @app.OnPointer[@app.PointerEnter],
-  ) raise {
+  ) {
     if pointer.target() is Some(target) {
       seen.push("enter:" + target.id.to_string())
     }
   })
   app = app.add_pointer_observer(fn(
     pointer : @app.OnPointer[@app.PointerLeave],
-  ) raise {
+  ) {
     if pointer.target() is Some(target) {
       seen.push("leave:" + target.id.to_string())
     }

@@ -411,6 +411,7 @@ fn process_cool_text(
   bytes : Bytes,
 ) -> Result[@asset.ProcessedAsset[Text], String] {
   let cool_text = load_cool_text_asset(asset_server, path, bytes)
+  ignore(cool_text.dependencies.length())
   let final_value = cool_text.text + transformer_appended_suffix(path)
   Ok(
     @asset.ProcessedAsset::new(Text::new(final_value)).with_saved_bytes(
@@ -420,36 +421,27 @@ fn process_cool_text(
 }
 
 ///|
-struct TextLoader {}
-
-///|
-fn TextLoader::loader() -> @asset.AssetLoader[Text] {
+fn text_loader() -> @asset.AssetLoader[Text] {
   @asset.AssetLoader::new(["txt"], load_text_asset)
 }
 
 ///|
-struct CoolTextLoader {}
-
-///|
-fn CoolTextLoader::loader() -> @asset.AssetLoader[CoolText] {
+fn cool_text_loader() -> @asset.AssetLoader[CoolText] {
   @asset.AssetLoader::new(["cool.ron"], load_cool_text_asset)
 }
-
-///|
-struct CoolTextTransformer {}
 
 ///|
 struct CoolTextSaver {}
 
 ///|
-fn CoolTextTransformer::processor() -> @asset.LoadTransformAndSave[Text] {
+fn cool_text_processor() -> @asset.LoadTransformAndSave[Text] {
   CoolTextSaver::{  } |> ignore
   @asset.LoadTransformAndSave::new(["cool.ron"], process_cool_text)
 }
 
 ///|
 fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  let processor : @asset.LoadTransformAndSave[Text] = CoolTextTransformer::processor()
+  let processor : @asset.LoadTransformAndSave[Text] = cool_text_processor()
   @asset.set_default_asset_processor(
     @asset.register_asset_processor(
       @asset.init_asset_processor(
@@ -466,9 +458,9 @@ fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
               ),
               fn() { Text::new("") },
             ),
-            TextLoader::loader(),
+            text_loader(),
           ),
-          CoolTextLoader::loader(),
+          cool_text_loader(),
         ),
         processor,
       ),

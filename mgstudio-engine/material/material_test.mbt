@@ -27,17 +27,28 @@ test "material boundary re-exports standard material APIs" {
 
 ///|
 test "material boundary re-exports material metadata APIs" {
-  let metadata = @material.ExtendedMaterialMetadata3d::new(7).with_disable_shadows(
-    true,
-  )
+  let metadata = @material.ExtendedMaterialMetadata3d::new(7)
+    .with_disable_shadows(true)
+    .with_shader_path(Some("shaders/custom/manual_material_3d.wgsl"))
   let forward_ext = @material.ForwardDecalMaterialExt::new(0.5)
   let renderer_method = @material.DefaultOpaqueRendererMethod::forward()
+  let mesh_material = @material.MeshMaterial3d::new(@asset.Handle::new(42)).with_extension_shader_path(
+    Some("shaders/custom/manual_material_3d.wgsl"),
+  )
   inspect(metadata.extension_tag, content="7")
   inspect(metadata.disable_shadows, content="true")
+  inspect(
+    metadata.shader_path,
+    content="Some(\"shaders/custom/manual_material_3d.wgsl\")",
+  )
   inspect(forward_ext.depth_fade_factor.to_double(), content="0.5")
   inspect(
     renderer_method.renderer_method() is @material.OpaqueRendererMethod::Forward,
     content="true",
+  )
+  inspect(
+    mesh_material.extended_material.map(fn(ext) { ext.shader_path }),
+    content="Some(Some(\"shaders/custom/manual_material_3d.wgsl\"))",
   )
 }
 

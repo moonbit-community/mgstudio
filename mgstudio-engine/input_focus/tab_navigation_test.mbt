@@ -36,7 +36,7 @@ fn[T : @ecs.Component] insert_component(
   entity : @core.Entity,
   value : T,
 ) -> Unit raise {
-  try! (world.entity_mut(entity).insert_component(value) |> ignore)
+  world.entity_mut(entity).insert_component(value) |> ignore
 }
 
 ///|
@@ -47,12 +47,12 @@ test "tab_navigation follows child order when TabIndex values are equal" {
   let first = world.spawn()
   let second = world.spawn()
 
-  try! insert_component(world, group, TabGroup::new(0))
-  try! insert_component(world, group, @hierarchy.Children::new([first, second]))
-  try! insert_component(world, first, @hierarchy.Parent::new(group))
-  try! insert_component(world, second, @hierarchy.Parent::new(group))
-  try! insert_component(world, first, TabIndex::new(0))
-  try! insert_component(world, second, TabIndex::new(0))
+  insert_component(world, group, TabGroup::new(0))
+  insert_component(world, group, @hierarchy.Children::new([first, second]))
+  insert_component(world, first, @hierarchy.Parent::new(group))
+  insert_component(world, second, @hierarchy.Parent::new(group))
+  insert_component(world, first, TabIndex::new(0))
+  insert_component(world, second, TabIndex::new(0))
 
   advance_tab_focus(world, false)
   inspect(tab_focus_entity(world) == Some(first), content="true")
@@ -74,20 +74,20 @@ test "tab_navigation orders groups first, then TabIndex, and supports reverse tr
   let late_first = world.spawn()
   let late_second = world.spawn()
 
-  try! insert_component(world, early_group, TabGroup::new(0))
-  try! insert_component(world, late_group, TabGroup::new(1))
-  try! insert_component(world, early_group, @hierarchy.Children::new([early]))
-  try! insert_component(
+  insert_component(world, early_group, TabGroup::new(0))
+  insert_component(world, late_group, TabGroup::new(1))
+  insert_component(world, early_group, @hierarchy.Children::new([early]))
+  insert_component(
     world,
     late_group,
     @hierarchy.Children::new([late_first, late_second]),
   )
-  try! insert_component(world, early, @hierarchy.Parent::new(early_group))
-  try! insert_component(world, late_first, @hierarchy.Parent::new(late_group))
-  try! insert_component(world, late_second, @hierarchy.Parent::new(late_group))
-  try! insert_component(world, early, TabIndex::new(0))
-  try! insert_component(world, late_first, TabIndex::new(1))
-  try! insert_component(world, late_second, TabIndex::new(3))
+  insert_component(world, early, @hierarchy.Parent::new(early_group))
+  insert_component(world, late_first, @hierarchy.Parent::new(late_group))
+  insert_component(world, late_second, @hierarchy.Parent::new(late_group))
+  insert_component(world, early, TabIndex::new(0))
+  insert_component(world, late_first, TabIndex::new(1))
+  insert_component(world, late_second, TabIndex::new(3))
 
   advance_tab_focus(world, false)
   inspect(tab_focus_entity(world) == Some(early), content="true")
@@ -111,30 +111,18 @@ test "tab_navigation restricts traversal to modal groups when present" {
   let normal_button = world.spawn()
   let modal_button = world.spawn()
 
-  try! insert_component(world, normal_group, TabGroup::new(0))
-  try! insert_component(world, modal_group, TabGroup::modal())
-  try! insert_component(
+  insert_component(world, normal_group, TabGroup::new(0))
+  insert_component(world, modal_group, TabGroup::modal())
+  insert_component(
     world,
     normal_group,
     @hierarchy.Children::new([normal_button]),
   )
-  try! insert_component(
-    world,
-    modal_group,
-    @hierarchy.Children::new([modal_button]),
-  )
-  try! insert_component(
-    world,
-    normal_button,
-    @hierarchy.Parent::new(normal_group),
-  )
-  try! insert_component(
-    world,
-    modal_button,
-    @hierarchy.Parent::new(modal_group),
-  )
-  try! insert_component(world, normal_button, TabIndex::new(0))
-  try! insert_component(world, modal_button, TabIndex::new(0))
+  insert_component(world, modal_group, @hierarchy.Children::new([modal_button]))
+  insert_component(world, normal_button, @hierarchy.Parent::new(normal_group))
+  insert_component(world, modal_button, @hierarchy.Parent::new(modal_group))
+  insert_component(world, normal_button, TabIndex::new(0))
+  insert_component(world, modal_button, TabIndex::new(0))
 
   advance_tab_focus(world, false)
   inspect(tab_focus_entity(world) == Some(modal_button), content="true")

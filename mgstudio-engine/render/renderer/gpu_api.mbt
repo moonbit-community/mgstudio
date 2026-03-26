@@ -1427,6 +1427,7 @@ pub fn draw_mesh3d(
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
+  shader_path? : String? = None,
 ) -> Unit {
   debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
   current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
@@ -1451,7 +1452,7 @@ pub fn draw_mesh3d(
       specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
       thickness, ior, alpha_cutoff, material_flags, transmission_source_texture_id,
       transmission_blur_taps, transmission_steps, point_shadow_texture_id, point_shadow_enabled,
-      point_shadow_depth_bias, cull_mode,
+      point_shadow_depth_bias, cull_mode, shader_path,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)
     }

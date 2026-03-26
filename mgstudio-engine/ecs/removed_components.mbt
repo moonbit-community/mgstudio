@@ -13,9 +13,8 @@
 // limitations under the License.
 
 ///|
-pub struct RemovedComponents[T] {
+pub struct RemovedComponents[_] {
   reader : @core.MessageReader[@core.Entity]
-  marker : T?
 }
 
 ///|
@@ -50,5 +49,5 @@ pub fn[T] World::removed_components(
     Some(messages_ref) => messages_ref.val.reader(system)
     None => @core.Messages::new().reader(system)
   }
-  RemovedComponents::{ reader, marker: None }
+  RemovedComponents::{ reader, }
 }

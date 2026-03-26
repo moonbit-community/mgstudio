@@ -366,6 +366,7 @@ pub struct Camera3dBundle {
   tonemapping : Tonemapping?
   deband_dither : DebandDither?
   chromatic_aberration : ChromaticAberration?
+  custom_post_process3d : CustomPostProcess3d?
   vignette : Vignette?
   motion_blur : MotionBlur?
   exposure : Exposure?
@@ -391,6 +392,7 @@ pub fn Camera3dBundle::new(
     tonemapping: Some(Tonemapping::default()),
     deband_dither: Some(Enabled),
     chromatic_aberration: None,
+    custom_post_process3d: None,
     vignette: None,
     motion_blur: None,
     exposure: Some(Exposure::default()),
@@ -418,6 +420,7 @@ pub fn Camera3dBundle::new_with_projection(
     tonemapping: Some(Tonemapping::default()),
     deband_dither: Some(Enabled),
     chromatic_aberration: None,
+    custom_post_process3d: None,
     vignette: None,
     motion_blur: None,
     exposure: Some(Exposure::default()),
@@ -491,6 +494,14 @@ pub fn Camera3dBundle::with_chromatic_aberration(
   chromatic_aberration : ChromaticAberration?,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, chromatic_aberration, }
+}
+
+///|
+pub fn Camera3dBundle::with_custom_post_process3d(
+  self : Camera3dBundle,
+  custom_post_process3d : CustomPostProcess3d?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, custom_post_process3d, }
 }
 
 ///|
@@ -691,6 +702,14 @@ fn camera3d_bundle_insert(
       entity,
       ecs_key_chromatic_aberration,
       chromatic_aberration,
+      loc~,
+    )
+  }
+  if bundle.custom_post_process3d is Some(custom_post_process3d) {
+    world.set_by_key(
+      entity,
+      ecs_key_custom_post_process3d,
+      custom_post_process3d,
       loc~,
     )
   }
@@ -1397,6 +1416,16 @@ fn render3d_effect_stack_enabled(
 ) -> Bool {
   render3d_chromatic_aberration_enabled(chromatic_aberration) ||
   render3d_vignette_enabled(vignette)
+}
+
+///|
+fn render3d_custom_post_process_enabled(
+  custom_post_process3d : CustomPostProcess3d?,
+) -> Bool {
+  match custom_post_process3d {
+    Some(value) => value.enabled && value.shader_path.trim() != ""
+    None => false
+  }
 }
 
 ///|
@@ -3204,6 +3233,35 @@ fn render3d_draw_camera_effect_stack_stage(
     vignette_color_g~,
     vignette_color_b~,
     vignette_color_a~,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
+}
+
+///|
+fn render3d_draw_camera_custom_post_process_stage(
+  scene_texture_id : Int,
+  custom_post_process3d : CustomPostProcess3d?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if !render3d_custom_post_process_enabled(custom_post_process3d) {
+    return
+  }
+  guard custom_post_process3d is Some(custom_post_process) else { return }
+  @render.host_gpu_draw_custom_postprocess3d(
+    scene_texture_id~,
+    shader_path=custom_post_process.shader_path.trim().to_string(),
+    fragment_entry=if custom_post_process.fragment_entry.trim().to_string() ==
+      "" {
+      "fragment_main"
+    } else {
+      custom_post_process.fragment_entry.trim().to_string()
+    },
+    uniform_x=custom_post_process.uniform_x,
+    uniform_y=custom_post_process.uniform_y,
+    uniform_z=custom_post_process.uniform_z,
+    uniform_w=custom_post_process.uniform_w,
     view_width=view_width_logical,
     view_height=view_height_logical,
   )
@@ -6060,6 +6118,7 @@ fn render3d_build_mesh_gpu_draw_payload(
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
+  shader_path? : String? = None,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
     material, texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
@@ -6110,6 +6169,7 @@ fn render3d_build_mesh_gpu_draw_payload(
     anisotropy_strength,
     max_relief_mapping_search_steps,
     cull_mode: render3d_cull_mode_value(material, draw_flags),
+    shader_path,
   }
 }
 
@@ -6188,6 +6248,7 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     point_shadow_enabled=payload.point_shadow_enabled,
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
     cull_mode=payload.cull_mode,
+    shader_path=payload.shader_path,
   )
 }
 
@@ -6316,6 +6377,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let chromatic_aberration = try! source_world.get_by_key(
       entity, ecs_key_chromatic_aberration,
     )
+    let custom_post_process3d = try! source_world.get_by_key(
+      entity, ecs_key_custom_post_process3d,
+    )
     let vignette = try! source_world.get_by_key(entity, ecs_key_vignette)
     let motion_blur = try! source_world.get_by_key(entity, ecs_key_motion_blur)
     let exposure = try! source_world.get_by_key(entity, ecs_key_exposure)
@@ -6420,6 +6484,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             tonemapping,
             deband_dither,
             chromatic_aberration,
+            custom_post_process3d,
             vignette,
             motion_blur,
             exposure,
@@ -6719,9 +6784,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera.chromatic_aberration,
       camera.vignette,
     )
+    let custom_post_process_enabled = render3d_custom_post_process_enabled(
+      camera.custom_post_process3d,
+    )
     let fxaa_postprocess_enabled = render3d_fxaa_enabled(camera.fxaa)
     let tonemap_postprocess_enabled = tonemapping_stage_enabled ||
       effect_stack_postprocess_enabled ||
+      custom_post_process_enabled ||
       fxaa_postprocess_enabled
     let motion_vector_prepass_enabled = prepass_enabled &&
       (
@@ -7304,6 +7373,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       } else {
         non_indexed_indirect_parameter_indices[draw_item_index]
       }
+      let draw_shader_path = match mesh.material_extension {
+        Some(extension) => extension.shader_path
+        None => None
+      }
       let draw_payload = render3d_build_mesh_gpu_draw_payload(
         mesh.mesh_id,
         camera_entity.id,
@@ -7350,6 +7423,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         anisotropy_strength,
         max_relief_mapping_search_steps,
         draw_flags,
+        shader_path=draw_shader_path,
       )
       if draw_item.phase == RENDER3D_PHASE_TRANSPARENT {
         transparent_draws.push(draw_payload)
@@ -7673,6 +7747,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           } else {
             0
           }) +
+          (if custom_post_process_enabled { 1 } else { 0 }) +
           (if tonemapping_stage_enabled { 1 } else { 0 }) +
           (if fxaa_postprocess_enabled { 1 } else { 0 })
         if postprocess_stage_count > 0 {
@@ -7714,6 +7789,45 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               current_source_texture_id,
               camera.chromatic_aberration,
               camera.vignette,
+              view_width_logical,
+              view_height_logical,
+            )
+            @render.host_gpu_end_pass()
+            current_source_texture_id = stage_target_id
+            stage_index = stage_index + 1
+          }
+          if custom_post_process_enabled {
+            let stage_target_id = render3d_postprocess_stage_target(
+              current_source_texture_id,
+              scene_target_id,
+              stage_ping_target_id,
+              camera.target_id,
+              stage_index,
+              postprocess_stage_count,
+            )
+            @render.host_gpu_begin_pass(
+              target_id=stage_target_id,
+              width=view_width_logical,
+              height=view_height_logical,
+              clear_r=clear_color.r,
+              clear_g=clear_color.g,
+              clear_b=clear_color.b,
+              clear_a=clear_color.a,
+              camera_x=0.0F,
+              camera_y=0.0F,
+              camera_rotation=0.0F,
+              camera_scale=1.0F,
+              viewport_x~,
+              viewport_y~,
+              viewport_width~,
+              viewport_height~,
+              viewport_depth_min~,
+              viewport_depth_max~,
+              clear_enabled=if clear_enabled { 1 } else { 0 },
+            )
+            render3d_draw_camera_custom_post_process_stage(
+              current_source_texture_id,
+              camera.custom_post_process3d,
               view_width_logical,
               view_height_logical,
             )

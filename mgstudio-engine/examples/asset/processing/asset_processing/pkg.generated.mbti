@@ -13,20 +13,14 @@ import {
 // Types and methods
 type CoolText
 
-type CoolTextLoader
-
 type CoolTextSaver
 
 type CoolTextSource
-
-type CoolTextTransformer
 
 type Text
 
 type TextAssets
 pub impl @app.Resource for TextAssets
-
-type TextLoader
 
 type TextSettings
 

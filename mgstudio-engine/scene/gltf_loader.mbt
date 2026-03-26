@@ -84,7 +84,6 @@ priv struct GltfAccessorDef {
 priv struct GltfPrimitiveDef {
   primitive_index : Int
   position : Int?
-  normal : Int?
   uv0 : Int?
   joint_indices : Int?
   joint_weights : Int?
@@ -388,6 +387,33 @@ fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
 }
 
 ///|
+fn scene_touch_gltf_asset_label(label : GltfAssetLabel?) -> Unit {
+  match label {
+    Some(GltfAssetLabel::Scene(index)) => ignore(index)
+    Some(GltfAssetLabel::Node(index)) => ignore(index)
+    Some(GltfAssetLabel::Mesh(index)) => ignore(index)
+    Some(GltfAssetLabel::Primitive(mesh, primitive)) => {
+      ignore(mesh)
+      ignore(primitive)
+    }
+    Some(GltfAssetLabel::MorphTarget(mesh, primitive)) => {
+      ignore(mesh)
+      ignore(primitive)
+    }
+    Some(GltfAssetLabel::Texture(index)) => ignore(index)
+    Some(GltfAssetLabel::Material(index, is_scale_inverted)) => {
+      ignore(index)
+      ignore(is_scale_inverted)
+    }
+    Some(GltfAssetLabel::DefaultMaterial) => ()
+    Some(GltfAssetLabel::Animation(index)) => ignore(index)
+    Some(GltfAssetLabel::Skin(index)) => ignore(index)
+    Some(GltfAssetLabel::InverseBindMatrices(index)) => ignore(index)
+    None => ()
+  }
+}
+
+///|
 fn scene_split_gltf_asset_path(
   asset_path : String,
 ) -> (String, GltfAssetLabel?) {
@@ -398,7 +424,9 @@ fn scene_split_gltf_asset_path(
       return (base_path, None)
     }
     let label = asset_path[label_start:asset_path.length()].to_string()
-    (base_path, scene_parse_gltf_asset_label(label))
+    let parsed_label = scene_parse_gltf_asset_label(label)
+    scene_touch_gltf_asset_label(parsed_label)
+    (base_path, parsed_label)
   } else {
     (asset_path, None)
   }
@@ -1033,7 +1061,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         if json_get_array(obj, "weights") is Some(weight_entries) {
           for weight_entry in weight_entries {
             if json_number(weight_entry) is Some(number) {
-              weights.push(number.to_float())
+              weights.push(Float::from_double(number))
             }
           }
         }
@@ -1051,10 +1079,6 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               let attributes = json_get_object(primitive_obj, "attributes")
               let position = match attributes {
                 Some(attr_obj) => json_get_int(attr_obj, "POSITION")
-                None => None
-              }
-              let normal = match attributes {
-                Some(attr_obj) => json_get_int(attr_obj, "NORMAL")
                 None => None
               }
               let uv0 = match attributes {
@@ -1100,7 +1124,6 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               primitives.push({
                 primitive_index,
                 position,
-                normal,
                 uv0,
                 joint_indices,
                 joint_weights,
@@ -1114,7 +1137,6 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               primitives.push({
                 primitive_index,
                 position: None,
-                normal: None,
                 uv0: None,
                 joint_indices: None,
                 joint_weights: None,
@@ -2545,30 +2567,6 @@ fn scene_build_material_component(
   let component = @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material))
   material_cache[material_index] = Some(component)
   Some(component)
-}
-
-///|
-fn quat_rotate_vec3(q : @math.Quat, value : @math.Vec3) -> @math.Vec3 {
-  let axis = @math.Vec3::new(q.x, q.y, q.z)
-  let uv = axis.cross(value)
-  let uuv = axis.cross(uv)
-  value.add(uv.mul_scalar(2.0F * q.w)).add(uuv.mul_scalar(2.0F))
-}
-
-///|
-fn transform_compose(
-  parent : @transform.Transform,
-  local_transform : @transform.Transform,
-) -> @transform.Transform {
-  let scaled_translation = local_transform.translation.mul(parent.scale)
-  let world_translation = parent.translation.add(
-    quat_rotate_vec3(parent.rotation, scaled_translation),
-  )
-  @transform.Transform::new(
-    world_translation,
-    parent.rotation.mul(local_transform.rotation).normalize(),
-    parent.scale.mul(local_transform.scale),
-  )
 }
 
 ///|

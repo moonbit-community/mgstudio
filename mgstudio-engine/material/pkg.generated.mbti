@@ -57,6 +57,7 @@ pub impl @json.FromJson for DefaultOpaqueRendererMethod
 
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
+  shader_path : String?
   alpha_mode_override : AlphaMode3d?
   opaque_render_method_override : OpaqueRendererMethod?
   requires_depth_prepass : Bool
@@ -71,6 +72,7 @@ pub fn ExtendedMaterialMetadata3d::with_extension_tag(Self, Int) -> Self
 pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(Self, OpaqueRendererMethod?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(Self, Bool) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_depth_prepass(Self, Bool) -> Self
+pub fn ExtendedMaterialMetadata3d::with_shader_path(Self, String?) -> Self
 
 pub(all) enum Face3d {
   Front
@@ -98,6 +100,7 @@ pub fn MeshMaterial3d::with_extension_disable_shadows(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_opaque_renderer_method(Self, OpaqueRendererMethod?) -> Self
 pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
+pub fn MeshMaterial3d::with_extension_shader_path(Self, String?) -> Self
 pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self
 pub impl @ecs.Component for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d

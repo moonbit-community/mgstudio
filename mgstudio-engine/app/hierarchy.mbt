@@ -13,9 +13,8 @@
 // limitations under the License.
 
 ///|
-pub struct ValidateParentHasComponentPlugin[C] {
+pub struct ValidateParentHasComponentPlugin[_] {
   schedule : ScheduleStage
-  marker : C?
 }
 
 ///|
@@ -29,7 +28,7 @@ pub fn[C] ValidateParentHasComponentPlugin::default() -> ValidateParentHasCompon
 pub fn[C] ValidateParentHasComponentPlugin::in_schedule(
   label : ScheduleStage,
 ) -> ValidateParentHasComponentPlugin[C] {
-  { schedule: label, marker: None }
+  { schedule: label }
 }
 
 ///|
@@ -38,10 +37,9 @@ pub let validate_parent_has_component_system_set : SystemSet = system_set(
 )
 
 ///|
-pub struct CheckParentHasComponent[C] {
+pub struct CheckParentHasComponent[_] {
   entity : @core.Entity
   caller : String?
-  marker : C?
 }
 
 ///|
@@ -49,7 +47,7 @@ pub fn[C] CheckParentHasComponent::new(
   entity : @core.Entity,
   caller? : String? = None,
 ) -> CheckParentHasComponent[C] {
-  { entity, caller, marker: None }
+  { entity, caller }
 }
 
 ///|

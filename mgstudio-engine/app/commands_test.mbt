@@ -667,13 +667,13 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
       .observe_pointer2(fn(
         pointer : OnPointer[PointerEnter],
         query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-      ) raise {
+      ) {
         guard pointer.target() is Some(entity) else { return }
         if (try! query.get(entity)) is Some(position) {
           hits.push("enter:" + position.value().x.to_string())
         }
       })
-      .observe_pointer(fn(_pointer : OnPointer[PointerEnter]) raise {
+      .observe_pointer(fn(_pointer : OnPointer[PointerEnter]) {
         hits.push("chained")
       }),
     )
@@ -733,7 +733,7 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
         resource : Res[CommandsCounterResource],
         positions : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
         markers : @ecs.Query[@ecs.Comp[CommandsMarker], @ecs.All],
-      ) raise {
+      ) {
         if (try! positions.get(target)) is Some(position) {
           hits.push(
             resource.get().value.to_string() +

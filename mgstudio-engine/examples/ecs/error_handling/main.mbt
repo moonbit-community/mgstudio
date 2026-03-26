@@ -47,7 +47,7 @@ fn main {
   let mut app = @app.App::new(@ecs.World::new())
     .set_error_handler(@app.ErrorHandlers::warn)
     .add_plugins(@mgstudio.default_plugins())
-    .add_systems(@app.Startup, @app.system(@app.fallible_system_param2(setup)))
+    .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
     .add_systems(@app.Startup, @app.system(@app.system_param(failing_commands)))
     .add_systems(
       @app.PostStartup,
@@ -63,7 +63,7 @@ fn main {
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-) -> Unit raise {
+) -> Unit {
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let ship = asset_server.get().load("textures/simplespace/ship_C.png")
 
@@ -111,7 +111,7 @@ fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit raise {
     (@ecs.Mut[@transform.Transform], @ecs.Mut[ObserverTarget]),
     @ecs.All,
   ] = world.query_filtered(@ecs.All::new())
-  if (try! query.get(world, entity)) is Some((transform_mut, target_mut)) {
+  if query.get(world, entity) is Some((transform_mut, target_mut)) {
     let transform_ref = transform_mut.get_ref()
     let target_ref = target_mut.get_ref()
     if transform_ref.val.translation.x > OBSERVER_BOUND_X {

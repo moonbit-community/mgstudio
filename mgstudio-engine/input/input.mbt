@@ -187,12 +187,11 @@ pub struct ButtonInput[T] {
   pressed : Array[(String, T)]
   just_pressed : Array[(String, T)]
   just_released : Array[(String, T)]
-  marker : T?
 }
 
 ///|
 pub fn[T] ButtonInput::new() -> ButtonInput[T] {
-  { pressed: [], just_pressed: [], just_released: [], marker: None }
+  { pressed: [], just_pressed: [], just_released: [] }
 }
 
 ///|
@@ -215,13 +214,12 @@ pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T] with from_json(
     Array[(String, T)],
     Array[(String, T)],
   ) = @json.from_json(json, path~)
-  ButtonInput::{ pressed, just_pressed, just_released, marker: None }
+  ButtonInput::{ pressed, just_pressed, just_released }
 }
 
 ///|
 pub struct Axis[T] {
   axis_data : Array[(T, Float)]
-  marker : T?
 }
 
 ///|
@@ -232,7 +230,7 @@ pub const AXIS_MAX : Float = 1.0F
 
 ///|
 pub fn[T] Axis::new() -> Axis[T] {
-  { axis_data: [], marker: None }
+  { axis_data: [] }
 }
 
 ///|
@@ -251,7 +249,7 @@ pub impl[T : @json.FromJson] @json.FromJson for Axis[T] with from_json(
   path,
 ) {
   let axis_data : Array[(T, Float)] = @json.from_json(json, path~)
-  Axis::{ axis_data, marker: None }
+  Axis::{ axis_data, }
 }
 
 ///|

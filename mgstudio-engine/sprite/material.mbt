@@ -335,11 +335,10 @@ pub(open) trait Material2d {
 }
 
 ///|
-pub struct Material2dKey[M] {
+pub struct Material2dKey[_] {
   mesh_key : Int
   bind_group_layout_key : String
   bind_group_data : String
-  marker : M?
 }
 
 ///|
@@ -348,28 +347,18 @@ pub fn[M] Material2dKey::new(
   bind_group_layout_key : String,
   bind_group_data : String,
 ) -> Material2dKey[M] {
-  Material2dKey::{
-    mesh_key,
-    bind_group_layout_key,
-    bind_group_data,
-    marker: None,
-  }
+  Material2dKey::{ mesh_key, bind_group_layout_key, bind_group_data }
 }
 
 ///|
-pub struct Material2dPipeline[M] {
+pub struct Material2dPipeline[_] {
   vertex_shader : String?
   fragment_shader : String?
-  marker : M?
 }
 
 ///|
 pub fn[M] Material2dPipeline::default() -> Material2dPipeline[M] {
-  Material2dPipeline::{
-    vertex_shader: None,
-    fragment_shader: None,
-    marker: None,
-  }
+  Material2dPipeline::{ vertex_shader: None, fragment_shader: None }
 }
 
 ///|
@@ -377,16 +366,15 @@ pub fn[M] Material2dPipeline::new(
   vertex_shader : String?,
   fragment_shader : String?,
 ) -> Material2dPipeline[M] {
-  Material2dPipeline::{ vertex_shader, fragment_shader, marker: None }
+  Material2dPipeline::{ vertex_shader, fragment_shader }
 }
 
 ///|
 pub fn[M : Material2d] Material2dPipeline::key_for(
-  self : Material2dPipeline[M],
+  _ : Material2dPipeline[M],
   material : M,
   bind_group : Material2dBindGroup,
 ) -> Material2dKey[M] {
-  self.marker |> ignore
   Material2dKey::new(
     material2d_mesh_pipeline_key_bits(material.alpha_mode()),
     bind_group.layout_key(),
@@ -538,15 +526,14 @@ fn register_material2d_shader_sources(
 }
 
 ///|
-pub struct Material2dPlugin[M] {
+pub struct Material2dPlugin[_] {
   vertex_shader : String?
   fragment_shader : String?
-  marker : M?
 }
 
 ///|
 pub fn[M] Material2dPlugin::default() -> Material2dPlugin[M] {
-  Material2dPlugin::{ vertex_shader: None, fragment_shader: None, marker: None }
+  Material2dPlugin::{ vertex_shader: None, fragment_shader: None }
 }
 
 ///|

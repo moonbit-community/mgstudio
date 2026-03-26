@@ -567,28 +567,25 @@ pub(all) enum Material2dBindingValue {
   Sampler(@asset.Handle[@image.Image]?)
 }
 
-pub struct Material2dKey[M] {
+pub struct Material2dKey[_] {
   mesh_key : Int
   bind_group_layout_key : String
   bind_group_data : String
-  marker : M?
 }
 pub fn[M] Material2dKey::new(Int, String, String) -> Self[M]
 
-pub struct Material2dPipeline[M] {
+pub struct Material2dPipeline[_] {
   vertex_shader : String?
   fragment_shader : String?
-  marker : M?
 }
 pub fn[M] Material2dPipeline::default() -> Self[M]
 pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M] @app.Resource for Material2dPipeline[M]
 
-pub struct Material2dPlugin[M] {
+pub struct Material2dPlugin[_] {
   vertex_shader : String?
   fragment_shader : String?
-  marker : M?
 }
 pub fn[M] Material2dPlugin::default() -> Self[M]
 pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]

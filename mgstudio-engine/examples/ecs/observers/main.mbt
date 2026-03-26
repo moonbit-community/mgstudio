@@ -203,8 +203,8 @@ fn mine_color(size : Float) -> @sprite.Color {
 fn pointer_world_position(
   pointer : @app.OnPointer[@app.PointerDown],
   windows : @ecs.Query[@ecs.Comp[@window.Window], @ecs.All],
-) -> @math.Vec2? {
-  guard (try! windows.single()) is Some(window_comp) else { return None }
+) -> @math.Vec2? raise {
+  guard windows.single() is Some(window_comp) else { return None }
   let window = window_comp.value()
   let position = pointer.position()
   Some(
@@ -288,7 +288,7 @@ fn explode_mine(
   commands : @app.Commands,
 ) -> Unit raise {
   guard explode.entity() is Some(entity) else { return }
-  guard (try! mines.get(entity)) is Some(mine_comp) else { return }
+  guard mines.get(entity) is Some(mine_comp) else { return }
   let mine = mine_comp.value()
   commands.entity(entity).despawn()
   commands.trigger(ExplodeMines::{ pos: mine.pos, radius: mine.size + 8.0F })

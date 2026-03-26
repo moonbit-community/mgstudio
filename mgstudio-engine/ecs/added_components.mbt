@@ -13,9 +13,8 @@
 // limitations under the License.
 
 ///|
-pub struct AddedComponents[T] {
+pub struct AddedComponents[_] {
   reader : @core.MessageReader[@core.Entity]
-  marker : T?
 }
 
 ///|
@@ -50,7 +49,7 @@ pub fn[T] World::added_components(
     Some(messages_ref) => messages_ref.val.reader(system)
     None => @core.Messages::new().reader(system)
   }
-  AddedComponents::{ reader, marker: None }
+  AddedComponents::{ reader, }
 }
 
 ///|

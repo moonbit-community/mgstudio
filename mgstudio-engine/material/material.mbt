@@ -703,10 +703,11 @@ pub fn standard_material_set(
 ///|
 /// Metadata-only hook aligned with Bevy's `ExtendedMaterial`.
 ///
-/// This does not introduce a shader pipeline on its own; it stores extension
-/// intent so examples and future backends can share a single API surface.
+/// Runtime can consume this metadata to select an alternative mesh3d shader
+/// path while keeping the same draw contract.
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
+  shader_path : String?
   alpha_mode_override : AlphaMode3d?
   opaque_render_method_override : OpaqueRendererMethod?
   requires_depth_prepass : Bool
@@ -718,6 +719,7 @@ pub struct ExtendedMaterialMetadata3d {
 pub fn ExtendedMaterialMetadata3d::default() -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::{
     extension_tag: 0,
+    shader_path: None,
     alpha_mode_override: None,
     opaque_render_method_override: None,
     requires_depth_prepass: false,
@@ -740,6 +742,18 @@ pub fn ExtendedMaterialMetadata3d::with_extension_tag(
 ) -> ExtendedMaterialMetadata3d {
   let safe_tag = if extension_tag < 0 { 0 } else { extension_tag }
   ExtendedMaterialMetadata3d::{ ..self, extension_tag: safe_tag }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  let safe_shader_path = match shader_path {
+    Some(path) => if path == "" { None } else { Some(path) }
+    None => None
+  }
+  ExtendedMaterialMetadata3d::{ ..self, shader_path: safe_shader_path }
 }
 
 ///|
@@ -826,6 +840,21 @@ pub fn MeshMaterial3d::with_extension_tag(
   MeshMaterial3d::{
     ..self,
     extended_material: Some(extension.with_extension_tag(extension_tag)),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_shader_path(
+  self : MeshMaterial3d,
+  shader_path : String?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(extension.with_shader_path(shader_path)),
   }
 }
 

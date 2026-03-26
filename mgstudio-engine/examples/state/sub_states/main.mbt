@@ -42,11 +42,6 @@ impl Default for AppState with default() {
 }
 
 ///|
-impl Default for IsPaused with default() {
-  IsPaused::Running
-}
-
-///|
 impl @app.States for AppState with debug_name(self) {
   ignore(self)
   "AppState"

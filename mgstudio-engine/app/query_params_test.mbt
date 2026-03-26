@@ -419,7 +419,7 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
           (@ecs.Mut[QueryPosition], @ecs.Mut[QueryVelocity]),
           @ecs.All,
         ],
-      ) raise {
+      ) {
         let query = query_param.query()
         counts.push(query.count())
         try! query.view(fn(_entity, data) {

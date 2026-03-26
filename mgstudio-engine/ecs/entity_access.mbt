@@ -75,7 +75,7 @@ fn[T] world_component_mut(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> Mut[T]? raise EcsError {
-  try! world.ensure_entity_alive(entity)
+  world.ensure_entity_alive(entity)
   guard world.component_store(key.id()) is Some(store_ref) else { return None }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
   let value_ref = try! world.component_ref(key, entity, payload)
@@ -88,7 +88,7 @@ pub fn[T] World::contains_by_key(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> Bool raise EcsError {
-  try! self.ensure_entity_alive(entity)
+  self.ensure_entity_alive(entity)
   entity_has_component_id(self, key.id(), entity)
 }
 
@@ -115,7 +115,7 @@ pub fn World::entity(
   self : World,
   entity : @core.Entity,
 ) -> EntityRef raise EcsError {
-  try! self.ensure_entity_alive(entity)
+  self.ensure_entity_alive(entity)
   { world: self, entity }
 }
 
@@ -124,7 +124,7 @@ pub fn World::entity_mut(
   self : World,
   entity : @core.Entity,
 ) -> EntityMut raise EcsError {
-  try! self.ensure_entity_alive(entity)
+  self.ensure_entity_alive(entity)
   { world: self, entity }
 }
 
@@ -138,7 +138,7 @@ pub fn[T : Component] EntityRef::contains(
   self : EntityRef,
   key? : ComponentKey[T] = T::component(),
 ) -> Bool raise EcsError {
-  try! self.world.contains_by_key(self.entity, key)
+  self.world.contains_by_key(self.entity, key)
 }
 
 ///|
@@ -167,7 +167,7 @@ pub fn[T : Component] EntityMut::contains(
   self : EntityMut,
   key? : ComponentKey[T] = T::component(),
 ) -> Bool raise EcsError {
-  try! self.world.contains_by_key(self.entity, key)
+  self.world.contains_by_key(self.entity, key)
 }
 
 ///|
@@ -245,7 +245,7 @@ pub fn[B : Bundle] EntityMut::insert(
   bundle : B,
   loc~ : SourceLoc,
 ) -> EntityMut raise EcsError {
-  try! B::insert_into(bundle, self.world, self.entity, loc~)
+  B::insert_into(bundle, self.world, self.entity, loc~)
   self
 }
 
@@ -256,7 +256,7 @@ pub fn[T : Component] EntityMut::insert_component(
   component : T,
   loc~ : SourceLoc,
 ) -> EntityMut raise EcsError {
-  try! self.world.set_by_key(self.entity, T::component(), component, loc~)
+  self.world.set_by_key(self.entity, T::component(), component, loc~)
   self
 }
 
@@ -266,9 +266,9 @@ pub fn[T : Component] EntityMut::remove_component(
   self : EntityMut,
   loc~ : SourceLoc,
 ) -> T? raise EcsError {
-  let previous = try! self.world.get_by_key(self.entity, T::component())
+  let previous = self.world.get_by_key(self.entity, T::component())
   if previous is Some(_) {
-    try! (self.world.remove_by_key(self.entity, T::component(), loc~) |> ignore)
+    self.world.remove_by_key(self.entity, T::component(), loc~) |> ignore
   }
   previous
 }

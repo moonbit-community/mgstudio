@@ -74,9 +74,7 @@ pub fn[S : @app.States] in_state(state : S) -> (@ecs.World) -> Bool {
 }
 
 ///|
-pub fn[S : @app.States] optional_state(
-  state : S,
-) -> @app.OptionalStateSource[S] {
+pub fn[S] optional_state(state : S) -> @app.OptionalStateSource[S] {
   @app.optional_state(state)
 }
 

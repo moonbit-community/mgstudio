@@ -41,6 +41,12 @@ pub impl @ecs.Component for ErrorHandlingMarker with component() {
 }
 
 ///|
+fn touch_error_handling_types() -> Unit {
+  ignore(ErrorHandlingResource::{ value: 0 })
+  ignore(ErrorHandlingMarker::{  })
+}
+
+///|
 suberror ErrorHandlingTestError {
   BodyFailure
   LocalFailure
@@ -48,6 +54,7 @@ suberror ErrorHandlingTestError {
 
 ///|
 test "app error handling: default handler captures fallible system body errors" {
+  touch_error_handling_types()
   let kinds : Array[ErrorContextKind] = []
   let sources : Array[String] = []
   let mut app = App::new(@ecs.World::new())

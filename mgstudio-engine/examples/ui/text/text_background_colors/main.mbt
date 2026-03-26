@@ -85,7 +85,7 @@ fn setup(commands : @app.Commands) -> Unit {
       .observe_pointer2(fn(
         _pointer : @app.OnPointer[@app.PointerEnter],
         query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
-      ) raise {
+      ) {
         if (try! query.get(span)) is Some(text_color) {
           text_color.get_ref().val = @text.TextColor::white()
         }
@@ -93,7 +93,7 @@ fn setup(commands : @app.Commands) -> Unit {
       .observe_pointer2(fn(
         _pointer : @app.OnPointer[@app.PointerLeave],
         query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
-      ) raise {
+      ) {
         if (try! query.get(span)) is Some(text_color) {
           text_color.get_ref().val = @text.TextColor::black()
         }

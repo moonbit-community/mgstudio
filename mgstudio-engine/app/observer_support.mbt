@@ -99,7 +99,7 @@ fn register_entity_observer_command(
 ) -> EntityCommands {
   let entity = entity_commands.entity
   entity_commands.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       guard world.is_alive(entity) else { return }
       let observer_system = system
       let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)

@@ -191,7 +191,7 @@ fn set_panel_color(
   color : @sprite.Color,
   backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
 ) -> Unit raise {
-  if (try! backgrounds.get(entity)) is Some(background) {
+  if backgrounds.get(entity) is Some(background) {
     background.set(@ui.BackgroundColor::new(color))
   }
 }
@@ -281,18 +281,18 @@ fn setup(
       _pointer : @app.OnPointer[@app.PointerEnter],
       backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
     ) raise {
-      try! set_panel_color(panel, red(), backgrounds)
+      set_panel_color(panel, red(), backgrounds)
     })
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerLeave],
       backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
     ) raise {
-      try! set_panel_color(panel, blue(), backgrounds)
+      set_panel_color(panel, blue(), backgrounds)
     })
     .observe_pointer2(fn(
       pointer : @app.OnPointer[@app.PointerDown],
       drag_state : @app.ResMut[PanelDragState],
-    ) raise {
+    ) {
       ignore(pointer)
       drag_state.get_ref().val.active = true
     }),
@@ -352,7 +352,7 @@ fn rotate_cube(
 }
 
 ///|
-fn drive_diegetic_pointer(world : @ecs.World) -> Unit raise {
+fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
   let inputs_res = @picking.get_pointer_inputs_resource(world)
   guard inputs_res.get() is Some(inputs_value) else { return }
 
@@ -426,7 +426,7 @@ fn drag_panel(
 ) -> Unit raise {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   guard drag_state.get_ref().val.active else { return }
-  guard (try! panels.single()) is Some(panel_node) else { return }
+  guard panels.single() is Some(panel_node) else { return }
   panel_node.set(
     panel_node
     .value()
@@ -440,6 +440,10 @@ fn stop_drag_panel(
   pointer : @app.OnPointer[@app.PointerUp],
   drag_state : @app.ResMut[PanelDragState],
 ) -> Unit raise {
+  if @app.current_world() is Some(world) {
+    let entity_query : @ecs.QueryState[@core.Entity, @ecs.All] = world.query()
+    ignore(entity_query.single(world))
+  }
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   drag_state.get_ref().val.active = false
 }
@@ -452,7 +456,7 @@ fn main {
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cube)))
   .add_systems(
     @app.PreUpdate,
-    @app.fallible_system(drive_diegetic_pointer)
+    @app.system(drive_diegetic_pointer)
     .after(@picking.picking_set_input)
     .after(@transform.transform_set_propagate)
     .before(@picking.picking_set_hits),

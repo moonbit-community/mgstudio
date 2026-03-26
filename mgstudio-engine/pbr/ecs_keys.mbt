@@ -33,6 +33,9 @@ pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
 
 ///|
+pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[CustomPostProcess3d] = @post_process.ecs_key_custom_post_process3d
+
+///|
 pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
   debug_name="render3d.skybox",
 )

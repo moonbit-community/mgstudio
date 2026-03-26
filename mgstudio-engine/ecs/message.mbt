@@ -15,7 +15,6 @@
 ///|
 pub struct MessageKey[T] {
   queue_key : ResourceKey[Messages[T]]
-  marker : T?
 }
 
 ///|
@@ -50,7 +49,7 @@ pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
     })
     .cast()
   }
-  MessageKey::{ queue_key, marker: None }
+  MessageKey::{ queue_key, }
 }
 
 ///|
@@ -59,9 +58,8 @@ pub(open) trait Message {
 }
 
 ///|
-pub struct MessageCursor[T] {
+pub struct MessageCursor[_] {
   mut last_message_count : Int
-  marker : T?
 }
 
 ///|
@@ -74,9 +72,8 @@ pub struct MessageQueueState {
 }
 
 ///|
-pub struct Messages[T] {
+pub struct Messages[_] {
   state : MessageQueueState
-  marker : T?
 }
 
 ///|
@@ -141,7 +138,7 @@ pub fn MessageQueueState::clear(self : MessageQueueState) -> Unit {
 
 ///|
 pub fn[T] Messages::new() -> Messages[T] {
-  { state: MessageQueueState::new(), marker: None }
+  { state: MessageQueueState::new() }
 }
 
 ///|
@@ -188,7 +185,7 @@ pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
 
 ///|
 pub impl[T] Default for MessageCursor[T] with default() {
-  { last_message_count: 0, marker: None }
+  { last_message_count: 0 }
 }
 
 ///|
@@ -199,7 +196,7 @@ pub impl[T] ToJson for MessageCursor[T] with to_json(self) {
 ///|
 pub impl[T] @json.FromJson for MessageCursor[T] with from_json(json, path) {
   let last_message_count : Int = @json.FromJson::from_json(json, path)
-  { last_message_count, marker: None }
+  { last_message_count, }
 }
 
 ///|
@@ -444,7 +441,7 @@ pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
 
 ///|
 pub fn[T] Messages::get_cursor_current(self : Messages[T]) -> MessageCursor[T] {
-  { last_message_count: self.state.message_count, marker: None }
+  { last_message_count: self.state.message_count }
 }
 
 ///|

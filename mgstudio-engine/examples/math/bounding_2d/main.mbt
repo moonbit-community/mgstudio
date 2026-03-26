@@ -116,11 +116,6 @@ impl @ecs.Component for DesiredVolume with component() {
 }
 
 ///|
-impl @ecs.Component for CurrentVolume with component() {
-  current_volume_key
-}
-
-///|
 impl @ecs.QueryData for VolumeIntersectionData with matches(world, entity) {
   @ecs.query_data_component_matches(world, entity, current_volume_key) &&
   @ecs.query_data_component_matches(world, entity, intersects_key)

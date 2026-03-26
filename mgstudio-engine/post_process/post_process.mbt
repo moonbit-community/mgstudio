@@ -286,6 +286,83 @@ pub fn Fxaa::with_sensitivity(
 }
 
 ///|
+/// Generic fullscreen custom post-process settings for 3D cameras.
+///
+/// Shader contracts follow Bevy-style post-process fullscreen passes:
+/// `@group(0) @binding(0)` source texture, `@group(0) @binding(1)` sampler,
+/// and `@group(0) @binding(2)` a uniform `vec4<f32>` parameters payload.
+pub struct CustomPostProcess3d {
+  enabled : Bool
+  shader_path : String
+  fragment_entry : String
+  uniform_x : Float
+  uniform_y : Float
+  uniform_z : Float
+  uniform_w : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn CustomPostProcess3d::default() -> CustomPostProcess3d {
+  CustomPostProcess3d::{
+    enabled: false,
+    shader_path: "",
+    fragment_entry: "fragment_main",
+    uniform_x: 0.0F,
+    uniform_y: 0.0F,
+    uniform_z: 0.0F,
+    uniform_w: 0.0F,
+  }
+}
+
+///|
+pub fn CustomPostProcess3d::new(shader_path : String) -> CustomPostProcess3d {
+  CustomPostProcess3d::{ ..CustomPostProcess3d::default(), shader_path, }
+}
+
+///|
+pub fn CustomPostProcess3d::with_enabled(
+  self : CustomPostProcess3d,
+  enabled : Bool,
+) -> CustomPostProcess3d {
+  CustomPostProcess3d::{ ..self, enabled, }
+}
+
+///|
+pub fn CustomPostProcess3d::with_shader_path(
+  self : CustomPostProcess3d,
+  shader_path : String,
+) -> CustomPostProcess3d {
+  CustomPostProcess3d::{ ..self, shader_path, }
+}
+
+///|
+pub fn CustomPostProcess3d::with_fragment_entry(
+  self : CustomPostProcess3d,
+  fragment_entry : String,
+) -> CustomPostProcess3d {
+  CustomPostProcess3d::{ ..self, fragment_entry, }
+}
+
+///|
+pub fn CustomPostProcess3d::with_uniform(
+  self : CustomPostProcess3d,
+  uniform_x : Float,
+  uniform_y : Float,
+  uniform_z : Float,
+  uniform_w : Float,
+) -> CustomPostProcess3d {
+  CustomPostProcess3d::{ ..self, uniform_x, uniform_y, uniform_z, uniform_w }
+}
+
+///|
+pub fn CustomPostProcess3d::with_intensity(
+  self : CustomPostProcess3d,
+  intensity : Float,
+) -> CustomPostProcess3d {
+  CustomPostProcess3d::{ ..self, uniform_x: intensity }
+}
+
+///|
 /// Camera temporal AA settings aligned with Bevy's `TemporalAntiAliasing`.
 pub struct TemporalAntiAliasing {
   reset : Bool
@@ -1124,6 +1201,11 @@ pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[CustomPostProcess3d] = @ecs.register_component(
+  debug_name="render3d.custom_post_process3d",
+)
+
+///|
 pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @ecs.register_component(
   debug_name="render3d.vignette",
 )
@@ -1188,6 +1270,11 @@ pub impl @ecs.Component for Fxaa with component() {
 ///|
 pub impl @ecs.Component for Bloom with component() {
   ecs_key_bloom
+}
+
+///|
+pub impl @ecs.Component for CustomPostProcess3d with component() {
+  ecs_key_custom_post_process3d
 }
 
 ///|

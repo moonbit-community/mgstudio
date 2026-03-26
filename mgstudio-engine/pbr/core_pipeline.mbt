@@ -1397,6 +1397,9 @@ pub type FxaaSensitivity = @post_process.FxaaSensitivity
 pub type Fxaa = @post_process.Fxaa
 
 ///|
+pub type CustomPostProcess3d = @post_process.CustomPostProcess3d
+
+///|
 pub type DepthPrepass = @core_pipeline.DepthPrepass
 
 ///|

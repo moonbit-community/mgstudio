@@ -24,7 +24,6 @@ const PARTICLE_COUNT : Int = 14
 ///|
 struct StepEvent {
   mut observer_entity : @core.Entity?
-  foot : String
   phase : Float
 }
 
@@ -129,8 +128,8 @@ pub impl @ecs.TriggerEvent for StepEvent with debug_name() {
 }
 
 ///|
-fn StepEvent::new(foot : String, phase : Float) -> StepEvent {
-  { observer_entity: None, foot, phase }
+fn StepEvent::new(phase : Float) -> StepEvent {
+  { observer_entity: None, phase }
 }
 
 ///|
@@ -164,22 +163,18 @@ fn install_step_events(
   .add_typed_event_to_target(
     feet_targets.front_left,
     0.625F,
-    StepEvent::new("front_left", 0.625F),
+    StepEvent::new(0.625F),
   )
   .add_typed_event_to_target(
     feet_targets.front_right,
     0.5F,
-    StepEvent::new("front_right", 0.5F),
+    StepEvent::new(0.5F),
   )
-  .add_typed_event_to_target(
-    feet_targets.back_left,
-    0.0F,
-    StepEvent::new("back_left", 0.0F),
-  )
+  .add_typed_event_to_target(feet_targets.back_left, 0.0F, StepEvent::new(0.0F))
   .add_typed_event_to_target(
     feet_targets.back_right,
     0.125F,
-    StepEvent::new("back_right", 0.125F),
+    StepEvent::new(0.125F),
   )
 }
 

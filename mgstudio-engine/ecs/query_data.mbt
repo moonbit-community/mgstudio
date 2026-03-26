@@ -87,7 +87,7 @@ pub fn[T] query_data_component_matches(
 }
 
 ///|
-fn[T : Component] query_data_require_component(
+fn[T] query_data_require_component(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -99,7 +99,7 @@ fn[T : Component] query_data_require_component(
 }
 
 ///|
-pub fn[T : Component] query_data_component_fetch(
+pub fn[T] query_data_component_fetch(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -108,7 +108,7 @@ pub fn[T : Component] query_data_component_fetch(
 }
 
 ///|
-pub fn[T : Component] query_data_component_optional(
+pub fn[T] query_data_component_optional(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -117,7 +117,7 @@ pub fn[T : Component] query_data_component_optional(
 }
 
 ///|
-fn[T : Component] query_data_require_component_mut(
+fn[T] query_data_require_component_mut(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -129,7 +129,7 @@ fn[T : Component] query_data_require_component_mut(
 }
 
 ///|
-pub fn[T : Component] query_data_component_has(
+pub fn[T] query_data_component_has(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],

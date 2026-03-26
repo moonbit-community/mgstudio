@@ -119,6 +119,7 @@ pub fn ErrorHandlers::ignore(_error : Error, _context : ErrorContext) -> Unit {
 
 ///|
 fn default_error_handler_impl(error : Error, context : ErrorContext) -> Unit {
+  ignore(ErrorHandlers::{  })
   ErrorHandlers::panic(error, context)
 }
 
