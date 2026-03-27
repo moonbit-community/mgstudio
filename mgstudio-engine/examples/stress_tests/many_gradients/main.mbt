@@ -13,10 +13,112 @@
 // limitations under the License.
 
 ///|
+const COLS : Int = 30
+
+///|
+const CELL_COUNT : Int = 900
+
+///|
+struct GradientCell {
+  index : Int
+}
+
+///|
+let gradient_cell_key : @ecs.ComponentKey[GradientCell] = @ecs.register_component(
+  debug_name="examples.stress_tests.many_gradients.GradientCell",
+)
+
+///|
+pub impl @ecs.Component for GradientCell with component() {
+  gradient_cell_key
+}
+
+///|
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn div_ceil(a : Int, b : Int) -> Int {
+  if a % b == 0 {
+    a / b
+  } else {
+    a / b + 1
+  }
+}
+
+///|
+fn setup(commands : @app.Commands) -> Unit {
+  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  |> ignore
+
+  let rows = div_ceil(CELL_COUNT, COLS)
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F))
+      .with_display(@ui.Display::Grid)
+      .with_grid_template_columns([
+        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(COLS), [
+          @ui.GridTrack::Fr(1.0F),
+        ]),
+      ])
+      .with_grid_template_rows([
+        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(rows), [
+          @ui.GridTrack::Fr(1.0F),
+        ]),
+      ]),
+    ),
+  )
+
+  for i in 0..<CELL_COUNT {
+    let hue = float_from_int(i * 10 % 360)
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        GradientCell::{ index: i },
+        @ui.Node::default()
+        .with_width(@ui.Val::Percent(100.0F))
+        .with_height(@ui.Val::Percent(100.0F)),
+        @ui.BackgroundColor::new(@sprite.Color::hsl(hue, 1.0F, 0.5F)),
+      ),
+    )
+    |> ignore
+  }
+}
+
+///|
+fn animate_cells(
+  time : @app.Res[@time.Time[Unit]],
+  cells : @ecs.Query[
+    (@ecs.Comp[GradientCell], @ecs.Mut[@ui.BackgroundColor]),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = time.get().elapsed_secs()
+  try! cells.for_each(fn(_entity, data) {
+    let (cell, background) = data
+    let idxf = float_from_int(cell.value().index)
+    let h = (@math.sin(t + idxf * 0.01F) * 0.5F + 0.5F) * 360.0F
+    let color = @sprite.Color::hsl(h, 1.0F, 0.5F)
+    background.get_ref().val = @ui.BackgroundColor::new(color)
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(
+    [
+      ..@mgstudio.default_plugins(),
+      @diagnostic.frame_time_diagnostics_plugin,
+      @diagnostic.log_diagnostics_plugin,
+    ],
+  )
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(animate_cells)))
   .run()
 }

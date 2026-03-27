@@ -13,10 +13,113 @@
 // limitations under the License.
 
 ///|
+const BUTTONS_PER_AXIS : Int = 20
+
+///|
+struct IdleColor {
+  color : @sprite.Color
+}
+
+///|
+let idle_color_key : @ecs.ComponentKey[IdleColor] = @ecs.register_component(
+  debug_name="examples.stress_tests.many_buttons.IdleColor",
+)
+
+///|
+pub impl @ecs.Component for IdleColor with component() {
+  idle_color_key
+}
+
+///|
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn setup(commands : @app.Commands) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F))
+      .with_display(@ui.Display::Grid)
+      .with_grid_template_columns([
+        @ui.RepeatedGridTrack::new(
+          @ui.GridTrackRepetition::Count(BUTTONS_PER_AXIS),
+          [@ui.GridTrack::Fr(1.0F)],
+        ),
+      ])
+      .with_grid_template_rows([
+        @ui.RepeatedGridTrack::new(
+          @ui.GridTrackRepetition::Count(BUTTONS_PER_AXIS),
+          [@ui.GridTrack::Fr(1.0F)],
+        ),
+      ]),
+    ),
+  )
+
+  let buttons_f = float_from_int(BUTTONS_PER_AXIS)
+  for row in 0..<BUTTONS_PER_AXIS {
+    for column in 0..<BUTTONS_PER_AXIS {
+      let h = float_from_int((row * BUTTONS_PER_AXIS + column) % 360)
+      let bg = @sprite.Color::hsl(h, 0.9F, 0.8F)
+      ignore(
+        commands.spawn(
+          (
+            @hierarchy.Parent::new(root),
+            @ui.Button::default(),
+            IdleColor::{ color: bg },
+            @ui.Node::default()
+            .with_width(@ui.Val::Percent(100.0F))
+            .with_height(@ui.Val::Percent(100.0F))
+            .with_border(
+              @ui.UiRect::all(@ui.Val::VMin(0.05F * 90.0F / buttons_f)),
+            ),
+            @ui.BackgroundColor::new(bg),
+            @ui.BorderColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.5F)),
+          ),
+        ),
+      )
+    }
+  }
+}
+
+///|
+fn button_system(
+  buttons : @ecs.Query[
+    (
+      @ecs.Comp[@ui.Interaction],
+      @ecs.Mut[@ui.BackgroundColor],
+      @ecs.Comp[IdleColor],
+    ),
+    @ecs.With[@ui.Button],
+  ],
+) -> Unit {
+  try! buttons.for_each(fn(_entity, data) {
+    let (interaction, color, idle_color) = data
+    let next = match interaction.value() {
+      @ui.Interaction::Hovered => @sprite.Color::srgb(1.0F, 0.27F, 0.0F)
+      _ => idle_color.value().color
+    }
+    color.set(@ui.BackgroundColor::new(next))
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(
+    [
+      ..@mgstudio.default_plugins(),
+      @diagnostic.frame_time_diagnostics_plugin,
+      @diagnostic.log_diagnostics_plugin,
+    ],
+  )
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param(button_system)))
   .run()
 }
