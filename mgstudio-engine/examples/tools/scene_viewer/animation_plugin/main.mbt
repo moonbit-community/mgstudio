@@ -13,10 +13,92 @@
 // limitations under the License.
 
 ///|
+struct Spin {
+  speed : Float
+}
+
+///|
+let spin_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
+  debug_name="examples.tools.scene_viewer.animation_plugin.Spin",
+)
+
+///|
+pub impl @ecs.Component for Spin with component() {
+  spin_key
+}
+
+///|
+fn setup(world : @ecs.World) -> Unit {
+  let mesh = @pbr.add_mesh(
+    @pbr.mesh_assets_mut_or_abort().val,
+    @math.Cuboid::new(1.3F, 1.3F, 1.3F),
+  )
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.45F, 0.78F, 0.95F)),
+  )
+  ignore(
+    try! world
+    .entity_mut(world.spawn_empty())
+    .insert(
+      (
+        @pbr.Mesh3d::new(mesh),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::identity(),
+        Spin::{ speed: 0.8F },
+      ),
+    ),
+  )
+  ignore(
+    @pbr.Camera3dBundle::new(
+      @sprite.Camera::default(),
+      @transform.Transform::from_xyz(5.0F, 4.0F, 7.0F).looking_at(
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    ).spawn(world),
+  )
+  let light = world.spawn_empty()
+  ignore(
+    try! world
+    .entity_mut(light)
+    .insert(
+      (
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 8000.0F, true),
+        @transform.Transform::from_xyz(3.0F, 8.0F, 3.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn rotate_preview(
+  time : @app.Res[@time.Time[Unit]],
+  previews : @ecs.Query[
+    (@ecs.Comp[Spin], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = time.get().elapsed_secs()
+  try! previews.for_each(fn(_entity, data) {
+    let (spin, transform) = data
+    transform.get_ref().val.rotation = @math.Quat::from_euler(
+      @math.EulerRot::ZYX,
+      0.0F,
+      t * spin.value().speed,
+      t * spin.value().speed * 0.35F,
+    )
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_preview)))
   .run()
 }

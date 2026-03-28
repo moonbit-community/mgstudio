@@ -1,6 +1,15 @@
 import {
+  "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gltf",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/scene",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/winit",
 }
 
 options(

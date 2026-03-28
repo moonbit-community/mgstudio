@@ -13,10 +13,102 @@
 // limitations under the License.
 
 ///|
+const MAIN_SCENE_ASSET : String = "models/FlightHelmet/FlightHelmet.gltf"
+
+///|
+struct OrbitCamera {
+  radius : Float
+  height : Float
+  speed : Float
+}
+
+///|
+let orbit_camera_key : @ecs.ComponentKey[OrbitCamera] = @ecs.register_component(
+  debug_name="examples.tools.scene_viewer.main.OrbitCamera",
+)
+
+///|
+pub impl @ecs.Component for OrbitCamera with component() {
+  orbit_camera_key
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  commands.queue(fn(world : @ecs.World) {
+    world.insert_resource(
+      @pbr.ecs_key_global_ambient_light,
+      @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1800.0F),
+    )
+  })
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(4.0F, 2.8F, 6.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.8F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        OrbitCamera::{ radius: 6.0F, height: 2.8F, speed: 0.26F },
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 9000.0F, true),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 2.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn_component(
+      @scene.SceneRoot::new(
+        asset_server
+        .get()
+        .load(@gltf.GltfAssetLabel::Scene(0).from_asset(MAIN_SCENE_ASSET)),
+      ),
+    ),
+  )
+}
+
+///|
+fn orbit_camera(
+  time : @app.Res[@time.Time[Unit]],
+  cameras : @ecs.Query[
+    (@ecs.Comp[OrbitCamera], @ecs.Mut[@transform.Transform]),
+    @ecs.With[@pbr.Camera3d],
+  ],
+) -> Unit {
+  let t = time.get().elapsed_secs()
+  try! cameras.for_each(fn(_entity, data) {
+    let (orbit, transform) = data
+    let transform_ref = transform.get_ref()
+    let angle = t * orbit.value().speed
+    let x = @math.cos(angle) * orbit.value().radius
+    let z = @math.sin(angle) * orbit.value().radius
+    transform_ref.val = @transform.Transform::from_xyz(
+      x,
+      orbit.value().height,
+      z,
+    ).looking_at(
+      @math.Vec3::new(0.0F, 0.8F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    )
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(orbit_camera)))
   .run()
 }

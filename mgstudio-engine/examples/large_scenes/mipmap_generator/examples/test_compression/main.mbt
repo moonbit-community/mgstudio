@@ -13,10 +13,55 @@
 // limitations under the License.
 
 ///|
+fn color_for_support(supported : Bool) -> @sprite.Color {
+  if supported {
+    @sprite.Color::srgb(0.2F, 0.85F, 0.35F)
+  } else {
+    @sprite.Color::srgb(0.88F, 0.25F, 0.28F)
+  }
+}
+
+///|
+fn setup(commands : @app.Commands) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  let formats = @asset.asset_supported_compressed_image_formats()
+  let astc = @asset.asset_compressed_image_formats_contains(
+    formats,
+    @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR,
+  )
+  let bc = @asset.asset_compressed_image_formats_contains(
+    formats,
+    @asset.COMPRESSED_IMAGE_FORMAT_BC,
+  )
+  let etc2 = @asset.asset_compressed_image_formats_contains(
+    formats,
+    @asset.COMPRESSED_IMAGE_FORMAT_ETC2,
+  )
+
+  let entries = [
+    (-240.0F, color_for_support(astc)),
+    (0.0F, color_for_support(bc)),
+    (240.0F, color_for_support(etc2)),
+  ]
+  for i in 0..<entries.length() {
+    ignore(
+      commands.spawn(
+        (
+          @sprite.Sprite::sized(@math.Vec2::new(180.0F, 260.0F)).with_color(
+            entries[i].1,
+          ),
+          @transform.Transform::from_xyz(entries[i].0, 0.0F, 0.0F),
+        ),
+      ),
+    )
+  }
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .run()
 }

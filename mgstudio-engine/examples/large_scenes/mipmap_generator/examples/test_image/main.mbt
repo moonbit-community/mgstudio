@@ -13,10 +13,58 @@
 // limitations under the License.
 
 ///|
+const IMAGE_SIZE : Int = 192
+
+///|
+fn build_pixels(width : Int, height : Int) -> Bytes {
+  Bytes::makei(width * height * 4, fn(i) {
+    let pixel = i / 4
+    let x = pixel % width
+    let y = pixel / width
+    let ring = (x - width / 2) * (x - width / 2) +
+      (y - height / 2) * (y - height / 2)
+    let value = if ring % 4096 < 2048 { 220 } else { 40 }
+    match i % 4 {
+      0 => value.to_byte()
+      1 => (255 - value).to_byte()
+      2 => (x * 255 / width).to_byte()
+      _ => (255).to_byte()
+    }
+  })
+}
+
+///|
+fn setup(commands : @app.Commands) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  let texture = @asset.asset_create_dynamic_texture(
+    @math.UVec2::new(IMAGE_SIZE, IMAGE_SIZE),
+    false,
+  )
+  @asset.asset_update_texture_region_rgba8(
+    texture,
+    @math.URect::new(
+      @math.UVec2::new(0, 0),
+      @math.UVec2::new(IMAGE_SIZE, IMAGE_SIZE),
+    ),
+    build_pixels(IMAGE_SIZE, IMAGE_SIZE),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(texture).with_custom_size(
+          Some(@math.Vec2::new(420.0F, 420.0F)),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .run()
 }

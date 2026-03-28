@@ -13,10 +13,120 @@
 // limitations under the License.
 
 ///|
+struct PendingTextures {
+  icon : @asset.Handle[@asset.Image]
+  bird : @asset.Handle[@asset.Image]
+  mut spawned : Bool
+}
+
+///|
+let pending_textures_key : @ecs.ResourceKey[PendingTextures] = @ecs.register_resource(
+  debug_name="examples.asset.multi_asset_sync.PendingTextures",
+)
+
+///|
+impl @app.Resource for PendingTextures with resource() {
+  pending_textures_key
+}
+
+///|
+struct LoadedSprite {
+  phase : Float
+}
+
+///|
+let loaded_sprite_key : @ecs.ComponentKey[LoadedSprite] = @ecs.register_component(
+  debug_name="examples.asset.multi_asset_sync.LoadedSprite",
+)
+
+///|
+pub impl @ecs.Component for LoadedSprite with component() {
+  loaded_sprite_key
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let server = asset_server.get()
+  commands.insert_resource(PendingTextures::{
+    icon: server.load("branding/icon.png"),
+    bird: server.load("branding/bevy_bird_dark.png"),
+    spawned: false,
+  })
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+}
+
+///|
+fn spawn_when_loaded(
+  commands : @app.Commands,
+  pending : @app.ResMut[PendingTextures],
+) -> Unit {
+  let pending_ref = pending.get_ref()
+  if pending_ref.val.spawned {
+    return
+  }
+  let icon_loaded = @asset.asset_is_texture_loaded(pending_ref.val.icon)
+  let bird_loaded = @asset.asset_is_texture_loaded(pending_ref.val.bird)
+  if !(icon_loaded && bird_loaded) {
+    return
+  }
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(pending_ref.val.icon).with_custom_size(
+          Some(@math.Vec2::new(240.0F, 240.0F)),
+        ),
+        @transform.Transform::from_xyz(-220.0F, 0.0F, 0.0F),
+        LoadedSprite::{ phase: 0.0F },
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(pending_ref.val.bird).with_custom_size(
+          Some(@math.Vec2::new(240.0F, 240.0F)),
+        ),
+        @transform.Transform::from_xyz(220.0F, 0.0F, 0.0F),
+        LoadedSprite::{ phase: 1.2F },
+      ),
+    ),
+  )
+  pending_ref.val.spawned = true
+  @window.host_debug_string(
+    value="[multi_asset_sync] all requested textures loaded and spawned",
+  )
+}
+
+///|
+fn animate_loaded_sprites(
+  time : @app.Res[@time.Time[Unit]],
+  sprites : @ecs.Query[
+    (@ecs.Comp[LoadedSprite], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
+) -> Unit {
+  let t = time.get().elapsed_secs()
+  try! sprites.for_each(fn(_entity, data) {
+    let (loaded, transform) = data
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation.y = @math.sin(t * 1.5F + loaded.value().phase) *
+      48.0F
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(spawn_when_loaded)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(animate_loaded_sprites)),
+  )
   .run()
 }

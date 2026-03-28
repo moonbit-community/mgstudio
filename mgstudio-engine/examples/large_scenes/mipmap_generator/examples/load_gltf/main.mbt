@@ -13,10 +13,51 @@
 // limitations under the License.
 
 ///|
+const SCENE_ASSET : String = "models/FlightHelmet/FlightHelmet.gltf"
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(0.8F, 1.0F, 1.6F).looking_at(
+          @math.Vec3::new(0.0F, 0.3F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 9000.0F, true),
+        @transform.Transform::from_xyz(2.0F, 5.0F, 2.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn_component(
+      @scene.SceneRoot::new(
+        asset_server
+        .get()
+        .load(@gltf.GltfAssetLabel::Scene(0).from_asset(SCENE_ASSET)),
+      ),
+    ),
+  )
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .insert_resource(@winit.WinitSettings::continuous())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }
