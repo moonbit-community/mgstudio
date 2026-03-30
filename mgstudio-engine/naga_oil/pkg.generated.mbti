@@ -73,10 +73,8 @@ pub(all) struct ComposableModuleDescriptor {
   as_name : String?
   additional_imports : Array[ImportDefinition]
   shader_defs : @hashmap.HashMap[String, ShaderDefValue]
-}
+} derive(Eq, Show)
 pub fn ComposableModuleDescriptor::default() -> Self
-pub impl Eq for ComposableModuleDescriptor
-pub impl Show for ComposableModuleDescriptor
 
 pub struct Composer {
   module_sets : @hashmap.HashMap[String, ComposableModuleDefinition]
@@ -94,31 +92,23 @@ pub struct DiagnosticDirective {
   severity : String
   rule : String
   source_location : Int
-}
-pub impl Eq for DiagnosticDirective
-pub impl Show for DiagnosticDirective
+} derive(Eq, Show)
 
 pub struct EnableDirective {
   extensions : Array[String]
   source_location : Int
-}
-pub impl Eq for EnableDirective
-pub impl Show for EnableDirective
+} derive(Eq, Show)
 
 pub struct ImportDefWithOffset {
   definition : ImportDefinition
   offset : Int
-}
-pub impl Eq for ImportDefWithOffset
-pub impl Show for ImportDefWithOffset
+} derive(Eq, Show)
 
 pub(all) struct ImportDefinition {
   import_path : String
   items : Array[String]
-}
+} derive(Eq, Show)
 pub fn ImportDefinition::default() -> Self
-pub impl Eq for ImportDefinition
-pub impl Show for ImportDefinition
 
 pub(all) struct NagaModuleDescriptor {
   source : String
@@ -126,10 +116,8 @@ pub(all) struct NagaModuleDescriptor {
   shader_type : ShaderType
   shader_defs : @hashmap.HashMap[String, ShaderDefValue]
   additional_imports : Array[ImportDefinition]
-}
+} derive(Eq, Show)
 pub fn NagaModuleDescriptor::default() -> Self
-pub impl Eq for NagaModuleDescriptor
-pub impl Show for NagaModuleDescriptor
 
 pub struct PreprocessOutput {
   preprocessed_source : String
@@ -155,65 +143,48 @@ pub struct PreprocessorMetaData {
 pub struct RequiresDirective {
   extensions : Array[String]
   source_location : Int
-}
-pub impl Eq for RequiresDirective
-pub impl Show for RequiresDirective
+} derive(Eq, Show)
 
-type ScopeLevel
-pub impl Eq for ScopeLevel
+type ScopeLevel derive(Eq)
 
 pub(all) enum ShaderDefValue {
   Bool(Bool)
   Int(Int)
   UInt(UInt)
-}
+} derive(Eq, Show)
 pub fn ShaderDefValue::value_as_string(Self) -> String
-pub impl Eq for ShaderDefValue
-pub impl Show for ShaderDefValue
 
 pub(all) enum ShaderLanguage {
   Wgsl
   Glsl
-}
-pub impl Eq for ShaderLanguage
-pub impl Show for ShaderLanguage
+} derive(Eq, Show)
 
 pub(all) enum ShaderType {
   Wgsl
   GlslVertex
   GlslFragment
-}
-pub impl Eq for ShaderType
-pub impl Show for ShaderType
+} derive(Eq, Show)
 
-type Token
-pub impl Eq for Token
-pub impl Show for Token
+type Token derive(Eq, Show)
 
 pub struct WgslDirectives {
   enables : Array[EnableDirective]
   requires : Array[RequiresDirective]
   diagnostics : Array[DiagnosticDirective]
-}
+} derive(Eq, Show)
 pub fn WgslDirectives::default() -> Self
 pub fn WgslDirectives::is_empty(Self) -> Bool
 pub fn WgslDirectives::to_wgsl_string(Self) -> String
-pub impl Eq for WgslDirectives
-pub impl Show for WgslDirectives
 
 pub struct WgslImportTarget {
   raw_path : String
   alias_name : String
-}
-pub impl Eq for WgslImportTarget
-pub impl Show for WgslImportTarget
+} derive(Eq, Show)
 
 pub struct WgslResolvedImportModule {
   module_path : String
   rel_path : String
-}
-pub impl Eq for WgslResolvedImportModule
-pub impl Show for WgslResolvedImportModule
+} derive(Eq, Show)
 
 // Type aliases
 

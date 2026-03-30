@@ -12,30 +12,18 @@ import {
 // Errors
 
 // Types and methods
-type Bar
+type Bar derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for Bar
-pub impl Eq for Bar
-pub impl Show for Bar
-pub impl ToJson for Bar
-pub impl @json.FromJson for Bar
 
-type ConstraintButton
+type ConstraintButton derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for ConstraintButton
-pub impl Eq for ConstraintButton
-pub impl Show for ConstraintButton
-pub impl ToJson for ConstraintButton
-pub impl @json.FromJson for ConstraintButton
 
 pub(all) enum ConstraintKind {
   FlexBasis
   Width
   MinWidth
   MaxWidth
-}
-pub impl Eq for ConstraintKind
-pub impl Show for ConstraintKind
-pub impl ToJson for ConstraintKind
-pub impl @json.FromJson for ConstraintKind
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 type ConstraintSettings
 pub impl @app.Resource for ConstraintSettings

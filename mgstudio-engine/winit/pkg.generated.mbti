@@ -53,36 +53,30 @@ pub fn winit_write_raw_winit_window_events_system(@ecs.World) -> Unit
 pub(all) struct RawWinitWindowEvent {
   window_id : Int
   event : @windowing_native.RawWinitWindowEventData
-}
+} derive(Eq, Show)
 pub impl @ecs.Message for RawWinitWindowEvent
-pub impl Eq for RawWinitWindowEvent
-pub impl Show for RawWinitWindowEvent
 
 pub(all) enum UpdateMode {
   Continuous
   Reactive(@Milky2018/mgstudio/core.Duration, Bool, Bool, Bool)
-}
+} derive(Eq, Show)
 pub fn UpdateMode::reactive(@Milky2018/mgstudio/core.Duration) -> Self
 pub fn UpdateMode::reactive_low_power(@Milky2018/mgstudio/core.Duration) -> Self
-pub impl Eq for UpdateMode
-pub impl Show for UpdateMode
 
 pub struct WinitMonitorEntry {
   monitor : @Milky2018/window/core.MonitorHandle
   entity : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub fn WinitMonitorEntry::new(@Milky2018/window/core.MonitorHandle, @Milky2018/mgstudio/core.Entity) -> Self
-pub impl Eq for WinitMonitorEntry
 
 pub struct WinitMonitors {
   monitors : Array[WinitMonitorEntry]
-}
+} derive(Eq)
 pub fn WinitMonitors::find_entity(Self, @Milky2018/mgstudio/core.Entity) -> @Milky2018/window/core.MonitorHandle?
 pub fn WinitMonitors::new() -> Self
 pub fn WinitMonitors::nth(Self, Int) -> @Milky2018/window/core.MonitorHandle?
 pub impl @app.Resource for WinitMonitors
 pub impl Default for WinitMonitors
-pub impl Eq for WinitMonitors
 
 pub(all) struct WinitPlugin {
   run_on_any_thread : Bool
@@ -93,7 +87,7 @@ pub impl @app.PluginReplacement for WinitPlugin
 pub(all) struct WinitSettings {
   focused_mode : UpdateMode
   unfocused_mode : UpdateMode
-}
+} derive(Eq, Show)
 pub fn WinitSettings::continuous() -> Self
 pub fn WinitSettings::desktop_app() -> Self
 pub fn WinitSettings::game() -> Self
@@ -101,19 +95,16 @@ pub fn WinitSettings::mobile() -> Self
 pub fn WinitSettings::update_mode(Self, Bool) -> UpdateMode
 pub impl @app.Resource for WinitSettings
 pub impl Default for WinitSettings
-pub impl Eq for WinitSettings
-pub impl Show for WinitSettings
 
 pub struct WinitWindowEntry {
   entity : @Milky2018/mgstudio/core.Entity
   window : Int
-}
+} derive(Eq)
 pub fn WinitWindowEntry::new(@Milky2018/mgstudio/core.Entity, Int) -> Self
-pub impl Eq for WinitWindowEntry
 
 pub struct WinitWindows {
   windows : Array[WinitWindowEntry]
-}
+} derive(Eq)
 pub fn WinitWindows::get_window(Self, @Milky2018/mgstudio/core.Entity) -> Int?
 pub fn WinitWindows::get_window_entity(Self, Int) -> @Milky2018/mgstudio/core.Entity?
 pub fn WinitWindows::new() -> Self
@@ -121,7 +112,6 @@ pub fn WinitWindows::remove_window(Self, @Milky2018/mgstudio/core.Entity) -> Int
 pub fn WinitWindows::sync_windows(Self, @ecs.World) -> Unit
 pub impl @app.Resource for WinitWindows
 pub impl Default for WinitWindows
-pub impl Eq for WinitWindows
 
 // Type aliases
 pub using @windowing_native {type RawWinitWindowEventData}

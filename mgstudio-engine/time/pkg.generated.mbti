@@ -109,7 +109,7 @@ pub impl Default for Real
 pub struct Stopwatch {
   elapsed : @core.Duration
   paused : Bool
-}
+} derive(Eq, Show)
 pub fn Stopwatch::elapsed(Self) -> @core.Duration
 pub fn Stopwatch::elapsed_seconds(Self) -> Float
 pub fn Stopwatch::elapsed_secs(Self) -> Float
@@ -122,8 +122,6 @@ pub fn Stopwatch::set_elapsed(Self, @core.Duration) -> Self
 pub fn Stopwatch::set_elapsed_seconds(Self, Float) -> Self
 pub fn Stopwatch::tick(Self, @core.Duration) -> Self
 pub fn Stopwatch::unpause(Self) -> Self
-pub impl Eq for Stopwatch
-pub impl Show for Stopwatch
 
 pub struct Time[T] {
   context : T
@@ -215,11 +213,9 @@ pub(all) enum TimeUpdateStrategy {
   ManualInstant(@core.Instant)
   ManualDuration(@core.Duration)
   FixedTimesteps(Int)
-}
+} derive(Eq, Show)
 pub fn TimeUpdateStrategy::default() -> Self
 pub impl @app.Resource for TimeUpdateStrategy
-pub impl Eq for TimeUpdateStrategy
-pub impl Show for TimeUpdateStrategy
 
 pub struct Timer {
   stopwatch : Stopwatch
@@ -227,7 +223,7 @@ pub struct Timer {
   mode : TimerMode
   finished : Bool
   times_finished_this_tick : Int
-}
+} derive(Eq, Show)
 pub fn Timer::almost_finish(Self) -> Self
 pub fn Timer::duration(Self) -> @core.Duration
 pub fn Timer::duration_seconds(Self) -> Float
@@ -257,15 +253,11 @@ pub fn Timer::tick(Self, @core.Duration) -> Self
 pub fn Timer::times_finished_this_tick(Self) -> Int
 pub fn Timer::toggle(Self) -> Self
 pub fn Timer::unpause(Self) -> Self
-pub impl Eq for Timer
-pub impl Show for Timer
 
 pub(all) enum TimerMode {
   Once
   Repeating
-}
-pub impl Eq for TimerMode
-pub impl Show for TimerMode
+} derive(Eq, Show)
 
 pub struct Virtual {
   max_delta : @core.Duration

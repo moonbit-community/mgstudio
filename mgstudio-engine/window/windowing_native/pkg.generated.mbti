@@ -312,16 +312,12 @@ pub(all) enum RawWinitWindowEventData {
   ScaleFactorChanged(Double, @dpi.PhysicalSize)
   ThemeChanged(@core.Theme)
   TouchpadPressure(@core.DeviceId?, Double, Int)
-}
-pub impl Eq for RawWinitWindowEventData
-pub impl Show for RawWinitWindowEventData
+} derive(Eq, Show)
 
 pub(all) struct RawWinitWindowEventSnapshot {
   window_id : Int
   event : RawWinitWindowEventData
-}
-pub impl Eq for RawWinitWindowEventSnapshot
-pub impl Show for RawWinitWindowEventSnapshot
+} derive(Eq, Show)
 
 // Type aliases
 pub type NativeWindowHandle = Int

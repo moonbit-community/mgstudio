@@ -14,9 +14,7 @@ import {
 pub(all) enum AppState {
   Menu
   InGame
-}
-pub impl Eq for AppState
-pub impl Show for AppState
+} derive(Eq, Show)
 
 type MenuData
 pub impl @app.Resource for MenuData

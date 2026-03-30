@@ -105,7 +105,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F), 0.0F),
+    @pbr.GlobalAmbientLight::new(
+      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      0.0F,
+    ),
   )
 
   let scene_root = world.spawn_empty()
@@ -204,7 +207,8 @@ fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   world.for_each_component(@pbr.ecs_key_mesh_material3d, fn(entity, _material) {
-    guard (try! world.get_by_key(entity, @ecs.ecs_key_name)) is Some(name_component) else {
+    guard (try! world.get_by_key(entity, @ecs.ecs_key_name))
+      is Some(name_component) else {
       return
     }
     guard lightmap_handle_for_name(asset_server, name_component.as_str())

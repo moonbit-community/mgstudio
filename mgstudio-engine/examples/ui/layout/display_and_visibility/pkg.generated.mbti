@@ -11,35 +11,19 @@ import {
 // Errors
 
 // Types and methods
-type ButtonPressState
+type ButtonPressState derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for ButtonPressState
-pub impl Eq for ButtonPressState
-pub impl Show for ButtonPressState
-pub impl ToJson for ButtonPressState
-pub impl @json.FromJson for ButtonPressState
 
-type TargetPanel
+type TargetPanel derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for TargetPanel
-pub impl Eq for TargetPanel
-pub impl Show for TargetPanel
-pub impl ToJson for TargetPanel
-pub impl @json.FromJson for TargetPanel
 
-type ToggleButtonAction
+type ToggleButtonAction derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for ToggleButtonAction
-pub impl Eq for ToggleButtonAction
-pub impl Show for ToggleButtonAction
-pub impl ToJson for ToggleButtonAction
-pub impl @json.FromJson for ToggleButtonAction
 
 pub(all) enum ToggleKind {
   DisplayTarget
   VisibilityTarget
-}
-pub impl Eq for ToggleKind
-pub impl Show for ToggleKind
-pub impl ToJson for ToggleKind
-pub impl @json.FromJson for ToggleKind
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 // Type aliases
 

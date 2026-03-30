@@ -700,10 +700,8 @@ pub impl @ecs.Component for UnderlineColor
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop
-}
+} derive(Eq, Show)
 pub impl @ecs.Component for YAxisOrientation
-pub impl Eq for YAxisOrientation
-pub impl Show for YAxisOrientation
 
 // Type aliases
 

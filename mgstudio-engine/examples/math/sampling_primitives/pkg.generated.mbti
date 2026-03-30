@@ -33,9 +33,7 @@ type SampledShapes
 pub(all) enum SamplingMode {
   Interior
   Boundary
-}
-pub impl Eq for SamplingMode
-pub impl Show for SamplingMode
+} derive(Eq, Show)
 
 pub(all) enum Shape {
   Cuboid
@@ -44,18 +42,14 @@ pub(all) enum Shape {
   Cylinder
   Tetrahedron
   Triangle
-}
-pub impl Eq for Shape
-pub impl Show for Shape
+} derive(Eq, Show)
 
 type SpawnQueue
 
 pub(all) enum SpawningMode {
   Manual
   Automatic
-}
-pub impl Eq for SpawningMode
-pub impl Show for SpawningMode
+} derive(Eq, Show)
 
 type SpawningPoint
 

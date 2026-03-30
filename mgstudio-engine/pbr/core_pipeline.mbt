@@ -1576,7 +1576,7 @@ pub fn Lightmap::default() -> Lightmap {
 
 ///|
 pub fn Lightmap::new(image : @asset.Handle[@asset.Image]) -> Lightmap {
-  Lightmap::{ ..Lightmap::default(), image }
+  Lightmap::{ ..Lightmap::default(), image, }
 }
 
 ///|

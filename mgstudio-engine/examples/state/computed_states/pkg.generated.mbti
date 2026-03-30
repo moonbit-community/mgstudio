@@ -14,48 +14,34 @@ import {
 pub(all) enum AppState {
   Menu
   InGame(Bool, Bool)
-}
-pub impl Eq for AppState
-pub impl Show for AppState
+} derive(Eq, Show)
 
-type InGame
-pub impl Eq for InGame
-pub impl Show for InGame
+type InGame derive(Eq, Show)
 
 pub(all) enum IsPaused {
   NotPaused
   Paused
-}
-pub impl Eq for IsPaused
-pub impl Show for IsPaused
+} derive(Eq, Show)
 
 pub(all) enum MenuButton {
   Play
   Tutorial
-}
-pub impl Eq for MenuButton
-pub impl Show for MenuButton
+} derive(Eq, Show)
 
 type MenuData
 pub impl @app.Resource for MenuData
 
-type TurboMode
-pub impl Eq for TurboMode
-pub impl Show for TurboMode
+type TurboMode derive(Eq, Show)
 
 pub(all) enum Tutorial {
   MovementInstructions
   PauseInstructions
-}
-pub impl Eq for Tutorial
-pub impl Show for Tutorial
+} derive(Eq, Show)
 
 pub(all) enum TutorialState {
   Active
   Inactive
-}
-pub impl Eq for TutorialState
-pub impl Show for TutorialState
+} derive(Eq, Show)
 
 // Type aliases
 

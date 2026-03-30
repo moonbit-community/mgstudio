@@ -10,10 +10,8 @@ import {
 // Errors
 
 // Types and methods
-type ButtonPressState
+type ButtonPressState derive(Eq, Show)
 pub impl @ecs.Component for ButtonPressState
-pub impl Eq for ButtonPressState
-pub impl Show for ButtonPressState
 
 type ControlButton
 pub impl @ecs.Component for ControlButton

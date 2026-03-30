@@ -11,24 +11,20 @@ import {
 // Errors
 
 // Types and methods
-type ArmorBlockedDamage
+type ArmorBlockedDamage derive(Show)
 pub impl @ecs.Message for ArmorBlockedDamage
 pub impl Default for ArmorBlockedDamage
-pub impl Show for ArmorBlockedDamage
 
-type DamageReceived
+type DamageReceived derive(Show)
 pub impl @ecs.Message for DamageReceived
 pub impl Default for DamageReceived
-pub impl Show for DamageReceived
 
-type DamageTimer
+type DamageTimer derive(Show)
 pub impl @app.Resource for DamageTimer
 pub impl Default for DamageTimer
-pub impl Show for DamageTimer
 
-type DealDamage
+type DealDamage derive(Show)
 pub impl @ecs.Message for DealDamage
-pub impl Show for DealDamage
 
 // Type aliases
 

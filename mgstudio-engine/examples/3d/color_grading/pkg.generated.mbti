@@ -14,31 +14,27 @@ pub(all) enum ColorGradingOptionWidgetType {
   Button
   Label
   Value
-}
-pub impl Eq for ColorGradingOptionWidgetType
+} derive(Eq)
 
 type HelpText
 
 pub(all) enum SelectedColorGradingOption {
   Global(SelectedGlobalColorGradingOption)
   Section(SelectedColorGradingSection, SelectedSectionColorGradingOption)
-}
-pub impl Eq for SelectedColorGradingOption
+} derive(Eq)
 
 pub(all) enum SelectedColorGradingSection {
   Highlights
   Midtones
   Shadows
-}
-pub impl Eq for SelectedColorGradingSection
+} derive(Eq)
 
 pub(all) enum SelectedGlobalColorGradingOption {
   Exposure
   Temperature
   Tint
   Hue
-}
-pub impl Eq for SelectedGlobalColorGradingOption
+} derive(Eq)
 
 pub(all) enum SelectedSectionColorGradingOption {
   Saturation
@@ -46,8 +42,7 @@ pub(all) enum SelectedSectionColorGradingOption {
   Gamma
   Gain
   Lift
-}
-pub impl Eq for SelectedSectionColorGradingOption
+} derive(Eq)
 
 // Type aliases
 

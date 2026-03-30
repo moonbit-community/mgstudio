@@ -12,10 +12,9 @@ import {
 // Errors
 
 // Types and methods
-type MyComponent
+type MyComponent derive(Eq)
 pub fn MyComponent::new(@events.KeyCode) -> Self
 pub impl @ecs.Component for MyComponent
-pub impl Eq for MyComponent
 
 type MyComponentIndex
 pub impl @app.Resource for MyComponentIndex

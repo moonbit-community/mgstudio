@@ -31,10 +31,8 @@ pub(all) enum ImageAddressMode {
   Repeat
   MirrorRepeat
   ClampToBorder
-}
+} derive(Eq, Show)
 pub fn ImageAddressMode::default() -> Self
-pub impl Eq for ImageAddressMode
-pub impl Show for ImageAddressMode
 
 pub(all) enum ImageArrayLayout {
   RowCount(Int)
@@ -50,24 +48,18 @@ pub(all) enum ImageCompareFunction {
   NotEqual
   GreaterEqual
   Always
-}
-pub impl Eq for ImageCompareFunction
-pub impl Show for ImageCompareFunction
+} derive(Eq, Show)
 
 pub(all) enum ImageFilterMode {
   Nearest
   Linear
-}
+} derive(Eq, Show)
 pub fn ImageFilterMode::default() -> Self
-pub impl Eq for ImageFilterMode
-pub impl Show for ImageFilterMode
 
 pub(all) enum ImageKind {
   Data
   TargetTexture
-}
-pub impl Eq for ImageKind
-pub impl Show for ImageKind
+} derive(Eq, Show)
 
 pub(all) enum ImageSampler {
   Default
@@ -82,9 +74,7 @@ pub(all) enum ImageSamplerBorderColor {
   OpaqueBlack
   OpaqueWhite
   Zero
-}
-pub impl Eq for ImageSamplerBorderColor
-pub impl Show for ImageSamplerBorderColor
+} derive(Eq, Show)
 
 pub(all) struct ImageSamplerDescriptor {
   mut label : String?
@@ -112,10 +102,8 @@ pub(all) enum TextureFormat {
   Rgba8UnormSrgb
   Rgba16Float
   Rg16Float
-}
+} derive(Eq, Show)
 pub fn TextureFormat::default() -> Self
-pub impl Eq for TextureFormat
-pub impl Show for TextureFormat
 
 // Type aliases
 

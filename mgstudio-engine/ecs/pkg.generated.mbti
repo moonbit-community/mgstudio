@@ -121,7 +121,7 @@ pub struct BatchingStrategy {
   min_batch_size : Int
   max_batch_size : Int
   batches_per_thread : Int
-}
+} derive(Eq, Show)
 pub fn BatchingStrategy::batches_per_thread(Self, Int) -> Self
 pub fn BatchingStrategy::calc_batch_size(Self, () -> Int, Int) -> Int
 pub fn BatchingStrategy::fixed(Int) -> Self
@@ -129,8 +129,6 @@ pub fn BatchingStrategy::max_batch_size(Self, Int) -> Self
 pub fn BatchingStrategy::min_batch_size(Self, Int) -> Self
 pub fn BatchingStrategy::new() -> Self
 pub impl Default for BatchingStrategy
-pub impl Eq for BatchingStrategy
-pub impl Show for BatchingStrategy
 
 pub struct Changed[T] {
   key : ComponentKey[T]
@@ -248,13 +246,9 @@ pub struct DeferredWorldCommands {
 pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityCommands
 
 pub struct Disabled {
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn Disabled::new() -> Self
 pub impl Component for Disabled
-pub impl Eq for Disabled
-pub impl Show for Disabled
-pub impl ToJson for Disabled
-pub impl @json.FromJson for Disabled
 
 pub struct EntityMut {
   world : World
@@ -409,14 +403,10 @@ pub impl[T : Component] QueryData for Mut[T]
 
 pub struct Name {
   name : String
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn Name::as_str(Self) -> String
 pub fn Name::new(String) -> Self
 pub impl Component for Name
-pub impl Eq for Name
-pub impl Show for Name
-pub impl ToJson for Name
-pub impl @json.FromJson for Name
 
 pub struct ObserverHandle {
   id : Int

@@ -12,9 +12,7 @@ import {
 // Errors
 
 // Types and methods
-type LinearColor
-pub impl ToJson for LinearColor
-pub impl @json.FromJson for LinearColor
+type LinearColor derive(ToJson, @json.FromJson)
 
 type MyProcGenImage
 pub impl @app.Resource for MyProcGenImage

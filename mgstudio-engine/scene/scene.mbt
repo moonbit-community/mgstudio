@@ -1285,6 +1285,7 @@ fn scene_spawn_instance_when_ready(
   )
 }
 
+///|
 fn scene_apply_morph_targets(
   base_positions : Array[@math.Vec3],
   morph_targets : Array[Array[@math.Vec3]],

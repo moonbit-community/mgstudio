@@ -17,9 +17,7 @@ pub fn gizmo_render_system_set(GizmoRenderSystems) -> String
 pub(all) enum GizmoRenderSystems {
   QueueLineGizmos2d
   QueueLineGizmos3d
-}
-pub impl Eq for GizmoRenderSystems
-pub impl Show for GizmoRenderSystems
+} derive(Eq, Show)
 
 // Type aliases
 

@@ -16,9 +16,8 @@ pub impl @ecs.Message for A
 type B
 pub impl @ecs.Message for B
 
-type DebugMessage
+type DebugMessage derive(Show)
 pub impl @ecs.Message for DebugMessage
-pub impl Show for DebugMessage
 
 // Type aliases
 

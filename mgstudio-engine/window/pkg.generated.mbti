@@ -322,11 +322,9 @@ pub(all) enum AppLifecycle {
   WillSuspend
   Suspended
   WillResume
-}
+} derive(Eq, Show)
 pub fn AppLifecycle::is_active(Self) -> Bool
 pub impl @ecs.Message for AppLifecycle
-pub impl Eq for AppLifecycle
-pub impl Show for AppLifecycle
 
 pub struct Captured {
 }
@@ -337,10 +335,8 @@ pub struct Capturing {
 pub impl @ecs.Component for Capturing
 
 pub(all) struct ClosingWindow {
-}
+} derive(Eq, Show)
 pub impl @ecs.Component for ClosingWindow
-pub impl Eq for ClosingWindow
-pub impl Show for ClosingWindow
 
 pub(all) enum CompositeAlphaMode {
   Auto
@@ -348,40 +344,32 @@ pub(all) enum CompositeAlphaMode {
   PreMultiplied
   PostMultiplied
   Inherit
-}
+} derive(Eq, Show)
 pub fn CompositeAlphaMode::default() -> Self
-pub impl Eq for CompositeAlphaMode
-pub impl Show for CompositeAlphaMode
 
 pub(all) struct CursorEntered {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for CursorEntered
-pub impl Eq for CursorEntered
 
 pub(all) enum CursorGrabMode {
   GrabNone
   GrabConfined
   GrabLocked
-}
-pub impl Eq for CursorGrabMode
-pub impl Show for CursorGrabMode
+} derive(Eq, Show)
 
 pub(all) enum CursorIcon {
   System(@Milky2018/window/core.CursorIcon)
-}
+} derive(Eq, Show)
 pub fn CursorIcon::as_system(Self) -> @Milky2018/window/core.CursorIcon?
 pub fn CursorIcon::from(@Milky2018/window/core.CursorIcon) -> Self
 pub impl @ecs.Component for CursorIcon
 pub impl Default for CursorIcon
-pub impl Eq for CursorIcon
-pub impl Show for CursorIcon
 
 pub(all) struct CursorLeft {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for CursorLeft
-pub impl Eq for CursorLeft
 
 pub(all) struct CursorMoved {
   window : @Milky2018/mgstudio/core.Entity
@@ -394,36 +382,29 @@ pub(all) struct CursorOptions {
   mut visible : Bool
   mut grab_mode : CursorGrabMode
   hit_test : Bool
-}
+} derive(Eq, Show)
 pub fn CursorOptions::default() -> Self
 pub impl @ecs.Component for CursorOptions
-pub impl Eq for CursorOptions
-pub impl Show for CursorOptions
 
 pub(all) struct EnabledButtons {
   mut minimize : Bool
   mut maximize : Bool
   mut close : Bool
-}
+} derive(Eq, Show)
 pub fn EnabledButtons::default() -> Self
-pub impl Eq for EnabledButtons
-pub impl Show for EnabledButtons
 
 pub(all) enum ExitCondition {
   OnPrimaryClosed
   OnAllClosed
   DontExit
-}
-pub impl Eq for ExitCondition
-pub impl Show for ExitCondition
+} derive(Eq, Show)
 
 pub(all) enum FileDragAndDrop {
   DroppedFile(@Milky2018/mgstudio/core.Entity, String)
   HoveredFile(@Milky2018/mgstudio/core.Entity, String)
   HoveredFileCanceled(@Milky2018/mgstudio/core.Entity)
-}
+} derive(Eq)
 pub impl @ecs.Message for FileDragAndDrop
-pub impl Eq for FileDragAndDrop
 
 pub(all) enum HostEvent {
   KeyDown(@events.KeyCode)
@@ -442,17 +423,14 @@ pub(all) enum Ime {
   Commit(@Milky2018/mgstudio/core.Entity, String)
   Disabled(@Milky2018/mgstudio/core.Entity)
   DeleteSurrounding(@Milky2018/mgstudio/core.Entity, Int, Int)
-}
+} derive(Eq)
 pub impl @ecs.Message for Ime
-pub impl Eq for Ime
 
 pub(all) struct ImeCursorRange {
   start : Int
   end : Int
-}
+} derive(Eq, Show)
 pub fn ImeCursorRange::new(Int, Int) -> Self
-pub impl Eq for ImeCursorRange
-pub impl Show for ImeCursorRange
 
 pub(all) struct Monitor {
   name : String?
@@ -471,8 +449,7 @@ pub(all) enum MonitorSelection {
   Primary
   Index(Int)
   Entity(@Milky2018/mgstudio/core.Entity)
-}
-pub impl Eq for MonitorSelection
+} derive(Eq)
 
 pub(all) enum PresentMode {
   AutoVsync
@@ -481,30 +458,22 @@ pub(all) enum PresentMode {
   FifoRelaxed
   Immediate
   Mailbox
-}
-pub impl Eq for PresentMode
-pub impl Show for PresentMode
+} derive(Eq, Show)
 
 pub(all) struct PrimaryMonitor {
-}
+} derive(Eq, Show)
 pub impl @ecs.Component for PrimaryMonitor
-pub impl Eq for PrimaryMonitor
-pub impl Show for PrimaryMonitor
 
 pub(all) struct PrimaryWindow {
-}
+} derive(Eq, Show)
 pub impl @ecs.Component for PrimaryWindow
-pub impl Eq for PrimaryWindow
-pub impl Show for PrimaryWindow
 
 pub(all) struct RawHandleWrapper {
   window : Int
-}
+} derive(Eq, Show)
 pub fn RawHandleWrapper::new(WindowWrapper) -> Self
 pub fn RawHandleWrapper::window(Self) -> Int
 pub impl @ecs.Component for RawHandleWrapper
-pub impl Eq for RawHandleWrapper
-pub impl Show for RawHandleWrapper
 
 pub(all) struct RawHandleWrapperHolder {
   handle : @ref.Ref[RawHandleWrapper?]
@@ -513,9 +482,8 @@ pub fn RawHandleWrapperHolder::new() -> Self
 pub impl @ecs.Component for RawHandleWrapperHolder
 
 pub(all) struct RequestRedraw {
-}
+} derive(Eq)
 pub impl @ecs.Message for RequestRedraw
-pub impl Eq for RequestRedraw
 
 pub(all) enum ScreenEdge {
   None
@@ -524,10 +492,8 @@ pub(all) enum ScreenEdge {
   Bottom
   Right
   All
-}
+} derive(Eq, Show)
 pub fn ScreenEdge::default() -> Self
-pub impl Eq for ScreenEdge
-pub impl Show for ScreenEdge
 
 pub struct Screenshot {
   target : ScreenshotTarget
@@ -560,8 +526,7 @@ pub fn VideoMode::new(@math.UVec2, Int, Int) -> Self
 pub(all) enum VideoModeSelection {
   Current
   Specific(@Milky2018/window/core.VideoMode)
-}
-pub impl Eq for VideoModeSelection
+} derive(Eq)
 
 pub(all) struct Window {
   mut title : String
@@ -623,39 +588,33 @@ pub impl @ecs.Component for Window
 pub(all) struct WindowBackendScaleFactorChanged {
   window : @Milky2018/mgstudio/core.Entity
   scale_factor : Float
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowBackendScaleFactorChanged
-pub impl Eq for WindowBackendScaleFactorChanged
 
 pub(all) struct WindowCloseRequested {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowCloseRequested
-pub impl Eq for WindowCloseRequested
 
 pub(all) struct WindowClosed {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowClosed
-pub impl Eq for WindowClosed
 
 pub(all) struct WindowClosing {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowClosing
-pub impl Eq for WindowClosing
 
 pub(all) struct WindowCreated {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowCreated
-pub impl Eq for WindowCreated
 
 pub(all) struct WindowDestroyed {
   window : @Milky2018/mgstudio/core.Entity
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowDestroyed
-pub impl Eq for WindowDestroyed
 
 pub(all) enum WindowEvent {
   AppLifecycle(AppLifecycle)
@@ -691,9 +650,8 @@ pub impl @ecs.Message for WindowEvent
 pub(all) struct WindowFocused {
   window : @Milky2018/mgstudio/core.Entity
   focused : Bool
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowFocused
-pub impl Eq for WindowFocused
 
 pub struct WindowHostEntry {
   entity : @Milky2018/mgstudio/core.Entity
@@ -705,8 +663,7 @@ pub(all) enum WindowMode {
   Windowed
   BorderlessFullscreen(MonitorSelection)
   Fullscreen(MonitorSelection, VideoModeSelection)
-}
-pub impl Eq for WindowMode
+} derive(Eq)
 
 pub struct WindowModeChangeRequest {
   entity : @Milky2018/mgstudio/core.Entity
@@ -719,16 +676,14 @@ pub(all) struct WindowMoved {
   window : @Milky2018/mgstudio/core.Entity
   x : Int
   y : Int
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowMoved
-pub impl Eq for WindowMoved
 
 pub(all) struct WindowOccluded {
   window : @Milky2018/mgstudio/core.Entity
   occluded : Bool
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowOccluded
-pub impl Eq for WindowOccluded
 
 pub(all) struct WindowPlugin {
   primary_window : Window?
@@ -743,45 +698,38 @@ pub(all) enum WindowPosition {
   Automatic
   Centered(MonitorSelection)
   At(Int, Int)
-}
+} derive(Eq)
 pub fn WindowPosition::center(Self, MonitorSelection) -> Self
 pub fn WindowPosition::new(Int, Int) -> Self
 pub fn WindowPosition::set(Self, Int, Int) -> Self
-pub impl Eq for WindowPosition
 
 pub(all) enum WindowRef {
   Primary
   Entity(@Milky2018/mgstudio/core.Entity)
-}
-pub impl Eq for WindowRef
-pub impl ToJson for WindowRef
-pub impl @json.FromJson for WindowRef
+} derive(Eq, ToJson, @json.FromJson)
 
 pub(all) struct WindowResizeConstraints {
   min_width : Float
   min_height : Float
   max_width : Float
   max_height : Float
-}
+} derive(Eq, Show)
 pub fn WindowResizeConstraints::check_constraints(Self) -> Self
 pub fn WindowResizeConstraints::default() -> Self
-pub impl Eq for WindowResizeConstraints
-pub impl Show for WindowResizeConstraints
 
 pub(all) struct WindowResized {
   window : @Milky2018/mgstudio/core.Entity
   width : Float
   height : Float
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowResized
-pub impl Eq for WindowResized
 
 pub(all) struct WindowResolution {
   mut physical_width : Int
   mut physical_height : Int
   mut scale_factor_override : Float?
   mut scale_factor : Float
-}
+} derive(Eq, Show)
 pub fn WindowResolution::base_scale_factor(Self) -> Float
 pub fn WindowResolution::default() -> Self
 pub fn WindowResolution::height(Self) -> Float
@@ -796,29 +744,23 @@ pub fn WindowResolution::set_scale_factor(Self, Float) -> Unit
 pub fn WindowResolution::set_scale_factor_override(Self, Float?) -> Unit
 pub fn WindowResolution::width(Self) -> Float
 pub fn WindowResolution::with_scale_factor_override(Self, Float) -> Self
-pub impl Eq for WindowResolution
-pub impl Show for WindowResolution
 
 pub(all) struct WindowScaleFactorChanged {
   window : @Milky2018/mgstudio/core.Entity
   scale_factor : Float
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowScaleFactorChanged
-pub impl Eq for WindowScaleFactorChanged
 
 pub(all) struct WindowThemeChanged {
   window : @Milky2018/mgstudio/core.Entity
   theme : @Milky2018/window/core.Theme
-}
+} derive(Eq)
 pub impl @ecs.Message for WindowThemeChanged
-pub impl Eq for WindowThemeChanged
 
 pub(all) struct WindowWrapper {
   window : Int
-}
+} derive(Eq, Show)
 pub fn WindowWrapper::new(Int) -> Self
-pub impl Eq for WindowWrapper
-pub impl Show for WindowWrapper
 
 // Type aliases
 pub using @events {type ButtonState}

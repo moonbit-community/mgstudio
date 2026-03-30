@@ -158,7 +158,7 @@ pub struct AxisSettings {
   mut deadzone_lowerbound : Float
   mut livezone_lowerbound : Float
   mut threshold : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn AxisSettings::deadzone_lowerbound(Self) -> Float
 pub fn AxisSettings::deadzone_upperbound(Self) -> Float
 pub fn AxisSettings::livezone_lowerbound(Self) -> Float
@@ -176,19 +176,13 @@ pub fn AxisSettings::try_set_livezone_lowerbound(Self, Float) -> Result[Unit, Ax
 pub fn AxisSettings::try_set_livezone_upperbound(Self, Float) -> Result[Unit, AxisSettingsError]
 pub fn AxisSettings::try_set_threshold(Self, Float) -> Result[Unit, AxisSettingsError]
 pub impl Default for AxisSettings
-pub impl Eq for AxisSettings
-pub impl ToJson for AxisSettings
-pub impl @json.FromJson for AxisSettings
 
 pub struct ButtonAxisSettings {
   high : Float
   low : Float
   threshold : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Default for ButtonAxisSettings
-pub impl Eq for ButtonAxisSettings
-pub impl ToJson for ButtonAxisSettings
-pub impl @json.FromJson for ButtonAxisSettings
 
 pub struct ButtonInput[T] {
   pressed : Array[(String, T)]
@@ -224,7 +218,7 @@ pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T]
 pub struct ButtonSettings {
   mut press_threshold : Float
   mut release_threshold : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn ButtonSettings::is_pressed(Self, Float) -> Bool
 pub fn ButtonSettings::is_released(Self, Float) -> Bool
 pub fn ButtonSettings::new(Float, Float) -> Result[Self, ButtonSettingsError]
@@ -235,16 +229,13 @@ pub fn ButtonSettings::set_release_threshold(Self, Float) -> Float
 pub fn ButtonSettings::try_set_press_threshold(Self, Float) -> Result[Unit, ButtonSettingsError]
 pub fn ButtonSettings::try_set_release_threshold(Self, Float) -> Result[Unit, ButtonSettingsError]
 pub impl Default for ButtonSettings
-pub impl Eq for ButtonSettings
-pub impl ToJson for ButtonSettings
-pub impl @json.FromJson for ButtonSettings
 
 pub struct Gamepad {
   vendor_id : Int?
   product_id : Int?
   digital : ButtonInput[GamepadButton]
   analog : Axis[GamepadInput]
-}
+} derive(ToJson, @json.FromJson)
 pub fn Gamepad::all_just_pressed(Self, Array[GamepadButton]) -> Bool
 pub fn Gamepad::all_just_released(Self, Array[GamepadButton]) -> Bool
 pub fn Gamepad::all_pressed(Self, Array[GamepadButton]) -> Bool
@@ -271,8 +262,6 @@ pub fn Gamepad::right_stick(Self) -> @math.Vec2
 pub fn Gamepad::vendor_id(Self) -> Int?
 pub impl @ecs.Component for Gamepad
 pub impl Default for Gamepad
-pub impl ToJson for Gamepad
-pub impl @json.FromJson for Gamepad
 
 pub(all) enum GamepadAxis {
   LeftStickX
@@ -282,25 +271,18 @@ pub(all) enum GamepadAxis {
   RightStickY
   RightZ
   Other(Int)
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn GamepadAxis::all() -> Array[Self]
 pub fn GamepadAxis::to_index(Self) -> Int
 pub impl IntoGamepadInput for GamepadAxis
-pub impl Eq for GamepadAxis
-pub impl Show for GamepadAxis
-pub impl ToJson for GamepadAxis
-pub impl @json.FromJson for GamepadAxis
 
 pub struct GamepadAxisChangedEvent {
   entity : @core.Entity
   axis : GamepadAxis
   value : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadAxisChangedEvent::new(@core.Entity, GamepadAxis, Float) -> Self
 pub impl @ecs.Message for GamepadAxisChangedEvent
-pub impl Eq for GamepadAxisChangedEvent
-pub impl ToJson for GamepadAxisChangedEvent
-pub impl @json.FromJson for GamepadAxisChangedEvent
 
 pub(all) enum GamepadButton {
   South
@@ -323,111 +305,79 @@ pub(all) enum GamepadButton {
   DPadLeft
   DPadRight
   Other(Int)
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn GamepadButton::all() -> Array[Self]
 pub fn GamepadButton::to_index(Self) -> Int
 pub impl ButtonInputButton for GamepadButton
 pub impl IntoGamepadInput for GamepadButton
-pub impl Eq for GamepadButton
-pub impl Show for GamepadButton
-pub impl ToJson for GamepadButton
-pub impl @json.FromJson for GamepadButton
 
 pub struct GamepadButtonChangedEvent {
   entity : @core.Entity
   button : GamepadButton
   state : @events.ButtonState
   value : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadButtonChangedEvent::new(@core.Entity, GamepadButton, @events.ButtonState, Float) -> Self
 pub impl @ecs.Message for GamepadButtonChangedEvent
-pub impl Eq for GamepadButtonChangedEvent
-pub impl ToJson for GamepadButtonChangedEvent
-pub impl @json.FromJson for GamepadButtonChangedEvent
 
 pub struct GamepadButtonStateChangedEvent {
   entity : @core.Entity
   button : GamepadButton
   state : @events.ButtonState
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadButtonStateChangedEvent::new(@core.Entity, GamepadButton, @events.ButtonState) -> Self
 pub impl @ecs.Message for GamepadButtonStateChangedEvent
-pub impl Eq for GamepadButtonStateChangedEvent
-pub impl ToJson for GamepadButtonStateChangedEvent
-pub impl @json.FromJson for GamepadButtonStateChangedEvent
 
 pub(all) enum GamepadConnection {
   Connected(GamepadConnectionInfo)
   Disconnected
-}
-pub impl Eq for GamepadConnection
-pub impl ToJson for GamepadConnection
-pub impl @json.FromJson for GamepadConnection
+} derive(Eq, ToJson, @json.FromJson)
 
 pub struct GamepadConnectionEvent {
   gamepad : @core.Entity
   connection : GamepadConnection
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadConnectionEvent::connected(Self) -> Bool
 pub fn GamepadConnectionEvent::disconnected(Self) -> Bool
 pub fn GamepadConnectionEvent::new(@core.Entity, GamepadConnection) -> Self
 pub impl @ecs.Message for GamepadConnectionEvent
-pub impl Eq for GamepadConnectionEvent
-pub impl ToJson for GamepadConnectionEvent
-pub impl @json.FromJson for GamepadConnectionEvent
 
 pub struct GamepadConnectionInfo {
   name : String
   vendor_id : Int?
   product_id : Int?
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadConnectionInfo::new(String, Int?, Int?) -> Self
-pub impl Eq for GamepadConnectionInfo
-pub impl ToJson for GamepadConnectionInfo
-pub impl @json.FromJson for GamepadConnectionInfo
 
 pub(all) enum GamepadEvent {
   Connection(GamepadConnectionEvent)
   Button(GamepadButtonChangedEvent)
   Axis(GamepadAxisChangedEvent)
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub impl @ecs.Message for GamepadEvent
-pub impl Eq for GamepadEvent
-pub impl ToJson for GamepadEvent
-pub impl @json.FromJson for GamepadEvent
 
 pub(all) enum GamepadInput {
   Axis(GamepadAxis)
   Button(GamepadButton)
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub impl IntoGamepadInput for GamepadInput
-pub impl Eq for GamepadInput
-pub impl Show for GamepadInput
-pub impl ToJson for GamepadInput
-pub impl @json.FromJson for GamepadInput
 
 pub(all) struct GamepadRumbleIntensity {
   strong_motor : Float
   weak_motor : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadRumbleIntensity::max() -> Self
 pub fn GamepadRumbleIntensity::strong_max() -> Self
 pub fn GamepadRumbleIntensity::strong_motor(Float) -> Self
 pub fn GamepadRumbleIntensity::weak_max() -> Self
 pub fn GamepadRumbleIntensity::weak_motor(Float) -> Self
-pub impl Eq for GamepadRumbleIntensity
-pub impl ToJson for GamepadRumbleIntensity
-pub impl @json.FromJson for GamepadRumbleIntensity
 
 pub(all) enum GamepadRumbleRequest {
   Add(duration~ : @core.Duration, intensity~ : GamepadRumbleIntensity, gamepad~ : @core.Entity)
   Stop(gamepad~ : @core.Entity)
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadRumbleRequest::gamepad(Self) -> @core.Entity
 pub impl @ecs.Message for GamepadRumbleRequest
-pub impl Eq for GamepadRumbleRequest
-pub impl ToJson for GamepadRumbleRequest
-pub impl @json.FromJson for GamepadRumbleRequest
 
 pub struct GamepadSettings {
   default_button_settings : ButtonSettings
@@ -436,14 +386,12 @@ pub struct GamepadSettings {
   button_settings : Array[(GamepadButton, ButtonSettings)]
   axis_settings : Array[(GamepadAxis, AxisSettings)]
   button_axis_settings : Array[(GamepadButton, ButtonAxisSettings)]
-}
+} derive(ToJson, @json.FromJson)
 pub fn GamepadSettings::get_axis_settings(Self, GamepadAxis) -> AxisSettings
 pub fn GamepadSettings::get_button_axis_settings(Self, GamepadButton) -> ButtonAxisSettings
 pub fn GamepadSettings::get_button_settings(Self, GamepadButton) -> ButtonSettings
 pub impl @ecs.Component for GamepadSettings
 pub impl Default for GamepadSettings
-pub impl ToJson for GamepadSettings
-pub impl @json.FromJson for GamepadSettings
 
 pub(all) struct InputPlugin {
 }
@@ -454,39 +402,27 @@ pub struct RawGamepadAxisChangedEvent {
   gamepad : @core.Entity
   axis : GamepadAxis
   value : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn RawGamepadAxisChangedEvent::new(@core.Entity, GamepadAxis, Float) -> Self
 pub impl @ecs.Message for RawGamepadAxisChangedEvent
-pub impl Eq for RawGamepadAxisChangedEvent
-pub impl ToJson for RawGamepadAxisChangedEvent
-pub impl @json.FromJson for RawGamepadAxisChangedEvent
 
 pub struct RawGamepadButtonChangedEvent {
   gamepad : @core.Entity
   button : GamepadButton
   value : Float
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn RawGamepadButtonChangedEvent::new(@core.Entity, GamepadButton, Float) -> Self
 pub impl @ecs.Message for RawGamepadButtonChangedEvent
-pub impl Eq for RawGamepadButtonChangedEvent
-pub impl ToJson for RawGamepadButtonChangedEvent
-pub impl @json.FromJson for RawGamepadButtonChangedEvent
 
 pub(all) enum RawGamepadEvent {
   Connection(GamepadConnectionEvent)
   Button(RawGamepadButtonChangedEvent)
   Axis(RawGamepadAxisChangedEvent)
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub impl @ecs.Message for RawGamepadEvent
-pub impl Eq for RawGamepadEvent
-pub impl ToJson for RawGamepadEvent
-pub impl @json.FromJson for RawGamepadEvent
 
-type RunningRumbleEffects
+type RunningRumbleEffects derive(Eq, ToJson, @json.FromJson)
 pub impl @app.Resource for RunningRumbleEffects
-pub impl Eq for RunningRumbleEffects
-pub impl ToJson for RunningRumbleEffects
-pub impl @json.FromJson for RunningRumbleEffects
 
 pub struct Touch {
   id : Int

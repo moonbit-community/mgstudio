@@ -268,9 +268,7 @@ pub(all) enum AlphaMode2d {
   Opaque
   Mask(Float)
   Blend
-}
-pub impl ToJson for AlphaMode2d
-pub impl @json.FromJson for AlphaMode2d
+} derive(ToJson, @json.FromJson)
 
 pub struct Anchor {
   value : @math.Vec2
@@ -658,12 +656,10 @@ pub impl @json.FromJson for NoWireframe2d
 
 pub struct OrthographicProjection {
   scale : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn OrthographicProjection::default_2d() -> Self
 pub fn OrthographicProjection::new(Float) -> Self
 pub fn OrthographicProjection::with_scale(Self, Float) -> Self
-pub impl ToJson for OrthographicProjection
-pub impl @json.FromJson for OrthographicProjection
 
 pub(all) struct OverlaySpriteUvScissor {
   texture : @asset.Handle[@image.Image]
@@ -692,12 +688,10 @@ pub(all) struct PanCamera {
   mut rotation_speed : Float
   mut key_rotate_ccw : @events.KeyCode?
   mut key_rotate_cw : @events.KeyCode?
-}
+} derive(ToJson, @json.FromJson)
 pub fn PanCamera::default() -> Self
 pub impl @ecs.Component for PanCamera
 pub impl Show for PanCamera
-pub impl ToJson for PanCamera
-pub impl @json.FromJson for PanCamera
 
 pub struct PreparedMaterial2d[M] {
   source : @asset.Handle[M]
@@ -919,22 +913,18 @@ pub struct UiBorderRect {
   top : Float
   right : Float
   bottom : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiBorderRect::new(Float, Float, Float, Float) -> Self
 pub fn UiBorderRect::zero() -> Self
-pub impl ToJson for UiBorderRect
-pub impl @json.FromJson for UiBorderRect
 
 pub struct UiCornerRadii {
   top_left : Float
   top_right : Float
   bottom_right : Float
   bottom_left : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
 pub fn UiCornerRadii::zero() -> Self
-pub impl ToJson for UiCornerRadii
-pub impl @json.FromJson for UiCornerRadii
 
 pub struct Viewport {
   physical_position : @math.IVec2
@@ -967,14 +957,12 @@ pub impl @json.FromJson for Wireframe2dColor
 pub struct Wireframe2dConfig {
   global : Bool
   default_color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn Wireframe2dConfig::default() -> Self
 pub fn Wireframe2dConfig::new(Bool, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_default_color(Self, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for Wireframe2dConfig
-pub impl ToJson for Wireframe2dConfig
-pub impl @json.FromJson for Wireframe2dConfig
 
 // Type aliases
 pub using @math {type Annulus}

@@ -1645,10 +1645,7 @@ fn GpuBackend::draw_mesh_material_with_options(
       required_binding_end
     }
   }
-  guard ensure_mesh2d_instance_uniform_binding(
-      self,
-      required_capacity,
-    )
+  guard ensure_mesh2d_instance_uniform_binding(self, required_capacity)
     is Some((instance_uniform_buf, _)) else {
     debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
       1

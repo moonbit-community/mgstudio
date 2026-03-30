@@ -148,11 +148,9 @@ pub fn ui_update_context_system(@ecs.World) -> Unit
 // Types and methods
 pub struct AccessibilityLabel {
   text : String
-}
+} derive(ToJson, @json.FromJson)
 pub fn AccessibilityLabel::new(String) -> Self
 pub impl @ecs.Component for AccessibilityLabel
-pub impl ToJson for AccessibilityLabel
-pub impl @json.FromJson for AccessibilityLabel
 
 pub(all) enum AlignContent {
   Center
@@ -165,11 +163,7 @@ pub(all) enum AlignContent {
   SpaceEvenly
   Start
   Stretch
-}
-pub impl Eq for AlignContent
-pub impl Show for AlignContent
-pub impl ToJson for AlignContent
-pub impl @json.FromJson for AlignContent
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum AlignItems {
   Baseline
@@ -180,11 +174,7 @@ pub(all) enum AlignItems {
   FlexStart
   Start
   Stretch
-}
-pub impl Eq for AlignItems
-pub impl Show for AlignItems
-pub impl ToJson for AlignItems
-pub impl @json.FromJson for AlignItems
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum AlignSelf {
   Auto
@@ -195,19 +185,13 @@ pub(all) enum AlignSelf {
   FlexStart
   Start
   Stretch
-}
-pub impl Eq for AlignSelf
-pub impl Show for AlignSelf
-pub impl ToJson for AlignSelf
-pub impl @json.FromJson for AlignSelf
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct AutoDirectionalNavigation {
   respect_tab_order : Bool
-}
+} derive(ToJson, @json.FromJson)
 pub fn AutoDirectionalNavigation::default() -> Self
 pub impl @ecs.Component for AutoDirectionalNavigation
-pub impl ToJson for AutoDirectionalNavigation
-pub impl @json.FromJson for AutoDirectionalNavigation
 
 pub struct AutoDirectionalNavigator {
   world : @ecs.World
@@ -218,47 +202,39 @@ pub impl @app.SystemParam for AutoDirectionalNavigator
 
 pub struct BackgroundColor {
   color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn BackgroundColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BackgroundColor
-pub impl ToJson for BackgroundColor
-pub impl @json.FromJson for BackgroundColor
 
 pub struct BorderColor {
   color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn BorderColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BorderColor
-pub impl ToJson for BorderColor
-pub impl @json.FromJson for BorderColor
 
 pub struct BorderRadius {
   top_left : Val
   top_right : Val
   bottom_left : Val
   bottom_right : Val
-}
+} derive(ToJson, @json.FromJson)
 pub fn BorderRadius::all(Val) -> Self
 pub fn BorderRadius::default() -> Self
 pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
 pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
 pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
 pub impl @ecs.Component for BorderRadius
-pub impl ToJson for BorderRadius
-pub impl @json.FromJson for BorderRadius
 
 pub struct BorderRect {
   left : Float
   right : Float
   top : Float
   bottom : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn BorderRect::default() -> Self
 pub fn BorderRect::new(Float, Float, Float, Float) -> Self
 pub fn BorderRect::rectangle(Float, Float) -> Self
 pub fn BorderRect::square(Float) -> Self
-pub impl ToJson for BorderRect
-pub impl @json.FromJson for BorderRect
 
 pub struct BoxShadow {
   color : @color.Color
@@ -266,143 +242,105 @@ pub struct BoxShadow {
   y_offset : Val
   spread_radius : Val
   blur_radius : Val
-}
+} derive(ToJson, @json.FromJson)
 pub fn BoxShadow::default() -> Self
 pub fn BoxShadow::new(@color.Color, Val, Val, Val, Val) -> Self
 pub impl @ecs.Component for BoxShadow
-pub impl ToJson for BoxShadow
-pub impl @json.FromJson for BoxShadow
 
 pub struct Button {
-}
+} derive(ToJson, @json.FromJson)
 pub fn Button::default() -> Self
 pub impl @ecs.Component for Button
-pub impl ToJson for Button
-pub impl @json.FromJson for Button
 
 pub struct ButtonColors {
   normal : @color.Color
   hovered : @color.Color
   pressed : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn ButtonColors::new(@color.Color, @color.Color, @color.Color) -> Self
 pub impl @ecs.Component for ButtonColors
-pub impl ToJson for ButtonColors
-pub impl @json.FromJson for ButtonColors
 
 pub struct CalculatedClip {
   clip : @math.Rect
-}
+} derive(ToJson, @json.FromJson)
 pub fn CalculatedClip::new(@math.Rect) -> Self
 pub impl @ecs.Component for CalculatedClip
-pub impl ToJson for CalculatedClip
-pub impl @json.FromJson for CalculatedClip
 
 pub struct ComputedUiRenderTargetInfo {
   scale_factor : Float
   physical_size : @math.IVec2
-}
+} derive(ToJson, @json.FromJson)
 pub fn ComputedUiRenderTargetInfo::default() -> Self
 pub fn ComputedUiRenderTargetInfo::logical_size(Self) -> @math.Vec2
 pub fn ComputedUiRenderTargetInfo::new(Float, @math.IVec2) -> Self
 pub fn ComputedUiRenderTargetInfo::physical_size(Self) -> @math.IVec2
 pub fn ComputedUiRenderTargetInfo::scale_factor(Self) -> Float
 pub impl @ecs.Component for ComputedUiRenderTargetInfo
-pub impl ToJson for ComputedUiRenderTargetInfo
-pub impl @json.FromJson for ComputedUiRenderTargetInfo
 
 pub struct ComputedUiTargetCamera {
   camera : @core.Entity
-}
+} derive(ToJson, @json.FromJson)
 pub fn ComputedUiTargetCamera::default() -> Self
 pub fn ComputedUiTargetCamera::get(Self) -> @core.Entity?
 pub fn ComputedUiTargetCamera::new(@core.Entity) -> Self
 pub impl @ecs.Component for ComputedUiTargetCamera
-pub impl ToJson for ComputedUiTargetCamera
-pub impl @json.FromJson for ComputedUiTargetCamera
 
 pub struct ContentSize {
   size : @math.Vec2
-}
+} derive(ToJson, @json.FromJson)
 pub fn ContentSize::new(@math.Vec2) -> Self
 pub impl @ecs.Component for ContentSize
-pub impl ToJson for ContentSize
-pub impl @json.FromJson for ContentSize
 
 pub(all) enum Display {
   Block
   Flex
   Grid
   None
-}
-pub impl Eq for Display
-pub impl Show for Display
-pub impl ToJson for Display
-pub impl @json.FromJson for Display
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum FlexDirection {
   Column
   ColumnReverse
   Row
   RowReverse
-}
-pub impl Eq for FlexDirection
-pub impl Show for FlexDirection
-pub impl ToJson for FlexDirection
-pub impl @json.FromJson for FlexDirection
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum FlexWrap {
   NoWrap
   Wrap
   WrapReverse
-}
-pub impl Eq for FlexWrap
-pub impl Show for FlexWrap
-pub impl ToJson for FlexWrap
-pub impl @json.FromJson for FlexWrap
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum FocusPolicy {
   Block
   Pass
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn FocusPolicy::default() -> Self
 pub impl @ecs.Component for FocusPolicy
-pub impl Eq for FocusPolicy
-pub impl Show for FocusPolicy
-pub impl ToJson for FocusPolicy
-pub impl @json.FromJson for FocusPolicy
 
 pub struct GhostNode {
-}
+} derive(ToJson, @json.FromJson)
 pub fn GhostNode::default() -> Self
 pub impl @ecs.Component for GhostNode
-pub impl ToJson for GhostNode
-pub impl @json.FromJson for GhostNode
 
 pub struct GlobalZIndex {
   value : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn GlobalZIndex::new(Int) -> Self
 pub impl @ecs.Component for GlobalZIndex
-pub impl ToJson for GlobalZIndex
-pub impl @json.FromJson for GlobalZIndex
 
 pub(all) enum GridAutoFlow {
   Column
   ColumnDense
   Row
   RowDense
-}
-pub impl Eq for GridAutoFlow
-pub impl Show for GridAutoFlow
-pub impl ToJson for GridAutoFlow
-pub impl @json.FromJson for GridAutoFlow
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct GridPlacement {
   start : Int?
   span : Int?
   end : Int?
-}
+} derive(ToJson, @json.FromJson)
 pub fn GridPlacement::auto() -> Self
 pub fn GridPlacement::default() -> Self
 pub fn GridPlacement::end(Int) -> Self
@@ -411,8 +349,6 @@ pub fn GridPlacement::span(Int) -> Self
 pub fn GridPlacement::start(Int) -> Self
 pub fn GridPlacement::start_end(Int, Int) -> Self
 pub fn GridPlacement::start_span(Int, Int) -> Self
-pub impl ToJson for GridPlacement
-pub impl @json.FromJson for GridPlacement
 
 pub(all) enum GridTrack {
   Auto
@@ -421,21 +357,13 @@ pub(all) enum GridTrack {
   Fr(Float)
   MinContent
   MaxContent
-}
-pub impl Eq for GridTrack
-pub impl Show for GridTrack
-pub impl ToJson for GridTrack
-pub impl @json.FromJson for GridTrack
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum GridTrackRepetition {
   Count(Int)
   AutoFill
   AutoFit
-}
-pub impl Eq for GridTrackRepetition
-pub impl Show for GridTrackRepetition
-pub impl ToJson for GridTrackRepetition
-pub impl @json.FromJson for GridTrackRepetition
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct ImageNode {
   color : @color.Color
@@ -445,7 +373,7 @@ pub struct ImageNode {
   flip_y : Bool
   rect : @math.Rect?
   image_mode : NodeImageMode
-}
+} derive(ToJson, @json.FromJson)
 pub fn ImageNode::default() -> Self
 pub fn ImageNode::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
 pub fn ImageNode::new(@asset.Handle[@image.Image]) -> Self
@@ -456,35 +384,25 @@ pub fn ImageNode::with_mode(Self, NodeImageMode) -> Self
 pub fn ImageNode::with_rect(Self, @math.Rect?) -> Self
 pub fn ImageNode::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for ImageNode
-pub impl ToJson for ImageNode
-pub impl @json.FromJson for ImageNode
 
 pub struct ImageNodeSize {
   size : @math.UVec2
-}
+} derive(ToJson, @json.FromJson)
 pub fn ImageNodeSize::default() -> Self
 pub fn ImageNodeSize::size(Self) -> @math.UVec2
 pub impl @ecs.Component for ImageNodeSize
-pub impl ToJson for ImageNodeSize
-pub impl @json.FromJson for ImageNodeSize
 
 pub(all) enum Interaction {
   None
   Hovered
   Pressed
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for Interaction
-pub impl Eq for Interaction
-pub impl Show for Interaction
-pub impl ToJson for Interaction
-pub impl @json.FromJson for Interaction
 
 pub struct IsDefaultUiCamera {
-}
+} derive(ToJson, @json.FromJson)
 pub fn IsDefaultUiCamera::default() -> Self
 pub impl @ecs.Component for IsDefaultUiCamera
-pub impl ToJson for IsDefaultUiCamera
-pub impl @json.FromJson for IsDefaultUiCamera
 
 pub(all) enum JustifyContent {
   Center
@@ -497,11 +415,7 @@ pub(all) enum JustifyContent {
   SpaceEvenly
   Start
   Stretch
-}
-pub impl Eq for JustifyContent
-pub impl Show for JustifyContent
-pub impl ToJson for JustifyContent
-pub impl @json.FromJson for JustifyContent
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum JustifyItems {
   Baseline
@@ -510,11 +424,7 @@ pub(all) enum JustifyItems {
   End
   Start
   Stretch
-}
-pub impl Eq for JustifyItems
-pub impl Show for JustifyItems
-pub impl ToJson for JustifyItems
-pub impl @json.FromJson for JustifyItems
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum JustifySelf {
   Auto
@@ -523,18 +433,12 @@ pub(all) enum JustifySelf {
   End
   Start
   Stretch
-}
-pub impl Eq for JustifySelf
-pub impl Show for JustifySelf
-pub impl ToJson for JustifySelf
-pub impl @json.FromJson for JustifySelf
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct Label {
-}
+} derive(ToJson, @json.FromJson)
 pub fn Label::default() -> Self
 pub impl @ecs.Component for Label
-pub impl ToJson for Label
-pub impl @json.FromJson for Label
 
 pub(all) struct Node {
   display : Display
@@ -575,7 +479,7 @@ pub(all) struct Node {
   grid_auto_columns : Array[GridTrack]
   grid_row : GridPlacement
   grid_column : GridPlacement
-}
+} derive(ToJson, @json.FromJson)
 pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
 pub fn Node::with_border(Self, UiRect) -> Self
@@ -601,136 +505,102 @@ pub fn Node::with_row_gap(Self, Val) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
 pub impl @ecs.Component for Node
-pub impl ToJson for Node
-pub impl @json.FromJson for Node
 
 pub(all) enum NodeImageMode {
   Auto
   Stretch
   Sliced(TextureSlicer)
   Tiled(Bool, Bool, Float)
-}
+} derive(ToJson, @json.FromJson)
 pub fn NodeImageMode::default() -> Self
 pub fn NodeImageMode::uses_slices(Self) -> Bool
-pub impl ToJson for NodeImageMode
-pub impl @json.FromJson for NodeImageMode
 
 pub struct Outline {
   width : Val
   offset : Val
   color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn Outline::default() -> Self
 pub fn Outline::new(Val, Val, @color.Color) -> Self
 pub impl @ecs.Component for Outline
-pub impl ToJson for Outline
-pub impl @json.FromJson for Outline
 
 pub struct Overflow {
   x : OverflowAxis
   y : OverflowAxis
-}
+} derive(ToJson, @json.FromJson)
 pub fn Overflow::default() -> Self
 pub fn Overflow::new(OverflowAxis, OverflowAxis) -> Self
-pub impl ToJson for Overflow
-pub impl @json.FromJson for Overflow
 
 pub(all) enum OverflowAxis {
   Clip
   Hidden
   Scroll
   Visible
-}
-pub impl Eq for OverflowAxis
-pub impl Show for OverflowAxis
-pub impl ToJson for OverflowAxis
-pub impl @json.FromJson for OverflowAxis
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) enum OverflowClipBox {
   BorderBox
   PaddingBox
   ContentBox
-}
-pub impl Eq for OverflowClipBox
-pub impl Show for OverflowClipBox
-pub impl ToJson for OverflowClipBox
-pub impl @json.FromJson for OverflowClipBox
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct OverflowClipMargin {
   visual_box : OverflowClipBox
   margin : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn OverflowClipMargin::border_box() -> Self
 pub fn OverflowClipMargin::content_box() -> Self
 pub fn OverflowClipMargin::default() -> Self
 pub fn OverflowClipMargin::new(OverflowClipBox, Float) -> Self
 pub fn OverflowClipMargin::padding_box() -> Self
 pub fn OverflowClipMargin::with_margin(Self, Float) -> Self
-pub impl ToJson for OverflowClipMargin
-pub impl @json.FromJson for OverflowClipMargin
 
 pub(all) enum PositionType {
   Relative
   Absolute
-}
-pub impl Eq for PositionType
-pub impl Show for PositionType
-pub impl ToJson for PositionType
-pub impl @json.FromJson for PositionType
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
   normalized : @math.Vec2?
-}
+} derive(ToJson, @json.FromJson)
 pub fn RelativeCursorPosition::cursor_over(Self) -> Bool
 pub fn RelativeCursorPosition::default() -> Self
 pub impl @ecs.Component for RelativeCursorPosition
-pub impl ToJson for RelativeCursorPosition
-pub impl @json.FromJson for RelativeCursorPosition
 
 pub struct RepeatedGridTrack {
   repetition : GridTrackRepetition
   tracks : Array[GridTrack]
-}
+} derive(ToJson, @json.FromJson)
 pub fn RepeatedGridTrack::default() -> Self
 pub fn RepeatedGridTrack::new(GridTrackRepetition, Array[GridTrack]) -> Self
-pub impl ToJson for RepeatedGridTrack
-pub impl @json.FromJson for RepeatedGridTrack
 
 pub struct ScrollPosition {
   offset_x : Float
   offset_y : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ScrollPosition::default() -> Self
 pub fn ScrollPosition::new(Float, Float) -> Self
 pub fn ScrollPosition::with_delta(Self, Float, Float) -> Self
 pub impl @ecs.Component for ScrollPosition
-pub impl ToJson for ScrollPosition
-pub impl @json.FromJson for ScrollPosition
 
 pub(all) enum SliceScaleMode {
   Stretch
   Tile(Float)
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn SliceScaleMode::default() -> Self
-pub impl Eq for SliceScaleMode
-pub impl Show for SliceScaleMode
-pub impl ToJson for SliceScaleMode
-pub impl @json.FromJson for SliceScaleMode
 
 pub struct TextureSlicer {
   border : BorderRect
   center_scale_mode : SliceScaleMode
   sides_scale_mode : SliceScaleMode
   max_corner_scale : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn TextureSlicer::default() -> Self
 pub fn TextureSlicer::new(BorderRect) -> Self
 pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
 pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
 pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
-pub impl ToJson for TextureSlicer
-pub impl @json.FromJson for TextureSlicer
 
 pub struct UiContext {
   mut white_texture : @asset.Handle[@image.Image]
@@ -757,7 +627,7 @@ pub struct UiImage {
   flip_x : Bool
   flip_y : Bool
   rect : @math.Rect?
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiImage::new(@asset.Handle[@image.Image]) -> Self
 pub fn UiImage::with_color(Self, @color.Color) -> Self
 pub fn UiImage::with_flip_x(Self) -> Self
@@ -765,60 +635,46 @@ pub fn UiImage::with_flip_y(Self) -> Self
 pub fn UiImage::with_rect(Self, @math.Rect?) -> Self
 pub fn UiImage::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for UiImage
-pub impl ToJson for UiImage
-pub impl @json.FromJson for UiImage
 
 pub struct UiLayout {
   rect : @math.Rect
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiLayout::new(@math.Rect) -> Self
 pub impl @ecs.Component for UiLayout
-pub impl ToJson for UiLayout
-pub impl @json.FromJson for UiLayout
 
 pub struct UiRect {
   left : Val
   top : Val
   right : Val
   bottom : Val
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiRect::all(Val) -> Self
 pub fn UiRect::default() -> Self
 pub fn UiRect::new(Val, Val, Val, Val) -> Self
-pub impl ToJson for UiRect
-pub impl @json.FromJson for UiRect
 
 pub struct UiRoot {
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiRoot::default() -> Self
 pub impl @ecs.Component for UiRoot
-pub impl ToJson for UiRoot
-pub impl @json.FromJson for UiRoot
 
 pub struct UiScale {
   value : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiScale::new(Float) -> Self
-pub impl ToJson for UiScale
-pub impl @json.FromJson for UiScale
 
 pub struct UiStack {
   mut uinodes : Array[@core.Entity]
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiStack::clear(@ref.Ref[Self]) -> Unit
 pub fn UiStack::default() -> Self
 pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
-pub impl ToJson for UiStack
-pub impl @json.FromJson for UiStack
 
 pub struct UiTargetCamera {
   camera : @core.Entity
-}
+} derive(ToJson, @json.FromJson)
 pub fn UiTargetCamera::entity(Self) -> @core.Entity
 pub fn UiTargetCamera::new(@core.Entity) -> Self
 pub impl @ecs.Component for UiTargetCamera
-pub impl ToJson for UiTargetCamera
-pub impl @json.FromJson for UiTargetCamera
 
 pub(all) enum Val {
   Auto
@@ -828,19 +684,13 @@ pub(all) enum Val {
   Vh(Float)
   VMin(Float)
   VMax(Float)
-}
-pub impl Eq for Val
-pub impl Show for Val
-pub impl ToJson for Val
-pub impl @json.FromJson for Val
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct ZIndex {
   value : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn ZIndex::new(Int) -> Self
 pub impl @ecs.Component for ZIndex
-pub impl ToJson for ZIndex
-pub impl @json.FromJson for ZIndex
 
 // Type aliases
 

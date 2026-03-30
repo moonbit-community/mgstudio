@@ -9,9 +9,7 @@ package "Milky2018/mgstudio/examples/3d/mirror"
 pub(all) enum DragAction {
   MoveCamera
   MoveFox
-}
-pub impl Eq for DragAction
-pub impl Show for DragAction
+} derive(Eq, Show)
 
 // Type aliases
 

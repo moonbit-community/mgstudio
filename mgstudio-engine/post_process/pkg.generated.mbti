@@ -51,7 +51,7 @@ pub struct Bloom {
   composite_mode : BloomCompositeMode
   max_mip_dimension : Int
   scale : @math.Vec2
-}
+} derive(ToJson, @json.FromJson)
 pub fn Bloom::anamorphic() -> Self
 pub fn Bloom::default() -> Self
 pub fn Bloom::natural() -> Self
@@ -70,55 +70,43 @@ pub fn Bloom::with_scale(Self, @math.Vec2) -> Self
 pub fn Bloom::with_scale_x(Self, Float) -> Self
 pub fn Bloom::with_scale_y(Self, Float) -> Self
 pub impl @ecs.Component for Bloom
-pub impl ToJson for Bloom
-pub impl @json.FromJson for Bloom
 
 pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn BloomCompositeMode::default() -> Self
-pub impl Eq for BloomCompositeMode
-pub impl Show for BloomCompositeMode
-pub impl ToJson for BloomCompositeMode
-pub impl @json.FromJson for BloomCompositeMode
 
 pub struct BloomPrefilter {
   threshold : Float
   threshold_softness : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn BloomPrefilter::default() -> Self
 pub fn BloomPrefilter::new(Float, Float) -> Self
 pub fn BloomPrefilter::with_threshold(Self, Float) -> Self
 pub fn BloomPrefilter::with_threshold_softness(Self, Float) -> Self
-pub impl ToJson for BloomPrefilter
-pub impl @json.FromJson for BloomPrefilter
 
 pub struct ChromaticAberration {
   intensity : Float
   max_samples : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn ChromaticAberration::default() -> Self
 pub fn ChromaticAberration::new(Float, Int) -> Self
 pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
 pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
 pub impl @ecs.Component for ChromaticAberration
-pub impl ToJson for ChromaticAberration
-pub impl @json.FromJson for ChromaticAberration
 
 pub(all) struct ColorGrading {
   mut global : ColorGradingGlobal
   mut shadows : ColorGradingSection
   mut midtones : ColorGradingSection
   mut highlights : ColorGradingSection
-}
+} derive(ToJson, @json.FromJson)
 pub fn ColorGrading::all_sections(Self) -> Iter[ColorGradingSection]
 pub fn ColorGrading::all_sections_mut(Self) -> Iter[ColorGradingSection]
 pub fn ColorGrading::default() -> Self
 pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
 pub impl @ecs.Component for ColorGrading
-pub impl ToJson for ColorGrading
-pub impl @json.FromJson for ColorGrading
 
 pub(all) struct ColorGradingGlobal {
   mut exposure : Float
@@ -127,18 +115,14 @@ pub(all) struct ColorGradingGlobal {
   mut hue : Float
   mut post_saturation : Float
   mut midtones_range : ColorGradingRange
-}
+} derive(ToJson, @json.FromJson)
 pub fn ColorGradingGlobal::default() -> Self
-pub impl ToJson for ColorGradingGlobal
-pub impl @json.FromJson for ColorGradingGlobal
 
 pub(all) struct ColorGradingRange {
   mut start : Float
   mut end_ : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ColorGradingRange::default() -> Self
-pub impl ToJson for ColorGradingRange
-pub impl @json.FromJson for ColorGradingRange
 
 pub(all) struct ColorGradingSection {
   mut saturation : Float
@@ -146,10 +130,8 @@ pub(all) struct ColorGradingSection {
   mut gamma : Float
   mut gain : Float
   mut lift : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ColorGradingSection::default() -> Self
-pub impl ToJson for ColorGradingSection
-pub impl @json.FromJson for ColorGradingSection
 
 pub struct CustomPostProcess3d {
   enabled : Bool
@@ -159,7 +141,7 @@ pub struct CustomPostProcess3d {
   uniform_y : Float
   uniform_z : Float
   uniform_w : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn CustomPostProcess3d::default() -> Self
 pub fn CustomPostProcess3d::new(String) -> Self
 pub fn CustomPostProcess3d::with_enabled(Self, Bool) -> Self
@@ -168,25 +150,19 @@ pub fn CustomPostProcess3d::with_intensity(Self, Float) -> Self
 pub fn CustomPostProcess3d::with_shader_path(Self, String) -> Self
 pub fn CustomPostProcess3d::with_uniform(Self, Float, Float, Float, Float) -> Self
 pub impl @ecs.Component for CustomPostProcess3d
-pub impl ToJson for CustomPostProcess3d
-pub impl @json.FromJson for CustomPostProcess3d
 
 pub(all) enum DebandDither {
   Disabled
   Enabled
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn DebandDither::default() -> Self
 pub impl @ecs.Component for DebandDither
-pub impl Eq for DebandDither
-pub impl Show for DebandDither
-pub impl ToJson for DebandDither
-pub impl @json.FromJson for DebandDither
 
 pub struct Fxaa {
   enabled : Bool
   edge_threshold : FxaaSensitivity
   edge_threshold_min : FxaaSensitivity
-}
+} derive(ToJson, @json.FromJson)
 pub fn Fxaa::default() -> Self
 pub fn Fxaa::new(Bool) -> Self
 pub fn Fxaa::new_with_sensitivity(Bool, FxaaSensitivity, FxaaSensitivity) -> Self
@@ -195,8 +171,6 @@ pub fn Fxaa::with_edge_threshold_min(Self, FxaaSensitivity) -> Self
 pub fn Fxaa::with_enabled(Self, Bool) -> Self
 pub fn Fxaa::with_sensitivity(Self, FxaaSensitivity) -> Self
 pub impl @ecs.Component for Fxaa
-pub impl ToJson for Fxaa
-pub impl @json.FromJson for Fxaa
 
 pub(all) enum FxaaSensitivity {
   Low
@@ -204,47 +178,35 @@ pub(all) enum FxaaSensitivity {
   High
   Ultra
   Extreme
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn FxaaSensitivity::default() -> Self
-pub impl Eq for FxaaSensitivity
-pub impl Show for FxaaSensitivity
-pub impl ToJson for FxaaSensitivity
-pub impl @json.FromJson for FxaaSensitivity
 
 pub struct MotionBlur {
   shutter_angle : Float
   samples : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn MotionBlur::default() -> Self
 pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 pub impl @ecs.Component for MotionBlur
-pub impl ToJson for MotionBlur
-pub impl @json.FromJson for MotionBlur
 
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel
   constant_object_thickness : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ScreenSpaceAmbientOcclusion::default() -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(Self, Float) -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_quality_level(Self, ScreenSpaceAmbientOcclusionQualityLevel) -> Self
 pub impl @ecs.Component for ScreenSpaceAmbientOcclusion
-pub impl ToJson for ScreenSpaceAmbientOcclusion
-pub impl @json.FromJson for ScreenSpaceAmbientOcclusion
 
 pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Low
   Medium
   High
   Ultra
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> Self
-pub impl Eq for ScreenSpaceAmbientOcclusionQualityLevel
-pub impl Show for ScreenSpaceAmbientOcclusionQualityLevel
-pub impl ToJson for ScreenSpaceAmbientOcclusionQualityLevel
-pub impl @json.FromJson for ScreenSpaceAmbientOcclusionQualityLevel
 
 pub struct ScreenSpaceReflections {
   min_perceptual_roughness_start : Float
@@ -258,7 +220,7 @@ pub struct ScreenSpaceReflections {
   edge_fadeout_end : Float
   bisection_steps : Int
   use_secant : Bool
-}
+} derive(ToJson, @json.FromJson)
 pub fn ScreenSpaceReflections::default() -> Self
 pub fn ScreenSpaceReflections::with_bisection_steps(Self, Int) -> Self
 pub fn ScreenSpaceReflections::with_edge_fadeout(Self, Float, Float) -> Self
@@ -269,52 +231,40 @@ pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float)
 pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
 pub impl @ecs.Component for ScreenSpaceReflections
-pub impl ToJson for ScreenSpaceReflections
-pub impl @json.FromJson for ScreenSpaceReflections
 
 pub struct ScreenSpaceTransmission {
   quality : ScreenSpaceTransmissionQuality
   steps : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn ScreenSpaceTransmission::default() -> Self
 pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
 pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
 pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
 pub impl @ecs.Component for ScreenSpaceTransmission
-pub impl ToJson for ScreenSpaceTransmission
-pub impl @json.FromJson for ScreenSpaceTransmission
 
 pub(all) enum ScreenSpaceTransmissionQuality {
   Low
   Medium
   High
   Ultra
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn ScreenSpaceTransmissionQuality::default() -> Self
-pub impl Eq for ScreenSpaceTransmissionQuality
-pub impl Show for ScreenSpaceTransmissionQuality
-pub impl ToJson for ScreenSpaceTransmissionQuality
-pub impl @json.FromJson for ScreenSpaceTransmissionQuality
 
 pub struct TemporalAntiAliasing {
   reset : Bool
-}
+} derive(ToJson, @json.FromJson)
 pub fn TemporalAntiAliasing::default() -> Self
 pub fn TemporalAntiAliasing::new(Bool) -> Self
 pub fn TemporalAntiAliasing::with_reset(Self, Bool) -> Self
 pub impl @ecs.Component for TemporalAntiAliasing
-pub impl ToJson for TemporalAntiAliasing
-pub impl @json.FromJson for TemporalAntiAliasing
 
 pub struct TemporalJitter {
   offset : @math.Vec2
-}
+} derive(ToJson, @json.FromJson)
 pub fn TemporalJitter::default() -> Self
 pub fn TemporalJitter::new(@math.Vec2) -> Self
 pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for TemporalJitter
-pub impl ToJson for TemporalJitter
-pub impl @json.FromJson for TemporalJitter
 
 pub(all) enum Tonemapping {
   None
@@ -325,14 +275,9 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-}
+} derive(Eq, Hash, Show, ToJson, @json.FromJson)
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
-pub impl Eq for Tonemapping
-pub impl Hash for Tonemapping
-pub impl Show for Tonemapping
-pub impl ToJson for Tonemapping
-pub impl @json.FromJson for Tonemapping
 
 pub struct Vignette {
   intensity : Float
@@ -342,7 +287,7 @@ pub struct Vignette {
   center : @math.Vec2
   edge_compensation : Float
   color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn Vignette::default() -> Self
 pub fn Vignette::new(Float, Float, Float, Float) -> Self
 pub fn Vignette::with_center(Self, @math.Vec2) -> Self
@@ -353,8 +298,6 @@ pub fn Vignette::with_radius(Self, Float) -> Self
 pub fn Vignette::with_roundness(Self, Float) -> Self
 pub fn Vignette::with_smoothness(Self, Float) -> Self
 pub impl @ecs.Component for Vignette
-pub impl ToJson for Vignette
-pub impl @json.FromJson for Vignette
 
 // Type aliases
 

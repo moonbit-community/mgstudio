@@ -17,10 +17,8 @@ pub struct PointerEvent {
   kind : PointerEventKind
   position : @math.Vec2
   target : @core.Entity?
-}
+} derive(ToJson, @json.FromJson)
 pub fn PointerEvent::new(Int, PointerEventKind, @math.Vec2, target? : @core.Entity?) -> Self
-pub impl ToJson for PointerEvent
-pub impl @json.FromJson for PointerEvent
 
 pub(all) enum PointerEventKind {
   Move
@@ -29,11 +27,7 @@ pub(all) enum PointerEventKind {
   Down
   Up
   Click
-}
-pub impl Eq for PointerEventKind
-pub impl Show for PointerEventKind
-pub impl ToJson for PointerEventKind
-pub impl @json.FromJson for PointerEventKind
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 // Type aliases
 pub type PointerId = Int

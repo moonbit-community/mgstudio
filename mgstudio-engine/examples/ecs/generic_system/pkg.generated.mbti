@@ -9,9 +9,7 @@ package "Milky2018/mgstudio/examples/ecs/generic_system"
 pub(all) enum AppState {
   MainMenu
   InGame
-}
-pub impl Eq for AppState
-pub impl Show for AppState
+} derive(Eq, Show)
 
 type LevelUnload
 

@@ -10,16 +10,12 @@ pub(all) enum LightType {
   Directional
   Point
   Spot
-}
-pub impl Eq for LightType
-pub impl Show for LightType
+} derive(Eq, Show)
 
 pub(all) enum ShadowFilter {
   NonTemporal
   Temporal
-}
-pub impl Eq for ShadowFilter
-pub impl Show for ShadowFilter
+} derive(Eq, Show)
 
 // Type aliases
 

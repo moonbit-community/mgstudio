@@ -9,38 +9,28 @@ package "Milky2018/mgstudio/examples/3d/contact_shadows"
 pub(all) enum ContactShadowState {
   Enabled
   Disabled
-}
-pub impl Eq for ContactShadowState
-pub impl Show for ContactShadowState
+} derive(Eq, Show)
 
 pub(all) enum LightRotationState {
   Rotating
   Stationary
-}
-pub impl Eq for LightRotationState
-pub impl Show for LightRotationState
+} derive(Eq, Show)
 
 pub(all) enum LightType {
   Directional
   Point
   Spot
-}
-pub impl Eq for LightType
-pub impl Show for LightType
+} derive(Eq, Show)
 
 pub(all) enum ReceiveShadowsState {
   Enabled
   Disabled
-}
-pub impl Eq for ReceiveShadowsState
-pub impl Show for ReceiveShadowsState
+} derive(Eq, Show)
 
 pub(all) enum ShadowMapsState {
   Enabled
   Disabled
-}
-pub impl Eq for ShadowMapsState
-pub impl Show for ShadowMapsState
+} derive(Eq, Show)
 
 // Type aliases
 

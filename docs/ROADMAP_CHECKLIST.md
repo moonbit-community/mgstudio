@@ -80,6 +80,8 @@ This file must not exceed 200 lines.
 - [x] Issue `pbr/perf_queue_index_maps`: switch preprocessed queue remap/resolve to entity-id index maps with generation-safe fallback.
 - [x] Issue `pbr/perf_reprofile`: re-run `bevymark_3d/many_materials` stress profiling after queue-path optimization.
 - [x] Issue `pbr/perf_many_foxes_scope`: classify remaining `many_foxes` bottleneck as gltf/animation skinning runtime, not pbr queue path.
+- [x] Issue `pbr/many_foxes_world_transform_cache`: cache entity world-transform resolution in render3d extract/skinning hot path to remove repeated hierarchy recomputation.
+- [x] Issue `render/mesh3d_skinning_upload_hotpath`: initialize skinning slot identity once and upload only used skinning rows per draw (remove per-draw full identity rebuild/upload).
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
 - [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.
 - [ ] Issue `pbr/forward_decal_runtime`: implement projected forward decal shading path (replace current marker-only runtime note).

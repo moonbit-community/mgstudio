@@ -11,15 +11,11 @@ import {
 // Errors
 
 // Types and methods
-type ButtonPressState
+type ButtonPressState derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for ButtonPressState
-pub impl ToJson for ButtonPressState
-pub impl @json.FromJson for ButtonPressState
 
-type Counter
+type Counter derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Counter
-pub impl ToJson for Counter
-pub impl @json.FromJson for Counter
 
 // Type aliases
 

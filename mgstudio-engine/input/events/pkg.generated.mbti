@@ -36,18 +36,12 @@ pub let ecs_key_touch_input : @ecs.MessageKey[TouchInput]
 pub(all) enum ButtonState {
   Pressed
   Released
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn ButtonState::is_pressed(Self) -> Bool
-pub impl Eq for ButtonState
-pub impl Show for ButtonState
-pub impl ToJson for ButtonState
-pub impl @json.FromJson for ButtonState
 
 pub(all) struct DoubleTapGesture {
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for DoubleTapGesture
-pub impl ToJson for DoubleTapGesture
-pub impl @json.FromJson for DoubleTapGesture
 
 pub(all) enum Key {
   Character(String)
@@ -65,10 +59,7 @@ pub(all) enum Key {
   Space
   Escape
   Function(Int)
-}
-pub impl Eq for Key
-pub impl ToJson for Key
-pub impl @json.FromJson for Key
+} derive(Eq, ToJson, @json.FromJson)
 
 pub(all) enum KeyCode {
   KeyA
@@ -143,26 +134,16 @@ pub(all) enum KeyCode {
   BracketLeft
   BracketRight
   Quote
-}
-pub impl Eq for KeyCode
-pub impl Hash for KeyCode
-pub impl Show for KeyCode
-pub impl ToJson for KeyCode
-pub impl @json.FromJson for KeyCode
+} derive(Eq, Hash, Show, ToJson, @json.FromJson)
 
 pub(all) struct KeyboardCharacter {
   character : String
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for KeyboardCharacter
-pub impl ToJson for KeyboardCharacter
-pub impl @json.FromJson for KeyboardCharacter
 
 pub(all) struct KeyboardFocusLost {
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub impl @ecs.Message for KeyboardFocusLost
-pub impl Eq for KeyboardFocusLost
-pub impl ToJson for KeyboardFocusLost
-pub impl @json.FromJson for KeyboardFocusLost
 
 pub(all) struct KeyboardInput {
   key_code : KeyCode
@@ -170,91 +151,66 @@ pub(all) struct KeyboardInput {
   state : ButtonState
   repeat : Bool
   text : String?
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for KeyboardInput
-pub impl ToJson for KeyboardInput
-pub impl @json.FromJson for KeyboardInput
 
 pub(all) enum MouseButton {
   Left
   Right
   Middle
-}
-pub impl Eq for MouseButton
-pub impl Hash for MouseButton
-pub impl Show for MouseButton
-pub impl ToJson for MouseButton
-pub impl @json.FromJson for MouseButton
+} derive(Eq, Hash, Show, ToJson, @json.FromJson)
 
 pub(all) struct MouseButtonInput {
   button : MouseButton
   state : ButtonState
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for MouseButtonInput
-pub impl ToJson for MouseButtonInput
-pub impl @json.FromJson for MouseButtonInput
 
 pub(all) struct MouseMotion {
   delta : @math.Vec2
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for MouseMotion
-pub impl ToJson for MouseMotion
-pub impl @json.FromJson for MouseMotion
 
 pub(all) enum MouseScrollUnit {
   Line
   Pixel
-}
-pub impl ToJson for MouseScrollUnit
-pub impl @json.FromJson for MouseScrollUnit
+} derive(ToJson, @json.FromJson)
 
 pub(all) struct MouseWheel {
   unit : MouseScrollUnit
   x : Float
   y : Float
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for MouseWheel
-pub impl ToJson for MouseWheel
-pub impl @json.FromJson for MouseWheel
 
 pub(all) struct PanGesture {
   delta : @math.Vec2
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for PanGesture
-pub impl ToJson for PanGesture
-pub impl @json.FromJson for PanGesture
 
 pub(all) struct PinchGesture {
   delta : Float
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for PinchGesture
-pub impl ToJson for PinchGesture
-pub impl @json.FromJson for PinchGesture
 
 pub(all) struct RotationGesture {
   delta : Float
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for RotationGesture
-pub impl ToJson for RotationGesture
-pub impl @json.FromJson for RotationGesture
 
 pub(all) struct TouchInput {
   id : Int
   phase : TouchPhase
   position : @math.Vec2
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Message for TouchInput
-pub impl ToJson for TouchInput
-pub impl @json.FromJson for TouchInput
 
 pub(all) enum TouchPhase {
   Started
   Moved
   Ended
   Canceled
-}
-pub impl ToJson for TouchPhase
-pub impl @json.FromJson for TouchPhase
+} derive(ToJson, @json.FromJson)
 
 // Type aliases
 

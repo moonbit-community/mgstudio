@@ -72,9 +72,7 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::set_shader(Self[ShaderModule, Re
 pub(all) enum ShaderCacheSource {
   SpirV(Bytes)
   Wgsl(String)
-}
-pub impl Eq for ShaderCacheSource
-pub impl Show for ShaderCacheSource
+} derive(Eq, Show)
 
 type ShaderData[ShaderModule, ShaderId]
 pub fn[ShaderModule, ShaderId] ShaderData::cache_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal], ShaderModule) -> Unit
@@ -92,21 +90,15 @@ pub(all) enum ShaderDefVal {
   Bool(String, Bool)
   Int(String, Int)
   UInt(String, UInt)
-}
+} derive(Eq, Hash, Show)
 pub fn ShaderDefVal::name(Self) -> String
 pub fn ShaderDefVal::value_as_string(Self) -> String
-pub impl Eq for ShaderDefVal
-pub impl Hash for ShaderDefVal
-pub impl Show for ShaderDefVal
 
 pub(all) enum ShaderImport {
   AssetPath(String)
   Custom(String)
-}
+} derive(Eq, Hash, Show)
 pub fn ShaderImport::module_name(Self) -> String
-pub impl Eq for ShaderImport
-pub impl Hash for ShaderImport
-pub impl Show for ShaderImport
 
 pub struct ShaderLoader {
 }
@@ -123,18 +115,14 @@ pub fn ShaderRef::default() -> Self
 
 pub(all) struct ShaderSettings {
   shader_defs : Array[ShaderDefVal]
-}
+} derive(Eq, Show)
 pub fn ShaderSettings::default() -> Self
-pub impl Eq for ShaderSettings
-pub impl Show for ShaderSettings
 
 pub(all) enum ShaderStage {
   Vertex
   Fragment
   Compute
-}
-pub impl Eq for ShaderStage
-pub impl Show for ShaderStage
+} derive(Eq, Show)
 
 pub(all) enum Source {
   Wgsl(String)
@@ -148,10 +136,8 @@ pub fn Source::shader_type(Self) -> @naga_oil.ShaderType
 pub(all) enum ValidateShader {
   Disabled
   Enabled
-}
+} derive(Eq, Show)
 pub fn ValidateShader::default() -> Self
-pub impl Eq for ValidateShader
-pub impl Show for ValidateShader
 
 // Type aliases
 pub type CachedPipelineId = Int

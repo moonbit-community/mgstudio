@@ -23,22 +23,16 @@ pub let ui_render_set_extract : String
 // Types and methods
 pub struct BoxShadowSamples {
   samples : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn BoxShadowSamples::default() -> Self
 pub fn BoxShadowSamples::new(Int) -> Self
 pub impl @ecs.Component for BoxShadowSamples
-pub impl ToJson for BoxShadowSamples
-pub impl @json.FromJson for BoxShadowSamples
 
 pub(all) enum UiAntiAlias {
   Off
   On
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for UiAntiAlias
-pub impl Eq for UiAntiAlias
-pub impl Show for UiAntiAlias
-pub impl ToJson for UiAntiAlias
-pub impl @json.FromJson for UiAntiAlias
 
 // Type aliases
 

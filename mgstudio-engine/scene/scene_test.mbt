@@ -211,7 +211,10 @@ test "scene: skinned mesh joints map by gltf node index" {
     let mesh_entity : Ref[@core.Entity?] = Ref::new(None)
     let node7_entity : Ref[@core.Entity?] = Ref::new(None)
     let node42_entity : Ref[@core.Entity?] = Ref::new(None)
-    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(entity, node_index) {
+    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(
+      entity,
+      node_index,
+    ) {
       if node_index.index() == 5 {
         mesh_entity.val = Some(entity)
       } else if node_index.index() == 7 {
@@ -296,7 +299,10 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
     )
     @scene.scene_spawn_roots_system(world)
 
-    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(entity, node_index) {
+    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(
+      entity,
+      node_index,
+    ) {
       if node_index.index() == 5 &&
         (try! world.entity(entity).get() : @mesh.SkinnedMesh?) is Some(_) {
         skinned_present.val = true

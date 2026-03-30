@@ -508,9 +508,7 @@ fn setup(world : @ecs.World) -> Unit {
         @scene.SceneRoot::new(
           asset_server.load(@gltf.GltfAssetLabel::Scene(0).from_asset(FOX_PATH)),
         ),
-        @transform.Transform::identity().with_scale(
-          @math.Vec3::splat(0.07F),
-        ),
+        @transform.Transform::identity().with_scale(@math.Vec3::splat(0.07F)),
       ),
     ),
   )

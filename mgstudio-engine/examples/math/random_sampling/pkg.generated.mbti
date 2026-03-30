@@ -9,9 +9,7 @@ package "Milky2018/mgstudio/examples/math/random_sampling"
 pub(all) enum Mode {
   Interior
   Boundary
-}
-pub impl Eq for Mode
-pub impl Show for Mode
+} derive(Eq, Show)
 
 type MousePressed
 

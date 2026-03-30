@@ -231,11 +231,9 @@ pub fn AnimationGraphNode::weight(Self) -> Float
 
 pub struct AnimationNodeIndex {
   index : Int
-}
+} derive(Eq, Show)
 pub fn AnimationNodeIndex::index(Self) -> Int
 pub fn AnimationNodeIndex::new(Int) -> Self
-pub impl Eq for AnimationNodeIndex
-pub impl Show for AnimationNodeIndex
 pub impl ToJson for AnimationNodeIndex
 pub impl @json.FromJson for AnimationNodeIndex
 
@@ -319,13 +317,11 @@ pub struct AnimationTargetCurves {
 pub struct AnimationTargetId {
   high : Int
   low : Int
-}
+} derive(Eq, Show)
 pub fn AnimationTargetId::from_name(String) -> Self
 pub fn AnimationTargetId::from_names(Array[String]) -> Self
 pub fn AnimationTargetId::new(Int, Int) -> Self
 pub impl @ecs.Component for AnimationTargetId
-pub impl Eq for AnimationTargetId
-pub impl Show for AnimationTargetId
 pub impl ToJson for AnimationTargetId
 pub impl @json.FromJson for AnimationTargetId
 

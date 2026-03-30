@@ -9,9 +9,7 @@ package "Milky2018/mgstudio/examples/3d/solari"
 pub(all) enum SolariSceneMode {
   PicaPica
   ManyLights
-}
-pub impl Eq for SolariSceneMode
-pub impl Show for SolariSceneMode
+} derive(Eq, Show)
 
 // Type aliases
 

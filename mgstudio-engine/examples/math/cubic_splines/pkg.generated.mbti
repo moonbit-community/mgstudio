@@ -10,9 +10,7 @@ type ControlPoints
 
 type Curve
 
-type CyclingMode
-pub impl Eq for CyclingMode
-pub impl Show for CyclingMode
+type CyclingMode derive(Eq, Show)
 
 type CyclingModeTextHandle
 
@@ -20,9 +18,7 @@ type MouseEditMove
 
 type MousePosition
 
-type SplineMode
-pub impl Eq for SplineMode
-pub impl Show for SplineMode
+type SplineMode derive(Eq, Show)
 
 type SplineModeTextHandle
 

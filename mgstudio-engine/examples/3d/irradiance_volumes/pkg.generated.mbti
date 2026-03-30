@@ -9,9 +9,7 @@ package "Milky2018/mgstudio/examples/3d/irradiance_volumes"
 pub(all) enum ExampleModel {
   Sphere
   Fox
-}
-pub impl Eq for ExampleModel
-pub impl Show for ExampleModel
+} derive(Eq, Show)
 
 // Type aliases
 

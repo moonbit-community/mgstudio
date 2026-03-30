@@ -80,15 +80,11 @@ pub impl @json.FromJson for GlobalTransform
 pub struct StaticTransformOptimizations {
   threshold : Float
   mut enabled : Bool
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn StaticTransformOptimizations::disabled() -> Self
 pub fn StaticTransformOptimizations::enabled() -> Self
 pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
 pub impl Default for StaticTransformOptimizations
-pub impl Eq for StaticTransformOptimizations
-pub impl Show for StaticTransformOptimizations
-pub impl ToJson for StaticTransformOptimizations
-pub impl @json.FromJson for StaticTransformOptimizations
 
 pub(all) struct Transform {
   mut translation : @math.Vec3
@@ -131,13 +127,9 @@ pub impl ToJson for Transform
 pub impl @json.FromJson for Transform
 
 pub struct TransformTreeChanged {
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for TransformTreeChanged
 pub impl Default for TransformTreeChanged
-pub impl Eq for TransformTreeChanged
-pub impl Show for TransformTreeChanged
-pub impl ToJson for TransformTreeChanged
-pub impl @json.FromJson for TransformTreeChanged
 
 // Type aliases
 

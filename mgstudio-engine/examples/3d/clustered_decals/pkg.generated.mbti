@@ -10,17 +10,13 @@ pub(all) enum DragMode {
   Move
   Scale
   Roll
-}
-pub impl Eq for DragMode
-pub impl Show for DragMode
+} derive(Eq, Show)
 
 pub(all) enum Selection {
   Camera
   DecalA
   DecalB
-}
-pub impl Eq for Selection
-pub impl Show for Selection
+} derive(Eq, Show)
 
 // Type aliases
 

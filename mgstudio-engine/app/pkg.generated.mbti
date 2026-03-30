@@ -415,22 +415,18 @@ pub fn App::world(Self[@ecs.World]) -> @ecs.World
 pub(all) enum AppExit {
   Success
   Error(Int)
-}
+} derive(Eq, Show)
 pub fn AppExit::error() -> Self
 pub fn AppExit::from_code(Int) -> Self
 pub fn AppExit::is_error(Self) -> Bool
 pub fn AppExit::is_success(Self) -> Bool
 pub impl @ecs.Message for AppExit
-pub impl Eq for AppExit
-pub impl Show for AppExit
 
 pub(all) enum AppLabel {
   MainApp
   RenderApp
   Custom(String)
-}
-pub impl Eq for AppLabel
-pub impl Show for AppLabel
+} derive(Eq, Show)
 
 pub struct CheckParentHasComponent[_] {
   entity : @core.Entity
@@ -530,9 +526,7 @@ pub(all) enum ErrorContextKind {
   Command
   Observer
   Validation
-}
-pub impl Eq for ErrorContextKind
-pub impl Show for ErrorContextKind
+} derive(Eq, Show)
 
 pub struct ErrorHandlers {
 }
@@ -547,19 +541,15 @@ pub fn ErrorHandlers::warn(Error, ErrorContext) -> Unit
 pub(all) enum ExecutorKind {
   SingleThreaded
   MultiThreaded
-}
-pub impl Eq for ExecutorKind
-pub impl Show for ExecutorKind
+} derive(Eq, Show)
 
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
-}
+} derive(Eq, Show)
 pub fn FixedMainScheduleOrder::default() -> Self
 pub fn FixedMainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
-pub impl Eq for FixedMainScheduleOrder
-pub impl Show for FixedMainScheduleOrder
 
 pub struct In[T] {
   value : T
@@ -583,9 +573,7 @@ pub(all) enum LogLevel {
   Info
   Debug
   Trace
-}
-pub impl Eq for LogLevel
-pub impl Show for LogLevel
+} derive(Eq, Show)
 
 pub struct LogPlugin {
   level : LogLevel
@@ -613,43 +601,35 @@ pub fn LogRecord::target(Self) -> String
 pub struct MainScheduleOrder {
   labels : Array[ScheduleStage]
   startup_labels : Array[ScheduleStage]
-}
+} derive(Eq, Show)
 pub fn MainScheduleOrder::default() -> Self
 pub fn MainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
-pub impl Eq for MainScheduleOrder
-pub impl Show for MainScheduleOrder
 
 pub(all) enum NextState[S] {
   Unchanged
   Pending(S)
   PendingIfNeq(S)
-}
+} derive(Eq, Show)
 pub fn[S] NextState::reset(Self[S]) -> Self[S]
 pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
 pub impl[S] Resource for NextState[S]
-pub impl[S : Eq] Eq for NextState[S]
-pub impl[S : Show] Show for NextState[S]
 
 pub struct OnEnter[S] {
   state : S
-}
+} derive(Eq, Show)
 pub fn[S] OnEnter::new(S) -> Self[S]
 pub fn[S] OnEnter::state(Self[S]) -> S
-pub impl[S : Eq] Eq for OnEnter[S]
-pub impl[S : Show] Show for OnEnter[S]
 
 pub struct OnExit[S] {
   state : S
-}
+} derive(Eq, Show)
 pub fn[S] OnExit::new(S) -> Self[S]
 pub fn[S] OnExit::state(Self[S]) -> S
-pub impl[S : Eq] Eq for OnExit[S]
-pub impl[S : Show] Show for OnExit[S]
 
 pub struct OnPointer[_] {
   event : @pointer_events.PointerEvent
@@ -675,12 +655,10 @@ pub fn[S] OnReexit::state(Self[S]) -> S
 pub struct OnTransition[S] {
   exited : S
   entered : S
-}
+} derive(Eq, Show)
 pub fn[S] OnTransition::entered(Self[S]) -> S
 pub fn[S] OnTransition::exited(Self[S]) -> S
 pub fn[S] OnTransition::new(S, S) -> Self[S]
-pub impl[S : Eq] Eq for OnTransition[S]
-pub impl[S : Show] Show for OnTransition[S]
 
 pub struct OptionalStateSource[S] {
   state : S
@@ -707,13 +685,11 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1]
 
 pub struct PickingEvents {
   mut events : Array[@pointer_events.PointerEvent]
-}
+} derive(ToJson, @json.FromJson)
 pub fn PickingEvents::default() -> Self
 pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[@pointer_events.PointerEvent]
 pub fn PickingEvents::push(@ref.Ref[Self], @pointer_events.PointerEvent) -> Unit
 pub impl Resource for PickingEvents
-pub impl ToJson for PickingEvents
-pub impl @json.FromJson for PickingEvents
 
 pub struct PluginGroupBuilder[W] {
   group_name : String
@@ -772,11 +748,9 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 
 pub struct PreviousState[S] {
   value : S
-}
+} derive(Eq, Show)
 pub fn[S] PreviousState::get(Self[S]) -> S
 pub impl[S] Resource for PreviousState[S]
-pub impl[S : Eq] Eq for PreviousState[S]
-pub impl[S : Show] Show for PreviousState[S]
 
 pub(all) enum RenderErrorPolicy {
   Ignore
@@ -784,9 +758,7 @@ pub(all) enum RenderErrorPolicy {
   ExitApp
   StopRendering
   Recover
-}
-pub impl Eq for RenderErrorPolicy
-pub impl Show for RenderErrorPolicy
+} derive(Eq, Show)
 
 pub(all) enum RenderRuntimeError {
   OutOfMemory
@@ -794,9 +766,7 @@ pub(all) enum RenderRuntimeError {
   DeviceLost
   Loop
   Unknown(String)
-}
-pub impl Eq for RenderRuntimeError
-pub impl Show for RenderRuntimeError
+} derive(Eq, Show)
 
 pub struct Res[T] {
   value : T
@@ -817,9 +787,7 @@ pub(all) enum RunFixedMainLoopSystems {
   BeforeFixedMainLoop
   FixedMainLoop
   AfterFixedMainLoop
-}
-pub impl Eq for RunFixedMainLoopSystems
-pub impl Show for RunFixedMainLoopSystems
+} derive(Eq, Show)
 
 pub struct Schedule {
   label : ScheduleStage
@@ -863,9 +831,7 @@ pub(all) enum ScheduleStage {
   PostUpdate
   Last
   Custom(String)
-}
-pub impl Eq for ScheduleStage
-pub impl Show for ScheduleStage
+} derive(Eq, Show)
 
 pub struct Single[D, _] {
   value : D
@@ -875,30 +841,24 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 
 pub struct State[S] {
   value : S
-}
+} derive(Eq, Show)
 pub fn[S] State::get(Self[S]) -> S
 pub fn[S] State::new(S) -> Self[S]
 pub impl[S] Resource for State[S]
-pub impl[S : Eq] Eq for State[S]
-pub impl[S : Show] Show for State[S]
 
 pub struct StateTransitionEvent[S] {
   exited : S?
   entered : S?
   allow_same_state_transitions : Bool
-}
+} derive(Eq, Show)
 pub impl[S] Resource for StateTransitionEvent[S]
-pub impl[S : Eq] Eq for StateTransitionEvent[S]
-pub impl[S : Show] Show for StateTransitionEvent[S]
 
 pub(all) enum StateTransitionSystems {
   DependentTransitions
   ExitSchedules
   TransitionSchedules
   EnterSchedules
-}
-pub impl Eq for StateTransitionSystems
-pub impl Show for StateTransitionSystems
+} derive(Eq, Show)
 
 pub struct StatesPlugin {
 }
@@ -927,9 +887,7 @@ pub(all) enum SteppingAction {
   Waiting
   Continue
   Step
-}
-pub impl Eq for SteppingAction
-pub impl Show for SteppingAction
+} derive(Eq, Show)
 
 pub struct SubApp[W] {
   mut world : W
@@ -1009,18 +967,14 @@ pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bo
 
 pub struct SystemId {
   index : Int
-}
-pub impl Eq for SystemId
-pub impl Show for SystemId
+} derive(Eq, Show)
 
 pub(all) enum SystemSteppingBehavior {
   AlwaysRun
   NeverRun
   Break
   Continue
-}
-pub impl Eq for SystemSteppingBehavior
-pub impl Show for SystemSteppingBehavior
+} derive(Eq, Show)
 
 pub struct ValidateParentHasComponentPlugin[_] {
   schedule : ScheduleStage

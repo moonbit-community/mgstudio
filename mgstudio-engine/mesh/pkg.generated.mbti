@@ -68,17 +68,13 @@ pub(all) enum Mesh2dValidationError {
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)
   IndexOutOfBounds(Int, Int)
-}
-pub impl Eq for Mesh2dValidationError
-pub impl Show for Mesh2dValidationError
+} derive(Eq, Show)
 
 pub(all) enum Mesh3dGenerateTangentsError {
   InvalidGeometry(Mesh3dValidationError)
   UnsupportedTopology(Mesh3dPrimitiveTopology)
   DegenerateUvTriangle(Int, Int, Int)
-}
-pub impl Eq for Mesh3dGenerateTangentsError
-pub impl Show for Mesh3dGenerateTangentsError
+} derive(Eq, Show)
 
 pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
@@ -105,6 +101,7 @@ pub fn Mesh3dGeometry::encode_interleaved_xyz_normal_uv_rgba_csv(Self) -> String
 pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_triangle_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(Self) -> Array[Double]?
+pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?
@@ -148,10 +145,8 @@ pub(all) enum Mesh3dPrimitiveTopology {
   TriangleList
   LineList
   LineStrip
-}
+} derive(Eq, Show)
 pub fn Mesh3dPrimitiveTopology::to_int(Self) -> Int
-pub impl Eq for Mesh3dPrimitiveTopology
-pub impl Show for Mesh3dPrimitiveTopology
 
 pub(all) enum Mesh3dValidationError {
   EmptyGeometry
@@ -165,9 +160,7 @@ pub(all) enum Mesh3dValidationError {
   NonLineStripVertexCount(Int)
   NonLineStripIndexCount(Int)
   IndexOutOfBounds(Int, Int)
-}
-pub impl Eq for Mesh3dValidationError
-pub impl Show for Mesh3dValidationError
+} derive(Eq, Show)
 
 pub struct MeshCustomAttributeVec3 {
   name : String
@@ -180,9 +173,7 @@ pub fn MeshCustomAttributeVec3::values(Self) -> Array[@math.Vec3]
 pub(all) enum MeshGenerateTangentsError {
   Not3dGeometry
   GeometryError(Mesh3dGenerateTangentsError)
-}
-pub impl Eq for MeshGenerateTangentsError
-pub impl Show for MeshGenerateTangentsError
+} derive(Eq, Show)
 
 pub(all) enum MeshGeometry {
   Geometry2d(Mesh2dGeometry)
@@ -247,6 +238,7 @@ pub fn SkinningMat4::from_values(Float, Float, Float, Float, Float, Float, Float
 pub fn SkinningMat4::identity() -> Self
 pub fn SkinningMat4::inverse_transform(@transform.Transform) -> Self
 pub fn SkinningMat4::mul(Self, Self) -> Self
+pub fn SkinningMat4::to_row_major_f32(Self) -> Array[Float]
 pub fn SkinningMat4::transform_point3(Self, @math.Vec3) -> @math.Vec3
 
 // Type aliases

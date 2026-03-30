@@ -281,7 +281,7 @@ pub impl Primitive2d for Capsule2dRing
 pub(all) struct Capsule3d {
   radius : Float
   half_length : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Capsule3d::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Capsule3d::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Capsule3d::new(Float, Float) -> Self
@@ -292,8 +292,6 @@ pub impl Measured3d for Capsule3d
 pub impl Primitive3d for Capsule3d
 pub impl ShapeSample for Capsule3d
 pub impl Default for Capsule3d
-pub impl ToJson for Capsule3d
-pub impl @json.FromJson for Capsule3d
 
 pub struct Circle {
   radius : Float
@@ -311,10 +309,7 @@ pub impl Primitive2d for Circle
 
 pub(all) enum CircularMeshUvMode {
   Mask(Float)
-}
-pub impl Eq for CircularMeshUvMode
-pub impl ToJson for CircularMeshUvMode
-pub impl @json.FromJson for CircularMeshUvMode
+} derive(Eq, ToJson, @json.FromJson)
 
 pub struct CircularSector {
   radius : Float
@@ -377,43 +372,35 @@ pub(all) enum CompassOctant {
   SouthWest
   West
   NorthWest
-}
-pub impl Eq for CompassOctant
-pub impl Show for CompassOctant
+} derive(Eq, Show)
 
 pub(all) enum CompassQuadrant {
   NorthEast
   SouthEast
   SouthWest
   NorthWest
-}
-pub impl Eq for CompassQuadrant
-pub impl Show for CompassQuadrant
+} derive(Eq, Show)
 
 pub struct Cone {
   radius : Float
   height : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Cone::default() -> Self
 pub fn Cone::new(Float, Float) -> Self
 pub impl Bounded3d for Cone
 pub impl Measured3d for Cone
 pub impl Primitive3d for Cone
-pub impl ToJson for Cone
-pub impl @json.FromJson for Cone
 
 pub struct ConicalFrustum {
   radius_top : Float
   radius_bottom : Float
   height : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ConicalFrustum::default() -> Self
 pub fn ConicalFrustum::new(Float, Float, Float) -> Self
 pub impl Bounded3d for ConicalFrustum
 pub impl Measured3d for ConicalFrustum
 pub impl Primitive3d for ConicalFrustum
-pub impl ToJson for ConicalFrustum
-pub impl @json.FromJson for ConicalFrustum
 
 pub struct ConstantCurve[T] {
   domain_ : Interval
@@ -536,7 +523,7 @@ pub fn[T, S] Curve::zip(Self[T], Self[S]) -> Result[Self[(T, S)], InvalidInterva
 pub(all) struct Cylinder {
   radius : Float
   half_height : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Cylinder::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Cylinder::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Cylinder::new(Float, Float) -> Self
@@ -547,8 +534,6 @@ pub impl Measured3d for Cylinder
 pub impl Primitive3d for Cylinder
 pub impl ShapeSample for Cylinder
 pub impl Default for Cylinder
-pub impl ToJson for Cylinder
-pub impl @json.FromJson for Cylinder
 
 pub struct Dir2 {
   value : Vec2
@@ -620,13 +605,10 @@ pub(all) enum EaseFunction {
   BounceInOut
   Steps(Int, JumpAt)
   Elastic(Float)
-}
+} derive(Show, ToJson, @json.FromJson)
 pub fn EaseFunction::sample(Self, Float) -> Float?
 pub fn EaseFunction::sample_clamped(Self, Float) -> Float
 pub impl Default for EaseFunction
-pub impl Show for EaseFunction
-pub impl ToJson for EaseFunction
-pub impl @json.FromJson for EaseFunction
 
 pub struct EasingCurve[T] {
   start : T
@@ -670,11 +652,7 @@ pub(all) enum EulerRot {
   YZXEx
   XYZEx
   XZYEx
-}
-pub impl Eq for EulerRot
-pub impl Show for EulerRot
-pub impl ToJson for EulerRot
-pub impl @json.FromJson for EulerRot
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct EvenCore[T] {
   domain_ : Interval
@@ -687,11 +665,9 @@ pub fn[T] EvenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
 
 pub struct FloatOrd {
   value : Float
-}
+} derive(Eq, Show)
 pub fn FloatOrd::new(Float) -> Self
 pub fn FloatOrd::value(Self) -> Float
-pub impl Eq for FloatOrd
-pub impl Show for FloatOrd
 
 pub struct FunctionCurve[T] {
   domain_ : Interval
@@ -706,15 +682,12 @@ pub fn[T] FunctionCurve::to_curve(Self[T]) -> Curve[T]
 
 pub struct HalfSpace {
   normal_d : Vec4
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn HalfSpace::d(Self) -> Float
 pub fn HalfSpace::intersection_point(Self, Self, Self) -> Vec3?
 pub fn HalfSpace::new(Vec4) -> Self
 pub fn HalfSpace::normal(Self) -> Vec3
 pub fn HalfSpace::normal_d(Self) -> Vec4
-pub impl Eq for HalfSpace
-pub impl ToJson for HalfSpace
-pub impl @json.FromJson for HalfSpace
 
 pub struct IRect {
   min : IVec2
@@ -760,7 +733,7 @@ pub fn[T, S] InterpolationDatum::map(Self[T], (T) -> S) -> Self[S]
 pub(all) struct Interval {
   start_ : Float
   end_ : Float
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn Interval::clamp(Self, Float) -> Float
 pub fn Interval::contains(Self, Float) -> Bool
 pub fn Interval::contains_interval(Self, Self) -> Bool
@@ -776,10 +749,6 @@ pub fn Interval::new(Float, Float) -> Result[Self, InvalidIntervalError]
 pub fn Interval::spaced_points(Self, Int) -> Result[Array[Float], SpacedPointsError]
 pub fn Interval::start(Self) -> Float
 pub fn Interval::unit() -> Self
-pub impl Eq for Interval
-pub impl Show for Interval
-pub impl ToJson for Interval
-pub impl @json.FromJson for Interval
 
 pub struct Isometry2d {
   translation : Vec2
@@ -814,12 +783,8 @@ pub(all) enum JumpAt {
   End
   None
   Both
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub impl Default for JumpAt
-pub impl Eq for JumpAt
-pub impl Show for JumpAt
-pub impl ToJson for JumpAt
-pub impl @json.FromJson for JumpAt
 
 pub struct Line2d {
   direction : Dir2
@@ -888,12 +853,10 @@ pub impl Primitive2d for Polyline2d
 
 pub struct Polyline3d {
   vertices : Array[Vec3]
-}
+} derive(ToJson, @json.FromJson)
 pub fn Polyline3d::new(Array[Vec3]) -> Self
 pub impl Bounded3d for Polyline3d
 pub impl Primitive3d for Polyline3d
-pub impl ToJson for Polyline3d
-pub impl @json.FromJson for Polyline3d
 
 pub(all) struct Quat {
   mut x : Float
@@ -1098,7 +1061,7 @@ pub impl Primitive2d for Segment2d
 pub struct Segment3d {
   point_a : Vec3
   point_b : Vec3
-}
+} derive(ToJson, @json.FromJson)
 pub fn Segment3d::center(Self) -> Vec3
 pub fn Segment3d::length(Self) -> Float
 pub fn Segment3d::new(Vec3, Vec3) -> Self
@@ -1106,12 +1069,10 @@ pub fn Segment3d::point1(Self) -> Vec3
 pub fn Segment3d::point2(Self) -> Vec3
 pub impl Bounded3d for Segment3d
 pub impl Primitive3d for Segment3d
-pub impl ToJson for Segment3d
-pub impl @json.FromJson for Segment3d
 
 pub(all) struct Sphere {
   radius : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Sphere::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Sphere::diameter(Self) -> Float
 pub fn Sphere::interior_dist(Self) -> SamplingDistribution[Vec3]
@@ -1123,12 +1084,10 @@ pub impl Measured3d for Sphere
 pub impl Primitive3d for Sphere
 pub impl ShapeSample for Sphere
 pub impl Default for Sphere
-pub impl ToJson for Sphere
-pub impl @json.FromJson for Sphere
 
 pub(all) struct Tetrahedron {
   vertices : Array[Vec3]
-}
+} derive(ToJson, @json.FromJson)
 pub fn Tetrahedron::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Tetrahedron::faces(Self) -> Array[Triangle3d]
 pub fn Tetrahedron::interior_dist(Self) -> SamplingDistribution[Vec3]
@@ -1140,21 +1099,17 @@ pub impl Measured3d for Tetrahedron
 pub impl Primitive3d for Tetrahedron
 pub impl ShapeSample for Tetrahedron
 pub impl Default for Tetrahedron
-pub impl ToJson for Tetrahedron
-pub impl @json.FromJson for Tetrahedron
 
 pub struct Torus {
   major_radius : Float
   minor_radius : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Torus::default() -> Self
 pub fn Torus::new(Float, Float) -> Self
 pub fn Torus::outer_radius(Self) -> Float
 pub impl Bounded3d for Torus
 pub impl Measured3d for Torus
 pub impl Primitive3d for Torus
-pub impl ToJson for Torus
-pub impl @json.FromJson for Torus
 
 pub struct Triangle2d {
   a : Vec2
@@ -1178,7 +1133,7 @@ pub impl Primitive2d for Triangle2dRing
 
 pub(all) struct Triangle3d {
   vertices : Array[Vec3]
-}
+} derive(ToJson, @json.FromJson)
 pub fn Triangle3d::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Triangle3d::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Triangle3d::new(Vec3, Vec3, Vec3) -> Self
@@ -1189,8 +1144,6 @@ pub impl Measured2d for Triangle3d
 pub impl Primitive3d for Triangle3d
 pub impl ShapeSample for Triangle3d
 pub impl Default for Triangle3d
-pub impl ToJson for Triangle3d
-pub impl @json.FromJson for Triangle3d
 
 pub struct URect {
   min : UVec2
@@ -1301,35 +1254,27 @@ pub(all) struct Vec4 {
   mut y : Float
   mut z : Float
   mut w : Float
-}
+} derive(Eq)
 pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
 pub impl Ease for Vec4
 pub impl SplinePoint for Vec4
 pub impl StableInterpolate for Vec4
 pub impl VectorSpace for Vec4
-pub impl Eq for Vec4
 pub impl ToJson for Vec4
 pub impl @json.FromJson for Vec4
 
 pub struct ViewFrustum {
   half_spaces : Array[HalfSpace]
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn ViewFrustum::corners(Self) -> Array[Vec3]?
 pub fn ViewFrustum::new(Array[HalfSpace]) -> Self
-pub impl Eq for ViewFrustum
-pub impl ToJson for ViewFrustum
-pub impl @json.FromJson for ViewFrustum
 
 pub(all) enum WindingOrder {
   Clockwise
   CounterClockwise
   Invalid
-}
-pub impl Eq for WindingOrder
-pub impl Show for WindingOrder
-pub impl ToJson for WindingOrder
-pub impl @json.FromJson for WindingOrder
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) struct WithDerivative[T] {
   value : T

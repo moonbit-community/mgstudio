@@ -55,26 +55,20 @@ pub(all) enum CursorGrabMode {
   GrabNone
   GrabConfined
   GrabLocked
-}
-pub impl Eq for CursorGrabMode
-pub impl Show for CursorGrabMode
+} derive(Eq, Show)
 
 pub(all) enum CursorIcon {
   System(@core.CursorIcon)
-}
+} derive(Eq, Show)
 pub fn CursorIcon::as_system(Self) -> @core.CursorIcon?
 pub fn CursorIcon::from(@core.CursorIcon) -> Self
 pub impl Default for CursorIcon
-pub impl Eq for CursorIcon
-pub impl Show for CursorIcon
 
 pub(all) enum WindowMode {
   Windowed
   BorderlessFullscreen
   Fullscreen
-}
-pub impl Eq for WindowMode
-pub impl Show for WindowMode
+} derive(Eq, Show)
 
 // Type aliases
 pub using @window {type HostEvent}

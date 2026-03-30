@@ -43,7 +43,7 @@ pub(all) enum AlphaMode3d {
 
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
-}
+} derive(ToJson, @json.FromJson)
 pub fn DefaultOpaqueRendererMethod::default() -> Self
 pub fn DefaultOpaqueRendererMethod::deferred() -> Self
 pub fn DefaultOpaqueRendererMethod::forward() -> Self
@@ -52,8 +52,6 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
-pub impl ToJson for DefaultOpaqueRendererMethod
-pub impl @json.FromJson for DefaultOpaqueRendererMethod
 
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
@@ -81,13 +79,11 @@ pub(all) enum Face3d {
 
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ForwardDecalMaterialExt::default() -> Self
 pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
 pub impl @ecs.Component for ForwardDecalMaterialExt
-pub impl ToJson for ForwardDecalMaterialExt
-pub impl @json.FromJson for ForwardDecalMaterialExt
 
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
@@ -110,22 +106,16 @@ pub(all) enum OpaqueRendererMethod {
   Auto
   Forward
   Deferred
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn OpaqueRendererMethod::default() -> Self
-pub impl Eq for OpaqueRendererMethod
-pub impl Show for OpaqueRendererMethod
-pub impl ToJson for OpaqueRendererMethod
-pub impl @json.FromJson for OpaqueRendererMethod
 
 pub(all) enum ParallaxMappingMethod {
   Occlusion
   Relief(Int)
-}
+} derive(Eq, Show)
 pub fn ParallaxMappingMethod::default() -> Self
 pub fn ParallaxMappingMethod::max_steps(Self) -> Int
 pub fn ParallaxMappingMethod::relief_default() -> Self
-pub impl Eq for ParallaxMappingMethod
-pub impl Show for ParallaxMappingMethod
 
 pub struct StandardMaterial {
   base_color : @color.Color

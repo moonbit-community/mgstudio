@@ -64,7 +64,7 @@ pub struct PickingHits {
   ui : Array[@core.Entity?]
   sprite2d : Array[@core.Entity?]
   mesh3d : Array[@core.Entity?]
-}
+} derive(ToJson, @json.FromJson)
 pub fn PickingHits::default() -> Self
 pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?], mesh3d? : Array[@core.Entity?]) -> Self
 pub fn PickingHits::mesh3d(Self, Int) -> @core.Entity?
@@ -74,14 +74,12 @@ pub fn PickingHits::set_ui(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
 pub fn PickingHits::ui(Self, Int) -> @core.Entity?
 pub impl @app.Resource for PickingHits
-pub impl ToJson for PickingHits
-pub impl @json.FromJson for PickingHits
 
 pub struct PickingState {
   hovered : Array[@core.Entity?]
   pressed : Array[@core.Entity?]
   last_position : Array[@math.Vec2?]
-}
+} derive(ToJson, @json.FromJson)
 pub fn PickingState::default() -> Self
 pub fn PickingState::hovered(Self, Int) -> @core.Entity?
 pub fn PickingState::last_position(Self, Int) -> @math.Vec2?
@@ -90,16 +88,12 @@ pub fn PickingState::set_hovered(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingState::set_last_position(@ref.Ref[Self], Int, @math.Vec2?) -> Unit
 pub fn PickingState::set_pressed(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub impl @app.Resource for PickingState
-pub impl ToJson for PickingState
-pub impl @json.FromJson for PickingState
 
 pub(all) enum PointerButton {
   Primary
   Secondary
   Middle
-}
-pub impl Eq for PointerButton
-pub impl Show for PointerButton
+} derive(Eq, Show)
 
 pub struct PointerInput {
   pointer : Int
@@ -107,21 +101,17 @@ pub struct PointerInput {
   down : Bool
   just_pressed : Bool
   just_released : Bool
-}
+} derive(ToJson, @json.FromJson)
 pub fn PointerInput::new(Int, @math.Vec2?, Bool, Bool, Bool) -> Self
-pub impl ToJson for PointerInput
-pub impl @json.FromJson for PointerInput
 
 pub struct PointerInputs {
   mut pointers : Array[PointerInput]
-}
+} derive(ToJson, @json.FromJson)
 pub fn PointerInputs::clear(@ref.Ref[Self]) -> Unit
 pub fn PointerInputs::default() -> Self
 pub fn PointerInputs::from_array(Array[PointerInput]) -> Self
 pub fn PointerInputs::push(@ref.Ref[Self], PointerInput) -> Unit
 pub impl @app.Resource for PointerInputs
-pub impl ToJson for PointerInputs
-pub impl @json.FromJson for PointerInputs
 
 // Type aliases
 

@@ -117,7 +117,7 @@ pub struct Diagnostic {
   max_history_length : Int
   mut is_enabled : Bool
   mut last_system_tick : Int?
-}
+} derive(Show)
 pub fn Diagnostic::add_measurement(Self, DiagnosticMeasurement, Int) -> Unit
 pub fn Diagnostic::average(Self) -> Float?
 pub fn Diagnostic::clear_history(Self) -> Unit
@@ -136,30 +136,21 @@ pub fn Diagnostic::values(Self) -> Array[Float]
 pub fn Diagnostic::with_max_history_length(Self, Int) -> Self
 pub fn Diagnostic::with_smoothing_factor(Self, Float) -> Self
 pub fn Diagnostic::with_suffix(Self, String) -> Self
-pub impl Show for Diagnostic
 
 pub struct DiagnosticMeasurement {
   time : @core.Instant
   value : Float
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn DiagnosticMeasurement::new(@core.Instant, Float) -> Self
-pub impl Eq for DiagnosticMeasurement
-pub impl Show for DiagnosticMeasurement
-pub impl ToJson for DiagnosticMeasurement
-pub impl @json.FromJson for DiagnosticMeasurement
 
 pub struct DiagnosticPath {
   path : String
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn DiagnosticPath::as_str(Self) -> String
 pub fn DiagnosticPath::components(Self) -> Array[String]
 pub fn DiagnosticPath::const_new(String) -> Self
 pub fn DiagnosticPath::from_components(Array[String]) -> Self
 pub fn DiagnosticPath::new(String) -> Self
-pub impl Eq for DiagnosticPath
-pub impl Show for DiagnosticPath
-pub impl ToJson for DiagnosticPath
-pub impl @json.FromJson for DiagnosticPath
 
 pub struct Diagnostics {
   store_ref : @ref.Ref[DiagnosticsStore]
@@ -192,13 +183,9 @@ pub fn EntityCountDiagnosticsPlugin::new(Int) -> Self
 
 pub struct FrameCount {
   mut value : Int
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn FrameCount::default() -> Self
 pub impl @app.Resource for FrameCount
-pub impl Eq for FrameCount
-pub impl Show for FrameCount
-pub impl ToJson for FrameCount
-pub impl @json.FromJson for FrameCount
 
 pub struct FrameCountPlugin {
 }
@@ -245,10 +232,9 @@ pub struct SystemInfo {
   cpu : String
   core_count : String
   memory : String
-}
+} derive(Show)
 pub fn SystemInfo::default() -> Self
 pub impl @app.Resource for SystemInfo
-pub impl Show for SystemInfo
 
 pub struct SystemInformationDiagnosticsPlugin {
 }

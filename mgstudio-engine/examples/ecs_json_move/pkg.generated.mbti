@@ -13,18 +13,14 @@ import {
 pub struct Position {
   mut x : Float
   mut y : Float
-}
+} derive(Eq, Show)
 pub impl @ecs.Component for Position
-pub impl Eq for Position
-pub impl Show for Position
 
 pub struct Velocity {
   x : Float
   y : Float
-}
+} derive(Eq, Show)
 pub impl @ecs.Component for Velocity
-pub impl Eq for Velocity
-pub impl Show for Velocity
 
 // Type aliases
 

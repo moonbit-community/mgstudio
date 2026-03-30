@@ -12,9 +12,7 @@ pub(all) enum Test {
   RayCast
   AabbCast
   CircleCast
-}
-pub impl Eq for Test
-pub impl Show for Test
+} derive(Eq, Show)
 
 // Type aliases
 

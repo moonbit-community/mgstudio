@@ -11,10 +11,8 @@ import {
 // Errors
 
 // Types and methods
-type AnimationMotion
+type AnimationMotion derive(Eq, Show)
 pub impl @ecs.Component for AnimationMotion
-pub impl Eq for AnimationMotion
-pub impl Show for AnimationMotion
 
 type AnimationState
 pub impl @app.Resource for AnimationState
@@ -25,9 +23,7 @@ pub impl @ecs.Component for Container
 pub(all) enum ContentKind {
   Image
   Text
-}
-pub impl Eq for ContentKind
-pub impl Show for ContentKind
+} derive(Eq, Show)
 
 type InstructionsText
 pub impl @ecs.Component for InstructionsText
@@ -36,9 +32,7 @@ pub(all) enum MotionKind {
   Move
   Scale
   Rotate
-}
-pub impl Eq for MotionKind
-pub impl Show for MotionKind
+} derive(Eq, Show)
 
 type OverflowDebugSettings
 pub impl @app.Resource for OverflowDebugSettings

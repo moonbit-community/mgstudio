@@ -27,18 +27,10 @@ pub(all) enum ShadowAction {
   XOffsetInc
   YOffsetDec
   YOffsetInc
-}
-pub impl Eq for ShadowAction
-pub impl Show for ShadowAction
-pub impl ToJson for ShadowAction
-pub impl @json.FromJson for ShadowAction
+} derive(Eq, Show, ToJson, @json.FromJson)
 
-type ShadowControlButton
+type ShadowControlButton derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for ShadowControlButton
-pub impl Eq for ShadowControlButton
-pub impl Show for ShadowControlButton
-pub impl ToJson for ShadowControlButton
-pub impl @json.FromJson for ShadowControlButton
 
 pub(all) enum ShadowField {
   Blur
@@ -46,28 +38,16 @@ pub(all) enum ShadowField {
   Spread
   XOffset
   YOffset
-}
-pub impl Eq for ShadowField
-pub impl Show for ShadowField
-pub impl ToJson for ShadowField
-pub impl @json.FromJson for ShadowField
+} derive(Eq, Show, ToJson, @json.FromJson)
 
-type ShadowNode
+type ShadowNode derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for ShadowNode
-pub impl Eq for ShadowNode
-pub impl Show for ShadowNode
-pub impl ToJson for ShadowNode
-pub impl @json.FromJson for ShadowNode
 
 type ShadowSettings
 pub impl @app.Resource for ShadowSettings
 
-type ShadowValueLabel
+type ShadowValueLabel derive(Eq, Show, ToJson, @json.FromJson)
 pub impl @ecs.Component for ShadowValueLabel
-pub impl Eq for ShadowValueLabel
-pub impl Show for ShadowValueLabel
-pub impl ToJson for ShadowValueLabel
-pub impl @json.FromJson for ShadowValueLabel
 
 // Type aliases
 

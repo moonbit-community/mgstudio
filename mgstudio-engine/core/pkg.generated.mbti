@@ -32,7 +32,7 @@ pub fn[T] ComponentStore::upsert(Self[T], Entity, T) -> Unit
 
 pub struct Duration {
   nanos : Int64
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn Duration::as_micros(Self) -> Int64
 pub fn Duration::as_millis(Self) -> Int64
 pub fn Duration::as_nanos(Self) -> Int64
@@ -52,10 +52,6 @@ pub fn Duration::new(Int64, nanos? : Int) -> Self
 pub fn Duration::saturating_add(Self, Self) -> Self
 pub fn Duration::saturating_sub(Self, Self) -> Self
 pub fn Duration::zero() -> Self
-pub impl Eq for Duration
-pub impl Show for Duration
-pub impl ToJson for Duration
-pub impl @json.FromJson for Duration
 
 type Entities
 pub fn Entities::alive_entities(Self) -> Array[Entity]
@@ -69,17 +65,14 @@ pub fn Entities::spawn(Self) -> Entity
 pub struct Entity {
   id : Int
   generation : Int
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
-pub impl Eq for Entity
-pub impl ToJson for Entity
-pub impl @json.FromJson for Entity
 
 pub struct Instant {
   nanos_since_start : Int64
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn Instant::as_duration_since_start(Self) -> Duration
 pub fn Instant::as_millis(Self) -> Int64
 pub fn Instant::as_secs_f32(Self) -> Float
@@ -98,10 +91,6 @@ pub fn Instant::now() -> Self
 pub fn Instant::saturating_add(Self, Duration) -> Self
 pub fn Instant::saturating_duration_since(Self, Self) -> Duration
 pub fn Instant::saturating_sub(Self, Duration) -> Self
-pub impl Eq for Instant
-pub impl Show for Instant
-pub impl ToJson for Instant
-pub impl @json.FromJson for Instant
 
 pub struct MessageReader[T] {
   previous_sequence : Int?

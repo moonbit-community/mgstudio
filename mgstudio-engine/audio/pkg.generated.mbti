@@ -75,23 +75,19 @@ pub fn AudioPlugin::default() -> Self
 pub struct AudioSink {
   sink_id : Int
   managed_volume : Volume?
-}
+} derive(ToJson, @json.FromJson)
 pub fn AudioSink::position_seconds(Self) -> Float
 pub fn AudioSink::toggle_mute(Self) -> Self
 pub fn AudioSink::toggle_playback(Self) -> Unit
 pub fn AudioSink::try_seek_seconds(Self, Float) -> Bool
 pub impl AudioSinkPlayback for AudioSink
 pub impl @ecs.Component for AudioSink
-pub impl ToJson for AudioSink
-pub impl @json.FromJson for AudioSink
 
 pub struct AudioSource {
   bytes : Bytes
-}
+} derive(ToJson, @json.FromJson)
 pub fn AudioSource::bytes(Self) -> Bytes
 pub fn AudioSource::new(Bytes) -> Self
-pub impl ToJson for AudioSource
-pub impl @json.FromJson for AudioSource
 
 pub struct AudioSourceAssets {
   assets : @asset.Assets[AudioSource]
@@ -105,12 +101,10 @@ pub impl @app.Resource for AudioSourceAssets
 
 pub struct DefaultSpatialScale {
   scale : SpatialScale
-}
+} derive(ToJson, @json.FromJson)
 pub fn DefaultSpatialScale::default() -> Self
 pub fn DefaultSpatialScale::new(SpatialScale) -> Self
 pub impl @app.Resource for DefaultSpatialScale
-pub impl ToJson for DefaultSpatialScale
-pub impl @json.FromJson for DefaultSpatialScale
 
 pub struct GlobalVolume {
   volume : Volume
@@ -124,10 +118,8 @@ pub impl @json.FromJson for GlobalVolume
 pub struct Pitch {
   frequency : Float
   duration_seconds : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Pitch::new(Float, Float) -> Self
-pub impl ToJson for Pitch
-pub impl @json.FromJson for Pitch
 
 pub struct PitchAssets {
   assets : @asset.Assets[Pitch]
@@ -139,27 +131,19 @@ pub fn PitchAssets::set(Self, @asset.Handle[Pitch], Pitch) -> Bool
 pub impl @app.Resource for PitchAssets
 
 pub struct PlaybackDespawnMarker {
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for PlaybackDespawnMarker
-pub impl ToJson for PlaybackDespawnMarker
-pub impl @json.FromJson for PlaybackDespawnMarker
 
 pub(all) enum PlaybackMode {
   Once
   Loop
   Despawn
   Remove
-}
-pub impl Eq for PlaybackMode
-pub impl Show for PlaybackMode
-pub impl ToJson for PlaybackMode
-pub impl @json.FromJson for PlaybackMode
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct PlaybackRemoveMarker {
-}
+} derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for PlaybackRemoveMarker
-pub impl ToJson for PlaybackRemoveMarker
-pub impl @json.FromJson for PlaybackRemoveMarker
 
 pub struct PlaybackSettings {
   mode : PlaybackMode
@@ -171,7 +155,7 @@ pub struct PlaybackSettings {
   spatial_scale : SpatialScale?
   start_position : @core.Duration?
   duration : @core.Duration?
-}
+} derive(ToJson, @json.FromJson)
 pub fn PlaybackSettings::default() -> Self
 pub fn PlaybackSettings::despawn() -> Self
 pub fn PlaybackSettings::looped() -> Self
@@ -186,13 +170,11 @@ pub fn PlaybackSettings::with_speed(Self, Float) -> Self
 pub fn PlaybackSettings::with_start_position(Self, @core.Duration) -> Self
 pub fn PlaybackSettings::with_volume(Self, Volume) -> Self
 pub impl @ecs.Component for PlaybackSettings
-pub impl ToJson for PlaybackSettings
-pub impl @json.FromJson for PlaybackSettings
 
 pub struct SpatialAudioSink {
   sink_id : Int
   managed_volume : Volume?
-}
+} derive(ToJson, @json.FromJson)
 pub fn SpatialAudioSink::position_seconds(Self) -> Float
 pub fn SpatialAudioSink::set_ears_position(Self, @math.Vec3, @math.Vec3) -> Unit
 pub fn SpatialAudioSink::set_emitter_position(Self, @math.Vec3) -> Unit
@@ -202,27 +184,21 @@ pub fn SpatialAudioSink::toggle_playback(Self) -> Unit
 pub fn SpatialAudioSink::try_seek_seconds(Self, Float) -> Bool
 pub impl AudioSinkPlayback for SpatialAudioSink
 pub impl @ecs.Component for SpatialAudioSink
-pub impl ToJson for SpatialAudioSink
-pub impl @json.FromJson for SpatialAudioSink
 
 pub struct SpatialListener {
   left_ear_offset : @math.Vec3
   right_ear_offset : @math.Vec3
-}
+} derive(ToJson, @json.FromJson)
 pub fn SpatialListener::default() -> Self
 pub fn SpatialListener::new(Float) -> Self
 pub impl @ecs.Component for SpatialListener
-pub impl ToJson for SpatialListener
-pub impl @json.FromJson for SpatialListener
 
 pub struct SpatialScale {
   scale : @math.Vec3
-}
+} derive(ToJson, @json.FromJson)
 pub fn SpatialScale::default() -> Self
 pub fn SpatialScale::new(Float) -> Self
 pub fn SpatialScale::new_2d(Float) -> Self
-pub impl ToJson for SpatialScale
-pub impl @json.FromJson for SpatialScale
 
 pub(all) enum Volume {
   Linear(Float)

@@ -10,9 +10,7 @@ pub(all) enum ReflectionMode {
   EnvironmentMap
   ReflectionProbe
   GeneratedEnvironmentMap
-}
-pub impl Eq for ReflectionMode
-pub impl Show for ReflectionMode
+} derive(Eq, Show)
 
 // Type aliases
 

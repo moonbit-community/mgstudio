@@ -261,11 +261,9 @@ pub impl[T] @ecs.Message for AssetEvent[T]
 pub struct AssetId[T] {
   id : Int
   phantom : T?
-}
+} derive(Eq, Show)
 pub fn[T] AssetId::index(Self[T]) -> Int
 pub fn[T] AssetId::new(Int) -> Self[T]
-pub impl[T : Eq] Eq for AssetId[T]
-pub impl[T : Show] Show for AssetId[T]
 
 pub struct AssetLoader[T] {
   extensions : Array[String]
@@ -285,23 +283,18 @@ pub(all) enum AssetLoaderKind {
 pub(all) enum AssetMode {
   Unprocessed
   Processed
-}
-pub impl Eq for AssetMode
-pub impl Show for AssetMode
+} derive(Eq, Show)
 
 #alias(ParsedAssetPath)
 pub struct AssetPath {
   source : AssetSourceId
   path : String
   label : String?
-}
+} derive(Eq, Hash, Show)
 pub fn AssetPath::from_path(String) -> Self
 pub fn AssetPath::with_label(Self, String?) -> Self
 pub fn AssetPath::with_source(Self, AssetSourceId) -> Self
 pub impl IntoAssetPath for AssetPath
-pub impl Eq for AssetPath
-pub impl Hash for AssetPath
-pub impl Show for AssetPath
 
 pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
@@ -381,11 +374,8 @@ pub fn AssetSourceBuilder::with_reader(Self, (AssetReader) -> AssetReader) -> Se
 pub(all) enum AssetSourceId {
   Default
   Named(String)
-}
+} derive(Eq, Hash, Show)
 pub fn AssetSourceId::from(String) -> Self
-pub impl Eq for AssetSourceId
-pub impl Hash for AssetSourceId
-pub impl Show for AssetSourceId
 
 pub struct Assets[T] {
   items : Array[T?]
@@ -490,13 +480,11 @@ pub fn[T] ProcessedAsset::with_saved_bytes(Self[T], Bytes) -> Self[T]
 
 pub struct RenderAssetUsages {
   bits : Int
-}
+} derive(Eq, Show)
 pub fn RenderAssetUsages::all() -> Self
 pub fn RenderAssetUsages::contains(Self, Self) -> Bool
 pub fn RenderAssetUsages::main_world() -> Self
 pub fn RenderAssetUsages::render_world() -> Self
-pub impl Eq for RenderAssetUsages
-pub impl Show for RenderAssetUsages
 
 pub struct SavedAsset[T] {
   asset : T

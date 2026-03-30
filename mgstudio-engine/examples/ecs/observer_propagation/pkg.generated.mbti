@@ -13,9 +13,8 @@ import {
 // Errors
 
 // Types and methods
-type Armor
+type Armor derive(Show)
 pub impl @ecs.Component for Armor
-pub impl Show for Armor
 
 type Attack
 pub impl @ecs.TriggerEvent for Attack
@@ -24,9 +23,8 @@ type AttackSchedule
 pub impl @app.Resource for AttackSchedule
 pub impl Default for AttackSchedule
 
-type HitPoints
+type HitPoints derive(Show)
 pub impl @ecs.Component for HitPoints
-pub impl Show for HitPoints
 
 // Type aliases
 

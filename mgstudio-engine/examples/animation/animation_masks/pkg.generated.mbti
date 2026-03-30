@@ -12,21 +12,15 @@ import {
 // Errors
 
 // Types and methods
-type AnimationControl
+type AnimationControl derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for AnimationControl
-pub impl ToJson for AnimationControl
-pub impl @json.FromJson for AnimationControl
 
 pub(all) enum AnimationLabel {
   Idle
   Walk
   Run
   Off
-}
-pub impl Eq for AnimationLabel
-pub impl Show for AnimationLabel
-pub impl ToJson for AnimationLabel
-pub impl @json.FromJson for AnimationLabel
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 type AnimationMaskSetup
 pub impl @app.Resource for AnimationMaskSetup

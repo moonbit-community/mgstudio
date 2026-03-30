@@ -3429,37 +3429,92 @@ fn render3d_compose_transform(
 }
 
 ///|
+priv struct Render3dWorldTransformCache {
+  transforms : Array[@transform.Transform?]
+  generations : Array[Int]
+  visiting : Array[Bool]
+}
+
+///|
+fn render3d_world_transform_cache_ref() -> Ref[Render3dWorldTransformCache] {
+  Ref::new({ transforms: [], generations: [], visiting: [] })
+}
+
+///|
+fn render3d_world_transform_cache_ensure_entity_slot(
+  cache_ref : Ref[Render3dWorldTransformCache],
+  entity_id : Int,
+) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  let required_len = entity_id + 1
+  while cache_ref.val.transforms.length() < required_len {
+    cache_ref.val.transforms.push(None)
+    cache_ref.val.generations.push(0)
+    cache_ref.val.visiting.push(false)
+  }
+}
+
+///|
+fn render3d_entity_local_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+    Some(value) => value
+    None => @transform.Transform::identity()
+  }
+}
+
+///|
+fn render3d_entity_world_transform_cached(
+  world : @ecs.World,
+  entity : @core.Entity,
+  cache_ref : Ref[Render3dWorldTransformCache],
+) -> @transform.Transform {
+  if entity.id < 0 {
+    return @transform.Transform::identity()
+  }
+  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
+  if cache_ref.val.generations[entity.id] == entity.generation {
+    if cache_ref.val.transforms[entity.id] is Some(cached) {
+      return cached
+    }
+  }
+  if cache_ref.val.visiting[entity.id] {
+    return render3d_entity_local_transform(world, entity)
+  }
+  cache_ref.val.visiting[entity.id] = true
+  let local_transform = render3d_entity_local_transform(world, entity)
+  let composed = match
+    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
+    Some(parent) => {
+      let parent_transform = render3d_entity_world_transform_cached(
+        world,
+        parent.entity(),
+        cache_ref,
+      )
+      render3d_compose_transform(parent_transform, local_transform)
+    }
+    None => local_transform
+  }
+  cache_ref.val.visiting[entity.id] = false
+  cache_ref.val.transforms[entity.id] = Some(composed)
+  cache_ref.val.generations[entity.id] = entity.generation
+  composed
+}
+
+///|
 fn render3d_entity_world_transform(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @transform.Transform {
-  let visited : Array[@core.Entity] = []
-  let mut current = entity
-  let mut composed = match
-    (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-    Some(value) => value
-    None => @transform.Transform::identity()
-  }
-  while true {
-    match (try! world.get_by_key(current, @hierarchy.ecs_key_parent)) {
-      Some(parent) => {
-        let parent_entity = parent.entity()
-        if render3d_entity_in_list(parent_entity, visited) {
-          break
-        }
-        visited.push(parent_entity)
-        let parent_transform = match
-          (try! world.get_by_key(parent_entity, @transform.ecs_key_transform)) {
-          Some(value) => value
-          None => @transform.Transform::identity()
-        }
-        composed = render3d_compose_transform(parent_transform, composed)
-        current = parent_entity
-      }
-      None => break
-    }
-  }
-  composed
+  render3d_entity_world_transform_cached(
+    world,
+    entity,
+    render3d_world_transform_cache_ref(),
+  )
 }
 
 ///|
@@ -3469,6 +3524,7 @@ const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
 fn render3d_extract_skinning_matrices(
   world : @ecs.World,
   entity : @core.Entity,
+  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
 ) -> Array[Float]? {
   guard (try! world.get_by_key(entity, @mesh.SkinnedMesh::component()))
     is Some(skinned_mesh) else {
@@ -3479,7 +3535,9 @@ fn render3d_extract_skinning_matrices(
   if joints.length() == 0 {
     return None
   }
-  let mesh_world = render3d_entity_world_transform(world, entity)
+  let mesh_world = render3d_entity_world_transform_cached(
+    world, entity, world_transform_cache_ref,
+  )
   let mesh_world_inverse = @mesh.SkinningMat4::inverse_transform(mesh_world)
   let capped_joint_count = if joints.length() < RENDER3D_MAX_SKINNING_JOINTS {
     joints.length()
@@ -3488,15 +3546,19 @@ fn render3d_extract_skinning_matrices(
   }
   let out : Array[Float] = []
   for joint_index in 0..<capped_joint_count {
-    let joint_world = render3d_entity_world_transform(world, joints[joint_index])
+    let joint_world = render3d_entity_world_transform_cached(
+      world,
+      joints[joint_index],
+      world_transform_cache_ref,
+    )
     let inverse_bindpose = if joint_index < inverse_bindposes.length() {
       inverse_bindposes[joint_index]
     } else {
       @mesh.SkinningMat4::identity()
     }
-    let joint_matrix = mesh_world_inverse.mul(
-      @mesh.SkinningMat4::from_transform(joint_world),
-    ).mul(inverse_bindpose)
+    let joint_matrix = mesh_world_inverse
+      .mul(@mesh.SkinningMat4::from_transform(joint_world))
+      .mul(inverse_bindpose)
     for value in joint_matrix.to_row_major_f32() {
       out.push(value)
     }
@@ -6464,6 +6526,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
+  let world_transform_cache_ref = render3d_world_transform_cache_ref()
   let runtime_config = render3d_runtime_config_or_default(source_world)
   let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
     runtime_config,
@@ -6585,7 +6648,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform(source_world, entity)
+    let transform = render3d_entity_world_transform_cached(
+      source_world, entity, world_transform_cache_ref,
+    )
     let previous_camera_history = camera_motion_blur_history_get(entity)
     let previous_transform = match previous_camera_history {
       Some(v) => v.transform
@@ -6724,7 +6789,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform(source_world, entity)
+    let transform = render3d_entity_world_transform_cached(
+      source_world, entity, world_transform_cache_ref,
+    )
     let previous_transform = match motion_blur_history_get(entity) {
       Some(v) => v
       None => transform
@@ -6786,8 +6853,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           entity, ecs_key_wireframe_color,
         ),
         skinning_matrices: render3d_extract_skinning_matrices(
-          source_world,
-          entity,
+          source_world, entity, world_transform_cache_ref,
         ),
       },
     })

@@ -9,9 +9,7 @@ package "Milky2018/mgstudio/examples/ecs/state_scoped"
 pub(all) enum GameState {
   A
   B
-}
-pub impl Eq for GameState
-pub impl Show for GameState
+} derive(Eq, Show)
 
 type TickTock
 

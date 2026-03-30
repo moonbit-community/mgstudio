@@ -201,7 +201,12 @@ fn build_text_buffer(
     Some(width) => Some(width)
     None =>
       match instance.ui_node_size {
-        Some(node_size) => if node_size.x > 0.0F { Some(node_size.x) } else { None }
+        Some(node_size) =>
+          if node_size.x > 0.0F {
+            Some(node_size.x)
+          } else {
+            None
+          }
         None => None
       }
   }

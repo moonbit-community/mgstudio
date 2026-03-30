@@ -113,6 +113,8 @@ pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@light.IrradianceVolume]
 
 pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
 
+pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
+
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
 pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
@@ -341,7 +343,7 @@ pub struct AutoExposure {
   exponential_transition_distance : Float
   compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?
   metering_mask : @asset.Handle[@image.Image]?
-}
+} derive(ToJson, @json.FromJson)
 pub fn AutoExposure::default() -> Self
 pub fn AutoExposure::new(Float, Float) -> Self
 pub fn AutoExposure::with_compensation_curve(Self, @asset.Handle[AutoExposureCompensationCurve]?) -> Self
@@ -351,8 +353,6 @@ pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@image.Image]?) -> S
 pub fn AutoExposure::with_range(Self, Float, Float) -> Self
 pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
 pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
-pub impl ToJson for AutoExposure
-pub impl @json.FromJson for AutoExposure
 
 pub struct AutoExposureCompensationCurve {
   min_log_lum : Float
@@ -373,7 +373,7 @@ pub struct Camera3d {
   atmosphere_settings : @light.AtmosphereSettings?
   auto_exposure : AutoExposure?
   depth_of_field : DepthOfField?
-}
+} derive(ToJson, @json.FromJson)
 pub fn Camera3d::default() -> Self
 pub fn Camera3d::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3d::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
@@ -384,8 +384,6 @@ pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3d::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @ecs.Component for Camera3d
-pub impl ToJson for Camera3d
-pub impl @json.FromJson for Camera3d
 
 pub struct Camera3dBundle {
   camera : @sprite.Camera
@@ -439,34 +437,26 @@ pub struct CameraDecalConfig3d {
   mode : DecalRenderMode3d
   requires_depth_prepass : Bool
   clustered_requires_deferred_prepass : Bool
-}
+} derive(ToJson, @json.FromJson)
 pub fn CameraDecalConfig3d::default() -> Self
 pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(Self, Bool) -> Self
 pub fn CameraDecalConfig3d::with_mode(Self, DecalRenderMode3d) -> Self
 pub fn CameraDecalConfig3d::with_requires_depth_prepass(Self, Bool) -> Self
-pub impl ToJson for CameraDecalConfig3d
-pub impl @json.FromJson for CameraDecalConfig3d
 
 pub struct CameraDeferredConfig3d {
   mode : CameraDeferredMode3d
   requires_deferred_prepass : Bool
-}
+} derive(ToJson, @json.FromJson)
 pub fn CameraDeferredConfig3d::default() -> Self
 pub fn CameraDeferredConfig3d::with_mode(Self, CameraDeferredMode3d) -> Self
 pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(Self, Bool) -> Self
-pub impl ToJson for CameraDeferredConfig3d
-pub impl @json.FromJson for CameraDeferredConfig3d
 
 pub(all) enum CameraDeferredMode3d {
   Auto
   Forward
   Deferred
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn CameraDeferredMode3d::default() -> Self
-pub impl Eq for CameraDeferredMode3d
-pub impl Show for CameraDeferredMode3d
-pub impl ToJson for CameraDeferredMode3d
-pub impl @json.FromJson for CameraDeferredMode3d
 
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@image.Image]?
@@ -474,7 +464,7 @@ pub struct ClusteredDecal {
   metallic_roughness_texture : @asset.Handle[@image.Image]?
   emissive_texture : @asset.Handle[@image.Image]?
   tag : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn ClusteredDecal::default() -> Self
 pub fn ClusteredDecal::new() -> Self
 pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
@@ -483,22 +473,18 @@ pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@imag
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
 pub impl @ecs.Component for ClusteredDecal
-pub impl ToJson for ClusteredDecal
-pub impl @json.FromJson for ClusteredDecal
 
 pub struct ContactShadows {
   linear_steps : Int
   thickness : Float
   length : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn ContactShadows::default() -> Self
 pub fn ContactShadows::new(Int, Float, Float) -> Self
 pub fn ContactShadows::with_length(Self, Float) -> Self
 pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
 pub fn ContactShadows::with_thickness(Self, Float) -> Self
 pub impl @ecs.Component for ContactShadows
-pub impl ToJson for ContactShadows
-pub impl @json.FromJson for ContactShadows
 
 type CustomProjection3d
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
@@ -518,12 +504,8 @@ pub(all) enum DecalRenderMode3d {
   ForwardOnly
   ClusteredOnly
   ForwardAndClustered
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn DecalRenderMode3d::default() -> Self
-pub impl Eq for DecalRenderMode3d
-pub impl Show for DecalRenderMode3d
-pub impl ToJson for DecalRenderMode3d
-pub impl @json.FromJson for DecalRenderMode3d
 
 pub struct DeferredPbrLightingPlugin {
 }
@@ -543,40 +525,32 @@ pub(all) struct DepthOfField {
   mut aperture_f_stops : Float
   mut max_circle_of_confusion_diameter : Float
   mut max_depth : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn DepthOfField::default() -> Self
 pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
-pub impl ToJson for DepthOfField
-pub impl @json.FromJson for DepthOfField
 
 pub(all) enum DepthOfFieldMode {
   Bokeh
   Gaussian
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn DepthOfFieldMode::default() -> Self
-pub impl Eq for DepthOfFieldMode
-pub impl Show for DepthOfFieldMode
-pub impl ToJson for DepthOfFieldMode
-pub impl @json.FromJson for DepthOfFieldMode
 
 pub struct DistanceFog {
   color : @color.Color
   directional_light_color : @color.Color
   directional_light_exponent : Float
   falloff : FogFalloff3d
-}
+} derive(ToJson, @json.FromJson)
 pub fn DistanceFog::default() -> Self
 pub fn DistanceFog::new(@color.Color, FogFalloff3d) -> Self
 pub fn DistanceFog::with_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
-pub impl ToJson for DistanceFog
-pub impl @json.FromJson for DistanceFog
 
 pub struct Exposure {
   ev100 : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn Exposure::blender() -> Self
 pub fn Exposure::default() -> Self
 pub fn Exposure::exposure(Self) -> Float
@@ -587,15 +561,13 @@ pub fn Exposure::overcast() -> Self
 pub fn Exposure::sunlight() -> Self
 pub fn Exposure::with_ev100(Self, Float) -> Self
 pub impl @ecs.Component for Exposure
-pub impl ToJson for Exposure
-pub impl @json.FromJson for Exposure
 
 pub(all) enum FogFalloff3d {
   Linear(Float, Float)
   Exponential(Float)
   ExponentialSquared(Float)
   Atmospheric(@math.Vec3, @math.Vec3)
-}
+} derive(ToJson, @json.FromJson)
 pub fn FogFalloff3d::atmospheric(@math.Vec3, @math.Vec3) -> Self
 pub fn FogFalloff3d::exponential(Float) -> Self
 pub fn FogFalloff3d::exponential_squared(Float) -> Self
@@ -609,18 +581,14 @@ pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
 pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
 pub fn FogFalloff3d::linear(Float, Float) -> Self
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
-pub impl ToJson for FogFalloff3d
-pub impl @json.FromJson for FogFalloff3d
 
 pub struct FogPluginState {
 }
 
 pub struct ForwardDecal {
-}
+} derive(ToJson, @json.FromJson)
 pub fn ForwardDecal::default() -> Self
 pub impl @ecs.Component for ForwardDecal
-pub impl ToJson for ForwardDecal
-pub impl @json.FromJson for ForwardDecal
 
 pub(all) struct FreeCamera {
   sensitivity : Float
@@ -637,11 +605,9 @@ pub(all) struct FreeCamera {
   run_speed : Float
   scroll_factor : Float
   friction : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn FreeCamera::default() -> Self
 pub impl @ecs.Component for FreeCamera
-pub impl ToJson for FreeCamera
-pub impl @json.FromJson for FreeCamera
 
 pub(all) struct FreeCameraState {
   enabled : Bool
@@ -650,22 +616,28 @@ pub(all) struct FreeCameraState {
   yaw : Float
   speed_multiplier : Float
   velocity : @math.Vec3
-}
+} derive(ToJson, @json.FromJson)
 pub fn FreeCameraState::default() -> Self
 pub impl @ecs.Component for FreeCameraState
-pub impl ToJson for FreeCameraState
-pub impl @json.FromJson for FreeCameraState
 
 pub struct Frustum {
   half_spaces : Array[@math.HalfSpace]
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::new(ViewFrustum) -> Self
 pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
-pub impl Eq for Frustum
-pub impl ToJson for Frustum
-pub impl @json.FromJson for Frustum
+
+pub struct Lightmap {
+  image : @asset.Handle[@image.Image]
+  uv_rect : @math.Rect
+  bicubic_sampling : Bool
+} derive(ToJson, @json.FromJson)
+pub fn Lightmap::default() -> Self
+pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
+pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
+pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
+pub impl @ecs.Component for Lightmap
 
 pub struct MaterialsPlugin {
 }
@@ -730,53 +702,41 @@ pub struct MeshRenderPluginState {
 pub fn MeshRenderPluginState::from_plugin(MeshRenderPlugin) -> Self
 
 pub struct NoIndirectDrawing {
-}
+} derive(ToJson, @json.FromJson)
 pub fn NoIndirectDrawing::default() -> Self
 pub impl @ecs.Component for NoIndirectDrawing
-pub impl ToJson for NoIndirectDrawing
-pub impl @json.FromJson for NoIndirectDrawing
 
 pub struct NoWireframe {
-}
+} derive(ToJson, @json.FromJson)
 pub fn NoWireframe::default() -> Self
 pub impl @ecs.Component for NoWireframe
-pub impl ToJson for NoWireframe
-pub impl @json.FromJson for NoWireframe
 
 pub struct NotShadowCaster {
-}
+} derive(ToJson, @json.FromJson)
 pub fn NotShadowCaster::default() -> Self
 pub impl @ecs.Component for NotShadowCaster
-pub impl ToJson for NotShadowCaster
-pub impl @json.FromJson for NotShadowCaster
 
 pub struct NotShadowReceiver {
-}
+} derive(ToJson, @json.FromJson)
 pub fn NotShadowReceiver::default() -> Self
 pub impl @ecs.Component for NotShadowReceiver
-pub impl ToJson for NotShadowReceiver
-pub impl @json.FromJson for NotShadowReceiver
 
 pub struct OcclusionCulling {
-}
+} derive(ToJson, @json.FromJson)
 pub fn OcclusionCulling::default() -> Self
 pub impl @ecs.Component for OcclusionCulling
-pub impl ToJson for OcclusionCulling
-pub impl @json.FromJson for OcclusionCulling
 
 pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
   fragments_per_pixel_average : Float
   alpha_threshold : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn OrderIndependentTransparencySettings::default() -> Self
 pub fn OrderIndependentTransparencySettings::new(Int, Float, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_alpha_threshold(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
 pub impl @ecs.Component for OrderIndependentTransparencySettings
-pub impl ToJson for OrderIndependentTransparencySettings
-pub impl @json.FromJson for OrderIndependentTransparencySettings
 
 pub(all) struct OrthographicProjection3d {
   mut near : Float
@@ -785,7 +745,7 @@ pub(all) struct OrthographicProjection3d {
   mut scaling_mode : OrthographicScalingMode3d
   mut scale : Float
   mut area : @math.Rect
-}
+} derive(ToJson, @json.FromJson)
 pub fn OrthographicProjection3d::area(Self) -> @math.Rect
 pub fn OrthographicProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn OrthographicProjection3d::default() -> Self
@@ -803,8 +763,6 @@ pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
 pub impl CameraProjection3d for OrthographicProjection3d
-pub impl ToJson for OrthographicProjection3d
-pub impl @json.FromJson for OrthographicProjection3d
 
 pub(all) enum OrthographicScalingMode3d {
   WindowSize
@@ -813,11 +771,7 @@ pub(all) enum OrthographicScalingMode3d {
   AutoMax(Float, Float)
   FixedVertical(Float)
   FixedHorizontal(Float)
-}
-pub impl Eq for OrthographicScalingMode3d
-pub impl Show for OrthographicScalingMode3d
-pub impl ToJson for OrthographicScalingMode3d
-pub impl @json.FromJson for OrthographicScalingMode3d
+} derive(Eq, Show, ToJson, @json.FromJson)
 
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
@@ -842,7 +796,7 @@ pub(all) struct PerspectiveProjection3d {
   mut far : Float
   mut aspect_ratio : Float
   mut near_clip_plane : @math.Vec4
-}
+} derive(ToJson, @json.FromJson)
 pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
 pub fn PerspectiveProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn PerspectiveProjection3d::default() -> Self
@@ -856,19 +810,15 @@ pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
 pub impl CameraProjection3d for PerspectiveProjection3d
-pub impl ToJson for PerspectiveProjection3d
-pub impl @json.FromJson for PerspectiveProjection3d
 
 pub(all) struct PhysicalCameraParameters {
   mut aperture_f_stops : Float
   mut shutter_speed_s : Float
   mut sensitivity_iso : Float
   mut sensor_height : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn PhysicalCameraParameters::default() -> Self
 pub fn PhysicalCameraParameters::ev100(Self) -> Float
-pub impl ToJson for PhysicalCameraParameters
-pub impl @json.FromJson for PhysicalCameraParameters
 
 pub(all) enum Projection {
   Perspective(PerspectiveProjection3d)
@@ -906,27 +856,21 @@ pub(all) enum ShadowFilteringMethod {
   Hardware2x2
   Gaussian
   Temporal
-}
+} derive(Eq, Show, ToJson, @json.FromJson)
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl @ecs.Component for ShadowFilteringMethod
-pub impl Eq for ShadowFilteringMethod
-pub impl Show for ShadowFilteringMethod
-pub impl ToJson for ShadowFilteringMethod
-pub impl @json.FromJson for ShadowFilteringMethod
 
 pub struct Skybox {
   image : @asset.Handle[@image.Image]?
   brightness : Float
   rotation : @math.Quat
-}
+} derive(ToJson, @json.FromJson)
 pub fn Skybox::default() -> Self
 pub fn Skybox::new(@asset.Handle[@image.Image], Float) -> Self
 pub fn Skybox::with_brightness(Self, Float) -> Self
 pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for Skybox
-pub impl ToJson for Skybox
-pub impl @json.FromJson for Skybox
 
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
@@ -943,59 +887,46 @@ pub struct SubCameraView3d {
   full_size : @math.IVec2
   offset : @math.Vec2
   size : @math.IVec2
-}
+} derive(ToJson, @json.FromJson)
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for SubCameraView3d
-pub impl ToJson for SubCameraView3d
-pub impl @json.FromJson for SubCameraView3d
 
 pub struct TransmittedShadowReceiver {
-}
+} derive(ToJson, @json.FromJson)
 pub fn TransmittedShadowReceiver::default() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
-pub impl ToJson for TransmittedShadowReceiver
-pub impl @json.FromJson for TransmittedShadowReceiver
 
 pub struct ViewFrustum {
   inner : @math.ViewFrustum
-}
+} derive(Eq, ToJson, @json.FromJson)
 pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
 pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
 pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
 pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
-pub impl Eq for ViewFrustum
-pub impl ToJson for ViewFrustum
-pub impl @json.FromJson for ViewFrustum
 
 pub struct Wireframe {
-}
+} derive(ToJson, @json.FromJson)
 pub fn Wireframe::default() -> Self
 pub impl @ecs.Component for Wireframe
-pub impl ToJson for Wireframe
-pub impl @json.FromJson for Wireframe
 
 pub struct WireframeColor {
   color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn WireframeColor::default() -> Self
 pub fn WireframeColor::new(@color.Color) -> Self
 pub fn WireframeColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for WireframeColor
-pub impl ToJson for WireframeColor
-pub impl @json.FromJson for WireframeColor
 
 pub struct WireframeConfig {
   global : Bool
   default_color : @color.Color
-}
+} derive(ToJson, @json.FromJson)
 pub fn WireframeConfig::default() -> Self
 pub fn WireframeConfig::new(Bool, @color.Color) -> Self
 pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for WireframeConfig
-pub impl ToJson for WireframeConfig
-pub impl @json.FromJson for WireframeConfig
 
 // Type aliases
 pub using @material {type AlphaMode3d}

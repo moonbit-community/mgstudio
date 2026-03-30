@@ -1605,10 +1605,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
                 mesh3d_vertex_color_or_white(self.colors, i),
               )
               mesh3d_push_skinning_joint_data(
-                out,
-                joint_indices,
-                joint_weights,
-                i,
+                out, joint_indices, joint_weights, i,
               )
             }
           }
@@ -1632,7 +1629,9 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               self.uvs[ia],
               mesh3d_vertex_color_or_white(self.colors, ia),
             )
-            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, ia)
+            mesh3d_push_skinning_joint_data(
+              out, joint_indices, joint_weights, ia,
+            )
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ib],
@@ -1640,7 +1639,9 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               self.uvs[ib],
               mesh3d_vertex_color_or_white(self.colors, ib),
             )
-            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, ib)
+            mesh3d_push_skinning_joint_data(
+              out, joint_indices, joint_weights, ib,
+            )
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ic],
@@ -1648,7 +1649,9 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               self.uvs[ic],
               mesh3d_vertex_color_or_white(self.colors, ic),
             )
-            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, ic)
+            mesh3d_push_skinning_joint_data(
+              out, joint_indices, joint_weights, ic,
+            )
           }
         }
       }
@@ -1665,7 +1668,9 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               self.uvs[i],
               mesh3d_vertex_color_or_white(self.colors, i),
             )
-            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, i)
+            mesh3d_push_skinning_joint_data(
+              out, joint_indices, joint_weights, i,
+            )
           }
         }
         Some(indices) =>
@@ -1679,10 +1684,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
             mesh3d_push_skinning_joint_data(
-              out,
-              joint_indices,
-              joint_weights,
-              idx,
+              out, joint_indices, joint_weights, idx,
             )
           }
       }
@@ -1700,7 +1702,9 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               self.uvs[i],
               mesh3d_vertex_color_or_white(self.colors, i),
             )
-            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, i)
+            mesh3d_push_skinning_joint_data(
+              out, joint_indices, joint_weights, i,
+            )
           }
         }
         Some(indices) =>
@@ -1714,10 +1718,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
             mesh3d_push_skinning_joint_data(
-              out,
-              joint_indices,
-              joint_weights,
-              idx,
+              out, joint_indices, joint_weights, idx,
             )
           }
       }

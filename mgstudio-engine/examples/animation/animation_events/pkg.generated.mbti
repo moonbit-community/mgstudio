@@ -20,9 +20,7 @@ pub(all) enum MessagePalette {
   None
   Hello
   Bye
-}
-pub impl Eq for MessagePalette
-pub impl Show for MessagePalette
+} derive(Eq, Show)
 
 type MessageText
 pub impl @ecs.Component for MessageText

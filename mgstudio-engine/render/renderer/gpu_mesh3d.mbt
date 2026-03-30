@@ -88,6 +88,30 @@ fn ensure_mesh3d_instance_draw_binding(
 }
 
 ///|
+fn mesh3d_identity_rows(matrix_count : Int) -> Array[Float] {
+  let identity_rows : Array[Float] = []
+  for _ in 0..<matrix_count {
+    identity_rows.push(1.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(1.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(1.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(1.0F)
+  }
+  identity_rows
+}
+
+///|
 fn ensure_mesh3d_skin_slot(
   backend : GpuBackend,
   slot_index : Int,
@@ -98,6 +122,12 @@ fn ensure_mesh3d_skin_slot(
     let skin_buf = backend.device.create_buffer(
       size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
       usage~,
+    )
+    let matrix_count = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 64UL).to_int()
+    backend.queue.write_buffer(
+      skin_buf,
+      0UL,
+      f32le_pack(mesh3d_identity_rows(matrix_count)),
     )
     let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
     let ok = builder.add_buffer(
@@ -123,9 +153,7 @@ fn ensure_mesh3d_skin_slot(
 }
 
 ///|
-fn ensure_mesh3d_skin_default_binding(
-  backend : GpuBackend,
-) -> @wgpu.BindGroup? {
+fn ensure_mesh3d_skin_default_binding(backend : GpuBackend) -> @wgpu.BindGroup? {
   guard backend.mesh3d_bgl_skin is Some(bgl) else { return None }
   if backend.mesh3d_skin_default_bg is Some(bg) {
     return Some(bg)
@@ -135,27 +163,12 @@ fn ensure_mesh3d_skin_default_binding(
     size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
     usage~,
   )
-  let identity_rows : Array[Float] = []
   let matrix_count = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 64UL).to_int()
-  for _ in 0..<matrix_count {
-    identity_rows.push(1.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(1.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(1.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(0.0F)
-    identity_rows.push(1.0F)
-  }
-  backend.queue.write_buffer(skin_buf, 0UL, f32le_pack(identity_rows))
+  backend.queue.write_buffer(
+    skin_buf,
+    0UL,
+    f32le_pack(mesh3d_identity_rows(matrix_count)),
+  )
   let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
   let ok = builder.add_buffer(
     0U,
@@ -5343,30 +5356,22 @@ pub fn GpuBackend::draw_mesh3d(
         } else {
           max_values
         }
-        let matrix_capacity = max_values / 16
-        let upload_values : Array[Float] = []
-        for _ in 0..<matrix_capacity {
-          upload_values.push(1.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(1.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(1.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(0.0F)
-          upload_values.push(1.0F)
+        if upload_len > 0 {
+          let upload_values = if upload_len == values.length() {
+            values
+          } else {
+            let clipped : Array[Float] = []
+            for i in 0..<upload_len {
+              clipped.push(values[i])
+            }
+            clipped
+          }
+          self.queue.write_buffer(
+            skin_slot.buffer,
+            0UL,
+            f32le_pack(upload_values),
+          )
         }
-        for i in 0..<upload_len {
-          upload_values[i] = values[i]
-        }
-        self.queue.write_buffer(skin_slot.buffer, 0UL, f32le_pack(upload_values))
         Some(skin_slot.bind_group)
       } else {
         ensure_mesh3d_skin_default_binding(self)

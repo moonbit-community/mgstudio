@@ -58,8 +58,7 @@ fn joint_animation(
   let angle = @math.pi_half() * @math.sin(time.get().elapsed_secs())
   try! skinned_mesh_parents.view(fn(_entity, parent_comp) {
     let mesh_node_entity = parent_comp.value().entity()
-    guard (try! parents.get(mesh_node_entity)) is Some(mesh_node_children_comp)
-      else {
+    guard (try! parents.get(mesh_node_entity)) is Some(mesh_node_children_comp) else {
       return
     }
     let mesh_node_children = mesh_node_children_comp.value().entities()
@@ -91,9 +90,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(joint_animation)),
-  )
+  .add_systems(@app.Update, @app.system(@app.system_param4(joint_animation)))
   .run()
 }

@@ -115,9 +115,7 @@ pub impl @app.Resource for InputFocus
 
 pub(all) enum InputFocusSystems {
   Dispatch
-}
-pub impl Eq for InputFocusSystems
-pub impl Show for InputFocusSystems
+} derive(Eq, Show)
 
 pub struct InputFocusVisible {
   mut visible : Bool

@@ -14,9 +14,7 @@ import {
 pub(all) enum AppState {
   Setup
   Finished
-}
-pub impl Eq for AppState
-pub impl Show for AppState
+} derive(Eq, Show)
 
 type RpgSpriteFolder
 pub impl @app.Resource for RpgSpriteFolder

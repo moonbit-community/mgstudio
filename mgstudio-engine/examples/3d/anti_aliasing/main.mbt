@@ -360,7 +360,11 @@ fn update_ui() -> Unit {
   )
   draw_selectable_menu_item(
     ui,
-    if HAS_SMAA { "SMAA".to_string() } else { "SMAA (Unavailable)".to_string() },
+    if HAS_SMAA {
+      "SMAA".to_string()
+    } else {
+      "SMAA (Unavailable)".to_string()
+    },
     "4".to_string(),
     HAS_SMAA && aa_method_eq(state.aa_method, AAMethod::SMAA),
   )
@@ -372,7 +376,11 @@ fn update_ui() -> Unit {
   )
   draw_selectable_menu_item(
     ui,
-    if HAS_DLSS { "DLSS".to_string() } else { "DLSS (Unavailable)".to_string() },
+    if HAS_DLSS {
+      "DLSS".to_string()
+    } else {
+      "DLSS (Unavailable)".to_string()
+    },
     "6".to_string(),
     HAS_DLSS && aa_method_eq(state.aa_method, AAMethod::DLSS),
   )

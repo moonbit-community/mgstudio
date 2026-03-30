@@ -27,30 +27,24 @@ pub fn visibility_propagate_system(@ecs.World) -> Unit
 // Types and methods
 pub struct InheritedVisibility {
   visible : Bool
-}
+} derive(Eq, Show)
 pub fn InheritedVisibility::is_visible(Self) -> Bool
 pub fn InheritedVisibility::new(Bool) -> Self
 pub impl @ecs.Component for InheritedVisibility
-pub impl Eq for InheritedVisibility
-pub impl Show for InheritedVisibility
 pub impl ToJson for InheritedVisibility
 pub impl @json.FromJson for InheritedVisibility
 
 pub struct NoFrustumCulling {
-}
+} derive(Eq, Show)
 pub fn NoFrustumCulling::default() -> Self
 pub impl @ecs.Component for NoFrustumCulling
-pub impl Eq for NoFrustumCulling
-pub impl Show for NoFrustumCulling
 
 pub struct ViewVisibility {
   visible : Bool
-}
+} derive(Eq, Show)
 pub fn ViewVisibility::is_visible(Self) -> Bool
 pub fn ViewVisibility::new(Bool) -> Self
 pub impl @ecs.Component for ViewVisibility
-pub impl Eq for ViewVisibility
-pub impl Show for ViewVisibility
 pub impl ToJson for ViewVisibility
 pub impl @json.FromJson for ViewVisibility
 
@@ -58,11 +52,9 @@ pub(all) enum Visibility {
   Inherited
   Hidden
   Visible
-}
+} derive(Eq, Show)
 pub fn Visibility::is_visible(Self) -> Bool
 pub impl @ecs.Component for Visibility
-pub impl Eq for Visibility
-pub impl Show for Visibility
 pub impl ToJson for Visibility
 pub impl @json.FromJson for Visibility
 

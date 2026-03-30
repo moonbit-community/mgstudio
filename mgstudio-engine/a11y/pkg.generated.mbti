@@ -107,9 +107,7 @@ pub impl @app.Resource for AccessibilityRequested
 
 pub(all) enum AccessibilitySystems {
   Update
-}
-pub impl Eq for AccessibilitySystems
-pub impl Show for AccessibilitySystems
+} derive(Eq, Show)
 
 pub(all) struct ActionRequest {
   request : @moon_accesskit.ActionRequest

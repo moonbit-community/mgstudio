@@ -10,10 +10,8 @@ import {
 // Errors
 
 // Types and methods
-type MyComponent
+type MyComponent derive(Eq, Show)
 pub impl @ecs.Component for MyComponent
-pub impl Eq for MyComponent
-pub impl Show for MyComponent
 
 // Type aliases
 
