@@ -13,38 +13,24 @@
 // limitations under the License.
 
 ///|
-const GLTF_PATH : String = "models/animated/Fox.glb"
+const GLTF_PATH : String = "models/SimpleSkin/SimpleSkin.gltf"
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1200.0F),
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 750.0F),
   )
 
   ignore(
     @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @transform.Transform::from_xyz(100.0F, 90.0F, 140.0F).looking_at(
-        @math.Vec3::new(0.0F, 20.0F, 0.0F),
+      @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     ).spawn(world),
-  )
-
-  let light = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(light)
-    .insert(
-      (
-        @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -0.6F),
-        ),
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true),
-      ),
-    ),
   )
 
   let root = world.spawn_empty()
@@ -60,19 +46,43 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn animate_joint_chain(
+fn joint_animation(
   time : @app.Res[@time.Time[Unit]],
-  skinned_meshes : @ecs.Query[@ecs.Comp[@mesh.SkinnedMesh], @ecs.All],
+  skinned_mesh_parents : @ecs.Query[
+    @ecs.Comp[@hierarchy.Parent],
+    @ecs.With[@mesh.SkinnedMesh],
+  ],
+  parents : @ecs.Query[@ecs.Comp[@hierarchy.Children], @ecs.All],
   transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
 ) -> Unit {
-  let angle = 0.5F * @math.sin(time.get().elapsed_secs())
-  try! skinned_meshes.view(fn(_entity, skinned_mesh) {
-    let joints = skinned_mesh.value().joints()
-    if joints.length() < 2 {
+  let angle = @math.pi_half() * @math.sin(time.get().elapsed_secs())
+  try! skinned_mesh_parents.view(fn(_entity, parent_comp) {
+    let mesh_node_entity = parent_comp.value().entity()
+    guard (try! parents.get(mesh_node_entity)) is Some(mesh_node_children_comp)
+      else {
       return
     }
-    guard (try! transforms.get(joints[1])) is Some(transform) else { return }
-    transform.get_ref().val.rotation = @math.Quat::from_rotation_z(angle)
+    let mesh_node_children = mesh_node_children_comp.value().entities()
+    if mesh_node_children.length() < 2 {
+      return
+    }
+    let first_joint_entity = mesh_node_children[1]
+    guard (try! parents.get(first_joint_entity))
+      is Some(first_joint_children_comp) else {
+      return
+    }
+    let first_joint_children = first_joint_children_comp.value().entities()
+    if first_joint_children.length() == 0 {
+      return
+    }
+    let second_joint_entity = first_joint_children[0]
+    guard (try! transforms.get(second_joint_entity))
+      is Some(second_joint_transform) else {
+      return
+    }
+    second_joint_transform.get_ref().val.rotation = @math.Quat::from_rotation_z(
+      angle,
+    )
   })
 }
 
@@ -83,7 +93,7 @@ fn main {
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(animate_joint_chain)),
+    @app.system(@app.system_param4(joint_animation)),
   )
   .run()
 }

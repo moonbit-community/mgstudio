@@ -1394,6 +1394,12 @@ fn render3d_float_clamp(
 }
 
 ///|
+fn render3d_lightmap_uv_transform(uv_rect : @math.Rect) -> @transform.Affine2 {
+  let size = uv_rect.size()
+  @transform.Affine2::from_scale_translation(size, uv_rect.min)
+}
+
+///|
 fn render3d_fxaa_enabled(fxaa : Fxaa?) -> Bool {
   match fxaa {
     Some(value) => value.enabled
@@ -3454,6 +3460,48 @@ fn render3d_entity_world_transform(
     }
   }
   composed
+}
+
+///|
+const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
+
+///|
+fn render3d_extract_skinning_matrices(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Array[Float]? {
+  guard (try! world.get_by_key(entity, @mesh.SkinnedMesh::component()))
+    is Some(skinned_mesh) else {
+    return None
+  }
+  let joints = skinned_mesh.joints()
+  let inverse_bindposes = skinned_mesh.inverse_bindposes()
+  if joints.length() == 0 {
+    return None
+  }
+  let mesh_world = render3d_entity_world_transform(world, entity)
+  let mesh_world_inverse = @mesh.SkinningMat4::inverse_transform(mesh_world)
+  let capped_joint_count = if joints.length() < RENDER3D_MAX_SKINNING_JOINTS {
+    joints.length()
+  } else {
+    RENDER3D_MAX_SKINNING_JOINTS
+  }
+  let out : Array[Float] = []
+  for joint_index in 0..<capped_joint_count {
+    let joint_world = render3d_entity_world_transform(world, joints[joint_index])
+    let inverse_bindpose = if joint_index < inverse_bindposes.length() {
+      inverse_bindposes[joint_index]
+    } else {
+      @mesh.SkinningMat4::identity()
+    }
+    let joint_matrix = mesh_world_inverse.mul(
+      @mesh.SkinningMat4::from_transform(joint_world),
+    ).mul(inverse_bindpose)
+    for value in joint_matrix.to_row_major_f32() {
+      out.push(value)
+    }
+  }
+  Some(out)
 }
 
 ///|
@@ -6216,6 +6264,7 @@ fn render3d_build_mesh_gpu_draw_payload(
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
   shader_path? : String? = None,
+  skinning_matrices? : Array[Float]? = None,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
     material, texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
@@ -6267,6 +6316,7 @@ fn render3d_build_mesh_gpu_draw_payload(
     max_relief_mapping_search_steps,
     cull_mode: render3d_cull_mode_value(material, draw_flags),
     shader_path,
+    skinning_matrices,
   }
 }
 
@@ -6346,6 +6396,7 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
     cull_mode=payload.cull_mode,
     shader_path=payload.shader_path,
+    skinning_matrices=payload.skinning_matrices,
   )
 }
 
@@ -6468,6 +6519,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let sub_camera_view = try! source_world.get_by_key(
       entity, ecs_key_sub_camera_view3d,
     )
+    let oit_settings = try! source_world.get_by_key(
+      entity, ecs_key_order_independent_transparency_settings,
+    )
     let screen_space_transmission = try! source_world.get_by_key(
       entity, ecs_key_screen_space_transmission,
     )
@@ -6579,6 +6633,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             camera: camera_clamped,
             projection,
             sub_camera_view,
+            oit_settings,
             screen_space_transmission,
             bloom,
             tonemapping,
@@ -6697,6 +6752,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         aabb_center_world,
         material,
         material_extension: material_handle.extended_material,
+        lightmap: try! source_world.get_by_key(entity, ecs_key_lightmap),
         is_forward_decal: (try! source_world.get_by_key(
           entity, ecs_key_forward_decal,
         ))
@@ -6707,6 +6763,18 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clustered_decal: try! source_world.get_by_key(
           entity, ecs_key_clustered_decal,
         ),
+        has_not_shadow_caster: (try! source_world.get_by_key(
+          entity, ecs_key_not_shadow_caster,
+        ))
+        is Some(_),
+        has_not_shadow_receiver: (try! source_world.get_by_key(
+          entity, ecs_key_not_shadow_receiver,
+        ))
+        is Some(_),
+        has_transmitted_shadow_receiver: (try! source_world.get_by_key(
+          entity, ecs_key_transmitted_shadow_receiver,
+        ))
+        is Some(_),
         layers,
         has_wireframe: (try! source_world.get_by_key(entity, ecs_key_wireframe))
         is Some(_),
@@ -6716,6 +6784,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         is Some(_),
         wireframe_color: try! source_world.get_by_key(
           entity, ecs_key_wireframe_color,
+        ),
+        skinning_matrices: render3d_extract_skinning_matrices(
+          source_world,
+          entity,
         ),
       },
     })
@@ -7206,6 +7278,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           }
           let extracted_shadow_mesh = meshes[shadow_draw_item.extracted_index]
           let shadow_mesh = extracted_shadow_mesh.payload
+          if shadow_mesh.has_not_shadow_caster {
+            continue
+          }
           if shadow_mesh.is_forward_decal ||
             shadow_mesh.clustered_decal is Some(_) {
             continue
@@ -7349,42 +7424,49 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         is Some(base_draw_alpha) else {
         continue
       }
+      let mut draw_material = mesh.material
+      if mesh.lightmap is Some(lightmap) && lightmap.image.id() > 0 {
+        draw_material = draw_material
+          .with_base_color_texture(Some(lightmap.image))
+          .with_uv_transform(render3d_lightmap_uv_transform(lightmap.uv_rect))
+          .with_unlit(true)
+      }
       let mut draw_alpha = base_draw_alpha
-      let mut texture_id = match mesh.material.base_color_texture {
+      let mut texture_id = match draw_material.base_color_texture {
         Some(texture) => texture.id()
         None => -1
       }
       let mut normal_texture_id = match
         (
-          mesh.material.normal_map_texture,
-          mesh.material.clearcoat_normal_texture,
+          draw_material.normal_map_texture,
+          draw_material.clearcoat_normal_texture,
         ) {
         (Some(texture), _) => texture.id()
         (None, Some(texture)) => texture.id()
         (None, None) => -1
       }
-      let mut emissive_texture_id = match mesh.material.emissive_texture {
+      let mut emissive_texture_id = match draw_material.emissive_texture {
         Some(texture) => texture.id()
         None => -1
       }
       let mut metallic_roughness_texture_id = match
-        mesh.material.metallic_roughness_texture {
+        draw_material.metallic_roughness_texture {
         Some(texture) => texture.id()
         None => -1
       }
-      let occlusion_texture_id = match mesh.material.occlusion_texture {
+      let occlusion_texture_id = match draw_material.occlusion_texture {
         Some(texture) => texture.id()
         None => -1
       }
-      let depth_texture_id = match mesh.material.depth_map {
+      let depth_texture_id = match draw_material.depth_map {
         Some(texture) => texture.id()
         None => -1
       }
-      let anisotropy_texture_id = match mesh.material.anisotropy_texture {
+      let anisotropy_texture_id = match draw_material.anisotropy_texture {
         Some(texture) => texture.id()
         None => -1
       }
-      let specular_tint_texture_id = match mesh.material.specular_tint_texture {
+      let specular_tint_texture_id = match draw_material.specular_tint_texture {
         Some(texture) => texture.id()
         None => -1
       }
@@ -7404,23 +7486,23 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
       let anisotropy_strength = maxf(
         0.0F,
-        minf(1.0F, mesh.material.anisotropy_strength),
+        minf(1.0F, draw_material.anisotropy_strength),
       )
       let max_relief_mapping_search_steps = Float::from_double(
-        mesh.material.parallax_mapping_method.max_steps().to_double(),
+        draw_material.parallax_mapping_method.max_steps().to_double(),
       )
       let mut clearcoat_reflectance = maxf(
         0.0F,
-        mesh.material.reflectance + mesh.material.clearcoat * 0.5F,
+        draw_material.reflectance + draw_material.clearcoat * 0.5F,
       )
       let clearcoat_roughness = minf(
-        mesh.material.perceptual_roughness,
-        mesh.material.clearcoat_perceptual_roughness,
+        draw_material.perceptual_roughness,
+        draw_material.clearcoat_perceptual_roughness,
       )
-      let mut draw_roughness = if mesh.material.clearcoat > 0.0F {
+      let mut draw_roughness = if draw_material.clearcoat > 0.0F {
         clearcoat_roughness
       } else {
-        mesh.material.perceptual_roughness
+        draw_material.perceptual_roughness
       }
       let mesh_distance = mesh.transform.translation
         .sub(camera.transform.translation)
@@ -7446,9 +7528,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       let (fogged_r, fogged_g, fogged_b) = render3d_apply_distance_fog(
         distance_fog,
         mesh_distance,
-        mesh.material.base_color.r,
-        mesh.material.base_color.g,
-        mesh.material.base_color.b,
+        draw_material.base_color.r,
+        draw_material.base_color.g,
+        draw_material.base_color.b,
         camera.transform.translation,
         mesh.transform.translation,
         pass_lighting,
@@ -7459,13 +7541,27 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       let draw_surface_roughness = draw_roughness
       let draw_reflectance = clearcoat_reflectance
       let draw_diffuse_transmission = clamp01(
-        mesh.material.diffuse_transmission,
+        draw_material.diffuse_transmission,
       )
       let draw_specular_transmission = clamp01(
-        mesh.material.specular_transmission,
+        draw_material.specular_transmission,
       )
-      let draw_thickness = maxf(0.0F, mesh.material.thickness)
-      let draw_ior = maxf(1.0F, mesh.material.ior)
+      let draw_thickness = maxf(0.0F, draw_material.thickness)
+      let draw_ior = maxf(1.0F, draw_material.ior)
+      if draw_item.phase == RENDER3D_PHASE_TRANSPARENT &&
+        camera.oit_settings is Some(oit_settings) &&
+        draw_alpha < oit_settings.alpha_threshold {
+        continue
+      }
+      let mut draw_point_shadow_enabled = point_shadow_enabled
+      if mesh.has_not_shadow_receiver {
+        draw_point_shadow_enabled = 0.0F
+      }
+      if draw_point_shadow_enabled > 0.0F &&
+        (draw_diffuse_transmission > 0.0F || draw_specular_transmission > 0.0F) &&
+        !mesh.has_transmitted_shadow_receiver {
+        draw_point_shadow_enabled = 0.0F
+      }
       let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
       let draw_indexed = render3d_mesh_handle_is_indexed(mesh.mesh_handle)
       let draw_indirect_parameters_index = if draw_indexed {
@@ -7492,7 +7588,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           MESH3D_DRAW_INDIRECT_KIND_NONE
         },
         draw_indirect_parameters_index,
-        mesh.material,
+        draw_material,
         mesh.transform,
         mesh.previous_transform,
         draw_color_r,
@@ -7517,13 +7613,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         0.0F,
         0.0F,
         point_shadow_texture_id,
-        point_shadow_enabled,
+        draw_point_shadow_enabled,
         point_shadow_depth_bias,
-        mesh.material.specular_tint,
+        draw_material.specular_tint,
         anisotropy_strength,
         max_relief_mapping_search_steps,
         draw_flags,
         shader_path=draw_shader_path,
+        skinning_matrices=mesh.skinning_matrices,
       )
       if draw_item.phase == RENDER3D_PHASE_TRANSPARENT {
         transparent_draws.push(draw_payload)
@@ -7603,9 +7700,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             transmission_steps: Float::from_double(
               transmission_steps.to_double(),
             ),
-            point_shadow_texture_id,
-            point_shadow_enabled,
-            point_shadow_depth_bias,
+            point_shadow_texture_id: transmissive_draw.payload.point_shadow_texture_id,
+            point_shadow_enabled: transmissive_draw.payload.point_shadow_enabled,
+            point_shadow_depth_bias: transmissive_draw.payload.point_shadow_depth_bias,
           })
         }
         @render.host_gpu_end_pass()

@@ -86,6 +86,8 @@ pub fn configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : 
 
 pub fn create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
+pub fn create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
+
 pub fn create_mesh_capsule(radius~ : Float, half_length~ : Float, segments~ : Int) -> Int
 
 pub fn create_mesh_rectangle(width~ : Float, height~ : Float) -> Int
@@ -193,6 +195,8 @@ pub fn set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
 pub fn surface_target_id(Int) -> Int
 
 pub fn surface_target_id_for_window(Int) -> Int
+
+pub fn update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
 
 pub fn upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
 
@@ -547,6 +551,7 @@ pub fn GpuBackend::set_texture_sampler(Self, Int, Int, Int, Int, Int, Int, Int, 
 pub fn GpuBackend::supported_compressed_image_formats_mask(Self) -> Int
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
+pub fn GpuBackend::update_mesh3d_xyznuvrgba(Self, Int, Array[Float], Int) -> Bool
 pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(Self, Int, Int, HostMesh3dPreprocessCameraPayload) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8_mip(Self, Int, Int, Int, Int, Int, Int, Bytes) -> Unit
@@ -861,6 +866,16 @@ pub struct RenderDiagnosticsSnapshot {
   mesh2d_executed_draw_calls : Int
   mesh3d_draw_calls : Int
   mesh3d_executed_draw_calls : Int
+  pass_total_count : Int
+  pass_2d_count : Int
+  pass_3d_main_count : Int
+  pass_3d_motion_vector_count : Int
+  pass_3d_point_shadow_count : Int
+  pass_total_cpu_ms : Float
+  pass_2d_cpu_ms : Float
+  pass_3d_main_cpu_ms : Float
+  pass_3d_motion_vector_cpu_ms : Float
+  pass_3d_point_shadow_cpu_ms : Float
 }
 pub fn RenderDiagnosticsSnapshot::default() -> Self
 pub fn RenderDiagnosticsSnapshot::new(Int, Int, Int, Int) -> Self

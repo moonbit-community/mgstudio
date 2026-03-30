@@ -135,10 +135,9 @@ fn random_font_size(idx : Int, args : Args) -> Float {
 fn configured_window() -> @window.Window {
   let window = @window.Window::default()
   window.present_mode = @window.PresentMode::AutoNoVsync
-  window.resolution = @window.WindowResolution::new(
-    1920,
-    1080,
-  ).with_scale_factor_override(1.0F)
+  window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
+    1.0F,
+  )
   window
 }
 

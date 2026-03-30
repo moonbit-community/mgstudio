@@ -512,7 +512,7 @@ pub struct QueryState[_, F] {
 pub fn[D : QueryData, F] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] QueryState::count(Self[D, F], World) -> Int
 pub fn[D : QueryData, F : QueryFilter] QueryState::get(Self[D, F], World, @core.Entity) -> D? raise EcsError
-pub fn[D, F] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::iter_combinations(Self[D, F], World) -> QueryCombinations[D, F]
 pub fn[D, F] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
@@ -584,8 +584,12 @@ pub struct World {
   used_components : Map[Int, Bool]
   added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
+  added_component_sequences : Map[Int, Map[Int, Int]]
+  changed_component_sequences : Map[Int, Map[Int, Int]]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
+  resource_added_sequences : Map[Int, Int]
+  resource_changed_sequences : Map[Int, Int]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
   mut deferred_hook_command_depth : Int
@@ -650,6 +654,8 @@ pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemSequence)
 #callsite(autofill(loc))
 pub fn[T] World::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
+pub fn[T] World::resource_added_since(Self, ResourceKey[T], Int) -> Bool
+pub fn[T] World::resource_changed_since(Self, ResourceKey[T], Int) -> Bool
 pub fn[T] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T] World::send_message(Self, MessageKey[T], T) -> Int
 pub fn[T] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
@@ -720,6 +726,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
 pub(open) trait QueryFilter {
   matches(Self, World, @core.Entity) -> Bool
   mentions_component(Self, Int) -> Bool
+  iteration_anchor_component(Self) -> Int?
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)

@@ -54,6 +54,26 @@ pub let render_diagnostic_mesh3d_draw_calls : DiagnosticPath
 
 pub let render_diagnostic_mesh3d_executed_draw_calls : DiagnosticPath
 
+pub let render_diagnostic_pass_2d_count : DiagnosticPath
+
+pub let render_diagnostic_pass_2d_cpu_ms : DiagnosticPath
+
+pub let render_diagnostic_pass_3d_main_count : DiagnosticPath
+
+pub let render_diagnostic_pass_3d_main_cpu_ms : DiagnosticPath
+
+pub let render_diagnostic_pass_3d_motion_vector_count : DiagnosticPath
+
+pub let render_diagnostic_pass_3d_motion_vector_cpu_ms : DiagnosticPath
+
+pub let render_diagnostic_pass_3d_point_shadow_count : DiagnosticPath
+
+pub let render_diagnostic_pass_3d_point_shadow_cpu_ms : DiagnosticPath
+
+pub let render_diagnostic_pass_total_count : DiagnosticPath
+
+pub let render_diagnostic_pass_total_cpu_ms : DiagnosticPath
+
 pub let render_diagnostic_prepared_cameras_2d : DiagnosticPath
 
 pub let render_diagnostic_prepared_cameras_3d : DiagnosticPath

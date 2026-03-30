@@ -1629,15 +1629,25 @@ fn GpuBackend::draw_mesh_material_with_options(
     MESH2D_UNIFORM_STRIDE_BYTES.to_int()
   let next_instance_used = uniform_write_offset +
     MESH2D_UNIFORM_STRIDE_BYTES.to_int()
+  let required_binding_end = self.mesh2d_batch_uniform_base_offset.to_uint64() +
+    MESH2D_UNIFORM_STRIDE_BYTES * MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE_U64
   if next_instance_used < 0 {
     debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
       1
     mesh2d_reset_pending_batch(self)
     return
   }
+  let required_capacity = {
+    let next_used_u64 = next_instance_used.to_uint64()
+    if next_used_u64 > required_binding_end {
+      next_used_u64
+    } else {
+      required_binding_end
+    }
+  }
   guard ensure_mesh2d_instance_uniform_binding(
       self,
-      next_instance_used.to_uint64(),
+      required_capacity,
     )
     is Some((instance_uniform_buf, _)) else {
     debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +

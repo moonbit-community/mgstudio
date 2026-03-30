@@ -1413,9 +1413,6 @@ pub type DeferredPrepass = @core_pipeline.DeferredPrepass
 
 ///|
 /// Marker component aligned with Bevy's `OcclusionCulling`.
-///
-/// Current runtime note: this records per-camera occlusion-culling intent as an
-/// ECS surface for parity and migration sequencing.
 pub struct OcclusionCulling {} derive(ToJson, FromJson)
 
 ///|
@@ -1452,9 +1449,6 @@ pub fn NotShadowReceiver::default() -> NotShadowReceiver {
 
 ///|
 /// Marker component aligned with Bevy's `TransmittedShadowReceiver`.
-///
-/// Current runtime note: this backend records transmitted-shadow intent as ECS
-/// API parity; transmitted shadowing itself remains backend-adapted.
 pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
@@ -1465,9 +1459,6 @@ pub fn TransmittedShadowReceiver::default() -> TransmittedShadowReceiver {
 ///|
 /// Camera transparency settings aligned with Bevy's
 /// `OrderIndependentTransparencySettings`.
-///
-/// Current runtime note: this records camera intent as an ECS surface; the
-/// renderer-side weighted OIT implementation is tracked separately.
 pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
   fragments_per_pixel_average : Float
@@ -1564,6 +1555,44 @@ pub fn OrderIndependentTransparencySettings::with_alpha_threshold(
     ..self,
     alpha_threshold: oit_safe_alpha_threshold(alpha_threshold),
   }
+}
+
+///|
+/// Per-mesh lightmap settings aligned with Bevy's `Lightmap`.
+pub struct Lightmap {
+  image : @asset.Handle[@asset.Image]
+  uv_rect : @math.Rect
+  bicubic_sampling : Bool
+} derive(ToJson, FromJson)
+
+///|
+pub fn Lightmap::default() -> Lightmap {
+  Lightmap::{
+    image: @asset.Handle::new(-1),
+    uv_rect: @math.Rect::new(@math.Vec2::zero(), @math.Vec2::new(1.0F, 1.0F)),
+    bicubic_sampling: false,
+  }
+}
+
+///|
+pub fn Lightmap::new(image : @asset.Handle[@asset.Image]) -> Lightmap {
+  Lightmap::{ ..Lightmap::default(), image }
+}
+
+///|
+pub fn Lightmap::with_uv_rect(
+  self : Lightmap,
+  uv_rect : @math.Rect,
+) -> Lightmap {
+  Lightmap::{ ..self, uv_rect, }
+}
+
+///|
+pub fn Lightmap::with_bicubic_sampling(
+  self : Lightmap,
+  bicubic_sampling : Bool,
+) -> Lightmap {
+  Lightmap::{ ..self, bicubic_sampling, }
 }
 
 ///|

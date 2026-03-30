@@ -61,6 +61,8 @@ pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.Til
 
 pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn render2d_primary_scene_cull_context(@ecs.World) -> @sprite.SceneCullContext?
+
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit
 
 pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
@@ -68,6 +70,10 @@ pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entit
 pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
 
 pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+
+pub fn render2d_scene_cull_context_values(@sprite.SceneCullContext) -> (Float, Float, Float, Float, Float, Float)
+
+pub fn render2d_scene_item_visible(@sprite.SceneCullContext, Float, Float, Float) -> Bool
 
 pub let render2d_set_execute : String
 
@@ -117,6 +123,8 @@ pub using @sprite {type MeshMaterial2d}
 pub using @sprite {type NoWireframe2d}
 
 pub using @sprite {type OverlaySpriteUvScissor}
+
+pub using @sprite {type SceneCullContext}
 
 pub using @sprite {type TileData}
 

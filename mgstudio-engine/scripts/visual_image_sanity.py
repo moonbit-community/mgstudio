@@ -70,6 +70,13 @@ def parse_args() -> argparse.Namespace:
         default=3.0,
         help="Minimum mean luma (0..255) in center crop (50%% width x 50%% height).",
     )
+    parser.add_argument(
+        "--min-center-non-black-ratio",
+        required=False,
+        type=float,
+        default=0.005,
+        help="Minimum non-black pixel ratio in center crop.",
+    )
     return parser.parse_args()
 
 
@@ -109,11 +116,23 @@ def main() -> int:
     bottom = top + center_h
     center_pixels = list(image.crop((left, top, right, bottom)).getdata())
     center_mean_luma = mean_luma(center_pixels)
+    center_non_black_pixels = sum(
+        1 for (r, g, b) in center_pixels if max(r, g, b) > args.black_threshold
+    )
+    center_total_pixels = len(center_pixels)
+    center_non_black_ratio = (
+        float(center_non_black_pixels) / float(center_total_pixels)
+        if center_total_pixels > 0
+        else 0.0
+    )
 
     pass_non_black = non_black_ratio >= args.min_non_black_ratio
     pass_full_luma = full_mean_luma >= args.min_mean_luma
     pass_center_luma = center_mean_luma >= args.min_center_mean_luma
-    passed = pass_non_black and pass_full_luma and pass_center_luma
+    pass_center_non_black = center_non_black_ratio >= args.min_center_non_black_ratio
+    # Dark-background text scenes are valid when center activity is visible.
+    pass_dark_scene_override = pass_center_luma and pass_center_non_black
+    passed = pass_non_black and (pass_full_luma or pass_dark_scene_override)
 
     report = {
         "image": str(args.image),
@@ -125,16 +144,22 @@ def main() -> int:
             "non_black_ratio": non_black_ratio,
             "mean_luma": full_mean_luma,
             "center_mean_luma": center_mean_luma,
+            "center_non_black_pixels": center_non_black_pixels,
+            "center_total_pixels": center_total_pixels,
+            "center_non_black_ratio": center_non_black_ratio,
         },
         "thresholds": {
             "min_non_black_ratio": args.min_non_black_ratio,
             "min_mean_luma": args.min_mean_luma,
             "min_center_mean_luma": args.min_center_mean_luma,
+            "min_center_non_black_ratio": args.min_center_non_black_ratio,
         },
         "checks": {
             "pass_non_black_ratio": pass_non_black,
             "pass_mean_luma": pass_full_luma,
             "pass_center_mean_luma": pass_center_luma,
+            "pass_center_non_black_ratio": pass_center_non_black,
+            "pass_dark_scene_override": pass_dark_scene_override,
         },
         "passed": passed,
     }

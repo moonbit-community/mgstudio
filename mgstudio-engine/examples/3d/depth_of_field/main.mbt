@@ -14,11 +14,7 @@
 
 ///|
 ///
-/// Baseline parity: Bevy `DepthOfField` post-process modes are not exposed in
-/// current mgstudio APIs. This port preserves Bevy's control model
-/// (focus/aperture/mode cycling and help text semantics), keeps real camera
-/// `Hdr`/`Tonemapping`/`Bloom` setup, and maps DOF adjustments onto camera
-/// projection and distance-fog proxies.
+/// Demonstrates depth of field (DOF) controls.
 
 ///|
 const FOCAL_DISTANCE_SPEED : Float = 0.05F
@@ -34,9 +30,6 @@ const MIN_APERTURE_F_STOPS : Float = 0.05F
 
 ///|
 const SENSOR_HEIGHT_METERS : Float = 0.024F
-
-///|
-const BASE_FOV : Float = 0.47123889803846897F
 
 ///|
 pub(all) enum DofMode {
@@ -84,12 +77,6 @@ fn mode_name(mode : DofMode) -> String {
 }
 
 ///|
-fn compute_proxy_fov() -> Float {
-  let aperture_term = (dof_state.val.aperture_f_stops - 0.125F) * 0.4F
-  clampf(BASE_FOV + aperture_term, 0.22F, 1.20F)
-}
-
-///|
 fn compute_focal_length_meters(fov : Float) -> Float {
   let half = fov / 2.0F
   let tan_half = @math.sin(half) / @math.cos(half)
@@ -97,69 +84,46 @@ fn compute_focal_length_meters(fov : Float) -> Float {
 }
 
 ///|
-fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
-  guard dof_state.val.camera is Some(camera) else { return }
-  let perspective = @pbr.PerspectiveProjection3d::{
-    ..@pbr.PerspectiveProjection3d::default(),
-    fov,
+fn dof_component() -> @pbr.DepthOfField? {
+  match dof_state.val.mode {
+    Off => None
+    Bokeh => {
+      let dof = @pbr.DepthOfField::default()
+      dof.mode = @pbr.DepthOfFieldMode::Bokeh
+      dof.focal_distance = dof_state.val.focal_distance
+      dof.aperture_f_stops = dof_state.val.aperture_f_stops
+      dof.max_depth = 14.0F
+      Some(dof)
+    }
+    Gaussian => {
+      let dof = @pbr.DepthOfField::default()
+      dof.mode = @pbr.DepthOfFieldMode::Gaussian
+      dof.focal_distance = dof_state.val.focal_distance
+      dof.aperture_f_stops = dof_state.val.aperture_f_stops
+      dof.max_depth = 14.0F
+      Some(dof)
+    }
+  }
+}
+
+///|
+fn apply_dof_settings(world : @ecs.World) -> Unit {
+  guard dof_state.val.camera is Some(camera_entity) else { return }
+  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d))
+    is Some(camera3d) else {
+    return
   }
   try! (world.replace(
-    camera,
-    @pbr.ecs_key_projection,
-    @pbr.Projection::Perspective(perspective),
+    camera_entity,
+    @pbr.ecs_key_camera3d,
+    camera3d.with_depth_of_field(dof_component()),
   )
   |> ignore)
 }
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @sprite.Color,
-  brightness : Float,
-) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
-}
-
-///|
-fn apply_dof_proxy(world : @ecs.World) -> Unit {
-  let mode = dof_state.val.mode
-  let focal = dof_state.val.focal_distance
-  let aperture = dof_state.val.aperture_f_stops
-  let fov = compute_proxy_fov()
-  set_camera_projection(world, fov)
-
-  if mode is Off {
-    @pbr.render3d_set_distance_fog(
-      @pbr.DistanceFog::new(
-        @sprite.Color::new(0.12F, 0.13F, 0.14F, 1.0F),
-        @pbr.FogFalloff3d::linear(20.0F, 200.0F),
-      ),
-    )
-    set_global_ambient_light(world, @sprite.Color::white(), 0.85F)
-    return
-  }
-
-  let blur_span = if mode is Bokeh { 1.2F } else { 2.0F }
-  let start = clampf(focal - blur_span * (0.6F + aperture * 0.6F), 0.1F, 500.0F)
-  let end = clampf(
-    focal + blur_span * (1.4F + aperture * 0.8F),
-    start + 0.1F,
-    500.0F,
-  )
-  @pbr.render3d_set_distance_fog(
-    @pbr.DistanceFog::new(
-      @sprite.Color::new(0.11F, 0.12F, 0.13F, 1.0F),
-      @pbr.FogFalloff3d::linear(start, end),
-    ),
-  )
-  let ambient = if mode is Bokeh { 0.70F } else { 0.77F }
-  set_global_ambient_light(world, @sprite.Color::white(), ambient)
-}
-
-///|
 fn help_text() -> String {
-  let fov = compute_proxy_fov()
+  let fov = @pbr.PerspectiveProjection3d::default().fov
   let focal_length_mm = compute_focal_length_meters(fov) * 1000.0F
   let sensor_mm = SENSOR_HEIGHT_METERS * 1000.0F
   if dof_state.val.mode is Off {
@@ -191,8 +155,7 @@ fn help_text() -> String {
   " mm\n" +
   "Mode: " +
   mode_name(dof_state.val.mode) +
-  " (Press Space to change)\n\n" +
-  "Adapted runtime note: DOF post-process is represented via projection/fog proxies."
+  " (Press Space to change)"
 }
 
 ///|
@@ -220,12 +183,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::TonyMcMapface,
-  )
   try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
   try! world.set_by_key(
     camera,
@@ -349,7 +306,7 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   dof_state.val.help_text = Some(help_text)
 
-  apply_dof_proxy(world)
+  apply_dof_settings(world)
   update_text()
 }
 
@@ -396,7 +353,7 @@ fn adjust_focus_and_mode(world : @ecs.World) -> Unit {
   }
 
   if changed {
-    apply_dof_proxy(world)
+    apply_dof_settings(world)
     update_text()
   }
 }

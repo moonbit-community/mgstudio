@@ -10,8 +10,13 @@ import {
 // Errors
 
 // Types and methods
-type MeshPulse
-pub impl @ecs.Component for MeshPulse
+type AnimationMaterials
+
+type AnimationTimer
+pub impl @ecs.Component for AnimationTimer
+
+type AtlasFrame
+pub impl @ecs.Component for AtlasFrame
 
 type PrintTimer
 

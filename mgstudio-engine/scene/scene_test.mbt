@@ -150,6 +150,164 @@ test "scene: register keeps stable handle" {
 }
 
 ///|
+test "scene: skinned mesh joints map by gltf node index" {
+  let skinned_present = Ref::new(false)
+  let joint_count = Ref::new(0)
+  let first_joint_ok = Ref::new(false)
+  let second_joint_ok = Ref::new(false)
+  let mesh_root_ok = Ref::new(false)
+
+  run_scene_test_app(fn(world : @ecs.World) {
+    let mesh = @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    )
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+    )
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#skinned-joint-remap",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(1),
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(42)),
+        ),
+        @scene.SceneNode3d::new(
+          mesh,
+          material,
+          @transform.Transform::identity(),
+          None,
+          None,
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(5)),
+          skinned_joint_node_indices=Some([7, 42]),
+          skinned_inverse_bindposes=Some([
+            @mesh.SkinningMat4::identity(),
+            @mesh.SkinningMat4::identity(),
+          ]),
+        ),
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(1),
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(7)),
+        ),
+      ]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    let mesh_entity : Ref[@core.Entity?] = Ref::new(None)
+    let node7_entity : Ref[@core.Entity?] = Ref::new(None)
+    let node42_entity : Ref[@core.Entity?] = Ref::new(None)
+    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(entity, node_index) {
+      if node_index.index() == 5 {
+        mesh_entity.val = Some(entity)
+      } else if node_index.index() == 7 {
+        node7_entity.val = Some(entity)
+      } else if node_index.index() == 42 {
+        node42_entity.val = Some(entity)
+      }
+    })
+
+    guard mesh_entity.val is Some(mesh_node) else { return }
+    guard (try! world.entity(mesh_node).get() : @mesh.SkinnedMesh?)
+      is Some(skinned_mesh) else {
+      return
+    }
+    skinned_present.val = true
+    let joints = skinned_mesh.joints()
+    joint_count.val = joints.length()
+    if joints.length() >= 2 &&
+      node7_entity.val is Some(node7) &&
+      node42_entity.val is Some(node42) {
+      first_joint_ok.val = joints[0].id == node7.id
+      second_joint_ok.val = joints[1].id == node42.id
+    }
+    if skinned_mesh.mesh_root() is Some(mesh_root) {
+      mesh_root_ok.val = mesh_root.id == mesh_node.id
+    }
+  })
+
+  inspect(skinned_present.val, content="true")
+  inspect(joint_count.val, content="2")
+  inspect(first_joint_ok.val, content="true")
+  inspect(second_joint_ok.val, content="true")
+  inspect(mesh_root_ok.val, content="true")
+}
+
+///|
+test "scene: skinned mesh skips when any gltf joint node is unresolved" {
+  let skinned_present = Ref::new(false)
+
+  run_scene_test_app(fn(world : @ecs.World) {
+    let mesh = @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    )
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+    )
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#skinned-missing-joint",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new(
+          mesh,
+          material,
+          @transform.Transform::identity(),
+          None,
+          None,
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(5)),
+          skinned_joint_node_indices=Some([7, 42]),
+          skinned_inverse_bindposes=Some([
+            @mesh.SkinningMat4::identity(),
+            @mesh.SkinningMat4::identity(),
+          ]),
+        ),
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(0),
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(7)),
+        ),
+      ]),
+    )
+
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(entity, node_index) {
+      if node_index.index() == 5 &&
+        (try! world.entity(entity).get() : @mesh.SkinnedMesh?) is Some(_) {
+        skinned_present.val = true
+      }
+    })
+  })
+
+  inspect(skinned_present.val, content="false")
+}
+
+///|
 test "scene: SceneRoot propagates gltf extras metadata" {
   let root_scene_extras = Ref::new("")
   let child_name = Ref::new("")

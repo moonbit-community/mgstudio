@@ -56,6 +56,7 @@ priv struct Camera3dViewPayload {
   camera : @sprite.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?
+  oit_settings : OrderIndependentTransparencySettings?
   screen_space_transmission : ScreenSpaceTransmission?
   bloom : Bloom?
   tonemapping : Tonemapping?
@@ -102,13 +103,18 @@ priv struct Mesh3dExtractedPayload {
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
   material_extension : ExtendedMaterialMetadata3d?
+  lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?
   clustered_decal : ClusteredDecal?
+  has_not_shadow_caster : Bool
+  has_not_shadow_receiver : Bool
+  has_transmitted_shadow_receiver : Bool
   layers : @sprite.RenderLayers
   has_wireframe : Bool
   has_no_wireframe : Bool
   wireframe_color : WireframeColor?
+  skinning_matrices : Array[Float]?
 }
 
 ///|
@@ -197,6 +203,7 @@ priv struct MeshGpuDrawPayload3d {
   max_relief_mapping_search_steps : Float
   cull_mode : Int
   shader_path : String?
+  skinning_matrices : Array[Float]?
 }
 
 ///|

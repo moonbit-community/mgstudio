@@ -10,6 +10,8 @@ import {
 // Values
 pub let ecs_key_inherited_visibility : @ecs.ComponentKey[InheritedVisibility]
 
+pub let ecs_key_no_frustum_culling : @ecs.ComponentKey[NoFrustumCulling]
+
 pub let ecs_key_view_visibility : @ecs.ComponentKey[ViewVisibility]
 
 pub let ecs_key_visibility : @ecs.ComponentKey[Visibility]
@@ -33,6 +35,13 @@ pub impl Eq for InheritedVisibility
 pub impl Show for InheritedVisibility
 pub impl ToJson for InheritedVisibility
 pub impl @json.FromJson for InheritedVisibility
+
+pub struct NoFrustumCulling {
+}
+pub fn NoFrustumCulling::default() -> Self
+pub impl @ecs.Component for NoFrustumCulling
+pub impl Eq for NoFrustumCulling
+pub impl Show for NoFrustumCulling
 
 pub struct ViewVisibility {
   visible : Bool

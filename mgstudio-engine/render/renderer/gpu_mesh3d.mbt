@@ -88,6 +88,124 @@ fn ensure_mesh3d_instance_draw_binding(
 }
 
 ///|
+fn ensure_mesh3d_skin_slot(
+  backend : GpuBackend,
+  slot_index : Int,
+) -> GpuStorageSlot? {
+  guard backend.mesh3d_bgl_skin is Some(bgl) else { return None }
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+  while backend.mesh3d_skin_slots.length() <= slot_index {
+    let skin_buf = backend.device.create_buffer(
+      size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+      usage~,
+    )
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+    let ok = builder.add_buffer(
+      0U,
+      skin_buf,
+      size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+    )
+    if !ok {
+      builder.free()
+      return None
+    }
+    let skin_bg = builder.finish(
+      backend.device,
+      bgl,
+      label="mgstudio_mesh3d_skin_slot_bg",
+    )
+    backend.mesh3d_skin_slots.push(GpuStorageSlot::{
+      buffer: skin_buf,
+      bind_group: skin_bg,
+    })
+  }
+  Some(backend.mesh3d_skin_slots[slot_index])
+}
+
+///|
+fn ensure_mesh3d_skin_default_binding(
+  backend : GpuBackend,
+) -> @wgpu.BindGroup? {
+  guard backend.mesh3d_bgl_skin is Some(bgl) else { return None }
+  if backend.mesh3d_skin_default_bg is Some(bg) {
+    return Some(bg)
+  }
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+  let skin_buf = backend.device.create_buffer(
+    size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+    usage~,
+  )
+  let identity_rows : Array[Float] = []
+  let matrix_count = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 64UL).to_int()
+  for _ in 0..<matrix_count {
+    identity_rows.push(1.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(1.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(1.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(0.0F)
+    identity_rows.push(1.0F)
+  }
+  backend.queue.write_buffer(skin_buf, 0UL, f32le_pack(identity_rows))
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+  let ok = builder.add_buffer(
+    0U,
+    skin_buf,
+    size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+  )
+  if !ok {
+    builder.free()
+    return None
+  }
+  let skin_bg = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_mesh3d_skin_default_bg",
+  )
+  backend.mesh3d_skin_default_buf = Some(skin_buf)
+  backend.mesh3d_skin_default_bg = Some(skin_bg)
+  Some(skin_bg)
+}
+
+///|
+fn mesh3d_expand_vertices_with_skinning_defaults(
+  vertices : Array[Float],
+) -> Array[Float]? {
+  if vertices.length() % MESH3D_VERTEX_SKINNED_FLOAT_STRIDE == 0 {
+    return Some(vertices)
+  }
+  if vertices.length() % MESH3D_VERTEX_BASE_FLOAT_STRIDE != 0 {
+    return None
+  }
+  let vertex_count = vertices.length() / MESH3D_VERTEX_BASE_FLOAT_STRIDE
+  let expanded : Array[Float] = []
+  for vertex_index in 0..<vertex_count {
+    let base = vertex_index * MESH3D_VERTEX_BASE_FLOAT_STRIDE
+    for i in 0..<MESH3D_VERTEX_BASE_FLOAT_STRIDE {
+      expanded.push(vertices[base + i])
+    }
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+    expanded.push(0.0F)
+  }
+  Some(expanded)
+}
+
+///|
 fn mesh3d_view_uniform_bytes(
   pass_state : GpuPassState,
   transmission_blur_taps : Float,
@@ -2634,15 +2752,32 @@ fn ensure_mesh3d_pipeline_rgba8(
       backend.device,
       label="mgstudio_mesh3d_draw_bgl",
     )
-    let pl = create_pipeline_layout_3(
+    let skin_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+    let skin_ok = skin_builder.add_buffer(
+      0U,
+      ss(@wgpu.SHADER_STAGE_VERTEX),
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      min_binding_size=64UL,
+    )
+    if !skin_ok {
+      skin_builder.free()
+      fatal("wgpu: failed to build mesh3d skin bind group layout")
+    }
+    let skin_bgl = skin_builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_skin_bgl",
+    )
+    let pl = create_pipeline_layout_4(
       backend.device,
       view_bgl,
       material_bgl,
       mesh_bgl,
+      skin_bgl,
     )
     backend.mesh3d_bgl_view = Some(view_bgl)
     backend.mesh3d_bgl_draw = Some(mesh_bgl)
     backend.mesh3d_bgl_material = Some(material_bgl)
+    backend.mesh3d_bgl_skin = Some(skin_bgl)
     backend.mesh3d_pipeline_layout = Some(pl)
     if backend.mesh3d_view_buf is None {
       backend.mesh3d_view_buf = Some(
@@ -2654,6 +2789,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     }
     mesh3d_material_cache_clear(backend)
     mesh3d_custom_pipeline_cache_clear(backend)
+    ensure_mesh3d_skin_default_binding(backend) |> ignore
   }
   if backend.mesh3d_view_buf is None {
     backend.mesh3d_view_buf = Some(
@@ -3198,8 +3334,12 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   vertices : Array[Float],
   primitive_topology_kind : Int,
 ) -> Int {
+  guard mesh3d_expand_vertices_with_skinning_defaults(vertices)
+    is Some(expanded_vertices) else {
+    return 0
+  }
   let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
-  let vcount = vertices.length() / 12
+  let vcount = expanded_vertices.length() / MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
   if vcount <= 0 {
     return 0
   }
@@ -3218,11 +3358,12 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   let uses_u32_indices = usable_vcount > 65535
   let id = alloc_id(self)
   let trimmed_vertices = if usable_vcount == vcount {
-    vertices
+    expanded_vertices
   } else {
     let out : Array[Float] = []
-    for i in 0..<(usable_vcount * 12) {
-      out.push(vertices[i])
+    let limit = usable_vcount * MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+    for i in 0..<limit {
+      out.push(expanded_vertices[i])
     }
     out
   }
@@ -3270,6 +3411,55 @@ pub fn GpuBackend::create_mesh_triangles_xyznuvrgba(
   vertices : Array[Float],
 ) -> Int {
   self.create_mesh3d_xyznuvrgba(vertices, 0)
+}
+
+///|
+pub fn GpuBackend::update_mesh3d_xyznuvrgba(
+  self : GpuBackend,
+  mesh_id : Int,
+  vertices : Array[Float],
+  primitive_topology_kind : Int,
+) -> Bool {
+  guard mesh3d_expand_vertices_with_skinning_defaults(vertices)
+    is Some(expanded_vertices) else {
+    return false
+  }
+  let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
+  let vcount = expanded_vertices.length() / MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+  if vcount <= 0 {
+    return false
+  }
+  let usable_vcount = if primitive_topology == MESH3D_TOPOLOGY_TRIANGLE_LIST {
+    vcount - vcount % 3
+  } else if primitive_topology == MESH3D_TOPOLOGY_LINE_LIST {
+    vcount - vcount % 2
+  } else if vcount < 2 {
+    0
+  } else {
+    vcount
+  }
+  if usable_vcount <= 0 {
+    return false
+  }
+  guard find_mesh_index(self, mesh_id) is Some(mesh_index) else { return false }
+  let mesh = self.meshes[mesh_index]
+  if mesh.vertex_stride_bytes != MESH3D_VERTEX_STRIDE_BYTES ||
+    mesh.primitive_topology != primitive_topology ||
+    mesh.vertex_count.reinterpret_as_int() != usable_vcount {
+    return false
+  }
+  let trimmed_vertices = if usable_vcount == vcount {
+    expanded_vertices
+  } else {
+    let out : Array[Float] = []
+    let limit = usable_vcount * MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+    for i in 0..<limit {
+      out.push(expanded_vertices[i])
+    }
+    out
+  }
+  self.queue.write_buffer(mesh.vertex_buf, 0UL, f32le_pack(trimmed_vertices))
+  true
 }
 
 ///|
@@ -4753,6 +4943,7 @@ pub fn GpuBackend::draw_mesh3d(
   point_shadow_depth_bias : Float,
   cull_mode : Int,
   shader_path : String?,
+  skinning_matrices? : Array[Float]? = None,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -5138,6 +5329,51 @@ pub fn GpuBackend::draw_mesh3d(
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
+  let resolved_skin_bg = match skinning_matrices {
+    Some(values) =>
+      if values.length() >= 16 && values.length() % 16 == 0 {
+        let slot_index = self.mesh3d_skin_slot_used
+        guard ensure_mesh3d_skin_slot(self, slot_index) is Some(skin_slot) else {
+          return
+        }
+        self.mesh3d_skin_slot_used = slot_index + 1
+        let max_values = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 4UL).to_int()
+        let upload_len = if values.length() < max_values {
+          values.length()
+        } else {
+          max_values
+        }
+        let matrix_capacity = max_values / 16
+        let upload_values : Array[Float] = []
+        for _ in 0..<matrix_capacity {
+          upload_values.push(1.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(1.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(1.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(0.0F)
+          upload_values.push(1.0F)
+        }
+        for i in 0..<upload_len {
+          upload_values[i] = values[i]
+        }
+        self.queue.write_buffer(skin_slot.buffer, 0UL, f32le_pack(upload_values))
+        Some(skin_slot.bind_group)
+      } else {
+        ensure_mesh3d_skin_default_binding(self)
+      }
+    None => ensure_mesh3d_skin_default_binding(self)
+  }
+  guard resolved_skin_bg is Some(active_skin_bg) else { return }
   self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
   self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   let view_bg = mesh3d_view_bg_cache_get_or_create(
@@ -5151,6 +5387,7 @@ pub fn GpuBackend::draw_mesh3d(
   pass.set_bind_group(0U, view_bg, [])
   pass.set_bind_group(1U, material_bg, [])
   pass.set_bind_group(2U, active_draw_bg, [])
+  pass.set_bind_group(3U, active_skin_bg, [])
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)

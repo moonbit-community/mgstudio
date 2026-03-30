@@ -14,9 +14,7 @@
 
 ///|
 ///
-/// Baseline parity: Bevy's native deferred backend (`Opaque3dDeferred`) is not
-/// yet active in current mgstudio runtime. This port preserves Bevy's mode-
-/// switch controls and prepass API topology on the current forward path.
+/// Compare Deferred / Forward / Forward+Prepass render modes.
 const LIGHT_ROTATION_SPEED : Float = 0.6283185307179586F
 
 ///|
@@ -99,8 +97,7 @@ fn help_text_content() -> String {
     "Rendering Method:\n" +
     "(1) \{mode_marker(DefaultRenderMode::Deferred)} Deferred\n" +
     "(2) \{mode_marker(DefaultRenderMode::Forward)} Forward\n" +
-    "(3) \{mode_marker(DefaultRenderMode::ForwardPrepass)} Forward + Prepass\n\n" +
-    "Note: deferred render path is API-aligned proxy on current forward backend."
+    "(3) \{mode_marker(DefaultRenderMode::ForwardPrepass)} Forward + Prepass"
   }
 }
 
@@ -153,23 +150,6 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
       try! (world.take(camera, @pbr.ecs_key_deferred_prepass) |> ignore)
     }
     ForwardPrepass => {
-      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_normal_prepass,
-        @pbr.NormalPrepass::default(),
-      )
-      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_normal_prepass,
-        @pbr.NormalPrepass::default(),
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::default(),
-      )
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
       try! world.set_by_key(
         camera,

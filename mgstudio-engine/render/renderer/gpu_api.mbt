@@ -1600,6 +1600,7 @@ pub fn draw_mesh3d(
   point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
   shader_path? : String? = None,
+  skinning_matrices? : Array[Float]? = None,
 ) -> Unit {
   debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
   current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
@@ -1624,7 +1625,7 @@ pub fn draw_mesh3d(
       specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
       thickness, ior, alpha_cutoff, material_flags, transmission_source_texture_id,
       transmission_blur_taps, transmission_steps, point_shadow_texture_id, point_shadow_enabled,
-      point_shadow_depth_bias, cull_mode, shader_path,
+      point_shadow_depth_bias, cull_mode, shader_path, skinning_matrices~,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)
     }
@@ -2134,20 +2135,10 @@ pub fn create_mesh3d(
   primitive_topology~ : Int,
 ) -> Int {
   if parse_f32_csv(vertices_xyzuvrgba_csv) is Some(vertices) {
-    if ensure_backend() is Some(backend) {
-      let mesh_id = backend.create_mesh3d_xyznuvrgba(
-        vertices, primitive_topology,
-      )
-      if mesh_id <= 0 {
-        @debug.debug(
-          "[renderer] create_mesh3d failed: parsed_values=" +
-          vertices.length().to_string() +
-          ", topology=" +
-          primitive_topology.to_string(),
-        )
-      }
-      return mesh_id
-    }
+    return create_mesh3d_xyznuvrgba(
+      vertices_xyznuvrgba=vertices,
+      primitive_topology~,
+    )
   } else {
     @debug.debug(
       "[renderer] create_mesh3d parse failed: csv_len=" +
@@ -2157,6 +2148,42 @@ pub fn create_mesh3d(
     )
   }
   0
+}
+
+///|
+pub fn create_mesh3d_xyznuvrgba(
+  vertices_xyznuvrgba~ : Array[Float],
+  primitive_topology~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    let mesh_id = backend.create_mesh3d_xyznuvrgba(
+      vertices_xyznuvrgba, primitive_topology,
+    )
+    if mesh_id <= 0 {
+      @debug.debug(
+        "[renderer] create_mesh3d_xyznuvrgba failed: values=" +
+        vertices_xyznuvrgba.length().to_string() +
+        ", topology=" +
+        primitive_topology.to_string(),
+      )
+    }
+    return mesh_id
+  }
+  0
+}
+
+///|
+pub fn update_mesh3d_xyznuvrgba(
+  mesh_id~ : Int,
+  vertices_xyznuvrgba~ : Array[Float],
+  primitive_topology~ : Int,
+) -> Bool {
+  if ensure_backend() is Some(backend) {
+    return backend.update_mesh3d_xyznuvrgba(
+      mesh_id, vertices_xyznuvrgba, primitive_topology,
+    )
+  }
+  false
 }
 
 ///|

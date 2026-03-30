@@ -18,7 +18,7 @@ pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "CustomPostProcess3d", "Mesh3d", "Skybox", "Camera3d",
   "Exposure", "Vignette", "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur",
   "PointLight", "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass",
-  "ForwardDecal", "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d",
+  "ForwardDecal", "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d", "Lightmap",
   "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster",
   "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
   "NoIndirectDrawing", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",

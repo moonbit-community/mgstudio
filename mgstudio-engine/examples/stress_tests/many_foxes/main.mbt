@@ -16,7 +16,7 @@
 const FOX_PATH : String = "models/animated/Fox.glb"
 
 ///|
-const FOX_COUNT : Int = 40
+const FOX_COUNT : Int = 1000
 
 ///|
 const FOX_SPACING : Float = 2.0F
@@ -125,8 +125,10 @@ fn setup(
 
   let mut ring_index = 0
   let mut foxes_remaining = FOX_COUNT
+  let mut outer_radius = RING_SPACING
   while foxes_remaining > 0 {
     let radius = RING_SPACING + float_from_int(ring_index) * RING_SPACING
+    outer_radius = radius
     let circumference = 6.283185307179586F * radius
     let estimated = max_int((circumference / FOX_SPACING).to_int(), 1)
     let foxes_in_ring = min_int(estimated, foxes_remaining)
@@ -166,12 +168,22 @@ fn setup(
     ring_index += 1
   }
 
+  let zoom = 0.8F
+  let camera_translation = @math.Vec3::new(
+    outer_radius * 1.25F * zoom,
+    outer_radius * 0.5F * zoom,
+    outer_radius * 1.5F * zoom,
+  )
   ignore(
     commands.spawn(
       (
         @pbr.Camera3d::default(),
-        @transform.Transform::from_xyz(90.0F, 40.0F, 100.0F).looking_at(
-          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        @transform.Transform::from_translation(camera_translation).looking_at(
+          @math.Vec3::new(
+            camera_translation.x * 0.2F,
+            0.0F,
+            camera_translation.z * 0.2F,
+          ),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
@@ -268,7 +280,6 @@ fn update_foxes(
     let transform_ref = transform.get_ref()
     transform_ref.val.translation = @math.Vec3::new(x, 0.0F, z)
     transform_ref.val.rotation = @math.Quat::from_rotation_y(facing)
-    transform_ref.val.scale = @math.Vec3::splat(FOX_SCALE)
   })
 }
 

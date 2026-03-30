@@ -85,6 +85,10 @@ struct Mesh3dDrawUniformBuffer {
   data : array<Mesh3dDrawUniform>,
 };
 
+struct Mesh3dSkinningRowsBuffer {
+  rows : array<vec4<f32>>,
+};
+
 const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT: u32         = 1u << 0u;
 const STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT: u32           = 1u << 1u;
 const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT: u32 = 1u << 2u;
@@ -127,6 +131,7 @@ const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32   = 6u << 29u;
 @group(1) @binding(29) var u_specular_tint_texture : texture_2d<f32>;
 @group(1) @binding(30) var u_specular_tint_sampler : sampler;
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
+@group(3) @binding(0) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -151,31 +156,86 @@ fn transform_normal_local_to_world(
   return safe_normalize(quat_rotate_vec3(q, local_normal / safe_scale));
 }
 
+fn skinning_row_count() -> u32 {
+  return arrayLength(&u_skinning_rows.rows);
+}
+
+fn skinning_transform_point(index : u32, local_point : vec3<f32>) -> vec3<f32> {
+  let base = index * 4u;
+  if base + 3u >= skinning_row_count() {
+    return local_point;
+  }
+  let value = vec4<f32>(local_point, 1.0);
+  return vec3<f32>(
+    dot(u_skinning_rows.rows[base], value),
+    dot(u_skinning_rows.rows[base + 1u], value),
+    dot(u_skinning_rows.rows[base + 2u], value),
+  );
+}
+
+fn skinning_transform_normal(index : u32, local_normal : vec3<f32>) -> vec3<f32> {
+  let base = index * 4u;
+  if base + 2u >= skinning_row_count() {
+    return local_normal;
+  }
+  let value = vec4<f32>(local_normal, 0.0);
+  return vec3<f32>(
+    dot(u_skinning_rows.rows[base], value),
+    dot(u_skinning_rows.rows[base + 1u], value),
+    dot(u_skinning_rows.rows[base + 2u], value),
+  );
+}
+
 @vertex
 fn vs_main(
   @location(0) position : vec3<f32>,
   @location(1) normal : vec3<f32>,
   @location(2) uv : vec2<f32>,
   @location(3) color : vec4<f32>,
+  @location(4) joint_indices : vec4<f32>,
+  @location(5) joint_weights : vec4<f32>,
   @builtin(instance_index) instance_index : u32,
 ) -> VertexOut {
   var out : VertexOut;
   let draw = u_draws.data[instance_index];
-
+  let weight_sum = joint_weights.x + joint_weights.y + joint_weights.z + joint_weights.w;
+  var local_pos = position;
+  var local_normal = normal;
+  var world_pos = vec3<f32>(0.0, 0.0, 0.0);
+  var world_normal = vec3<f32>(0.0, 0.0, 1.0);
+  if weight_sum > 1.0e-6 {
+    let i0 = u32(max(joint_indices.x, 0.0));
+    let i1 = u32(max(joint_indices.y, 0.0));
+    let i2 = u32(max(joint_indices.z, 0.0));
+    let i3 = u32(max(joint_indices.w, 0.0));
+    local_pos =
+      skinning_transform_point(i0, position) * joint_weights.x +
+      skinning_transform_point(i1, position) * joint_weights.y +
+      skinning_transform_point(i2, position) * joint_weights.z +
+      skinning_transform_point(i3, position) * joint_weights.w;
+    local_normal = normalize(
+      skinning_transform_normal(i0, normal) * joint_weights.x +
+      skinning_transform_normal(i1, normal) * joint_weights.y +
+      skinning_transform_normal(i2, normal) * joint_weights.z +
+      skinning_transform_normal(i3, normal) * joint_weights.w
+    );
+  }
   let model_q = quat_normalize(draw.transform.model_rotation);
-  let local_pos = position * draw.transform.model_scale.xyz;
-  let world_pos = quat_rotate_vec3(model_q, local_pos) +
-    draw.transform.model_translation.xyz;
+  world_pos = quat_rotate_vec3(
+    model_q,
+    local_pos * draw.transform.model_scale.xyz,
+  ) + draw.transform.model_translation.xyz;
+  world_normal = transform_normal_local_to_world(
+    model_q,
+    local_normal,
+    draw.transform.model_scale.xyz,
+  );
   out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
   let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
   out.uv = transformed_uv.xy;
   out.color = color * draw.material.base_color;
   out.world_pos = world_pos;
-  out.world_normal = transform_normal_local_to_world(
-    model_q,
-    normal,
-    draw.transform.model_scale.xyz,
-  );
+  out.world_normal = world_normal;
   out.draw_index = instance_index;
   return out;
 }

@@ -1926,23 +1926,24 @@ fn gltf_read_accessor_mat4(
   let matrix_count = decoded.1.length() / 16
   for i in 0..<matrix_count {
     let base = i * 16
+    // glTF MAT4 data is column-major; SkinningMat4 fields are row-major.
     out.push(
       @mesh.SkinningMat4::from_values(
         decoded.1[base],
-        decoded.1[base + 1],
-        decoded.1[base + 2],
-        decoded.1[base + 3],
         decoded.1[base + 4],
-        decoded.1[base + 5],
-        decoded.1[base + 6],
-        decoded.1[base + 7],
         decoded.1[base + 8],
-        decoded.1[base + 9],
-        decoded.1[base + 10],
-        decoded.1[base + 11],
         decoded.1[base + 12],
+        decoded.1[base + 1],
+        decoded.1[base + 5],
+        decoded.1[base + 9],
         decoded.1[base + 13],
+        decoded.1[base + 2],
+        decoded.1[base + 6],
+        decoded.1[base + 10],
         decoded.1[base + 14],
+        decoded.1[base + 3],
+        decoded.1[base + 7],
+        decoded.1[base + 11],
         decoded.1[base + 15],
       ),
     )
@@ -2882,11 +2883,6 @@ fn scene_build_from_gltf(
     visited_nodes.push(false)
   }
 
-  let scene_node_indices_for_gltf_nodes : Array[Int?] = []
-  for _ in doc.nodes {
-    scene_node_indices_for_gltf_nodes.push(None)
-  }
-
   let default_material_component = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(@pbr.StandardMaterial::default()),
   )
@@ -2935,7 +2931,6 @@ fn scene_build_from_gltf(
         gltf_skin_index=node.skin.map(@gltf.GltfSkinIndex::new),
       ),
     )
-    scene_node_indices_for_gltf_nodes[node_index] = Some(scene_node_index)
 
     if node.mesh is Some(mesh_index) &&
       mesh_index >= 0 &&

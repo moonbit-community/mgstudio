@@ -20,6 +20,14 @@ pub extern "C" fn pipeline_layout_descriptor_3_new(
 ) -> @wgpu_c.WGPUPipelineLayoutDescriptorPtr = "mgstudio_pipeline_layout_descriptor_3_new"
 
 ///|
+pub extern "C" fn pipeline_layout_descriptor_4_new(
+  bind_group_layout0 : @wgpu_c.WGPUBindGroupLayout,
+  bind_group_layout1 : @wgpu_c.WGPUBindGroupLayout,
+  bind_group_layout2 : @wgpu_c.WGPUBindGroupLayout,
+  bind_group_layout3 : @wgpu_c.WGPUBindGroupLayout,
+) -> @wgpu_c.WGPUPipelineLayoutDescriptorPtr = "mgstudio_pipeline_layout_descriptor_4_new"
+
+///|
 fn create_pipeline_layout_3(
   device : @wgpu.Device,
   bind_group_layout0 : @wgpu.BindGroupLayout,
@@ -30,6 +38,25 @@ fn create_pipeline_layout_3(
     bind_group_layout0.raw_handle(),
     bind_group_layout1.raw_handle(),
     bind_group_layout2.raw_handle(),
+  )
+  let layout = device.create_pipeline_layout_ptr(descriptor)
+  @wgpu_c.pipeline_layout_descriptor_free(descriptor)
+  layout
+}
+
+///|
+fn create_pipeline_layout_4(
+  device : @wgpu.Device,
+  bind_group_layout0 : @wgpu.BindGroupLayout,
+  bind_group_layout1 : @wgpu.BindGroupLayout,
+  bind_group_layout2 : @wgpu.BindGroupLayout,
+  bind_group_layout3 : @wgpu.BindGroupLayout,
+) -> @wgpu.PipelineLayout {
+  let descriptor = pipeline_layout_descriptor_4_new(
+    bind_group_layout0.raw_handle(),
+    bind_group_layout1.raw_handle(),
+    bind_group_layout2.raw_handle(),
+    bind_group_layout3.raw_handle(),
   )
   let layout = device.create_pipeline_layout_ptr(descriptor)
   @wgpu_c.pipeline_layout_descriptor_free(descriptor)

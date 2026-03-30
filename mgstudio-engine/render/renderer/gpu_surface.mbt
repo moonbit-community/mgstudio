@@ -492,6 +492,7 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh2d_instance_used = 0
   mesh2d_reset_pending_batch(self)
   self.mesh3d_draw_slot_used = 0
+  self.mesh3d_skin_slot_used = 0
   self.mesh3d_instance_draw_used = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
   self.mesh3d_motion_vector_instance_mesh_used = 0

@@ -153,7 +153,8 @@ pub fn sync_simple_transforms(
   ) -> Unit {
     let next_global = GlobalTransform::from_transform(transform.value())
     if !global_transform_eq(global.value(), next_global) {
-      try! (world.replace(entity, ecs_key_global_transform, next_global) |> ignore)
+      try! (world.replace(entity, ecs_key_global_transform, next_global)
+      |> ignore)
     }
   }
 
@@ -168,7 +169,8 @@ pub fn sync_simple_transforms(
   }
   let orphan_query = query.p1()
   for entity in orphaned.read() {
-    if (try! orphan_query.get(entity)) is Some((transform, global)) {
+    if (orphan_query.get(entity) catch { _ => None })
+      is Some((transform, global)) {
       sync_entity_if_needed(world, transform, global, entity)
     }
   }

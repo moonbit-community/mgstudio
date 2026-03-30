@@ -58,15 +58,12 @@ fn mesh3d_to_mesh2d(mesh_asset : @mesh.Mesh) -> @mesh.Mesh? {
 
 ///|
 fn convert_mesh_to_2d(
-  asset_path : String,
-  mesh_index : Int,
-  primitive_index : Int,
+  _asset_path : String,
+  _mesh_index : Int,
+  _primitive_index : Int,
   entity : @core.Entity,
   world : @ecs.World,
 ) -> Unit {
-  if asset_path != GLTF_PATH || mesh_index != 0 || primitive_index != 0 {
-    return
-  }
   guard (try! world.entity(entity).get() : @pbr.Mesh3d?) is Some(mesh3d) else {
     return
   }

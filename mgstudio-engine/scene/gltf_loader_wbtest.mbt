@@ -611,3 +611,52 @@ test "scene gltf wb: split labeled gltf path with extended labels" {
   inspect(unknown_label.0, content="models/Foo/Foo.gltf")
   inspect(label_option_text(unknown_label.1), content="None")
 }
+
+///|
+test "scene gltf wb: read MAT4 accessor as row-major SkinningMat4" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"buffers\":[{\"byteLength\":64}]," +
+    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":64}]," +
+    "\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":1,\"type\":\"MAT4\"}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  let raw : Array[Byte] = []
+  for i in 1..<17 {
+    push_f32_le(raw, Float::from_int(i))
+  }
+  let mats = gltf_read_accessor_mat4(doc, [Bytes::from_array(raw)], 0).unwrap()
+  inspect(mats.length(), content="1")
+  let row_major = mats[0].to_row_major_f32()
+  inspect(row_major.length(), content="16")
+  inspect(row_major[0].to_double(), content="1")
+  inspect(row_major[1].to_double(), content="5")
+  inspect(row_major[2].to_double(), content="9")
+  inspect(row_major[3].to_double(), content="13")
+  inspect(row_major[4].to_double(), content="2")
+  inspect(row_major[8].to_double(), content="3")
+  inspect(row_major[12].to_double(), content="4")
+}
+
+///|
+test "scene gltf wb: parse skin joint node indices from gltf doc" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"skins\":[{\"joints\":[2,0,1,5]}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.skins.length(), content="1")
+  inspect(doc.skins[0].joints.length(), content="4")
+  inspect(doc.skins[0].joints[0], content="2")
+  inspect(doc.skins[0].joints[1], content="0")
+  inspect(doc.skins[0].joints[2], content="1")
+  inspect(doc.skins[0].joints[3], content="5")
+}

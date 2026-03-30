@@ -14,14 +14,16 @@
 
 ///|
 ///
-/// Baseline parity: Bevy's per-mesh `Lightmap` component (`image`, `uv_rect`,
-/// `bicubic_sampling`) and deferred prepass components are not exposed in the
-/// current mgstudio runtime surface. This port keeps the original scene source,
-/// camera setup, args model, and startup/update flow, and applies a global
-/// baked-light proxy once the scene is ready.
+/// Rendering a scene with baked lightmaps.
 
 ///|
-const LIGHTMAP_EXPOSURE : Float = 250.0F
+const LIGHTMAP_PATH_LARGE : String = "lightmaps/CornellBox-Large.zstd.ktx2"
+
+///|
+const LIGHTMAP_PATH_SMALL : String = "lightmaps/CornellBox-Small.zstd.ktx2"
+
+///|
+const LIGHTMAP_PATH_BOX : String = "lightmaps/CornellBox-Box.zstd.ktx2"
 
 ///|
 const DEFAULT_DEFERRED : Bool = false
@@ -74,18 +76,15 @@ fn status_text() -> String {
     "Waiting for SceneInstanceReady"
   }
 
-  "Bevy lightmaps (adapted)\n" +
+  "Bevy lightmaps\n" +
   "Scene: models/CornellBox/CornellBox.glb\n" +
   "Args.deferred = " +
   bool_label(args.deferred) +
   ", Args.bicubic = " +
   bool_label(args.bicubic) +
   "\n" +
-  "Lightmap proxy status: " +
-  applied +
-  "\n\n" +
-  "Runtime note: per-mesh Lightmap + deferred prepass components are currently unavailable;" +
-  " this example applies a global ambient baked-light proxy after scene spawn."
+  "Lightmap status: " +
+  applied
 }
 
 ///|
@@ -93,16 +92,6 @@ fn update_help_text() -> Unit {
   if lightmaps_state.val.help_text is Some(help_text) {
     @text.text_set_content(help_text, status_text())
   }
-}
-
-///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @sprite.Color,
-  brightness : Float,
-) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -114,7 +103,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
 
-  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
+  world.insert_resource(
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F), 0.0F),
+  )
 
   let scene_root = world.spawn_empty()
   try! world.set_by_key(
@@ -136,29 +128,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
   if lightmaps_state.val.args.deferred {
-    world.insert_resource(
-      @pbr.ecs_key_default_opaque_renderer_method,
-      @pbr.DefaultOpaqueRendererMethod::deferred(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::default(),
-    )
-    world.insert_resource(
-      @pbr.ecs_key_default_opaque_renderer_method,
-      @pbr.DefaultOpaqueRendererMethod::deferred(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::default(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_motion_vector_prepass,
-      @pbr.MotionVectorPrepass::default(),
-    )
     world.insert_resource(
       @pbr.ecs_key_default_opaque_renderer_method,
       @pbr.DefaultOpaqueRendererMethod::deferred(),
@@ -204,6 +173,23 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn lightmap_handle_for_name(
+  asset_server : @asset.AssetServer,
+  name : String,
+) -> @asset.Handle[@asset.Image]? {
+  if name.contains("large_box") {
+    return Some(asset_server.load(LIGHTMAP_PATH_LARGE))
+  }
+  if name.contains("small_box") {
+    return Some(asset_server.load(LIGHTMAP_PATH_SMALL))
+  }
+  if name.contains("cornell_box") {
+    return Some(asset_server.load(LIGHTMAP_PATH_BOX))
+  }
+  None
+}
+
+///|
 fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
   if lightmaps_state.val.lightmaps_applied {
     return
@@ -216,13 +202,23 @@ fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
     return
   }
 
-  // Proxy for Bevy's per-mesh lightmap pass: keep the scene statically lit and
-  // independent from runtime directional/point lights.
-  set_global_ambient_light(
-    world,
-    @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-    LIGHTMAP_EXPOSURE,
-  )
+  let asset_server = @asset.AssetServer::new()
+  world.for_each_component(@pbr.ecs_key_mesh_material3d, fn(entity, _material) {
+    guard (try! world.get_by_key(entity, @ecs.ecs_key_name)) is Some(name_component) else {
+      return
+    }
+    guard lightmap_handle_for_name(asset_server, name_component.as_str())
+      is Some(lightmap_image) else {
+      return
+    }
+    try! world.set_by_key(
+      entity,
+      @pbr.ecs_key_lightmap,
+      @pbr.Lightmap::new(lightmap_image).with_bicubic_sampling(
+        lightmaps_state.val.args.bicubic,
+      ),
+    )
+  })
   lightmaps_state.val.lightmaps_applied = true
   update_help_text()
 }

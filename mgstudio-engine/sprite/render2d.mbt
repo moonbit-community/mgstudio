@@ -947,6 +947,22 @@ fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
 }
 
 ///|
+fn mesh3d_geometry_flatten_vertices_f32(
+  geometry : @mesh.Mesh3dGeometry,
+) -> Array[Float]? {
+  match geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights() {
+    Some(vertices) => {
+      let vertices_f32 : Array[Float] = []
+      for value in vertices {
+        vertices_f32.push(Float::from_double(value))
+      }
+      Some(vertices_f32)
+    }
+    None => None
+  }
+}
+
+///|
 fn uploaded_mesh_base_radius(mesh_id : Int) -> Float {
   if mesh_id <= 0 {
     return 1.0F
@@ -964,8 +980,25 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
     match event {
       @asset.AssetEvent::Modified(handle) =>
         if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
-          mesh_upload_cache.val.remove(handle.id())
-          mesh_upload_radius_cache.val.remove(mesh_id)
+          let mut keep_cache = false
+          if mesh_asset_get(handle) is Some(mesh_asset) {
+            match mesh_asset.geometry {
+              @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+                if mesh3d_geometry_flatten_vertices_f32(geometry3d)
+                  is Some(vertices_f32) {
+                  keep_cache = @render.host_gpu_update_mesh3d_xyznuvrgba(
+                    mesh_id~,
+                    vertices_xyznuvrgba=vertices_f32,
+                    primitive_topology=geometry3d.primitive_topology().to_int(),
+                  )
+                }
+              _ => ()
+            }
+          }
+          if !keep_cache {
+            mesh_upload_cache.val.remove(handle.id())
+            mesh_upload_radius_cache.val.remove(mesh_id)
+          }
         }
       @asset.AssetEvent::Removed(handle) =>
         if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
@@ -1044,10 +1077,10 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
         }
         @mesh.MeshGeometry::Geometry3d(geometry3d) => {
           uploaded_mesh_radius = 64.0F
-          match geometry3d.encode_interleaved_xyz_normal_uv_rgba_csv() {
-            Some(vertices_csv) =>
-              @render.host_gpu_create_mesh3d(
-                vertices_xyzuvrgba_csv=vertices_csv,
+          match mesh3d_geometry_flatten_vertices_f32(geometry3d) {
+            Some(vertices_f32) =>
+              @render.host_gpu_create_mesh3d_xyznuvrgba(
+                vertices_xyznuvrgba=vertices_f32,
                 primitive_topology=geometry3d.primitive_topology().to_int(),
               )
             None => {

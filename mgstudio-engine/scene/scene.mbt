@@ -1100,8 +1100,7 @@ fn scene_spawn_instance_when_ready(
         Some(geometry) => geometry.morph_target_positions() is Some(_)
         None => false
       }
-      let needs_instance_mesh = node.skinned_joint_node_indices is Some(_) ||
-        has_morph_targets
+      let needs_instance_mesh = has_morph_targets
       let effective_mesh = if needs_instance_mesh {
         match source_mesh {
           Some(mesh_asset) => {
@@ -1137,22 +1136,13 @@ fn scene_spawn_instance_when_ready(
       }
       if node.skinned_joint_node_indices is Some(joint_node_indices) &&
         node.skinned_inverse_bindposes is Some(inverse_bindposes) {
-        let mesh_root = match node.parent_node_index {
-          Some(parent_index) =>
-            if parent_index >= 0 && parent_index < spawned_entities.length() {
-              Some(spawned_entities[parent_index])
-            } else {
-              Some(root_entity)
-            }
-          None => Some(root_entity)
-        }
         pending_skinned_meshes.push(
           (
             spawned_entities.length() - 1,
             source_mesh_handle,
             joint_node_indices,
             inverse_bindposes,
-            mesh_root,
+            Some(child),
           ),
         )
       }
@@ -1210,6 +1200,19 @@ fn scene_spawn_instance_when_ready(
     )
   }
 
+  let spawned_scene_index_by_gltf_node : Array[Int?] = []
+  for scene_index, node in scene.nodes3d {
+    guard node.gltf_node_index is Some(gltf_node_index) else { continue }
+    let gltf_node = gltf_node_index.index()
+    if gltf_node < 0 {
+      continue
+    }
+    while spawned_scene_index_by_gltf_node.length() <= gltf_node {
+      spawned_scene_index_by_gltf_node.push(None)
+    }
+    spawned_scene_index_by_gltf_node[gltf_node] = Some(scene_index)
+  }
+
   for pending in pending_skinned_meshes {
     let (
       entity_index,
@@ -1222,13 +1225,29 @@ fn scene_spawn_instance_when_ready(
       continue
     }
     let joint_entities : Array[@core.Entity] = []
+    let mut has_all_joints = true
     for joint_node_index in joint_node_indices {
-      if joint_node_index >= 0 && joint_node_index < spawned_entities.length() {
-        joint_entities.push(spawned_entities[joint_node_index])
+      if joint_node_index >= 0 &&
+        joint_node_index < spawned_scene_index_by_gltf_node.length() &&
+        spawned_scene_index_by_gltf_node[joint_node_index] is Some(scene_index) &&
+        scene_index >= 0 &&
+        scene_index < spawned_entities.length() {
+        joint_entities.push(spawned_entities[scene_index])
+      } else {
+        has_all_joints = false
+        break
       }
     }
-    if joint_entities.length() == 0 {
+    if !has_all_joints || joint_entities.length() == 0 {
       continue
+    }
+    let resolved_inverse_bindposes : Array[@mesh.SkinningMat4] = []
+    for joint_index in 0..<joint_entities.length() {
+      if joint_index < inverse_bindposes.length() {
+        resolved_inverse_bindposes.push(inverse_bindposes[joint_index])
+      } else {
+        resolved_inverse_bindposes.push(@mesh.SkinningMat4::identity())
+      }
     }
     try! world.set_by_key(
       spawned_entities[entity_index],
@@ -1236,7 +1255,7 @@ fn scene_spawn_instance_when_ready(
       @mesh.SkinnedMesh::new(
         source_mesh_handle,
         joint_entities,
-        inverse_bindposes,
+        resolved_inverse_bindposes,
         mesh_root~,
       ),
     )
@@ -1266,77 +1285,6 @@ fn scene_spawn_instance_when_ready(
   )
 }
 
-///|
-fn scene_entity_local_transform_or_identity(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> @transform.Transform {
-  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-    Some(transform) => transform
-    None => @transform.Transform::identity()
-  }
-}
-
-///|
-fn scene_entity_global_matrix(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> @mesh.SkinningMat4 {
-  if (try! world.get_by_key(entity, @transform.ecs_key_global_transform))
-    is Some(global_transform) {
-    return @mesh.SkinningMat4::from_transform(
-      global_transform.to_transform_approx(),
-    )
-  }
-  let chain : Array[@core.Entity] = []
-  let mut current : @core.Entity? = Some(entity)
-  while current is Some(value) {
-    chain.push(value)
-    current = match (try! world.get_by_key(value, @hierarchy.ecs_key_parent)) {
-      Some(parent) => Some(parent.entity())
-      None => None
-    }
-  }
-  let mut matrix = @mesh.SkinningMat4::identity()
-  for i in 0..<chain.length() {
-    let entity_index = chain.length() - 1 - i
-    matrix = matrix.mul(
-      @mesh.SkinningMat4::from_transform(
-        scene_entity_local_transform_or_identity(world, chain[entity_index]),
-      ),
-    )
-  }
-  matrix
-}
-
-///|
-fn scene_entity_global_inverse_matrix(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> @mesh.SkinningMat4 {
-  if (try! world.get_by_key(entity, @transform.ecs_key_global_transform))
-    is Some(global_transform) {
-    return @mesh.SkinningMat4::inverse_transform(
-      global_transform.to_transform_approx(),
-    )
-  }
-  let mut matrix = @mesh.SkinningMat4::identity()
-  let mut current : @core.Entity? = Some(entity)
-  while current is Some(value) {
-    matrix = matrix.mul(
-      @mesh.SkinningMat4::inverse_transform(
-        scene_entity_local_transform_or_identity(world, value),
-      ),
-    )
-    current = match (try! world.get_by_key(value, @hierarchy.ecs_key_parent)) {
-      Some(parent) => Some(parent.entity())
-      None => None
-    }
-  }
-  matrix
-}
-
-///|
 fn scene_apply_morph_targets(
   base_positions : Array[@math.Vec3],
   morph_targets : Array[Array[@math.Vec3]],
@@ -1373,78 +1321,6 @@ fn scene_apply_morph_targets(
 }
 
 ///|
-fn scene_skin_positions(
-  positions : Array[@math.Vec3],
-  joint_indices : Array[@mesh.MeshJointIndices],
-  joint_weights : Array[@math.Vec4],
-  joint_matrices : Array[@mesh.SkinningMat4],
-) -> Array[@math.Vec3] {
-  let skinned_positions : Array[@math.Vec3] = []
-  let vertex_count = positions.length()
-  for vertex_index in 0..<vertex_count {
-    let base_position = positions[vertex_index]
-    let indices = joint_indices[vertex_index]
-    let weights = joint_weights[vertex_index]
-    let mut value = @math.Vec3::zero()
-    let mut total_weight = 0.0F
-    if weights.x != 0.0F &&
-      indices.x >= 0 &&
-      indices.x < joint_matrices.length() {
-      total_weight = total_weight + weights.x
-      value = @math.Vec3::add(
-        value,
-        @math.Vec3::mul_scalar(
-          joint_matrices[indices.x].transform_point3(base_position),
-          weights.x,
-        ),
-      )
-    }
-    if weights.y != 0.0F &&
-      indices.y >= 0 &&
-      indices.y < joint_matrices.length() {
-      total_weight = total_weight + weights.y
-      value = @math.Vec3::add(
-        value,
-        @math.Vec3::mul_scalar(
-          joint_matrices[indices.y].transform_point3(base_position),
-          weights.y,
-        ),
-      )
-    }
-    if weights.z != 0.0F &&
-      indices.z >= 0 &&
-      indices.z < joint_matrices.length() {
-      total_weight = total_weight + weights.z
-      value = @math.Vec3::add(
-        value,
-        @math.Vec3::mul_scalar(
-          joint_matrices[indices.z].transform_point3(base_position),
-          weights.z,
-        ),
-      )
-    }
-    if weights.w != 0.0F &&
-      indices.w >= 0 &&
-      indices.w < joint_matrices.length() {
-      total_weight = total_weight + weights.w
-      value = @math.Vec3::add(
-        value,
-        @math.Vec3::mul_scalar(
-          joint_matrices[indices.w].transform_point3(base_position),
-          weights.w,
-        ),
-      )
-    }
-    if total_weight > 0.0F {
-      skinned_positions.push(value)
-    } else {
-      skinned_positions.push(base_position)
-    }
-  }
-  skinned_positions
-}
-
-///|
 fn scene_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
   let mesh_query : @ecs.Query[(@core.Entity, @ecs.Comp[@pbr.Mesh3d]), @ecs.All] = @ecs.query(
     world,
@@ -1456,24 +1332,14 @@ fn scene_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
     let morph_target_mesh : @mesh.MorphTargetMesh? = try! world
       .entity(entity)
       .get()
-    let skinned_mesh : @mesh.SkinnedMesh? = try! world.entity(entity).get()
-    if morph_target_mesh is None && skinned_mesh is None {
-      return
-    }
+    guard morph_target_mesh is Some(active_morph_target_mesh) else { return }
     let animation_weights : @animation.AnimationWeights? = try! world
       .entity(entity)
       .get()
     let morph_weights_component : @mesh.MorphWeights? = try! world
       .entity(entity)
       .get()
-    let source_mesh_handle = match skinned_mesh {
-      Some(value) => value.source_mesh()
-      None =>
-        match morph_target_mesh {
-          Some(value) => value.source_mesh()
-          None => return
-        }
-    }
+    let source_mesh_handle = active_morph_target_mesh.source_mesh()
     let instance_mesh_handle = mesh_component.value().mesh()
     let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
       Some(value) => value
@@ -1506,33 +1372,6 @@ fn scene_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
       active_morph_weights.length() > 0 {
       positions = scene_apply_morph_targets(
         positions, morph_targets, active_morph_weights,
-      )
-    }
-
-    if skinned_mesh is Some(skinned) &&
-      source_geometry.joint_indices() is Some(joint_indices) &&
-      source_geometry.joint_weights() is Some(joint_weights) {
-      let joint_matrices : Array[@mesh.SkinningMat4] = []
-      let mesh_root_inverse = match skinned.mesh_root() {
-        Some(mesh_root) => scene_entity_global_inverse_matrix(world, mesh_root)
-        None => @mesh.SkinningMat4::identity()
-      }
-      let joints = skinned.joints()
-      let inverse_bindposes = skinned.inverse_bindposes()
-      let joint_limit = if joints.length() < inverse_bindposes.length() {
-        joints.length()
-      } else {
-        inverse_bindposes.length()
-      }
-      for joint_index in 0..<joint_limit {
-        joint_matrices.push(
-          mesh_root_inverse
-          .mul(scene_entity_global_matrix(world, joints[joint_index]))
-          .mul(inverse_bindposes[joint_index]),
-        )
-      }
-      positions = scene_skin_positions(
-        positions, joint_indices, joint_weights, joint_matrices,
       )
     }
 

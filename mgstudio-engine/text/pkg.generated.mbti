@@ -61,6 +61,8 @@ pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, 
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
+pub fn text_compute_cull_margin(TextBounds, @math.Vec2, @math.Vec3) -> Float
+
 pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw]
 
 pub fn text_debug_capture_enabled() -> Bool
@@ -85,6 +87,24 @@ pub fn text_debug_visible_overlap_count(TextHandle, TextHandle) -> Int
 
 pub fn text_despawn(TextHandle) -> Bool
 
+pub fn text_diagnostic_render_cpu_ms() -> Float
+
+pub fn text_diagnostic_render_culled_text_count() -> Int
+
+pub fn text_diagnostic_render_submitted_item_count() -> Int
+
+pub fn text_diagnostic_render_visible_text_count() -> Int
+
+pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float
+
+pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int
+
+pub fn text_diagnostic_sync_ecs_early_return() -> Bool
+
+pub fn text_diagnostic_update_cpu_ms() -> Float
+
+pub fn text_diagnostic_update_pending_layout_count() -> Int
+
 pub fn text_get_content(TextHandle) -> String?
 
 pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
@@ -100,6 +120,12 @@ pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn text_render_system(@ecs.World) -> Unit
 
 pub fn text_reset_runtime_state_for_tests() -> Unit
+
+pub fn text_runtime_clear_layout_dirty() -> Unit
+
+pub fn text_runtime_layout_dirty() -> Bool
+
+pub fn text_runtime_mark_layout_dirty() -> Unit
 
 pub fn text_set_anchor(TextHandle, @sprite.Anchor) -> Unit
 
@@ -120,6 +146,8 @@ pub fn text_set_layout(TextHandle, TextLayout) -> Unit
 pub fn text_set_line_height(TextHandle, LineHeight) -> Unit
 
 pub fn text_set_logical_viewport_size(TextHandle, @math.Vec2?) -> Unit
+
+pub fn text_set_no_frustum_culling(TextHandle, Bool) -> Unit
 
 pub let text_set_render_extract : String
 
@@ -191,6 +219,7 @@ pub fn CosmicBuffer::default() -> Self
 pub struct FontAtlas {
   dynamic_texture_atlas_builder : @asset.DynamicTextureAtlasBuilder
   glyph_locations : Array[(GlyphCacheKey, GlyphAtlasLocation)]
+  glyph_location_map : Map[String, GlyphAtlasLocation]
   texture_atlas : @asset.Handle[@asset.TextureAtlasLayout]
   texture : @asset.Handle[@image.Image]
 }
@@ -476,6 +505,7 @@ pub struct Text2dBundle {
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
+  no_frustum_culling : Bool
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
   logical_viewport_size : @math.Vec2?

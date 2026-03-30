@@ -199,6 +199,8 @@ pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_prepared_camera_count(@ecs.World) -> Int?
 
+pub fn render2d_primary_scene_cull_context(@ecs.World) -> SceneCullContext?
+
 pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers) -> Unit
 
 pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?) -> Unit
@@ -212,6 +214,8 @@ pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?,
 pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
+
+pub fn render2d_scene_item_visible(SceneCullContext, Float, Float, Float) -> Bool
 
 pub let render2d_set_execute : String
 
@@ -763,6 +767,17 @@ pub struct RoundedRectBuilder {
 }
 pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
 pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self
+
+pub struct SceneCullContext {
+  center_x : Float
+  center_y : Float
+  cosv : Float
+  sinv : Float
+  half_width : Float
+  half_height : Float
+}
+pub fn SceneCullContext::new(Float, Float, Float, Float, Float, Float) -> Self
+pub fn SceneCullContext::values(Self) -> (Float, Float, Float, Float, Float, Float)
 
 pub struct ScissorRect {
   rect : @math.Rect

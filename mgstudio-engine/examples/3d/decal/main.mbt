@@ -14,10 +14,7 @@
 
 ///|
 ///
-/// Baseline parity: this example now attaches
-/// `ForwardDecal`/`ForwardDecalMaterialExt` components directly on the decal
-/// entity. Current backend rendering still does not project forward decals, so
-/// a textured proxy volume is kept for visible behavior parity.
+/// Forward decal example.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -144,11 +141,6 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
-  )
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,

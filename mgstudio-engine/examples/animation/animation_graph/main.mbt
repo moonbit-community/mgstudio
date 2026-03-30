@@ -314,9 +314,12 @@ fn setup_scene(
     ),
   )
   |> ignore
-  commands.spawn_component(
-    @scene.SceneRoot::new(
-      server.load(@gltf.GltfAssetLabel::Scene(0).from_asset(FOX_PATH)),
+  commands.spawn(
+    (
+      @scene.SceneRoot::new(
+        server.load(@gltf.GltfAssetLabel::Scene(0).from_asset(FOX_PATH)),
+      ),
+      @transform.Transform::identity().with_scale(@math.Vec3::splat(0.07F)),
     ),
   )
   |> ignore

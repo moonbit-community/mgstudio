@@ -1353,6 +1353,57 @@ fn mesh3d_push_interleaved_xyz_normal_uv_rgba(
 }
 
 ///|
+fn mesh3d_joint_indices_or_default(
+  joint_indices : Array[MeshJointIndices]?,
+  index : Int,
+) -> MeshJointIndices {
+  match joint_indices {
+    Some(values) =>
+      if index >= 0 && index < values.length() {
+        values[index]
+      } else {
+        MeshJointIndices::new(0, 0, 0, 0)
+      }
+    None => MeshJointIndices::new(0, 0, 0, 0)
+  }
+}
+
+///|
+fn mesh3d_joint_weights_or_default(
+  joint_weights : Array[@math.Vec4]?,
+  index : Int,
+) -> @math.Vec4 {
+  match joint_weights {
+    Some(values) =>
+      if index >= 0 && index < values.length() {
+        values[index]
+      } else {
+        @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F)
+      }
+    None => @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F)
+  }
+}
+
+///|
+fn mesh3d_push_skinning_joint_data(
+  out : Array[Double],
+  joint_indices : Array[MeshJointIndices]?,
+  joint_weights : Array[@math.Vec4]?,
+  source_index : Int,
+) -> Unit {
+  let indices = mesh3d_joint_indices_or_default(joint_indices, source_index)
+  let weights = mesh3d_joint_weights_or_default(joint_weights, source_index)
+  out.push(Float::from_int(indices.x).to_double())
+  out.push(Float::from_int(indices.y).to_double())
+  out.push(Float::from_int(indices.z).to_double())
+  out.push(Float::from_int(indices.w).to_double())
+  out.push(weights.x.to_double())
+  out.push(weights.y.to_double())
+  out.push(weights.z.to_double())
+  out.push(weights.w.to_double())
+}
+
+///|
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(
   self : Mesh3dGeometry,
 ) -> Array[Double]? {
@@ -1516,6 +1567,157 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               normal,
               self.uvs[idx],
               mesh3d_vertex_color_or_white(self.colors, idx),
+            )
+          }
+      }
+    }
+  }
+  Some(out)
+}
+
+///|
+pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
+  self : Mesh3dGeometry,
+) -> Array[Double]? {
+  if self.validate() is Some(_) {
+    return None
+  }
+  let out : Array[Double] = []
+  let joint_indices = self.joint_indices
+  let joint_weights = self.joint_weights
+  match self.topology {
+    Mesh3dPrimitiveTopology::TriangleList =>
+      match self.indices {
+        None => {
+          let triangle_count = self.positions.length() / 3
+          for tri in 0..<triangle_count {
+            let base = tri * 3
+            let a = self.positions[base]
+            let b = self.positions[base + 1]
+            let c = self.positions[base + 2]
+            let normal = mesh3d_triangle_face_normal(a, b, c)
+            for i in base..<(base + 3) {
+              mesh3d_push_interleaved_xyz_normal_uv_rgba(
+                out,
+                self.positions[i],
+                normal,
+                self.uvs[i],
+                mesh3d_vertex_color_or_white(self.colors, i),
+              )
+              mesh3d_push_skinning_joint_data(
+                out,
+                joint_indices,
+                joint_weights,
+                i,
+              )
+            }
+          }
+        }
+        Some(indices) => {
+          let triangle_count = indices.length() / 3
+          for tri in 0..<triangle_count {
+            let base = tri * 3
+            let ia = indices[base]
+            let ib = indices[base + 1]
+            let ic = indices[base + 2]
+            let normal = mesh3d_triangle_face_normal(
+              self.positions[ia],
+              self.positions[ib],
+              self.positions[ic],
+            )
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[ia],
+              normal,
+              self.uvs[ia],
+              mesh3d_vertex_color_or_white(self.colors, ia),
+            )
+            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, ia)
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[ib],
+              normal,
+              self.uvs[ib],
+              mesh3d_vertex_color_or_white(self.colors, ib),
+            )
+            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, ib)
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[ic],
+              normal,
+              self.uvs[ic],
+              mesh3d_vertex_color_or_white(self.colors, ic),
+            )
+            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, ic)
+          }
+        }
+      }
+    Mesh3dPrimitiveTopology::LineList => {
+      let normal = mesh3d_runtime_default_normal()
+      match self.indices {
+        None => {
+          let n = self.positions.length()
+          for i in 0..<n {
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[i],
+              normal,
+              self.uvs[i],
+              mesh3d_vertex_color_or_white(self.colors, i),
+            )
+            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, i)
+          }
+        }
+        Some(indices) =>
+          for i in 0..<indices.length() {
+            let idx = indices[i]
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[idx],
+              normal,
+              self.uvs[idx],
+              mesh3d_vertex_color_or_white(self.colors, idx),
+            )
+            mesh3d_push_skinning_joint_data(
+              out,
+              joint_indices,
+              joint_weights,
+              idx,
+            )
+          }
+      }
+    }
+    Mesh3dPrimitiveTopology::LineStrip => {
+      let normal = mesh3d_runtime_default_normal()
+      match self.indices {
+        None => {
+          let n = self.positions.length()
+          for i in 0..<n {
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[i],
+              normal,
+              self.uvs[i],
+              mesh3d_vertex_color_or_white(self.colors, i),
+            )
+            mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, i)
+          }
+        }
+        Some(indices) =>
+          for i in 0..<indices.length() {
+            let idx = indices[i]
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[idx],
+              normal,
+              self.uvs[idx],
+              mesh3d_vertex_color_or_white(self.colors, idx),
+            )
+            mesh3d_push_skinning_joint_data(
+              out,
+              joint_indices,
+              joint_weights,
+              idx,
             )
           }
       }

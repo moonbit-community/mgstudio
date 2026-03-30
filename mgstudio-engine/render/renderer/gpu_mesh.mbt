@@ -28,6 +28,16 @@ fn find_mesh(backend : GpuBackend, id : Int) -> GpuMeshInfo? {
 }
 
 ///|
+fn find_mesh_index(backend : GpuBackend, id : Int) -> Int? {
+  for i in 0..<backend.meshes.length() {
+    if backend.meshes[i].id == id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
 fn gpu_mesh_bind_index_buffer(
   pass : @wgpu.RenderPass,
   mesh : GpuMeshInfo,

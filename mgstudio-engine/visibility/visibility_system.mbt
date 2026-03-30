@@ -118,15 +118,19 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
       return
     }
     start_seen.set(entity.id, true)
-    let parent_visible = match (world.get_by_key(entity, @hierarchy.ecs_key_parent) catch {
-      _ => None
-    }) {
+    let parent_visible = match
+      (world.get_by_key(entity, @hierarchy.ecs_key_parent) catch { _ => None }) {
       Some(parent) => {
         let p = parent.entity()
-        match (
-          world.get_by_key(p, ecs_key_visibility) catch { _ => None },
-          world.get_by_key(p, ecs_key_inherited_visibility) catch { _ => None },
-        ) {
+        match
+          (
+            world.get_by_key(p, ecs_key_visibility) catch {
+              _ => None
+            },
+            world.get_by_key(p, ecs_key_inherited_visibility) catch {
+              _ => None
+            },
+          ) {
           (Some(_), Some(inherited)) => inherited.is_visible()
           _ => true
         }
@@ -139,7 +143,10 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   for entity in world.changed_components(ecs_key_visibility, sequence).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
-  for entity in world.changed_components(@hierarchy.ecs_key_parent, sequence).read() {
+  for
+    entity in world
+    .changed_components(@hierarchy.ecs_key_parent, sequence)
+    .read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
   if start_entities.length() == 0 {
@@ -171,7 +178,8 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
       !(try! world.contains_by_key(entity, ecs_key_inherited_visibility)) {
       let inherited = InheritedVisibility::new(is_visible)
       if (try! world.contains_by_key(entity, ecs_key_inherited_visibility)) {
-        try! (world.replace(entity, ecs_key_inherited_visibility, inherited) |> ignore)
+        try! (world.replace(entity, ecs_key_inherited_visibility, inherited)
+        |> ignore)
       } else {
         try! world.set_by_key(entity, ecs_key_inherited_visibility, inherited)
       }
@@ -180,7 +188,8 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     if !(try! world.contains_by_key(entity, ecs_key_view_visibility)) ||
       (try! world.get_by_key(entity, ecs_key_view_visibility))
       .map(fn(v) { v.is_visible() })
-      .unwrap_or(!is_visible) != is_visible {
+      .unwrap_or(!is_visible) !=
+      is_visible {
       let view = ViewVisibility::new(is_visible)
       if (try! world.contains_by_key(entity, ecs_key_view_visibility)) {
         try! (world.replace(entity, ecs_key_view_visibility, view) |> ignore)

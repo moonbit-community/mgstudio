@@ -15,12 +15,21 @@
 ///|
 ///
 /// Parity target: keep Bevy's AA control surface and component semantics on the
-/// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers). Renderer
-/// backends that are still unavailable (`SMAA`, `DLSS`, CAS pass quality) are
-/// explicitly represented through visual proxy mapping in this example.
+/// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers). Features
+/// that are not available in current runtime are exposed as explicit capability
+/// gates instead of visual proxy remapping.
 
 ///|
 const TEXTURE_SIZE : Int = 8
+
+///|
+const HAS_SMAA : Bool = false
+
+///|
+const HAS_DLSS : Bool = false
+
+///|
+const HAS_CAS : Bool = false
 
 ///|
 pub(all) enum AAMethod {
@@ -83,7 +92,6 @@ priv struct AntiAliasingState {
   mut cas : CASState
   mut use_orthographic : Bool
   mut camera : @core.Entity?
-  mut cube_material : @asset.Handle[@pbr.StandardMaterial]?
   mut help_text : @text.TextHandle?
 }
 
@@ -97,7 +105,6 @@ let anti_aliasing_state : Ref[AntiAliasingState] = Ref::new({
   cas: { enabled: false, strength: 0.0F, denoise: false },
   use_orthographic: false,
   camera: None,
-  cube_material: None,
   help_text: None,
 })
 
@@ -309,146 +316,21 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     )
     return
   }
+  if aa_method_eq(aa_method, AAMethod::SMAA) && !HAS_SMAA {
+    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
+    clear_temporal_aa_components(world, camera_entity)
+    return
+  }
+  if aa_method_eq(aa_method, AAMethod::DLSS) && !HAS_DLSS {
+    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
+    clear_temporal_aa_components(world, camera_entity)
+    return
+  }
   try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
   clear_temporal_aa_components(world, camera_entity)
-}
-
-///|
-fn aa_proxy_roughness() -> Float {
-  let aa_method = anti_aliasing_state.val.aa_method
-  if aa_method_eq(aa_method, AAMethod::NoAA) {
-    0.85F
-  } else if aa_method_eq(aa_method, AAMethod::MSAA) {
-    if msaa_samples_eq(
-        anti_aliasing_state.val.msaa_samples,
-        MSAASamples::Sample2,
-      ) {
-      0.70F
-    } else if msaa_samples_eq(
-        anti_aliasing_state.val.msaa_samples,
-        MSAASamples::Sample4,
-      ) {
-      0.58F
-    } else {
-      0.45F
-    }
-  } else if aa_method_eq(aa_method, AAMethod::FXAA) {
-    if fxaa_sensitivity_eq(
-        anti_aliasing_state.val.fxaa_sensitivity,
-        FXAASensitivity::Low,
-      ) {
-      0.64F
-    } else if fxaa_sensitivity_eq(
-        anti_aliasing_state.val.fxaa_sensitivity,
-        FXAASensitivity::Medium,
-      ) {
-      0.58F
-    } else if fxaa_sensitivity_eq(
-        anti_aliasing_state.val.fxaa_sensitivity,
-        FXAASensitivity::High,
-      ) {
-      0.52F
-    } else if fxaa_sensitivity_eq(
-        anti_aliasing_state.val.fxaa_sensitivity,
-        FXAASensitivity::Ultra,
-      ) {
-      0.46F
-    } else {
-      0.40F
-    }
-  } else if aa_method_eq(aa_method, AAMethod::SMAA) {
-    if smaa_quality_eq(anti_aliasing_state.val.smaa_quality, SMAAQuality::Low) {
-      0.62F
-    } else if smaa_quality_eq(
-        anti_aliasing_state.val.smaa_quality,
-        SMAAQuality::Medium,
-      ) {
-      0.54F
-    } else if smaa_quality_eq(
-        anti_aliasing_state.val.smaa_quality,
-        SMAAQuality::High,
-      ) {
-      0.46F
-    } else {
-      0.38F
-    }
-  } else if aa_method_eq(aa_method, AAMethod::TAA) {
-    0.35F
-  } else if dlss_quality_eq(
-      anti_aliasing_state.val.dlss_quality,
-      DLSSQuality::UltraPerformance,
-    ) {
-    0.33F
-  } else if dlss_quality_eq(
-      anti_aliasing_state.val.dlss_quality,
-      DLSSQuality::Performance,
-    ) {
-    0.31F
-  } else if dlss_quality_eq(
-      anti_aliasing_state.val.dlss_quality,
-      DLSSQuality::Balanced,
-    ) {
-    0.29F
-  } else if dlss_quality_eq(
-      anti_aliasing_state.val.dlss_quality,
-      DLSSQuality::Quality,
-    ) {
-    0.27F
-  } else if dlss_quality_eq(
-      anti_aliasing_state.val.dlss_quality,
-      DLSSQuality::Dlaa,
-    ) {
-    0.25F
-  } else {
-    0.30F
-  }
-}
-
-///|
-fn aa_proxy_fog_end() -> Float {
-  let aa_method = anti_aliasing_state.val.aa_method
-  if aa_method_eq(aa_method, AAMethod::NoAA) {
-    3.4F
-  } else if aa_method_eq(aa_method, AAMethod::MSAA) {
-    3.9F
-  } else if aa_method_eq(aa_method, AAMethod::FXAA) {
-    4.3F
-  } else if aa_method_eq(aa_method, AAMethod::SMAA) {
-    4.8F
-  } else if aa_method_eq(aa_method, AAMethod::TAA) {
-    5.3F
-  } else {
-    5.8F
-  }
-}
-
-///|
-fn apply_aa_proxy() -> Unit {
-  if anti_aliasing_state.val.cube_material is Some(material_handle) {
-    if @pbr.standard_material_get(material_handle) is Some(material) {
-      let cas = anti_aliasing_state.val.cas
-      let strength = if cas.enabled { cas.strength } else { 0.0F }
-      let emissive_value = 0.15F * strength
-      let updated = material
-        .with_perceptual_roughness(aa_proxy_roughness())
-        .with_reflectance(0.5F + strength * 0.3F)
-        .with_emissive(
-          @sprite.Color::new(
-            emissive_value, emissive_value, emissive_value, 1.0F,
-          ),
-        )
-        .with_metallic(if cas.denoise { 0.0F } else { 0.1F + strength * 0.2F })
-      @pbr.standard_material_set(material_handle, updated) |> ignore
-    }
-  }
-
-  @pbr.render3d_set_distance_fog(
-    @pbr.DistanceFog::new(
-      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @pbr.FogFalloff3d::linear(1.0F, aa_proxy_fog_end()),
-    ),
-  )
 }
 
 ///|
@@ -478,9 +360,9 @@ fn update_ui() -> Unit {
   )
   draw_selectable_menu_item(
     ui,
-    "SMAA".to_string(),
+    if HAS_SMAA { "SMAA".to_string() } else { "SMAA (Unavailable)".to_string() },
     "4".to_string(),
-    aa_method_eq(state.aa_method, AAMethod::SMAA),
+    HAS_SMAA && aa_method_eq(state.aa_method, AAMethod::SMAA),
   )
   draw_selectable_menu_item(
     ui,
@@ -490,9 +372,9 @@ fn update_ui() -> Unit {
   )
   draw_selectable_menu_item(
     ui,
-    "DLSS".to_string(),
+    if HAS_DLSS { "DLSS".to_string() } else { "DLSS (Unavailable)".to_string() },
     "6".to_string(),
-    aa_method_eq(state.aa_method, AAMethod::DLSS),
+    HAS_DLSS && aa_method_eq(state.aa_method, AAMethod::DLSS),
   )
 
   if aa_method_eq(state.aa_method, AAMethod::MSAA) {
@@ -551,7 +433,7 @@ fn update_ui() -> Unit {
     )
   }
 
-  if aa_method_eq(state.aa_method, AAMethod::SMAA) {
+  if HAS_SMAA && aa_method_eq(state.aa_method, AAMethod::SMAA) {
     ui.write_string("\n----------\n\nQuality\n")
     draw_selectable_menu_item(
       ui,
@@ -579,7 +461,7 @@ fn update_ui() -> Unit {
     )
   }
 
-  if aa_method_eq(state.aa_method, AAMethod::DLSS) {
+  if HAS_DLSS && aa_method_eq(state.aa_method, AAMethod::DLSS) {
     ui.write_string("\n----------\n\nQuality\n")
     draw_selectable_menu_item(
       ui,
@@ -622,11 +504,15 @@ fn update_ui() -> Unit {
   ui.write_string("\n----------\n\n")
   draw_selectable_menu_item(
     ui,
-    "Sharpening".to_string(),
+    if HAS_CAS {
+      "Sharpening".to_string()
+    } else {
+      "Sharpening (Unavailable)".to_string()
+    },
     "0".to_string(),
-    state.cas.enabled,
+    HAS_CAS && state.cas.enabled,
   )
-  if state.cas.enabled {
+  if HAS_CAS && state.cas.enabled {
     ui.write_string("(-/=) Strength: " + state.cas.strength.to_string() + "\n")
     draw_selectable_menu_item(
       ui,
@@ -642,9 +528,7 @@ fn update_ui() -> Unit {
     "O".to_string(),
     state.use_orthographic,
   )
-  ui.write_string(
-    "\nRuntime note: MSAA/FXAA/TAA camera components follow Bevy semantics; SMAA/DLSS/CAS stay proxy-mapped in current runtime.",
-  )
+  ui.write_string("\nRuntime note: unavailable features are capability-gated.")
   @text.text_set_content(handle, ui.to_string())
 }
 
@@ -722,7 +606,6 @@ fn setup(world : @ecs.World) -> Unit {
   }
   anti_aliasing_state.val.use_orthographic = false
   anti_aliasing_state.val.camera = None
-  anti_aliasing_state.val.cube_material = None
   anti_aliasing_state.val.help_text = None
 
   @pbr.MeshMaterial3dBundle::new(
@@ -748,7 +631,6 @@ fn setup(world : @ecs.World) -> Unit {
     .with_perceptual_roughness(0.85F)
     .with_metallic(0.0F),
   )
-  anti_aliasing_state.val.cube_material = Some(cube_material)
 
   for i in 0..<5 {
     let i_f = Float::from_double(i.to_double())
@@ -845,7 +727,6 @@ fn setup(world : @ecs.World) -> Unit {
 
   set_camera_projection(world)
   apply_aa_components(world)
-  apply_aa_proxy()
   update_ui()
 }
 
@@ -895,16 +776,20 @@ fn modify_aa(
     changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    anti_aliasing_state.val.aa_method = AAMethod::SMAA
-    changed = true
+    if HAS_SMAA {
+      anti_aliasing_state.val.aa_method = AAMethod::SMAA
+      changed = true
+    }
   }
   if @input.key_just_pressed(@window.KeyCode::Digit5) {
     anti_aliasing_state.val.aa_method = AAMethod::TAA
     changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    anti_aliasing_state.val.aa_method = AAMethod::DLSS
-    changed = true
+    if HAS_DLSS {
+      anti_aliasing_state.val.aa_method = AAMethod::DLSS
+      changed = true
+    }
   }
 
   if aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::MSAA) {
@@ -945,7 +830,7 @@ fn modify_aa(
     }
   }
 
-  if aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::SMAA) {
+  if HAS_SMAA && aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::SMAA) {
     if @input.key_just_pressed(@window.KeyCode::KeyQ) {
       anti_aliasing_state.val.smaa_quality = SMAAQuality::Low
       changed = true
@@ -964,7 +849,7 @@ fn modify_aa(
     }
   }
 
-  if aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::DLSS) {
+  if HAS_DLSS && aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::DLSS) {
     if @input.key_just_pressed(@window.KeyCode::KeyZ) {
       anti_aliasing_state.val.dlss_quality = DLSSQuality::Auto
       changed = true
@@ -991,42 +876,44 @@ fn modify_aa(
     }
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyP) || cas_toggle_char {
-    anti_aliasing_state.val.cas = {
-      ..anti_aliasing_state.val.cas,
-      enabled: !anti_aliasing_state.val.cas.enabled,
-    }
-    changed = true
-  }
-  if anti_aliasing_state.val.cas.enabled {
-    if @input.key_just_pressed(@window.KeyCode::Comma) || cas_decrease_char {
+  if HAS_CAS {
+    if @input.key_just_pressed(@window.KeyCode::KeyP) || cas_toggle_char {
       anti_aliasing_state.val.cas = {
         ..anti_aliasing_state.val.cas,
-        strength: if anti_aliasing_state.val.cas.strength - 0.1F < 0.0F {
-          0.0F
-        } else {
-          anti_aliasing_state.val.cas.strength - 0.1F
-        },
+        enabled: !anti_aliasing_state.val.cas.enabled,
       }
       changed = true
     }
-    if @input.key_just_pressed(@window.KeyCode::Period) || cas_increase_char {
-      anti_aliasing_state.val.cas = {
-        ..anti_aliasing_state.val.cas,
-        strength: if anti_aliasing_state.val.cas.strength + 0.1F > 1.0F {
-          1.0F
-        } else {
-          anti_aliasing_state.val.cas.strength + 0.1F
-        },
+    if anti_aliasing_state.val.cas.enabled {
+      if @input.key_just_pressed(@window.KeyCode::Comma) || cas_decrease_char {
+        anti_aliasing_state.val.cas = {
+          ..anti_aliasing_state.val.cas,
+          strength: if anti_aliasing_state.val.cas.strength - 0.1F < 0.0F {
+            0.0F
+          } else {
+            anti_aliasing_state.val.cas.strength - 0.1F
+          },
+        }
+        changed = true
       }
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyD) {
-      anti_aliasing_state.val.cas = {
-        ..anti_aliasing_state.val.cas,
-        denoise: !anti_aliasing_state.val.cas.denoise,
+      if @input.key_just_pressed(@window.KeyCode::Period) || cas_increase_char {
+        anti_aliasing_state.val.cas = {
+          ..anti_aliasing_state.val.cas,
+          strength: if anti_aliasing_state.val.cas.strength + 0.1F > 1.0F {
+            1.0F
+          } else {
+            anti_aliasing_state.val.cas.strength + 0.1F
+          },
+        }
+        changed = true
       }
-      changed = true
+      if @input.key_just_pressed(@window.KeyCode::KeyD) {
+        anti_aliasing_state.val.cas = {
+          ..anti_aliasing_state.val.cas,
+          denoise: !anti_aliasing_state.val.cas.denoise,
+        }
+        changed = true
+      }
     }
   }
 
@@ -1044,7 +931,6 @@ fn update(keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput]) -> Unit {
   let world = @app.current_world().unwrap()
   if modify_aa(world, keyboard_inputs) {
     apply_aa_components(world)
-    apply_aa_proxy()
     update_ui()
   }
 }

@@ -18,6 +18,11 @@ pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @ecs.register_component(
+  debug_name="render3d.lightmap",
+)
+
+///|
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @material.ecs_key_mesh_material3d
 
 ///|
@@ -249,6 +254,11 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 ///|
 pub impl @ecs.Component for Mesh3d with component() {
   ecs_key_mesh3d
+}
+
+///|
+pub impl @ecs.Component for Lightmap with component() {
+  ecs_key_lightmap
 }
 
 ///|

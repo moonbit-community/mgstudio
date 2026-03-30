@@ -30,12 +30,12 @@ This file must not exceed 200 lines.
 - [x] Package `light`.
 - [x] Package `log`.
 - [x] Package `macro_utils`.
-- [x] Package `material`.
+- [ ] Package `material` (pending deferred-method runtime activation and forward-decal extension shader specialization).
 - [x] Package `math`.
 - [x] Package `mesh`.
 - [x] Package `moon.pkg` (root runtime package).
 - [x] Package `naga_oil` (runtime contract path aligned; internal toolchain parity not tracked).
-- [x] Package `pbr`.
+- [ ] Package `pbr` (pending decal/occlusion/OIT/transmitted-shadow backend closures).
 - [x] Package `physics2d`.
 - [x] Package `physics3d`.
 - [x] Package `picking`.
@@ -80,6 +80,23 @@ This file must not exceed 200 lines.
 - [x] Issue `pbr/perf_queue_index_maps`: switch preprocessed queue remap/resolve to entity-id index maps with generation-safe fallback.
 - [x] Issue `pbr/perf_reprofile`: re-run `bevymark_3d/many_materials` stress profiling after queue-path optimization.
 - [x] Issue `pbr/perf_many_foxes_scope`: classify remaining `many_foxes` bottleneck as gltf/animation skinning runtime, not pbr queue path.
+- [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
+- [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.
+- [ ] Issue `pbr/forward_decal_runtime`: implement projected forward decal shading path (replace current marker-only runtime note).
+- [ ] Issue `pbr/clustered_decal_runtime`: implement clustered decal projection/material application path (replace current metadata-only path).
+- [ ] Issue `pbr/occlusion_culling_runtime`: wire `OcclusionCulling` marker into actual renderer occlusion-culling path.
+- [x] Issue `pbr/transmitted_shadow_runtime`: close transmitted-shadow behavior gap behind `TransmittedShadowReceiver`.
+- [ ] Issue `pbr/order_independent_transparency_runtime`: close weighted OIT runtime path behind `OrderIndependentTransparencySettings`.
+- [x] Issue `examples_3d/depth_of_field_true_path`: replace DOF proxy mapping with real depth-of-field post-process path.
+- [x] Issue `examples_3d/lightmap_true_path`: replace mixed-lighting/lightmaps proxy flow with real lightmap component pipeline.
+- [x] Issue `examples_3d/anti_aliasing_nonproxy_modes`: replace SMAA/DLSS/CAS proxy mapping with real backend paths or explicit capability gates.
+- [x] Issue `examples_gltf_animation/full_visual_audit_20260330`: run full capture + manual visual audit for all `animation` and `gltf` examples (`22/22` pass).
+- [x] Issue `examples_animation/fox_scene_scale_parity`: align `animation_graph` and `animation_masks` fox scene spawn scale (`0.07`) with Bevy flow.
+- [x] Issue `examples_animation/dark_scene_sanity_false_positive`: fix `visual_image_sanity` to avoid false failures on valid black-background scenes with visible center content.
+- [x] Issue `examples_gltf/gltf_skinned_mesh_simpleskin_parity`: switch to `SimpleSkin.gltf` and align camera/joint traversal with Bevy `gltf_skinned_mesh`.
+- [x] Issue `scene/gltf_skin_joint_index_remap`: map skinned joints by `gltf_node_index` at spawn time to avoid traversal-order-dependent joint binding.
+- [x] Issue `scene/gltf_skinned_mesh_root_space`: bind skinned mesh `mesh_root` to the mesh entity transform space to avoid parent-space deformation drift.
+- [x] Issue `scene/gltf_skinned_joint_completeness_guard`: skip skinned binding when any joint node cannot be resolved and preserve inverse-bind fallback by joint index.
 - [ ] Issue `text/perf_many_text2d`: optimize world/UI text stress bottlenecks in `many_text2d`.
 - [ ] Issue `text/perf_many_glyphs`: optimize glyph layout/raster cache bottlenecks in `many_glyphs`.
 - [ ] Issue `text/perf_text_pipeline`: optimize text pipeline bottlenecks in `text_pipeline`.
@@ -91,6 +108,7 @@ This file must not exceed 200 lines.
 - [x] Issue `render_renderer/pass_timing`: expose per-pass/per-phase timing metrics for regressions.
 - [x] Issue `render_renderer/mesh2d_structural_cache_keys`: replace mesh2d material cache key heuristics with structural keys and collision-safe lookup.
 - [x] Issue `render_renderer/mesh2d_pass_uniform_sync`: move mesh2d view/global uniform upload from draw path to pass begin path.
+- [x] Issue `render_renderer/mesh2d_dynamic_offset_binding_window`: ensure mesh2d instance uniform capacity covers `dynamic_offset + bind_range` for all batch offsets.
 - [x] Issue `sprite/material2d_prepare_unique_handles`: prepare `PreparedMaterial2d` once per unique source handle instead of per mesh instance each frame.
 - [x] Issue `sprite/material2d_prepare_host_bind_group`: build host material bind-group once in prepare stage and reuse it in mesh draw path.
 - [x] Issue `sprite/render2d_color_material_fastpath`: bypass runtime-registry indirection for default color material path in queue/draw and use direct typed path.
@@ -100,6 +118,8 @@ This file must not exceed 200 lines.
 - [x] Issue `sprite/render2d_mesh_material_handle_reuse`: carry prepared material handle in queue item and reuse cached prepared material in execute fast path.
 - [x] Issue `sprite/render2d_queue_scene_cull`: cull scene sprite/mesh items during queue build and remove execute-stage duplicate scene cull checks.
 - [x] Issue `sprite/render2d_scene_phase_split`: queue stores scene opaque/transparent items separately and execute consumes both in one cached draw loop (no queue-time concat copy).
+- [x] Issue `render/mesh3d_upload_csv_bypass`: bypass CSV parse path for mesh3d uploads and upload interleaved float vertices directly.
+- [x] Issue `render/mesh3d_asset_modified_inplace_update`: on mesh asset modified events, update cached GPU mesh3d vertex buffer in place instead of drop+recreate.
 - [x] Issue `text/default_font_preload_path`: preload default text font handle in plugin init and reuse resolved handle in pipeline.
 - [x] Issue `text/glyph_atlas_hash_lookup`: switch font-atlas glyph lookup from linear scan to map lookup.
 - [x] Issue `text/atlas_lookup_before_rasterize`: align pipeline to atlas-first lookup and rasterize only on cache miss.
@@ -112,7 +132,7 @@ This file must not exceed 200 lines.
 - [x] Issue `text/render2d_cull_context_unification`: reuse sprite render2d primary scene cull context and visibility helper in text render path.
 - [x] Issue `text/layout_run_geometry_line_bounds`: build run geometry Y bounds from layout line bounds (remove per-glyph metrics reconstruction).
 - [x] Issue `text/state_handle_index_map`: replace TextState handle lookup linear scans with id->index map and swap-remove despawn path.
-- [ ] Issue `text/dependency_moon_cosmic_bidi_linearization`: pending upstream linear-time neutral bidi resolution (`moonbit-community/moon_cosmic#3`).
+- [ ] Issue `text/dependency_moon_cosmic_bidi_linearization`: pending upstream linear-time neutral bidi resolution (`moonbit-community/moon_cosmic#3`, verified unresolved on `moon_cosmic 0.2.0` at 2026-03-30).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
 - [ ] Issue `stress_tests/3d_heavy_scenes`: close remaining bottleneck in `many_foxes` (skinning runtime path).
@@ -122,3 +142,4 @@ This file must not exceed 200 lines.
 - [x] Issue `stress_tests/benchmark_methodology`: standardize warmup window, sampling duration, and metric extraction pipeline.
 - [x] Issue `stress_tests/perf_baseline`: establish reproducible native baseline artifacts and per-case trend tracking.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
+- [x] Issue `transform/sync_simple_transforms_removed_parent_guard`: avoid abort when `Removed<Parent>` stream contains dead entities.

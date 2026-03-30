@@ -1585,6 +1585,7 @@ pub fn host_gpu_draw_mesh3d(
   point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
   shader_path? : String? = None,
+  skinning_matrices? : Array[Float]? = None,
 ) -> Unit {
   @renderer.draw_mesh3d(
     mesh_id~,
@@ -1660,6 +1661,7 @@ pub fn host_gpu_draw_mesh3d(
     point_shadow_depth_bias~,
     cull_mode~,
     shader_path~,
+    skinning_matrices~,
   )
 }
 
@@ -2116,6 +2118,27 @@ pub fn host_gpu_create_mesh3d(
   primitive_topology~ : Int,
 ) -> Int {
   @renderer.create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology~)
+}
+
+///|
+pub fn host_gpu_create_mesh3d_xyznuvrgba(
+  vertices_xyznuvrgba~ : Array[Float],
+  primitive_topology~ : Int,
+) -> Int {
+  @renderer.create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~, primitive_topology~)
+}
+
+///|
+pub fn host_gpu_update_mesh3d_xyznuvrgba(
+  mesh_id~ : Int,
+  vertices_xyznuvrgba~ : Array[Float],
+  primitive_topology~ : Int,
+) -> Bool {
+  @renderer.update_mesh3d_xyznuvrgba(
+    mesh_id~,
+    vertices_xyznuvrgba~,
+    primitive_topology~,
+  )
 }
 
 ///|

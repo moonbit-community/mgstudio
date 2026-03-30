@@ -59,7 +59,16 @@ const MESH3D_PREPROCESS_VIEW_BUFFER_SIZE : UInt64 = 768UL
 const MESH3D_PREPROCESS_MESH_CULLING_DATA_STRIDE_BYTES : UInt64 = 32UL
 
 ///|
-const MESH3D_VERTEX_STRIDE_BYTES : UInt64 = 48UL
+const MESH3D_VERTEX_BASE_FLOAT_STRIDE : Int = 12
+
+///|
+const MESH3D_VERTEX_SKINNED_FLOAT_STRIDE : Int = 20
+
+///|
+const MESH3D_VERTEX_STRIDE_BYTES : UInt64 = 80UL
+
+///|
+const MESH3D_SKINNING_STORAGE_STRIDE_BYTES : UInt64 = 16384UL
 
 ///|
 const BLOOM_UNIFORM_BUFFER_SIZE : UInt64 = 48UL
@@ -590,6 +599,7 @@ pub struct GpuBackend {
   mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_draw : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
+  mut mesh3d_bgl_skin : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_pipeline : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_transparent : @wgpu.RenderPipeline?
@@ -611,6 +621,10 @@ pub struct GpuBackend {
   mut mesh3d_view_buf : @wgpu.Buffer?
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mut mesh3d_draw_slot_used : Int
+  mut mesh3d_skin_default_buf : @wgpu.Buffer?
+  mut mesh3d_skin_default_bg : @wgpu.BindGroup?
+  mesh3d_skin_slots : Array[GpuStorageSlot]
+  mut mesh3d_skin_slot_used : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu.BindGroup?
@@ -1052,6 +1066,7 @@ pub fn GpuBackend::new(
     mesh3d_bgl_view: None,
     mesh3d_bgl_draw: None,
     mesh3d_bgl_material: None,
+    mesh3d_bgl_skin: None,
     mesh3d_pipeline_layout: None,
     mesh3d_pipeline: None,
     mesh3d_pipeline_transparent: None,
@@ -1073,6 +1088,10 @@ pub fn GpuBackend::new(
     mesh3d_view_buf: None,
     mesh3d_draw_slots: [],
     mesh3d_draw_slot_used: 0,
+    mesh3d_skin_default_buf: None,
+    mesh3d_skin_default_bg: None,
+    mesh3d_skin_slots: [],
+    mesh3d_skin_slot_used: 0,
     mesh3d_gpu_instance_builder_enabled: false,
     mesh3d_instance_draw_buf: None,
     mesh3d_instance_draw_bg: None,
@@ -1778,6 +1797,8 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let normal_offset = 12UL
   let uv_offset = if position3d { 24UL } else { 8UL }
   let color_offset = if position3d { 32UL } else { 16UL }
+  let joints_offset = 48UL
+  let weights_offset = 64UL
   let set_vertex_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
     builder,
     vertex_stride,
@@ -1810,13 +1831,35 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     color_offset,
     color_location,
   )
+  let joints_err = if position3d {
+    @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+      builder,
+      @wgpu.VERTEX_FORMAT_FLOAT32X4,
+      joints_offset,
+      4U,
+    )
+  } else {
+    0U
+  }
+  let weights_err = if position3d {
+    @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+      builder,
+      @wgpu.VERTEX_FORMAT_FLOAT32X4,
+      weights_offset,
+      5U,
+    )
+  } else {
+    0U
+  }
   if set_format_err != 0U ||
     set_blend_err != 0U ||
     set_vertex_layout_err != 0U ||
     pos_err != 0U ||
     normal_err != 0U ||
     uv_err != 0U ||
-    color_err != 0U {
+    color_err != 0U ||
+    joints_err != 0U ||
+    weights_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal(
       "wgpu: failed to configure mesh vertex attributes for runtime mesh pipeline",

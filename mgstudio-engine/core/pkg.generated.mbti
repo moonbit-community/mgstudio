@@ -164,6 +164,7 @@ pub struct SystemSequence {
   last_run : Int
   this_run : Int
 }
+pub fn SystemSequence::contains(Self, Int) -> Bool
 pub fn SystemSequence::new(Int, Int) -> Self
 
 pub struct SystemSequenceContext {
