@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf",
@@ -15,10 +16,15 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/winit",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
 }
+
+supported_targets = "native"
 
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

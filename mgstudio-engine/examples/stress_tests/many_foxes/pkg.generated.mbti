@@ -10,12 +10,17 @@ import {
 // Errors
 
 // Types and methods
+type Args
+
 type FoxAnimations
 
-type FoxMotion
-pub impl @ecs.Component for FoxMotion
-
 type Foxes
+
+type Ring
+pub impl @ecs.Component for Ring
+
+type RotationDirection
+pub impl @ecs.Component for RotationDirection
 
 // Type aliases
 
