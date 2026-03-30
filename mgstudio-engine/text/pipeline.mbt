@@ -197,6 +197,14 @@ fn build_text_buffer(
     rem_size,
   )
   let line_height = instance.line_height.eval(font_size)
+  let max_width = match instance.bounds.width {
+    Some(width) => Some(width)
+    None =>
+      match instance.ui_node_size {
+        Some(node_size) => if node_size.x > 0.0F { Some(node_size.x) } else { None }
+        None => None
+      }
+  }
   CosmicBuffer::{
     text,
     spans,
@@ -204,7 +212,7 @@ fn build_text_buffer(
     line_height,
     justify: instance.layout.justify,
     linebreak: instance.layout.linebreak,
-    max_width: instance.bounds.width,
+    max_width,
     max_height: instance.bounds.height,
     uses_viewport_sizes: text_font_supports_viewport_size(instance),
     uses_rem_sizes: text_font_uses_rem_size(instance),

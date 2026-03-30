@@ -132,6 +132,7 @@ This file must not exceed 200 lines.
 - [x] Issue `text/render2d_cull_context_unification`: reuse sprite render2d primary scene cull context and visibility helper in text render path.
 - [x] Issue `text/layout_run_geometry_line_bounds`: build run geometry Y bounds from layout line bounds (remove per-glyph metrics reconstruction).
 - [x] Issue `text/state_handle_index_map`: replace TextState handle lookup linear scans with id->index map and swap-remove despawn path.
+- [x] Issue `text/ui_text_wrap_from_node_width`: use UI node width as text layout max width when `TextBounds.width` is absent, fixing `many_glyphs` UI single-line collapse.
 - [ ] Issue `text/dependency_moon_cosmic_bidi_linearization`: pending upstream linear-time neutral bidi resolution (`moonbit-community/moon_cosmic#3`, verified unresolved on `moon_cosmic 0.2.0` at 2026-03-30).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
@@ -139,6 +140,7 @@ This file must not exceed 200 lines.
 - [ ] Issue `stress_tests/text_pipeline`: close perf bottlenecks in `many_text2d`, `many_glyphs`, and `text_pipeline`.
 - [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
 - [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
+- [x] Issue `stress_tests/capture_delay_policy`: for low-FPS cases use low `capture_delay_frames` to avoid camera-runaway false black screenshots in visual audit.
 - [x] Issue `stress_tests/benchmark_methodology`: standardize warmup window, sampling duration, and metric extraction pipeline.
 - [x] Issue `stress_tests/perf_baseline`: establish reproducible native baseline artifacts and per-case trend tracking.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
