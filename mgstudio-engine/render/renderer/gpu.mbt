@@ -619,6 +619,9 @@ pub struct GpuBackend {
   mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
+  mut mesh3d_pass_view_uniform_bytes : Bytes?
+  mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
+  mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mut mesh3d_draw_slot_used : Int
   mut mesh3d_skin_default_buf : @wgpu.Buffer?
@@ -1086,6 +1089,9 @@ pub fn GpuBackend::new(
     mesh3d_custom_pipeline_cache: [],
     mesh3d_point_shadow_compare_sampler: None,
     mesh3d_view_buf: None,
+    mesh3d_pass_view_uniform_bytes: None,
+    mesh3d_motion_vector_pass_view_uniform_bytes: None,
+    mesh3d_motion_vector_pass_previous_view_uniform_bytes: None,
     mesh3d_draw_slots: [],
     mesh3d_draw_slot_used: 0,
     mesh3d_skin_default_buf: None,

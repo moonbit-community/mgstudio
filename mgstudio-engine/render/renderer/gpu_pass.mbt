@@ -308,6 +308,9 @@ pub fn GpuBackend::begin_pass(
   self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
+  self.mesh3d_pass_view_uniform_bytes = None
+  self.mesh3d_motion_vector_pass_view_uniform_bytes = None
+  self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
   render_diagnostics_begin_active_pass_timing(RENDER_PASS_PHASE_2D)
   if self.sprite_globals_buf is Some(globals_buf) {
@@ -509,6 +512,9 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
+  self.mesh3d_pass_view_uniform_bytes = None
+  self.mesh3d_motion_vector_pass_view_uniform_bytes = None
+  self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
   render_diagnostics_begin_active_pass_timing(RENDER_PASS_PHASE_2D)
   if self.sprite_globals_buf is Some(globals_buf) {
@@ -914,6 +920,9 @@ pub fn GpuBackend::begin_pass_3d(
   self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
+  self.mesh3d_pass_view_uniform_bytes = None
+  self.mesh3d_motion_vector_pass_view_uniform_bytes = None
+  self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
   render_diagnostics_begin_active_pass_timing(
     render_diagnostics_pass_phase_from_3d_pass_kind(pass_kind),

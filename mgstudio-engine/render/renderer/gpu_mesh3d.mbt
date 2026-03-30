@@ -5073,16 +5073,34 @@ pub fn GpuBackend::draw_mesh3d(
       mesh_index = 0U
     }
     guard mesh_bind_group is Some(active_mesh_bg) else { return }
-    self.queue.write_buffer(
-      view_buf,
-      0UL,
-      mesh3d_motion_vector_view_uniform_bytes(ps),
+    let motion_view_bytes = mesh3d_motion_vector_view_uniform_bytes(ps)
+    let motion_view_needs_upload = match
+      self.mesh3d_motion_vector_pass_view_uniform_bytes {
+      Some(cached) => cached != motion_view_bytes
+      None => true
+    }
+    if motion_view_needs_upload {
+      self.queue.write_buffer(view_buf, 0UL, motion_view_bytes)
+      self.mesh3d_motion_vector_pass_view_uniform_bytes = Some(
+        motion_view_bytes,
+      )
+    }
+    let motion_previous_view_bytes = mesh3d_motion_vector_previous_view_uniform_bytes(
+      ps,
     )
-    self.queue.write_buffer(
-      previous_view_buf,
-      0UL,
-      mesh3d_motion_vector_previous_view_uniform_bytes(ps),
-    )
+    let motion_previous_view_needs_upload = match
+      self.mesh3d_motion_vector_pass_previous_view_uniform_bytes {
+      Some(cached) => cached != motion_previous_view_bytes
+      None => true
+    }
+    if motion_previous_view_needs_upload {
+      self.queue.write_buffer(
+        previous_view_buf, 0UL, motion_previous_view_bytes,
+      )
+      self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = Some(
+        motion_previous_view_bytes,
+      )
+    }
     if writes_motion_vector_mesh {
       guard mesh_buffer is Some(active_mesh_buffer) else { return }
       self.queue.write_buffer(
@@ -5379,7 +5397,14 @@ pub fn GpuBackend::draw_mesh3d(
     None => ensure_mesh3d_skin_default_binding(self)
   }
   guard resolved_skin_bg is Some(active_skin_bg) else { return }
-  self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
+  let view_needs_upload = match self.mesh3d_pass_view_uniform_bytes {
+    Some(cached) => cached != view_bytes
+    None => true
+  }
+  if view_needs_upload {
+    self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
+    self.mesh3d_pass_view_uniform_bytes = Some(view_bytes)
+  }
   self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   let view_bg = mesh3d_view_bg_cache_get_or_create(
     self, transmission_source_texture, point_shadow_texture,
