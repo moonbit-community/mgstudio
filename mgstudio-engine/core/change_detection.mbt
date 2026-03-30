@@ -58,3 +58,17 @@ pub fn SystemSequenceContext::sequence(
 ) -> SystemSequence {
   { last_run: self.last_run, this_run: self.this_run }
 }
+
+///|
+pub fn SystemSequence::contains(
+  self : SystemSequence,
+  sequence : Sequence,
+) -> Bool {
+  let last_run = self.last_run
+  let this_run = self.this_run
+  if this_run >= last_run {
+    sequence > last_run && sequence <= this_run
+  } else {
+    sequence > last_run || sequence <= this_run
+  }
+}

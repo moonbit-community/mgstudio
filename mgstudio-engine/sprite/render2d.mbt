@@ -926,13 +926,52 @@ let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref::new(
 )
 
 ///|
+let mesh_upload_radius_cache : Ref[@hashmap.HashMap[Int, Float]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
+  let mut max_len_sq = 0.0F
+  for position in geometry.positions {
+    let len_sq = position.x * position.x + position.y * position.y
+    if len_sq > max_len_sq {
+      max_len_sq = len_sq
+    }
+  }
+  if max_len_sq <= 0.0F {
+    1.0F
+  } else {
+    @math.sqrt(max_len_sq)
+  }
+}
+
+///|
+fn uploaded_mesh_base_radius(mesh_id : Int) -> Float {
+  if mesh_id <= 0 {
+    return 1.0F
+  }
+  if mesh_upload_radius_cache.val.get(mesh_id) is Some(radius) {
+    radius
+  } else {
+    64.0F
+  }
+}
+
+///|
 fn mesh_upload_cache_sync_with_asset_events() -> Unit {
   for event in mesh_assets_mut_or_abort().val.drain_events() {
     match event {
       @asset.AssetEvent::Modified(handle) =>
-        mesh_upload_cache.val.remove(handle.id())
+        if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
+          mesh_upload_cache.val.remove(handle.id())
+          mesh_upload_radius_cache.val.remove(mesh_id)
+        }
       @asset.AssetEvent::Removed(handle) =>
-        mesh_upload_cache.val.remove(handle.id())
+        if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
+          mesh_upload_cache.val.remove(handle.id())
+          mesh_upload_radius_cache.val.remove(mesh_id)
+        }
       _ => ()
     }
   }
@@ -981,10 +1020,12 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   if mesh_upload_cache.val.get(mesh_handle_id) is Some(mesh_id) {
     return mesh_id
   }
+  let mut uploaded_mesh_radius = 1.0F
   let uploaded_mesh_id = match mesh_asset_get(mesh) {
     Some(mesh_asset) =>
       match mesh_asset.geometry {
-        @mesh.MeshGeometry::Geometry2d(geometry2d) =>
+        @mesh.MeshGeometry::Geometry2d(geometry2d) => {
+          uploaded_mesh_radius = mesh2d_geometry_base_radius(geometry2d)
           match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
             Some(vertices_csv) =>
               @render.host_gpu_create_mesh_triangles_xyuvrgba(
@@ -1000,7 +1041,9 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
               0
             }
           }
-        @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+        }
+        @mesh.MeshGeometry::Geometry3d(geometry3d) => {
+          uploaded_mesh_radius = 64.0F
           match geometry3d.encode_interleaved_xyz_normal_uv_rgba_csv() {
             Some(vertices_csv) =>
               @render.host_gpu_create_mesh3d(
@@ -1017,6 +1060,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
               0
             }
           }
+        }
       }
     None => {
       @window.host_debug_string(
@@ -1027,6 +1071,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   }
   if uploaded_mesh_id > 0 {
     mesh_upload_cache.val.set(mesh_handle_id, uploaded_mesh_id)
+    mesh_upload_radius_cache.val.set(uploaded_mesh_id, uploaded_mesh_radius)
   }
   uploaded_mesh_id
 }
@@ -3059,11 +3104,15 @@ const SPRITE_VIEW_BINDINGS_PATH : String = "shaders/bevy_sprite_render/render/sp
 
 ///|
 fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
-  match (try! world.get_resource(@asset.asset_server_resource_key())) {
+  let key : @ecs.ResourceKey[@asset.AssetServer] = @asset.asset_server_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(key, @asset.AssetServer::new())
+  }
+  match (try! world.get_resource(key)) {
     Some(asset_server) => asset_server
     None =>
       abort(
-        "Render2dPlugin requires the world-owned AssetServer resource; add AssetPlugin before Render2dPlugin",
+        "Render2dPlugin failed to initialize or acquire AssetServer resource",
       )
   }
 }
@@ -3409,6 +3458,44 @@ priv struct ExtractedMesh2d {
 }
 
 ///|
+priv enum DrawKind {
+  SpriteMain(Int)
+  SpriteExtra(Int)
+  UiSpriteExtra(Int)
+  UiRectExtra(Int)
+  UiBoxShadowExtra(Int)
+  UiTextureSliceExtra(Int)
+  Mesh(Int)
+}
+
+///|
+priv struct DrawItem {
+  kind : DrawKind
+  entity : PhaseEntityRef
+  z : Float
+  // 0 = scene opaque/mask, 1 = scene transparent, 2 = UI overlay.
+  phase : Int
+  // Stable insertion order tie-break key.
+  tie : Int
+  material_handle_id : Int
+  material_runtime_index : Int
+}
+
+///|
+priv struct ScenePhaseDrawItems {
+  opaque_items : Array[DrawItem]
+  transparent_items : Array[DrawItem]
+}
+
+///|
+priv struct QueuedCameraDrawItems {
+  camera_entity : @core.Entity
+  scene_opaque_items : Array[DrawItem]
+  scene_transparent_items : Array[DrawItem]
+  ui_overlay_items : Array[DrawItem]
+}
+
+///|
 priv struct RenderTargetInfo {
   id : Int
   width : Int
@@ -3444,6 +3531,8 @@ struct RenderState {
   mut prepared_camera_indices : Array[Int]
   // Queue stage output: per-camera queued item counts for diagnostics/sanity.
   mut queued_draw_item_counts : Array[Int]
+  // Queue stage output: cached draw items per camera for execute stage reuse.
+  mut queued_camera_draw_items : Array[QueuedCameraDrawItems]
 }
 
 ///|
@@ -3451,6 +3540,12 @@ let render2d_diagnostic_queued_draw_item_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
 let render2d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render2d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
+let render2d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
 
 ///|
 fn RenderState::new() -> RenderState {
@@ -3470,6 +3565,7 @@ fn RenderState::new() -> RenderState {
     postprocess_intermediate_targets: [],
     prepared_camera_indices: [],
     queued_draw_item_counts: [],
+    queued_camera_draw_items: [],
   }
 }
 
@@ -5369,6 +5465,7 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
     if !rs.val.draw_enabled {
       rs.val.prepared_camera_indices.clear()
       rs.val.queued_draw_item_counts.clear()
+      rs.val.queued_camera_draw_items.clear()
       render2d_diagnostic_prepared_camera_count_ref.val = 0
       render2d_diagnostic_queued_draw_item_count_ref.val = 0
       return
@@ -5378,16 +5475,33 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
     )
     render2d_diagnostic_prepared_camera_count_ref.val = rs.val.prepared_camera_indices.length()
     rs.val.queued_draw_item_counts.clear()
+    rs.val.queued_camera_draw_items.clear()
   })
   |> ignore
 }
 
 ///|
 pub fn render_queue_system(world : @ecs.World) -> Unit {
+  let queue_start = @time.host_time_now()
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
+  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+    0,
+  )
+  let use_color_material_fast_path = material_runtime_registry.entry_count() ==
+    1 &&
+    material_runtime_registry.contains_type_name(
+      material2d_runtime_type_name(color_material_probe),
+    )
+  let color_prepared_materials = prepared_material2d_assets_or_empty(
+    world, color_material_probe,
+  )
+  let color_material_instances = render_material2d_instances_or_empty(
+    world, color_material_probe,
+  )
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       rs.val.queued_draw_item_counts.clear()
+      rs.val.queued_camera_draw_items.clear()
       render2d_diagnostic_queued_draw_item_count_ref.val = 0
       return
     }
@@ -5399,12 +5513,14 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       render2d_sorted_camera_indices(cameras)
     }
     let counts : Array[Int] = []
+    let queued_items : Array[QueuedCameraDrawItems] = []
     for index in camera_indices {
       if index < 0 || index >= cameras.length() {
         continue
       }
       let camera = cameras[index]
-      let items = draw_registered_items_for_layers(
+      let scene_cull_context = render2d_camera_scene_cull_context(camera)
+      let item = build_camera_draw_items(
         world,
         material_runtime_registry,
         rs.val.sprites,
@@ -5414,12 +5530,22 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         rs.val.extra_ui_box_shadows,
         rs.val.extra_ui_texture_slices,
         rs.val.meshes,
+        color_prepared_materials,
+        color_material_instances,
         camera.entity,
         camera.layers,
+        use_color_material_fast_path,
+        scene_cull_context,
       )
-      counts.push(items.length())
+      counts.push(
+        item.scene_opaque_items.length() +
+        item.scene_transparent_items.length() +
+        item.ui_overlay_items.length(),
+      )
+      queued_items.push(item)
     }
     rs.val.queued_draw_item_counts = counts
+    rs.val.queued_camera_draw_items = queued_items
     let mut total = 0
     for count in counts {
       total = total + count
@@ -5427,6 +5553,10 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
     render2d_diagnostic_queued_draw_item_count_ref.val = total
   })
   |> ignore
+  render2d_diagnostic_queue_cpu_ms_ref.val = (
+      @time.host_time_now() - queue_start
+    ) *
+    1000.0F
 }
 
 ///|
@@ -5437,6 +5567,16 @@ pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
 ///|
 pub fn render2d_diagnostic_prepared_camera_count() -> Int {
   render2d_diagnostic_prepared_camera_count_ref.val
+}
+
+///|
+pub fn render2d_diagnostic_queue_cpu_ms() -> Float {
+  render2d_diagnostic_queue_cpu_ms_ref.val
+}
+
+///|
+pub fn render2d_diagnostic_execute_cpu_ms() -> Float {
+  render2d_diagnostic_execute_cpu_ms_ref.val
 }
 
 ///|
@@ -5478,20 +5618,193 @@ fn cmp_float(a : Float, b : Float) -> Int {
 }
 
 ///|
+pub struct SceneCullContext {
+  center_x : Float
+  center_y : Float
+  cosv : Float
+  sinv : Float
+  half_width : Float
+  half_height : Float
+}
+
+///|
+pub fn SceneCullContext::new(
+  center_x : Float,
+  center_y : Float,
+  cosv : Float,
+  sinv : Float,
+  half_width : Float,
+  half_height : Float,
+) -> SceneCullContext {
+  SceneCullContext::{ center_x, center_y, cosv, sinv, half_width, half_height }
+}
+
+///|
+pub fn SceneCullContext::values(
+  self : SceneCullContext,
+) -> (Float, Float, Float, Float, Float, Float) {
+  (
+    self.center_x,
+    self.center_y,
+    self.cosv,
+    self.sinv,
+    self.half_width,
+    self.half_height,
+  )
+}
+
+///|
+fn scene_cull_abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn scene_cull_radius_from_sprite_scale(scale : @math.Vec2) -> Float {
+  let sx = scene_cull_abs_float(scale.x)
+  let sy = scene_cull_abs_float(scale.y)
+  let edge = if sx > sy { sx } else { sy }
+  edge * 64.0F + 8.0F
+}
+
+///|
+fn scene_cull_radius_from_mesh_scale(
+  scale : @math.Vec3,
+  base_radius : Float,
+) -> Float {
+  let sx = scene_cull_abs_float(scale.x)
+  let sy = scene_cull_abs_float(scale.y)
+  let edge = if sx > sy { sx } else { sy }
+  edge * base_radius + 8.0F
+}
+
+///|
+fn scene_item_visible_in_context(
+  context : SceneCullContext,
+  x : Float,
+  y : Float,
+  radius : Float,
+) -> Bool {
+  let dx = x - context.center_x
+  let dy = y - context.center_y
+  let local_x = dx * context.cosv + dy * context.sinv
+  let local_y = -dx * context.sinv + dy * context.cosv
+  scene_cull_abs_float(local_x) <= context.half_width + radius &&
+  scene_cull_abs_float(local_y) <= context.half_height + radius
+}
+
+///|
+fn render2d_camera_scene_cull_context(
+  camera : ExtractedCamera2d,
+) -> SceneCullContext? {
+  let target_size = camera.computed.target_size
+  guard camera_viewport_rect_physical(
+      target_size.x,
+      target_size.y,
+      camera.camera.viewport,
+    )
+    is Some((_viewport_x, _viewport_y, viewport_width, viewport_height)) else {
+    return None
+  }
+  let mut scale_factor = camera.computed.scale_factor
+  if scale_factor <= 0.0F {
+    scale_factor = 1.0F
+  }
+  let view_width_logical = render2d_logical_view_extent_axis(
+    viewport_width, scale_factor,
+  )
+  let view_height_logical = render2d_logical_view_extent_axis(
+    viewport_height, scale_factor,
+  )
+  if view_width_logical <= 0 || view_height_logical <= 0 {
+    return None
+  }
+  let camera_uniform_scale = render2d_camera_uniform_scale(
+    camera.projection,
+    camera.transform,
+  )
+  let rotation = camera.transform.rotation_z()
+  Some(SceneCullContext::{
+    center_x: camera.transform.translation.x,
+    center_y: camera.transform.translation.y,
+    cosv: @math.cos(rotation),
+    sinv: @math.sin(rotation),
+    half_width: Float::from_double(view_width_logical.to_double()) *
+    camera_uniform_scale *
+    0.5F,
+    half_height: Float::from_double(view_height_logical.to_double()) *
+    camera_uniform_scale *
+    0.5F,
+  })
+}
+
+///|
+fn render2d_primary_camera(world : @ecs.World) -> ExtractedCamera2d? {
+  guard render_state_ref(world) is Some(rs) else { return None }
+  let id = rs.primary_camera
+  if id.is_placeholder() {
+    return None
+  }
+  let mut found : ExtractedCamera2d? = None
+  for camera in rs.cameras {
+    if camera.entity.id == id.id && camera.entity.generation == id.generation {
+      found = Some(camera)
+      break
+    }
+  }
+  found
+}
+
+///|
+pub fn render2d_primary_scene_cull_context(
+  world : @ecs.World,
+) -> SceneCullContext? {
+  guard render2d_primary_camera(world) is Some(camera) else { return None }
+  render2d_camera_scene_cull_context(camera)
+}
+
+///|
+pub fn render2d_scene_item_visible(
+  context : SceneCullContext,
+  x : Float,
+  y : Float,
+  radius : Float,
+) -> Bool {
+  scene_item_visible_in_context(context, x, y, radius)
+}
+
+///|
 fn[M] append_material2d_mesh_draw_items(
-  items : Array[DrawItem],
+  opaque_items : Array[DrawItem],
+  transparent_items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   tie : Int,
   material_runtime_index? : Int = -1,
+  scene_cull_context? : SceneCullContext? = None,
 ) -> Int {
   let mut next_tie = tie
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
     if !mesh.payload.layers.matches(layers) {
       continue
+    }
+    if scene_cull_context is Some(context) {
+      let transform = mesh.payload.transform
+      let base_radius = uploaded_mesh_base_radius(mesh.payload.mesh_id)
+      if !scene_item_visible_in_context(
+          context,
+          transform.translation.x,
+          transform.translation.y,
+          scene_cull_radius_from_mesh_scale(transform.scale, base_radius),
+        ) {
+        continue
+      }
     }
     guard prepared_material2d_handle_for_mesh(mesh, material_instances)
       is Some(material_handle) else {
@@ -5504,50 +5817,35 @@ fn[M] append_material2d_mesh_draw_items(
     guard prepared_material2d_alpha_phase(material) is Some(phase) else {
       continue
     }
-    items.push(DrawItem::{
+    let item = DrawItem::{
       kind: Mesh(i),
       entity: mesh.entity,
       z: mesh.payload.transform.translation.z,
       phase,
       tie: next_tie,
+      material_handle_id: material_handle.id(),
       material_runtime_index,
-    })
+    }
+    if phase == 0 {
+      opaque_items.push(item)
+    } else {
+      transparent_items.push(item)
+    }
     next_tie = next_tie + 1
   }
   next_tie
 }
 
 ///|
-priv enum DrawKind {
-  SpriteMain(Int)
-  SpriteExtra(Int)
-  UiSpriteExtra(Int)
-  UiRectExtra(Int)
-  UiBoxShadowExtra(Int)
-  UiTextureSliceExtra(Int)
-  Mesh(Int)
-}
-
-///|
-priv struct DrawItem {
-  kind : DrawKind
-  entity : PhaseEntityRef
-  z : Float
-  // 0 = scene opaque/mask, 1 = scene transparent, 2 = UI overlay.
-  phase : Int
-  // Stable insertion order tie-break key.
-  tie : Int
-  material_runtime_index : Int
-}
-
-///|
 fn append_registered_material2d_mesh_draw_items(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
-  items : Array[DrawItem],
+  opaque_items : Array[DrawItem],
+  transparent_items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
   layers : RenderLayers,
   tie : Int,
+  scene_cull_context? : SceneCullContext? = None,
 ) -> Int {
   let mut next_tie = tie
   for i in 0..<meshes.length() {
@@ -5555,20 +5853,38 @@ fn append_registered_material2d_mesh_draw_items(
     if !mesh.payload.layers.matches(layers) {
       continue
     }
+    if scene_cull_context is Some(context) {
+      let transform = mesh.payload.transform
+      let base_radius = uploaded_mesh_base_radius(mesh.payload.mesh_id)
+      if !scene_item_visible_in_context(
+          context,
+          transform.translation.x,
+          transform.translation.y,
+          scene_cull_radius_from_mesh_scale(transform.scale, base_radius),
+        ) {
+        continue
+      }
+    }
     let mut matched = false
     for runtime_index in 0..<registry.entries.length() {
       let entry = registry.entries[runtime_index]
       guard (entry.mesh_phase_for_draw_fn)(world, mesh) is Some(phase) else {
         continue
       }
-      items.push(DrawItem::{
+      let item = DrawItem::{
         kind: Mesh(i),
         entity: mesh.entity,
         z: mesh.payload.transform.translation.z,
         phase,
         tie: next_tie,
+        material_handle_id: -1,
         material_runtime_index: runtime_index,
-      })
+      }
+      if phase == 0 {
+        opaque_items.push(item)
+      } else {
+        transparent_items.push(item)
+      }
       next_tie = next_tie + 1
       matched = true
       break
@@ -5653,32 +5969,128 @@ fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
 }
 
 ///|
-fn[M] draw_material2d_scene_items_for_layers(
+fn sort_transparent_scene_draw_items(
+  items : Array[DrawItem],
+) -> Array[DrawItem] {
+  items.sort_by(fn(a, b) {
+    let cz = cmp_float(a.z, b.z)
+    if cz != 0 {
+      return cz
+    }
+    let ce = phase_entity_ref_cmp(a.entity, b.entity)
+    if ce != 0 {
+      return ce
+    }
+    cmp_int(a.tie, b.tie)
+  })
+  items
+}
+
+///|
+fn draw_kind_opaque_batch_group(kind : DrawKind) -> Int {
+  match kind {
+    Mesh(_) => 0
+    SpriteMain(_) => 1
+    SpriteExtra(_) => 2
+    UiSpriteExtra(_) => 3
+    UiRectExtra(_) => 4
+    UiBoxShadowExtra(_) => 5
+    UiTextureSliceExtra(_) => 6
+  }
+}
+
+///|
+fn sort_opaque_scene_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
+  items.sort_by(fn(a, b) {
+    let ck = cmp_int(
+      draw_kind_opaque_batch_group(a.kind),
+      draw_kind_opaque_batch_group(b.kind),
+    )
+    if ck != 0 {
+      return ck
+    }
+    let cmh = cmp_int(a.material_handle_id, b.material_handle_id)
+    if cmh != 0 {
+      return cmh
+    }
+    let cmr = cmp_int(a.material_runtime_index, b.material_runtime_index)
+    if cmr != 0 {
+      return cmr
+    }
+    let cz = cmp_float(a.z, b.z)
+    if cz != 0 {
+      return cz
+    }
+    let ce = phase_entity_ref_cmp(a.entity, b.entity)
+    if ce != 0 {
+      return ce
+    }
+    cmp_int(a.tie, b.tie)
+  })
+  items
+}
+
+///|
+fn scene_phase_draw_items_concat(
+  phase_items : ScenePhaseDrawItems,
+) -> Array[DrawItem] {
+  let items = phase_items.opaque_items
+  for item in phase_items.transparent_items {
+    items.push(item)
+  }
+  items
+}
+
+///|
+fn[M] draw_material2d_scene_phase_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
-) -> Array[DrawItem] {
-  let items : Array[DrawItem] = []
+  scene_cull_context? : SceneCullContext? = None,
+) -> ScenePhaseDrawItems {
+  let opaque_items : Array[DrawItem] = []
+  let transparent_items : Array[DrawItem] = []
   let mut tie = 0
   // Align with Bevy queue structure: mesh phases are queued before sprite phases.
   // Transparent items are then sorted by z with stable insertion order.
   tie = append_material2d_mesh_draw_items(
-    items, meshes, prepared_materials, material_instances, layers, tie,
+    opaque_items,
+    transparent_items,
+    meshes,
+    prepared_materials,
+    material_instances,
+    layers,
+    tie,
+    scene_cull_context~,
   )
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
     if !sprite.payload.layers.matches(layers) {
       continue
     }
-    items.push(DrawItem::{
+    if scene_cull_context is Some(context) {
+      let transform = sprite.payload.transform
+      let pos_x = transform.translation.x + sprite.payload.anchor_offset.x
+      let pos_y = transform.translation.y + sprite.payload.anchor_offset.y
+      if !scene_item_visible_in_context(
+          context,
+          pos_x,
+          pos_y,
+          scene_cull_radius_from_sprite_scale(sprite.payload.draw_scale),
+        ) {
+        continue
+      }
+    }
+    transparent_items.push(DrawItem::{
       kind: SpriteMain(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
       phase: 1,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
@@ -5688,17 +6100,55 @@ fn[M] draw_material2d_scene_items_for_layers(
     if !sprite.payload.layers.matches(layers) {
       continue
     }
-    items.push(DrawItem::{
+    if scene_cull_context is Some(context) {
+      let transform = sprite.payload.transform
+      let pos_x = transform.translation.x + sprite.payload.anchor_offset.x
+      let pos_y = transform.translation.y + sprite.payload.anchor_offset.y
+      if !scene_item_visible_in_context(
+          context,
+          pos_x,
+          pos_y,
+          scene_cull_radius_from_sprite_scale(sprite.payload.draw_scale),
+        ) {
+        continue
+      }
+    }
+    transparent_items.push(DrawItem::{
       kind: SpriteExtra(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
       phase: 1,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
   }
-  sort_draw_items(items)
+  ignore(sort_opaque_scene_draw_items(opaque_items))
+  ignore(sort_transparent_scene_draw_items(transparent_items))
+  ScenePhaseDrawItems::{ opaque_items, transparent_items }
+}
+
+///|
+fn[M] draw_material2d_scene_items_for_layers(
+  sprites : Array[ExtractedSprite],
+  extra_sprites : Array[ExtractedSprite],
+  meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  material_instances : RenderMaterial2dInstances[M],
+  layers : RenderLayers,
+  scene_cull_context? : SceneCullContext? = None,
+) -> Array[DrawItem] {
+  let phase_items = draw_material2d_scene_phase_items_for_layers(
+    sprites,
+    extra_sprites,
+    meshes,
+    prepared_materials,
+    material_instances,
+    layers,
+    scene_cull_context~,
+  )
+  scene_phase_draw_items_concat(phase_items)
 }
 
 ///|
@@ -5709,37 +6159,67 @@ fn draw_scene_items_for_layers(
   prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
   material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   layers : RenderLayers,
+  scene_cull_context? : SceneCullContext? = None,
 ) -> Array[DrawItem] {
   draw_material2d_scene_items_for_layers(
-    sprites, extra_sprites, meshes, prepared_materials, material_instances, layers,
+    sprites,
+    extra_sprites,
+    meshes,
+    prepared_materials,
+    material_instances,
+    layers,
+    scene_cull_context~,
   )
 }
 
 ///|
-fn draw_registered_scene_items_for_layers(
+fn draw_registered_scene_phase_items_for_layers(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
   meshes : Array[ExtractedMesh2d],
   layers : RenderLayers,
-) -> Array[DrawItem] {
-  let items : Array[DrawItem] = []
+  scene_cull_context? : SceneCullContext? = None,
+) -> ScenePhaseDrawItems {
+  let opaque_items : Array[DrawItem] = []
+  let transparent_items : Array[DrawItem] = []
   let mut tie = 0
   tie = append_registered_material2d_mesh_draw_items(
-    world, registry, items, meshes, layers, tie,
+    world,
+    registry,
+    opaque_items,
+    transparent_items,
+    meshes,
+    layers,
+    tie,
+    scene_cull_context~,
   )
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
     if !sprite.payload.layers.matches(layers) {
       continue
     }
-    items.push(DrawItem::{
+    if scene_cull_context is Some(context) {
+      let transform = sprite.payload.transform
+      let pos_x = transform.translation.x + sprite.payload.anchor_offset.x
+      let pos_y = transform.translation.y + sprite.payload.anchor_offset.y
+      if !scene_item_visible_in_context(
+          context,
+          pos_x,
+          pos_y,
+          scene_cull_radius_from_sprite_scale(sprite.payload.draw_scale),
+        ) {
+        continue
+      }
+    }
+    transparent_items.push(DrawItem::{
       kind: SpriteMain(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
       phase: 1,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
@@ -5749,17 +6229,33 @@ fn draw_registered_scene_items_for_layers(
     if !sprite.payload.layers.matches(layers) {
       continue
     }
-    items.push(DrawItem::{
+    if scene_cull_context is Some(context) {
+      let transform = sprite.payload.transform
+      let pos_x = transform.translation.x + sprite.payload.anchor_offset.x
+      let pos_y = transform.translation.y + sprite.payload.anchor_offset.y
+      if !scene_item_visible_in_context(
+          context,
+          pos_x,
+          pos_y,
+          scene_cull_radius_from_sprite_scale(sprite.payload.draw_scale),
+        ) {
+        continue
+      }
+    }
+    transparent_items.push(DrawItem::{
       kind: SpriteExtra(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
       phase: 1,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
   }
-  sort_draw_items(items)
+  ignore(sort_opaque_scene_draw_items(opaque_items))
+  ignore(sort_transparent_scene_draw_items(transparent_items))
+  ScenePhaseDrawItems::{ opaque_items, transparent_items }
 }
 
 ///|
@@ -5789,7 +6285,7 @@ fn draw_wireframe_meshes_for_layers(
 }
 
 ///|
-fn draw_registered_items_for_layers(
+fn build_camera_draw_items(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
@@ -5799,24 +6295,69 @@ fn draw_registered_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   camera_entity : @core.Entity,
   layers : RenderLayers,
-) -> Array[DrawItem] {
-  let items : Array[DrawItem] = []
-  for
-    item in draw_registered_scene_items_for_layers(
-      world, registry, sprites, extra_sprites, meshes, layers,
-    ) {
-    items.push(item)
+  use_color_material_fast_path : Bool,
+  scene_cull_context : SceneCullContext?,
+) -> QueuedCameraDrawItems {
+  let scene_phase_items = if use_color_material_fast_path {
+    draw_material2d_scene_phase_items_for_layers(
+      sprites,
+      extra_sprites,
+      meshes,
+      prepared_materials,
+      material_instances,
+      layers,
+      scene_cull_context~,
+    )
+  } else {
+    draw_registered_scene_phase_items_for_layers(
+      world,
+      registry,
+      sprites,
+      extra_sprites,
+      meshes,
+      layers,
+      scene_cull_context~,
+    )
   }
-  for
-    item in draw_ui_overlay_items_for_layers(
-      extra_ui_sprites, extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices,
-      camera_entity, layers,
-    ) {
-    items.push(item)
+  let ui_overlay_items = draw_ui_overlay_items_for_layers(
+    extra_ui_sprites, extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices,
+    camera_entity, layers,
+  )
+  QueuedCameraDrawItems::{
+    camera_entity,
+    scene_opaque_items: scene_phase_items.opaque_items,
+    scene_transparent_items: scene_phase_items.transparent_items,
+    ui_overlay_items,
   }
-  sort_draw_items(items)
+}
+
+///|
+fn queued_camera_draw_items_for_camera(
+  state : RenderState,
+  camera_entity : @core.Entity,
+) -> QueuedCameraDrawItems? {
+  for item in state.queued_camera_draw_items {
+    if item.camera_entity.id == camera_entity.id &&
+      item.camera_entity.generation == camera_entity.generation {
+      return Some(item)
+    }
+  }
+  None
+}
+
+///|
+fn queued_camera_draw_items_at_index(
+  state : RenderState,
+  index : Int,
+) -> QueuedCameraDrawItems? {
+  if index < 0 || index >= state.queued_camera_draw_items.length() {
+    return None
+  }
+  Some(state.queued_camera_draw_items[index])
 }
 
 ///|
@@ -5845,6 +6386,7 @@ fn draw_ui_overlay_items_for_layers(
       z: sprite.payload.transform.translation.z,
       phase: 2,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
@@ -5864,6 +6406,7 @@ fn draw_ui_overlay_items_for_layers(
       z: rect.payload.transform.translation.z,
       phase: 2,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
@@ -5883,6 +6426,7 @@ fn draw_ui_overlay_items_for_layers(
       z: shadow.payload.transform.translation.z,
       phase: 2,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
@@ -5902,6 +6446,7 @@ fn draw_ui_overlay_items_for_layers(
       z: slice.payload.transform.translation.z,
       phase: 2,
       tie,
+      material_handle_id: -1,
       material_runtime_index: -1,
     })
     tie = tie + 1
@@ -6786,7 +7331,25 @@ test "render2d: logical view extent derives from physical viewport and scale fac
 
 ///|
 pub fn render_execute_system(world : @ecs.World) -> Unit {
+  let execute_start = @time.host_time_now()
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
+  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+    0,
+  )
+  let use_color_material_fast_path = material_runtime_registry.entry_count() ==
+    1 &&
+    material_runtime_registry.contains_type_name(
+      material2d_runtime_type_name(color_material_probe),
+    )
+  let color_prepared_materials = prepared_material2d_assets_or_empty(
+    world, color_material_probe,
+  )
+  let color_material_instances = render_material2d_instances_or_empty(
+    world, color_material_probe,
+  )
+  let color_material_pipeline = material2d_pipeline_or_default(
+    world, color_material_probe,
+  )
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       render2d_diagnostic_prepared_camera_count_ref.val = 0
@@ -6800,6 +7363,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       gizmos_clear()
       rs.val.prepared_camera_indices.clear()
       rs.val.queued_draw_item_counts.clear()
+      rs.val.queued_camera_draw_items.clear()
       render2d_diagnostic_prepared_camera_count_ref.val = 0
       render2d_diagnostic_queued_draw_item_count_ref.val = 0
       rs.val.extra_sprites.clear()
@@ -6883,7 +7447,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     } else {
       render2d_sorted_camera_indices(cameras)
     }
-    for index in camera_indices {
+    for camera_order_index in 0..<camera_indices.length() {
+      let index = camera_indices[camera_order_index]
       let camera = cameras[index]
       let mut target_id = -1
       let target_size = camera.computed.target_size
@@ -6976,23 +7541,56 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       if view_width_logical <= 0 || view_height_logical <= 0 {
         continue
       }
+      let camera_uniform_scale = render2d_camera_uniform_scale(
+        camera.projection,
+        camera.transform,
+      )
+      let camera_rotation = camera.transform.rotation_z()
       let (clear_enabled, clear) = camera.camera.clear_color.resolve()
-      let draw_items = draw_registered_scene_items_for_layers(
-        world,
-        material_runtime_registry,
-        sprites,
-        extra_sprites,
-        meshes,
-        camera.layers,
-      )
-      let ui_overlay_draw_items = draw_ui_overlay_items_for_layers(
-        extra_ui_sprites,
-        extra_ui_rects,
-        extra_ui_box_shadows,
-        extra_ui_texture_slices,
-        camera.entity,
-        camera.layers,
-      )
+      let scene_cull_context = render2d_camera_scene_cull_context(camera)
+      let mut draw_opaque_items : Array[DrawItem] = []
+      let mut draw_transparent_items : Array[DrawItem] = []
+      let mut ui_overlay_draw_items : Array[DrawItem] = []
+      let queued_items_for_camera = match
+        queued_camera_draw_items_at_index(rs.val, camera_order_index) {
+        Some(item) =>
+          if item.camera_entity.id == camera.entity.id &&
+            item.camera_entity.generation == camera.entity.generation {
+            Some(item)
+          } else {
+            queued_camera_draw_items_for_camera(rs.val, camera.entity)
+          }
+        None => queued_camera_draw_items_for_camera(rs.val, camera.entity)
+      }
+      match queued_items_for_camera {
+        Some(queued) => {
+          draw_opaque_items = queued.scene_opaque_items
+          draw_transparent_items = queued.scene_transparent_items
+          ui_overlay_draw_items = queued.ui_overlay_items
+        }
+        None => {
+          let built = build_camera_draw_items(
+            world,
+            material_runtime_registry,
+            sprites,
+            extra_sprites,
+            extra_ui_sprites,
+            extra_ui_rects,
+            extra_ui_box_shadows,
+            extra_ui_texture_slices,
+            meshes,
+            color_prepared_materials,
+            color_material_instances,
+            camera.entity,
+            camera.layers,
+            use_color_material_fast_path,
+            scene_cull_context,
+          )
+          draw_opaque_items = built.scene_opaque_items
+          draw_transparent_items = built.scene_transparent_items
+          ui_overlay_draw_items = built.ui_overlay_items
+        }
+      }
       fn draw_camera_items(
         items : Array[DrawItem],
         draw_viewport_x : Int,
@@ -7000,12 +7598,15 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         draw_viewport_width : Int,
         draw_viewport_height : Int,
         draw_scale_factor : Float,
+        tail_items : Array[DrawItem],
       ) -> Unit {
         let mut scissor_active = false
         let mut scissor_x = 0
         let mut scissor_y = 0
         let mut scissor_w = 0
         let mut scissor_h = 0
+        let mut cached_color_material_handle_id = -1
+        let mut cached_color_material : PreparedMaterial2d[ColorMaterialAsset]? = None
         fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
           match rect_opt {
             None =>
@@ -7034,7 +7635,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           }
         }
 
-        for item in items {
+        fn draw_camera_item(item : DrawItem) -> Unit {
           match item.kind {
             SpriteMain(i) => {
               let sprite = sprites[i].payload
@@ -7114,12 +7715,34 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             Mesh(i) => {
               apply_scissor(None)
               let mesh = meshes[i]
-              draw_registered_material2d_mesh_item(
-                world,
-                material_runtime_registry,
-                item.material_runtime_index,
-                mesh,
-              )
+              if use_color_material_fast_path {
+                if item.material_handle_id < 0 {
+                  draw_material2d_mesh_item(
+                    mesh, color_prepared_materials, color_material_instances, color_material_pipeline,
+                  )
+                } else {
+                  if item.material_handle_id != cached_color_material_handle_id {
+                    let material_handle : @asset.Handle[
+                      PreparedMaterial2d[ColorMaterialAsset],
+                    ] = @asset.Handle::new(item.material_handle_id)
+                    cached_color_material = prepared_material2d_get(
+                      color_prepared_materials, material_handle,
+                    )
+                    cached_color_material_handle_id = item.material_handle_id
+                  }
+                  guard cached_color_material is Some(material) else { return }
+                  draw_material2d_mesh_item_with_prepared_material(
+                    mesh, material, color_material_pipeline,
+                  )
+                }
+              } else {
+                draw_registered_material2d_mesh_item(
+                  world,
+                  material_runtime_registry,
+                  item.material_runtime_index,
+                  mesh,
+                )
+              }
             }
             UiRectExtra(i) => {
               let rect = extra_ui_rects[i].payload
@@ -7223,6 +7846,12 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             }
           }
         }
+        for item in items {
+          draw_camera_item(item)
+        }
+        for item in tail_items {
+          draw_camera_item(item)
+        }
       }
 
       fn ui_overlay_split_draw_items(
@@ -7254,11 +7883,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             clear_a=clear.a,
             camera_x=camera.transform.translation.x,
             camera_y=camera.transform.translation.y,
-            camera_rotation=camera.transform.rotation_z(),
-            camera_scale=render2d_camera_uniform_scale(
-              camera.projection,
-              camera.transform,
-            ),
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
             viewport_x~,
             viewport_y~,
             viewport_width~,
@@ -7268,8 +7894,13 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             clear_enabled=0,
           )
           draw_camera_items(
-            non_sprite_items, viewport_x, viewport_y, viewport_width, viewport_height,
+            non_sprite_items,
+            viewport_x,
+            viewport_y,
+            viewport_width,
+            viewport_height,
             scale_factor,
+            [],
           )
           @render.host_gpu_end_pass()
         }
@@ -7284,11 +7915,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             clear_a=clear.a,
             camera_x=camera.transform.translation.x,
             camera_y=camera.transform.translation.y,
-            camera_rotation=camera.transform.rotation_z(),
-            camera_scale=render2d_camera_uniform_scale(
-              camera.projection,
-              camera.transform,
-            ),
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
             viewport_x~,
             viewport_y~,
             viewport_width~,
@@ -7298,8 +7926,13 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             clear_enabled=0,
           )
           draw_camera_items(
-            sprite_items, viewport_x, viewport_y, viewport_width, viewport_height,
+            sprite_items,
+            viewport_x,
+            viewport_y,
+            viewport_width,
+            viewport_height,
             scale_factor,
+            [],
           )
           @render.host_gpu_end_pass()
         }
@@ -7336,11 +7969,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_a=clear.a,
           camera_x=camera.transform.translation.x,
           camera_y=camera.transform.translation.y,
-          camera_rotation=camera.transform.rotation_z(),
-          camera_scale=render2d_camera_uniform_scale(
-            camera.projection,
-            camera.transform,
-          ),
+          camera_rotation~,
+          camera_scale=camera_uniform_scale,
           viewport_x=0,
           viewport_y=0,
           viewport_width~,
@@ -7350,7 +7980,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
         draw_camera_items(
-          draw_items, 0, 0, viewport_width, viewport_height, scale_factor,
+          draw_opaque_items, 0, 0, viewport_width, viewport_height, scale_factor,
+          draw_transparent_items,
         )
         draw_wireframe_meshes_for_layers(meshes, camera.layers)
         @render.host_gpu_end_pass()
@@ -7365,11 +7996,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_a=clear.a,
           camera_x=camera.transform.translation.x,
           camera_y=camera.transform.translation.y,
-          camera_rotation=camera.transform.rotation_z(),
-          camera_scale=render2d_camera_uniform_scale(
-            camera.projection,
-            camera.transform,
-          ),
+          camera_rotation~,
+          camera_scale=camera_uniform_scale,
           viewport_x~,
           viewport_y~,
           viewport_width~,
@@ -7410,11 +8038,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_a=clear.a,
           camera_x=camera.transform.translation.x,
           camera_y=camera.transform.translation.y,
-          camera_rotation=camera.transform.rotation_z(),
-          camera_scale=render2d_camera_uniform_scale(
-            camera.projection,
-            camera.transform,
-          ),
+          camera_rotation~,
+          camera_scale=camera_uniform_scale,
           viewport_x~,
           viewport_y~,
           viewport_width~,
@@ -7424,7 +8049,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
         draw_camera_items(
-          draw_items, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+          draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
+          scale_factor, draw_transparent_items,
         )
         draw_wireframe_meshes_for_layers(meshes, camera.layers)
         gizmos_draw_lines(camera.layers)
@@ -7444,11 +8070,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         clear_a=clear.a,
         camera_x=camera.transform.translation.x,
         camera_y=camera.transform.translation.y,
-        camera_rotation=camera.transform.rotation_z(),
-        camera_scale=render2d_camera_uniform_scale(
-          camera.projection,
-          camera.transform,
-        ),
+        camera_rotation~,
+        camera_scale=camera_uniform_scale,
         viewport_x~,
         viewport_y~,
         viewport_width~,
@@ -7458,7 +8081,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
       draw_camera_items(
-        draw_items, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+        draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
+        scale_factor, draw_transparent_items,
       )
       draw_wireframe_meshes_for_layers(meshes, camera.layers)
       gizmos_draw_lines(camera.layers)
@@ -7467,6 +8091,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     gizmos_clear()
     rs.val.prepared_camera_indices.clear()
     rs.val.queued_draw_item_counts.clear()
+    rs.val.queued_camera_draw_items.clear()
     rs.val.extra_sprites.clear()
     rs.val.extra_ui_sprites.clear()
     rs.val.extra_ui_rects.clear()
@@ -7474,6 +8099,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     rs.val.extra_ui_texture_slices.clear()
   })
   |> ignore
+  render2d_diagnostic_execute_cpu_ms_ref.val = (
+      @time.host_time_now() - execute_start
+    ) *
+    1000.0F
 }
 
 ///|

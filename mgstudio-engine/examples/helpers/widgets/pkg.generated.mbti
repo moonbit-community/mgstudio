@@ -34,6 +34,9 @@ pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]]
 // Errors
 
 // Types and methods
+type IdleColor
+pub impl @ecs.Component for IdleColor
+
 pub struct RadioButton {
 }
 pub impl @ecs.Component for RadioButton

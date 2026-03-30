@@ -155,6 +155,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
     entity in query_candidate_entities(
       self.world,
       D::iteration_anchor_component(),
+      QueryFilter::iteration_anchor_component(self.filter),
     ) {
     if query_matches_with_query_data_default_filters(
         self.world,
@@ -183,6 +184,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
     entity in query_candidate_entities(
       self.world,
       D::iteration_anchor_component(),
+      QueryFilter::iteration_anchor_component(self.filter),
     ) {
     if query_matches_with_query_data_default_filters(
         self.world,
@@ -262,6 +264,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(
     entity in query_candidate_entities(
       self.world,
       D::iteration_anchor_component(),
+      QueryFilter::iteration_anchor_component(self.filter),
     ) {
     if query_matches_with_query_data_default_filters(
         self.world,
@@ -324,12 +327,18 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::get(
 }
 
 ///|
-pub fn[D, F] QueryState::iter(
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
   self : QueryState[D, F],
   world : World,
 ) -> QueryMany[D, F] {
   let query : Query[D, F] = query_filtered(world, self.filter)
-  query.iter_many(query_all_alive_entities(world))
+  query.iter_many(
+    query_candidate_entities(
+      world,
+      D::iteration_anchor_component(),
+      QueryFilter::iteration_anchor_component(self.filter),
+    ),
+  )
 }
 
 ///|
@@ -444,10 +453,16 @@ fn query_all_alive_entities(world : World) -> Array[@core.Entity] {
 fn query_candidate_entities(
   world : World,
   anchor_component_id : Int?,
+  filter_anchor_component_id : Int?,
 ) -> Array[@core.Entity] {
   match anchor_component_id {
     Some(component_id) => query_entities_for_component_id(world, component_id)
-    None => query_all_alive_entities(world)
+    None =>
+      match filter_anchor_component_id {
+        Some(component_id) =>
+          query_entities_for_component_id(world, component_id)
+        None => query_all_alive_entities(world)
+      }
   }
 }
 

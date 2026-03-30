@@ -1,11 +1,21 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/bevymark_3d"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type CubeAssets
+
+type CubeCounter
+
+type CubeVelocity
+pub impl @ecs.Component for CubeVelocity
 
 // Type aliases
 

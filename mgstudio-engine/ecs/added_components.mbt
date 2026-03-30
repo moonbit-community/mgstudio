@@ -62,5 +62,8 @@ pub fn[T] World::is_added_by_key(
   if !self.is_alive(entity) || !entity_has_component_id(self, key.id(), entity) {
     return false
   }
-  self.added_components(key, system).read().contains(entity)
+  match self.added_component_sequence(key.id(), entity.id) {
+    Some(sequence) => system.contains(sequence)
+    None => false
+  }
 }

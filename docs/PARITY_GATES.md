@@ -43,6 +43,20 @@ The exact selection can be narrowed or widened with:
 - `MGSTUDIO_3D_EXAMPLES_FILTER`
 - `MGSTUDIO_3D_EXAMPLES_MAX_CASES`
 
+### `gate_stress_performance.sh`
+
+Runs a representative stress performance gate using diagnostics metrics:
+
+- collects `fps_avg` and `frame_time_avg_ms` from stress example logs
+- compares results with a checked-in baseline threshold table
+- emits a markdown report under `/tmp` (or a caller-provided output directory)
+
+Related scripts:
+
+- `scripts/stress_profile_collect.sh`
+- `scripts/stress_perf_baseline.tsv`
+- `scripts/gate_stress_performance.sh`
+
 ## Entry point
 
 `mgstudio-engine/scripts/parity_hard_gates.sh` is the top-level entry point for
@@ -51,11 +65,18 @@ the parity gate set:
 1. `gate_no_mgstudio_shader.sh`
 2. `gate_asset_provenance.sh`
 3. `gate_visual_runtime.sh`
+4. `gate_stress_performance.sh` (optional; enabled by env flag)
 
 For environments that should only run the static subset, set:
 
 ```bash
 MGSTUDIO_PARITY_SKIP_VISUAL=1 ./mgstudio-engine/scripts/parity_hard_gates.sh
+```
+
+To include stress gate in the parity bundle:
+
+```bash
+MGSTUDIO_PARITY_INCLUDE_STRESS=1 ./mgstudio-engine/scripts/parity_hard_gates.sh
 ```
 
 ## CI shape

@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/remote/client"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type Pulse
+pub impl @ecs.Component for Pulse
 
 // Type aliases
 

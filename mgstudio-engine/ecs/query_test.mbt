@@ -256,6 +256,12 @@ pub impl QueryFilter for GenericTagFilter with mentions_component(
 }
 
 ///|
+pub impl QueryFilter for GenericTagFilter with iteration_anchor_component(self) {
+  ignore(self)
+  Some(generic_tag_key.id())
+}
+
+///|
 test "ecs query: query1 view and for_each" {
   let world = World::new()
   let comp_position = position_key

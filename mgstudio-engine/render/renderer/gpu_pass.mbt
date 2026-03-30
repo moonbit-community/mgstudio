@@ -180,6 +180,7 @@ pub fn GpuBackend::begin_pass(
     return
   }
   guard self.frame is Some(frame) else { return }
+  render_diagnostics_end_active_pass_timing()
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
@@ -220,6 +221,7 @@ pub fn GpuBackend::begin_pass(
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
+  self.pass_has_depth = false
   self.auto_exposure_active_state_buf = None
   let clip_from_world = gpu_clip_matrix_2d(
     Float::from_double(width_logical.to_double()),
@@ -307,6 +309,7 @@ pub fn GpuBackend::begin_pass(
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
   ensure_sprite_resources(self)
+  render_diagnostics_begin_active_pass_timing(RENDER_PASS_PHASE_2D)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
     let w = Float::from_double(width_logical.to_double())
@@ -320,6 +323,7 @@ pub fn GpuBackend::begin_pass(
     ])
     self.queue.write_buffer(globals_buf, 0UL, bytes)
   }
+  mesh2d_sync_view_uniforms_for_current_pass(self)
 }
 
 ///|
@@ -348,6 +352,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     return
   }
   guard self.frame is Some(frame) else { return }
+  render_diagnostics_end_active_pass_timing()
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
@@ -417,6 +422,7 @@ pub fn GpuBackend::begin_pass_with_depth(
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
+  self.pass_has_depth = true
   self.auto_exposure_active_state_buf = None
   let clip_from_world = gpu_clip_matrix_2d(
     Float::from_double(width_logical.to_double()),
@@ -504,6 +510,7 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
   ensure_sprite_resources(self)
+  render_diagnostics_begin_active_pass_timing(RENDER_PASS_PHASE_2D)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
     let w = Float::from_double(width_logical.to_double())
@@ -517,6 +524,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     ])
     self.queue.write_buffer(globals_buf, 0UL, bytes)
   }
+  mesh2d_sync_view_uniforms_for_current_pass(self)
 }
 
 ///|
@@ -634,6 +642,7 @@ pub fn GpuBackend::begin_pass_3d(
     return
   }
   guard self.frame is Some(frame) else { return }
+  render_diagnostics_end_active_pass_timing()
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
@@ -776,6 +785,7 @@ pub fn GpuBackend::begin_pass_3d(
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
+  self.pass_has_depth = true
   if target_id < 0 && effective_clear_enabled != 0 {
     set_active_surface_cleared_state(self, true)
   }
@@ -905,6 +915,9 @@ pub fn GpuBackend::begin_pass_3d(
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
   ensure_sprite_resources(self)
+  render_diagnostics_begin_active_pass_timing(
+    render_diagnostics_pass_phase_from_3d_pass_kind(pass_kind),
+  )
   if self.sprite_globals_buf is Some(globals_buf) {
     let w = Float::from_double(width_logical.to_double())
     let h = Float::from_double(height_logical.to_double())
@@ -929,6 +942,7 @@ pub fn GpuBackend::set_scissor(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
@@ -954,6 +968,7 @@ pub fn GpuBackend::clear_scissor(
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(pass_state) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
@@ -973,13 +988,16 @@ pub fn GpuBackend::clear_scissor(
 pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
+    flush_mesh2d_batches(self)
     flush_ui_shadow_batches(self)
     flush_ui_slice_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
+    render_diagnostics_end_active_pass_timing()
     pass.end()
     pass.release()
     frame.pass = None
   }
   self.pass_state = None
+  self.pass_has_depth = false
 }

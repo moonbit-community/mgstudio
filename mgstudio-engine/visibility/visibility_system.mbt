@@ -24,10 +24,10 @@
 /// (no frustum culling yet).
 
 ///|
-pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
+let visibility_initialized_worlds_ref : Ref[Map[Int, Bool]] = Ref::new({})
 
-  // Identify roots: entities that either have no parent, or whose parent lacks
-  // the required visibility components (Bevy fallback).
+///|
+fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
   let roots : Array[@core.Entity] = []
   let visibility_query : @ecs.Query[@ecs.Comp[Visibility], @ecs.All] = @ecs.query(
     world,
@@ -44,8 +44,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
       }
     }
   })
-
-  // DFS traversal from roots, propagating inherited visibility.
   let stack : Array[(@core.Entity, Bool)] = []
   for root in roots {
     stack.push((root, true))
@@ -61,8 +59,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
       Visibility::Visible => true
       Visibility::Inherited => parent_visible
     }
-
-    // Update InheritedVisibility (insert if missing).
     let needs_inherited_update = match
       (try! world.get_by_key(entity, ecs_key_inherited_visibility)) {
       Some(v) => v.is_visible() != is_visible
@@ -76,8 +72,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
         try! world.set_by_key(entity, ecs_key_inherited_visibility, v)
       }
     }
-
-    // Stage-1: ViewVisibility == InheritedVisibility (no culling yet).
     let needs_view_update = match
       (try! world.get_by_key(entity, ecs_key_view_visibility)) {
       Some(v) => v.is_visible() != is_visible
@@ -91,9 +85,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
         try! world.set_by_key(entity, ecs_key_view_visibility, v)
       }
     }
-
-    // Recurse to children that participate in visibility (same as Bevy's query
-    // constraints: With<Visibility>, With<InheritedVisibility>).
     if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
       is Some(children) {
       for child in children.entities() {
@@ -106,7 +97,130 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
+  let world_id = world.world_id()
+  if visibility_initialized_worlds_ref.val.get(world_id) is None {
+    visibility_propagate_full_scan(world)
+    visibility_initialized_worlds_ref.val.set(world_id, true)
+    return
+  }
+  let sequence = world.get_sequence_context().sequence()
+  let start_entities : Array[(@core.Entity, Bool)] = []
+  let start_seen : Map[Int, Bool] = {}
+
+  fn add_start_entity(
+    world : @ecs.World,
+    start_entities : Array[(@core.Entity, Bool)],
+    start_seen : Map[Int, Bool],
+    entity : @core.Entity,
+  ) -> Unit {
+    if start_seen.get(entity.id) is Some(_) {
+      return
+    }
+    start_seen.set(entity.id, true)
+    let parent_visible = match (world.get_by_key(entity, @hierarchy.ecs_key_parent) catch {
+      _ => None
+    }) {
+      Some(parent) => {
+        let p = parent.entity()
+        match (
+          world.get_by_key(p, ecs_key_visibility) catch { _ => None },
+          world.get_by_key(p, ecs_key_inherited_visibility) catch { _ => None },
+        ) {
+          (Some(_), Some(inherited)) => inherited.is_visible()
+          _ => true
+        }
+      }
+      None => true
+    }
+    start_entities.push((entity, parent_visible))
+  }
+
+  for entity in world.changed_components(ecs_key_visibility, sequence).read() {
+    add_start_entity(world, start_entities, start_seen, entity)
+  }
+  for entity in world.changed_components(@hierarchy.ecs_key_parent, sequence).read() {
+    add_start_entity(world, start_entities, start_seen, entity)
+  }
+  if start_entities.length() == 0 {
+    return
+  }
+
+  let stack : Array[(@core.Entity, Bool)] = []
+  for start in start_entities {
+    stack.push(start)
+  }
+  while stack.length() > 0 {
+    let (entity, parent_visible) = stack.pop().unwrap()
+    guard (try! world.get_by_key(entity, ecs_key_visibility))
+      is Some(visibility) else {
+      continue
+    }
+    let is_visible = match visibility {
+      Visibility::Hidden => false
+      Visibility::Visible => true
+      Visibility::Inherited => parent_visible
+    }
+    let inherited_visible_before = match
+      (try! world.get_by_key(entity, ecs_key_inherited_visibility)) {
+      Some(v) => v.is_visible()
+      None => !is_visible
+    }
+    let inherited_changed = inherited_visible_before != is_visible
+    if inherited_changed ||
+      !(try! world.contains_by_key(entity, ecs_key_inherited_visibility)) {
+      let inherited = InheritedVisibility::new(is_visible)
+      if (try! world.contains_by_key(entity, ecs_key_inherited_visibility)) {
+        try! (world.replace(entity, ecs_key_inherited_visibility, inherited) |> ignore)
+      } else {
+        try! world.set_by_key(entity, ecs_key_inherited_visibility, inherited)
+      }
+    }
+    // Stage-1: ViewVisibility == InheritedVisibility (no frustum culling yet).
+    if !(try! world.contains_by_key(entity, ecs_key_view_visibility)) ||
+      (try! world.get_by_key(entity, ecs_key_view_visibility))
+      .map(fn(v) { v.is_visible() })
+      .unwrap_or(!is_visible) != is_visible {
+      let view = ViewVisibility::new(is_visible)
+      if (try! world.contains_by_key(entity, ecs_key_view_visibility)) {
+        try! (world.replace(entity, ecs_key_view_visibility, view) |> ignore)
+      } else {
+        try! world.set_by_key(entity, ecs_key_view_visibility, view)
+      }
+    }
+    if !inherited_changed {
+      continue
+    }
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
+      for child in children.entities() {
+        if (try! world.contains_by_key(child, ecs_key_visibility)) {
+          stack.push((child, is_visible))
+        }
+      }
+    }
+  }
+}
+
+///|
+fn register_visibility_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_visibility,
+    ecs_key_inherited_visibility,
+    fn() { InheritedVisibility::new(true) },
+  )
+  world.register_required_components_with(
+    ecs_key_visibility,
+    ecs_key_view_visibility,
+    fn() { ViewVisibility::new(true) },
+  )
+}
+
+///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Hierarchy hooks keep `Children` synchronized with `Parent` before schedule execution.
+  try! register_visibility_required_components(app.world())
   app.add_pre_update_system(visibility_propagate_system)
 }

@@ -154,6 +154,8 @@ pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, F
 
 pub fn mesh3d_indirect_first_instance_supported() -> Bool
 
+pub fn mesh3d_preprocess_disabled_by_env() -> Bool
+
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
@@ -219,6 +221,7 @@ pub struct GpuBackend {
   mut surface_cleared_this_frame : Bool
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
+  mut pass_has_depth : Bool
   mut frame_count : UInt
   mut depth_texture : @wgpu_mbt.Texture?
   mut depth_view : @wgpu_mbt.TextureView?
@@ -231,6 +234,9 @@ pub struct GpuBackend {
   mut sprite_pipeline : @wgpu_mbt.RenderPipeline?
   mut sprite_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut sprite_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut sprite_pipeline_depth : @wgpu_mbt.RenderPipeline?
+  mut sprite_pipeline_depth_surface : @wgpu_mbt.RenderPipeline?
+  mut sprite_pipeline_depth_surface_format : @wgpu_mbt.TextureFormat?
   mut sprite_globals_buf : @wgpu_mbt.Buffer?
   mut sprite_instance_buf : @wgpu_mbt.Buffer?
   mut sprite_index_buf : @wgpu_mbt.Buffer?
@@ -301,9 +307,24 @@ pub struct GpuBackend {
   mut mesh2d_instance_bg : @wgpu_mbt.BindGroup?
   mut mesh2d_instance_capacity : UInt64
   mut mesh2d_instance_used : Int
+  mut mesh2d_batch_active : Bool
+  mut mesh2d_batch_mesh_id : Int
+  mut mesh2d_batch_alpha_mode_kind : Int
+  mut mesh2d_batch_wireframe : Bool
+  mut mesh2d_batch_vertex_shader_path : String
+  mut mesh2d_batch_fragment_shader_path : String
+  mut mesh2d_batch_material_hash : UInt64
+  mut mesh2d_batch_material_key : Array[HostMaterial2dBinding]
+  mut mesh2d_batch_uniform_base_offset : Int
+  mut mesh2d_batch_instance_count : UInt
+  mut mesh2d_batch_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh2d_batch_material_bg : @wgpu_mbt.BindGroup?
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
+  mesh2d_pipeline_cache_index : @hashmap.HashMap[String, Int]
   mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
+  mesh2d_material_layout_cache_index : Map[UInt64, Array[Int]]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
+  mesh2d_material_bg_cache_index : Map[UInt64, Array[Int]]
   mut mesh3d_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_draw : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
@@ -374,6 +395,7 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_previous_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_motion_vector_empty_bg : @wgpu_mbt.BindGroup?
   mesh3d_motion_vector_mesh_slots : Array[GpuStorageSlot]
   mut mesh3d_motion_vector_mesh_slot_used : Int
   mut mesh3d_motion_vector_instance_mesh_buf : @wgpu_mbt.Buffer?
@@ -810,7 +832,7 @@ pub(all) struct HostMesh3dPreprocessView {
 type Mesh2dMaterialBindGroupCacheEntry
 
 pub struct Mesh2dMaterialLayoutCacheEntry {
-  key : String
+  key : Array[(UInt, Int)]
   bind_group_layout : @wgpu_mbt.BindGroupLayout
   pipeline_layout : @wgpu_mbt.PipelineLayout
 }

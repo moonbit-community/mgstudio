@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/many_materials"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type MaterialSlot
+pub impl @ecs.Component for MaterialSlot
 
 // Type aliases
 

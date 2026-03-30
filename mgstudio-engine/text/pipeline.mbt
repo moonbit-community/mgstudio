@@ -311,6 +311,11 @@ fn text_span_has_strikethrough(
 let font_atlas_set_state : Ref[FontAtlasSet] = Ref::new(FontAtlasSet::default())
 
 ///|
+let default_text_font_handle_ref : Ref[@asset.Handle[@asset.Font]?] = Ref::new(
+  None,
+)
+
+///|
 /// Global font system state for `moon_cosmic` (engine-side shaping/wrap/BiDi).
 priv struct CosmicFontSystemState {
   font_system : @cosmic.FontSystem
@@ -329,6 +334,24 @@ let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontS
   font_id_to_handle_id: [],
   handle_to_family: [],
 })
+
+///|
+let text_diagnostic_update_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
+let text_diagnostic_update_pending_layout_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let text_diagnostic_render_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
+let text_diagnostic_render_visible_text_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let text_diagnostic_render_culled_text_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let text_diagnostic_render_submitted_item_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
 fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
@@ -392,13 +415,25 @@ fn find_str_pair_value(pairs : Array[(Int, String)], key : Int) -> String? {
 const DEFAULT_TEXT_FONT_PATH : String = "fonts/FiraMono-Medium.ttf"
 
 ///|
+fn text_pipeline_ensure_default_font_handle() -> @asset.Handle[@asset.Font] {
+  match default_text_font_handle_ref.val {
+    Some(cached) => cached
+    None => {
+      let loaded = @asset.AssetServer::new().load_font(DEFAULT_TEXT_FONT_PATH)
+      default_text_font_handle_ref.val = Some(loaded)
+      loaded
+    }
+  }
+}
+
+///|
 fn text_pipeline_resolve_default_font(
   font : @asset.Handle[@asset.Font],
 ) -> @asset.Handle[@asset.Font] {
   if font.id() > 0 {
     return font
   }
-  @asset.AssetServer::new().load_font(DEFAULT_TEXT_FONT_PATH)
+  text_pipeline_ensure_default_font_handle()
 }
 
 ///|
@@ -596,7 +631,7 @@ fn text_layout_needs_update(instance : TextInstance) -> Bool {
 ///|
 fn text_update_layout(instance : TextInstance) -> TextInstance {
   if !text_layout_needs_update(instance) {
-    return instance
+    return TextInstance::{ ..instance, layout_dirty: false }
   }
   let logical_viewport_size = text_current_logical_viewport_size(instance)
   let rem_size = text_runtime_rem_size_ref.val
@@ -611,6 +646,12 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         run_geometry: [],
         size: @math.Vec2::new(0.0F, 0.0F),
       },
+      cull_margin: text_compute_cull_margin(
+        instance.bounds,
+        @math.Vec2::new(0.0F, 0.0F),
+        instance.transform.scale,
+      ),
+      layout_dirty: false,
       computed: ComputedTextBlock::{
         buffer,
         entities,
@@ -625,11 +666,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
 
   // Ensure all fonts used by this text block are loaded into the cosmic font system.
   //
-  // Important: When font bytes are not yet available (async host load),
-  // `cosmic_get_or_load_font_id` returns None and the layout phase may produce
-  // zero glyphs. We must keep `needs_rerender=true` in that case so the text
-  // retries once assets become available.
-  // Retry only for async font-byte loading paths.
+  // Bevy parity: if required fonts are not ready yet, defer text processing and
+  // retry next frame instead of running full layout/raster work on a fallback path.
   //
   // Other glyph failures:
   // - missing glyph image keeps partial layout and retries next frame.
@@ -641,6 +679,26 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   for span in instance.spans {
     if !text_font_source_ready(span.font.font) {
       needs_retry = true
+    }
+  }
+  if needs_retry {
+    return TextInstance::{
+      ..instance,
+      cull_margin: text_compute_cull_margin(
+        instance.bounds,
+        instance.layout_info.size,
+        instance.transform.scale,
+      ),
+      layout_dirty: true,
+      computed: ComputedTextBlock::{
+        buffer,
+        entities,
+        needs_rerender: true,
+        uses_viewport_sizes: buffer.uses_viewport_sizes,
+        uses_rem_sizes: buffer.uses_rem_sizes,
+        logical_viewport_size: instance.logical_viewport_size,
+        rem_size,
+      },
     }
   }
   let font_system = cosmic_font_system_state.val.font_system
@@ -735,40 +793,10 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
   for run in cosmic_buffer.layout_runs() {
-    // Reconstruct run vertical bounds from font metrics.
-    // Baseline (`run.line_y`) comes from `moon_cosmic` layout.
-    let mut run_max_ascent = 0.0F
-    let mut run_max_descent = 0.0F
-    for g in run.glyphs {
-      let font_opt = font_system.get_font(g.font_id)
-      if font_opt is Some(font_ref) {
-        let m = font_ref.metrics([])
-        let upem = m.units_per_em.to_int()
-        if upem > 0 {
-          let scalar = g.font_size / Float::from_double(upem.to_double())
-          let ascent = Float::from_double(m.ascent * scalar.to_double())
-          let descent = Float::from_double(m.descent * scalar.to_double())
-          if ascent > run_max_ascent {
-            run_max_ascent = ascent
-          }
-          if descent > run_max_descent {
-            run_max_descent = descent
-          }
-        }
-      }
-    }
-    let run_glyph_height = run_max_ascent + run_max_descent
     let run_line_y = run.line_y
-    let run_min_y = if run_glyph_height > 0.0F {
-      run_line_y - run_max_ascent
-    } else {
-      run.line_top
-    }
-    let run_max_y = if run_glyph_height > 0.0F {
-      run_min_y + run_glyph_height
-    } else {
-      run.line_top + run.line_height
-    }
+    // Bevy parity: use layout line bounds directly for run geometry bounds.
+    let run_min_y = run.line_top
+    let run_max_y = run.line_top + run.line_height
 
     let mut maybe_run_geom : RunGeometry? = None
     let mut end_x = 0.0F
@@ -839,18 +867,6 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let (physical_key, phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
         layout_glyph, font_smoothing, run_line_y,
       )
-      let raster_opt = font_rasterize_cache_key(
-        font_system, physical_key, font_smoothing,
-      )
-      if raster_opt is None {
-        // Bevy parity intent:
-        // layout extraction should skip non-renderable spacing/cluster glyphs.
-        // `moon_cosmic` can emit such glyphs with no raster image even when
-        // byte ranges do not map cleanly to visible whitespace.
-        // Treat them as non-renderable and continue without forcing rerender.
-        continue
-      }
-      let raster = if raster_opt is Some(v) { v } else { continue }
       let cache_key = GlyphCacheKey::new(
         physical_key.glyph_id,
         subpixel_x,
@@ -864,13 +880,34 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         font_smoothing,
       )
       let atlases = font_atlas_set_state.val.get_or_insert(font_key)
-      let atlas_info_opt = add_glyph_to_atlas(
-        atlases, cache_key, raster, font_smoothing,
-      )
-      if atlas_info_opt is None {
-        text_abort_layout_error(instance.id, "failed to add glyph to atlas")
+      let atlas_info = match get_glyph_atlas_info(atlases, cache_key) {
+        Some(atlas_info) => atlas_info
+        None => {
+          let raster_opt = font_rasterize_cache_key(
+            font_system, physical_key, font_smoothing,
+          )
+          if raster_opt is None {
+            // Bevy parity intent:
+            // layout extraction should skip non-renderable spacing/cluster glyphs.
+            // `moon_cosmic` can emit such glyphs with no raster image even when
+            // byte ranges do not map cleanly to visible whitespace.
+            // Treat them as non-renderable and continue without forcing rerender.
+            continue
+          }
+          let raster = if raster_opt is Some(v) { v } else { continue }
+          let atlas_info_opt = add_glyph_to_atlas(
+            atlases, cache_key, raster, font_smoothing,
+          )
+          if atlas_info_opt is None {
+            text_abort_layout_error(instance.id, "failed to add glyph to atlas")
+          }
+          if atlas_info_opt is Some(v) {
+            v
+          } else {
+            continue
+          }
+        }
       }
-      let atlas_info = if atlas_info_opt is Some(v) { v } else { continue }
       let layout_opt = @asset.asset_get_texture_atlas_layout(
         atlas_info.texture_atlas,
       )
@@ -939,6 +976,12 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   TextInstance::{
     ..instance,
     layout_info: updated,
+    cull_margin: text_compute_cull_margin(
+      instance.bounds,
+      updated.size,
+      instance.transform.scale,
+    ),
+    layout_dirty: needs_retry,
     computed: ComputedTextBlock::{
       buffer,
       entities,
@@ -960,150 +1003,228 @@ fn text_runtime_resolve_rem_size(world : @ecs.World) -> Float {
 }
 
 ///|
+
+///|
+fn text_absf(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F - value
+  } else {
+    value
+  }
+}
+
+///|
+fn text_scene_item_visible(
+  center_x : Float,
+  center_y : Float,
+  cosv : Float,
+  sinv : Float,
+  half_width : Float,
+  half_height : Float,
+  x : Float,
+  y : Float,
+  radius : Float,
+) -> Bool {
+  let dx = x - center_x
+  let dy = y - center_y
+  let local_x = dx * cosv + dy * sinv
+  let local_y = -dx * sinv + dy * cosv
+  text_absf(local_x) <= half_width + radius &&
+  text_absf(local_y) <= half_height + radius
+}
+
+///|
+fn text_rotate_vec2(v : @math.Vec2, cosv : Float, sinv : Float) -> @math.Vec2 {
+  @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
+}
+
+///|
+fn text_to_y_up(y_axis : YAxisOrientation, v : @math.Vec2) -> @math.Vec2 {
+  match y_axis {
+    YAxisOrientation::TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
+    YAxisOrientation::BottomToTop => v
+  }
+}
+
+///|
+fn text_glyph_world_bounds(
+  center : @math.Vec2,
+  glyph_size : @math.Vec2,
+  scale : @math.Vec2,
+  rotation : Float,
+) -> @math.Rect {
+  let rotation_cos = @math.cos(rotation)
+  let rotation_sin = @math.sin(rotation)
+  let half = @math.Vec2::new(
+    glyph_size.x * text_absf(scale.x) / 2.0F,
+    glyph_size.y * text_absf(scale.y) / 2.0F,
+  )
+  let p0 = text_rotate_vec2(
+    @math.Vec2::new(0.0F - half.x, 0.0F - half.y),
+    rotation_cos,
+    rotation_sin,
+  )
+  let p1 = text_rotate_vec2(
+    @math.Vec2::new(half.x, 0.0F - half.y),
+    rotation_cos,
+    rotation_sin,
+  )
+  let p2 = text_rotate_vec2(
+    @math.Vec2::new(half.x, half.y),
+    rotation_cos,
+    rotation_sin,
+  )
+  let p3 = text_rotate_vec2(
+    @math.Vec2::new(0.0F - half.x, half.y),
+    rotation_cos,
+    rotation_sin,
+  )
+  let x0 = center.x + p0.x
+  let y0 = center.y + p0.y
+  let x1 = center.x + p1.x
+  let y1 = center.y + p1.y
+  let x2 = center.x + p2.x
+  let y2 = center.y + p2.y
+  let x3 = center.x + p3.x
+  let y3 = center.y + p3.y
+  let mut min_x = x0
+  let mut max_x = x0
+  let mut min_y = y0
+  let mut max_y = y0
+  if x1 < min_x {
+    min_x = x1
+  }
+  if x2 < min_x {
+    min_x = x2
+  }
+  if x3 < min_x {
+    min_x = x3
+  }
+  if x1 > max_x {
+    max_x = x1
+  }
+  if x2 > max_x {
+    max_x = x2
+  }
+  if x3 > max_x {
+    max_x = x3
+  }
+  if y1 < min_y {
+    min_y = y1
+  }
+  if y2 < min_y {
+    min_y = y2
+  }
+  if y3 < min_y {
+    min_y = y3
+  }
+  if y1 > max_y {
+    max_y = y1
+  }
+  if y2 > max_y {
+    max_y = y2
+  }
+  if y3 > max_y {
+    max_y = y3
+  }
+  @math.Rect::new(@math.Vec2::new(min_x, min_y), @math.Vec2::new(max_x, max_y))
+}
+
+///|
 pub fn text_update_system(world : @ecs.World) -> Unit {
+  let update_start = @time.host_time_now()
+  text_diagnostic_update_pending_layout_count_ref.val = 0
   text_set_runtime_rem_size(text_runtime_resolve_rem_size(world))
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    text_state.val.texts[i] = text_update_layout(text_state.val.texts[i])
+  if text_runtime_layout_dirty() {
+    text_runtime_clear_layout_dirty()
+    let count = text_state.val.texts.length()
+    let pending_layout_count = Ref::new(0)
+    for i in 0..<count {
+      let current = text_state.val.texts[i]
+      if !current.layout_dirty {
+        continue
+      }
+      let instance = text_update_layout(current)
+      if instance.layout_dirty {
+        pending_layout_count.val = pending_layout_count.val + 1
+      }
+      text_state.val.texts[i] = instance
+    }
+    text_diagnostic_update_pending_layout_count_ref.val = pending_layout_count.val
+    if pending_layout_count.val > 0 {
+      text_runtime_mark_layout_dirty()
+    }
   }
   world.insert_resource(FontAtlasSet::resource(), font_atlas_set_state.val)
+  text_diagnostic_update_cpu_ms_ref.val = (@time.host_time_now() - update_start) *
+    1000.0F
 }
 
 ///|
 pub fn text_render_system(world : @ecs.World) -> Unit {
+  let render_start = @time.host_time_now()
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
   let overlay_sprites : Array[@sprite.OverlaySpriteUvScissor] = []
   let white_texture = @asset.asset_white_texture()
-  let texts = text_state.val.texts
-  for instance in texts {
+  let scene_cull_context = @sprite_render.render2d_primary_scene_cull_context(
+    world,
+  )
+  let scene_cull_values : (Float, Float, Float, Float, Float, Float)? = match
+    scene_cull_context {
+    Some(context) =>
+      Some(@sprite_render.render2d_scene_cull_context_values(context))
+    None => None
+  }
+  let text_count = text_state.val.texts.length()
+  let visible_text_count = Ref::new(0)
+  let culled_text_count = Ref::new(0)
+  for i in 0..<text_count {
+    let instance = text_state.val.texts[i]
     let layout_info = instance.layout_info
-    fn rotate_vec2(v : @math.Vec2, cosv : Float, sinv : Float) -> @math.Vec2 {
-      @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
-    }
+    let transform = instance.transform
+    let tx = transform.translation.x
+    let ty = transform.translation.y
+    let sx = transform.scale.x
+    let sy = transform.scale.y
 
-    fn absf(v : Float) -> Float {
-      if v < 0.0F {
-        0.0F - v
-      } else {
-        v
+    // Bevy-aligned intent: skip `Text2d` work for off-screen text.
+    // UI text (`ui_node_size` is `Some`) keeps existing UI-space behavior.
+    if instance.ui_node_size is None && !instance.no_frustum_culling {
+      if scene_cull_values
+        is Some((center_x, center_y, cosv, sinv, half_width, half_height)) {
+        if !text_scene_item_visible(
+            center_x,
+            center_y,
+            cosv,
+            sinv,
+            half_width,
+            half_height,
+            tx,
+            ty,
+            instance.cull_margin,
+          ) {
+          culled_text_count.val = culled_text_count.val + 1
+          continue
+        }
       }
     }
+    visible_text_count.val = visible_text_count.val + 1
+    let bound_w = instance.bounds.width.unwrap_or(layout_info.size.x)
+    let bound_h = instance.bounds.height.unwrap_or(layout_info.size.y)
+    let scale = @math.Vec2::new(sx, sy)
+    let base = @math.Vec2::new(tx, ty)
+    let anchor_size = @math.Vec2::new(bound_w, bound_h)
 
-    fn to_y_up(y_axis : YAxisOrientation, v : @math.Vec2) -> @math.Vec2 {
-      match y_axis {
-        YAxisOrientation::TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
-        YAxisOrientation::BottomToTop => v
-      }
-    }
-
-    fn glyph_world_bounds(
-      center : @math.Vec2,
-      glyph_size : @math.Vec2,
-      scale : @math.Vec2,
-      rotation : Float,
-    ) -> @math.Rect {
-      let rotation_cos = @math.cos(rotation)
-      let rotation_sin = @math.sin(rotation)
-      let half = @math.Vec2::new(
-        glyph_size.x * absf(scale.x) / 2.0F,
-        glyph_size.y * absf(scale.y) / 2.0F,
-      )
-      let p0 = rotate_vec2(
-        @math.Vec2::new(0.0F - half.x, 0.0F - half.y),
-        rotation_cos,
-        rotation_sin,
-      )
-      let p1 = rotate_vec2(
-        @math.Vec2::new(half.x, 0.0F - half.y),
-        rotation_cos,
-        rotation_sin,
-      )
-      let p2 = rotate_vec2(
-        @math.Vec2::new(half.x, half.y),
-        rotation_cos,
-        rotation_sin,
-      )
-      let p3 = rotate_vec2(
-        @math.Vec2::new(0.0F - half.x, half.y),
-        rotation_cos,
-        rotation_sin,
-      )
-      let x0 = center.x + p0.x
-      let y0 = center.y + p0.y
-      let x1 = center.x + p1.x
-      let y1 = center.y + p1.y
-      let x2 = center.x + p2.x
-      let y2 = center.y + p2.y
-      let x3 = center.x + p3.x
-      let y3 = center.y + p3.y
-      let mut min_x = x0
-      let mut max_x = x0
-      let mut min_y = y0
-      let mut max_y = y0
-      if x1 < min_x {
-        min_x = x1
-      }
-      if x2 < min_x {
-        min_x = x2
-      }
-      if x3 < min_x {
-        min_x = x3
-      }
-      if x1 > max_x {
-        max_x = x1
-      }
-      if x2 > max_x {
-        max_x = x2
-      }
-      if x3 > max_x {
-        max_x = x3
-      }
-      if y1 < min_y {
-        min_y = y1
-      }
-      if y2 < min_y {
-        min_y = y2
-      }
-      if y3 < min_y {
-        min_y = y3
-      }
-      if y1 > max_y {
-        max_y = y1
-      }
-      if y2 > max_y {
-        max_y = y2
-      }
-      if y3 > max_y {
-        max_y = y3
-      }
-      @math.Rect::new(
-        @math.Vec2::new(min_x, min_y),
-        @math.Vec2::new(max_x, max_y),
-      )
-    }
-
-    let rot = instance.transform.rotation_z()
+    let rot = transform.rotation_z()
     let rot_cos = @math.cos(rot)
     let rot_sin = @math.sin(rot)
-    let scale = @math.Vec2::new(
-      instance.transform.scale.x,
-      instance.transform.scale.y,
-    )
-    let base = @math.Vec2::new(
-      instance.transform.translation.x,
-      instance.transform.translation.y,
-    )
 
     // Bevy parity:
     // - Text2d: use `Anchor` + (`TextBounds` if set, otherwise `TextLayoutInfo.size`)
     //   to compute the local origin.
     // - UI text: treat `GlobalTransform`/`Transform` as the center of the UI node, then translate
     //   by (-0.5 * node_size) to convert to top-left origin.
-    let anchor_size = @math.Vec2::new(
-      instance.bounds.width.unwrap_or(layout_info.size.x),
-      instance.bounds.height.unwrap_or(layout_info.size.y),
-    )
     let mut origin_offset_layout = @math.Vec2::new(0.0F, 0.0F)
     if instance.ui_node_size is Some(node_size) {
       origin_offset_layout = @math.Vec2::new(
@@ -1134,33 +1255,35 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     // For UI text we keep existing conversion semantics.
     let origin_offset = match (instance.y_axis, instance.ui_node_size) {
       (YAxisOrientation::TopToBottom, None) => origin_offset_layout
-      _ => to_y_up(instance.y_axis, origin_offset_layout)
+      _ => text_to_y_up(instance.y_axis, origin_offset_layout)
     }
     let origin_scaled = @math.Vec2::new(
       origin_offset.x * scale.x,
       origin_offset.y * scale.y,
     )
-    let origin_rotated = rotate_vec2(origin_scaled, rot_cos, rot_sin)
+    let origin_rotated = text_rotate_vec2(origin_scaled, rot_cos, rot_sin)
     let text_origin = @math.Vec2::new(
       base.x + origin_rotated.x,
       base.y + origin_rotated.y,
     )
 
     for run in layout_info.run_geometry {
-      let run_center_layout = to_y_up(instance.y_axis, run.bounds.center())
+      let run_center_layout = text_to_y_up(instance.y_axis, run.bounds.center())
       let run_center_scaled = @math.Vec2::new(
         run_center_layout.x * scale.x,
         run_center_layout.y * scale.y,
       )
-      let run_center_offset = rotate_vec2(run_center_scaled, rot_cos, rot_sin)
+      let run_center_offset = text_rotate_vec2(
+        run_center_scaled, rot_cos, rot_sin,
+      )
       let run_translation = @math.Vec2::new(
         text_origin.x + run_center_offset.x,
         text_origin.y + run_center_offset.y,
       )
       let run_size = run.bounds.size()
       let run_draw_scale = @math.Vec2::new(
-        run_size.x * absf(scale.x),
-        run_size.y * absf(scale.y),
+        run_size.x * text_absf(scale.x),
+        run_size.y * text_absf(scale.y),
       )
       if text_span_background_color(instance, run.span_index)
         is Some(background) &&
@@ -1196,7 +1319,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         None => span_color
       }
       if text_span_has_underline(instance, run.span_index) {
-        let underline_position_layout = to_y_up(
+        let underline_position_layout = text_to_y_up(
           instance.y_axis,
           run.underline_position(),
         )
@@ -1204,15 +1327,17 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           underline_position_layout.x * scale.x,
           underline_position_layout.y * scale.y,
         )
-        let underline_offset = rotate_vec2(underline_scaled, rot_cos, rot_sin)
+        let underline_offset = text_rotate_vec2(
+          underline_scaled, rot_cos, rot_sin,
+        )
         let underline_translation = @math.Vec2::new(
           text_origin.x + underline_offset.x,
           text_origin.y + underline_offset.y,
         )
         let underline_size = run.underline_size()
         let underline_draw_scale = @math.Vec2::new(
-          underline_size.x * absf(scale.x),
-          underline_size.y * absf(scale.y),
+          underline_size.x * text_absf(scale.x),
+          underline_size.y * text_absf(scale.y),
         )
         if underline_draw_scale.x > 0.0F && underline_draw_scale.y > 0.0F {
           let underline_transform = @transform.Transform::from_xy_rotation_scale(
@@ -1235,7 +1360,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       }
 
       if text_span_has_strikethrough(instance, run.span_index) {
-        let strike_position_layout = to_y_up(
+        let strike_position_layout = text_to_y_up(
           instance.y_axis,
           run.strikethrough_position(),
         )
@@ -1243,15 +1368,15 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           strike_position_layout.x * scale.x,
           strike_position_layout.y * scale.y,
         )
-        let strike_offset = rotate_vec2(strike_scaled, rot_cos, rot_sin)
+        let strike_offset = text_rotate_vec2(strike_scaled, rot_cos, rot_sin)
         let strike_translation = @math.Vec2::new(
           text_origin.x + strike_offset.x,
           text_origin.y + strike_offset.y,
         )
         let strike_size = run.strikethrough_size()
         let strike_draw_scale = @math.Vec2::new(
-          strike_size.x * absf(scale.x),
-          strike_size.y * absf(scale.y),
+          strike_size.x * text_absf(scale.x),
+          strike_size.y * text_absf(scale.y),
         )
         if strike_draw_scale.x > 0.0F && strike_draw_scale.y > 0.0F {
           let strike_transform = @transform.Transform::from_xy_rotation_scale(
@@ -1281,12 +1406,12 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       let atlas_info = glyph.atlas_info
       let uv_min = glyph.uv_min
       let uv_max = glyph.uv_max
-      let glyph_pos = to_y_up(instance.y_axis, glyph.position)
+      let glyph_pos = text_to_y_up(instance.y_axis, glyph.position)
       let local_scaled = @math.Vec2::new(
         glyph_pos.x * scale.x,
         glyph_pos.y * scale.y,
       )
-      let offset = rotate_vec2(local_scaled, rot_cos, rot_sin)
+      let offset = text_rotate_vec2(local_scaled, rot_cos, rot_sin)
       let translation = @math.Vec2::new(
         text_origin.x + offset.x,
         text_origin.y + offset.y,
@@ -1331,7 +1456,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         target_camera: instance.ui_camera_entity,
       })
       if debug_capture_enabled {
-        let glyph_bounds = glyph_world_bounds(
+        let glyph_bounds = text_glyph_world_bounds(
           translation,
           glyph.size,
           scale,
@@ -1349,6 +1474,41 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     }
   }
   @sprite_render.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
+  text_diagnostic_render_visible_text_count_ref.val = visible_text_count.val
+  text_diagnostic_render_culled_text_count_ref.val = culled_text_count.val
+  text_diagnostic_render_submitted_item_count_ref.val = overlay_sprites.length()
+  text_diagnostic_render_cpu_ms_ref.val = (@time.host_time_now() - render_start) *
+    1000.0F
+}
+
+///|
+pub fn text_diagnostic_update_cpu_ms() -> Float {
+  text_diagnostic_update_cpu_ms_ref.val
+}
+
+///|
+pub fn text_diagnostic_update_pending_layout_count() -> Int {
+  text_diagnostic_update_pending_layout_count_ref.val
+}
+
+///|
+pub fn text_diagnostic_render_cpu_ms() -> Float {
+  text_diagnostic_render_cpu_ms_ref.val
+}
+
+///|
+pub fn text_diagnostic_render_visible_text_count() -> Int {
+  text_diagnostic_render_visible_text_count_ref.val
+}
+
+///|
+pub fn text_diagnostic_render_culled_text_count() -> Int {
+  text_diagnostic_render_culled_text_count_ref.val
+}
+
+///|
+pub fn text_diagnostic_render_submitted_item_count() -> Int {
+  text_diagnostic_render_submitted_item_count_ref.val
 }
 
 ///|
@@ -1364,6 +1524,7 @@ pub let text_set_sync_ecs : @app.SystemSet = @app.system_set(
 ///|
 pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_text_required_components(app.world())
+  text_pipeline_ensure_default_font_handle() |> ignore
   let next = app
     .insert_resource(RemSize::default())
     .insert_resource(FontCx::default())

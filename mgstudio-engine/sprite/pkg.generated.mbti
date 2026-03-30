@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
@@ -180,7 +181,11 @@ pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@image
 
 pub fn render2d_debug_log_primary_camera(@ecs.World) -> Unit
 
+pub fn render2d_diagnostic_execute_cpu_ms() -> Float
+
 pub fn render2d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render2d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
@@ -693,6 +698,7 @@ pub impl @json.FromJson for PanCamera
 pub struct PreparedMaterial2d[M] {
   source : @asset.Handle[M]
   bind_group : Material2dBindGroup
+  host_bind_group : @renderer.HostMaterial2dBindGroup
   key : Material2dKey[M]
   properties : Material2dProperties
 }

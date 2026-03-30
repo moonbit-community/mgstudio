@@ -1,0 +1,124 @@
+This file must not exceed 200 lines.
+
+- [x] Package `a11y`.
+- [x] Package `android`.
+- [x] Package `animation`.
+- [x] Package `anti_alias`.
+- [x] Package `app`.
+- [x] Package `asset`.
+- [x] Package `audio`.
+- [x] Package `camera`.
+- [x] Package `camera_controller`.
+- [x] Package `color`.
+- [x] Package `core`.
+- [x] Package `core_pipeline`.
+- [ ] Package `dev_tools` (pending deeper profiling surface).
+- [ ] Package `diagnostic` (pending stress-suite diagnostics consistency and deeper profiling).
+- [ ] Package `ecs` (pending full change-detection boundary closure).
+- [x] Package `encase_derive`.
+- [x] Package `feathers`.
+- [x] Package `gilrs`.
+- [x] Package `gizmos`.
+- [x] Package `gizmos_render`.
+- [x] Package `gltf`.
+- [x] Package `hierarchy`.
+- [x] Package `image`.
+- [x] Package `input`.
+- [x] Package `input/events`.
+- [x] Package `input_focus`.
+- [x] Package `internal`.
+- [x] Package `light`.
+- [x] Package `log`.
+- [x] Package `macro_utils`.
+- [x] Package `material`.
+- [x] Package `math`.
+- [x] Package `mesh`.
+- [x] Package `moon.pkg` (root runtime package).
+- [x] Package `naga_oil` (runtime contract path aligned; internal toolchain parity not tracked).
+- [x] Package `pbr`.
+- [x] Package `physics2d`.
+- [x] Package `physics3d`.
+- [x] Package `picking`.
+- [x] Package `platform`.
+- [x] Package `pointer_events`.
+- [x] Package `post_process`.
+- [x] Package `ptr`.
+- [x] Package `reflect` (policy-locked minimal boundary).
+- [ ] Package `remote` (current plugin is still stubbed backend).
+- [ ] Package `render` (pending perf baseline tooling and heavy-scene optimization closure).
+- [ ] Package `render/renderer` (pending profiling/deep perf tooling and bottleneck closure).
+- [x] Package `scene`.
+- [x] Package `shader`.
+- [ ] Package `solari` (current runtime boundary is still stubbed).
+- [x] Package `sprite`.
+- [x] Package `sprite_render`.
+- [x] Package `state`.
+- [ ] Package `text` (pending glyph/layout stress bottleneck closure).
+- [x] Package `time`.
+- [x] Package `transform`.
+- [x] Package `ui`.
+- [x] Package `ui_render`.
+- [x] Package `ui_widgets`.
+- [x] Package `utils`.
+- [x] Package `visibility`.
+- [x] Package `window`.
+- [x] Package `window/windowing_native`.
+- [x] Package `winit`.
+- [x] Issue `app/changed_filter_surface`: expose and wire `Changed<T>` through app query/system-param surface.
+- [x] Issue `app/change_detection_conditions`: align component/resource change run-conditions with `Changed<T>` semantics.
+- [x] Issue `app/commands_spawn_batch_single_queue`: make `Commands::spawn_batch` queue one batched command instead of `N` per-entity deferred commands.
+- [x] Issue `ecs/changed_filter_storage`: add changed-component tracking storage and reader lifecycle.
+- [x] Issue `ecs/changed_filter_query`: add `Changed<T>` query filter matching and component mention wiring.
+- [x] Issue `ecs/changed_filter_tests`: add wbtest/unit coverage and migrate `change_detection` example to final semantics.
+- [x] Issue `ecs/changed_filter_ref_boundary`: define/close behavior for direct `Mut::get_ref()` in-place writes.
+- [x] Issue `ecs/added_changed_o1_lookup`: switch `is_added_by_key/is_changed_by_key` to per-entity sequence lookup and clear records on remove/despawn.
+- [ ] Issue `dev_tools/perf_overlay`: add profiling-oriented dev tool surface beyond FPS-only overlay.
+- [ ] Issue `diagnostic/timeline_metrics`: add timeline/trace-grade metrics export path.
+- [ ] Issue `diagnostic/stress_consistency`: keep stress diagnostics output shape stable across all stress examples.
+- [x] Issue `pbr/perf_bevymark_3d`: remove prequeue-to-draw-item `O(N^2)` remap hotspot in render3d queue pipeline.
+- [x] Issue `pbr/perf_many_materials`: remove prequeue-to-mesh `O(N^2)` resolve hotspot in render3d queue pipeline.
+- [x] Issue `pbr/perf_queue_index_maps`: switch preprocessed queue remap/resolve to entity-id index maps with generation-safe fallback.
+- [x] Issue `pbr/perf_reprofile`: re-run `bevymark_3d/many_materials` stress profiling after queue-path optimization.
+- [x] Issue `pbr/perf_many_foxes_scope`: classify remaining `many_foxes` bottleneck as gltf/animation skinning runtime, not pbr queue path.
+- [ ] Issue `text/perf_many_text2d`: optimize world/UI text stress bottlenecks in `many_text2d`.
+- [ ] Issue `text/perf_many_glyphs`: optimize glyph layout/raster cache bottlenecks in `many_glyphs`.
+- [ ] Issue `text/perf_text_pipeline`: optimize text pipeline bottlenecks in `text_pipeline`.
+- [ ] Issue `text/view_visibility_text2d`: wire `ViewVisibility` consistency for Text2d and align visible-count diagnostics with runtime output.
+- [x] Issue `stress_tests/text_example_flow_alignment`: align `many_glyphs`/`many_text2d`/`text_pipeline` control flow with Bevy-style args/camera/recompute/bounds patterns.
+- [ ] Issue `remote/transport_backend`: replace remote plugin stub with real transport backend.
+- [ ] Issue `remote/protocol_backend`: replace remote plugin stub with protocol/message runtime.
+- [x] Issue `render/profiler_hooks`: add render-stage profiling hooks for repeatable stress analysis.
+- [x] Issue `render_renderer/pass_timing`: expose per-pass/per-phase timing metrics for regressions.
+- [x] Issue `render_renderer/mesh2d_structural_cache_keys`: replace mesh2d material cache key heuristics with structural keys and collision-safe lookup.
+- [x] Issue `render_renderer/mesh2d_pass_uniform_sync`: move mesh2d view/global uniform upload from draw path to pass begin path.
+- [x] Issue `sprite/material2d_prepare_unique_handles`: prepare `PreparedMaterial2d` once per unique source handle instead of per mesh instance each frame.
+- [x] Issue `sprite/material2d_prepare_host_bind_group`: build host material bind-group once in prepare stage and reuse it in mesh draw path.
+- [x] Issue `sprite/render2d_color_material_fastpath`: bypass runtime-registry indirection for default color material path in queue/draw and use direct typed path.
+- [x] Issue `render_renderer/mesh2d_instanced_batch_submission`: batch contiguous mesh2d draw submissions into instanced draws and flush on pass boundaries.
+- [x] Issue `sprite/render2d_camera_space_culling`: gate scene sprite/mesh submissions by camera-space visibility before host GPU draw calls.
+- [x] Issue `sprite/render2d_queue_execute_single_build`: queue cached draw-items per camera and execute consumes cache instead of rebuilding/sorting twice.
+- [x] Issue `sprite/render2d_mesh_material_handle_reuse`: carry prepared material handle in queue item and reuse cached prepared material in execute fast path.
+- [x] Issue `sprite/render2d_queue_scene_cull`: cull scene sprite/mesh items during queue build and remove execute-stage duplicate scene cull checks.
+- [x] Issue `sprite/render2d_scene_phase_split`: queue stores scene opaque/transparent items separately and execute consumes both in one cached draw loop (no queue-time concat copy).
+- [x] Issue `text/default_font_preload_path`: preload default text font handle in plugin init and reuse resolved handle in pipeline.
+- [x] Issue `text/glyph_atlas_hash_lookup`: switch font-atlas glyph lookup from linear scan to map lookup.
+- [x] Issue `text/atlas_lookup_before_rasterize`: align pipeline to atlas-first lookup and rasterize only on cache miss.
+- [x] Issue `text/sync_ecs_changed_fastpath_no_span`: skip unchanged text entities in ECS sync path when no span hierarchy is present.
+- [x] Issue `text/sync_ecs_text_dirty_guard`: avoid full Text2d sync scans when only non-text entities changed.
+- [x] Issue `text/sync_ecs_incremental_cleanup`: replace per-frame full stale scan with removed-components incremental cleanup in world/ui text sync.
+- [x] Issue `text/sync_ecs_index_cache`: cache per-world text bridge index maps and maintain them incrementally.
+- [x] Issue `text/ui_sync_no_immediate_layout`: remove UI text spawn/respawn immediate layout updates and hand layout to scheduled text update path.
+- [x] Issue `text/render_helper_hoist`: hoist Text2d render helper closures out of per-instance hot loop.
+- [x] Issue `text/render2d_cull_context_unification`: reuse sprite render2d primary scene cull context and visibility helper in text render path.
+- [x] Issue `text/layout_run_geometry_line_bounds`: build run geometry Y bounds from layout line bounds (remove per-glyph metrics reconstruction).
+- [x] Issue `text/state_handle_index_map`: replace TextState handle lookup linear scans with id->index map and swap-remove despawn path.
+- [ ] Issue `text/dependency_moon_cosmic_bidi_linearization`: pending upstream linear-time neutral bidi resolution (`moonbit-community/moon_cosmic#3`).
+- [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
+- [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
+- [ ] Issue `stress_tests/3d_heavy_scenes`: close remaining bottleneck in `many_foxes` (skinning runtime path).
+- [ ] Issue `stress_tests/text_pipeline`: close perf bottlenecks in `many_text2d`, `many_glyphs`, and `text_pipeline`.
+- [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
+- [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
+- [x] Issue `stress_tests/benchmark_methodology`: standardize warmup window, sampling duration, and metric extraction pipeline.
+- [x] Issue `stress_tests/perf_baseline`: establish reproducible native baseline artifacts and per-case trend tracking.
+- [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.

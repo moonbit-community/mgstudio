@@ -203,6 +203,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
 fn create_sprite_render_pipeline(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
+  with_depth : Bool,
   label : String,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
   guard backend.sprite_render_pipeline_layout is Some(layout) else {
@@ -222,11 +223,13 @@ fn create_sprite_render_pipeline(
     builder.set_entry_points("vertex", "fragment")
     builder.set_color_target_format(format)
     builder.enable_alpha_blend()
-    builder.set_depth_stencil(
-      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
-      depth_write_enabled=false,
-      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
-    )
+    if with_depth {
+      builder.set_depth_stencil(
+        tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+        depth_write_enabled=false,
+        depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      )
+    }
     builder.set_vertex_buffer_layout(
       SPRITE_INSTANCE_STRIDE_BYTES,
       @wgpu.VERTEX_STEP_MODE_INSTANCE,
@@ -252,55 +255,101 @@ fn create_sprite_render_pipeline(
 ///|
 fn ensure_sprite_pipeline_rgba8(
   backend : GpuBackend,
+  with_depth : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
-  if backend.sprite_pipeline is Some(_) {
+  if with_depth && backend.sprite_pipeline_depth is Some(_) {
     return
   }
-  backend.sprite_pipeline = Some(
-    create_sprite_render_pipeline(
-      backend,
-      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-      "mgstudio_sprite_rgba8",
-    ),
+  if !with_depth && backend.sprite_pipeline is Some(_) {
+    return
+  }
+  let pipeline = create_sprite_render_pipeline(
+    backend,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    with_depth,
+    if with_depth {
+      "mgstudio_sprite_rgba8_depth"
+    } else {
+      "mgstudio_sprite_rgba8"
+    },
   )
+  if with_depth {
+    backend.sprite_pipeline_depth = Some(pipeline)
+  } else {
+    backend.sprite_pipeline = Some(pipeline)
+  }
 }
 
 ///|
 fn ensure_sprite_pipeline_surface(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
+  with_depth : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
-  if backend.sprite_pipeline_surface_format is Some(prev) &&
+  if with_depth &&
+    backend.sprite_pipeline_depth_surface_format is Some(prev) &&
+    prev == format &&
+    backend.sprite_pipeline_depth_surface is Some(_) {
+    return
+  }
+  if !with_depth &&
+    backend.sprite_pipeline_surface_format is Some(prev) &&
     prev == format &&
     backend.sprite_pipeline_surface is Some(_) {
     return
   }
-  if backend.sprite_pipeline_surface is Some(old) {
+  if with_depth {
+    if backend.sprite_pipeline_depth_surface is Some(old) {
+      old.release()
+    }
+  } else if backend.sprite_pipeline_surface is Some(old) {
     old.release()
   }
-  backend.sprite_pipeline_surface = Some(
-    create_sprite_render_pipeline(backend, format, "mgstudio_sprite_surface"),
+  let pipeline = create_sprite_render_pipeline(
+    backend,
+    format,
+    with_depth,
+    if with_depth {
+      "mgstudio_sprite_surface_depth"
+    } else {
+      "mgstudio_sprite_surface"
+    },
   )
-  backend.sprite_pipeline_surface_format = Some(format)
+  if with_depth {
+    backend.sprite_pipeline_depth_surface = Some(pipeline)
+    backend.sprite_pipeline_depth_surface_format = Some(format)
+  } else {
+    backend.sprite_pipeline_surface = Some(pipeline)
+    backend.sprite_pipeline_surface_format = Some(format)
+  }
 }
 
 ///|
 fn sprite_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let with_depth = backend.pass_has_depth
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-      ensure_sprite_pipeline_surface(backend, format)
-      backend.sprite_pipeline_surface
+      ensure_sprite_pipeline_surface(backend, format, with_depth)
+      if with_depth {
+        backend.sprite_pipeline_depth_surface
+      } else {
+        backend.sprite_pipeline_surface
+      }
     }
     _ => {
-      ensure_sprite_pipeline_rgba8(backend)
-      backend.sprite_pipeline
+      ensure_sprite_pipeline_rgba8(backend, with_depth)
+      if with_depth {
+        backend.sprite_pipeline_depth
+      } else {
+        backend.sprite_pipeline
+      }
     }
   }
 }
@@ -469,6 +518,7 @@ pub fn GpuBackend::draw_sprite_uv(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)

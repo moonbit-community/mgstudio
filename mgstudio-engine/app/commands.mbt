@@ -314,9 +314,27 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(
   loc~ : SourceLoc,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  for components in component_batch {
-    entities.push(self.spawn(components, loc~))
+  for _ in component_batch {
+    let entity = self.world.spawn_empty()
+    entities.push(entity)
   }
+  let queued_components = component_batch
+  let queued_entities = entities
+  self.queue.push({
+    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
+      let count = queued_components.length()
+      for i in 0..<count {
+        queued_components[i].spawn_components(
+          world,
+          queued_entities[i],
+          sequence,
+          loc~,
+        )
+      }
+    },
+    error_handler: None,
+    source: "Commands::spawn_batch",
+  })
   entities
 }
 

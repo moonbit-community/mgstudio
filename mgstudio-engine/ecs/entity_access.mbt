@@ -27,6 +27,9 @@ pub struct EntityMut {
 ///|
 pub struct Mut[T] {
   value_ref : Ref[T]?
+  world : World?
+  entity : @core.Entity?
+  key_id : Int?
 }
 
 ///|
@@ -42,7 +45,7 @@ pub(open) trait Bundle {
 ///|
 pub fn[T] Mut::new(key : ComponentKey[T]) -> Mut[T] {
   ignore(key)
-  { value_ref: None }
+  { value_ref: None, world: None, entity: None, key_id: None }
 }
 
 ///|
@@ -53,6 +56,13 @@ pub fn[T : Component] Mut::key(self : Mut[T]) -> ComponentKey[T] {
 
 ///|
 pub fn[T] Mut::get_ref(self : Mut[T]) -> Ref[T] {
+  if self.world is Some(world) {
+    if self.entity is Some(entity) {
+      if self.key_id is Some(key_id) {
+        world.record_component_changed(entity, key_id)
+      }
+    }
+  }
   match self.value_ref {
     Some(value_ref) => value_ref
     None => abort("Mut::get_ref expected a fetched query item")
@@ -79,7 +89,12 @@ fn[T] world_component_mut(
   guard world.component_store(key.id()) is Some(store_ref) else { return None }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
   let value_ref = try! world.component_ref(key, entity, payload)
-  Some({ value_ref: Some(value_ref) })
+  Some({
+    value_ref: Some(value_ref),
+    world: Some(world),
+    entity: Some(entity),
+    key_id: Some(key.id()),
+  })
 }
 
 ///|

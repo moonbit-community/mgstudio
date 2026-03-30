@@ -56,6 +56,7 @@ pub fn GpuBackend::draw_tonemapping2d(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(active_pass) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
@@ -251,6 +252,7 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(active_pass) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)

@@ -157,6 +157,7 @@ pub fn GpuBackend::draw_custom_postprocess3d(
   view_height |> ignore
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(active_pass) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)

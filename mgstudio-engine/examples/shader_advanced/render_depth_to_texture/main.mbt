@@ -35,6 +35,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
+  let offscreen_layer = @sprite.RenderLayers::layer(1)
   let render_target = images.get_ref().val.add(
     @asset.Image::new_target_texture(
       768,
@@ -53,6 +54,7 @@ fn setup(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
+      offscreen_layer,
     ),
   )
   |> ignore
@@ -68,6 +70,7 @@ fn setup(
       @pbr.Mesh3d::new(offscreen_mesh),
       @pbr.MeshMaterial3d::new(offscreen_material),
       @transform.Transform::identity(),
+      offscreen_layer,
     ),
   )
   |> ignore

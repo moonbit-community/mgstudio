@@ -103,6 +103,14 @@ pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
 }
 
 ///|
+pub struct NoFrustumCulling {} derive(Eq, Show)
+
+///|
+pub fn NoFrustumCulling::default() -> NoFrustumCulling {
+  NoFrustumCulling::{  }
+}
+
+///|
 //
 // Mirrors Bevy's `VisibilityRange` shape:
 // - `start_margin_*` defines the near-side visible threshold range.

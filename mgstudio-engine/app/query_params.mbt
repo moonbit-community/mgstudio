@@ -35,6 +35,18 @@ pub impl[T : @ecs.Component] FromWorld for @ecs.Allow[T] with from_world(_world)
 }
 
 ///|
+pub impl[T : @ecs.Component] FromWorld for @ecs.Added[T] with from_world(_world) {
+  @ecs.Added::new(@ecs.Component::component())
+}
+
+///|
+pub impl[T : @ecs.Component] FromWorld for @ecs.Changed[T] with from_world(
+  _world,
+) {
+  @ecs.Changed::new(@ecs.Component::component())
+}
+
+///|
 pub impl[T : @ecs.Component] FromWorld for @ecs.Has[T] with from_world(_world) {
   @ecs.Has::new(@ecs.Component::component())
 }

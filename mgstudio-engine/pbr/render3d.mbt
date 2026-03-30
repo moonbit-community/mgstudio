@@ -160,11 +160,17 @@ fn render3d_internal_assets_ref(
 fn render3d_internal_assets_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[Render3dInternalAssetsState] {
+  if render3d_internal_assets_ref(world) is None {
+    world.insert_resource(
+      ecs_key_internal_assets,
+      Render3dInternalAssetsState::new(),
+    )
+  }
   match render3d_internal_assets_ref(world) {
     Some(state) => state
     None =>
       abort(
-        "render3d internal assets resource is missing; Render3dPlugin must initialize render3d.internal_assets before use",
+        "render3d internal assets resource is missing after lazy initialization",
       )
   }
 }
@@ -173,12 +179,14 @@ fn render3d_internal_assets_ref_or_abort(
 fn render3d_asset_server_from_world_or_abort(
   world : @ecs.World,
 ) -> @asset.AssetServer {
-  match (try! world.get_resource(@asset.asset_server_resource_key())) {
+  let key : @ecs.ResourceKey[@asset.AssetServer] = @asset.asset_server_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(key, @asset.AssetServer::new())
+  }
+  match (try! world.get_resource(key)) {
     Some(asset_server) => asset_server
     None =>
-      abort(
-        "render3d asset server resource is missing; AssetPlugin must initialize AssetServer before render3d internal assets are used",
-      )
+      abort("render3d failed to initialize or acquire AssetServer resource")
   }
 }
 
@@ -1084,6 +1092,12 @@ let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
 let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
+let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
+let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
 priv struct Render3dPhaseState {
   mut prepared_camera_order : Array[@core.Entity]
   gpu_preprocess_camera_queues : Array[GpuPreprocessCameraQueueEntry3d]
@@ -1712,6 +1726,19 @@ fn render3d_runtime_config_or_default(
     Some(config) => config
     None => pbr_plugin_runtime_config()
   }
+}
+
+///|
+fn render3d_gpu_preprocess_forced_disabled() -> Bool {
+  @render.host_gpu_mesh3d_preprocess_disabled()
+}
+
+///|
+fn render3d_use_gpu_instance_buffer_builder(
+  runtime_config : PbrPluginRuntimeConfig,
+) -> Bool {
+  runtime_config.use_gpu_instance_buffer_builder &&
+  !render3d_gpu_preprocess_forced_disabled()
 }
 
 ///|
@@ -4496,14 +4523,36 @@ fn render3d_resolve_prequeued_to_draw_item_indices(
   prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
   draw_items : Array[MeshPhaseItem3d],
 ) -> Array[Int] {
+  let draw_item_index_by_entity_id : Map[Int, Int] = {}
+  for i in 0..<draw_items.length() {
+    draw_item_index_by_entity_id.set(draw_items[i].entity.main_entity.id, i)
+  }
   let prequeued_to_draw_item_indices : Array[Int] = []
   for prequeued_item in prequeued_items {
-    let mut draw_item_index = -1
-    for i in 0..<draw_items.length() {
-      if phase_entity_ref3d_main_eq(prequeued_item.entity, draw_items[i].entity) {
-        draw_item_index = i
-        break
-      }
+    let draw_item_index = match
+      draw_item_index_by_entity_id.get(prequeued_item.entity.main_entity.id) {
+      Some(index) =>
+        if index >= 0 &&
+          index < draw_items.length() &&
+          phase_entity_ref3d_main_eq(
+            prequeued_item.entity,
+            draw_items[index].entity,
+          ) {
+          index
+        } else {
+          let mut fallback_index = -1
+          for i in 0..<draw_items.length() {
+            if phase_entity_ref3d_main_eq(
+                prequeued_item.entity,
+                draw_items[i].entity,
+              ) {
+              fallback_index = i
+              break
+            }
+          }
+          fallback_index
+        }
+      None => -1
     }
     prequeued_to_draw_item_indices.push(draw_item_index)
   }
@@ -4645,14 +4694,38 @@ fn render3d_resolve_prequeued_mesh_phase_items(
   prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
   meshes : Array[ExtractedMesh3d],
 ) -> Array[MeshPhaseItem3d] {
+  let extracted_mesh_index_by_entity_id : Map[Int, Int] = {}
+  for i in 0..<meshes.length() {
+    extracted_mesh_index_by_entity_id.set(meshes[i].entity.main_entity.id, i)
+  }
   let resolved : Array[MeshPhaseItem3d] = []
   for prequeued_item in prequeued_items {
-    let mut extracted_index = -1
-    for i in 0..<meshes.length() {
-      if phase_entity_ref3d_main_eq(meshes[i].entity, prequeued_item.entity) {
-        extracted_index = i
-        break
-      }
+    let extracted_index = match
+      extracted_mesh_index_by_entity_id.get(
+        prequeued_item.entity.main_entity.id,
+      ) {
+      Some(index) =>
+        if index >= 0 &&
+          index < meshes.length() &&
+          phase_entity_ref3d_main_eq(
+            meshes[index].entity,
+            prequeued_item.entity,
+          ) {
+          index
+        } else {
+          let mut fallback_index = -1
+          for i in 0..<meshes.length() {
+            if phase_entity_ref3d_main_eq(
+                meshes[i].entity,
+                prequeued_item.entity,
+              ) {
+              fallback_index = i
+              break
+            }
+          }
+          fallback_index
+        }
+      None => -1
     }
     if extracted_index < 0 {
       continue
@@ -5835,11 +5908,16 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_queue_system(world : @ecs.World) -> Unit {
+  let queue_start = @time.host_time_now()
   let source_world = @render.render_source_world(world)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.gpu_preprocess_camera_queues.clear()
   if phase_state_ref.val.prepared_camera_order.length() == 0 {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+    render3d_diagnostic_queue_cpu_ms_ref.val = (
+        @time.host_time_now() - queue_start
+      ) *
+      1000.0F
     return
   }
   let mut visible_mesh_count = 0
@@ -5855,8 +5933,15 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   })
   render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
   let runtime_config = render3d_runtime_config_or_default(source_world)
+  let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
+    runtime_config,
+  )
   let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
-  if !runtime_config.use_gpu_instance_buffer_builder {
+  if !gpu_instance_buffer_builder_requested {
+    render3d_diagnostic_queue_cpu_ms_ref.val = (
+        @time.host_time_now() - queue_start
+      ) *
+      1000.0F
     return
   }
   let mesh_candidates = render3d_collect_gpu_preprocess_mesh_candidates(
@@ -5879,9 +5964,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       ))
       is Some(_)
     let camera_indirect_enabled = render3d_camera_indirect_enabled(
-      runtime_config.use_gpu_instance_buffer_builder,
-      indirect_first_instance_supported,
-      no_indirect_drawing,
+      gpu_instance_buffer_builder_requested, indirect_first_instance_supported, no_indirect_drawing,
     )
     let gpu_occlusion_culling_enabled = camera_indirect_enabled &&
       (try! source_world.get_by_key(camera_entity, ecs_key_occlusion_culling))
@@ -5893,6 +5976,10 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       ),
     )
   }
+  render3d_diagnostic_queue_cpu_ms_ref.val = (
+      @time.host_time_now() - queue_start
+    ) *
+    1000.0F
 }
 
 ///|
@@ -5903,6 +5990,16 @@ pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
 ///|
 pub fn render3d_diagnostic_prepared_camera_count() -> Int {
   render3d_diagnostic_prepared_camera_count_ref.val
+}
+
+///|
+pub fn render3d_diagnostic_queue_cpu_ms() -> Float {
+  render3d_diagnostic_queue_cpu_ms_ref.val
+}
+
+///|
+pub fn render3d_diagnostic_execute_cpu_ms() -> Float {
+  render3d_diagnostic_execute_cpu_ms_ref.val
 }
 
 ///|
@@ -6308,6 +6405,7 @@ fn render3d_draw_gizmo_lines_3d(
 
 ///|
 pub fn render3d_execute_system(world : @ecs.World) -> Unit {
+  let execute_start = @time.host_time_now()
   let source_world = @render.render_source_world(world)
   let cameras : Array[ExtractedCamera3d] = []
   let meshes : Array[ExtractedMesh3d] = []
@@ -6316,11 +6414,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
   let runtime_config = render3d_runtime_config_or_default(source_world)
+  let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
+    runtime_config,
+  )
   let prepass_enabled = standard_material_prepass_enabled(source_world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
     deferred_pbr_lighting_enabled(source_world)
   let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
-  let gpu_instance_buffer_builder_enabled = runtime_config.use_gpu_instance_buffer_builder
+  let gpu_instance_buffer_builder_enabled = gpu_instance_buffer_builder_requested &&
+    indirect_first_instance_supported
   @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
     gpu_instance_buffer_builder_enabled,
   )
@@ -6403,9 +6505,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       ))
       is Some(_)
     let camera_indirect_enabled = render3d_camera_indirect_enabled(
-      runtime_config.use_gpu_instance_buffer_builder,
-      indirect_first_instance_supported,
-      no_indirect_drawing,
+      gpu_instance_buffer_builder_requested, indirect_first_instance_supported, no_indirect_drawing,
     )
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
       camera_indirect_enabled &&
@@ -8018,6 +8118,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   camera_motion_blur_history_sync(next_camera_motion_blur_history)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()
+  render3d_diagnostic_execute_cpu_ms_ref.val = (
+      @time.host_time_now() - execute_start
+    ) *
+    1000.0F
 }
 
 ///|

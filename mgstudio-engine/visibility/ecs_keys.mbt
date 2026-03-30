@@ -28,6 +28,11 @@ pub let ecs_key_view_visibility : @ecs.ComponentKey[ViewVisibility] = @ecs.regis
 )
 
 ///|
+pub let ecs_key_no_frustum_culling : @ecs.ComponentKey[NoFrustumCulling] = @ecs.register_component(
+  debug_name="visibility.no_frustum_culling",
+)
+
+///|
 pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange] = @ecs.register_component(
   debug_name="visibility.visibility_range",
 )
@@ -45,6 +50,11 @@ pub impl @ecs.Component for InheritedVisibility with component() {
 ///|
 pub impl @ecs.Component for ViewVisibility with component() {
   ecs_key_view_visibility
+}
+
+///|
+pub impl @ecs.Component for NoFrustumCulling with component() {
+  ecs_key_no_frustum_culling
 }
 
 ///|

@@ -1,11 +1,32 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/many_components"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type CompA
+pub impl @ecs.Component for CompA
+
+type CompB
+pub impl @ecs.Component for CompB
+
+type CompC
+pub impl @ecs.Component for CompC
+
+type CompD
+pub impl @ecs.Component for CompD
+
+type CompE
+pub impl @ecs.Component for CompE
+
+type CompF
+pub impl @ecs.Component for CompF
 
 // Type aliases
 

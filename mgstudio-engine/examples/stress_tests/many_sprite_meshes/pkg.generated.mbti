@@ -1,11 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/many_sprite_meshes"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type PrintTimer
+
+type SpriteMeshTag
+pub impl @ecs.Component for SpriteMeshTag
 
 // Type aliases
 

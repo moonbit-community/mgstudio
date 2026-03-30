@@ -31,7 +31,7 @@ const ROTATION_SPEED : Float = 0.2F
 const FOX_SCALE : Float = 0.05F
 
 ///|
-const SPHERE_SCALE : Float = 2.0F
+const SPHERE_SCALE : Float = 6.0F
 
 ///|
 const IRRADIANCE_VOLUME_INTENSITY : Float = 1800.0F
@@ -304,7 +304,9 @@ fn spawn_main_scene(
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::default().with_clear_color(
+      @sprite.Color::srgb(0.18F, 0.20F, 0.24F),
+    ),
     @transform.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -377,8 +379,8 @@ fn spawn_light(world : @ecs.World) -> Unit {
 fn spawn_sphere(world : @ecs.World) -> Unit {
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
-    ),
+      @sprite.Color::new(0.85F, 0.95F, 1.0F, 1.0F),
+    ).with_unlit(true),
   )
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 24, 36),

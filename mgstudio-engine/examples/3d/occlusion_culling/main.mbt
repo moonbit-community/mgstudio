@@ -50,7 +50,6 @@ priv struct SmallCube {
 priv struct OcclusionState {
   mut occlusion_enabled : Bool
   mut sphere_angle : Float
-  mut camera : @core.Entity?
   mut large_cube : @core.Entity?
   mut rendered_count : Int
   mut culled_count : Int
@@ -63,7 +62,6 @@ fn default_state() -> OcclusionState {
   {
     occlusion_enabled: true,
     sphere_angle: 0.0F,
-    camera: None,
     large_cube: None,
     rendered_count: 0,
     culled_count: 0,
@@ -112,7 +110,7 @@ fn help_text_content() -> String {
   "Occlusion culling \{status} (Press Space to toggle)\n" +
   "\{occlusion_state.val.rendered_count}/\{total} meshes rendered\n" +
   "Approx culled meshes: \{occlusion_state.val.culled_count}\n\n" +
-  "Adapted note: Bevy's GPU indirect-parameter readback APIs are unavailable."
+  "Adapted note: GPU readback + occlusion compute path is temporarily disabled."
 }
 
 ///|
@@ -248,16 +246,10 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  occlusion_state.val.camera = Some(camera)
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
     @pbr.DepthPrepass::default(),
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_occlusion_culling,
-    @pbr.OcclusionCulling::default(),
   )
 
   let help_text = @text.Text2dBundle::new(
@@ -329,18 +321,8 @@ fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
+  world |> ignore
   occlusion_state.val.occlusion_enabled = !occlusion_state.val.occlusion_enabled
-  if occlusion_state.val.camera is Some(camera) {
-    if occlusion_state.val.occlusion_enabled {
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_occlusion_culling,
-        @pbr.OcclusionCulling::default(),
-      )
-    } else {
-      try! (world.take(camera, @pbr.ecs_key_occlusion_culling) |> ignore)
-    }
-  }
   recompute_counts()
   update_help_text()
 }

@@ -6,6 +6,7 @@ package "Milky2018/mgstudio/examples/stress_tests/many_lights"
 // Errors
 
 // Types and methods
+type LightStats
 
 // Type aliases
 

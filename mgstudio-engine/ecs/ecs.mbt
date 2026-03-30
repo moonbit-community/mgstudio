@@ -180,8 +180,13 @@ pub struct World {
   required_components : Map[Int, Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
   added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  added_component_sequences : Map[Int, Map[Int, @core.Sequence]]
+  changed_component_sequences : Map[Int, Map[Int, @core.Sequence]]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
+  resource_added_sequences : Map[Int, @core.Sequence]
+  resource_changed_sequences : Map[Int, @core.Sequence]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
   mut deferred_hook_command_depth : Int
@@ -201,8 +206,13 @@ pub fn World::new() -> World {
     required_components: {},
     used_components: {},
     added_components: {},
+    changed_components: {},
+    added_component_sequences: {},
+    changed_component_sequences: {},
     removed_components: {},
     resources: {},
+    resource_added_sequences: {},
+    resource_changed_sequences: {},
     previous_events: {},
     current_events: {},
     deferred_hook_command_depth: 0,
@@ -276,6 +286,7 @@ pub fn World::despawn(
         component_write_sequence(self),
         entity,
       )
+      self.clear_component_sequence_records(entity, key_id)
     }
   }
   self.end_deferred_hook_command_scope(outermost)
@@ -339,6 +350,7 @@ pub fn[T] World::update_by_key(
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   store_ref.val.set(entity, new_payload) |> ignore
+  self.record_component_changed(entity, key.id())
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.end_deferred_hook_command_scope(outermost)
   true
@@ -367,6 +379,7 @@ pub fn[T] World::remove_by_key(
             component_write_sequence(self),
             entity,
           )
+          self.clear_component_sequence_records(entity, key.id())
           self.end_deferred_hook_command_scope(outermost)
           true
         }
@@ -485,11 +498,154 @@ fn World::ensure_added_component_messages(
 }
 
 ///|
+fn World::ensure_changed_component_messages(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.Messages[@core.Entity]] {
+  match self.changed_components.get(key_id) {
+    Some(messages_ref) => messages_ref
+    None => {
+      let messages_ref = Ref::new(@core.Messages::new())
+      self.changed_components.set(key_id, messages_ref)
+      messages_ref
+    }
+  }
+}
+
+///|
+fn World::ensure_added_component_sequence_map(
+  self : World,
+  key_id : Int,
+) -> Map[Int, @core.Sequence] {
+  match self.added_component_sequences.get(key_id) {
+    Some(sequence_by_entity) => sequence_by_entity
+    None => {
+      let sequence_by_entity : Map[Int, @core.Sequence] = {}
+      self.added_component_sequences.set(key_id, sequence_by_entity)
+      sequence_by_entity
+    }
+  }
+}
+
+///|
+fn World::ensure_changed_component_sequence_map(
+  self : World,
+  key_id : Int,
+) -> Map[Int, @core.Sequence] {
+  match self.changed_component_sequences.get(key_id) {
+    Some(sequence_by_entity) => sequence_by_entity
+    None => {
+      let sequence_by_entity : Map[Int, @core.Sequence] = {}
+      self.changed_component_sequences.set(key_id, sequence_by_entity)
+      sequence_by_entity
+    }
+  }
+}
+
+///|
+fn World::record_component_added(
+  self : World,
+  entity : @core.Entity,
+  key_id : Int,
+) -> Unit {
+  self
+  .ensure_added_component_sequence_map(key_id)
+  .set(entity.id, component_write_sequence(self))
+}
+
+///|
+fn World::record_component_changed(
+  self : World,
+  entity : @core.Entity,
+  key_id : Int,
+) -> Unit {
+  self
+  .ensure_changed_component_sequence_map(key_id)
+  .set(entity.id, component_write_sequence(self))
+  self.ensure_changed_component_messages(key_id).val.send(
+    component_write_sequence(self),
+    entity,
+  )
+}
+
+///|
+fn World::clear_component_sequence_records(
+  self : World,
+  entity : @core.Entity,
+  key_id : Int,
+) -> Unit {
+  if self.added_component_sequences.get(key_id) is Some(sequence_by_entity) {
+    ignore(sequence_by_entity.remove(entity.id))
+  }
+  if self.changed_component_sequences.get(key_id) is Some(sequence_by_entity) {
+    ignore(sequence_by_entity.remove(entity.id))
+  }
+}
+
+///|
+fn World::record_resource_added(self : World, key_id : Int) -> Unit {
+  self.resource_added_sequences.set(key_id, resource_write_sequence(self))
+}
+
+///|
+fn World::record_resource_changed(self : World, key_id : Int) -> Unit {
+  self.resource_changed_sequences.set(key_id, resource_write_sequence(self))
+}
+
+///|
+fn World::resource_added_sequence(
+  self : World,
+  key_id : Int,
+) -> @core.Sequence? {
+  self.resource_added_sequences.get(key_id)
+}
+
+///|
+fn World::resource_changed_sequence(
+  self : World,
+  key_id : Int,
+) -> @core.Sequence? {
+  self.resource_changed_sequences.get(key_id)
+}
+
+///|
 fn World::added_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]]? {
   self.added_components.get(key_id)
+}
+
+///|
+fn World::added_component_sequence(
+  self : World,
+  key_id : Int,
+  entity_id : Int,
+) -> @core.Sequence? {
+  match self.added_component_sequences.get(key_id) {
+    Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
+    None => None
+  }
+}
+
+///|
+fn World::changed_component_messages(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.Messages[@core.Entity]]? {
+  self.changed_components.get(key_id)
+}
+
+///|
+fn World::changed_component_sequence(
+  self : World,
+  key_id : Int,
+  entity_id : Int,
+) -> @core.Sequence? {
+  match self.changed_component_sequences.get(key_id) {
+    Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
+    None => None
+  }
 }
 
 ///|
@@ -554,6 +710,16 @@ pub fn World::set_sequence_context(
 
 ///|
 fn component_write_sequence(world : World) -> @core.Sequence {
+  let tick = world.read_sequence()
+  if tick > 0 {
+    tick
+  } else {
+    1
+  }
+}
+
+///|
+fn resource_write_sequence(world : World) -> @core.Sequence {
   let tick = world.read_sequence()
   if tick > 0 {
     tick

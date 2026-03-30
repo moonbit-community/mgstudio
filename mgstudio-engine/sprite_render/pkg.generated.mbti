@@ -49,7 +49,11 @@ pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handl
 
 pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@image.Image]
 
+pub fn render2d_diagnostic_execute_cpu_ms() -> Float
+
 pub fn render2d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render2d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 

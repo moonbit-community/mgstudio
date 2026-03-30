@@ -1614,6 +1614,7 @@ pub fn GpuBackend::draw_ui_rect(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_sprite_batches(self)
@@ -1657,6 +1658,7 @@ pub fn GpuBackend::draw_ui_texture_slice(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_sprite_batches(self)
   flush_ui_batches(self)
@@ -1694,6 +1696,7 @@ pub fn GpuBackend::draw_ui_box_shadow(
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
   texture_id |> ignore
+  flush_mesh2d_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)

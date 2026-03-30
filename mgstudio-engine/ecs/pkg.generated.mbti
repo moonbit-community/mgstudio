@@ -132,6 +132,20 @@ pub impl Default for BatchingStrategy
 pub impl Eq for BatchingStrategy
 pub impl Show for BatchingStrategy
 
+pub struct Changed[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Changed::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for Changed[T]
+
+pub struct ChangedComponents[_] {
+  reader : @core.MessageReader[@core.Entity]
+}
+pub fn[T] ChangedComponents::clear(Self[T]) -> Unit
+pub fn[T] ChangedComponents::is_empty(Self[T]) -> Bool
+pub fn[T] ChangedComponents::len(Self[T]) -> Int
+pub fn[T] ChangedComponents::read(Self[T]) -> Array[@core.Entity]
+
 pub struct Comp[T] {
   value : T?
 }
@@ -382,6 +396,9 @@ pub fn[T : Default] Messages::write_message_default(Self[T], MessageKey[T]) -> I
 
 pub struct Mut[T] {
   value_ref : @ref.Ref[T]?
+  world : World?
+  entity : @core.Entity?
+  key_id : Int?
 }
 pub fn[T] Mut::get_ref(Self[T]) -> @ref.Ref[T]
 pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
@@ -566,6 +583,7 @@ pub struct World {
   required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
   added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
+  changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[ErasedValue]]
@@ -582,6 +600,7 @@ pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.En
 pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemSequence) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::advance_sequence(Self) -> Int
+pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemSequence) -> ChangedComponents[T]
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
 pub fn[T] World::component_count(Self, ComponentKey[T]) -> Int
@@ -607,6 +626,7 @@ pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
+pub fn[T] World::is_changed_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
 pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]

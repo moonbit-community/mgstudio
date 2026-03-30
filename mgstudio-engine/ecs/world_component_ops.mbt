@@ -29,6 +29,7 @@ pub fn[T] World::replace(
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   ignore(store_ref.val.set(entity, payload))
+  self.record_component_changed(entity, key.id())
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.end_deferred_hook_command_scope(outermost)
   true

@@ -441,16 +441,20 @@ pub fn TextureAtlasBuilder::add_texture(
 
 ///|
 fn texture_atlas_layout_assets_mut_or_abort() -> Ref[Assets[TextureAtlasLayout]] {
+  let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
-    Some(world) =>
-      match
-        (try! world.get_resource_ref_mut(registered_assets_resource_key())) {
+    Some(world) => {
+      if (try! world.get_resource_ref_mut(key)) is None {
+        world.insert_resource(key, Assets::new())
+      }
+      match (try! world.get_resource_ref_mut(key)) {
         Some(assets) => assets
         None =>
           abort(
-            "TextureAtlasLayout assets resource is missing; AssetPlugin must initialize Assets<TextureAtlasLayout> before atlas APIs run",
+            "TextureAtlasLayout assets resource is missing after lazy initialization",
           )
       }
+    }
     None =>
       abort(
         "TextureAtlasLayout asset mutations require an active app world; use the world-owned Assets<TextureAtlasLayout> resource directly outside scheduled systems",
@@ -460,15 +464,20 @@ fn texture_atlas_layout_assets_mut_or_abort() -> Ref[Assets[TextureAtlasLayout]]
 
 ///|
 fn texture_atlas_layout_assets_or_abort() -> Assets[TextureAtlasLayout] {
+  let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
-    Some(world) =>
-      match (try! world.get_resource(registered_assets_resource_key())) {
+    Some(world) => {
+      if (try! world.get_resource_ref_mut(key)) is None {
+        world.insert_resource(key, Assets::new())
+      }
+      match (try! world.get_resource(key)) {
         Some(assets) => assets
         None =>
           abort(
-            "TextureAtlasLayout assets resource is missing; AssetPlugin must initialize Assets<TextureAtlasLayout> before atlas APIs run",
+            "TextureAtlasLayout assets resource is missing after lazy initialization",
           )
       }
+    }
     None =>
       abort(
         "TextureAtlasLayout asset lookups require an active app world; use the world-owned Assets<TextureAtlasLayout> resource directly outside scheduled systems",

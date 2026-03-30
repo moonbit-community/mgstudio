@@ -1,11 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/app/thread_pool_resources"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type SimulatedPool
+
+type WorkerCube
+pub impl @ecs.Component for WorkerCube
 
 // Type aliases
 

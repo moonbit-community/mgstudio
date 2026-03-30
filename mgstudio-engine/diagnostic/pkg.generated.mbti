@@ -42,6 +42,10 @@ pub fn log_diagnostics_plugin_with(@app.App[@ecs.World], LogDiagnosticsPlugin) -
 
 pub fn register_diagnostic(@app.App[@ecs.World], Diagnostic) -> @app.App[@ecs.World]
 
+pub let render_diagnostic_execute_cpu_ms_2d : DiagnosticPath
+
+pub let render_diagnostic_execute_cpu_ms_3d : DiagnosticPath
+
 pub let render_diagnostic_mesh2d_draw_calls : DiagnosticPath
 
 pub let render_diagnostic_mesh2d_executed_draw_calls : DiagnosticPath
@@ -53,6 +57,10 @@ pub let render_diagnostic_mesh3d_executed_draw_calls : DiagnosticPath
 pub let render_diagnostic_prepared_cameras_2d : DiagnosticPath
 
 pub let render_diagnostic_prepared_cameras_3d : DiagnosticPath
+
+pub let render_diagnostic_queue_cpu_ms_2d : DiagnosticPath
+
+pub let render_diagnostic_queue_cpu_ms_3d : DiagnosticPath
 
 pub let render_diagnostic_queued_draw_items_2d : DiagnosticPath
 

@@ -400,6 +400,7 @@ pub fn Material2dProperties::new(
 pub struct PreparedMaterial2d[M] {
   source : @asset.Handle[M]
   bind_group : Material2dBindGroup
+  host_bind_group : @render.HostMaterial2dBindGroup
   key : Material2dKey[M]
   properties : Material2dProperties
 }
@@ -411,10 +412,12 @@ pub fn[M : Material2d] PreparedMaterial2d::from_material(
   pipeline : Material2dPipeline[M],
 ) -> PreparedMaterial2d[M] {
   let bind_group = material.bind_group()
+  let host_bind_group = material2d_bind_group_to_host(bind_group)
   let key = pipeline.key_for(material, bind_group)
   PreparedMaterial2d::{
     source,
     bind_group,
+    host_bind_group,
     key,
     properties: Material2dProperties::new(material.alpha_mode(), key.mesh_key),
   }
@@ -828,9 +831,17 @@ fn[M] draw_material2d_mesh_item(
     is Some(material) else {
     return
   }
+  draw_material2d_mesh_item_with_prepared_material(mesh, material, pipeline)
+}
+
+///|
+fn[M] draw_material2d_mesh_item_with_prepared_material(
+  mesh : ExtractedMesh2d,
+  material : PreparedMaterial2d[M],
+  pipeline : Material2dPipeline[M],
+) -> Unit {
   let payload = mesh.payload
   let transform = payload.transform
-  let host_bind_group = material2d_bind_group_to_host(material.bind_group)
   @render.host_gpu_draw_mesh_material(
     mesh_id=payload.mesh_id,
     x=transform.translation.x,
@@ -839,7 +850,7 @@ fn[M] draw_material2d_mesh_item(
     scale_x=transform.scale.x,
     scale_y=transform.scale.y,
     alpha_mode_kind=mesh_alpha_mode_kind(material.properties.alpha_mode),
-    material_bind_group=host_bind_group,
+    material_bind_group=material.host_bind_group,
     vertex_shader_path=pipeline.vertex_shader,
     fragment_shader_path=pipeline.fragment_shader,
   )
@@ -1041,7 +1052,13 @@ fn[M : Material2d] prepare_material2d_assets_system(
     is Some(prepared_assets_ref) else {
     return
   }
+  let prepared_ids : @hashmap.HashMap[Int, Bool] = @hashmap.HashMap::new()
   for _, material_handle in instances_ref.val.instances {
+    let material_id = material_handle.id()
+    if prepared_ids.contains(material_id) {
+      continue
+    }
+    prepared_ids.set(material_id, true)
     guard source_assets_ref.val.get(material_handle) is Some(material) else {
       continue
     }

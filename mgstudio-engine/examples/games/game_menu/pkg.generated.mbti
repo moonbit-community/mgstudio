@@ -1,11 +1,22 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/games/game_menu"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type MenuPanel
+pub impl @ecs.Component for MenuPanel
+
+type MenuState
+
+type Player
+pub impl @ecs.Component for Player
 
 // Type aliases
 

@@ -1931,7 +1931,15 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
       tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
     )
-    let view = texture.create_view_2d(0U, 1U)
+    let view = texture.create_view_u32(
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      @wgpu.TEXTURE_ASPECT_ALL,
+      0U,
+      1U,
+      0U,
+      1U,
+    )
     backend.mesh3d_preprocess_depth_pyramid_dummy_texture = Some(texture)
     backend.mesh3d_preprocess_depth_pyramid_dummy_view = Some(view)
   }
@@ -2857,7 +2865,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
       backend.device,
       label="mgstudio_motion_vector_view_bgl",
     )
-    let empty_bgl = backend.device.create_bind_group_layout_empty()
+    let empty_bgl = backend.device.create_bind_group_layout_uniform_buffer()
     let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
     let mesh_ok = mesh_builder.add_buffer(
       0U,
@@ -2888,8 +2896,12 @@ fn ensure_mesh3d_motion_vector_pipeline(
     backend.mesh3d_motion_vector_globals_buf is None ||
     backend.mesh3d_motion_vector_previous_view_buf is None ||
     backend.mesh3d_motion_vector_visibility_ranges_buf is None ||
-    backend.mesh3d_motion_vector_view_bg is None {
+    backend.mesh3d_motion_vector_view_bg is None ||
+    backend.mesh3d_motion_vector_empty_bg is None {
     guard backend.mesh3d_motion_vector_bgl_view is Some(view_bgl) else {
+      return
+    }
+    guard backend.mesh3d_motion_vector_bgl_empty is Some(empty_bgl) else {
       return
     }
     let uniform_usage = bu(
@@ -2950,6 +2962,9 @@ fn ensure_mesh3d_motion_vector_pipeline(
       view_bgl,
       label="mgstudio_motion_vector_view_bg",
     )
+    let empty_bg = backend.device.create_bind_group_uniform_buffer(
+      empty_bgl, globals_buf,
+    )
     backend.mesh3d_motion_vector_view_buf = Some(view_buf)
     backend.mesh3d_motion_vector_globals_buf = Some(globals_buf)
     backend.mesh3d_motion_vector_previous_view_buf = Some(previous_view_buf)
@@ -2957,6 +2972,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
       visibility_ranges_buf,
     )
     backend.mesh3d_motion_vector_view_bg = Some(view_bg)
+    backend.mesh3d_motion_vector_empty_bg = Some(empty_bg)
   }
   if backend.mesh3d_motion_vector_pipeline is Some(_) {
     return
@@ -4741,6 +4757,10 @@ pub fn GpuBackend::draw_mesh3d(
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(ps) else { return }
+  if !ps.is_3d {
+    return
+  }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
@@ -4776,6 +4796,7 @@ pub fn GpuBackend::draw_mesh3d(
       return
     }
     guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
+    guard self.mesh3d_motion_vector_empty_bg is Some(empty_bg) else { return }
     let preprocess_state_index = mesh3d_preprocess_camera_upload_state_index(
       self, preprocess_camera_key_hi, preprocess_camera_key_lo,
     )
@@ -4873,6 +4894,7 @@ pub fn GpuBackend::draw_mesh3d(
     }
     pass.set_pipeline(pipeline)
     pass.set_bind_group(0U, view_bg, [])
+    pass.set_bind_group(1U, empty_bg, [])
     pass.set_bind_group(2U, active_mesh_bg, [])
     let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
       mesh.vertex_stride_bytes

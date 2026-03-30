@@ -1,11 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/games/stepping"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type StepSprite
+pub impl @ecs.Component for StepSprite
+
+type StepState
 
 // Type aliases
 

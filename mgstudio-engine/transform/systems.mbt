@@ -15,13 +15,17 @@
 ///|
 type SimpleTransformChangedQuery = @ecs.Query[
   (@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]),
-  @ecs.All,
+  (
+    @ecs.Without[@hierarchy.Parent],
+    @ecs.Without[@hierarchy.Children],
+    @ecs.Changed[Transform],
+  ),
 ]
 
 ///|
 type SimpleTransformOrphanQuery = @ecs.Query[
   (@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]),
-  @ecs.All,
+  (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children]),
 ]
 
 ///|
@@ -139,10 +143,34 @@ pub fn sync_simple_transforms(
   ],
   orphaned : @ecs.RemovedComponents[@hierarchy.Parent],
 ) -> Unit {
-  ignore(query)
-  ignore(orphaned)
-  if @app.current_world() is Some(world) {
-    sync_simple_transforms_apply(world)
+  guard @app.current_world() is Some(world) else { return }
+
+  fn sync_entity_if_needed(
+    world : @ecs.World,
+    transform : @ecs.Comp[Transform],
+    global : @ecs.Comp[GlobalTransform],
+    entity : @core.Entity,
+  ) -> Unit {
+    let next_global = GlobalTransform::from_transform(transform.value())
+    if !global_transform_eq(global.value(), next_global) {
+      try! (world.replace(entity, ecs_key_global_transform, next_global) |> ignore)
+    }
+  }
+
+  let changed = query.p0()
+  try! changed.for_each(fn(entity, data) {
+    let (transform, global) = data
+    sync_entity_if_needed(world, transform, global, entity)
+  })
+
+  if orphaned.is_empty() {
+    return
+  }
+  let orphan_query = query.p1()
+  for entity in orphaned.read() {
+    if (try! orphan_query.get(entity)) is Some((transform, global)) {
+      sync_entity_if_needed(world, transform, global, entity)
+    }
   }
 }
 
@@ -207,6 +235,13 @@ fn propagate_descendants(
 
 ///|
 pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
+  let has_parent = Ref::new(false)
+  world.for_each_component(@hierarchy.ecs_key_parent, fn(_entity, _parent) {
+    has_parent.val = true
+  })
+  if !has_parent.val {
+    return
+  }
   let roots : Array[@core.Entity] = []
   world.for_each_component(ecs_key_global_transform, fn(entity, _global) {
     if (try! world.contains_by_key(entity, ecs_key_transform)) &&

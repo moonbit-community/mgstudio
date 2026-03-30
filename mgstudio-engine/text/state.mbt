@@ -53,6 +53,7 @@ pub struct Text2dBundle {
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
+  no_frustum_culling : Bool
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
   logical_viewport_size : @math.Vec2?
@@ -79,6 +80,7 @@ pub fn Text2dBundle::new(
     shadow: None,
     transform,
     layers: @sprite.RenderLayers::default(),
+    no_frustum_culling: false,
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
@@ -107,6 +109,7 @@ pub fn Text2dBundle::new_with_layers(
     shadow: None,
     transform,
     layers,
+    no_frustum_culling: false,
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
@@ -331,6 +334,7 @@ priv struct TextInstance {
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
+  no_frustum_culling : Bool
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
   /// When set, this text handle is treated as "UI text" and will be positioned
@@ -342,7 +346,9 @@ priv struct TextInstance {
   /// Optional UI clip rect (logical UI space) propagated from `ui_clip_system`.
   /// When present, glyph sprites are submitted with scissor.
   ui_scissor : @math.Rect?
+  cull_margin : Float
   spans : Array[TextSpanInstance]
+  layout_dirty : Bool
   computed : ComputedTextBlock
   layout_info : TextLayoutInfo
 }
@@ -352,6 +358,7 @@ priv struct TextState {
   mut next_text_id : Int
   mut next_span_id : Int
   texts : Array[TextInstance]
+  text_index_by_id : Map[Int, Int]
 }
 
 ///|
@@ -359,10 +366,87 @@ let text_state : Ref[TextState] = Ref::new(TextState::{
   next_text_id: 0,
   next_span_id: 0,
   texts: [],
+  text_index_by_id: {},
 })
 
 ///|
+fn text_state_clear_instances() -> Unit {
+  text_state.val.texts.clear()
+  text_state.val.text_index_by_id.clear()
+}
+
+///|
+fn text_state_find_index_by_id(id : Int) -> Int? {
+  match text_state.val.text_index_by_id.get(id) {
+    Some(index) =>
+      if index >= 0 &&
+        index < text_state.val.texts.length() &&
+        text_state.val.texts[index].id == id {
+        Some(index)
+      } else {
+        let count = text_state.val.texts.length()
+        for i in 0..<count {
+          if text_state.val.texts[i].id == id {
+            text_state.val.text_index_by_id.set(id, i)
+            return Some(i)
+          }
+        }
+        ignore(text_state.val.text_index_by_id.remove(id))
+        None
+      }
+    None => {
+      let count = text_state.val.texts.length()
+      for i in 0..<count {
+        if text_state.val.texts[i].id == id {
+          text_state.val.text_index_by_id.set(id, i)
+          return Some(i)
+        }
+      }
+      None
+    }
+  }
+}
+
+///|
+pub fn text_compute_cull_margin(
+  bounds : TextBounds,
+  layout_size : @math.Vec2,
+  scale : @math.Vec3,
+) -> Float {
+  let width = bounds.width.unwrap_or(layout_size.x)
+  let height = bounds.height.unwrap_or(layout_size.y)
+  let abs_sx = if scale.x < 0.0F { 0.0F - scale.x } else { scale.x }
+  let abs_sy = if scale.y < 0.0F { 0.0F - scale.y } else { scale.y }
+  let cull_width = width * abs_sx
+  let cull_height = height * abs_sy
+  let cull_radius = if cull_width > cull_height {
+    cull_width
+  } else {
+    cull_height
+  }
+  cull_radius * 0.6F + 16.0F
+}
+
+///|
 let text_runtime_rem_size_ref : Ref[Float] = Ref::new(20.0F)
+
+///|
+let text_layout_dirty_ref : Ref[Bool] = Ref::new(true)
+
+///|
+pub fn text_runtime_mark_layout_dirty() -> Unit {
+  text_layout_dirty_ref.val = true
+}
+
+///|
+pub fn text_runtime_layout_dirty() -> Bool {
+  text_layout_dirty_ref.val
+}
+
+///|
+pub fn text_runtime_clear_layout_dirty() -> Unit {
+  text_layout_dirty_ref.val = false
+}
 
 ///|
 pub struct TextDebugGlyphDraw {
@@ -580,7 +664,9 @@ pub fn text_debug_visible_overlap_count(
 ///|
 pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
   let id = text_state.val.next_text_id
+  let index = text_state.val.texts.length()
   text_state.val.next_text_id = id + 1
+  text_runtime_mark_layout_dirty()
   text_state.val.texts.push(TextInstance::{
     id,
     text: bundle.text,
@@ -597,16 +683,24 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     shadow: bundle.shadow,
     transform: bundle.transform,
     layers: bundle.layers,
+    no_frustum_culling: bundle.no_frustum_culling,
     anchor: bundle.anchor,
     y_axis: bundle.y_axis,
     ui_node_size: None,
     logical_viewport_size: bundle.logical_viewport_size,
     ui_camera_entity: None,
     ui_scissor: None,
+    cull_margin: text_compute_cull_margin(
+      bundle.bounds,
+      @math.Vec2::new(0.0F, 0.0F),
+      bundle.transform.scale,
+    ),
     spans: [],
+    layout_dirty: true,
     computed: ComputedTextBlock::default(),
     layout_info: TextLayoutInfo::default(),
   })
+  text_state.val.text_index_by_id.set(id, index)
   TextHandle::{ id, }
 }
 
@@ -617,31 +711,26 @@ pub fn text_spawn_span(
 ) -> TextSpanHandle {
   let span_id = text_state.val.next_span_id
   text_state.val.next_span_id = span_id + 1
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id == parent.id {
-      let instance = text_state.val.texts[i]
-      instance.spans.push(TextSpanInstance::{
-        id: span_id,
-        span: bundle.span,
-        font: bundle.font,
-        color: bundle.color,
-        background_color: bundle.background_color,
-        underline: bundle.underline,
-        underline_color: bundle.underline_color,
-        strikethrough: bundle.strikethrough,
-        strikethrough_color: bundle.strikethrough_color,
-        line_height: bundle.line_height,
-      })
-      text_state.val.texts[i] = TextInstance::{
-        ..instance,
-        spans: instance.spans,
-        computed: ComputedTextBlock::{
-          ..instance.computed,
-          needs_rerender: true,
-        },
-      }
-      break
+  text_runtime_mark_layout_dirty()
+  if text_state_find_index_by_id(parent.id) is Some(index) {
+    let instance = text_state.val.texts[index]
+    instance.spans.push(TextSpanInstance::{
+      id: span_id,
+      span: bundle.span,
+      font: bundle.font,
+      color: bundle.color,
+      background_color: bundle.background_color,
+      underline: bundle.underline,
+      underline_color: bundle.underline_color,
+      strikethrough: bundle.strikethrough,
+      strikethrough_color: bundle.strikethrough_color,
+      line_height: bundle.line_height,
+    })
+    text_state.val.texts[index] = TextInstance::{
+      ..instance,
+      spans: instance.spans,
+      layout_dirty: true,
+      computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
     }
   }
   TextSpanHandle::{ id: span_id }
@@ -649,22 +738,17 @@ pub fn text_spawn_span(
 
 ///|
 pub fn text_despawn(handle : TextHandle) -> Bool {
-  let next_texts : Array[TextInstance] = []
-  let mut removed = false
-  for instance in text_state.val.texts {
-    if instance.id == handle.id {
-      removed = true
-    } else {
-      next_texts.push(instance)
-    }
-  }
-  if !removed {
+  guard text_state_find_index_by_id(handle.id) is Some(index) else {
     return false
   }
-  text_state.val.texts.clear()
-  for instance in next_texts {
-    text_state.val.texts.push(instance)
+  let last_index = text_state.val.texts.length() - 1
+  if index != last_index {
+    let moved = text_state.val.texts[last_index]
+    text_state.val.texts[index] = moved
+    text_state.val.text_index_by_id.set(moved.id, index)
   }
+  ignore(text_state.val.texts.pop())
+  ignore(text_state.val.text_index_by_id.remove(handle.id))
   if text_debug_frame_state.val.draws.length() > 0 {
     let next_draws : Array[TextDebugGlyphDraw] = []
     for draw in text_debug_frame_state.val.draws {
@@ -685,38 +769,40 @@ fn text_update_instance(
   handle : TextHandle,
   update : (TextInstance) -> TextInstance,
 ) -> Unit {
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id == handle.id {
-      text_state.val.texts[i] = update(text_state.val.texts[i])
-      break
-    }
+  if text_state_find_index_by_id(handle.id) is Some(index) {
+    text_state.val.texts[index] = update(text_state.val.texts[index])
   }
 }
 
 ///|
 pub fn text_set_content(handle : TextHandle, content : String) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     text: Text2d::{ content, },
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_font(handle : TextHandle, font : TextFont) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     font,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_color(handle : TextHandle, color : TextColor) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     color,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
@@ -726,18 +812,22 @@ pub fn text_set_background_color(
   handle : TextHandle,
   background_color : TextBackgroundColor?,
 ) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     background_color,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_underline(handle : TextHandle, underline : Underline?) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     underline,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
@@ -747,9 +837,11 @@ pub fn text_set_underline_color(
   handle : TextHandle,
   underline_color : UnderlineColor?,
 ) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     underline_color,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
@@ -759,9 +851,11 @@ pub fn text_set_strikethrough(
   handle : TextHandle,
   strikethrough : Strikethrough?,
 ) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     strikethrough,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
@@ -771,27 +865,38 @@ pub fn text_set_strikethrough_color(
   handle : TextHandle,
   strikethrough_color : StrikethroughColor?,
 ) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     strikethrough_color,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_layout(handle : TextHandle, layout : TextLayout) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     layout,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_bounds(handle : TextHandle, bounds : TextBounds) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     bounds,
+    cull_margin: text_compute_cull_margin(
+      bounds,
+      instance.layout_info.size,
+      instance.transform.scale,
+    ),
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
@@ -801,18 +906,22 @@ pub fn text_set_line_height(
   handle : TextHandle,
   line_height : LineHeight,
 ) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     line_height,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_shadow(handle : TextHandle, shadow : Text2dShadow?) -> Unit {
+  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     shadow,
+    layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }
@@ -826,17 +935,19 @@ pub fn text_set_transform(
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     transform,
+    cull_margin: text_compute_cull_margin(
+      instance.bounds,
+      instance.layout_info.size,
+      transform.scale,
+    ),
   })
 }
 
 ///|
 /// Get the current transform for a text handle.
 pub fn text_get_transform(handle : TextHandle) -> @transform.Transform? {
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id == handle.id {
-      return Some(text_state.val.texts[i].transform)
-    }
+  if text_state_find_index_by_id(handle.id) is Some(index) {
+    return Some(text_state.val.texts[index].transform)
   }
   None
 }
@@ -851,6 +962,18 @@ pub fn text_set_layers(
 }
 
 ///|
+/// Update the frustum-culling marker of a text handle without marking rerender.
+pub fn text_set_no_frustum_culling(
+  handle : TextHandle,
+  no_frustum_culling : Bool,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    no_frustum_culling,
+  })
+}
+
+///|
 /// Update the anchor of a text handle without marking it as needing rerender.
 pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
   text_update_instance(handle, instance => TextInstance::{ ..instance, anchor, })
@@ -859,6 +982,7 @@ pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
 ///|
 /// Update the y-axis orientation of a text handle without marking it as needing rerender.
 pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
+  text_runtime_mark_layout_dirty()
   // Orientation affects glyph coordinates, so we must relayout.
   text_update_instance(handle, instance => {
     if instance.y_axis == y_axis {
@@ -867,6 +991,7 @@ pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
       TextInstance::{
         ..instance,
         y_axis,
+        layout_dirty: true,
         computed: ComputedTextBlock::{
           ..instance.computed,
           needs_rerender: true,
@@ -890,14 +1015,37 @@ pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
 }
 
 ///|
+fn text_state_vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs), Some(rhs)) => lhs.x == rhs.x && lhs.y == rhs.y
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
 pub fn text_set_logical_viewport_size(
   handle : TextHandle,
   logical_viewport_size : @math.Vec2?,
 ) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    logical_viewport_size,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  text_runtime_mark_layout_dirty()
+  text_update_instance(handle, instance => {
+    if text_state_vec2_opt_eq(
+        instance.logical_viewport_size,
+        logical_viewport_size,
+      ) {
+      instance
+    } else {
+      TextInstance::{
+        ..instance,
+        logical_viewport_size,
+        layout_dirty: true,
+        computed: ComputedTextBlock::{
+          ..instance.computed,
+          needs_rerender: true,
+        },
+      }
+    }
   })
 }
 
@@ -924,11 +1072,8 @@ pub fn text_set_ui_scissor(handle : TextHandle, scissor : @math.Rect?) -> Unit {
 ///|
 /// Get current optional UI clip rect for a text handle.
 pub fn text_get_ui_scissor(handle : TextHandle) -> @math.Rect? {
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id == handle.id {
-      return text_state.val.texts[i].ui_scissor
-    }
+  if text_state_find_index_by_id(handle.id) is Some(index) {
+    return text_state.val.texts[index].ui_scissor
   }
   None
 }
@@ -936,28 +1081,30 @@ pub fn text_get_ui_scissor(handle : TextHandle) -> @math.Rect? {
 ///|
 /// Get the last computed logical layout size (may lag by one frame).
 pub fn text_get_layout_size(handle : TextHandle) -> @math.Vec2? {
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id == handle.id {
-      return Some(text_state.val.texts[i].layout_info.size)
-    }
+  if text_state_find_index_by_id(handle.id) is Some(index) {
+    return Some(text_state.val.texts[index].layout_info.size)
   }
   None
 }
 
 ///|
 pub fn text_set_runtime_rem_size(rem_size : Float) -> Unit {
+  if text_runtime_rem_size_ref.val != rem_size {
+    let count = text_state.val.texts.length()
+    for i in 0..<count {
+      let instance = text_state.val.texts[i]
+      text_state.val.texts[i] = TextInstance::{ ..instance, layout_dirty: true }
+    }
+    text_runtime_mark_layout_dirty()
+  }
   text_runtime_rem_size_ref.val = rem_size
 }
 
 ///|
 /// Get the current text content for a handle.
 pub fn text_get_content(handle : TextHandle) -> String? {
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id == handle.id {
-      return Some(text_state.val.texts[i].text.content)
-    }
+  if text_state_find_index_by_id(handle.id) is Some(index) {
+    return Some(text_state.val.texts[index].text.content)
   }
   None
 }
@@ -989,12 +1136,8 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
     }
   }
 
-  let count = text_state.val.texts.length()
-  for i in 0..<count {
-    if text_state.val.texts[i].id != handle.id {
-      continue
-    }
-    let instance = text_state.val.texts[i]
+  if text_state_find_index_by_id(handle.id) is Some(index) {
+    let instance = text_state.val.texts[index]
     let glyphs = instance.layout_info.glyphs
     if glyphs.length() == 0 {
       return None

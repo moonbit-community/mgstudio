@@ -138,7 +138,7 @@ test "app: any_with_component gates system execution on component presence" {
 }
 
 ///|
-test "app: resource_added now follows resource existence" {
+test "app: resource_added tracks added events" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { log.push(log.length()) }).run_if(
@@ -155,11 +155,11 @@ test "app: resource_added now follows resource existence" {
   inspect(log[0], content="0")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
+  inspect(log.length(), content="1")
 }
 
 ///|
-test "app: resource_exists_and_changed now follows resource existence" {
+test "app: resource_exists_and_changed tracks change events" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
@@ -177,17 +177,16 @@ test "app: resource_exists_and_changed now follows resource existence" {
   inspect(log[0], content="1")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[1], content="1")
+  inspect(log.length(), content="1")
 
   app.insert_resource(CounterResource::{ value: 8 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="3")
-  inspect(log[2], content="8")
+  inspect(log.length(), content="2")
+  inspect(log[1], content="8")
 }
 
 ///|
-test "app: resource_changed now follows resource existence" {
+test "app: resource_changed tracks change events" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
@@ -205,13 +204,12 @@ test "app: resource_changed now follows resource existence" {
   inspect(log[0], content="1")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[1], content="1")
+  inspect(log.length(), content="1")
 
   app.insert_resource(CounterResource::{ value: 9 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="3")
-  inspect(log[2], content="9")
+  inspect(log.length(), content="2")
+  inspect(log[1], content="9")
 }
 
 ///|

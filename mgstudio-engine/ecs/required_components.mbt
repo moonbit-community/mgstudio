@@ -360,8 +360,10 @@ fn World::insert_component_with_requirements_unchecked(
   }
   store_ref.val.insert(entity, payload)
   self.mark_component_used(component_id)
+  self.record_component_changed(entity, component_id)
 
   if !replacing {
+    self.record_component_added(entity, component_id)
     self.ensure_added_component_messages(component_id).val.send(
       component_write_sequence(self),
       entity,

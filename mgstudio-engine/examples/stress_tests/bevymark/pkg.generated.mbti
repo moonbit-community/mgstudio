@@ -1,11 +1,21 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/bevymark"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type Bird
+pub impl @ecs.Component for Bird
+
+type BirdAssets
+
+type BirdCounter
 
 // Type aliases
 

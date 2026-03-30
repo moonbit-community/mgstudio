@@ -24,8 +24,20 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
+  .add_systems(@app.Startup, @app.system(setup_visual))
   .add_systems(@app.Update, @app.system(monitor_info_system))
   .run()
+}
+
+///|
+fn setup_visual(world : @ecs.World) -> Unit {
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_clear_color(
+      @sprite.Color::srgb(0.10F, 0.20F, 0.18F),
+    ),
+    @transform.Transform::identity(),
+  ).spawn(world)
+  |> ignore
 }
 
 ///|

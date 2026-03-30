@@ -123,35 +123,25 @@ fn main {
 }
 
 ///|
-fn spawn_help_overlay(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
+fn spawn_help_overlay(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-    ),
-  )
   ignore(
-    commands.spawn(
-      (
-        @hierarchy.Parent::new(root),
-        @ui.Node::default()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
-        @text.Text::new(
-          "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
-        ),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.Text2dBundle::new(
+      @text.Text2d::new(
+        "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
       ),
-    ),
+      @text.TextFont::default().with_font(font).with_font_size(20.0F),
+      @transform.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-620.0F, 340.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=10.0F,
+      ),
+    )
+    .with_anchor(@sprite.Anchor::top_left())
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .spawn(),
   )
 }
 
@@ -162,7 +152,7 @@ fn setup(
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
-  spawn_help_overlay(commands, asset_server)
+  spawn_help_overlay(asset_server)
 
   let texture = asset_server
     .get()

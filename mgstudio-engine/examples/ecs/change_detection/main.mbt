@@ -14,7 +14,7 @@
 
 ///|
 struct MyComponent {
-  mut value : Int
+  value : Int
 }
 
 ///|
@@ -51,33 +51,35 @@ fn setup(commands : @app.Commands) -> Unit {
 
 ///|
 fn change_component(
-  time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[@ecs.Mut[MyComponent], @ecs.All],
 ) -> Unit {
-  let target = (time.get().elapsed_seconds() * 2.0F).to_int()
   try! query.view(fn(_entity, component) {
-    if component.value().value != target {
-      component.get_ref().val.value = target
+    if component.value().value != 1 {
+      component.set(MyComponent::{ value: 1 })
     }
   })
 }
 
 ///|
-fn change_resource(
-  time : @app.Res[@time.Time[Unit]],
-  resource : @app.ResMut[MyResource],
-) -> Unit {
-  resource.get_ref().val.value = (time.get().elapsed_seconds() * 3.0F).to_int()
+fn change_resource(resource : @app.ResMut[MyResource]) -> Unit {
+  resource.get_ref().val.value = resource.get_ref().val.value + 1
 }
 
 ///|
-fn detect_added(world : @ecs.World) -> Unit {
-  let added : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Added[MyComponent]] = @ecs.query_filtered(
-    world,
-    @ecs.Added::new(my_component_key),
-  )
+fn detect_added(
+  added : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Added[MyComponent]],
+) -> Unit {
   try! added.view(fn(_entity, component) {
     println("Added MyComponent value=" + component.value().value.to_string())
+  })
+}
+
+///|
+fn detect_changed(
+  changed : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Changed[MyComponent]],
+) -> Unit {
+  try! changed.view(fn(_entity, component) {
+    println("Changed MyComponent value=" + component.value().value.to_string())
   })
 }
 
@@ -96,9 +98,10 @@ fn main {
     @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
   ])
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(change_component)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(change_resource)))
-  .add_systems(@app.Update, @app.system(detect_added))
+  .add_systems(@app.Update, @app.system(@app.system_param(change_component)))
+  .add_systems(@app.Update, @app.system(@app.system_param(change_resource)))
+  .add_systems(@app.Update, @app.system(@app.system_param(detect_added)))
+  .add_systems(@app.Update, @app.system(@app.system_param(detect_changed)))
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(detect_resource_change)),

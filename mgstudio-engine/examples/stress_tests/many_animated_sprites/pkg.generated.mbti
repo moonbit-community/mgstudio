@@ -1,11 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/many_animated_sprites"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type AnimationTimer
+pub impl @ecs.Component for AnimationTimer
+
+type PrintTimer
 
 // Type aliases
 

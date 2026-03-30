@@ -33,12 +33,16 @@ pub fn GlyphCacheKey::new(
 }
 
 ///|
-fn glyph_cache_key_equals(a : GlyphCacheKey, b : GlyphCacheKey) -> Bool {
-  a.glyph_id == b.glyph_id &&
-  a.subpixel_x == b.subpixel_x &&
-  a.subpixel_y == b.subpixel_y &&
-  a.font_weight == b.font_weight &&
-  a.flags == b.flags
+fn glyph_cache_key_map_key(cache_key : GlyphCacheKey) -> String {
+  cache_key.glyph_id.to_string() +
+  ":" +
+  cache_key.subpixel_x.to_string() +
+  ":" +
+  cache_key.subpixel_y.to_string() +
+  ":" +
+  cache_key.font_weight.to_string() +
+  ":" +
+  cache_key.flags.reinterpret_as_int().to_string()
 }
 
 ///|
@@ -392,6 +396,7 @@ pub fn font_rasterize_cache_key(
 pub struct FontAtlas {
   dynamic_texture_atlas_builder : @asset.DynamicTextureAtlasBuilder
   glyph_locations : Array[(GlyphCacheKey, GlyphAtlasLocation)]
+  glyph_location_map : Map[String, GlyphAtlasLocation]
   texture_atlas : @asset.Handle[@asset.TextureAtlasLayout]
   texture : @asset.Handle[@asset.Image]
 }
@@ -414,6 +419,7 @@ pub fn FontAtlas::new(
   FontAtlas::{
     dynamic_texture_atlas_builder: builder,
     glyph_locations: [],
+    glyph_location_map: {},
     texture_atlas,
     texture,
   }
@@ -424,14 +430,7 @@ pub fn FontAtlas::get_glyph_index(
   self : FontAtlas,
   cache_key : GlyphCacheKey,
 ) -> GlyphAtlasLocation? {
-  let count = self.glyph_locations.length()
-  for i in 0..<count {
-    let entry = self.glyph_locations[i]
-    if glyph_cache_key_equals(entry.0, cache_key) {
-      return Some(entry.1)
-    }
-  }
-  None
+  self.glyph_location_map.get(glyph_cache_key_map_key(cache_key))
 }
 
 ///|
@@ -475,6 +474,10 @@ pub fn FontAtlas::add_glyph(
       GlyphAtlasLocation::{ glyph_index: index, offset: raster.offset },
     ),
   )
+  self.glyph_location_map.set(glyph_cache_key_map_key(cache_key), GlyphAtlasLocation::{
+    glyph_index: index,
+    offset: raster.offset,
+  })
   true
 }
 
@@ -507,12 +510,23 @@ pub fn add_glyph_to_atlas(
   let count = font_atlases.length()
   for i in 0..<count {
     let atlas = font_atlases[i]
-    if atlas.has_glyph(cache_key) {
-      return get_glyph_atlas_info(font_atlases, cache_key)
+    if atlas.get_glyph_index(cache_key) is Some(location) {
+      return Some(GlyphAtlasInfo::{
+        texture: atlas.texture,
+        texture_atlas: atlas.texture_atlas,
+        location,
+      })
     }
     if atlas.add_glyph(cache_key, raster) {
       font_atlases[i] = atlas
-      return get_glyph_atlas_info(font_atlases, cache_key)
+      if atlas.get_glyph_index(cache_key) is Some(location) {
+        return Some(GlyphAtlasInfo::{
+          texture: atlas.texture,
+          texture_atlas: atlas.texture_atlas,
+          location,
+        })
+      }
+      return None
     }
   }
   let max_size = if raster.size.x > raster.size.y {
@@ -529,8 +543,16 @@ pub fn add_glyph_to_atlas(
   }
   let new_atlas = FontAtlas::new(@math.UVec2::splat(containing), font_smoothing)
   if new_atlas.add_glyph(cache_key, raster) {
+    let location = match new_atlas.get_glyph_index(cache_key) {
+      Some(location) => location
+      None => return None
+    }
     font_atlases.push(new_atlas)
-    return get_glyph_atlas_info(font_atlases, cache_key)
+    return Some(GlyphAtlasInfo::{
+      texture: new_atlas.texture,
+      texture_atlas: new_atlas.texture_atlas,
+      location,
+    })
   }
   None
 }

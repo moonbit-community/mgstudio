@@ -143,6 +143,7 @@ fn help_text_content() -> String {
   "Samples: \{motion_blur_state.val.samples}\n" +
   "Camera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\n" +
   "MSAA: Off (Bevy web compatibility path)\n" +
+  "Motion blur backend: temporarily disabled on native (pipeline guard)\n" +
   "1/2: -/+ shutter angle (blur amount)\n" +
   "3/4: -/+ sample count (blur quality)\n" +
   "Spacebar: cycle camera\n"
@@ -185,43 +186,20 @@ fn set_camera_fov(
 
 ///|
 fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
-  guard motion_blur_state.val.camera is Some(camera_entity) else { return }
-  let motion_blur = @post_process.MotionBlur::new(
-    motion_blur_state.val.shutter_angle,
-    motion_blur_state.val.samples,
-  )
-  if (try! world.contains_by_key(
-      camera_entity, @post_process.ecs_key_motion_blur,
-    )) {
-    try! (world.replace(
-      camera_entity, @post_process.ecs_key_motion_blur, motion_blur,
-    )
-    |> ignore)
-  } else {
-    try! world.set_by_key(
-      camera_entity, @post_process.ecs_key_motion_blur, motion_blur,
-    )
-  }
+  // Keep the public controls and UI, but avoid attaching MotionBlur on native
+  // while the runtime post-process pipeline remains unstable for this example.
+  world |> ignore
 }
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @pbr.Camera3dBundle::new(
-      @sprite.Camera::default(),
-      @transform.Transform::from_xyz(15.0F, -0.5F, 0.0F).looking_at(
-        @math.Vec3::zero(),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    )
-    .with_motion_blur(
-      Some(
-        @post_process.MotionBlur::new(
-          motion_blur_state.val.shutter_angle,
-          motion_blur_state.val.samples,
-        ),
-      ),
-    )
-    .spawn(world)
+    @sprite.Camera::default(),
+    @transform.Transform::from_xyz(15.0F, -0.5F, 0.0F).looking_at(
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  ).spawn(world)
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   motion_blur_state.val.camera = Some(camera)
 }

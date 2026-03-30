@@ -34,7 +34,10 @@ const MESH2D_ALPHA_MODE_KIND_MASK : Int = 1
 const MESH2D_ALPHA_MODE_KIND_BLEND : Int = 2
 
 ///|
-const MESH2D_DEFAULT_MATERIAL_LAYOUT_KEY : String = "0:uniform;1:texture;2:sampler"
+const MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE : Int = 128
+
+///|
+const MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE_U64 : UInt64 = 128UL
 
 ///|
 priv struct Mesh2dPipelineKey {
@@ -133,7 +136,11 @@ fn ensure_mesh2d_instance_uniform_binding(
   let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
   let uniform_buf = backend.device.create_buffer(size=next_capacity, usage~)
   let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-  let ok = builder.add_buffer(0U, uniform_buf, size=MESH2D_UNIFORM_STRIDE_BYTES)
+  let ok = builder.add_buffer(
+    0U,
+    uniform_buf,
+    size=MESH2D_UNIFORM_STRIDE_BYTES * MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE_U64,
+  )
   if !ok {
     builder.free()
     return None
@@ -179,69 +186,186 @@ fn mesh2d_fragment_shader_path_or_default(path : String?) -> String {
 ///|
 fn host_material2d_binding_layout_kind_key(
   value : HostMaterial2dBindingValue,
-) -> String {
+) -> Int {
   match value {
-    Uniform(_) => "uniform"
-    Texture(_) => "texture"
-    Sampler(_) => "sampler"
+    Uniform(_) => 1
+    Texture(_) => 2
+    Sampler(_) => 3
   }
+}
+
+///|
+fn host_material2d_layout_signature(
+  bind_group : HostMaterial2dBindGroup,
+) -> Array[(UInt, Int)] {
+  let signature : Array[(UInt, Int)] = []
+  for binding in bind_group.bindings {
+    signature.push(
+      (binding.binding, host_material2d_binding_layout_kind_key(binding.value)),
+    )
+  }
+  signature
+}
+
+///|
+fn host_material2d_layout_signature_eq(
+  lhs : Array[(UInt, Int)],
+  rhs : Array[(UInt, Int)],
+) -> Bool {
+  if lhs.length() != rhs.length() {
+    return false
+  }
+  for i in 0..<lhs.length() {
+    if lhs[i] != rhs[i] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn host_material2d_layout_signature_key(
+  signature : Array[(UInt, Int)],
+) -> String {
+  let mut data = ""
+  for i in 0..<signature.length() {
+    let binding = signature[i]
+    if i > 0 {
+      data = data + ";"
+    }
+    data = data + binding.0.to_string() + ":" + binding.1.to_string()
+  }
+  data
 }
 
 ///|
 fn host_material2d_bind_group_layout_key(
   bind_group : HostMaterial2dBindGroup,
 ) -> String {
-  let mut data = ""
-  for i in 0..<bind_group.bindings.length() {
-    let binding = bind_group.bindings[i]
-    if i > 0 {
-      data = data + ";"
-    }
-    data = data +
-      binding.binding.to_string() +
-      ":" +
-      host_material2d_binding_layout_kind_key(binding.value)
-  }
-  data
+  host_material2d_layout_signature_key(
+    host_material2d_layout_signature(bind_group),
+  )
 }
 
 ///|
-fn host_material2d_binding_data_key(
-  value : HostMaterial2dBindingValue,
-) -> String {
-  match value {
-    Uniform(bytes) => {
-      let mut data = "uniform(" + bytes.length().to_string() + ":"
-      for i in 0..<bytes.length() {
-        if i > 0 {
-          data = data + ","
-        }
-        data = data + bytes[i].to_int().to_string()
-      }
-      data + ")"
-    }
-    Texture(texture_id) => "texture(" + texture_id.to_string() + ")"
-    Sampler(texture_id) => "sampler(" + texture_id.to_string() + ")"
+fn mesh2d_cache_hash_mix(hash : UInt64, word : UInt64) -> UInt64 {
+  hash * 11400714819323198485UL + word + 0x9E3779B97F4A7C15UL
+}
+
+///|
+fn host_material2d_layout_signature_hash(
+  signature : Array[(UInt, Int)],
+) -> UInt64 {
+  let mut hash = 1469598103934665603UL
+  for entry in signature {
+    let (binding, kind) = entry
+    hash = mesh2d_cache_hash_mix(hash, binding.to_uint64())
+    hash = mesh2d_cache_hash_mix(hash, kind.reinterpret_as_uint().to_uint64())
   }
+  hash
+}
+
+///|
+fn host_material2d_bind_group_hash(
+  bind_group : HostMaterial2dBindGroup,
+) -> UInt64 {
+  let mut hash = 1469598103934665603UL
+  for binding in bind_group.bindings {
+    hash = mesh2d_cache_hash_mix(hash, binding.binding.to_uint64())
+    match binding.value {
+      Uniform(bytes) => {
+        hash = mesh2d_cache_hash_mix(hash, 1UL)
+        hash = mesh2d_cache_hash_mix(hash, bytes.length().to_uint64())
+        for byte in bytes {
+          hash = mesh2d_cache_hash_mix(hash, byte.to_uint64())
+        }
+      }
+      Texture(texture_id) => {
+        hash = mesh2d_cache_hash_mix(hash, 2UL)
+        hash = mesh2d_cache_hash_mix(
+          hash,
+          texture_id.reinterpret_as_uint().to_uint64(),
+        )
+      }
+      Sampler(texture_id) => {
+        hash = mesh2d_cache_hash_mix(hash, 3UL)
+        hash = mesh2d_cache_hash_mix(
+          hash,
+          texture_id.reinterpret_as_uint().to_uint64(),
+        )
+      }
+    }
+  }
+  hash
+}
+
+///|
+fn bytes_eq(lhs : Bytes, rhs : Bytes) -> Bool {
+  if lhs.length() != rhs.length() {
+    return false
+  }
+  for i in 0..<lhs.length() {
+    if lhs[i] != rhs[i] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn host_material2d_binding_value_eq(
+  lhs : HostMaterial2dBindingValue,
+  rhs : HostMaterial2dBindingValue,
+) -> Bool {
+  match (lhs, rhs) {
+    (Uniform(lhs), Uniform(rhs)) => bytes_eq(lhs, rhs)
+    (Texture(lhs), Texture(rhs)) => lhs == rhs
+    (Sampler(lhs), Sampler(rhs)) => lhs == rhs
+    _ => false
+  }
+}
+
+///|
+fn host_material2d_bind_group_key_eq(
+  cached : Array[HostMaterial2dBinding],
+  bind_group : HostMaterial2dBindGroup,
+) -> Bool {
+  if cached.length() != bind_group.bindings.length() {
+    return false
+  }
+  for i in 0..<cached.length() {
+    let lhs = cached[i]
+    let rhs = bind_group.bindings[i]
+    if lhs.binding != rhs.binding ||
+      !host_material2d_binding_value_eq(lhs.value, rhs.value) {
+      return false
+    }
+  }
+  true
 }
 
 ///|
 fn host_material2d_bind_group_cache_key(
   bind_group : HostMaterial2dBindGroup,
-) -> String {
-  let mut data = host_material2d_bind_group_layout_key(bind_group)
-  data = data + "#"
-  for i in 0..<bind_group.bindings.length() {
-    let binding = bind_group.bindings[i]
-    if i > 0 {
-      data = data + ";"
+) -> Array[HostMaterial2dBinding] {
+  let cloned : Array[HostMaterial2dBinding] = []
+  for binding in bind_group.bindings {
+    let cloned_value = match binding.value {
+      Uniform(bytes) => Uniform(bytes)
+      Texture(texture_id) => Texture(texture_id)
+      Sampler(texture_id) => Sampler(texture_id)
     }
-    data = data +
-      binding.binding.to_string() +
-      ":" +
-      host_material2d_binding_data_key(binding.value)
+    cloned.push(HostMaterial2dBinding::{
+      binding: binding.binding,
+      value: cloned_value,
+    })
   }
-  data
+  cloned
+}
+
+///|
+fn host_material2d_default_layout_signature() -> Array[(UInt, Int)] {
+  [(0U, 1), (1U, 2), (2U, 3)]
 }
 
 ///|
@@ -256,6 +380,10 @@ fn load_wgsl_with_defines_required_mesh2d_material(
   }
   let value_defines = default_wgsl_value_defines()
   value_defines.set("MATERIAL_BIND_GROUP", 2)
+  value_defines.set(
+    "PER_OBJECT_BUFFER_BATCH_SIZE",
+    MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE,
+  )
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = copy_registered_wgsl_import_module_paths()
   let mesh_source = registered_wgsl_source_required(
@@ -411,9 +539,13 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.mesh2d_instance_bg = None
     backend.mesh2d_instance_capacity = 0UL
     backend.mesh2d_instance_used = 0
+    mesh2d_reset_pending_batch(backend)
     backend.mesh2d_pipeline_cache.clear()
+    backend.mesh2d_pipeline_cache_index.clear()
     backend.mesh2d_material_layout_cache.clear()
+    backend.mesh2d_material_layout_cache_index.clear()
     backend.mesh2d_material_bg_cache.clear()
+    backend.mesh2d_material_bg_cache_index.clear()
     if ensure_mesh2d_instance_uniform_binding(
         backend,
         MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES,
@@ -427,21 +559,52 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
 ///|
 fn mesh2d_material_layout_from_cache(
   backend : GpuBackend,
-  layout_key : String,
+  layout_key : Array[(UInt, Int)],
 ) -> (@wgpu.BindGroupLayout, @wgpu.PipelineLayout)? {
-  if layout_key == MESH2D_DEFAULT_MATERIAL_LAYOUT_KEY {
+  if host_material2d_layout_signature_eq(
+      layout_key,
+      host_material2d_default_layout_signature(),
+    ) {
     guard backend.mesh2d_material_bgl is Some(material_bgl) else { return None }
     guard backend.mesh_pipeline_layout is Some(pipeline_layout) else {
       return None
     }
     return Some((material_bgl, pipeline_layout))
   }
-  for entry in backend.mesh2d_material_layout_cache {
-    if entry.key == layout_key {
-      return Some((entry.bind_group_layout, entry.pipeline_layout))
-    }
+  let signature_hash = host_material2d_layout_signature_hash(layout_key)
+  match backend.mesh2d_material_layout_cache_index.get(signature_hash) {
+    Some(indices) =>
+      for index in indices {
+        if index < 0 || index >= backend.mesh2d_material_layout_cache.length() {
+          continue
+        }
+        let entry = backend.mesh2d_material_layout_cache[index]
+        if host_material2d_layout_signature_eq(entry.key, layout_key) {
+          return Some((entry.bind_group_layout, entry.pipeline_layout))
+        }
+      }
+    None => ()
   }
   None
+}
+
+///|
+fn mesh2d_material_layout_cache_insert_index(
+  backend : GpuBackend,
+  layout_signature : Array[(UInt, Int)],
+  cache_index : Int,
+) -> Unit {
+  let signature_hash = host_material2d_layout_signature_hash(layout_signature)
+  match backend.mesh2d_material_layout_cache_index.get(signature_hash) {
+    Some(indices) => {
+      indices.push(cache_index)
+      backend.mesh2d_material_layout_cache_index.set(signature_hash, indices)
+    }
+    None =>
+      backend.mesh2d_material_layout_cache_index.set(signature_hash, [
+        cache_index,
+      ])
+  }
 }
 
 ///|
@@ -449,8 +612,10 @@ fn mesh2d_material_layout_for_bind_group(
   backend : GpuBackend,
   bind_group : HostMaterial2dBindGroup,
 ) -> (@wgpu.BindGroupLayout, @wgpu.PipelineLayout)? {
-  let layout_key = host_material2d_bind_group_layout_key(bind_group)
-  if mesh2d_material_layout_from_cache(backend, layout_key) is Some(layout_info) {
+  let layout_signature = host_material2d_layout_signature(bind_group)
+  let layout_key_string = host_material2d_layout_signature_key(layout_signature)
+  if mesh2d_material_layout_from_cache(backend, layout_signature)
+    is Some(layout_info) {
     return Some(layout_info)
   }
   guard backend.mesh2d_view_bgl is Some(view_bgl) else { return None }
@@ -498,7 +663,7 @@ fn mesh2d_material_layout_for_bind_group(
   } else {
     builder.finish(
       backend.device,
-      label="mgstudio_mesh2d_material_bind_group_layout_" + layout_key,
+      label="mgstudio_mesh2d_material_bind_group_layout_" + layout_key_string,
     )
   }
   let pipeline_layout = create_pipeline_layout_3(
@@ -507,12 +672,19 @@ fn mesh2d_material_layout_for_bind_group(
     mesh_bgl,
     material_bgl,
   )
-  pipeline_layout.set_label("mgstudio_mesh2d_pipeline_layout_" + layout_key)
+  pipeline_layout.set_label(
+    "mgstudio_mesh2d_pipeline_layout_" + layout_key_string,
+  )
   backend.mesh2d_material_layout_cache.push(Mesh2dMaterialLayoutCacheEntry::{
-    key: layout_key,
+    key: layout_signature,
     bind_group_layout: material_bgl,
     pipeline_layout,
   })
+  mesh2d_material_layout_cache_insert_index(
+    backend,
+    layout_signature,
+    backend.mesh2d_material_layout_cache.length() - 1,
+  )
   Some((material_bgl, pipeline_layout))
 }
 
@@ -620,6 +792,24 @@ fn mesh2d_globals_uniform_bytes() -> Bytes {
 }
 
 ///|
+fn mesh2d_sync_view_uniforms_for_current_pass(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  guard backend.pass_state is Some(pass_state) else { return }
+  ensure_mesh2d_resources(backend)
+  guard backend.mesh2d_view_buf is Some(view_buf) &&
+    backend.mesh2d_globals_buf is Some(globals_buf) else {
+    return
+  }
+  backend.queue.write_buffer(
+    view_buf,
+    0UL,
+    mesh2d_view_uniform_bytes(pass_state),
+  )
+  backend.queue.write_buffer(globals_buf, 0UL, mesh2d_globals_uniform_bytes())
+}
+
+///|
 fn mesh2d_instance_uniform_bytes(
   x : Float,
   y : Float,
@@ -686,6 +876,22 @@ fn resolve_mesh2d_material_texture(
 }
 
 ///|
+fn mesh2d_material_bind_group_cache_insert_index(
+  backend : GpuBackend,
+  bind_group_hash : UInt64,
+  cache_index : Int,
+) -> Unit {
+  match backend.mesh2d_material_bg_cache_index.get(bind_group_hash) {
+    Some(indices) => {
+      indices.push(cache_index)
+      backend.mesh2d_material_bg_cache_index.set(bind_group_hash, indices)
+    }
+    None =>
+      backend.mesh2d_material_bg_cache_index.set(bind_group_hash, [cache_index])
+  }
+}
+
+///|
 fn mesh2d_material_bind_group_for_draw(
   backend : GpuBackend,
   bind_group : HostMaterial2dBindGroup,
@@ -695,13 +901,22 @@ fn mesh2d_material_bind_group_for_draw(
     return None
   }
   let cache_key = host_material2d_bind_group_cache_key(bind_group)
-  for entry in backend.mesh2d_material_bg_cache {
-    if entry.key == cache_key {
-      for uniform_buffer in entry.uniform_buffers {
-        uniform_buffer |> ignore
+  let bind_group_hash = host_material2d_bind_group_hash(bind_group)
+  match backend.mesh2d_material_bg_cache_index.get(bind_group_hash) {
+    Some(indices) =>
+      for index in indices {
+        if index < 0 || index >= backend.mesh2d_material_bg_cache.length() {
+          continue
+        }
+        let entry = backend.mesh2d_material_bg_cache[index]
+        if host_material2d_bind_group_key_eq(entry.key, bind_group) {
+          for uniform_buffer in entry.uniform_buffers {
+            uniform_buffer |> ignore
+          }
+          return Some((material_bgl, entry.bind_group))
+        }
       }
-      return Some((material_bgl, entry.bind_group))
-    }
+    None => ()
   }
   let uniform_buffers : Array[@wgpu.Buffer] = []
   let builder = @wgpu.BindGroupBuilder::new(
@@ -747,6 +962,11 @@ fn mesh2d_material_bind_group_for_draw(
     bind_group,
     uniform_buffers,
   })
+  mesh2d_material_bind_group_cache_insert_index(
+    backend,
+    bind_group_hash,
+    backend.mesh2d_material_bg_cache.length() - 1,
+  )
   Some((material_bgl, bind_group))
 }
 
@@ -798,10 +1018,15 @@ fn mesh2d_get_or_create_pipeline(
   material_pipeline_layout : @wgpu.PipelineLayout,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let cache_key = mesh2d_pipeline_cache_key(key)
-  for entry in backend.mesh2d_pipeline_cache {
-    if entry.key == cache_key {
-      return Some(entry.pipeline)
-    }
+  match backend.mesh2d_pipeline_cache_index.get(cache_key) {
+    Some(index) =>
+      if index >= 0 && index < backend.mesh2d_pipeline_cache.length() {
+        let entry = backend.mesh2d_pipeline_cache[index]
+        if entry.key == cache_key {
+          return Some(entry.pipeline)
+        }
+      }
+    None => ()
   }
   let pipeline_label = if key.blend_alpha {
     "mgstudio_mesh2d_transparent_pipeline"
@@ -817,6 +1042,10 @@ fn mesh2d_get_or_create_pipeline(
     key: cache_key,
     pipeline,
   })
+  backend.mesh2d_pipeline_cache_index.set(
+    cache_key,
+    backend.mesh2d_pipeline_cache.length() - 1,
+  )
   let uses_default_shaders = key.vertex_shader_path ==
     MESH2D_DEFAULT_VERTEX_SHADER_PATH &&
     key.fragment_shader_path == MESH2D_COLOR_MATERIAL_SHADER_PATH
@@ -867,6 +1096,110 @@ fn mesh_pipeline_for_draw(
     ),
     material_pipeline_layout,
   )
+}
+
+///|
+fn mesh2d_reset_pending_batch(backend : GpuBackend) -> Unit {
+  backend.mesh2d_batch_active = false
+  backend.mesh2d_batch_mesh_id = -1
+  backend.mesh2d_batch_alpha_mode_kind = MESH2D_ALPHA_MODE_KIND_OPAQUE
+  backend.mesh2d_batch_wireframe = false
+  backend.mesh2d_batch_vertex_shader_path = ""
+  backend.mesh2d_batch_fragment_shader_path = ""
+  backend.mesh2d_batch_material_hash = 0UL
+  backend.mesh2d_batch_material_key.clear()
+  backend.mesh2d_batch_uniform_base_offset = 0
+  backend.mesh2d_batch_instance_count = 0U
+  backend.mesh2d_batch_pipeline = None
+  backend.mesh2d_batch_material_bg = None
+}
+
+///|
+fn mesh2d_pending_batch_matches(
+  backend : GpuBackend,
+  mesh_id : Int,
+  alpha_mode_kind : Int,
+  material_bind_group : HostMaterial2dBindGroup,
+  material_bind_group_hash : UInt64,
+  wireframe : Bool,
+  vertex_shader_path : String,
+  fragment_shader_path : String,
+) -> Bool {
+  backend.mesh2d_batch_active &&
+  backend.mesh2d_batch_mesh_id == mesh_id &&
+  backend.mesh2d_batch_alpha_mode_kind == alpha_mode_kind &&
+  backend.mesh2d_batch_wireframe == wireframe &&
+  backend.mesh2d_batch_vertex_shader_path == vertex_shader_path &&
+  backend.mesh2d_batch_fragment_shader_path == fragment_shader_path &&
+  backend.mesh2d_batch_material_hash == material_bind_group_hash &&
+  host_material2d_bind_group_key_eq(
+    backend.mesh2d_batch_material_key,
+    material_bind_group,
+  )
+}
+
+///|
+fn flush_mesh2d_batches(backend : GpuBackend) -> Unit {
+  if !backend.mesh2d_batch_active {
+    return
+  }
+  if backend.mesh2d_batch_instance_count == 0U {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard backend.frame is Some(frame) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard frame.pass is Some(pass) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard backend.mesh2d_batch_pipeline is Some(pipeline) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard backend.mesh2d_batch_material_bg is Some(material_bg) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard backend.mesh2d_view_bg is Some(view_bg) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard backend.mesh2d_instance_bg is Some(instance_uniform_bg) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  guard find_mesh(backend, backend.mesh2d_batch_mesh_id) is Some(mesh) else {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  if mesh.vertex_stride_bytes != MESH2D_VERTEX_STRIDE_BYTES {
+    mesh2d_reset_pending_batch(backend)
+    return
+  }
+  let uniform_dynamic_offset = backend.mesh2d_batch_uniform_base_offset.reinterpret_as_uint()
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, view_bg, [0U])
+  pass.set_bind_group(1U, instance_uniform_bg, [uniform_dynamic_offset])
+  pass.set_bind_group(2U, material_bg, [])
+  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
+    mesh.vertex_stride_bytes
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+  gpu_mesh_bind_index_buffer(pass, mesh)
+  debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
+    1
+  current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
+    1
+  pass.draw_indexed(
+    mesh.index_count,
+    backend.mesh2d_batch_instance_count,
+    0U,
+    0,
+    0U,
+  )
+  mesh2d_reset_pending_batch(backend)
 }
 
 ///|
@@ -1210,11 +1543,11 @@ fn GpuBackend::draw_mesh_material_with_options(
     debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
     return
   }
-  guard frame.pass is Some(pass) else {
+  guard frame.pass is Some(_) else {
     debug_mesh2d_drop_no_pass_ref.val = debug_mesh2d_drop_no_pass_ref.val + 1
     return
   }
-  guard self.pass_state is Some(ps) else {
+  guard self.pass_state is Some(_) else {
     debug_mesh2d_drop_no_pass_state_ref.val = debug_mesh2d_drop_no_pass_state_ref.val +
       1
     return
@@ -1234,38 +1567,23 @@ fn GpuBackend::draw_mesh_material_with_options(
     return
   }
   ensure_mesh2d_resources(self)
+  let resolved_vertex_shader_path = mesh2d_vertex_shader_path_or_default(
+    vertex_shader_path,
+  )
+  let resolved_fragment_shader_path = mesh2d_fragment_shader_path_or_default(
+    fragment_shader_path,
+  )
   guard mesh_pipeline_for_draw(
-      self, mesh, alpha_mode_kind, material_bind_group, wireframe, vertex_shader_path,
-      fragment_shader_path,
+      self,
+      mesh,
+      alpha_mode_kind,
+      material_bind_group,
+      wireframe,
+      Some(resolved_vertex_shader_path),
+      Some(resolved_fragment_shader_path),
     )
     is Some(pipeline) else {
     debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
-      1
-    return
-  }
-  let uniform_write_offset = self.mesh2d_instance_used
-  let next_instance_used = uniform_write_offset +
-    MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES.to_int()
-  if next_instance_used < 0 {
-    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
-      1
-    return
-  }
-  guard ensure_mesh2d_instance_uniform_binding(
-      self,
-      next_instance_used.to_uint64(),
-    )
-    is Some((instance_uniform_buf, instance_uniform_bg)) else {
-    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
-      1
-    return
-  }
-  self.mesh2d_instance_used = next_instance_used
-  let uniform_dynamic_offset = uniform_write_offset.reinterpret_as_uint()
-  guard self.mesh2d_view_buf is Some(view_buf) &&
-    self.mesh2d_globals_buf is Some(globals_buf) &&
-    self.mesh2d_view_bg is Some(view_bg) else {
-    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
       1
     return
   }
@@ -1275,26 +1593,67 @@ fn GpuBackend::draw_mesh_material_with_options(
       1
     return
   }
-  self.queue.write_buffer(view_buf, 0UL, mesh2d_view_uniform_bytes(ps))
-  self.queue.write_buffer(globals_buf, 0UL, mesh2d_globals_uniform_bytes())
+  let material_bind_group_hash = host_material2d_bind_group_hash(
+    material_bind_group,
+  )
+  if self.mesh2d_batch_active &&
+    self.mesh2d_batch_instance_count.reinterpret_as_int() >=
+    MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE {
+    flush_mesh2d_batches(self)
+  }
+  if !mesh2d_pending_batch_matches(
+      self, mesh_id, alpha_mode_kind, material_bind_group, material_bind_group_hash,
+      wireframe, resolved_vertex_shader_path, resolved_fragment_shader_path,
+    ) {
+    flush_mesh2d_batches(self)
+    self.mesh2d_batch_active = true
+    self.mesh2d_batch_mesh_id = mesh_id
+    self.mesh2d_batch_alpha_mode_kind = alpha_mode_kind
+    self.mesh2d_batch_wireframe = wireframe
+    self.mesh2d_batch_vertex_shader_path = resolved_vertex_shader_path
+    self.mesh2d_batch_fragment_shader_path = resolved_fragment_shader_path
+    self.mesh2d_batch_material_hash = material_bind_group_hash
+    self.mesh2d_batch_material_key = host_material2d_bind_group_cache_key(
+      material_bind_group,
+    )
+    self.mesh2d_batch_instance_count = 0U
+    self.mesh2d_batch_pipeline = Some(pipeline)
+    self.mesh2d_batch_material_bg = Some(material_bg)
+    self.mesh2d_batch_uniform_base_offset = mesh2d_align_up(
+      self.mesh2d_instance_used.to_uint64(),
+      MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES,
+    ).to_int()
+  }
+  let uniform_write_offset = self.mesh2d_batch_uniform_base_offset +
+    self.mesh2d_batch_instance_count.reinterpret_as_int() *
+    MESH2D_UNIFORM_STRIDE_BYTES.to_int()
+  let next_instance_used = uniform_write_offset +
+    MESH2D_UNIFORM_STRIDE_BYTES.to_int()
+  if next_instance_used < 0 {
+    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
+      1
+    mesh2d_reset_pending_batch(self)
+    return
+  }
+  guard ensure_mesh2d_instance_uniform_binding(
+      self,
+      next_instance_used.to_uint64(),
+    )
+    is Some((instance_uniform_buf, _)) else {
+    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
+      1
+    mesh2d_reset_pending_batch(self)
+    return
+  }
+  if next_instance_used > self.mesh2d_instance_used {
+    self.mesh2d_instance_used = next_instance_used
+  }
   self.queue.write_buffer(
     instance_uniform_buf,
     uniform_write_offset.to_uint64(),
     mesh2d_instance_uniform_bytes(x, y, rotation, scale_x, scale_y, 0U, 0U),
   )
-  pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, view_bg, [0U])
-  pass.set_bind_group(1U, instance_uniform_bg, [uniform_dynamic_offset])
-  pass.set_bind_group(2U, material_bg, [])
-  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
-    mesh.vertex_stride_bytes
-  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-  gpu_mesh_bind_index_buffer(pass, mesh)
-  debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
-    1
-  current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
-    1
-  pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+  self.mesh2d_batch_instance_count = self.mesh2d_batch_instance_count + 1U
 }
 
 ///|

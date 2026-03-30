@@ -327,7 +327,7 @@ fn[T : Resource] world_resource_ref_mut_or_raise(
   world : @ecs.World,
 ) -> Ref[T] raise @ecs.SystemParamValidationError {
   match
-    (try world.get_resource_ref(Resource::resource()) catch {
+    (try world.get_resource_ref_mut(Resource::resource()) catch {
       _ => None
     } noraise {
       value => value

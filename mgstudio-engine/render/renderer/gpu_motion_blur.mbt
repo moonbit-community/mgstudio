@@ -46,8 +46,10 @@ fn ensure_motion_blur_pipeline_rgba8(
   if backend.motion_blur_pipeline is Some(_) {
     return
   }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/bevy_post_process/motion_blur/motion_blur.wgsl",
+  let wgsl = load_fullscreen_postprocess_wgsl_with_defines_required(
+    backend,
+    "shaders/bevy_post_process/motion_blur/motion_blur.wgsl",
+    [],
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = backend.device.create_render_pipeline_color_format_entries(
@@ -81,8 +83,10 @@ fn ensure_motion_blur_pipeline_surface(
   if backend.motion_blur_pipeline_surface is Some(old) {
     old.release()
   }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/bevy_post_process/motion_blur/motion_blur.wgsl",
+  let wgsl = load_fullscreen_postprocess_wgsl_with_defines_required(
+    backend,
+    "shaders/bevy_post_process/motion_blur/motion_blur.wgsl",
+    [],
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = backend.device.create_render_pipeline_color_format_entries(
@@ -130,6 +134,7 @@ pub fn GpuBackend::draw_motion_blur(
     motion_blur_debug_log("skip: no active render pass")
     return
   }
+  flush_mesh2d_batches(self)
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)

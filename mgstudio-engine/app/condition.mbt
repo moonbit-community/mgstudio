@@ -56,21 +56,34 @@ pub fn[T] any_with_component(
 pub fn[T] resource_added(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  resource_exists(key)
+  let mut last_seen_sequence = 0
+  fn(world : @ecs.World) {
+    let exists = world.resource(key).is_present()
+    let added = exists && world.resource_added_since(key, last_seen_sequence)
+    last_seen_sequence = world.read_sequence()
+    added
+  }
 }
 
 ///|
 pub fn[T] resource_changed(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  resource_exists(key)
+  let mut last_seen_sequence = 0
+  fn(world : @ecs.World) {
+    let exists = world.resource(key).is_present()
+    let changed = exists &&
+      world.resource_changed_since(key, last_seen_sequence)
+    last_seen_sequence = world.read_sequence()
+    changed
+  }
 }
 
 ///|
 pub fn[T] resource_exists_and_changed(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  resource_exists(key)
+  resource_changed(key)
 }
 
 ///|

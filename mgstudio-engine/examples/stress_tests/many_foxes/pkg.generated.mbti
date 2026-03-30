@@ -1,11 +1,21 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/stress_tests/many_foxes"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type FoxAnimations
+
+type FoxMotion
+pub impl @ecs.Component for FoxMotion
+
+type Foxes
 
 // Type aliases
 

@@ -541,6 +541,11 @@ pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool {
 }
 
 ///|
+pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool {
+  @renderer.mesh3d_preprocess_disabled_by_env()
+}
+
+///|
 fn host_mesh3d_preprocess_shader_work_item_to_renderer(
   item : HostMesh3dPreprocessShaderWorkItem,
 ) -> @renderer.HostMesh3dPreprocessShaderWorkItem {

@@ -215,6 +215,10 @@ priv struct EcsTextBridgeEntry {
 let text_ecs_bridge_entries : Array[EcsTextBridgeEntry] = []
 
 ///|
+let text_ecs_bridge_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
+)
+
+///|
 priv struct UiEcsTextBridgeEntry {
   world_id : Int
   entity : @core.Entity
@@ -227,17 +231,33 @@ priv struct UiEcsTextBridgeEntry {
 let ui_text_ecs_bridge_entries : Array[UiEcsTextBridgeEntry] = []
 
 ///|
+let ui_text_ecs_bridge_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
+)
+
+///|
 let text_runtime_world_id_ref : Ref[Int?] = Ref::new(None)
+
+///|
+let text_diagnostic_sync_ecs_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
+let text_diagnostic_sync_ecs_dirty_entity_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let text_diagnostic_sync_ecs_early_return_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 fn reset_text_runtime_state() -> Unit {
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
-  text_state.val.texts.clear()
+  text_state_clear_instances()
   text_debug_frame_state.val.draws.clear()
   text_ecs_bridge_entries.clear()
+  text_ecs_bridge_index_by_world_id_ref.val.clear()
   ui_text_ecs_bridge_entries.clear()
+  ui_text_ecs_bridge_index_by_world_id_ref.val.clear()
   font_atlas_set_state.val = FontAtlasSet::default()
+  default_text_font_handle_ref.val = None
   cosmic_font_system_state.val = CosmicFontSystemState::{
     font_system: @cosmic.FontSystem::new(),
     handle_to_font_id: [],
@@ -268,8 +288,37 @@ pub fn text_reset_runtime_state_for_tests() -> Unit {
 fn register_text_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
-  world.register_required_components(
-    ecs_key_text2d, @transform.ecs_key_transform,
+  world.register_required_components_with(ecs_key_text2d, ecs_key_text_layout, fn() {
+    TextLayout::default()
+  })
+  world.register_required_components_with(ecs_key_text2d, ecs_key_text_font, fn() {
+    TextFont::default()
+  })
+  world.register_required_components_with(ecs_key_text2d, ecs_key_text_color, fn() {
+    TextColor::default()
+  })
+  world.register_required_components_with(
+    ecs_key_text2d,
+    ecs_key_text_line_height,
+    fn() { LineHeight::default() },
+  )
+  world.register_required_components_with(ecs_key_text2d, ecs_key_text_bounds, fn() {
+    TextBounds::default()
+  })
+  world.register_required_components_with(
+    ecs_key_text2d,
+    @sprite.ecs_key_anchor,
+    fn() { @sprite.Anchor::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_text2d,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_text2d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
   )
 }
 
@@ -299,6 +348,36 @@ fn color_eq(lhs : @sprite.Color, rhs : @sprite.Color) -> Bool {
 ///|
 fn vec2_eq(lhs : @math.Vec2, rhs : @math.Vec2) -> Bool {
   lhs.x == rhs.x && lhs.y == rhs.y
+}
+
+///|
+fn vec3_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
+}
+
+///|
+fn quat_eq(lhs : @math.Quat, rhs : @math.Quat) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w
+}
+
+///|
+fn transform_eq(lhs : @transform.Transform, rhs : @transform.Transform) -> Bool {
+  vec3_eq(lhs.translation, rhs.translation) &&
+  quat_eq(lhs.rotation, rhs.rotation) &&
+  vec3_eq(lhs.scale, rhs.scale)
+}
+
+///|
+fn render_layers_eq(
+  lhs : @sprite.RenderLayers,
+  rhs : @sprite.RenderLayers,
+) -> Bool {
+  lhs.mask == rhs.mask
+}
+
+///|
+fn anchor_eq(lhs : @sprite.Anchor, rhs : @sprite.Anchor) -> Bool {
+  vec2_eq(lhs.value, rhs.value)
 }
 
 ///|
@@ -595,23 +674,73 @@ fn text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
 }
 
 ///|
-fn text_ecs_has_required_components(
+fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
+  if text_ecs_bridge_index_by_world_id_ref.val.get(world_id)
+    is Some(index_by_entity_id) {
+    return index_by_entity_id
+  }
+  let index_by_entity_id : Map[Int, Int] = {}
+  let count = text_ecs_bridge_entries.length()
+  for i in 0..<count {
+    let entry = text_ecs_bridge_entries[i]
+    if entry.world_id == world_id {
+      index_by_entity_id.set(entry.entity.id, i)
+    }
+  }
+  text_ecs_bridge_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
+  index_by_entity_id
+}
+
+///|
+fn[T] text_ecs_union_changed_entities_into(
   world : @ecs.World,
+  key : @ecs.ComponentKey[T],
+  sequence : @core.SystemSequence,
+  dirty_entities : Map[Int, Bool],
+  has_text_dirty_entities : Ref[Bool],
+) -> Bool {
+  let mut has_any = false
+  for entity in world.changed_components(key, sequence).read() {
+    has_any = true
+    dirty_entities.set(entity.id, true)
+    if !has_text_dirty_entities.val {
+      let is_text_entity = world.contains_by_key(entity, ecs_key_text2d) catch {
+        _ => false
+      }
+      if is_text_entity {
+        has_text_dirty_entities.val = true
+      }
+    }
+  }
+  has_any
+}
+
+///|
+fn text_ecs_entity_id_set_contains(
+  set : Map[Int, Bool],
   entity : @core.Entity,
 ) -> Bool {
-  if !world.is_alive(entity) {
-    return false
+  set.get(entity.id) is Some(_)
+}
+
+///|
+fn text_ecs_find_entry_index_from_index(
+  world_id : Int,
+  entity : @core.Entity,
+  index_by_entity_id : Map[Int, Int],
+) -> Int? {
+  match index_by_entity_id.get(entity.id) {
+    Some(index) =>
+      if index >= 0 &&
+        index < text_ecs_bridge_entries.length() &&
+        text_ecs_bridge_entries[index].world_id == world_id &&
+        text_ecs_bridge_entries[index].entity == entity {
+        Some(index)
+      } else {
+        text_ecs_find_entry_index(world_id, entity)
+      }
+    None => None
   }
-  if (try! world.entity(entity).get() : Text2d?) is None {
-    return false
-  }
-  if (try! world.entity(entity).get() : TextFont?) is None {
-    return false
-  }
-  if (try! world.entity(entity).get() : @transform.Transform?) is None {
-    return false
-  }
-  true
 }
 
 ///|
@@ -622,46 +751,49 @@ fn text_ecs_bundle_from_entity(
   font : TextFont,
   local_transform : @transform.Transform,
 ) -> Text2dBundle {
-  let transform = match
-    (try! world.entity(entity).get() : @transform.GlobalTransform?) {
+  let entity_ref = try! world.entity(entity)
+  let transform = match (try! entity_ref.get() : @transform.GlobalTransform?) {
     Some(global_transform) => global_transform.to_transform_approx()
     None => local_transform
   }
-  let color = match (try! world.entity(entity).get() : TextColor?) {
+  let color = match (try! entity_ref.get() : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! world.entity(entity).get()
-  let underline : Underline? = try! world.entity(entity).get()
-  let underline_color : UnderlineColor? = try! world.entity(entity).get()
-  let strikethrough : Strikethrough? = try! world.entity(entity).get()
-  let strikethrough_color : StrikethroughColor? = try! world
-    .entity(entity)
-    .get()
-  let layout = match (try! world.entity(entity).get() : TextLayout?) {
+  let background_color : TextBackgroundColor? = try! entity_ref.get()
+  let underline : Underline? = try! entity_ref.get()
+  let underline_color : UnderlineColor? = try! entity_ref.get()
+  let strikethrough : Strikethrough? = try! entity_ref.get()
+  let strikethrough_color : StrikethroughColor? = try! entity_ref.get()
+  let layout = match (try! entity_ref.get() : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
   }
-  let bounds = match (try! world.entity(entity).get() : TextBounds?) {
+  let bounds = match (try! entity_ref.get() : TextBounds?) {
     Some(bounds) => bounds
     None => TextBounds::default()
   }
-  let line_height = match (try! world.entity(entity).get() : LineHeight?) {
+  let line_height = match (try! entity_ref.get() : LineHeight?) {
     Some(line_height) => line_height
     None => LineHeight::default()
   }
-  let shadow : Text2dShadow? = try! world.entity(entity).get()
-  let layers = match (try! world.entity(entity).get() : @sprite.RenderLayers?) {
+  let shadow : Text2dShadow? = try! entity_ref.get()
+  let layers = match (try! entity_ref.get() : @sprite.RenderLayers?) {
     Some(layers) => layers
     None => @sprite.RenderLayers::default()
   }
-  let anchor = match (try! world.entity(entity).get() : @sprite.Anchor?) {
+  let anchor = match (try! entity_ref.get() : @sprite.Anchor?) {
     Some(anchor) => anchor
     None => @sprite.Anchor::default()
   }
-  let y_axis = match (try! world.entity(entity).get() : YAxisOrientation?) {
+  let y_axis = match (try! entity_ref.get() : YAxisOrientation?) {
     Some(y_axis) => y_axis
     None => YAxisOrientation::TopToBottom
+  }
+  let no_frustum_culling = world.contains_by_key(
+    entity, @visibility.ecs_key_no_frustum_culling,
+  ) catch {
+    _ => false
   }
   Text2dBundle::{
     text,
@@ -678,6 +810,7 @@ fn text_ecs_bundle_from_entity(
     shadow,
     transform,
     layers,
+    no_frustum_culling,
     anchor,
     y_axis,
     logical_viewport_size: None,
@@ -691,26 +824,25 @@ fn text_ecs_span_bundle_from_entity(
   inherited_font : TextFont,
   inherited_line_height : LineHeight,
 ) -> TextSpanBundle? {
-  let span = match (try! world.entity(entity).get() : TextSpan?) {
+  let entity_ref = try! world.entity(entity)
+  let span = match (try! entity_ref.get() : TextSpan?) {
     Some(span) => span
     None => return None
   }
-  let font = match (try! world.entity(entity).get() : TextFont?) {
+  let font = match (try! entity_ref.get() : TextFont?) {
     Some(font) => font
     None => inherited_font
   }
-  let color = match (try! world.entity(entity).get() : TextColor?) {
+  let color = match (try! entity_ref.get() : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! world.entity(entity).get()
-  let underline : Underline? = try! world.entity(entity).get()
-  let underline_color : UnderlineColor? = try! world.entity(entity).get()
-  let strikethrough : Strikethrough? = try! world.entity(entity).get()
-  let strikethrough_color : StrikethroughColor? = try! world
-    .entity(entity)
-    .get()
-  let line_height = match (try! world.entity(entity).get() : LineHeight?) {
+  let background_color : TextBackgroundColor? = try! entity_ref.get()
+  let underline : Underline? = try! entity_ref.get()
+  let underline_color : UnderlineColor? = try! entity_ref.get()
+  let strikethrough : Strikethrough? = try! entity_ref.get()
+  let strikethrough_color : StrikethroughColor? = try! entity_ref.get()
+  let line_height = match (try! entity_ref.get() : LineHeight?) {
     Some(line_height) => line_height
     None => inherited_line_height
   }
@@ -732,9 +864,11 @@ fn text_ecs_collect_span_bundles_for_entity(
   world : @ecs.World,
   entity : @core.Entity,
   bundle : Text2dBundle,
+  span_edges : Array[(@core.Entity, @core.Entity)],
 ) -> Array[TextSpanBundle] {
   let span_bundles : Array[TextSpanBundle] = []
-  match (try! world.entity(entity).get() : @hierarchy.Children?) {
+  let entity_ref = try! world.entity(entity)
+  match (try! entity_ref.get() : @hierarchy.Children?) {
     Some(children) =>
       for child in children.entities() {
         if text_ecs_span_bundle_from_entity(
@@ -747,15 +881,12 @@ fn text_ecs_collect_span_bundles_for_entity(
           span_bundles.push(span_bundle)
         }
       }
-    None => {
-      let query : @ecs.Query[
-        (@ecs.Comp[TextSpan], @ecs.Comp[@hierarchy.Parent]),
-        @ecs.All,
-      ] = @ecs.query(world)
-      try! query.view(fn(child, data) {
-        let (_span, parent) = data
-        if parent.value().entity() != entity {
-          return
+    None =>
+      for edge in span_edges {
+        let parent = edge.0
+        let child = edge.1
+        if parent != entity {
+          continue
         }
         if text_ecs_span_bundle_from_entity(
             world,
@@ -766,10 +897,25 @@ fn text_ecs_collect_span_bundles_for_entity(
           is Some(span_bundle) {
           span_bundles.push(span_bundle)
         }
-      })
-    }
+      }
   }
   span_bundles
+}
+
+///|
+fn text_ecs_collect_span_edges(
+  world : @ecs.World,
+) -> Array[(@core.Entity, @core.Entity)] {
+  let span_edges : Array[(@core.Entity, @core.Entity)] = []
+  let query : @ecs.Query[
+    (@ecs.Comp[TextSpan], @ecs.Comp[@hierarchy.Parent]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(child, data) {
+    let (_span, parent) = data
+    span_edges.push((parent.value().entity(), child))
+  })
+  span_edges
 }
 
 ///|
@@ -786,7 +932,6 @@ fn text_ecs_spawn_entry(
     for span_bundle in span_bundles {
       ignore(text_spawn_span(handle, span_bundle))
     }
-    text_update_instance(handle, text_update_layout)
     handle
   })
   text_ecs_bridge_entries.push(EcsTextBridgeEntry::{
@@ -796,26 +941,60 @@ fn text_ecs_spawn_entry(
     bundle,
     span_bundles,
   })
+  text_ecs_build_entry_index_by_entity_id(world_id).set(
+    entity.id,
+    text_ecs_bridge_entries.length() - 1,
+  )
 }
 
 ///|
-fn text_ecs_cleanup_stale_entries(world : @ecs.World) -> Unit {
-  let world_id = world.world_id()
-  let next_entries : Array[EcsTextBridgeEntry] = []
-  for entry in text_ecs_bridge_entries {
-    if entry.world_id != world_id {
-      next_entries.push(entry)
-      continue
-    }
-    if text_ecs_has_required_components(world, entry.entity) {
-      next_entries.push(entry)
-      continue
-    }
-    ignore(text_despawn(entry.handle))
+fn text_ecs_remove_entry_at_index(
+  index : Int,
+  index_by_entity_id : Map[Int, Int],
+) -> Unit {
+  let last_index = text_ecs_bridge_entries.length() - 1
+  let removed_entry = text_ecs_bridge_entries[index]
+  ignore(text_despawn(removed_entry.handle))
+  if index != last_index {
+    let moved_entry = text_ecs_bridge_entries[last_index]
+    text_ecs_bridge_entries[index] = moved_entry
+    index_by_entity_id.set(moved_entry.entity.id, index)
   }
-  text_ecs_bridge_entries.clear()
-  for entry in next_entries {
-    text_ecs_bridge_entries.push(entry)
+  ignore(text_ecs_bridge_entries.pop())
+  ignore(index_by_entity_id.remove(removed_entry.entity.id))
+}
+
+///|
+fn text_ecs_cleanup_removed_entity(
+  world_id : Int,
+  entity : @core.Entity,
+  index_by_entity_id : Map[Int, Int],
+) -> Unit {
+  match
+    text_ecs_find_entry_index_from_index(world_id, entity, index_by_entity_id) {
+    Some(index) => text_ecs_remove_entry_at_index(index, index_by_entity_id)
+    None => ()
+  }
+}
+
+///|
+fn text_ecs_cleanup_removed_entries(
+  world : @ecs.World,
+  world_id : Int,
+  sequence : @core.SystemSequence,
+  index_by_entity_id : Map[Int, Int],
+) -> Unit {
+  for entity in world.removed_components(ecs_key_text2d, sequence).read() {
+    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
+  }
+  for entity in world.removed_components(ecs_key_text_font, sequence).read() {
+    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
+  }
+  for
+    entity in world
+    .removed_components(@transform.ecs_key_transform, sequence)
+    .read() {
+    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
 }
 
@@ -833,7 +1012,6 @@ fn text_ecs_respawn_entry(
     for span_bundle in span_bundles {
       ignore(text_spawn_span(handle, span_bundle))
     }
-    text_update_instance(handle, text_update_layout)
     handle
   })
   EcsTextBridgeEntry::{ ..entry, handle, bundle, span_bundles }
@@ -854,7 +1032,6 @@ fn text_ecs_sync_existing_entry(
   if !text_span_bundle_array_eq(entry.span_bundles, span_bundles) {
     return text_ecs_respawn_entry(world, entry, bundle, span_bundles)
   }
-  let needs_layout = !text_bundle_rerender_eq(entry.bundle, bundle)
   if !text2d_eq(entry.bundle.text, bundle.text) {
     text_set_content(handle, bundle.text.content)
   }
@@ -897,34 +1074,155 @@ fn text_ecs_sync_existing_entry(
   if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
     text_set_shadow(handle, bundle.shadow)
   }
-  text_set_transform(handle, bundle.transform)
-  text_set_layers(handle, bundle.layers)
-  text_set_anchor(handle, bundle.anchor)
-  text_set_y_axis(handle, bundle.y_axis)
+  if !transform_eq(entry.bundle.transform, bundle.transform) {
+    text_set_transform(handle, bundle.transform)
+  }
+  if !render_layers_eq(entry.bundle.layers, bundle.layers) {
+    text_set_layers(handle, bundle.layers)
+  }
+  if entry.bundle.no_frustum_culling != bundle.no_frustum_culling {
+    text_set_no_frustum_culling(handle, bundle.no_frustum_culling)
+  }
+  if !anchor_eq(entry.bundle.anchor, bundle.anchor) {
+    text_set_anchor(handle, bundle.anchor)
+  }
+  if !y_axis_eq(entry.bundle.y_axis, bundle.y_axis) {
+    text_set_y_axis(handle, bundle.y_axis)
+  }
   if !vec2_opt_eq(
       entry.bundle.logical_viewport_size,
       bundle.logical_viewport_size,
     ) {
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
-  if needs_layout {
-    @asset.asset_with_world(world, fn() {
-      text_update_instance(handle, text_update_layout)
-    })
-  }
   EcsTextBridgeEntry::{ ..entry, bundle, span_bundles }
 }
 
 ///|
 fn text_sync_ecs_system(world : @ecs.World) -> Unit {
+  let sync_start = @time.host_time_now()
+  text_diagnostic_sync_ecs_early_return_ref.val = false
+  text_diagnostic_sync_ecs_dirty_entity_count_ref.val = 0
   prepare_text_runtime_world(world)
-  text_ecs_cleanup_stale_entries(world)
   let world_id = world.world_id()
+  let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
+  let sequence = world.get_sequence_context().sequence()
+  text_ecs_cleanup_removed_entries(
+    world, world_id, sequence, index_by_entity_id,
+  )
+  let span_edges = text_ecs_collect_span_edges(world)
+  let has_any_spans = span_edges.length() > 0
+  let dirty_entities : Map[Int, Bool] = {}
+  let has_text_dirty_entities = Ref::new(false)
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text2d, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_font, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, @transform.ecs_key_transform, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, @transform.ecs_key_global_transform, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_background_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_underline, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_underline_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_strikethrough, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_strikethrough_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_layout, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_bounds, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_line_height, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text2d_shadow, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, @sprite.ecs_key_render_layers, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, @sprite.ecs_key_anchor, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_y_axis, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  if !has_any_spans &&
+    !has_text_dirty_entities.val &&
+    text_ecs_bridge_entries.length() > 0 {
+    text_diagnostic_sync_ecs_early_return_ref.val = true
+    text_diagnostic_sync_ecs_cpu_ms_ref.val = (
+        @time.host_time_now() - sync_start
+      ) *
+      1000.0F
+    return
+  }
+  text_diagnostic_sync_ecs_dirty_entity_count_ref.val = dirty_entities.length()
   let query : @ecs.Query[
     (@ecs.Comp[Text2d], @ecs.Comp[TextFont], @ecs.Comp[@transform.Transform]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(entity, data) {
+    let existing_index = text_ecs_find_entry_index_from_index(
+      world_id, entity, index_by_entity_id,
+    )
+    if existing_index is Some(_) && !has_any_spans {
+      if !text_ecs_entity_id_set_contains(dirty_entities, entity) {
+        return
+      }
+    }
     let (text, font, local_transform) = data
     let bundle = text_ecs_bundle_from_entity(
       world,
@@ -933,20 +1231,43 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       font.value(),
       local_transform.value(),
     )
-    let span_bundles = text_ecs_collect_span_bundles_for_entity(
-      world, entity, bundle,
-    )
-    match text_ecs_find_entry_index(world_id, entity) {
+    let span_bundles = if has_any_spans {
+      text_ecs_collect_span_bundles_for_entity(
+        world, entity, bundle, span_edges,
+      )
+    } else {
+      []
+    }
+    match existing_index {
       Some(index) => {
         let entry = text_ecs_bridge_entries[index]
         text_ecs_bridge_entries[index] = text_ecs_sync_existing_entry(
           world, entry, bundle, span_bundles,
         )
       }
-      None =>
+      None => {
         text_ecs_spawn_entry(world, world_id, entity, bundle, span_bundles)
+        index_by_entity_id.set(entity.id, text_ecs_bridge_entries.length() - 1)
+      }
     }
   })
+  text_diagnostic_sync_ecs_cpu_ms_ref.val = (@time.host_time_now() - sync_start) *
+    1000.0F
+}
+
+///|
+pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float {
+  text_diagnostic_sync_ecs_cpu_ms_ref.val
+}
+
+///|
+pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int {
+  text_diagnostic_sync_ecs_dirty_entity_count_ref.val
+}
+
+///|
+pub fn text_diagnostic_sync_ecs_early_return() -> Bool {
+  text_diagnostic_sync_ecs_early_return_ref.val
 }
 
 ///|
@@ -962,14 +1283,41 @@ fn ui_text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
 }
 
 ///|
-fn ui_text_ecs_has_required_components(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> Bool {
-  if !world.is_alive(entity) {
-    return false
+fn ui_text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
+  if ui_text_ecs_bridge_index_by_world_id_ref.val.get(world_id)
+    is Some(index_by_entity_id) {
+    return index_by_entity_id
   }
-  (try! world.entity(entity).get() : Text?) is Some(_)
+  let index_by_entity_id : Map[Int, Int] = {}
+  let count = ui_text_ecs_bridge_entries.length()
+  for i in 0..<count {
+    let entry = ui_text_ecs_bridge_entries[i]
+    if entry.world_id == world_id {
+      index_by_entity_id.set(entry.entity.id, i)
+    }
+  }
+  ui_text_ecs_bridge_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
+  index_by_entity_id
+}
+
+///|
+fn ui_text_ecs_find_entry_index_from_index(
+  world_id : Int,
+  entity : @core.Entity,
+  index_by_entity_id : Map[Int, Int],
+) -> Int? {
+  match index_by_entity_id.get(entity.id) {
+    Some(index) =>
+      if index >= 0 &&
+        index < ui_text_ecs_bridge_entries.length() &&
+        ui_text_ecs_bridge_entries[index].world_id == world_id &&
+        ui_text_ecs_bridge_entries[index].entity == entity {
+        Some(index)
+      } else {
+        ui_text_ecs_find_entry_index(world_id, entity)
+      }
+    None => None
+  }
 }
 
 ///|
@@ -978,30 +1326,29 @@ fn ui_text_ecs_bundle_from_entity(
   entity : @core.Entity,
   text : Text,
 ) -> Text2dBundle {
-  let font = match (try! world.entity(entity).get() : TextFont?) {
+  let entity_ref = try! world.entity(entity)
+  let font = match (try! entity_ref.get() : TextFont?) {
     Some(font) => font
     None => TextFont::default()
   }
-  let color = match (try! world.entity(entity).get() : TextColor?) {
+  let color = match (try! entity_ref.get() : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! world.entity(entity).get()
-  let underline : Underline? = try! world.entity(entity).get()
-  let underline_color : UnderlineColor? = try! world.entity(entity).get()
-  let strikethrough : Strikethrough? = try! world.entity(entity).get()
-  let strikethrough_color : StrikethroughColor? = try! world
-    .entity(entity)
-    .get()
-  let layout = match (try! world.entity(entity).get() : TextLayout?) {
+  let background_color : TextBackgroundColor? = try! entity_ref.get()
+  let underline : Underline? = try! entity_ref.get()
+  let underline_color : UnderlineColor? = try! entity_ref.get()
+  let strikethrough : Strikethrough? = try! entity_ref.get()
+  let strikethrough_color : StrikethroughColor? = try! entity_ref.get()
+  let layout = match (try! entity_ref.get() : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
   }
-  let line_height = match (try! world.entity(entity).get() : LineHeight?) {
+  let line_height = match (try! entity_ref.get() : LineHeight?) {
     Some(line_height) => line_height
     None => LineHeight::default()
   }
-  let shadow_component : TextShadow? = try! world.entity(entity).get()
+  let shadow_component : TextShadow? = try! entity_ref.get()
   Text2dBundle::{
     text: Text2d::new(text.content),
     font,
@@ -1017,6 +1364,7 @@ fn ui_text_ecs_bundle_from_entity(
     shadow: text_shadow_component_to_2d(shadow_component),
     transform: @transform.Transform::identity(),
     layers: @sprite.RenderLayers::default(),
+    no_frustum_culling: false,
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
@@ -1037,7 +1385,6 @@ fn ui_text_ecs_spawn_entry(
     for span_bundle in span_bundles {
       ignore(text_spawn_span(handle, span_bundle))
     }
-    text_update_instance(handle, text_update_layout)
     handle
   })
   ui_text_ecs_bridge_entries.push(UiEcsTextBridgeEntry::{
@@ -1047,26 +1394,53 @@ fn ui_text_ecs_spawn_entry(
     bundle,
     span_bundles,
   })
+  ui_text_ecs_build_entry_index_by_entity_id(world_id).set(
+    entity.id,
+    ui_text_ecs_bridge_entries.length() - 1,
+  )
 }
 
 ///|
-fn ui_text_ecs_cleanup_stale_entries(world : @ecs.World) -> Unit {
-  let world_id = world.world_id()
-  let next_entries : Array[UiEcsTextBridgeEntry] = []
-  for entry in ui_text_ecs_bridge_entries {
-    if entry.world_id != world_id {
-      next_entries.push(entry)
-      continue
-    }
-    if ui_text_ecs_has_required_components(world, entry.entity) {
-      next_entries.push(entry)
-      continue
-    }
-    ignore(text_despawn(entry.handle))
+fn ui_text_ecs_remove_entry_at_index(
+  index : Int,
+  index_by_entity_id : Map[Int, Int],
+) -> Unit {
+  let last_index = ui_text_ecs_bridge_entries.length() - 1
+  let removed_entry = ui_text_ecs_bridge_entries[index]
+  ignore(text_despawn(removed_entry.handle))
+  if index != last_index {
+    let moved_entry = ui_text_ecs_bridge_entries[last_index]
+    ui_text_ecs_bridge_entries[index] = moved_entry
+    index_by_entity_id.set(moved_entry.entity.id, index)
   }
-  ui_text_ecs_bridge_entries.clear()
-  for entry in next_entries {
-    ui_text_ecs_bridge_entries.push(entry)
+  ignore(ui_text_ecs_bridge_entries.pop())
+  ignore(index_by_entity_id.remove(removed_entry.entity.id))
+}
+
+///|
+fn ui_text_ecs_cleanup_removed_entity(
+  world_id : Int,
+  entity : @core.Entity,
+  index_by_entity_id : Map[Int, Int],
+) -> Unit {
+  match
+    ui_text_ecs_find_entry_index_from_index(
+      world_id, entity, index_by_entity_id,
+    ) {
+    Some(index) => ui_text_ecs_remove_entry_at_index(index, index_by_entity_id)
+    None => ()
+  }
+}
+
+///|
+fn ui_text_ecs_cleanup_removed_entries(
+  world : @ecs.World,
+  world_id : Int,
+  sequence : @core.SystemSequence,
+  index_by_entity_id : Map[Int, Int],
+) -> Unit {
+  for entity in world.removed_components(ecs_key_text, sequence).read() {
+    ui_text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
 }
 
@@ -1084,7 +1458,6 @@ fn ui_text_ecs_respawn_entry(
     for span_bundle in span_bundles {
       ignore(text_spawn_span(handle, span_bundle))
     }
-    text_update_instance(handle, text_update_layout)
     handle
   })
   UiEcsTextBridgeEntry::{ ..entry, handle, bundle, span_bundles }
@@ -1142,11 +1515,7 @@ fn ui_text_ecs_sync_existing_entry(
     ) {
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
-  if needs_layout {
-    @asset.asset_with_world(world, fn() {
-      text_update_instance(handle, text_update_layout)
-    })
-  }
+  ignore(needs_layout)
   UiEcsTextBridgeEntry::{ ..entry, bundle, span_bundles }
 }
 
@@ -1164,23 +1533,36 @@ pub fn ui_text_ecs_handle(
 ///|
 pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   prepare_text_runtime_world(world)
-  ui_text_ecs_cleanup_stale_entries(world)
   let world_id = world.world_id()
+  let index_by_entity_id = ui_text_ecs_build_entry_index_by_entity_id(world_id)
+  let sequence = world.get_sequence_context().sequence()
+  ui_text_ecs_cleanup_removed_entries(
+    world, world_id, sequence, index_by_entity_id,
+  )
+  let span_edges = text_ecs_collect_span_edges(world)
   let query : @ecs.Query[@ecs.Comp[Text], @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, text) {
     let bundle = ui_text_ecs_bundle_from_entity(world, entity, text.value())
     let span_bundles = text_ecs_collect_span_bundles_for_entity(
-      world, entity, bundle,
+      world, entity, bundle, span_edges,
     )
-    match ui_text_ecs_find_entry_index(world_id, entity) {
+    match
+      ui_text_ecs_find_entry_index_from_index(
+        world_id, entity, index_by_entity_id,
+      ) {
       Some(index) => {
         let entry = ui_text_ecs_bridge_entries[index]
         ui_text_ecs_bridge_entries[index] = ui_text_ecs_sync_existing_entry(
           world, entry, bundle, span_bundles,
         )
       }
-      None =>
+      None => {
         ui_text_ecs_spawn_entry(world, world_id, entity, bundle, span_bundles)
+        index_by_entity_id.set(
+          entity.id,
+          ui_text_ecs_bridge_entries.length() - 1,
+        )
+      }
     }
   })
 }

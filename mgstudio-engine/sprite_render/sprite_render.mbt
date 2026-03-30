@@ -102,6 +102,9 @@ pub type UiCornerRadii = @sprite.UiCornerRadii
 pub type UiBorderRect = @sprite.UiBorderRect
 
 ///|
+pub type SceneCullContext = @sprite.SceneCullContext
+
+///|
 pub let render2d_set_extract : @app.SystemSet = @app.system_set(
   "bevy.render2d.extract",
 )
@@ -130,6 +133,30 @@ pub fn render2d_push_sprite_uv_scissor_batch(
   sprites : Array[OverlaySpriteUvScissor],
 ) -> Unit {
   @sprite.render2d_push_sprite_uv_scissor_batch(world, sprites)
+}
+
+///|
+pub fn render2d_primary_scene_cull_context(
+  world : @ecs.World,
+) -> SceneCullContext? {
+  @sprite.render2d_primary_scene_cull_context(world)
+}
+
+///|
+pub fn render2d_scene_item_visible(
+  context : SceneCullContext,
+  x : Float,
+  y : Float,
+  radius : Float,
+) -> Bool {
+  @sprite.render2d_scene_item_visible(context, x, y, radius)
+}
+
+///|
+pub fn render2d_scene_cull_context_values(
+  context : SceneCullContext,
+) -> (Float, Float, Float, Float, Float, Float) {
+  context.values()
 }
 
 ///|
@@ -222,6 +249,16 @@ pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
 ///|
 pub fn render2d_diagnostic_prepared_camera_count() -> Int {
   @sprite.render2d_diagnostic_prepared_camera_count()
+}
+
+///|
+pub fn render2d_diagnostic_queue_cpu_ms() -> Float {
+  @sprite.render2d_diagnostic_queue_cpu_ms()
+}
+
+///|
+pub fn render2d_diagnostic_execute_cpu_ms() -> Float {
+  @sprite.render2d_diagnostic_execute_cpu_ms()
 }
 
 ///|

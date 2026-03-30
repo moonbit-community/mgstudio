@@ -120,7 +120,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   }
   var out_color = in.color * sampled;
   let edge = 0.75 + 0.25 * abs(in.uv.x * 2.0 - 1.0);
-  out_color.rgb = out_color.rgb * vec3<f32>(edge, 1.0, edge);
+  out_color = vec4<f32>(out_color.rgb * vec3<f32>(edge, 1.0, edge), out_color.a);
   if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK) &&
     out_color.a < draw.material.alpha_cutoff {
     discard;

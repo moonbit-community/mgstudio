@@ -339,6 +339,21 @@ fn wgsl_import_request_visit_key(request : WgslImportRequest) -> String {
 }
 
 ///|
+fn wgsl_visit_has_rel_prefix(
+  visited : @hashmap.HashMap[String, Bool],
+  rel_path : String,
+) -> Bool {
+  let prefix = rel_path + "|"
+  for entry in visited.iter() {
+    let (key, _) = entry
+    if starts_with_text(key, prefix) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn wgsl_declaration_name(line : String) -> String {
   let trimmed = line.trim().to_string()
   if trimmed == "" {
@@ -1249,6 +1264,17 @@ pub fn Composer::preprocess_wgsl_source(
         }
       }
       for request in requests {
+        if request.import_full_module {
+          if wgsl_visit_has_rel_prefix(visited, request.rel_path) {
+            continue
+          }
+        }
+        if !request.import_full_module {
+          let full_module_key = request.rel_path + "|*"
+          if visited.contains(full_module_key) {
+            continue
+          }
+        }
         let visit_key = wgsl_import_request_visit_key(request)
         if visited.contains(visit_key) {
           continue

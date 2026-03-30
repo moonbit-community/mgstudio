@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/tools/gamepad_viewer"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type GamepadIndicator
+pub impl @ecs.Component for GamepadIndicator
 
 // Type aliases
 

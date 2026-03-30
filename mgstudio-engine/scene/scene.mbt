@@ -1282,6 +1282,12 @@ fn scene_entity_global_matrix(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @mesh.SkinningMat4 {
+  if (try! world.get_by_key(entity, @transform.ecs_key_global_transform))
+    is Some(global_transform) {
+    return @mesh.SkinningMat4::from_transform(
+      global_transform.to_transform_approx(),
+    )
+  }
   let chain : Array[@core.Entity] = []
   let mut current : @core.Entity? = Some(entity)
   while current is Some(value) {
@@ -1308,6 +1314,12 @@ fn scene_entity_global_inverse_matrix(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @mesh.SkinningMat4 {
+  if (try! world.get_by_key(entity, @transform.ecs_key_global_transform))
+    is Some(global_transform) {
+    return @mesh.SkinningMat4::inverse_transform(
+      global_transform.to_transform_approx(),
+    )
+  }
   let mut matrix = @mesh.SkinningMat4::identity()
   let mut current : @core.Entity? = Some(entity)
   while current is Some(value) {
@@ -1370,37 +1382,63 @@ fn scene_skin_positions(
   let skinned_positions : Array[@math.Vec3] = []
   let vertex_count = positions.length()
   for vertex_index in 0..<vertex_count {
+    let base_position = positions[vertex_index]
     let indices = joint_indices[vertex_index]
     let weights = joint_weights[vertex_index]
     let mut value = @math.Vec3::zero()
     let mut total_weight = 0.0F
-    let channels : Array[(Int, Float)] = [
-      (indices.x, weights.x),
-      (indices.y, weights.y),
-      (indices.z, weights.z),
-      (indices.w, weights.w),
-    ]
-    for channel in channels {
-      let (joint_index, joint_weight) = channel
-      if joint_weight == 0.0F {
-        continue
-      }
-      if joint_index < 0 || joint_index >= joint_matrices.length() {
-        continue
-      }
-      total_weight = total_weight + joint_weight
+    if weights.x != 0.0F &&
+      indices.x >= 0 &&
+      indices.x < joint_matrices.length() {
+      total_weight = total_weight + weights.x
       value = @math.Vec3::add(
         value,
         @math.Vec3::mul_scalar(
-          joint_matrices[joint_index].transform_point3(positions[vertex_index]),
-          joint_weight,
+          joint_matrices[indices.x].transform_point3(base_position),
+          weights.x,
+        ),
+      )
+    }
+    if weights.y != 0.0F &&
+      indices.y >= 0 &&
+      indices.y < joint_matrices.length() {
+      total_weight = total_weight + weights.y
+      value = @math.Vec3::add(
+        value,
+        @math.Vec3::mul_scalar(
+          joint_matrices[indices.y].transform_point3(base_position),
+          weights.y,
+        ),
+      )
+    }
+    if weights.z != 0.0F &&
+      indices.z >= 0 &&
+      indices.z < joint_matrices.length() {
+      total_weight = total_weight + weights.z
+      value = @math.Vec3::add(
+        value,
+        @math.Vec3::mul_scalar(
+          joint_matrices[indices.z].transform_point3(base_position),
+          weights.z,
+        ),
+      )
+    }
+    if weights.w != 0.0F &&
+      indices.w >= 0 &&
+      indices.w < joint_matrices.length() {
+      total_weight = total_weight + weights.w
+      value = @math.Vec3::add(
+        value,
+        @math.Vec3::mul_scalar(
+          joint_matrices[indices.w].transform_point3(base_position),
+          weights.w,
         ),
       )
     }
     if total_weight > 0.0F {
       skinned_positions.push(value)
     } else {
-      skinned_positions.push(positions[vertex_index])
+      skinned_positions.push(base_position)
     }
   }
   skinned_positions

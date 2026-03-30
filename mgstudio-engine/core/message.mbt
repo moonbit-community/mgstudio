@@ -101,11 +101,23 @@ pub fn[T] Messages::reader(
   self : Messages[T],
   system : SystemSequence,
 ) -> MessageReader[T] {
+  let previous_messages = if self.previous_sequence is Some(sequence) &&
+    message_sequence_in_range(sequence, system) {
+    self.previous_messages.copy()
+  } else {
+    []
+  }
+  let current_messages = if self.current_sequence is Some(sequence) &&
+    message_sequence_in_range(sequence, system) {
+    self.current_messages.copy()
+  } else {
+    []
+  }
   MessageReader::{
     previous_sequence: self.previous_sequence,
-    previous_messages: self.previous_messages.copy(),
+    previous_messages,
     current_sequence: self.current_sequence,
-    current_messages: self.current_messages.copy(),
+    current_messages,
     system,
     has_read: false,
   }

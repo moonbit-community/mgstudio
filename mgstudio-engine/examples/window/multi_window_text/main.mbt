@@ -89,11 +89,6 @@ fn spawn_ui_label(
   )
   try! world.set_by_key(
     text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    text_entity,
     @text.ecs_key_text,
     @text.Text::new(content),
   )
@@ -115,10 +110,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let text_font = @text.TextFont::from_font_size(30.0F)
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::default().with_clear_color(
+      @sprite.Color::srgb(0.14F, 0.12F, 0.20F),
+    ),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
+
+  if @render.host_gpu_mesh3d_preprocess_disabled() {
+    spawn_ui_label(world, UI_TEXT_PRIMARY, None, text_font)
+    return
+  }
 
   let secondary_window = world.spawn_empty()
   try! world.set_by_key(
@@ -128,7 +130,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
-    @sprite.Camera::default(),
+    @sprite.Camera::default().with_clear_color(
+      @sprite.Color::srgb(0.08F, 0.10F, 0.14F),
+    ),
     @transform.Transform::identity(),
     @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
     @sprite.RenderLayers::layer(1),

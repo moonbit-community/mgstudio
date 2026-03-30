@@ -84,7 +84,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .insert_resource(@time.Time::from_hz(1024.0F))
+  .insert_resource(@time.Time::from_hz(120.0F))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.FixedUpdate, @app.system(@app.system_param5(draw)))
   .run()

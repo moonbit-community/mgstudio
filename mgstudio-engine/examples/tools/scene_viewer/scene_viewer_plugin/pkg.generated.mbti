@@ -1,11 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/tools/scene_viewer/scene_viewer_plugin"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type ViewerRoot
+pub impl @ecs.Component for ViewerRoot
+
+type ViewerScenes
 
 // Type aliases
 

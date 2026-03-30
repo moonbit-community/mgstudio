@@ -19,7 +19,7 @@ fn reset_text_ecs_test_state() -> Unit {
   text_runtime_world_id_ref.val = None
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
-  text_state.val.texts.clear()
+  text_state_clear_instances()
   text_runtime_rem_size_ref.val = RemSize::default().value()
   text_debug_frame_state.val.draws.clear()
 }
@@ -55,6 +55,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     shadow: None,
     transform: global_transform,
     layers: @sprite.RenderLayers::default(),
+    no_frustum_culling: false,
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
@@ -119,13 +120,18 @@ test "ecs text bridge cleanup removes dead entity entries" {
   })
 
   try! world.despawn(entity)
-  text_ecs_cleanup_stale_entries(world)
+  let world_id = world.world_id()
+  let sequence = @core.SystemSequence::new(0, 1)
+  let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
+  text_ecs_cleanup_removed_entries(
+    world, world_id, sequence, index_by_entity_id,
+  )
 
   inspect(text_ecs_bridge_entries.length(), content="0")
 }
 
 ///|
-test "text ecs bridge registers Transform as a required component for Text2d" {
+test "text ecs bridge registers required components for Text2d" {
   let world = @ecs.World::new()
   try! register_text_required_components(world)
   let entity = world.spawn()
@@ -134,6 +140,34 @@ test "text ecs bridge registers Transform as a required component for Text2d" {
 
   inspect(
     (try! world.entity(entity).get() : @transform.Transform?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : TextLayout?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : TextFont?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : TextColor?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : LineHeight?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : TextBounds?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : @sprite.Anchor?) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.entity(entity).get() : @visibility.Visibility?) is Some(_),
     content="true",
   )
 }
@@ -183,7 +217,10 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
   )
 
   let span_bundles = text_ecs_collect_span_bundles_for_entity(
-    world, root, root_bundle,
+    world,
+    root,
+    root_bundle,
+    text_ecs_collect_span_edges(world),
   )
 
   inspect(span_bundles.length(), content="2")
@@ -234,6 +271,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     shadow: None,
     transform: @transform.Transform::identity(),
     layers: @sprite.RenderLayers::default(),
+    no_frustum_culling: false,
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,

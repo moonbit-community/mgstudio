@@ -76,7 +76,9 @@ fn setup(
     @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
   )
   let base_material = materials.get_ref().val.add(
-    @sprite.ColorMaterialAsset::from_image(texture),
+    @sprite.ColorMaterialAsset::from_image(texture).with_alpha_mode(
+      @sprite.AlphaMode2d::Mask(0.5F),
+    ),
   )
 
   for y in -GRID_HALF_Y..<GRID_HALF_Y {
@@ -114,14 +116,10 @@ fn move_camera(
   let elapsed = time.get().elapsed_secs()
   try! camera.for_each(fn(_entity, transform) {
     let transform_ref = transform.get_ref()
-    transform_ref.val.translation = @math.Vec3::new(
-      @math.cos(elapsed * 0.2F) * CAMERA_RADIUS,
-      @math.sin(elapsed * 0.2F) * CAMERA_RADIUS,
-      0.0F,
+    transform_ref.val.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
+    transform_ref.val.translation = transform_ref.val.translation.add(
+      @math.Vec3::new(CAMERA_RADIUS * time.get().delta_secs(), 0.0F, 0.0F),
     )
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(elapsed * 0.1F)
-    let scale = 1.0F + 0.18F * @math.sin(elapsed * 0.6F)
-    transform_ref.val.scale = @math.Vec3::new(scale, scale, 1.0F)
   })
 }
 

@@ -149,14 +149,14 @@ pub struct Mesh2dPipelineCacheEntry {
 
 ///|
 pub struct Mesh2dMaterialLayoutCacheEntry {
-  key : String
+  key : Array[(UInt, Int)]
   bind_group_layout : @wgpu.BindGroupLayout
   pipeline_layout : @wgpu.PipelineLayout
 }
 
 ///|
 struct Mesh2dMaterialBindGroupCacheEntry {
-  key : String
+  key : Array[HostMaterial2dBinding]
   bind_group : @wgpu.BindGroup
   uniform_buffers : Array[@wgpu.Buffer]
 }
@@ -473,6 +473,7 @@ pub struct GpuBackend {
   mut surface_cleared_this_frame : Bool
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
+  mut pass_has_depth : Bool
   mut frame_count : UInt
   mut depth_texture : @wgpu.Texture?
   mut depth_view : @wgpu.TextureView?
@@ -487,6 +488,9 @@ pub struct GpuBackend {
   mut sprite_pipeline : @wgpu.RenderPipeline?
   mut sprite_pipeline_surface : @wgpu.RenderPipeline?
   mut sprite_pipeline_surface_format : @wgpu.TextureFormat?
+  mut sprite_pipeline_depth : @wgpu.RenderPipeline?
+  mut sprite_pipeline_depth_surface : @wgpu.RenderPipeline?
+  mut sprite_pipeline_depth_surface_format : @wgpu.TextureFormat?
   mut sprite_globals_buf : @wgpu.Buffer?
   mut sprite_instance_buf : @wgpu.Buffer?
   mut sprite_index_buf : @wgpu.Buffer?
@@ -565,9 +569,24 @@ pub struct GpuBackend {
   mut mesh2d_instance_bg : @wgpu.BindGroup?
   mut mesh2d_instance_capacity : UInt64
   mut mesh2d_instance_used : Int
+  mut mesh2d_batch_active : Bool
+  mut mesh2d_batch_mesh_id : Int
+  mut mesh2d_batch_alpha_mode_kind : Int
+  mut mesh2d_batch_wireframe : Bool
+  mut mesh2d_batch_vertex_shader_path : String
+  mut mesh2d_batch_fragment_shader_path : String
+  mut mesh2d_batch_material_hash : UInt64
+  mut mesh2d_batch_material_key : Array[HostMaterial2dBinding]
+  mut mesh2d_batch_uniform_base_offset : Int
+  mut mesh2d_batch_instance_count : UInt
+  mut mesh2d_batch_pipeline : @wgpu.RenderPipeline?
+  mut mesh2d_batch_material_bg : @wgpu.BindGroup?
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
+  mesh2d_pipeline_cache_index : @hashmap.HashMap[String, Int]
   mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
+  mesh2d_material_layout_cache_index : Map[UInt64, Array[Int]]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
+  mesh2d_material_bg_cache_index : Map[UInt64, Array[Int]]
   mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_draw : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
@@ -640,6 +659,7 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
+  mut mesh3d_motion_vector_empty_bg : @wgpu.BindGroup?
   mesh3d_motion_vector_mesh_slots : Array[GpuStorageSlot]
   mut mesh3d_motion_vector_mesh_slot_used : Int
   mut mesh3d_motion_vector_instance_mesh_buf : @wgpu.Buffer?
@@ -925,6 +945,7 @@ pub fn GpuBackend::new(
     surface_cleared_this_frame: false,
     frame: None,
     pass_state: None,
+    pass_has_depth: false,
     frame_count: 0U,
     depth_texture: None,
     depth_view: None,
@@ -937,6 +958,9 @@ pub fn GpuBackend::new(
     sprite_pipeline: None,
     sprite_pipeline_surface: None,
     sprite_pipeline_surface_format: None,
+    sprite_pipeline_depth: None,
+    sprite_pipeline_depth_surface: None,
+    sprite_pipeline_depth_surface_format: None,
     sprite_globals_buf: None,
     sprite_instance_buf: None,
     sprite_index_buf: None,
@@ -1007,9 +1031,24 @@ pub fn GpuBackend::new(
     mesh2d_instance_bg: None,
     mesh2d_instance_capacity: 0UL,
     mesh2d_instance_used: 0,
+    mesh2d_batch_active: false,
+    mesh2d_batch_mesh_id: -1,
+    mesh2d_batch_alpha_mode_kind: MESH2D_ALPHA_MODE_KIND_OPAQUE,
+    mesh2d_batch_wireframe: false,
+    mesh2d_batch_vertex_shader_path: "",
+    mesh2d_batch_fragment_shader_path: "",
+    mesh2d_batch_material_hash: 0UL,
+    mesh2d_batch_material_key: [],
+    mesh2d_batch_uniform_base_offset: 0,
+    mesh2d_batch_instance_count: 0U,
+    mesh2d_batch_pipeline: None,
+    mesh2d_batch_material_bg: None,
     mesh2d_pipeline_cache: [],
+    mesh2d_pipeline_cache_index: @hashmap.HashMap::new(),
     mesh2d_material_layout_cache: [],
+    mesh2d_material_layout_cache_index: {},
     mesh2d_material_bg_cache: [],
+    mesh2d_material_bg_cache_index: {},
     mesh3d_bgl_view: None,
     mesh3d_bgl_draw: None,
     mesh3d_bgl_material: None,
@@ -1080,6 +1119,7 @@ pub fn GpuBackend::new(
     mesh3d_motion_vector_previous_view_buf: None,
     mesh3d_motion_vector_visibility_ranges_buf: None,
     mesh3d_motion_vector_view_bg: None,
+    mesh3d_motion_vector_empty_bg: None,
     mesh3d_motion_vector_mesh_slots: [],
     mesh3d_motion_vector_mesh_slot_used: 0,
     mesh3d_motion_vector_instance_mesh_buf: None,

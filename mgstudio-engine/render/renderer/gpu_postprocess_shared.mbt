@@ -60,7 +60,7 @@ fn preprocess_manual_wgsl_source(
     value_defines.set(key, value)
   }
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(backend.assets_base)
   preprocess_wgsl_source(
     backend.assets_base,
     source,
@@ -137,7 +137,12 @@ fn merge_fullscreen_postprocess_source(
   if main_source.contains("fn fullscreen_vertex_shader(") {
     return main_source
   }
-  if main_source.contains("struct FullscreenVertexOutput") {
+  let imports_fullscreen_vertex_output = main_source.contains(
+      "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput",
+    ) ||
+    main_source.contains("fullscreen_vertex_shader::FullscreenVertexOutput")
+  if main_source.contains("struct FullscreenVertexOutput") ||
+    imports_fullscreen_vertex_output {
     return main_source +
       "\n" +
       fullscreen_vertex_shader_function_source(fullscreen_source)

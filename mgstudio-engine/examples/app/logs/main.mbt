@@ -80,8 +80,20 @@ fn main {
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(@app.LogPlugin::default())])
   .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Startup, @app.system(setup_visual))
   .add_systems(@app.Update, @app.system(log_system))
   .add_systems(@app.Update, @app.system(log_once_system))
   .add_systems(@app.Update, @app.system(panic_on_p))
   .run()
+}
+
+///|
+fn setup_visual(world : @ecs.World) -> Unit {
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_clear_color(
+      @sprite.Color::srgb(0.16F, 0.12F, 0.18F),
+    ),
+    @transform.Transform::identity(),
+  ).spawn(world)
+  |> ignore
 }

@@ -44,6 +44,16 @@ pub let render_diagnostic_queued_draw_items_2d : DiagnosticPath = DiagnosticPath
 )
 
 ///|
+pub let render_diagnostic_queue_cpu_ms_2d : DiagnosticPath = DiagnosticPath::const_new(
+  "render/2d/queue_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_execute_cpu_ms_2d : DiagnosticPath = DiagnosticPath::const_new(
+  "render/2d/execute_cpu_ms",
+)
+
+///|
 pub let render_diagnostic_prepared_cameras_3d : DiagnosticPath = DiagnosticPath::const_new(
   "render/3d/prepared_cameras",
 )
@@ -51,6 +61,66 @@ pub let render_diagnostic_prepared_cameras_3d : DiagnosticPath = DiagnosticPath:
 ///|
 pub let render_diagnostic_visible_meshes_3d : DiagnosticPath = DiagnosticPath::const_new(
   "render/3d/visible_meshes",
+)
+
+///|
+pub let render_diagnostic_queue_cpu_ms_3d : DiagnosticPath = DiagnosticPath::const_new(
+  "render/3d/queue_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_execute_cpu_ms_3d : DiagnosticPath = DiagnosticPath::const_new(
+  "render/3d/execute_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_pass_total_count : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/total_count",
+)
+
+///|
+pub let render_diagnostic_pass_2d_count : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/2d_count",
+)
+
+///|
+pub let render_diagnostic_pass_3d_main_count : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/3d_main_count",
+)
+
+///|
+pub let render_diagnostic_pass_3d_motion_vector_count : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/3d_motion_vector_count",
+)
+
+///|
+pub let render_diagnostic_pass_3d_point_shadow_count : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/3d_point_shadow_count",
+)
+
+///|
+pub let render_diagnostic_pass_total_cpu_ms : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/total_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_pass_2d_cpu_ms : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/2d_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_pass_3d_main_cpu_ms : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/3d_main_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_pass_3d_motion_vector_cpu_ms : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/3d_motion_vector_cpu_ms",
+)
+
+///|
+pub let render_diagnostic_pass_3d_point_shadow_cpu_ms : DiagnosticPath = DiagnosticPath::const_new(
+  "render/pass/3d_point_shadow_cpu_ms",
 )
 
 ///|
@@ -77,8 +147,22 @@ pub let render_diagnostic_mesh3d_executed_draw_calls : DiagnosticPath = Diagnost
 priv struct RenderDiagnosticsMeasurements {
   prepared_cameras_2d : Int?
   queued_draw_items_2d : Int?
+  queue_cpu_ms_2d : Float?
+  execute_cpu_ms_2d : Float?
   prepared_cameras_3d : Int?
   visible_meshes_3d : Int?
+  queue_cpu_ms_3d : Float?
+  execute_cpu_ms_3d : Float?
+  pass_total_count : Int
+  pass_2d_count : Int
+  pass_3d_main_count : Int
+  pass_3d_motion_vector_count : Int
+  pass_3d_point_shadow_count : Int
+  pass_total_cpu_ms : Float
+  pass_2d_cpu_ms : Float
+  pass_3d_main_cpu_ms : Float
+  pass_3d_motion_vector_cpu_ms : Float
+  pass_3d_point_shadow_cpu_ms : Float
   mesh2d_draw_calls : Int
   mesh2d_executed_draw_calls : Int
   mesh3d_draw_calls : Int
@@ -100,9 +184,14 @@ pub fn render_diagnostics_plugin_with(
   let mut app_ = app
   let diagnostics = [
     render_diagnostic_prepared_cameras_2d, render_diagnostic_queued_draw_items_2d,
-    render_diagnostic_prepared_cameras_3d, render_diagnostic_visible_meshes_3d, render_diagnostic_mesh2d_draw_calls,
-    render_diagnostic_mesh2d_executed_draw_calls, render_diagnostic_mesh3d_draw_calls,
-    render_diagnostic_mesh3d_executed_draw_calls,
+    render_diagnostic_queue_cpu_ms_2d, render_diagnostic_execute_cpu_ms_2d, render_diagnostic_prepared_cameras_3d,
+    render_diagnostic_visible_meshes_3d, render_diagnostic_queue_cpu_ms_3d, render_diagnostic_execute_cpu_ms_3d,
+    render_diagnostic_pass_total_count, render_diagnostic_pass_2d_count, render_diagnostic_pass_3d_main_count,
+    render_diagnostic_pass_3d_motion_vector_count, render_diagnostic_pass_3d_point_shadow_count,
+    render_diagnostic_pass_total_cpu_ms, render_diagnostic_pass_2d_cpu_ms, render_diagnostic_pass_3d_main_cpu_ms,
+    render_diagnostic_pass_3d_motion_vector_cpu_ms, render_diagnostic_pass_3d_point_shadow_cpu_ms,
+    render_diagnostic_mesh2d_draw_calls, render_diagnostic_mesh2d_executed_draw_calls,
+    render_diagnostic_mesh3d_draw_calls, render_diagnostic_mesh3d_executed_draw_calls,
   ]
   for path in diagnostics {
     app_ = register_diagnostic(
@@ -160,6 +249,27 @@ fn render_diagnostics_record_measurement(
 }
 
 ///|
+fn render_diagnostics_record_measurement_float(
+  store : DiagnosticsStore,
+  tick : Int,
+  path : DiagnosticPath,
+  value : Float,
+) -> Unit {
+  match store.get_ref(path) {
+    Some(diagnostic_ref) => {
+      if !diagnostic_ref.val.is_enabled() {
+        return
+      }
+      diagnostic_ref.val.add_measurement(
+        DiagnosticMeasurement::new(@core.Instant::now(), value),
+        tick,
+      )
+    }
+    None => ()
+  }
+}
+
+///|
 fn render_diagnostics_record_snapshot(
   store : DiagnosticsStore,
   tick : Int,
@@ -175,6 +285,16 @@ fn render_diagnostics_record_snapshot(
       store, tick, render_diagnostic_queued_draw_items_2d, value,
     )
   }
+  if snapshot.queue_cpu_ms_2d is Some(value) {
+    render_diagnostics_record_measurement_float(
+      store, tick, render_diagnostic_queue_cpu_ms_2d, value,
+    )
+  }
+  if snapshot.execute_cpu_ms_2d is Some(value) {
+    render_diagnostics_record_measurement_float(
+      store, tick, render_diagnostic_execute_cpu_ms_2d, value,
+    )
+  }
   if snapshot.prepared_cameras_3d is Some(value) {
     render_diagnostics_record_measurement(
       store, tick, render_diagnostic_prepared_cameras_3d, value,
@@ -185,6 +305,76 @@ fn render_diagnostics_record_snapshot(
       store, tick, render_diagnostic_visible_meshes_3d, value,
     )
   }
+  if snapshot.queue_cpu_ms_3d is Some(value) {
+    render_diagnostics_record_measurement_float(
+      store, tick, render_diagnostic_queue_cpu_ms_3d, value,
+    )
+  }
+  if snapshot.execute_cpu_ms_3d is Some(value) {
+    render_diagnostics_record_measurement_float(
+      store, tick, render_diagnostic_execute_cpu_ms_3d, value,
+    )
+  }
+  render_diagnostics_record_measurement(
+    store,
+    tick,
+    render_diagnostic_pass_total_count,
+    snapshot.pass_total_count,
+  )
+  render_diagnostics_record_measurement(
+    store,
+    tick,
+    render_diagnostic_pass_2d_count,
+    snapshot.pass_2d_count,
+  )
+  render_diagnostics_record_measurement(
+    store,
+    tick,
+    render_diagnostic_pass_3d_main_count,
+    snapshot.pass_3d_main_count,
+  )
+  render_diagnostics_record_measurement(
+    store,
+    tick,
+    render_diagnostic_pass_3d_motion_vector_count,
+    snapshot.pass_3d_motion_vector_count,
+  )
+  render_diagnostics_record_measurement(
+    store,
+    tick,
+    render_diagnostic_pass_3d_point_shadow_count,
+    snapshot.pass_3d_point_shadow_count,
+  )
+  render_diagnostics_record_measurement_float(
+    store,
+    tick,
+    render_diagnostic_pass_total_cpu_ms,
+    snapshot.pass_total_cpu_ms,
+  )
+  render_diagnostics_record_measurement_float(
+    store,
+    tick,
+    render_diagnostic_pass_2d_cpu_ms,
+    snapshot.pass_2d_cpu_ms,
+  )
+  render_diagnostics_record_measurement_float(
+    store,
+    tick,
+    render_diagnostic_pass_3d_main_cpu_ms,
+    snapshot.pass_3d_main_cpu_ms,
+  )
+  render_diagnostics_record_measurement_float(
+    store,
+    tick,
+    render_diagnostic_pass_3d_motion_vector_cpu_ms,
+    snapshot.pass_3d_motion_vector_cpu_ms,
+  )
+  render_diagnostics_record_measurement_float(
+    store,
+    tick,
+    render_diagnostic_pass_3d_point_shadow_cpu_ms,
+    snapshot.pass_3d_point_shadow_cpu_ms,
+  )
   render_diagnostics_record_measurement(
     store,
     tick,
@@ -221,10 +411,24 @@ fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
     queued_draw_items_2d: Some(
       @sprite_render.render2d_diagnostic_queued_draw_item_count(),
     ),
+    queue_cpu_ms_2d: Some(@sprite_render.render2d_diagnostic_queue_cpu_ms()),
+    execute_cpu_ms_2d: Some(@sprite_render.render2d_diagnostic_execute_cpu_ms()),
     prepared_cameras_3d: Some(@pbr.render3d_diagnostic_prepared_camera_count()),
     visible_meshes_3d: Some(
       @pbr.render3d_diagnostic_queued_visible_mesh_count(),
     ),
+    queue_cpu_ms_3d: Some(@pbr.render3d_diagnostic_queue_cpu_ms()),
+    execute_cpu_ms_3d: Some(@pbr.render3d_diagnostic_execute_cpu_ms()),
+    pass_total_count: gpu_snapshot.pass_total_count,
+    pass_2d_count: gpu_snapshot.pass_2d_count,
+    pass_3d_main_count: gpu_snapshot.pass_3d_main_count,
+    pass_3d_motion_vector_count: gpu_snapshot.pass_3d_motion_vector_count,
+    pass_3d_point_shadow_count: gpu_snapshot.pass_3d_point_shadow_count,
+    pass_total_cpu_ms: gpu_snapshot.pass_total_cpu_ms,
+    pass_2d_cpu_ms: gpu_snapshot.pass_2d_cpu_ms,
+    pass_3d_main_cpu_ms: gpu_snapshot.pass_3d_main_cpu_ms,
+    pass_3d_motion_vector_cpu_ms: gpu_snapshot.pass_3d_motion_vector_cpu_ms,
+    pass_3d_point_shadow_cpu_ms: gpu_snapshot.pass_3d_point_shadow_cpu_ms,
     mesh2d_draw_calls: gpu_snapshot.mesh2d_draw_calls,
     mesh2d_executed_draw_calls: gpu_snapshot.mesh2d_executed_draw_calls,
     mesh3d_draw_calls: gpu_snapshot.mesh3d_draw_calls,

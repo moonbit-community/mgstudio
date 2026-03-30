@@ -999,6 +999,10 @@ pub fn GpuBackend::create_render_target_with_formats(
     @wgpu.TEXTURE_USAGE_COPY_SRC |
     @wgpu.TEXTURE_USAGE_COPY_DST
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let view_formats = match sample_format_raw {
+    Some(raw) if raw != format_raw => [tf(raw)]
+    _ => []
+  }
   let tex = self.device.create_texture_u32(
     w,
     h,
@@ -1006,6 +1010,7 @@ pub fn GpuBackend::create_render_target_with_formats(
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     tf(format_raw),
+    view_formats~,
   )
   let view = tex.create_view_u32(
     tf(format_raw),

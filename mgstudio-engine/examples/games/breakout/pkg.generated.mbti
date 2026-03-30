@@ -1,11 +1,23 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/games/breakout"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type Ball
+pub impl @ecs.Component for Ball
+
+type Brick
+pub impl @ecs.Component for Brick
+
+type Paddle
+pub impl @ecs.Component for Paddle
 
 // Type aliases
 

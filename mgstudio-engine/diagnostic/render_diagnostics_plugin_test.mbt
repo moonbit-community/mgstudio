@@ -157,11 +157,71 @@ test "diagnostics: render diagnostics plugin reports zero scene counters without
     content="0",
   )
   inspect(
+    read_diagnostic_value(app, render_diagnostic_queue_cpu_ms_2d) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_execute_cpu_ms_2d) >= 0.0F,
+    content="true",
+  )
+  inspect(
     read_diagnostic_value(app, render_diagnostic_prepared_cameras_3d),
     content="0",
   )
   inspect(
     read_diagnostic_value(app, render_diagnostic_visible_meshes_3d),
     content="0",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_queue_cpu_ms_3d) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_execute_cpu_ms_3d) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_total_count) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_2d_count) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_3d_main_count) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_3d_motion_vector_count) >=
+    0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_3d_point_shadow_count) >=
+    0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_total_cpu_ms) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_2d_cpu_ms) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_3d_main_cpu_ms) >= 0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_3d_motion_vector_cpu_ms) >=
+    0.0F,
+    content="true",
+  )
+  inspect(
+    read_diagnostic_value(app, render_diagnostic_pass_3d_point_shadow_cpu_ms) >=
+    0.0F,
+    content="true",
   )
 }

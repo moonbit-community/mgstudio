@@ -16,6 +16,7 @@
 pub(open) trait QueryFilter {
   matches(self : Self, world : World, entity : @core.Entity) -> Bool
   mentions_component(self : Self, component_id : Int) -> Bool
+  iteration_anchor_component(self : Self) -> Int?
 }
 
 ///|
@@ -45,6 +46,12 @@ pub impl QueryFilter for All with mentions_component(self, _component_id) {
 }
 
 ///|
+pub impl QueryFilter for All with iteration_anchor_component(self) {
+  ignore(self)
+  None
+}
+
+///|
 pub struct With[T] {
   key : ComponentKey[T]
 }
@@ -62,6 +69,11 @@ pub impl[T] QueryFilter for With[T] with matches(self, world, entity) {
 ///|
 pub impl[T] QueryFilter for With[T] with mentions_component(self, component_id) {
   self.key.id() == component_id
+}
+
+///|
+pub impl[T] QueryFilter for With[T] with iteration_anchor_component(self) {
+  Some(self.key.id())
 }
 
 ///|
@@ -88,6 +100,12 @@ pub impl[T] QueryFilter for Without[T] with mentions_component(
 }
 
 ///|
+pub impl[T] QueryFilter for Without[T] with iteration_anchor_component(self) {
+  ignore(self)
+  None
+}
+
+///|
 pub struct Allow[T] {
   key : ComponentKey[T]
 }
@@ -106,6 +124,12 @@ pub impl[T] QueryFilter for Allow[T] with matches(self, _world, _entity) {
 ///|
 pub impl[T] QueryFilter for Allow[T] with mentions_component(self, component_id) {
   self.key.id() == component_id
+}
+
+///|
+pub impl[T] QueryFilter for Allow[T] with iteration_anchor_component(self) {
+  ignore(self)
+  None
 }
 
 ///|
@@ -130,6 +154,43 @@ pub impl[T] QueryFilter for Added[T] with matches(self, world, entity) {
 ///|
 pub impl[T] QueryFilter for Added[T] with mentions_component(self, component_id) {
   self.key.id() == component_id
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with iteration_anchor_component(self) {
+  Some(self.key.id())
+}
+
+///|
+pub struct Changed[T] {
+  key : ComponentKey[T]
+}
+
+///|
+pub fn[T] Changed::new(key : ComponentKey[T]) -> Changed[T] {
+  { key, }
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with matches(self, world, entity) {
+  world.is_changed_by_key(
+    entity,
+    self.key,
+    world.get_sequence_context().sequence(),
+  )
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with mentions_component(
+  self,
+  component_id,
+) {
+  self.key.id() == component_id
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with iteration_anchor_component(self) {
+  Some(self.key.id())
 }
 
 ///|
@@ -160,6 +221,14 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with mentions_compone
 }
 
 ///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with iteration_anchor_component(
+  self,
+) {
+  ignore(self)
+  None
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with matches(
   self,
   world,
@@ -176,6 +245,16 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with mentions_
 ) {
   QueryFilter::mentions_component(self.0, component_id) ||
   QueryFilter::mentions_component(self.1, component_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with iteration_anchor_component(
+  self,
+) {
+  match QueryFilter::iteration_anchor_component(self.0) {
+    Some(component_id) => Some(component_id)
+    None => QueryFilter::iteration_anchor_component(self.1)
+  }
 }
 
 ///|
@@ -198,6 +277,22 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
   QueryFilter::mentions_component(self.0, component_id) ||
   QueryFilter::mentions_component(self.1, component_id) ||
   QueryFilter::mentions_component(self.2, component_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
+) with iteration_anchor_component(self) {
+  match QueryFilter::iteration_anchor_component(self.0) {
+    Some(component_id) => Some(component_id)
+    None =>
+      match QueryFilter::iteration_anchor_component(self.1) {
+        Some(component_id) => Some(component_id)
+        None => QueryFilter::iteration_anchor_component(self.2)
+      }
+  }
 }
 
 ///|

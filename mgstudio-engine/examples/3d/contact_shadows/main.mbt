@@ -29,13 +29,13 @@ const PI : Float = 3.141592653589793F
 const LIGHT_ROTATION_SPEED : Float = 0.12F
 
 ///|
-const POINT_LIGHT_INTENSITY : Float = 400_000.0F
+const POINT_LIGHT_INTENSITY : Float = 4_000.0F
 
 ///|
-const SPOT_LIGHT_INTENSITY : Float = 400_000.0F
+const SPOT_LIGHT_INTENSITY : Float = 4_000.0F
 
 ///|
-const DIRECTIONAL_ILLUMINANCE : Float = 10_000.0F
+const DIRECTIONAL_ILLUMINANCE : Float = 1_000.0F
 
 ///|
 const MODEL_DRAG_ROTATION_SPEED : Float = 0.01F
@@ -363,10 +363,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(
-      asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
-      1000.0F,
-    ),
+    @pbr.Skybox::new(asset_server.load("textures/Ryfjallet_cubemap.png"), 1.0F),
   )
 
   let directional_light = world.spawn_empty()

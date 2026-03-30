@@ -265,7 +265,11 @@ pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Project
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub fn render3d_diagnostic_execute_cpu_ms() -> Float
+
 pub fn render3d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render3d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
 

@@ -123,6 +123,14 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with mentions_component(
 }
 
 ///|
+pub impl @ecs.QueryFilter for QueryMarkerFilter with iteration_anchor_component(
+  self,
+) {
+  ignore(self)
+  Some(query_marker_key.id())
+}
+
+///|
 pub impl FromWorld for QueryMarkerFilter with from_world(_world) {
   QueryMarkerFilter::{  }
 }

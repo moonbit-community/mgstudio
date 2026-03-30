@@ -1,11 +1,22 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/games/alien_cake_addict"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type Cake
+pub impl @ecs.Component for Cake
+
+type Player
+pub impl @ecs.Component for Player
+
+type Score
 
 // Type aliases
 

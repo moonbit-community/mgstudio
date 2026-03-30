@@ -58,8 +58,10 @@ fn cubemap_path(index : Int) -> String {
     "textures/Ryfjallet_cubemap_astc4x4.ktx2".to_string()
   } else if index == 2 {
     "textures/Ryfjallet_cubemap_bc7.ktx2".to_string()
-  } else {
+  } else if index == 3 {
     "textures/Ryfjallet_cubemap_etc2.ktx2".to_string()
+  } else {
+    "textures/Ryfjallet_cubemap.png".to_string()
   }
 }
 
@@ -71,8 +73,10 @@ fn cubemap_format_name(index : Int) -> String {
     "ASTC 4x4 (KTX2)".to_string()
   } else if index == 2 {
     "BC7 (KTX2)".to_string()
-  } else {
+  } else if index == 3 {
     "ETC2 (KTX2)".to_string()
+  } else {
+    "PNG".to_string()
   }
 }
 
@@ -84,9 +88,24 @@ fn cubemap_required_format(index : Int) -> Int {
     @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR
   } else if index == 2 {
     @asset.COMPRESSED_IMAGE_FORMAT_BC
-  } else {
+  } else if index == 3 {
     @asset.COMPRESSED_IMAGE_FORMAT_ETC2
+  } else {
+    @asset.COMPRESSED_IMAGE_FORMAT_NONE
   }
+}
+
+///|
+fn select_initial_cubemap_index(supported_formats : Int) -> Int {
+  for index in 0..<CUBEMAP_COUNT {
+    if @asset.asset_compressed_image_formats_contains(
+        supported_formats,
+        cubemap_required_format(index),
+      ) {
+      return index
+    }
+  }
+  0
 }
 
 ///|
@@ -191,9 +210,11 @@ fn update_help_text() -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   cubemap_state.val.is_loaded = false
-  cubemap_state.val.index = 0
-  cubemap_state.val.image_handle = None
   cubemap_state.val.supported_formats = @asset.asset_supported_compressed_image_formats()
+  cubemap_state.val.index = select_initial_cubemap_index(
+    cubemap_state.val.supported_formats,
+  )
+  cubemap_state.val.image_handle = None
   cubemap_state.val.camera = None
   cubemap_state.val.next_swap_time = 0.0F
   cubemap_state.val.directional_light = None
@@ -249,12 +270,12 @@ fn setup(world : @ecs.World) -> Unit {
   cubemap_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
-  let initial_image = asset_server.load(cubemap_path(0))
+  let initial_image = asset_server.load(cubemap_path(cubemap_state.val.index))
   cubemap_state.val.image_handle = Some(initial_image)
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(initial_image, 1000.0F),
+    @pbr.Skybox::new(initial_image, 1.0F),
   )
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")

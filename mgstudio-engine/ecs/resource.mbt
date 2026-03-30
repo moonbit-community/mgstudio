@@ -18,8 +18,13 @@ pub fn[T] World::insert_resource(
   key : ResourceKey[T],
   value : T,
 ) -> Unit {
+  let existed = self.resources.contains(key.id())
   let payload = erased_value(value)
   self.resources.set(key.id(), ResourceSlot::{ payload, })
+  if !existed {
+    self.record_resource_added(key.id())
+  }
+  self.record_resource_changed(key.id())
 }
 
 ///|
@@ -49,7 +54,13 @@ pub fn[T] World::get_resource_ref_mut(
   self : World,
   key : ResourceKey[T],
 ) -> Ref[T]? raise EcsError {
-  self.get_resource_ref(key)
+  match self.resources.get(key.id()) {
+    Some(slot) => {
+      self.record_resource_changed(key.id())
+      Some(self.resource_ref(key, slot.payload))
+    }
+    None => None
+  }
 }
 
 ///|
@@ -59,6 +70,8 @@ pub fn[T] World::remove_resource(
 ) -> T? raise EcsError {
   guard self.get_resource(key) is Some(value) else { return None }
   self.resources.remove(key.id())
+  self.resource_added_sequences.remove(key.id())
+  self.resource_changed_sequences.remove(key.id())
   Some(value)
 }
 
@@ -97,4 +110,28 @@ fn[T] World::resource_value(
   payload : ErasedValue,
 ) -> T raise EcsError {
   self.resource_ref(key, payload).val
+}
+
+///|
+pub fn[T] World::resource_added_since(
+  self : World,
+  key : ResourceKey[T],
+  sequence : @core.Sequence,
+) -> Bool {
+  match self.resource_added_sequence(key.id()) {
+    Some(recorded) => recorded > sequence
+    None => false
+  }
+}
+
+///|
+pub fn[T] World::resource_changed_since(
+  self : World,
+  key : ResourceKey[T],
+  sequence : @core.Sequence,
+) -> Bool {
+  match self.resource_changed_sequence(key.id()) {
+    Some(recorded) => recorded > sequence
+    None => false
+  }
 }

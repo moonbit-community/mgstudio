@@ -1597,7 +1597,9 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
       false,
       false,
       false,
-      MESH2D_DEFAULT_MATERIAL_LAYOUT_KEY,
+      host_material2d_layout_signature_key(
+        host_material2d_default_layout_signature(),
+      ),
       None,
       None,
     ),

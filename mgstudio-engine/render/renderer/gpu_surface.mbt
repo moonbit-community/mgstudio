@@ -490,6 +490,7 @@ pub fn GpuBackend::begin_frame_binding(
   sync_active_surface_legacy_state(self)
 
   self.mesh2d_instance_used = 0
+  mesh2d_reset_pending_batch(self)
   self.mesh3d_draw_slot_used = 0
   self.mesh3d_instance_draw_used = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
@@ -532,10 +533,12 @@ pub fn GpuBackend::end_frame_binding(
   }
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
+    flush_mesh2d_batches(self)
     flush_ui_shadow_batches(self)
     flush_ui_slice_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
+    render_diagnostics_end_active_pass_timing()
     pass.end()
     pass.release()
     frame.pass = None
