@@ -323,6 +323,54 @@ fn physics3d_debug_emit_ball_lines(
 }
 
 ///|
+fn physics3d_debug_emit_triangle_lines(
+  lines : Array[DebugLine3d],
+  transform : @transform.Transform,
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+  material : @pbr.MeshMaterial3d,
+) -> Unit {
+  let wa = physics3d_debug_transform_point(transform, a)
+  let wb = physics3d_debug_transform_point(transform, b)
+  let wc = physics3d_debug_transform_point(transform, c)
+  physics3d_debug_add_line(lines, wa, wb, material)
+  physics3d_debug_add_line(lines, wb, wc, material)
+  physics3d_debug_add_line(lines, wc, wa, material)
+}
+
+///|
+fn physics3d_debug_emit_trimesh_lines(
+  lines : Array[DebugLine3d],
+  transform : @transform.Transform,
+  vertices : Array[@math.Vec3],
+  indices : Array[(Int, Int, Int)],
+  material : @pbr.MeshMaterial3d,
+) -> Unit {
+  for tri in indices {
+    let i0 = tri.0
+    let i1 = tri.1
+    let i2 = tri.2
+    if i0 < 0 || i1 < 0 || i2 < 0 {
+      continue
+    }
+    if i0 >= vertices.length() ||
+      i1 >= vertices.length() ||
+      i2 >= vertices.length() {
+      continue
+    }
+    physics3d_debug_emit_triangle_lines(
+      lines,
+      transform,
+      vertices[i0],
+      vertices[i1],
+      vertices[i2],
+      material,
+    )
+  }
+}
+
+///|
 fn physics3d_debug_ensure_line_pool(
   world : @ecs.World,
   desired_count : Int,
@@ -379,6 +427,15 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
         physics3d_debug_emit_cuboid_lines(
           lines, source_transform, hx, hy, hz, material,
         )
+      Triangle(a, b, c) =>
+        physics3d_debug_emit_triangle_lines(
+          lines, source_transform, a, b, c, material,
+        )
+      TriMesh(vertices, indices) =>
+        physics3d_debug_emit_trimesh_lines(
+          lines, source_transform, vertices, indices, material,
+        )
+      _ => ()
     }
   })
 

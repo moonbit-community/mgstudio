@@ -66,27 +66,29 @@ pub fn Physics2dHooksConfig::default() -> Physics2dHooksConfig {
 }
 
 ///|
-let physics2d_hooks_state : Ref[Physics2dHooksConfig] = Ref::new(
-  Physics2dHooksConfig::default(),
-)
-
-///|
 let physics2d_hook_collider_to_entity : Ref[
   @hashmap.HashMap[(Int, Int), @core.Entity],
 ] = Ref::new(@hashmap.HashMap::new())
 
 ///|
-pub fn physics2d_hooks_config() -> Physics2dHooksConfig {
-  physics2d_hooks_state.val
+pub fn physics2d_hooks_config(world : @ecs.World) -> Physics2dHooksConfig {
+  match get_physics2d_hooks_config_resource(world).get() {
+    Some(cfg) => cfg
+    None => Physics2dHooksConfig::default()
+  }
 }
 
 ///|
-pub fn physics2d_hooks_set_config(config : Physics2dHooksConfig) -> Unit {
-  physics2d_hooks_state.val = config
+pub fn physics2d_hooks_set_config(
+  world : @ecs.World,
+  config : Physics2dHooksConfig,
+) -> Unit {
+  get_physics2d_hooks_config_resource(world).insert(config)
 }
 
 ///|
 pub fn physics2d_set_filter_contact_pair(
+  world : @ecs.World,
   f : (
     @dynamics.RigidBodySet,
     @collision.ColliderSet,
@@ -94,24 +96,25 @@ pub fn physics2d_set_filter_contact_pair(
     @collision.ColliderHandle,
   ) -> Bool,
 ) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     filter_contact_pair: Some(f),
-  }
+  })
 }
 
 ///|
-pub fn physics2d_clear_filter_contact_pair() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+pub fn physics2d_clear_filter_contact_pair(world : @ecs.World) -> Unit {
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     filter_contact_pair: None,
-  }
+  })
 }
 
 ///|
 pub fn physics2d_set_filter_intersection_pair(
+  world : @ecs.World,
   f : (
     @dynamics.RigidBodySet,
     @collision.ColliderSet,
@@ -119,24 +122,25 @@ pub fn physics2d_set_filter_intersection_pair(
     @collision.ColliderHandle,
   ) -> Bool,
 ) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     filter_intersection_pair: Some(f),
-  }
+  })
 }
 
 ///|
-pub fn physics2d_clear_filter_intersection_pair() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+pub fn physics2d_clear_filter_intersection_pair(world : @ecs.World) -> Unit {
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     filter_intersection_pair: None,
-  }
+  })
 }
 
 ///|
 pub fn physics2d_set_modify_solver_contacts(
+  world : @ecs.World,
   f : (
     @dynamics.RigidBodySet,
     @collision.ColliderSet,
@@ -145,24 +149,25 @@ pub fn physics2d_set_modify_solver_contacts(
     @collision.ContactManifold,
   ) -> (Bool, @rapier_core.Vec2),
 ) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     modify_solver_contacts: Some(f),
-  }
+  })
 }
 
 ///|
-pub fn physics2d_clear_modify_solver_contacts() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+pub fn physics2d_clear_modify_solver_contacts(world : @ecs.World) -> Unit {
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     modify_solver_contacts: None,
-  }
+  })
 }
 
 ///|
 pub fn physics2d_set_modify_solver_contacts_with_solver_contacts(
+  world : @ecs.World,
   f : (
     @dynamics.RigidBodySet,
     @collision.ColliderSet,
@@ -173,20 +178,22 @@ pub fn physics2d_set_modify_solver_contacts_with_solver_contacts(
     @collision.SolverFlags,
   ) -> @collision.SolverFlags,
 ) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     modify_solver_contacts_with_solver_contacts: Some(f),
-  }
+  })
 }
 
 ///|
-pub fn physics2d_clear_modify_solver_contacts_with_solver_contacts() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
+pub fn physics2d_clear_modify_solver_contacts_with_solver_contacts(
+  world : @ecs.World,
+) -> Unit {
+  let c = physics2d_hooks_config(world)
+  physics2d_hooks_set_config(world, Physics2dHooksConfig::{
     ..c,
     modify_solver_contacts_with_solver_contacts: None,
-  }
+  })
 }
 
 ///|
@@ -212,8 +219,11 @@ pub fn physics2d_hooks_clear_current_collider_map() -> Unit {
 }
 
 ///|
-pub fn physics2d_apply_global_hooks(ctx : Physics2dContext) -> Unit {
-  let c = physics2d_hooks_state.val
+pub fn physics2d_apply_global_hooks(
+  world : @ecs.World,
+  ctx : Physics2dContext,
+) -> Unit {
+  let c = physics2d_hooks_config(world)
   let mut hooks = @pipeline.PhysicsHooks::new()
   match c.filter_contact_pair {
     Some(f) => hooks = hooks.filter_contact_pair(f)

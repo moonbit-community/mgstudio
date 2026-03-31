@@ -472,7 +472,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       @collision.ActiveHooks::filter_contact_pairs(),
     ),
   )
-  @physics2d.physics2d_set_filter_contact_pair(fn(_, _, h1, h2) {
+  @physics2d.physics2d_set_filter_contact_pair(world, fn(_, _, h1, h2) {
     if !showcase_ghost_nocollide_enabled.val {
       return true
     }
@@ -491,7 +491,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       _ => true
     }
   })
-  @physics2d.physics2d_set_filter_intersection_pair(fn(_, _, h1, h2) {
+  @physics2d.physics2d_set_filter_intersection_pair(world, fn(_, _, h1, h2) {
     match
       (
         @physics2d.physics2d_hook_entity_from_collider_handle(h1),

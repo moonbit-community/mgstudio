@@ -102,6 +102,8 @@ pub let ecs_res_key_physics2d_context : @ecs.ResourceKey[Physics2dContext]
 
 pub let ecs_res_key_physics2d_events : @ecs.ResourceKey[Physics2dEvents]
 
+pub let ecs_res_key_physics2d_hooks_config : @ecs.ResourceKey[Physics2dHooksConfig]
+
 pub let ecs_resources : Array[String]
 
 pub fn get_physics2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dConfig]
@@ -109,6 +111,8 @@ pub fn get_physics2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2
 pub fn get_physics2d_context_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dContext]
 
 pub fn get_physics2d_events_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dEvents]
+
+pub fn get_physics2d_hooks_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dHooksConfig]
 
 pub fn iso2_to_mg_transform(@Milky2018/moon_rapier/core.Isometry2, Float) -> @transform.Transform
 
@@ -126,7 +130,7 @@ pub fn mg_transform_to_iso2(@transform.Transform) -> @Milky2018/moon_rapier/core
 
 pub fn mg_vec2_to_rapier(@math.Vec2) -> @Milky2018/moon_rapier/core.Vec2
 
-pub fn physics2d_apply_global_hooks(Physics2dContext) -> Unit
+pub fn physics2d_apply_global_hooks(@ecs.World, Physics2dContext) -> Unit
 
 pub fn physics2d_character_controller_system(@ecs.World) -> Unit
 
@@ -134,13 +138,13 @@ pub fn physics2d_cleanup_despawned_system(@ecs.World) -> Unit
 
 pub fn physics2d_clear_events_system(@ecs.World) -> Unit
 
-pub fn physics2d_clear_filter_contact_pair() -> Unit
+pub fn physics2d_clear_filter_contact_pair(@ecs.World) -> Unit
 
-pub fn physics2d_clear_filter_intersection_pair() -> Unit
+pub fn physics2d_clear_filter_intersection_pair(@ecs.World) -> Unit
 
-pub fn physics2d_clear_modify_solver_contacts() -> Unit
+pub fn physics2d_clear_modify_solver_contacts(@ecs.World) -> Unit
 
-pub fn physics2d_clear_modify_solver_contacts_with_solver_contacts() -> Unit
+pub fn physics2d_clear_modify_solver_contacts_with_solver_contacts(@ecs.World) -> Unit
 
 pub fn physics2d_debug_render_config() -> Physics2dDebugRenderConfig
 
@@ -154,9 +158,9 @@ pub fn physics2d_hook_entity_from_collider_handle(@collision.ColliderHandle) -> 
 
 pub fn physics2d_hooks_clear_current_collider_map() -> Unit
 
-pub fn physics2d_hooks_config() -> Physics2dHooksConfig
+pub fn physics2d_hooks_config(@ecs.World) -> Physics2dHooksConfig
 
-pub fn physics2d_hooks_set_config(Physics2dHooksConfig) -> Unit
+pub fn physics2d_hooks_set_config(@ecs.World, Physics2dHooksConfig) -> Unit
 
 pub fn physics2d_hooks_set_current_collider_map(@hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]) -> Unit
 
@@ -164,13 +168,13 @@ pub fn physics2d_init_resources_system(@ecs.World) -> Unit
 
 pub fn physics2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn physics2d_set_filter_contact_pair((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
+pub fn physics2d_set_filter_contact_pair(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
 
-pub fn physics2d_set_filter_intersection_pair((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
+pub fn physics2d_set_filter_intersection_pair(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
 
-pub fn physics2d_set_modify_solver_contacts((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @Milky2018/moon_rapier/core.Vec2)) -> Unit
+pub fn physics2d_set_modify_solver_contacts(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @Milky2018/moon_rapier/core.Vec2)) -> Unit
 
-pub fn physics2d_set_modify_solver_contacts_with_solver_contacts((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Unit
+pub fn physics2d_set_modify_solver_contacts_with_solver_contacts(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Unit
 
 pub fn physics2d_step_system(@ecs.World) -> Unit
 

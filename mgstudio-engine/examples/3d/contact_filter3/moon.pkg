@@ -1,0 +1,17 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/physics3d",
+  "Milky2018/mgstudio/examples/helpers/rapier_examples",
+  "Milky2018/moon_rapier/collision" @collision,
+  "Milky2018/moon_rapier/dynamics" @dynamics,
+  "moonbitlang/core/hashmap",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+)

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/joints_despawn3"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct DespawnMarker {
+  value : Bool
+}
+pub fn DespawnMarker::new() -> Self
+pub impl @ecs.Component for DespawnMarker
+
+// Type aliases
+
+// Traits
+

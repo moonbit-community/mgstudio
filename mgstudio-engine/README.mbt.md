@@ -22,13 +22,15 @@ pipeline.
 `physics2d` exposes Rapier hooks in a Bevy-like split:
 
 - Global callback config (`Physics2dHooksConfig`) for hook functions.
+- World-resource callback config (`Physics2dHooksConfig`) for hook functions.
 - Per-collider opt-in (`ActiveHooks2d`) to enable hook categories.
 
 Example:
 
 ```mbt nocheck
-let cfg = @physics2d.physics2d_hooks_config()
+let cfg = @physics2d.physics2d_hooks_config(world)
 @physics2d.physics2d_hooks_set_config(
+  world,
   @physics2d.Physics2dHooksConfig::{
     ..cfg,
     filter_contact_pair: Some(fn(_bodies, _colliders, h1, h2) {

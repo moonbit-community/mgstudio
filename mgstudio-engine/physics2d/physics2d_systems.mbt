@@ -164,6 +164,10 @@ pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
   if !ev_res.is_present() {
     ev_res.insert(Physics2dEvents::new())
   }
+  let hooks_res = get_physics2d_hooks_config_resource(ecs_world)
+  if !hooks_res.is_present() {
+    hooks_res.insert(Physics2dHooksConfig::default())
+  }
 }
 
 ///|
@@ -678,7 +682,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     None => abort("Missing Time<Fixed> resource in physics2d systems")
   }
   ctx.integration = cfg.integration.set_dt(dt)
-  physics2d_apply_global_hooks(ctx)
+  physics2d_apply_global_hooks(world, ctx)
 
   // Colliders: update authoring properties and keep standalone colliders
   // (no parent rigid body) following Transform.

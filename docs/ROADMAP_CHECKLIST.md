@@ -94,6 +94,21 @@ This file must not exceed 200 lines.
 - [ ] Issue `pbr/occlusion_culling_runtime`: wire `OcclusionCulling` marker into actual renderer occlusion-culling path.
 - [x] Issue `pbr/transmitted_shadow_runtime`: close transmitted-shadow behavior gap behind `TransmittedShadowReceiver`.
 - [ ] Issue `pbr/order_independent_transparency_runtime`: close weighted OIT runtime path behind `OrderIndependentTransparencySettings`.
+- [x] Issue `physics/plugin_explicit_install_surface`: deferred/not-goal by project constraint (keep `DefaultPlugins` auto-install path).
+- [x] Issue `physics2d/hooks_resource_injection_surface`: replace global hook `Ref` state with app/world-configured hook injection shape (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/authoring_component_surface`: add missing Bevy-style 3D authoring components (damping/gravity-scale/locked-axes/ccd/sleeping/forces/impulses/material-groups) (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/sync_world_to_rapier_component_coverage`: wire all 3D authoring components into insertion and per-step sync paths (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/collider_shape_surface`: expand 3D collider shape constructors and conversion/runtime path beyond `Ball/Cuboid` (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/joints_runtime_surface`: add 3D impulse/multibody joint components, handle components, and sync systems (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/query_context_surface`: add 3D Rapier query context helpers and entity-mapped query APIs (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/hooks_runtime_surface`: add 3D physics hooks config/apply path and entity mapping helper surface (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/kinematic_character_controller_surface`: add 3D KCC components/output/collision and fixed-step runtime path (`.private/docs/engine/RAPIER_V0_32_0_ALIGNMENT_2026-03-31.md`).
+- [x] Issue `physics3d/debug_render_trimesh_visibility`: add `Triangle/TriMesh` debug-render wireframe emission so `static_trimesh3` no longer renders as near-empty scene.
+- [x] Issue `physics/examples2d_bevy_rapier_v032_port`: port all `bevy_rapier v0.32.0` 2D examples to mgstudio `examples/2d/*2`.
+- [x] Issue `physics/examples3d_bevy_rapier_v032_port`: port all `bevy_rapier v0.32.0` 3D examples to mgstudio `examples/3d/*3`.
+- [ ] Issue `physics/examples_bevy_rapier_visual_parity`: run screenshot-by-screenshot visual audit against `bevy_rapier v0.32.0` and fix behavior/render mismatches.
+- [ ] Issue `physics/examples_debugdump2_exact_parity`: replace fixed schedule-dump fallback with upstream-style debugdump helper behavior for `debugdump2`.
+- [ ] Issue `physics/examples_debugdump3_context_component_exact_parity`: close remaining behavior gaps in `debugdump3` and `rapier_context_component`.
 - [x] Issue `examples_3d/depth_of_field_true_path`: replace DOF proxy mapping with real depth-of-field post-process path.
 - [x] Issue `examples_3d/lightmap_true_path`: replace mixed-lighting/lightmaps proxy flow with real lightmap component pipeline.
 - [x] Issue `examples_3d/anti_aliasing_nonproxy_modes`: replace SMAA/DLSS/CAS proxy mapping with real backend paths or explicit capability gates.

@@ -1,0 +1,16 @@
+import {
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio",
+  "Milky2018/mgstudio/physics3d",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/pbr",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+)

@@ -6,7 +6,7 @@
 
 ## 明显异常
 
-- `static_trimesh3`：画面几乎为空，只看到右上方一个很小的点，`ramp + bowl` 这类大体量几何没有正常进入画面，疑似相机 framing 或渲染/布局异常。
+- 无（`static_trimesh3` 已通过 `physics3d_debug_render` 补齐 `TriMesh` 线框可视化修复，复测截图：`/tmp/mgstudio_rapier_visual_3d_20260331/static_trimesh3_after_fix.png`）。
 
 ## 示例清单
 
@@ -27,10 +27,10 @@
 - [x] `rapier_context_component`：正常，截图 `/tmp/mgstudio_rapier_visual_3d_20260331/rapier_context_component.png`，sanity `/tmp/mgstudio_rapier_visual_3d_20260331/rapier_context_component.sanity.json`
 - [x] `rapier_to_bevy_mesh`：正常，截图 `/tmp/mgstudio_rapier_visual_3d_20260331/rapier_to_bevy_mesh.png`，sanity `/tmp/mgstudio_rapier_visual_3d_20260331/rapier_to_bevy_mesh.sanity.json`
 - [x] `ray_casting3`：正常，截图 `/tmp/mgstudio_rapier_visual_3d_20260331/ray_casting3.png`，sanity `/tmp/mgstudio_rapier_visual_3d_20260331/ray_casting3.sanity.json`
-- [!] `static_trimesh3`：疑似异常，截图 `/tmp/mgstudio_rapier_visual_3d_20260331/static_trimesh3.png`，sanity `/tmp/mgstudio_rapier_visual_3d_20260331/static_trimesh3.sanity.json`
+- [x] `static_trimesh3`：已修复并复测，旧截图 `/tmp/mgstudio_rapier_visual_3d_20260331/static_trimesh3.png`，复测截图 `/tmp/mgstudio_rapier_visual_3d_20260331/static_trimesh3_after_fix.png`
 - [x] `testbed3`：正常，截图 `/tmp/mgstudio_rapier_visual_3d_20260331/testbed3.png`，sanity `/tmp/mgstudio_rapier_visual_3d_20260331/testbed3.sanity.json`
 - [x] `voxels3`：正常，截图 `/tmp/mgstudio_rapier_visual_3d_20260331/voxels3.png`，sanity `/tmp/mgstudio_rapier_visual_3d_20260331/voxels3.sanity.json`
 
 ## 备注
 
-- 本轮 20 个 3D rapier 示例均已生成截图；除 `static_trimesh3` 外未见明确的空场景、几何尖刺、鬼影拖尾或朝向错误。
+- 本轮 20 个 3D rapier 示例均已生成截图并完成人工审视；`static_trimesh3` 已在同日修复并复测通过。

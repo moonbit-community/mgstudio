@@ -809,17 +809,17 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
 
 ///|
 test "physics2d: hooks filter_contact_pair can disable contacts" {
-  let old_hooks = physics2d_hooks_config()
+  let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
+  physics2d_init_resources_system(world)
+  let old_hooks = physics2d_hooks_config(world)
   let called = Ref::new(false)
   let mapped = Ref::new(false)
-  physics2d_set_filter_contact_pair(fn(_bodies, _colliders, h1, _h2) {
+  physics2d_set_filter_contact_pair(world, fn(_bodies, _colliders, h1, _h2) {
     called.val = true
     mapped.val = physics2d_hook_entity_from_collider_handle(h1) is Some(_)
     false
   })
-  let world = @ecs.World::new()
-  configure_fixed_time(world, 1.0F / 60.0F)
-  physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
@@ -886,7 +886,7 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   inspect(mapped.val, content="true")
   let events = get_physics2d_events_resource(world).get().unwrap()
   inspect(events.collisions.length() == 0, content="true")
-  physics2d_hooks_set_config(old_hooks)
+  physics2d_hooks_set_config(world, old_hooks)
 }
 
 ///|

@@ -29,7 +29,7 @@ pub let ecs_components : Array[String] = [
 ///|
 /// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
-  "Physics2dConfig", "Physics2dEvents", "Physics2dContext",
+  "Physics2dConfig", "Physics2dEvents", "Physics2dContext", "Physics2dHooksConfig",
 ]
 
 ///|
@@ -46,6 +46,11 @@ pub let ecs_res_key_physics2d_events : @ecs.ResourceKey[Physics2dEvents] = @ecs.
 pub let ecs_res_key_physics2d_context : @ecs.ResourceKey[Physics2dContext] = @ecs.register_resource(
   debug_name="physics2d.physics2d_context",
 )
+
+///|
+pub let ecs_res_key_physics2d_hooks_config : @ecs.ResourceKey[
+  Physics2dHooksConfig,
+] = @ecs.register_resource(debug_name="physics2d.physics2d_hooks_config")
 
 ///|
 
@@ -450,4 +455,11 @@ pub fn get_physics2d_context_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[Physics2dContext] {
   world.resource(ecs_res_key_physics2d_context)
+}
+
+///|
+pub fn get_physics2d_hooks_config_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[Physics2dHooksConfig] {
+  world.resource(ecs_res_key_physics2d_hooks_config)
 }

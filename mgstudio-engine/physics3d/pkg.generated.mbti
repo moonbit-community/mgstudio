@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/control",
   "Milky2018/moon_rapier/dynamics",
   "Milky2018/moon_rapier/pipeline",
   "moonbitlang/core/hashmap",
@@ -22,15 +23,71 @@ pub let ecs_key_active_events3d : @ecs.ComponentKey[ActiveEvents3d]
 
 pub let ecs_key_active_hooks3d : @ecs.ComponentKey[ActiveHooks3d]
 
+pub let ecs_key_additional_mass_properties3d : @ecs.ComponentKey[AdditionalMassProperties3d]
+
+pub let ecs_key_additional_solver_iterations3d : @ecs.ComponentKey[AdditionalSolverIterations3d]
+
+pub let ecs_key_ccd3d : @ecs.ComponentKey[Ccd3d]
+
 pub let ecs_key_collider3d : @ecs.ComponentKey[Collider3d]
 
+pub let ecs_key_collider_density3d : @ecs.ComponentKey[ColliderDensity3d]
+
+pub let ecs_key_collider_enabled3d : @ecs.ComponentKey[ColliderEnabled3d]
+
+pub let ecs_key_collider_mass_properties3d : @ecs.ComponentKey[ColliderMassProperties3d]
+
+pub let ecs_key_collider_parent3d : @ecs.ComponentKey[ColliderParent3d]
+
+pub let ecs_key_collision_groups3d : @ecs.ComponentKey[CollisionGroups3d]
+
 pub let ecs_key_contact_force_event_threshold3d : @ecs.ComponentKey[ContactForceEventThreshold3d]
+
+pub let ecs_key_contact_skin3d : @ecs.ComponentKey[ContactSkin3d]
+
+pub let ecs_key_damping3d : @ecs.ComponentKey[Damping3d]
+
+pub let ecs_key_dominance3d : @ecs.ComponentKey[Dominance3d]
+
+pub let ecs_key_external_force3d : @ecs.ComponentKey[ExternalForce3d]
+
+pub let ecs_key_external_impulse3d : @ecs.ComponentKey[ExternalImpulse3d]
+
+pub let ecs_key_friction3d : @ecs.ComponentKey[Friction3d]
+
+pub let ecs_key_friction_combine_rule3d : @ecs.ComponentKey[FrictionCombineRule3d]
+
+pub let ecs_key_gravity_scale3d : @ecs.ComponentKey[GravityScale3d]
+
+pub let ecs_key_impulse_joint3d : @ecs.ComponentKey[ImpulseJoint3d]
+
+pub let ecs_key_kinematic_character_controller3d : @ecs.ComponentKey[KinematicCharacterController3d]
+
+pub let ecs_key_kinematic_character_controller_output3d : @ecs.ComponentKey[KinematicCharacterControllerOutput3d]
+
+pub let ecs_key_locked_axes3d : @ecs.ComponentKey[LockedAxes3d]
+
+pub let ecs_key_multibody_joint3d : @ecs.ComponentKey[MultibodyJoint3d]
 
 pub let ecs_key_rapier_body_handle3d : @ecs.ComponentKey[RapierBodyHandle3d]
 
 pub let ecs_key_rapier_collider_handle3d : @ecs.ComponentKey[RapierColliderHandle3d]
 
+pub let ecs_key_rapier_impulse_joint_handle3d : @ecs.ComponentKey[RapierImpulseJointHandle3d]
+
+pub let ecs_key_rapier_multibody_joint_handle3d : @ecs.ComponentKey[RapierMultibodyJointHandle3d]
+
+pub let ecs_key_restitution3d : @ecs.ComponentKey[Restitution3d]
+
+pub let ecs_key_restitution_combine_rule3d : @ecs.ComponentKey[RestitutionCombineRule3d]
+
 pub let ecs_key_rigid_body3d : @ecs.ComponentKey[RigidBody3d]
+
+pub let ecs_key_rigid_body_enabled3d : @ecs.ComponentKey[RigidBodyEnabled3d]
+
+pub let ecs_key_sleeping3d : @ecs.ComponentKey[Sleeping3d]
+
+pub let ecs_key_solver_groups3d : @ecs.ComponentKey[SolverGroups3d]
 
 pub let ecs_key_velocity3d : @ecs.ComponentKey[Velocity3d]
 
@@ -40,6 +97,8 @@ pub let ecs_res_key_physics3d_context : @ecs.ResourceKey[Physics3dContext]
 
 pub let ecs_res_key_physics3d_events : @ecs.ResourceKey[Physics3dEvents]
 
+pub let ecs_res_key_physics3d_hooks_config : @ecs.ResourceKey[Physics3dHooksConfig]
+
 pub let ecs_resources : Array[String]
 
 pub fn get_physics3d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dConfig]
@@ -48,7 +107,21 @@ pub fn get_physics3d_context_resource(@ecs.World) -> @ecs.ResourceAccess[Physics
 
 pub fn get_physics3d_events_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dEvents]
 
+pub fn get_physics3d_hooks_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dHooksConfig]
+
 pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @transform.Transform
+
+pub fn joint3d_fixed(@math.Vec3, @math.Vec3) -> @dynamics.GenericJoint
+
+pub fn joint3d_prismatic(@math.Vec3, @math.Vec3, @math.Vec3) -> @dynamics.GenericJoint
+
+pub fn joint3d_revolute(@math.Vec3, @math.Vec3, @math.Vec3) -> @dynamics.GenericJoint
+
+pub fn joint3d_rope(Float, @math.Vec3, @math.Vec3) -> @dynamics.GenericJoint
+
+pub fn joint3d_spherical(@math.Vec3, @math.Vec3) -> @dynamics.GenericJoint
+
+pub fn joint3d_spring(Float, Float, Float, @math.Vec3, @math.Vec3) -> @dynamics.GenericJoint
 
 pub fn mg_quat_to_rapier(@math.Quat) -> @Milky2018/moon_rapier/core.Quat
 
@@ -56,9 +129,19 @@ pub fn mg_transform_to_iso3(@transform.Transform) -> @Milky2018/moon_rapier/core
 
 pub fn mg_vec3_to_rapier(@math.Vec3) -> @Milky2018/moon_rapier/core.Vec3
 
+pub fn physics3d_apply_hooks(@ecs.World, Physics3dContext) -> Unit
+
+pub fn physics3d_character_controller_system(@ecs.World) -> Unit
+
 pub fn physics3d_cleanup_despawned_system(@ecs.World) -> Unit
 
 pub fn physics3d_clear_events_system(@ecs.World) -> Unit
+
+pub fn physics3d_clear_filter_contact_pair(@ecs.World) -> Unit
+
+pub fn physics3d_clear_filter_intersection_pair(@ecs.World) -> Unit
+
+pub fn physics3d_clear_modify_solver_contacts(@ecs.World) -> Unit
 
 pub fn physics3d_debug_render_enabled() -> Bool
 
@@ -68,9 +151,21 @@ pub fn physics3d_debug_render_set_enabled(Bool) -> Unit
 
 pub fn physics3d_debug_render_sync_system(@ecs.World) -> Unit
 
+pub fn physics3d_hook_entity_from_collider_handle(@collision.ColliderHandle3D) -> @Milky2018/mgstudio/core.Entity?
+
+pub fn physics3d_hooks_clear_current_collider_map() -> Unit
+
+pub fn physics3d_hooks_config(@ecs.World) -> Physics3dHooksConfig
+
+pub fn physics3d_hooks_set_config(@ecs.World, Physics3dHooksConfig) -> Unit
+
+pub fn physics3d_hooks_set_current_collider_map(@hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]) -> Unit
+
 pub fn physics3d_init_resources_system(@ecs.World) -> Unit
 
 pub fn physics3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let physics3d_set_character_controller : String
 
 pub let physics3d_set_cleanup : String
 
@@ -78,9 +173,17 @@ pub let physics3d_set_clear_events : String
 
 pub let physics3d_set_debug_render_sync : String
 
+pub fn physics3d_set_filter_contact_pair(@ecs.World, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool) -> Unit
+
+pub fn physics3d_set_filter_intersection_pair(@ecs.World, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool) -> Unit
+
+pub fn physics3d_set_modify_solver_contacts(@ecs.World, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @Milky2018/moon_rapier/core.Vec3) -> (Bool, @Milky2018/moon_rapier/core.Vec3?)) -> Unit
+
 pub let physics3d_set_step : String
 
 pub let physics3d_set_sync_insertions : String
+
+pub let physics3d_set_sync_joints : String
 
 pub let physics3d_set_sync_world_to_rapier : String
 
@@ -89,6 +192,8 @@ pub let physics3d_set_writeback : String
 pub fn physics3d_step_system(@ecs.World) -> Unit
 
 pub fn physics3d_sync_insertions_system(@ecs.World) -> Unit
+
+pub fn physics3d_sync_joints_system(@ecs.World) -> Unit
 
 pub fn physics3d_sync_world_to_rapier_system(@ecs.World) -> Unit
 
@@ -127,6 +232,38 @@ pub impl @ecs.Component for ActiveHooks3d
 pub impl ToJson for ActiveHooks3d
 pub impl @json.FromJson for ActiveHooks3d
 
+pub enum AdditionalMassProperties3d {
+  Mass(Float)
+  MassProperties(@Milky2018/moon_rapier/core.MassProperties3)
+}
+pub fn AdditionalMassProperties3d::mass(Float) -> Self
+pub fn AdditionalMassProperties3d::mass_properties(@Milky2018/moon_rapier/core.MassProperties3) -> Self
+pub impl @ecs.Component for AdditionalMassProperties3d
+
+pub struct AdditionalSolverIterations3d {
+  iterations : Int
+}
+pub fn AdditionalSolverIterations3d::new(Int) -> Self
+pub impl @ecs.Component for AdditionalSolverIterations3d
+
+pub struct Ccd3d {
+  enabled : Bool
+  soft_prediction : Float
+}
+pub fn Ccd3d::enabled() -> Self
+pub fn Ccd3d::new(Bool, Float) -> Self
+pub impl @ecs.Component for Ccd3d
+
+pub struct CharacterCollision3d {
+  other : @Milky2018/mgstudio/core.Entity?
+  toi : Float
+  point : @math.Vec3
+  normal : @math.Vec3
+  translation_applied : @math.Vec3
+  translation_remaining : @math.Vec3
+}
+pub fn CharacterCollision3d::from_rapier(Physics3dContext, @control.CharacterCollision3DReal) -> Self
+
 pub struct Collider3d {
   shape : ColliderShape3d
   sensor : Bool
@@ -137,12 +274,61 @@ pub impl @ecs.Component for Collider3d
 pub impl ToJson for Collider3d
 pub impl @json.FromJson for Collider3d
 
+pub struct ColliderDensity3d {
+  density : Float
+}
+pub fn ColliderDensity3d::new(Float) -> Self
+pub impl @ecs.Component for ColliderDensity3d
+
+pub struct ColliderEnabled3d {
+  enabled : Bool
+}
+pub fn ColliderEnabled3d::disabled() -> Self
+pub fn ColliderEnabled3d::new(Bool) -> Self
+pub impl @ecs.Component for ColliderEnabled3d
+
+pub struct ColliderMassProperties3d {
+  mass_properties : @Milky2018/moon_rapier/core.MassProperties3
+}
+pub fn ColliderMassProperties3d::new(@Milky2018/moon_rapier/core.MassProperties3) -> Self
+pub impl @ecs.Component for ColliderMassProperties3d
+
+pub struct ColliderParent3d {
+  parent : @Milky2018/mgstudio/core.Entity
+}
+pub fn ColliderParent3d::new(@Milky2018/mgstudio/core.Entity) -> Self
+pub impl @ecs.Component for ColliderParent3d
+
 pub enum ColliderShape3d {
   Ball(Float)
   Cuboid(Float, Float, Float)
+  CapsuleX(Float, Float)
+  CapsuleY(Float, Float)
+  CapsuleZ(Float, Float)
+  Cylinder(Float, Float)
+  Cone(Float, Float)
+  HalfSpace(@math.Vec3)
+  Triangle(@math.Vec3, @math.Vec3, @math.Vec3)
+  TriMesh(Array[@math.Vec3], Array[(Int, Int, Int)])
+  ConvexHull(Array[@math.Vec3])
+  Compound(Array[(@transform.Transform, ColliderShape3d)])
+  Heightfield(Array[Float], Int, Int, @math.Vec3)
+  Raw(@collision.Shape3D)
 }
 pub fn ColliderShape3d::ball(Float) -> Self
+pub fn ColliderShape3d::capsule_x(Float, Float) -> Self
+pub fn ColliderShape3d::capsule_y(Float, Float) -> Self
+pub fn ColliderShape3d::capsule_z(Float, Float) -> Self
+pub fn ColliderShape3d::compound(Array[(@transform.Transform, Self)]) -> Self
+pub fn ColliderShape3d::cone(Float, Float) -> Self
+pub fn ColliderShape3d::convex_hull(Array[@math.Vec3]) -> Self
 pub fn ColliderShape3d::cuboid(Float, Float, Float) -> Self
+pub fn ColliderShape3d::cylinder(Float, Float) -> Self
+pub fn ColliderShape3d::halfspace(@math.Vec3) -> Self
+pub fn ColliderShape3d::heightfield(Array[Float], Int, Int, @math.Vec3) -> Self
+pub fn ColliderShape3d::raw(@collision.Shape3D) -> Self
+pub fn ColliderShape3d::triangle(@math.Vec3, @math.Vec3, @math.Vec3) -> Self
+pub fn ColliderShape3d::trimesh(Array[@math.Vec3], Array[(Int, Int, Int)]) -> Self
 pub impl ToJson for ColliderShape3d
 pub impl @json.FromJson for ColliderShape3d
 
@@ -150,6 +336,14 @@ pub enum CollisionEvent3d {
   Started(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
   Stopped(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
 }
+
+pub struct CollisionGroups3d {
+  memberships : Int
+  filter : Int
+  test_mode : @dynamics.InteractionTestMode
+}
+pub fn CollisionGroups3d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
+pub impl @ecs.Component for CollisionGroups3d
 
 pub struct ContactForceEvent3d {
   entity1 : @Milky2018/mgstudio/core.Entity
@@ -168,11 +362,129 @@ pub impl @ecs.Component for ContactForceEventThreshold3d
 pub impl ToJson for ContactForceEventThreshold3d
 pub impl @json.FromJson for ContactForceEventThreshold3d
 
+pub struct ContactSkin3d {
+  skin : Float
+}
+pub fn ContactSkin3d::new(Float) -> Self
+pub impl @ecs.Component for ContactSkin3d
+
+pub struct Damping3d {
+  linear : Float
+  angular : Float
+}
+pub fn Damping3d::new(Float, Float) -> Self
+pub impl @ecs.Component for Damping3d
+
+pub struct Dominance3d {
+  group : Int
+}
+pub fn Dominance3d::new(Int) -> Self
+pub impl @ecs.Component for Dominance3d
+
+pub struct ExternalForce3d {
+  force : @math.Vec3
+  torque : @math.Vec3
+}
+pub fn ExternalForce3d::new(@math.Vec3, @math.Vec3) -> Self
+pub fn ExternalForce3d::zero() -> Self
+pub impl @ecs.Component for ExternalForce3d
+
+pub struct ExternalImpulse3d {
+  impulse : @math.Vec3
+  torque_impulse : @math.Vec3
+}
+pub fn ExternalImpulse3d::new(@math.Vec3, @math.Vec3) -> Self
+pub fn ExternalImpulse3d::zero() -> Self
+pub impl @ecs.Component for ExternalImpulse3d
+
+pub struct Friction3d {
+  coefficient : Float
+}
+pub fn Friction3d::new(Float) -> Self
+pub impl @ecs.Component for Friction3d
+
+pub struct FrictionCombineRule3d {
+  rule : @dynamics.CoefficientCombineRule
+}
+pub fn FrictionCombineRule3d::new(@dynamics.CoefficientCombineRule) -> Self
+pub impl @ecs.Component for FrictionCombineRule3d
+
+pub struct GravityScale3d {
+  scale : Float
+}
+pub fn GravityScale3d::new(Float) -> Self
+pub impl @ecs.Component for GravityScale3d
+
+pub struct ImpulseJoint3d {
+  other : @Milky2018/mgstudio/core.Entity
+  data : @dynamics.GenericJoint
+  wake_up : Bool
+}
+pub fn ImpulseJoint3d::new(@Milky2018/mgstudio/core.Entity, @dynamics.GenericJoint) -> Self
+pub fn ImpulseJoint3d::with_wake_up(Self, Bool) -> Self
+pub impl @ecs.Component for ImpulseJoint3d
+
+pub struct KinematicCharacterController3d {
+  translation : @math.Vec3
+  controller : @control.KinematicCharacterController3DReal
+}
+pub fn KinematicCharacterController3d::add_translation(Self, @math.Vec3) -> Self
+pub fn KinematicCharacterController3d::default() -> Self
+pub fn KinematicCharacterController3d::reset_translation(Self) -> Self
+pub fn KinematicCharacterController3d::with_autostep(Self, @control.CharacterAutostep?) -> Self
+pub fn KinematicCharacterController3d::with_max_slope_climb_angle(Self, Float) -> Self
+pub fn KinematicCharacterController3d::with_min_slope_slide_angle(Self, Float) -> Self
+pub fn KinematicCharacterController3d::with_normal_nudge_factor(Self, Float) -> Self
+pub fn KinematicCharacterController3d::with_offset(Self, @control.CharacterLength) -> Self
+pub fn KinematicCharacterController3d::with_slide(Self, Bool) -> Self
+pub fn KinematicCharacterController3d::with_snap_to_ground(Self, @control.CharacterLength?) -> Self
+pub fn KinematicCharacterController3d::with_translation(Self, @math.Vec3) -> Self
+pub fn KinematicCharacterController3d::with_up(Self, @math.Vec3) -> Self
+pub impl @ecs.Component for KinematicCharacterController3d
+
+pub struct KinematicCharacterControllerOutput3d {
+  effective_translation : @math.Vec3
+  grounded : Bool
+  sliding_down_slope : Bool
+  collisions : Array[CharacterCollision3d]
+}
+pub fn KinematicCharacterControllerOutput3d::new() -> Self
+pub fn KinematicCharacterControllerOutput3d::without_collisions(Self) -> Self
+pub impl @ecs.Component for KinematicCharacterControllerOutput3d
+
+pub struct LockedAxes3d {
+  lock_translation_x : Bool
+  lock_translation_y : Bool
+  lock_translation_z : Bool
+  lock_rotation_x : Bool
+  lock_rotation_y : Bool
+  lock_rotation_z : Bool
+}
+pub fn LockedAxes3d::locked() -> Self
+pub fn LockedAxes3d::new(Bool, Bool, Bool, Bool, Bool, Bool) -> Self
+pub impl @ecs.Component for LockedAxes3d
+
+pub struct MultibodyJoint3d {
+  other : @Milky2018/mgstudio/core.Entity
+  data : @dynamics.GenericJoint
+  wake_up : Bool
+  kinematic : Bool
+}
+pub fn MultibodyJoint3d::new(@Milky2018/mgstudio/core.Entity, @dynamics.GenericJoint) -> Self
+pub fn MultibodyJoint3d::with_kinematic(Self, Bool) -> Self
+pub fn MultibodyJoint3d::with_wake_up(Self, Bool) -> Self
+pub impl @ecs.Component for MultibodyJoint3d
+
 pub struct Physics3dConfig {
   gravity : @math.Vec3
+  physics_pipeline_active : Bool
+  integration : @dynamics.IntegrationParameters
 }
 pub fn Physics3dConfig::default() -> Self
 pub fn Physics3dConfig::new(@math.Vec3) -> Self
+pub fn Physics3dConfig::with_gravity(Self, @math.Vec3) -> Self
+pub fn Physics3dConfig::with_integration_parameters(Self, @dynamics.IntegrationParameters) -> Self
+pub fn Physics3dConfig::with_physics_pipeline_active(Self, Bool) -> Self
 pub impl ToJson for Physics3dConfig
 pub impl @json.FromJson for Physics3dConfig
 
@@ -182,14 +494,39 @@ pub struct Physics3dContext {
   islands : @dynamics.IslandManager3D
   broad_phase : @collision.BroadPhase3D
   narrow_phase : @collision.NarrowPhase3D
+  mut rope_joints : @dynamics.RopeJointSet3DReal
+  mut impulse_joints : @dynamics.JointSet3DReal
+  mut multibody_joints : @dynamics.MultibodyJointSet3DReal
   pipeline : @pipeline.PhysicsPipeline3DReal
   mut integration : @dynamics.IntegrationParameters
+  mut hooks : @pipeline.PhysicsHooks3D
   event_handler : @pipeline.EventHandler3D
+  query_pipeline : @collision.QueryPipeline3DReal
   entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
   entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle3D]
+  entity_to_impulse_joint : @hashmap.HashMap[(Int, Int), @dynamics.JointHandle3DReal]
+  entity_to_multibody_joint : @hashmap.HashMap[(Int, Int), @dynamics.MultibodyJointHandle]
   collider_to_entity : @hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]
 }
+pub fn Physics3dContext::cast_ray_and_get_normal_entity(Self, @math.Vec3, @math.Vec3, Float, Bool) -> RayHitNormal3d?
+pub fn Physics3dContext::cast_ray_and_get_normal_entity_with_filter(Self, @math.Vec3, @math.Vec3, Float, Bool, @collision.QueryFilter3DReal) -> RayHitNormal3d?
+pub fn Physics3dContext::cast_ray_entity(Self, @math.Vec3, @math.Vec3, Float, Bool) -> RayHit3d?
+pub fn Physics3dContext::cast_ray_entity_with_filter(Self, @math.Vec3, @math.Vec3, Float, Bool, @collision.QueryFilter3DReal) -> RayHit3d?
+pub fn Physics3dContext::cast_shape_entity(Self, @transform.Transform, @math.Vec3, @collision.Shape3D, @collision.ShapeCastOptions3) -> ShapeCastHit3d?
+pub fn Physics3dContext::cast_shape_entity_with_filter(Self, @transform.Transform, @math.Vec3, @collision.Shape3D, @collision.ShapeCastOptions3, @collision.QueryFilter3DReal) -> ShapeCastHit3d?
+pub fn Physics3dContext::collider_handle_of(Self, @Milky2018/mgstudio/core.Entity) -> @collision.ColliderHandle3D?
+pub fn Physics3dContext::intersect_point_entities(Self, @math.Vec3) -> Array[@Milky2018/mgstudio/core.Entity]
+pub fn Physics3dContext::intersect_point_entities_with_filter(Self, @math.Vec3, @collision.QueryFilter3DReal) -> Array[@Milky2018/mgstudio/core.Entity]
+pub fn Physics3dContext::intersect_ray_entities(Self, @math.Vec3, @math.Vec3, Float, Bool) -> Array[RayHitNormal3d]
+pub fn Physics3dContext::intersect_ray_entities_with_filter(Self, @math.Vec3, @math.Vec3, Float, Bool, @collision.QueryFilter3DReal) -> Array[RayHitNormal3d]
+pub fn Physics3dContext::intersect_shape_entities(Self, @transform.Transform, @collision.Shape3D) -> Array[@Milky2018/mgstudio/core.Entity]
+pub fn Physics3dContext::intersect_shape_entities_with_filter(Self, @transform.Transform, @collision.Shape3D, @collision.QueryFilter3DReal) -> Array[@Milky2018/mgstudio/core.Entity]
 pub fn Physics3dContext::new() -> Self
+pub fn Physics3dContext::project_point_entity(Self, @math.Vec3, Float, Bool) -> PointProjection3d?
+pub fn Physics3dContext::project_point_entity_with_filter(Self, @math.Vec3, Float, Bool, @collision.QueryFilter3DReal) -> PointProjection3d?
+pub fn Physics3dContext::query(Self) -> @collision.QueryPipeline3DReal
+pub fn Physics3dContext::query_filter_exclude_entity(Self, @collision.QueryFilter3DReal, @Milky2018/mgstudio/core.Entity) -> @collision.QueryFilter3DReal
+pub fn Physics3dContext::rigid_body_handle_of(Self, @Milky2018/mgstudio/core.Entity) -> @dynamics.RigidBodyHandle?
 pub impl ToJson for Physics3dContext
 pub impl @json.FromJson for Physics3dContext
 
@@ -207,6 +544,19 @@ pub fn Physics3dEvents::new() -> Self
 pub impl ToJson for Physics3dEvents
 pub impl @json.FromJson for Physics3dEvents
 
+pub struct Physics3dHooksConfig {
+  filter_contact_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
+  filter_intersection_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
+  modify_solver_contacts : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @Milky2018/moon_rapier/core.Vec3) -> (Bool, @Milky2018/moon_rapier/core.Vec3?))?
+}
+pub fn Physics3dHooksConfig::default() -> Self
+
+pub struct PointProjection3d {
+  entity : @Milky2018/mgstudio/core.Entity
+  point : @math.Vec3
+  is_inside : Bool
+}
+
 pub struct RapierBodyHandle3d {
   handle : @dynamics.RigidBodyHandle
 }
@@ -223,6 +573,43 @@ pub impl @ecs.Component for RapierColliderHandle3d
 pub impl ToJson for RapierColliderHandle3d
 pub impl @json.FromJson for RapierColliderHandle3d
 
+pub struct RapierImpulseJointHandle3d {
+  handle : @dynamics.JointHandle3DReal
+  other : @Milky2018/mgstudio/core.Entity
+}
+pub fn RapierImpulseJointHandle3d::new(@dynamics.JointHandle3DReal, @Milky2018/mgstudio/core.Entity) -> Self
+pub impl @ecs.Component for RapierImpulseJointHandle3d
+
+pub struct RapierMultibodyJointHandle3d {
+  handle : @dynamics.MultibodyJointHandle
+  other : @Milky2018/mgstudio/core.Entity
+}
+pub fn RapierMultibodyJointHandle3d::new(@dynamics.MultibodyJointHandle, @Milky2018/mgstudio/core.Entity) -> Self
+pub impl @ecs.Component for RapierMultibodyJointHandle3d
+
+pub struct RayHit3d {
+  entity : @Milky2018/mgstudio/core.Entity
+  toi : Float
+}
+
+pub struct RayHitNormal3d {
+  entity : @Milky2018/mgstudio/core.Entity
+  toi : Float
+  normal : @math.Vec3
+}
+
+pub struct Restitution3d {
+  coefficient : Float
+}
+pub fn Restitution3d::new(Float) -> Self
+pub impl @ecs.Component for Restitution3d
+
+pub struct RestitutionCombineRule3d {
+  rule : @dynamics.CoefficientCombineRule
+}
+pub fn RestitutionCombineRule3d::new(@dynamics.CoefficientCombineRule) -> Self
+pub impl @ecs.Component for RestitutionCombineRule3d
+
 pub struct RigidBody3d {
   body_type : @dynamics.RigidBodyType
 }
@@ -233,6 +620,34 @@ pub fn RigidBody3d::kinematic_velocity_based() -> Self
 pub impl @ecs.Component for RigidBody3d
 pub impl ToJson for RigidBody3d
 pub impl @json.FromJson for RigidBody3d
+
+pub struct RigidBodyEnabled3d {
+  enabled : Bool
+}
+pub fn RigidBodyEnabled3d::disabled() -> Self
+pub fn RigidBodyEnabled3d::new(Bool) -> Self
+pub impl @ecs.Component for RigidBodyEnabled3d
+
+pub struct ShapeCastHit3d {
+  entity : @Milky2018/mgstudio/core.Entity
+  toi : Float
+  point : @math.Vec3
+  normal : @math.Vec3
+}
+
+pub struct Sleeping3d {
+  sleeping : Bool
+}
+pub fn Sleeping3d::new(Bool) -> Self
+pub impl @ecs.Component for Sleeping3d
+
+pub struct SolverGroups3d {
+  memberships : Int
+  filter : Int
+  test_mode : @dynamics.InteractionTestMode
+}
+pub fn SolverGroups3d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
+pub impl @ecs.Component for SolverGroups3d
 
 pub struct Velocity3d {
   linvel : @math.Vec3

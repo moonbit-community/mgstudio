@@ -155,18 +155,110 @@ pub impl ToJson for ColliderShape3d with to_json(self) {
   match self {
     Ball(radius) => ("Ball", radius).to_json()
     Cuboid(hx, hy, hz) => ("Cuboid", (hx, hy, hz)).to_json()
+    CapsuleX(half_height, radius) =>
+      ("CapsuleX", (half_height, radius)).to_json()
+    CapsuleY(half_height, radius) =>
+      ("CapsuleY", (half_height, radius)).to_json()
+    CapsuleZ(half_height, radius) =>
+      ("CapsuleZ", (half_height, radius)).to_json()
+    Cylinder(half_height, radius) =>
+      ("Cylinder", (half_height, radius)).to_json()
+    Cone(half_height, radius) => ("Cone", (half_height, radius)).to_json()
+    HalfSpace(normal) => ("HalfSpace", normal).to_json()
+    Triangle(a, b, c) => ("Triangle", (a, b, c)).to_json()
+    TriMesh(vertices, indices) => ("TriMesh", (vertices, indices)).to_json()
+    ConvexHull(vertices) => ("ConvexHull", vertices).to_json()
+    Compound(parts) => ("Compound", parts).to_json()
+    Heightfield(heights, nrows, ncols, scale) =>
+      ("Heightfield", (heights, nrows, ncols, scale)).to_json()
+    Raw(_shape) => ("RawUnsupported", ().to_json()).to_json()
   }
 }
 
 ///|
 pub impl @json.FromJson for ColliderShape3d with from_json(json, path) {
   let (tag, payload) : (String, Json) = @json.from_json(json, path~)
-  if tag == "Ball" {
-    let radius : Float = @json.from_json(payload, path~)
-    ColliderShape3d::ball(radius)
-  } else {
-    let (hx, hy, hz) : (Float, Float, Float) = @json.from_json(payload, path~)
-    ColliderShape3d::cuboid(hx, hy, hz)
+  match tag {
+    "Ball" => {
+      let radius : Float = @json.from_json(payload, path~)
+      ColliderShape3d::ball(radius)
+    }
+    "Cuboid" => {
+      let (hx, hy, hz) : (Float, Float, Float) = @json.from_json(payload, path~)
+      ColliderShape3d::cuboid(hx, hy, hz)
+    }
+    "CapsuleX" => {
+      let (half_height, radius) : (Float, Float) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::capsule_x(half_height, radius)
+    }
+    "CapsuleY" => {
+      let (half_height, radius) : (Float, Float) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::capsule_y(half_height, radius)
+    }
+    "CapsuleZ" => {
+      let (half_height, radius) : (Float, Float) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::capsule_z(half_height, radius)
+    }
+    "Cylinder" => {
+      let (half_height, radius) : (Float, Float) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::cylinder(half_height, radius)
+    }
+    "Cone" => {
+      let (half_height, radius) : (Float, Float) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::cone(half_height, radius)
+    }
+    "HalfSpace" => {
+      let normal : @math.Vec3 = @json.from_json(payload, path~)
+      ColliderShape3d::halfspace(normal)
+    }
+    "Triangle" => {
+      let (a, b, c) : (@math.Vec3, @math.Vec3, @math.Vec3) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::triangle(a, b, c)
+    }
+    "TriMesh" => {
+      let (vertices, indices) : (Array[@math.Vec3], Array[(Int, Int, Int)]) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::trimesh(vertices, indices)
+    }
+    "ConvexHull" => {
+      let vertices : Array[@math.Vec3] = @json.from_json(payload, path~)
+      ColliderShape3d::convex_hull(vertices)
+    }
+    "Compound" => {
+      let parts : Array[(@transform.Transform, ColliderShape3d)] = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::compound(parts)
+    }
+    "Heightfield" => {
+      let (heights, nrows, ncols, scale) : (Array[Float], Int, Int, @math.Vec3) = @json.from_json(
+        payload,
+        path~,
+      )
+      ColliderShape3d::heightfield(heights, nrows, ncols, scale)
+    }
+    _ => ColliderShape3d::ball(0.5F)
   }
 }
 

@@ -1,0 +1,68 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/helpers/rapier_examples"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/physics3d",
+  "Milky2018/mgstudio/transform",
+}
+
+// Values
+pub fn rapier2d_default_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+
+pub fn rapier2d_set_clear_color(@ecs.World, @color.Color) -> Unit
+
+pub fn rapier2d_set_gravity(@ecs.World, @math.Vec2) -> Unit
+
+pub fn rapier2d_spawn_camera(@ecs.World, Float, Float) -> Unit
+
+pub fn rapier2d_spawn_camera_and_clear(@ecs.World, @color.Color, @math.Vec2) -> Unit
+
+pub fn rapier2d_spawn_dynamic_ball(@ecs.World, @asset.Handle[@image.Image], @math.Vec2, Float, Float, @color.Color) -> @core.Entity
+
+pub fn rapier2d_spawn_dynamic_box(@ecs.World, @asset.Handle[@image.Image], @math.Vec2, @math.Vec2, Float, @color.Color) -> @core.Entity
+
+pub fn rapier2d_spawn_fixed_ball(@ecs.World, @asset.Handle[@image.Image], @math.Vec2, Float, Float, @color.Color) -> @core.Entity
+
+pub fn rapier2d_spawn_fixed_box(@ecs.World, @asset.Handle[@image.Image], @math.Vec2, @math.Vec2, Float, @color.Color) -> @core.Entity
+
+pub fn rapier2d_spawn_sprite_box(@ecs.World, @asset.Handle[@image.Image], @math.Vec2, @math.Vec2, Float, @color.Color) -> @core.Entity
+
+pub fn rapier2d_spawn_static_bounds(@ecs.World, @asset.Handle[@image.Image], Float, Float, Float) -> Unit
+
+pub fn rapier3d_basic_lighting(@ecs.World) -> Unit
+
+pub fn rapier3d_camera(@ecs.World, @math.Vec3, @math.Vec3) -> Unit
+
+pub fn rapier3d_color(Int) -> @color.Color
+
+pub fn rapier3d_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+
+pub fn rapier3d_spawn_ball(@ecs.World, @math.Vec3, Float, @color.Color, @physics3d.RigidBody3d?) -> @core.Entity
+
+pub fn rapier3d_spawn_body_mesh(@ecs.World, @mesh.Mesh3dGeometry, @color.Color, @transform.Transform, @physics3d.RigidBody3d?, @physics3d.Collider3d?) -> @core.Entity
+
+pub fn rapier3d_spawn_capsule_y(@ecs.World, @math.Vec3, Float, Float, @color.Color, @physics3d.RigidBody3d?) -> @core.Entity
+
+pub fn rapier3d_spawn_cuboid(@ecs.World, @math.Vec3, @math.Vec3, @color.Color, @physics3d.RigidBody3d?) -> @core.Entity
+
+pub fn rapier3d_spawn_ground(@ecs.World, @math.Vec3, @math.Vec3) -> @core.Entity
+
+pub fn rapier3d_unlit_material(@color.Color) -> @material.MeshMaterial3d
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
