@@ -13,17 +13,17 @@
 // limitations under the License.
 
 ///|
-let gilrs_ref : Ref[@gamepad.Gilrs?] = Ref::new(None)
+let gilrs_ref : Ref[@gamepad.Gil?] = Ref::new(None)
 
 ///|
 let connected_gamepad_ids_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
-fn ensure_gilrs() -> @gamepad.Gilrs {
+fn ensure_gilrs() -> @gamepad.Gil {
   match gilrs_ref.val {
     Some(gilrs) => gilrs
     None => {
-      let gilrs = @gamepad.Gilrs::new()
+      let gilrs = @gamepad.Gil::new()
       gilrs_ref.val = Some(gilrs)
       gilrs
     }
@@ -147,14 +147,14 @@ pub fn gamepad_set_rumble(
 }
 
 ///|
-pub fn gamepad_test_use_mock_gilrs(gilrs : @gamepad.Gilrs) -> Unit {
+pub fn gamepad_test_use_mock_gilrs(gilrs : @gamepad.Gil) -> Unit {
   gilrs_ref.val = Some(gilrs)
   connected_gamepad_ids_ref.val = []
 }
 
 ///|
 pub fn gamepad_test_use_ff_mock(gamepad_count : Int) -> Unit {
-  let gilrs = @gamepad.Gilrs::new_mock(gamepad_count)
+  let gilrs = @gamepad.Gil::new_mock(gamepad_count)
   gamepad_test_use_mock_gilrs(gilrs)
   gamepad_test_ff_supported_override_ref.val = Some(true)
 }

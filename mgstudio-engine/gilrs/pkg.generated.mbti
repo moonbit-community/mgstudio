@@ -40,7 +40,7 @@ pub fn gamepad_test_take_recorded_rumble_commands() -> Array[GamepadRumbleComman
 
 pub fn gamepad_test_use_ff_mock(Int) -> Unit
 
-pub fn gamepad_test_use_mock_gilrs(@gamepad.Gilrs) -> Unit
+pub fn gamepad_test_use_mock_gilrs(@gamepad.Gil) -> Unit
 
 pub fn gamepad_vendor_id(Int) -> Int
 
