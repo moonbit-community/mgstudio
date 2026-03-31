@@ -318,7 +318,8 @@ fn auto_directional_navigation_focusable_area(
   entity : @core.Entity,
 ) -> (@core.Entity?, @input_focus.FocusableArea)? {
   let query = auto_directional_navigation_area_query(world)
-  guard (try! query.get(entity)) is Some((_query_entity, _marker, layout)) else {
+  guard (query.get(entity) catch { _ => None })
+    is Some((_query_entity, _marker, layout)) else {
     return None
   }
   let inherited_visibility : @visibility.InheritedVisibility? = try

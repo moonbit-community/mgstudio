@@ -506,8 +506,8 @@ fn toggle_ambient_light(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  if (try? world.get_resource(@pbr.ecs_key_global_ambient_light))
-    is Ok(Some(ambient)) {
+  if (world.get_resource(@pbr.ecs_key_global_ambient_light) catch { _ => None })
+    is Some(ambient) {
     if ambient.brightness > 1.0F {
       world.insert_resource(
         @pbr.ecs_key_global_ambient_light,

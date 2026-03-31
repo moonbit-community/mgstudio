@@ -379,7 +379,7 @@ fn update(
   ],
   commands : @app.Commands,
 ) -> Unit {
-  guard (try? labels.single()) is Ok(Some((entity, _label_comp))) else {
+  guard (labels.single() catch { _ => None }) is Some((entity, _label_comp)) else {
     return
   }
   if keyboard_input.pressed(ArrowUp) {

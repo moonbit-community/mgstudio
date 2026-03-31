@@ -364,7 +364,9 @@ fn accumulate_input(
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
-  guard (try! cameras.single()) is Some(camera_transform_comp) else { return }
+  guard (cameras.single() catch { _ => None }) is Some(camera_transform_comp) else {
+    return
+  }
   let camera_transform = camera_transform_comp.value()
 
   try! players.view(fn(entity, data) {
@@ -474,7 +476,9 @@ fn translate_camera(
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
-  guard (try! players.single()) is Some(player_transform_comp) else { return }
+  guard (players.single() catch { _ => None }) is Some(player_transform_comp) else {
+    return
+  }
   let player_transform = player_transform_comp.value()
 
   try! cameras.view(fn(_entity, transform) {

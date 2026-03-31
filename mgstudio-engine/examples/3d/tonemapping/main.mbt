@@ -603,7 +603,7 @@ fn toggle_scene(
     } else {
       @visibility.Visibility::Hidden
     }
-    if (try! visibility_query.get(entity)) is Some(component) {
+    if (visibility_query.get(entity) catch { _ => None }) is Some(component) {
       component.get_ref().val = visibility
     }
   })
@@ -639,13 +639,14 @@ fn toggle_tonemapping_method(
     None
   }
   guard first_entity(tonemapping_query) is Some(camera) else { return }
-  guard (try! tonemapping_query.get(camera)) is Some(initial_tonemapping) else {
+  guard (tonemapping_query.get(camera) catch { _ => None })
+    is Some(initial_tonemapping) else {
     return
   }
 
   let mut current_tonemapping = initial_tonemapping.value()
   if next_method is Some(tonemapper) {
-    if (try! tonemapping_query.get(camera)) is Some(component) {
+    if (tonemapping_query.get(camera) catch { _ => None }) is Some(component) {
       component.get_ref().val = tonemapper
       current_tonemapping = tonemapper
     }
@@ -655,7 +656,7 @@ fn toggle_tonemapping_method(
     is Some(color_grading) else {
     return
   }
-  if (try! color_grading_query.get(camera)) is Some(component) {
+  if (color_grading_query.get(camera) catch { _ => None }) is Some(component) {
     component.get_ref().val = color_grading
   }
 }
@@ -670,7 +671,8 @@ fn update_color_grading_settings(
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
   guard first_entity(tonemapping_query) is Some(camera) else { return }
-  guard (try! tonemapping_query.get(camera)) is Some(current_method) else {
+  guard (tonemapping_query.get(camera) catch { _ => None })
+    is Some(current_method) else {
     return
   }
   let current_method = current_method.value()

@@ -223,7 +223,7 @@ fn activate_ability(
       return
     }
 
-    if (try! active_cooldowns.get(entity)) is Some(_) {
+    if (active_cooldowns.get(entity) catch { _ => None }) is Some(_) {
       let remaining_seconds = cooldown_ref.val.timer
         .remaining_secs()
         .to_double()
@@ -254,10 +254,13 @@ fn animate_cooldowns(
 ) -> Unit {
   try! cooldowns.view(fn(entity, cooldown) {
     let cooldown_ref = cooldown.get_ref()
-    guard (try! active_cooldowns.get(entity)) is Some(_) else { return }
+    guard (active_cooldowns.get(entity) catch { _ => None }) is Some(_) else {
+      return
+    }
 
     cooldown_ref.val.timer = cooldown_ref.val.timer.tick(time.get().delta())
-    if (try! nodes.get(cooldown_ref.val.overlay_entity)) is Some(overlay_node) {
+    if (nodes.get(cooldown_ref.val.overlay_entity) catch { _ => None })
+      is Some(overlay_node) {
       let overlay_node_ref = overlay_node.get_ref()
       if cooldown_ref.val.timer.just_finished() {
         commands.entity(entity).remove_component(ActiveCooldown::component())

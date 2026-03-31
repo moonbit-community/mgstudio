@@ -101,7 +101,9 @@ fn bounce_system(
     @ecs.All,
   ],
 ) -> Unit {
-  guard (try! window_query.single()) is Some(window_comp) else { return }
+  guard (window_query.single() catch { _ => None }) is Some(window_comp) else {
+    return
+  }
   let window = window_comp.value()
   let width = window.width()
   let height = window.height()

@@ -69,10 +69,17 @@ fn shader_cache_dummy_load_module(
   _device : Int,
   source : @shader.ShaderCacheSource,
   _validate : @shader.ValidateShader,
-) -> Result[String, @shader.ShaderCacheError] {
+) -> String raise @shader.ShaderCacheError {
   match source {
-    Wgsl(text) => Ok(text)
-    SpirV(_) => Ok("spirv")
+    Wgsl(text) =>
+      if text == "" {
+        raise @shader.ShaderCacheError::CreateShaderModule(
+          "empty WGSL source in shader cache test",
+        )
+      } else {
+        text
+      }
+    SpirV(_) => "spirv"
   }
 }
 

@@ -162,20 +162,16 @@ pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
     return None
   }
   let reader = self.world().message_reader(key, Ref::new(0))
-  let exits_result : Result[Array[AppExit], @ecs.EcsError] = try? reader.read()
-  match exits_result {
-    Ok(exits) =>
-      if exits.length() == 0 {
-        None
-      } else {
-        for exit in exits {
-          if exit.is_error() {
-            return Some(exit)
-          }
-        }
-        Some(AppExit::Success)
+  let exits = reader.read() catch { _ => return None }
+  if exits.length() == 0 {
+    None
+  } else {
+    for exit in exits {
+      if exit.is_error() {
+        return Some(exit)
       }
-    Err(_) => None
+    }
+    Some(AppExit::Success)
   }
 }
 

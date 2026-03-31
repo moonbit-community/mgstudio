@@ -178,16 +178,19 @@ fn draw_cursor(
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
-  guard (try! camera_query.get(camera_entity)) is Some(camera_comp) else {
+  guard (camera_query.get(camera_entity) catch { _ => None })
+    is Some(camera_comp) else {
     return
   }
   let camera = camera_comp.value()
-  guard (try! projection_query.get(camera_entity)) is Some(projection_comp) else {
+  guard (projection_query.get(camera_entity) catch { _ => None })
+    is Some(projection_comp) else {
     return
   }
   let projection = projection_comp.value()
   guard projection is Orthographic(orthographic_projection) else { return }
-  guard (try! transform_query.get(camera_entity)) is Some(camera_transform_comp) else {
+  guard (transform_query.get(camera_entity) catch { _ => None })
+    is Some(camera_transform_comp) else {
     return
   }
   let camera_transform = camera_transform_comp.value()
@@ -244,7 +247,8 @@ fn controls(
   let uspeed = fspeed.to_int()
 
   ignore(
-    if (try! transform_query.get(camera_entity)) is Some(camera_transform) {
+    if (transform_query.get(camera_entity) catch { _ => None })
+      is Some(camera_transform) {
       let transform_ref = camera_transform.get_ref()
       let mut x = transform_ref.val.translation.x
       let mut y = transform_ref.val.translation.y
@@ -273,7 +277,8 @@ fn controls(
   )
 
   ignore(
-    if (try! projection_query.get(camera_entity)) is Some(camera_projection) {
+    if (projection_query.get(camera_entity) catch { _ => None })
+      is Some(camera_projection) {
       let projection_ref = camera_projection.get_ref()
       match projection_ref.val {
         @sprite.Projection::Orthographic(orthographic) => {
@@ -301,7 +306,8 @@ fn controls(
   }
 
   ignore(
-    if (try! camera_query.get(camera_entity)) is Some(camera_component) {
+    if (camera_query.get(camera_entity) catch { _ => None })
+      is Some(camera_component) {
       let camera_ref = camera_component.get_ref()
       let window_size = @math.IVec2::new(width, height)
       let current_viewport = match camera_ref.val.viewport {

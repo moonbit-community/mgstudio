@@ -76,7 +76,8 @@ fn toggle_mouse_passthrough(
   if !keyboard_input.just_pressed(@window.KeyCode::KeyP) {
     return
   }
-  guard (try! cursor_query.single()) is Some((_primary, cursor_options)) else {
+  guard (cursor_query.single() catch { _ => None })
+    is Some((_primary, cursor_options)) else {
     return
   }
   let current = cursor_options.value()

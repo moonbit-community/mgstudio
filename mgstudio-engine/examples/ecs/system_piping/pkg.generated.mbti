@@ -10,6 +10,8 @@ type Message
 
 type OptionalWarning
 
+type ParseOutcome derive(Show)
+
 // Type aliases
 
 // Traits

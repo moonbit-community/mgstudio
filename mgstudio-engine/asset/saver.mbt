@@ -18,6 +18,18 @@ pub struct Writer {
 }
 
 ///|
+pub(all) suberror AssetSaveError {
+  Message(String)
+}
+
+///|
+pub fn AssetSaveError::message(self : AssetSaveError) -> String {
+  match self {
+    Message(message) => message
+  }
+}
+
+///|
 pub fn Writer::new() -> Writer {
   Writer::{ buffer: [] }
 }
@@ -131,12 +143,12 @@ pub fn[T] SavedAssetBuilder::build(
 
 ///|
 pub struct AssetSaver[T, Settings] {
-  save : (Writer, SavedAsset[T], Settings) -> Result[Unit, String]
+  save : (Writer, SavedAsset[T], Settings) -> Unit raise AssetSaveError
 }
 
 ///|
 pub fn[T, Settings] AssetSaver::new(
-  save : (Writer, SavedAsset[T], Settings) -> Result[Unit, String],
+  save : (Writer, SavedAsset[T], Settings) -> Unit raise AssetSaveError,
 ) -> AssetSaver[T, Settings] {
   AssetSaver::{ save, }
 }
@@ -148,35 +160,30 @@ pub fn[T, Settings, P : IntoAssetPath] save_using_saver(
   path : P,
   asset : SavedAsset[T],
   settings : Settings,
-) -> Result[Unit, String] {
+) -> Unit raise AssetSaveError {
   let asset_path = path.into_asset_path()
   let formatted_path = asset_format_path(asset_path)
   let writer = Writer::new()
-  match (saver.save)(writer, asset, settings) {
-    Ok(_) => {
-      let bytes = writer.finish()
-      host_asset_save_bytes(path=formatted_path, bytes~)
-      let canonical_path = asset_canonical_path(formatted_path)
-      let seen = Ref::new(false)
-      for existing_path in asset_server.paths.val {
-        if existing_path == canonical_path {
-          seen.val = true
-          break
-        }
-      }
-      if !seen.val {
-        asset_server.paths.val.push(canonical_path)
-      }
-      asset_server.path_fingerprints.val.set(
-        canonical_path,
-        bytes_fingerprint(bytes),
-      )
-      let probe : Assets[T] = Assets::new()
-      let type_name = @any.of(probe).type_name()
-      let cache_key = typed_asset_loader_path_key(type_name, asset_path)
-      asset_server.typed_asset_paths.val.remove(cache_key) |> ignore
-      Ok(())
+  (saver.save)(writer, asset, settings)
+  let bytes = writer.finish()
+  host_asset_save_bytes(path=formatted_path, bytes~)
+  let canonical_path = asset_canonical_path(formatted_path)
+  let seen = Ref::new(false)
+  for existing_path in asset_server.paths.val {
+    if existing_path == canonical_path {
+      seen.val = true
+      break
     }
-    Err(err) => Err(err)
   }
+  if !seen.val {
+    asset_server.paths.val.push(canonical_path)
+  }
+  asset_server.path_fingerprints.val.set(
+    canonical_path,
+    bytes_fingerprint(bytes),
+  )
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  let cache_key = typed_asset_loader_path_key(type_name, asset_path)
+  asset_server.typed_asset_paths.val.remove(cache_key) |> ignore
 }

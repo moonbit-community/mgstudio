@@ -744,6 +744,25 @@ fn text_ecs_find_entry_index_from_index(
 }
 
 ///|
+fn text_ecs_world_entity_ref(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @ecs.EntityRef? {
+  Some(world.entity(entity)) catch {
+    _ => None
+  }
+}
+
+///|
+fn[T : @ecs.Component] text_ecs_entity_ref_get(
+  entity_ref : @ecs.EntityRef,
+) -> T? {
+  entity_ref.get() catch {
+    _ => None
+  }
+}
+
+///|
 fn text_ecs_bundle_from_entity(
   world : @ecs.World,
   entity : @core.Entity,
@@ -751,42 +770,69 @@ fn text_ecs_bundle_from_entity(
   font : TextFont,
   local_transform : @transform.Transform,
 ) -> Text2dBundle {
-  let entity_ref = try! world.entity(entity)
-  let transform = match (try! entity_ref.get() : @transform.GlobalTransform?) {
+  guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
+    return Text2dBundle::{
+      text,
+      font,
+      color: TextColor::default(),
+      background_color: None,
+      underline: None,
+      underline_color: None,
+      strikethrough: None,
+      strikethrough_color: None,
+      layout: TextLayout::default(),
+      bounds: TextBounds::default(),
+      line_height: LineHeight::default(),
+      shadow: None,
+      transform: local_transform,
+      layers: @sprite.RenderLayers::default(),
+      no_frustum_culling: false,
+      anchor: @sprite.Anchor::default(),
+      y_axis: YAxisOrientation::TopToBottom,
+      logical_viewport_size: None,
+    }
+  }
+  let transform = match
+    (text_ecs_entity_ref_get(entity_ref) : @transform.GlobalTransform?) {
     Some(global_transform) => global_transform.to_transform_approx()
     None => local_transform
   }
-  let color = match (try! entity_ref.get() : TextColor?) {
+  let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! entity_ref.get()
-  let underline : Underline? = try! entity_ref.get()
-  let underline_color : UnderlineColor? = try! entity_ref.get()
-  let strikethrough : Strikethrough? = try! entity_ref.get()
-  let strikethrough_color : StrikethroughColor? = try! entity_ref.get()
-  let layout = match (try! entity_ref.get() : TextLayout?) {
+  let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
+    entity_ref,
+  )
+  let underline : Underline? = text_ecs_entity_ref_get(entity_ref)
+  let underline_color : UnderlineColor? = text_ecs_entity_ref_get(entity_ref)
+  let strikethrough : Strikethrough? = text_ecs_entity_ref_get(entity_ref)
+  let strikethrough_color : StrikethroughColor? = text_ecs_entity_ref_get(
+    entity_ref,
+  )
+  let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
   }
-  let bounds = match (try! entity_ref.get() : TextBounds?) {
+  let bounds = match (text_ecs_entity_ref_get(entity_ref) : TextBounds?) {
     Some(bounds) => bounds
     None => TextBounds::default()
   }
-  let line_height = match (try! entity_ref.get() : LineHeight?) {
+  let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
     None => LineHeight::default()
   }
-  let shadow : Text2dShadow? = try! entity_ref.get()
-  let layers = match (try! entity_ref.get() : @sprite.RenderLayers?) {
+  let shadow : Text2dShadow? = text_ecs_entity_ref_get(entity_ref)
+  let layers = match
+    (text_ecs_entity_ref_get(entity_ref) : @sprite.RenderLayers?) {
     Some(layers) => layers
     None => @sprite.RenderLayers::default()
   }
-  let anchor = match (try! entity_ref.get() : @sprite.Anchor?) {
+  let anchor = match (text_ecs_entity_ref_get(entity_ref) : @sprite.Anchor?) {
     Some(anchor) => anchor
     None => @sprite.Anchor::default()
   }
-  let y_axis = match (try! entity_ref.get() : YAxisOrientation?) {
+  let y_axis = match (text_ecs_entity_ref_get(entity_ref) : YAxisOrientation?) {
     Some(y_axis) => y_axis
     None => YAxisOrientation::TopToBottom
   }
@@ -824,25 +870,31 @@ fn text_ecs_span_bundle_from_entity(
   inherited_font : TextFont,
   inherited_line_height : LineHeight,
 ) -> TextSpanBundle? {
-  let entity_ref = try! world.entity(entity)
-  let span = match (try! entity_ref.get() : TextSpan?) {
+  guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
+    return None
+  }
+  let span = match (text_ecs_entity_ref_get(entity_ref) : TextSpan?) {
     Some(span) => span
     None => return None
   }
-  let font = match (try! entity_ref.get() : TextFont?) {
+  let font = match (text_ecs_entity_ref_get(entity_ref) : TextFont?) {
     Some(font) => font
     None => inherited_font
   }
-  let color = match (try! entity_ref.get() : TextColor?) {
+  let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! entity_ref.get()
-  let underline : Underline? = try! entity_ref.get()
-  let underline_color : UnderlineColor? = try! entity_ref.get()
-  let strikethrough : Strikethrough? = try! entity_ref.get()
-  let strikethrough_color : StrikethroughColor? = try! entity_ref.get()
-  let line_height = match (try! entity_ref.get() : LineHeight?) {
+  let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
+    entity_ref,
+  )
+  let underline : Underline? = text_ecs_entity_ref_get(entity_ref)
+  let underline_color : UnderlineColor? = text_ecs_entity_ref_get(entity_ref)
+  let strikethrough : Strikethrough? = text_ecs_entity_ref_get(entity_ref)
+  let strikethrough_color : StrikethroughColor? = text_ecs_entity_ref_get(
+    entity_ref,
+  )
+  let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
     None => inherited_line_height
   }
@@ -867,8 +919,12 @@ fn text_ecs_collect_span_bundles_for_entity(
   span_edges : Array[(@core.Entity, @core.Entity)],
 ) -> Array[TextSpanBundle] {
   let span_bundles : Array[TextSpanBundle] = []
-  let entity_ref = try! world.entity(entity)
-  match (try! entity_ref.get() : @hierarchy.Children?) {
+  let children : @hierarchy.Children? = match
+    text_ecs_world_entity_ref(world, entity) {
+    Some(entity_ref) => text_ecs_entity_ref_get(entity_ref)
+    None => None
+  }
+  match children {
     Some(children) =>
       for child in children.entities() {
         if text_ecs_span_bundle_from_entity(
@@ -1326,29 +1382,54 @@ fn ui_text_ecs_bundle_from_entity(
   entity : @core.Entity,
   text : Text,
 ) -> Text2dBundle {
-  let entity_ref = try! world.entity(entity)
-  let font = match (try! entity_ref.get() : TextFont?) {
+  guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
+    return Text2dBundle::{
+      text: Text2d::new(text.content),
+      font: TextFont::default(),
+      color: TextColor::default(),
+      background_color: None,
+      underline: None,
+      underline_color: None,
+      strikethrough: None,
+      strikethrough_color: None,
+      layout: TextLayout::default(),
+      bounds: TextBounds::default(),
+      line_height: LineHeight::default(),
+      shadow: None,
+      transform: @transform.Transform::identity(),
+      layers: @sprite.RenderLayers::default(),
+      no_frustum_culling: false,
+      anchor: @sprite.Anchor::default(),
+      y_axis: YAxisOrientation::TopToBottom,
+      logical_viewport_size: None,
+    }
+  }
+  let font = match (text_ecs_entity_ref_get(entity_ref) : TextFont?) {
     Some(font) => font
     None => TextFont::default()
   }
-  let color = match (try! entity_ref.get() : TextColor?) {
+  let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
     None => TextColor::default()
   }
-  let background_color : TextBackgroundColor? = try! entity_ref.get()
-  let underline : Underline? = try! entity_ref.get()
-  let underline_color : UnderlineColor? = try! entity_ref.get()
-  let strikethrough : Strikethrough? = try! entity_ref.get()
-  let strikethrough_color : StrikethroughColor? = try! entity_ref.get()
-  let layout = match (try! entity_ref.get() : TextLayout?) {
+  let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
+    entity_ref,
+  )
+  let underline : Underline? = text_ecs_entity_ref_get(entity_ref)
+  let underline_color : UnderlineColor? = text_ecs_entity_ref_get(entity_ref)
+  let strikethrough : Strikethrough? = text_ecs_entity_ref_get(entity_ref)
+  let strikethrough_color : StrikethroughColor? = text_ecs_entity_ref_get(
+    entity_ref,
+  )
+  let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
   }
-  let line_height = match (try! entity_ref.get() : LineHeight?) {
+  let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
     None => LineHeight::default()
   }
-  let shadow_component : TextShadow? = try! entity_ref.get()
+  let shadow_component : TextShadow? = text_ecs_entity_ref_get(entity_ref)
   Text2dBundle::{
     text: Text2d::new(text.content),
     font,

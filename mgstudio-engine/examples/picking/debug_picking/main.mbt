@@ -171,7 +171,8 @@ fn refresh_overlay(
   state : @app.Res[DebugPickingState],
   texts : @ecs.Query[@ecs.Mut[@text.Text], @ecs.All],
 ) -> Unit {
-  if (try! texts.get(state.get().label_entity)) is Some(text) {
+  let text = texts.get(state.get().label_entity) catch { _ => None }
+  if text is Some(text) {
     text.get_ref().val = @text.Text::new(
       "Press F3 to cycle debug mode\nMode: " +
       debug_mode_name(state.get().mode) +

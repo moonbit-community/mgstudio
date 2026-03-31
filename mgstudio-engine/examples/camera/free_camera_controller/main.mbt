@@ -98,7 +98,8 @@ fn spawn_text(
     @ecs.All,
   ],
 ) -> Unit {
-  guard (try! free_camera_query.single()) is Some(free_camera_comp) else {
+  guard (free_camera_query.single() catch { _ => None })
+    is Some(free_camera_comp) else {
     return
   }
   let free_camera = free_camera_comp.value()

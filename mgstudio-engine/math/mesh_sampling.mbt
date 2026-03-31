@@ -28,9 +28,9 @@ pub struct UniformMeshSampler {
 ///|
 pub fn UniformMeshSampler::try_new(
   triangles : Array[Triangle3d],
-) -> Result[UniformMeshSampler, UniformMeshSamplerError] {
+) -> UniformMeshSampler raise UniformMeshSamplerError {
   if triangles.is_empty() {
-    return Err(Empty)
+    raise Empty
   }
   let cumulative_areas : Array[Float] = []
   let mut total_area = 0.0F
@@ -39,9 +39,9 @@ pub fn UniformMeshSampler::try_new(
     cumulative_areas.push(total_area)
   }
   if total_area <= 0.0F {
-    return Err(ZeroSurfaceArea)
+    raise ZeroSurfaceArea
   }
-  Ok(UniformMeshSampler::{ triangles, cumulative_areas, total_area })
+  UniformMeshSampler::{ triangles, cumulative_areas, total_area }
 }
 
 ///|

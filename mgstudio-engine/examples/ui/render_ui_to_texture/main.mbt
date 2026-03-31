@@ -191,7 +191,8 @@ fn set_panel_color(
   color : @sprite.Color,
   backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
 ) -> Unit {
-  if (try! backgrounds.get(entity)) is Some(background) {
+  let background = backgrounds.get(entity) catch { _ => None }
+  if background is Some(background) {
     background.set(@ui.BackgroundColor::new(color))
   }
 }
@@ -342,13 +343,15 @@ fn rotate_cube(
   cubes : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Cube]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
-  try! cubes.view(fn(_entity, transform) {
+  cubes.view(fn(_entity, transform) {
     let transform_ref = transform.get_ref()
     transform_ref.val.rotation = transform_ref.val.rotation
       .mul(@math.Quat::from_rotation_x(delta * ROTATION_SPEED))
       .mul(@math.Quat::from_rotation_y(delta * ROTATION_SPEED * 0.7F))
       .normalize()
-  })
+  }) catch {
+    _ => return
+  }
 }
 
 ///|
@@ -368,13 +371,10 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
     (@core.Entity, @ecs.Comp[@transform.Transform]),
     @ecs.With[Cube],
   ] = @ecs.query_filtered(world, @ecs.With::new(Cube::component()))
-  guard (try! camera_query.single())
-    is Some((camera, projection, camera_transform)) else {
-    return
-  }
-  guard (try! cube_query.single()) is Some((cube_entity, cube_transform)) else {
-    return
-  }
+  let camera = camera_query.single() catch { _ => None }
+  guard camera is Some((camera, projection, camera_transform)) else { return }
+  let cube = cube_query.single() catch { _ => None }
+  guard cube is Some((cube_entity, cube_transform)) else { return }
 
   let down = @input.mouse_button_pressed(@window.MouseButton::Left)
   let just_pressed = @input.mouse_button_just_pressed(@window.MouseButton::Left)
@@ -426,7 +426,8 @@ fn drag_panel(
 ) -> Unit {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   guard drag_state.get_ref().val.active else { return }
-  guard (try! panels.single()) is Some(panel_node) else { return }
+  let panel_node = panels.single() catch { _ => None }
+  guard panel_node is Some(panel_node) else { return }
   panel_node.set(
     panel_node
     .value()
@@ -440,10 +441,6 @@ fn stop_drag_panel(
   pointer : @app.OnPointer[@app.PointerUp],
   drag_state : @app.ResMut[PanelDragState],
 ) -> Unit {
-  if @app.current_world() is Some(world) {
-    let entity_query : @ecs.QueryState[@core.Entity, @ecs.All] = world.query()
-    ignore(try! entity_query.single(world))
-  }
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   drag_state.get_ref().val.active = false
 }

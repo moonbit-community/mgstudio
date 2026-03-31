@@ -176,7 +176,7 @@ fn interact_bodies(
 ) -> Unit {
   let combinations = query.iter_combinations()
   while true {
-    if (try! combinations.fetch_next()) is Some((left, right)) {
+    if (combinations.fetch_next() catch { _ => None }) is Some((left, right)) {
       let (left_mass, left_transform, left_acceleration) = left
       let (right_mass, right_transform, right_acceleration) = right
       let delta = @math.Vec2::new(

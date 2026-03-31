@@ -196,7 +196,9 @@ fn input_handler(
 ) -> Unit {
   let mesh_assets = meshes.get_ref().val
   if keyboard_input.just_pressed(@window.KeyCode::Space) {
-    guard (try! mesh_query.single()) is Some(mesh_handle_comp) else { return }
+    guard (mesh_query.single() catch { _ => None }) is Some(mesh_handle_comp) else {
+      return
+    }
     let mesh_handle = mesh_handle_comp.value()
     if mesh_assets.get(mesh_handle.mesh) is Some(mesh) {
       mesh_assets.set(mesh_handle.mesh, toggle_texture(mesh)) |> ignore

@@ -158,7 +158,8 @@ fn on_drag_start(
   draggables : @ecs.Query[@ecs.Comp[DraggableButton], @ecs.All],
 ) -> Unit {
   guard pointer.target() is Some(target) else { return }
-  guard (try! draggables.get(target)) is Some(_) else { return }
+  let draggable = draggables.get(target) catch { _ => None }
+  guard draggable is Some(_) else { return }
   let state = drag_state.get_ref()
   state.val.active = true
   state.val.drop_hovered = false
@@ -190,7 +191,7 @@ fn on_drag_move(
   guard state.val.active else { return }
   state.val.drop_hovered = pointer.target() == Some(state.val.drop_area)
   if state.val.ghost is Some(ghost) &&
-    (try! ghost_nodes.get(ghost)) is Some(node) {
+    (ghost_nodes.get(ghost) catch { _ => None }) is Some(node) {
     let next = node
       .value()
       .with_left(@ui.Val::Px(pointer.position().x - 15.0F))

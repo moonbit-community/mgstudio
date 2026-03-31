@@ -191,10 +191,7 @@ pub struct Line2d {
 
 ///|
 pub fn Line2d::new(direction : Vec2) -> Line2d {
-  let safe_direction = match Dir2::new(direction) {
-    Ok(value) => value
-    Err(_) => Dir2::x()
-  }
+  let safe_direction = Dir2::new(direction) catch { _ => Dir2::x() }
   Line2d::{ direction: safe_direction }
 }
 
@@ -210,10 +207,7 @@ pub struct Plane2d {
 
 ///|
 pub fn Plane2d::new(normal : Vec2) -> Plane2d {
-  let safe_normal = match Dir2::new(normal) {
-    Ok(value) => value
-    Err(_) => Dir2::y()
-  }
+  let safe_normal = Dir2::new(normal) catch { _ => Dir2::y() }
   Plane2d::{ normal: safe_normal }
 }
 

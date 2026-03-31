@@ -133,7 +133,7 @@ pub fn asset_texture_width(Handle[@image.Image]) -> Int
 
 pub fn asset_transparent_texture() -> Handle[@image.Image]
 
-pub fn asset_try_parse_path(String) -> Result[AssetPath, ParseAssetPathError]
+pub fn asset_try_parse_path(String) -> AssetPath raise ParseAssetPathError
 
 pub fn asset_update_event_messages(@ecs.World) -> Unit
 
@@ -241,13 +241,29 @@ pub fn[T] register_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]
 
 pub fn register_asset_source(@app.App[@ecs.World], AssetSourceId, AssetSourceBuilder) -> @app.App[@ecs.World]
 
-pub fn[T, Settings, P : IntoAssetPath] save_using_saver(AssetServer, AssetSaver[T, Settings], P, SavedAsset[T], Settings) -> Result[Unit, String]
+pub fn[T, Settings, P : IntoAssetPath] save_using_saver(AssetServer, AssetSaver[T, Settings], P, SavedAsset[T], Settings) -> Unit raise AssetSaveError
 
 pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
 
 pub fn web_asset_plugin(WebAssetPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
+pub(all) suberror AssetProcessError {
+  Message(String)
+}
+pub fn AssetProcessError::message(Self) -> String
+
+pub(all) suberror AssetSaveError {
+  Message(String)
+}
+pub fn AssetSaveError::message(Self) -> String
+
+pub(all) suberror ParseAssetPathError {
+  InvalidSourceSyntax
+  InvalidLabelSyntax
+  MissingSource
+  MissingLabel
+}
 
 // Types and methods
 pub(all) enum AssetEvent[T] {
@@ -323,9 +339,9 @@ pub fn AssetReader::read_directory(Self, String) -> Array[String]?
 pub fn AssetReader::read_meta(Self, String) -> Bytes?
 
 pub struct AssetSaver[T, Settings] {
-  save : (Writer, SavedAsset[T], Settings) -> Result[Unit, String]
+  save : (Writer, SavedAsset[T], Settings) -> Unit raise AssetSaveError
 }
-pub fn[T, Settings] AssetSaver::new((Writer, SavedAsset[T], Settings) -> Result[Unit, String]) -> Self[T, Settings]
+pub fn[T, Settings] AssetSaver::new((Writer, SavedAsset[T], Settings) -> Unit raise AssetSaveError) -> Self[T, Settings]
 
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
@@ -448,19 +464,12 @@ pub fn LoadContext::path(Self) -> AssetPath
 
 pub struct LoadTransformAndSave[T] {
   extensions : Array[String]
-  process : (AssetServer, AssetPath, Bytes) -> Result[ProcessedAsset[T], String]
+  process : (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError
 }
-pub fn[T] LoadTransformAndSave::new(Array[String], (AssetServer, AssetPath, Bytes) -> Result[ProcessedAsset[T], String]) -> Self[T]
+pub fn[T] LoadTransformAndSave::new(Array[String], (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError) -> Self[T]
 
 pub struct LoadedFolder {
   handles : Array[Handle[@image.Image]]
-}
-
-pub(all) enum ParseAssetPathError {
-  InvalidSourceSyntax
-  InvalidLabelSyntax
-  MissingSource
-  MissingLabel
 }
 
 type PendingAcquiredLoad

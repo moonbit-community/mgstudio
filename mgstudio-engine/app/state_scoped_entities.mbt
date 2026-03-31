@@ -88,7 +88,7 @@ fn[S : States] despawn_on_exit_entities(world : @ecs.World, state : S) -> Unit {
     }
   })
   for entity in entities {
-    ignore(try? world.despawn(entity))
+    ignore(world.despawn(entity) catch { _ => () })
   }
 }
 
@@ -106,7 +106,7 @@ fn[S : States] despawn_on_enter_entities(world : @ecs.World, state : S) -> Unit 
     }
   })
   for entity in entities {
-    ignore(try? world.despawn(entity))
+    ignore(world.despawn(entity) catch { _ => () })
   }
 }
 

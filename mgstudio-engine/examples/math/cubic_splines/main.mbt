@@ -367,44 +367,43 @@ fn form_curve(
   match spline_mode {
     Hermite => {
       let spline = @math.CubicHermite::new(points, tangents)
-      curve_from_result(
+      let curve = try {
         if cycling_mode == CyclingMode::Cyclic {
           spline.to_curve_cyclic()
         } else {
           spline.to_curve()
-        },
-      )
+        }
+      } catch {
+        _ => return Curve::{ value: None }
+      }
+      Curve::{ value: Some(curve) }
     }
     Cardinal => {
       let spline = @math.CubicCardinalSpline::new_catmull_rom(points)
-      curve_from_result(
+      let curve = try {
         if cycling_mode == CyclingMode::Cyclic {
           spline.to_curve_cyclic()
         } else {
           spline.to_curve()
-        },
-      )
+        }
+      } catch {
+        _ => return Curve::{ value: None }
+      }
+      Curve::{ value: Some(curve) }
     }
     B => {
       let spline = @math.CubicBSpline::new(points)
-      curve_from_result(
+      let curve = try {
         if cycling_mode == CyclingMode::Cyclic {
           spline.to_curve_cyclic()
         } else {
           spline.to_curve()
-        },
-      )
+        }
+      } catch {
+        _ => return Curve::{ value: None }
+      }
+      Curve::{ value: Some(curve) }
     }
-  }
-}
-
-///|
-fn curve_from_result(
-  result : Result[@math.CubicCurve[@math.Vec2], @math.InsufficientDataError],
-) -> Curve {
-  match result {
-    Ok(curve) => Curve::{ value: Some(curve) }
-    Err(_) => Curve::{ value: None }
   }
 }
 
@@ -414,13 +413,17 @@ fn update_spline_mode_text(
   handle : @app.Res[SplineModeTextHandle],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  guard (try! world.get_by_key(handle.get().entity, @text.ecs_key_text))
+  guard (world.get_by_key(handle.get().entity, @text.ecs_key_text) catch {
+      _ => None
+    })
     is Some(text_value) else {
     return
   }
   text_value.content = "Spline: " + spline_mode_label(spline_mode.get())
   ignore(
-    try! world.replace(handle.get().entity, @text.ecs_key_text, text_value),
+    world.replace(handle.get().entity, @text.ecs_key_text, text_value) catch {
+      _ => false
+    },
   )
 }
 
@@ -430,13 +433,17 @@ fn update_cycling_mode_text(
   handle : @app.Res[CyclingModeTextHandle],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  guard (try! world.get_by_key(handle.get().entity, @text.ecs_key_text))
+  guard (world.get_by_key(handle.get().entity, @text.ecs_key_text) catch {
+      _ => None
+    })
     is Some(text_value) else {
     return
   }
   text_value.content = cycling_mode_label(cycling_mode.get())
   ignore(
-    try! world.replace(handle.get().entity, @text.ecs_key_text, text_value),
+    world.replace(handle.get().entity, @text.ecs_key_text, text_value) catch {
+      _ => false
+    },
   )
 }
 

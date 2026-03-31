@@ -47,7 +47,9 @@ pub fn[P : SplinePoint] CubicSegment::sample_with_two_derivatives(
 
 ///|
 pub fn[P] CubicCurve::domain(self : CubicCurve[P]) -> Interval {
-  Interval::new(0.0F, Float::from_double(self.segments().length().to_double())).unwrap()
+  Interval::new(0.0F, Float::from_double(self.segments().length().to_double())) catch {
+    _ => abort("CubicCurve::domain expects non-empty cubic segments")
+  }
 }
 
 ///|

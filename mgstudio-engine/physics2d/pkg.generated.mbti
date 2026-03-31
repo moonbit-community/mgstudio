@@ -11,6 +11,7 @@ import {
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/control",
   "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/dynamics_ccd",
   "Milky2018/moon_rapier/pipeline",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
@@ -473,11 +474,11 @@ pub impl @json.FromJson for LockedAxes2d
 
 pub struct MultibodyJoint2d {
   other : @Milky2018/mgstudio/core.Entity
-  data : @dynamics.RevoluteJoint
+  data : @dynamics.GenericJoint
   wake_up : Bool
   kinematic : Bool
 }
-pub fn MultibodyJoint2d::new(@Milky2018/mgstudio/core.Entity, @dynamics.RevoluteJoint) -> Self
+pub fn MultibodyJoint2d::new(@Milky2018/mgstudio/core.Entity, @dynamics.GenericJoint) -> Self
 pub fn MultibodyJoint2d::with_kinematic(Self, Bool) -> Self
 pub fn MultibodyJoint2d::with_wake_up(Self, Bool) -> Self
 pub impl @ecs.Component for MultibodyJoint2d
@@ -505,7 +506,7 @@ pub struct Physics2dContext {
   narrow_phase : @collision.NarrowPhase
   impulse_joints : @dynamics.ImpulseJointSet
   multibody_joints : @dynamics.MultibodyJointSet
-  ccd : @dynamics.CCDSolver
+  ccd : @dynamics_ccd.CCDSolver
   pipeline : @pipeline.PhysicsPipeline
   mut integration : @dynamics.IntegrationParameters
   mut hooks : @pipeline.PhysicsHooks

@@ -27,7 +27,8 @@ fn winit_monitor_entry_index(
 
 ///|
 fn winit_has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
-  match (try! world.entity(entity).get() : @window.PrimaryMonitor?) {
+  match
+    (world.entity(entity).get() catch { _ => None } : @window.PrimaryMonitor?) {
     Some(_) => true
     None => false
   }

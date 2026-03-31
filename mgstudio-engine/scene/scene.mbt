@@ -1004,7 +1004,11 @@ fn scene_spawn_instance_when_ready(
   }
 
   if scene.gltf_scene_extras is Some(scene_extras) &&
-    (try! world.entity(root_entity).get() : @gltf.GltfSceneExtras?) is None {
+    (
+      world.entity(root_entity).get() catch {
+        _ => None
+      } : @gltf.GltfSceneExtras?)
+    is None {
     try! world.set_by_key(
       root_entity,
       @gltf.GltfSceneExtras::component(),

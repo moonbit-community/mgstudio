@@ -111,7 +111,8 @@ fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit {
     (@ecs.Mut[@transform.Transform], @ecs.Mut[ObserverTarget]),
     @ecs.All,
   ] = world.query_filtered(@ecs.All::new())
-  if (try! query.get(world, entity)) is Some((transform_mut, target_mut)) {
+  let entity_data = query.get(world, entity) catch { _ => None }
+  if entity_data is Some((transform_mut, target_mut)) {
     let transform_ref = transform_mut.get_ref()
     let target_ref = target_mut.get_ref()
     if transform_ref.val.translation.x > OBSERVER_BOUND_X {

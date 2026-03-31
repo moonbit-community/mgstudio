@@ -311,7 +311,8 @@ fn setup_scene_once_loaded(
       @ecs.All,
     ] = world.query()
     try! visit_descendants(world, children_state, scene_entity, fn(descendant) {
-      guard (try! players_state.get(world, descendant)) is Some(player_mut) else {
+      guard (players_state.get(world, descendant) catch { _ => None })
+        is Some(player_mut) else {
         return
       }
       let player_ref = player_mut.get_ref()

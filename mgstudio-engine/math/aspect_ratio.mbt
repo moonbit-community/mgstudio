@@ -43,24 +43,24 @@ pub fn AspectRatio::ultrawide() -> AspectRatio {
 pub fn AspectRatio::try_new(
   width : Float,
   height : Float,
-) -> Result[AspectRatio, AspectRatioError] {
+) -> AspectRatio raise AspectRatioError {
   if width == 0.0F || height == 0.0F {
-    return Err(AspectRatioError::Zero)
+    raise AspectRatioError::Zero
   }
   if width.is_nan() || height.is_nan() {
-    return Err(AspectRatioError::NaN)
+    raise AspectRatioError::NaN
   }
   if width.is_inf() || height.is_inf() {
-    return Err(AspectRatioError::Infinite)
+    raise AspectRatioError::Infinite
   }
-  Ok(AspectRatio::{ value: width / height })
+  AspectRatio::{ value: width / height }
 }
 
 ///|
 pub fn AspectRatio::try_from_pixels(
   x : Int,
   y : Int,
-) -> Result[AspectRatio, AspectRatioError] {
+) -> AspectRatio raise AspectRatioError {
   AspectRatio::try_new(
     Float::from_double(x.to_double()),
     Float::from_double(y.to_double()),
@@ -95,6 +95,6 @@ pub fn AspectRatio::is_square(self : AspectRatio) -> Bool {
 ///|
 pub fn aspect_ratio_try_from_vec2(
   value : Vec2,
-) -> Result[AspectRatio, AspectRatioError] {
+) -> AspectRatio raise AspectRatioError {
   AspectRatio::try_new(value.x, value.y)
 }

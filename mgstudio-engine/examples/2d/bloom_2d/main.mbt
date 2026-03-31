@@ -286,11 +286,13 @@ fn update_bloom_settings(
 ) -> Unit {
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
 
-  let tonemapping = match (try! tonemapping_query.get(camera_entity)) {
+  let tonemapping = match
+    (tonemapping_query.get(camera_entity) catch { _ => None }) {
     Some(mode) => mode.value()
     None => @sprite.Tonemapping::TonyMcMapface
   }
-  let current_bloom = match (try! bloom_query.get(camera_entity)) {
+  let current_bloom = match
+    (bloom_query.get(camera_entity) catch { _ => None }) {
     Some(value) => Some(value.value())
     None => None
   }

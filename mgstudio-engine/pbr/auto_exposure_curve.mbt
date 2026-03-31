@@ -24,10 +24,7 @@ pub(all) suberror AutoExposureCompensationCurveError {
 
 ///|
 pub(open) trait AutoExposureCompensationCurveSource {
-  to_auto_exposure_curve(self : Self) -> Result[
-    @math.CubicCurve[@math.Vec2],
-    @math.InsufficientDataError,
-  ]
+  to_auto_exposure_curve(self : Self) -> @math.CubicCurve[@math.Vec2] raise @math.InsufficientDataError
 }
 
 ///|
@@ -41,7 +38,7 @@ pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2] 
 pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2] with to_auto_exposure_curve(
   self,
 ) {
-  Ok(self)
+  self
 }
 
 ///|
@@ -67,12 +64,12 @@ pub fn AutoExposureCompensationCurve::default() -> AutoExposureCompensationCurve
 ///|
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(
   curve : T,
-) -> Result[AutoExposureCompensationCurve, AutoExposureCompensationCurveError] {
-  guard curve.to_auto_exposure_curve() is Ok(curve_value) else {
-    return Err(InvalidCurve)
+) -> AutoExposureCompensationCurve raise AutoExposureCompensationCurveError {
+  let curve_value = curve.to_auto_exposure_curve() catch {
+    _ => raise InvalidCurve
   }
   if curve_value.segments().length() == 0 {
-    return Err(InvalidCurve)
+    raise InvalidCurve
   }
   let min_log_lum = curve_value.position(0.0F).x
   let max_log_lum = curve_value.position(
@@ -80,7 +77,7 @@ pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::f
     ).x
   let log_lum_range = max_log_lum - min_log_lum
   if log_lum_range <= 0.0F {
-    return Err(NotMonotonic)
+    raise NotMonotonic
   }
   let lut_values : Array[Float] = []
   for _ in 0..<AUTO_EXPOSURE_COMPENSATION_CURVE_LUT_SIZE {
@@ -91,14 +88,14 @@ pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::f
   let mut max_compensation = previous.y
   for segment in curve_value.segments() {
     if !auto_exposure_curve_vec2_eq(segment.position(0.0F), previous) {
-      return Err(DiscontinuityFound)
+      raise DiscontinuityFound
     }
     for sample_index in 1..<64 {
       let current = segment.position(
         Float::from_double(sample_index.to_double()) / 63.0F,
       )
       if current.x < previous.x {
-        return Err(NotMonotonic)
+        raise NotMonotonic
       }
       let lut_begin = (previous.x - min_log_lum) /
         log_lum_range *
@@ -149,13 +146,13 @@ pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::f
   } else {
     Bytes::makei(AUTO_EXPOSURE_COMPENSATION_CURVE_LUT_SIZE, _ => 0)
   }
-  Ok(AutoExposureCompensationCurve::{
+  AutoExposureCompensationCurve::{
     min_log_lum,
     max_log_lum,
     min_compensation,
     max_compensation,
     lut,
-  })
+  }
 }
 
 ///|

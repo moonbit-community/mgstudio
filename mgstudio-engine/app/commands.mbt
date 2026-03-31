@@ -357,7 +357,7 @@ pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
   self.queue.push({
     run: fn(world : @ecs.World, _sequence : @core.Sequence) {
-      ignore(try? world.remove_resource(key))
+      ignore(world.remove_resource(key) catch { _ => None })
     },
     error_handler: None,
     source: "Commands::remove_resource",
@@ -371,7 +371,7 @@ pub fn[T] Commands::remove_world_resource(
 ) -> Unit {
   self.queue.push({
     run: fn(world : @ecs.World, _sequence : @core.Sequence) {
-      ignore(try? world.remove_resource(key))
+      ignore(world.remove_resource(key) catch { _ => None })
     },
     error_handler: None,
     source: "Commands::remove_world_resource",

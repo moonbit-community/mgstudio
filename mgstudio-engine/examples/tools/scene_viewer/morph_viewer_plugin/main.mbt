@@ -111,11 +111,12 @@ fn play_animation_when_ready(
   animations_to_play : @ecs.Query[@ecs.Comp[AnimationToPlay], @ecs.All],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (try! animations_to_play.get(scene_ready.entity))
+  guard (animations_to_play.get(scene_ready.entity) catch { _ => None })
     is Some(animation_to_play) else {
     return
   }
-  guard (try! players.get(scene_ready.entity)) is Some(player_mut) else {
+  guard (players.get(scene_ready.entity) catch { _ => None })
+    is Some(player_mut) else {
     return
   }
   player_mut.get_ref().val.play(animation_to_play.value().index).repeat()

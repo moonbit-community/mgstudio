@@ -135,11 +135,12 @@ test "naga_oil: metadata parser matches upstream bevy path import usage shape" {
 
 ///|
 test "naga_oil: preprocess strips imports and records used import offsets" {
-  let result = @naga_oil.Preprocessor::default().preprocess(
+  let output = @naga_oil.Preprocessor::default().preprocess(
     "#import bevy_render::view::View\nfn main(view: View) -> View {\n  return view;\n}\n",
     empty_shader_defs(),
-  )
-  guard result is Ok(output) else { abort("expected preprocess success") }
+  ) catch {
+    _ => abort("expected preprocess success")
+  }
   inspect(output.imports.length(), content="1")
   inspect(output.imports[0].definition.import_path, content="bevy_render::view")
   inspect(output.imports[0].definition.items[0], content="View")
@@ -150,12 +151,11 @@ test "naga_oil: preprocess strips imports and records used import offsets" {
 ///|
 test "naga_oil: preprocess follows else-ifdef fallback semantics" {
   let source = "\nstruct View {\n    view_proj: mat4x4<f32>,\n    world_position: vec3<f32>,\n};\n@group(0) @binding(0)\nvar<uniform> view: View;\n\n#ifdef TEXTURE\n@group(1) @binding(0)\nvar sprite_texture: texture_2d<f32>;\n#else ifdef SECOND_TEXTURE\n@group(1) @binding(0)\nvar sprite_texture: texture_2d<f32>;\n#else\n@group(1) @binding(0)\nvar sprite_texture: texture_2d_array<f32>;\n#endif\n"
-  let fallback = @naga_oil.Preprocessor::default().preprocess(
+  let fallback_output = @naga_oil.Preprocessor::default().preprocess(
     source,
     empty_shader_defs(),
-  )
-  guard fallback is Ok(fallback_output) else {
-    abort("expected fallback preprocess success")
+  ) catch {
+    _ => abort("expected fallback preprocess success")
   }
   inspect(
     fallback_output.preprocessed_source.contains("texture_2d_array<f32>;"),
@@ -166,12 +166,11 @@ test "naga_oil: preprocess follows else-ifdef fallback semantics" {
     content="false",
   )
 
-  let first_clause = @naga_oil.Preprocessor::default().preprocess(
+  let first_clause_output = @naga_oil.Preprocessor::default().preprocess(
     source,
     bool_shader_def("TEXTURE", true),
-  )
-  guard first_clause is Ok(first_clause_output) else {
-    abort("expected first-clause preprocess success")
+  ) catch {
+    _ => abort("expected first-clause preprocess success")
   }
   inspect(
     first_clause_output.preprocessed_source.contains("texture_2d<f32>;"),
@@ -187,12 +186,11 @@ test "naga_oil: preprocess follows else-ifdef fallback semantics" {
 test "naga_oil: preprocess applies module defines to output" {
   let source = "#define DEFUINT 1\n#define DEFINT -1\n#define DEFBOOL false\n#if DEFUINT == 1\nuint: #DEFUINT\n#endif\n#if DEFINT == -1\nint: #DEFINT\n#endif\n#if DEFBOOL == false\nbool: #DEFBOOL\n#endif\n"
   let metadata = @naga_oil.get_preprocessor_metadata(source)
-  let result = @naga_oil.Preprocessor::default().preprocess(
+  let output = @naga_oil.Preprocessor::default().preprocess(
     source,
     metadata.defines,
-  )
-  guard result is Ok(output) else {
-    abort("expected preprocess success with module defines")
+  ) catch {
+    _ => abort("expected preprocess success with module defines")
   }
   inspect(output.preprocessed_source.contains("uint: 1"), content="true")
   inspect(output.preprocessed_source.contains("int: -1"), content="true")

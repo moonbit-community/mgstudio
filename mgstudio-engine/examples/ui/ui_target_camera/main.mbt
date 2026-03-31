@@ -144,12 +144,14 @@ fn update_camera_orders(
     let (interaction, box) = data
     guard interaction.value() == @ui.Interaction::Pressed else { return }
     let box = box.value()
-    guard (try! cameras.get(box.camera_entity)) is Some(camera) else { return }
+    guard (cameras.get(box.camera_entity) catch { _ => None }) is Some(camera) else {
+      return
+    }
     let camera_ref = camera.get_ref()
     let next_order = camera_ref.val.order + delta
     camera_ref.val = camera_ref.val.with_order(next_order)
 
-    if (try! texts.get(box.label_entity)) is Some(label_text) {
+    if (texts.get(box.label_entity) catch { _ => None }) is Some(label_text) {
       label_text.get_ref().val.content = next_order.to_string()
     }
   })

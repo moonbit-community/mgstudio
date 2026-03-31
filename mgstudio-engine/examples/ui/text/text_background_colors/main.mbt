@@ -86,7 +86,8 @@ fn setup(commands : @app.Commands) -> Unit {
         _pointer : @app.OnPointer[@app.PointerEnter],
         query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
       ) {
-        if (try! query.get(span)) is Some(text_color) {
+        let text_color = query.get(span) catch { _ => None }
+        if text_color is Some(text_color) {
           text_color.get_ref().val = @text.TextColor::white()
         }
       })
@@ -94,7 +95,8 @@ fn setup(commands : @app.Commands) -> Unit {
         _pointer : @app.OnPointer[@app.PointerLeave],
         query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
       ) {
-        if (try! query.get(span)) is Some(text_color) {
+        let text_color = query.get(span) catch { _ => None }
+        if text_color is Some(text_color) {
           text_color.get_ref().val = @text.TextColor::black()
         }
       }),
@@ -115,12 +117,15 @@ fn cycle_text_background_colors(
   ],
 ) -> Unit {
   let n = time.get().elapsed_secs().to_int()
-  guard (try! children_query.single()) is Some(children_comp) else { return }
+  let children_comp = children_query.single() catch { _ => None }
+  guard children_comp is Some(children_comp) else { return }
   let children = children_comp.value()
   let entities = children.entities()
   for i in 0..<entities.length() {
-    if (try! text_background_colors_query.get(entities[i]))
-      is Some(background_color) {
+    let background_color = text_background_colors_query.get(entities[i]) catch {
+      _ => None
+    }
+    if background_color is Some(background_color) {
       background_color.get_ref().val = @text.TextBackgroundColor::new(
         palette_color(i + n),
       )

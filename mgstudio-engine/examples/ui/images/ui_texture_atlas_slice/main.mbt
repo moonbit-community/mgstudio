@@ -102,7 +102,9 @@ fn button_system(
     if child_entities.length() == 0 {
       return
     }
-    guard (try! texts.get(child_entities[0])) is Some(text) else { return }
+    guard (texts.get(child_entities[0]) catch { _ => None }) is Some(text) else {
+      return
+    }
     match interaction.value() {
       @ui.Interaction::Pressed => {
         text.get_ref().val.content = "Press"

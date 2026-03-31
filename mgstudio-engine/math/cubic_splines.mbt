@@ -136,9 +136,9 @@ pub fn[P] LinearSpline::new(control_points : Array[P]) -> LinearSpline[P] {
 ///|
 pub fn[P : SplinePoint] LinearSpline::to_curve(
   self : LinearSpline[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   if self.control_points.length() < 2 {
-    return Err(InsufficientData(2, self.control_points.length()))
+    raise InsufficientData(2, self.control_points.length())
   }
   let segment_count = self.control_points.length() - 1
   let segments : Array[CubicSegment[P]] = []
@@ -152,15 +152,15 @@ pub fn[P : SplinePoint] LinearSpline::to_curve(
       coeff3: P::zero(),
     })
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
 pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(
   self : LinearSpline[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   if self.control_points.length() < 2 {
-    return Err(InsufficientData(2, self.control_points.length()))
+    raise InsufficientData(2, self.control_points.length())
   }
   let segments : Array[CubicSegment[P]] = []
   for index in 0..<self.control_points.length() {
@@ -173,7 +173,7 @@ pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(
       coeff3: P::zero(),
     })
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
@@ -429,10 +429,10 @@ pub fn[P : SplinePoint] CubicCurve::iter_accelerations(
 ///|
 pub fn[P : SplinePoint] CubicHermite::to_curve(
   self : CubicHermite[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   let count = self.control_points.length()
   if count < 2 {
-    return Err(InsufficientData(2, count))
+    raise InsufficientData(2, count)
   }
   let segments : Array[CubicSegment[P]] = []
   let row0 = (1.0F, 0.0F, 0.0F, 0.0F)
@@ -455,16 +455,16 @@ pub fn[P : SplinePoint] CubicHermite::to_curve(
       ),
     )
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
 pub fn[P : SplinePoint] CubicHermite::to_curve_cyclic(
   self : CubicHermite[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   let count = self.control_points.length()
   if count < 2 {
-    return Err(InsufficientData(2, count))
+    raise InsufficientData(2, count)
   }
   let segments : Array[CubicSegment[P]] = []
   let row0 = (1.0F, 0.0F, 0.0F, 0.0F)
@@ -487,16 +487,16 @@ pub fn[P : SplinePoint] CubicHermite::to_curve_cyclic(
       ),
     )
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
 pub fn[P : SplinePoint] CubicCardinalSpline::to_curve(
   self : CubicCardinalSpline[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   let count = self.control_points.length()
   if count < 2 {
-    return Err(InsufficientData(2, count))
+    raise InsufficientData(2, count)
   }
   let p0 = self.control_points[0]
   let p1 = self.control_points[1]
@@ -532,16 +532,16 @@ pub fn[P : SplinePoint] CubicCardinalSpline::to_curve(
       cubic_segment_coefficients(a, b, c, d, row0, row1, row2, row3),
     )
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
 pub fn[P : SplinePoint] CubicCardinalSpline::to_curve_cyclic(
   self : CubicCardinalSpline[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   let count = self.control_points.length()
   if count < 2 {
-    return Err(InsufficientData(2, count))
+    raise InsufficientData(2, count)
   }
   let row0 = (0.0F, 1.0F, 0.0F, 0.0F)
   let row1 = (-self.tension, 0.0F, self.tension, 0.0F)
@@ -584,16 +584,16 @@ pub fn[P : SplinePoint] CubicCardinalSpline::to_curve_cyclic(
       ),
     )
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
 pub fn[P : SplinePoint] CubicBSpline::to_curve(
   self : CubicBSpline[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   let count = self.control_points.length()
   if count < 4 {
-    return Err(InsufficientData(4, count))
+    raise InsufficientData(4, count)
   }
   let row0 = (1.0F / 6.0F, 4.0F / 6.0F, 1.0F / 6.0F, 0.0F)
   let row1 = (-3.0F / 6.0F, 0.0F, 3.0F / 6.0F, 0.0F)
@@ -614,16 +614,16 @@ pub fn[P : SplinePoint] CubicBSpline::to_curve(
       ),
     )
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|
 pub fn[P : SplinePoint] CubicBSpline::to_curve_cyclic(
   self : CubicBSpline[P],
-) -> Result[CubicCurve[P], InsufficientDataError] {
+) -> CubicCurve[P] raise InsufficientDataError {
   let count = self.control_points.length()
   if count < 2 {
-    return Err(InsufficientData(2, count))
+    raise InsufficientData(2, count)
   }
   let row0 = (1.0F / 6.0F, 4.0F / 6.0F, 1.0F / 6.0F, 0.0F)
   let row1 = (-3.0F / 6.0F, 0.0F, 3.0F / 6.0F, 0.0F)
@@ -644,7 +644,7 @@ pub fn[P : SplinePoint] CubicBSpline::to_curve_cyclic(
       ),
     )
   }
-  Ok(CubicCurve::{ segments, })
+  CubicCurve::{ segments, }
 }
 
 ///|

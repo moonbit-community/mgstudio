@@ -172,7 +172,7 @@ fn spawn_help_overlay(
 fn player_translation(
   player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
 ) -> @math.Vec2? {
-  match (try! player_query.single()) {
+  match (player_query.single() catch { _ => None }) {
     Some(transform) => {
       let value = transform.value()
       Some(@math.Vec2::new(value.translation.x, value.translation.y))

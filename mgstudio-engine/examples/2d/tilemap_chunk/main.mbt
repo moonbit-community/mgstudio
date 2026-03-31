@@ -196,7 +196,9 @@ fn spawn_fake_player(
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
   chunks : @ecs.Query[@ecs.Comp[@sprite.TilemapChunk], @ecs.All],
 ) -> Unit {
-  guard (try! chunks.single()) is Some(chunk_comp) else { return }
+  guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {
+    return
+  }
   let chunk = chunk_comp.value()
   spawn_player(
     commands,
@@ -215,7 +217,9 @@ fn move_player(
   time : @app.Res[@time.Time[Unit]],
   chunks : @ecs.Query[@ecs.Comp[@sprite.TilemapChunk], @ecs.All],
 ) -> Unit {
-  guard (try! chunks.single()) is Some(chunk_comp) else { return }
+  guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {
+    return
+  }
   let chunk = chunk_comp.value()
 
   let t = (@math.sin(time.get().elapsed_secs()) + 1.0F) / 2.0F
@@ -247,7 +251,7 @@ fn update_tilemap(
     }
 
     ignore(
-      if (try! tile_data_query.get(entity)) is Some(tile_data) {
+      if (tile_data_query.get(entity) catch { _ => None }) is Some(tile_data) {
         let tile_data_ref = tile_data.get_ref()
         let tile_count = tile_data_ref.val.tile_data.length()
         if tile_count == 0 {

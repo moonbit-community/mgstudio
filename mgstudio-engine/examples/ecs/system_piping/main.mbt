@@ -19,8 +19,14 @@ struct Message {
 
 ///|
 struct OptionalWarning {
-  value : Result[Unit, String]
+  value : String?
 }
+
+///|
+enum ParseOutcome {
+  Parsed(Int)
+  ParseError(String)
+} derive(Show)
 
 ///|
 let message_resource_key : @ecs.ResourceKey[Message] = @ecs.register_resource(
@@ -43,34 +49,32 @@ impl @app.Resource for OptionalWarning with resource() {
 }
 
 ///|
-fn parse_message(text : String) -> Result[Int, String] {
+fn parse_message(text : String) -> ParseOutcome {
   try @string.parse_int(text[:], base=10) catch {
-    _ => Err("failed to parse message: " + text)
+    _ => ParseError("failed to parse message: " + text)
   } noraise {
-    value => Ok(value)
+    value => Parsed(value)
   }
 }
 
 ///|
-fn parse_message_system(message : @app.Res[Message]) -> Result[Int, String] {
+fn parse_message_system(message : @app.Res[Message]) -> ParseOutcome {
   parse_message(message.get().value)
 }
 
 ///|
-fn parse_error_message_system(
-  message : @app.Res[Message],
-) -> Result[Unit, String] {
+fn parse_error_message_system(message : @app.Res[Message]) -> String? {
   match parse_message(message.get().value) {
-    Ok(_) => Ok(())
-    Err(err) => Err(err)
+    Parsed(_) => None
+    ParseError(err) => Some(err)
   }
 }
 
 ///|
-fn handler_system(result : @app.In[Result[Int, String]]) -> Unit {
+fn handler_system(result : @app.In[ParseOutcome]) -> Unit {
   match result.get() {
-    Ok(value) => println("parsed message: " + value.to_string())
-    Err(err) => println("encountered an error: " + err)
+    Parsed(value) => println("parsed message: " + value.to_string())
+    ParseError(err) => println("encountered an error: " + err)
   }
 }
 
@@ -80,9 +84,7 @@ fn data_pipe_system(message : @app.Res[Message]) -> String {
 }
 
 ///|
-fn warning_pipe_system(
-  warning : @app.Res[OptionalWarning],
-) -> Result[Unit, String] {
+fn warning_pipe_system(warning : @app.Res[OptionalWarning]) -> String? {
   warning.get().value
 }
 
@@ -92,26 +94,26 @@ fn print_info(output : String) -> Unit {
 }
 
 ///|
-fn print_debug(result : Result[Int, String]) -> Unit {
+fn print_debug(result : ParseOutcome) -> Unit {
   @app.log_debug(result.to_string())
 }
 
 ///|
-fn print_warning(result : Result[Unit, String]) -> Unit {
-  if result is Err(err) {
+fn print_warning(warning : String?) -> Unit {
+  if warning is Some(err) {
     @app.log_error(err)
   }
 }
 
 ///|
-fn print_parse_error(result : Result[Unit, String]) -> Unit {
-  if result is Err(err) {
+fn print_parse_error(result : String?) -> Unit {
+  if result is Some(err) {
     @app.log_error(err)
   }
 }
 
 ///|
-fn drop_parsed_message(_result : Result[Int, String]) -> Unit {
+fn drop_parsed_message(_result : ParseOutcome) -> Unit {
 
 }
 
@@ -146,7 +148,7 @@ fn main {
     @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
   ])
   .insert_resource(Message::{ value: "42" })
-  .insert_resource(OptionalWarning::{ value: Err("Got to rusty?") })
+  .insert_resource(OptionalWarning::{ value: Some("Got to rusty?") })
   .add_systems(@app.Update, update_chain)
   .run()
 }

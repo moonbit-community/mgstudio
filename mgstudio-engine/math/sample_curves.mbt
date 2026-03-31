@@ -23,11 +23,9 @@ pub fn[T] SampleCurve::new(
   domain : Interval,
   samples : Array[T],
   interpolation : (T, T, Float) -> T,
-) -> Result[SampleCurve[T], EvenCoreError] {
-  match EvenCore::new(domain, samples) {
-    Ok(core) => Ok(SampleCurve::{ core, interpolation })
-    Err(err) => Err(err)
-  }
+) -> SampleCurve[T] raise EvenCoreError {
+  let core = EvenCore::new(domain, samples)
+  SampleCurve::{ core, interpolation }
 }
 
 ///|
@@ -68,11 +66,9 @@ pub struct SampleAutoCurve[T] {
 pub fn[T] SampleAutoCurve::new(
   domain : Interval,
   samples : Array[T],
-) -> Result[SampleAutoCurve[T], EvenCoreError] {
-  match EvenCore::new(domain, samples) {
-    Ok(core) => Ok(SampleAutoCurve::{ core, })
-    Err(err) => Err(err)
-  }
+) -> SampleAutoCurve[T] raise EvenCoreError {
+  let core = EvenCore::new(domain, samples)
+  SampleAutoCurve::{ core, }
 }
 
 ///|
@@ -125,11 +121,9 @@ pub struct UnevenSampleCurve[T] {
 pub fn[T] UnevenSampleCurve::new(
   sample_points : Array[(Float, T)],
   interpolation : (T, T, Float) -> T,
-) -> Result[UnevenSampleCurve[T], UnevenCoreError] {
-  match UnevenCore::new(sample_points) {
-    Ok(core) => Ok(UnevenSampleCurve::{ core, interpolation })
-    Err(err) => Err(err)
-  }
+) -> UnevenSampleCurve[T] raise UnevenCoreError {
+  let core = UnevenCore::new(sample_points)
+  UnevenSampleCurve::{ core, interpolation }
 }
 
 ///|

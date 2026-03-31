@@ -754,7 +754,7 @@ fn primary_window_size(
     @ecs.With[@window.PrimaryWindow],
   ],
 ) -> @math.Vec2 {
-  if (try! windows.single()) is Some(window_comp) {
+  if (windows.single() catch { _ => None }) is Some(window_comp) {
     let window = window_comp.value()
     @math.Vec2::new(
       max_float(window.width(), 1.0F),

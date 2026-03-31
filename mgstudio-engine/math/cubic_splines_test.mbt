@@ -33,7 +33,7 @@ test "math: cubic hermite passes through endpoints" {
     [Vec2::new(0.0F, 0.0F), Vec2::new(2.0F, 1.0F)],
     [Vec2::new(1.0F, 0.0F), Vec2::new(1.0F, 0.0F)],
   )
-  guard spline.to_curve() is Ok(curve) else { abort("expected hermite curve") }
+  let curve = spline.to_curve() catch { _ => abort("expected hermite curve") }
   inspect(curve.segments().length(), content="1")
   approx_vec2(curve.position(0.0F), Vec2::new(0.0F, 0.0F))
   approx_vec2(curve.position(1.0F), Vec2::new(2.0F, 1.0F))
@@ -47,7 +47,7 @@ test "math: catmull-rom cardinal spline interpolates every control point" {
     Vec2::new(2.0F, 0.0F),
     Vec2::new(3.0F, 0.0F),
   ])
-  guard spline.to_curve() is Ok(curve) else { abort("expected cardinal curve") }
+  let curve = spline.to_curve() catch { _ => abort("expected cardinal curve") }
   inspect(curve.segments().length(), content="3")
   approx_vec2(curve.position(0.0F), Vec2::new(0.0F, 0.0F))
   approx_vec2(curve.position(1.0F), Vec2::new(1.0F, 0.0F))
@@ -63,8 +63,8 @@ test "math: cyclic catmull-rom keeps first segment on first control edge" {
     Vec2::new(2.0F, 0.0F),
     Vec2::new(3.0F, 0.0F),
   ])
-  guard spline.to_curve_cyclic() is Ok(curve) else {
-    abort("expected cyclic cardinal curve")
+  let curve = spline.to_curve_cyclic() catch {
+    _ => abort("expected cyclic cardinal curve")
   }
   inspect(curve.segments().length(), content="4")
   approx_vec2(curve.position(0.0F), Vec2::new(0.0F, 0.0F))
@@ -79,7 +79,7 @@ test "math: cubic b-spline uses Bevy-aligned uniform endpoint positions" {
     Vec2::new(2.0F, 0.0F),
     Vec2::new(3.0F, 0.0F),
   ])
-  guard spline.to_curve() is Ok(curve) else { abort("expected b-spline curve") }
+  let curve = spline.to_curve() catch { _ => abort("expected b-spline curve") }
   inspect(curve.segments().length(), content="1")
   approx_vec2(curve.position(0.0F), Vec2::new(1.0F, 0.0F))
   approx_vec2(curve.position(1.0F), Vec2::new(2.0F, 0.0F))
@@ -91,7 +91,7 @@ test "math: cubic curve iter_positions includes both endpoints" {
     [Vec2::new(0.0F, 0.0F), Vec2::new(1.0F, 0.0F)],
     [Vec2::new(1.0F, 0.0F), Vec2::new(1.0F, 0.0F)],
   )
-  guard spline.to_curve() is Ok(curve) else { abort("expected hermite curve") }
+  let curve = spline.to_curve() catch { _ => abort("expected hermite curve") }
   let samples = curve.iter_positions(4)
   inspect(samples.length(), content="5")
   approx_vec2(samples[0], Vec2::new(0.0F, 0.0F))
@@ -105,9 +105,14 @@ test "math: cubic b-spline reports insufficient data for fewer than four points"
     Vec2::new(1.0F, 0.0F),
     Vec2::new(2.0F, 0.0F),
   ])
-  guard spline.to_curve() is Err(InsufficientData(expected, given)) else {
-    abort("expected insufficient data")
-  }
-  inspect(expected, content="4")
-  inspect(given, content="3")
+  ignore(
+    spline.to_curve() catch {
+      InsufficientData(expected, given) => {
+        inspect(expected, content="4")
+        inspect(given, content="3")
+        return
+      }
+    },
+  )
+  abort("expected insufficient data")
 }

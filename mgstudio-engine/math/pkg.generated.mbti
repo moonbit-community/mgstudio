@@ -17,7 +17,7 @@ pub fn[T : Bounded3d] aabb_3d_of(T, Isometry3d) -> Aabb3d
 
 pub fn abs(Float) -> Float
 
-pub fn aspect_ratio_try_from_vec2(Vec2) -> Result[AspectRatio, AspectRatioError]
+pub fn aspect_ratio_try_from_vec2(Vec2) -> AspectRatio raise AspectRatioError
 
 pub fn atan2(Float, Float) -> Float
 
@@ -29,7 +29,7 @@ pub fn cos(Float) -> Float
 
 pub fn even_interp(Interval, Int, Float) -> InterpolationDatum[Int]
 
-pub fn interval(Float, Float) -> Result[Interval, InvalidIntervalError]
+pub fn interval(Float, Float) -> Interval raise InvalidIntervalError
 
 pub fn irect(IVec2, IVec2) -> IRect
 
@@ -213,8 +213,8 @@ pub fn AspectRatio::is_portrait(Self) -> Bool
 pub fn AspectRatio::is_square(Self) -> Bool
 pub fn AspectRatio::ratio(Self) -> Float
 pub fn AspectRatio::sixteen_nine() -> Self
-pub fn AspectRatio::try_from_pixels(Int, Int) -> Result[Self, AspectRatioError]
-pub fn AspectRatio::try_new(Float, Float) -> Result[Self, AspectRatioError]
+pub fn AspectRatio::try_from_pixels(Int, Int) -> Self raise AspectRatioError
+pub fn AspectRatio::try_new(Float, Float) -> Self raise AspectRatioError
 pub fn AspectRatio::ultrawide() -> Self
 
 pub struct BoundingCircle {
@@ -424,8 +424,8 @@ pub struct CubicBSpline[P] {
   control_points : Array[P]
 }
 pub fn[P] CubicBSpline::new(Array[P]) -> Self[P]
-pub fn[P : SplinePoint] CubicBSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
-pub fn[P : SplinePoint] CubicBSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] CubicBSpline::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : SplinePoint] CubicBSpline::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
 
 pub struct CubicCardinalSpline[P] {
   tension : Float
@@ -433,8 +433,8 @@ pub struct CubicCardinalSpline[P] {
 }
 pub fn[P] CubicCardinalSpline::new(Float, Array[P]) -> Self[P]
 pub fn[P] CubicCardinalSpline::new_catmull_rom(Array[P]) -> Self[P]
-pub fn[P : SplinePoint] CubicCardinalSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
-pub fn[P : SplinePoint] CubicCardinalSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] CubicCardinalSpline::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : SplinePoint] CubicCardinalSpline::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
 
 pub struct CubicCurve[P] {
   segments : Array[CubicSegment[P]]
@@ -458,8 +458,8 @@ pub struct CubicHermite[P] {
   control_points : Array[(P, P)]
 }
 pub fn[P] CubicHermite::new(Array[P], Array[P]) -> Self[P]
-pub fn[P : SplinePoint] CubicHermite::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
-pub fn[P : SplinePoint] CubicHermite::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] CubicHermite::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : SplinePoint] CubicHermite::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
 
 pub struct CubicSegment[P] {
   coeff0 : P
@@ -504,21 +504,21 @@ pub struct Curve[T] {
   domain_ : Interval
   sample_unchecked_fn : (Float) -> T
 }
-pub fn[T] Curve::chain(Self[T], Self[T]) -> Result[Self[T], CurveChainError]
+pub fn[T] Curve::chain(Self[T], Self[T]) -> Self[T] raise CurveChainError
 pub fn[T] Curve::domain(Self[T]) -> Interval
 pub fn[T] Curve::graph(Self[T]) -> Self[(Float, T)]
 pub fn[T, S] Curve::map(Self[T], (T) -> S) -> Self[S]
 pub fn[T] Curve::new(Interval, (Float) -> T) -> Self[T]
 pub fn[T] Curve::reparametrize(Self[T], Interval, (Float) -> Float) -> Self[T]
-pub fn[T] Curve::reparametrize_linear(Self[T], Interval) -> Result[Self[T], LinearMapError]
-pub fn[T] Curve::resample(Self[T], Int, (T, T, Float) -> T) -> Result[SampleCurve[T], EvenCoreError]
-pub fn[T] Curve::resample_auto(Self[T], Int) -> Result[SampleAutoCurve[T], EvenCoreError]
-pub fn[T] Curve::reverse(Self[T]) -> Result[Self[T], LinearMapError]
+pub fn[T] Curve::reparametrize_linear(Self[T], Interval) -> Self[T] raise LinearMapError
+pub fn[T] Curve::resample(Self[T], Int, (T, T, Float) -> T) -> SampleCurve[T] raise EvenCoreError
+pub fn[T] Curve::resample_auto(Self[T], Int) -> SampleAutoCurve[T] raise EvenCoreError
+pub fn[T] Curve::reverse(Self[T]) -> Self[T] raise LinearMapError
 pub fn[T] Curve::sample(Self[T], Float) -> T?
 pub fn[T] Curve::sample_clamped(Self[T], Float) -> T
 pub fn[T] Curve::sample_unchecked(Self[T], Float) -> T
-pub fn[T] Curve::samples(Self[T], Int) -> Result[Array[T], SpacedPointsError]
-pub fn[T, S] Curve::zip(Self[T], Self[S]) -> Result[Self[(T, S)], InvalidIntervalError]
+pub fn[T] Curve::samples(Self[T], Int) -> Array[T] raise SpacedPointsError
+pub fn[T, S] Curve::zip(Self[T], Self[S]) -> Self[(T, S)] raise InvalidIntervalError
 
 pub(all) struct Cylinder {
   radius : Float
@@ -541,10 +541,10 @@ pub struct Dir2 {
 pub fn Dir2::as_vec2(Self) -> Vec2
 pub fn Dir2::dot(Self, Self) -> Float
 pub fn Dir2::from_angle(Float) -> Self
-pub fn Dir2::from_xy(Float, Float) -> Result[Self, InvalidDirectionError]
+pub fn Dir2::from_xy(Float, Float) -> Self raise InvalidDirectionError
 pub fn Dir2::from_xy_unchecked(Float, Float) -> Self
-pub fn Dir2::new(Vec2) -> Result[Self, InvalidDirectionError]
-pub fn Dir2::new_and_length(Vec2) -> Result[(Self, Float), InvalidDirectionError]
+pub fn Dir2::new(Vec2) -> Self raise InvalidDirectionError
+pub fn Dir2::new_and_length(Vec2) -> (Self, Float) raise InvalidDirectionError
 pub fn Dir2::new_unchecked(Vec2) -> Self
 pub fn Dir2::x() -> Self
 pub fn Dir2::y() -> Self
@@ -555,10 +555,10 @@ pub struct Dir3 {
 }
 pub fn Dir3::as_vec3(Self) -> Vec3
 pub fn Dir3::dot(Self, Self) -> Float
-pub fn Dir3::from_xyz(Float, Float, Float) -> Result[Self, InvalidDirectionError]
+pub fn Dir3::from_xyz(Float, Float, Float) -> Self raise InvalidDirectionError
 pub fn Dir3::from_xyz_unchecked(Float, Float, Float) -> Self
-pub fn Dir3::new(Vec3) -> Result[Self, InvalidDirectionError]
-pub fn Dir3::new_and_length(Vec3) -> Result[(Self, Float), InvalidDirectionError]
+pub fn Dir3::new(Vec3) -> Self raise InvalidDirectionError
+pub fn Dir3::new_and_length(Vec3) -> (Self, Float) raise InvalidDirectionError
 pub fn Dir3::new_unchecked(Vec3) -> Self
 pub fn Dir3::x() -> Self
 pub fn Dir3::y() -> Self
@@ -659,7 +659,7 @@ pub struct EvenCore[T] {
   samples : Array[T]
 }
 pub fn[T] EvenCore::domain(Self[T]) -> Interval
-pub fn[T] EvenCore::new(Interval, Array[T]) -> Result[Self[T], EvenCoreError]
+pub fn[T] EvenCore::new(Interval, Array[T]) -> Self[T] raise EvenCoreError
 pub fn[T] EvenCore::sample_interp(Self[T], Float) -> InterpolationDatum[T]
 pub fn[T] EvenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
 
@@ -741,12 +741,12 @@ pub fn Interval::end_(Self) -> Float
 pub fn Interval::everywhere() -> Self
 pub fn Interval::has_finite_end(Self) -> Bool
 pub fn Interval::has_finite_start(Self) -> Bool
-pub fn Interval::intersect(Self, Self) -> Result[Self, InvalidIntervalError]
+pub fn Interval::intersect(Self, Self) -> Self raise InvalidIntervalError
 pub fn Interval::is_bounded(Self) -> Bool
 pub fn Interval::length(Self) -> Float
-pub fn Interval::linear_map_value_to(Self, Self, Float) -> Result[Float, LinearMapError]
-pub fn Interval::new(Float, Float) -> Result[Self, InvalidIntervalError]
-pub fn Interval::spaced_points(Self, Int) -> Result[Array[Float], SpacedPointsError]
+pub fn Interval::linear_map_value_to(Self, Self, Float) -> Float raise LinearMapError
+pub fn Interval::new(Float, Float) -> Self raise InvalidIntervalError
+pub fn Interval::spaced_points(Self, Int) -> Array[Float] raise SpacedPointsError
 pub fn Interval::start(Self) -> Float
 pub fn Interval::unit() -> Self
 
@@ -806,8 +806,8 @@ pub struct LinearSpline[P] {
   control_points : Array[P]
 }
 pub fn[P] LinearSpline::new(Array[P]) -> Self[P]
-pub fn[P : SplinePoint] LinearSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
-pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] LinearSpline::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
 
 pub struct Mat3 {
   x_axis : Vec3
@@ -1024,7 +1024,7 @@ pub struct SampleAutoCurve[T] {
   core : EvenCore[T]
 }
 pub fn[T] SampleAutoCurve::domain(Self[T]) -> Interval
-pub fn[T] SampleAutoCurve::new(Interval, Array[T]) -> Result[Self[T], EvenCoreError]
+pub fn[T] SampleAutoCurve::new(Interval, Array[T]) -> Self[T] raise EvenCoreError
 pub fn[T : StableInterpolate] SampleAutoCurve::sample(Self[T], Float) -> T?
 pub fn[T : StableInterpolate] SampleAutoCurve::sample_clamped(Self[T], Float) -> T
 pub fn[T : StableInterpolate] SampleAutoCurve::sample_unchecked(Self[T], Float) -> T
@@ -1035,7 +1035,7 @@ pub struct SampleCurve[T] {
   interpolation : (T, T, Float) -> T
 }
 pub fn[T] SampleCurve::domain(Self[T]) -> Interval
-pub fn[T] SampleCurve::new(Interval, Array[T], (T, T, Float) -> T) -> Result[Self[T], EvenCoreError]
+pub fn[T] SampleCurve::new(Interval, Array[T], (T, T, Float) -> T) -> Self[T] raise EvenCoreError
 pub fn[T] SampleCurve::sample(Self[T], Float) -> T?
 pub fn[T] SampleCurve::sample_clamped(Self[T], Float) -> T
 pub fn[T] SampleCurve::sample_unchecked(Self[T], Float) -> T
@@ -1172,7 +1172,7 @@ pub struct UnevenCore[T] {
   sample_points : Array[(Float, T)]
 }
 pub fn[T] UnevenCore::domain(Self[T]) -> Interval
-pub fn[T] UnevenCore::new(Array[(Float, T)]) -> Result[Self[T], UnevenCoreError]
+pub fn[T] UnevenCore::new(Array[(Float, T)]) -> Self[T] raise UnevenCoreError
 pub fn[T] UnevenCore::sample_interp(Self[T], Float) -> InterpolationDatum[(Float, T)]
 pub fn[T] UnevenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
 
@@ -1181,7 +1181,7 @@ pub struct UnevenSampleCurve[T] {
   interpolation : (T, T, Float) -> T
 }
 pub fn[T] UnevenSampleCurve::domain(Self[T]) -> Interval
-pub fn[T] UnevenSampleCurve::new(Array[(Float, T)], (T, T, Float) -> T) -> Result[Self[T], UnevenCoreError]
+pub fn[T] UnevenSampleCurve::new(Array[(Float, T)], (T, T, Float) -> T) -> Self[T] raise UnevenCoreError
 pub fn[T] UnevenSampleCurve::sample(Self[T], Float) -> T?
 pub fn[T] UnevenSampleCurve::sample_clamped(Self[T], Float) -> T
 pub fn[T] UnevenSampleCurve::sample_unchecked(Self[T], Float) -> T
@@ -1194,7 +1194,7 @@ pub struct UniformMeshSampler {
 }
 pub fn UniformMeshSampler::sample(Self, @random.Rand) -> Vec3
 pub fn UniformMeshSampler::sample_iter(Self, @random.Rand) -> Iter[Vec3]
-pub fn UniformMeshSampler::try_new(Array[Triangle3d]) -> Result[Self, UniformMeshSamplerError]
+pub fn UniformMeshSampler::try_new(Array[Triangle3d]) -> Self raise UniformMeshSamplerError
 
 pub(all) struct Vec2 {
   mut x : Float

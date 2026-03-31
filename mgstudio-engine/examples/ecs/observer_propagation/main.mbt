@@ -175,7 +175,7 @@ fn attack_hits(
   names : @ecs.Query[@ecs.Comp[@ecs.Name], @ecs.All],
 ) -> Unit {
   guard attack.entity() is Some(entity) else { return }
-  if (try! names.get(entity)) is Some(name_comp) {
+  if (names.get(entity) catch { _ => None }) is Some(name_comp) {
     @app.log_info("Attack hit " + name_comp.value().as_str())
   }
 }

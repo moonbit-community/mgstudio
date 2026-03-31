@@ -158,7 +158,8 @@ fn setup_scene_once_loaded(
   animations : @app.Res[Animations],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (try! players.get(scene_ready.entity)) is Some(player_mut) else {
+  guard (players.get(scene_ready.entity) catch { _ => None })
+    is Some(player_mut) else {
     return
   }
   let player_ref = player_mut.get_ref()

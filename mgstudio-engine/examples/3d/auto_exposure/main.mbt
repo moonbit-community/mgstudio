@@ -165,17 +165,15 @@ fn auto_exposure_curve_assets_ref_mut_or_abort(
 fn build_basic_compensation_curve(
   world : @ecs.World,
 ) -> @asset.Handle[@pbr.AutoExposureCompensationCurve] {
-  let curve = match
-    @pbr.AutoExposureCompensationCurve::from_curve(
-      @math.LinearSpline::new([
-        @math.Vec2::new(-4.0F, -2.0F),
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(2.0F, 0.0F),
-        @math.Vec2::new(4.0F, 2.0F),
-      ]),
-    ) {
-    Ok(value) => value
-    Err(err) =>
+  let curve = @pbr.AutoExposureCompensationCurve::from_curve(
+    @math.LinearSpline::new([
+      @math.Vec2::new(-4.0F, -2.0F),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(2.0F, 0.0F),
+      @math.Vec2::new(4.0F, 2.0F),
+    ]),
+  ) catch {
+    err =>
       abort(
         "Failed to build auto exposure compensation curve in example: " +
         auto_exposure_curve_error_message(err),

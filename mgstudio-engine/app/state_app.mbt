@@ -79,9 +79,11 @@ pub fn[S : States] insert_state_app(
     entered: Some(state),
     allow_same_state_transitions: true,
   })
-  let _ : Result[PreviousState[S]?, @ecs.EcsError] = try? app
-    .world()
-    .remove_resource(previous_state_resource_key(state))
+  ignore(
+    app.world().remove_resource(previous_state_resource_key(state)) catch {
+      _ => None
+    },
+  )
   app
 }
 

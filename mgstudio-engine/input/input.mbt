@@ -1532,7 +1532,8 @@ fn input_has_focused_window(world : @ecs.World) -> Bool {
   .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
   .view(fn(_query_entity, entity) { entities.push(entity) })
   for entity in entities {
-    if (try! world.entity(entity).get() : @window.Window?) is Some(window) {
+    if (world.entity(entity).get() catch { _ => None } : @window.Window?)
+      is Some(window) {
       if window.focused {
         return true
       }

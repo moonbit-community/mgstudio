@@ -33,10 +33,8 @@ fn composer_test_add_or_abort(
   composer : @naga_oil.Composer,
   desc : @naga_oil.ComposableModuleDescriptor,
 ) -> @naga_oil.ComposableModuleDefinition {
-  match composer.add_composable_module(desc) {
-    Ok(definition) => definition
-    Err(err) =>
-      abort("expected add_composable_module success: " + err.message())
+  composer.add_composable_module(desc) catch {
+    err => abort("expected add_composable_module success: " + err.message())
   }
 }
 
@@ -109,19 +107,23 @@ test "naga_oil: composer remove_composable_module removes dependent modules" {
 ///|
 test "naga_oil: composer rejects modules without an import path name" {
   let composer = @naga_oil.Composer::default()
-  let result = composer.add_composable_module(
-    composer_test_descriptor(
-      "fn shade() -> f32 {\n  return 1.0;\n}\n",
-      "tests/no_name.wgsl",
-      @hashmap.HashMap::new(),
+  let mut message : String? = None
+  ignore(
+    composer.add_composable_module(
+      composer_test_descriptor(
+        "fn shade() -> f32 {\n  return 1.0;\n}\n",
+        "tests/no_name.wgsl",
+        @hashmap.HashMap::new(),
+      ),
     ),
-  )
-  match result {
-    Ok(_) => abort("expected missing module-name error")
-    Err(err) =>
-      inspect(
-        err.message(),
-        content="shader module is missing #define_import_path: tests/no_name.wgsl",
-      )
+  ) catch {
+    err => message = Some(err.message())
   }
+  guard message is Some(error_message) else {
+    abort("expected missing module-name error")
+  }
+  inspect(
+    error_message,
+    content="shader module is missing #define_import_path: tests/no_name.wgsl",
+  )
 }

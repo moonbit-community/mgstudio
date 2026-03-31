@@ -143,10 +143,7 @@ pub fn ShaderCacheError::message(self : ShaderCacheError) -> String {
 ///|
 pub struct ShaderCache[ShaderModule, RenderDevice] {
   device : RenderDevice
-  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> Result[
-    ShaderModule,
-    ShaderCacheError,
-  ]
+  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> ShaderModule raise ShaderCacheError
   data : @hashmap.HashMap[Int, ShaderData[ShaderModule, Int]]
   shaders : @hashmap.HashMap[Int, Shader]
   import_path_shaders : @hashmap.HashMap[ShaderImport, @asset.AssetId[Shader]]
@@ -213,10 +210,7 @@ fn[ShaderModule, RenderDevice] shader_cache_clear(
 ///|
 pub fn[ShaderModule, RenderDevice] ShaderCache::new(
   device : RenderDevice,
-  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> Result[
-    ShaderModule,
-    ShaderCacheError,
-  ],
+  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> ShaderModule raise ShaderCacheError,
 ) -> ShaderCache[ShaderModule, RenderDevice] {
   {
     device,

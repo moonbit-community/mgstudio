@@ -182,7 +182,9 @@ fn alter_mesh(
   left_shape : @ecs.Query[@ecs.Comp[@pbr.Mesh3d], @ecs.With[Left]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
-  guard (try! left_shape.single()) is Some(mesh3d_comp) else { return }
+  guard (left_shape.single() catch { _ => None }) is Some(mesh3d_comp) else {
+    return
+  }
   let mesh3d = mesh3d_comp.value()
   let mesh_assets = meshes.get_ref().val
   guard mesh_assets.get_mut(mesh3d.mesh) is Some(mesh_asset) else { return }

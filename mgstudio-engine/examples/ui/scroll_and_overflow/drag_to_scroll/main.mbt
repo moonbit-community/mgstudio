@@ -159,19 +159,23 @@ fn start_drag(
   let state = drag_state.get_ref()
   state.val.active_entity = None
   let pointer_position = pointer.position()
-  try! scroll_nodes.view(fn(_entity, data) {
-    let ((entity, _marker), (relative_cursor_position, scroll_position)) = data
-    if state.val.active_entity is Some(_) {
-      return
-    }
-    if !relative_cursor_position.value().cursor_over() {
-      return
-    }
-    state.val.active_entity = Some(entity)
-    state.val.start_pointer = pointer_position
-    state.val.start_offset_x = scroll_position.value().offset_x
-    state.val.start_offset_y = scroll_position.value().offset_y
-  })
+  ignore(
+    scroll_nodes.view(fn(_entity, data) {
+      let ((entity, _marker), (relative_cursor_position, scroll_position)) = data
+      if state.val.active_entity is Some(_) {
+        return
+      }
+      if !relative_cursor_position.value().cursor_over() {
+        return
+      }
+      state.val.active_entity = Some(entity)
+      state.val.start_pointer = pointer_position
+      state.val.start_offset_x = scroll_position.value().offset_x
+      state.val.start_offset_y = scroll_position.value().offset_y
+    }) catch {
+      _ => ()
+    },
+  )
 }
 
 ///|
@@ -182,7 +186,8 @@ fn update_drag(
 ) -> Unit {
   let state = drag_state.get_ref()
   guard state.val.active_entity is Some(entity) else { return }
-  guard (try! scroll_positions.get(entity)) is Some(scroll_position) else {
+  let scroll_position = scroll_positions.get(entity) catch { _ => None }
+  guard scroll_position is Some(scroll_position) else {
     state.val.active_entity = None
     return
   }
@@ -199,10 +204,6 @@ fn update_drag(
 
 ///|
 fn end_drag(drag_state : @app.ResMut[ScrollDragState]) -> Unit {
-  if @app.current_world() is Some(world) {
-    let entity_query : @ecs.QueryState[@core.Entity, @ecs.All] = world.query()
-    ignore(try! entity_query.single(world))
-  }
   drag_state.get_ref().val.active_entity = None
 }
 

@@ -38,11 +38,11 @@ pub(all) struct Interval {
 pub fn Interval::new(
   start_ : Float,
   end_ : Float,
-) -> Result[Interval, InvalidIntervalError] {
+) -> Interval raise InvalidIntervalError {
   if start_ >= end_ || interval_is_nan(start_) || interval_is_nan(end_) {
-    Err(Invalid)
+    raise Invalid
   } else {
-    Ok(Interval::{ start_, end_ })
+    Interval::{ start_, end_ }
   }
 }
 
@@ -111,7 +111,7 @@ pub fn Interval::clamp(self : Interval, value : Float) -> Float {
 pub fn Interval::intersect(
   self : Interval,
   other : Interval,
-) -> Result[Interval, InvalidIntervalError] {
+) -> Interval raise InvalidIntervalError {
   let lower = interval_maxf(self.start_, other.start_)
   let upper = interval_minf(self.end_, other.end_)
   Interval::new(lower, upper)
@@ -121,22 +121,22 @@ pub fn Interval::intersect(
 pub fn Interval::spaced_points(
   self : Interval,
   points : Int,
-) -> Result[Array[Float], SpacedPointsError] {
+) -> Array[Float] raise SpacedPointsError {
   if !self.is_bounded() {
-    return Err(Unbounded)
+    raise Unbounded
   }
   if points <= 0 {
-    return Ok([])
+    return []
   }
   if points == 1 {
-    return Ok([self.start_])
+    return [self.start_]
   }
   let values : Array[Float] = []
   let step = self.length() / interval_float_from_int(points - 1)
   for index in 0..<points {
     values.push(self.start_ + interval_float_from_int(index) * step)
   }
-  Ok(values)
+  values
 }
 
 ///|
@@ -144,22 +144,22 @@ pub fn Interval::linear_map_value_to(
   self : Interval,
   other : Interval,
   value : Float,
-) -> Result[Float, LinearMapError] {
+) -> Float raise LinearMapError {
   if !self.is_bounded() {
-    return Err(SourceUnbounded)
+    raise SourceUnbounded
   }
   if !other.is_bounded() {
-    return Err(TargetUnbounded)
+    raise TargetUnbounded
   }
   let scale = other.length() / self.length()
-  Ok((value - self.start_) * scale + other.start_)
+  (value - self.start_) * scale + other.start_
 }
 
 ///|
 pub fn interval(
   start_ : Float,
   end_ : Float,
-) -> Result[Interval, InvalidIntervalError] {
+) -> Interval raise InvalidIntervalError {
   Interval::new(start_, end_)
 }
 

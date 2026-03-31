@@ -58,7 +58,8 @@ fn joint_animation(
   let angle = @math.pi_half() * @math.sin(time.get().elapsed_secs())
   try! skinned_mesh_parents.view(fn(_entity, parent_comp) {
     let mesh_node_entity = parent_comp.value().entity()
-    guard (try! parents.get(mesh_node_entity)) is Some(mesh_node_children_comp) else {
+    guard (parents.get(mesh_node_entity) catch { _ => None })
+      is Some(mesh_node_children_comp) else {
       return
     }
     let mesh_node_children = mesh_node_children_comp.value().entities()
@@ -66,7 +67,7 @@ fn joint_animation(
       return
     }
     let first_joint_entity = mesh_node_children[1]
-    guard (try! parents.get(first_joint_entity))
+    guard (parents.get(first_joint_entity) catch { _ => None })
       is Some(first_joint_children_comp) else {
       return
     }
@@ -75,7 +76,7 @@ fn joint_animation(
       return
     }
     let second_joint_entity = first_joint_children[0]
-    guard (try! transforms.get(second_joint_entity))
+    guard (transforms.get(second_joint_entity) catch { _ => None })
       is Some(second_joint_transform) else {
       return
     }

@@ -678,7 +678,8 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
     (@core.Entity, @ecs.Mut[@animation.AnimationPlayer]),
     @ecs.All,
   ] = @ecs.query(world)
-  guard (try! players.single()) is Some((player_entity, player_mut)) else {
+  guard (players.single() catch { _ => None })
+    is Some((player_entity, player_mut)) else {
     return
   }
 

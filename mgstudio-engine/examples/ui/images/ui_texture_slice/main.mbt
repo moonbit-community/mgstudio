@@ -90,7 +90,7 @@ fn button_system(
       return
     }
     let label = children[0]
-    guard (try! texts.get(label)) is Some(text) else { return }
+    guard (texts.get(label) catch { _ => None }) is Some(text) else { return }
     match interaction_comp.value() {
       @ui.Interaction::Pressed => {
         text.get_ref().val.content = "Press"

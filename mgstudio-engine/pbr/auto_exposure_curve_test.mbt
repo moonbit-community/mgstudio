@@ -14,15 +14,16 @@
 
 ///|
 test "render3d: auto exposure compensation curve matches Bevy linear spline defaults" {
-  let curve = AutoExposureCompensationCurve::from_curve(
+  let value = AutoExposureCompensationCurve::from_curve(
     @math.LinearSpline::new([
       @math.Vec2::new(-4.0F, -2.0F),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(2.0F, 0.0F),
       @math.Vec2::new(4.0F, 2.0F),
     ]),
-  )
-  guard curve is Ok(value) else { abort("expected valid compensation curve") }
+  ) catch {
+    _ => abort("expected valid compensation curve")
+  }
   inspect(value.min_log_lum, content="-4")
   inspect(value.max_log_lum, content="4")
   inspect(value.min_compensation, content="-2")
@@ -32,17 +33,16 @@ test "render3d: auto exposure compensation curve matches Bevy linear spline defa
 
 ///|
 test "render3d: auto exposure compensation curve rejects non-monotonic points" {
-  let curve = AutoExposureCompensationCurve::from_curve(
-    @math.LinearSpline::new([
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(-1.0F, 1.0F),
-    ]),
-  )
-  inspect(
-    match curve {
-      Err(NotMonotonic) => true
-      _ => false
+  ignore(
+    AutoExposureCompensationCurve::from_curve(
+      @math.LinearSpline::new([
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(-1.0F, 1.0F),
+      ]),
+    ) catch {
+      NotMonotonic => return inspect(true, content="true")
+      _ => return inspect(false, content="true")
     },
-    content="true",
   )
+  inspect(false, content="true")
 }

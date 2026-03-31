@@ -49,7 +49,7 @@ fn apply_health_decay(
   query : @ecs.Query[(@ecs.Comp[HealthDecay], @ecs.Mut[Health]), @ecs.All],
 ) -> Unit {
   guard query.contiguous_iter() is Some(iter) else { return }
-  while (try! iter.fetch_next()) is Some((decay, health)) {
+  while (iter.fetch_next() catch { _ => None }) is Some((decay, health)) {
     let health_ref = health.get_ref()
     health_ref.val.value = health_ref.val.value * decay.value().factor
   }

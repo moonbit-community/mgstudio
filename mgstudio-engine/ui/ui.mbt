@@ -2999,12 +2999,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       }
     }
 
-    let compute_res = try? taffy.compute_layout_with_measure(
-      root_node_id, avail, measure,
-    )
-    match compute_res {
-      Ok(_) => ()
-      Err(_) => return
+    taffy.compute_layout_with_measure(root_node_id, avail, measure) catch {
+      _ => return
     }
     fn apply_layout(entity : @core.Entity, parent_rect : @math.Rect) -> Unit {
       if ui_is_ghost_node(world, entity) {
@@ -3019,8 +3015,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       guard entity_to_node.get(entity_key(entity)) is Some(node_id) else {
         return
       }
-      let layout_res = try? taffy.layout(node_id)
-      guard layout_res is Ok(tl) else { return }
+      let tl = taffy.layout(node_id) catch { _ => return }
       let parent_origin = parent_rect.min
       let loc = @math.Vec2::new(d2f(tl.location.x), d2f(tl.location.y))
       let size = @math.Vec2::new(d2f(tl.size.width), d2f(tl.size.height))

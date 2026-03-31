@@ -162,7 +162,9 @@ fn alter_asset(
   images : @app.ResMut[@asset.Assets[@asset.Image]],
   left_bird : @ecs.Query[@ecs.Comp[@sprite.Sprite], @ecs.With[Left]],
 ) -> Unit {
-  guard (try! left_bird.single()) is Some(sprite_comp) else { return }
+  guard (left_bird.single() catch { _ => None }) is Some(sprite_comp) else {
+    return
+  }
   let sprite = sprite_comp.value()
   guard images.get_ref().val.get_mut(sprite.image) is Some(image) else {
     return

@@ -19,6 +19,18 @@ pub(all) enum AssetMode {
 } derive(Eq, Show)
 
 ///|
+pub(all) suberror AssetProcessError {
+  Message(String)
+}
+
+///|
+pub fn AssetProcessError::message(self : AssetProcessError) -> String {
+  match self {
+    Message(message) => message
+  }
+}
+
+///|
 pub struct ProcessedAsset[T] {
   asset : T
   saved_bytes : Bytes?
@@ -50,13 +62,13 @@ pub fn[T] ProcessedAsset::saved_bytes(self : ProcessedAsset[T]) -> Bytes? {
 ///|
 pub struct LoadTransformAndSave[T] {
   extensions : Array[String]
-  process : (AssetServer, AssetPath, Bytes) -> Result[ProcessedAsset[T], String]
+  process : (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError
 }
 
 ///|
 pub fn[T] LoadTransformAndSave::new(
   extensions : Array[String],
-  process : (AssetServer, AssetPath, Bytes) -> Result[ProcessedAsset[T], String],
+  process : (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError,
 ) -> LoadTransformAndSave[T] {
   LoadTransformAndSave::{ extensions, process }
 }
@@ -77,7 +89,7 @@ priv struct ProcessedAssetAny {
 ///|
 priv struct AssetProcessorEntry {
   extensions : Array[String]
-  process : (AssetServer, AssetPath, Bytes) -> Result[ProcessedAssetAny, String]
+  process : (AssetServer, AssetPath, Bytes) -> ProcessedAssetAny raise AssetProcessError
   insert : (@ecs.World, Int, @any.Any) -> Unit
 }
 
@@ -103,14 +115,11 @@ pub fn[T] register_asset_processor(
   }
   next_entries.push(AssetProcessorEntry::{
     extensions: processor.extensions,
-    process: fn(asset_server, path, bytes) {
-      match (processor.process)(asset_server, path, bytes) {
-        Ok(processed) =>
-          Ok(ProcessedAssetAny::{
-            asset: @any.of(processed.asset()),
-            saved_bytes: processed.saved_bytes(),
-          })
-        Err(err) => Err(err)
+    process: fn(asset_server, path, bytes) raise AssetProcessError {
+      let processed = (processor.process)(asset_server, path, bytes)
+      ProcessedAssetAny::{
+        asset: @any.of(processed.asset()),
+        saved_bytes: processed.saved_bytes(),
       }
     },
     insert: fn(world, handle_id, value_any) {
@@ -252,17 +261,18 @@ fn asset_process_pending_processed_asset_loads(
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
         let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))
-        match (entry.process)(asset_server, pending.path, bytes) {
-          Ok(processed) => {
-            (entry.insert)(world, pending.handle_id, processed.asset)
-            if processed.saved_bytes is Some(saved_bytes) {
-              if asset_processed_output_path(asset_server, pending.path)
-                is Some(output_path) {
-                host_asset_save_bytes(path=output_path, bytes=saved_bytes)
-              }
-            }
+        let processed = (entry.process)(asset_server, pending.path, bytes) catch {
+          _ => {
+            remaining.push(pending)
+            continue
           }
-          Err(_err) => remaining.push(pending)
+        }
+        (entry.insert)(world, pending.handle_id, processed.asset)
+        if processed.saved_bytes is Some(saved_bytes) {
+          if asset_processed_output_path(asset_server, pending.path)
+            is Some(output_path) {
+            host_asset_save_bytes(path=output_path, bytes=saved_bytes)
+          }
         }
       }
       None => remaining.push(pending)

@@ -20,7 +20,9 @@ fn spawn_text(
   asset_server : @app.Res[@asset.AssetServer],
   camera : @ecs.Query[@ecs.Comp[@sprite.PanCamera], @ecs.All],
 ) -> Unit {
-  guard (try! camera.single()) is Some(controller_comp) else { return }
+  guard (camera.single() catch { _ => None }) is Some(controller_comp) else {
+    return
+  }
   let controller = controller_comp.value()
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(

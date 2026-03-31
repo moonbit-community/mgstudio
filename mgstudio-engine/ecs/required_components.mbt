@@ -267,18 +267,12 @@ pub fn[T, R : Default] World::try_register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
-) -> Result[Unit, RequiredComponentsError] {
-  try
-    self.register_required_components_by_keys(
-      requiree_key.id(),
-      required_key.id(),
-      fn() { erased_value(R::default()) },
-    )
-  catch {
-    err => Err(err)
-  } noraise {
-    _ => Ok(())
-  }
+) -> Unit raise RequiredComponentsError {
+  self.register_required_components_by_keys(
+    requiree_key.id(),
+    required_key.id(),
+    fn() { erased_value(R::default()) },
+  )
 }
 
 ///|
@@ -287,18 +281,12 @@ pub fn[T, R] World::try_register_required_components_with(
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
   init : () -> R,
-) -> Result[Unit, RequiredComponentsError] {
-  try
-    self.register_required_components_by_keys(
-      requiree_key.id(),
-      required_key.id(),
-      fn() { erased_value(init()) },
-    )
-  catch {
-    err => Err(err)
-  } noraise {
-    _ => Ok(())
-  }
+) -> Unit raise RequiredComponentsError {
+  self.register_required_components_by_keys(
+    requiree_key.id(),
+    required_key.id(),
+    fn() { erased_value(init()) },
+  )
 }
 
 ///|

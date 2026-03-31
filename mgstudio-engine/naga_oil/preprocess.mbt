@@ -56,14 +56,14 @@ fn Scope::branch(
   is_else : Bool,
   condition : Bool,
   offset : Int,
-) -> Result[Unit, PreprocessError] {
+) -> Unit raise PreprocessError {
   if is_else {
     let previous_scope = self.levels.pop()
     guard previous_scope is Some(previous) else {
-      return Err(PreprocessError::ElseWithoutCondition(offset))
+      raise PreprocessError::ElseWithoutCondition(offset)
     }
     guard self.levels.length() > 0 else {
-      return Err(PreprocessError::ElseWithoutCondition(offset))
+      raise PreprocessError::ElseWithoutCondition(offset)
     }
     let parent_scope = self.levels[self.levels.length() - 1]
     let new_scope = if parent_scope != ScopeLevel::Active {
@@ -76,7 +76,7 @@ fn Scope::branch(
       ScopeLevel::NotActive
     }
     self.levels.push(new_scope)
-    return Ok(())
+    return ()
   }
   let parent_scope = if self.levels.is_empty() {
     ScopeLevel::Active
@@ -89,16 +89,16 @@ fn Scope::branch(
     ScopeLevel::NotActive
   }
   self.levels.push(new_scope)
-  Ok(())
+  ()
 }
 
 ///|
-fn Scope::pop(self : Scope, offset : Int) -> Result[Unit, PreprocessError] {
+fn Scope::pop(self : Scope, offset : Int) -> Unit raise PreprocessError {
   self.levels.pop() |> ignore
   if self.levels.is_empty() {
-    Err(PreprocessError::TooManyEndIfs(offset))
+    raise PreprocessError::TooManyEndIfs(offset)
   } else {
-    Ok(())
+    ()
   }
 }
 
@@ -108,11 +108,11 @@ fn Scope::active(self : Scope) -> Bool {
 }
 
 ///|
-fn Scope::finish(self : Scope, offset : Int) -> Result[Unit, PreprocessError] {
+fn Scope::finish(self : Scope, offset : Int) -> Unit raise PreprocessError {
   if self.levels.length() != 1 {
-    Err(PreprocessError::NotEnoughEndIfs(offset))
+    raise PreprocessError::NotEnoughEndIfs(offset)
   } else {
-    Ok(())
+    ()
   }
 }
 
@@ -303,15 +303,15 @@ fn compare_bool_values(
   rhs : Bool,
   operator : String,
   offset : Int,
-) -> Result[Bool, PreprocessError] {
+) -> Bool raise PreprocessError {
   match operator {
-    "==" => Ok(lhs == rhs)
-    "!=" => Ok(lhs != rhs)
-    ">" => Ok(lhs > rhs)
-    ">=" => Ok(lhs >= rhs)
-    "<" => Ok(lhs < rhs)
-    "<=" => Ok(lhs <= rhs)
-    _ => Err(PreprocessError::UnknownShaderDefOperator(operator, offset))
+    "==" => lhs == rhs
+    "!=" => lhs != rhs
+    ">" => lhs > rhs
+    ">=" => lhs >= rhs
+    "<" => lhs < rhs
+    "<=" => lhs <= rhs
+    _ => raise PreprocessError::UnknownShaderDefOperator(operator, offset)
   }
 }
 
@@ -321,15 +321,15 @@ fn compare_int_values(
   rhs : Int,
   operator : String,
   offset : Int,
-) -> Result[Bool, PreprocessError] {
+) -> Bool raise PreprocessError {
   match operator {
-    "==" => Ok(lhs == rhs)
-    "!=" => Ok(lhs != rhs)
-    ">" => Ok(lhs > rhs)
-    ">=" => Ok(lhs >= rhs)
-    "<" => Ok(lhs < rhs)
-    "<=" => Ok(lhs <= rhs)
-    _ => Err(PreprocessError::UnknownShaderDefOperator(operator, offset))
+    "==" => lhs == rhs
+    "!=" => lhs != rhs
+    ">" => lhs > rhs
+    ">=" => lhs >= rhs
+    "<" => lhs < rhs
+    "<=" => lhs <= rhs
+    _ => raise PreprocessError::UnknownShaderDefOperator(operator, offset)
   }
 }
 
@@ -339,15 +339,15 @@ fn compare_uint_values(
   rhs : UInt,
   operator : String,
   offset : Int,
-) -> Result[Bool, PreprocessError] {
+) -> Bool raise PreprocessError {
   match operator {
-    "==" => Ok(lhs == rhs)
-    "!=" => Ok(lhs != rhs)
-    ">" => Ok(lhs > rhs)
-    ">=" => Ok(lhs >= rhs)
-    "<" => Ok(lhs < rhs)
-    "<=" => Ok(lhs <= rhs)
-    _ => Err(PreprocessError::UnknownShaderDefOperator(operator, offset))
+    "==" => lhs == rhs
+    "!=" => lhs != rhs
+    ">" => lhs > rhs
+    ">=" => lhs >= rhs
+    "<" => lhs < rhs
+    "<=" => lhs <= rhs
+    _ => raise PreprocessError::UnknownShaderDefOperator(operator, offset)
   }
 }
 
@@ -358,9 +358,9 @@ fn eval_if_condition(
   operator : String,
   value : String,
   offset : Int,
-) -> Result[Bool, PreprocessError] {
+) -> Bool raise PreprocessError {
   guard shader_defs.get(def) is Some(def_value) else {
-    return Err(PreprocessError::UnknownShaderDef(def, offset))
+    raise PreprocessError::UnknownShaderDef(def, offset)
   }
   match def_value {
     ShaderDefValue::Bool(bool_value) =>
@@ -368,19 +368,15 @@ fn eval_if_condition(
         Some(expected) =>
           compare_bool_values(bool_value, expected, operator, offset)
         None =>
-          Err(
-            PreprocessError::InvalidShaderDefComparisonValue(
-              def, value, "bool", offset,
-            ),
+          raise PreprocessError::InvalidShaderDefComparisonValue(
+            def, value, "bool", offset,
           )
       }
     ShaderDefValue::Int(int_value) => {
       let parsed = @string.parse_int(value[:], base=10) catch {
         _ =>
-          return Err(
-            PreprocessError::InvalidShaderDefComparisonValue(
-              def, value, "int", offset,
-            ),
+          raise PreprocessError::InvalidShaderDefComparisonValue(
+            def, value, "int", offset,
           )
       }
       compare_int_values(int_value, parsed, operator, offset)
@@ -393,10 +389,8 @@ fn eval_if_condition(
       }
       let parsed = @string.parse_int(parsed_text[:], base=10) catch {
         _ =>
-          return Err(
-            PreprocessError::InvalidShaderDefComparisonValue(
-              def, value, "uint", offset,
-            ),
+          raise PreprocessError::InvalidShaderDefComparisonValue(
+            def, value, "uint", offset,
           )
       }
       compare_uint_values(
@@ -415,99 +409,67 @@ fn check_scope(
   line : String,
   scope : Scope?,
   offset : Int,
-) -> Result[(Bool, String?), PreprocessError] {
+) -> (Bool, String?) raise PreprocessError {
   if parse_prefixed_identifier(line, "#ifdef ") is Some(name) {
     let condition = shader_defs.contains(name)
     if scope is Some(scope_state) {
-      match scope_state.branch(false, condition, offset) {
-        Ok(_) => ()
-        Err(err) => return Err(err)
-      }
+      scope_state.branch(false, condition, offset)
     }
-    return Ok((true, Some(name)))
+    return (true, Some(name))
   }
   if parse_prefixed_identifier(line, "#ifndef ") is Some(name) {
     let condition = !shader_defs.contains(name)
     if scope is Some(scope_state) {
-      match scope_state.branch(false, condition, offset) {
-        Ok(_) => ()
-        Err(err) => return Err(err)
-      }
+      scope_state.branch(false, condition, offset)
     }
-    return Ok((true, Some(name)))
+    return (true, Some(name))
   }
   if parse_prefixed_identifier(line, "#else ifdef ") is Some(name) {
     let condition = shader_defs.contains(name)
     if scope is Some(scope_state) {
-      match scope_state.branch(true, condition, offset) {
-        Ok(_) => ()
-        Err(err) => return Err(err)
-      }
+      scope_state.branch(true, condition, offset)
     }
-    return Ok((true, Some(name)))
+    return (true, Some(name))
   }
   if parse_prefixed_identifier(line, "#else ifndef ") is Some(name) {
     let condition = !shader_defs.contains(name)
     if scope is Some(scope_state) {
-      match scope_state.branch(true, condition, offset) {
-        Ok(_) => ()
-        Err(err) => return Err(err)
-      }
+      scope_state.branch(true, condition, offset)
     }
-    return Ok((true, Some(name)))
+    return (true, Some(name))
   }
   if parse_if_operator_clause(line, "#else if ") is Some((def, operator, value)) {
     if scope is None {
-      return Ok((true, Some(def)))
+      return (true, Some(def))
     }
-    let condition = match
-      eval_if_condition(shader_defs, def, operator, value, offset) {
-      Ok(result) => result
-      Err(err) => return Err(err)
-    }
+    let condition = eval_if_condition(shader_defs, def, operator, value, offset)
     guard scope is Some(scope_state) else { abort("unreachable missing scope") }
-    match scope_state.branch(true, condition, offset) {
-      Ok(_) => ()
-      Err(err) => return Err(err)
-    }
-    return Ok((true, Some(def)))
+    scope_state.branch(true, condition, offset)
+    return (true, Some(def))
   }
   if parse_if_operator_clause(line, "#if ") is Some((def, operator, value)) {
     if scope is None {
-      return Ok((true, Some(def)))
+      return (true, Some(def))
     }
-    let condition = match
-      eval_if_condition(shader_defs, def, operator, value, offset) {
-      Ok(result) => result
-      Err(err) => return Err(err)
-    }
+    let condition = eval_if_condition(shader_defs, def, operator, value, offset)
     guard scope is Some(scope_state) else { abort("unreachable missing scope") }
-    match scope_state.branch(false, condition, offset) {
-      Ok(_) => ()
-      Err(err) => return Err(err)
-    }
-    return Ok((true, Some(def)))
+    scope_state.branch(false, condition, offset)
+    return (true, Some(def))
   }
   let trimmed = line.trim().to_string()
   if starts_with_text(trimmed, "#else") {
     if scope is Some(scope_state) {
-      match scope_state.branch(true, true, offset) {
-        Ok(_) => ()
-        Err(err) => return Err(err)
-      }
+      scope_state.branch(true, true, offset)
     }
-    return Ok((true, None))
+    return (true, None)
   }
   if starts_with_text(trimmed, "#endif") {
     if scope is Some(scope_state) {
-      match scope_state.pop(offset) {
-        Ok(_) => ()
-        Err(err) => return Err(err)
-      }
+      scope_state.pop(offset)
     }
-    return Ok((true, None))
+    return (true, None)
   }
-  Ok((false, None))
+  (false, None)
 }
 
 ///|
@@ -663,7 +625,7 @@ pub fn Preprocessor::preprocess(
   _self : Preprocessor,
   source : String,
   shader_defs : @hashmap.HashMap[String, ShaderDefValue],
-) -> Result[PreprocessOutput, PreprocessError] {
+) -> PreprocessOutput raise PreprocessError {
   let declared_imports : Array[DeclaredImportBinding] = []
   let used_imports : Array[ImportDefWithOffset] = []
   let scope = Scope::new()
@@ -690,14 +652,10 @@ pub fn Preprocessor::preprocess(
         trimmed[9:trimmed.length()].to_string(),
       )
       if version != "440" && version != "450" {
-        return Err(PreprocessError::GlslInvalidVersion(offset))
+        raise PreprocessError::GlslInvalidVersion(offset)
       }
     } else {
-      let scope_result = check_scope(shader_defs, line, Some(scope), offset)
-      let is_scope = match scope_result {
-        Ok((matched, _)) => matched
-        Err(err) => return Err(err)
-      }
+      let (is_scope, _) = check_scope(shader_defs, line, Some(scope), offset)
       if is_scope ||
         starts_with_text(trimmed, "#define_import_path ") ||
         starts_with_text(trimmed, "#define ") {
@@ -719,14 +677,11 @@ pub fn Preprocessor::preprocess(
             line_index = line_index + 1
             line = decommented_lines[line_index]
           }
-          match parse_imports(import_lines, declared_imports) {
-            Ok(_) => ()
-            Err((message, line_offset)) =>
-              return Err(
-                PreprocessError::ImportParseError(
-                  message,
-                  initial_offset + line_offset,
-                ),
+          parse_imports(import_lines, declared_imports) catch {
+            Parse(message, line_offset) =>
+              raise PreprocessError::ImportParseError(
+                message,
+                initial_offset + line_offset,
               )
           }
           output = true
@@ -738,30 +693,24 @@ pub fn Preprocessor::preprocess(
             line, shader_defs,
           )
           let ignored_imports : Array[ImportDefWithOffset] = []
-          let item_replaced_line = match
-            substitute_identifiers(
-              replaced_original, offset, declared_imports, ignored_imports, true,
-            ) {
-            Ok(replaced) => replaced
-            Err(position) =>
-              return Err(
-                PreprocessError::ImportParseError(
-                  "Ambiguous import path for item", position,
-                ),
+          let item_replaced_line = substitute_identifiers(
+            replaced_original, offset, declared_imports, ignored_imports, true,
+          ) catch {
+            AmbiguousImport(position) =>
+              raise PreprocessError::ImportParseError(
+                "Ambiguous import path for item", position,
               )
           }
-          match
+          ignore(
             substitute_identifiers(
               replaced_decommented, offset, declared_imports, used_imports, false,
-            ) {
-            Ok(_) => ()
-            Err(position) =>
-              return Err(
-                PreprocessError::ImportParseError(
+            ) catch {
+              AmbiguousImport(position) =>
+                raise PreprocessError::ImportParseError(
                   "Ambiguous import path for item", position,
-                ),
-              )
-          }
+                )
+            },
+          )
           final_string = final_string + item_replaced_line
           let diff = line.length() - item_replaced_line.length()
           if diff > 0 {
@@ -781,21 +730,15 @@ pub fn Preprocessor::preprocess(
     line_index = line_index + 1
   }
 
-  match scope.finish(offset) {
-    Ok(_) => ()
-    Err(err) => return Err(err)
-  }
-  Ok(PreprocessOutput::{
-    preprocessed_source: final_string,
-    imports: used_imports,
-  })
+  scope.finish(offset)
+  PreprocessOutput::{ preprocessed_source: final_string, imports: used_imports }
 }
 
 ///|
 fn try_get_preprocessor_metadata(
   source : String,
   allow_defines : Bool,
-) -> Result[PreprocessorMetaData, PreprocessError] {
+) -> PreprocessorMetaData raise PreprocessError {
   let preprocessor = Preprocessor::default()
   let (cleaned_for_directives, wgsl_directives) = preprocessor.extract_wgsl_directives(
     source,
@@ -818,11 +761,12 @@ fn try_get_preprocessor_metadata(
   while line_index < lines.length() {
     let line = lines[line_index]
     let trimmed = line.trim().to_string()
-    let scope_result = check_scope(@hashmap.HashMap::new(), line, None, offset)
-    let (is_scope, def) = match scope_result {
-      Ok(result) => result
-      Err(err) => return Err(err)
-    }
+    let (is_scope, def) = check_scope(
+      @hashmap.HashMap::new(),
+      line,
+      None,
+      offset,
+    )
 
     if is_scope {
       if def is Some(def_name) {
@@ -841,14 +785,11 @@ fn try_get_preprocessor_metadata(
         offset = offset + next_line.length() + 1
       }
 
-      match parse_imports(import_lines, declared_imports) {
-        Ok(_) => ()
-        Err((message, line_offset)) =>
-          return Err(
-            PreprocessError::ImportParseError(
-              message,
-              initial_offset + line_offset,
-            ),
+      parse_imports(import_lines, declared_imports) catch {
+        Parse(message, line_offset) =>
+          raise PreprocessError::ImportParseError(
+            message,
+            initial_offset + line_offset,
           )
       }
     } else if starts_with_text(trimmed, "#define_import_path ") {
@@ -867,43 +808,40 @@ fn try_get_preprocessor_metadata(
           defines.set(define_name, parse_define_value(define_value))
         }
       } else {
-        return Err(PreprocessError::DefineInModule(offset))
+        raise PreprocessError::DefineInModule(offset)
       }
     } else {
       collect_effective_def_names(line, effective_defs)
-      match
+      ignore(
         substitute_identifiers(
           line, offset, declared_imports, used_imports, true,
-        ) {
-        Ok(_) => ()
-        Err(position) =>
-          return Err(
-            PreprocessError::ImportParseError(
+        ) catch {
+          AmbiguousImport(position) =>
+            raise PreprocessError::ImportParseError(
               "Ambiguous import path for item", position,
-            ),
-          )
-      }
+            )
+        },
+      )
     }
 
     offset = offset + line.length() + 1
     line_index = line_index + 1
   }
 
-  Ok(PreprocessorMetaData::{
+  PreprocessorMetaData::{
     name,
     imports: used_imports,
     defines,
     effective_defs,
     wgsl_directives,
     cleaned_source: cleaned_for_directives,
-  })
+  }
 }
 
 ///|
 pub fn get_preprocessor_metadata(source : String) -> PreprocessorMetaData {
-  match try_get_preprocessor_metadata(source, true) {
-    Ok(metadata) => metadata
-    Err(_) =>
+  try_get_preprocessor_metadata(source, true) catch {
+    _ =>
       PreprocessorMetaData::{
         name: None,
         imports: [],

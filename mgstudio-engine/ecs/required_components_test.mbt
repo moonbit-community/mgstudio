@@ -182,10 +182,15 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   try! duplicate_world.register_required_components(
     required_a_key, required_b_key,
   )
-  let duplicate_result = duplicate_world.try_register_required_components(
+  let mut duplicate_pair : (Int, Int)? = None
+  duplicate_world.try_register_required_components(
     required_a_key, required_b_key,
-  )
-  guard duplicate_result is Err(DuplicateRegistration(a0, b0)) else {
+  ) catch {
+    RequiredComponentsError::DuplicateRegistration(a0, b0) =>
+      duplicate_pair = Some((a0, b0))
+    _ => fail("expected duplicate registration error")
+  }
+  guard duplicate_pair is Some((a0, b0)) else {
     fail("expected duplicate registration error")
   }
   inspect(
@@ -195,12 +200,17 @@ test "ecs: try register required components reports duplicate cycle and archetyp
 
   let cycle_world = World::new()
   try! cycle_world.register_required_components(required_a_key, required_b_key)
-  let cycle_result = cycle_world.try_register_required_components_with(
+  let mut cycle_pair : (Int, Int)? = None
+  cycle_world.try_register_required_components_with(
     required_b_key,
     required_a_key,
     fn() { RequiredA::{  } },
-  )
-  guard cycle_result is Err(CyclicRequirement(a1, b1)) else {
+  ) catch {
+    RequiredComponentsError::CyclicRequirement(a1, b1) =>
+      cycle_pair = Some((a1, b1))
+    _ => fail("expected cyclic requirement error")
+  }
+  guard cycle_pair is Some((a1, b1)) else {
     fail("expected cyclic requirement error")
   }
   inspect(
@@ -212,10 +222,15 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   let entity = archetype_world.spawn()
   try! (archetype_world.entity_mut(entity).insert_component(RequiredA::{  })
   |> ignore)
-  let archetype_result = archetype_world.try_register_required_components(
+  let mut archetype_component_id : Int? = None
+  archetype_world.try_register_required_components(
     required_a_key, required_b_key,
-  )
-  guard archetype_result is Err(ArchetypeExists(component_id)) else {
+  ) catch {
+    RequiredComponentsError::ArchetypeExists(component_id) =>
+      archetype_component_id = Some(component_id)
+    _ => fail("expected archetype exists error")
+  }
+  guard archetype_component_id is Some(component_id) else {
     fail("expected archetype exists error")
   }
   inspect(component_id == required_a_key.id(), content="true")

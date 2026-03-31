@@ -120,10 +120,8 @@ pub struct Plane3d {
 
 ///|
 pub fn Plane3d::new(normal : Vec3, half_size : Vec2) -> Plane3d {
-  match Dir3::new(normal) {
-    Ok(direction) => Plane3d::{ normal: direction, half_size }
-    Err(_) => Plane3d::{ normal: Dir3::y(), half_size }
-  }
+  let direction = Dir3::new(normal) catch { _ => Dir3::y() }
+  Plane3d::{ normal: direction, half_size }
 }
 
 ///|
@@ -138,10 +136,8 @@ pub struct InfinitePlane3d {
 
 ///|
 pub fn InfinitePlane3d::new(normal : Vec3) -> InfinitePlane3d {
-  match Dir3::new(normal) {
-    Ok(direction) => InfinitePlane3d::{ normal: direction }
-    Err(_) => InfinitePlane3d::{ normal: Dir3::y() }
-  }
+  let direction = Dir3::new(normal) catch { _ => Dir3::y() }
+  InfinitePlane3d::{ normal: direction }
 }
 
 ///|
@@ -177,10 +173,8 @@ pub struct Line3d {
 
 ///|
 pub fn Line3d::new(direction : Vec3) -> Line3d {
-  match Dir3::new(direction) {
-    Ok(unit) => Line3d::{ direction: unit }
-    Err(_) => Line3d::{ direction: Dir3::y() }
-  }
+  let unit = Dir3::new(direction) catch { _ => Dir3::y() }
+  Line3d::{ direction: unit }
 }
 
 ///|

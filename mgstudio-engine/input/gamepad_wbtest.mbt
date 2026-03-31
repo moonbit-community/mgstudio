@@ -158,7 +158,9 @@ test "input gamepad: connection and disconnection in the same frame keeps settin
 
 ///|
 test "input gamepad: reconnection preserves settings component state" {
-  let button_settings = ButtonSettings::new(0.7F, 0.2F).unwrap()
+  let button_settings = ButtonSettings::new(0.7F, 0.2F) catch {
+    _ => abort("expected valid button settings")
+  }
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()

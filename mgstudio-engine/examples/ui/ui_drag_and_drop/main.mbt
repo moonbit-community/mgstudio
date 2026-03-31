@@ -114,7 +114,8 @@ fn set_tile_colors(
     @ecs.All,
   ],
 ) -> Unit {
-  if (try! query.get(entity)) is Some((background_color, border_color)) {
+  let colors = query.get(entity) catch { _ => None }
+  if colors is Some((background_color, border_color)) {
     background_color.set(@ui.BackgroundColor::new(background))
     border_color.set(@ui.BorderColor::new(border))
   }
@@ -134,7 +135,8 @@ fn begin_drag(
   state_ref.val.active = Some(entity)
   state_ref.val.hovered = Some(entity)
   state_ref.val.start_position = position
-  if (try! visuals.get(entity)) is Some((outline, global_z)) {
+  let visual = visuals.get(entity) catch { _ => None }
+  if visual is Some((outline, global_z)) {
     outline.set(
       @ui.Outline::new(
         @ui.Val::Px(2.0F),
@@ -154,7 +156,8 @@ fn drag_active_tile(
 ) -> Unit {
   let state_ref = drag_state.get_ref()
   guard state_ref.val.active is Some(active) else { return }
-  if (try! transforms.get(active)) is Some(transform) {
+  let transform = transforms.get(active) catch { _ => None }
+  if transform is Some(transform) {
     let current = pointer.position()
     let start = state_ref.val.start_position
     let delta_x = current.x - start.x
@@ -182,7 +185,8 @@ fn release_active_tile(
   let state_ref = drag_state.get_ref()
   guard state_ref.val.active is Some(active) else { return }
 
-  if (try! visuals.get(active)) is Some((transform, outline, global_z)) {
+  let active_visual = visuals.get(active) catch { _ => None }
+  if active_visual is Some((transform, outline, global_z)) {
     let transform_ref = transform.get_ref()
     let z = transform_ref.val.translation.z
     transform_ref.val.translation = @math.Vec3::new(0.0F, 0.0F, z)
@@ -190,22 +194,25 @@ fn release_active_tile(
     global_z.set(@ui.GlobalZIndex::new(0))
   }
 
+  let active_node = nodes.get(active) catch { _ => None }
   if state_ref.val.hovered is Some(hovered) &&
     hovered != active &&
-    (try! nodes.get(active)) is Some(active_node) &&
-    (try! nodes.get(hovered)) is Some(hovered_node) {
-    let active_value = active_node.value()
-    let hovered_value = hovered_node.value()
-    active_node.set(@ui.Node::{
-      ..active_value,
-      grid_row: hovered_value.grid_row,
-      grid_column: hovered_value.grid_column,
-    })
-    hovered_node.set(@ui.Node::{
-      ..hovered_value,
-      grid_row: active_value.grid_row,
-      grid_column: active_value.grid_column,
-    })
+    active_node is Some(active_node) {
+    let hovered_node = nodes.get(hovered) catch { _ => None }
+    if hovered_node is Some(hovered_node) {
+      let active_value = active_node.value()
+      let hovered_value = hovered_node.value()
+      active_node.set(@ui.Node::{
+        ..active_value,
+        grid_row: hovered_value.grid_row,
+        grid_column: hovered_value.grid_column,
+      })
+      hovered_node.set(@ui.Node::{
+        ..hovered_value,
+        grid_row: active_value.grid_row,
+        grid_column: active_value.grid_column,
+      })
+    }
   }
 
   state_ref.val.active = None

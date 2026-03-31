@@ -366,9 +366,9 @@ fn processed_text_from_path(
     path[path.length() - 9:path.length()].to_string() == ".cool.ron" {
     let asset_path = @asset.asset_parse_path(path)
     let bytes = @asset.load_asset_source_bytes(asset_path)
-    let processed = match process_cool_text(asset_server, asset_path, bytes) {
-      Ok(processed) => processed
-      Err(err) => abort("Failed to process dependent cool text asset: " + err)
+    let processed = process_cool_text(asset_server, asset_path, bytes) catch {
+      err =>
+        abort("Failed to process dependent cool text asset: " + err.message())
     }
     let text = processed.asset()
     match settings.text_override {
@@ -409,14 +409,17 @@ fn process_cool_text(
   asset_server : @asset.AssetServer,
   path : @asset.AssetPath,
   bytes : Bytes,
-) -> Result[@asset.ProcessedAsset[Text], String] {
+) -> @asset.ProcessedAsset[Text] raise @asset.AssetProcessError {
+  if @asset.asset_format_path(path).trim() == "" {
+    raise @asset.AssetProcessError::Message(
+      "cool text processor received an empty asset path",
+    )
+  }
   let cool_text = load_cool_text_asset(asset_server, path, bytes)
   ignore(cool_text.dependencies.length())
   let final_value = cool_text.text + transformer_appended_suffix(path)
-  Ok(
-    @asset.ProcessedAsset::new(Text::new(final_value)).with_saved_bytes(
-      text_to_bytes(final_value),
-    ),
+  @asset.ProcessedAsset::new(Text::new(final_value)).with_saved_bytes(
+    text_to_bytes(final_value),
   )
 }
 

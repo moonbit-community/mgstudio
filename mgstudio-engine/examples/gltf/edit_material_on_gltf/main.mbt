@@ -130,9 +130,12 @@ fn change_material(
   ],
 ) -> Unit {
   let scene_entity = event.entity
-  guard (try! colors.get(scene_entity)) is Some(color_override) else { return }
+  guard (colors.get(scene_entity) catch { _ => None }) is Some(color_override) else {
+    return
+  }
   try! visit_descendants(children_query, scene_entity, fn(descendant) {
-    guard (try! mesh_materials.get(descendant)) is Some(material_data) else {
+    guard (mesh_materials.get(descendant) catch { _ => None })
+      is Some(material_data) else {
       return
     }
     let (mesh_material_comp, material_name_comp) = material_data

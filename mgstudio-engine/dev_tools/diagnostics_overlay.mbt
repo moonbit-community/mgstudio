@@ -421,7 +421,8 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
   let overlays : @ecs.QueryState[@ecs.Comp[DiagnosticsOverlay], @ecs.All] = world.query()
   let overlay_iter = overlays.iter(world)
   let mut window_index = 0
-  while (try! overlay_iter.fetch_next()) is Some((overlay_entity, overlay_comp)) {
+  while (overlay_iter.fetch_next() catch { _ => None })
+        is Some((overlay_entity, overlay_comp)) {
     if (try! world.get_by_key(
         overlay_entity, ecs_key_diagnostics_overlay_window,
       ))
@@ -577,7 +578,7 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
     @ecs.All,
   ] = world.query()
   let overlay_iter = overlays.iter(world)
-  while (try! overlay_iter.fetch_next())
+  while (overlay_iter.fetch_next() catch { _ => None })
         is Some((_entity, (overlay_comp, window_comp))) {
     let overlay = overlay_comp.value()
     let window = window_comp.value()
@@ -595,11 +596,11 @@ fn diagnostics_overlay_pointer_down(
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
 ) -> Unit {
   guard pointer.target() is Some(target) else { return }
-  guard (try! headers.get(target)) is Some(header_comp) else { return }
+  let header_comp = headers.get(target) catch { _ => None }
+  guard header_comp is Some(header_comp) else { return }
   let header = header_comp.value()
-  guard (try! overlays.get(header.overlay_entity)) is Some(overlay_node) else {
-    return
-  }
+  let overlay_node = overlays.get(header.overlay_entity) catch { _ => None }
+  guard overlay_node is Some(overlay_node) else { return }
   let left = diagnostics_overlay_val_px(overlay_node.value().left)
   let top = diagnostics_overlay_val_px(overlay_node.value().top)
   drag_state.get_ref().val.active_overlay = Some(header.overlay_entity)
@@ -619,9 +620,8 @@ fn diagnostics_overlay_pointer_move(
   }
   guard drag_state.get_ref().val.pointer_id is Some(pointer_id) else { return }
   guard pointer.pointer() == pointer_id else { return }
-  guard (try! overlays.get(overlay_entity)) is Some(overlay_node) else {
-    return
-  }
+  let overlay_node = overlays.get(overlay_entity) catch { _ => None }
+  guard overlay_node is Some(overlay_node) else { return }
   let x = pointer.position().x - drag_state.get_ref().val.offset_x
   let y = pointer.position().y - drag_state.get_ref().val.offset_y
   overlay_node.set(
@@ -648,15 +648,16 @@ fn diagnostics_overlay_pointer_click(
   nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
 ) -> Unit {
   guard pointer.target() is Some(target) else { return }
-  guard (try! headers.get(target)) is Some(header_comp) else { return }
+  let header_comp = headers.get(target) catch { _ => None }
+  guard header_comp is Some(header_comp) else { return }
   let header = header_comp.value()
-  guard (try! windows.get(header.overlay_entity)) is Some(window_mut) else {
-    return
-  }
+  let window_mut = windows.get(header.overlay_entity) catch { _ => None }
+  guard window_mut is Some(window_mut) else { return }
   let collapsed = !window_mut.get_ref().val.collapsed
   window_mut.get_ref().val.collapsed = collapsed
   let contents_entity = window_mut.get_ref().val.contents_entity
-  guard (try! nodes.get(contents_entity)) is Some(contents_node) else { return }
+  let contents_node = nodes.get(contents_entity) catch { _ => None }
+  guard contents_node is Some(contents_node) else { return }
   contents_node.set(
     contents_node
     .value()

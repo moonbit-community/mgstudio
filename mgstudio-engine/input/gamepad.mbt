@@ -587,19 +587,17 @@ pub impl Default for ButtonSettings with default() {
 pub fn ButtonSettings::new(
   press_threshold : Float,
   release_threshold : Float,
-) -> Result[ButtonSettings, ButtonSettingsError] {
+) -> ButtonSettings raise ButtonSettingsError {
   if release_threshold < 0.0F || release_threshold > 1.0F {
-    Err(ButtonSettingsError::ReleaseThresholdOutOfRange(release_threshold))
+    raise ButtonSettingsError::ReleaseThresholdOutOfRange(release_threshold)
   } else if press_threshold < 0.0F || press_threshold > 1.0F {
-    Err(ButtonSettingsError::PressThresholdOutOfRange(press_threshold))
+    raise ButtonSettingsError::PressThresholdOutOfRange(press_threshold)
   } else if release_threshold > press_threshold {
-    Err(
-      ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
-        press_threshold, release_threshold,
-      ),
+    raise ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
+      press_threshold, release_threshold,
     )
   } else {
-    Ok(ButtonSettings::{ press_threshold, release_threshold })
+    ButtonSettings::{ press_threshold, release_threshold }
   }
 }
 
@@ -625,18 +623,16 @@ pub fn ButtonSettings::press_threshold(self : ButtonSettings) -> Float {
 pub fn ButtonSettings::try_set_press_threshold(
   self : ButtonSettings,
   value : Float,
-) -> Result[Unit, ButtonSettingsError] {
+) -> Unit raise ButtonSettingsError {
   if value >= self.release_threshold && value <= 1.0F {
     self.press_threshold = value
-    Ok(())
+    ()
   } else if value < 0.0F || value > 1.0F {
-    Err(ButtonSettingsError::PressThresholdOutOfRange(value))
+    raise ButtonSettingsError::PressThresholdOutOfRange(value)
   } else {
-    Err(
-      ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
-        value,
-        self.release_threshold,
-      ),
+    raise ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
+      value,
+      self.release_threshold,
     )
   }
 }
@@ -646,7 +642,9 @@ pub fn ButtonSettings::set_press_threshold(
   self : ButtonSettings,
   value : Float,
 ) -> Float {
-  self.try_set_press_threshold(value) |> ignore
+  self.try_set_press_threshold(value) catch {
+    _ => ()
+  }
   self.press_threshold
 }
 
@@ -659,18 +657,16 @@ pub fn ButtonSettings::release_threshold(self : ButtonSettings) -> Float {
 pub fn ButtonSettings::try_set_release_threshold(
   self : ButtonSettings,
   value : Float,
-) -> Result[Unit, ButtonSettingsError] {
+) -> Unit raise ButtonSettingsError {
   if value >= 0.0F && value <= self.press_threshold {
     self.release_threshold = value
-    Ok(())
+    ()
   } else if value < 0.0F || value > 1.0F {
-    Err(ButtonSettingsError::ReleaseThresholdOutOfRange(value))
+    raise ButtonSettingsError::ReleaseThresholdOutOfRange(value)
   } else {
-    Err(
-      ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
-        self.press_threshold,
-        value,
-      ),
+    raise ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
+      self.press_threshold,
+      value,
     )
   }
 }
@@ -680,7 +676,9 @@ pub fn ButtonSettings::set_release_threshold(
   self : ButtonSettings,
   value : Float,
 ) -> Float {
-  self.try_set_release_threshold(value) |> ignore
+  self.try_set_release_threshold(value) catch {
+    _ => ()
+  }
   self.release_threshold
 }
 
@@ -711,37 +709,33 @@ pub fn AxisSettings::new(
   deadzone_upperbound : Float,
   livezone_upperbound : Float,
   threshold : Float,
-) -> Result[AxisSettings, AxisSettingsError] {
+) -> AxisSettings raise AxisSettingsError {
   if livezone_lowerbound < -1.0F || livezone_lowerbound > 0.0F {
-    Err(AxisSettingsError::LiveZoneLowerBoundOutOfRange(livezone_lowerbound))
+    raise AxisSettingsError::LiveZoneLowerBoundOutOfRange(livezone_lowerbound)
   } else if deadzone_lowerbound < -1.0F || deadzone_lowerbound > 0.0F {
-    Err(AxisSettingsError::DeadZoneLowerBoundOutOfRange(deadzone_lowerbound))
+    raise AxisSettingsError::DeadZoneLowerBoundOutOfRange(deadzone_lowerbound)
   } else if deadzone_upperbound < 0.0F || deadzone_upperbound > 1.0F {
-    Err(AxisSettingsError::DeadZoneUpperBoundOutOfRange(deadzone_upperbound))
+    raise AxisSettingsError::DeadZoneUpperBoundOutOfRange(deadzone_upperbound)
   } else if livezone_upperbound < 0.0F || livezone_upperbound > 1.0F {
-    Err(AxisSettingsError::LiveZoneUpperBoundOutOfRange(livezone_upperbound))
+    raise AxisSettingsError::LiveZoneUpperBoundOutOfRange(livezone_upperbound)
   } else if livezone_lowerbound > deadzone_lowerbound {
-    Err(
-      AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
-        livezone_lowerbound, deadzone_lowerbound,
-      ),
+    raise AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
+      livezone_lowerbound, deadzone_lowerbound,
     )
   } else if deadzone_upperbound > livezone_upperbound {
-    Err(
-      AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
-        livezone_upperbound, deadzone_upperbound,
-      ),
+    raise AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
+      livezone_upperbound, deadzone_upperbound,
     )
   } else if threshold < 0.0F || threshold > 2.0F {
-    Err(AxisSettingsError::Threshold(threshold))
+    raise AxisSettingsError::Threshold(threshold)
   } else {
-    Ok(AxisSettings::{
+    AxisSettings::{
       livezone_upperbound,
       deadzone_upperbound,
       deadzone_lowerbound,
       livezone_lowerbound,
       threshold,
-    })
+    }
   }
 }
 
@@ -754,19 +748,17 @@ pub fn AxisSettings::livezone_upperbound(self : AxisSettings) -> Float {
 pub fn AxisSettings::try_set_livezone_upperbound(
   self : AxisSettings,
   value : Float,
-) -> Result[Unit, AxisSettingsError] {
+) -> Unit raise AxisSettingsError {
   if value < 0.0F || value > 1.0F {
-    Err(AxisSettingsError::LiveZoneUpperBoundOutOfRange(value))
+    raise AxisSettingsError::LiveZoneUpperBoundOutOfRange(value)
   } else if value < self.deadzone_upperbound {
-    Err(
-      AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
-        value,
-        self.deadzone_upperbound,
-      ),
+    raise AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
+      value,
+      self.deadzone_upperbound,
     )
   } else {
     self.livezone_upperbound = value
-    Ok(())
+    ()
   }
 }
 
@@ -775,7 +767,9 @@ pub fn AxisSettings::set_livezone_upperbound(
   self : AxisSettings,
   value : Float,
 ) -> Float {
-  self.try_set_livezone_upperbound(value) |> ignore
+  self.try_set_livezone_upperbound(value) catch {
+    _ => ()
+  }
   self.livezone_upperbound
 }
 
@@ -788,19 +782,17 @@ pub fn AxisSettings::deadzone_upperbound(self : AxisSettings) -> Float {
 pub fn AxisSettings::try_set_deadzone_upperbound(
   self : AxisSettings,
   value : Float,
-) -> Result[Unit, AxisSettingsError] {
+) -> Unit raise AxisSettingsError {
   if value < 0.0F || value > 1.0F {
-    Err(AxisSettingsError::DeadZoneUpperBoundOutOfRange(value))
+    raise AxisSettingsError::DeadZoneUpperBoundOutOfRange(value)
   } else if self.livezone_upperbound < value {
-    Err(
-      AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
-        self.livezone_upperbound,
-        value,
-      ),
+    raise AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
+      self.livezone_upperbound,
+      value,
     )
   } else {
     self.deadzone_upperbound = value
-    Ok(())
+    ()
   }
 }
 
@@ -809,7 +801,9 @@ pub fn AxisSettings::set_deadzone_upperbound(
   self : AxisSettings,
   value : Float,
 ) -> Float {
-  self.try_set_deadzone_upperbound(value) |> ignore
+  self.try_set_deadzone_upperbound(value) catch {
+    _ => ()
+  }
   self.deadzone_upperbound
 }
 
@@ -822,19 +816,17 @@ pub fn AxisSettings::livezone_lowerbound(self : AxisSettings) -> Float {
 pub fn AxisSettings::try_set_livezone_lowerbound(
   self : AxisSettings,
   value : Float,
-) -> Result[Unit, AxisSettingsError] {
+) -> Unit raise AxisSettingsError {
   if value < -1.0F || value > 0.0F {
-    Err(AxisSettingsError::LiveZoneLowerBoundOutOfRange(value))
+    raise AxisSettingsError::LiveZoneLowerBoundOutOfRange(value)
   } else if value > self.deadzone_lowerbound {
-    Err(
-      AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
-        value,
-        self.deadzone_lowerbound,
-      ),
+    raise AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
+      value,
+      self.deadzone_lowerbound,
     )
   } else {
     self.livezone_lowerbound = value
-    Ok(())
+    ()
   }
 }
 
@@ -843,7 +835,9 @@ pub fn AxisSettings::set_livezone_lowerbound(
   self : AxisSettings,
   value : Float,
 ) -> Float {
-  self.try_set_livezone_lowerbound(value) |> ignore
+  self.try_set_livezone_lowerbound(value) catch {
+    _ => ()
+  }
   self.livezone_lowerbound
 }
 
@@ -856,19 +850,17 @@ pub fn AxisSettings::deadzone_lowerbound(self : AxisSettings) -> Float {
 pub fn AxisSettings::try_set_deadzone_lowerbound(
   self : AxisSettings,
   value : Float,
-) -> Result[Unit, AxisSettingsError] {
+) -> Unit raise AxisSettingsError {
   if value < -1.0F || value > 0.0F {
-    Err(AxisSettingsError::DeadZoneLowerBoundOutOfRange(value))
+    raise AxisSettingsError::DeadZoneLowerBoundOutOfRange(value)
   } else if self.livezone_lowerbound > value {
-    Err(
-      AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
-        self.livezone_lowerbound,
-        value,
-      ),
+    raise AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
+      self.livezone_lowerbound,
+      value,
     )
   } else {
     self.deadzone_lowerbound = value
-    Ok(())
+    ()
   }
 }
 
@@ -877,7 +869,9 @@ pub fn AxisSettings::set_deadzone_lowerbound(
   self : AxisSettings,
   value : Float,
 ) -> Float {
-  self.try_set_deadzone_lowerbound(value) |> ignore
+  self.try_set_deadzone_lowerbound(value) catch {
+    _ => ()
+  }
   self.deadzone_lowerbound
 }
 
@@ -890,18 +884,20 @@ pub fn AxisSettings::threshold(self : AxisSettings) -> Float {
 pub fn AxisSettings::try_set_threshold(
   self : AxisSettings,
   value : Float,
-) -> Result[Unit, AxisSettingsError] {
+) -> Unit raise AxisSettingsError {
   if value < 0.0F || value > 2.0F {
-    Err(AxisSettingsError::Threshold(value))
+    raise AxisSettingsError::Threshold(value)
   } else {
     self.threshold = value
-    Ok(())
+    ()
   }
 }
 
 ///|
 pub fn AxisSettings::set_threshold(self : AxisSettings, value : Float) -> Float {
-  self.try_set_threshold(value) |> ignore
+  self.try_set_threshold(value) catch {
+    _ => ()
+  }
   self.threshold
 }
 
@@ -1935,7 +1931,7 @@ fn gamepad_event_processing_system(
         outputs.gamepad_events.write(GamepadEvent::Connection(connection_event))
         |> ignore
       Axis(axis_event) =>
-        if (try! gamepads.get(axis_event.gamepad))
+        if (gamepads.get(axis_event.gamepad) catch { _ => None })
           is Some((settings, gamepad_mut)) {
           let settings = settings.value()
           let old_value = gamepad_mut.get_ref().val.analog.get(
@@ -1960,7 +1956,7 @@ fn gamepad_event_processing_system(
           }
         }
       Button(button_event) =>
-        if (try! gamepads.get(button_event.gamepad))
+        if (gamepads.get(button_event.gamepad) catch { _ => None })
           is Some((settings, gamepad_mut)) {
           let settings = settings.value()
           let gamepad_ref = gamepad_mut.get_ref()

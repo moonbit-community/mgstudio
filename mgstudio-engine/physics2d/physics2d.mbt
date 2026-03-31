@@ -604,7 +604,7 @@ pub struct Physics2dContext {
   narrow_phase : @collision.NarrowPhase
   impulse_joints : @dynamics.ImpulseJointSet
   multibody_joints : @dynamics.MultibodyJointSet
-  ccd : @dynamics.CCDSolver
+  ccd : @dynamics_ccd.CCDSolver
   pipeline : @pipeline.PhysicsPipeline
   mut integration : @dynamics.IntegrationParameters
   mut hooks : @pipeline.PhysicsHooks
@@ -643,7 +643,7 @@ pub fn Physics2dContext::new() -> Physics2dContext {
     narrow_phase: @collision.NarrowPhase::new(),
     impulse_joints: @dynamics.ImpulseJointSet::new(),
     multibody_joints: @dynamics.MultibodyJointSet::new(),
-    ccd: @dynamics.CCDSolver::new(),
+    ccd: @dynamics_ccd.CCDSolver::new(),
     pipeline: @pipeline.PhysicsPipeline::new(),
     integration: @dynamics.IntegrationParameters::default(),
     hooks: @pipeline.PhysicsHooks::new(),

@@ -43,11 +43,8 @@ pub fn InvalidDirectionError::from_length(
 }
 
 ///|
-pub fn Dir2::new(value : Vec2) -> Result[Dir2, InvalidDirectionError] {
-  match Dir2::new_and_length(value) {
-    Ok((dir, _)) => Ok(dir)
-    Err(error) => Err(error)
-  }
+pub fn Dir2::new(value : Vec2) -> Dir2 raise InvalidDirectionError {
+  Dir2::new_and_length(value).0
 }
 
 ///|
@@ -58,19 +55,16 @@ pub fn Dir2::new_unchecked(value : Vec2) -> Dir2 {
 ///|
 pub fn Dir2::new_and_length(
   value : Vec2,
-) -> Result[(Dir2, Float), InvalidDirectionError] {
+) -> (Dir2, Float) raise InvalidDirectionError {
   let length = value.length()
   if length.is_inf() || length <= 0.0F {
-    return Err(InvalidDirectionError::from_length(length))
+    raise InvalidDirectionError::from_length(length)
   }
-  Ok((Dir2::{ value: value.mul_scalar(1.0F / length) }, length))
+  (Dir2::{ value: value.mul_scalar(1.0F / length) }, length)
 }
 
 ///|
-pub fn Dir2::from_xy(
-  x : Float,
-  y : Float,
-) -> Result[Dir2, InvalidDirectionError] {
+pub fn Dir2::from_xy(x : Float, y : Float) -> Dir2 raise InvalidDirectionError {
   Dir2::new(Vec2::new(x, y))
 }
 
@@ -105,11 +99,8 @@ pub fn Dir2::y() -> Dir2 {
 }
 
 ///|
-pub fn Dir3::new(value : Vec3) -> Result[Dir3, InvalidDirectionError] {
-  match Dir3::new_and_length(value) {
-    Ok((dir, _)) => Ok(dir)
-    Err(error) => Err(error)
-  }
+pub fn Dir3::new(value : Vec3) -> Dir3 raise InvalidDirectionError {
+  Dir3::new_and_length(value).0
 }
 
 ///|
@@ -120,12 +111,12 @@ pub fn Dir3::new_unchecked(value : Vec3) -> Dir3 {
 ///|
 pub fn Dir3::new_and_length(
   value : Vec3,
-) -> Result[(Dir3, Float), InvalidDirectionError] {
+) -> (Dir3, Float) raise InvalidDirectionError {
   let length = value.length()
   if length.is_inf() || length <= 0.0F {
-    return Err(InvalidDirectionError::from_length(length))
+    raise InvalidDirectionError::from_length(length)
   }
-  Ok((Dir3::{ value: value.mul_scalar(1.0F / length) }, length))
+  (Dir3::{ value: value.mul_scalar(1.0F / length) }, length)
 }
 
 ///|
@@ -133,7 +124,7 @@ pub fn Dir3::from_xyz(
   x : Float,
   y : Float,
   z : Float,
-) -> Result[Dir3, InvalidDirectionError] {
+) -> Dir3 raise InvalidDirectionError {
   Dir3::new(Vec3::new(x, y, z))
 }
 

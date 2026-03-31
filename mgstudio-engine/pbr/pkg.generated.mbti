@@ -362,7 +362,7 @@ pub struct AutoExposureCompensationCurve {
   lut : Bytes
 }
 pub fn AutoExposureCompensationCurve::default() -> Self
-pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Result[Self, AutoExposureCompensationCurveError]
+pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
 
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
@@ -1067,7 +1067,7 @@ pub using @light {type VolumetricLight}
 
 // Traits
 pub(open) trait AutoExposureCompensationCurveSource {
-  to_auto_exposure_curve(Self) -> Result[@math.CubicCurve[@math.Vec2], @math.InsufficientDataError]
+  to_auto_exposure_curve(Self) -> @math.CubicCurve[@math.Vec2] raise @math.InsufficientDataError
 }
 pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2]
 pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2]

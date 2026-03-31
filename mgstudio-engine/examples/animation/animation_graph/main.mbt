@@ -434,7 +434,9 @@ fn handle_weight_drag(
   ],
   weights_query : @ecs.Query[@ecs.Mut[ExampleAnimationWeights], @ecs.All],
 ) -> Unit {
-  guard (try! weights_query.single()) is Some(weights_mut) else { return }
+  guard (weights_query.single() catch { _ => None }) is Some(weights_mut) else {
+    return
+  }
   let weights_ref = weights_mut.get_ref()
   try! controls.view(fn(_entity, data) {
     let (interaction, relative_cursor_position, clip_node) = data
@@ -458,7 +460,9 @@ fn update_ui(
   ],
   fills : @ecs.Query[(@ecs.Comp[ClipNodeFill], @ecs.Mut[@ui.Node]), @ecs.All],
 ) -> Unit {
-  guard (try! weights_query.single()) is Some(weights_comp) else { return }
+  guard (weights_query.single() catch { _ => None }) is Some(weights_comp) else {
+    return
+  }
   let weights = weights_comp.value().weights
   try! labels.view(fn(_entity, data) {
     let (label, text) = data

@@ -310,7 +310,7 @@ fn move_or_resize_windows(
   .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
   .view(fn(_query_entity, entity) {
     ignore(
-      if (try! window_query.get(entity)) is Some(window_mut) {
+      if (window_query.get(entity) catch { _ => None }) is Some(window_mut) {
         let window_ref = window_mut.get_ref()
         match action.get() {
           Nothing => ()

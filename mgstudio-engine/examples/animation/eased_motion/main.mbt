@@ -26,37 +26,37 @@ const ROTATION_SAMPLE_COUNT : Int = 81
 
 ///|
 fn easing_translation_curve() -> @math.Curve[@math.Vec3] {
-  let motion_domain = @math.Interval::new(0.0F, 3.0F).unwrap()
+  let motion_domain = @math.Interval::new(0.0F, 3.0F) catch {
+    _ => abort("eased motion example expects bounded translation domain")
+  }
   let base = @math.EasingCurve::new(
     @math.Vec3::new(-6.0F, 2.0F, 0.0F),
     @math.Vec3::new(6.0F, 2.0F, 0.0F),
     @math.EaseFunction::CubicInOut,
   ).as_curve()
-  let forward = match base.reparametrize_linear(motion_domain) {
-    Ok(curve) => curve
-    Err(_) => abort("eased motion example expects bounded translation curve")
+  let forward = base.reparametrize_linear(motion_domain) catch {
+    _ => abort("eased motion example expects bounded translation curve")
   }
-  let backward = match forward.reverse() {
-    Ok(curve) => curve
-    Err(_) => abort("eased motion example expects reversible translation curve")
+  let backward = forward.reverse() catch {
+    _ => abort("eased motion example expects reversible translation curve")
   }
-  match forward.chain(backward) {
-    Ok(curve) => curve
-    Err(_) => abort("eased motion example expects chainable translation curve")
+  forward.chain(backward) catch {
+    _ => abort("eased motion example expects chainable translation curve")
   }
 }
 
 ///|
 fn easing_rotation_curve() -> @math.Curve[@math.Quat] {
-  let rotation_domain = @math.Interval::new(0.0F, 4.0F).unwrap()
+  let rotation_domain = @math.Interval::new(0.0F, 4.0F) catch {
+    _ => abort("eased motion example expects bounded rotation domain")
+  }
   let base = @math.EasingCurve::new(
     @math.Quat::identity(),
     @math.Quat::from_rotation_y(1.5707963267948966F),
     @math.EaseFunction::ElasticInOut,
   ).as_curve()
-  match base.reparametrize_linear(rotation_domain) {
-    Ok(curve) => curve
-    Err(_) => abort("eased motion example expects bounded rotation curve")
+  base.reparametrize_linear(rotation_domain) catch {
+    _ => abort("eased motion example expects bounded rotation curve")
   }
 }
 

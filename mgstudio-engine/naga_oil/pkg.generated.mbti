@@ -42,6 +42,10 @@ pub(all) suberror ComposerError {
 }
 pub fn ComposerError::message(Self) -> String
 
+pub(all) suberror ParseImportsError {
+  Parse(String, Int)
+}
+
 pub(all) suberror PreprocessError {
   GlslInvalidVersion(Int)
   ElseWithoutCondition(Int)
@@ -52,6 +56,10 @@ pub(all) suberror PreprocessError {
   InvalidShaderDefComparisonValue(String, String, String, Int)
   ImportParseError(String, Int)
   DefineInModule(Int)
+}
+
+pub(all) suberror SubstituteIdentifiersError {
+  AmbiguousImport(Int)
 }
 
 // Types and methods
@@ -79,7 +87,7 @@ pub fn ComposableModuleDescriptor::default() -> Self
 pub struct Composer {
   module_sets : @hashmap.HashMap[String, ComposableModuleDefinition]
 }
-pub fn Composer::add_composable_module(Self, ComposableModuleDescriptor) -> Result[ComposableModuleDefinition, ComposerError]
+pub fn Composer::add_composable_module(Self, ComposableModuleDescriptor) -> ComposableModuleDefinition raise ComposerError
 pub fn Composer::contains_module(Self, String) -> Bool
 pub fn Composer::default() -> Self
 pub fn Composer::load_wgsl_from_assets_base_required(Self, String, String) -> String raise ComposerError
@@ -129,7 +137,7 @@ pub struct Preprocessor {
 }
 pub fn Preprocessor::default() -> Self
 pub fn Preprocessor::extract_wgsl_directives(Self, String) -> (String, WgslDirectives)
-pub fn Preprocessor::preprocess(Self, String, @hashmap.HashMap[String, ShaderDefValue]) -> Result[PreprocessOutput, PreprocessError]
+pub fn Preprocessor::preprocess(Self, String, @hashmap.HashMap[String, ShaderDefValue]) -> PreprocessOutput raise PreprocessError
 
 pub struct PreprocessorMetaData {
   name : String?

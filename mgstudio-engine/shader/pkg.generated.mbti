@@ -57,7 +57,7 @@ pub impl @app.Resource for ShaderAssetPaths
 
 pub struct ShaderCache[ShaderModule, RenderDevice] {
   device : RenderDevice
-  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> Result[ShaderModule, ShaderCacheError]
+  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> ShaderModule raise ShaderCacheError
   data : @hashmap.HashMap[Int, ShaderData[ShaderModule, Int]]
   shaders : @hashmap.HashMap[Int, Shader]
   import_path_shaders : @hashmap.HashMap[ShaderImport, @asset.AssetId[Shader]]
@@ -65,7 +65,7 @@ pub struct ShaderCache[ShaderModule, RenderDevice] {
   composer : @naga_oil.Composer
 }
 pub fn[ShaderModule, RenderDevice] ShaderCache::contains_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Bool
-pub fn[ShaderModule, RenderDevice] ShaderCache::new(RenderDevice, (RenderDevice, ShaderCacheSource, ValidateShader) -> Result[ShaderModule, ShaderCacheError]) -> Self[ShaderModule, RenderDevice]
+pub fn[ShaderModule, RenderDevice] ShaderCache::new(RenderDevice, (RenderDevice, ShaderCacheSource, ValidateShader) -> ShaderModule raise ShaderCacheError) -> Self[ShaderModule, RenderDevice]
 pub fn[ShaderModule, RenderDevice] ShaderCache::remove(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Array[Int]
 pub fn[ShaderModule, RenderDevice] ShaderCache::set_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader], Shader) -> Array[Int]
 

@@ -302,9 +302,7 @@ fn[S : States] run_pending_enter(world : @ecs.World, state : S) -> Unit {
 ///|
 fn[S : States] clear_pending_event(world : @ecs.World, state : S) -> Unit {
   let key = pending_state_transition_event_resource_key(state)
-  let _ : Result[StateTransitionEvent[S]?, @ecs.EcsError] = try? world.remove_resource(
-    key,
-  )
+  ignore(world.remove_resource(key) catch { _ => None })
 }
 
 ///|
@@ -436,9 +434,7 @@ fn[S : States] internal_apply_state_transition(
         }
         None => {
           world.insert_resource(current_key, State::new(entered))
-          let _ : Result[PreviousState[S]?, @ecs.EcsError] = try? world.remove_resource(
-            previous_key,
-          )
+          ignore(world.remove_resource(previous_key) catch { _ => None })
           let event = StateTransitionEvent::{
             exited: None,
             entered: Some(entered),
@@ -451,9 +447,7 @@ fn[S : States] internal_apply_state_transition(
       match current_state {
         Some(current) => {
           let exited = current.get()
-          let _ : Result[State[S]?, @ecs.EcsError] = try? world.remove_resource(
-            current_key,
-          )
+          ignore(world.remove_resource(current_key) catch { _ => None })
           world.insert_resource(previous_key, PreviousState::{ value: exited })
           let event = StateTransitionEvent::{
             exited: Some(exited),

@@ -938,10 +938,10 @@ pub fn Composer::contains_module(self : Composer, module_name : String) -> Bool 
 pub fn Composer::add_composable_module(
   self : Composer,
   desc : ComposableModuleDescriptor,
-) -> Result[ComposableModuleDefinition, ComposerError] {
+) -> ComposableModuleDefinition raise ComposerError {
   let metadata = get_preprocessor_metadata(desc.source)
   let module_name = composable_module_name_from_descriptor(desc) catch {
-    err => return Err(err)
+    err => raise err
   }
 
   let shader_defs = copy_shader_def_values(desc.shader_defs)
@@ -957,7 +957,7 @@ pub fn Composer::add_composable_module(
 
   for import_name in all_imports.iter() {
     guard self.module_sets.get(import_name) is Some(imported_module) else {
-      return Err(ComposerError::FailedToResolveImport(import_name))
+      raise ComposerError::FailedToResolveImport(import_name)
     }
     for effective_def in imported_module.effective_defs {
       effective_defs.add(effective_def)
@@ -987,7 +987,7 @@ pub fn Composer::add_composable_module(
   composer_remove_composable_module_recursive(self, module_name)
   self.module_sets.set(module_name, definition)
   match self.module_sets.get(module_name) {
-    Some(module_definition) => Ok(module_definition)
+    Some(module_definition) => module_definition
     None => abort("expected just-inserted composable module to exist")
   }
 }

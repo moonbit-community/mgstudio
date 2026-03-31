@@ -59,8 +59,7 @@ pub fn RapierImpulseJointHandle2d::new(
 ///|
 pub struct MultibodyJoint2d {
   other : @core.Entity
-  /// moon_rapier currently models multibody joints as revolute joints.
-  data : @dynamics.RevoluteJoint
+  data : @dynamics.GenericJoint
   wake_up : Bool
   /// If true, insert using `MultibodyJointSet::insert_kinematic`.
   kinematic : Bool
@@ -69,7 +68,7 @@ pub struct MultibodyJoint2d {
 ///|
 pub fn MultibodyJoint2d::new(
   other : @core.Entity,
-  data : @dynamics.RevoluteJoint,
+  data : @dynamics.GenericJoint,
 ) -> MultibodyJoint2d {
   { other, data, wake_up: true, kinematic: false }
 }

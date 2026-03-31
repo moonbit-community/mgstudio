@@ -278,7 +278,8 @@ fn setup_scene_once_loaded(
   animation_setup : @app.ResMut[AnimationSetup],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (try! players.get(scene_ready.entity)) is Some(player_mut) else {
+  guard (players.get(scene_ready.entity) catch { _ => None })
+    is Some(player_mut) else {
     return
   }
 
@@ -318,7 +319,9 @@ fn observe_on_step(
 ) -> Unit {
   let event = step_event.event()
   guard step_event.entity() is Some(target_entity) else { return }
-  guard (try! transforms.get(target_entity)) is Some(transform) else { return }
+  guard (transforms.get(target_entity) catch { _ => None }) is Some(transform) else {
+    return
+  }
   let translation = transform.value().translation
   for i in 0..<PARTICLE_COUNT {
     let i_float = Float::from_int(i)

@@ -14,7 +14,12 @@
 
 ///|
 test "curve: interval spaced_points follows bounded interval layout" {
-  let values = Interval::new(-1.0F, 1.0F).unwrap().spaced_points(3).unwrap()
+  let interval = Interval::new(-1.0F, 1.0F) catch {
+    _ => abort("invalid interval")
+  }
+  let values = interval.spaced_points(3) catch {
+    _ => abort("expected bounded interval")
+  }
   inspect(values.length() == 3, content="true")
   inspect(values[0] == -1.0F, content="true")
   inspect(values[1] == 0.0F, content="true")
@@ -33,7 +38,9 @@ test "curve: function curve map and graph preserve domain" {
 
 ///|
 test "curve: sample auto curve interpolates stable values" {
-  let curve = SampleAutoCurve::new(Interval::unit(), [0.0F, 10.0F]).unwrap()
+  let curve = SampleAutoCurve::new(Interval::unit(), [0.0F, 10.0F]) catch {
+    _ => abort("expected stable sample curve")
+  }
   inspect(curve.sample(0.5F).unwrap() == 5.0F, content="true")
 }
 

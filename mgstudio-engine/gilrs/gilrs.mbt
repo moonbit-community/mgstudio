@@ -126,25 +126,24 @@ pub fn gamepad_set_rumble(
     return GamepadRumbleResult::Applied
   }
 
-  let effect_result : Result[@gamepad.Effect, @gamepad.FfError] = try? @gamepad.EffectBuilder::new()
+  let effect = @gamepad.EffectBuilder::new()
     .add_gamepad(gamepad)
     .duration(clamped_duration_ms)
     .rumble(strong, weak)
-    .finish(ensure_gilrs())
-  let effect = match effect_result {
-    Ok(effect) => effect
-    Err(_) => return GamepadRumbleResult::Unsupported
-  }
+    .finish(ensure_gilrs()) catch {
+      _ => return GamepadRumbleResult::Unsupported
+    }
 
-  let result : Result[Unit, @gamepad.FfError] = if strong == 0.0 && weak == 0.0 {
-    try? effect.stop()
+  if strong == 0.0 && weak == 0.0 {
+    effect.stop() catch {
+      _ => return GamepadRumbleResult::Unsupported
+    }
   } else {
-    try? effect.play()
+    effect.play() catch {
+      _ => return GamepadRumbleResult::Unsupported
+    }
   }
-  match result {
-    Ok(_) => GamepadRumbleResult::Applied
-    Err(_) => GamepadRumbleResult::Unsupported
-  }
+  GamepadRumbleResult::Applied
 }
 
 ///|

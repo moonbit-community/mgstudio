@@ -466,48 +466,6 @@ fn joint_motor_from_json(
 }
 
 ///|
-fn joint_motor_option_to_json(motor : @dynamics.JointMotor?) -> Json {
-  match motor {
-    Some(value) => (true, joint_motor_to_json(value)).to_json()
-    None => (false, (0).to_json()).to_json()
-  }
-}
-
-///|
-fn joint_motor_option_from_json(
-  json : Json,
-  path : @json.JsonPath,
-) -> @dynamics.JointMotor? raise @json.JsonDecodeError {
-  let (present, payload) : (Bool, Json) = @json.from_json(json, path~)
-  if present {
-    Some(joint_motor_from_json(payload, path))
-  } else {
-    None
-  }
-}
-
-///|
-fn joint_limits_option_to_json(limit : @dynamics.JointLimits?) -> Json {
-  match limit {
-    Some(value) => (true, joint_limits_to_json(value)).to_json()
-    None => (false, (0).to_json()).to_json()
-  }
-}
-
-///|
-fn joint_limits_option_from_json(
-  json : Json,
-  path : @json.JsonPath,
-) -> @dynamics.JointLimits? raise @json.JsonDecodeError {
-  let (present, payload) : (Bool, Json) = @json.from_json(json, path~)
-  if present {
-    Some(joint_limits_from_json(payload, path))
-  } else {
-    None
-  }
-}
-
-///|
 fn character_length_to_json(length : @control.CharacterLength) -> Json {
   match length {
     @control.CharacterLength::Absolute(value) => ("absolute", value).to_json()
@@ -1058,53 +1016,6 @@ fn generic_joint_from_json(
 }
 
 ///|
-fn revolute_joint_to_json(joint : @dynamics.RevoluteJoint) -> Json {
-  (
-    rapier_vec2_to_json(joint.local_anchor1()),
-    rapier_vec2_to_json(joint.local_anchor2()),
-    spring_coefficients_to_json(joint.softness()),
-    joint_motor_option_to_json(joint.motor()),
-    joint_limits_option_to_json(joint.limits()),
-  ).to_json()
-}
-
-///|
-fn revolute_joint_from_json(
-  json : Json,
-  path : @json.JsonPath,
-) -> @dynamics.RevoluteJoint raise @json.JsonDecodeError {
-  let (anchor1_json, anchor2_json, softness_json, motor_json, limits_json) : (
-    Json,
-    Json,
-    Json,
-    Json,
-    Json,
-  ) = @json.from_json(json, path~)
-  let mut builder = @dynamics.RevoluteJointBuilder::new()
-    .local_anchor1(rapier_vec2_from_json(anchor1_json, path))
-    .local_anchor2(rapier_vec2_from_json(anchor2_json, path))
-    .softness(spring_coefficients_from_json(softness_json, path))
-
-  if joint_motor_option_from_json(motor_json, path) is Some(motor_data) {
-    builder = builder
-      .motor_model(motor_data.model)
-      .motor_position(
-        motor_data.target_pos,
-        motor_data.stiffness,
-        motor_data.damping,
-      )
-      .motor_velocity(motor_data.target_vel, motor_data.damping)
-      .motor_max_force(motor_data.max_force)
-  }
-
-  if joint_limits_option_from_json(limits_json, path) is Some(limits_data) {
-    builder = builder.limits(limits_data.min(), limits_data.max())
-  }
-
-  builder.build()
-}
-
-///|
 pub impl ToJson for RigidBody2d with to_json(self) {
   rigid_body_type_to_json(self.body_type)
 }
@@ -1591,7 +1502,7 @@ pub impl @json.FromJson for RapierImpulseJointHandle2d with from_json(
 pub impl ToJson for MultibodyJoint2d with to_json(self) {
   (
     entity_to_json(self.other),
-    revolute_joint_to_json(self.data),
+    generic_joint_to_json(self.data),
     self.wake_up,
     self.kinematic,
   ).to_json()
@@ -1605,7 +1516,7 @@ pub impl @json.FromJson for MultibodyJoint2d with from_json(json, path) {
   )
   MultibodyJoint2d::{
     other: entity_from_json(other_json, path),
-    data: revolute_joint_from_json(data_json, path),
+    data: generic_joint_from_json(data_json, path),
     wake_up,
     kinematic,
   }

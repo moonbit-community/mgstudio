@@ -247,7 +247,8 @@ fn on_add_mine(
   state : @app.ResMut[MineWorldState],
   mines : @ecs.Query[@ecs.Comp[Mine], @ecs.All],
 ) -> Unit {
-  guard (try! mines.get(event.entity)) is Some(mine_comp) else { return }
+  let mine_comp = mines.get(event.entity) catch { _ => None }
+  guard mine_comp is Some(mine_comp) else { return }
   state.get_ref().val.insert(event.entity, mine_comp.value())
 }
 
@@ -272,7 +273,8 @@ fn explode_nearby_mines(
   }
   let event = explode_mines.event()
   for entity in world_state.get_nearby(event.pos) {
-    guard (try! mines.get(entity)) is Some(mine_comp) else { continue }
+    let mine_comp = mines.get(entity) catch { _ => None }
+    guard mine_comp is Some(mine_comp) else { continue }
     let mine = mine_comp.value()
     let distance = mine.pos.sub(event.pos).length()
     if distance < mine.size + event.radius {
@@ -317,9 +319,8 @@ fn handle_click(
   windows : @ecs.Query[@ecs.Comp[@window.Window], @ecs.All],
   commands : @app.Commands,
 ) -> Unit {
-  guard (try! pointer_world_position(pointer, windows)) is Some(pos) else {
-    return
-  }
+  let pos = pointer_world_position(pointer, windows) catch { _ => None }
+  guard pos is Some(pos) else { return }
   commands.trigger(ExplodeMines::{ pos, radius: 1.0F })
 }
 

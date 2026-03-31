@@ -157,7 +157,9 @@ fn rotate_cube(
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  guard (try! center_spheres.single()) is Some(center_comp) else { return }
+  guard (center_spheres.single() catch { _ => None }) is Some(center_comp) else {
+    return
+  }
   let center = center_comp.value()
 
   let delta = time.get().delta_secs()

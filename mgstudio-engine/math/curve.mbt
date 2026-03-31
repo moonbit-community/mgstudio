@@ -78,91 +78,78 @@ pub fn[T] Curve::reparametrize(
 pub fn[T] Curve::reparametrize_linear(
   self : Curve[T],
   domain : Interval,
-) -> Result[Curve[T], LinearMapError] {
+) -> Curve[T] raise LinearMapError {
   if !domain.is_bounded() {
-    return Err(TargetUnbounded)
+    raise TargetUnbounded
   }
   if !self.domain_.is_bounded() {
-    return Err(SourceUnbounded)
+    raise SourceUnbounded
   }
-  Ok(
-    Curve::new(domain, fn(t) {
-      let mapped = domain.linear_map_value_to(self.domain_, t).unwrap()
-      self.sample_clamped(mapped)
-    }),
-  )
+  Curve::new(domain, fn(t) {
+    let mapped = domain.linear_map_value_to(self.domain_, t) catch {
+      _ => abort("Curve::reparametrize_linear requires bounded domains")
+    }
+    self.sample_clamped(mapped)
+  })
 }
 
 ///|
-pub fn[T] Curve::reverse(self : Curve[T]) -> Result[Curve[T], LinearMapError] {
+pub fn[T] Curve::reverse(self : Curve[T]) -> Curve[T] raise LinearMapError {
   if !self.domain_.is_bounded() {
-    return Err(SourceUnbounded)
+    raise SourceUnbounded
   }
   let source = self.domain_
-  Ok(
-    Curve::new(source, fn(t) {
-      let mirrored = source.end_() - (t - source.start())
-      self.sample_clamped(mirrored)
-    }),
-  )
+  Curve::new(source, fn(t) {
+    let mirrored = source.end_() - (t - source.start())
+    self.sample_clamped(mirrored)
+  })
 }
 
 ///|
 pub fn[T, S] Curve::zip(
   self : Curve[T],
   other : Curve[S],
-) -> Result[Curve[(T, S)], InvalidIntervalError] {
-  match self.domain_.intersect(other.domain_) {
-    Ok(shared) =>
-      Ok(
-        Curve::new(shared, fn(t) {
-          (self.sample_clamped(t), other.sample_clamped(t))
-        }),
-      )
-    Err(err) => Err(err)
-  }
+) -> Curve[(T, S)] raise InvalidIntervalError {
+  let shared = self.domain_.intersect(other.domain_)
+  Curve::new(shared, fn(t) { (self.sample_clamped(t), other.sample_clamped(t)) })
 }
 
 ///|
 pub fn[T] Curve::chain(
   self : Curve[T],
   other : Curve[T],
-) -> Result[Curve[T], CurveChainError] {
+) -> Curve[T] raise CurveChainError {
   if !self.domain_.is_bounded() || !other.domain_.is_bounded() {
-    return Err(UnboundedDomain)
+    raise UnboundedDomain
   }
   let chained_domain = Interval::new(
     self.domain_.start(),
     self.domain_.start() + self.domain_.length() + other.domain_.length(),
-  ).unwrap()
+  ) catch {
+    _ => abort("Curve::chain expects finite bounded source intervals")
+  }
   let split = self.domain_.start() + self.domain_.length()
-  Ok(
-    Curve::new(chained_domain, fn(t) {
-      if t <= split {
-        self.sample_clamped(t)
-      } else {
-        let shifted = other.domain_.start() + (t - split)
-        other.sample_clamped(shifted)
-      }
-    }),
-  )
+  Curve::new(chained_domain, fn(t) {
+    if t <= split {
+      self.sample_clamped(t)
+    } else {
+      let shifted = other.domain_.start() + (t - split)
+      other.sample_clamped(shifted)
+    }
+  })
 }
 
 ///|
 pub fn[T] Curve::samples(
   self : Curve[T],
   points : Int,
-) -> Result[Array[T], SpacedPointsError] {
-  match self.domain_.spaced_points(points) {
-    Ok(times) => {
-      let values : Array[T] = []
-      for time in times {
-        values.push(self.sample_clamped(time))
-      }
-      Ok(values)
-    }
-    Err(err) => Err(err)
+) -> Array[T] raise SpacedPointsError {
+  let times = self.domain_.spaced_points(points)
+  let values : Array[T] = []
+  for time in times {
+    values.push(self.sample_clamped(time))
   }
+  values
 }
 
 ///|
@@ -170,20 +157,20 @@ pub fn[T] Curve::resample(
   self : Curve[T],
   points : Int,
   interpolation : (T, T, Float) -> T,
-) -> Result[SampleCurve[T], EvenCoreError] {
-  match self.samples(points) {
-    Ok(values) => SampleCurve::new(self.domain_, values, interpolation)
-    Err(_) => Err(EvenCoreError::UnboundedDomain)
+) -> SampleCurve[T] raise EvenCoreError {
+  let values = self.samples(points) catch {
+    _ => raise EvenCoreError::UnboundedDomain
   }
+  SampleCurve::new(self.domain_, values, interpolation)
 }
 
 ///|
 pub fn[T] Curve::resample_auto(
   self : Curve[T],
   points : Int,
-) -> Result[SampleAutoCurve[T], EvenCoreError] {
-  match self.samples(points) {
-    Ok(values) => SampleAutoCurve::new(self.domain_, values)
-    Err(_) => Err(EvenCoreError::UnboundedDomain)
+) -> SampleAutoCurve[T] raise EvenCoreError {
+  let values = self.samples(points) catch {
+    _ => raise EvenCoreError::UnboundedDomain
   }
+  SampleAutoCurve::new(self.domain_, values)
 }

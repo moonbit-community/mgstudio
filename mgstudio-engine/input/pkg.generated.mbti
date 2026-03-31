@@ -163,18 +163,18 @@ pub fn AxisSettings::deadzone_lowerbound(Self) -> Float
 pub fn AxisSettings::deadzone_upperbound(Self) -> Float
 pub fn AxisSettings::livezone_lowerbound(Self) -> Float
 pub fn AxisSettings::livezone_upperbound(Self) -> Float
-pub fn AxisSettings::new(Float, Float, Float, Float, Float) -> Result[Self, AxisSettingsError]
+pub fn AxisSettings::new(Float, Float, Float, Float, Float) -> Self raise AxisSettingsError
 pub fn AxisSettings::set_deadzone_lowerbound(Self, Float) -> Float
 pub fn AxisSettings::set_deadzone_upperbound(Self, Float) -> Float
 pub fn AxisSettings::set_livezone_lowerbound(Self, Float) -> Float
 pub fn AxisSettings::set_livezone_upperbound(Self, Float) -> Float
 pub fn AxisSettings::set_threshold(Self, Float) -> Float
 pub fn AxisSettings::threshold(Self) -> Float
-pub fn AxisSettings::try_set_deadzone_lowerbound(Self, Float) -> Result[Unit, AxisSettingsError]
-pub fn AxisSettings::try_set_deadzone_upperbound(Self, Float) -> Result[Unit, AxisSettingsError]
-pub fn AxisSettings::try_set_livezone_lowerbound(Self, Float) -> Result[Unit, AxisSettingsError]
-pub fn AxisSettings::try_set_livezone_upperbound(Self, Float) -> Result[Unit, AxisSettingsError]
-pub fn AxisSettings::try_set_threshold(Self, Float) -> Result[Unit, AxisSettingsError]
+pub fn AxisSettings::try_set_deadzone_lowerbound(Self, Float) -> Unit raise AxisSettingsError
+pub fn AxisSettings::try_set_deadzone_upperbound(Self, Float) -> Unit raise AxisSettingsError
+pub fn AxisSettings::try_set_livezone_lowerbound(Self, Float) -> Unit raise AxisSettingsError
+pub fn AxisSettings::try_set_livezone_upperbound(Self, Float) -> Unit raise AxisSettingsError
+pub fn AxisSettings::try_set_threshold(Self, Float) -> Unit raise AxisSettingsError
 pub impl Default for AxisSettings
 
 pub struct ButtonAxisSettings {
@@ -221,13 +221,13 @@ pub struct ButtonSettings {
 } derive(Eq, ToJson, @json.FromJson)
 pub fn ButtonSettings::is_pressed(Self, Float) -> Bool
 pub fn ButtonSettings::is_released(Self, Float) -> Bool
-pub fn ButtonSettings::new(Float, Float) -> Result[Self, ButtonSettingsError]
+pub fn ButtonSettings::new(Float, Float) -> Self raise ButtonSettingsError
 pub fn ButtonSettings::press_threshold(Self) -> Float
 pub fn ButtonSettings::release_threshold(Self) -> Float
 pub fn ButtonSettings::set_press_threshold(Self, Float) -> Float
 pub fn ButtonSettings::set_release_threshold(Self, Float) -> Float
-pub fn ButtonSettings::try_set_press_threshold(Self, Float) -> Result[Unit, ButtonSettingsError]
-pub fn ButtonSettings::try_set_release_threshold(Self, Float) -> Result[Unit, ButtonSettingsError]
+pub fn ButtonSettings::try_set_press_threshold(Self, Float) -> Unit raise ButtonSettingsError
+pub fn ButtonSettings::try_set_release_threshold(Self, Float) -> Unit raise ButtonSettingsError
 pub impl Default for ButtonSettings
 
 pub struct Gamepad {

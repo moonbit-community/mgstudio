@@ -659,8 +659,8 @@ pub fn World::spawn_empty(Self) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
 pub fn[E : TriggerEvent] World::trigger(Self, E, caller? : String?) -> Unit
-pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Result[Unit, RequiredComponentsError]
-pub fn[T, R] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Result[Unit, RequiredComponentsError]
+pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
+pub fn[T, R] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
 #callsite(autofill(loc))
 pub fn[T : Component] World::update(Self, @core.Entity, key? : ComponentKey[T], (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
 #callsite(autofill(loc))

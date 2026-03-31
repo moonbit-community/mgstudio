@@ -56,14 +56,14 @@ pub struct EvenCore[T] {
 pub fn[T] EvenCore::new(
   domain : Interval,
   samples : Array[T],
-) -> Result[EvenCore[T], EvenCoreError] {
+) -> EvenCore[T] raise EvenCoreError {
   if samples.length() < 2 {
-    return Err(NotEnoughSamples(samples.length()))
+    raise NotEnoughSamples(samples.length())
   }
   if !domain.is_bounded() {
-    return Err(UnboundedDomain)
+    raise UnboundedDomain
   }
-  Ok(EvenCore::{ domain_: domain, samples })
+  EvenCore::{ domain_: domain, samples }
 }
 
 ///|
@@ -129,20 +129,20 @@ pub struct UnevenCore[T] {
 ///|
 pub fn[T] UnevenCore::new(
   sample_points : Array[(Float, T)],
-) -> Result[UnevenCore[T], UnevenCoreError] {
+) -> UnevenCore[T] raise UnevenCoreError {
   if sample_points.length() < 2 {
-    return Err(NotEnoughSamples(sample_points.length()))
+    raise NotEnoughSamples(sample_points.length())
   }
   for index in 0..<sample_points.length() {
     let time = sample_points[index].0
     if !cores_is_finite(time) {
-      return Err(NonFiniteSampleTime)
+      raise NonFiniteSampleTime
     }
     if index > 0 && time <= sample_points[index - 1].0 {
-      return Err(NonIncreasingSampleTimes)
+      raise NonIncreasingSampleTimes
     }
   }
-  Ok(UnevenCore::{ sample_points, })
+  UnevenCore::{ sample_points, }
 }
 
 ///|
@@ -150,7 +150,9 @@ pub fn[T] UnevenCore::domain(self : UnevenCore[T]) -> Interval {
   Interval::new(
     self.sample_points[0].0,
     self.sample_points[self.sample_points.length() - 1].0,
-  ).unwrap()
+  ) catch {
+    _ => abort("UnevenCore::domain expects sorted finite sample points")
+  }
 }
 
 ///|

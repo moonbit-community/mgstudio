@@ -162,7 +162,8 @@ fn disable_entities_on_click(
     if event.kind != @pointer_events.PointerEventKind::Click {
       continue
     }
-    if event.target is Some(target) && (try! valid_query.get(target)) is Some(_) {
+    if event.target is Some(target) &&
+      (valid_query.get(target) catch { _ => None }) is Some(_) {
       commands.entity(target).insert_component(@ecs.Disabled::new())
     }
   }

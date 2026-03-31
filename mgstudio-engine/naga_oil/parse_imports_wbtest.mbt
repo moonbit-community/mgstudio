@@ -15,10 +15,8 @@
 ///|
 fn parse_imports_snapshot(input : String) -> String {
   let declared_imports : Array[DeclaredImportBinding] = []
-  let result = parse_imports(input, declared_imports)
-  match result {
-    Ok(_) => ()
-    Err((message, offset)) => return "ERR " + offset.to_string() + " " + message
+  parse_imports(input, declared_imports) catch {
+    Parse(message, offset) => return "ERR " + offset.to_string() + " " + message
   }
 
   let rows : Array[String] = []

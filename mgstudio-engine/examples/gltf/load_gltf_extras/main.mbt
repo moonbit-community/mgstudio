@@ -122,11 +122,19 @@ fn update_display(
   let lines : Array[String] = []
 
   try! entities.view(fn(_entity, entity_ref) {
-    let name : @ecs.Name? = try! entity_ref.get()
-    let scene_extras : @gltf.GltfSceneExtras? = try! entity_ref.get()
-    let primitive_extras : @gltf.GltfExtras? = try! entity_ref.get()
-    let mesh_extras : @gltf.GltfMeshExtras? = try! entity_ref.get()
-    let material_extras : @gltf.GltfMaterialExtras? = try! entity_ref.get()
+    let name : @ecs.Name? = entity_ref.get() catch { _ => None }
+    let scene_extras : @gltf.GltfSceneExtras? = entity_ref.get() catch {
+      _ => None
+    }
+    let primitive_extras : @gltf.GltfExtras? = entity_ref.get() catch {
+      _ => None
+    }
+    let mesh_extras : @gltf.GltfMeshExtras? = entity_ref.get() catch {
+      _ => None
+    }
+    let material_extras : @gltf.GltfMaterialExtras? = entity_ref.get() catch {
+      _ => None
+    }
 
     guard scene_extras is Some(_) ||
       primitive_extras is Some(_) ||

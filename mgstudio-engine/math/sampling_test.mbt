@@ -54,7 +54,9 @@ test "sampling: uniform mesh sampler produces points on triangle faces" {
       Vec3::new(1.0F, 0.0F, 1.0F),
       Vec3::new(0.0F, 1.0F, 1.0F),
     ),
-  ]).unwrap()
+  ]) catch {
+    _ => abort("expected non-empty mesh sampler")
+  }
   let point = sampler.sample(
     @random.Rand::chacha8(seed=b"uniformmeshsamplerseed0000000000"),
   )

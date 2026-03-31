@@ -886,18 +886,14 @@ fn draw_filled_circle(
 
 ///|
 fn direction_or_fallback(vector : @math.Vec2) -> @math.Dir2 {
-  match @math.Dir2::new(vector) {
-    Ok(direction) => direction
-    Err(_) => @math.Dir2::x()
+  @math.Dir2::new(vector) catch {
+    _ => @math.Dir2::x()
   }
 }
 
 ///|
 fn normalize_or_fallback(vector : @math.Vec2) -> @math.Vec2 {
-  match @math.Dir2::new(vector) {
-    Ok(direction) => direction.as_vec2()
-    Err(_) => @math.Dir2::x().as_vec2()
-  }
+  (@math.Dir2::new(vector) catch { _ => @math.Dir2::x() }).as_vec2()
 }
 
 ///|

@@ -19,6 +19,16 @@ priv struct DeclaredImportBinding {
 }
 
 ///|
+pub(all) suberror ParseImportsError {
+  Parse(String, Int)
+}
+
+///|
+pub(all) suberror SubstituteIdentifiersError {
+  AmbiguousImport(Int)
+}
+
+///|
 fn declared_imports_find_index(
   declared_imports : Array[DeclaredImportBinding],
   used_name : String,
@@ -98,23 +108,23 @@ fn stack_join(stack : Array[String]) -> String {
 fn parse_imports(
   input : String,
   declared_imports : Array[DeclaredImportBinding],
-) -> Result[Unit, (String, Int)] {
+) -> Unit raise ParseImportsError {
   let tokens = tokenize(input, false)
   let mut index = 0
 
   guard index < tokens.length() else {
-    return Err(("expected #import", input.length()))
+    raise Parse("expected #import", input.length())
   }
   guard tokens[index] == Token::Other(35, tokens[index].pos()) else {
-    return Err(("expected `#import`", tokens[index].pos()))
+    raise Parse("expected `#import`", tokens[index].pos())
   }
   index = index + 1
 
   guard index < tokens.length() else {
-    return Err(("expected `#import`", input.length()))
+    raise Parse("expected `#import`", input.length())
   }
   guard tokens[index].identifier() == Some("import") else {
-    return Err(("expected `#import`", tokens[index].pos()))
+    raise Parse("expected `#import`", tokens[index].pos())
   }
   index = index + 1
 
@@ -134,10 +144,10 @@ fn parse_imports(
           let pos = tokens[index].pos()
           index = index + 1
           guard index < tokens.length() else {
-            return Err(("expected identifier after `as`", pos))
+            raise Parse("expected identifier after `as`", pos)
           }
           guard tokens[index] is Token::Identifier(name, _) else {
-            return Err(("expected identifier after `as`", pos))
+            raise Parse("expected identifier after `as`", pos)
           }
           as_name = Some(name)
           index = index + 1
@@ -153,7 +163,7 @@ fn parse_imports(
       }
       Some(Token::Other(code, pos)) if code == 123 => { // '{'
         if !current.has_suffix("::") {
-          return Err(("open brace must follow `::`", pos))
+          raise Parse("open brace must follow `::`", pos)
         }
         stack.push(current)
         current = ""
@@ -181,7 +191,7 @@ fn parse_imports(
         }
         if code == 125 {
           guard stack.pop() is Some(_) else {
-            return Err(("close brace without open", pos))
+            raise Parse("close brace without open", pos)
           }
         }
         index = index + 1
@@ -190,11 +200,11 @@ fn parse_imports(
       Some(Token::Other(code, _)) if code == 59 => { // ';'
         index = index + 1
         if index < tokens.length() {
-          return Err(("unexpected token after ';'", tokens[index].pos()))
+          raise Parse("unexpected token after ';'", tokens[index].pos())
         }
         break
       }
-      Some(Token::Other(_, pos)) => return Err(("unexpected token", pos))
+      Some(Token::Other(_, pos)) => raise Parse("unexpected token", pos)
       Some(Token::Whitespace(_, _)) =>
         abort("whitespace tokens should not be emitted here")
       None => {
@@ -219,9 +229,9 @@ fn parse_imports(
   }
 
   if !(stack.is_empty() || (is_deprecated_itemlist && stack.length() == 1)) {
-    return Err(("missing close brace", input.length()))
+    raise Parse("missing close brace", input.length())
   }
-  Ok(())
+  ()
 }
 
 ///|
@@ -297,7 +307,7 @@ fn substitute_identifiers(
   declared_imports : Array[DeclaredImportBinding],
   used_imports : Array[ImportDefWithOffset],
   allow_ambiguous : Bool,
-) -> Result[String, Int] {
+) -> String raise SubstituteIdentifiersError {
   let tokens = tokenize(input, true)
   let mut output = ""
   let mut in_substitution_position = true
@@ -316,7 +326,7 @@ fn substitute_identifiers(
             None => [first]
           }
           if !allow_ambiguous && full_paths.length() > 1 {
-            return Err(offset + token_pos)
+            raise AmbiguousImport(offset + token_pos)
           }
 
           for full_path_base in full_paths {
@@ -357,5 +367,5 @@ fn substitute_identifiers(
     in_substitution_position = true
   }
 
-  Ok(output)
+  output
 }

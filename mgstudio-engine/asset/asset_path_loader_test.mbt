@@ -32,24 +32,40 @@ test "asset path parse supports source and label" {
 
 ///|
 test "asset path try_parse follows Bevy syntax checks" {
+  let mut missing_source_error : ParseAssetPathError? = None
+  ignore(asset_try_parse_path("://file.test")) catch {
+    err => missing_source_error = Some(err)
+  }
   inspect(
-    asset_try_parse_path("://file.test")
-    is Err(ParseAssetPathError::MissingSource),
+    missing_source_error is Some(ParseAssetPathError::MissingSource),
     content="true",
   )
+
+  let mut missing_label_error : ParseAssetPathError? = None
+  ignore(asset_try_parse_path("source://file.test#")) catch {
+    err => missing_label_error = Some(err)
+  }
   inspect(
-    asset_try_parse_path("source://file.test#")
-    is Err(ParseAssetPathError::MissingLabel),
+    missing_label_error is Some(ParseAssetPathError::MissingLabel),
     content="true",
   )
+
+  let mut invalid_source_syntax_error : ParseAssetPathError? = None
+  ignore(asset_try_parse_path("bad#source://file.test")) catch {
+    err => invalid_source_syntax_error = Some(err)
+  }
   inspect(
-    asset_try_parse_path("bad#source://file.test")
-    is Err(ParseAssetPathError::InvalidSourceSyntax),
+    invalid_source_syntax_error
+    is Some(ParseAssetPathError::InvalidSourceSyntax),
     content="true",
   )
+
+  let mut invalid_label_syntax_error : ParseAssetPathError? = None
+  ignore(asset_try_parse_path("source://file.test#bad://label")) catch {
+    err => invalid_label_syntax_error = Some(err)
+  }
   inspect(
-    asset_try_parse_path("source://file.test#bad://label")
-    is Err(ParseAssetPathError::InvalidLabelSyntax),
+    invalid_label_syntax_error is Some(ParseAssetPathError::InvalidLabelSyntax),
     content="true",
   )
 }

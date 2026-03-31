@@ -127,7 +127,8 @@ fn setup(
       _pointer : @app.OnPointer[@app.PointerEnter],
       texts : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
     ) {
-      if (try! texts.get(label)) is Some(color) {
+      let color = texts.get(label) catch { _ => None }
+      if color is Some(color) {
         color.get_ref().val = @text.TextColor::new(
           @sprite.Color::srgb(0.3F, 0.9F, 0.95F),
         )
@@ -137,7 +138,8 @@ fn setup(
       _pointer : @app.OnPointer[@app.PointerLeave],
       texts : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
     ) {
-      if (try! texts.get(label)) is Some(color) {
+      let color = texts.get(label) catch { _ => None }
+      if color is Some(color) {
         color.get_ref().val = @text.TextColor::new(@sprite.Color::white())
       }
     }),
@@ -153,7 +155,8 @@ fn toggle_cube_color_on_click(
   ],
 ) -> Unit {
   guard pointer.target() is Some(entity) else { return }
-  guard (try! cubes.get(entity)) is Some((material, cube_state)) else { return }
+  let cube_data = cubes.get(entity) catch { _ => None }
+  guard cube_data is Some((material, cube_state)) else { return }
   cube_state.get_ref().val.active = !cube_state.get_ref().val.active
   let next = if cube_state.get_ref().val.active {
     cube_state.get_ref().val.selected

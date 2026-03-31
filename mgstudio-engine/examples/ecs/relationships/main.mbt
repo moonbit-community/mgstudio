@@ -85,7 +85,7 @@ fn relationship_add_reverse(
   target : @core.Entity,
   source : @core.Entity,
 ) -> Unit {
-  match (try! world.get(target, targeted_by_component_key)) {
+  match (world.get(target, targeted_by_component_key) catch { _ => None }) {
     Some(targeted_by) => {
       if entity_in_array(targeted_by.entities, source) {
         return
@@ -108,7 +108,8 @@ fn relationship_remove_reverse(
   target : @core.Entity,
   source : @core.Entity,
 ) -> Unit {
-  guard (try! world.get(target, targeted_by_component_key)) is Some(targeted_by) else {
+  guard (world.get(target, targeted_by_component_key) catch { _ => None })
+    is Some(targeted_by) else {
     return
   }
   let kept = remove_entity_from_array(targeted_by.entities, source)
@@ -129,7 +130,7 @@ fn relationship_targeting_insert(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (try! world.get(context.entity, targeting_component_key))
+  guard (world.get(context.entity, targeting_component_key) catch { _ => None })
     is Some(targeting) else {
     return
   }
@@ -141,7 +142,7 @@ fn relationship_targeting_replace(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (try! world.get(context.entity, targeting_component_key))
+  guard (world.get(context.entity, targeting_component_key) catch { _ => None })
     is Some(targeting) else {
     return
   }
@@ -153,7 +154,7 @@ fn relationship_targeting_remove(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (try! world.get(context.entity, targeting_component_key))
+  guard (world.get(context.entity, targeting_component_key) catch { _ => None })
     is Some(targeting) else {
     return
   }
@@ -173,7 +174,7 @@ fn relationship_register_hooks(world : @ecs.World) -> Unit {
 
 ///|
 fn world_name_or_abort(world : @ecs.World, entity : @core.Entity) -> String {
-  match (try! world.entity(entity).get() : @ecs.Name?) {
+  match (world.entity(entity).get() catch { _ => None } : @ecs.Name?) {
     Some(name) => name.as_str()
     None => abort("Missing Name in relationships example")
   }
@@ -202,7 +203,7 @@ fn relationship_targeted_by_names(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> String {
-  match (try! world.entity(entity).get() : TargetedBy?) {
+  match (world.entity(entity).get() catch { _ => None } : TargetedBy?) {
     Some(targeted_by) => {
       let names : Array[String] = []
       for source in targeted_by.entities {
@@ -250,7 +251,7 @@ fn relationship_has_cycle_from(
       return true
     }
     visited.push(current)
-    match (try! world.entity(current).get() : Targeting?) {
+    match (world.entity(current).get() catch { _ => None } : Targeting?) {
       Some(targeting) => walk(world, targeting.target)
       None => false
     }

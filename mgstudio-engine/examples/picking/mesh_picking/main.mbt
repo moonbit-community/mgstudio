@@ -144,9 +144,8 @@ fn set_target_material(
   ],
 ) -> Unit {
   guard target is Some(entity) else { return }
-  guard (try! query.get(entity)) is Some((mesh_material, pickable)) else {
-    return
-  }
+  let target_data = query.get(entity) catch { _ => None }
+  guard target_data is Some((mesh_material, pickable)) else { return }
   mesh_material.get_ref().val = @pbr.MeshMaterial3d::new(
     material_handle(pickable.value()),
   )
@@ -187,7 +186,8 @@ fn on_pointer_down(
     last_drag_position.val = None
     return
   }
-  if (try! query.get(entity)) is Some((mesh_material, pickable)) {
+  let target_data = query.get(entity) catch { _ => None }
+  if target_data is Some((mesh_material, pickable)) {
     mesh_material.get_ref().val = @pbr.MeshMaterial3d::new(
       pickable.value().pressed,
     )
@@ -218,7 +218,8 @@ fn on_pointer_move_drag(
   transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
 ) -> Unit {
   guard dragging_entity.val is Some(entity) else { return }
-  guard (try! transforms.get(entity)) is Some(transform) else { return }
+  let transform = transforms.get(entity) catch { _ => None }
+  guard transform is Some(transform) else { return }
   let delta = match last_drag_position.val {
     Some(previous) =>
       @math.Vec2::new(

@@ -1556,7 +1556,7 @@ pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
   )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
+      if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         window_sync_observed_state(world, entity, runtime_ref)
       },
@@ -1577,7 +1577,7 @@ pub fn window_backend_apply_changed_windows_system(world : @ecs.World) -> Unit {
   )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
+      if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         window_sync_requested_window_state(world, entity, runtime_ref)
       },
@@ -1595,7 +1595,7 @@ pub fn window_take_changed_mode_requests(
   )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
+      if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         if window_component(world, entity) is Some(window) {
           if window.mode != runtime_ref.val.last_applied_mode {
@@ -1624,7 +1624,7 @@ pub fn window_backend_apply_changed_cursor_options_system(
   )
   for entity in window_runtime_entities_with_host(world) {
     ignore(
-      if (try! runtime_query.get(entity)) is Some(runtime_mut) {
+      if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
         window_sync_requested_cursor_state(world, entity, runtime_ref)
       },

@@ -97,20 +97,25 @@ fn player_movement_system(
   guard main_camera_entity(main_camera_query) is Some(camera_entity) else {
     return
   }
-  guard (try! camera_query.get(camera_entity)) is Some(camera_comp) else {
+  guard (camera_query.get(camera_entity) catch { _ => None })
+    is Some(camera_comp) else {
     return
   }
   let camera = camera_comp.value()
-  guard (try! projection_query.get(camera_entity)) is Some(projection_comp) else {
+  guard (projection_query.get(camera_entity) catch { _ => None })
+    is Some(projection_comp) else {
     return
   }
   let projection = projection_comp.value()
   guard projection is Orthographic(orthographic_projection) else { return }
-  guard (try! transform_query.get(camera_entity)) is Some(camera_transform_comp) else {
+  guard (transform_query.get(camera_entity) catch { _ => None })
+    is Some(camera_transform_comp) else {
     return
   }
   let camera_transform = camera_transform_comp.value()
-  guard (try! windows.single()) is Some(window_comp) else { return }
+  guard (windows.single() catch { _ => None }) is Some(window_comp) else {
+    return
+  }
   let window = window_comp.value()
   guard @input.mouse_position() is Some(cursor_position) else { return }
 

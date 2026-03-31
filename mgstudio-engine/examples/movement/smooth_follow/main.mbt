@@ -249,7 +249,9 @@ fn move_follower(
   decay_rate : @app.Res[DecayRate],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  guard (try! target.single()) is Some(target_transform_comp) else { return }
+  guard (target.single() catch { _ => None }) is Some(target_transform_comp) else {
+    return
+  }
   let target_transform = target_transform_comp.value()
 
   let delta_time = time.get().delta_secs()

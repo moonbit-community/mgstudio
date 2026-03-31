@@ -565,9 +565,8 @@ fn animation_curve_sample_times_or_abort(
   sample_count : Int,
 ) -> Array[Float] {
   let points = if sample_count < 2 { 2 } else { sample_count }
-  match domain.spaced_points(points) {
-    Ok(times) => times
-    Err(_) => abort("animation curve authoring expects a bounded domain")
+  domain.spaced_points(points) catch {
+    _ => abort("animation curve authoring expects a bounded domain")
   }
 }
 

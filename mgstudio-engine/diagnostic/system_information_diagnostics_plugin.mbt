@@ -224,7 +224,7 @@ fn collect_sysinfo_refresh_data(
 ///|
 fn collect_sysinfo_refresh_data_once() -> SysinfoRefreshData {
   let pid = match @sysinfo.get_current_pid() {
-    Ok(value) => value
+    Ok(pid) => pid
     Err(message) =>
       abort("Failed to get current process id for diagnostics: " + message)
   }

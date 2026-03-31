@@ -64,7 +64,8 @@ fn convert_mesh_to_2d(
   entity : @core.Entity,
   world : @ecs.World,
 ) -> Unit {
-  guard (try! world.entity(entity).get() : @pbr.Mesh3d?) is Some(mesh3d) else {
+  guard (world.entity(entity).get() catch { _ => None } : @pbr.Mesh3d?)
+    is Some(mesh3d) else {
     return
   }
   let mesh_assets_ref : Ref[@asset.Assets[@mesh.Mesh]] = match
