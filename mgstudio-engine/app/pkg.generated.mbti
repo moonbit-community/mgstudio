@@ -344,10 +344,10 @@ pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, 
 pub fn[W] App::add_plugin(Self[W], (Self[W]) -> Self[W]) -> Self[W]
 pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
-pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] App::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] App::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[W] App::add_post_startup_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_post_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_post_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -518,10 +518,10 @@ pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(Self, (@ecs.On[E], P2) -> Unit raise) -> Self
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(Self, (@ecs.On[E], P2, P3) -> Unit raise) -> Self
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4(Self, (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(Self, (OnPointer[K]) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointer2(Self, (OnPointer[K], P2) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe_pointer3(Self, (OnPointer[K], P2, P3) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe_pointer4(Self, (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(Self, (OnPointer[K]) -> Unit) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointer2(Self, (OnPointer[K], P2) -> Unit) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe_pointer3(Self, (OnPointer[K], P2, P3) -> Unit) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe_pointer4(Self, (OnPointer[K], P2, P3, P4) -> Unit) -> Self
 #callsite(autofill(loc))
 pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
@@ -928,10 +928,10 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] SubApp::add_ob
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[E], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
 pub fn[E : @ecs.TriggerEvent] SubApp::add_observer_fallible(Self[@ecs.World], (@ecs.On[E]) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind] SubApp::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit raise) -> Self[@ecs.World]
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind] SubApp::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]

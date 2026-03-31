@@ -190,8 +190,8 @@ fn set_panel_color(
   entity : @core.Entity,
   color : @sprite.Color,
   backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
-) -> Unit raise {
-  if backgrounds.get(entity) is Some(background) {
+) -> Unit {
+  if (try! backgrounds.get(entity)) is Some(background) {
     background.set(@ui.BackgroundColor::new(color))
   }
 }
@@ -280,13 +280,13 @@ fn setup(
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerEnter],
       backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
-    ) raise {
+    ) {
       set_panel_color(panel, red(), backgrounds)
     })
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerLeave],
       backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
-    ) raise {
+    ) {
       set_panel_color(panel, blue(), backgrounds)
     })
     .observe_pointer2(fn(
@@ -423,10 +423,10 @@ fn drag_panel(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[PanelDragState],
   panels : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[DraggablePanel]],
-) -> Unit raise {
+) -> Unit {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   guard drag_state.get_ref().val.active else { return }
-  guard panels.single() is Some(panel_node) else { return }
+  guard (try! panels.single()) is Some(panel_node) else { return }
   panel_node.set(
     panel_node
     .value()
@@ -439,10 +439,10 @@ fn drag_panel(
 fn stop_drag_panel(
   pointer : @app.OnPointer[@app.PointerUp],
   drag_state : @app.ResMut[PanelDragState],
-) -> Unit raise {
+) -> Unit {
   if @app.current_world() is Some(world) {
     let entity_query : @ecs.QueryState[@core.Entity, @ecs.All] = world.query()
-    ignore(entity_query.single(world))
+    ignore(try! entity_query.single(world))
   }
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   drag_state.get_ref().val.active = false

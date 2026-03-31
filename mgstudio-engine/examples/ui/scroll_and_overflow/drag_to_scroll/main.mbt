@@ -155,11 +155,11 @@ fn start_drag(
     ),
     @ecs.All,
   ],
-) -> Unit raise {
+) -> Unit {
   let state = drag_state.get_ref()
   state.val.active_entity = None
   let pointer_position = pointer.position()
-  scroll_nodes.view(fn(_entity, data) {
+  try! scroll_nodes.view(fn(_entity, data) {
     let ((entity, _marker), (relative_cursor_position, scroll_position)) = data
     if state.val.active_entity is Some(_) {
       return
@@ -179,10 +179,10 @@ fn update_drag(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[ScrollDragState],
   scroll_positions : @ecs.Query[@ecs.Mut[@ui.ScrollPosition], @ecs.All],
-) -> Unit raise {
+) -> Unit {
   let state = drag_state.get_ref()
   guard state.val.active_entity is Some(entity) else { return }
-  guard scroll_positions.get(entity) is Some(scroll_position) else {
+  guard (try! scroll_positions.get(entity)) is Some(scroll_position) else {
     state.val.active_entity = None
     return
   }
@@ -198,10 +198,10 @@ fn update_drag(
 }
 
 ///|
-fn end_drag(drag_state : @app.ResMut[ScrollDragState]) -> Unit raise {
+fn end_drag(drag_state : @app.ResMut[ScrollDragState]) -> Unit {
   if @app.current_world() is Some(world) {
     let entity_query : @ecs.QueryState[@core.Entity, @ecs.All] = world.query()
-    ignore(entity_query.single(world))
+    ignore(try! entity_query.single(world))
   }
   drag_state.get_ref().val.active_entity = None
 }
@@ -216,7 +216,7 @@ fn main {
   .add_pointer_observer2(fn(
     _pointer : @app.OnPointer[@app.PointerUp],
     drag_state : @app.ResMut[ScrollDragState],
-  ) raise {
+  ) {
     end_drag(drag_state)
   })
   .run()

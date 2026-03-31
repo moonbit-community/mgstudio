@@ -274,21 +274,21 @@ fn register_pointer_observer_entry_in_sub_app(
 ///|
 pub fn[K : PointerObserverKind] SubApp::add_pointer_observer(
   self : SubApp[@ecs.World],
-  observer : (OnPointer[K]) -> Unit raise,
+  observer : (OnPointer[K]) -> Unit,
 ) -> SubApp[@ecs.World] {
   register_pointer_observer_entry_in_sub_app(
     self,
     K::event_kind(),
     K::source_label(),
     None,
-    fallible_system_param(observer),
+    system_param(observer),
   )
 }
 
 ///|
 pub fn[K : PointerObserverKind] App::add_pointer_observer(
   self : App[@ecs.World],
-  observer : (OnPointer[K]) -> Unit raise,
+  observer : (OnPointer[K]) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_pointer_observer(observer)
   self
@@ -297,21 +297,21 @@ pub fn[K : PointerObserverKind] App::add_pointer_observer(
 ///|
 pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(
   self : SubApp[@ecs.World],
-  observer : (OnPointer[K], P2) -> Unit raise,
+  observer : (OnPointer[K], P2) -> Unit,
 ) -> SubApp[@ecs.World] {
   register_pointer_observer_entry_in_sub_app(
     self,
     K::event_kind(),
     K::source_label(),
     None,
-    fallible_system_param2(observer),
+    system_param2(observer),
   )
 }
 
 ///|
 pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(
   self : App[@ecs.World],
-  observer : (OnPointer[K], P2) -> Unit raise,
+  observer : (OnPointer[K], P2) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_pointer_observer2(observer)
   self
@@ -320,21 +320,21 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(
 ///|
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(
   self : SubApp[@ecs.World],
-  observer : (OnPointer[K], P2, P3) -> Unit raise,
+  observer : (OnPointer[K], P2, P3) -> Unit,
 ) -> SubApp[@ecs.World] {
   register_pointer_observer_entry_in_sub_app(
     self,
     K::event_kind(),
     K::source_label(),
     None,
-    fallible_system_param3(observer),
+    system_param3(observer),
   )
 }
 
 ///|
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] App::add_pointer_observer3(
   self : App[@ecs.World],
-  observer : (OnPointer[K], P2, P3) -> Unit raise,
+  observer : (OnPointer[K], P2, P3) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_pointer_observer3(observer)
   self
@@ -348,14 +348,14 @@ pub fn[
   P4 : SystemParam,
 ] SubApp::add_pointer_observer4(
   self : SubApp[@ecs.World],
-  observer : (OnPointer[K], P2, P3, P4) -> Unit raise,
+  observer : (OnPointer[K], P2, P3, P4) -> Unit,
 ) -> SubApp[@ecs.World] {
   register_pointer_observer_entry_in_sub_app(
     self,
     K::event_kind(),
     K::source_label(),
     None,
-    fallible_system_param4(observer),
+    system_param4(observer),
   )
 }
 
@@ -367,7 +367,7 @@ pub fn[
   P4 : SystemParam,
 ] App::add_pointer_observer4(
   self : App[@ecs.World],
-  observer : (OnPointer[K], P2, P3, P4) -> Unit raise,
+  observer : (OnPointer[K], P2, P3, P4) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_pointer_observer4(observer)
   self

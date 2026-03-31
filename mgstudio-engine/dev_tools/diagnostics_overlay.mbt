@@ -593,7 +593,7 @@ fn diagnostics_overlay_pointer_down(
   headers : @ecs.Query[@ecs.Comp[DiagnosticsOverlayHeader], @ecs.All],
   overlays : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
-) -> Unit raise {
+) -> Unit {
   guard pointer.target() is Some(target) else { return }
   guard (try! headers.get(target)) is Some(header_comp) else { return }
   let header = header_comp.value()
@@ -613,7 +613,7 @@ fn diagnostics_overlay_pointer_move(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
   overlays : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
-) -> Unit raise {
+) -> Unit {
   guard drag_state.get_ref().val.active_overlay is Some(overlay_entity) else {
     return
   }
@@ -633,7 +633,7 @@ fn diagnostics_overlay_pointer_move(
 fn diagnostics_overlay_pointer_up(
   pointer : @app.OnPointer[@app.PointerUp],
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
-) -> Unit raise {
+) -> Unit {
   guard drag_state.get_ref().val.pointer_id is Some(pointer_id) else { return }
   guard pointer.pointer() == pointer_id else { return }
   drag_state.get_ref().val.active_overlay = None
@@ -646,7 +646,7 @@ fn diagnostics_overlay_pointer_click(
   headers : @ecs.Query[@ecs.Comp[DiagnosticsOverlayHeader], @ecs.All],
   windows : @ecs.Query[@ecs.Mut[DiagnosticsOverlayWindow], @ecs.All],
   nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
-) -> Unit raise {
+) -> Unit {
   guard pointer.target() is Some(target) else { return }
   guard (try! headers.get(target)) is Some(header_comp) else { return }
   let header = header_comp.value()

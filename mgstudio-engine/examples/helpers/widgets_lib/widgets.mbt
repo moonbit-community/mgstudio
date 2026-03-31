@@ -78,12 +78,12 @@ pub struct RadioButtonText {}
 
 ///|
 let radio_button_key : @ecs.ComponentKey[RadioButton] = @ecs.register_component(
-  debug_name="examples.helpers.widgets.RadioButton",
+  debug_name="examples.helpers.widgets_lib.RadioButton",
 )
 
 ///|
 let radio_button_text_key : @ecs.ComponentKey[RadioButtonText] = @ecs.register_component(
-  debug_name="examples.helpers.widgets.RadioButtonText",
+  debug_name="examples.helpers.widgets_lib.RadioButtonText",
 )
 
 ///|
@@ -99,7 +99,7 @@ pub impl @ecs.Component for RadioButtonText with component() {
 ///|
 pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]] {
   let probe : T? = None
-  let type_name = "examples.helpers.widgets.WidgetClickEvent<" +
+  let type_name = "examples.helpers.widgets_lib.WidgetClickEvent<" +
     @any.of(probe).type_name() +
     ">"
   match widget_click_event_registry.val.get(type_name) {
@@ -121,7 +121,7 @@ pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]] {
 ///|
 pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]] {
   let probe : T? = None
-  let type_name = "examples.helpers.widgets.WidgetClickSender<" +
+  let type_name = "examples.helpers.widgets_lib.WidgetClickSender<" +
     @any.of(probe).type_name() +
     ">"
   match widget_click_sender_registry.val.get(type_name) {

@@ -113,8 +113,8 @@ fn set_tile_colors(
     (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
     @ecs.All,
   ],
-) -> Unit raise {
-  if query.get(entity) is Some((background_color, border_color)) {
+) -> Unit {
+  if (try! query.get(entity)) is Some((background_color, border_color)) {
     background_color.set(@ui.BackgroundColor::new(background))
     border_color.set(@ui.BorderColor::new(border))
   }
@@ -129,12 +129,12 @@ fn begin_drag(
     (@ecs.Mut[@ui.Outline], @ecs.Mut[@ui.GlobalZIndex]),
     @ecs.All,
   ],
-) -> Unit raise {
+) -> Unit {
   let state_ref = drag_state.get_ref()
   state_ref.val.active = Some(entity)
   state_ref.val.hovered = Some(entity)
   state_ref.val.start_position = position
-  if visuals.get(entity) is Some((outline, global_z)) {
+  if (try! visuals.get(entity)) is Some((outline, global_z)) {
     outline.set(
       @ui.Outline::new(
         @ui.Val::Px(2.0F),
@@ -151,10 +151,10 @@ fn drag_active_tile(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[DragState],
   transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
-) -> Unit raise {
+) -> Unit {
   let state_ref = drag_state.get_ref()
   guard state_ref.val.active is Some(active) else { return }
-  if transforms.get(active) is Some(transform) {
+  if (try! transforms.get(active)) is Some(transform) {
     let current = pointer.position()
     let start = state_ref.val.start_position
     let delta_x = current.x - start.x
@@ -178,11 +178,11 @@ fn release_active_tile(
     @ecs.All,
   ],
   nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
-) -> Unit raise {
+) -> Unit {
   let state_ref = drag_state.get_ref()
   guard state_ref.val.active is Some(active) else { return }
 
-  if visuals.get(active) is Some((transform, outline, global_z)) {
+  if (try! visuals.get(active)) is Some((transform, outline, global_z)) {
     let transform_ref = transform.get_ref()
     let z = transform_ref.val.translation.z
     transform_ref.val.translation = @math.Vec3::new(0.0F, 0.0F, z)
@@ -192,8 +192,8 @@ fn release_active_tile(
 
   if state_ref.val.hovered is Some(hovered) &&
     hovered != active &&
-    nodes.get(active) is Some(active_node) &&
-    nodes.get(hovered) is Some(hovered_node) {
+    (try! nodes.get(active)) is Some(active_node) &&
+    (try! nodes.get(hovered)) is Some(hovered_node) {
     let active_value = active_node.value()
     let hovered_value = hovered_node.value()
     active_node.set(@ui.Node::{
@@ -293,7 +293,7 @@ fn setup(
             (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
             @ecs.All,
           ],
-        ) raise {
+        ) {
           drag_state.get_ref().val.hovered = Some(tile)
           set_tile_colors(
             tile, tile_hover_color, tile_hover_border_color, colors,
@@ -306,7 +306,7 @@ fn setup(
             (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
             @ecs.All,
           ],
-        ) raise {
+        ) {
           let state_ref = drag_state.get_ref()
           if state_ref.val.hovered is Some(hovered) && hovered == tile {
             state_ref.val.hovered = None
@@ -320,7 +320,7 @@ fn setup(
             (@ecs.Mut[@ui.Outline], @ecs.Mut[@ui.GlobalZIndex]),
             @ecs.All,
           ],
-        ) raise {
+        ) {
           begin_drag(tile, pointer.position(), drag_state, visuals)
         }),
       )

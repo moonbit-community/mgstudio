@@ -316,8 +316,10 @@ fn handle_click(
   pointer : @app.OnPointer[@app.PointerDown],
   windows : @ecs.Query[@ecs.Comp[@window.Window], @ecs.All],
   commands : @app.Commands,
-) -> Unit raise {
-  guard pointer_world_position(pointer, windows) is Some(pos) else { return }
+) -> Unit {
+  guard (try! pointer_world_position(pointer, windows)) is Some(pos) else {
+    return
+  }
   commands.trigger(ExplodeMines::{ pos, radius: 1.0F })
 }
 

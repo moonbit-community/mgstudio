@@ -104,14 +104,14 @@ fn setup(
 }
 
 ///|
-fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit raise {
+fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit {
   guard pointer.target() is Some(entity) else { return }
   guard @app.current_world() is Some(world) else { return }
   let query : @ecs.QueryState[
     (@ecs.Mut[@transform.Transform], @ecs.Mut[ObserverTarget]),
     @ecs.All,
   ] = world.query_filtered(@ecs.All::new())
-  if query.get(world, entity) is Some((transform_mut, target_mut)) {
+  if (try! query.get(world, entity)) is Some((transform_mut, target_mut)) {
     let transform_ref = transform_mut.get_ref()
     let target_ref = target_mut.get_ref()
     if transform_ref.val.translation.x > OBSERVER_BOUND_X {

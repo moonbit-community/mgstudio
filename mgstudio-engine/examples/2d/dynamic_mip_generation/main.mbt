@@ -229,8 +229,8 @@ pub impl @ecs.Message for RegenerateImage with message() {
 ///|
 fn main {
   let widget_click_message_key : @ecs.MessageKey[
-    @widgets.WidgetClickEvent[AppSetting],
-  ] = @widgets.widget_click_event_key()
+    @widgets_lib.WidgetClickEvent[AppSetting],
+  ] = @widgets_lib.widget_click_event_key()
   let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
     @app.system_param3(setup),
   )
@@ -288,10 +288,12 @@ fn setup(
 
 ///|
 fn spawn_ui(commands : @app.Commands) -> Unit {
-  let root = commands.spawn((@ui.UiRoot::default(), @widgets.main_ui_node()))
+  let root = commands.spawn(
+    (@ui.UiRoot::default(), @widgets_lib.main_ui_node()),
+  )
 
   ignore(
-    @widgets.spawn_action_button(
+    @widgets_lib.spawn_action_button(
       commands,
       root,
       AppSetting::RegenerateTopMipLevel,
@@ -299,7 +301,7 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
     ),
   )
   ignore(
-    @widgets.spawn_option_buttons(
+    @widgets_lib.spawn_option_buttons(
       commands,
       root,
       "Mip Generation",
@@ -311,7 +313,7 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
     ),
   )
   ignore(
-    @widgets.spawn_option_buttons(
+    @widgets_lib.spawn_option_buttons(
       commands,
       root,
       "Image Width",
@@ -326,7 +328,7 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
     ),
   )
   ignore(
-    @widgets.spawn_option_buttons(
+    @widgets_lib.spawn_option_buttons(
       commands,
       root,
       "Image Height",
@@ -347,32 +349,32 @@ fn handle_widget_interactions(
   interactions : @ecs.Query[
     (
       @ecs.Comp[@ui.Interaction],
-      @ecs.Comp[@widgets.WidgetClickSender[AppSetting]],
+      @ecs.Comp[@widgets_lib.WidgetClickSender[AppSetting]],
     ),
     @ecs.With[@ui.Button],
   ],
   widget_click_events : @ecs.MessageWriter[
-    @widgets.WidgetClickEvent[AppSetting],
+    @widgets_lib.WidgetClickEvent[AppSetting],
   ],
 ) -> Unit {
-  @widgets.handle_ui_interactions(interactions, widget_click_events)
+  @widgets_lib.handle_ui_interactions(interactions, widget_click_events)
 }
 
 ///|
 fn update_radio_buttons(
   radio_buttons : @ecs.Query[
     (
-      @ecs.Comp[@widgets.WidgetClickSender[AppSetting]],
+      @ecs.Comp[@widgets_lib.WidgetClickSender[AppSetting]],
       @ecs.Mut[@ui.BackgroundColor],
     ),
-    @ecs.With[@widgets.RadioButton],
+    @ecs.With[@widgets_lib.RadioButton],
   ],
   radio_button_texts : @ecs.Query[
     (
-      @ecs.Comp[@widgets.WidgetClickSender[AppSetting]],
+      @ecs.Comp[@widgets_lib.WidgetClickSender[AppSetting]],
       @ecs.Mut[@text.TextColor],
     ),
-    @ecs.With[@widgets.RadioButtonText],
+    @ecs.With[@widgets_lib.RadioButtonText],
   ],
   app_status : @app.Res[AppStatus],
 ) -> Unit {
@@ -380,7 +382,7 @@ fn update_radio_buttons(
 
   try! radio_buttons.view(fn(_entity, data) {
     let (sender, background_color) = data
-    @widgets.update_ui_radio_button(
+    @widgets_lib.update_ui_radio_button(
       background_color,
       app_setting_selected(sender.value().get(), status),
     )
@@ -388,7 +390,7 @@ fn update_radio_buttons(
 
   try! radio_button_texts.view(fn(_entity, data) {
     let (sender, text_color) = data
-    @widgets.update_ui_radio_button_text(
+    @widgets_lib.update_ui_radio_button_text(
       text_color,
       app_setting_selected(sender.value().get(), status),
     )
@@ -409,7 +411,7 @@ fn app_setting_selected(setting : AppSetting, app_status : AppStatus) -> Bool {
 
 ///|
 fn handle_app_setting_change(
-  events : @ecs.MessageReader[@widgets.WidgetClickEvent[AppSetting]],
+  events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[AppSetting]],
   app_status : @app.ResMut[AppStatus],
   regenerate_writer : @ecs.MessageWriter[RegenerateImage],
 ) -> Unit {

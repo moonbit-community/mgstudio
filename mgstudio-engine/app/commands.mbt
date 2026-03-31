@@ -503,7 +503,7 @@ pub fn[T] EntityCommands::remove(
 ///|
 pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
   self : EntityCommands,
-  observer : (OnPointer[K]) -> Unit raise,
+  observer : (OnPointer[K]) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
@@ -514,7 +514,7 @@ pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
         K::event_kind(),
         "EntityCommands::observe_pointer(" + K::source_label() + ")",
         Some(entity),
-        fallible_system_param(observer),
+        system_param(observer),
       )
     },
     error_handler: None,
@@ -526,7 +526,7 @@ pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
 ///|
 pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointer2(
   self : EntityCommands,
-  observer : (OnPointer[K], P2) -> Unit raise,
+  observer : (OnPointer[K], P2) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
@@ -537,7 +537,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointe
         K::event_kind(),
         "EntityCommands::observe_pointer2(" + K::source_label() + ")",
         Some(entity),
-        fallible_system_param2(observer),
+        system_param2(observer),
       )
     },
     error_handler: None,
@@ -549,7 +549,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointe
 ///|
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe_pointer3(
   self : EntityCommands,
-  observer : (OnPointer[K], P2, P3) -> Unit raise,
+  observer : (OnPointer[K], P2, P3) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
@@ -560,7 +560,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityComman
         K::event_kind(),
         "EntityCommands::observe_pointer3(" + K::source_label() + ")",
         Some(entity),
-        fallible_system_param3(observer),
+        system_param3(observer),
       )
     },
     error_handler: None,
@@ -577,7 +577,7 @@ pub fn[
   P4 : SystemParam,
 ] EntityCommands::observe_pointer4(
   self : EntityCommands,
-  observer : (OnPointer[K], P2, P3, P4) -> Unit raise,
+  observer : (OnPointer[K], P2, P3, P4) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
@@ -588,7 +588,7 @@ pub fn[
         K::event_kind(),
         "EntityCommands::observe_pointer4(" + K::source_label() + ")",
         Some(entity),
-        fallible_system_param4(observer),
+        system_param4(observer),
       )
     },
     error_handler: None,

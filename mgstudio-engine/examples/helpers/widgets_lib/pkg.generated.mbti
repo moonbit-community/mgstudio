@@ -1,0 +1,62 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/helpers/widgets_lib"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/ui",
+}
+
+// Values
+pub fn[T] handle_ui_interactions(@ecs.Query[(@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]), @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
+
+pub fn main_ui_node() -> @ui.Node
+
+pub fn[T] spawn_action_button(@app.Commands, @core.Entity, T, String) -> @core.Entity
+
+pub fn[T] spawn_option_button(@app.Commands, @core.Entity, T, String, Bool, Bool, Bool) -> @core.Entity
+
+pub fn[T] spawn_option_buttons(@app.Commands, @core.Entity, String, Array[(T, String)], Int) -> @core.Entity
+
+pub fn ui_text(String, @color.Color) -> (@text.Text, @text.TextFont, @text.TextColor)
+
+pub fn update_ui_radio_button(@ecs.Mut[@ui.BackgroundColor], Bool) -> Unit
+
+pub fn update_ui_radio_button_text(@ecs.Mut[@text.TextColor], Bool) -> Unit
+
+pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]]
+
+pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]]
+
+// Errors
+
+// Types and methods
+pub struct RadioButton {
+}
+pub impl @ecs.Component for RadioButton
+
+pub struct RadioButtonText {
+}
+pub impl @ecs.Component for RadioButtonText
+
+pub struct WidgetClickEvent[T] {
+  value : T
+}
+pub fn[T] WidgetClickEvent::get(Self[T]) -> T
+pub fn[T] WidgetClickEvent::new(T) -> Self[T]
+pub impl[T] @ecs.Message for WidgetClickEvent[T]
+
+pub struct WidgetClickSender[T] {
+  value : T
+}
+pub fn[T] WidgetClickSender::get(Self[T]) -> T
+pub fn[T] WidgetClickSender::new(T) -> Self[T]
+pub impl[T] @ecs.Component for WidgetClickSender[T]
+
+// Type aliases
+
+// Traits
+
