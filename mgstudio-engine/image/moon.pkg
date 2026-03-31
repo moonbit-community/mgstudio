@@ -3,6 +3,4 @@ import {
   "Milky2018/wgpu_mbt" @wgpu,
 }
 
-options(
-  "supported-targets": "native",
-)
+supported_targets = "native"

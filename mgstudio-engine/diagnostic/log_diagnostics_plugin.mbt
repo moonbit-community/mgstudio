@@ -217,6 +217,19 @@ fn log_diagnostic_message(diagnostic : Diagnostic) -> String {
 }
 
 ///|
+fn log_diagnostics_sorted(diagnostics : DiagnosticsStore) -> Array[Diagnostic] {
+  let items = diagnostics.iter()
+  items.sort_by(fn(left, right) {
+    match left.path().as_str().compare(right.path().as_str()) {
+      0 => 0
+      n if n < 0 => -1
+      _ => 1
+    }
+  })
+  items
+}
+
+///|
 fn log_diagnostics_system(
   state : @app.ResMut[LogDiagnosticsState],
   time : @app.Res[@time.Time[@time.Real]],
@@ -228,7 +241,7 @@ fn log_diagnostics_system(
     return
   }
 
-  for diagnostic in diagnostics.get().iter() {
+  for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
     if !diagnostic.is_enabled ||
       !log_diagnostics_state_allows(state_ref.val, diagnostic.path()) {
       continue
@@ -252,7 +265,7 @@ fn log_diagnostics_debug_system(
     return
   }
 
-  for diagnostic in diagnostics.get().iter() {
+  for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
     if !diagnostic.is_enabled ||
       !log_diagnostics_state_allows(state_ref.val, diagnostic.path()) {
       continue

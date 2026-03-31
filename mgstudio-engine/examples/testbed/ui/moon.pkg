@@ -9,7 +9,8 @@ import {
   "Milky2018/mgstudio/winit",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

@@ -420,8 +420,7 @@ fn main {
       close_when_requested: true,
     })
   })
-  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
-  .add_plugin(@diagnostic.log_diagnostics_plugin)
+  .add_plugin(@diagnostic.stress_diagnostics_plugin)
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_component_observer4(setup_scene_once_loaded)
   .add_systems(

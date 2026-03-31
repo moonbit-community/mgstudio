@@ -384,6 +384,11 @@ let text_diagnostic_render_culled_text_count_ref : Ref[Int] = Ref::new(0)
 let text_diagnostic_render_submitted_item_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
+let text_render_overlay_sprites_cache_ref : Ref[
+  Array[@sprite.OverlaySpriteUvScissor],
+] = Ref::new([])
+
+///|
 fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
   let message = "Text2d fatal: inconsistent atlas state, text_id=" +
     text_id.to_string() +
@@ -1195,7 +1200,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
   let render_start = @time.host_time_now()
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
-  let overlay_sprites : Array[@sprite.OverlaySpriteUvScissor] = []
+  let overlay_sprites = text_render_overlay_sprites_cache_ref.val
+  overlay_sprites.clear()
   let white_texture = @asset.asset_white_texture()
   let scene_cull_context = @sprite_render.render2d_primary_scene_cull_context(
     world,
@@ -1441,74 +1447,282 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     // Keep UI text origin in continuous space.
     // Snapping world-space origins introduces visible jitter when camera
     // viewport/scale changes dynamically (e.g. 2d_viewport_to_world).
-    for glyph in layout_info.glyphs {
-      let atlas_info = glyph.atlas_info
-      let uv_min = glyph.uv_min
-      let uv_max = glyph.uv_max
-      let glyph_pos = text_to_y_up(instance.y_axis, glyph.position)
-      let local_scaled = @math.Vec2::new(
-        glyph_pos.x * scale.x,
-        glyph_pos.y * scale.y,
-      )
-      let offset = text_rotate_vec2(local_scaled, rot_cos, rot_sin)
-      let translation = @math.Vec2::new(
-        text_origin.x + offset.x,
-        text_origin.y + offset.y,
-      )
-      let transform = @transform.Transform::from_xy_rotation_scale(
-        translation,
-        rot,
-        scale,
-        z=instance.transform.translation.z,
-      )
-      let color = text_span_color(instance, glyph.span_index).color
-      if instance.shadow is Some(shadow) {
-        let shadow_translation = @math.Vec2::new(
-          translation.x + shadow.offset.x,
-          translation.y + shadow.offset.y,
+    let glyph_rotation = instance.transform.rotation
+    let glyph_scale3 = @math.Vec3::new(scale.x, scale.y, 1.0F)
+    let glyph_z = instance.transform.translation.z
+    let shadow_opt = instance.shadow
+    let top_to_bottom_y_axis = match instance.y_axis {
+      YAxisOrientation::TopToBottom => true
+      YAxisOrientation::BottomToTop => false
+    }
+    let no_rotation = rot > -0.000001F && rot < 0.000001F
+    let mut cached_span_index = -1
+    let mut cached_span_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+    if shadow_opt is Some(shadow) {
+      if no_rotation {
+        for glyph in layout_info.glyphs {
+          let atlas_info = glyph.atlas_info
+          let uv_min = glyph.uv_min
+          let uv_max = glyph.uv_max
+          let glyph_y = if top_to_bottom_y_axis {
+            0.0F - glyph.position.y
+          } else {
+            glyph.position.y
+          }
+          let translation = @math.Vec2::new(
+            text_origin.x + glyph.position.x * scale.x,
+            text_origin.y + glyph_y * scale.y,
+          )
+          let transform = @transform.Transform::new(
+            @math.Vec3::new(translation.x, translation.y, glyph_z),
+            glyph_rotation,
+            glyph_scale3,
+          )
+          let color = if glyph.span_index == cached_span_index {
+            cached_span_color
+          } else {
+            let span_color = text_span_color(instance, glyph.span_index).color
+            cached_span_index = glyph.span_index
+            cached_span_color = span_color
+            span_color
+          }
+          let shadow_translation = @math.Vec2::new(
+            translation.x + shadow.offset.x,
+            translation.y + shadow.offset.y,
+          )
+          let shadow_transform = @transform.Transform::new(
+            @math.Vec3::new(shadow_translation.x, shadow_translation.y, glyph_z),
+            glyph_rotation,
+            glyph_scale3,
+          )
+          overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
+            texture: atlas_info.texture,
+            transform: shadow_transform,
+            uv_min,
+            uv_max,
+            color: shadow.color,
+            layers: instance.layers,
+            scissor: instance.ui_scissor,
+            target_camera: instance.ui_camera_entity,
+          })
+          overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
+            texture: atlas_info.texture,
+            transform,
+            uv_min,
+            uv_max,
+            color,
+            layers: instance.layers,
+            scissor: instance.ui_scissor,
+            target_camera: instance.ui_camera_entity,
+          })
+          if debug_capture_enabled {
+            let glyph_bounds = text_glyph_world_bounds(
+              translation,
+              glyph.size,
+              scale,
+              rot,
+            )
+            text_debug_push_glyph(
+              instance.id,
+              glyph_bounds,
+              instance.ui_scissor,
+              atlas_info.texture.id(),
+              uv_min,
+              uv_max,
+            )
+          }
+        }
+      } else {
+        for glyph in layout_info.glyphs {
+          let atlas_info = glyph.atlas_info
+          let uv_min = glyph.uv_min
+          let uv_max = glyph.uv_max
+          let glyph_pos = if top_to_bottom_y_axis {
+            @math.Vec2::new(glyph.position.x, 0.0F - glyph.position.y)
+          } else {
+            glyph.position
+          }
+          let local_scaled = @math.Vec2::new(
+            glyph_pos.x * scale.x,
+            glyph_pos.y * scale.y,
+          )
+          let offset = text_rotate_vec2(local_scaled, rot_cos, rot_sin)
+          let translation = @math.Vec2::new(
+            text_origin.x + offset.x,
+            text_origin.y + offset.y,
+          )
+          let transform = @transform.Transform::new(
+            @math.Vec3::new(translation.x, translation.y, glyph_z),
+            glyph_rotation,
+            glyph_scale3,
+          )
+          let color = if glyph.span_index == cached_span_index {
+            cached_span_color
+          } else {
+            let span_color = text_span_color(instance, glyph.span_index).color
+            cached_span_index = glyph.span_index
+            cached_span_color = span_color
+            span_color
+          }
+          let shadow_translation = @math.Vec2::new(
+            translation.x + shadow.offset.x,
+            translation.y + shadow.offset.y,
+          )
+          let shadow_transform = @transform.Transform::new(
+            @math.Vec3::new(shadow_translation.x, shadow_translation.y, glyph_z),
+            glyph_rotation,
+            glyph_scale3,
+          )
+          overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
+            texture: atlas_info.texture,
+            transform: shadow_transform,
+            uv_min,
+            uv_max,
+            color: shadow.color,
+            layers: instance.layers,
+            scissor: instance.ui_scissor,
+            target_camera: instance.ui_camera_entity,
+          })
+          overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
+            texture: atlas_info.texture,
+            transform,
+            uv_min,
+            uv_max,
+            color,
+            layers: instance.layers,
+            scissor: instance.ui_scissor,
+            target_camera: instance.ui_camera_entity,
+          })
+          if debug_capture_enabled {
+            let glyph_bounds = text_glyph_world_bounds(
+              translation,
+              glyph.size,
+              scale,
+              rot,
+            )
+            text_debug_push_glyph(
+              instance.id,
+              glyph_bounds,
+              instance.ui_scissor,
+              atlas_info.texture.id(),
+              uv_min,
+              uv_max,
+            )
+          }
+        }
+      }
+    } else if no_rotation {
+      for glyph in layout_info.glyphs {
+        let atlas_info = glyph.atlas_info
+        let uv_min = glyph.uv_min
+        let uv_max = glyph.uv_max
+        let glyph_y = if top_to_bottom_y_axis {
+          0.0F - glyph.position.y
+        } else {
+          glyph.position.y
+        }
+        let translation = @math.Vec2::new(
+          text_origin.x + glyph.position.x * scale.x,
+          text_origin.y + glyph_y * scale.y,
         )
-        let shadow_transform = @transform.Transform::from_xy_rotation_scale(
-          shadow_translation,
-          instance.transform.rotation_z(),
-          scale,
-          z=instance.transform.translation.z,
+        let transform = @transform.Transform::new(
+          @math.Vec3::new(translation.x, translation.y, glyph_z),
+          glyph_rotation,
+          glyph_scale3,
         )
+        let color = if glyph.span_index == cached_span_index {
+          cached_span_color
+        } else {
+          let span_color = text_span_color(instance, glyph.span_index).color
+          cached_span_index = glyph.span_index
+          cached_span_color = span_color
+          span_color
+        }
         overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
           texture: atlas_info.texture,
-          transform: shadow_transform,
+          transform,
           uv_min,
           uv_max,
-          color: shadow.color,
+          color,
           layers: instance.layers,
           scissor: instance.ui_scissor,
           target_camera: instance.ui_camera_entity,
         })
+        if debug_capture_enabled {
+          let glyph_bounds = text_glyph_world_bounds(
+            translation,
+            glyph.size,
+            scale,
+            rot,
+          )
+          text_debug_push_glyph(
+            instance.id,
+            glyph_bounds,
+            instance.ui_scissor,
+            atlas_info.texture.id(),
+            uv_min,
+            uv_max,
+          )
+        }
       }
-      overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
-        texture: atlas_info.texture,
-        transform,
-        uv_min,
-        uv_max,
-        color,
-        layers: instance.layers,
-        scissor: instance.ui_scissor,
-        target_camera: instance.ui_camera_entity,
-      })
-      if debug_capture_enabled {
-        let glyph_bounds = text_glyph_world_bounds(
-          translation,
-          glyph.size,
-          scale,
-          rot,
+    } else {
+      for glyph in layout_info.glyphs {
+        let atlas_info = glyph.atlas_info
+        let uv_min = glyph.uv_min
+        let uv_max = glyph.uv_max
+        let glyph_pos = if top_to_bottom_y_axis {
+          @math.Vec2::new(glyph.position.x, 0.0F - glyph.position.y)
+        } else {
+          glyph.position
+        }
+        let local_scaled = @math.Vec2::new(
+          glyph_pos.x * scale.x,
+          glyph_pos.y * scale.y,
         )
-        text_debug_push_glyph(
-          instance.id,
-          glyph_bounds,
-          instance.ui_scissor,
-          atlas_info.texture.id(),
+        let offset = text_rotate_vec2(local_scaled, rot_cos, rot_sin)
+        let translation = @math.Vec2::new(
+          text_origin.x + offset.x,
+          text_origin.y + offset.y,
+        )
+        let transform = @transform.Transform::new(
+          @math.Vec3::new(translation.x, translation.y, glyph_z),
+          glyph_rotation,
+          glyph_scale3,
+        )
+        let color = if glyph.span_index == cached_span_index {
+          cached_span_color
+        } else {
+          let span_color = text_span_color(instance, glyph.span_index).color
+          cached_span_index = glyph.span_index
+          cached_span_color = span_color
+          span_color
+        }
+        overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
+          texture: atlas_info.texture,
+          transform,
           uv_min,
           uv_max,
-        )
+          color,
+          layers: instance.layers,
+          scissor: instance.ui_scissor,
+          target_camera: instance.ui_camera_entity,
+        })
+        if debug_capture_enabled {
+          let glyph_bounds = text_glyph_world_bounds(
+            translation,
+            glyph.size,
+            scale,
+            rot,
+          )
+          text_debug_push_glyph(
+            instance.id,
+            glyph_bounds,
+            instance.ui_scissor,
+            atlas_info.texture.id(),
+            uv_min,
+            uv_max,
+          )
+        }
       }
     }
   }

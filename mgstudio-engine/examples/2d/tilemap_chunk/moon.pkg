@@ -11,7 +11,8 @@ import {
   "moonbitlang/core/ref",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

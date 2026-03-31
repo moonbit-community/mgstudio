@@ -30,6 +30,8 @@ pub fn[T : ChainedSystemConfigs] chain(T) -> SystemConfig[@ecs.World]
 
 pub fn[C] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
 
+pub fn clear_timeline_trace_span_sink() -> Unit
+
 pub fn current_schedule_stage() -> ScheduleStage?
 
 pub fn current_system_sequence() -> @core.SystemSequence
@@ -188,6 +190,8 @@ pub fn[S : States] set_state(S) -> Unit
 
 pub fn[S : States] set_state_if_neq(S) -> Unit
 
+pub fn set_timeline_trace_span_sink(((TimelineTraceSpan) -> Unit)?) -> Unit
+
 pub fn[S : States] state_changed(S) -> (@ecs.World) -> Bool
 
 pub fn[S : States] state_exists(S) -> (@ecs.World) -> Bool
@@ -223,6 +227,18 @@ pub fn[W, P : SystemParam, O] system_param_output((P) -> O) -> OutputSystemConfi
 pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
 
 pub fn system_set(String) -> String
+
+pub fn timeline_trace_begin_span(TimelineTraceCategory, String) -> Int64
+
+pub fn timeline_trace_category_label(TimelineTraceCategory) -> String
+
+pub fn timeline_trace_emit_complete_span(TimelineTraceCategory, String, Int64, Int64) -> Unit
+
+pub fn timeline_trace_enabled() -> Bool
+
+pub fn timeline_trace_end_span(TimelineTraceCategory, String, Int64) -> Unit
+
+pub fn timeline_trace_now_us() -> Int64
 
 pub fn[C : @ecs.Component] validate_parent_has_component_plugin(ValidateParentHasComponentPlugin[C]) -> (App[@ecs.World]) -> App[@ecs.World]
 
@@ -976,6 +992,24 @@ pub(all) enum SystemSteppingBehavior {
   Continue
 } derive(Eq, Show)
 
+pub(all) enum TimelineTraceCategory {
+  ScheduleStage
+  System
+  RenderPass
+  RenderQueue
+} derive(Eq, Show)
+
+pub struct TimelineTraceSpan {
+  category : TimelineTraceCategory
+  name : String
+  ts_us : Int64
+  dur_us : Int64
+}
+pub fn TimelineTraceSpan::category(Self) -> TimelineTraceCategory
+pub fn TimelineTraceSpan::dur_us(Self) -> Int64
+pub fn TimelineTraceSpan::name(Self) -> String
+pub fn TimelineTraceSpan::ts_us(Self) -> Int64
+
 pub struct ValidateParentHasComponentPlugin[_] {
   schedule : ScheduleStage
 }
@@ -1008,6 +1042,8 @@ pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 pub type SystemFn[W] = (W) -> Unit
 
 pub type SystemSet = String
+
+pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 
 // Traits
 pub(open) trait ChainedSystemConfigs {

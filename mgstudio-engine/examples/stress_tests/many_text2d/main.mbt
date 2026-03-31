@@ -303,8 +303,7 @@ fn main {
       close_when_requested: true,
     })
   })
-  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
-  .add_plugin(@diagnostic.log_diagnostics_plugin)
+  .add_plugin(@diagnostic.stress_diagnostics_plugin)
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
   .add_systems(@app.Update, @app.system(@app.system_param2(recompute)))

@@ -125,6 +125,7 @@ pub impl @json.FromJson for AnimatedBy
 pub struct AnimationClip {
   mut duration_seconds : Float
   targets : Array[AnimationTargetBinding]
+  target_index_by_key : Map[UInt64, Int]
   events_root : Array[AnimationClipEvent]
   events_targets : Array[(AnimationTargetId, Array[AnimationClipEvent])]
 }

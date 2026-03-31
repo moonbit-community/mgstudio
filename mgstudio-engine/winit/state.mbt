@@ -142,7 +142,7 @@ fn env_int_or_default(key : String, default_value : Int) -> Int {
       if token == "" {
         default_value
       } else {
-        @strconv.parse_int(token[:], base=10) catch {
+        @string.parse_int(token[:], base=10) catch {
           _ => default_value
         }
       }

@@ -233,6 +233,7 @@ pub struct SkinningMat4 {
   m32 : Float
   m33 : Float
 }
+pub fn SkinningMat4::append_row_major_f32(Self, Array[Float]) -> Unit
 pub fn SkinningMat4::from_transform(@transform.Transform) -> Self
 pub fn SkinningMat4::from_values(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Self
 pub fn SkinningMat4::identity() -> Self

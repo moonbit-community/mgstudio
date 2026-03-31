@@ -11,6 +11,4 @@ import {
   "Milky2018/mgstudio/ui",
 }
 
-options(
-  "supported-targets": "native",
-)
+supported_targets = "native"

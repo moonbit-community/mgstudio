@@ -96,7 +96,7 @@ fn screenshot_env_trimmed(key : String) -> String? {
 fn parity_capture_delay_frames_from_env() -> Int {
   match screenshot_env_trimmed(PARITY_CAPTURE_DELAY_ENV) {
     Some(raw) => {
-      let parsed = @strconv.parse_int(raw[:], base=10) catch {
+      let parsed = @string.parse_int(raw[:], base=10) catch {
         _ => PARITY_CAPTURE_DEFAULT_DELAY_FRAMES
       }
       if parsed < 0 {

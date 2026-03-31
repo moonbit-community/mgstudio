@@ -3,7 +3,8 @@ import {
   "Milky2018/mgstudio/ecs",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

@@ -174,11 +174,7 @@ fn main {
   .insert_resource(PrintTimer::default())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(
-    [
-      ..@mgstudio.default_plugins(),
-      @diagnostic.frame_time_diagnostics_plugin,
-      @diagnostic.log_diagnostics_plugin,
-    ],
+    [..@mgstudio.default_plugins(), @diagnostic.stress_diagnostics_plugin],
   )
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_sprites)))

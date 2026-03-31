@@ -376,6 +376,29 @@ pub fn SkinningMat4::to_row_major_f32(self : SkinningMat4) -> Array[Float] {
 }
 
 ///|
+pub fn SkinningMat4::append_row_major_f32(
+  self : SkinningMat4,
+  out : Array[Float],
+) -> Unit {
+  out.push(self.m00)
+  out.push(self.m01)
+  out.push(self.m02)
+  out.push(self.m03)
+  out.push(self.m10)
+  out.push(self.m11)
+  out.push(self.m12)
+  out.push(self.m13)
+  out.push(self.m20)
+  out.push(self.m21)
+  out.push(self.m22)
+  out.push(self.m23)
+  out.push(self.m30)
+  out.push(self.m31)
+  out.push(self.m32)
+  out.push(self.m33)
+}
+
+///|
 pub struct SkinnedMesh {
   source_mesh : @asset.Handle[Mesh]
   joints : Array[@core.Entity]

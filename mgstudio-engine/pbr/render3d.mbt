@@ -916,9 +916,11 @@ priv struct Render3dLightingState {
 }
 
 ///|
-priv struct MotionBlurHistoryEntry {
-  entity : @core.Entity
-  transform : @transform.Transform
+priv struct MotionBlurHistoryDenseCache {
+  mut frame_stamp : Int
+  transforms : Array[@transform.Transform?]
+  generations : Array[Int]
+  stamps : Array[Int]
 }
 
 ///|
@@ -1065,7 +1067,12 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
 }
 
 ///|
-let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
+let motion_blur_history : Ref[MotionBlurHistoryDenseCache] = Ref::new({
+  frame_stamp: 0,
+  transforms: [],
+  generations: [],
+  stamps: [],
+})
 
 ///|
 let camera_motion_blur_history : Ref[Array[CameraMotionBlurHistoryEntry]] = Ref::new([],
@@ -1336,26 +1343,61 @@ fn render3d_default_lighting_state() -> Render3dLightingState {
 }
 
 ///|
-fn motion_blur_history_get(entity : @core.Entity) -> @transform.Transform? {
-  for item in motion_blur_history.val {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation {
-      return Some(item.transform)
-    }
+fn motion_blur_history_ensure_slot(entity_id : Int) -> Unit {
+  if entity_id < 0 {
+    return
   }
-  None
+  while motion_blur_history.val.transforms.length() <= entity_id {
+    motion_blur_history.val.transforms.push(None)
+    motion_blur_history.val.generations.push(0)
+    motion_blur_history.val.stamps.push(0)
+  }
 }
 
 ///|
-fn motion_blur_history_sync(meshes : Array[ExtractedMesh3d]) -> Unit {
-  let next : Array[MotionBlurHistoryEntry] = []
-  for mesh in meshes {
-    next.push({
-      entity: mesh.entity.main_entity,
-      transform: mesh.payload.transform,
-    })
+fn motion_blur_history_begin_frame() -> Int {
+  motion_blur_history.val.frame_stamp = motion_blur_history.val.frame_stamp + 1
+  if motion_blur_history.val.frame_stamp <= 0 {
+    motion_blur_history.val.frame_stamp = 1
+    for i in 0..<motion_blur_history.val.stamps.length() {
+      motion_blur_history.val.stamps[i] = 0
+    }
   }
-  motion_blur_history.val = next
+  motion_blur_history.val.frame_stamp
+}
+
+///|
+fn motion_blur_history_get(
+  entity : @core.Entity,
+  previous_frame_stamp : Int,
+) -> @transform.Transform? {
+  if entity.id < 0 || entity.id >= motion_blur_history.val.transforms.length() {
+    return None
+  }
+  if motion_blur_history.val.stamps[entity.id] != previous_frame_stamp {
+    return None
+  }
+  if motion_blur_history.val.generations[entity.id] != entity.generation {
+    return None
+  }
+  motion_blur_history.val.transforms[entity.id]
+}
+
+///|
+fn motion_blur_history_sync(
+  meshes : Array[ExtractedMesh3d],
+  frame_stamp : Int,
+) -> Unit {
+  for mesh in meshes {
+    let entity = mesh.entity.main_entity
+    if entity.id < 0 {
+      continue
+    }
+    motion_blur_history_ensure_slot(entity.id)
+    motion_blur_history.val.transforms[entity.id] = Some(mesh.payload.transform)
+    motion_blur_history.val.generations[entity.id] = entity.generation
+    motion_blur_history.val.stamps[entity.id] = frame_stamp
+  }
 }
 
 ///|
@@ -3430,14 +3472,49 @@ fn render3d_compose_transform(
 
 ///|
 priv struct Render3dWorldTransformCache {
+  mut frame_stamp : Int
   transforms : Array[@transform.Transform?]
   generations : Array[Int]
   visiting : Array[Bool]
+  stamps : Array[Int]
+  skinning_matrices : Array[Array[Float]?]
+  skinning_generations : Array[Int]
+  skinning_stamps : Array[Int]
 }
 
 ///|
+fn render3d_world_transform_cache_new() -> Render3dWorldTransformCache {
+  {
+    frame_stamp: 0,
+    transforms: [],
+    generations: [],
+    visiting: [],
+    stamps: [],
+    skinning_matrices: [],
+    skinning_generations: [],
+    skinning_stamps: [],
+  }
+}
+
+///|
+let render3d_world_transform_cache_shared_ref : Ref[Render3dWorldTransformCache] = Ref::new(
+  render3d_world_transform_cache_new(),
+)
+
+///|
 fn render3d_world_transform_cache_ref() -> Ref[Render3dWorldTransformCache] {
-  Ref::new({ transforms: [], generations: [], visiting: [] })
+  let cache_ref = render3d_world_transform_cache_shared_ref
+  cache_ref.val.frame_stamp = cache_ref.val.frame_stamp + 1
+  if cache_ref.val.frame_stamp <= 0 {
+    cache_ref.val.frame_stamp = 1
+    for i in 0..<cache_ref.val.stamps.length() {
+      cache_ref.val.stamps[i] = 0
+    }
+    for i in 0..<cache_ref.val.skinning_stamps.length() {
+      cache_ref.val.skinning_stamps[i] = 0
+    }
+  }
+  cache_ref
 }
 
 ///|
@@ -3453,6 +3530,10 @@ fn render3d_world_transform_cache_ensure_entity_slot(
     cache_ref.val.transforms.push(None)
     cache_ref.val.generations.push(0)
     cache_ref.val.visiting.push(false)
+    cache_ref.val.stamps.push(0)
+    cache_ref.val.skinning_matrices.push(None)
+    cache_ref.val.skinning_generations.push(0)
+    cache_ref.val.skinning_stamps.push(0)
   }
 }
 
@@ -3477,14 +3558,18 @@ fn render3d_entity_world_transform_cached(
     return @transform.Transform::identity()
   }
   render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-  if cache_ref.val.generations[entity.id] == entity.generation {
+  let frame_stamp = cache_ref.val.frame_stamp
+  if cache_ref.val.stamps[entity.id] == frame_stamp &&
+    cache_ref.val.generations[entity.id] == entity.generation {
     if cache_ref.val.transforms[entity.id] is Some(cached) {
       return cached
     }
   }
-  if cache_ref.val.visiting[entity.id] {
+  if cache_ref.val.stamps[entity.id] == frame_stamp &&
+    cache_ref.val.visiting[entity.id] {
     return render3d_entity_local_transform(world, entity)
   }
+  cache_ref.val.stamps[entity.id] = frame_stamp
   cache_ref.val.visiting[entity.id] = true
   let local_transform = render3d_entity_local_transform(world, entity)
   let composed = match
@@ -3502,6 +3587,7 @@ fn render3d_entity_world_transform_cached(
   cache_ref.val.visiting[entity.id] = false
   cache_ref.val.transforms[entity.id] = Some(composed)
   cache_ref.val.generations[entity.id] = entity.generation
+  cache_ref.val.stamps[entity.id] = frame_stamp
   composed
 }
 
@@ -3535,6 +3621,31 @@ fn render3d_extract_skinning_matrices(
   if joints.length() == 0 {
     return None
   }
+  if entity.id < 0 {
+    return None
+  }
+  render3d_world_transform_cache_ensure_entity_slot(
+    world_transform_cache_ref,
+    entity.id,
+  )
+  let frame_stamp = world_transform_cache_ref.val.frame_stamp
+  if entity.id < world_transform_cache_ref.val.skinning_stamps.length() &&
+    world_transform_cache_ref.val.skinning_stamps[entity.id] == frame_stamp &&
+    world_transform_cache_ref.val.skinning_generations[entity.id] ==
+    entity.generation {
+    return world_transform_cache_ref.val.skinning_matrices[entity.id]
+  }
+  let out = match world_transform_cache_ref.val.skinning_matrices[entity.id] {
+    Some(values) => {
+      values.clear()
+      values
+    }
+    None => {
+      let values : Array[Float] = []
+      world_transform_cache_ref.val.skinning_matrices[entity.id] = Some(values)
+      values
+    }
+  }
   let mesh_world = render3d_entity_world_transform_cached(
     world, entity, world_transform_cache_ref,
   )
@@ -3544,7 +3655,7 @@ fn render3d_extract_skinning_matrices(
   } else {
     RENDER3D_MAX_SKINNING_JOINTS
   }
-  let out : Array[Float] = []
+  let identity_inverse_bindpose = @mesh.SkinningMat4::identity()
   for joint_index in 0..<capped_joint_count {
     let joint_world = render3d_entity_world_transform_cached(
       world,
@@ -3554,15 +3665,16 @@ fn render3d_extract_skinning_matrices(
     let inverse_bindpose = if joint_index < inverse_bindposes.length() {
       inverse_bindposes[joint_index]
     } else {
-      @mesh.SkinningMat4::identity()
+      identity_inverse_bindpose
     }
     let joint_matrix = mesh_world_inverse
       .mul(@mesh.SkinningMat4::from_transform(joint_world))
       .mul(inverse_bindpose)
-    for value in joint_matrix.to_row_major_f32() {
-      out.push(value)
-    }
+    joint_matrix.append_row_major_f32(out)
   }
+  world_transform_cache_ref.val.skinning_generations[entity.id] = entity.generation
+  world_transform_cache_ref.val.skinning_stamps[entity.id] = frame_stamp
+  world_transform_cache_ref.val.skinning_matrices[entity.id] = Some(out)
   Some(out)
 }
 
@@ -6565,6 +6677,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   } else {
     PointLightShadowMap::default().size
   }
+  let mut needs_mesh_previous_transform = false
   source_world.for_each_component(ecs_key_camera3d, fn(entity, camera3d) {
     let camera = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
@@ -6634,6 +6747,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         is Some(_) ||
         gpu_occlusion_culling_enabled
       )
+    if motion_vector_prepass_enabled {
+      needs_mesh_previous_transform = true
+    }
     let temporal_anti_aliasing = try! source_world.get_by_key(
       entity, ecs_key_temporal_anti_aliasing,
     )
@@ -6765,6 +6881,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   } else {
     None
   }
+  let motion_blur_frame_stamp = if needs_mesh_previous_transform {
+    motion_blur_history_begin_frame()
+  } else {
+    0
+  }
+  let previous_motion_blur_frame_stamp = motion_blur_frame_stamp - 1
   source_world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
     if (try! source_world.get_by_key(
         entity, @visibility.ecs_key_view_visibility,
@@ -6792,9 +6914,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let transform = render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_ref,
     )
-    let previous_transform = match motion_blur_history_get(entity) {
-      Some(v) => v
-      None => transform
+    let previous_transform = if needs_mesh_previous_transform {
+      match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
+        Some(v) => v
+        None => transform
+      }
+    } else {
+      transform
     }
     let visibility_range = try! source_world.get_by_key(
       entity, @visibility.ecs_key_visibility_range,
@@ -6858,7 +6984,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       },
     })
   })
-  motion_blur_history_sync(meshes)
+  if needs_mesh_previous_transform {
+    motion_blur_history_sync(meshes, motion_blur_frame_stamp)
+  }
   let lighting = render3d_collect_lighting(source_world)
   let camera_phase_items = match
     render3d_prepared_camera_phase_items(world, cameras) {

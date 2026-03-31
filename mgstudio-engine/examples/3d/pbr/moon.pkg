@@ -11,7 +11,8 @@ import {
   "Milky2018/mgstudio/text",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

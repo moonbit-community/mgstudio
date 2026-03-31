@@ -76,7 +76,7 @@ pub fn frame_count_plugin_with(
 ///|
 pub fn update_frame_count(frame_count : @app.ResMut[FrameCount]) -> Unit {
   let value_ref = frame_count.get_ref()
-  if value_ref.val.value == @int.max_value {
+  if value_ref.val.value == @int.MAX_VALUE {
     value_ref.val.value = 0
   } else {
     value_ref.val.value = value_ref.val.value + 1

@@ -254,7 +254,7 @@ const SCENE_GLTF_ASSET_LABEL_INVERSE_BIND_MATRICES_SUFFIX : String = "/InverseBi
 
 ///|
 fn scene_gltf_parse_non_negative_int(payload : String) -> Int? {
-  let parsed = @strconv.parse_int(payload[:], base=10) catch { _ => -1 }
+  let parsed = @string.parse_int(payload[:], base=10) catch { _ => -1 }
   if parsed < 0 {
     None
   } else {

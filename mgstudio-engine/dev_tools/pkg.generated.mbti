@@ -5,12 +5,19 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/text",
 }
 
 // Values
 pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
+
+pub const INITIAL_DIAGNOSTICS_OVERLAY_PLANE_Z_INDEX : Int = 1_000_000
+
+pub fn diagnostics_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn diagnostics_overlay_plugin_with(@app.App[@ecs.World], DiagnosticsOverlayPlugin) -> @app.App[@ecs.World]
 
 pub fn fps_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -23,6 +30,38 @@ pub let fps_overlay_set_update_text : String
 // Errors
 
 // Types and methods
+pub struct DiagnosticsOverlay {
+  title : String
+  diagnostic_overlay_items : Array[DiagnosticsOverlayItem]
+}
+pub fn DiagnosticsOverlay::fps() -> Self
+pub fn DiagnosticsOverlay::new(String, Array[DiagnosticsOverlayItem]) -> Self
+pub fn DiagnosticsOverlay::render() -> Self
+pub impl @ecs.Component for DiagnosticsOverlay
+
+pub struct DiagnosticsOverlayItem {
+  statistic : DiagnosticsOverlayStatistic
+  path : @diagnostic.DiagnosticPath
+  precision : Int
+}
+pub fn DiagnosticsOverlayItem::default_with_path(@diagnostic.DiagnosticPath) -> Self
+
+pub struct DiagnosticsOverlayPlane {
+}
+pub impl @ecs.Component for DiagnosticsOverlayPlane
+
+pub(all) struct DiagnosticsOverlayPlugin {
+  refresh_interval_seconds : Float
+}
+pub fn DiagnosticsOverlayPlugin::default() -> Self
+
+pub(all) enum DiagnosticsOverlayStatistic {
+  Value
+  Average
+  Smoothed
+} derive(Eq, Show)
+pub fn DiagnosticsOverlayStatistic::default() -> Self
+
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
   mut text_color : @color.Color

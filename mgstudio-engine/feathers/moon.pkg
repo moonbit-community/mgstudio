@@ -4,6 +4,4 @@ import {
   "Milky2018/mgstudio/ui_widgets",
 }
 
-options(
-  "supported-targets": "native",
-)
+supported_targets = "native"

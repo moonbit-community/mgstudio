@@ -47,6 +47,9 @@ WARMUP_SECONDS="${MGSTUDIO_STRESS_WARMUP_SECONDS:-3}"
 TIMEOUT_SECONDS="${MGSTUDIO_STRESS_TIMEOUT_SECONDS:-$((SAMPLE_SECONDS + WARMUP_SECONDS + 15))}"
 BUILD_RELEASE="${MGSTUDIO_STRESS_BUILD_RELEASE:-1}"
 FAIL_ON_MISSING_DIAGNOSTIC="${MGSTUDIO_STRESS_FAIL_ON_MISSING_DIAGNOSTIC:-0}"
+ENABLE_TRACE="${MGSTUDIO_STRESS_ENABLE_TRACE:-0}"
+TRACE_CATEGORIES="${MGSTUDIO_STRESS_TRACE_CATEGORIES:-schedule_stage,system,render_pass,render_queue}"
+TRACE_FLUSH_FRAMES="${MGSTUDIO_STRESS_TRACE_FLUSH_FRAMES:-10}"
 
 declare -a CASES=()
 if [[ -n "${MGSTUDIO_STRESS_CASES:-}" ]]; then
@@ -56,6 +59,9 @@ else
 fi
 
 mkdir -p "${OUT_DIR}/logs"
+if [[ "${ENABLE_TRACE}" == "1" ]]; then
+  mkdir -p "${OUT_DIR}/traces"
+fi
 RESULT_TSV="${OUT_DIR}/results.tsv"
 SUMMARY_MD="${OUT_DIR}/summary.md"
 
@@ -67,7 +73,7 @@ if [[ "${BUILD_RELEASE}" == "1" ]]; then
 fi
 
 {
-  printf "case\tfps_avg\tframe_time_avg_ms\tframe_count\tstatus\tlog\n"
+  printf "case\tfps_avg\tframe_time_avg_ms\tframe_count\tstatus\tlog\ttrace\n"
 } >"${RESULT_TSV}"
 
 missing_count=0
@@ -75,18 +81,34 @@ for case_name in "${CASES[@]}"; do
   pkg="examples/stress_tests/${case_name}"
   exe="${ENGINE_DIR}/_build/native/release/build/examples/stress_tests/${case_name}/${case_name}.exe"
   log="${OUT_DIR}/logs/${case_name}.log"
+  trace=""
+  if [[ "${ENABLE_TRACE}" == "1" ]]; then
+    trace="${OUT_DIR}/traces/${case_name}.trace.json"
+    rm -f "${trace}"
+  fi
 
   if [[ ! -x "${exe}" ]]; then
-    printf "%s\t\t\t\tmissing-binary\t%s\n" "${case_name}" "${log}" >>"${RESULT_TSV}"
+    printf "%s\t\t\t\tmissing-binary\t%s\t%s\n" "${case_name}" "${log}" "${trace}" >>"${RESULT_TSV}"
     missing_count=$((missing_count + 1))
     continue
   fi
 
   echo "[stress-collect] run ${pkg}"
-  (
-    cd "${ENGINE_DIR}" &&
-      timeout "${TIMEOUT_SECONDS}" stdbuf -oL -eL "${exe}"
-  ) >"${log}" 2>&1 || true
+  if [[ "${ENABLE_TRACE}" == "1" ]]; then
+    (
+      cd "${ENGINE_DIR}" &&
+        MGSTUDIO_TIMELINE_TRACE=1 \
+        MGSTUDIO_TIMELINE_TRACE_OUTPUT="${trace}" \
+        MGSTUDIO_TIMELINE_TRACE_FLUSH_FRAMES="${TRACE_FLUSH_FRAMES}" \
+        MGSTUDIO_TIMELINE_TRACE_CATEGORIES="${TRACE_CATEGORIES}" \
+        timeout "${TIMEOUT_SECONDS}" stdbuf -oL -eL "${exe}"
+    ) >"${log}" 2>&1 || true
+  else
+    (
+      cd "${ENGINE_DIR}" &&
+        timeout "${TIMEOUT_SECONDS}" stdbuf -oL -eL "${exe}"
+    ) >"${log}" 2>&1 || true
+  fi
 
   fps_line="$(rg "\\[INFO\\] \\[bevy_diagnostic\\] fps:" "${log}" | tail -n 1 || true)"
   frame_line="$(rg "\\[INFO\\] \\[bevy_diagnostic\\] frame_time:" "${log}" | tail -n 1 || true)"
@@ -104,9 +126,12 @@ for case_name in "${CASES[@]}"; do
   if [[ -z "${frame_count}" ]]; then
     frame_count="0"
   fi
+  if [[ "${ENABLE_TRACE}" == "1" && ! -f "${trace}" && "${status}" == "ok" ]]; then
+    status="trace-missing"
+  fi
 
-  printf "%s\t%s\t%s\t%s\t%s\t%s\n" \
-    "${case_name}" "${fps_avg}" "${frame_time_avg}" "${frame_count}" "${status}" "${log}" >>"${RESULT_TSV}"
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    "${case_name}" "${fps_avg}" "${frame_time_avg}" "${frame_count}" "${status}" "${log}" "${trace}" >>"${RESULT_TSV}"
 done
 
 python3 - "${RESULT_TSV}" "${SUMMARY_MD}" "${OUT_DIR}" "${SAMPLE_SECONDS}" "${WARMUP_SECONDS}" "${TIMEOUT_SECONDS}" <<'PY'
@@ -134,13 +159,14 @@ lines = [
     f"- sample_seconds: `{sample_s}`",
     f"- timeout_seconds: `{timeout_s}`",
     "",
-    "| case | fps_avg | frame_time_avg_ms | frame_count | status |",
-    "| --- | ---: | ---: | ---: | --- |",
+    "| case | fps_avg | frame_time_avg_ms | frame_count | status | trace |",
+    "| --- | ---: | ---: | ---: | --- | --- |",
 ]
 for row in rows:
     lines.append(
         f"| {row['case']} | {row['fps_avg'] or '-'} | "
-        f"{row['frame_time_avg_ms'] or '-'} | {row['frame_count'] or '-'} | {row['status']} |"
+        f"{row['frame_time_avg_ms'] or '-'} | {row['frame_count'] or '-'} | "
+        f"{row['status']} | {row['trace'] or '-'} |"
     )
 summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY

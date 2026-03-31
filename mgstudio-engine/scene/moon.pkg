@@ -15,7 +15,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/base64",
-  "moonbitlang/core/strconv",
+  "moonbitlang/core/string",
 }
 
 import {
@@ -24,6 +24,4 @@ import {
   "Milky2018/mgstudio/time",
 } for "test"
 
-options(
-  "supported-targets": "native",
-)
+supported_targets = "native"

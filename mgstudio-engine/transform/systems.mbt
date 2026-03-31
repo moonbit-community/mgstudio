@@ -29,36 +29,8 @@ type SimpleTransformOrphanQuery = @ecs.Query[
 ]
 
 ///|
-fn sort_entities_by_id(entities : Array[@core.Entity]) -> Unit {
-  let mut i = 1
-  while i < entities.length() {
-    let current = entities[i]
-    let mut j = i
-    while j > 0 && entities[j - 1].id > current.id {
-      entities[j] = entities[j - 1]
-      j = j - 1
-    }
-    entities[j] = current
-    i = i + 1
-  }
-}
-
-///|
 fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
   a.id == b.id && a.generation == b.generation
-}
-
-///|
-fn entity_array_contains(
-  entities : Array[@core.Entity],
-  target : @core.Entity,
-) -> Bool {
-  for entity in entities {
-    if entity_eq(entity, target) {
-      return true
-    }
-  }
-  false
 }
 
 ///|
@@ -120,7 +92,6 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
       entities.push(entity)
     }
   })
-  sort_entities_by_id(entities)
   for entity in entities {
     if (try! world.get_by_key(entity, ecs_key_transform)) is Some(transform) {
       let next_global = GlobalTransform::from_transform(transform)
@@ -194,14 +165,8 @@ fn propagate_descendants(
   parent : @core.Entity,
   parent_global : GlobalTransform,
   children : @hierarchy.Children,
-  ancestors : Array[@core.Entity],
 ) -> Unit {
-  let child_entities = children.entities().copy()
-  sort_entities_by_id(child_entities)
-  for child in child_entities {
-    if entity_array_contains(ancestors, child) {
-      transform_abort_malformed_hierarchy()
-    }
+  for child in children.entities() {
     guard (try! world.get_by_key(child, @hierarchy.ecs_key_parent))
       is Some(child_parent) else {
       transform_abort_malformed_hierarchy()
@@ -226,24 +191,13 @@ fn propagate_descendants(
     }
     if (try! world.get_by_key(child, @hierarchy.ecs_key_children))
       is Some(grand_children) {
-      ancestors.push(child)
-      propagate_descendants(
-        world, child, next_global, grand_children, ancestors,
-      )
-      ancestors.pop() |> ignore
+      propagate_descendants(world, child, next_global, grand_children)
     }
   }
 }
 
 ///|
 pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
-  let has_parent = Ref::new(false)
-  world.for_each_component(@hierarchy.ecs_key_parent, fn(_entity, _parent) {
-    has_parent.val = true
-  })
-  if !has_parent.val {
-    return
-  }
   let roots : Array[@core.Entity] = []
   world.for_each_component(ecs_key_global_transform, fn(entity, _global) {
     if (try! world.contains_by_key(entity, ecs_key_transform)) &&
@@ -251,7 +205,6 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
       roots.push(entity)
     }
   })
-  sort_entities_by_id(roots)
   for entity in roots {
     guard (try! world.get_by_key(entity, ecs_key_transform))
       is Some(local_transform) else {
@@ -268,8 +221,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     }
     if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
       is Some(children) {
-      let ancestors = [entity]
-      propagate_descendants(world, entity, next_global, children, ancestors)
+      propagate_descendants(world, entity, next_global, children)
     }
   }
 }

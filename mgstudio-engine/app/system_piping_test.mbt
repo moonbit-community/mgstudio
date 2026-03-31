@@ -62,7 +62,7 @@ fn touch_system_piping_types() -> Unit {
 
 ///|
 fn parse_piped_message(text : String) -> Result[Int, String] {
-  try @strconv.parse_int(text[:], base=10) catch {
+  try @string.parse_int(text[:], base=10) catch {
     _ => Err("invalid integer: " + text)
   } noraise {
     value => Ok(value)

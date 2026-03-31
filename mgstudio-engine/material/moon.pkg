@@ -8,6 +8,4 @@ import {
   "Milky2018/mgstudio/transform",
 }
 
-options(
-  "supported-targets": "native",
-)
+supported_targets = "native"

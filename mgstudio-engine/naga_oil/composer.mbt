@@ -649,7 +649,7 @@ fn parse_wgsl_uint_literal(text : String) -> Int? {
   if token == "" {
     return None
   }
-  let parsed = @strconv.parse_int(token[:], base=10) catch { _ => return None }
+  let parsed = @string.parse_int(token[:], base=10) catch { _ => return None }
   Some(parsed)
 }
 

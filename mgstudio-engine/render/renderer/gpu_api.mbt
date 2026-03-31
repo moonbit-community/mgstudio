@@ -763,7 +763,7 @@ fn parse_f32_csv(csv : String) -> Array[Float]? {
     if token == "" {
       continue
     }
-    let parsed = @strconv.parse_double(token) catch { _ => return None }
+    let parsed = @string.parse_double(token) catch { _ => return None }
     values.push(Float::from_double(parsed))
   }
   Some(values)

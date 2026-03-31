@@ -7,6 +7,4 @@ import {
   "Milky2018/mgstudio/window/windowing_native" @windowing,
 }
 
-options(
-  "supported-targets": "native",
-)
+supported_targets = "native"

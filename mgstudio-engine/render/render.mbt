@@ -433,6 +433,44 @@ pub const MESH3D_BUILD_INDIRECT_PHASE_MAIN : Int = @renderer.MESH3D_BUILD_INDIRE
 pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = @renderer.MESH3D_BUILD_INDIRECT_PHASE_EARLY
 
 ///|
+priv struct RenderTimelineActivePass {
+  name : String
+  ts_us : Int64
+}
+
+///|
+let render_timeline_active_pass_ref : Ref[RenderTimelineActivePass?] = Ref::new(
+  None,
+)
+
+///|
+fn render_timeline_end_active_pass() -> Unit {
+  if render_timeline_active_pass_ref.val is Some(active_pass) {
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderPass,
+      active_pass.name,
+      active_pass.ts_us,
+    )
+  }
+  render_timeline_active_pass_ref.val = None
+}
+
+///|
+fn render_timeline_begin_pass(name : String) -> Unit {
+  render_timeline_end_active_pass()
+  let ts_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderPass,
+    name,
+  )
+  if ts_us >= 0L {
+    render_timeline_active_pass_ref.val = Some(RenderTimelineActivePass::{
+      name,
+      ts_us,
+    })
+  }
+}
+
+///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
   @renderer.request_device()
 }
@@ -873,6 +911,7 @@ pub fn host_gpu_begin_pass(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
+  render_timeline_begin_pass("pass_2d")
   @renderer.begin_pass(
     target_id~,
     width~,
@@ -916,6 +955,7 @@ pub fn host_gpu_begin_pass_with_depth(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
+  render_timeline_begin_pass("pass_2d_depth")
   @renderer.begin_pass_with_depth(
     target_id~,
     width~,
@@ -1045,6 +1085,7 @@ pub fn host_gpu_begin_pass_3d(
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
+  render_timeline_begin_pass("pass_3d(kind=\{pass_kind})")
   @renderer.begin_pass_3d(
     target_id~,
     target_layer~,
@@ -2028,6 +2069,7 @@ pub fn host_gpu_draw_gizmo_line(
 ///|
 pub fn host_gpu_end_pass() -> Unit {
   @renderer.end_pass()
+  render_timeline_end_active_pass()
 }
 
 ///|

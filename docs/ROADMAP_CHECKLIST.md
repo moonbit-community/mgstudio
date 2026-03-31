@@ -12,8 +12,8 @@ This file must not exceed 200 lines.
 - [x] Package `color`.
 - [x] Package `core`.
 - [x] Package `core_pipeline`.
-- [ ] Package `dev_tools` (pending deeper profiling surface).
-- [ ] Package `diagnostic` (pending stress-suite diagnostics consistency and deeper profiling).
+- [x] Package `dev_tools`.
+- [x] Package `diagnostic`.
 - [ ] Package `ecs` (pending full change-detection boundary closure).
 - [x] Package `encase_derive`.
 - [x] Package `feathers`.
@@ -72,15 +72,20 @@ This file must not exceed 200 lines.
 - [x] Issue `ecs/changed_filter_tests`: add wbtest/unit coverage and migrate `change_detection` example to final semantics.
 - [x] Issue `ecs/changed_filter_ref_boundary`: define/close behavior for direct `Mut::get_ref()` in-place writes.
 - [x] Issue `ecs/added_changed_o1_lookup`: switch `is_added_by_key/is_changed_by_key` to per-entity sequence lookup and clear records on remove/despawn.
-- [ ] Issue `dev_tools/perf_overlay`: add profiling-oriented dev tool surface beyond FPS-only overlay.
-- [ ] Issue `diagnostic/timeline_metrics`: add timeline/trace-grade metrics export path.
-- [ ] Issue `diagnostic/stress_consistency`: keep stress diagnostics output shape stable across all stress examples.
+- [x] Issue `dev_tools/perf_overlay`: add profiling-oriented diagnostics overlay (`DiagnosticsOverlayPlugin`) with preset stats, rebuild timer, drag/collapse support (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
+- [x] Issue `diagnostic/timeline_metrics`: add Chrome/Perfetto trace export (`TimelineTracePlugin`) and app/render timeline spans (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
+- [x] Issue `diagnostic/stress_consistency`: unify stress examples on `stress_diagnostics_plugin`, stable sorted logging, and optional per-case trace collection in script (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
 - [x] Issue `pbr/perf_bevymark_3d`: remove prequeue-to-draw-item `O(N^2)` remap hotspot in render3d queue pipeline.
 - [x] Issue `pbr/perf_many_materials`: remove prequeue-to-mesh `O(N^2)` resolve hotspot in render3d queue pipeline.
 - [x] Issue `pbr/perf_queue_index_maps`: switch preprocessed queue remap/resolve to entity-id index maps with generation-safe fallback.
 - [x] Issue `pbr/perf_reprofile`: re-run `bevymark_3d/many_materials` stress profiling after queue-path optimization.
 - [x] Issue `pbr/perf_many_foxes_scope`: classify remaining `many_foxes` bottleneck as gltf/animation skinning runtime, not pbr queue path.
+- [x] Issue `animation/animate_targets_single_cache_reuse`: precompute per-player animation samples once and reuse via a single cache entry in target application path.
 - [x] Issue `pbr/many_foxes_world_transform_cache`: cache entity world-transform resolution in render3d extract/skinning hot path to remove repeated hierarchy recomputation.
+- [x] Issue `pbr/many_foxes_transform_cache_cross_frame_reuse`: reuse render3d world-transform cache across frames via per-frame stamp invalidation to remove per-frame high-id cache reallocation.
+- [x] Issue `pbr/many_foxes_skinning_matrix_buffer_reuse`: reuse per-entity skinning matrix buffers and append row-major values without per-joint temporary arrays.
+- [x] Issue `pbr/many_foxes_motion_blur_history_dense_cache`: replace render3d motion-blur previous-transform linear scan with entity-id indexed dense cache plus frame-stamp gating.
+- [x] Issue `pbr/many_foxes_previous_transform_on_demand`: only maintain/read mesh previous-transform history when any active camera enables motion-vector prepass.
 - [x] Issue `render/mesh3d_skinning_upload_hotpath`: initialize skinning slot identity once and upload only used skinning rows per draw (remove per-draw full identity rebuild/upload).
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
 - [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.
@@ -133,6 +138,8 @@ This file must not exceed 200 lines.
 - [x] Issue `text/ui_sync_no_immediate_layout`: remove UI text spawn/respawn immediate layout updates and hand layout to scheduled text update path.
 - [x] Issue `text/render_helper_hoist`: hoist Text2d render helper closures out of per-instance hot loop.
 - [x] Issue `text/render2d_cull_context_unification`: reuse sprite render2d primary scene cull context and visibility helper in text render path.
+- [x] Issue `text/render_glyph_zero_rotation_branch_fastpath`: split glyph submit path by shadow/rotation and add zero-rotation direct-offset branch for text stress cases.
+- [x] Issue `text/render_overlay_sprites_cross_frame_cache`: reuse text overlay sprite array across frames to avoid per-frame large temporary array object creation.
 - [x] Issue `text/layout_run_geometry_line_bounds`: build run geometry Y bounds from layout line bounds (remove per-glyph metrics reconstruction).
 - [x] Issue `text/state_handle_index_map`: replace TextState handle lookup linear scans with id->index map and swap-remove despawn path.
 - [x] Issue `text/ui_text_wrap_from_node_width`: use UI node width as text layout max width when `TextBounds.width` is absent, fixing `many_glyphs` UI single-line collapse.
@@ -148,3 +155,4 @@ This file must not exceed 200 lines.
 - [x] Issue `stress_tests/perf_baseline`: establish reproducible native baseline artifacts and per-case trend tracking.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
 - [x] Issue `transform/sync_simple_transforms_removed_parent_guard`: avoid abort when `Removed<Parent>` stream contains dead entities.
+- [x] Issue `transform/propagation_bevy_traversal_alignment`: remove per-frame hierarchy sorting and ancestor-list scans in transform propagation to match Bevy traversal flow.

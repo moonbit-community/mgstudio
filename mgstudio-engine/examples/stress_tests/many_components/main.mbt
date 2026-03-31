@@ -233,11 +233,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(
-    [
-      ..@mgstudio.default_plugins(),
-      @diagnostic.frame_time_diagnostics_plugin,
-      @diagnostic.log_diagnostics_plugin,
-    ],
+    [..@mgstudio.default_plugins(), @diagnostic.stress_diagnostics_plugin],
   )
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(

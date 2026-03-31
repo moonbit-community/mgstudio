@@ -13,7 +13,8 @@ import {
   "moonbitlang/core/json",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

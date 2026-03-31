@@ -14,7 +14,8 @@ import {
   "tonyfettes/any",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

@@ -44,7 +44,7 @@ impl @app.Resource for OptionalWarning with resource() {
 
 ///|
 fn parse_message(text : String) -> Result[Int, String] {
-  try @strconv.parse_int(text[:], base=10) catch {
+  try @string.parse_int(text[:], base=10) catch {
     _ => Err("failed to parse message: " + text)
   } noraise {
     value => Ok(value)

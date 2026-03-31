@@ -2897,6 +2897,7 @@ fn run_systems(
   set_edges : Array[(SystemSet, SystemSet)],
   stage : ScheduleStage?,
 ) -> Unit {
+  let timeline_enabled = timeline_trace_enabled()
   current_system_sequence_ref.val = None
   current_world_ref.val = None
   let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
@@ -3060,6 +3061,20 @@ fn run_systems(
       continue
     }
 
+    let system_trace_start_us = if timeline_enabled {
+      let trace_name = match cfg.name {
+        Some(name) => name
+        None =>
+          match cfg.set {
+            Some(set) => set + "#" + execution_i.to_string()
+            None => "__system#" + execution_i.to_string()
+          }
+      }
+      timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
+    } else {
+      -1L
+    }
+
     // Align with Bevy: increment global change tick once per executed system
     // and expose SystemSequence via World-backed context for change detection.
     let this_run = world.advance_sequence()
@@ -3081,6 +3096,21 @@ fn run_systems(
     current_world_ref.val = prev_world
     match outcome {
       Success => {
+        if timeline_enabled {
+          let trace_name = match systems[system_i].name {
+            Some(name) => name
+            None =>
+              match systems[system_i].set {
+                Some(set) => set + "#" + execution_i.to_string()
+                None => "__system#" + execution_i.to_string()
+              }
+          }
+          timeline_trace_end_span(
+            TimelineTraceCategory::System,
+            trace_name,
+            system_trace_start_us,
+          )
+        }
         systems[system_i].last_run_sequence = this_run
         stepping_record_system_run(
           stepping_ref, stage, systems, system_i, execution_i,
@@ -3088,6 +3118,21 @@ fn run_systems(
       }
       Skipped(_) => continue
       Invalid(message) => {
+        if timeline_enabled {
+          let trace_name = match systems[system_i].name {
+            Some(name) => name
+            None =>
+              match systems[system_i].set {
+                Some(set) => set + "#" + execution_i.to_string()
+                None => "__system#" + execution_i.to_string()
+              }
+          }
+          timeline_trace_end_span(
+            TimelineTraceCategory::System,
+            trace_name,
+            system_trace_start_us,
+          )
+        }
         report_world_error(
           world,
           @ecs.Invalid(message),
@@ -3100,6 +3145,21 @@ fn run_systems(
         continue
       }
       Error(err) => {
+        if timeline_enabled {
+          let trace_name = match systems[system_i].name {
+            Some(name) => name
+            None =>
+              match systems[system_i].set {
+                Some(set) => set + "#" + execution_i.to_string()
+                None => "__system#" + execution_i.to_string()
+              }
+          }
+          timeline_trace_end_span(
+            TimelineTraceCategory::System,
+            trace_name,
+            system_trace_start_us,
+          )
+        }
         systems[system_i].last_run_sequence = this_run
         stepping_record_system_run(
           stepping_ref, stage, systems, system_i, execution_i,
@@ -3137,6 +3197,10 @@ fn run_schedule_stage(
   schedule : ScheduleRegistry[@ecs.World],
   stage : ScheduleStage,
 ) -> Unit {
+  let stage_trace_start_us = timeline_trace_begin_span(
+    TimelineTraceCategory::ScheduleStage,
+    stage.to_string(),
+  )
   current_schedule_stage_ref.val = Some(stage)
   run_systems(
     world,
@@ -3145,6 +3209,11 @@ fn run_schedule_stage(
     Some(stage),
   )
   current_schedule_stage_ref.val = None
+  timeline_trace_end_span(
+    TimelineTraceCategory::ScheduleStage,
+    stage.to_string(),
+    stage_trace_start_us,
+  )
 }
 
 ///|

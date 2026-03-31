@@ -373,6 +373,7 @@ pub fn AnimationClipEvent::typed_event_payload(
 pub struct AnimationClip {
   mut duration_seconds : Float
   targets : Array[AnimationTargetBinding]
+  target_index_by_key : Map[UInt64, Int]
   events_root : Array[AnimationClipEvent]
   events_targets : Array[(AnimationTargetId, Array[AnimationClipEvent])]
 }
@@ -382,6 +383,7 @@ pub fn AnimationClip::new() -> AnimationClip {
   AnimationClip::{
     duration_seconds: 0.0F,
     targets: [],
+    target_index_by_key: {},
     events_root: [],
     events_targets: [],
   }
@@ -406,13 +408,28 @@ pub fn AnimationClip::set_duration(
 }
 
 ///|
+fn animation_target_id_lookup_key(target_id : AnimationTargetId) -> UInt64 {
+  let high = target_id.high.reinterpret_as_uint().to_uint64()
+  let low = target_id.low.reinterpret_as_uint().to_uint64()
+  (high << 32) | low
+}
+
+///|
 fn animation_clip_find_target(
   clip : AnimationClip,
   target_id : AnimationTargetId,
 ) -> Int? {
+  let target_key = animation_target_id_lookup_key(target_id)
+  if clip.target_index_by_key.get(target_key) is Some(index) &&
+    index >= 0 &&
+    index < clip.targets.length() &&
+    clip.targets[index].target_id == target_id {
+    return Some(index)
+  }
   let mut i = 0
   while i < clip.targets.length() {
     if clip.targets[i].target_id == target_id {
+      clip.target_index_by_key.set(target_key, i)
       return Some(i)
     }
     i = i + 1
@@ -429,7 +446,9 @@ fn animation_clip_get_or_insert_target(
     return index
   }
   clip.targets.push(animation_target_binding_new(target_id))
-  clip.targets.length() - 1
+  let index = clip.targets.length() - 1
+  clip.target_index_by_key.set(animation_target_id_lookup_key(target_id), index)
+  index
 }
 
 ///|
@@ -1028,21 +1047,30 @@ fn animation_sample_vec3(
   if time_seconds <= keyframes[0].time {
     return Some(keyframes[0].value)
   }
-  let mut i = 1
-  while i < keyframes.length() {
-    let right = keyframes[i]
-    let left = keyframes[i - 1]
-    if time_seconds <= right.time {
-      let span = right.time - left.time
-      if span <= 0.0F {
-        return Some(right.value)
-      }
-      let t = animation_saturate((time_seconds - left.time) / span)
-      return Some(animation_vec3_lerp(left.value, right.value, t))
-    }
-    i = i + 1
+  let last_index = keyframes.length() - 1
+  if time_seconds >= keyframes[last_index].time {
+    return Some(keyframes[last_index].value)
   }
-  Some(keyframes[keyframes.length() - 1].value)
+  let mut left = 1
+  let mut right = last_index
+  let mut segment_right = last_index
+  while left <= right {
+    let mid = left + (right - left) / 2
+    if time_seconds <= keyframes[mid].time {
+      segment_right = mid
+      right = mid - 1
+    } else {
+      left = mid + 1
+    }
+  }
+  let right_keyframe = keyframes[segment_right]
+  let left_keyframe = keyframes[segment_right - 1]
+  let span = right_keyframe.time - left_keyframe.time
+  if span <= 0.0F {
+    return Some(right_keyframe.value)
+  }
+  let t = animation_saturate((time_seconds - left_keyframe.time) / span)
+  Some(animation_vec3_lerp(left_keyframe.value, right_keyframe.value, t))
 }
 
 ///|
@@ -1059,21 +1087,30 @@ fn animation_sample_quat(
   if time_seconds <= keyframes[0].time {
     return Some(keyframes[0].value)
   }
-  let mut i = 1
-  while i < keyframes.length() {
-    let right = keyframes[i]
-    let left = keyframes[i - 1]
-    if time_seconds <= right.time {
-      let span = right.time - left.time
-      if span <= 0.0F {
-        return Some(right.value)
-      }
-      let t = animation_saturate((time_seconds - left.time) / span)
-      return Some(animation_quat_nlerp(left.value, right.value, t))
-    }
-    i = i + 1
+  let last_index = keyframes.length() - 1
+  if time_seconds >= keyframes[last_index].time {
+    return Some(keyframes[last_index].value)
   }
-  Some(keyframes[keyframes.length() - 1].value)
+  let mut left = 1
+  let mut right = last_index
+  let mut segment_right = last_index
+  while left <= right {
+    let mid = left + (right - left) / 2
+    if time_seconds <= keyframes[mid].time {
+      segment_right = mid
+      right = mid - 1
+    } else {
+      left = mid + 1
+    }
+  }
+  let right_keyframe = keyframes[segment_right]
+  let left_keyframe = keyframes[segment_right - 1]
+  let span = right_keyframe.time - left_keyframe.time
+  if span <= 0.0F {
+    return Some(right_keyframe.value)
+  }
+  let t = animation_saturate((time_seconds - left_keyframe.time) / span)
+  Some(animation_quat_nlerp(left_keyframe.value, right_keyframe.value, t))
 }
 
 ///|
@@ -1090,21 +1127,30 @@ fn animation_sample_weights(
   if time_seconds <= keyframes[0].time {
     return Some(keyframes[0].value)
   }
-  let mut i = 1
-  while i < keyframes.length() {
-    let right = keyframes[i]
-    let left = keyframes[i - 1]
-    if time_seconds <= right.time {
-      let span = right.time - left.time
-      if span <= 0.0F {
-        return Some(right.value)
-      }
-      let t = animation_saturate((time_seconds - left.time) / span)
-      return Some(animation_weights_lerp(left.value, right.value, t))
-    }
-    i = i + 1
+  let last_index = keyframes.length() - 1
+  if time_seconds >= keyframes[last_index].time {
+    return Some(keyframes[last_index].value)
   }
-  Some(keyframes[keyframes.length() - 1].value)
+  let mut left = 1
+  let mut right = last_index
+  let mut segment_right = last_index
+  while left <= right {
+    let mid = left + (right - left) / 2
+    if time_seconds <= keyframes[mid].time {
+      segment_right = mid
+      right = mid - 1
+    } else {
+      left = mid + 1
+    }
+  }
+  let right_keyframe = keyframes[segment_right]
+  let left_keyframe = keyframes[segment_right - 1]
+  let span = right_keyframe.time - left_keyframe.time
+  if span <= 0.0F {
+    return Some(right_keyframe.value)
+  }
+  let t = animation_saturate((time_seconds - left_keyframe.time) / span)
+  Some(animation_weights_lerp(left_keyframe.value, right_keyframe.value, t))
 }
 
 ///|
@@ -1121,21 +1167,30 @@ fn animation_sample_color(
   if time_seconds <= keyframes[0].time {
     return Some(keyframes[0].value)
   }
-  let mut i = 1
-  while i < keyframes.length() {
-    let right = keyframes[i]
-    let left = keyframes[i - 1]
-    if time_seconds <= right.time {
-      let span = right.time - left.time
-      if span <= 0.0F {
-        return Some(right.value)
-      }
-      let t = animation_saturate((time_seconds - left.time) / span)
-      return Some(animation_color_lerp(left.value, right.value, t))
-    }
-    i = i + 1
+  let last_index = keyframes.length() - 1
+  if time_seconds >= keyframes[last_index].time {
+    return Some(keyframes[last_index].value)
   }
-  Some(keyframes[keyframes.length() - 1].value)
+  let mut left = 1
+  let mut right = last_index
+  let mut segment_right = last_index
+  while left <= right {
+    let mid = left + (right - left) / 2
+    if time_seconds <= keyframes[mid].time {
+      segment_right = mid
+      right = mid - 1
+    } else {
+      left = mid + 1
+    }
+  }
+  let right_keyframe = keyframes[segment_right]
+  let left_keyframe = keyframes[segment_right - 1]
+  let span = right_keyframe.time - left_keyframe.time
+  if span <= 0.0F {
+    return Some(right_keyframe.value)
+  }
+  let t = animation_saturate((time_seconds - left_keyframe.time) / span)
+  Some(animation_color_lerp(left_keyframe.value, right_keyframe.value, t))
 }
 
 ///|
@@ -2894,11 +2949,44 @@ fn animation_weights_blend(
 }
 
 ///|
-fn animation_apply_player_to_target(
-  target_id : AnimationTargetId,
-  target_mask : AnimationMask,
+priv struct AnimationPreparedTargetSample {
+  clip : AnimationClip
+  seek_time : Float
+  combined_weight : Float
+  computed_mask : AnimationMask
+}
+
+///|
+fn animation_prepare_player_target_samples(
   player : AnimationPlayer,
   graph : AnimationGraph,
+) -> Array[AnimationPreparedTargetSample] {
+  let samples : Array[AnimationPreparedTargetSample] = []
+  for pair in player.playing_animations() {
+    let node_index = pair.0
+    let active = pair.1
+    guard graph.get(node_index) is Some(node) else { continue }
+    guard node.node_type is Clip(clip_handle) else { continue }
+    guard animation_clip_get(clip_handle) is Some(clip) else { continue }
+    let combined_weight = active.weight() * graph.effective_weight(node_index)
+    if combined_weight <= 0.0F {
+      continue
+    }
+    samples.push({
+      clip,
+      seek_time: active.seek_time(),
+      combined_weight,
+      computed_mask: graph.computed_mask(node_index),
+    })
+  }
+  samples
+}
+
+///|
+fn animation_apply_prepared_player_to_target(
+  target_id : AnimationTargetId,
+  target_mask : AnimationMask,
+  prepared_samples : Array[AnimationPreparedTargetSample],
   base_transform : @transform.Transform?,
   base_weights : AnimationWeights?,
   base_text_color : @text.TextColor?,
@@ -2929,28 +3017,17 @@ fn animation_apply_player_to_target(
   let mut text_color_acc_b = 0.0F
   let mut text_color_acc_a = 0.0F
 
-  for pair in player.playing_animations() {
-    let node_index = pair.0
-    let active = pair.1
-    guard graph.get(node_index) is Some(node) else { continue }
-    guard node.node_type is Clip(clip_handle) else { continue }
-    guard animation_clip_get(clip_handle) is Some(clip) else { continue }
-
-    let computed_mask = graph.computed_mask(node_index)
-    if (target_mask & computed_mask) != 0U {
+  for sample in prepared_samples {
+    if (target_mask & sample.computed_mask) != 0U {
       continue
     }
-
-    let combined_weight = active.weight() * graph.effective_weight(node_index)
-    if combined_weight <= 0.0F {
+    guard sample.clip.sample_target(target_id, sample.seek_time)
+      is Some(clip_sample) else {
       continue
     }
+    let combined_weight = sample.combined_weight
 
-    guard clip.sample_target(target_id, active.seek_time()) is Some(sample) else {
-      continue
-    }
-
-    if sample.translation is Some(translation) {
+    if clip_sample.translation is Some(translation) {
       has_translation = true
       translation_weight = translation_weight + combined_weight
       translation_acc = translation_acc.add(
@@ -2958,7 +3035,7 @@ fn animation_apply_player_to_target(
       )
     }
 
-    if sample.rotation is Some(rotation) {
+    if clip_sample.rotation is Some(rotation) {
       has_rotation = true
       rotation_weight = rotation_weight + combined_weight
       rotation_acc_x = rotation_acc_x + rotation.x * combined_weight
@@ -2967,19 +3044,19 @@ fn animation_apply_player_to_target(
       rotation_acc_w = rotation_acc_w + rotation.w * combined_weight
     }
 
-    if sample.scale is Some(scale) {
+    if clip_sample.scale is Some(scale) {
       has_scale = true
       scale_weight = scale_weight + combined_weight
       scale_acc = scale_acc.add(scale.mul_scalar(combined_weight))
     }
 
-    if sample.weights is Some(weights) {
+    if clip_sample.weights is Some(weights) {
       has_weights = true
       weights_weight = weights_weight + combined_weight
       animation_weights_accumulate(weights_acc, weights, combined_weight)
     }
 
-    if sample.text_color is Some(text_color) {
+    if clip_sample.text_color is Some(text_color) {
       has_text_color = true
       text_color_weight = text_color_weight + combined_weight
       text_color_acc_r = text_color_acc_r + text_color.r * combined_weight
@@ -3318,6 +3395,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let transform_updates : Array[(@core.Entity, @transform.Transform)] = []
   let weights_updates : Array[(@core.Entity, AnimationWeights)] = []
   let text_color_updates : Array[(@core.Entity, @text.TextColor)] = []
+  let prepared_player_cache : Map[
+    Int,
+    (AnimationGraph, Array[AnimationPreparedTargetSample]),
+  ] = {}
+  let missing_player_cache : Map[Int, Bool] = {}
 
   let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
     world,
@@ -3328,25 +3410,50 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       return
     }
     let player_entity = animated_by.player()
-    guard (try! world.get_by_key(player_entity, ecs_key_animation_player))
-      is Some(player) else {
+    let player_id = player_entity.id
+    if player_id < 0 {
       return
     }
-    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
-      is Some(graph_handle) else {
+    if missing_player_cache.get(player_id) is Some(_) {
       return
     }
-    guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
+    let (graph, prepared_samples) = match prepared_player_cache.get(player_id) {
+      Some(cached) => cached
+      None => {
+        guard (try! world.get_by_key(player_entity, ecs_key_animation_player))
+          is Some(player) else {
+          missing_player_cache.set(player_id, true)
+          return
+        }
+        guard (try! world.get_by_key(
+            player_entity, ecs_key_animation_graph_handle,
+          ))
+          is Some(graph_handle) else {
+          missing_player_cache.set(player_id, true)
+          return
+        }
+        guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
+          missing_player_cache.set(player_id, true)
+          return
+        }
+        let prepared_samples = animation_prepare_player_target_samples(
+          player, graph,
+        )
+        let cached = (graph, prepared_samples)
+        prepared_player_cache.set(player_id, cached)
+        cached
+      }
+    }
+    if prepared_samples.length() == 0 {
       return
     }
     let target_id = target_id.value()
     let target_mask = graph.target_mask(target_id)
 
-    let (next_transform, next_weights, next_text_color) = animation_apply_player_to_target(
+    let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
       target_id,
       target_mask,
-      player,
-      graph,
+      prepared_samples,
       try! world.get_by_key(entity, @transform.ecs_key_transform),
       try! world.get_by_key(entity, ecs_key_animation_weights),
       try! world.get_by_key(entity, @text.ecs_key_text_color),

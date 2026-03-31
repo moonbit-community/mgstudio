@@ -12,7 +12,8 @@ import {
   "Milky2018/mgstudio/window",
 }
 
+supported_targets = "native"
+
 options(
   "is-main": true,
-  "supported-targets": "native",
 )

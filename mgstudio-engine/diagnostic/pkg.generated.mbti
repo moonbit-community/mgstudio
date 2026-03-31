@@ -90,6 +90,8 @@ pub fn render_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render_diagnostics_plugin_with(@app.App[@ecs.World], RenderDiagnosticsPlugin) -> @app.App[@ecs.World]
 
+pub fn stress_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let system_information_diagnostic_process_cpu_usage : DiagnosticPath
 
 pub let system_information_diagnostic_process_mem_usage : DiagnosticPath
@@ -101,6 +103,10 @@ pub let system_information_diagnostic_system_mem_usage : DiagnosticPath
 pub fn system_information_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn system_information_diagnostics_plugin_with(@app.App[@ecs.World], SystemInformationDiagnosticsPlugin) -> @app.App[@ecs.World]
+
+pub fn timeline_trace_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn timeline_trace_plugin_with(@app.App[@ecs.World], TimelineTracePlugin) -> @app.App[@ecs.World]
 
 pub fn update_frame_count(@app.ResMut[FrameCount]) -> Unit
 
@@ -226,6 +232,10 @@ pub struct RenderDiagnosticsPlugin {
 pub fn RenderDiagnosticsPlugin::default() -> Self
 pub fn RenderDiagnosticsPlugin::new(Int) -> Self
 
+pub struct StressDiagnosticsPlugin {
+}
+pub fn StressDiagnosticsPlugin::default() -> Self
+
 pub struct SystemInfo {
   os : String
   kernel : String
@@ -239,6 +249,24 @@ pub impl @app.Resource for SystemInfo
 pub struct SystemInformationDiagnosticsPlugin {
 }
 pub fn SystemInformationDiagnosticsPlugin::default() -> Self
+
+pub struct TimelineTraceConfig {
+  enabled : Bool
+  output_path : String
+  flush_interval_frames : Int
+  categories : Array[@app.TimelineTraceCategory]
+}
+pub fn TimelineTraceConfig::default() -> Self
+pub fn TimelineTraceConfig::with_categories(Self, Array[@app.TimelineTraceCategory]) -> Self
+pub fn TimelineTraceConfig::with_enabled(Self, Bool) -> Self
+pub fn TimelineTraceConfig::with_flush_interval_frames(Self, Int) -> Self
+pub fn TimelineTraceConfig::with_output_path(Self, String) -> Self
+
+pub struct TimelineTracePlugin {
+  config : TimelineTraceConfig
+}
+pub fn TimelineTracePlugin::default() -> Self
+pub fn TimelineTracePlugin::with_config(TimelineTraceConfig) -> Self
 
 // Type aliases
 

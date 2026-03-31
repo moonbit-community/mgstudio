@@ -62,3 +62,21 @@ test "diagnostics: log diagnostics timer advances with real time" {
     content="true",
   )
 }
+
+///|
+test "diagnostics: log diagnostics sorts output by path lexicographically" {
+  let app = register_diagnostic(
+    register_diagnostic(
+      @app.App::new(@ecs.World::new()).add_plugin(diagnostics_plugin),
+      Diagnostic::new(DiagnosticPath::const_new("z.path")),
+    ),
+    Diagnostic::new(DiagnosticPath::const_new("a.path")),
+  )
+  let store = try! app
+    .world()
+    .get_resource(DiagnosticsStore::resource())
+    .unwrap()
+  let sorted = log_diagnostics_sorted(store)
+  inspect(sorted[0].path().as_str(), content="a.path")
+  inspect(sorted[1].path().as_str(), content="z.path")
+}

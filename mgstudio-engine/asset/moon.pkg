@@ -19,6 +19,8 @@ import {
   "tonyfettes/any",
 }
 
+supported_targets = "native"
+
 options(
   link: {
     "native": {
@@ -27,5 +29,4 @@ options(
     },
   },
   "native-stub": [ "gzip_stub.c", "web_asset_stub.c" ],
-  "supported-targets": "native",
 )

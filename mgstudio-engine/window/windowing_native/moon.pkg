@@ -9,8 +9,9 @@ import {
   "moonbitlang/core/ref",
 }
 
+supported_targets = "native"
+
 options(
   "native-stub": [ "layer_attach_stub.c" ],
-  "supported-targets": "native",
   targets: { "raw.mbt": [ "native" ] },
 )

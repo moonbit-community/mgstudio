@@ -197,12 +197,12 @@ fn parse_define_value(raw_value : String) -> ShaderDefValue {
       .to_string()
       .trim()
       .to_string()
-    let parsed = @strconv.parse_int(unsigned_text[:], base=10) catch {
+    let parsed = @string.parse_int(unsigned_text[:], base=10) catch {
       _ => return ShaderDefValue::Bool(false)
     }
     return ShaderDefValue::UInt(parsed.reinterpret_as_uint())
   }
-  let parsed = @strconv.parse_int(value[:], base=10) catch {
+  let parsed = @string.parse_int(value[:], base=10) catch {
     _ => return ShaderDefValue::Bool(false)
   }
   ShaderDefValue::Int(parsed)
@@ -375,7 +375,7 @@ fn eval_if_condition(
           )
       }
     ShaderDefValue::Int(int_value) => {
-      let parsed = @strconv.parse_int(value[:], base=10) catch {
+      let parsed = @string.parse_int(value[:], base=10) catch {
         _ =>
           return Err(
             PreprocessError::InvalidShaderDefComparisonValue(
@@ -391,7 +391,7 @@ fn eval_if_condition(
       } else {
         value
       }
-      let parsed = @strconv.parse_int(parsed_text[:], base=10) catch {
+      let parsed = @string.parse_int(parsed_text[:], base=10) catch {
         _ =>
           return Err(
             PreprocessError::InvalidShaderDefComparisonValue(
