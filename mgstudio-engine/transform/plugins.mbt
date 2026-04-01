@@ -60,7 +60,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_systems(
     @app.PostStartup,
-    @app.system(@app.system_param2(sync_simple_transforms)).in_set(
+    @app.system(sync_simple_transforms_world).in_set(
       transform_set_sync_simple_transforms,
     ),
   )
@@ -80,7 +80,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param2(sync_simple_transforms)).in_set(
+    @app.system(sync_simple_transforms_world).in_set(
       transform_set_sync_simple_transforms,
     ),
   )

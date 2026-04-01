@@ -41,6 +41,13 @@ fn transform_abort_malformed_hierarchy() -> Unit {
 }
 
 ///|
+fn transform_entity_key(entity : @core.Entity) -> UInt64 {
+  let hi = entity.id.reinterpret_as_uint().to_uint64()
+  let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+  (hi << 32) | lo
+}
+
+///|
 fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   let key = static_transform_optimizations_resource_key()
   if !world.resource(key).is_present() {
@@ -84,67 +91,60 @@ fn global_transform_eq(a : GlobalTransform, b : GlobalTransform) -> Bool {
 
 ///|
 fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
-  let entities : Array[@core.Entity] = []
-  world.for_each_component(ecs_key_global_transform, fn(entity, _global) {
-    if (try! world.contains_by_key(entity, ecs_key_transform)) &&
-      !(try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) &&
-      !(try! world.contains_by_key(entity, @hierarchy.ecs_key_children)) {
-      entities.push(entity)
+  let sequence = world.get_sequence_context().sequence()
+  let processed : Map[UInt64, Bool] = {}
+  fn sync_entity_if_needed(world : @ecs.World, entity : @core.Entity) -> Unit {
+    guard world.is_alive(entity) else { return }
+    guard !(try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) else {
+      return
     }
-  })
-  for entity in entities {
-    if (try! world.get_by_key(entity, ecs_key_transform)) is Some(transform) {
-      let next_global = GlobalTransform::from_transform(transform)
-      if (try! world.get_by_key(entity, ecs_key_global_transform))
-        is Some(current_global) {
-        if !global_transform_eq(current_global, next_global) {
-          try! (world.replace(entity, ecs_key_global_transform, next_global)
-          |> ignore)
-        }
-      }
+    guard !(try! world.contains_by_key(entity, @hierarchy.ecs_key_children)) else {
+      return
     }
+    guard (try! world.get_by_key(entity, ecs_key_transform)) is Some(transform) else {
+      return
+    }
+    guard (try! world.get_by_key(entity, ecs_key_global_transform))
+      is Some(current_global) else {
+      return
+    }
+    let next_global = GlobalTransform::from_transform(transform)
+    if !global_transform_eq(current_global, next_global) {
+      try! (world.replace(entity, ecs_key_global_transform, next_global)
+      |> ignore)
+    }
+  }
+  for entity in world.changed_components(ecs_key_transform, sequence).read() {
+    let key = transform_entity_key(entity)
+    if processed.contains(key) {
+      continue
+    }
+    processed.set(key, true)
+    sync_entity_if_needed(world, entity)
+  }
+  for
+    entity in world
+    .removed_components(@hierarchy.ecs_key_parent, sequence)
+    .read() {
+    let key = transform_entity_key(entity)
+    if processed.contains(key) {
+      continue
+    }
+    processed.set(key, true)
+    sync_entity_if_needed(world, entity)
   }
 }
 
 ///|
 pub fn sync_simple_transforms(
-  query : @app.ParamSet2[
+  _query : @app.ParamSet2[
     SimpleTransformChangedQuery,
     SimpleTransformOrphanQuery,
   ],
-  orphaned : @ecs.RemovedComponents[@hierarchy.Parent],
+  _orphaned : @ecs.RemovedComponents[@hierarchy.Parent],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-
-  fn sync_entity_if_needed(
-    world : @ecs.World,
-    transform : @ecs.Comp[Transform],
-    global : @ecs.Comp[GlobalTransform],
-    entity : @core.Entity,
-  ) -> Unit {
-    let next_global = GlobalTransform::from_transform(transform.value())
-    if !global_transform_eq(global.value(), next_global) {
-      try! (world.replace(entity, ecs_key_global_transform, next_global)
-      |> ignore)
-    }
-  }
-
-  let changed = query.p0()
-  try! changed.for_each(fn(entity, data) {
-    let (transform, global) = data
-    sync_entity_if_needed(world, transform, global, entity)
-  })
-
-  if orphaned.is_empty() {
-    return
-  }
-  let orphan_query = query.p1()
-  for entity in orphaned.read() {
-    if (orphan_query.get(entity) catch { _ => None })
-      is Some((transform, global)) {
-      sync_entity_if_needed(world, transform, global, entity)
-    }
-  }
+  sync_simple_transforms_apply(world)
 }
 
 ///|
@@ -165,6 +165,7 @@ fn propagate_descendants(
   parent : @core.Entity,
   parent_global : GlobalTransform,
   children : @hierarchy.Children,
+  processed : Map[UInt64, Bool],
 ) -> Unit {
   for child in children.entities() {
     guard (try! world.get_by_key(child, @hierarchy.ecs_key_parent))
@@ -185,44 +186,85 @@ fn propagate_descendants(
     let next_global = parent_global.mul(
       GlobalTransform::from_transform(local_transform),
     )
+    processed.set(transform_entity_key(child), true)
     if !global_transform_eq(current_global, next_global) {
       try! (world.replace(child, ecs_key_global_transform, next_global)
       |> ignore)
     }
     if (try! world.get_by_key(child, @hierarchy.ecs_key_children))
       is Some(grand_children) {
-      propagate_descendants(world, child, next_global, grand_children)
+      propagate_descendants(
+        world, child, next_global, grand_children, processed,
+      )
     }
   }
 }
 
 ///|
 pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
-  let roots : Array[@core.Entity] = []
-  world.for_each_component(ecs_key_global_transform, fn(entity, _global) {
-    if (try! world.contains_by_key(entity, ecs_key_transform)) &&
-      !(try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
-      roots.push(entity)
-    }
-  })
-  for entity in roots {
+  let processed : Map[UInt64, Bool] = {}
+  let sequence = world.get_sequence_context().sequence()
+  fn propagate_entity_if_needed(
+    world : @ecs.World,
+    entity : @core.Entity,
+  ) -> Unit {
+    guard world.is_alive(entity) else { return }
     guard (try! world.get_by_key(entity, ecs_key_transform))
       is Some(local_transform) else {
-      continue
+      return
     }
     guard (try! world.get_by_key(entity, ecs_key_global_transform))
       is Some(current_global) else {
-      continue
+      return
     }
-    let next_global = GlobalTransform::from_transform(local_transform)
+    let next_global = match
+      (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
+      Some(parent) => {
+        let parent_global = match
+          (try! world.get_by_key(parent.entity(), ecs_key_global_transform)) {
+          Some(value) => value
+          None => GlobalTransform::identity()
+        }
+        parent_global.mul(GlobalTransform::from_transform(local_transform))
+      }
+      None => GlobalTransform::from_transform(local_transform)
+    }
+    processed.set(transform_entity_key(entity), true)
     if !global_transform_eq(current_global, next_global) {
       try! (world.replace(entity, ecs_key_global_transform, next_global)
       |> ignore)
     }
     if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
       is Some(children) {
-      propagate_descendants(world, entity, next_global, children)
+      propagate_descendants(world, entity, next_global, children, processed)
     }
+  }
+  for entity in world.changed_components(ecs_key_transform, sequence).read() {
+    if processed.contains(transform_entity_key(entity)) {
+      continue
+    }
+    propagate_entity_if_needed(world, entity)
+  }
+  for
+    entity in world
+    .changed_components(@hierarchy.ecs_key_parent, sequence)
+    .read() {
+    if processed.contains(transform_entity_key(entity)) {
+      continue
+    }
+    propagate_entity_if_needed(world, entity)
+  }
+  for
+    entity in world
+    .removed_components(@hierarchy.ecs_key_parent, sequence)
+    .read() {
+    if processed.contains(transform_entity_key(entity)) {
+      continue
+    }
+    if !world.is_alive(entity) {
+      continue
+    }
+    propagate_entity_if_needed(world, entity)
   }
 }
 

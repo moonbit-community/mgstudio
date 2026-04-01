@@ -1279,9 +1279,7 @@ pub fn mouse_position() -> @math.Vec2? {
       let sf = if sf0 <= 0.0F { 1.0F } else { sf0 }
       let logical_x = raw_x / sf
       let logical_y = raw_y / sf
-      let window_h0 = Float::from_int(@windowing.height(cursor_window))
-      let logical_h = if window_h0 <= 0.0F { 0.0F } else { window_h0 / sf }
-      Some(@math.Vec2::new(logical_x, logical_h - logical_y))
+      Some(@math.Vec2::new(logical_x, logical_y))
     }
   } else {
     None
