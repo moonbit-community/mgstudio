@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,88 +13,22 @@
 // limitations under the License.
 
 ///|
-fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_debugdump2_setup))
-  .run()
+fn rapier_debugdump_include_system(name : String) -> Bool {
+  !name.has_prefix("pbr.") &&
+  !name.has_prefix("render.") &&
+  !name.has_prefix("gizmos.") &&
+  !name.has_prefix("window.") &&
+  !name.has_prefix("sprite.")
 }
 
 ///|
-fn rapier2d_debugdump2_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/icon.png")
-  world
-  .resource(@sprite.ClearColor::resource())
-  .insert(
-    @sprite.ClearColor::new(@sprite.Color::new(0.93F, 0.94F, 0.97F, 1.0F)),
+fn main {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @rapier_examples.rapier2d_default_plugins(),
   )
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-  let cfg_res = @physics2d.get_physics2d_config_resource(world)
-  match cfg_res.get() {
-    Some(current) =>
-      cfg_res.insert(current.with_gravity(@math.Vec2::new(0.0F, -500.0F)))
-    None =>
-      cfg_res.insert(
-        @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F)),
-      )
-  }
-  let floor = world.spawn_empty()
-  try! world.set_by_key(
-    floor,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, -240.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=0.0F,
-    ),
+  let settings = @app.ScheduleGraphSettings::default().with_include_system_name(
+    rapier_debugdump_include_system,
   )
-  try! world.set_by_key(
-    floor,
-    @physics2d.ecs_key_rigid_body2d,
-    @physics2d.RigidBody2d::fixed(),
-  )
-  try! world.set_by_key(
-    floor,
-    @physics2d.ecs_key_collider2d,
-    @physics2d.Collider2d::new(
-      @physics2d.ColliderShape2d::cuboid(390.0F, 18.0F),
-    ),
-  )
-  let ball = world.spawn_empty()
-  try! world.set_by_key(
-    ball,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 70.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=1.0F,
-    ),
-  )
-  try! world.set_by_key(
-    ball,
-    @sprite.ecs_key_sprite,
-    @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.93F, 0.62F, 0.22F, 1.0F))
-    .with_custom_size(Some(@math.Vec2::new(46.0F, 46.0F))),
-  )
-  try! world.set_by_key(
-    ball,
-    @physics2d.ecs_key_rigid_body2d,
-    @physics2d.RigidBody2d::dynamic(),
-  )
-  try! world.set_by_key(
-    ball,
-    @physics2d.ecs_key_collider2d,
-    @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(23.0F)),
-  )
-  println(
-    "digraph Physics2dDebugDump {\n  startup -> clear_events;\n  clear_events -> cleanup_despawned;\n  cleanup_despawned -> sync_insertions;\n  sync_insertions -> sync_joints;\n  sync_joints -> sync_world_to_rapier;\n  sync_world_to_rapier -> character_controller;\n  character_controller -> step;\n  step -> writeback;\n  writeback -> debug_render;\n}",
-  )
+  let dot = app.schedule_graph_dot(@app.PostUpdate, settings~)
+  println(dot)
 }

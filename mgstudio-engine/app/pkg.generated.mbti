@@ -415,6 +415,7 @@ pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn App::run(Self[@ecs.World]) -> Unit
 pub fn App::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn App::schedule_graph_dot(Self[@ecs.World], ScheduleStage, settings? : ScheduleGraphSettings) -> String
 pub fn App::set_error_handler(Self[@ecs.World], (Error, ErrorContext) -> Unit) -> Self[@ecs.World]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
@@ -813,6 +814,12 @@ pub fn Schedule::get_executor_kind(Self) -> ExecutorKind
 pub fn Schedule::label(Self) -> ScheduleStage
 pub fn Schedule::new(ScheduleStage) -> Self
 pub fn Schedule::set_executor_kind(Self, ExecutorKind) -> Self
+
+pub struct ScheduleGraphSettings {
+  include_system_name : ((String) -> Bool)?
+}
+pub fn ScheduleGraphSettings::default() -> Self
+pub fn ScheduleGraphSettings::with_include_system_name(Self, (String) -> Bool) -> Self
 
 type ScheduleRegistry[W]
 

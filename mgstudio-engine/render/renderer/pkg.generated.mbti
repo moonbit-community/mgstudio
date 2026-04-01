@@ -50,9 +50,13 @@ pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~
 
 pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format_raw~ : Int, pixels~ : Bytes) -> Int
 
+pub fn asset_create_texture_cube_with_format(width~ : Int, height~ : Int, format_raw~ : Int, levels~ : Array[Bytes], nearest~ : Bool) -> Int
+
 pub fn asset_create_texture_empty(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
 
 pub fn asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int
+
+pub fn asset_create_texture_stacked_2d_with_format(width~ : Int, height_per_slice~ : Int, slice_count~ : Int, format_raw~ : Int, levels~ : Array[Bytes], nearest~ : Bool) -> Int
 
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool
 
@@ -529,6 +533,7 @@ pub fn GpuBackend::create_render_target_with_formats(Self, Int, Int, Bool, UInt,
 pub fn GpuBackend::create_surface(Self, Int) -> Unit
 pub fn GpuBackend::create_surface_binding(Self, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, UInt, Array[Bytes]) -> Int raise GpuBackendError
+pub fn GpuBackend::create_texture_cube_with_format(Self, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError

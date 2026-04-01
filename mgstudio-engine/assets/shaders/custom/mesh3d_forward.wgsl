@@ -114,6 +114,10 @@ const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32   = 6u << 29u;
 @group(0) @binding(2) var u_transmission_source_sampler : sampler;
 @group(0) @binding(3) var u_point_shadow_texture : texture_depth_cube;
 @group(0) @binding(4) var u_point_shadow_sampler : sampler_comparison;
+@group(0) @binding(5) var u_environment_diffuse_texture : texture_2d<f32>;
+@group(0) @binding(6) var u_environment_diffuse_sampler : sampler;
+@group(0) @binding(7) var u_environment_specular_texture : texture_2d<f32>;
+@group(0) @binding(8) var u_environment_specular_sampler : sampler;
 @group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
 @group(1) @binding(2) var u_base_color_sampler : sampler;
 @group(1) @binding(3) var u_emissive_texture : texture_2d<f32>;
@@ -731,6 +735,36 @@ fn cubemap_stacked_vertical_uv(direction : vec3<f32>) -> vec2<f32> {
   return vec2<f32>(u, v);
 }
 
+fn sample_environment_diffuse(
+  direction : vec3<f32>,
+  rotation : vec4<f32>,
+) -> vec3<f32> {
+  let sample_dir = quat_rotate_vec3(rotation, safe_normalize(direction));
+  let uv = cubemap_stacked_vertical_uv(sample_dir);
+  return textureSampleLevel(
+    u_environment_diffuse_texture,
+    u_environment_diffuse_sampler,
+    uv,
+    0.0,
+  ).rgb;
+}
+
+fn sample_environment_specular(
+  direction : vec3<f32>,
+  rotation : vec4<f32>,
+  perceptual_roughness : f32,
+) -> vec3<f32> {
+  let sample_dir = quat_rotate_vec3(rotation, safe_normalize(direction));
+  let uv = cubemap_stacked_vertical_uv(sample_dir);
+  let lod = clamp(perceptual_roughness * 8.0, 0.0, 8.0);
+  return textureSampleLevel(
+    u_environment_specular_texture,
+    u_environment_specular_sampler,
+    uv,
+    lod,
+  ).rgb;
+}
+
 fn sample_transmission_source(
   base_uv : vec2<f32>,
   blur_taps : i32,
@@ -1011,10 +1045,11 @@ fn fs_main(
       let cubemap_uv = cubemap_stacked_vertical_uv(
         in.world_pos - u_view.view.world_position.xyz,
       );
-      base_color = textureSample(
+      base_color = textureSampleLevel(
         u_base_color_texture,
         u_base_color_sampler,
         cubemap_uv,
+        0.0,
       ) * in.color;
     } else if has_uv {
       base_color = textureSample(u_base_color_texture, u_base_color_sampler, uv) * in.color;
@@ -1100,6 +1135,13 @@ fn fs_main(
   let specular_transmissive_color = base_color.xyz * specular_transmission;
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
+  let environment_map_intensity = max(u_view.view.exposure.y, 0.0);
+  let environment_map_rotation = quat_normalize(vec4<f32>(
+    u_view.lights.ambient_color.w,
+    u_view.lights.directional_light_direction_to_light.w,
+    u_view.lights.directional_light_color.w,
+    u_view.lights.point_light_shadow_params.w,
+  ));
 
   let ambient_term = u_view.lights.ambient_color.xyz;
 
@@ -1157,8 +1199,26 @@ fn fs_main(
     spot,
     occlusion_tex,
   );
-  let indirect_diffuse = indirect_diffuse_light(ambient_term, occlusion_tex);
-  let direct_specular = direct_specular_light(directional, point, spot);
+  var environment_diffuse = sample_environment_diffuse(
+    normal,
+    environment_map_rotation,
+  );
+  var environment_specular = sample_environment_specular(
+    reflect(-view_dir, normal),
+    environment_map_rotation,
+    perceptual_roughness,
+  );
+  if environment_map_intensity > 0.0 {
+    environment_diffuse = environment_diffuse * environment_map_intensity;
+    environment_specular = environment_specular * environment_map_intensity;
+  } else {
+    environment_diffuse = vec3<f32>(0.0, 0.0, 0.0);
+    environment_specular = vec3<f32>(0.0, 0.0, 0.0);
+  }
+  let indirect_diffuse = indirect_diffuse_light(ambient_term, occlusion_tex) +
+    environment_diffuse * occlusion_tex;
+  let direct_specular = direct_specular_light(directional, point, spot) +
+    environment_specular;
   let direct_diffuse_transmitted = direct_diffuse_transmissive_light(
     directional,
     point,
@@ -1176,7 +1236,7 @@ fn fs_main(
     directional,
     point,
     spot,
-  );
+  ) + environment_diffuse;
   let specular_transmitted_lighting = specular_transmissive_light(
     specular_transmissive_incident,
     in.position.xy,

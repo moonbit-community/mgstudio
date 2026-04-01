@@ -31,9 +31,13 @@ pub fn asset_create_render_target_with_formats(width~ : Int, height~ : Int, near
 
 pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format_raw~ : Int, pixels~ : Bytes) -> Int
 
+pub fn asset_create_texture_cube_with_format(width~ : Int, height~ : Int, format_raw~ : Int, levels~ : Array[Bytes], nearest~ : Bool) -> Int
+
 pub fn asset_create_texture_empty(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
 
 pub fn asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int
+
+pub fn asset_create_texture_stacked_2d_with_format(width~ : Int, height_per_slice~ : Int, slice_count~ : Int, format_raw~ : Int, levels~ : Array[Bytes], nearest~ : Bool) -> Int
 
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool
 

@@ -65,9 +65,6 @@ const FOG_INSCATTER_G : Float = 0.844F
 const FOG_INSCATTER_B : Float = 1.0F
 
 ///|
-const TERRAIN_ROWS : Int = 28
-
-///|
 priv struct AtmosphericFogState {
   mut camera : @core.Entity?
   mut fog_enabled : Bool
@@ -82,11 +79,6 @@ let atmospheric_fog_state : Ref[AtmosphericFogState] = Ref::new({
   directional_influence_enabled: true,
   help_text: None,
 })
-
-///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
 
 ///|
 fn fog_center() -> @math.Vec3 {
@@ -168,22 +160,8 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @pbr.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-  |> ignore
-}
-
-///|
 fn setup_terrain_scene(world : @ecs.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(3.0F)
@@ -201,44 +179,27 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     sun,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
-      10_000.0F,
+      @sprite.Color::srgb(0.98F, 0.95F, 0.82F),
+      100_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
   )
-
-  let terrain_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.35F, 0.32F, 0.29F, 1.0F),
-    )
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F),
-  )
-
-  for i in 0..<TERRAIN_ROWS {
-    let i_f = float_from_int(i)
-    let depth = i_f * 0.38F
-    let width = 0.8F + i_f * 0.55F
-    let height = 0.05F + i_f * 0.012F
-    let shift = @math.sin(i_f * 0.45F) * 0.25F
-
-    spawn_mesh(
-      world,
-      @pbr.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(width, height, 0.3F),
-          ),
+  let terrain = world.spawn_empty()
+  try! world.set_by_key(
+    terrain,
+    @scene.ecs_key_scene_root,
+    @scene.SceneRoot::new(
+      asset_server.load(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
+          "models/terrain/Mountains.gltf",
         ),
       ),
-      terrain_material,
-      @transform.Transform::from_xyz(shift, height / 2.0F - 0.08F, -depth),
-    )
-  }
+    ),
+  )
 
   let sky_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.53F, 0.53F, 0.53F, 1.0F),
+      @sprite.Color::new(0.53333336F, 0.53333336F, 0.53333336F, 1.0F),
     )
     .with_unlit(true)
     .with_cull_mode(None),

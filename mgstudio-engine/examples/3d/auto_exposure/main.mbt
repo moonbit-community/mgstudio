@@ -87,17 +87,49 @@ fn camera_transform_for_angle(angle : Float) -> @transform.Transform {
 }
 
 ///|
-fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit {
+fn auto_exposure_wall_geometry(
+  width : Float,
+  height : Float,
+) -> @pbr.Mesh3dGeometry {
+  let half_width = width * 0.5F
+  let half_height = height * 0.5F
+  @pbr.Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(-half_width, half_height, 0.0F),
+      @math.Vec3::new(half_width, -half_height, 0.0F),
+      @math.Vec3::new(-half_width, -half_height, 0.0F),
+      @math.Vec3::new(-half_width, half_height, 0.0F),
+      @math.Vec3::new(half_width, half_height, 0.0F),
+      @math.Vec3::new(half_width, -half_height, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ],
+    None,
+  )
+}
+
+///|
+fn spawn_wall_panel(
+  world : @ecs.World,
+  wall_mesh : @asset.Handle[@pbr.Mesh],
+  side : @math.Vec3,
+  level : Int,
+) -> Unit {
   let level_f = float_from_int(level)
   let height = @math.Vec3::new(0.0F, level_f, 0.0F)
   let target = height
   let position = side.mul_scalar(2.0F).add(height)
 
-  let base_color = @sprite.Color::new(
+  let base_color = @sprite.Color::srgb(
     clampf(0.5F + side.x * 0.5F, 0.0F, 1.0F),
     clampf(0.75F - level_f * 0.25F, 0.0F, 1.0F),
     clampf(0.5F + side.z * 0.5F, 0.0F, 1.0F),
-    1.0F,
   )
 
   let material = @pbr.standard_material_add(
@@ -105,13 +137,7 @@ fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit 
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(4.0F, 1.0F, 0.04F),
-        ),
-      ),
-    ),
+    @pbr.Mesh3d::new(wall_mesh),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       target,
@@ -266,6 +292,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
   auto_exposure_state.val.camera = Some(camera)
 
+  let wall_mesh = @pbr.mesh_assets_mut_or_abort().val.add(
+    @pbr.Mesh::from_3d_geometry(auto_exposure_wall_geometry(4.0F, 1.0F)),
+  )
+
   for level in [-1, 0, 1] {
     for
       side in [
@@ -277,7 +307,7 @@ fn setup(world : @ecs.World) -> Unit {
       if level == 0 && side.z == 1.0F {
         continue
       }
-      spawn_wall_panel(world, side, level)
+      spawn_wall_panel(world, wall_mesh, side, level)
     }
   }
 
@@ -287,7 +317,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point_light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, true),
+    @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, false),
   )
   try! world.set_by_key(
     point_light,
@@ -295,76 +325,8 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   )
 
-  // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  let mask_size = @math.Vec2::new(
-    float_from_int(@window.window_width()),
-    float_from_int(@window.window_height()),
-  )
-  let mask_overlay = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(metering_mask)
-    .with_custom_size(Some(mask_size))
-    .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  try! world.set_by_key(
-    mask_overlay,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
-  auto_exposure_state.val.mask_overlay = Some(mask_overlay)
-
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-
-  @text.Text2dBundle::new(
-    @text.Text2d::new(
-      "Left / Right - Rotate Camera\n" +
-      "C - Toggle Compensation Curve\n" +
-      "M - Toggle Metering Mask\n" +
-      "V - Visualize Metering Mask",
-    ),
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-390.0F, 320.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
-    ),
-  )
-  .with_anchor(@sprite.Anchor::top_left())
-  .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  .with_shadow(Some(@text.Text2dShadow::default()))
-  .spawn()
-  |> ignore
-
-  let display_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_right())
-    .with_bounds(@text.TextBounds::new_horizontal(360.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::default()))
-    .spawn()
-  auto_exposure_state.val.display_text = Some(display_text)
+  auto_exposure_state.val.mask_overlay = None
+  auto_exposure_state.val.display_text = None
 
   update_display_text()
 }
@@ -414,16 +376,21 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
     let show_mask = @input.key_pressed(@window.KeyCode::KeyV)
-    try! (world.replace(
-      mask_entity,
-      @visibility.ecs_key_visibility,
-      if show_mask {
-        @visibility.Visibility::Visible
-      } else {
-        @visibility.Visibility::Hidden
-      },
-    )
-    |> ignore)
+    if (try! world.get_by_key(mask_entity, @sprite.ecs_key_sprite))
+      is Some(mask_sprite) {
+      let color = mask_sprite.color
+      let next_alpha = if show_mask { MASK_OVERLAY_ALPHA } else { 0.0F }
+      if color.a != next_alpha {
+        try! (world.replace(
+          mask_entity,
+          @sprite.ecs_key_sprite,
+          mask_sprite.with_color(
+            @sprite.Color::new(color.r, color.g, color.b, next_alpha),
+          ),
+        )
+        |> ignore)
+      }
+    }
   }
 
   update_display_text()

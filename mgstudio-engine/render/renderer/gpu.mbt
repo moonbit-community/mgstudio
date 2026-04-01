@@ -938,7 +938,10 @@ pub fn GpuBackend::new(
   if adapter.has_feature_native_polygon_mode_line() {
     required_features.push(@wgpu.NATIVE_FEATURE_POLYGON_MODE_LINE)
   }
-  let device = adapter.request_device_sync_with_features(
+  if adapter.has_feature_native_vertex_writable_storage() {
+    required_features.push(@wgpu.NATIVE_FEATURE_VERTEX_WRITABLE_STORAGE)
+  }
+  let device = adapter.request_device_sync_with_features_and_limits(
     instance, required_features,
   ) catch {
     err => fatal("wgpu: Adapter::request_device_sync failed: " + err.message())
@@ -1399,6 +1402,16 @@ fn texture_block_info(format_raw : UInt) -> TextureBlockInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM ||
+    format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB ||
+    format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM ||
+    format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB {
+    return Some(TextureBlockInfo::{
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 8,
     })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM ||

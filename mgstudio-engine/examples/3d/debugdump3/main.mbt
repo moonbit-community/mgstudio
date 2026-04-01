@@ -13,69 +13,22 @@
 // limitations under the License.
 
 ///|
-priv struct DumpState {
-  mut done : Bool
+fn rapier_debugdump_include_system(name : String) -> Bool {
+  !name.has_prefix("pbr.") &&
+  !name.has_prefix("render.") &&
+  !name.has_prefix("gizmos.") &&
+  !name.has_prefix("window.") &&
+  !name.has_prefix("sprite.")
 }
-
-///|
-let dump_state : Ref[DumpState] = Ref::new({ done: false })
 
 ///|
 fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.PostUpdate, @app.system(debug_dump))
-  .run()
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  @rapier_examples.rapier3d_camera(
-    world,
-    @math.Vec3::new(0.0F, 6.0F, 10.0F),
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @rapier_examples.rapier3d_plugins(),
   )
-  @rapier_examples.rapier3d_basic_lighting(world)
-  ignore(
-    @rapier_examples.rapier3d_spawn_ground(
-      world,
-      @math.Vec3::new(10.0F, 0.5F, 10.0F),
-      @math.Vec3::new(0.0F, -0.5F, 0.0F),
-    ),
+  let settings = @app.ScheduleGraphSettings::default().with_include_system_name(
+    rapier_debugdump_include_system,
   )
-  for i in 0..<6 {
-    ignore(
-      @rapier_examples.rapier3d_spawn_cuboid(
-        world,
-        @math.Vec3::new(
-          Float::from_int(i) * 1.2F - 3.0F,
-          0.6F + Float::from_int(i % 2) * 0.5F,
-          0.0F,
-        ),
-        @math.Vec3::new(0.4F, 0.4F, 0.4F),
-        @rapier_examples.rapier3d_color(i),
-        Some(@physics3d.RigidBody3d::dynamic()),
-      ),
-    )
-  }
-}
-
-///|
-fn debug_dump(world : @ecs.World) -> Unit {
-  if dump_state.val.done {
-    return
-  }
-  guard @physics3d.get_physics3d_context_resource(world).get() is Some(ctx) else {
-    return
-  }
-  let hits = ctx.intersect_shape_entities(
-    @transform.Transform::identity(),
-    @collision.Shape3D::ball(100.0F),
-  )
-  println(
-    "[debugdump3] physics3d set chain: sync_insertions -> sync_joints -> sync_world_to_rapier -> step -> writeback",
-  )
-  println("[debugdump3] visible collider count = \{hits.length()}")
-  dump_state.val.done = true
+  let dot = app.schedule_graph_dot(@app.PostUpdate, settings~)
+  println(dot)
 }

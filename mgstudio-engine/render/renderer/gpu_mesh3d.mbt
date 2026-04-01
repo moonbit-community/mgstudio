@@ -225,6 +225,11 @@ fn mesh3d_view_uniform_bytes(
   transmission_steps : Float,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
+  environment_map_intensity : Float,
+  environment_map_rotation_x : Float,
+  environment_map_rotation_y : Float,
+  environment_map_rotation_z : Float,
+  environment_map_rotation_w : Float,
 ) -> Bytes {
   let point_shadow_near = if point_shadow_enabled > 0.5F {
     pass_state.point_shadow_near
@@ -298,21 +303,21 @@ fn mesh3d_view_uniform_bytes(
     pass_state.clip_from_world.w_axis_z,
     pass_state.clip_from_world.w_axis_w,
     pass_state.camera_exposure,
-    0.0F,
+    environment_map_intensity,
     0.0F,
     0.0F,
     ambient_color_r,
     ambient_color_g,
     ambient_color_b,
-    1.0F,
+    environment_map_rotation_x,
     pass_state.directional_dir_x,
     pass_state.directional_dir_y,
     pass_state.directional_dir_z,
-    0.0F,
+    environment_map_rotation_y,
     directional_color_r,
     directional_color_g,
     directional_color_b,
-    1.0F,
+    environment_map_rotation_z,
     pass_state.point_pos_x,
     pass_state.point_pos_y,
     pass_state.point_pos_z,
@@ -324,7 +329,7 @@ fn mesh3d_view_uniform_bytes(
     point_shadow_enabled,
     point_shadow_depth_bias,
     point_shadow_near,
-    0.0F,
+    environment_map_rotation_w,
     pass_state.spot_pos_x,
     pass_state.spot_pos_y,
     pass_state.spot_pos_z,
@@ -2616,7 +2621,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   }
   if backend.mesh3d_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
-    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=9UL)
     let view_ok = view_builder.add_buffer(
         0U,
         view_stage,
@@ -2643,6 +2648,28 @@ fn ensure_mesh3d_pipeline_rgba8(
         4U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
+      ) &&
+      view_builder.add_texture(
+        5U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      view_builder.add_sampler(
+        6U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      view_builder.add_texture(
+        7U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      view_builder.add_sampler(
+        8U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       )
     if !view_ok {
       view_builder.free()
@@ -3207,6 +3234,8 @@ fn mesh3d_view_bg_cache_get_or_create(
   backend : GpuBackend,
   transmission_source_texture : GpuTextureInfo,
   point_shadow_texture : GpuTextureInfo,
+  environment_diffuse_texture : GpuTextureInfo,
+  environment_specular_texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let layout = match backend.mesh3d_bgl_view {
     Some(v) => v
@@ -3223,12 +3252,16 @@ fn mesh3d_view_bg_cache_get_or_create(
   let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
     backend,
   )
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
     builder.add_texture_view(1U, transmission_source_texture.view) &&
     builder.add_sampler(2U, transmission_source_texture.sampler) &&
     builder.add_texture_view(3U, point_shadow_sample_view) &&
-    builder.add_sampler(4U, point_shadow_compare_sampler)
+    builder.add_sampler(4U, point_shadow_compare_sampler) &&
+    builder.add_texture_view(5U, environment_diffuse_texture.view) &&
+    builder.add_sampler(6U, environment_diffuse_texture.sampler) &&
+    builder.add_texture_view(7U, environment_specular_texture.view) &&
+    builder.add_sampler(8U, environment_specular_texture.sampler)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d view bind group")
@@ -4954,6 +4987,13 @@ pub fn GpuBackend::draw_mesh3d(
   point_shadow_texture_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
+  environment_diffuse_texture_id : Int,
+  environment_specular_texture_id : Int,
+  environment_map_intensity : Float,
+  environment_map_rotation_x : Float,
+  environment_map_rotation_y : Float,
+  environment_map_rotation_z : Float,
+  environment_map_rotation_w : Float,
   cull_mode : Int,
   shader_path : String?,
   skinning_matrices? : Array[Float]? = None,
@@ -5252,6 +5292,25 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     point_shadow_texture_id
   }
+  let environment_map_enabled = environment_map_intensity > 0.0F
+  let resolved_environment_diffuse_texture_id = if environment_map_enabled {
+    if environment_diffuse_texture_id >= 0 {
+      environment_diffuse_texture_id
+    } else {
+      -1
+    }
+  } else {
+    -1
+  }
+  let resolved_environment_specular_texture_id = if environment_map_enabled {
+    if environment_specular_texture_id >= 0 {
+      environment_specular_texture_id
+    } else {
+      -1
+    }
+  } else {
+    -1
+  }
   guard resolve_mesh3d_texture(self, resolved_base_texture_id)
     is Some(base_texture) else {
     return
@@ -5292,6 +5351,14 @@ pub fn GpuBackend::draw_mesh3d(
     is Some(point_shadow_texture) else {
     return
   }
+  guard resolve_mesh3d_texture(self, resolved_environment_diffuse_texture_id)
+    is Some(environment_diffuse_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_environment_specular_texture_id)
+    is Some(environment_specular_texture) else {
+    return
+  }
   let textured = texture_id >= 0
   let normal_textured = normal_texture_id >= 0
   let emissive_textured = emissive_texture_id >= 0
@@ -5302,6 +5369,31 @@ pub fn GpuBackend::draw_mesh3d(
   let specular_tint_textured = specular_tint_texture_id >= 0
   let transmission_source_textured = transmission_source_texture_id >= 0
   let point_shadow_textured = point_shadow_texture_id >= 0
+  let environment_map_intensity_value = if environment_map_enabled {
+    environment_map_intensity
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_x_value = if environment_map_enabled {
+    environment_map_rotation_x
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_y_value = if environment_map_enabled {
+    environment_map_rotation_y
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_z_value = if environment_map_enabled {
+    environment_map_rotation_z
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_w_value = if environment_map_enabled {
+    environment_map_rotation_w
+  } else {
+    1.0F
+  }
   let uv_transform_a_value = uv_transform_a
   let uv_transform_b_value = uv_transform_b
   let uv_transform_c_value = uv_transform_c
@@ -5347,6 +5439,11 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       0.0F
     },
+    environment_map_intensity_value,
+    environment_map_rotation_x_value,
+    environment_map_rotation_y_value,
+    environment_map_rotation_z_value,
+    environment_map_rotation_w_value,
   )
   let draw_bytes = mesh3d_draw_uniform_bytes(
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
@@ -5407,7 +5504,8 @@ pub fn GpuBackend::draw_mesh3d(
   }
   self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   let view_bg = mesh3d_view_bg_cache_get_or_create(
-    self, transmission_source_texture, point_shadow_texture,
+    self, transmission_source_texture, point_shadow_texture, environment_diffuse_texture,
+    environment_specular_texture,
   )
   let material_bg = mesh3d_material_cache_get_or_create(
     self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,

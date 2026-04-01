@@ -1217,7 +1217,8 @@ fn image_data_texture_format(is_srgb : Bool) -> TextureFormat {
 
 ///|
 fn image_from_loaded_texture_bytes(bytes : Bytes, is_srgb : Bool) -> Image? {
-  if ktx2_decode_uncompressed_3d_payload(bytes) is Some(_) {
+  if ktx2_decode_uncompressed_3d_payload(bytes) is Some(_) ||
+    ktx2_decode_2d_payload(bytes) is Some(_) {
     return None
   }
   let (width, height, pixels) = if decode_texture_image(bytes) is Some(decoded) {

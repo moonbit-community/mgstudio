@@ -13,29 +13,19 @@
 // limitations under the License.
 
 ///|
-///
-/// Baseline parity:
-/// - Bevy widget UI + pointer drag interactions are mapped to keyboard
-///   controls in this runtime.
-/// - Primary-pointer drag now rotates the model as a lightweight fallback for
-///   Bevy `Pointer<Drag>` observers.
-/// - Contact shadow / shadow filter effects are represented through Bevy-shaped
-///   components, while rendering is currently an approximation in mgstudio.
-
-///|
 const PI : Float = 3.141592653589793F
 
 ///|
-const LIGHT_ROTATION_SPEED : Float = 0.12F
+const LIGHT_ROTATION_SPEED : Float = 0.002F
 
 ///|
-const POINT_LIGHT_INTENSITY : Float = 4_000.0F
+const POINT_LIGHT_INTENSITY : Float = 400_000.0F
 
 ///|
-const SPOT_LIGHT_INTENSITY : Float = 4_000.0F
+const SPOT_LIGHT_INTENSITY : Float = 400_000.0F
 
 ///|
-const DIRECTIONAL_ILLUMINANCE : Float = 1_000.0F
+const DIRECTIONAL_ILLUMINANCE : Float = 10_000.0F
 
 ///|
 const MODEL_DRAG_ROTATION_SPEED : Float = 0.01F
@@ -315,6 +305,12 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let asset_server = @asset.AssetServer::new()
+  let pisa_diffuse = asset_server.load(
+    "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2",
+  )
+  let pisa_specular = asset_server.load(
+    "environment_maps/pisa_specular_rgb9e5_zstd.ktx2",
+  )
 
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
@@ -363,7 +359,16 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(asset_server.load("textures/Ryfjallet_cubemap.png"), 1.0F),
+    @pbr.Skybox::new(pisa_diffuse, 1000.0F),
+  )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_environment_map_light,
+    @pbr.EnvironmentMapLight::new(
+      Some(pisa_diffuse),
+      Some(pisa_specular),
+      1000.0F,
+    ),
   )
 
   let directional_light = world.spawn_empty()

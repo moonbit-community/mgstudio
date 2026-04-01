@@ -88,18 +88,20 @@ pub fn GpuBackend::draw_tonemapping2d(
   let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
   view_width |> ignore
   view_height |> ignore
-  tonemapping_write_view_uniform(
-    self, pass_state, exposure_value, color_grading_balance_x_axis_x, color_grading_balance_x_axis_y,
-    color_grading_balance_x_axis_z, color_grading_balance_y_axis_x, color_grading_balance_y_axis_y,
-    color_grading_balance_y_axis_z, color_grading_balance_z_axis_x, color_grading_balance_z_axis_y,
-    color_grading_balance_z_axis_z, color_grading_saturation_shadows, color_grading_saturation_midtones,
-    color_grading_saturation_highlights, color_grading_contrast_shadows, color_grading_contrast_midtones,
-    color_grading_contrast_highlights, color_grading_gamma_shadows, color_grading_gamma_midtones,
-    color_grading_gamma_highlights, color_grading_gain_shadows, color_grading_gain_midtones,
-    color_grading_gain_highlights, color_grading_lift_shadows, color_grading_lift_midtones,
-    color_grading_lift_highlights, color_grading_midtones_start, color_grading_midtones_end,
-    color_grading_exposure, color_grading_hue, color_grading_post_saturation,
-  )
+  if self.auto_exposure_active_state_buf is None {
+    tonemapping_write_view_uniform(
+      self, pass_state, exposure_value, color_grading_balance_x_axis_x, color_grading_balance_x_axis_y,
+      color_grading_balance_x_axis_z, color_grading_balance_y_axis_x, color_grading_balance_y_axis_y,
+      color_grading_balance_y_axis_z, color_grading_balance_z_axis_x, color_grading_balance_z_axis_y,
+      color_grading_balance_z_axis_z, color_grading_saturation_shadows, color_grading_saturation_midtones,
+      color_grading_saturation_highlights, color_grading_contrast_shadows, color_grading_contrast_midtones,
+      color_grading_contrast_highlights, color_grading_gamma_shadows, color_grading_gamma_midtones,
+      color_grading_gamma_highlights, color_grading_gain_shadows, color_grading_gain_midtones,
+      color_grading_gain_highlights, color_grading_lift_shadows, color_grading_lift_midtones,
+      color_grading_lift_highlights, color_grading_midtones_start, color_grading_midtones_end,
+      color_grading_exposure, color_grading_hue, color_grading_post_saturation,
+    )
+  }
 
   active_pass.end()
   active_pass.release()
@@ -284,20 +286,18 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
   let exposure_value = clamp_non_negative(exposure)
   view_width |> ignore
   view_height |> ignore
-  if self.auto_exposure_active_state_buf is None {
-    tonemapping_write_view_uniform(
-      self, pass_state, exposure_value, color_grading_balance_x_axis_x, color_grading_balance_x_axis_y,
-      color_grading_balance_x_axis_z, color_grading_balance_y_axis_x, color_grading_balance_y_axis_y,
-      color_grading_balance_y_axis_z, color_grading_balance_z_axis_x, color_grading_balance_z_axis_y,
-      color_grading_balance_z_axis_z, color_grading_saturation_shadows, color_grading_saturation_midtones,
-      color_grading_saturation_highlights, color_grading_contrast_shadows, color_grading_contrast_midtones,
-      color_grading_contrast_highlights, color_grading_gamma_shadows, color_grading_gamma_midtones,
-      color_grading_gamma_highlights, color_grading_gain_shadows, color_grading_gain_midtones,
-      color_grading_gain_highlights, color_grading_lift_shadows, color_grading_lift_midtones,
-      color_grading_lift_highlights, color_grading_midtones_start, color_grading_midtones_end,
-      color_grading_exposure, color_grading_hue, color_grading_post_saturation,
-    )
-  }
+  tonemapping_write_view_uniform(
+    self, pass_state, exposure_value, color_grading_balance_x_axis_x, color_grading_balance_x_axis_y,
+    color_grading_balance_x_axis_z, color_grading_balance_y_axis_x, color_grading_balance_y_axis_y,
+    color_grading_balance_y_axis_z, color_grading_balance_z_axis_x, color_grading_balance_z_axis_y,
+    color_grading_balance_z_axis_z, color_grading_saturation_shadows, color_grading_saturation_midtones,
+    color_grading_saturation_highlights, color_grading_contrast_shadows, color_grading_contrast_midtones,
+    color_grading_contrast_highlights, color_grading_gamma_shadows, color_grading_gamma_midtones,
+    color_grading_gamma_highlights, color_grading_gain_shadows, color_grading_gain_midtones,
+    color_grading_gain_highlights, color_grading_lift_shadows, color_grading_lift_midtones,
+    color_grading_lift_highlights, color_grading_midtones_start, color_grading_midtones_end,
+    color_grading_exposure, color_grading_hue, color_grading_post_saturation,
+  )
 
   active_pass.end()
   active_pass.release()

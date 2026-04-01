@@ -68,6 +68,9 @@ priv struct Camera3dViewPayload {
   exposure : Exposure?
   color_grading : ColorGrading?
   skybox : Skybox?
+  environment_map_light : EnvironmentMapLight?
+  generated_environment_map_light : GeneratedEnvironmentMapLight?
+  atmosphere_environment_map_light : AtmosphereEnvironmentMapLight?
   depth_prepass_enabled : Bool
   deferred_prepass_enabled : Bool
   no_indirect_drawing : Bool
@@ -198,6 +201,10 @@ priv struct MeshGpuDrawPayload3d {
   point_shadow_texture_id : Int
   point_shadow_enabled : Float
   point_shadow_depth_bias : Float
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
+  environment_map_intensity : Float
+  environment_map_rotation : @math.Quat
   specular_tint : @sprite.Color
   anisotropy_strength : Float
   max_relief_mapping_search_steps : Float

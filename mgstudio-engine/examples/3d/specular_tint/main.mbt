@@ -258,29 +258,6 @@ fn setup(world : @ecs.World) -> Unit {
   )
   try! world.set_by_key(
     help_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @ui.ecs_key_node,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text,
-    @text.Text::new(app_status_help_text(state.tint_type)),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    help_entity,
     @ui.ecs_key_node,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)

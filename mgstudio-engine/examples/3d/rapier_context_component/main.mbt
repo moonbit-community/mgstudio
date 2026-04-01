@@ -13,62 +13,82 @@
 // limitations under the License.
 
 ///|
-priv struct DumpState {
-  mut done : Bool
-}
-
-///|
-let dump_state : Ref[DumpState] = Ref::new({ done: false })
-
-///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.PostUpdate, @app.system(display_nb_colliders))
+  .add_systems(@app.Startup, @app.system(setup_physics))
+  .add_systems(@app.Startup, @app.system(setup_graphics))
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(@app.system_param2(display_nb_colliders)).after(
+      @physics3d.physics3d_set_writeback,
+    ),
+  )
   .run()
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  @rapier_examples.rapier3d_camera(
-    world,
-    @math.Vec3::new(0.0F, 3.0F, -10.0F),
-    @math.Vec3::zero(),
+fn display_nb_colliders(
+  colliders : @ecs.Query[@ecs.Comp[@physics3d.RapierColliderHandle3d], @ecs.All],
+  exit : @ecs.MessageWriter[@app.AppExit],
+) -> Unit {
+  let nb_colliders = colliders.count()
+  println("There are \{nb_colliders} colliders.")
+  if nb_colliders <= 0 {
+    abort("Expected at least one collider in rapier_context_component.")
+  }
+  ignore(exit.write(@app.AppExit::Success))
+}
+
+///|
+fn setup_physics(world : @ecs.World) -> Unit {
+  let ground_size = 5.1F
+  let ground_height = 0.1F
+  let starting_y = -0.5F - ground_height
+
+  let ground = world.spawn_empty()
+  try! world.set_by_key(
+    ground,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, starting_y, 0.0F),
   )
-  @rapier_examples.rapier3d_basic_lighting(world)
-  ignore(
-    @rapier_examples.rapier3d_spawn_ground(
-      world,
-      @math.Vec3::new(5.1F, 0.1F, 5.1F),
-      @math.Vec3::new(0.0F, -0.6F, 0.0F),
+  try! world.set_by_key(
+    ground,
+    @physics3d.ecs_key_collider3d,
+    @physics3d.Collider3d::new(
+      @physics3d.ColliderShape3d::cuboid(
+        ground_size, ground_height, ground_size,
+      ),
     ),
   )
-  for i in 0..<3 {
-    ignore(
-      @rapier_examples.rapier3d_spawn_cuboid(
-        world,
-        @math.Vec3::new(Float::from_int(i) * 1.5F - 1.5F, 0.5F, 0.0F),
-        @math.Vec3::new(0.5F, 0.5F, 0.5F),
-        @rapier_examples.rapier3d_color(i),
-        Some(@physics3d.RigidBody3d::dynamic()),
+
+  for _ in 0..<3 {
+    let cube = world.spawn_empty()
+    try! world.set_by_key(
+      cube,
+      @transform.ecs_key_transform,
+      @transform.Transform::identity(),
+    )
+    try! world.set_by_key(
+      cube,
+      @physics3d.ecs_key_rigid_body3d,
+      @physics3d.RigidBody3d::dynamic(),
+    )
+    try! world.set_by_key(
+      cube,
+      @physics3d.ecs_key_collider3d,
+      @physics3d.Collider3d::new(
+        @physics3d.ColliderShape3d::cuboid(0.5F, 0.5F, 0.5F),
       ),
     )
   }
 }
 
 ///|
-fn display_nb_colliders(world : @ecs.World) -> Unit {
-  if dump_state.val.done {
-    return
-  }
-  guard @physics3d.get_physics3d_context_resource(world).get() is Some(ctx) else {
-    return
-  }
-  let hits = ctx.intersect_shape_entities(
-    @transform.Transform::identity(),
-    @collision.Shape3D::ball(100.0F),
+fn setup_graphics(world : @ecs.World) -> Unit {
+  @rapier_examples.rapier3d_camera(
+    world,
+    @math.Vec3::new(0.0F, 3.0F, -10.0F),
+    @math.Vec3::zero(),
   )
-  println("[rapier_context_component] visible colliders = \{hits.length()}")
-  dump_state.val.done = true
 }

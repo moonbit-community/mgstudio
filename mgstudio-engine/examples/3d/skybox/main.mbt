@@ -275,7 +275,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(initial_image, 1.0F),
+    @pbr.Skybox::new(initial_image, 1000.0F),
   )
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")

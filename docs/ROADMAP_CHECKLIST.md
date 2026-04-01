@@ -107,11 +107,19 @@ This file must not exceed 200 lines.
 - [x] Issue `physics/examples2d_bevy_rapier_v032_port`: port all `bevy_rapier v0.32.0` 2D examples to mgstudio `examples/2d/*2`.
 - [x] Issue `physics/examples3d_bevy_rapier_v032_port`: port all `bevy_rapier v0.32.0` 3D examples to mgstudio `examples/3d/*3`.
 - [ ] Issue `physics/examples_bevy_rapier_visual_parity`: run screenshot-by-screenshot visual audit against `bevy_rapier v0.32.0` and fix behavior/render mismatches.
-- [ ] Issue `physics/examples_debugdump2_exact_parity`: replace fixed schedule-dump fallback with upstream-style debugdump helper behavior for `debugdump2`.
-- [ ] Issue `physics/examples_debugdump3_context_component_exact_parity`: close remaining behavior gaps in `debugdump3` and `rapier_context_component`.
+- [x] Issue `physics/examples_debugdump2_exact_parity`: replace fixed schedule-dump fallback with upstream-style debugdump helper behavior for `debugdump2`.
+- [x] Issue `physics/examples_debugdump3_context_component_exact_parity`: close remaining behavior gaps in `debugdump3` and `rapier_context_component`.
 - [x] Issue `examples_3d/depth_of_field_true_path`: replace DOF proxy mapping with real depth-of-field post-process path.
 - [x] Issue `examples_3d/lightmap_true_path`: replace mixed-lighting/lightmaps proxy flow with real lightmap component pipeline.
 - [x] Issue `examples_3d/anti_aliasing_nonproxy_modes`: replace SMAA/DLSS/CAS proxy mapping with real backend paths or explicit capability gates.
+- [x] Issue `examples_3d/contact_shadows_visual_parity`: close remaining visual gaps in `contact_shadows` by matching Bevy light/camera/UI flow and runtime component wiring (`/tmp/mgstudio_examples_visual_20260331_fix1/contact_shadows.png`).
+- [ ] Issue `examples_3d/atmosphere_visual_parity`: remove legacy fallback path in `atmosphere` and align with Bevy atmosphere/volumetric-fog/water material flow.
+- [ ] Issue `render/atmosphere_sky_render_runtime`: implement true atmosphere sky rendering path (not only distance-fog remap), current gap keeps `examples/3d/atmosphere` sky black and blocks visual parity.
+- [x] Issue `examples_3d/atmosphere_terrain_glb_loader_stability`: fix `models/terrain/terrain.glb` runtime load failure path observed in `examples/3d/atmosphere` (`/tmp/mgstudio_tmp_atmosphere_terrain_glb_after_png_threshold_fix2.png`).
+- [x] Issue `asset/png_decoder_stack_overflow_terrain_glb`: route texture PNG decode to `mizchi/image.decode_png` first to avoid gm_png/flate recursion stack overflow on `terrain.glb` textures (`~/Library/Logs/DiagnosticReports/atmosphere.exe-2026-04-01-010236.ips`).
+- [ ] Issue `examples_3d/auto_exposure_visual_parity`: align `auto_exposure` scene luminance adaptation output with Bevy reference screenshot flow.
+- [x] Issue `examples_3d/skybox_visual_parity`: align `skybox` brightness/cubemap upload path with Bevy (`brightness=1000`, stacked-cubemap upload compatibility) (`/tmp/mgstudio_examples_visual_20260331_fix1/skybox.png`).
+- [ ] Issue `render/cubemap_sampling_pipeline_alignment`: migrate current stacked-2d cubemap compatibility path to true cube-texture sampling layout parity.
 - [x] Issue `examples_gltf_animation/full_visual_audit_20260330`: run full capture + manual visual audit for all `animation` and `gltf` examples (`22/22` pass).
 - [x] Issue `examples_animation/fox_scene_scale_parity`: align `animation_graph` and `animation_masks` fox scene spawn scale (`0.07`) with Bevy flow.
 - [x] Issue `examples_animation/dark_scene_sanity_false_positive`: fix `visual_image_sanity` to avoid false failures on valid black-background scenes with visible center content.

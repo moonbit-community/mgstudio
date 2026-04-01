@@ -1598,6 +1598,13 @@ pub fn draw_mesh3d(
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
+  environment_diffuse_texture_id? : Int = -1,
+  environment_specular_texture_id? : Int = -1,
+  environment_map_intensity? : Float = 0.0F,
+  environment_map_rotation_x? : Float = 0.0F,
+  environment_map_rotation_y? : Float = 0.0F,
+  environment_map_rotation_z? : Float = 0.0F,
+  environment_map_rotation_w? : Float = 1.0F,
   cull_mode~ : Int,
   shader_path? : String? = None,
   skinning_matrices? : Array[Float]? = None,
@@ -1682,6 +1689,13 @@ pub fn draw_mesh3d(
       point_shadow_texture_id,
       point_shadow_enabled,
       point_shadow_depth_bias,
+      environment_diffuse_texture_id,
+      environment_specular_texture_id,
+      environment_map_intensity,
+      environment_map_rotation_x,
+      environment_map_rotation_y,
+      environment_map_rotation_z,
+      environment_map_rotation_w,
       cull_mode,
       shader_path,
       skinning_matrices~,
@@ -1983,6 +1997,65 @@ pub fn asset_create_texture_3d_with_format(
         safe_depth,
         format_raw.reinterpret_as_uint(),
         levels,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_create_texture_stacked_2d_with_format(
+  width~ : Int,
+  height_per_slice~ : Int,
+  slice_count~ : Int,
+  format_raw~ : Int,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height_per_slice = if height_per_slice <= 0 {
+    1
+  } else {
+    height_per_slice
+  }
+  let safe_slice_count = if slice_count <= 0 { 1 } else { slice_count }
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_stacked_2d_with_format(
+        safe_width,
+        safe_height_per_slice,
+        safe_slice_count,
+        format_raw.reinterpret_as_uint(),
+        levels,
+        nearest,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_create_texture_cube_with_format(
+  width~ : Int,
+  height~ : Int,
+  format_raw~ : Int,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_cube_with_format(
+        safe_width,
+        safe_height,
+        format_raw.reinterpret_as_uint(),
+        levels,
+        nearest,
       )
     } catch {
       _ => ()

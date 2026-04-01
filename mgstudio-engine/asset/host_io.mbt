@@ -111,7 +111,34 @@ priv struct Ktx2TexturePayload {
 }
 
 ///|
+priv struct Ktx2Texture2dPayload {
+  width : Int
+  height : Int
+  is_cube : Bool
+  slice_count : Int
+  format_raw : Int
+  levels : Array[Bytes]
+}
+
+///|
+priv struct Ktx2FormatInfo {
+  format_raw : Int
+  block_width : Int
+  block_height : Int
+  block_bytes : Int
+}
+
+///|
 const KTX2_HEADER_SIZE : Int = 80
+
+///|
+const KTX2_LEVEL_INDEX_STRIDE : Int = 24
+
+///|
+const KTX2_SUPERCOMPRESSION_NONE : Int = 0
+
+///|
+const KTX2_SUPERCOMPRESSION_ZSTD : Int = 2
 
 ///|
 const KTX2_VK_FORMAT_R16G16B16A16_SFLOAT : Int = 97
@@ -120,10 +147,70 @@ const KTX2_VK_FORMAT_R16G16B16A16_SFLOAT : Int = 97
 const KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 : Int = 123
 
 ///|
+const KTX2_VK_FORMAT_BC7_UNORM_BLOCK : Int = 145
+
+///|
+const KTX2_VK_FORMAT_BC7_SRGB_BLOCK : Int = 146
+
+///|
+const KTX2_VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK : Int = 147
+
+///|
+const KTX2_VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK : Int = 148
+
+///|
+const KTX2_VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK : Int = 149
+
+///|
+const KTX2_VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK : Int = 150
+
+///|
+const KTX2_VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK : Int = 151
+
+///|
+const KTX2_VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK : Int = 152
+
+///|
+const KTX2_VK_FORMAT_ASTC_4X4_UNORM_BLOCK : Int = 157
+
+///|
+const KTX2_VK_FORMAT_ASTC_4X4_SRGB_BLOCK : Int = 158
+
+///|
 const WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT : Int = 0x1C
 
 ///|
 const WGPU_TEXTURE_FORMAT_RGBA16_FLOAT : Int = 0x22
+
+///|
+const WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM : Int = 0x38
+
+///|
+const WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB : Int = 0x39
+
+///|
+const WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM : Int = 0x3A
+
+///|
+const WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB : Int = 0x3B
+
+///|
+const WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM : Int = 0x3C
+
+///|
+const WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB : Int = 0x3D
+
+///|
+const WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM : Int = 0x3E
+
+///|
+const WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB : Int = 0x3F
+
+///|
+const WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM : Int = 0x44
+
+///|
+const WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB : Int = 0x45
 
 ///|
 let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref::new([
@@ -793,9 +880,29 @@ fn decode_texture_image_from_gm_png(bytes : Bytes) -> DecodedTextureImage? {
 }
 
 ///|
+fn decode_texture_image_from_mizchi_png(bytes : Bytes) -> DecodedTextureImage? {
+  Some(decoded_texture_image_from_mizchi(@img_decode.decode_png(bytes))) catch {
+    _ => None
+  }
+}
+
+///|
+const PNG_GM_DECODER_MAX_SAFE_PIXELS : Int = 1024 * 1024
+
+///|
 fn decode_texture_image(bytes : Bytes) -> DecodedTextureImage? {
   if is_png_bytes(bytes) {
-    return decode_texture_image_from_gm_png(bytes)
+    let prefer_mizchi = match png_dimensions(bytes) {
+      Some((width, height)) => width * height >= PNG_GM_DECODER_MAX_SAFE_PIXELS
+      None => false
+    }
+    if prefer_mizchi {
+      return decode_texture_image_from_mizchi_png(bytes)
+    }
+    if decode_texture_image_from_gm_png(bytes) is Some(decoded) {
+      return Some(decoded)
+    }
+    return decode_texture_image_from_mizchi_png(bytes)
   }
   if is_jpeg_bytes(bytes) {
     return Some(
@@ -867,12 +974,155 @@ fn ktx2_dimensions(bytes : Bytes) -> (Int, Int)? {
 }
 
 ///|
-fn ktx2_vulkan_format_to_wgpu_format(vulkan_format : Int) -> (Int, Int)? {
+fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   if vulkan_format == KTX2_VK_FORMAT_R16G16B16A16_SFLOAT {
-    return Some((WGPU_TEXTURE_FORMAT_RGBA16_FLOAT, 8))
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_RGBA16_FLOAT,
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 8,
+    })
   }
   if vulkan_format == KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 {
-    return Some((WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT, 4))
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_BC7_UNORM_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_BC7_SRGB_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 8,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 8,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 8,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 8,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_UNORM_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_SRGB_BLOCK {
+    return Some(Ktx2FormatInfo::{
+      format_raw: WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB,
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  None
+}
+
+///|
+fn ktx2_expected_level_bytes(
+  format_info : Ktx2FormatInfo,
+  width : Int,
+  height : Int,
+  slice_count : Int,
+) -> Int? {
+  let safe_width = clamp_dim(width)
+  let safe_height = clamp_dim(height)
+  let safe_slices = clamp_dim(slice_count)
+  let blocks_w = (safe_width + format_info.block_width - 1) /
+    format_info.block_width
+  let blocks_h = (safe_height + format_info.block_height - 1) /
+    format_info.block_height
+  if blocks_w <= 0 || blocks_h <= 0 {
+    return None
+  }
+  let bytes_per_slice = blocks_w * blocks_h * format_info.block_bytes
+  if bytes_per_slice <= 0 {
+    return None
+  }
+  let total = bytes_per_slice * safe_slices
+  if total <= 0 {
+    return None
+  }
+  Some(total)
+}
+
+///|
+fn ktx2_decode_level_payload(
+  bytes : Bytes,
+  level_offset : Int,
+  level_length : Int,
+  level_uncompressed_length : Int,
+  supercompression_scheme : Int,
+) -> Bytes? {
+  guard bytes_slice_copy(bytes, level_offset, level_length) is Some(raw_level) else {
+    return None
+  }
+  if supercompression_scheme == KTX2_SUPERCOMPRESSION_NONE {
+    return Some(raw_level)
+  }
+  if supercompression_scheme == KTX2_SUPERCOMPRESSION_ZSTD {
+    let decoded = @zstd.decompress(raw_level) catch { _ => return None }
+    if level_uncompressed_length > 0 &&
+      decoded.length() != level_uncompressed_length {
+      return None
+    }
+    return Some(decoded)
   }
   None
 }
@@ -894,8 +1144,7 @@ fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
     supercompression_scheme != 0 {
     return None
   }
-  guard ktx2_vulkan_format_to_wgpu_format(blob_u32_at(bytes, 12))
-    is Some((format_raw, bytes_per_texel)) else {
+  guard ktx2_vulkan_format_info(blob_u32_at(bytes, 12)) is Some(format_info) else {
     return None
   }
   let level0_offset = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE)
@@ -903,14 +1152,114 @@ fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   if level0_offset < 0 || level0_length < 0 {
     return None
   }
-  let expected_bytes = width * height * depth * bytes_per_texel
-  if expected_bytes <= 0 || level0_length < expected_bytes {
+  guard ktx2_expected_level_bytes(format_info, width, height, depth)
+    is Some(expected_bytes) else {
+    return None
+  }
+  if level0_length < expected_bytes {
     return None
   }
   guard bytes_slice_copy(bytes, level0_offset, expected_bytes) is Some(pixels) else {
     return None
   }
-  Some(Ktx2TexturePayload::{ width, height, depth, format_raw, pixels })
+  Some(Ktx2TexturePayload::{
+    width,
+    height,
+    depth,
+    format_raw: format_info.format_raw,
+    pixels,
+  })
+}
+
+///|
+fn ktx2_decode_2d_payload(bytes : Bytes) -> Ktx2Texture2dPayload? {
+  if bytes.length() < KTX2_HEADER_SIZE {
+    return None
+  }
+  let width = blob_u32_at(bytes, 20)
+  let height = blob_u32_at(bytes, 24)
+  let depth = blob_u32_at(bytes, 28)
+  let layer_count_raw = blob_u32_at(bytes, 32)
+  let face_count_raw = blob_u32_at(bytes, 36)
+  let level_count = blob_u32_at(bytes, 40)
+  let supercompression_scheme = blob_u32_at(bytes, 44)
+  if width <= 0 ||
+    height <= 0 ||
+    depth > 1 ||
+    level_count < 1 ||
+    (
+      supercompression_scheme != KTX2_SUPERCOMPRESSION_NONE &&
+      supercompression_scheme != KTX2_SUPERCOMPRESSION_ZSTD
+    ) {
+    return None
+  }
+  let layer_count = if layer_count_raw <= 0 { 1 } else { layer_count_raw }
+  let face_count = if face_count_raw <= 0 { 1 } else { face_count_raw }
+  let is_cube = face_count > 1
+  let slice_count = layer_count * face_count
+  if slice_count <= 0 {
+    return None
+  }
+  guard ktx2_vulkan_format_info(blob_u32_at(bytes, 12)) is Some(format_info) else {
+    return None
+  }
+  let levels : Array[Bytes] = []
+  for level_index in 0..<level_count {
+    let entry_offset = KTX2_HEADER_SIZE + level_index * KTX2_LEVEL_INDEX_STRIDE
+    let level_offset = blob_u64_at_as_int(bytes, entry_offset)
+    let level_length = blob_u64_at_as_int(bytes, entry_offset + 8)
+    let level_uncompressed_length = blob_u64_at_as_int(bytes, entry_offset + 16)
+    if level_offset < 0 || level_length < 0 || level_uncompressed_length < 0 {
+      return None
+    }
+    guard ktx2_decode_level_payload(
+        bytes, level_offset, level_length, level_uncompressed_length, supercompression_scheme,
+      )
+      is Some(level_bytes) else {
+      return None
+    }
+    let level_width = {
+      let shifted = width >> level_index
+      if shifted <= 0 {
+        1
+      } else {
+        shifted
+      }
+    }
+    let level_height = {
+      let shifted = height >> level_index
+      if shifted <= 0 {
+        1
+      } else {
+        shifted
+      }
+    }
+    guard ktx2_expected_level_bytes(
+        format_info, level_width, level_height, slice_count,
+      )
+      is Some(expected_bytes) else {
+      return None
+    }
+    if level_bytes.length() < expected_bytes {
+      return None
+    }
+    if level_bytes.length() == expected_bytes {
+      levels.push(level_bytes)
+    } else {
+      guard bytes_slice_copy(level_bytes, 0, expected_bytes) is Some(clipped) else {
+        return None
+      }
+      levels.push(clipped)
+    }
+  }
+  Some(Ktx2Texture2dPayload::{
+    width,
+    height,
+    is_cube,
+    slice_count,
+    format_raw: format_info.format_raw,
+    levels,
+  })
 }
 
 ///|
@@ -1397,6 +1746,23 @@ fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
       depth=payload.depth,
       format_raw=payload.format_raw,
       pixels=payload.pixels,
+    )
+    if texture_id > 0 {
+      sync_texture_record(texture_id, payload.width, payload.height, loaded)
+      return texture_id
+    }
+  }
+  if ktx2_decode_2d_payload(bytes) is Some(payload) {
+    payload.is_cube |> ignore
+    // Current material/sprite bind-group layouts sample `texture_2d`, so KTX2
+    // cubemaps are uploaded as stacked 2D textures for runtime compatibility.
+    let texture_id = @render.asset_create_texture_stacked_2d_with_format(
+      width=payload.width,
+      height_per_slice=payload.height,
+      slice_count=payload.slice_count,
+      format_raw=payload.format_raw,
+      levels=payload.levels,
+      nearest~,
     )
     if texture_id > 0 {
       sync_texture_record(texture_id, payload.width, payload.height, loaded)

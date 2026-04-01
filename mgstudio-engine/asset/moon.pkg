@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
+  "Milky2018/zstd",
   "moonbitlang/core/json",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",

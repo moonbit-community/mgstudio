@@ -804,6 +804,9 @@ pub fn register_render3d_required_components(
     ecs_key_tonemapping,
     fn() { Tonemapping::default() },
   )
+  world.register_required_components_with(ecs_key_camera3d, ecs_key_hdr, fn() {
+    Hdr::default()
+  })
   world.register_required_components_with(
     ecs_key_camera3d,
     ecs_key_deband_dither,
@@ -1309,6 +1312,16 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
   let qv = @math.Vec3::new(q.x, q.y, q.z)
   let t = qv.cross(v).mul_scalar(2.0F)
   v.add(t.mul_scalar(q.w)).add(qv.cross(t))
+}
+
+///|
+fn render3d_quat_inverse(q : @math.Quat) -> @math.Quat {
+  let length_squared = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w
+  if length_squared <= 1.0e-8F {
+    return @math.Quat::identity()
+  }
+  let inv = 1.0F / length_squared
+  @math.Quat::new(-q.x * inv, -q.y * inv, -q.z * inv, q.w * inv)
 }
 
 ///|
@@ -2298,29 +2311,151 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
 }
 
 ///|
+priv struct Render3dEnvironmentMapState {
+  diffuse_texture_id : Int
+  specular_texture_id : Int
+  intensity : Float
+  rotation : @math.Quat
+}
+
+///|
+fn render3d_loaded_image_texture_id(
+  image_handle : @asset.Handle[@asset.Image]?,
+) -> Int? {
+  match image_handle {
+    Some(handle) => {
+      let texture_id = handle.id()
+      if texture_id >= 0 && @render.asset_is_texture_loaded(texture_id~) {
+        Some(texture_id)
+      } else {
+        None
+      }
+    }
+    None => None
+  }
+}
+
+///|
+fn render3d_camera_environment_map_state(
+  camera : ExtractedCamera3d,
+) -> Render3dEnvironmentMapState {
+  let mut state = Render3dEnvironmentMapState::{
+    diffuse_texture_id: -1,
+    specular_texture_id: -1,
+    intensity: 0.0F,
+    rotation: @math.Quat::identity(),
+  }
+  if camera.payload.environment_map_light is Some(environment_map_light) {
+    if render3d_loaded_image_texture_id(environment_map_light.diffuse_map)
+      is Some(diffuse_texture_id) &&
+      render3d_loaded_image_texture_id(environment_map_light.specular_map)
+      is Some(specular_texture_id) {
+      state = Render3dEnvironmentMapState::{
+        diffuse_texture_id,
+        specular_texture_id,
+        intensity: environment_map_light.intensity,
+        rotation: environment_map_light.rotation,
+      }
+    }
+  }
+  if state.diffuse_texture_id < 0 &&
+    state.specular_texture_id < 0 &&
+    camera.payload.generated_environment_map_light
+    is Some(generated_environment_map_light) {
+    if render3d_loaded_image_texture_id(
+        generated_environment_map_light.environment_map,
+      )
+      is Some(generated_texture_id) {
+      state = Render3dEnvironmentMapState::{
+        diffuse_texture_id: generated_texture_id,
+        specular_texture_id: generated_texture_id,
+        intensity: generated_environment_map_light.intensity,
+        rotation: generated_environment_map_light.rotation,
+      }
+    }
+  }
+  let mut diffuse_texture_id = state.diffuse_texture_id
+  let mut specular_texture_id = state.specular_texture_id
+  if diffuse_texture_id < 0 && specular_texture_id >= 0 {
+    diffuse_texture_id = specular_texture_id
+  }
+  if specular_texture_id < 0 && diffuse_texture_id >= 0 {
+    specular_texture_id = diffuse_texture_id
+  }
+  if diffuse_texture_id < 0 || specular_texture_id < 0 {
+    Render3dEnvironmentMapState::{
+      diffuse_texture_id: -1,
+      specular_texture_id: -1,
+      intensity: 0.0F,
+      rotation: @math.Quat::identity(),
+    }
+  } else {
+    Render3dEnvironmentMapState::{
+      ..state,
+      diffuse_texture_id,
+      specular_texture_id,
+    }
+  }
+}
+
+///|
+fn render3d_camera_apply_environment_map_lighting(
+  lighting : Render3dLightingState,
+  camera : ExtractedCamera3d,
+) -> Render3dLightingState {
+  let atmosphere_environment_intensity = if camera.payload.atmosphere_environment_map_light
+    is Some(atmosphere_environment_map_light) {
+    maxf(0.0F, atmosphere_environment_map_light.intensity)
+  } else {
+    0.0F
+  }
+  if atmosphere_environment_intensity <= 0.0F {
+    return lighting
+  }
+  Render3dLightingState::{
+    ..lighting,
+    ambient_brightness: maxf(
+      lighting.ambient_brightness,
+      atmosphere_environment_intensity,
+    ),
+  }
+}
+
+///|
 fn render3d_draw_camera_skybox(
   world : @ecs.World,
   camera : ExtractedCamera3d,
   camera_far : Float,
+  camera_exposure_value : Float,
+  point_shadow_texture_id : Int,
+  point_shadow_enabled : Float,
+  point_shadow_depth_bias : Float,
+  environment_map_state : Render3dEnvironmentMapState,
 ) -> Unit {
   guard camera.payload.skybox is Some(skybox) else { return }
   guard skybox.image is Some(image) else { return }
+  let skybox_texture_id = image.id()
+  if skybox_texture_id < 0 ||
+    !@render.asset_is_texture_loaded(texture_id=skybox_texture_id) {
+    return
+  }
   let mesh_id = render3d_skybox_proxy_mesh_id(world)
   if mesh_id <= 0 {
     return
   }
-  let brightness = maxf(0.0F, skybox.brightness)
+  let brightness = maxf(0.0F, skybox.brightness * camera_exposure_value)
   let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
+  let skybox_rotation_inverse = render3d_quat_inverse(skybox.rotation)
   // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
   @render.host_gpu_draw_mesh3d(
     mesh_id~,
     x=camera.payload.transform.translation.x,
     y=camera.payload.transform.translation.y,
     z=camera.payload.transform.translation.z,
-    rotation_x=skybox.rotation.x,
-    rotation_y=skybox.rotation.y,
-    rotation_z=skybox.rotation.z,
-    rotation_w=skybox.rotation.w,
+    rotation_x=skybox_rotation_inverse.x,
+    rotation_y=skybox_rotation_inverse.y,
+    rotation_z=skybox_rotation_inverse.z,
+    rotation_w=skybox_rotation_inverse.w,
     scale_x=skybox_extent,
     scale_y=skybox_extent,
     scale_z=skybox_extent,
@@ -2338,7 +2473,7 @@ fn render3d_draw_camera_skybox(
     color_g=brightness,
     color_b=brightness,
     color_a=1.0F,
-    texture_id=image.id(),
+    texture_id=skybox_texture_id,
     uv_transform_a=1.0F,
     uv_transform_b=0.0F,
     uv_transform_c=0.0F,
@@ -2378,9 +2513,16 @@ fn render3d_draw_camera_skybox(
     transmission_source_texture_id=-1,
     transmission_blur_taps=0.0F,
     transmission_steps=0.0F,
-    point_shadow_texture_id=-1,
-    point_shadow_enabled=0.0F,
-    point_shadow_depth_bias=0.0F,
+    point_shadow_texture_id~,
+    point_shadow_enabled~,
+    point_shadow_depth_bias~,
+    environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
+    environment_specular_texture_id=environment_map_state.specular_texture_id,
+    environment_map_intensity=environment_map_state.intensity,
+    environment_map_rotation_x=environment_map_state.rotation.x,
+    environment_map_rotation_y=environment_map_state.rotation.y,
+    environment_map_rotation_z=environment_map_state.rotation.z,
+    environment_map_rotation_w=environment_map_state.rotation.w,
     cull_mode=1,
   )
 }
@@ -3360,13 +3502,17 @@ fn render3d_draw_camera_tonemapping_stage(
     ) {
     return
   }
+  let exposure_value = match exposure {
+    Some(value) => value.exposure()
+    None => Exposure::default().exposure()
+  }
   let luts = render3d_tonemapping_lut_handles(world)
   let color_grading_uniform = @render.host_color_grading_from_post_process(
     color_grading,
   )
   @render.host_gpu_draw_tonemapping3d(
     scene_texture_id~,
-    exposure=1.0F,
+    exposure=exposure_value,
     tonemapping_mode=match tonemapping {
       Some(mode) => render3d_tonemapping_mode_to_int(mode)
       None => 0
@@ -6433,6 +6579,10 @@ fn render3d_build_mesh_gpu_draw_payload(
   point_shadow_texture_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
+  environment_diffuse_texture_id : Int,
+  environment_specular_texture_id : Int,
+  environment_map_intensity : Float,
+  environment_map_rotation : @math.Quat,
   specular_tint : @sprite.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
@@ -6485,6 +6635,10 @@ fn render3d_build_mesh_gpu_draw_payload(
     point_shadow_texture_id,
     point_shadow_enabled,
     point_shadow_depth_bias,
+    environment_diffuse_texture_id,
+    environment_specular_texture_id,
+    environment_map_intensity,
+    environment_map_rotation,
     specular_tint,
     anisotropy_strength,
     max_relief_mapping_search_steps,
@@ -6568,6 +6722,13 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     point_shadow_texture_id=payload.point_shadow_texture_id,
     point_shadow_enabled=payload.point_shadow_enabled,
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
+    environment_diffuse_texture_id=payload.environment_diffuse_texture_id,
+    environment_specular_texture_id=payload.environment_specular_texture_id,
+    environment_map_intensity=payload.environment_map_intensity,
+    environment_map_rotation_x=payload.environment_map_rotation.x,
+    environment_map_rotation_y=payload.environment_map_rotation.y,
+    environment_map_rotation_z=payload.environment_map_rotation.z,
+    environment_map_rotation_w=payload.environment_map_rotation.w,
     cull_mode=payload.cull_mode,
     shader_path=payload.shader_path,
     skinning_matrices=payload.skinning_matrices,
@@ -6620,6 +6781,10 @@ fn render3d_draw_gizmo_lines_3d(
       -1,
       0.0F,
       0.0F,
+      -1,
+      -1,
+      0.0F,
+      @math.Quat::identity(),
       @sprite.Color::white(),
       0.0F,
       0.0F,
@@ -6719,6 +6884,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       entity, ecs_key_color_grading,
     )
     let skybox = try! source_world.get_by_key(entity, ecs_key_skybox)
+    let environment_map_light = try! source_world.get_by_key(
+      entity, ecs_key_environment_map_light,
+    )
+    let generated_environment_map_light = try! source_world.get_by_key(
+      entity, ecs_key_generated_environment_map_light,
+    )
+    let atmosphere_environment_map_light = try! source_world.get_by_key(
+      entity, ecs_key_atmosphere_environment_map_light,
+    )
     let hdr_enabled = (try! source_world.get_by_key(entity, ecs_key_hdr))
       is Some(_)
     let fxaa = try! source_world.get_by_key(entity, ecs_key_fxaa)
@@ -6826,6 +7000,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             exposure,
             color_grading,
             skybox,
+            environment_map_light,
+            generated_environment_map_light,
+            atmosphere_environment_map_light,
             depth_prepass_enabled,
             deferred_prepass_enabled,
             no_indirect_drawing,
@@ -7053,7 +7230,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       transform: camera.transform,
       clip_from_world: current_clip_from_world,
     })
-    let pass_lighting = lighting
+    let pass_lighting = render3d_camera_apply_environment_map_lighting(
+      lighting, extracted_camera,
+    )
+    let environment_map_state = render3d_camera_environment_map_state(
+      extracted_camera,
+    )
     let camera_deferred_mode = render3d_camera_deferred_mode(
       camera.camera3d.deferred_config,
       default_opaque_renderer_method,
@@ -7101,25 +7283,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera.camera3d.atmosphere_settings,
     )
     let (clear_enabled, resolved_clear_color) = camera.camera.clear_color.resolve()
-    let mut clear_color = resolved_clear_color
-    // Bevy renders atmosphere / volumetric fog sky contribution as a full-view
-    // background. Until that stage is fully ported, use fog color as the clear
-    // background when the camera clear color is black to avoid losing the scene
-    // behind sparse geometry.
-    if clear_enabled &&
-      (
-        camera.camera3d.atmosphere is Some(_) ||
-        camera.camera3d.volumetric_fog is Some(_) ||
-        render3d_distance_fog_enabled(distance_fog)
-      ) {
-      let fog_color = distance_fog.color
-      clear_color = @sprite.Color::new(
-        maxf(clear_color.r, maxf(0.02F, fog_color.r)),
-        maxf(clear_color.g, maxf(0.02F, fog_color.g)),
-        maxf(clear_color.b, maxf(0.02F, fog_color.b)),
-        clear_color.a,
-      )
-    }
+    let clear_color = resolved_clear_color
     let motion_blur_active = if camera.motion_blur is Some(motion_blur) {
       motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F
     } else {
@@ -7158,6 +7322,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       effect_stack_postprocess_enabled ||
       custom_post_process_enabled ||
       fxaa_postprocess_enabled
+    let auto_exposure_enabled = camera.camera3d.auto_exposure is Some(_)
     let motion_vector_prepass_enabled = prepass_enabled &&
       (
         motion_blur_active ||
@@ -7170,7 +7335,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera_clustered_decal_enabled
     let postprocess_enabled = motion_blur_active ||
       bloom_enabled ||
-      tonemap_postprocess_enabled
+      tonemap_postprocess_enabled ||
+      auto_exposure_enabled
     let scene_pass_kind = render3d_pass_kind_encode(
       RENDER3D_PASS_KIND_BASE_SCENE,
       postprocess_enabled,
@@ -7388,6 +7554,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             -1,
             0.0F,
             0.0F,
+            -1,
+            -1,
+            0.0F,
+            @math.Quat::identity(),
             @sprite.Color::white(),
             0.0F,
             0.0F,
@@ -7540,6 +7710,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               -1,
               0.0F,
               0.0F,
+              -1,
+              -1,
+              0.0F,
+              @math.Quat::identity(),
               @sprite.Color::white(),
               0.0F,
               0.0F,
@@ -7551,8 +7725,18 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
     }
     if !motion_blur_active &&
-      (transmission_enabled || bloom_enabled || tonemap_postprocess_enabled) &&
-      (camera.target_id < 0 || bloom_enabled || tonemap_postprocess_enabled) {
+      (
+        transmission_enabled ||
+        bloom_enabled ||
+        tonemap_postprocess_enabled ||
+        auto_exposure_enabled
+      ) &&
+      (
+        camera.target_id < 0 ||
+        bloom_enabled ||
+        tonemap_postprocess_enabled ||
+        auto_exposure_enabled
+      ) {
       let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera_entity, view_width, view_height,
       )
@@ -7809,6 +7993,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         point_shadow_texture_id,
         draw_point_shadow_enabled,
         point_shadow_depth_bias,
+        environment_map_state.diffuse_texture_id,
+        environment_map_state.specular_texture_id,
+        environment_map_state.intensity,
+        environment_map_state.rotation,
         draw_material.specular_tint,
         anisotropy_strength,
         max_relief_mapping_search_steps,
@@ -7834,7 +8022,16 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       render3d_draw_mesh_gpu_payload(draw_payload)
     }
     render3d_draw_gizmo_lines_3d(camera_entity, camera)
-    render3d_draw_camera_skybox(world, extracted_camera, camera_far)
+    render3d_draw_camera_skybox(
+      world,
+      extracted_camera,
+      camera_far,
+      camera_exposure_value,
+      point_shadow_texture_id,
+      point_shadow_enabled,
+      point_shadow_depth_bias,
+      environment_map_state,
+    )
     @render.host_gpu_end_pass()
     let transmissive_draws = render3d_sort_transmissive_phase_items(
       transmissive_phase_items,
@@ -7962,6 +8159,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           -1,
           0.0F,
           0.0F,
+          -1,
+          -1,
+          0.0F,
+          @math.Quat::identity(),
           @sprite.Color::white(),
           0.0F,
           0.0F,
@@ -8067,7 +8268,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else if scene_target_id != camera.target_id {
       final_source_texture_id = scene_target_id
     }
-    if bloom_enabled || tonemap_postprocess_enabled {
+    if bloom_enabled || tonemap_postprocess_enabled || auto_exposure_enabled {
       let postprocess_source_texture_id = if final_source_texture_id >= 0 {
         final_source_texture_id
       } else {

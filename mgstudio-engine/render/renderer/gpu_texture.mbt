@@ -842,7 +842,11 @@ pub fn GpuBackend::set_texture_sampler(
         self, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
         mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
       )
-      let bg = create_cached_texture_bind_group(self, sampler, info.view)
+      let sampled_view = match info.sample_view {
+        Some(sample) => sample
+        None => info.view
+      }
+      let bg = create_cached_texture_bind_group(self, sampler, sampled_view)
       self.textures[i] = GpuTextureInfo::{
         id: info.id,
         width: info.width,
@@ -975,6 +979,171 @@ pub fn GpuBackend::create_point_light_shadow_target(
     layer_views,
     sampler: default_texture.sampler,
     bind_group: default_texture.bind_group,
+  }
+  self.textures.push(info)
+  mesh3d_material_cache_clear(self)
+  id
+}
+
+///|
+pub fn GpuBackend::create_texture_cube_with_format(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  format_raw : UInt,
+  levels : Array[Bytes],
+  nearest : Bool,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  if levels.length() == 0 {
+    fatal("wgpu: no mip levels provided for cube texture upload")
+  }
+  guard texture_block_info(format_raw) is Some(block_info) else {
+    fatal(
+      "wgpu: unsupported cube texture format for upload: " +
+      format_raw.reinterpret_as_int().to_string(),
+    )
+  }
+
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1 } else { width }
+  let h = if height <= 0 { 1 } else { height }
+  let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST |
+    @wgpu.TEXTURE_USAGE_COPY_SRC
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let tex = self.device.create_texture_u32(
+    w.reinterpret_as_uint(),
+    h.reinterpret_as_uint(),
+    6U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(format_raw),
+    mip_level_count=levels.length().reinterpret_as_uint(),
+  )
+
+  for level_index in 0..<levels.length() {
+    let mip_width = {
+      let shifted = w >> level_index
+      if shifted <= 0 {
+        1
+      } else {
+        shifted
+      }
+    }
+    let mip_height = {
+      let shifted = h >> level_index
+      if shifted <= 0 {
+        1
+      } else {
+        shifted
+      }
+    }
+    guard texture_layout_for_level(block_info, mip_width, mip_height)
+      is Some((bytes_per_row, rows_per_image, bytes_per_face)) else {
+      fatal("wgpu: failed to compute cube texture upload layout")
+    }
+    let expected_bytes = bytes_per_face * 6
+    if expected_bytes <= 0 {
+      fatal("wgpu: invalid cube texture upload size")
+    }
+    let level_data = levels[level_index]
+    if level_data.length() < expected_bytes {
+      fatal(
+        "wgpu: cube mip upload size mismatch at level " +
+        level_index.to_string(),
+      )
+    }
+    let upload_data = if level_data.length() == expected_bytes {
+      level_data
+    } else {
+      Bytes::makei(expected_bytes, i => {
+        match level_data.get(i) {
+          Some(b) => b
+          None => (0).to_byte()
+        }
+      })
+    }
+    let tex_info = @wgpu_c.texel_copy_texture_info_new(
+      tex.raw,
+      level_index.reinterpret_as_uint(),
+      0U,
+      0U,
+      0U,
+    )
+    let layout = @wgpu_c.texel_copy_buffer_layout_new(
+      0UL,
+      bytes_per_row.reinterpret_as_uint(),
+      rows_per_image.reinterpret_as_uint(),
+    )
+    let extent = @wgpu_c.extent3d_new(
+      mip_width.reinterpret_as_uint(),
+      mip_height.reinterpret_as_uint(),
+      6U,
+    )
+    self.queue.write_texture_ptr(
+      tex_info,
+      upload_data,
+      layout,
+      extent,
+      data_size=expected_bytes.to_uint64(),
+    )
+    @wgpu_c.extent3d_free(extent)
+    @wgpu_c.texel_copy_buffer_layout_free(layout)
+    @wgpu_c.texel_copy_texture_info_free(tex_info)
+  }
+
+  let face0_view = tex.create_view_u32(
+    tf(format_raw),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format_raw),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let layer_views : Array[@wgpu.TextureView] = []
+  for face in 0..<6 {
+    layer_views.push(
+      tex.create_view_u32(
+        tf(format_raw),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        texture_view_aspect_for_format(format_raw),
+        face.reinterpret_as_uint(),
+        1U,
+        0U,
+        1U,
+      ),
+    )
+  }
+  let cube_view = tex.create_view_u32(
+    tf(format_raw),
+    @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
+    texture_view_aspect_for_format(format_raw),
+    0U,
+    6U,
+    0U,
+    levels.length().reinterpret_as_uint(),
+  )
+  let sampler = if nearest {
+    self.device.create_sampler_nearest_clamp()
+  } else {
+    self.device.create_sampler_linear_clamp()
+  }
+  let bind_group = create_cached_texture_bind_group(self, sampler, cube_view)
+  let info = GpuTextureInfo::{
+    id,
+    width: w,
+    height: h,
+    mip_level_count: levels.length(),
+    base_mip_level: 0,
+    format_raw,
+    texture: tex,
+    view: face0_view,
+    sample_view: Some(cube_view),
+    layer_views,
+    sampler,
+    bind_group,
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
