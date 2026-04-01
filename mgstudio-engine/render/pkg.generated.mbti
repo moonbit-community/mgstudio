@@ -117,7 +117,7 @@ pub fn host_gpu_draw_gizmo_line(start_x~ : Float, start_y~ : Float, start_r~ : F
 
 pub fn host_gpu_draw_mesh(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, alpha_mode_kind~ : Int, alpha_cutoff~ : Float, texture_id~ : Int, uv_offset_x~ : Float, uv_offset_y~ : Float, uv_scale_x~ : Float, uv_scale_y~ : Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
 
-pub fn host_gpu_draw_mesh3d(mesh_id~ : Int, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, indirect_kind? : Int, indirect_parameters_index? : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, transmission_source_texture_id~ : Int, transmission_blur_taps~ : Float, transmission_steps~ : Float, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, cull_mode~ : Int, shader_path? : String?, skinning_matrices? : Array[Float]?) -> Unit
+pub fn host_gpu_draw_mesh3d(mesh_id~ : Int, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, indirect_kind? : Int, indirect_parameters_index? : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, transmission_source_texture_id~ : Int, transmission_blur_taps~ : Float, transmission_steps~ : Float, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, cull_mode~ : Int, shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int, skinning_matrices? : Array[Float]?) -> Unit
 
 pub fn host_gpu_draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, alpha_mode_kind~ : Int, material_bind_group~ : @renderer.HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
 
@@ -149,6 +149,8 @@ pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool
 
 pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool
 
+pub fn host_gpu_prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
+
 pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn host_gpu_request_device() -> Int
@@ -165,7 +167,7 @@ pub fn host_gpu_surface_target_id_for_window(Int) -> Int
 
 pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
 
-pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
+pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : @renderer.HostMesh3dPreprocessCameraPayload) -> Unit
 
 pub fn register_wgsl_source(String, String) -> Unit
 
@@ -246,130 +248,6 @@ pub(all) enum HostGpuPresentMode {
 } derive(Eq, Show)
 pub fn HostGpuPresentMode::default() -> Self
 
-pub(all) struct HostMesh3dPreprocessCameraPayload {
-  view : HostMesh3dPreprocessView
-  previous_view : HostMesh3dPreprocessPreviousView
-  mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
-  mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
-  direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  late_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  late_non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  indexed_cpu_metadata : Array[HostMesh3dPreprocessIndirectParametersCpuMetadata]
-  indexed_gpu_metadata : Array[HostMesh3dPreprocessIndirectParametersGpuMetadata]
-  indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
-  non_indexed_cpu_metadata : Array[HostMesh3dPreprocessIndirectParametersCpuMetadata]
-  non_indexed_gpu_metadata : Array[HostMesh3dPreprocessIndirectParametersGpuMetadata]
-  non_indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
-  dispatch_metadata : HostMesh3dPreprocessDispatchMetadata
-}
-
-pub(all) struct HostMesh3dPreprocessDispatchMetadata {
-  direct_workgroup_count : Int
-  indexed_workgroup_count : Int
-  non_indexed_workgroup_count : Int
-  late_indexed_workgroup_count : Int
-  late_non_indexed_workgroup_count : Int
-}
-
-pub(all) struct HostMesh3dPreprocessFrustumPlane {
-  normal_x : Float
-  normal_y : Float
-  normal_z : Float
-  distance : Float
-}
-
-pub(all) struct HostMesh3dPreprocessIndirectBatchSet {
-  indirect_parameters_count : Int
-  indirect_parameters_base : Int
-}
-
-pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
-  base_output_index : Int
-  batch_set_index : Int
-}
-
-pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
-  mesh_index : Int
-  early_instance_count : Int
-  late_instance_count : Int
-}
-
-pub(all) struct HostMesh3dPreprocessMeshCullingData {
-  aabb_center_x : Float
-  aabb_center_y : Float
-  aabb_center_z : Float
-  aabb_half_extents_x : Float
-  aabb_half_extents_y : Float
-  aabb_half_extents_z : Float
-}
-
-pub(all) struct HostMesh3dPreprocessMeshInput {
-  translation_x : Float
-  translation_y : Float
-  translation_z : Float
-  rotation_x : Float
-  rotation_y : Float
-  rotation_z : Float
-  rotation_w : Float
-  scale_x : Float
-  scale_y : Float
-  scale_z : Float
-  previous_translation_x : Float
-  previous_translation_y : Float
-  previous_translation_z : Float
-  previous_rotation_x : Float
-  previous_rotation_y : Float
-  previous_rotation_z : Float
-  previous_rotation_w : Float
-  previous_scale_x : Float
-  previous_scale_y : Float
-  previous_scale_z : Float
-  flags : UInt
-  first_vertex_index : Int
-  first_index_index : Int
-  index_count : Int
-  tag : Int
-}
-
-pub(all) struct HostMesh3dPreprocessPreviousView {
-  view_from_world : @renderer.GpuClipMatrix
-  clip_from_world : @renderer.GpuClipMatrix
-  clip_from_view : @renderer.GpuClipMatrix
-  world_from_clip : @renderer.GpuClipMatrix
-  view_from_clip : @renderer.GpuClipMatrix
-}
-
-pub(all) struct HostMesh3dPreprocessShaderWorkItem {
-  input_index : Int
-  output_or_indirect_parameters_index : Int
-}
-
-pub(all) struct HostMesh3dPreprocessView {
-  clip_from_world : @renderer.GpuClipMatrix
-  unjittered_clip_from_world : @renderer.GpuClipMatrix
-  world_from_clip : @renderer.GpuClipMatrix
-  world_from_view : @renderer.GpuClipMatrix
-  view_from_world : @renderer.GpuClipMatrix
-  clip_from_view : @renderer.GpuClipMatrix
-  view_from_clip : @renderer.GpuClipMatrix
-  world_position_x : Float
-  world_position_y : Float
-  world_position_z : Float
-  exposure : Float
-  viewport_x : Float
-  viewport_y : Float
-  viewport_width : Float
-  viewport_height : Float
-  main_pass_viewport_x : Float
-  main_pass_viewport_y : Float
-  main_pass_viewport_width : Float
-  main_pass_viewport_height : Float
-  frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
-  mip_bias : Float
-}
-
 // Type aliases
 pub using @renderer {type GpuClipMatrix as HostGpuClipMatrix}
 
@@ -386,6 +264,28 @@ pub using @renderer {type HostMaterial2dBindGroup}
 pub using @renderer {type HostMaterial2dBinding}
 
 pub using @renderer {type HostMaterial2dBindingValue}
+
+pub using @renderer {type HostMesh3dPreprocessCameraPayload}
+
+pub using @renderer {type HostMesh3dPreprocessDispatchMetadata}
+
+pub using @renderer {type HostMesh3dPreprocessFrustumPlane}
+
+pub using @renderer {type HostMesh3dPreprocessIndirectBatchSet}
+
+pub using @renderer {type HostMesh3dPreprocessIndirectParametersCpuMetadata}
+
+pub using @renderer {type HostMesh3dPreprocessIndirectParametersGpuMetadata}
+
+pub using @renderer {type HostMesh3dPreprocessMeshCullingData}
+
+pub using @renderer {type HostMesh3dPreprocessMeshInput}
+
+pub using @renderer {type HostMesh3dPreprocessPreviousView}
+
+pub using @renderer {type HostMesh3dPreprocessShaderWorkItem}
+
+pub using @renderer {type HostMesh3dPreprocessView}
 
 // Traits
 

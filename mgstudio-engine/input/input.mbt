@@ -1269,7 +1269,20 @@ pub fn mouse_button_just_released(button : @window.MouseButton) -> Bool {
 ///|
 pub fn mouse_position() -> @math.Vec2? {
   if host_input_has_cursor() {
-    Some(@math.Vec2::new(host_input_mouse_x(), host_input_mouse_y()))
+    let raw_x = host_input_mouse_x()
+    let raw_y = host_input_mouse_y()
+    let cursor_window = host_input_cursor_window()
+    if cursor_window < 0 {
+      Some(@math.Vec2::new(raw_x, raw_y))
+    } else {
+      let sf0 = @windowing.scale_factor(cursor_window)
+      let sf = if sf0 <= 0.0F { 1.0F } else { sf0 }
+      let logical_x = raw_x / sf
+      let logical_y = raw_y / sf
+      let window_h0 = Float::from_int(@windowing.height(cursor_window))
+      let logical_h = if window_h0 <= 0.0F { 0.0F } else { window_h0 / sf }
+      Some(@math.Vec2::new(logical_x, logical_h - logical_y))
+    }
   } else {
     None
   }

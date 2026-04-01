@@ -269,150 +269,49 @@ pub fn host_color_grading_from_post_process(
 }
 
 ///|
-pub(all) struct HostMesh3dPreprocessShaderWorkItem {
-  input_index : Int
-  output_or_indirect_parameters_index : Int
-}
+pub type HostMesh3dPreprocessShaderWorkItem = @renderer.HostMesh3dPreprocessShaderWorkItem
 
 ///|
-pub(all) struct HostMesh3dPreprocessMeshInput {
-  translation_x : Float
-  translation_y : Float
-  translation_z : Float
-  rotation_x : Float
-  rotation_y : Float
-  rotation_z : Float
-  rotation_w : Float
-  scale_x : Float
-  scale_y : Float
-  scale_z : Float
-  previous_translation_x : Float
-  previous_translation_y : Float
-  previous_translation_z : Float
-  previous_rotation_x : Float
-  previous_rotation_y : Float
-  previous_rotation_z : Float
-  previous_rotation_w : Float
-  previous_scale_x : Float
-  previous_scale_y : Float
-  previous_scale_z : Float
-  flags : UInt
-  first_vertex_index : Int
-  first_index_index : Int
-  index_count : Int
-  tag : Int
+pub type HostMesh3dPreprocessMeshInput = @renderer.HostMesh3dPreprocessMeshInput
+
+///|
+pub fn host_gpu_prepare_mesh3d_skin_binding(
+  key_hi~ : Int,
+  key_lo~ : Int,
+  skinning_matrices~ : Array[Float],
+) -> Unit {
+  @renderer.prepare_mesh3d_skin_binding(key_hi~, key_lo~, skinning_matrices~)
 }
 
 ///|
 pub type HostGpuClipMatrix = @renderer.GpuClipMatrix
 
 ///|
-pub(all) struct HostMesh3dPreprocessFrustumPlane {
-  normal_x : Float
-  normal_y : Float
-  normal_z : Float
-  distance : Float
-}
+pub type HostMesh3dPreprocessFrustumPlane = @renderer.HostMesh3dPreprocessFrustumPlane
 
 ///|
-pub(all) struct HostMesh3dPreprocessView {
-  clip_from_world : HostGpuClipMatrix
-  unjittered_clip_from_world : HostGpuClipMatrix
-  world_from_clip : HostGpuClipMatrix
-  world_from_view : HostGpuClipMatrix
-  view_from_world : HostGpuClipMatrix
-  clip_from_view : HostGpuClipMatrix
-  view_from_clip : HostGpuClipMatrix
-  world_position_x : Float
-  world_position_y : Float
-  world_position_z : Float
-  exposure : Float
-  viewport_x : Float
-  viewport_y : Float
-  viewport_width : Float
-  viewport_height : Float
-  main_pass_viewport_x : Float
-  main_pass_viewport_y : Float
-  main_pass_viewport_width : Float
-  main_pass_viewport_height : Float
-  frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
-  mip_bias : Float
-}
+pub type HostMesh3dPreprocessView = @renderer.HostMesh3dPreprocessView
 
 ///|
-pub(all) struct HostMesh3dPreprocessPreviousView {
-  view_from_world : HostGpuClipMatrix
-  clip_from_world : HostGpuClipMatrix
-  clip_from_view : HostGpuClipMatrix
-  world_from_clip : HostGpuClipMatrix
-  view_from_clip : HostGpuClipMatrix
-}
+pub type HostMesh3dPreprocessPreviousView = @renderer.HostMesh3dPreprocessPreviousView
 
 ///|
-pub(all) struct HostMesh3dPreprocessMeshCullingData {
-  aabb_center_x : Float
-  aabb_center_y : Float
-  aabb_center_z : Float
-  aabb_half_extents_x : Float
-  aabb_half_extents_y : Float
-  aabb_half_extents_z : Float
-}
+pub type HostMesh3dPreprocessMeshCullingData = @renderer.HostMesh3dPreprocessMeshCullingData
 
 ///|
-pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
-  base_output_index : Int
-  batch_set_index : Int
-}
+pub type HostMesh3dPreprocessIndirectParametersCpuMetadata = @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata
 
 ///|
-pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
-  mesh_index : Int
-  early_instance_count : Int
-  late_instance_count : Int
-}
+pub type HostMesh3dPreprocessIndirectParametersGpuMetadata = @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata
 
 ///|
-pub(all) struct HostMesh3dPreprocessIndirectBatchSet {
-  indirect_parameters_count : Int
-  indirect_parameters_base : Int
-}
+pub type HostMesh3dPreprocessIndirectBatchSet = @renderer.HostMesh3dPreprocessIndirectBatchSet
 
 ///|
-pub(all) struct HostMesh3dPreprocessDispatchMetadata {
-  direct_workgroup_count : Int
-  indexed_workgroup_count : Int
-  non_indexed_workgroup_count : Int
-  late_indexed_workgroup_count : Int
-  late_non_indexed_workgroup_count : Int
-}
+pub type HostMesh3dPreprocessDispatchMetadata = @renderer.HostMesh3dPreprocessDispatchMetadata
 
 ///|
-pub(all) struct HostMesh3dPreprocessCameraPayload {
-  view : HostMesh3dPreprocessView
-  previous_view : HostMesh3dPreprocessPreviousView
-  mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
-  mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
-  direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  late_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  late_non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
-  indexed_cpu_metadata : Array[
-    HostMesh3dPreprocessIndirectParametersCpuMetadata,
-  ]
-  indexed_gpu_metadata : Array[
-    HostMesh3dPreprocessIndirectParametersGpuMetadata,
-  ]
-  indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
-  non_indexed_cpu_metadata : Array[
-    HostMesh3dPreprocessIndirectParametersCpuMetadata,
-  ]
-  non_indexed_gpu_metadata : Array[
-    HostMesh3dPreprocessIndirectParametersGpuMetadata,
-  ]
-  non_indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
-  dispatch_metadata : HostMesh3dPreprocessDispatchMetadata
-}
+pub type HostMesh3dPreprocessCameraPayload = @renderer.HostMesh3dPreprocessCameraPayload
 
 ///|
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = @renderer.MESH3D_PREPROCESS_PHASE_MAIN
@@ -584,150 +483,6 @@ pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool {
 }
 
 ///|
-fn host_mesh3d_preprocess_shader_work_item_to_renderer(
-  item : HostMesh3dPreprocessShaderWorkItem,
-) -> @renderer.HostMesh3dPreprocessShaderWorkItem {
-  @renderer.HostMesh3dPreprocessShaderWorkItem::{
-    input_index: item.input_index,
-    output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_mesh_input_to_renderer(
-  input : HostMesh3dPreprocessMeshInput,
-) -> @renderer.HostMesh3dPreprocessMeshInput {
-  @renderer.HostMesh3dPreprocessMeshInput::{
-    translation_x: input.translation_x,
-    translation_y: input.translation_y,
-    translation_z: input.translation_z,
-    rotation_x: input.rotation_x,
-    rotation_y: input.rotation_y,
-    rotation_z: input.rotation_z,
-    rotation_w: input.rotation_w,
-    scale_x: input.scale_x,
-    scale_y: input.scale_y,
-    scale_z: input.scale_z,
-    previous_translation_x: input.previous_translation_x,
-    previous_translation_y: input.previous_translation_y,
-    previous_translation_z: input.previous_translation_z,
-    previous_rotation_x: input.previous_rotation_x,
-    previous_rotation_y: input.previous_rotation_y,
-    previous_rotation_z: input.previous_rotation_z,
-    previous_rotation_w: input.previous_rotation_w,
-    previous_scale_x: input.previous_scale_x,
-    previous_scale_y: input.previous_scale_y,
-    previous_scale_z: input.previous_scale_z,
-    flags: input.flags,
-    first_vertex_index: input.first_vertex_index,
-    first_index_index: input.first_index_index,
-    index_count: input.index_count,
-    tag: input.tag,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_frustum_plane_to_renderer(
-  plane : HostMesh3dPreprocessFrustumPlane,
-) -> @renderer.HostMesh3dPreprocessFrustumPlane {
-  @renderer.HostMesh3dPreprocessFrustumPlane::{
-    normal_x: plane.normal_x,
-    normal_y: plane.normal_y,
-    normal_z: plane.normal_z,
-    distance: plane.distance,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_view_to_renderer(
-  view : HostMesh3dPreprocessView,
-) -> @renderer.HostMesh3dPreprocessView {
-  let frustum_planes : Array[@renderer.HostMesh3dPreprocessFrustumPlane] = []
-  for plane in view.frustum_planes {
-    frustum_planes.push(host_mesh3d_preprocess_frustum_plane_to_renderer(plane))
-  }
-  @renderer.HostMesh3dPreprocessView::{
-    clip_from_world: view.clip_from_world,
-    unjittered_clip_from_world: view.unjittered_clip_from_world,
-    world_from_clip: view.world_from_clip,
-    world_from_view: view.world_from_view,
-    view_from_world: view.view_from_world,
-    clip_from_view: view.clip_from_view,
-    view_from_clip: view.view_from_clip,
-    world_position_x: view.world_position_x,
-    world_position_y: view.world_position_y,
-    world_position_z: view.world_position_z,
-    exposure: view.exposure,
-    viewport_x: view.viewport_x,
-    viewport_y: view.viewport_y,
-    viewport_width: view.viewport_width,
-    viewport_height: view.viewport_height,
-    main_pass_viewport_x: view.main_pass_viewport_x,
-    main_pass_viewport_y: view.main_pass_viewport_y,
-    main_pass_viewport_width: view.main_pass_viewport_width,
-    main_pass_viewport_height: view.main_pass_viewport_height,
-    frustum_planes,
-    mip_bias: view.mip_bias,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_previous_view_to_renderer(
-  view : HostMesh3dPreprocessPreviousView,
-) -> @renderer.HostMesh3dPreprocessPreviousView {
-  @renderer.HostMesh3dPreprocessPreviousView::{
-    view_from_world: view.view_from_world,
-    clip_from_world: view.clip_from_world,
-    clip_from_view: view.clip_from_view,
-    world_from_clip: view.world_from_clip,
-    view_from_clip: view.view_from_clip,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_mesh_culling_data_to_renderer(
-  data : HostMesh3dPreprocessMeshCullingData,
-) -> @renderer.HostMesh3dPreprocessMeshCullingData {
-  @renderer.HostMesh3dPreprocessMeshCullingData::{
-    aabb_center_x: data.aabb_center_x,
-    aabb_center_y: data.aabb_center_y,
-    aabb_center_z: data.aabb_center_z,
-    aabb_half_extents_x: data.aabb_half_extents_x,
-    aabb_half_extents_y: data.aabb_half_extents_y,
-    aabb_half_extents_z: data.aabb_half_extents_z,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_cpu_metadata_to_renderer(
-  metadata : HostMesh3dPreprocessIndirectParametersCpuMetadata,
-) -> @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata {
-  @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata::{
-    base_output_index: metadata.base_output_index,
-    batch_set_index: metadata.batch_set_index,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_gpu_metadata_to_renderer(
-  metadata : HostMesh3dPreprocessIndirectParametersGpuMetadata,
-) -> @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata {
-  @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata::{
-    mesh_index: metadata.mesh_index,
-    early_instance_count: metadata.early_instance_count,
-    late_instance_count: metadata.late_instance_count,
-  }
-}
-
-///|
-fn host_mesh3d_preprocess_batch_set_to_renderer(
-  batch_set : HostMesh3dPreprocessIndirectBatchSet,
-) -> @renderer.HostMesh3dPreprocessIndirectBatchSet {
-  @renderer.HostMesh3dPreprocessIndirectBatchSet::{
-    indirect_parameters_count: batch_set.indirect_parameters_count,
-    indirect_parameters_base: batch_set.indirect_parameters_base,
-  }
-}
 
 ///|
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
@@ -735,128 +490,10 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
 ) -> Unit {
-  let mesh_culling_data : Array[@renderer.HostMesh3dPreprocessMeshCullingData] = []
-  for item in payload.mesh_culling_data {
-    mesh_culling_data.push(
-      host_mesh3d_preprocess_mesh_culling_data_to_renderer(item),
-    )
-  }
-  let mesh_inputs : Array[@renderer.HostMesh3dPreprocessMeshInput] = []
-  for input in payload.mesh_inputs {
-    mesh_inputs.push(host_mesh3d_preprocess_mesh_input_to_renderer(input))
-  }
-  let direct_work_items : Array[@renderer.HostMesh3dPreprocessShaderWorkItem] = []
-  for item in payload.direct_work_items {
-    direct_work_items.push(
-      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
-    )
-  }
-  let indexed_work_items : Array[@renderer.HostMesh3dPreprocessShaderWorkItem] = []
-  for item in payload.indexed_work_items {
-    indexed_work_items.push(
-      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
-    )
-  }
-  let non_indexed_work_items : Array[
-    @renderer.HostMesh3dPreprocessShaderWorkItem,
-  ] = []
-  for item in payload.non_indexed_work_items {
-    non_indexed_work_items.push(
-      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
-    )
-  }
-  let late_indexed_work_items : Array[
-    @renderer.HostMesh3dPreprocessShaderWorkItem,
-  ] = []
-  for item in payload.late_indexed_work_items {
-    late_indexed_work_items.push(
-      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
-    )
-  }
-  let late_non_indexed_work_items : Array[
-    @renderer.HostMesh3dPreprocessShaderWorkItem,
-  ] = []
-  for item in payload.late_non_indexed_work_items {
-    late_non_indexed_work_items.push(
-      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
-    )
-  }
-  let indexed_cpu_metadata : Array[
-    @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata,
-  ] = []
-  for metadata in payload.indexed_cpu_metadata {
-    indexed_cpu_metadata.push(
-      host_mesh3d_preprocess_cpu_metadata_to_renderer(metadata),
-    )
-  }
-  let indexed_gpu_metadata : Array[
-    @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata,
-  ] = []
-  for metadata in payload.indexed_gpu_metadata {
-    indexed_gpu_metadata.push(
-      host_mesh3d_preprocess_gpu_metadata_to_renderer(metadata),
-    )
-  }
-  let indexed_batch_sets : Array[@renderer.HostMesh3dPreprocessIndirectBatchSet] = []
-  for batch_set in payload.indexed_batch_sets {
-    indexed_batch_sets.push(
-      host_mesh3d_preprocess_batch_set_to_renderer(batch_set),
-    )
-  }
-  let non_indexed_cpu_metadata : Array[
-    @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata,
-  ] = []
-  for metadata in payload.non_indexed_cpu_metadata {
-    non_indexed_cpu_metadata.push(
-      host_mesh3d_preprocess_cpu_metadata_to_renderer(metadata),
-    )
-  }
-  let non_indexed_gpu_metadata : Array[
-    @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata,
-  ] = []
-  for metadata in payload.non_indexed_gpu_metadata {
-    non_indexed_gpu_metadata.push(
-      host_mesh3d_preprocess_gpu_metadata_to_renderer(metadata),
-    )
-  }
-  let non_indexed_batch_sets : Array[
-    @renderer.HostMesh3dPreprocessIndirectBatchSet,
-  ] = []
-  for batch_set in payload.non_indexed_batch_sets {
-    non_indexed_batch_sets.push(
-      host_mesh3d_preprocess_batch_set_to_renderer(batch_set),
-    )
-  }
-  let dispatch_metadata = @renderer.HostMesh3dPreprocessDispatchMetadata::{
-    direct_workgroup_count: payload.dispatch_metadata.direct_workgroup_count,
-    indexed_workgroup_count: payload.dispatch_metadata.indexed_workgroup_count,
-    non_indexed_workgroup_count: payload.dispatch_metadata.non_indexed_workgroup_count,
-    late_indexed_workgroup_count: payload.dispatch_metadata.late_indexed_workgroup_count,
-    late_non_indexed_workgroup_count: payload.dispatch_metadata.late_non_indexed_workgroup_count,
-  }
   @renderer.upload_mesh3d_preprocess_camera_payload(
     camera_key_hi~,
     camera_key_lo~,
-    payload=@renderer.HostMesh3dPreprocessCameraPayload::{
-      view: host_mesh3d_preprocess_view_to_renderer(payload.view),
-      previous_view: host_mesh3d_preprocess_previous_view_to_renderer(
-        payload.previous_view,
-      ),
-      mesh_culling_data,
-      mesh_inputs,
-      direct_work_items,
-      indexed_work_items,
-      non_indexed_work_items,
-      late_indexed_work_items,
-      late_non_indexed_work_items,
-      indexed_cpu_metadata,
-      indexed_gpu_metadata,
-      indexed_batch_sets,
-      non_indexed_cpu_metadata,
-      non_indexed_gpu_metadata,
-      non_indexed_batch_sets,
-      dispatch_metadata,
-    },
+    payload~,
   )
 }
 
@@ -1659,6 +1296,8 @@ pub fn host_gpu_draw_mesh3d(
   environment_map_rotation_w? : Float = 1.0F,
   cull_mode~ : Int,
   shader_path? : String? = None,
+  skinning_key_hi? : Int = -1,
+  skinning_key_lo? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
 ) -> Unit {
   @renderer.draw_mesh3d(
@@ -1742,6 +1381,8 @@ pub fn host_gpu_draw_mesh3d(
     environment_map_rotation_w~,
     cull_mode~,
     shader_path~,
+    skinning_key_hi~,
+    skinning_key_lo~,
     skinning_matrices~,
   )
 }

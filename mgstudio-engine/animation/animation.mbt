@@ -3487,6 +3487,8 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
     @app.current_system_sequence().this_run,
   )
+  let players_with_target_events : Map[Int, (AnimationPlayer, AnimationGraph)] = {}
+  let mut has_any_target_events = false
 
   // Root (untargeted) events fire on the player entity.
   let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
@@ -3501,6 +3503,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
+    let mut player_has_target_events = false
     for pair in player.playing_animations() {
       let node_index = pair.0
       let active = pair.1
@@ -3510,6 +3513,9 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
       guard graph.get(node_index) is Some(node) else { continue }
       guard node.node_type is Clip(clip_handle) else { continue }
       guard animation_clip_get(clip_handle) is Some(clip) else { continue }
+      if !player_has_target_events && clip.events_targets.length() > 0 {
+        player_has_target_events = true
+      }
       let triggered = animation_clip_collect_triggered_events(
         clip.events_root,
         active,
@@ -3527,9 +3533,16 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
         triggered,
       )
     }
+    if player_has_target_events {
+      players_with_target_events.set(player_entity.id, (player, graph))
+      has_any_target_events = true
+    }
   })
 
   // Targeted events fire on the animated target entity.
+  if !has_any_target_events {
+    return
+  }
   let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
     world,
   )
@@ -3539,18 +3552,11 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
       return
     }
     let player_entity = animated_by.player()
-    guard (try! world.get_by_key(player_entity, ecs_key_animation_player))
-      is Some(player) else {
-      return
-    }
-    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
-      is Some(graph_handle) else {
+    guard players_with_target_events.get(player_entity.id)
+      is Some((player, graph)) else {
       return
     }
     let target_id = target_id.value()
-    guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
-      return
-    }
     let target_mask = graph.target_mask(target_id)
     for pair in player.playing_animations() {
       let node_index = pair.0

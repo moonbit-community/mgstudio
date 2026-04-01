@@ -117,7 +117,8 @@ priv struct Mesh3dExtractedPayload {
   has_wireframe : Bool
   has_no_wireframe : Bool
   wireframe_color : WireframeColor?
-  skinning_matrices : Array[Float]?
+  skinning_key_hi : Int
+  skinning_key_lo : Int
 }
 
 ///|
@@ -210,7 +211,8 @@ priv struct MeshGpuDrawPayload3d {
   max_relief_mapping_search_steps : Float
   cull_mode : Int
   shader_path : String?
-  skinning_matrices : Array[Float]?
+  skinning_key_hi : Int
+  skinning_key_lo : Int
 }
 
 ///|

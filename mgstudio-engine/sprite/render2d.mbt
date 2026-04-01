@@ -5516,6 +5516,10 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render_queue_system(world : @ecs.World) -> Unit {
   let queue_start = @time.host_time_now()
+  let queue_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_2d",
+  )
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
     0,
@@ -5590,6 +5594,11 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       @time.host_time_now() - queue_start
     ) *
     1000.0F
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_2d",
+    queue_trace_start_us,
+  )
 }
 
 ///|
@@ -7365,6 +7374,10 @@ test "render2d: logical view extent derives from physical viewport and scale fac
 ///|
 pub fn render_execute_system(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
+  let execute_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_2d",
+  )
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
     0,
@@ -8136,6 +8149,11 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       @time.host_time_now() - execute_start
     ) *
     1000.0F
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_2d",
+    execute_trace_start_us,
+  )
 }
 
 ///|

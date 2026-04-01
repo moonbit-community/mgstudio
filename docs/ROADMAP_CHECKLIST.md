@@ -75,6 +75,7 @@ This file must not exceed 200 lines.
 - [x] Issue `dev_tools/perf_overlay`: add profiling-oriented diagnostics overlay (`DiagnosticsOverlayPlugin`) with preset stats, rebuild timer, drag/collapse support (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
 - [x] Issue `diagnostic/timeline_metrics`: add Chrome/Perfetto trace export (`TimelineTracePlugin`) and app/render timeline spans (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
 - [x] Issue `diagnostic/stress_consistency`: unify stress examples on `stress_diagnostics_plugin`, stable sorted logging, and optional per-case trace collection in script (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
+- [x] Issue `diagnostic/render_queue_direct_spans`: emit `RenderQueue` timeline spans directly from `render2d/render3d` queue/execute systems and drop diagnostics-derived backfill.
 - [x] Issue `pbr/perf_bevymark_3d`: remove prequeue-to-draw-item `O(N^2)` remap hotspot in render3d queue pipeline.
 - [x] Issue `pbr/perf_many_materials`: remove prequeue-to-mesh `O(N^2)` resolve hotspot in render3d queue pipeline.
 - [x] Issue `pbr/perf_queue_index_maps`: switch preprocessed queue remap/resolve to entity-id index maps with generation-safe fallback.
@@ -130,7 +131,7 @@ This file must not exceed 200 lines.
 - [ ] Issue `text/perf_many_text2d`: optimize world/UI text stress bottlenecks in `many_text2d`.
 - [ ] Issue `text/perf_many_glyphs`: optimize glyph layout/raster cache bottlenecks in `many_glyphs`.
 - [ ] Issue `text/perf_text_pipeline`: optimize text pipeline bottlenecks in `text_pipeline`.
-- [ ] Issue `text/view_visibility_text2d`: wire `ViewVisibility` consistency for Text2d and align visible-count diagnostics with runtime output.
+- [x] Issue `text/view_visibility_text2d`: wire `ViewVisibility` consistency for Text2d and align visible-count diagnostics with runtime output.
 - [x] Issue `stress_tests/text_example_flow_alignment`: align `many_glyphs`/`many_text2d`/`text_pipeline` control flow with Bevy-style args/camera/recompute/bounds patterns.
 - [ ] Issue `remote/transport_backend`: replace remote plugin stub with real transport backend.
 - [ ] Issue `remote/protocol_backend`: replace remote plugin stub with protocol/message runtime.
@@ -152,6 +153,8 @@ This file must not exceed 200 lines.
 - [x] Issue `render/mesh3d_view_uniform_pass_scope`: move transmission/point-shadow/environment view uniform source-of-truth to pass begin and stop draw-time mutation.
 - [x] Issue `render/mesh3d_upload_csv_bypass`: bypass CSV parse path for mesh3d uploads and upload interleaved float vertices directly.
 - [x] Issue `render/mesh3d_asset_modified_inplace_update`: on mesh asset modified events, update cached GPU mesh3d vertex buffer in place instead of drop+recreate.
+- [x] Issue `render/mesh3d_preprocess_bind_group_prepare_use`: move early/late preprocess bind-group construction to upload/prepare stage and keep execute stage bind-only.
+- [x] Issue `render/mesh3d_preprocess_payload_zero_copy_bridge`: remove per-frame host->renderer field-by-field preprocess payload cloning and forward renderer-compatible payload structs directly.
 - [x] Issue `text/default_font_preload_path`: preload default text font handle in plugin init and reuse resolved handle in pipeline.
 - [x] Issue `text/glyph_atlas_hash_lookup`: switch font-atlas glyph lookup from linear scan to map lookup.
 - [x] Issue `text/atlas_lookup_before_rasterize`: align pipeline to atlas-first lookup and rasterize only on cache miss.
@@ -168,9 +171,11 @@ This file must not exceed 200 lines.
 - [x] Issue `text/state_handle_index_map`: replace TextState handle lookup linear scans with id->index map and swap-remove despawn path.
 - [x] Issue `text/ui_text_wrap_from_node_width`: use UI node width as text layout max width when `TextBounds.width` is absent, fixing `many_glyphs` UI single-line collapse.
 - [x] Issue `text/dependency_moon_cosmic_bidi_linearization`: downstream startup starvation no longer reproducible on `moon_cosmic 0.3.0` (verified 2026-04-01; upstream `moonbit-community/moon_cosmic#3` state sync pending).
+- [ ] Issue `native/dependency_zlib_link_propagation`: fix native test link path so transitive `mizchi/zlib` `-lz` is propagated (current macOS native link fails unresolved `_compress/_inflate/_deflate`).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
 - [ ] Issue `stress_tests/3d_heavy_scenes`: close remaining bottleneck in `many_foxes` (skinning runtime path).
+- [ ] Issue `pbr/many_foxes_collect_meshes_extract_cost`: align mesh extract/skinning prep path with Bevy flow to reduce `execute_3d_collect_meshes` hotspot.
 - [ ] Issue `stress_tests/text_pipeline`: close perf bottlenecks in `many_text2d`, `many_glyphs`, and `text_pipeline`.
 - [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
 - [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
@@ -178,5 +183,7 @@ This file must not exceed 200 lines.
 - [x] Issue `stress_tests/benchmark_methodology`: standardize warmup window, sampling duration, and metric extraction pipeline.
 - [x] Issue `stress_tests/perf_baseline`: establish reproducible native baseline artifacts and per-case trend tracking.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
+- [x] Issue `stress_tests/profile_rerun_20260401`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) at `/tmp/mgstudio_stress_profile_20260401_after_alias/results.tsv`.
+- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture (`19/19`) and verify output set under `/tmp/mgstudio_stress_visual_20260401_full`.
 - [x] Issue `transform/sync_simple_transforms_removed_parent_guard`: avoid abort when `Removed<Parent>` stream contains dead entities.
 - [x] Issue `transform/propagation_bevy_traversal_alignment`: remove per-frame hierarchy sorting and ancestor-list scans in transform propagation to match Bevy traversal flow.

@@ -5190,99 +5190,6 @@ fn render3d_gpu_preprocess_opaque_alpha_end_index(
 }
 
 ///|
-fn render3d_gpu_preprocess_indirect_mesh_class_metadata_checksum(
-  metadata : GpuPreprocessIndirectMeshClassMetadata3d,
-) -> Int {
-  let mut checksum = 0
-  for cpu_metadata in metadata.indirect_parameters_cpu_metadata {
-    checksum = checksum +
-      cpu_metadata.base_output_index +
-      cpu_metadata.batch_set_index
-  }
-  for gpu_metadata in metadata.indirect_parameters_gpu_metadata {
-    checksum = checksum +
-      gpu_metadata.mesh_index +
-      gpu_metadata.early_instance_count +
-      gpu_metadata.late_instance_count
-  }
-  for batch_set in metadata.indirect_batch_sets {
-    checksum = checksum +
-      batch_set.indirect_parameters_count +
-      batch_set.indirect_parameters_base
-  }
-  checksum
-}
-
-///|
-fn render3d_gpu_preprocess_indirect_metadata_checksum(
-  metadata : GpuPreprocessIndirectMetadata3d,
-) -> Int {
-  render3d_gpu_preprocess_indirect_mesh_class_metadata_checksum(
-    metadata.indexed,
-  ) +
-  render3d_gpu_preprocess_indirect_mesh_class_metadata_checksum(
-    metadata.non_indexed,
-  )
-}
-
-///|
-fn render3d_gpu_preprocess_work_item_buffers_checksum(
-  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
-) -> Int {
-  match work_item_buffers {
-    Direct(items) => {
-      let mut checksum = 0
-      for item in items {
-        checksum = checksum +
-          item.input_index +
-          item.output_or_indirect_parameters_index
-      }
-      checksum
-    }
-    Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
-      let mut checksum = 0
-      for item in indexed_items {
-        checksum = checksum +
-          item.input_index +
-          item.output_or_indirect_parameters_index
-      }
-      for item in non_indexed_items {
-        checksum = checksum +
-          item.input_index +
-          item.output_or_indirect_parameters_index
-      }
-      if gpu_occlusion_culling is Some(culling_buffers) {
-        checksum = checksum +
-          culling_buffers.late_indirect_parameters_indexed_offset +
-          culling_buffers.late_indirect_parameters_non_indexed_offset
-        for item in culling_buffers.late_indexed {
-          checksum = checksum +
-            item.input_index +
-            item.output_or_indirect_parameters_index
-        }
-        for item in culling_buffers.late_non_indexed {
-          checksum = checksum +
-            item.input_index +
-            item.output_or_indirect_parameters_index
-        }
-      }
-      checksum
-    }
-  }
-}
-
-///|
-fn render3d_gpu_preprocess_dispatch_metadata_checksum(
-  metadata : GpuPreprocessDispatchMetadata3d,
-) -> Int {
-  metadata.direct_workgroup_count +
-  metadata.indexed_workgroup_count +
-  metadata.non_indexed_workgroup_count +
-  metadata.late_indexed_workgroup_count +
-  metadata.late_non_indexed_workgroup_count
-}
-
-///|
 fn render3d_host_preprocess_shader_work_item(
   item : GpuPreprocessShaderWorkItem3d,
 ) -> @render.HostMesh3dPreprocessShaderWorkItem {
@@ -6277,15 +6184,27 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   let queue_start = @time.host_time_now()
+  let queue_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_3d",
+  )
+  fn finish_queue() -> Unit {
+    render3d_diagnostic_queue_cpu_ms_ref.val = (
+        @time.host_time_now() - queue_start
+      ) *
+      1000.0F
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "queue_3d",
+      queue_trace_start_us,
+    )
+  }
   let source_world = @render.render_source_world(world)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.gpu_preprocess_camera_queues.clear()
   if phase_state_ref.val.prepared_camera_order.length() == 0 {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
-    render3d_diagnostic_queue_cpu_ms_ref.val = (
-        @time.host_time_now() - queue_start
-      ) *
-      1000.0F
+    finish_queue()
     return
   }
   let mut visible_mesh_count = 0
@@ -6306,10 +6225,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   )
   let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
   if !gpu_instance_buffer_builder_requested {
-    render3d_diagnostic_queue_cpu_ms_ref.val = (
-        @time.host_time_now() - queue_start
-      ) *
-      1000.0F
+    finish_queue()
     return
   }
   let mesh_candidates = render3d_collect_gpu_preprocess_mesh_candidates(
@@ -6344,10 +6260,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       ),
     )
   }
-  render3d_diagnostic_queue_cpu_ms_ref.val = (
-      @time.host_time_now() - queue_start
-    ) *
-    1000.0F
+  finish_queue()
 }
 
 ///|
@@ -6611,7 +6524,8 @@ fn render3d_build_mesh_gpu_draw_payload(
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
   shader_path? : String? = None,
-  skinning_matrices? : Array[Float]? = None,
+  skinning_key_hi? : Int = -1,
+  skinning_key_lo? : Int = -1,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
     material, texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
@@ -6667,7 +6581,8 @@ fn render3d_build_mesh_gpu_draw_payload(
     max_relief_mapping_search_steps,
     cull_mode: render3d_cull_mode_value(material, draw_flags),
     shader_path,
-    skinning_matrices,
+    skinning_key_hi,
+    skinning_key_lo,
   }
 }
 
@@ -6754,7 +6669,8 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     environment_map_rotation_w=payload.environment_map_rotation.w,
     cull_mode=payload.cull_mode,
     shader_path=payload.shader_path,
-    skinning_matrices=payload.skinning_matrices,
+    skinning_key_hi=payload.skinning_key_hi,
+    skinning_key_lo=payload.skinning_key_lo,
   )
 }
 
@@ -6819,6 +6735,21 @@ fn render3d_draw_gizmo_lines_3d(
 ///|
 pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
+  let execute_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d",
+  )
+  fn finish_execute() -> Unit {
+    render3d_diagnostic_execute_cpu_ms_ref.val = (
+        @time.host_time_now() - execute_start
+      ) *
+      1000.0F
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d",
+      execute_trace_start_us,
+    )
+  }
   let source_world = @render.render_source_world(world)
   let cameras : Array[ExtractedCamera3d] = []
   let meshes : Array[ExtractedMesh3d] = []
@@ -6865,6 +6796,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   } else {
     PointLightShadowMap::default().size
   }
+  let trace_collect_cameras_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_collect_cameras",
+  )
   let mut needs_mesh_previous_transform = false
   source_world.for_each_component(ecs_key_camera3d, fn(entity, camera3d) {
     let camera = match
@@ -7068,9 +7003,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   for entity in projection_runtime_removals {
     try! (source_world.take(entity, ecs_key_projection_runtime3d) |> ignore)
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_collect_cameras",
+    trace_collect_cameras_start_us,
+  )
   if cameras.length() == 0 {
     let phase_state_ref = render3d_phase_state_ref_or_abort(world)
     phase_state_ref.val.prepared_camera_order.clear()
+    finish_execute()
     return
   }
   let wireframe_config = if (try! source_world.get_resource(
@@ -7087,6 +7028,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     0
   }
   let previous_motion_blur_frame_stamp = motion_blur_frame_stamp - 1
+  let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_collect_meshes",
+  )
+  let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
+  let mesh_id_frame_cache : Map[Int, Int] = {}
   source_world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
     if (try! source_world.get_by_key(
         entity, @visibility.ecs_key_view_visibility,
@@ -7099,8 +7046,20 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       is Some(material_handle) else {
       return
     }
-    guard standard_material_get(material_handle.material) is Some(base_material) else {
-      return
+    let material_handle_id = material_handle.material.id()
+    let base_material = match
+      standard_material_frame_cache.get(material_handle_id) {
+      Some(cached_material) => cached_material
+      None =>
+        match standard_material_get(material_handle.material) {
+          Some(loaded_material) => {
+            standard_material_frame_cache.set(
+              material_handle_id, loaded_material,
+            )
+            loaded_material
+          }
+          None => return
+        }
     }
     let material = render3d_apply_extended_material_metadata(
       base_material,
@@ -7134,11 +7093,36 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
+    let skinning_matrices = render3d_extract_skinning_matrices(
+      source_world, entity, world_transform_cache_ref,
+    )
+    let (skinning_key_hi, skinning_key_lo) = match skinning_matrices {
+      Some(values) => {
+        @render.host_gpu_prepare_mesh3d_skin_binding(
+          key_hi=entity.id,
+          key_lo=entity.generation,
+          skinning_matrices=values,
+        )
+        (entity.id, entity.generation)
+      }
+      None => (-1, -1)
+    }
+    let mesh_handle_id = mesh3d.mesh.id()
+    let mesh_id = match mesh_id_frame_cache.get(mesh_handle_id) {
+      Some(cached_mesh_id) => cached_mesh_id
+      None => {
+        let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
+          mesh3d.mesh,
+        )
+        mesh_id_frame_cache.set(mesh_handle_id, uploaded_mesh_id)
+        uploaded_mesh_id
+      }
+    }
     meshes.push(ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(entity),
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh,
-        mesh_id: @sprite_render.render2d_upload_mesh_handle(mesh3d.mesh),
+        mesh_id,
         transform,
         previous_transform,
         visibility_range,
@@ -7178,15 +7162,23 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         wireframe_color: try! source_world.get_by_key(
           entity, ecs_key_wireframe_color,
         ),
-        skinning_matrices: render3d_extract_skinning_matrices(
-          source_world, entity, world_transform_cache_ref,
-        ),
+        skinning_key_hi,
+        skinning_key_lo,
       },
     })
   })
   if needs_mesh_previous_transform {
     motion_blur_history_sync(meshes, motion_blur_frame_stamp)
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_collect_meshes",
+    trace_collect_meshes_start_us,
+  )
+  let trace_render_cameras_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_render_cameras",
+  )
   let lighting = render3d_collect_lighting(source_world)
   let camera_phase_items = match
     render3d_prepared_camera_phase_items(world, cameras) {
@@ -7388,6 +7380,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       0.0001F
     }
+    let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_build",
+    )
+    let trace_camera_queue_entry_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_entry",
+    )
     let draw_queue_entry = if gpu_instance_buffer_builder_enabled {
       match
         render3d_take_gpu_preprocess_camera_queue_items(
@@ -7424,7 +7424,16 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         false,
       )
     }
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_entry",
+      trace_camera_queue_entry_start_us,
+    )
     let draw_items = draw_queue_entry.draw_items
+    let trace_camera_queue_indices_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_indices",
+    )
     let opaque_alpha_draw_item_indices = render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
       draw_items,
       draw_queue_entry.phase_ranges,
@@ -7437,18 +7446,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       draw_items,
       draw_queue_entry.work_item_buffers,
     )
-    render3d_gpu_preprocess_indirect_metadata_checksum(
-      draw_queue_entry.indirect_metadata,
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_indices",
+      trace_camera_queue_indices_start_us,
     )
-    |> ignore
-    render3d_gpu_preprocess_work_item_buffers_checksum(
-      draw_queue_entry.work_item_buffers,
+    let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_upload",
     )
-    |> ignore
-    render3d_gpu_preprocess_dispatch_metadata_checksum(
-      draw_queue_entry.dispatch_metadata,
-    )
-    |> ignore
     @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
@@ -7456,6 +7462,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         draw_queue_entry, meshes, camera, camera_pass_projection, viewport_x, viewport_y,
         viewport_width, viewport_height, camera_exposure_value,
       ),
+    )
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_upload",
+      trace_camera_queue_upload_start_us,
+    )
+    let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_preprocess",
     )
     if camera.gpu_occlusion_culling_enabled {
       @render.host_gpu_preprocess_mesh3d(
@@ -7478,6 +7493,16 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         camera_key_lo=camera_entity.generation,
       )
     }
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_preprocess",
+      trace_camera_queue_preprocess_start_us,
+    )
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_queue_build",
+      trace_camera_queue_build_start_us,
+    )
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera_entity, view_width, view_height,
@@ -7766,6 +7791,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       scene_target_id = scene_id
     }
     let mut transmission_source_target_id = -1
+    let trace_camera_main_pass_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_main_pass",
+    )
     render3d_begin_pass_3d(
       target_id=scene_target_id,
       width=view_width_logical,
@@ -7912,9 +7941,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       } else {
         draw_material.perceptual_roughness
       }
-      let mesh_distance = mesh.transform.translation
-        .sub(camera.transform.translation)
-        .length()
+      let needs_mesh_distance = fog_enabled || mesh.is_forward_decal
+      let mesh_distance = if needs_mesh_distance {
+        mesh.transform.translation.sub(camera.transform.translation).length()
+      } else {
+        0.0F
+      }
       if mesh.is_forward_decal {
         let depth_fade_factor = if mesh.forward_decal_material_ext
           is Some(extension) {
@@ -7933,16 +7965,24 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clearcoat_reflectance = 0.0F
         draw_roughness = maxf(draw_roughness, 0.85F)
       }
-      let (fogged_r, fogged_g, fogged_b) = render3d_apply_distance_fog(
-        distance_fog,
-        mesh_distance,
-        draw_material.base_color.r,
-        draw_material.base_color.g,
-        draw_material.base_color.b,
-        camera.transform.translation,
-        mesh.transform.translation,
-        pass_lighting,
-      )
+      let (fogged_r, fogged_g, fogged_b) = if fog_enabled {
+        render3d_apply_distance_fog(
+          distance_fog,
+          mesh_distance,
+          draw_material.base_color.r,
+          draw_material.base_color.g,
+          draw_material.base_color.b,
+          camera.transform.translation,
+          mesh.transform.translation,
+          pass_lighting,
+        )
+      } else {
+        (
+          draw_material.base_color.r,
+          draw_material.base_color.g,
+          draw_material.base_color.b,
+        )
+      }
       let draw_color_r = fogged_r
       let draw_color_g = fogged_g
       let draw_color_b = fogged_b
@@ -8032,7 +8072,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         max_relief_mapping_search_steps,
         draw_flags,
         shader_path=draw_shader_path,
-        skinning_matrices=mesh.skinning_matrices,
+        skinning_key_hi=mesh.skinning_key_hi,
+        skinning_key_lo=mesh.skinning_key_lo,
       )
       if draw_item.phase == RENDER3D_PHASE_TRANSPARENT {
         transparent_draws.push(draw_payload)
@@ -8247,6 +8288,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
       @render.host_gpu_end_pass()
     }
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_main_pass",
+      trace_camera_main_pass_start_us,
+    )
+    let trace_camera_postprocess_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_postprocess",
+    )
     let mut final_source_texture_id = -1
     if motion_blur_active &&
       camera.motion_blur is Some(motion_blur) &&
@@ -8653,14 +8703,21 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       )
       @render.host_gpu_end_pass()
     }
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera_postprocess",
+      trace_camera_postprocess_start_us,
+    )
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_render_cameras",
+    trace_render_cameras_start_us,
+  )
   camera_motion_blur_history_sync(next_camera_motion_blur_history)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()
-  render3d_diagnostic_execute_cpu_ms_ref.val = (
-      @time.host_time_now() - execute_start
-    ) *
-    1000.0F
+  finish_execute()
 }
 
 ///|

@@ -208,6 +208,7 @@ priv struct EcsTextBridgeEntry {
   entity : @core.Entity
   handle : TextHandle
   bundle : Text2dBundle
+  view_visible : Bool
   span_bundles : Array[TextSpanBundle]
 }
 
@@ -763,34 +764,45 @@ fn[T : @ecs.Component] text_ecs_entity_ref_get(
 }
 
 ///|
+fn text_ecs_entity_ref_view_visible(entity_ref : @ecs.EntityRef) -> Bool {
+  match (text_ecs_entity_ref_get(entity_ref) : @visibility.ViewVisibility?) {
+    Some(view_visibility) => view_visibility.is_visible()
+    None => true
+  }
+}
+
+///|
 fn text_ecs_bundle_from_entity(
   world : @ecs.World,
   entity : @core.Entity,
   text : Text2d,
   font : TextFont,
   local_transform : @transform.Transform,
-) -> Text2dBundle {
+) -> (Text2dBundle, Bool) {
   guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
-    return Text2dBundle::{
-      text,
-      font,
-      color: TextColor::default(),
-      background_color: None,
-      underline: None,
-      underline_color: None,
-      strikethrough: None,
-      strikethrough_color: None,
-      layout: TextLayout::default(),
-      bounds: TextBounds::default(),
-      line_height: LineHeight::default(),
-      shadow: None,
-      transform: local_transform,
-      layers: @sprite.RenderLayers::default(),
-      no_frustum_culling: false,
-      anchor: @sprite.Anchor::default(),
-      y_axis: YAxisOrientation::TopToBottom,
-      logical_viewport_size: None,
-    }
+    return (
+      Text2dBundle::{
+        text,
+        font,
+        color: TextColor::default(),
+        background_color: None,
+        underline: None,
+        underline_color: None,
+        strikethrough: None,
+        strikethrough_color: None,
+        layout: TextLayout::default(),
+        bounds: TextBounds::default(),
+        line_height: LineHeight::default(),
+        shadow: None,
+        transform: local_transform,
+        layers: @sprite.RenderLayers::default(),
+        no_frustum_culling: false,
+        anchor: @sprite.Anchor::default(),
+        y_axis: YAxisOrientation::TopToBottom,
+        logical_viewport_size: None,
+      },
+      true,
+    )
   }
   let transform = match
     (text_ecs_entity_ref_get(entity_ref) : @transform.GlobalTransform?) {
@@ -841,26 +853,29 @@ fn text_ecs_bundle_from_entity(
   ) catch {
     _ => false
   }
-  Text2dBundle::{
-    text,
-    font,
-    color,
-    background_color,
-    underline,
-    underline_color,
-    strikethrough,
-    strikethrough_color,
-    layout,
-    bounds,
-    line_height,
-    shadow,
-    transform,
-    layers,
-    no_frustum_culling,
-    anchor,
-    y_axis,
-    logical_viewport_size: None,
-  }
+  (
+    Text2dBundle::{
+      text,
+      font,
+      color,
+      background_color,
+      underline,
+      underline_color,
+      strikethrough,
+      strikethrough_color,
+      layout,
+      bounds,
+      line_height,
+      shadow,
+      transform,
+      layers,
+      no_frustum_culling,
+      anchor,
+      y_axis,
+      logical_viewport_size: None,
+    },
+    text_ecs_entity_ref_view_visible(entity_ref),
+  )
 }
 
 ///|
@@ -981,6 +996,7 @@ fn text_ecs_spawn_entry(
   entity : @core.Entity,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
+  view_visible : Bool,
 ) -> Unit {
   sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
@@ -990,11 +1006,13 @@ fn text_ecs_spawn_entry(
     }
     handle
   })
+  text_set_view_visible(handle, view_visible)
   text_ecs_bridge_entries.push(EcsTextBridgeEntry::{
     world_id,
     entity,
     handle,
     bundle,
+    view_visible,
     span_bundles,
   })
   text_ecs_build_entry_index_by_entity_id(world_id).set(
@@ -1060,6 +1078,7 @@ fn text_ecs_respawn_entry(
   entry : EcsTextBridgeEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
+  view_visible : Bool,
 ) -> EcsTextBridgeEntry {
   ignore(text_despawn(entry.handle))
   sync_text_runtime_rem_size(world)
@@ -1070,7 +1089,8 @@ fn text_ecs_respawn_entry(
     }
     handle
   })
-  EcsTextBridgeEntry::{ ..entry, handle, bundle, span_bundles }
+  text_set_view_visible(handle, view_visible)
+  EcsTextBridgeEntry::{ ..entry, handle, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1079,14 +1099,22 @@ fn text_ecs_sync_existing_entry(
   entry : EcsTextBridgeEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
+  view_visible : Bool,
 ) -> EcsTextBridgeEntry {
   sync_text_runtime_rem_size(world)
   let handle = entry.handle
   if text_get_transform(handle) is None {
-    return text_ecs_respawn_entry(world, entry, bundle, span_bundles)
+    return text_ecs_respawn_entry(
+      world, entry, bundle, span_bundles, view_visible,
+    )
   }
   if !text_span_bundle_array_eq(entry.span_bundles, span_bundles) {
-    return text_ecs_respawn_entry(world, entry, bundle, span_bundles)
+    return text_ecs_respawn_entry(
+      world, entry, bundle, span_bundles, view_visible,
+    )
+  }
+  if entry.view_visible != view_visible {
+    text_set_view_visible(handle, view_visible)
   }
   if !text2d_eq(entry.bundle.text, bundle.text) {
     text_set_content(handle, bundle.text.content)
@@ -1151,7 +1179,7 @@ fn text_ecs_sync_existing_entry(
     ) {
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
-  EcsTextBridgeEntry::{ ..entry, bundle, span_bundles }
+  EcsTextBridgeEntry::{ ..entry, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1255,6 +1283,11 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       world, ecs_key_text_y_axis, sequence, dirty_entities, has_text_dirty_entities,
     ),
   )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, @visibility.ecs_key_view_visibility, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
   if !has_any_spans &&
     !has_text_dirty_entities.val &&
     text_ecs_bridge_entries.length() > 0 {
@@ -1280,7 +1313,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       }
     }
     let (text, font, local_transform) = data
-    let bundle = text_ecs_bundle_from_entity(
+    let (bundle, view_visible) = text_ecs_bundle_from_entity(
       world,
       entity,
       text.value(),
@@ -1298,11 +1331,13 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       Some(index) => {
         let entry = text_ecs_bridge_entries[index]
         text_ecs_bridge_entries[index] = text_ecs_sync_existing_entry(
-          world, entry, bundle, span_bundles,
+          world, entry, bundle, span_bundles, view_visible,
         )
       }
       None => {
-        text_ecs_spawn_entry(world, world_id, entity, bundle, span_bundles)
+        text_ecs_spawn_entry(
+          world, world_id, entity, bundle, span_bundles, view_visible,
+        )
         index_by_entity_id.set(entity.id, text_ecs_bridge_entries.length() - 1)
       }
     }

@@ -114,7 +114,6 @@ priv struct TimelineTraceState {
   config : TimelineTraceConfig
   events_json_lines : Array[String]
   mut frame_count_since_flush : Int
-  last_render_queue_measurement_us : @hashmap.HashMap[String, Int64]
 }
 
 ///|
@@ -362,71 +361,6 @@ fn timeline_trace_append_pending_spans(state : TimelineTraceState) -> Unit {
 }
 
 ///|
-fn timeline_trace_append_render_queue_measurement(
-  state : TimelineTraceState,
-  metric_name : String,
-  path : DiagnosticPath,
-  diagnostics_store : DiagnosticsStore,
-) -> Unit {
-  guard timeline_trace_category_enabled(
-    state.config,
-    @app.TimelineTraceCategory::RenderQueue,
-  ) else {
-    return
-  }
-  guard diagnostics_store.get(path) is Some(diagnostic) else { return }
-  guard diagnostic.measurement() is Some(measurement) else { return }
-  let measured_ts_us = measurement.time.as_duration_since_start().as_micros()
-  if state.last_render_queue_measurement_us.contains(metric_name) &&
-    state.last_render_queue_measurement_us.get(metric_name).unwrap() ==
-    measured_ts_us {
-    return
-  }
-  state.last_render_queue_measurement_us.set(metric_name, measured_ts_us)
-  let dur_us = if measurement.value <= 0.0F {
-    0L
-  } else {
-    (measurement.value.to_double() * 1000.0).to_int64()
-  }
-  let ts_us = if measured_ts_us >= dur_us {
-    measured_ts_us - dur_us
-  } else {
-    0L
-  }
-  state.events_json_lines.push(
-    timeline_trace_event_json_line(
-      @app.TimelineTraceCategory::RenderQueue,
-      metric_name,
-      ts_us,
-      dur_us,
-    ),
-  )
-}
-
-///|
-fn timeline_trace_append_render_queue_spans(
-  world : @ecs.World,
-  state : TimelineTraceState,
-) -> Unit {
-  guard (try! world.get_resource(DiagnosticsStore::resource()))
-    is Some(diagnostics_store) else {
-    return
-  }
-  timeline_trace_append_render_queue_measurement(
-    state, "queue_2d", render_diagnostic_queue_cpu_ms_2d, diagnostics_store,
-  )
-  timeline_trace_append_render_queue_measurement(
-    state, "execute_2d", render_diagnostic_execute_cpu_ms_2d, diagnostics_store,
-  )
-  timeline_trace_append_render_queue_measurement(
-    state, "queue_3d", render_diagnostic_queue_cpu_ms_3d, diagnostics_store,
-  )
-  timeline_trace_append_render_queue_measurement(
-    state, "execute_3d", render_diagnostic_execute_cpu_ms_3d, diagnostics_store,
-  )
-}
-
-///|
 fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
   guard (try! world.get_resource_ref_mut(timeline_trace_state_resource_key))
     is Some(state_ref) else {
@@ -436,7 +370,6 @@ fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
     return
   }
   timeline_trace_append_pending_spans(state_ref.val)
-  timeline_trace_append_render_queue_spans(world, state_ref.val)
   state_ref.val.frame_count_since_flush = state_ref.val.frame_count_since_flush +
     1
   if state_ref.val.frame_count_since_flush >=
@@ -474,7 +407,6 @@ pub fn timeline_trace_plugin_with(
       config,
       events_json_lines: [],
       frame_count_since_flush: 0,
-      last_render_queue_measurement_us: @hashmap.HashMap::new(),
     })
 
   timeline_trace_pending_spans_ref.val = []

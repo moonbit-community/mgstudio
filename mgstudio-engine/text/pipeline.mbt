@@ -1217,6 +1217,10 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
   let culled_text_count = Ref::new(0)
   for i in 0..<text_count {
     let instance = text_state.val.texts[i]
+    if !instance.view_visible {
+      culled_text_count.val = culled_text_count.val + 1
+      continue
+    }
     let layout_info = instance.layout_info
     let transform = instance.transform
     let tx = transform.translation.x

@@ -56,9 +56,6 @@ const MESH3D_PREPASS_MESH_BUFFER_SIZE : UInt64 = 176UL
 const MESH3D_PREPROCESS_VIEW_BUFFER_SIZE : UInt64 = 768UL
 
 ///|
-const MESH3D_PREPROCESS_MESH_CULLING_DATA_STRIDE_BYTES : UInt64 = 32UL
-
-///|
 const MESH3D_VERTEX_BASE_FLOAT_STRIDE : Int = 12
 
 ///|
@@ -393,13 +390,23 @@ struct GpuMesh3dPreprocessCameraUploadState {
   key_lo : Int
   mut mesh_input_buffer : @wgpu.Buffer?
   mut mesh_input_capacity : UInt64
-  mut mesh_input_count : Int
   mut previous_mesh_input_buffer : @wgpu.Buffer?
   mut previous_mesh_input_capacity : UInt64
   mut output_buffer : @wgpu.Buffer?
   mut output_capacity : UInt64
   mut output_count : Int
   mut motion_vector_mesh_bind_group : @wgpu.BindGroup?
+  mut preprocess_main_direct_bind_group : @wgpu.BindGroup?
+  mut preprocess_main_indexed_bind_group : @wgpu.BindGroup?
+  mut preprocess_main_non_indexed_bind_group : @wgpu.BindGroup?
+  mut preprocess_early_indexed_bind_group : @wgpu.BindGroup?
+  mut preprocess_early_non_indexed_bind_group : @wgpu.BindGroup?
+  mut preprocess_late_indexed_bind_group : @wgpu.BindGroup?
+  mut preprocess_late_non_indexed_bind_group : @wgpu.BindGroup?
+  mut build_indirect_reset_indexed_bind_group : @wgpu.BindGroup?
+  mut build_indirect_reset_non_indexed_bind_group : @wgpu.BindGroup?
+  mut build_indirect_indexed_bind_group : @wgpu.BindGroup?
+  mut build_indirect_non_indexed_bind_group : @wgpu.BindGroup?
   mut preprocess_view_buffer : @wgpu.Buffer?
   mut preprocess_view_capacity : UInt64
   mut previous_view_buffer : @wgpu.Buffer?
@@ -435,7 +442,6 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut indexed_batch_set_count : Int
   mut indexed_indirect_parameters_buffer : @wgpu.Buffer?
   mut indexed_indirect_parameters_capacity : UInt64
-  mut indexed_indirect_parameters_count : Int
   mut non_indexed_cpu_metadata_buffer : @wgpu.Buffer?
   mut non_indexed_cpu_metadata_capacity : UInt64
   mut non_indexed_gpu_metadata_buffer : @wgpu.Buffer?
@@ -446,7 +452,6 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut non_indexed_batch_set_count : Int
   mut non_indexed_indirect_parameters_buffer : @wgpu.Buffer?
   mut non_indexed_indirect_parameters_capacity : UInt64
-  mut non_indexed_indirect_parameters_count : Int
   mut dispatch_metadata_buffer : @wgpu.Buffer?
   mut dispatch_metadata_capacity : UInt64
   mut direct_workgroup_count : Int
@@ -640,6 +645,7 @@ pub struct GpuBackend {
   mut mesh3d_skin_default_buf : @wgpu.Buffer?
   mut mesh3d_skin_default_bg : @wgpu.BindGroup?
   mesh3d_skin_slots : Array[GpuStorageSlot]
+  mesh3d_skin_slot_indices_by_key : Map[UInt64, Int]
   mut mesh3d_skin_slot_used : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu.Buffer?
@@ -649,6 +655,7 @@ pub struct GpuBackend {
   mesh3d_preprocess_camera_upload_states : Array[
     GpuMesh3dPreprocessCameraUploadState,
   ]
+  mesh3d_preprocess_camera_upload_state_indices : Map[UInt64, Int]
   mut mesh3d_preprocess_reset_batch_sets_bgl : @wgpu.BindGroupLayout?
   mut mesh3d_preprocess_reset_batch_sets_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_reset_batch_sets_pipeline : @wgpu.ComputePipeline?
@@ -1113,6 +1120,7 @@ pub fn GpuBackend::new(
     mesh3d_skin_default_buf: None,
     mesh3d_skin_default_bg: None,
     mesh3d_skin_slots: [],
+    mesh3d_skin_slot_indices_by_key: {},
     mesh3d_skin_slot_used: 0,
     mesh3d_gpu_instance_builder_enabled: false,
     mesh3d_instance_draw_buf: None,
@@ -1120,6 +1128,7 @@ pub fn GpuBackend::new(
     mesh3d_instance_draw_capacity: 0UL,
     mesh3d_instance_draw_used: 0,
     mesh3d_preprocess_camera_upload_states: [],
+    mesh3d_preprocess_camera_upload_state_indices: {},
     mesh3d_preprocess_reset_batch_sets_bgl: None,
     mesh3d_preprocess_reset_batch_sets_pipeline_layout: None,
     mesh3d_preprocess_reset_batch_sets_pipeline: None,

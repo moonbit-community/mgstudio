@@ -334,6 +334,7 @@ priv struct TextInstance {
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
+  view_visible : Bool
   no_frustum_culling : Bool
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
@@ -683,6 +684,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     shadow: bundle.shadow,
     transform: bundle.transform,
     layers: bundle.layers,
+    view_visible: true,
     no_frustum_culling: bundle.no_frustum_culling,
     anchor: bundle.anchor,
     y_axis: bundle.y_axis,
@@ -959,6 +961,15 @@ pub fn text_set_layers(
   layers : @sprite.RenderLayers,
 ) -> Unit {
   text_update_instance(handle, instance => TextInstance::{ ..instance, layers, })
+}
+
+///|
+/// Update the extracted `ViewVisibility` of a text handle without marking rerender.
+pub fn text_set_view_visible(handle : TextHandle, view_visible : Bool) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    view_visible,
+  })
 }
 
 ///|

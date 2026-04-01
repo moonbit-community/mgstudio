@@ -483,7 +483,6 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
   let ok = backend.mesh3d_preprocess_camera_upload_states.length() == 1 &&
     state.mesh_input_buffer is Some(_) &&
     state.previous_mesh_input_buffer is Some(_) &&
-    state.mesh_input_count == 1 &&
     state.output_buffer is Some(_) &&
     state.output_count == 1 &&
     state.preprocess_view_buffer is Some(_) &&
@@ -494,7 +493,7 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
     state.indexed_batch_set_buffer is Some(_) &&
     state.indexed_batch_set_count == 1 &&
     state.indexed_indirect_parameters_buffer is Some(_) &&
-    state.indexed_indirect_parameters_count == 1 &&
+    state.indexed_indirect_parameters_capacity > 0UL &&
     state.late_indexed_dispatch_indirect_buffer is Some(_) &&
     state.late_non_indexed_dispatch_indirect_buffer is Some(_) &&
     state.depth_pyramid_texture is Some(_) &&

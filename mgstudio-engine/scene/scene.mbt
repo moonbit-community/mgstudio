@@ -1327,24 +1327,21 @@ fn scene_apply_morph_targets(
 
 ///|
 fn scene_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
-  let mesh_query : @ecs.Query[(@core.Entity, @ecs.Comp[@pbr.Mesh3d]), @ecs.All] = @ecs.query(
-    world,
-  )
+  let mesh_query : @ecs.Query[
+    (@core.Entity, @ecs.Comp[@pbr.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    @ecs.All,
+  ] = @ecs.query(world)
   let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
 
   try! mesh_query.view(fn(_entity, data) {
-    let (entity, mesh_component) = data
-    let morph_target_mesh : @mesh.MorphTargetMesh? = try! world
-      .entity(entity)
-      .get()
-    guard morph_target_mesh is Some(active_morph_target_mesh) else { return }
+    let (entity, mesh_component, morph_target_mesh_component) = data
     let animation_weights : @animation.AnimationWeights? = try! world
       .entity(entity)
       .get()
     let morph_weights_component : @mesh.MorphWeights? = try! world
       .entity(entity)
       .get()
-    let source_mesh_handle = active_morph_target_mesh.source_mesh()
+    let source_mesh_handle = morph_target_mesh_component.value().source_mesh()
     let instance_mesh_handle = mesh_component.value().mesh()
     let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
       Some(value) => value

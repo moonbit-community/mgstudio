@@ -173,6 +173,8 @@ pub fn text_set_underline(TextHandle, Underline?) -> Unit
 
 pub fn text_set_underline_color(TextHandle, UnderlineColor?) -> Unit
 
+pub fn text_set_view_visible(TextHandle, Bool) -> Unit
+
 pub fn text_set_y_axis(TextHandle, YAxisOrientation) -> Unit
 
 pub fn text_spawn(Text2dBundle) -> TextHandle

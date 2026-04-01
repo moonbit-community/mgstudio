@@ -329,6 +329,17 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
 }
 
 ///|
+pub fn prepare_mesh3d_skin_binding(
+  key_hi~ : Int,
+  key_lo~ : Int,
+  skinning_matrices~ : Array[Float],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_skin_binding(key_hi, key_lo, skinning_matrices)
+  }
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessFrustumPlane {
   normal_x : Float
   normal_y : Float
@@ -1624,6 +1635,8 @@ pub fn draw_mesh3d(
   environment_map_rotation_w? : Float = 1.0F,
   cull_mode~ : Int,
   shader_path? : String? = None,
+  skinning_key_hi? : Int = -1,
+  skinning_key_lo? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
 ) -> Unit {
   debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
@@ -1715,6 +1728,8 @@ pub fn draw_mesh3d(
       environment_map_rotation_w,
       cull_mode,
       shader_path,
+      skinning_key_hi,
+      skinning_key_lo,
       skinning_matrices~,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)

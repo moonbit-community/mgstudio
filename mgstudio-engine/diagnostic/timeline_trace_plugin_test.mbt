@@ -48,6 +48,37 @@ test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
 }
 
 ///|
+test "diagnostics: timeline trace plugin captures direct render queue spans" {
+  let output_path = timeline_trace_test_output_path()
+  let config = TimelineTraceConfig::default()
+    .with_enabled(true)
+    .with_output_path(output_path)
+    .with_flush_interval_frames(1)
+    .with_categories([@app.TimelineTraceCategory::RenderQueue])
+  let mut app = @app.App::new(@ecs.World::new()).add_plugin(fn(app_) {
+    timeline_trace_plugin_with(app_, TimelineTracePlugin::with_config(config))
+  })
+  app = app.add_system_config(
+    @app.system(fn(_world : @ecs.World) {
+      let trace_start_us = @app.timeline_trace_begin_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "queue_2d",
+      )
+      @app.timeline_trace_end_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "queue_2d",
+        trace_start_us,
+      )
+    }),
+  )
+  app = app.update()
+
+  let json_text = @fs.read_file_to_string(output_path) catch { _ => "" }
+  inspect(json_text.contains("\"cat\":\"render_queue\""), content="true")
+  inspect(json_text.contains("\"name\":\"queue_2d\""), content="true")
+}
+
+///|
 test "diagnostics: stress diagnostics plugin installs frame and render diagnostics" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins([

@@ -79,7 +79,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     TextLayout::new_with_justify(Justify::Center),
   )
 
-  let bundle = text_ecs_bundle_from_entity(
+  let (bundle, view_visible) = text_ecs_bundle_from_entity(
     world,
     entity,
     Text2d::new("Repeat On"),
@@ -88,6 +88,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
   )
 
   inspect(text_bundle_rerender_eq(bundle, expected), content="true")
+  inspect(view_visible, content="true")
   inspect(
     bundle.transform.to_json(),
     content="Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
@@ -116,6 +117,7 @@ test "ecs text bridge cleanup removes dead entity entries" {
       TextFont::default(),
       @transform.Transform::identity(),
     ),
+    view_visible: true,
     span_bundles: [],
   })
 
@@ -170,6 +172,42 @@ test "text ecs bridge registers required components for Text2d" {
     (try! world.entity(entity).get() : @visibility.Visibility?) is Some(_),
     content="true",
   )
+}
+
+///|
+test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
+  reset_text_ecs_test_state()
+  let world = @ecs.World::new()
+  try! register_text_required_components(world)
+  let entity = world.spawn()
+  try! (world.entity_mut(entity).insert_component(Text2d::new("Visibility"))
+  |> ignore)
+  try! (world.entity_mut(entity).insert_component(TextFont::default()) |> ignore)
+  try! (world
+  .entity_mut(entity)
+  .insert_component(@transform.Transform::identity())
+  |> ignore)
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+
+  text_sync_ecs_system(world)
+  inspect(text_ecs_bridge_entries.length(), content="1")
+  inspect(text_ecs_bridge_entries[0].view_visible, content="false")
+  text_render_system(world)
+  inspect(text_diagnostic_render_visible_text_count(), content="0")
+
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  text_sync_ecs_system(world)
+  inspect(text_ecs_bridge_entries[0].view_visible, content="true")
+  text_render_system(world)
+  inspect(text_diagnostic_render_visible_text_count(), content="1")
 }
 
 ///|
