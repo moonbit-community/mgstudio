@@ -1142,6 +1142,14 @@ fn fs_main(
     u_view.lights.directional_light_color.w,
     u_view.lights.point_light_shadow_params.w,
   ));
+  let draw_point_shadow_enabled = max(bitcast<f32>(draw.material._reserved0), 0.0);
+  let draw_point_shadow_depth_bias = max(bitcast<f32>(draw.material._reserved1), 0.0);
+  let point_shadow_params = vec4<f32>(
+    u_view.lights.point_light_shadow_params.x * draw_point_shadow_enabled,
+    max(u_view.lights.point_light_shadow_params.y, draw_point_shadow_depth_bias),
+    u_view.lights.point_light_shadow_params.z,
+    u_view.lights.point_light_shadow_params.w,
+  );
 
   let ambient_term = u_view.lights.ambient_color.xyz;
 
@@ -1161,7 +1169,7 @@ fn fs_main(
     in.world_pos,
     u_view.lights.point_light_position_radius.xyz,
     max(u_view.lights.point_light_position_radius.w, 1e-4),
-    u_view.lights.point_light_shadow_params,
+    point_shadow_params,
   );
   let point = point_light(
     normal,

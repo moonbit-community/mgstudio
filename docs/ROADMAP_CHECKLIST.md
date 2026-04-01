@@ -149,6 +149,7 @@ This file must not exceed 200 lines.
 - [x] Issue `sprite/render2d_queue_scene_cull`: cull scene sprite/mesh items during queue build and remove execute-stage duplicate scene cull checks.
 - [x] Issue `sprite/render2d_scene_phase_split`: queue stores scene opaque/transparent items separately and execute consumes both in one cached draw loop (no queue-time concat copy).
 - [x] Issue `render/mesh3d_pass_view_uniform_sync`: sync mesh3d forward/motion-vector view uniforms only when bytes change within the active pass.
+- [x] Issue `render/mesh3d_view_uniform_pass_scope`: move transmission/point-shadow/environment view uniform source-of-truth to pass begin and stop draw-time mutation.
 - [x] Issue `render/mesh3d_upload_csv_bypass`: bypass CSV parse path for mesh3d uploads and upload interleaved float vertices directly.
 - [x] Issue `render/mesh3d_asset_modified_inplace_update`: on mesh asset modified events, update cached GPU mesh3d vertex buffer in place instead of drop+recreate.
 - [x] Issue `text/default_font_preload_path`: preload default text font handle in plugin init and reuse resolved handle in pipeline.

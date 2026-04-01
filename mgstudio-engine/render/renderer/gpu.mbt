@@ -345,6 +345,19 @@ pub struct GpuPassState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  transmission_blur_taps : Float
+  transmission_steps : Float
+  point_shadow_texture_id : Int
+  point_shadow_enabled : Float
+  point_shadow_depth_bias : Float
+  transmission_source_texture_id : Int
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
+  environment_map_intensity : Float
+  environment_map_rotation_x : Float
+  environment_map_rotation_y : Float
+  environment_map_rotation_z : Float
+  environment_map_rotation_w : Float
   point_shadow_near : Float
 }
 

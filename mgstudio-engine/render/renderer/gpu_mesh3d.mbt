@@ -219,22 +219,62 @@ fn mesh3d_expand_vertices_with_skinning_defaults(
 }
 
 ///|
-fn mesh3d_view_uniform_bytes(
-  pass_state : GpuPassState,
-  transmission_blur_taps : Float,
-  transmission_steps : Float,
-  point_shadow_enabled : Float,
-  point_shadow_depth_bias : Float,
-  environment_map_intensity : Float,
-  environment_map_rotation_x : Float,
-  environment_map_rotation_y : Float,
-  environment_map_rotation_z : Float,
-  environment_map_rotation_w : Float,
-) -> Bytes {
+fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+  let transmission_source_enabled = pass_state.transmission_source_texture_id >=
+    0
+  let transmission_blur_taps = if transmission_source_enabled {
+    pass_state.transmission_blur_taps
+  } else {
+    0.0F
+  }
+  let transmission_steps = if transmission_source_enabled {
+    pass_state.transmission_steps
+  } else {
+    0.0F
+  }
+  let point_shadow_textured = pass_state.point_shadow_texture_id >= 0
+  let point_shadow_enabled = if point_shadow_textured {
+    pass_state.point_shadow_enabled
+  } else {
+    0.0F
+  }
+  let point_shadow_depth_bias = if point_shadow_textured {
+    pass_state.point_shadow_depth_bias
+  } else {
+    0.0F
+  }
   let point_shadow_near = if point_shadow_enabled > 0.5F {
     pass_state.point_shadow_near
   } else {
     0.1F
+  }
+  let environment_map_enabled = pass_state.environment_map_intensity > 0.0F &&
+    pass_state.environment_diffuse_texture_id >= 0 &&
+    pass_state.environment_specular_texture_id >= 0
+  let environment_map_intensity = if environment_map_enabled {
+    pass_state.environment_map_intensity
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_x = if environment_map_enabled {
+    pass_state.environment_map_rotation_x
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_y = if environment_map_enabled {
+    pass_state.environment_map_rotation_y
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_z = if environment_map_enabled {
+    pass_state.environment_map_rotation_z
+  } else {
+    0.0F
+  }
+  let environment_map_rotation_w = if environment_map_enabled {
+    pass_state.environment_map_rotation_w
+  } else {
+    1.0F
   }
   let ambient_brightness = if pass_state.ambient_brightness < 0.0F {
     0.0F
@@ -425,6 +465,8 @@ fn mesh3d_draw_uniform_bytes(
   ior : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  point_shadow_enabled : Float,
+  point_shadow_depth_bias : Float,
 ) -> Bytes {
   let reflectance_tint_r = reflectance * specular_tint_r
   let reflectance_tint_g = reflectance * specular_tint_g
@@ -480,8 +522,8 @@ fn mesh3d_draw_uniform_bytes(
     f32_bits(max_parallax_layer_count),
     max_relief_mapping_search_steps.to_int().reinterpret_as_uint(),
     f32_bits(uv_transform_mode),
-    0U,
-    0U,
+    f32_bits(point_shadow_enabled),
+    f32_bits(point_shadow_depth_bias),
   ]
   u32le_pack(words)
 }
@@ -5001,6 +5043,17 @@ pub fn GpuBackend::draw_mesh3d(
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(ps) else { return }
+  transmission_source_texture_id |> ignore
+  transmission_blur_taps |> ignore
+  transmission_steps |> ignore
+  point_shadow_texture_id |> ignore
+  environment_diffuse_texture_id |> ignore
+  environment_specular_texture_id |> ignore
+  environment_map_intensity |> ignore
+  environment_map_rotation_x |> ignore
+  environment_map_rotation_y |> ignore
+  environment_map_rotation_z |> ignore
+  environment_map_rotation_w |> ignore
   if !ps.is_3d {
     return
   }
@@ -5281,21 +5334,21 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     specular_tint_texture_id
   }
-  let resolved_transmission_source_texture_id = if transmission_source_texture_id <
+  let resolved_transmission_source_texture_id = if ps.transmission_source_texture_id <
     0 {
     -1
   } else {
-    transmission_source_texture_id
+    ps.transmission_source_texture_id
   }
-  let resolved_point_shadow_texture_id = if point_shadow_texture_id < 0 {
+  let resolved_point_shadow_texture_id = if ps.point_shadow_texture_id < 0 {
     ensure_point_shadow_fallback_texture(self).id
   } else {
-    point_shadow_texture_id
+    ps.point_shadow_texture_id
   }
-  let environment_map_enabled = environment_map_intensity > 0.0F
+  let environment_map_enabled = ps.environment_map_intensity > 0.0F
   let resolved_environment_diffuse_texture_id = if environment_map_enabled {
-    if environment_diffuse_texture_id >= 0 {
-      environment_diffuse_texture_id
+    if ps.environment_diffuse_texture_id >= 0 {
+      ps.environment_diffuse_texture_id
     } else {
       -1
     }
@@ -5303,8 +5356,8 @@ pub fn GpuBackend::draw_mesh3d(
     -1
   }
   let resolved_environment_specular_texture_id = if environment_map_enabled {
-    if environment_specular_texture_id >= 0 {
-      environment_specular_texture_id
+    if ps.environment_specular_texture_id >= 0 {
+      ps.environment_specular_texture_id
     } else {
       -1
     }
@@ -5367,32 +5420,17 @@ pub fn GpuBackend::draw_mesh3d(
   let depth_textured = depth_texture_id >= 0
   let anisotropy_textured = anisotropy_texture_id >= 0
   let specular_tint_textured = specular_tint_texture_id >= 0
-  let transmission_source_textured = transmission_source_texture_id >= 0
-  let point_shadow_textured = point_shadow_texture_id >= 0
-  let environment_map_intensity_value = if environment_map_enabled {
-    environment_map_intensity
-  } else {
-    0.0F
-  }
-  let environment_map_rotation_x_value = if environment_map_enabled {
-    environment_map_rotation_x
-  } else {
-    0.0F
-  }
-  let environment_map_rotation_y_value = if environment_map_enabled {
-    environment_map_rotation_y
-  } else {
-    0.0F
-  }
-  let environment_map_rotation_z_value = if environment_map_enabled {
-    environment_map_rotation_z
-  } else {
-    0.0F
-  }
-  let environment_map_rotation_w_value = if environment_map_enabled {
-    environment_map_rotation_w
-  } else {
+  let point_shadow_textured = ps.point_shadow_texture_id >= 0
+  let draw_point_shadow_enabled = if point_shadow_textured &&
+    point_shadow_enabled > 0.5F {
     1.0F
+  } else {
+    0.0F
+  }
+  let draw_point_shadow_depth_bias = if point_shadow_textured {
+    point_shadow_depth_bias
+  } else {
+    0.0F
   }
   let uv_transform_a_value = uv_transform_a
   let uv_transform_b_value = uv_transform_b
@@ -5417,34 +5455,7 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     0.0F
   }
-  let view_bytes = mesh3d_view_uniform_bytes(
-    ps,
-    if transmission_source_textured {
-      transmission_blur_taps
-    } else {
-      0.0F
-    },
-    if transmission_source_textured {
-      transmission_steps
-    } else {
-      0.0F
-    },
-    if point_shadow_textured {
-      point_shadow_enabled
-    } else {
-      0.0F
-    },
-    if point_shadow_textured {
-      point_shadow_depth_bias
-    } else {
-      0.0F
-    },
-    environment_map_intensity_value,
-    environment_map_rotation_x_value,
-    environment_map_rotation_y_value,
-    environment_map_rotation_z_value,
-    environment_map_rotation_w_value,
-  )
+  let view_bytes = mesh3d_view_uniform_bytes(ps)
   let draw_bytes = mesh3d_draw_uniform_bytes(
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
     color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
@@ -5453,6 +5464,7 @@ pub fn GpuBackend::draw_mesh3d(
     reflectance, parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
     anisotropy_strength, anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b,
     diffuse_transmission, specular_transmission, thickness, ior, alpha_cutoff, runtime_material_flags,
+    draw_point_shadow_enabled, draw_point_shadow_depth_bias,
   )
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
