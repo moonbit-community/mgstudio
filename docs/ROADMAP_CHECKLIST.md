@@ -192,4 +192,5 @@ This file must not exceed 200 lines.
 - [x] Issue `transform/propagation_changed_components_incremental`: drive transform propagation and simple-sync from `changed_components/removed_components` streams instead of `Changed` query full-scan loops.
 - [x] Issue `input/mouse_position_bevy_logical_space_no_y_flip`: keep cursor in Bevy-style logical window space and remove input-layer Y flip to fix mirrored pointer hit tests.
 - [x] Issue `pbr/render3d_update_frusta_incremental_changed_stream`: update frusta from changed `Transform/Projection` streams instead of all-entity query scan, removing large 2D-scene cross-pipeline overhead.
+- [x] Issue `stress_examples/recompute_system_conditional_registration`: align `many_text2d`/`many_glyphs` with Bevy by registering recompute systems only when recompute flags are enabled.
 - [ ] Issue `ui/picking_hit_test_transform_aware_alignment`: align UI hit testing with Bevy `contains_point(transform, cursor)` semantics and camera-target routing for multi-camera pointer correctness.

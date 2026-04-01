@@ -109,12 +109,8 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
 
 ///|
 fn force_recompute(
-  args : @app.Res[Args],
   texts : @ecs.Query[@ecs.Mut[@text.TextLayout], @ecs.All],
 ) -> Unit {
-  if !args.get().recompute_text {
-    return
-  }
   try! texts.for_each(fn(_entity, text_layout) {
     text_layout.set(text_layout.value())
   })
@@ -123,19 +119,25 @@ fn force_recompute(
 ///|
 fn main {
   let args = parse_args()
-  @app.App::new(@ecs.World::new())
-  .insert_resource(args)
-  .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugin_group(fn() {
-    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
-      primary_window: Some(configured_window()),
-      primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
-      close_when_requested: true,
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(args)
+    .insert_resource(@winit.WinitSettings::continuous())
+    .add_plugin_group(fn() {
+      @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+        primary_window: Some(configured_window()),
+        primary_cursor_options: None,
+        exit_condition: @window.ExitCondition::OnAllClosed,
+        close_when_requested: true,
+      })
     })
-  })
-  .add_plugin(@diagnostic.stress_diagnostics_plugin)
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(force_recompute)))
-  .run()
+    .add_plugin(@diagnostic.stress_diagnostics_plugin)
+    .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  if args.recompute_text {
+    app.add_systems(
+      @app.Update,
+      @app.system(@app.system_param(force_recompute)),
+    )
+    |> ignore
+  }
+  app.run()
 }

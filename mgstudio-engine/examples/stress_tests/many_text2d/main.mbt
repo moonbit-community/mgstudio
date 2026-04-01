@@ -247,13 +247,7 @@ fn move_camera(
 }
 
 ///|
-fn recompute(
-  args : @app.Res[Args],
-  texts : @ecs.Query[@ecs.Mut[@text.Text2d], @ecs.All],
-) -> Unit {
-  if !args.get().recompute {
-    return
-  }
+fn recompute(texts : @ecs.Query[@ecs.Mut[@text.Text2d], @ecs.All]) -> Unit {
   try! texts.for_each(fn(_entity, text2d) { text2d.set(text2d.value()) })
 }
 
@@ -291,22 +285,25 @@ fn print_counts(
 ///|
 fn main {
   let args = parse_args()
-  @app.App::new(@ecs.World::new())
-  .insert_resource(TextStats::default())
-  .insert_resource(args)
-  .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugin_group(fn() {
-    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
-      primary_window: Some(configured_window()),
-      primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
-      close_when_requested: true,
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(TextStats::default())
+    .insert_resource(args)
+    .insert_resource(@winit.WinitSettings::continuous())
+    .add_plugin_group(fn() {
+      @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+        primary_window: Some(configured_window()),
+        primary_cursor_options: None,
+        exit_condition: @window.ExitCondition::OnAllClosed,
+        close_when_requested: true,
+      })
     })
-  })
-  .add_plugin(@diagnostic.stress_diagnostics_plugin)
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(recompute)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(print_counts)))
-  .run()
+    .add_plugin(@diagnostic.stress_diagnostics_plugin)
+    .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+    .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
+    .add_systems(@app.Update, @app.system(@app.system_param4(print_counts)))
+  if args.recompute {
+    app.add_systems(@app.Update, @app.system(@app.system_param(recompute)))
+    |> ignore
+  }
+  app.run()
 }
