@@ -87,6 +87,7 @@ This file must not exceed 200 lines.
 - [x] Issue `pbr/many_foxes_skinning_matrix_buffer_reuse`: reuse per-entity skinning matrix buffers and append row-major values without per-joint temporary arrays.
 - [x] Issue `pbr/many_foxes_motion_blur_history_dense_cache`: replace render3d motion-blur previous-transform linear scan with entity-id indexed dense cache plus frame-stamp gating.
 - [x] Issue `pbr/many_foxes_previous_transform_on_demand`: only maintain/read mesh previous-transform history when any active camera enables motion-vector prepass.
+- [x] Issue `pbr/many_foxes_optional_component_query_gating`: gate sparse optional component lookups in `execute_3d_collect_meshes` by world-level component presence to cut hot-loop `get_by_key` overhead.
 - [x] Issue `render/mesh3d_skinning_upload_hotpath`: initialize skinning slot identity once and upload only used skinning rows per draw (remove per-draw full identity rebuild/upload).
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
 - [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.
