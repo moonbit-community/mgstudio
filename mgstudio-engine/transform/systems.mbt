@@ -48,10 +48,28 @@ fn transform_entity_key(entity : @core.Entity) -> UInt64 {
 }
 
 ///|
+priv struct TransformBootstrapState {
+  completed : Bool
+}
+
+///|
+let transform_bootstrap_state_resource_key : @ecs.ResourceKey[
+  TransformBootstrapState
+] = @ecs.register_resource(
+  debug_name="mgstudio.transform.TransformBootstrapState",
+)
+
+///|
 fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   let key = static_transform_optimizations_resource_key()
   if !world.resource(key).is_present() {
     world.insert_resource(key, StaticTransformOptimizations::disabled())
+  }
+  if !world.resource(transform_bootstrap_state_resource_key).is_present() {
+    world.insert_resource(
+      transform_bootstrap_state_resource_key,
+      TransformBootstrapState::{ completed: false },
+    )
   }
 }
 
@@ -72,6 +90,23 @@ fn write_static_transform_optimizations(
   value : StaticTransformOptimizations,
 ) -> Unit {
   world.insert_resource(static_transform_optimizations_resource_key(), value)
+}
+
+///|
+fn transform_bootstrap_completed(world : @ecs.World) -> Bool {
+  ensure_transform_runtime_resources(world)
+  match world.resource(transform_bootstrap_state_resource_key).get() {
+    Some(state) => state.completed
+    None => false
+  }
+}
+
+///|
+fn mark_transform_bootstrap_completed(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    transform_bootstrap_state_resource_key,
+    TransformBootstrapState::{ completed: true },
+  )
 }
 
 ///|
@@ -115,6 +150,14 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
     }
   }
   for entity in world.changed_components(ecs_key_transform, sequence).read() {
+    let key = transform_entity_key(entity)
+    if processed.contains(key) {
+      continue
+    }
+    processed.set(key, true)
+    sync_entity_if_needed(world, entity)
+  }
+  for entity in world.added_components(ecs_key_transform, sequence).read() {
     let key = transform_entity_key(entity)
     if processed.contains(key) {
       continue
@@ -245,9 +288,24 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     }
     propagate_entity_if_needed(world, entity)
   }
+  for entity in world.added_components(ecs_key_transform, sequence).read() {
+    if processed.contains(transform_entity_key(entity)) {
+      continue
+    }
+    propagate_entity_if_needed(world, entity)
+  }
   for
     entity in world
     .changed_components(@hierarchy.ecs_key_parent, sequence)
+    .read() {
+    if processed.contains(transform_entity_key(entity)) {
+      continue
+    }
+    propagate_entity_if_needed(world, entity)
+  }
+  for
+    entity in world
+    .added_components(@hierarchy.ecs_key_parent, sequence)
     .read() {
     if processed.contains(transform_entity_key(entity)) {
       continue
@@ -265,6 +323,18 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
       continue
     }
     propagate_entity_if_needed(world, entity)
+  }
+  if !transform_bootstrap_completed(world) {
+    let all_transforms : @ecs.Query[@ecs.Comp[Transform], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! all_transforms.for_each(fn(entity, _transform) {
+      if processed.contains(transform_entity_key(entity)) {
+        return
+      }
+      propagate_entity_if_needed(world, entity)
+    })
+    mark_transform_bootstrap_completed(world)
   }
 }
 

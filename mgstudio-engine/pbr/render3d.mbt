@@ -3738,6 +3738,49 @@ fn render3d_entity_world_transform_cached(
 }
 
 ///|
+fn render3d_entity_world_transform_cached_with_local(
+  world : @ecs.World,
+  entity : @core.Entity,
+  local_transform : @transform.Transform,
+  cache_ref : Ref[Render3dWorldTransformCache],
+) -> @transform.Transform {
+  if entity.id < 0 {
+    return @transform.Transform::identity()
+  }
+  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
+  let frame_stamp = cache_ref.val.frame_stamp
+  if cache_ref.val.stamps[entity.id] == frame_stamp &&
+    cache_ref.val.generations[entity.id] == entity.generation {
+    if cache_ref.val.transforms[entity.id] is Some(cached) {
+      return cached
+    }
+  }
+  if cache_ref.val.stamps[entity.id] == frame_stamp &&
+    cache_ref.val.visiting[entity.id] {
+    return local_transform
+  }
+  cache_ref.val.stamps[entity.id] = frame_stamp
+  cache_ref.val.visiting[entity.id] = true
+  let composed = match
+    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
+    Some(parent) => {
+      let parent_transform = render3d_entity_world_transform_cached(
+        world,
+        parent.entity(),
+        cache_ref,
+      )
+      render3d_compose_transform(parent_transform, local_transform)
+    }
+    None => local_transform
+  }
+  cache_ref.val.visiting[entity.id] = false
+  cache_ref.val.transforms[entity.id] = Some(composed)
+  cache_ref.val.generations[entity.id] = entity.generation
+  cache_ref.val.stamps[entity.id] = frame_stamp
+  composed
+}
+
+///|
 fn render3d_entity_world_transform(
   world : @ecs.World,
   entity : @core.Entity,
@@ -7080,18 +7123,23 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
   let mesh_id_frame_cache : Map[Int, Int] = {}
-  source_world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
-    if (try! source_world.get_by_key(
-        entity, @visibility.ecs_key_view_visibility,
-      ))
-      is Some(view_visibility) &&
-      !view_visibility.is_visible() {
+  let mesh_extract_query : @ecs.Query[
+    (
+      @ecs.Comp[Mesh3d],
+      @ecs.Comp[MeshMaterial3d],
+      @ecs.Comp[@visibility.ViewVisibility],
+      @ecs.Comp[@transform.Transform],
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! mesh_extract_query.view(fn(entity, data) {
+    let (mesh3d_comp, material_handle_comp, view_visibility_comp, local_transform_comp) = data
+    let mesh3d = mesh3d_comp.value()
+    let view_visibility = view_visibility_comp.value()
+    if !view_visibility.is_visible() {
       return
     }
-    guard (try! source_world.get_by_key(entity, ecs_key_mesh_material3d))
-      is Some(material_handle) else {
-      return
-    }
+    let material_handle = material_handle_comp.value()
     let material_handle_id = material_handle.material.id()
     let base_material = match
       standard_material_frame_cache.get(material_handle_id) {
@@ -7120,8 +7168,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform_cached(
-      source_world, entity, world_transform_cache_ref,
+    let transform = render3d_entity_world_transform_cached_with_local(
+      source_world,
+      entity,
+      local_transform_comp.value(),
+      world_transform_cache_ref,
     )
     let previous_transform = if needs_mesh_previous_transform {
       match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
@@ -7372,7 +7423,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let camera_base_fog = match camera.camera3d.distance_fog {
       Some(value) => value
-      None => render3d_distance_fog()
+      None =>
+        DistanceFog::new(
+          @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+          FogFalloff3d::linear(0.0F, 0.0F),
+        )
     }
     let distance_fog = render3d_camera_distance_fog(
       camera_base_fog,
@@ -8636,6 +8691,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               viewport_depth_max~,
               clear_enabled=if clear_enabled { 1 } else { 0 },
             )
+            if camera.camera3d.auto_exposure is Some(_) {
+              @render.host_gpu_activate_auto_exposure_view_state(
+                view_key_hi=camera_entity.id,
+                view_key_lo=camera_entity.generation,
+              )
+            }
             render3d_draw_camera_tonemapping_stage(
               world,
               current_source_texture_id,

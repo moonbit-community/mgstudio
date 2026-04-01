@@ -28,6 +28,7 @@ This file must not exceed 200 lines.
 - [x] Package `input_focus`.
 - [x] Package `internal`.
 - [x] Package `light`.
+- [ ] Package `ldtk` (system-chain/message parity landed; pending full bevy_ecs_ldtk module/API/example closure).
 - [x] Package `log`.
 - [x] Package `macro_utils`.
 - [ ] Package `material` (pending deferred-method runtime activation and forward-decal extension shader specialization).
@@ -180,17 +181,20 @@ This file must not exceed 200 lines.
 - [ ] Issue `stress_tests/text_pipeline`: close perf bottlenecks in `many_text2d`, `many_glyphs`, and `text_pipeline`.
 - [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
 - [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
-- [x] Issue `stress_tests/capture_delay_policy`: for low-FPS cases use low `capture_delay_frames` to avoid camera-runaway false black screenshots in visual audit.
+- [x] Issue `stress_tests/capture_delay_policy`: low-FPS stress visual runs use low `capture_delay_frames` (`delay=2` in `/tmp/mgstudio_stress_visual_20260402_full_delay2`) to avoid camera-runaway false blanks.
 - [x] Issue `stress_tests/benchmark_methodology`: standardize warmup window, sampling duration, and metric extraction pipeline.
 - [x] Issue `stress_tests/perf_baseline`: establish reproducible native baseline artifacts and per-case trend tracking.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
 - [x] Issue `stress_tests/profile_rerun_20260401`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) at `/tmp/mgstudio_stress_profile_20260401_after_alias/results.tsv`.
 - [x] Issue `stress_tests/profile_rerun_20260401_after_transform_incremental`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) after transform incremental path at `/tmp/mgstudio_stress_profile_20260401_full_after_transform_incremental/results.tsv`.
-- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture (`19/19`) and verify output set under `/tmp/mgstudio_stress_visual_20260401_full`.
+- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture (`19/19`) and verify output sets under `/tmp/mgstudio_stress_visual_20260401_full` and `/tmp/mgstudio_stress_visual_20260402_full_delay2`.
 - [x] Issue `transform/sync_simple_transforms_removed_parent_guard`: avoid abort when `Removed<Parent>` stream contains dead entities.
 - [x] Issue `transform/propagation_bevy_traversal_alignment`: remove per-frame hierarchy sorting and ancestor-list scans in transform propagation to match Bevy traversal flow.
-- [x] Issue `transform/propagation_changed_components_incremental`: drive transform propagation and simple-sync from `changed_components/removed_components` streams instead of `Changed` query full-scan loops.
+- [x] Issue `transform/propagation_changed_components_incremental`: keep incremental streams and add one-shot startup bootstrap propagation to prevent root `GlobalTransform` initialization gaps.
 - [x] Issue `input/mouse_position_bevy_logical_space_no_y_flip`: keep cursor in Bevy-style logical window space and remove input-layer Y flip to fix mirrored pointer hit tests.
 - [x] Issue `pbr/render3d_update_frusta_incremental_changed_stream`: update frusta from changed `Transform/Projection` streams instead of all-entity query scan, removing large 2D-scene cross-pipeline overhead.
 - [x] Issue `stress_examples/recompute_system_conditional_registration`: align `many_text2d`/`many_glyphs` with Bevy by registering recompute systems only when recompute flags are enabled.
 - [ ] Issue `ui/picking_hit_test_transform_aware_alignment`: align UI hit testing with Bevy `contains_point(transform, cursor)` semantics and camera-target routing for multi-camera pointer correctness.
+- [x] Issue `ldtk/typed_field_value_surface`: align LDtk field payload to typed `FieldValue` model and expose typed getter family (`get_* / get_maybe_* / iter_*`).
+- [x] Issue `ldtk/assets_project_data_surface`: add `LdtkJsonWithMetadata` + `LdtkProjectData` surface and `LdtkProject::as_standalone/as_parent` parity entry points.
+- [ ] Issue `ldtk/bevy_ecs_ldtk_source_layout_parity`: plugin schedule topology + clear-color + int-grid-image asset path aligned; pending `tile_makers` parity and module-file layout closure.
