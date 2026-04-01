@@ -167,7 +167,7 @@ This file must not exceed 200 lines.
 - [x] Issue `text/layout_run_geometry_line_bounds`: build run geometry Y bounds from layout line bounds (remove per-glyph metrics reconstruction).
 - [x] Issue `text/state_handle_index_map`: replace TextState handle lookup linear scans with id->index map and swap-remove despawn path.
 - [x] Issue `text/ui_text_wrap_from_node_width`: use UI node width as text layout max width when `TextBounds.width` is absent, fixing `many_glyphs` UI single-line collapse.
-- [ ] Issue `text/dependency_moon_cosmic_bidi_linearization`: pending upstream linear-time neutral bidi resolution (`moonbit-community/moon_cosmic#3`, verified unresolved on `moon_cosmic 0.2.0` at 2026-03-30).
+- [x] Issue `text/dependency_moon_cosmic_bidi_linearization`: downstream startup starvation no longer reproducible on `moon_cosmic 0.3.0` (verified 2026-04-01; upstream `moonbit-community/moon_cosmic#3` state sync pending).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
 - [ ] Issue `stress_tests/3d_heavy_scenes`: close remaining bottleneck in `many_foxes` (skinning runtime path).
