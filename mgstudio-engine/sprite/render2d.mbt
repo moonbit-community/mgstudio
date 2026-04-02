@@ -3373,6 +3373,8 @@ priv struct SpriteSliceBatchDrawPayload {
   draw_scale : @math.Vec2
   z : Float
   color : Color
+  cull_center : @math.Vec2
+  cull_half_size : @math.Vec2
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
   scissor : @math.Rect?
@@ -4416,6 +4418,8 @@ pub(all) struct OverlaySpriteUvScissorSlices {
   draw_scale : @math.Vec2
   z : Float
   color : Color
+  cull_center : @math.Vec2
+  cull_half_size : @math.Vec2
   layers : RenderLayers
   scissor : @math.Rect?
   target_camera : @core.Entity?
@@ -4492,6 +4496,8 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
         draw_scale: batch.draw_scale,
         z: batch.z,
         color: batch.color,
+        cull_center: batch.cull_center,
+        cull_half_size: batch.cull_half_size,
         texture: batch.texture,
         layers: batch.layers,
         scissor: batch.scissor,
@@ -5830,32 +5836,27 @@ fn scene_cull_radius_from_sprite_scale(scale : @math.Vec2) -> Float {
 }
 
 ///|
-fn scene_cull_batch_center(
-  slices : Array[SpriteSliceUvPayload],
-) -> @math.Vec2? {
-  if slices.length() == 0 {
-    return None
+fn scene_cull_batch_radius(half_size : @math.Vec2, scale : @math.Vec2) -> Float {
+  let batch_half_extent = if half_size.x > half_size.y {
+    half_size.x
+  } else {
+    half_size.y
   }
-  let mut min_x = slices[0].center.x
-  let mut max_x = slices[0].center.x
-  let mut min_y = slices[0].center.y
-  let mut max_y = slices[0].center.y
-  for i in 1..<slices.length() {
-    let center = slices[i].center
-    if center.x < min_x {
-      min_x = center.x
-    }
-    if center.x > max_x {
-      max_x = center.x
-    }
-    if center.y < min_y {
-      min_y = center.y
-    }
-    if center.y > max_y {
-      max_y = center.y
-    }
+  let sprite_radius = scene_cull_radius_from_sprite_scale(scale)
+  if batch_half_extent > sprite_radius {
+    batch_half_extent
+  } else {
+    sprite_radius
   }
-  Some(@math.Vec2::new((min_x + max_x) * 0.5F, (min_y + max_y) * 0.5F))
+}
+
+///|
+test "render2d: slice batch cull radius keeps batch bounds over sprite padding" {
+  let radius = scene_cull_batch_radius(
+    @math.Vec2::new(80.0F, 20.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+  inspect(radius == 80.0F, content="true")
 }
 
 ///|
@@ -6103,25 +6104,15 @@ fn[M] draw_material2d_items_for_layers(
   let items : Array[DrawItem] = []
   for
     item in draw_material2d_scene_items_for_layers(
-      sprites,
-      extra_sprites,
-      extra_sprite_slice_batches,
-      meshes,
-      prepared_materials,
-      material_instances,
-      layers,
+      sprites, extra_sprites, extra_sprite_slice_batches, meshes, prepared_materials,
+      material_instances, layers,
     ) {
     items.push(item)
   }
   for
     item in draw_ui_overlay_items_for_layers(
-      extra_ui_sprites,
-      extra_ui_sprite_slice_batches,
-      extra_ui_rects,
-      extra_ui_box_shadows,
-      extra_ui_texture_slices,
-      camera_entity,
-      layers,
+      extra_ui_sprites, extra_ui_sprite_slice_batches, extra_ui_rects, extra_ui_box_shadows,
+      extra_ui_texture_slices, camera_entity, layers,
     ) {
     items.push(item)
   }
@@ -6145,19 +6136,9 @@ fn draw_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_items_for_layers(
-    sprites,
-    extra_sprites,
-    extra_sprite_slice_batches,
-    extra_ui_sprites,
-    extra_ui_sprite_slice_batches,
-    extra_ui_rects,
-    extra_ui_box_shadows,
-    extra_ui_texture_slices,
-    meshes,
-    prepared_materials,
-    material_instances,
-    camera_entity,
-    layers,
+    sprites, extra_sprites, extra_sprite_slice_batches, extra_ui_sprites, extra_ui_sprite_slice_batches,
+    extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices, meshes, prepared_materials,
+    material_instances, camera_entity, layers,
   )
 }
 
@@ -6346,16 +6327,16 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
       continue
     }
     if scene_cull_context is Some(context) {
-      let center = scene_cull_batch_center(batch.payload.slices)
-      if center is Some(center) {
-        if !scene_item_visible_in_context(
-            context,
-            center.x,
-            center.y,
-            scene_cull_radius_from_sprite_scale(batch.payload.draw_scale),
-          ) {
-          continue
-        }
+      if !scene_item_visible_in_context(
+          context,
+          batch.payload.cull_center.x,
+          batch.payload.cull_center.y,
+          scene_cull_batch_radius(
+            batch.payload.cull_half_size,
+            batch.payload.draw_scale,
+          ),
+        ) {
+        continue
       }
     }
     transparent_items.push(DrawItem::{
@@ -6509,16 +6490,16 @@ fn draw_registered_scene_phase_items_for_layers(
       continue
     }
     if scene_cull_context is Some(context) {
-      let center = scene_cull_batch_center(batch.payload.slices)
-      if center is Some(center) {
-        if !scene_item_visible_in_context(
-            context,
-            center.x,
-            center.y,
-            scene_cull_radius_from_sprite_scale(batch.payload.draw_scale),
-          ) {
-          continue
-        }
+      if !scene_item_visible_in_context(
+          context,
+          batch.payload.cull_center.x,
+          batch.payload.cull_center.y,
+          scene_cull_batch_radius(
+            batch.payload.cull_half_size,
+            batch.payload.draw_scale,
+          ),
+        ) {
+        continue
       }
     }
     transparent_items.push(DrawItem::{
@@ -6607,13 +6588,8 @@ fn build_camera_draw_items(
     )
   }
   let ui_overlay_items = draw_ui_overlay_items_for_layers(
-    extra_ui_sprites,
-    extra_ui_sprite_slice_batches,
-    extra_ui_rects,
-    extra_ui_box_shadows,
-    extra_ui_texture_slices,
-    camera_entity,
-    layers,
+    extra_ui_sprites, extra_ui_sprite_slice_batches, extra_ui_rects, extra_ui_box_shadows,
+    extra_ui_texture_slices, camera_entity, layers,
   )
   QueuedCameraDrawItems::{
     camera_entity,
@@ -8238,20 +8214,20 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         }
       }
 
-        fn ui_overlay_split_draw_items(
-          items : Array[DrawItem],
-        ) -> (Array[DrawItem], Array[DrawItem]) {
-          let non_sprite_items : Array[DrawItem] = []
-          let sprite_items : Array[DrawItem] = []
-          for item in items {
-            match item.kind {
+      fn ui_overlay_split_draw_items(
+        items : Array[DrawItem],
+      ) -> (Array[DrawItem], Array[DrawItem]) {
+        let non_sprite_items : Array[DrawItem] = []
+        let sprite_items : Array[DrawItem] = []
+        for item in items {
+          match item.kind {
             UiSpriteExtra(_) => sprite_items.push(item)
             UiSpriteSliceBatchExtra(_) => sprite_items.push(item)
             _ => non_sprite_items.push(item)
-            }
           }
-          (non_sprite_items, sprite_items)
         }
+        (non_sprite_items, sprite_items)
+      }
 
       fn draw_ui_overlay_passes(items : Array[DrawItem]) -> Unit {
         let (non_sprite_items, sprite_items) = ui_overlay_split_draw_items(

@@ -394,6 +394,90 @@ let text_render_overlay_sprite_slices_batches_cache_ref : Ref[
 ] = Ref::new([])
 
 ///|
+priv struct OverlaySpriteSliceBatchBounds {
+  mut has_bounds : Bool
+  mut min_x : Float
+  mut min_y : Float
+  mut max_x : Float
+  mut max_y : Float
+}
+
+///|
+fn OverlaySpriteSliceBatchBounds::default() -> OverlaySpriteSliceBatchBounds {
+  OverlaySpriteSliceBatchBounds::{
+    has_bounds: false,
+    min_x: 0.0F,
+    min_y: 0.0F,
+    max_x: 0.0F,
+    max_y: 0.0F,
+  }
+}
+
+///|
+fn OverlaySpriteSliceBatchBounds::expand(
+  self : OverlaySpriteSliceBatchBounds,
+  point : @math.Vec2,
+) -> Unit {
+  if !self.has_bounds {
+    self.has_bounds = true
+    self.min_x = point.x
+    self.max_x = point.x
+    self.min_y = point.y
+    self.max_y = point.y
+    return
+  }
+  if point.x < self.min_x {
+    self.min_x = point.x
+  }
+  if point.x > self.max_x {
+    self.max_x = point.x
+  }
+  if point.y < self.min_y {
+    self.min_y = point.y
+  }
+  if point.y > self.max_y {
+    self.max_y = point.y
+  }
+}
+
+///|
+fn OverlaySpriteSliceBatchBounds::clear(
+  self : OverlaySpriteSliceBatchBounds,
+) -> Unit {
+  self.has_bounds = false
+  self.min_x = 0.0F
+  self.min_y = 0.0F
+  self.max_x = 0.0F
+  self.max_y = 0.0F
+}
+
+///|
+fn OverlaySpriteSliceBatchBounds::center(
+  self : OverlaySpriteSliceBatchBounds,
+) -> @math.Vec2 {
+  if !self.has_bounds {
+    return @math.Vec2::new(0.0F, 0.0F)
+  }
+  @math.Vec2::new(
+    (self.min_x + self.max_x) * 0.5F,
+    (self.min_y + self.max_y) * 0.5F,
+  )
+}
+
+///|
+fn OverlaySpriteSliceBatchBounds::half_size(
+  self : OverlaySpriteSliceBatchBounds,
+) -> @math.Vec2 {
+  if !self.has_bounds {
+    return @math.Vec2::new(0.0F, 0.0F)
+  }
+  @math.Vec2::new(
+    (self.max_x - self.min_x) * 0.5F,
+    (self.max_y - self.min_y) * 0.5F,
+  )
+}
+
+///|
 fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
   let message = "Text2d fatal: inconsistent atlas state, text_id=\{text_id.to_string()}, detail=\{detail}"
   @window.host_debug_string(value=message)
@@ -1188,7 +1272,10 @@ fn text_glyph_world_translation(
       text_origin.y + glyph_pos.y * scale.y,
     )
   }
-  let local_scaled = @math.Vec2::new(glyph_pos.x * scale.x, glyph_pos.y * scale.y)
+  let local_scaled = @math.Vec2::new(
+    glyph_pos.x * scale.x,
+    glyph_pos.y * scale.y,
+  )
   let offset = text_rotate_vec2(local_scaled, rot_cos, rot_sin)
   @math.Vec2::new(text_origin.x + offset.x, text_origin.y + offset.y)
 }
@@ -1201,14 +1288,14 @@ fn text_push_overlay_sprite_slice_batch(
   draw_scale : @math.Vec2,
   z : Float,
   color : @sprite.Color,
+  cull_center : @math.Vec2,
+  cull_half_size : @math.Vec2,
   layers : @sprite.RenderLayers,
   scissor : @math.Rect?,
   target_camera : @core.Entity?,
   slices : Array[@sprite.OverlaySpriteUvScissorSlice],
 ) -> Unit {
-  guard texture_opt is Some(texture) else {
-    return
-  }
+  guard texture_opt is Some(texture) else { return }
   if slices.length() == 0 {
     return
   }
@@ -1222,6 +1309,8 @@ fn text_push_overlay_sprite_slice_batch(
     draw_scale,
     z,
     color,
+    cull_center,
+    cull_half_size,
     layers,
     scissor,
     target_camera,
@@ -1539,24 +1628,20 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let mut main_batch_texture_id = -1
     let mut main_batch_span_index = -1
     let mut main_batch_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+    let main_batch_bounds = OverlaySpriteSliceBatchBounds::default()
 
     let instance_shadow_batches : Array[@sprite.OverlaySpriteUvScissorSlices] = []
     let shadow_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
     let mut shadow_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut shadow_batch_texture_id = -1
+    let shadow_batch_bounds = OverlaySpriteSliceBatchBounds::default()
 
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
       let uv_min = glyph.uv_min
       let uv_max = glyph.uv_max
       let translation = text_glyph_world_translation(
-        glyph,
-        top_to_bottom_y_axis,
-        no_rotation,
-        scale,
-        text_origin,
-        rot_cos,
-        rot_sin,
+        glyph, top_to_bottom_y_axis, no_rotation, scale, text_origin, rot_cos, rot_sin,
       )
 
       let color = if glyph.span_index == cached_span_index {
@@ -1570,8 +1655,10 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
 
       let texture_id = atlas_info.texture.id()
       if main_batch_slices.length() > 0 &&
-        (main_batch_texture_id != texture_id ||
-          main_batch_span_index != glyph.span_index) {
+        (
+          main_batch_texture_id != texture_id ||
+          main_batch_span_index != glyph.span_index
+        ) {
         text_push_overlay_sprite_slice_batch(
           instance_main_batches,
           main_batch_texture,
@@ -1579,12 +1666,15 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           glyph_draw_scale,
           glyph_z,
           main_batch_color,
+          main_batch_bounds.center(),
+          main_batch_bounds.half_size(),
           instance.layers,
           instance.ui_scissor,
           instance.ui_camera_entity,
           main_batch_slices,
         )
         main_batch_slices.clear()
+        main_batch_bounds.clear()
       }
       if main_batch_slices.length() == 0 {
         main_batch_texture = Some(atlas_info.texture)
@@ -1592,6 +1682,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         main_batch_span_index = glyph.span_index
         main_batch_color = color
       }
+      main_batch_bounds.expand(translation)
       main_batch_slices.push(@sprite.OverlaySpriteUvScissorSlice::{
         center: translation,
         uv_min,
@@ -1608,12 +1699,15 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             glyph_draw_scale,
             glyph_z,
             shadow.color,
+            shadow_batch_bounds.center(),
+            shadow_batch_bounds.half_size(),
             instance.layers,
             instance.ui_scissor,
             instance.ui_camera_entity,
             shadow_batch_slices,
           )
           shadow_batch_slices.clear()
+          shadow_batch_bounds.clear()
         }
         if shadow_batch_slices.length() == 0 {
           shadow_batch_texture = Some(atlas_info.texture)
@@ -1623,6 +1717,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           translation.x + shadow.offset.x,
           translation.y + shadow.offset.y,
         )
+        shadow_batch_bounds.expand(shadow_translation)
         shadow_batch_slices.push(@sprite.OverlaySpriteUvScissorSlice::{
           center: shadow_translation,
           uv_min,
@@ -1655,12 +1750,15 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       glyph_draw_scale,
       glyph_z,
       main_batch_color,
+      main_batch_bounds.center(),
+      main_batch_bounds.half_size(),
       instance.layers,
       instance.ui_scissor,
       instance.ui_camera_entity,
       main_batch_slices,
     )
     main_batch_slices.clear()
+    main_batch_bounds.clear()
 
     if shadow_opt is Some(shadow) {
       text_push_overlay_sprite_slice_batch(
@@ -1670,12 +1768,15 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         glyph_draw_scale,
         glyph_z,
         shadow.color,
+        shadow_batch_bounds.center(),
+        shadow_batch_bounds.half_size(),
         instance.layers,
         instance.ui_scissor,
         instance.ui_camera_entity,
         shadow_batch_slices,
       )
       shadow_batch_slices.clear()
+      shadow_batch_bounds.clear()
       for batch in instance_shadow_batches {
         overlay_sprite_slices_batches.push(batch)
       }
@@ -1686,8 +1787,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
   }
   @sprite_render.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
   @sprite.render2d_push_sprite_uv_scissor_slices_batch(
-    world,
-    overlay_sprite_slices_batches,
+    world, overlay_sprite_slices_batches,
   )
   text_diagnostic_render_visible_text_count_ref.val = visible_text_count.val
   text_diagnostic_render_culled_text_count_ref.val = culled_text_count.val
