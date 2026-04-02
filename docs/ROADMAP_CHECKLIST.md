@@ -176,9 +176,9 @@ This file must not exceed 200 lines.
 - [ ] Issue `native/dependency_zlib_link_propagation`: fix native test link path so transitive `mizchi/zlib` `-lz` is propagated (current macOS native link fails unresolved `_compress/_inflate/_deflate`).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
-- [ ] Issue `stress_tests/3d_heavy_scenes`: `many_foxes` visual is stable and now `3.64 FPS` (round8); remaining hotspot is still `render3d.prepare + queue_preprocess` (`~115ms + ~64ms` in trace focus).
+- [ ] Issue `stress_tests/3d_heavy_scenes`: `many_foxes` visual is stable and now `3.63~3.64 FPS` (round8/round9); remaining hotspot is still `render3d.prepare + queue_preprocess` (`~115ms + ~64ms` in trace focus).
 - [x] Issue `pbr/many_foxes_collect_meshes_extract_cost`: frame-stamp/cache fix + global-transform skin path + retained preprocess-static cache landed; `execute_3d_collect_meshes` dropped from `~64.9ms` to `~6.5ms`.
-- [ ] Issue `stress_tests/text_pipeline`: text cull-bounds alignment landed, but `many_glyphs` remains `~3.33 FPS`; hotspot is still `bevy.render2d.render/pass_2d_depth`.
+- [ ] Issue `stress_tests/text_pipeline`: text cull-bounds + UI single-pass alignment landed (`pass_2d_depth` no longer duplicated), but `many_glyphs` remains `~3.35 FPS`; hotspot is now split across `pass_2d_depth + pass_2d` (~`150ms` each).
 - [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
 - [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
 - [x] Issue `stress_tests/capture_delay_policy`: low-FPS stress visual runs use low `capture_delay_frames` (`delay=2` in `/tmp/mgstudio_stress_visual_20260402_full_delay2`) to avoid camera-runaway false blanks.

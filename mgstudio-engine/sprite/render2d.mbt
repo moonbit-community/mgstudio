@@ -8214,89 +8214,40 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         }
       }
 
-      fn ui_overlay_split_draw_items(
-        items : Array[DrawItem],
-      ) -> (Array[DrawItem], Array[DrawItem]) {
-        let non_sprite_items : Array[DrawItem] = []
-        let sprite_items : Array[DrawItem] = []
-        for item in items {
-          match item.kind {
-            UiSpriteExtra(_) => sprite_items.push(item)
-            UiSpriteSliceBatchExtra(_) => sprite_items.push(item)
-            _ => non_sprite_items.push(item)
-          }
-        }
-        (non_sprite_items, sprite_items)
-      }
-
       fn draw_ui_overlay_passes(items : Array[DrawItem]) -> Unit {
-        let (non_sprite_items, sprite_items) = ui_overlay_split_draw_items(
-          items,
+        if items.length() == 0 {
+          return
+        }
+        @render.host_gpu_begin_pass(
+          target_id~,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear.r,
+          clear_g=clear.g,
+          clear_b=clear.b,
+          clear_a=clear.a,
+          camera_x=camera.transform.translation.x,
+          camera_y=camera.transform.translation.y,
+          camera_rotation~,
+          camera_scale=camera_uniform_scale,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=0,
         )
-        if non_sprite_items.length() > 0 {
-          @render.host_gpu_begin_pass(
-            target_id~,
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=0,
-          )
-          draw_camera_items(
-            non_sprite_items,
-            viewport_x,
-            viewport_y,
-            viewport_width,
-            viewport_height,
-            scale_factor,
-            [],
-          )
-          @render.host_gpu_end_pass()
-        }
-        if sprite_items.length() > 0 {
-          @render.host_gpu_begin_pass_with_depth(
-            target_id~,
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=0,
-          )
-          draw_camera_items(
-            sprite_items,
-            viewport_x,
-            viewport_y,
-            viewport_width,
-            viewport_height,
-            scale_factor,
-            [],
-          )
-          @render.host_gpu_end_pass()
-        }
+        draw_camera_items(
+          items,
+          viewport_x,
+          viewport_y,
+          viewport_width,
+          viewport_height,
+          scale_factor,
+          [],
+        )
+        @render.host_gpu_end_pass()
       }
 
       let tonemapping_mode = camera.tonemapping_mode
