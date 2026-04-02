@@ -131,7 +131,7 @@ This file must not exceed 200 lines.
 - [x] Issue `scene/gltf_skinned_mesh_root_space`: bind skinned mesh `mesh_root` to the mesh entity transform space to avoid parent-space deformation drift.
 - [x] Issue `scene/gltf_skinned_joint_completeness_guard`: skip skinned binding when any joint node cannot be resolved and preserve inverse-bind fallback by joint index.
 - [ ] Issue `text/perf_many_text2d`: optimize world/UI text stress bottlenecks in `many_text2d`.
-- [ ] Issue `text/perf_many_glyphs`: optimize glyph layout/raster cache bottlenecks in `many_glyphs`.
+- [ ] Issue `text/perf_many_glyphs`: visual output is expected stress dense block; close low FPS via Bevy-style text run batching and draw-call collapse.
 - [ ] Issue `text/perf_text_pipeline`: optimize text pipeline bottlenecks in `text_pipeline`.
 - [x] Issue `text/view_visibility_text2d`: wire `ViewVisibility` consistency for Text2d and align visible-count diagnostics with runtime output.
 - [x] Issue `stress_tests/text_example_flow_alignment`: align `many_glyphs`/`many_text2d`/`text_pipeline` control flow with Bevy-style args/camera/recompute/bounds patterns.
@@ -176,9 +176,9 @@ This file must not exceed 200 lines.
 - [ ] Issue `native/dependency_zlib_link_propagation`: fix native test link path so transitive `mizchi/zlib` `-lz` is propagated (current macOS native link fails unresolved `_compress/_inflate/_deflate`).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
-- [ ] Issue `stress_tests/3d_heavy_scenes`: close remaining bottleneck in `many_foxes` (skinning runtime path).
-- [ ] Issue `pbr/many_foxes_collect_meshes_extract_cost`: align mesh extract/skinning prep path with Bevy flow to reduce `execute_3d_collect_meshes` hotspot.
-- [ ] Issue `stress_tests/text_pipeline`: close perf bottlenecks in `many_text2d`, `many_glyphs`, and `text_pipeline`.
+- [ ] Issue `stress_tests/3d_heavy_scenes`: `many_foxes` visual is stable and now `3.52 FPS` (round6); remaining hotspot is `render3d.prepare + queue_preprocess` (`~115ms + ~103ms`).
+- [x] Issue `pbr/many_foxes_collect_meshes_extract_cost`: frame-stamp/cache fix + global-transform skin path landed; `execute_3d_collect_meshes` dropped from `~64.9ms` to `~6.5ms`.
+- [ ] Issue `stress_tests/text_pipeline`: run-slice batching landed (`many_glyphs` improved from `~3.37` to `~3.52~3.79 FPS`); remaining hotspot is `bevy.render2d.render/pass_2d_depth`.
 - [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
 - [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
 - [x] Issue `stress_tests/capture_delay_policy`: low-FPS stress visual runs use low `capture_delay_frames` (`delay=2` in `/tmp/mgstudio_stress_visual_20260402_full_delay2`) to avoid camera-runaway false blanks.
@@ -187,7 +187,7 @@ This file must not exceed 200 lines.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
 - [x] Issue `stress_tests/profile_rerun_20260401`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) at `/tmp/mgstudio_stress_profile_20260401_after_alias/results.tsv`.
 - [x] Issue `stress_tests/profile_rerun_20260401_after_transform_incremental`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) after transform incremental path at `/tmp/mgstudio_stress_profile_20260401_full_after_transform_incremental/results.tsv`.
-- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture (`19/19`) and verify output sets under `/tmp/mgstudio_stress_visual_20260401_full` and `/tmp/mgstudio_stress_visual_20260402_full_delay2`.
+- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture (`19/19`) and verify output sets under `/tmp/mgstudio_stress_visual_20260401_full`, `/tmp/mgstudio_stress_visual_20260402_full_delay2`, `/tmp/mgstudio_stress_visual_20260402_round6_after_cache_stamp_fix`.
 - [x] Issue `transform/sync_simple_transforms_removed_parent_guard`: avoid abort when `Removed<Parent>` stream contains dead entities.
 - [x] Issue `transform/propagation_bevy_traversal_alignment`: remove per-frame hierarchy sorting and ancestor-list scans in transform propagation to match Bevy traversal flow.
 - [x] Issue `transform/propagation_changed_components_incremental`: keep incremental streams and add one-shot startup bootstrap propagation to prevent root `GlobalTransform` initialization gaps.

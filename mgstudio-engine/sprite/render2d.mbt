@@ -814,11 +814,7 @@ fn PanCamera::key_to_string(key : @window.KeyCode?) -> String {
 ///|
 pub impl Show for PanCamera with output(self, logger) {
   logger.write_string(
-    "\nPanCamera Controls:\n" +
-    "  Move Up / Down    - \{PanCamera::key_to_string(self.key_up)} / \{PanCamera::key_to_string(self.key_down)}\n" +
-    "  Move Left / Right - \{PanCamera::key_to_string(self.key_left)} / \{PanCamera::key_to_string(self.key_right)}\n" +
-    "  Rotate CCW / CW   - \{PanCamera::key_to_string(self.key_rotate_ccw)} / \{PanCamera::key_to_string(self.key_rotate_cw)}\n" +
-    "  Zoom              - Mouse Scroll + \{PanCamera::key_to_string(self.key_zoom_in)} / \{PanCamera::key_to_string(self.key_zoom_out)}\n",
+    "\nPanCamera Controls:\n  Move Up / Down    - \{PanCamera::key_to_string(self.key_up)} / \{PanCamera::key_to_string(self.key_down)}\n  Move Left / Right - \{PanCamera::key_to_string(self.key_left)} / \{PanCamera::key_to_string(self.key_right)}\n  Rotate CCW / CW   - \{PanCamera::key_to_string(self.key_rotate_ccw)} / \{PanCamera::key_to_string(self.key_rotate_cw)}\n  Zoom              - Mouse Scroll + \{PanCamera::key_to_string(self.key_zoom_in)} / \{PanCamera::key_to_string(self.key_zoom_out)}\n",
   )
 }
 
@@ -1067,7 +1063,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
             None => {
               let message = match geometry2d.validate() {
                 Some(err) =>
-                  "Mesh2dGeometry validation failed: " + err.to_string()
+                  "Mesh2dGeometry validation failed: \{err.to_string()}"
                 None => "Mesh2dGeometry flatten failed"
               }
               @window.host_debug_string(value=message)
@@ -1086,7 +1082,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
             None => {
               let message = match geometry3d.validate() {
                 Some(err) =>
-                  "Mesh3dGeometry validation failed: " + err.to_string()
+                  "Mesh3dGeometry validation failed: \{err.to_string()}"
                 None => "Mesh3dGeometry flatten failed"
               }
               @window.host_debug_string(value=message)
@@ -3184,7 +3180,7 @@ fn register_render2d_bevy_shader_sources(world : @ecs.World) -> Unit {
   for path in render2d_bevy_shader_asset_paths() {
     let blob = asset_server.load_bytes(path)
     guard @asset.asset_blob_read_text(blob) is Some(source) else {
-      abort("failed to load render2d shader asset text: " + path)
+      abort("failed to load render2d shader asset text: \{path}")
     }
     @render.register_wgsl_source(path, source)
   }
@@ -3365,6 +3361,25 @@ priv struct SpriteDrawPayload {
 }
 
 ///|
+priv struct SpriteSliceUvPayload {
+  center : @math.Vec2
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+}
+
+///|
+priv struct SpriteSliceBatchDrawPayload {
+  rotation : Float
+  draw_scale : @math.Vec2
+  z : Float
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  scissor : @math.Rect?
+  slices : Array[SpriteSliceUvPayload]
+}
+
+///|
 priv struct ExtractedSprite {
   entity : PhaseEntityRef
   payload : SpriteDrawPayload
@@ -3375,6 +3390,19 @@ priv struct ExtractedUiSprite {
   entity : PhaseEntityRef
   extracted_camera_entity : @core.Entity
   payload : SpriteDrawPayload
+}
+
+///|
+priv struct ExtractedSpriteSliceBatch {
+  entity : PhaseEntityRef
+  payload : SpriteSliceBatchDrawPayload
+}
+
+///|
+priv struct ExtractedUiSpriteSliceBatch {
+  entity : PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : SpriteSliceBatchDrawPayload
 }
 
 ///|
@@ -3494,7 +3522,9 @@ priv struct ExtractedMesh2d {
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
+  SpriteSliceBatchExtra(Int)
   UiSpriteExtra(Int)
+  UiSpriteSliceBatchExtra(Int)
   UiRectExtra(Int)
   UiBoxShadowExtra(Int)
   UiTextureSliceExtra(Int)
@@ -3552,7 +3582,9 @@ struct RenderState {
   mut tonemapping_lut_handles : TonemappingLutHandles?
   sprites : Array[ExtractedSprite]
   extra_sprites : Array[ExtractedSprite]
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch]
   extra_ui_sprites : Array[ExtractedUiSprite]
+  extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch]
   extra_ui_rects : Array[ExtractedUiRect]
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow]
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice]
@@ -3588,7 +3620,9 @@ fn RenderState::new() -> RenderState {
     tonemapping_lut_handles: None,
     sprites: [],
     extra_sprites: [],
+    extra_sprite_slice_batches: [],
     extra_ui_sprites: [],
+    extra_ui_sprite_slice_batches: [],
     extra_ui_rects: [],
     extra_ui_box_shadows: [],
     extra_ui_texture_slices: [],
@@ -4290,7 +4324,11 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
 
 ///|
 pub fn render2d_clear_overlay_sprites(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.val.extra_sprites.clear() }) |> ignore
+  render_state_update(world, fn(rs) {
+    rs.val.extra_sprites.clear()
+    rs.val.extra_sprite_slice_batches.clear()
+  })
+  |> ignore
 }
 
 ///|
@@ -4365,6 +4403,26 @@ pub(all) struct OverlaySpriteUvScissor {
 }
 
 ///|
+pub(all) struct OverlaySpriteUvScissorSlice {
+  center : @math.Vec2
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+}
+
+///|
+pub(all) struct OverlaySpriteUvScissorSlices {
+  texture : @asset.Handle[@asset.Image]
+  rotation : Float
+  draw_scale : @math.Vec2
+  z : Float
+  color : Color
+  layers : RenderLayers
+  scissor : @math.Rect?
+  target_camera : @core.Entity?
+  slices : Array[OverlaySpriteUvScissorSlice]
+}
+
+///|
 pub fn render2d_push_sprite_uv_scissor_batch(
   world : @ecs.World,
   sprites : Array[OverlaySpriteUvScissor],
@@ -4409,8 +4467,62 @@ pub fn render2d_push_sprite_uv_scissor_batch(
 }
 
 ///|
+pub fn render2d_push_sprite_uv_scissor_slices_batch(
+  world : @ecs.World,
+  sprite_batches : Array[OverlaySpriteUvScissorSlices],
+) -> Unit {
+  if sprite_batches.length() == 0 {
+    return
+  }
+  render_state_update(world, fn(rs) {
+    for batch in sprite_batches {
+      if batch.slices.length() == 0 {
+        continue
+      }
+      let slices : Array[SpriteSliceUvPayload] = []
+      for slice in batch.slices {
+        slices.push(SpriteSliceUvPayload::{
+          center: slice.center,
+          uv_min: slice.uv_min,
+          uv_max: slice.uv_max,
+        })
+      }
+      let payload = SpriteSliceBatchDrawPayload::{
+        rotation: batch.rotation,
+        draw_scale: batch.draw_scale,
+        z: batch.z,
+        color: batch.color,
+        texture: batch.texture,
+        layers: batch.layers,
+        scissor: batch.scissor,
+        slices,
+      }
+      match batch.target_camera {
+        Some(camera_entity) =>
+          rs.val.extra_ui_sprite_slice_batches.push(ExtractedUiSpriteSliceBatch::{
+            entity: phase_entity_ref_placeholder(),
+            extracted_camera_entity: render2d_ui_overlay_target_camera(
+              Some(camera_entity),
+            ),
+            payload,
+          })
+        None =>
+          rs.val.extra_sprite_slice_batches.push(ExtractedSpriteSliceBatch::{
+            entity: phase_entity_ref_placeholder(),
+            payload,
+          })
+      }
+    }
+  })
+  |> ignore
+}
+
+///|
 pub fn render2d_clear_overlay_ui_sprites(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.val.extra_ui_sprites.clear() })
+  render_state_update(world, fn(rs) {
+    rs.val.extra_ui_sprites.clear()
+    rs.val.extra_ui_sprite_slice_batches.clear()
+  })
   |> ignore
 }
 
@@ -5236,6 +5348,9 @@ fn render2d_extract_ui_only_cameras_ecs(
   for item in rs.val.extra_ui_sprites {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
+  for item in rs.val.extra_ui_sprite_slice_batches {
+    render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
+  }
   for item in rs.val.extra_ui_rects {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
@@ -5562,7 +5677,9 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         material_runtime_registry,
         rs.val.sprites,
         rs.val.extra_sprites,
+        rs.val.extra_sprite_slice_batches,
         rs.val.extra_ui_sprites,
+        rs.val.extra_ui_sprite_slice_batches,
         rs.val.extra_ui_rects,
         rs.val.extra_ui_box_shadows,
         rs.val.extra_ui_texture_slices,
@@ -5710,6 +5827,35 @@ fn scene_cull_radius_from_sprite_scale(scale : @math.Vec2) -> Float {
   let sy = scene_cull_abs_float(scale.y)
   let edge = if sx > sy { sx } else { sy }
   edge * 64.0F + 8.0F
+}
+
+///|
+fn scene_cull_batch_center(
+  slices : Array[SpriteSliceUvPayload],
+) -> @math.Vec2? {
+  if slices.length() == 0 {
+    return None
+  }
+  let mut min_x = slices[0].center.x
+  let mut max_x = slices[0].center.x
+  let mut min_y = slices[0].center.y
+  let mut max_y = slices[0].center.y
+  for i in 1..<slices.length() {
+    let center = slices[i].center
+    if center.x < min_x {
+      min_x = center.x
+    }
+    if center.x > max_x {
+      max_x = center.x
+    }
+    if center.y < min_y {
+      min_y = center.y
+    }
+    if center.y > max_y {
+      max_y = center.y
+    }
+  }
+  Some(@math.Vec2::new((min_x + max_x) * 0.5F, (min_y + max_y) * 0.5F))
 }
 
 ///|
@@ -5942,7 +6088,9 @@ fn append_registered_material2d_mesh_draw_items(
 fn[M] draw_material2d_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   extra_ui_sprites : Array[ExtractedUiSprite],
+  extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -5955,14 +6103,25 @@ fn[M] draw_material2d_items_for_layers(
   let items : Array[DrawItem] = []
   for
     item in draw_material2d_scene_items_for_layers(
-      sprites, extra_sprites, meshes, prepared_materials, material_instances, layers,
+      sprites,
+      extra_sprites,
+      extra_sprite_slice_batches,
+      meshes,
+      prepared_materials,
+      material_instances,
+      layers,
     ) {
     items.push(item)
   }
   for
     item in draw_ui_overlay_items_for_layers(
-      extra_ui_sprites, extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices,
-      camera_entity, layers,
+      extra_ui_sprites,
+      extra_ui_sprite_slice_batches,
+      extra_ui_rects,
+      extra_ui_box_shadows,
+      extra_ui_texture_slices,
+      camera_entity,
+      layers,
     ) {
     items.push(item)
   }
@@ -5973,7 +6132,9 @@ fn[M] draw_material2d_items_for_layers(
 fn draw_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   extra_ui_sprites : Array[ExtractedUiSprite],
+  extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -5984,8 +6145,18 @@ fn draw_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_items_for_layers(
-    sprites, extra_sprites, extra_ui_sprites, extra_ui_rects, extra_ui_box_shadows,
-    extra_ui_texture_slices, meshes, prepared_materials, material_instances, camera_entity,
+    sprites,
+    extra_sprites,
+    extra_sprite_slice_batches,
+    extra_ui_sprites,
+    extra_ui_sprite_slice_batches,
+    extra_ui_rects,
+    extra_ui_box_shadows,
+    extra_ui_texture_slices,
+    meshes,
+    prepared_materials,
+    material_instances,
+    camera_entity,
     layers,
   )
 }
@@ -6034,10 +6205,12 @@ fn draw_kind_opaque_batch_group(kind : DrawKind) -> Int {
     Mesh(_) => 0
     SpriteMain(_) => 1
     SpriteExtra(_) => 2
-    UiSpriteExtra(_) => 3
-    UiRectExtra(_) => 4
-    UiBoxShadowExtra(_) => 5
-    UiTextureSliceExtra(_) => 6
+    SpriteSliceBatchExtra(_) => 3
+    UiSpriteExtra(_) => 4
+    UiSpriteSliceBatchExtra(_) => 5
+    UiRectExtra(_) => 6
+    UiBoxShadowExtra(_) => 7
+    UiTextureSliceExtra(_) => 8
   }
 }
 
@@ -6087,6 +6260,7 @@ fn scene_phase_draw_items_concat(
 fn[M] draw_material2d_scene_phase_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
@@ -6166,6 +6340,35 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
     })
     tie = tie + 1
   }
+  for i in 0..<extra_sprite_slice_batches.length() {
+    let batch = extra_sprite_slice_batches[i]
+    if !batch.payload.layers.matches(layers) {
+      continue
+    }
+    if scene_cull_context is Some(context) {
+      let center = scene_cull_batch_center(batch.payload.slices)
+      if center is Some(center) {
+        if !scene_item_visible_in_context(
+            context,
+            center.x,
+            center.y,
+            scene_cull_radius_from_sprite_scale(batch.payload.draw_scale),
+          ) {
+          continue
+        }
+      }
+    }
+    transparent_items.push(DrawItem::{
+      kind: SpriteSliceBatchExtra(i),
+      entity: batch.entity,
+      z: batch.payload.z,
+      phase: 1,
+      tie,
+      material_handle_id: -1,
+      material_runtime_index: -1,
+    })
+    tie = tie + 1
+  }
   ignore(sort_opaque_scene_draw_items(opaque_items))
   ignore(sort_transparent_scene_draw_items(transparent_items))
   ScenePhaseDrawItems::{ opaque_items, transparent_items }
@@ -6175,6 +6378,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
 fn[M] draw_material2d_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
@@ -6184,6 +6388,7 @@ fn[M] draw_material2d_scene_items_for_layers(
   let phase_items = draw_material2d_scene_phase_items_for_layers(
     sprites,
     extra_sprites,
+    extra_sprite_slice_batches,
     meshes,
     prepared_materials,
     material_instances,
@@ -6197,6 +6402,7 @@ fn[M] draw_material2d_scene_items_for_layers(
 fn draw_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
   material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
@@ -6206,6 +6412,7 @@ fn draw_scene_items_for_layers(
   draw_material2d_scene_items_for_layers(
     sprites,
     extra_sprites,
+    extra_sprite_slice_batches,
     meshes,
     prepared_materials,
     material_instances,
@@ -6220,6 +6427,7 @@ fn draw_registered_scene_phase_items_for_layers(
   registry : Material2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -6295,6 +6503,35 @@ fn draw_registered_scene_phase_items_for_layers(
     })
     tie = tie + 1
   }
+  for i in 0..<extra_sprite_slice_batches.length() {
+    let batch = extra_sprite_slice_batches[i]
+    if !batch.payload.layers.matches(layers) {
+      continue
+    }
+    if scene_cull_context is Some(context) {
+      let center = scene_cull_batch_center(batch.payload.slices)
+      if center is Some(center) {
+        if !scene_item_visible_in_context(
+            context,
+            center.x,
+            center.y,
+            scene_cull_radius_from_sprite_scale(batch.payload.draw_scale),
+          ) {
+          continue
+        }
+      }
+    }
+    transparent_items.push(DrawItem::{
+      kind: SpriteSliceBatchExtra(i),
+      entity: batch.entity,
+      z: batch.payload.z,
+      phase: 1,
+      tie,
+      material_handle_id: -1,
+      material_runtime_index: -1,
+    })
+    tie = tie + 1
+  }
   ignore(sort_opaque_scene_draw_items(opaque_items))
   ignore(sort_transparent_scene_draw_items(transparent_items))
   ScenePhaseDrawItems::{ opaque_items, transparent_items }
@@ -6332,7 +6569,9 @@ fn build_camera_draw_items(
   registry : Material2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
+  extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   extra_ui_sprites : Array[ExtractedUiSprite],
+  extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -6348,6 +6587,7 @@ fn build_camera_draw_items(
     draw_material2d_scene_phase_items_for_layers(
       sprites,
       extra_sprites,
+      extra_sprite_slice_batches,
       meshes,
       prepared_materials,
       material_instances,
@@ -6360,14 +6600,20 @@ fn build_camera_draw_items(
       registry,
       sprites,
       extra_sprites,
+      extra_sprite_slice_batches,
       meshes,
       layers,
       scene_cull_context~,
     )
   }
   let ui_overlay_items = draw_ui_overlay_items_for_layers(
-    extra_ui_sprites, extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices,
-    camera_entity, layers,
+    extra_ui_sprites,
+    extra_ui_sprite_slice_batches,
+    extra_ui_rects,
+    extra_ui_box_shadows,
+    extra_ui_texture_slices,
+    camera_entity,
+    layers,
   )
   QueuedCameraDrawItems::{
     camera_entity,
@@ -6405,6 +6651,7 @@ fn queued_camera_draw_items_at_index(
 ///|
 fn draw_ui_overlay_items_for_layers(
   extra_ui_sprites : Array[ExtractedUiSprite],
+  extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -6426,6 +6673,26 @@ fn draw_ui_overlay_items_for_layers(
       kind: UiSpriteExtra(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
+      phase: 2,
+      tie,
+      material_handle_id: -1,
+      material_runtime_index: -1,
+    })
+    tie = tie + 1
+  }
+  for i in 0..<extra_ui_sprite_slice_batches.length() {
+    let sprite = extra_ui_sprite_slice_batches[i]
+    if !sprite.payload.layers.matches(layers) ||
+      !render2d_ui_overlay_matches_camera(
+        sprite.extracted_camera_entity,
+        camera_entity,
+      ) {
+      continue
+    }
+    items.push(DrawItem::{
+      kind: UiSpriteSliceBatchExtra(i),
+      entity: sprite.entity,
+      z: sprite.payload.z,
       phase: 2,
       tie,
       material_handle_id: -1,
@@ -6650,7 +6917,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
     ),
   ]
   let extra : Array[ExtractedSprite] = []
-  let extra_ui : Array[ExtractedUiRect] = []
+  let extra_ui_sprites : Array[ExtractedUiSprite] = []
+  let extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch] = []
+  let extra_ui_rects : Array[ExtractedUiRect] = []
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = [
@@ -6673,7 +6942,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
     sprites,
     extra,
     [],
-    extra_ui,
+    extra_ui_sprites,
+    extra_ui_sprite_slice_batches,
+    extra_ui_rects,
     extra_shadow,
     extra_slices,
     meshes,
@@ -6697,7 +6968,9 @@ test "render2d: UI overlay draw items route by target camera" {
   let camera_b = @core.Entity::new(11, 0)
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
-  let extra_ui : Array[ExtractedUiRect] = [
+  let extra_ui_sprites : Array[ExtractedUiSprite] = []
+  let extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch] = []
+  let extra_ui_rects : Array[ExtractedUiRect] = [
     extracted_ui_rect_item(
       @core.Entity::new(100, 0),
       camera_a,
@@ -6738,7 +7011,9 @@ test "render2d: UI overlay draw items route by target camera" {
     sprites,
     extra,
     [],
-    extra_ui,
+    extra_ui_sprites,
+    extra_ui_sprite_slice_batches,
+    extra_ui_rects,
     extra_shadow,
     extra_slices,
     meshes,
@@ -6761,11 +7036,13 @@ test "render2d: scene draw items exclude UI overlays" {
     [],
     [],
     [],
+    [],
     prepared_materials,
     material_instances,
     layers,
   )
   let ui_items = draw_ui_overlay_items_for_layers(
+    [],
     [],
     [
       extracted_ui_rect_item(
@@ -6880,6 +7157,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     rs.val.prepared_camera_indices.push(0)
     rs.val.prepared_camera_indices.push(1)
     rs.val.extra_ui_sprites.clear()
+    rs.val.extra_ui_sprite_slice_batches.clear()
     rs.val.extra_ui_rects.clear()
     rs.val.extra_ui_rects.push(
       extracted_ui_rect_item(
@@ -6938,6 +7216,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
 
   render_state_update(world, fn(rs) {
     rs.val.extra_ui_sprites.clear()
+    rs.val.extra_ui_sprite_slice_batches.clear()
     rs.val.extra_ui_rects.clear()
     rs.val.extra_ui_rects.push(
       extracted_ui_rect_item(
@@ -6996,7 +7275,9 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   ])
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
-  let extra_ui : Array[ExtractedUiRect] = []
+  let extra_ui_sprites : Array[ExtractedUiSprite] = []
+  let extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch] = []
+  let extra_ui_rects : Array[ExtractedUiRect] = []
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = [
@@ -7021,7 +7302,9 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
     sprites,
     extra,
     [],
-    extra_ui,
+    extra_ui_sprites,
+    extra_ui_sprite_slice_batches,
+    extra_ui_rects,
     extra_shadow,
     extra_slices,
     meshes,
@@ -7078,6 +7361,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let items = draw_scene_items_for_layers(
     sprites,
     [],
+    [],
     meshes,
     prepared_materials,
     material_instances,
@@ -7114,7 +7398,9 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   ])
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
-  let extra_ui : Array[ExtractedUiRect] = []
+  let extra_ui_sprites : Array[ExtractedUiSprite] = []
+  let extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch] = []
+  let extra_ui_rects : Array[ExtractedUiRect] = []
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = [
@@ -7139,7 +7425,9 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
     sprites,
     extra,
     [],
-    extra_ui,
+    extra_ui_sprites,
+    extra_ui_sprite_slice_batches,
+    extra_ui_rects,
     extra_shadow,
     extra_slices,
     meshes,
@@ -7413,7 +7701,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       render2d_diagnostic_prepared_camera_count_ref.val = 0
       render2d_diagnostic_queued_draw_item_count_ref.val = 0
       rs.val.extra_sprites.clear()
+      rs.val.extra_sprite_slice_batches.clear()
       rs.val.extra_ui_sprites.clear()
+      rs.val.extra_ui_sprite_slice_batches.clear()
       rs.val.extra_ui_rects.clear()
       rs.val.extra_ui_box_shadows.clear()
       rs.val.extra_ui_texture_slices.clear()
@@ -7421,7 +7711,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     }
     let sprites = rs.val.sprites
     let extra_sprites = rs.val.extra_sprites
+    let extra_sprite_slice_batches = rs.val.extra_sprite_slice_batches
     let extra_ui_sprites = rs.val.extra_ui_sprites
+    let extra_ui_sprite_slice_batches = rs.val.extra_ui_sprite_slice_batches
     let extra_ui_rects = rs.val.extra_ui_rects
     let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
     let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
@@ -7620,7 +7912,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             material_runtime_registry,
             sprites,
             extra_sprites,
+            extra_sprite_slice_batches,
             extra_ui_sprites,
+            extra_ui_sprite_slice_batches,
             extra_ui_rects,
             extra_ui_box_shadows,
             extra_ui_texture_slices,
@@ -7733,6 +8027,28 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 uv_max_y=sprite.uv_max.y,
               )
             }
+            SpriteSliceBatchExtra(i) => {
+              let batch = extra_sprite_slice_batches[i].payload
+              apply_scissor(batch.scissor)
+              for slice in batch.slices {
+                @render.host_gpu_draw_sprite_uv(
+                  texture_id=batch.texture.id(),
+                  x=slice.center.x,
+                  y=slice.center.y,
+                  rotation=batch.rotation,
+                  scale_x=batch.draw_scale.x,
+                  scale_y=batch.draw_scale.y,
+                  color_r=batch.color.r,
+                  color_g=batch.color.g,
+                  color_b=batch.color.b,
+                  color_a=batch.color.a,
+                  uv_min_x=slice.uv_min.x,
+                  uv_min_y=slice.uv_min.y,
+                  uv_max_x=slice.uv_max.x,
+                  uv_max_y=slice.uv_max.y,
+                )
+              }
+            }
             UiSpriteExtra(i) => {
               let sprite = extra_ui_sprites[i].payload
               apply_scissor(sprite.scissor)
@@ -7757,6 +8073,28 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 uv_max_x=sprite.uv_max.x,
                 uv_max_y=sprite.uv_max.y,
               )
+            }
+            UiSpriteSliceBatchExtra(i) => {
+              let batch = extra_ui_sprite_slice_batches[i].payload
+              apply_scissor(batch.scissor)
+              for slice in batch.slices {
+                @render.host_gpu_draw_sprite_uv(
+                  texture_id=batch.texture.id(),
+                  x=slice.center.x,
+                  y=slice.center.y,
+                  rotation=batch.rotation,
+                  scale_x=batch.draw_scale.x,
+                  scale_y=batch.draw_scale.y,
+                  color_r=batch.color.r,
+                  color_g=batch.color.g,
+                  color_b=batch.color.b,
+                  color_a=batch.color.a,
+                  uv_min_x=slice.uv_min.x,
+                  uv_min_y=slice.uv_min.y,
+                  uv_max_x=slice.uv_max.x,
+                  uv_max_y=slice.uv_max.y,
+                )
+              }
             }
             Mesh(i) => {
               apply_scissor(None)
@@ -7900,19 +8238,20 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         }
       }
 
-      fn ui_overlay_split_draw_items(
-        items : Array[DrawItem],
-      ) -> (Array[DrawItem], Array[DrawItem]) {
-        let non_sprite_items : Array[DrawItem] = []
-        let sprite_items : Array[DrawItem] = []
-        for item in items {
-          match item.kind {
+        fn ui_overlay_split_draw_items(
+          items : Array[DrawItem],
+        ) -> (Array[DrawItem], Array[DrawItem]) {
+          let non_sprite_items : Array[DrawItem] = []
+          let sprite_items : Array[DrawItem] = []
+          for item in items {
+            match item.kind {
             UiSpriteExtra(_) => sprite_items.push(item)
+            UiSpriteSliceBatchExtra(_) => sprite_items.push(item)
             _ => non_sprite_items.push(item)
+            }
           }
+          (non_sprite_items, sprite_items)
         }
-        (non_sprite_items, sprite_items)
-      }
 
       fn draw_ui_overlay_passes(items : Array[DrawItem]) -> Unit {
         let (non_sprite_items, sprite_items) = ui_overlay_split_draw_items(
@@ -8139,7 +8478,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     rs.val.queued_draw_item_counts.clear()
     rs.val.queued_camera_draw_items.clear()
     rs.val.extra_sprites.clear()
+    rs.val.extra_sprite_slice_batches.clear()
     rs.val.extra_ui_sprites.clear()
+    rs.val.extra_ui_sprite_slice_batches.clear()
     rs.val.extra_ui_rects.clear()
     rs.val.extra_ui_box_shadows.clear()
     rs.val.extra_ui_texture_slices.clear()
@@ -8366,26 +8707,9 @@ pub fn render2d_debug_log_primary_camera(world : @ecs.World) -> Unit {
       if camera.camera.viewport is Some(viewport) {
         let pos = viewport.physical_position
         let size = viewport.physical_size
-        viewport_text = "pos=(" +
-          pos.x.to_string() +
-          "," +
-          pos.y.to_string() +
-          ") size=(" +
-          size.x.to_string() +
-          "," +
-          size.y.to_string() +
-          ")"
+        viewport_text = "pos=(\{pos.x.to_string()},\{pos.y.to_string()}) size=(\{size.x.to_string()},\{size.y.to_string()})"
       }
-      let message = "camera_debug target=(" +
-        target.x.to_string() +
-        "," +
-        target.y.to_string() +
-        ") scale=" +
-        scale.to_string() +
-        " proj_scale=" +
-        proj_scale.to_string() +
-        " viewport=" +
-        viewport_text
+      let message = "camera_debug target=(\{target.x.to_string()},\{target.y.to_string()}) scale=\{scale.to_string()} proj_scale=\{proj_scale.to_string()} viewport=\{viewport_text}"
       @window.host_debug_string(value=message)
       return
     }

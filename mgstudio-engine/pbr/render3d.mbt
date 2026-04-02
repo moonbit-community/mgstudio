@@ -775,6 +775,16 @@ pub fn register_render3d_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
+    ecs_key_mesh3d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_mesh3d,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
     ecs_key_camera3d,
     @sprite.ecs_key_camera,
     fn() { @sprite.Camera::default() },
@@ -964,6 +974,23 @@ priv struct Render3dCameraOrderEntry {
 }
 
 ///|
+priv struct PreparedSkinBinding3d {
+  entity_generation : Int
+  key_hi : Int
+  key_lo : Int
+}
+
+///|
+priv struct MeshPreprocessStatic3d {
+  first_vertex_index : Int
+  first_index_index : Int
+  index_count : Int
+  has_local_aabb : Bool
+  aabb_center : @math.Vec3
+  aabb_half_extents : @math.Vec3
+}
+
+///|
 priv struct GpuPreprocessPrequeuedMeshItem3d {
   entity : PhaseEntityRef3d
   indexed : Bool
@@ -1110,14 +1137,22 @@ let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
 ///|
 priv struct Render3dPhaseState {
   mut prepared_camera_order : Array[@core.Entity]
+  mut camera_order_needs_refresh : Bool
+  mut last_camera3d_count : Int
   gpu_preprocess_camera_queues : Array[GpuPreprocessCameraQueueEntry3d]
+  mesh_upload_cache : Map[Int, Int]
+  prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
 }
 
 ///|
 fn Render3dPhaseState::new() -> Render3dPhaseState {
   Render3dPhaseState::{
     prepared_camera_order: [],
+    camera_order_needs_refresh: true,
+    last_camera3d_count: 0,
     gpu_preprocess_camera_queues: [],
+    mesh_upload_cache: {},
+    prepared_skin_bindings: {},
   }
 }
 
@@ -3619,10 +3654,17 @@ fn render3d_compose_transform(
 ///|
 priv struct Render3dWorldTransformCache {
   mut frame_stamp : Int
+  mut captured_frame_stamp : Int
   transforms : Array[@transform.Transform?]
   generations : Array[Int]
   visiting : Array[Bool]
   stamps : Array[Int]
+  local_transforms : Array[@transform.Transform?]
+  local_generations : Array[Int]
+  local_stamps : Array[Int]
+  parent_entities : Array[@core.Entity?]
+  parent_generations : Array[Int]
+  parent_stamps : Array[Int]
   skinning_matrices : Array[Array[Float]?]
   skinning_generations : Array[Int]
   skinning_stamps : Array[Int]
@@ -3632,10 +3674,17 @@ priv struct Render3dWorldTransformCache {
 fn render3d_world_transform_cache_new() -> Render3dWorldTransformCache {
   {
     frame_stamp: 0,
+    captured_frame_stamp: 0,
     transforms: [],
     generations: [],
     visiting: [],
     stamps: [],
+    local_transforms: [],
+    local_generations: [],
+    local_stamps: [],
+    parent_entities: [],
+    parent_generations: [],
+    parent_stamps: [],
     skinning_matrices: [],
     skinning_generations: [],
     skinning_stamps: [],
@@ -3649,7 +3698,13 @@ let render3d_world_transform_cache_shared_ref : Ref[Render3dWorldTransformCache]
 
 ///|
 fn render3d_world_transform_cache_ref() -> Ref[Render3dWorldTransformCache] {
-  let cache_ref = render3d_world_transform_cache_shared_ref
+  render3d_world_transform_cache_shared_ref
+}
+
+///|
+fn render3d_world_transform_cache_begin_frame(
+  cache_ref : Ref[Render3dWorldTransformCache],
+) -> Unit {
   cache_ref.val.frame_stamp = cache_ref.val.frame_stamp + 1
   if cache_ref.val.frame_stamp <= 0 {
     cache_ref.val.frame_stamp = 1
@@ -3659,8 +3714,14 @@ fn render3d_world_transform_cache_ref() -> Ref[Render3dWorldTransformCache] {
     for i in 0..<cache_ref.val.skinning_stamps.length() {
       cache_ref.val.skinning_stamps[i] = 0
     }
+    for i in 0..<cache_ref.val.local_stamps.length() {
+      cache_ref.val.local_stamps[i] = 0
+    }
+    for i in 0..<cache_ref.val.parent_stamps.length() {
+      cache_ref.val.parent_stamps[i] = 0
+    }
   }
-  cache_ref
+  cache_ref.val.captured_frame_stamp = 0
 }
 
 ///|
@@ -3677,6 +3738,12 @@ fn render3d_world_transform_cache_ensure_entity_slot(
     cache_ref.val.generations.push(0)
     cache_ref.val.visiting.push(false)
     cache_ref.val.stamps.push(0)
+    cache_ref.val.local_transforms.push(None)
+    cache_ref.val.local_generations.push(0)
+    cache_ref.val.local_stamps.push(0)
+    cache_ref.val.parent_entities.push(None)
+    cache_ref.val.parent_generations.push(0)
+    cache_ref.val.parent_stamps.push(0)
     cache_ref.val.skinning_matrices.push(None)
     cache_ref.val.skinning_generations.push(0)
     cache_ref.val.skinning_stamps.push(0)
@@ -3684,14 +3751,99 @@ fn render3d_world_transform_cache_ensure_entity_slot(
 }
 
 ///|
-fn render3d_entity_local_transform(
+fn render3d_world_transform_cache_capture_frame(
+  world : @ecs.World,
+  cache_ref : Ref[Render3dWorldTransformCache],
+) -> Unit {
+  let frame_stamp = cache_ref.val.frame_stamp
+  if frame_stamp <= 0 {
+    return
+  }
+  if cache_ref.val.captured_frame_stamp == frame_stamp {
+    return
+  }
+  let transform_query : @ecs.Query[
+    @ecs.Comp[@transform.Transform],
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! transform_query.view(fn(entity, transform_comp) {
+    if entity.id < 0 {
+      return
+    }
+    render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
+    cache_ref.val.local_transforms[entity.id] = Some(transform_comp.value())
+    cache_ref.val.local_generations[entity.id] = entity.generation
+    cache_ref.val.local_stamps[entity.id] = frame_stamp
+  })
+  let parent_query : @ecs.Query[
+    @ecs.Comp[@hierarchy.Parent],
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! parent_query.view(fn(entity, parent_comp) {
+    if entity.id < 0 {
+      return
+    }
+    render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
+    cache_ref.val.parent_entities[entity.id] = Some(parent_comp.value().entity())
+    cache_ref.val.parent_generations[entity.id] = entity.generation
+    cache_ref.val.parent_stamps[entity.id] = frame_stamp
+  })
+  cache_ref.val.captured_frame_stamp = frame_stamp
+}
+
+///|
+fn render3d_entity_local_transform_cached(
   world : @ecs.World,
   entity : @core.Entity,
+  cache_ref : Ref[Render3dWorldTransformCache],
 ) -> @transform.Transform {
-  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+  if entity.id < 0 {
+    return @transform.Transform::identity()
+  }
+  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
+  let frame_stamp = cache_ref.val.frame_stamp
+  if cache_ref.val.local_stamps[entity.id] == frame_stamp &&
+    cache_ref.val.local_generations[entity.id] == entity.generation {
+    if cache_ref.val.local_transforms[entity.id] is Some(cached) {
+      return cached
+    }
+    return @transform.Transform::identity()
+  }
+  let local_transform = match
+    (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
     Some(value) => value
     None => @transform.Transform::identity()
   }
+  cache_ref.val.local_transforms[entity.id] = Some(local_transform)
+  cache_ref.val.local_generations[entity.id] = entity.generation
+  cache_ref.val.local_stamps[entity.id] = frame_stamp
+  local_transform
+}
+
+///|
+fn render3d_entity_parent_cached(
+  world : @ecs.World,
+  entity : @core.Entity,
+  cache_ref : Ref[Render3dWorldTransformCache],
+) -> @core.Entity? {
+  if entity.id < 0 {
+    return None
+  }
+  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
+  let frame_stamp = cache_ref.val.frame_stamp
+  if cache_ref.val.parent_stamps[entity.id] == frame_stamp &&
+    cache_ref.val.parent_generations[entity.id] == entity.generation {
+    return cache_ref.val.parent_entities[entity.id]
+  }
+  let parent_entity = match
+    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
+    Some(parent) => Some(parent.entity())
+    None => None
+  }
+  cache_ref.val.parent_entities[entity.id] = parent_entity
+  cache_ref.val.parent_generations[entity.id] = entity.generation
+  cache_ref.val.parent_stamps[entity.id] = frame_stamp
+  parent_entity
 }
 
 ///|
@@ -3713,17 +3865,20 @@ fn render3d_entity_world_transform_cached(
   }
   if cache_ref.val.stamps[entity.id] == frame_stamp &&
     cache_ref.val.visiting[entity.id] {
-    return render3d_entity_local_transform(world, entity)
+    return render3d_entity_local_transform_cached(world, entity, cache_ref)
   }
   cache_ref.val.stamps[entity.id] = frame_stamp
   cache_ref.val.visiting[entity.id] = true
-  let local_transform = render3d_entity_local_transform(world, entity)
-  let composed = match
-    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
-    Some(parent) => {
+  let local_transform = render3d_entity_local_transform_cached(
+    world,
+    entity,
+    cache_ref,
+  )
+  let composed = match render3d_entity_parent_cached(world, entity, cache_ref) {
+    Some(parent_entity) => {
       let parent_transform = render3d_entity_world_transform_cached(
         world,
-        parent.entity(),
+        parent_entity,
         cache_ref,
       )
       render3d_compose_transform(parent_transform, local_transform)
@@ -3761,12 +3916,14 @@ fn render3d_entity_world_transform_cached_with_local(
   }
   cache_ref.val.stamps[entity.id] = frame_stamp
   cache_ref.val.visiting[entity.id] = true
-  let composed = match
-    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
-    Some(parent) => {
+  cache_ref.val.local_transforms[entity.id] = Some(local_transform)
+  cache_ref.val.local_generations[entity.id] = entity.generation
+  cache_ref.val.local_stamps[entity.id] = frame_stamp
+  let composed = match render3d_entity_parent_cached(world, entity, cache_ref) {
+    Some(parent_entity) => {
       let parent_transform = render3d_entity_world_transform_cached(
         world,
-        parent.entity(),
+        parent_entity,
         cache_ref,
       )
       render3d_compose_transform(parent_transform, local_transform)
@@ -3778,6 +3935,21 @@ fn render3d_entity_world_transform_cached_with_local(
   cache_ref.val.generations[entity.id] = entity.generation
   cache_ref.val.stamps[entity.id] = frame_stamp
   composed
+}
+
+///|
+fn render3d_entity_world_transform_from_components(
+  world : @ecs.World,
+  entity : @core.Entity,
+  local_transform : @transform.Transform,
+  cache_ref : Ref[Render3dWorldTransformCache],
+) -> @transform.Transform {
+  render3d_entity_world_transform_cached_with_local(
+    world,
+    entity,
+    local_transform,
+    cache_ref,
+  )
 }
 
 ///|
@@ -3794,6 +3966,23 @@ fn render3d_entity_world_transform(
 
 ///|
 const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
+
+///|
+fn render3d_entity_global_or_cached_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global) => global.to_transform_approx()
+    None =>
+      render3d_entity_world_transform_cached(
+        world,
+        entity,
+        world_transform_cache_ref,
+      )
+  }
+}
 
 ///|
 fn render3d_extract_skinning_matrices(
@@ -3835,8 +4024,10 @@ fn render3d_extract_skinning_matrices(
       values
     }
   }
-  let mesh_world = render3d_entity_world_transform_cached(
-    world, entity, world_transform_cache_ref,
+  let mesh_world = render3d_entity_global_or_cached_transform(
+    world,
+    entity,
+    world_transform_cache_ref,
   )
   let mesh_world_inverse = @mesh.SkinningMat4::inverse_transform(mesh_world)
   let capped_joint_count = if joints.length() < RENDER3D_MAX_SKINNING_JOINTS {
@@ -3846,9 +4037,10 @@ fn render3d_extract_skinning_matrices(
   }
   let identity_inverse_bindpose = @mesh.SkinningMat4::identity()
   for joint_index in 0..<capped_joint_count {
-    let joint_world = render3d_entity_world_transform_cached(
+    let joint_entity = joints[joint_index]
+    let joint_world = render3d_entity_global_or_cached_transform(
       world,
-      joints[joint_index],
+      joint_entity,
       world_transform_cache_ref,
     )
     let inverse_bindpose = if joint_index < inverse_bindposes.length() {
@@ -4445,7 +4637,7 @@ fn render3d_write_batched_instance_buffers(
 ///|
 priv struct GpuPreprocessMeshCandidate3d {
   entity : PhaseEntityRef3d
-  mesh_id : Int
+  mesh_ready : Bool
   indexed : Bool
   layers : @sprite.RenderLayers
   visibility_range : @visibility.VisibilityRange?
@@ -4573,10 +4765,21 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
       Some(value) => value
       None => @sprite.RenderLayers::default()
     }
+    let mesh_asset = @sprite.render_mesh_asset_get(mesh3d.mesh)
+    let mesh_ready = mesh_asset is Some(_)
+    let indexed = match mesh_asset {
+      Some(mesh_asset_value) =>
+        match mesh_asset_value.geometry {
+          @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+            geometry3d.indices is Some(_)
+          _ => false
+        }
+      None => false
+    }
     candidates.push(GpuPreprocessMeshCandidate3d::{
       entity: phase_entity_ref3d_for_main(entity),
-      mesh_id: @sprite_render.render2d_upload_mesh_handle(mesh3d.mesh),
-      indexed: render3d_mesh_handle_is_indexed(mesh3d.mesh),
+      mesh_ready,
+      indexed,
       layers,
       visibility_range,
       aabb_center_world,
@@ -4596,7 +4799,7 @@ fn render3d_collect_gpu_preprocess_camera_queue_items(
 ) -> Array[GpuPreprocessPrequeuedMeshItem3d] {
   let items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
   for candidate in mesh_candidates {
-    if candidate.mesh_id <= 0 {
+    if !candidate.mesh_ready {
       continue
     }
     if !candidate.layers.matches(layers) {
@@ -5416,40 +5619,22 @@ fn render3d_host_preprocess_previous_view(
 fn render3d_host_preprocess_mesh_culling_data(
   draw_item : MeshPhaseItem3d,
   meshes : Array[ExtractedMesh3d],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> @render.HostMesh3dPreprocessMeshCullingData {
-  if draw_item.extracted_index < 0 ||
-    draw_item.extracted_index >= meshes.length() {
-    return @render.HostMesh3dPreprocessMeshCullingData::{
-      aabb_center_x: 0.0F,
-      aabb_center_y: 0.0F,
-      aabb_center_z: 0.0F,
-      aabb_half_extents_x: 0.0F,
-      aabb_half_extents_y: 0.0F,
-      aabb_half_extents_z: 0.0F,
-    }
-  }
-  let mesh = meshes[draw_item.extracted_index].payload
-  match render3d_mesh_handle_local_aabb(mesh.mesh_handle) {
-    Some((min_corner, max_corner)) => {
-      let center = @math.Vec3::new(
-        (min_corner.x + max_corner.x) * 0.5F,
-        (min_corner.y + max_corner.y) * 0.5F,
-        (min_corner.z + max_corner.z) * 0.5F,
-      )
-      let half_extents = @math.Vec3::new(
-        (max_corner.x - min_corner.x) * 0.5F,
-        (max_corner.y - min_corner.y) * 0.5F,
-        (max_corner.z - min_corner.z) * 0.5F,
-      )
+  match render3d_mesh_preprocess_static_for_draw_item(
+      draw_item,
+      meshes,
+      mesh_preprocess_static_cache,
+    ) {
+    Some(metadata) =>
       @render.HostMesh3dPreprocessMeshCullingData::{
-        aabb_center_x: center.x,
-        aabb_center_y: center.y,
-        aabb_center_z: center.z,
-        aabb_half_extents_x: half_extents.x,
-        aabb_half_extents_y: half_extents.y,
-        aabb_half_extents_z: half_extents.z,
+        aabb_center_x: metadata.aabb_center.x,
+        aabb_center_y: metadata.aabb_center.y,
+        aabb_center_z: metadata.aabb_center.z,
+        aabb_half_extents_x: metadata.aabb_half_extents.x,
+        aabb_half_extents_y: metadata.aabb_half_extents.y,
+        aabb_half_extents_z: metadata.aabb_half_extents.z,
       }
-    }
     None =>
       @render.HostMesh3dPreprocessMeshCullingData::{
         aabb_center_x: 0.0F,
@@ -5522,6 +5707,86 @@ fn render3d_mesh_handle_local_aabb(
 }
 
 ///|
+fn render3d_mesh_preprocess_static(
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> MeshPreprocessStatic3d {
+  let (first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
+    mesh_handle,
+  )
+  let (has_local_aabb, aabb_center, aabb_half_extents) = match
+    render3d_mesh_handle_local_aabb(mesh_handle) {
+    Some((min_corner, max_corner)) => (
+      true,
+      @math.Vec3::new(
+        (min_corner.x + max_corner.x) * 0.5F,
+        (min_corner.y + max_corner.y) * 0.5F,
+        (min_corner.z + max_corner.z) * 0.5F,
+      ),
+      @math.Vec3::new(
+        (max_corner.x - min_corner.x) * 0.5F,
+        (max_corner.y - min_corner.y) * 0.5F,
+        (max_corner.z - min_corner.z) * 0.5F,
+      ),
+    )
+    None => (
+      false,
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    )
+  }
+  MeshPreprocessStatic3d::{
+    first_vertex_index,
+    first_index_index,
+    index_count,
+    has_local_aabb,
+    aabb_center,
+    aabb_half_extents,
+  }
+}
+
+///|
+fn render3d_build_mesh_preprocess_static_cache(
+  meshes : Array[ExtractedMesh3d],
+) -> Map[Int, MeshPreprocessStatic3d] {
+  let cache : Map[Int, MeshPreprocessStatic3d] = {}
+  for mesh in meshes {
+    let mesh_handle_id = mesh.payload.mesh_handle.id()
+    if mesh_handle_id < 0 {
+      continue
+    }
+    if cache.get(mesh_handle_id) is Some(_) {
+      continue
+    }
+    cache.set(
+      mesh_handle_id,
+      render3d_mesh_preprocess_static(mesh.payload.mesh_handle),
+    )
+  }
+  cache
+}
+
+///|
+fn render3d_mesh_preprocess_static_for_draw_item(
+  draw_item : MeshPhaseItem3d,
+  meshes : Array[ExtractedMesh3d],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+) -> MeshPreprocessStatic3d? {
+  if draw_item.extracted_index < 0 ||
+    draw_item.extracted_index >= meshes.length() {
+    return None
+  }
+  let mesh_handle = meshes[draw_item.extracted_index].payload.mesh_handle
+  let mesh_handle_id = mesh_handle.id()
+  if mesh_handle_id < 0 {
+    return None
+  }
+  match mesh_preprocess_static_cache.get(mesh_handle_id) {
+    Some(metadata) => Some(metadata)
+    None => Some(render3d_mesh_preprocess_static(mesh_handle))
+  }
+}
+
+///|
 fn render3d_host_gpu_clip_matrix(
   matrix : ProjectionMatrix3d,
 ) -> @render.HostGpuClipMatrix {
@@ -5578,6 +5843,7 @@ fn render3d_world_from_view_matrix(
 fn render3d_host_preprocess_mesh_input(
   draw_item : MeshPhaseItem3d,
   meshes : Array[ExtractedMesh3d],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> @render.HostMesh3dPreprocessMeshInput {
   if draw_item.extracted_index < 0 ||
     draw_item.extracted_index >= meshes.length() {
@@ -5610,10 +5876,23 @@ fn render3d_host_preprocess_mesh_input(
     }
   }
   let mesh = meshes[draw_item.extracted_index].payload
-  let (first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
-    mesh.mesh_handle,
-  )
-  let flags = if render3d_mesh_handle_local_aabb(mesh.mesh_handle) is Some(_) {
+  let metadata = match render3d_mesh_preprocess_static_for_draw_item(
+      draw_item,
+      meshes,
+      mesh_preprocess_static_cache,
+    ) {
+    Some(value) => value
+    None =>
+      MeshPreprocessStatic3d::{
+        first_vertex_index: 0,
+        first_index_index: 0,
+        index_count: 0,
+        has_local_aabb: false,
+        aabb_center: @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        aabb_half_extents: @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      }
+  }
+  let flags = if metadata.has_local_aabb {
     0U
   } else {
     @render.MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING
@@ -5640,9 +5919,9 @@ fn render3d_host_preprocess_mesh_input(
     previous_scale_y: mesh.previous_transform.scale.y,
     previous_scale_z: mesh.previous_transform.scale.z,
     flags,
-    first_vertex_index,
-    first_index_index,
-    index_count,
+    first_vertex_index: metadata.first_vertex_index,
+    first_index_index: metadata.first_index_index,
+    index_count: metadata.index_count,
     tag: draw_item.extracted_index,
   }
 }
@@ -5651,6 +5930,7 @@ fn render3d_host_preprocess_mesh_input(
 fn render3d_host_preprocess_camera_payload(
   queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   meshes : Array[ExtractedMesh3d],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   camera : Camera3dViewPayload,
   pass_projection : Render3dPassProjection,
   viewport_x : Int,
@@ -5678,9 +5958,19 @@ fn render3d_host_preprocess_camera_payload(
   let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
   for draw_item in queue_entry.draw_items {
     mesh_culling_data.push(
-      render3d_host_preprocess_mesh_culling_data(draw_item, meshes),
+      render3d_host_preprocess_mesh_culling_data(
+        draw_item,
+        meshes,
+        mesh_preprocess_static_cache,
+      ),
     )
-    mesh_inputs.push(render3d_host_preprocess_mesh_input(draw_item, meshes))
+    mesh_inputs.push(
+      render3d_host_preprocess_mesh_input(
+        draw_item,
+        meshes,
+        mesh_preprocess_static_cache,
+      ),
+    )
   }
   let direct_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
   let indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
@@ -5895,16 +6185,6 @@ fn render3d_queue_mesh_phase_items(
     )
   }
   render3d_queue_mesh_phase_items_cpu_builder(meshes, layers, camera_transform)
-}
-
-///|
-fn[T] render3d_world_has_any_component(
-  world : @ecs.World,
-  key : @ecs.ComponentKey[T],
-) -> Bool {
-  let found = Ref::new(false)
-  world.for_each_component(key, fn(_, _) { found.val = true })
-  found.val
 }
 
 ///|
@@ -6179,6 +6459,146 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
 }
 
 ///|
+fn render3d_camera_order_has_changes(world : @ecs.World) -> Bool {
+  let changed_camera_query : @ecs.Query[
+    @ecs.Comp[@sprite.Camera],
+    @ecs.Changed[@sprite.Camera],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.Changed::new(@sprite.ecs_key_camera),
+  )
+  let mut changed = false
+  try! changed_camera_query.view(fn(_entity, _camera) { changed = true })
+  if changed {
+    return true
+  }
+  let changed_camera3d_query : @ecs.Query[
+    @ecs.Comp[Camera3d],
+    @ecs.Changed[Camera3d],
+  ] = @ecs.query_filtered(world, @ecs.Changed::new(ecs_key_camera3d))
+  try! changed_camera3d_query.view(fn(_entity, _camera3d) { changed = true })
+  changed
+}
+
+///|
+fn render3d_refresh_prepared_camera_order_if_needed(
+  source_world : @ecs.World,
+  phase_state_ref : Ref[Render3dPhaseState],
+) -> Unit {
+  let camera3d_count = source_world.component_count(ecs_key_camera3d)
+  let must_refresh = phase_state_ref.val.camera_order_needs_refresh ||
+    phase_state_ref.val.prepared_camera_order.length() != camera3d_count ||
+    phase_state_ref.val.last_camera3d_count != camera3d_count ||
+    render3d_camera_order_has_changes(source_world)
+  if !must_refresh {
+    return
+  }
+  phase_state_ref.val.prepared_camera_order = render3d_sorted_camera_entities(
+    source_world,
+  )
+  phase_state_ref.val.last_camera3d_count = camera3d_count
+  phase_state_ref.val.camera_order_needs_refresh = false
+}
+
+///|
+fn render3d_upload_mesh_handle_cached(
+  phase_state_ref : Ref[Render3dPhaseState],
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Int {
+  let mesh_handle_id = mesh_handle.id()
+  if mesh_handle_id < 0 {
+    return -1
+  }
+  match phase_state_ref.val.mesh_upload_cache.get(mesh_handle_id) {
+    Some(mesh_id) =>
+      if mesh_id > 0 {
+        mesh_id
+      } else {
+        let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
+          mesh_handle,
+        )
+        phase_state_ref.val.mesh_upload_cache.set(mesh_handle_id, uploaded_mesh_id)
+        uploaded_mesh_id
+      }
+    None => {
+      let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
+        mesh_handle,
+      )
+      phase_state_ref.val.mesh_upload_cache.set(mesh_handle_id, uploaded_mesh_id)
+      uploaded_mesh_id
+    }
+  }
+}
+
+///|
+fn render3d_prepare_skin_bindings(
+  source_world : @ecs.World,
+  phase_state_ref : Ref[Render3dPhaseState],
+  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+) -> Unit {
+  phase_state_ref.val.prepared_skin_bindings.clear()
+  if source_world.component_count(@mesh.SkinnedMesh::component()) == 0 {
+    return
+  }
+  render3d_world_transform_cache_capture_frame(
+    source_world,
+    world_transform_cache_ref,
+  )
+  source_world.for_each_component(
+    @mesh.SkinnedMesh::component(),
+    fn(entity, _skinned_mesh) {
+      if entity.id < 0 {
+        return
+      }
+      if (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+        is Some(view_visibility) &&
+        !view_visibility.is_visible() {
+        return
+      }
+      if render3d_extract_skinning_matrices(
+          source_world,
+          entity,
+          world_transform_cache_ref,
+        )
+        is Some(skinning_matrices) {
+        @render.host_gpu_prepare_mesh3d_skin_binding(
+          key_hi=entity.id,
+          key_lo=entity.generation,
+          skinning_matrices=skinning_matrices,
+        )
+        phase_state_ref.val.prepared_skin_bindings.set(
+          entity.id,
+          PreparedSkinBinding3d::{
+            entity_generation: entity.generation,
+            key_hi: entity.id,
+            key_lo: entity.generation,
+          },
+        )
+      }
+    },
+  )
+}
+
+///|
+fn render3d_prepared_skin_binding_keys(
+  phase_state_ref : Ref[Render3dPhaseState],
+  entity : @core.Entity,
+) -> (Int, Int) {
+  if entity.id < 0 {
+    return (-1, -1)
+  }
+  match phase_state_ref.val.prepared_skin_bindings.get(entity.id) {
+    Some(binding) =>
+      if binding.entity_generation == entity.generation {
+        (binding.key_hi, binding.key_lo)
+      } else {
+        (-1, -1)
+      }
+    None => (-1, -1)
+  }
+}
+
+///|
 fn render3d_prepared_camera_phase_items(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
@@ -6215,8 +6635,9 @@ fn render3d_prepared_camera_phase_items(
 pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
-  phase_state_ref.val.prepared_camera_order = render3d_sorted_camera_entities(
+  render3d_refresh_prepared_camera_order_if_needed(
     source_world,
+    phase_state_ref,
   )
   phase_state_ref.val.gpu_preprocess_camera_queues.clear()
   render3d_diagnostic_prepared_camera_count_ref.val = phase_state_ref.val.prepared_camera_order.length()
@@ -6227,11 +6648,17 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
-  if phase_state_ref.val.prepared_camera_order.length() == 0 {
-    phase_state_ref.val.prepared_camera_order = render3d_sorted_camera_entities(
-      source_world,
-    )
-  }
+  let world_transform_cache_ref = render3d_world_transform_cache_ref()
+  render3d_world_transform_cache_begin_frame(world_transform_cache_ref)
+  render3d_refresh_prepared_camera_order_if_needed(
+    source_world,
+    phase_state_ref,
+  )
+  render3d_prepare_skin_bindings(
+    source_world,
+    phase_state_ref,
+    world_transform_cache_ref,
+  )
 }
 
 ///|
@@ -6804,6 +7231,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     )
   }
   let source_world = @render.render_source_world(world)
+  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
   let cameras : Array[ExtractedCamera3d] = []
   let meshes : Array[ExtractedMesh3d] = []
   let projection_updates : Array[
@@ -6812,6 +7240,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let projection_runtime_removals : Array[@core.Entity] = []
   let world_transform_cache_ref = render3d_world_transform_cache_ref()
   let runtime_config = render3d_runtime_config_or_default(source_world)
+  render3d_world_transform_cache_capture_frame(
+    source_world,
+    world_transform_cache_ref,
+  )
   let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
     runtime_config,
   )
@@ -7062,8 +7494,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     trace_collect_cameras_start_us,
   )
   if cameras.length() == 0 {
-    let phase_state_ref = render3d_phase_state_ref_or_abort(world)
     phase_state_ref.val.prepared_camera_order.clear()
+    phase_state_ref.val.last_camera3d_count = 0
+    phase_state_ref.val.camera_order_needs_refresh = true
     finish_execute()
     return
   }
@@ -7085,44 +7518,41 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",
   )
-  let has_visibility_range_components = render3d_world_has_any_component(
-    source_world, @visibility.ecs_key_visibility_range,
-  )
-  let has_render_layers_components = render3d_world_has_any_component(
-    source_world, @sprite.ecs_key_render_layers,
-  )
-  let has_lightmap_components = render3d_world_has_any_component(
-    source_world, ecs_key_lightmap,
-  )
-  let has_forward_decal_components = render3d_world_has_any_component(
-    source_world, ecs_key_forward_decal,
-  )
-  let has_forward_decal_material_ext_components = render3d_world_has_any_component(
-    source_world, ecs_key_forward_decal_material_ext,
-  )
-  let has_clustered_decal_components = render3d_world_has_any_component(
-    source_world, ecs_key_clustered_decal,
-  )
-  let has_not_shadow_caster_components = render3d_world_has_any_component(
-    source_world, ecs_key_not_shadow_caster,
-  )
-  let has_not_shadow_receiver_components = render3d_world_has_any_component(
-    source_world, ecs_key_not_shadow_receiver,
-  )
-  let has_transmitted_shadow_receiver_components = render3d_world_has_any_component(
-    source_world, ecs_key_transmitted_shadow_receiver,
-  )
-  let has_wireframe_components = render3d_world_has_any_component(
-    source_world, ecs_key_wireframe,
-  )
-  let has_no_wireframe_components = render3d_world_has_any_component(
-    source_world, ecs_key_no_wireframe,
-  )
-  let has_wireframe_color_components = render3d_world_has_any_component(
-    source_world, ecs_key_wireframe_color,
-  )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
-  let mesh_id_frame_cache : Map[Int, Int] = {}
+  let has_render_layers_components = source_world.component_count(
+    @sprite.ecs_key_render_layers,
+  ) > 0
+  let has_visibility_range_components = source_world.component_count(
+    @visibility.ecs_key_visibility_range,
+  ) > 0
+  let has_lightmap_components = source_world.component_count(ecs_key_lightmap) > 0
+  let has_forward_decal_components = source_world.component_count(
+    ecs_key_forward_decal,
+  ) > 0
+  let has_forward_decal_material_ext_components = source_world.component_count(
+    ecs_key_forward_decal_material_ext,
+  ) > 0
+  let has_clustered_decal_components = source_world.component_count(
+    ecs_key_clustered_decal,
+  ) > 0
+  let has_not_shadow_caster_components = source_world.component_count(
+    ecs_key_not_shadow_caster,
+  ) > 0
+  let has_not_shadow_receiver_components = source_world.component_count(
+    ecs_key_not_shadow_receiver,
+  ) > 0
+  let has_transmitted_shadow_receiver_components = source_world.component_count(
+    ecs_key_transmitted_shadow_receiver,
+  ) > 0
+  let has_wireframe_components = source_world.component_count(
+    ecs_key_wireframe,
+  ) > 0
+  let has_no_wireframe_components = source_world.component_count(
+    ecs_key_no_wireframe,
+  ) > 0
+  let has_wireframe_color_components = source_world.component_count(
+    ecs_key_wireframe_color,
+  ) > 0
   let mesh_extract_query : @ecs.Query[
     (
       @ecs.Comp[Mesh3d],
@@ -7160,15 +7590,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       material_handle.extended_material,
     )
     let layers = if has_render_layers_components {
-      match
-        (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+      match (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
         Some(v) => v
         None => @sprite.RenderLayers::default()
       }
     } else {
       @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform_cached_with_local(
+    let transform = render3d_entity_world_transform_from_components(
       source_world,
       entity,
       local_transform_comp.value(),
@@ -7196,31 +7625,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
-    let skinning_matrices = render3d_extract_skinning_matrices(
-      source_world, entity, world_transform_cache_ref,
+    let (skinning_key_hi, skinning_key_lo) = render3d_prepared_skin_binding_keys(
+      phase_state_ref,
+      entity,
     )
-    let (skinning_key_hi, skinning_key_lo) = match skinning_matrices {
-      Some(values) => {
-        @render.host_gpu_prepare_mesh3d_skin_binding(
-          key_hi=entity.id,
-          key_lo=entity.generation,
-          skinning_matrices=values,
-        )
-        (entity.id, entity.generation)
-      }
-      None => (-1, -1)
-    }
-    let mesh_handle_id = mesh3d.mesh.id()
-    let mesh_id = match mesh_id_frame_cache.get(mesh_handle_id) {
-      Some(cached_mesh_id) => cached_mesh_id
-      None => {
-        let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
-          mesh3d.mesh,
-        )
-        mesh_id_frame_cache.set(mesh_handle_id, uploaded_mesh_id)
-        uploaded_mesh_id
-      }
-    }
+    let mesh_id = render3d_upload_mesh_handle_cached(
+      phase_state_ref,
+      mesh3d.mesh,
+    )
     let lightmap = if has_lightmap_components {
       try! source_world.get_by_key(entity, ecs_key_lightmap)
     } else {
@@ -7242,8 +7654,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       None
     }
     let has_not_shadow_caster = if has_not_shadow_caster_components {
-      (try! source_world.get_by_key(entity, ecs_key_not_shadow_caster))
-      is Some(_)
+      (try! source_world.get_by_key(entity, ecs_key_not_shadow_caster)) is Some(_)
     } else {
       false
     }
@@ -7253,7 +7664,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       false
     }
-    let has_transmitted_shadow_receiver = if has_transmitted_shadow_receiver_components {
+    let has_transmitted_shadow_receiver = if
+      has_transmitted_shadow_receiver_components {
       (try! source_world.get_by_key(entity, ecs_key_transmitted_shadow_receiver))
       is Some(_)
     } else {
@@ -7308,6 +7720,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",
     trace_collect_meshes_start_us,
+  )
+  let mesh_preprocess_static_cache = render3d_build_mesh_preprocess_static_cache(
+    meshes,
   )
   let trace_render_cameras_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -7597,7 +8012,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
       payload=render3d_host_preprocess_camera_payload(
-        draw_queue_entry, meshes, camera, camera_pass_projection, viewport_x, viewport_y,
+        draw_queue_entry,
+        meshes,
+        mesh_preprocess_static_cache,
+        camera,
+        camera_pass_projection,
+        viewport_x,
+        viewport_y,
         viewport_width, viewport_height, camera_exposure_value,
       ),
     )
