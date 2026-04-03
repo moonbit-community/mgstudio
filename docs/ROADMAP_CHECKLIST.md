@@ -77,10 +77,7 @@ This file must not exceed 200 lines.
 - [x] Issue `diagnostic/timeline_metrics`: add Chrome/Perfetto trace export (`TimelineTracePlugin`) and app/render timeline spans (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
 - [x] Issue `diagnostic/stress_consistency`: unify stress examples on `stress_diagnostics_plugin`, stable sorted logging, and optional per-case trace collection in script (`.private/docs/engine/PROFILING_DEBUG_PARITY_TRANCHE_2026-03-31.md`).
 - [x] Issue `diagnostic/render_queue_direct_spans`: emit `RenderQueue` timeline spans directly from `render2d/render3d` queue/execute systems and drop diagnostics-derived backfill.
-- [x] Issue `pbr/perf_bevymark_3d`: remove prequeue-to-draw-item `O(N^2)` remap hotspot in render3d queue pipeline.
-- [x] Issue `pbr/perf_many_materials`: remove prequeue-to-mesh `O(N^2)` resolve hotspot in render3d queue pipeline.
-- [x] Issue `pbr/perf_queue_index_maps`: switch preprocessed queue remap/resolve to entity-id index maps with generation-safe fallback.
-- [x] Issue `pbr/perf_reprofile`: re-run `bevymark_3d/many_materials` stress profiling after queue-path optimization.
+- [x] Issue `pbr/gpu_preprocess_phase_sort_alignment`: align preprocess ordering with Bevy by keeping opaque/alpha insertion order and sorting only transparent work items.
 - [x] Issue `pbr/perf_many_foxes_scope`: classify remaining `many_foxes` bottleneck as gltf/animation skinning runtime, not pbr queue path.
 - [x] Issue `animation/animate_targets_single_cache_reuse`: precompute per-player animation samples once and reuse via a single cache entry in target application path.
 - [x] Issue `pbr/many_foxes_world_transform_cache`: cache entity world-transform resolution in render3d extract/skinning hot path to remove repeated hierarchy recomputation.
@@ -176,9 +173,10 @@ This file must not exceed 200 lines.
 - [ ] Issue `native/dependency_zlib_link_propagation`: fix native test link path so transitive `mizchi/zlib` `-lz` is propagated (current macOS native link fails unresolved `_compress/_inflate/_deflate`).
 - [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
 - [x] Issue `stress_tests/diagnostic_coverage`: add diagnostics logging coverage for all stress examples (including `many_cameras_lights`).
-- [ ] Issue `stress_tests/3d_heavy_scenes`: `many_foxes` visual is stable and now `3.63~3.64 FPS` (round8/round9); remaining hotspot is still `render3d.prepare + queue_preprocess` (`~115ms + ~64ms` in trace focus).
+- [ ] Issue `stress_tests/3d_heavy_scenes`: `many_foxes` visual remains stable and is `~4.16 FPS` (`/tmp/mgstudio_stress_profile_20260403_roundJ_focus/results.tsv`); hotspot remains queue/preprocess (`execute_3d_camera_queue_build + execute_3d_camera_queue_preprocess`) and needs stricter Bevy phase-path closure.
 - [x] Issue `pbr/many_foxes_collect_meshes_extract_cost`: frame-stamp/cache fix + global-transform skin path + retained preprocess-static cache landed; `execute_3d_collect_meshes` dropped from `~64.9ms` to `~6.5ms`.
-- [ ] Issue `stress_tests/text_pipeline`: text cull-bounds + UI single-pass alignment landed (`pass_2d_depth` no longer duplicated), but `many_glyphs` remains `~3.35 FPS`; hotspot is now split across `pass_2d_depth + pass_2d` (~`150ms` each).
+- [ ] Issue `stress_tests/text_pipeline`: slice-batch move semantics landed (`text/pipeline.mbt`), but `many_glyphs` remains `~3.43 FPS` (`/tmp/mgstudio_stress_profile_20260403_roundK_after_text_batch_move/results.tsv`); hotspot is still `pass_2d_depth + pass_2d` (`~148.9ms + ~149.9ms`) and needs deeper Bevy text queue/runtime closure.
+- [x] Issue `stress_tests/many_cameras_lights_multi_viewport_parity`: fixed pass-target viewport mapping for postprocess/offscreen path and restored Bevy-style 4x4 output (`/tmp/mgstudio_stress_visual_20260403_031714_round_next/many_cameras_lights.png`).
 - [x] Issue `stress_tests/text_startup_starvation`: `many_text2d`/`many_glyphs` now emit diagnostics within 180s under Bevy-scale workloads.
 - [x] Issue `stress_tests/sprite_meshes`: align camera/material/queue flow with Bevy and close main `many_sprite_meshes`/`many_animated_sprite_meshes` bottlenecks.
 - [x] Issue `stress_tests/capture_delay_policy`: low-FPS stress visual runs use low `capture_delay_frames` (`delay=2` in `/tmp/mgstudio_stress_visual_20260402_full_delay2`) to avoid camera-runaway false blanks.
@@ -187,14 +185,14 @@ This file must not exceed 200 lines.
 - [x] Issue `stress_tests/regression_gate`: define thresholds and add automated perf regression gate for representative stress cases.
 - [x] Issue `stress_tests/profile_rerun_20260401`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) at `/tmp/mgstudio_stress_profile_20260401_after_alias/results.tsv`.
 - [x] Issue `stress_tests/profile_rerun_20260401_after_transform_incremental`: rerun full stress profile (`19/19`, native, warmup=3s, sample=12s) after transform incremental path at `/tmp/mgstudio_stress_profile_20260401_full_after_transform_incremental/results.tsv`.
-- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture (`19/19`) and verify output sets under `/tmp/mgstudio_stress_visual_20260401_full`, `/tmp/mgstudio_stress_visual_20260402_full_delay2`, `/tmp/mgstudio_stress_visual_20260402_round6_after_cache_stamp_fix`, `/tmp/mgstudio_stress_visual_20260402_round8_after_pbrcache`.
+- [x] Issue `stress_tests/visual_audit_20260401`: rerun full stress screenshot capture and verify output sets under `/tmp/mgstudio_stress_visual_20260401_full`, `/tmp/mgstudio_stress_visual_20260402_full_delay2`, `/tmp/mgstudio_stress_visual_20260402_round6_after_cache_stamp_fix`, `/tmp/mgstudio_stress_visual_20260402_round8_after_pbrcache`, `/tmp/mgstudio_stress_visual_20260402_round11_full_delay2`, `/tmp/mgstudio_stress_visual_20260402_round14_full`, `/tmp/mgstudio_stress_visual_20260402_round16b_full`, `/tmp/mgstudio_visual_round12_focus`, `/tmp/mgstudio_stress_visual_20260403_roundC` (all 19 stress captures pass sanity).
 - [x] Issue `transform/sync_simple_transforms_removed_parent_guard`: avoid abort when `Removed<Parent>` stream contains dead entities.
 - [x] Issue `transform/propagation_bevy_traversal_alignment`: remove per-frame hierarchy sorting and ancestor-list scans in transform propagation to match Bevy traversal flow.
 - [x] Issue `transform/propagation_changed_components_incremental`: keep incremental streams and add one-shot startup bootstrap propagation to prevent root `GlobalTransform` initialization gaps.
 - [x] Issue `input/mouse_position_bevy_logical_space_no_y_flip`: keep cursor in Bevy-style logical window space and remove input-layer Y flip to fix mirrored pointer hit tests.
 - [x] Issue `pbr/render3d_update_frusta_incremental_changed_stream`: update frusta from changed `Transform/Projection` streams instead of all-entity query scan, removing large 2D-scene cross-pipeline overhead.
 - [x] Issue `stress_examples/recompute_system_conditional_registration`: align `many_text2d`/`many_glyphs` with Bevy by registering recompute systems only when recompute flags are enabled.
-- [ ] Issue `ui/picking_hit_test_transform_aware_alignment`: align UI hit testing with Bevy `contains_point(transform, cursor)` semantics and camera-target routing for multi-camera pointer correctness.
+- [ ] Issue `ui/picking_hit_test_transform_aware_alignment`: fixed `Interaction` skip regression and moved standard `Node` UI hit test to layout-space path (avoid viewport->world Y-mirror drift); remaining work is full Bevy `ui_focus_system/picking_backend` traversal-state + `Pickable`-blocking parity.
 - [x] Issue `ldtk/typed_field_value_surface`: align LDtk field payload to typed `FieldValue` model and expose typed getter family (`get_* / get_maybe_* / iter_*`).
 - [x] Issue `ldtk/assets_project_data_surface`: add `LdtkJsonWithMetadata` + `LdtkProjectData` surface and `LdtkProject::as_standalone/as_parent` parity entry points.
 - [ ] Issue `ldtk/bevy_ecs_ldtk_source_layout_parity`: plugin schedule topology + clear-color + int-grid-image asset path aligned; pending `tile_makers` parity and module-file layout closure.

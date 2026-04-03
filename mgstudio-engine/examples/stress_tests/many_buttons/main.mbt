@@ -95,7 +95,7 @@ fn button_system(
       @ecs.Mut[@ui.BackgroundColor],
       @ecs.Comp[IdleColor],
     ),
-    @ecs.With[@ui.Button],
+    (@ecs.With[@ui.Button], @ecs.Changed[@ui.Interaction]),
   ],
 ) -> Unit {
   try! buttons.for_each(fn(_entity, data) {

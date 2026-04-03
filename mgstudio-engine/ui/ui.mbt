@@ -1657,6 +1657,201 @@ pub fn ui_pointer_pos_in_viewport(
 }
 
 ///|
+/// Resolve pointer position in the target viewport of a UI entity.
+///
+/// This follows the same camera-target propagation path used by layout/extract,
+/// so callers do not need to manually route pointers per camera.
+pub fn ui_pointer_pos_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+  pointer_window_pos : @math.Vec2,
+) -> @math.Vec2? {
+  let legacy_ctx = get_ui_context_resource(world).get()
+  let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+  ui_pointer_pos_in_viewport(
+    pointer_window_pos,
+    entity_ctx.viewport_origin,
+    entity_ctx.viewport_size,
+  )
+}
+
+///|
+fn ui_abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn ui_rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
+  let min_x = if a.min.x > b.min.x { a.min.x } else { b.min.x }
+  let min_y = if a.min.y > b.min.y { a.min.y } else { b.min.y }
+  let max_x = if a.max.x < b.max.x { a.max.x } else { b.max.x }
+  let max_y = if a.max.y < b.max.y { a.max.y } else { b.max.y }
+  let min = @math.Vec2::new(min_x, min_y)
+  let max = @math.Vec2::new(
+    if max_x < min_x {
+      min_x
+    } else {
+      max_x
+    },
+    if max_y < min_y {
+      min_y
+    } else {
+      max_y
+    },
+  )
+  @math.Rect::new(min, max)
+}
+
+///|
+fn ui_viewport_point_to_world(
+  world : @ecs.World,
+  entity_ctx : UiResolvedCameraState,
+  point : @math.Vec2,
+) -> @math.Vec2 {
+  if entity_ctx.camera_entity is Some(camera_entity) &&
+    (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+    is Some(camera) {
+    let projection = match
+      (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
+      Some(@sprite.Orthographic(orthographic)) => orthographic
+      _ => @sprite.OrthographicProjection::default_2d()
+    }
+    let target_size = match camera.physical_target_size() {
+      Some(size) => size
+      None => {
+        let fallback_scale = safe_scale_factor(@window.window_scale_factor())
+        @math.IVec2::new(
+          (int_to_float(@window.window_width()) * fallback_scale).to_int(),
+          (int_to_float(@window.window_height()) * fallback_scale).to_int(),
+        )
+      }
+    }
+    let scale_factor = safe_scale_factor(
+      camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
+    )
+    if @sprite.render2d_camera_viewport_to_world_2d(
+        point,
+        camera,
+        projection,
+        entity_ctx.camera_transform,
+        target_size,
+        scale_factor,
+      )
+      is Some(world_point) {
+      return world_point
+    }
+  }
+  let cam_scale = safe_camera_scale(entity_ctx.camera_scale)
+  let cam_rot = entity_ctx.camera_transform.rotation_z()
+  let cam_pos = @math.Vec2::new(
+    entity_ctx.camera_transform.translation.x,
+    entity_ctx.camera_transform.translation.y,
+  )
+  let half_w = entity_ctx.viewport_size.x / 2.0F
+  let half_h = entity_ctx.viewport_size.y / 2.0F
+  let centered = @math.Vec2::new(point.x - half_w, half_h - point.y)
+  let scaled = @math.Vec2::new(centered.x * cam_scale, centered.y * cam_scale)
+  let world_offset = rotate_vec2(scaled, cam_rot)
+  @math.Vec2::new(cam_pos.x + world_offset.x, cam_pos.y + world_offset.y)
+}
+
+///|
+fn ui_pointer_hit_for_entity_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+  node_rect : @math.Rect,
+  pointer : @math.Vec2,
+  entity_ctx : UiResolvedCameraState,
+) -> Bool {
+  let size = node_rect.size()
+  if size.x <= 0.0F || size.y <= 0.0F {
+    return false
+  }
+  // Bevy UI hit-testing runs in UI layout space for regular Node entities.
+  // Keep this path aligned and avoid world-space camera conversion drift.
+  if (try! world.contains_by_key(entity, ecs_key_node)) {
+    return node_rect.contains(pointer)
+  }
+  let transform_opt = ui_pointer_hit_transform_for_entity(world, entity)
+  match transform_opt {
+    Some(node_transform) => {
+      let pointer_world = ui_viewport_point_to_world(world, entity_ctx, pointer)
+      let relative = @math.Vec2::new(
+        pointer_world.x - node_transform.translation.x,
+        pointer_world.y - node_transform.translation.y,
+      )
+      let local_point = rotate_vec2(relative, -node_transform.rotation_z())
+      let scale_x = node_transform.scale.x
+      let scale_y = node_transform.scale.y
+      if ui_abs_float(scale_x) <= 1.0e-6F || ui_abs_float(scale_y) <= 1.0e-6F {
+        return false
+      }
+      let half_w_world = size.x / 2.0F * ui_abs_float(scale_x)
+      let half_h_world = size.y / 2.0F * ui_abs_float(scale_y)
+      ui_abs_float(local_point.x) <= half_w_world &&
+      ui_abs_float(local_point.y) <= half_h_world
+    }
+    None => node_rect.contains(pointer)
+  }
+}
+
+///|
+fn ui_pointer_hit_transform_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform? {
+  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+    Some(transform) => Some(transform)
+    None =>
+      match
+        (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+        Some(global_transform) => Some(global_transform.to_transform_approx())
+        None => None
+      }
+  }
+}
+
+///|
+/// Bevy-style UI hit test for a single entity using its routed target camera.
+///
+/// This includes viewport routing, transform-aware contains-point, and clip check.
+pub fn ui_entity_contains_pointer(
+  world : @ecs.World,
+  entity : @core.Entity,
+  pointer_window_pos : @math.Vec2,
+) -> Bool {
+  guard ui_pointer_pos_for_entity(world, entity, pointer_window_pos)
+    is Some(pointer) else {
+    return false
+  }
+  let legacy_ctx = get_ui_context_resource(world).get()
+  let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+  guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
+    return false
+  }
+  let node_rect = layout.rect
+  if !ui_pointer_hit_for_entity_transform(
+      world, entity, node_rect, pointer, entity_ctx,
+    ) {
+    return false
+  }
+  let (clip_rect, has_clip) = match
+    (try! world.get_by_key(entity, ecs_key_calculated_clip)) {
+    Some(v) => (v.clip, true)
+    None => (node_rect, false)
+  }
+  let visible_rect = ui_rect_intersect(node_rect, clip_rect)
+  if has_clip && !visible_rect.contains(pointer) {
+    return false
+  }
+  true
+}
+
+///|
 fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
   let res = get_ui_context_resource(world)
   match res.get() {
@@ -4030,7 +4225,9 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   guard res.get() is Some(ctx0) else { return }
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  let pointer = ctx0.pointer_pos
+  let pointer_window = @input.mouse_position()
+  let pointer_ctx = ctx0.pointer_pos
+  let legacy_ctx = Some(ctx0)
   let down = ctx0.pointer_down
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
     a.id == b.id && a.generation == b.generation
@@ -4081,18 +4278,105 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
     @math.Rect::new(min, max)
   }
 
+  fn abs_float(value : Float) -> Float {
+    if value < 0.0F {
+      -value
+    } else {
+      value
+    }
+  }
+
+  fn same_vec2(a : @math.Vec2, b : @math.Vec2) -> Bool {
+    abs_float(a.x - b.x) <= 0.001F && abs_float(a.y - b.y) <= 0.001F
+  }
+
+  fn pointer_hit_for_entity(
+    entity : @core.Entity,
+    node_rect : @math.Rect,
+    pointer : @math.Vec2,
+    entity_ctx : UiResolvedCameraState,
+  ) -> (Bool, @math.Vec2?) {
+    let size = node_rect.size()
+    if size.x <= 0.0F || size.y <= 0.0F {
+      return (false, None)
+    }
+    let normalized_by_rect = Some(
+      @math.Vec2::new(
+        (pointer.x - node_rect.min.x) / size.x,
+        (pointer.y - node_rect.min.y) / size.y,
+      ),
+    )
+    if (try! world.contains_by_key(entity, ecs_key_node)) {
+      return (node_rect.contains(pointer), normalized_by_rect)
+    }
+    let transform_opt = ui_pointer_hit_transform_for_entity(world, entity)
+    match transform_opt {
+      Some(node_transform) => {
+        let pointer_world = ui_viewport_point_to_world(
+          world, entity_ctx, pointer,
+        )
+        let relative = @math.Vec2::new(
+          pointer_world.x - node_transform.translation.x,
+          pointer_world.y - node_transform.translation.y,
+        )
+        let local_point = rotate_vec2(relative, -node_transform.rotation_z())
+        let scale_x = node_transform.scale.x
+        let scale_y = node_transform.scale.y
+        if abs_float(scale_x) <= 1.0e-6F || abs_float(scale_y) <= 1.0e-6F {
+          return (false, normalized_by_rect)
+        }
+        let half_w_world = size.x / 2.0F * abs_float(scale_x)
+        let half_h_world = size.y / 2.0F * abs_float(scale_y)
+        let contains = abs_float(local_point.x) <= half_w_world &&
+          abs_float(local_point.y) <= half_h_world
+        let local_unscaled = @math.Vec2::new(
+          local_point.x / scale_x,
+          local_point.y / scale_y,
+        )
+        let normalized_by_transform = Some(
+          @math.Vec2::new(
+            (local_unscaled.x + size.x / 2.0F) / size.x,
+            (size.y / 2.0F - local_unscaled.y) / size.y,
+          ),
+        )
+        (contains, normalized_by_transform)
+      }
+      None => (node_rect.contains(pointer), normalized_by_rect)
+    }
+  }
+
   // Apply interactions in UiStack order (front-to-back) until a `Block` focus
   // policy is hit. This matches Bevy: the last entry in UiStack receives input
   // first.
   let active : Array[@core.Entity] = []
   let mut captured = false
-  if pointer is Some(p) {
+  if pointer_window is Some(_) || pointer_ctx is Some(_) {
     for i in 0..<stack0.uinodes.length() {
       if captured {
         break
       }
       let idx = stack0.uinodes.length() - 1 - i
       let entity = stack0.uinodes[idx]
+      let entity_ctx = ui_entity_resolved_camera_state(
+        world, entity, legacy_ctx,
+      )
+      let pointer = match pointer_window {
+        Some(pointer_window_pos) =>
+          ui_pointer_pos_in_viewport(
+            pointer_window_pos,
+            entity_ctx.viewport_origin,
+            entity_ctx.viewport_size,
+          )
+        None =>
+          if pointer_ctx is Some(p) &&
+            same_vec2(entity_ctx.viewport_origin, ctx0.viewport_origin) &&
+            same_vec2(entity_ctx.viewport_size, ctx0.viewport_size) {
+            Some(p)
+          } else {
+            None
+          }
+      }
+      guard pointer is Some(p) else { continue }
       if !candidates_contains(candidates, entity) {
         continue
       }
@@ -4105,32 +4389,38 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
         continue
       }
       let node_rect = layout.rect
-      if !node_rect.contains(p) {
+      let (contains_pointer, normalized) = pointer_hit_for_entity(
+        entity, node_rect, p, entity_ctx,
+      )
+      if !contains_pointer {
         continue
       }
-      let clip_rect = match
+      let (clip_rect, has_clip) = match
         (try! world.get_by_key(entity, ecs_key_calculated_clip)) {
-        Some(v) => v.clip
-        None => node_rect
+        Some(v) => (v.clip, true)
+        None => (node_rect, false)
       }
       let visible_rect = rect_intersect(node_rect, clip_rect)
-      if !visible_rect.contains(p) {
+      if has_clip && !visible_rect.contains(p) {
         continue
       }
 
       // Update (or insert) RelativeCursorPosition.
       let size = node_rect.size()
-      let mut normalized : @math.Vec2? = None
       let mut normalized_visible = @math.Rect::new(
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
       )
-      if size.x > 0.0F && size.y > 0.0F {
-        let rel = @math.Vec2::new(
-          (p.x - node_rect.min.x) / size.x,
-          (p.y - node_rect.min.y) / size.y,
+      let mut normalized_value = normalized
+      if normalized_value is None && size.x > 0.0F && size.y > 0.0F {
+        normalized_value = Some(
+          @math.Vec2::new(
+            (p.x - node_rect.min.x) / size.x,
+            (p.y - node_rect.min.y) / size.y,
+          ),
         )
-        normalized = Some(rel)
+      }
+      if size.x > 0.0F && size.y > 0.0F {
         let vmin = @math.Vec2::new(
           (visible_rect.min.x - node_rect.min.x) / size.x,
           (visible_rect.min.y - node_rect.min.y) / size.y,
@@ -4143,7 +4433,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       }
       let rcp = RelativeCursorPosition::{
         normalized_visible_node_rect: normalized_visible,
-        normalized,
+        normalized: normalized_value,
       }
       if (try! world.contains_by_key(entity, ecs_key_relative_cursor_position)) {
         try! (world.replace(entity, ecs_key_relative_cursor_position, rcp)

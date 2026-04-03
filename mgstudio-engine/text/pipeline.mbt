@@ -1299,10 +1299,6 @@ fn text_push_overlay_sprite_slice_batch(
   if slices.length() == 0 {
     return
   }
-  let copied_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
-  for slice in slices {
-    copied_slices.push(slice)
-  }
   batches.push(@sprite.OverlaySpriteUvScissorSlices::{
     texture,
     rotation,
@@ -1314,7 +1310,7 @@ fn text_push_overlay_sprite_slice_batch(
     layers,
     scissor,
     target_camera,
-    slices: copied_slices,
+    slices,
   })
 }
 
@@ -1623,7 +1619,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let mut cached_span_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
 
     let instance_main_batches : Array[@sprite.OverlaySpriteUvScissorSlices] = []
-    let main_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
+    let mut main_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
     let mut main_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut main_batch_texture_id = -1
     let mut main_batch_span_index = -1
@@ -1631,7 +1627,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let main_batch_bounds = OverlaySpriteSliceBatchBounds::default()
 
     let instance_shadow_batches : Array[@sprite.OverlaySpriteUvScissorSlices] = []
-    let shadow_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
+    let mut shadow_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
     let mut shadow_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut shadow_batch_texture_id = -1
     let shadow_batch_bounds = OverlaySpriteSliceBatchBounds::default()
@@ -1673,7 +1669,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           instance.ui_camera_entity,
           main_batch_slices,
         )
-        main_batch_slices.clear()
+        main_batch_slices = []
         main_batch_bounds.clear()
       }
       if main_batch_slices.length() == 0 {
@@ -1706,7 +1702,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             instance.ui_camera_entity,
             shadow_batch_slices,
           )
-          shadow_batch_slices.clear()
+          shadow_batch_slices = []
           shadow_batch_bounds.clear()
         }
         if shadow_batch_slices.length() == 0 {
@@ -1757,7 +1753,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       instance.ui_camera_entity,
       main_batch_slices,
     )
-    main_batch_slices.clear()
+    main_batch_slices = []
     main_batch_bounds.clear()
 
     if shadow_opt is Some(shadow) {
@@ -1775,7 +1771,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         instance.ui_camera_entity,
         shadow_batch_slices,
       )
-      shadow_batch_slices.clear()
+      shadow_batch_slices = []
       shadow_batch_bounds.clear()
       for batch in instance_shadow_batches {
         overlay_sprite_slices_batches.push(batch)
