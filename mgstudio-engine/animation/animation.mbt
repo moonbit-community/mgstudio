@@ -1394,6 +1394,7 @@ pub struct AnimationGraph {
   root : AnimationNodeIndex
   nodes : Array[AnimationGraphNode]
   mask_groups : Array[(AnimationTargetId, AnimationMask)]
+  target_mask_index_by_key : Map[UInt64, Int]
 }
 
 ///|
@@ -1403,6 +1404,7 @@ pub fn AnimationGraph::new() -> AnimationGraph {
     root,
     nodes: [animation_graph_node_new(AnimationNodeType::Blend, 0U, 1.0F, None)],
     mask_groups: [],
+    target_mask_index_by_key: {},
   }
 }
 
@@ -1460,9 +1462,17 @@ fn animation_graph_find_target_mask_group(
   graph : AnimationGraph,
   target_id : AnimationTargetId,
 ) -> Int? {
+  let target_key = animation_target_id_lookup_key(target_id)
+  if graph.target_mask_index_by_key.get(target_key) is Some(index) &&
+    index >= 0 &&
+    index < graph.mask_groups.length() &&
+    graph.mask_groups[index].0 == target_id {
+    return Some(index)
+  }
   let mut i = 0
   while i < graph.mask_groups.length() {
     if graph.mask_groups[i].0 == target_id {
+      graph.target_mask_index_by_key.set(target_key, i)
       return Some(i)
     }
     i = i + 1
@@ -1485,6 +1495,10 @@ pub fn AnimationGraph::add_target_to_mask_group(
     self.mask_groups[index] = (target_id, current.1 | bit)
   } else {
     self.mask_groups.push((target_id, bit))
+    self.target_mask_index_by_key.set(
+      animation_target_id_lookup_key(target_id),
+      self.mask_groups.length() - 1,
+    )
   }
   self
 }
@@ -1768,6 +1782,136 @@ pub fn AnimationGraph::effective_weight(
     cursor = Some(parent_index)
   }
   result
+}
+
+///|
+priv struct ThreadedAnimationGraph {
+  threaded_graph : Array[AnimationNodeIndex]
+  sorted_edge_ranges : Array[(Int, Int)]
+  sorted_edges : Array[AnimationNodeIndex]
+  computed_masks : Array[AnimationMask]
+  effective_weights : Array[Float]
+}
+
+///|
+priv struct ThreadedAnimationGraphs {
+  graphs : Map[Int, ThreadedAnimationGraph]
+}
+
+///|
+let threaded_animation_graphs_key : @ecs.ResourceKey[ThreadedAnimationGraphs] = @ecs.register_resource(
+  debug_name="bevy_animation::ThreadedAnimationGraphs",
+)
+
+///|
+impl @app.Resource for ThreadedAnimationGraphs with resource() {
+  threaded_animation_graphs_key
+}
+
+///|
+fn threaded_animation_graph_new(node_count : Int) -> ThreadedAnimationGraph {
+  let sorted_edge_ranges : Array[(Int, Int)] = []
+  let computed_masks : Array[AnimationMask] = []
+  let effective_weights : Array[Float] = []
+  for _ in 0..<node_count {
+    sorted_edge_ranges.push((0, 0))
+    computed_masks.push(0U)
+    effective_weights.push(0.0F)
+  }
+  ThreadedAnimationGraph::{
+    threaded_graph: [],
+    sorted_edge_ranges,
+    sorted_edges: [],
+    computed_masks,
+    effective_weights,
+  }
+}
+
+///|
+fn animation_graph_sorted_children(
+  children : Array[AnimationNodeIndex],
+) -> Array[AnimationNodeIndex] {
+  let sorted : Array[AnimationNodeIndex] = []
+  for child in children {
+    sorted.push(child)
+  }
+  let mut i = 1
+  while i < sorted.length() {
+    let cur = sorted[i]
+    let cur_index = cur.index()
+    let mut j = i
+    while j > 0 && sorted[j - 1].index() > cur_index {
+      sorted[j] = sorted[j - 1]
+      j = j - 1
+    }
+    sorted[j] = cur
+    i = i + 1
+  }
+  sorted
+}
+
+///|
+fn threaded_animation_graph_build_from(
+  threaded : ThreadedAnimationGraph,
+  graph : AnimationGraph,
+  node_index : AnimationNodeIndex,
+  inherited_mask : AnimationMask,
+  parent_multiplier : Float,
+) -> Unit {
+  guard graph.get(node_index) is Some(node) else { return }
+  let node_i = node_index.index()
+  if node_i < 0 || node_i >= threaded.sorted_edge_ranges.length() {
+    return
+  }
+
+  let node_mask = inherited_mask | node.mask
+  threaded.computed_masks[node_i] = node_mask
+
+  let node_weight = animation_graph_positive_weight(node.weight)
+  threaded.effective_weights[node_i] = node_weight * parent_multiplier
+
+  let sorted_children = animation_graph_sorted_children(node.children)
+  let edge_start = threaded.sorted_edges.length()
+  for child in sorted_children {
+    threaded.sorted_edges.push(child)
+  }
+  let edge_end = threaded.sorted_edges.length()
+  threaded.sorted_edge_ranges[node_i] = (edge_start, edge_end)
+
+  let child_multiplier = match node.node_type {
+    Blend => {
+      let child_weight_sum = animation_graph_child_weight_sum(graph, node_index)
+      if child_weight_sum <= 0.0F {
+        0.0F
+      } else {
+        parent_multiplier * node_weight / child_weight_sum
+      }
+    }
+    Add => parent_multiplier * node_weight
+    Clip(_) => parent_multiplier * node_weight
+  }
+
+  let mut child_i = sorted_children.length()
+  while child_i > 0 {
+    child_i = child_i - 1
+    threaded_animation_graph_build_from(
+      threaded,
+      graph,
+      sorted_children[child_i],
+      node_mask,
+      child_multiplier,
+    )
+  }
+  threaded.threaded_graph.push(node_index)
+}
+
+///|
+fn animation_thread_graph_build(
+  graph : AnimationGraph,
+) -> ThreadedAnimationGraph {
+  let threaded = threaded_animation_graph_new(graph.nodes.length())
+  threaded_animation_graph_build_from(threaded, graph, graph.root, 0U, 1.0F)
+  threaded
 }
 
 ///|
@@ -2231,7 +2375,7 @@ fn animation_player_entry_active_or_abort(
     Some(active) => active
     None =>
       abort(
-        "Missing active animation for node " + entry.node.index().to_string(),
+        "Missing active animation for node \{entry.node.index().to_string()}",
       )
   }
 }
@@ -2959,6 +3103,7 @@ priv struct AnimationPreparedTargetSample {
 fn animation_prepare_player_target_samples(
   player : AnimationPlayer,
   graph : AnimationGraph,
+  threaded_graph : ThreadedAnimationGraph,
 ) -> Array[AnimationPreparedTargetSample] {
   let samples : Array[AnimationPreparedTargetSample] = []
   for pair in player.playing_animations() {
@@ -2967,15 +3112,30 @@ fn animation_prepare_player_target_samples(
     guard graph.get(node_index) is Some(node) else { continue }
     guard node.node_type is Clip(clip_handle) else { continue }
     guard animation_clip_get(clip_handle) is Some(clip) else { continue }
-    let combined_weight = active.weight() * graph.effective_weight(node_index)
+    let node_i = node_index.index()
+    let effective_weight = if
+      node_i >= 0 &&
+      node_i < threaded_graph.effective_weights.length() {
+      threaded_graph.effective_weights[node_i]
+    } else {
+      graph.effective_weight(node_index)
+    }
+    let combined_weight = active.weight() * effective_weight
     if combined_weight <= 0.0F {
       continue
+    }
+    let computed_mask = if
+      node_i >= 0 &&
+      node_i < threaded_graph.computed_masks.length() {
+      threaded_graph.computed_masks[node_i]
+    } else {
+      graph.computed_mask(node_index)
     }
     samples.push({
       clip,
       seek_time: active.seek_time(),
       combined_weight,
-      computed_mask: graph.computed_mask(node_index),
+      computed_mask,
     })
   }
   samples
@@ -3324,8 +3484,30 @@ pub impl @ecs.Component for AnimationWeights with component() {
 }
 
 ///|
-pub fn thread_animation_graphs(_world : @ecs.World) -> Unit {
-  // Stub for future threaded graph acceleration structures.
+pub fn thread_animation_graphs(world : @ecs.World) -> Unit {
+  let unique_handles : Map[Int, @asset.Handle[AnimationGraph]] = {}
+  let graph_handle_query : @ecs.Query[@ecs.Comp[AnimationGraphHandle], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! graph_handle_query.view(fn(_entity, graph_handle_comp) {
+    let graph_handle = graph_handle_comp.value().graph()
+    let graph_id = graph_handle.id()
+    if graph_id >= 0 && !unique_handles.contains(graph_id) {
+      unique_handles.set(graph_id, graph_handle)
+    }
+  })
+
+  let threaded_graphs : Map[Int, ThreadedAnimationGraph] = {}
+  for pair in unique_handles.iter() {
+    let (graph_id, graph_handle) = pair
+    if animation_graph_get(graph_handle) is Some(graph) {
+      threaded_graphs.set(graph_id, animation_thread_graph_build(graph))
+    }
+  }
+
+  world.insert_resource(threaded_animation_graphs_key, ThreadedAnimationGraphs::{
+    graphs: threaded_graphs,
+  })
 }
 
 ///|
@@ -3399,15 +3581,16 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     (AnimationGraph, Array[AnimationPreparedTargetSample]),
   ] = {}
   let missing_player_cache : Map[Int, Bool] = {}
+  let threaded_graphs = try! world.get_resource_ref(threaded_animation_graphs_key)
+  let threaded_graph_cache : Map[Int, ThreadedAnimationGraph] = {}
 
-  let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! target_query.view(fn(entity, target_id) {
-    guard (try! world.get_by_key(entity, ecs_key_animated_by))
-      is Some(animated_by) else {
-      return
-    }
+  let target_query : @ecs.Query[
+    (@ecs.Comp[AnimationTargetId], @ecs.Comp[AnimatedBy]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! target_query.view(fn(entity, target_data) {
+    let (target_id_comp, animated_by_comp) = target_data
+    let animated_by = animated_by_comp.value()
     let player_entity = animated_by.player()
     let player_id = player_entity.id
     if player_id < 0 {
@@ -3431,12 +3614,36 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           missing_player_cache.set(player_id, true)
           return
         }
+        let graph_handle_id = graph_handle.graph().id()
         guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
           missing_player_cache.set(player_id, true)
           return
         }
+        let threaded_graph = match threaded_graphs {
+          Some(threaded_graphs) => match threaded_graphs.val.graphs.get(
+            graph_handle_id,
+          ) {
+            Some(cached_threaded) => cached_threaded
+            None => match threaded_graph_cache.get(graph_handle_id) {
+              Some(cached_threaded) => cached_threaded
+              None => {
+                let built = animation_thread_graph_build(graph)
+                threaded_graph_cache.set(graph_handle_id, built)
+                built
+              }
+            }
+          }
+          None => match threaded_graph_cache.get(graph_handle_id) {
+            Some(cached_threaded) => cached_threaded
+            None => {
+              let built = animation_thread_graph_build(graph)
+              threaded_graph_cache.set(graph_handle_id, built)
+              built
+            }
+          }
+        }
         let prepared_samples = animation_prepare_player_target_samples(
-          player, graph,
+          player, graph, threaded_graph,
         )
         let cached = (graph, prepared_samples)
         prepared_player_cache.set(player_id, cached)
@@ -3446,7 +3653,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     if prepared_samples.length() == 0 {
       return
     }
-    let target_id = target_id.value()
+    let target_id = target_id_comp.value()
     let target_mask = graph.target_mask(target_id)
 
     let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
@@ -3629,6 +3836,7 @@ pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let assets : @asset.Assets[AnimationGraph] = @asset.Assets::new()
     assets
   })
+  .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } })
   .add_post_update_system_config(
     @app.system(thread_animation_graphs).in_set(animation_set_thread),
   )
