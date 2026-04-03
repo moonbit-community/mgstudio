@@ -3361,13 +3361,6 @@ priv struct SpriteDrawPayload {
 }
 
 ///|
-priv struct SpriteSliceUvPayload {
-  center : @math.Vec2
-  uv_min : @math.Vec2
-  uv_max : @math.Vec2
-}
-
-///|
 priv struct SpriteSliceBatchDrawPayload {
   rotation : Float
   draw_scale : @math.Vec2
@@ -3378,7 +3371,7 @@ priv struct SpriteSliceBatchDrawPayload {
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
   scissor : @math.Rect?
-  slices : Array[SpriteSliceUvPayload]
+  slices_xy_uv : Array[Float]
 }
 
 ///|
@@ -4405,13 +4398,6 @@ pub(all) struct OverlaySpriteUvScissor {
 }
 
 ///|
-pub(all) struct OverlaySpriteUvScissorSlice {
-  center : @math.Vec2
-  uv_min : @math.Vec2
-  uv_max : @math.Vec2
-}
-
-///|
 pub(all) struct OverlaySpriteUvScissorSlices {
   texture : @asset.Handle[@asset.Image]
   rotation : Float
@@ -4423,7 +4409,7 @@ pub(all) struct OverlaySpriteUvScissorSlices {
   layers : RenderLayers
   scissor : @math.Rect?
   target_camera : @core.Entity?
-  slices : Array[OverlaySpriteUvScissorSlice]
+  slices_xy_uv : Array[Float]
 }
 
 ///|
@@ -4480,16 +4466,8 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
   }
   render_state_update(world, fn(rs) {
     for batch in sprite_batches {
-      if batch.slices.length() == 0 {
+      if batch.slices_xy_uv.length() == 0 {
         continue
-      }
-      let slices : Array[SpriteSliceUvPayload] = []
-      for slice in batch.slices {
-        slices.push(SpriteSliceUvPayload::{
-          center: slice.center,
-          uv_min: slice.uv_min,
-          uv_max: slice.uv_max,
-        })
       }
       let payload = SpriteSliceBatchDrawPayload::{
         rotation: batch.rotation,
@@ -4501,7 +4479,7 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
         texture: batch.texture,
         layers: batch.layers,
         scissor: batch.scissor,
-        slices,
+        slices_xy_uv: batch.slices_xy_uv,
       }
       match batch.target_camera {
         Some(camera_entity) =>
@@ -5672,6 +5650,8 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
     }
     let counts : Array[Int] = []
     let queued_items : Array[QueuedCameraDrawItems] = []
+    counts.reserve_capacity(camera_indices.length())
+    queued_items.reserve_capacity(camera_indices.length())
     for index in camera_indices {
       if index < 0 || index >= cameras.length() {
         continue
@@ -6102,6 +6082,12 @@ fn[M] draw_material2d_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
+  items.reserve_capacity(
+    sprites.length() + extra_sprites.length() + extra_sprite_slice_batches.length() +
+    extra_ui_sprites.length() + extra_ui_sprite_slice_batches.length() +
+    extra_ui_rects.length() + extra_ui_box_shadows.length() +
+    extra_ui_texture_slices.length() + meshes.length(),
+  )
   for
     item in draw_material2d_scene_items_for_layers(
       sprites, extra_sprites, extra_sprite_slice_batches, meshes, prepared_materials,
@@ -6170,10 +6156,6 @@ fn sort_transparent_scene_draw_items(
     let cz = cmp_float(a.z, b.z)
     if cz != 0 {
       return cz
-    }
-    let ce = phase_entity_ref_cmp(a.entity, b.entity)
-    if ce != 0 {
-      return ce
     }
     cmp_int(a.tie, b.tie)
   })
@@ -6250,6 +6232,10 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
 ) -> ScenePhaseDrawItems {
   let opaque_items : Array[DrawItem] = []
   let transparent_items : Array[DrawItem] = []
+  opaque_items.reserve_capacity(meshes.length())
+  transparent_items.reserve_capacity(
+    sprites.length() + extra_sprites.length() + extra_sprite_slice_batches.length(),
+  )
   let mut tie = 0
   // Align with Bevy queue structure: mesh phases are queued before sprite phases.
   // Transparent items are then sorted by z with stable insertion order.
@@ -6415,6 +6401,10 @@ fn draw_registered_scene_phase_items_for_layers(
 ) -> ScenePhaseDrawItems {
   let opaque_items : Array[DrawItem] = []
   let transparent_items : Array[DrawItem] = []
+  opaque_items.reserve_capacity(meshes.length())
+  transparent_items.reserve_capacity(
+    sprites.length() + extra_sprites.length() + extra_sprite_slice_batches.length(),
+  )
   let mut tie = 0
   tie = append_registered_material2d_mesh_draw_items(
     world,
@@ -7951,6 +7941,56 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           }
         }
 
+        fn sprite_slice_batch_scissor_eq(
+          lhs : @math.Rect?,
+          rhs : @math.Rect?,
+        ) -> Bool {
+          match (lhs, rhs) {
+            (None, None) => true
+            (Some(a), Some(b)) =>
+              a.min.x == b.min.x &&
+              a.min.y == b.min.y &&
+              a.max.x == b.max.x &&
+              a.max.y == b.max.y
+            _ => false
+          }
+        }
+
+        fn sprite_payload_can_merge(
+          lhs : SpriteDrawPayload,
+          rhs : SpriteDrawPayload,
+          lhs_rotation : Float,
+          rhs_rotation : Float,
+          lhs_z : Float,
+          rhs_z : Float,
+        ) -> Bool {
+          lhs.texture.id() == rhs.texture.id() &&
+          lhs_rotation == rhs_rotation &&
+          lhs.draw_scale.x == rhs.draw_scale.x &&
+          lhs.draw_scale.y == rhs.draw_scale.y &&
+          lhs_z == rhs_z &&
+          lhs.color.r == rhs.color.r &&
+          lhs.color.g == rhs.color.g &&
+          lhs.color.b == rhs.color.b &&
+          lhs.color.a == rhs.color.a &&
+          sprite_slice_batch_scissor_eq(lhs.scissor, rhs.scissor)
+        }
+
+        fn sprite_payload_append_slice_xy_uv(
+          out : Array[Float],
+          payload : SpriteDrawPayload,
+        ) -> Unit {
+          let transform = payload.transform
+          out.push(transform.translation.x + payload.anchor_offset.x)
+          out.push(transform.translation.y + payload.anchor_offset.y)
+          out.push(payload.uv_min.x)
+          out.push(payload.uv_min.y)
+          out.push(payload.uv_max.x)
+          out.push(payload.uv_max.y)
+        }
+
+        let merged_slice_xy_uv : Array[Float] = []
+
         fn draw_camera_item(item : DrawItem) -> Unit {
           match item.kind {
             SpriteMain(i) => {
@@ -8006,24 +8046,17 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             SpriteSliceBatchExtra(i) => {
               let batch = extra_sprite_slice_batches[i].payload
               apply_scissor(batch.scissor)
-              for slice in batch.slices {
-                @render.host_gpu_draw_sprite_uv(
-                  texture_id=batch.texture.id(),
-                  x=slice.center.x,
-                  y=slice.center.y,
-                  rotation=batch.rotation,
-                  scale_x=batch.draw_scale.x,
-                  scale_y=batch.draw_scale.y,
-                  color_r=batch.color.r,
-                  color_g=batch.color.g,
-                  color_b=batch.color.b,
-                  color_a=batch.color.a,
-                  uv_min_x=slice.uv_min.x,
-                  uv_min_y=slice.uv_min.y,
-                  uv_max_x=slice.uv_max.x,
-                  uv_max_y=slice.uv_max.y,
-                )
-              }
+              @render.host_gpu_draw_sprite_uv_slices(
+                texture_id=batch.texture.id(),
+                rotation=batch.rotation,
+                scale_x=batch.draw_scale.x,
+                scale_y=batch.draw_scale.y,
+                color_r=batch.color.r,
+                color_g=batch.color.g,
+                color_b=batch.color.b,
+                color_a=batch.color.a,
+                slices_xy_uv=batch.slices_xy_uv,
+              )
             }
             UiSpriteExtra(i) => {
               let sprite = extra_ui_sprites[i].payload
@@ -8053,24 +8086,17 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             UiSpriteSliceBatchExtra(i) => {
               let batch = extra_ui_sprite_slice_batches[i].payload
               apply_scissor(batch.scissor)
-              for slice in batch.slices {
-                @render.host_gpu_draw_sprite_uv(
-                  texture_id=batch.texture.id(),
-                  x=slice.center.x,
-                  y=slice.center.y,
-                  rotation=batch.rotation,
-                  scale_x=batch.draw_scale.x,
-                  scale_y=batch.draw_scale.y,
-                  color_r=batch.color.r,
-                  color_g=batch.color.g,
-                  color_b=batch.color.b,
-                  color_a=batch.color.a,
-                  uv_min_x=slice.uv_min.x,
-                  uv_min_y=slice.uv_min.y,
-                  uv_max_x=slice.uv_max.x,
-                  uv_max_y=slice.uv_max.y,
-                )
-              }
+              @render.host_gpu_draw_sprite_uv_slices(
+                texture_id=batch.texture.id(),
+                rotation=batch.rotation,
+                scale_x=batch.draw_scale.x,
+                scale_y=batch.draw_scale.y,
+                color_r=batch.color.r,
+                color_g=batch.color.g,
+                color_b=batch.color.b,
+                color_a=batch.color.a,
+                slices_xy_uv=batch.slices_xy_uv,
+              )
             }
             Mesh(i) => {
               apply_scissor(None)
@@ -8206,11 +8232,216 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             }
           }
         }
-        for item in items {
-          draw_camera_item(item)
+
+        fn draw_camera_item_array(item_array : Array[DrawItem]) -> Unit {
+          let item_count = item_array.length()
+          let mut item_index = 0
+          while item_index < item_count {
+            let item = item_array[item_index]
+            match item.kind {
+              SpriteMain(i) => {
+                let first_sprite = sprites[i].payload
+                let first_rotation = first_sprite.transform.rotation_z()
+                let first_z = item.z
+                apply_scissor(first_sprite.scissor)
+                let mut merged_end = item_index + 1
+                while merged_end < item_count {
+                  let next_item = item_array[merged_end]
+                  match next_item.kind {
+                    SpriteMain(next_i) => {
+                      let next_sprite = sprites[next_i].payload
+                      let next_rotation = next_sprite.transform.rotation_z()
+                      if !sprite_payload_can_merge(
+                          first_sprite,
+                          next_sprite,
+                          first_rotation,
+                          next_rotation,
+                          first_z,
+                          next_item.z,
+                        ) {
+                        break
+                      }
+                      merged_end = merged_end + 1
+                    }
+                    _ => break
+                  }
+                }
+                merged_slice_xy_uv.clear()
+                merged_slice_xy_uv.reserve_capacity((merged_end - item_index) * 6)
+                sprite_payload_append_slice_xy_uv(
+                  merged_slice_xy_uv, first_sprite,
+                )
+                for merged_index in (item_index + 1)..<merged_end {
+                  if item_array[merged_index].kind is SpriteMain(next_i) {
+                    sprite_payload_append_slice_xy_uv(
+                      merged_slice_xy_uv,
+                      sprites[next_i].payload,
+                    )
+                  }
+                }
+                @render.host_gpu_draw_sprite_uv_slices(
+                  texture_id=first_sprite.texture.id(),
+                  rotation=first_rotation,
+                  scale_x=first_sprite.draw_scale.x,
+                  scale_y=first_sprite.draw_scale.y,
+                  color_r=first_sprite.color.r,
+                  color_g=first_sprite.color.g,
+                  color_b=first_sprite.color.b,
+                  color_a=first_sprite.color.a,
+                  slices_xy_uv=merged_slice_xy_uv,
+                )
+                item_index = merged_end
+              }
+              SpriteExtra(i) => {
+                let first_sprite = extra_sprites[i].payload
+                let first_rotation = first_sprite.transform.rotation_z()
+                let first_z = item.z
+                apply_scissor(first_sprite.scissor)
+                let mut merged_end = item_index + 1
+                while merged_end < item_count {
+                  let next_item = item_array[merged_end]
+                  match next_item.kind {
+                    SpriteExtra(next_i) => {
+                      let next_sprite = extra_sprites[next_i].payload
+                      let next_rotation = next_sprite.transform.rotation_z()
+                      if !sprite_payload_can_merge(
+                          first_sprite,
+                          next_sprite,
+                          first_rotation,
+                          next_rotation,
+                          first_z,
+                          next_item.z,
+                        ) {
+                        break
+                      }
+                      merged_end = merged_end + 1
+                    }
+                    _ => break
+                  }
+                }
+                merged_slice_xy_uv.clear()
+                merged_slice_xy_uv.reserve_capacity((merged_end - item_index) * 6)
+                sprite_payload_append_slice_xy_uv(
+                  merged_slice_xy_uv, first_sprite,
+                )
+                for merged_index in (item_index + 1)..<merged_end {
+                  if item_array[merged_index].kind is SpriteExtra(next_i) {
+                    sprite_payload_append_slice_xy_uv(
+                      merged_slice_xy_uv,
+                      extra_sprites[next_i].payload,
+                    )
+                  }
+                }
+                @render.host_gpu_draw_sprite_uv_slices(
+                  texture_id=first_sprite.texture.id(),
+                  rotation=first_rotation,
+                  scale_x=first_sprite.draw_scale.x,
+                  scale_y=first_sprite.draw_scale.y,
+                  color_r=first_sprite.color.r,
+                  color_g=first_sprite.color.g,
+                  color_b=first_sprite.color.b,
+                  color_a=first_sprite.color.a,
+                  slices_xy_uv=merged_slice_xy_uv,
+                )
+                item_index = merged_end
+              }
+              SpriteSliceBatchExtra(i) => {
+                let first_batch = extra_sprite_slice_batches[i].payload
+                apply_scissor(first_batch.scissor)
+                @render.host_gpu_draw_sprite_uv_slices(
+                  texture_id=first_batch.texture.id(),
+                  rotation=first_batch.rotation,
+                  scale_x=first_batch.draw_scale.x,
+                  scale_y=first_batch.draw_scale.y,
+                  color_r=first_batch.color.r,
+                  color_g=first_batch.color.g,
+                  color_b=first_batch.color.b,
+                  color_a=first_batch.color.a,
+                  slices_xy_uv=first_batch.slices_xy_uv,
+                )
+                item_index = item_index + 1
+              }
+              UiSpriteExtra(i) => {
+                let first_sprite = extra_ui_sprites[i].payload
+                let first_rotation = first_sprite.transform.rotation_z()
+                let first_z = item.z
+                apply_scissor(first_sprite.scissor)
+                let mut merged_end = item_index + 1
+                while merged_end < item_count {
+                  let next_item = item_array[merged_end]
+                  match next_item.kind {
+                    UiSpriteExtra(next_i) => {
+                      let next_sprite = extra_ui_sprites[next_i].payload
+                      let next_rotation = next_sprite.transform.rotation_z()
+                      if !sprite_payload_can_merge(
+                          first_sprite,
+                          next_sprite,
+                          first_rotation,
+                          next_rotation,
+                          first_z,
+                          next_item.z,
+                        ) {
+                        break
+                      }
+                      merged_end = merged_end + 1
+                    }
+                    _ => break
+                  }
+                }
+                merged_slice_xy_uv.clear()
+                merged_slice_xy_uv.reserve_capacity((merged_end - item_index) * 6)
+                sprite_payload_append_slice_xy_uv(
+                  merged_slice_xy_uv, first_sprite,
+                )
+                for merged_index in (item_index + 1)..<merged_end {
+                  if item_array[merged_index].kind is UiSpriteExtra(next_i) {
+                    sprite_payload_append_slice_xy_uv(
+                      merged_slice_xy_uv,
+                      extra_ui_sprites[next_i].payload,
+                    )
+                  }
+                }
+                @render.host_gpu_draw_sprite_uv_slices(
+                  texture_id=first_sprite.texture.id(),
+                  rotation=first_rotation,
+                  scale_x=first_sprite.draw_scale.x,
+                  scale_y=first_sprite.draw_scale.y,
+                  color_r=first_sprite.color.r,
+                  color_g=first_sprite.color.g,
+                  color_b=first_sprite.color.b,
+                  color_a=first_sprite.color.a,
+                  slices_xy_uv=merged_slice_xy_uv,
+                )
+                item_index = merged_end
+              }
+              UiSpriteSliceBatchExtra(i) => {
+                let first_batch = extra_ui_sprite_slice_batches[i].payload
+                apply_scissor(first_batch.scissor)
+                @render.host_gpu_draw_sprite_uv_slices(
+                  texture_id=first_batch.texture.id(),
+                  rotation=first_batch.rotation,
+                  scale_x=first_batch.draw_scale.x,
+                  scale_y=first_batch.draw_scale.y,
+                  color_r=first_batch.color.r,
+                  color_g=first_batch.color.g,
+                  color_b=first_batch.color.b,
+                  color_a=first_batch.color.a,
+                  slices_xy_uv=first_batch.slices_xy_uv,
+                )
+                item_index = item_index + 1
+              }
+              _ => {
+                draw_camera_item(item)
+                item_index = item_index + 1
+              }
+            }
+          }
         }
-        for item in tail_items {
-          draw_camera_item(item)
+
+        draw_camera_item_array(items)
+        draw_camera_item_array(tail_items)
+        if scissor_active {
+          @render.host_gpu_clear_scissor()
         }
       }
 
@@ -8258,6 +8489,23 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         tonemapping_mode,
         color_grading,
       )
+      fn scene_draw_items_need_depth(
+        opaque_items : Array[DrawItem],
+        transparent_items : Array[DrawItem],
+      ) -> Bool {
+        if opaque_items.length() > 0 {
+          return true
+        }
+        for item in transparent_items {
+          if item.kind is Mesh(_) {
+            return true
+          }
+        }
+        false
+      }
+      let scene_needs_depth = scene_draw_items_need_depth(
+        draw_opaque_items, draw_transparent_items,
+      )
       let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
       if camera_postprocess_plan.uses_intermediate_source {
         auto_postprocess_source = Some(
@@ -8271,26 +8519,49 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
 
       if auto_postprocess_source is Some(source) {
-        @render.host_gpu_begin_pass_with_depth(
-          target_id=@asset.Handle::id(source),
-          width=view_width_logical,
-          height=view_height_logical,
-          clear_r=clear.r,
-          clear_g=clear.g,
-          clear_b=clear.b,
-          clear_a=clear.a,
-          camera_x=camera.transform.translation.x,
-          camera_y=camera.transform.translation.y,
-          camera_rotation~,
-          camera_scale=camera_uniform_scale,
-          viewport_x=0,
-          viewport_y=0,
-          viewport_width~,
-          viewport_height~,
-          viewport_depth_min~,
-          viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
-        )
+        if scene_needs_depth {
+          @render.host_gpu_begin_pass_with_depth(
+            target_id=@asset.Handle::id(source),
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x=0,
+            viewport_y=0,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+        } else {
+          @render.host_gpu_begin_pass(
+            target_id=@asset.Handle::id(source),
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x=0,
+            viewport_y=0,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+        }
         draw_camera_items(
           draw_opaque_items, 0, 0, viewport_width, viewport_height, scale_factor,
           draw_transparent_items,
@@ -8340,6 +8611,62 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
 
       if camera.bloom is None {
+        if scene_needs_depth {
+          @render.host_gpu_begin_pass_with_depth(
+            target_id~,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+        } else {
+          @render.host_gpu_begin_pass(
+            target_id~,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+        }
+        draw_camera_items(
+          draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
+          scale_factor, draw_transparent_items,
+        )
+        draw_wireframe_meshes_for_layers(meshes, camera.layers)
+        gizmos_draw_lines(camera.layers)
+        @render.host_gpu_end_pass()
+        if ui_overlay_draw_items.length() > 0 {
+          draw_ui_overlay_passes(ui_overlay_draw_items)
+        }
+        continue
+      }
+      if scene_needs_depth {
         @render.host_gpu_begin_pass_with_depth(
           target_id~,
           width=view_width_logical,
@@ -8360,38 +8687,28 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        draw_camera_items(
-          draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
-          scale_factor, draw_transparent_items,
+      } else {
+        @render.host_gpu_begin_pass(
+          target_id~,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear.r,
+          clear_g=clear.g,
+          clear_b=clear.b,
+          clear_a=clear.a,
+          camera_x=camera.transform.translation.x,
+          camera_y=camera.transform.translation.y,
+          camera_rotation~,
+          camera_scale=camera_uniform_scale,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        draw_wireframe_meshes_for_layers(meshes, camera.layers)
-        gizmos_draw_lines(camera.layers)
-        @render.host_gpu_end_pass()
-        if ui_overlay_draw_items.length() > 0 {
-          draw_ui_overlay_passes(ui_overlay_draw_items)
-        }
-        continue
       }
-      @render.host_gpu_begin_pass_with_depth(
-        target_id~,
-        width=view_width_logical,
-        height=view_height_logical,
-        clear_r=clear.r,
-        clear_g=clear.g,
-        clear_b=clear.b,
-        clear_a=clear.a,
-        camera_x=camera.transform.translation.x,
-        camera_y=camera.transform.translation.y,
-        camera_rotation~,
-        camera_scale=camera_uniform_scale,
-        viewport_x~,
-        viewport_y~,
-        viewport_width~,
-        viewport_height~,
-        viewport_depth_min~,
-        viewport_depth_max~,
-        clear_enabled=if clear_enabled { 1 } else { 0 },
-      )
       draw_camera_items(
         draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
         scale_factor, draw_transparent_items,

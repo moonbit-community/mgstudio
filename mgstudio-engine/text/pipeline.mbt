@@ -1124,8 +1124,6 @@ fn text_runtime_resolve_rem_size(world : @ecs.World) -> Float {
 }
 
 ///|
-
-///|
 fn text_absf(value : Float) -> Float {
   if value < 0.0F {
     0.0F - value
@@ -1293,10 +1291,10 @@ fn text_push_overlay_sprite_slice_batch(
   layers : @sprite.RenderLayers,
   scissor : @math.Rect?,
   target_camera : @core.Entity?,
-  slices : Array[@sprite.OverlaySpriteUvScissorSlice],
+  slices_xy_uv : Array[Float],
 ) -> Unit {
   guard texture_opt is Some(texture) else { return }
-  if slices.length() == 0 {
+  if slices_xy_uv.length() == 0 {
     return
   }
   batches.push(@sprite.OverlaySpriteUvScissorSlices::{
@@ -1310,8 +1308,129 @@ fn text_push_overlay_sprite_slice_batch(
     layers,
     scissor,
     target_camera,
-    slices,
+    slices_xy_uv,
   })
+}
+
+///|
+fn text_overlay_sprite_slice_scissor_eq(
+  lhs : @math.Rect?,
+  rhs : @math.Rect?,
+) -> Bool {
+  match (lhs, rhs) {
+    (None, None) => true
+    (Some(a), Some(b)) =>
+      a.min.x == b.min.x &&
+      a.min.y == b.min.y &&
+      a.max.x == b.max.x &&
+      a.max.y == b.max.y
+    _ => false
+  }
+}
+
+///|
+fn text_overlay_sprite_slice_target_camera_eq(
+  lhs : @core.Entity?,
+  rhs : @core.Entity?,
+) -> Bool {
+  match (lhs, rhs) {
+    (None, None) => true
+    (Some(a), Some(b)) => a.id == b.id && a.generation == b.generation
+    _ => false
+  }
+}
+
+///|
+fn text_overlay_sprite_slice_batch_can_merge(
+  lhs : @sprite.OverlaySpriteUvScissorSlices,
+  rhs : @sprite.OverlaySpriteUvScissorSlices,
+) -> Bool {
+  lhs.texture.id() == rhs.texture.id() &&
+  lhs.rotation == rhs.rotation &&
+  lhs.draw_scale.x == rhs.draw_scale.x &&
+  lhs.draw_scale.y == rhs.draw_scale.y &&
+  lhs.z == rhs.z &&
+  lhs.color.r == rhs.color.r &&
+  lhs.color.g == rhs.color.g &&
+  lhs.color.b == rhs.color.b &&
+  lhs.color.a == rhs.color.a &&
+  lhs.layers.mask == rhs.layers.mask &&
+  text_overlay_sprite_slice_scissor_eq(lhs.scissor, rhs.scissor) &&
+  text_overlay_sprite_slice_target_camera_eq(
+    lhs.target_camera,
+    rhs.target_camera,
+  )
+}
+
+///|
+fn text_overlay_sprite_slice_batch_union_bounds(
+  lhs_center : @math.Vec2,
+  lhs_half_size : @math.Vec2,
+  rhs_center : @math.Vec2,
+  rhs_half_size : @math.Vec2,
+) -> (@math.Vec2, @math.Vec2) {
+  let lhs_min_x = lhs_center.x - lhs_half_size.x
+  let lhs_min_y = lhs_center.y - lhs_half_size.y
+  let lhs_max_x = lhs_center.x + lhs_half_size.x
+  let lhs_max_y = lhs_center.y + lhs_half_size.y
+  let rhs_min_x = rhs_center.x - rhs_half_size.x
+  let rhs_min_y = rhs_center.y - rhs_half_size.y
+  let rhs_max_x = rhs_center.x + rhs_half_size.x
+  let rhs_max_y = rhs_center.y + rhs_half_size.y
+  let min_x = if lhs_min_x < rhs_min_x { lhs_min_x } else { rhs_min_x }
+  let min_y = if lhs_min_y < rhs_min_y { lhs_min_y } else { rhs_min_y }
+  let max_x = if lhs_max_x > rhs_max_x { lhs_max_x } else { rhs_max_x }
+  let max_y = if lhs_max_y > rhs_max_y { lhs_max_y } else { rhs_max_y }
+  let center = @math.Vec2::new((min_x + max_x) / 2.0F, (min_y + max_y) / 2.0F)
+  let half_size = @math.Vec2::new(
+    (max_x - min_x) / 2.0F,
+    (max_y - min_y) / 2.0F,
+  )
+  (center, half_size)
+}
+
+///|
+fn text_append_overlay_sprite_slice_batch(
+  batches : Array[@sprite.OverlaySpriteUvScissorSlices],
+  batch : @sprite.OverlaySpriteUvScissorSlices,
+) -> Unit {
+  let batch_count = batches.length()
+  if batch_count == 0 {
+    batches.push(batch)
+    return
+  }
+  let last_index = batch_count - 1
+  let last_batch = batches[last_index]
+  if !text_overlay_sprite_slice_batch_can_merge(last_batch, batch) {
+    batches.push(batch)
+    return
+  }
+  let merged_slices_xy_uv = last_batch.slices_xy_uv
+  merged_slices_xy_uv.reserve_capacity(
+    merged_slices_xy_uv.length() + batch.slices_xy_uv.length(),
+  )
+  for value in batch.slices_xy_uv {
+    merged_slices_xy_uv.push(value)
+  }
+  let (merged_center, merged_half_size) = text_overlay_sprite_slice_batch_union_bounds(
+    last_batch.cull_center,
+    last_batch.cull_half_size,
+    batch.cull_center,
+    batch.cull_half_size,
+  )
+  batches[last_index] = @sprite.OverlaySpriteUvScissorSlices::{
+    texture: last_batch.texture,
+    rotation: last_batch.rotation,
+    draw_scale: last_batch.draw_scale,
+    z: last_batch.z,
+    color: last_batch.color,
+    cull_center: merged_center,
+    cull_half_size: merged_half_size,
+    layers: last_batch.layers,
+    scissor: last_batch.scissor,
+    target_camera: last_batch.target_camera,
+    slices_xy_uv: merged_slices_xy_uv,
+  }
 }
 
 ///|
@@ -1374,11 +1493,12 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     }
     let layout_info = instance.layout_info
     let transform = instance.transform
+    let glyph_count = layout_info.glyphs.length()
+    let run_count = layout_info.run_geometry.length()
     let tx = transform.translation.x
     let ty = transform.translation.y
     let sx = transform.scale.x
     let sy = transform.scale.y
-
     let mut scene_visible = true
     // Bevy-aligned intent: skip `Text2d` work for off-screen text.
     // UI text (`ui_node_size` is `Some`) keeps existing UI-space behavior.
@@ -1619,18 +1739,24 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let mut cached_span_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
 
     let instance_main_batches : Array[@sprite.OverlaySpriteUvScissorSlices] = []
-    let mut main_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
+    let mut main_batch_slices_xy_uv : Array[Float] = []
     let mut main_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut main_batch_texture_id = -1
     let mut main_batch_span_index = -1
     let mut main_batch_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
     let main_batch_bounds = OverlaySpriteSliceBatchBounds::default()
+    instance_main_batches.reserve_capacity(run_count + 1)
+    main_batch_slices_xy_uv.reserve_capacity(glyph_count * 6)
 
     let instance_shadow_batches : Array[@sprite.OverlaySpriteUvScissorSlices] = []
-    let mut shadow_batch_slices : Array[@sprite.OverlaySpriteUvScissorSlice] = []
+    let mut shadow_batch_slices_xy_uv : Array[Float] = []
     let mut shadow_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut shadow_batch_texture_id = -1
     let shadow_batch_bounds = OverlaySpriteSliceBatchBounds::default()
+    instance_shadow_batches.reserve_capacity(run_count + 1)
+    if shadow_opt is Some(_) {
+      shadow_batch_slices_xy_uv.reserve_capacity(glyph_count * 6)
+    }
 
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
@@ -1650,7 +1776,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       }
 
       let texture_id = atlas_info.texture.id()
-      if main_batch_slices.length() > 0 &&
+      if main_batch_slices_xy_uv.length() > 0 &&
         (
           main_batch_texture_id != texture_id ||
           main_batch_span_index != glyph.span_index
@@ -1667,26 +1793,27 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           instance.layers,
           instance.ui_scissor,
           instance.ui_camera_entity,
-          main_batch_slices,
+          main_batch_slices_xy_uv,
         )
-        main_batch_slices = []
+        main_batch_slices_xy_uv = []
         main_batch_bounds.clear()
       }
-      if main_batch_slices.length() == 0 {
+      if main_batch_slices_xy_uv.length() == 0 {
         main_batch_texture = Some(atlas_info.texture)
         main_batch_texture_id = texture_id
         main_batch_span_index = glyph.span_index
         main_batch_color = color
       }
       main_batch_bounds.expand(translation)
-      main_batch_slices.push(@sprite.OverlaySpriteUvScissorSlice::{
-        center: translation,
-        uv_min,
-        uv_max,
-      })
+      main_batch_slices_xy_uv.push(translation.x)
+      main_batch_slices_xy_uv.push(translation.y)
+      main_batch_slices_xy_uv.push(uv_min.x)
+      main_batch_slices_xy_uv.push(uv_min.y)
+      main_batch_slices_xy_uv.push(uv_max.x)
+      main_batch_slices_xy_uv.push(uv_max.y)
 
       if shadow_opt is Some(shadow) {
-        if shadow_batch_slices.length() > 0 &&
+        if shadow_batch_slices_xy_uv.length() > 0 &&
           shadow_batch_texture_id != texture_id {
           text_push_overlay_sprite_slice_batch(
             instance_shadow_batches,
@@ -1700,12 +1827,12 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             instance.layers,
             instance.ui_scissor,
             instance.ui_camera_entity,
-            shadow_batch_slices,
+            shadow_batch_slices_xy_uv,
           )
-          shadow_batch_slices = []
+          shadow_batch_slices_xy_uv = []
           shadow_batch_bounds.clear()
         }
-        if shadow_batch_slices.length() == 0 {
+        if shadow_batch_slices_xy_uv.length() == 0 {
           shadow_batch_texture = Some(atlas_info.texture)
           shadow_batch_texture_id = texture_id
         }
@@ -1714,11 +1841,12 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           translation.y + shadow.offset.y,
         )
         shadow_batch_bounds.expand(shadow_translation)
-        shadow_batch_slices.push(@sprite.OverlaySpriteUvScissorSlice::{
-          center: shadow_translation,
-          uv_min,
-          uv_max,
-        })
+        shadow_batch_slices_xy_uv.push(shadow_translation.x)
+        shadow_batch_slices_xy_uv.push(shadow_translation.y)
+        shadow_batch_slices_xy_uv.push(uv_min.x)
+        shadow_batch_slices_xy_uv.push(uv_min.y)
+        shadow_batch_slices_xy_uv.push(uv_max.x)
+        shadow_batch_slices_xy_uv.push(uv_max.y)
       }
 
       if debug_capture_enabled {
@@ -1751,9 +1879,9 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       instance.layers,
       instance.ui_scissor,
       instance.ui_camera_entity,
-      main_batch_slices,
+      main_batch_slices_xy_uv,
     )
-    main_batch_slices = []
+    main_batch_slices_xy_uv = []
     main_batch_bounds.clear()
 
     if shadow_opt is Some(shadow) {
@@ -1769,16 +1897,20 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         instance.layers,
         instance.ui_scissor,
         instance.ui_camera_entity,
-        shadow_batch_slices,
+        shadow_batch_slices_xy_uv,
       )
-      shadow_batch_slices = []
+      shadow_batch_slices_xy_uv = []
       shadow_batch_bounds.clear()
       for batch in instance_shadow_batches {
-        overlay_sprite_slices_batches.push(batch)
+        text_append_overlay_sprite_slice_batch(
+          overlay_sprite_slices_batches, batch,
+        )
       }
     }
     for batch in instance_main_batches {
-      overlay_sprite_slices_batches.push(batch)
+      text_append_overlay_sprite_slice_batch(
+        overlay_sprite_slices_batches, batch,
+      )
     }
   }
   @sprite_render.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
