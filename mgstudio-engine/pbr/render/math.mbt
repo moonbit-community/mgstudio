@@ -88,6 +88,22 @@ pub fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
 }
 
 ///|
+pub fn render3d_mesh_view_depth(
+  mesh_transform : @transform.Transform,
+  camera_transform : @transform.Transform,
+) -> Float {
+  let to_mesh = @math.Vec3::new(
+    mesh_transform.translation.x - camera_transform.translation.x,
+    mesh_transform.translation.y - camera_transform.translation.y,
+    mesh_transform.translation.z - camera_transform.translation.z,
+  )
+  let camera_forward = render3d_transform_forward(camera_transform)
+  to_mesh.x * camera_forward.x +
+  to_mesh.y * camera_forward.y +
+  to_mesh.z * camera_forward.z
+}
+
+///|
 pub fn render3d_transform_forward(
   transform : @transform.Transform,
 ) -> @math.Vec3 {

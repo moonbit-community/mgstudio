@@ -183,22 +183,6 @@ fn render3d_pass_projection_unjittered_clip_from_world(
 }
 
 ///|
-fn render3d_mesh_view_depth(
-  mesh_transform : @transform.Transform,
-  camera_transform : @transform.Transform,
-) -> Float {
-  let to_mesh = @math.Vec3::new(
-    mesh_transform.translation.x - camera_transform.translation.x,
-    mesh_transform.translation.y - camera_transform.translation.y,
-    mesh_transform.translation.z - camera_transform.translation.z,
-  )
-  let camera_forward = render3d_transform_forward(camera_transform)
-  to_mesh.x * camera_forward.x +
-  to_mesh.y * camera_forward.y +
-  to_mesh.z * camera_forward.z
-}
-
-///|
 fn render3d_orthographic_projection_matrix(
   left : Float,
   right : Float,
