@@ -45,7 +45,7 @@ fn float_text_1(value : Float) -> String {
   let abs_scaled = if scaled < 0 { -scaled } else { scaled }
   let whole = abs_scaled / 10
   let fraction = abs_scaled % 10
-  sign + whole.to_string() + "." + fraction.to_string()
+  "\{sign}\{whole.to_string()}.\{fraction.to_string()}"
 }
 
 ///|
@@ -54,7 +54,7 @@ fn cursor_position_text(
 ) -> String {
   match relative_cursor_position.normalized {
     Some(normalized) =>
-      "(" + float_text_1(normalized.x) + ", " + float_text_1(normalized.y) + ")"
+      "(\{float_text_1(normalized.x)}, \{float_text_1(normalized.y)})"
     None => "unknown"
   }
 }

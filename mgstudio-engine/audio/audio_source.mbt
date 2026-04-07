@@ -191,6 +191,6 @@ fn audio_source_load_registered(
   }
   match audio_source_load(world, asset_server, path) {
     Some(handle) => handle
-    None => abort("Failed to decode AudioSource bytes for asset path " + path)
+    None => abort("Failed to decode AudioSource bytes for asset path \{path}")
   }
 }

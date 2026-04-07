@@ -226,15 +226,12 @@ pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[
         Some(key) => key
         None =>
           abort(
-            "focused input registry contained a mismatched key for " +
-            source_key.debug_name(),
+            "focused input registry contained a mismatched key for \{source_key.debug_name()}",
           )
       }
     None => {
       let key : @ecs.MessageKey[FocusedInput[M]] = @ecs.register_message(
-        debug_name="bevy_input_focus::FocusedInput<" +
-          source_key.debug_name() +
-          ">",
+        debug_name="bevy_input_focus::FocusedInput<\{source_key.debug_name()}>",
       )
       focused_input_message_registry.val.set(source_id, @any.Any::of(key))
       key

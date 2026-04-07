@@ -34,15 +34,7 @@ pub fn GlyphCacheKey::new(
 
 ///|
 fn glyph_cache_key_map_key(cache_key : GlyphCacheKey) -> String {
-  cache_key.glyph_id.to_string() +
-  ":" +
-  cache_key.subpixel_x.to_string() +
-  ":" +
-  cache_key.subpixel_y.to_string() +
-  ":" +
-  cache_key.font_weight.to_string() +
-  ":" +
-  cache_key.flags.reinterpret_as_int().to_string()
+  "\{cache_key.glyph_id.to_string()}:\{cache_key.subpixel_x.to_string()}:\{cache_key.subpixel_y.to_string()}:\{cache_key.font_weight.to_string()}:\{cache_key.flags.reinterpret_as_int().to_string()}"
 }
 
 ///|

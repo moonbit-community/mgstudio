@@ -44,15 +44,7 @@ fn label_color(index : Int) -> @sprite.Color {
 
 ///|
 fn all_glyphs() -> String {
-  " !\\\"#$%&'()*\n" +
-  "+,-./012345\n" +
-  "6789:;<=>?@\n" +
-  "ABCDEFGHIJK\n" +
-  "LMNOPQRSTUV\n" +
-  "WXYZ[\\\\]^_`a\n" +
-  "bcdefghijkl\n" +
-  "mnopqrstuvw\n" +
-  "xyz{|}~"
+  " !\\\"#$%&'()*\n+,-./012345\n6789:;<=>?@\nABCDEFGHIJK\nLMNOPQRSTUV\nWXYZ[\\\\]^_`a\nbcdefghijkl\nmnopqrstuvw\nxyz{|}~"
 }
 
 ///|
@@ -84,7 +76,7 @@ fn draw_labels(
     )
     gizmos.text_2d(
       @gizmos.Isometry2d::new(position, 0.03490658503988659F),
-      "label " + i.to_string(),
+      "label \{i.to_string()}",
       25.0F,
       @math.Vec2::new(0.0F, 0.0F),
       label_color(i),
@@ -99,7 +91,7 @@ fn draw_labels(
   if fps_value is Some(fps) {
     gizmos.text_2d(
       @gizmos.Isometry2d::new(@math.Vec2::new(600.0F, START_Y + 150.0F), 0.0F),
-      "fps: " + fps.to_string(),
+      "fps: \{fps.to_string()}",
       25.0F,
       @math.Vec2::new(0.0F, 0.0F),
       @sprite.Color::white(),

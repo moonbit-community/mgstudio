@@ -46,11 +46,11 @@ fn[T] draw_bounds_component_key() -> @ecs.ComponentKey[DrawBounds[T]] {
       match existing_key.try_to() {
         Some(key) => key
         None =>
-          abort("draw bounds component registry mismatch for " + type_name)
+          abort("draw bounds component registry mismatch for \{type_name}")
       }
     None => {
       let key : @ecs.ComponentKey[DrawBounds[T]] = @ecs.register_component(
-        debug_name="examples.2d.mesh2d_arcs." + type_name,
+        debug_name="examples.2d.mesh2d_arcs.\{type_name}",
       )
       draw_bounds_component_registry.val.set(type_name, @any.of(key))
       key

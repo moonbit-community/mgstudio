@@ -49,7 +49,7 @@ fn generic_font_label(font_source : @text.FontSource) -> String {
     Math => "FontSource::Math"
     FangSong => "FontSource::FangSong"
     Handle(_) => "FontSource::Handle"
-    Family(name) => "FontSource::Family(" + name + ")"
+    Family(name) => "FontSource::Family(\{name})"
   }
 }
 

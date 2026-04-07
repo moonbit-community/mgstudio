@@ -109,22 +109,13 @@ fn update_info_text(world : @ecs.World) -> Unit {
   if virtual_time_state.val.real_text is Some(real_text) {
     @text.text_set_content(
       real_text,
-      "REAL TIME\nElapsed: " +
-      real_time.elapsed_seconds().to_string() +
-      "\nDelta: " +
-      real_time.delta_seconds().to_string() +
-      "\n",
+      "REAL TIME\nElapsed: \{real_time.elapsed_seconds().to_string()}\nDelta: \{real_time.delta_seconds().to_string()}\n",
     )
   }
   if virtual_time_state.val.virtual_text is Some(virtual_text) {
     @text.text_set_content(
       virtual_text,
-      "VIRTUAL TIME\nElapsed: " +
-      virtual_time.elapsed_seconds().to_string() +
-      "\nDelta: " +
-      virtual_time.delta_seconds().to_string() +
-      "\nSpeed: " +
-      virtual_time.relative_speed().to_string(),
+      "VIRTUAL TIME\nElapsed: \{virtual_time.elapsed_seconds().to_string()}\nDelta: \{virtual_time.delta_seconds().to_string()}\nSpeed: \{virtual_time.relative_speed().to_string()}",
     )
   }
 }

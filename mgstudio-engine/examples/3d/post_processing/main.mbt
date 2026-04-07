@@ -94,11 +94,11 @@ fn float_text(value : Float) -> String {
   let fraction = scaled - whole * 100
   let fraction_abs = if fraction < 0 { -fraction } else { fraction }
   let fraction_text = if fraction_abs < 10 {
-    "0" + fraction_abs.to_string()
+    "0\{fraction_abs.to_string()}"
   } else {
     fraction_abs.to_string()
   }
-  whole.to_string() + "." + fraction_text
+  "\{whole.to_string()}.\{fraction_text}"
 }
 
 ///|
@@ -146,14 +146,12 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
 fn help_text_content() -> String {
   let settings = post_processing_state.val.settings
   let lines = [
-    "Chromatic aberration intensity: " +
-    float_text(settings.chromatic_aberration_intensity),
-    "Vignette intensity: " + float_text(settings.vignette_intensity),
-    "Vignette radius: " + float_text(settings.vignette_radius),
-    "Vignette smoothness: " + float_text(settings.vignette_smoothness),
-    "Vignette roundness: " + float_text(settings.vignette_roundness),
-    "Vignette edge compensation: " +
-    float_text(settings.vignette_edge_compensation),
+    "Chromatic aberration intensity: \{float_text(settings.chromatic_aberration_intensity)}",
+    "Vignette intensity: \{float_text(settings.vignette_intensity)}",
+    "Vignette radius: \{float_text(settings.vignette_radius)}",
+    "Vignette smoothness: \{float_text(settings.vignette_smoothness)}",
+    "Vignette roundness: \{float_text(settings.vignette_roundness)}",
+    "Vignette edge compensation: \{float_text(settings.vignette_edge_compensation)}",
   ]
   let text = StringBuilder::new()
   for i in 0..<SETTING_COUNT {
@@ -187,6 +185,19 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       Some(@post_process.ChromaticAberration::default()),
     )
     .with_vignette(Some(@post_process.Vignette::default()))
+    .with_distance_fog(
+      Some(
+        @pbr.DistanceFog::new(
+          @sprite.Color::new(
+            43.0F / 255.0F,
+            44.0F / 255.0F,
+            47.0F / 255.0F,
+            1.0F,
+          ),
+          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
+        ),
+      ),
+    )
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
   try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
@@ -197,13 +208,6 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       2000.0F,
-    ),
-  )
-
-  @pbr.render3d_set_distance_fog(
-    @pbr.DistanceFog::new(
-      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @pbr.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
 }

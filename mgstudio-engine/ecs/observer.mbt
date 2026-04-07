@@ -232,19 +232,13 @@ pub fn[E : TriggerEvent] current_observer() -> On[E] {
   let event_key : EventKey[E] = E::observer_event()
   if context.event_key_id != event_key.id() {
     abort(
-      "Current " +
-      E::debug_name() +
-      " observer context does not match event `" +
-      event_key.debug_name() +
-      "`",
+      "Current \{E::debug_name()} observer context does not match event `\{event_key.debug_name()}`",
     )
   }
   let event_ref : Ref[E] = context.payload.to_ref() catch {
     _ =>
       abort(
-        "Current trigger observer payload type mismatch for `" +
-        E::debug_name() +
-        "`",
+        "Current trigger observer payload type mismatch for `\{E::debug_name()}`",
       )
   }
   On::{
@@ -264,11 +258,7 @@ pub fn[E : ComponentObserverEvent, C : Component] current_component_observer() -
   let component_key : ComponentKey[C] = Component::component()
   if context.component_id != component_key.id() {
     abort(
-      "Current " +
-      E::debug_name() +
-      " observer context does not match component `" +
-      component_key.debug_name() +
-      "`",
+      "Current \{E::debug_name()} observer context does not match component `\{component_key.debug_name()}`",
     )
   }
   ComponentOn::{

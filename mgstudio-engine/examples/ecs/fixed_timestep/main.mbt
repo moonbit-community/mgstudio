@@ -22,8 +22,7 @@ fn frame_update(
   let last_time_ref = last_time.get_ref()
   let time_value = time.get()
   @app.log_info(
-    "time since last frame_update: " +
-    (time_value.elapsed_secs() - last_time_ref.val).to_string(),
+    "time since last frame_update: \{(time_value.elapsed_secs() - last_time_ref.val).to_string()}",
   )
   last_time_ref.val = time_value.elapsed_secs()
 }
@@ -38,15 +37,11 @@ fn fixed_update(
   let time_value = time.get()
   let fixed_time_value = fixed_time.get()
   @app.log_info(
-    "time since last fixed_update: " +
-    (time_value.elapsed_secs() - last_time_ref.val).to_string() +
-    "\n",
+    "time since last fixed_update: \{(time_value.elapsed_secs() - last_time_ref.val).to_string()}\n",
   )
-  @app.log_info("fixed timestep: " + time_value.delta_secs().to_string() + "\n")
+  @app.log_info("fixed timestep: \{time_value.delta_secs().to_string()}\n")
   @app.log_info(
-    "time accrued toward next fixed_update: " +
-    fixed_time_value.overstep().as_secs_f32().to_string() +
-    "\n",
+    "time accrued toward next fixed_update: \{fixed_time_value.overstep().as_secs_f32().to_string()}\n",
   )
   last_time_ref.val = time_value.elapsed_secs()
 }

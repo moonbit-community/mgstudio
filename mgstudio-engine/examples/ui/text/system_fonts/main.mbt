@@ -193,7 +193,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
     spawn_text(
       commands,
       panel,
-      "Total available fonts: " + families.length().to_string(),
+      "Total available fonts: \{families.length().to_string()}",
       heading_font(),
       label_color(),
       @ui.Node::default(),

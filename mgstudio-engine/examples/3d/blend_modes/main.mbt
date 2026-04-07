@@ -119,7 +119,8 @@ fn blend_modes_display_text(
 ) -> String {
   let alpha_text = ((blend_modes_state.val.alpha * 100.0F).round() / 100.0F).to_string()
   let hdr_on = try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
-  "  HDR: " + (if hdr_on { "ON " } else { "OFF" }) + "\nAlpha: " + alpha_text
+  let hdr_text = if hdr_on { "ON " } else { "OFF" }
+  "  HDR: \{hdr_text}\nAlpha: \{alpha_text}"
 }
 
 ///|

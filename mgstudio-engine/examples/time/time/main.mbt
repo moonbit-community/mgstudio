@@ -56,7 +56,7 @@ fn[T] read_time_resource(
 ) -> @my_time.Time[T] {
   match (try! world.get_resource(key)) {
     Some(time) => time
-    None => abort("Missing required time resource: " + debug_name)
+    None => abort("Missing required time resource: \{debug_name}")
   }
 }
 
@@ -86,10 +86,7 @@ fn print_real_time(world : @ecs.World) -> Unit {
     "Time<Real>",
   )
   println(
-    "PreUpdate: this is real time clock, delta is " +
-    real_time.delta().to_string() +
-    " and elapsed is " +
-    real_time.elapsed().to_string(),
+    "PreUpdate: this is real time clock, delta is \{real_time.delta().to_string()} and elapsed is \{real_time.elapsed().to_string()}",
   )
 }
 
@@ -101,10 +98,7 @@ fn print_fixed_time(world : @ecs.World) -> Unit {
     "Time<Unit>",
   )
   println(
-    "FixedUpdate: this is generic time clock inside fixed, delta is " +
-    time.delta().to_string() +
-    " and elapsed is " +
-    time.elapsed().to_string(),
+    "FixedUpdate: this is generic time clock inside fixed, delta is \{time.delta().to_string()} and elapsed is \{time.elapsed().to_string()}",
   )
 }
 
@@ -116,10 +110,7 @@ fn print_time(world : @ecs.World) -> Unit {
     "Time<Unit>",
   )
   println(
-    "Update: this is generic time clock, delta is " +
-    time.delta().to_string() +
-    " and elapsed is " +
-    time.elapsed().to_string(),
+    "Update: this is generic time clock, delta is \{time.delta().to_string()} and elapsed is \{time.elapsed().to_string()}",
   )
 }
 

@@ -147,7 +147,7 @@ fn on_pointer_move(
       Some(entity) => entity.id.to_string()
       None => "none"
     }
-    state.get_ref().val.last_event = "move target=" + target_text
+    state.get_ref().val.last_event = "move target=\{target_text}"
   }
 }
 
@@ -163,7 +163,7 @@ fn on_pointer_click(
     Some(entity) => entity.id.to_string()
     None => "none"
   }
-  state.get_ref().val.last_event = "click target=" + target_text
+  state.get_ref().val.last_event = "click target=\{target_text}"
 }
 
 ///|
@@ -174,10 +174,7 @@ fn refresh_overlay(
   let text = texts.get(state.get().label_entity) catch { _ => None }
   if text is Some(text) {
     text.get_ref().val = @text.Text::new(
-      "Press F3 to cycle debug mode\nMode: " +
-      debug_mode_name(state.get().mode) +
-      "\nLast event: " +
-      state.get().last_event,
+      "Press F3 to cycle debug mode\nMode: \{debug_mode_name(state.get().mode)}\nLast event: \{state.get().last_event}",
     )
   }
 }

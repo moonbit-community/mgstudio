@@ -170,14 +170,7 @@ fn camera_view_transform(index : Int) -> @transform.Transform {
 ///|
 fn help_text_content() -> String {
   let current_layers = layer_count(parallax_state.val.target_layers)
-  "Parallax depth scale: \{float_text(parallax_state.val.displayed_depth)}\n" +
-  "Layers: \{current_layers.round()}\n" +
-  "Method: \{parallax_method_text(parallax_state.val.current_method)}\n\n" +
-  "Controls:\n" +
-  "Left click - Change view angle\n" +
-  "1/2 - Decrease/Increase parallax depth scale\n" +
-  "3/4 - Decrease/Increase layer count\n" +
-  "Space - Switch parallaxing algorithm\n"
+  "Parallax depth scale: \{float_text(parallax_state.val.displayed_depth)}\nLayers: \{current_layers.round()}\nMethod: \{parallax_method_text(parallax_state.val.current_method)}\n\nControls:\nLeft click - Change view angle\n1/2 - Decrease/Increase parallax depth scale\n3/4 - Decrease/Increase layer count\nSpace - Switch parallaxing algorithm\n"
 }
 
 ///|

@@ -156,18 +156,7 @@ fn current_selection_visibility() -> Bool {
 
 ///|
 fn help_text_content() -> String {
-  "Light Textures (Bevy-aligned controls)\n" +
-  "1/2/3/4: Selection (" +
-  selection_text(light_textures_state.val.selection) +
-  ")\n" +
-  "M/S/R: Drag Mode (" +
-  drag_mode_text(light_textures_state.val.drag_mode) +
-  ")\n" +
-  "V: Toggle selected light visibility (" +
-  visibility_text(current_selection_visibility()) +
-  ")\n" +
-  "Drag Left Mouse: apply mode to selection\n\n" +
-  "Note: light-cookie projection is currently renderer-adapted."
+  "Light Textures (Bevy-aligned controls)\n1/2/3/4: Selection (\{selection_text(light_textures_state.val.selection)})\nM/S/R: Drag Mode (\{drag_mode_text(light_textures_state.val.drag_mode)})\nV: Toggle selected light visibility (\{visibility_text(current_selection_visibility())})\nDrag Left Mouse: apply mode to selection\n\nNote: light-cookie projection is currently renderer-adapted."
 }
 
 ///|

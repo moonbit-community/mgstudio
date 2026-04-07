@@ -195,7 +195,7 @@ fn setup(world : @ecs.World) -> Unit {
       spawn_text_block(
         world,
         column_entity,
-        "JustifyContent::" + justify_content_name(justification),
+        "JustifyContent::\{justify_content_name(justification)}",
         font,
         linebreak,
         @sprite.Color::srgb(0.55F, 0.0F, 0.0F),
@@ -203,7 +203,7 @@ fn setup(world : @ecs.World) -> Unit {
       spawn_text_block(
         world,
         column_entity,
-        "LineBreak::" + linebreak_name(linebreak),
+        "LineBreak::\{linebreak_name(linebreak)}",
         font,
         linebreak,
         @sprite.Color::srgb(0.4F, 0.0F, 0.0F),

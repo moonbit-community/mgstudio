@@ -356,7 +356,7 @@ fn system_config_name(
     None =>
       match config.set {
         Some(set_name) => set_name
-        None => "__anon_system#" + system_index.to_string()
+        None => "__anon_system#\{system_index.to_string()}"
       }
   }
 }

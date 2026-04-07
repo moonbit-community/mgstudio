@@ -309,7 +309,7 @@ fn toggle_explosions(
     } else {
       "disabled"
     }
-    @app.log_info("Mine explosions " + label)
+    @app.log_info("Mine explosions \{label}")
   }
 }
 

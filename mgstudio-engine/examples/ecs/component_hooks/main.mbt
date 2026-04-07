@@ -70,7 +70,7 @@ pub impl Default for MyComponentIndex with default() {
 ///|
 fn caller_suffix(caller : String?) -> String {
   match caller {
-    Some(location) => " due to " + location
+    Some(location) => " due to \{location}"
     None => ""
   }
 }
@@ -100,9 +100,10 @@ fn my_component_or_abort(
 fn my_component_index_text(index : MyComponentIndex) -> String {
   let entries : Array[String] = []
   index.entities.each(fn(key, entity) {
-    entries.push(key.to_string() + ":" + entity.id.to_string())
+    entries.push("\{key.to_string()}:\{entity.id.to_string()}")
   })
-  "{" + entries.join(", ") + "}"
+  let joined_entries = entries.join(", ")
+  "{\{joined_entries}}"
 }
 
 ///|
@@ -135,12 +136,7 @@ fn setup(world : @ecs.World) -> Unit {
     .on_add(fn(world, context) {
       let component = my_component_or_abort(world, context.entity)
       @app.log_info(
-        context.component_id.to_string() +
-        " added to entity " +
-        context.entity.id.to_string() +
-        " with value " +
-        component.key.to_string() +
-        caller_suffix(context.caller),
+        "\{context.component_id.to_string()} added to entity \{context.entity.id.to_string()} with value \{component.key.to_string()}\{caller_suffix(context.caller)}",
       )
       update_my_component_index(world, fn(index) {
         index.entities.set(component.key, context.entity)
@@ -150,8 +146,7 @@ fn setup(world : @ecs.World) -> Unit {
     })
     .on_insert(fn(world, _context) {
       @app.log_info(
-        "Current Index: " +
-        my_component_index_text(my_component_index_or_abort(world.world())),
+        "Current Index: \{my_component_index_text(my_component_index_or_abort(world.world()))}",
       )
     })
     .on_replace(fn(world, context) {
@@ -164,12 +159,7 @@ fn setup(world : @ecs.World) -> Unit {
     .on_remove(fn(world, context) {
       let component = my_component_or_abort(world, context.entity)
       @app.log_info(
-        context.component_id.to_string() +
-        " removed from entity " +
-        context.entity.id.to_string() +
-        " with value " +
-        component.key.to_string() +
-        caller_suffix(context.caller),
+        "\{context.component_id.to_string()} removed from entity \{context.entity.id.to_string()} with value \{component.key.to_string()}\{caller_suffix(context.caller)}",
       )
       world.commands().entity(context.entity).despawn()
     }),

@@ -26,10 +26,10 @@ fn main {
   let complex_closure = fn(value : String) -> @app.SystemFn[@ecs.World] {
     let stored_value : Ref[String] = Ref::new(value)
     fn(_world : @ecs.World) {
-      @app.log_info("Hello from a complex closure! " + stored_value.val)
+      @app.log_info("Hello from a complex closure! \{stored_value.val}")
 
       // We can modify the value inside the closure. This is saved between calls.
-      stored_value.val = stored_value.val + " - updated"
+      stored_value.val = "\{stored_value.val} - updated"
     }
   }
 
@@ -53,8 +53,7 @@ fn main {
     @app.Update,
     @app.system(fn(_world : @ecs.World) {
       @app.log_info(
-        "Hello from an inlined closure that captured the 'outside_variable'! " +
-        outside_variable,
+        "Hello from an inlined closure that captured the 'outside_variable'! \{outside_variable}",
       )
     }),
   )

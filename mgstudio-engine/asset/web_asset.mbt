@@ -36,7 +36,7 @@ pub fn WebAssetPlugin::with_silence_startup_warning(
 ///|
 fn web_asset_reader(scheme : String) -> AssetReader {
   AssetReader::new(
-    fn(path) { web_asset_fetch(scheme + "://" + path) },
+    fn(path) { web_asset_fetch("\{scheme}://\{path}") },
     fn(_path) { None },
     fn(_path) { None },
     fn(_path) { false },

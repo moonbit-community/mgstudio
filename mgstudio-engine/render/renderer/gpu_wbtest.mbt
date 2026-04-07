@@ -1202,7 +1202,7 @@ fn resolve_wgsl_import_module_path_for_test(
 fn register_renderer_test_shader_source(path : String) -> Unit {
   let full_path = @path.Path::join("assets", path).normalize().to_string()
   let source = @fs.read_file_to_string(full_path) catch {
-    _ => abort("failed to load renderer test shader source: " + path)
+    _ => abort("failed to load renderer test shader source: \{path}")
   }
   register_wgsl_source(path, source)
 }

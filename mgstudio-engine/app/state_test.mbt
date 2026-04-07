@@ -105,15 +105,15 @@ test "app state: exit transition enter hooks run in bevy order" {
       ),
     )
     .add_on_exit_system(TestState::A, fn(_world : @ecs.World) {
-      log.push("exit@" + current_stage_label())
+      log.push("exit@\{current_stage_label()}")
     })
     .add_on_transition_system(TestState::A, TestState::B, fn(
       _world : @ecs.World,
     ) {
-      log.push("transition@" + current_stage_label())
+      log.push("transition@\{current_stage_label()}")
     })
     .add_on_enter_system(TestState::B, fn(_world : @ecs.World) {
-      log.push("enter@" + current_stage_label())
+      log.push("enter@\{current_stage_label()}")
     })
 
   app.run_once() |> ignore
@@ -137,7 +137,7 @@ test "app state: startup enter hook runs in state transition stage" {
     .add_plugins([states_plugin(StatesPlugin::default())])
     .insert_state(TestState::A)
     .add_on_enter_system(TestState::A, fn(_world : @ecs.World) {
-      log.push("enter@" + current_stage_label())
+      log.push("enter@\{current_stage_label()}")
     })
 
   app.run_startup() |> ignore

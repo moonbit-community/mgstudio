@@ -21,7 +21,7 @@ pub(all) enum ShaderImport {
 ///|
 pub fn ShaderImport::module_name(self : ShaderImport) -> String {
   match self {
-    AssetPath(path) => "\"" + path + "\""
+    AssetPath(path) => "\"\{path}\""
     Custom(path) => path
   }
 }

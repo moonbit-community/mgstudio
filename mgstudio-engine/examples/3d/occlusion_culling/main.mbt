@@ -107,10 +107,7 @@ fn approximate_occluded(world_pos : @math.Vec3) -> Bool {
 fn help_text_content() -> String {
   let status = if occlusion_state.val.occlusion_enabled { "ON" } else { "OFF" }
   let total = occlusion_state.val.small_cubes.length() + 1
-  "Occlusion culling \{status} (Press Space to toggle)\n" +
-  "\{occlusion_state.val.rendered_count}/\{total} meshes rendered\n" +
-  "Approx culled meshes: \{occlusion_state.val.culled_count}\n\n" +
-  "Adapted note: GPU readback + occlusion compute path is temporarily disabled."
+  "Occlusion culling \{status} (Press Space to toggle)\n\{occlusion_state.val.rendered_count}/\{total} meshes rendered\nApprox culled meshes: \{occlusion_state.val.culled_count}\n\nAdapted note: GPU readback + occlusion compute path is temporarily disabled."
 }
 
 ///|

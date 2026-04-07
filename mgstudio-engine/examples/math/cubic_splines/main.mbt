@@ -290,7 +290,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     root,
     text_font,
-    "Spline: " + spline_mode_label(spline_mode),
+    "Spline: \{spline_mode_label(spline_mode)}",
   )
   let cycling_handle = spawn_ui_text_line(
     world,
@@ -419,7 +419,7 @@ fn update_spline_mode_text(
     is Some(text_value) else {
     return
   }
-  text_value.content = "Spline: " + spline_mode_label(spline_mode.get())
+  text_value.content = "Spline: \{spline_mode_label(spline_mode.get())}"
   ignore(
     world.replace(handle.get().entity, @text.ecs_key_text, text_value) catch {
       _ => false
@@ -636,8 +636,5 @@ fn screen_to_world(position : @math.Vec2) -> @math.Vec2? {
 
 ///|
 fn instructions_text() -> String {
-  "Click and drag to add control points and their tangents\n" +
-  "R: Remove the last control point\n" +
-  "S: Cycle the spline construction being used\n" +
-  "C: Toggle cyclic curve construction"
+  "Click and drag to add control points and their tangents\nR: Remove the last control point\nS: Cycle the spline construction being used\nC: Toggle cyclic curve construction"
 }

@@ -29,16 +29,7 @@ pub impl @ecs.Component for InfoText with component() {
 
 ///|
 fn free_camera_text(free_camera : @camera_controller.FreeCamera) -> String {
-  "Sensitivity: " +
-  format_float(free_camera.sensitivity, 3) +
-  "\nFriction: " +
-  format_float(free_camera.friction, 1) +
-  "\nScroll factor: " +
-  format_float(free_camera.scroll_factor, 2) +
-  "\nWalk speed: " +
-  format_float(free_camera.walk_speed, 2) +
-  "\nRun speed: " +
-  format_float(free_camera.run_speed, 2)
+  "Sensitivity: \{format_float(free_camera.sensitivity, 3)}\nFriction: \{format_float(free_camera.friction, 1)}\nScroll factor: \{format_float(free_camera.scroll_factor, 2)}\nWalk speed: \{format_float(free_camera.walk_speed, 2)}\nRun speed: \{format_float(free_camera.run_speed, 2)}"
 }
 
 ///|
@@ -56,15 +47,15 @@ fn format_float(value : Float, precision : Int) -> String {
   let fraction_text = if precision == 1 {
     fraction.to_string()
   } else if precision == 2 && fraction < 10 {
-    "0" + fraction.to_string()
+    "0\{fraction.to_string()}"
   } else if precision == 3 && fraction < 10 {
-    "00" + fraction.to_string()
+    "00\{fraction.to_string()}"
   } else if precision == 3 && fraction < 100 {
-    "0" + fraction.to_string()
+    "0\{fraction.to_string()}"
   } else {
     fraction.to_string()
   }
-  sign + whole.to_string() + "." + fraction_text
+  "\{sign}\{whole.to_string()}.\{fraction_text}"
 }
 
 ///|
@@ -282,27 +273,16 @@ fn update_text(
     let (free_camera, free_camera_state) = data
     let free_camera = free_camera.value()
     let free_camera_state = free_camera_state.value()
+    let walk_speed = format_float(
+      free_camera.walk_speed * free_camera_state.speed_multiplier,
+      2,
+    )
+    let run_speed = format_float(
+      free_camera.run_speed * free_camera_state.speed_multiplier,
+      2,
+    )
     content_ref.val = Some(
-      "Enabled: " +
-      free_camera_state.enabled.to_string() +
-      ",\nSensitivity: " +
-      format_float(free_camera.sensitivity, 3) +
-      "\nFriction: " +
-      format_float(free_camera.friction, 1) +
-      "\nScroll factor: " +
-      format_float(free_camera.scroll_factor, 2) +
-      "\nWalk Speed: " +
-      format_float(
-        free_camera.walk_speed * free_camera_state.speed_multiplier,
-        2,
-      ) +
-      "\nRun Speed: " +
-      format_float(
-        free_camera.run_speed * free_camera_state.speed_multiplier,
-        2,
-      ) +
-      "\nSpeed: " +
-      format_float(free_camera_state.velocity.length(), 2),
+      "Enabled: \{free_camera_state.enabled.to_string()},\nSensitivity: \{format_float(free_camera.sensitivity, 3)}\nFriction: \{format_float(free_camera.friction, 1)}\nScroll factor: \{format_float(free_camera.scroll_factor, 2)}\nWalk Speed: \{walk_speed}\nRun Speed: \{run_speed}\nSpeed: \{format_float(free_camera_state.velocity.length(), 2)}",
     )
   })
   guard content_ref.val is Some(content) else { return }

@@ -54,5 +54,5 @@ fn monitor_info_system(world : @ecs.World) -> Unit {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[monitor_info] " + text)
+  @window.host_debug_string(value="[monitor_info] \{text}")
 }

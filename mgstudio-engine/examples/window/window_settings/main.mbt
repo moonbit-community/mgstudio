@@ -28,7 +28,7 @@ let cursor_icons_key : @ecs.ResourceKey[CursorIcons] = @ecs.register_resource(
 fn configured_window() -> @window.Window {
   let window = @window.Window::default()
   window.title = "I am a window!"
-  window.name = Some("bevy.app")
+  window.name = Some("mgstudio.app")
   window.resolution.set_physical_resolution(500, 300)
   window.present_mode = @window.PresentMode::AutoVsync
   window.fit_canvas_to_parent = true
@@ -105,7 +105,7 @@ fn set_primary_cursor_icon(
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[window_settings] " + text)
+  @window.host_debug_string(value="[window_settings] \{text}")
 }
 
 ///|
@@ -135,7 +135,7 @@ fn toggle_vsync(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     present_mode_ref.val = window.present_mode
   })
-  log_line("PRESENT_MODE: " + present_mode_ref.val.to_string())
+  log_line("PRESENT_MODE: \{present_mode_ref.val.to_string()}")
 }
 
 ///|
@@ -155,7 +155,7 @@ fn switch_level(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     level_ref.val = window.window_level
   })
-  log_line("WINDOW_LEVEL: " + level_ref.val.to_string())
+  log_line("WINDOW_LEVEL: \{level_ref.val.to_string()}")
 }
 
 ///|
@@ -189,7 +189,7 @@ fn change_title(world : @ecs.World) -> Unit {
   }
   let seconds = time.elapsed_seconds().round()
   update_primary_window(world, fn(window) {
-    window.title = "Seconds since startup: " + seconds.to_string()
+    window.title = "Seconds since startup: \{seconds.to_string()}"
   })
 }
 

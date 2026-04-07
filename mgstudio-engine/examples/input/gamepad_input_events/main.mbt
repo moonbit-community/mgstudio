@@ -158,10 +158,10 @@ fn format_button_changed_event(
 
 ///|
 fn entity_text(entity : @core.Entity) -> String {
-  "Entity(" + entity.id.to_string() + ", " + entity.generation.to_string() + ")"
+  "Entity(\{entity.id.to_string()}, \{entity.generation.to_string()})"
 }
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[gamepad_input_events] " + text)
+  @window.host_debug_string(value="[gamepad_input_events] \{text}")
 }

@@ -677,10 +677,7 @@ fn ensure_bloom_mip_texture(
   )
   if texture.mip_level_count_u32() != requested_mip_count {
     raise Fatal(
-      "wgpu: canonical bloom texture allocation returned mip count " +
-      texture.mip_level_count_u32().to_string() +
-      " but requested " +
-      requested_mip_count.to_string(),
+      "wgpu: canonical bloom texture allocation returned mip count \{texture.mip_level_count_u32().to_string()} but requested \{requested_mip_count.to_string()}",
     )
   }
   for mip in 0..<safe_mip_count {

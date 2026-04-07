@@ -319,7 +319,7 @@ fn default_asset_source_reader(source_id : AssetSourceId) -> AssetReader {
     },
     fn(path) {
       let virtual_path = compose_virtual_asset_path(source_name, path, None)
-      let meta_path = virtual_path + ".meta"
+      let meta_path = "\{virtual_path}.meta"
       if embedded_asset_bytes(meta_path) is Some(bytes) {
         return Some(bytes)
       }
@@ -433,11 +433,11 @@ fn compose_virtual_asset_path(
   label : String?,
 ) -> String {
   let prefix = match source_name {
-    Some(name) if name.length() > 0 => name + "://" + relative_path
+    Some(name) if name.length() > 0 => "\{name}://\{relative_path}"
     _ => relative_path
   }
   match label {
-    Some(label) if label.length() > 0 => prefix + "#" + label
+    Some(label) if label.length() > 0 => "\{prefix}#\{label}"
     _ => prefix
   }
 }
@@ -482,7 +482,7 @@ fn source_root_dir(source_name : String?) -> String {
       if asset_source_dir_overrides_ref.val.get(name) is Some(override_root) {
         return override_root
       }
-      let env_key = "MGSTUDIO_ASSET_SOURCE_" + source_env_suffix(name) + "_DIR"
+      let env_key = "MGSTUDIO_ASSET_SOURCE_\{source_env_suffix(name)}_DIR"
       let default_root = path_join(runtime_assets_dir(), name)
       env_or_default(env_key, default_root)
     }
@@ -1567,7 +1567,7 @@ fn load_asset_meta_bytes(path : String) -> Bytes? {
     let parsed = parse_virtual_asset_path(path)
     return reader.read_meta(parsed.relative_path)
   }
-  let meta_path = path + ".meta"
+  let meta_path = "\{path}.meta"
   if embedded_asset_bytes(meta_path) is Some(bytes) {
     return Some(bytes)
   }

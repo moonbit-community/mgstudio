@@ -33,7 +33,7 @@ fn join_wgsl_import_prefix(prefix : String, path : String) -> String {
   } else if rhs == "" {
     lhs
   } else {
-    lhs + "::" + rhs
+    "\{lhs}::\{rhs}"
   }
 }
 
@@ -302,11 +302,11 @@ fn wgsl_module_path_to_rel_path(module_path : String) -> String {
     if first {
       first = false
     } else {
-      rel = rel + "/"
+      rel = "\{rel}/"
     }
-    rel = rel + text
+    rel = "\{rel}\{text}"
   }
-  rel + ".wgsl"
+  "\{rel}.wgsl"
 }
 
 ///|
@@ -321,11 +321,11 @@ fn wgsl_module_path_to_rel_path_namespace(module_path : String) -> String {
   if segments.length() == 0 {
     return ""
   }
-  let mut rel = "shaders/" + segments[0]
+  let mut rel = "shaders/\{segments[0]}"
   for i in 1..<segments.length() {
-    rel = rel + "/" + segments[i]
+    rel = "\{rel}/\{segments[i]}"
   }
-  rel + ".wgsl"
+  "\{rel}.wgsl"
 }
 
 ///|
@@ -345,7 +345,7 @@ fn collect_wgsl_import_module_paths(
     if name == "" {
       continue
     }
-    let child_rel = if rel_dir == "" { name } else { rel_dir + "/" + name }
+    let child_rel = if rel_dir == "" { name } else { "\{rel_dir}/\{name}" }
     let child_path = join_asset_path(assets_base, child_rel)
     if path_is_dir(child_path) {
       collect_wgsl_import_module_paths(assets_base, child_rel, modules)
@@ -393,7 +393,7 @@ pub fn resolve_wgsl_import_module(
   while segments.length() > 0 {
     let mut module_path = segments[0]
     for i in 1..<segments.length() {
-      module_path = module_path + "::" + segments[i]
+      module_path = "\{module_path}::\{segments[i]}"
     }
     if modules.get(module_path) is Some(rel_path) {
       return Some(WgslResolvedImportModule::{ module_path, rel_path })

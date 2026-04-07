@@ -1957,7 +1957,7 @@ pub fn text_diagnostic_render_submitted_item_count() -> Int {
 
 ///|
 pub let text_set_render_extract : @app.SystemSet = @app.system_set(
-  "bevy.text.render_extract",
+  "mgstudio.text.render_extract",
 )
 
 ///|
@@ -1981,7 +1981,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @app.PostUpdate,
       text_set_sync_ecs,
       after=[
-        @app.system_set("bevy.ui.stack"),
+        @app.system_set("mgstudio.ui.stack"),
         @transform.transform_set_sync_simple_transforms,
       ],
       before=[text_set_render_extract],

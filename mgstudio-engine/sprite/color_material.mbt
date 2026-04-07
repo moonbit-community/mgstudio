@@ -289,29 +289,28 @@ fn material2d_color_material_uniform_bytes(
 ) -> Bytes {
   let texture_bit = if texture_enabled { 1U } else { 0U }
   let alpha_cutoff = mesh_alpha_cutoff(alpha_mode)
-  material2d_f32le_pack([
-    color.r,
-    color.g,
-    color.b,
-    color.a,
-    uv_scale.x,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    uv_scale.y,
-    0.0F,
-    0.0F,
-    uv_offset.x,
-    uv_offset.y,
-    1.0F,
-    0.0F,
-    Float::from_int(
-      (texture_bit | material2d_alpha_mode_kind_bits(alpha_mode)).reinterpret_as_int(),
-    ),
-    alpha_cutoff,
-    0.0F,
-    0.0F,
+  let flags = texture_bit | material2d_alpha_mode_kind_bits(alpha_mode)
+  material2d_u32le_pack([
+    material2d_f32_bits(color.r),
+    material2d_f32_bits(color.g),
+    material2d_f32_bits(color.b),
+    material2d_f32_bits(color.a),
+    material2d_f32_bits(uv_scale.x),
+    material2d_f32_bits(0.0F),
+    material2d_f32_bits(0.0F),
+    material2d_f32_bits(0.0F),
+    material2d_f32_bits(0.0F),
+    material2d_f32_bits(uv_scale.y),
+    material2d_f32_bits(0.0F),
+    material2d_f32_bits(0.0F),
+    material2d_f32_bits(uv_offset.x),
+    material2d_f32_bits(uv_offset.y),
+    material2d_f32_bits(1.0F),
+    material2d_f32_bits(0.0F),
+    flags,
+    material2d_f32_bits(alpha_cutoff),
+    0U,
+    0U,
   ])
 }
 

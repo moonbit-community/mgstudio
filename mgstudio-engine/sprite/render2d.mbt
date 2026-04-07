@@ -5354,7 +5354,7 @@ fn render2d_extract_ui_only_cameras_ecs(
 
 ///|
 pub let camera_update_systems : @app.SystemSet = @app.system_set(
-  "bevy.camera.update_systems",
+  "mgstudio.camera.update_systems",
 )
 
 ///|
@@ -6083,10 +6083,15 @@ fn[M] draw_material2d_items_for_layers(
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
   items.reserve_capacity(
-    sprites.length() + extra_sprites.length() + extra_sprite_slice_batches.length() +
-    extra_ui_sprites.length() + extra_ui_sprite_slice_batches.length() +
-    extra_ui_rects.length() + extra_ui_box_shadows.length() +
-    extra_ui_texture_slices.length() + meshes.length(),
+    sprites.length() +
+    extra_sprites.length() +
+    extra_sprite_slice_batches.length() +
+    extra_ui_sprites.length() +
+    extra_ui_sprite_slice_batches.length() +
+    extra_ui_rects.length() +
+    extra_ui_box_shadows.length() +
+    extra_ui_texture_slices.length() +
+    meshes.length(),
   )
   for
     item in draw_material2d_scene_items_for_layers(
@@ -6234,7 +6239,9 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
   let transparent_items : Array[DrawItem] = []
   opaque_items.reserve_capacity(meshes.length())
   transparent_items.reserve_capacity(
-    sprites.length() + extra_sprites.length() + extra_sprite_slice_batches.length(),
+    sprites.length() +
+    extra_sprites.length() +
+    extra_sprite_slice_batches.length(),
   )
   let mut tie = 0
   // Align with Bevy queue structure: mesh phases are queued before sprite phases.
@@ -6403,7 +6410,9 @@ fn draw_registered_scene_phase_items_for_layers(
   let transparent_items : Array[DrawItem] = []
   opaque_items.reserve_capacity(meshes.length())
   transparent_items.reserve_capacity(
-    sprites.length() + extra_sprites.length() + extra_sprite_slice_batches.length(),
+    sprites.length() +
+    extra_sprites.length() +
+    extra_sprite_slice_batches.length(),
   )
   let mut tie = 0
   tie = append_registered_material2d_mesh_draw_items(
@@ -8267,7 +8276,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                   }
                 }
                 merged_slice_xy_uv.clear()
-                merged_slice_xy_uv.reserve_capacity((merged_end - item_index) * 6)
+                merged_slice_xy_uv.reserve_capacity(
+                  (merged_end - item_index) * 6,
+                )
                 sprite_payload_append_slice_xy_uv(
                   merged_slice_xy_uv, first_sprite,
                 )
@@ -8320,7 +8331,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                   }
                 }
                 merged_slice_xy_uv.clear()
-                merged_slice_xy_uv.reserve_capacity((merged_end - item_index) * 6)
+                merged_slice_xy_uv.reserve_capacity(
+                  (merged_end - item_index) * 6,
+                )
                 sprite_payload_append_slice_xy_uv(
                   merged_slice_xy_uv, first_sprite,
                 )
@@ -8389,7 +8402,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                   }
                 }
                 merged_slice_xy_uv.clear()
-                merged_slice_xy_uv.reserve_capacity((merged_end - item_index) * 6)
+                merged_slice_xy_uv.reserve_capacity(
+                  (merged_end - item_index) * 6,
+                )
                 sprite_payload_append_slice_xy_uv(
                   merged_slice_xy_uv, first_sprite,
                 )
@@ -8962,32 +8977,32 @@ pub fn render2d_debug_log_primary_camera(world : @ecs.World) -> Unit {
 
 ///|
 pub let render2d_set_extract : @app.SystemSet = @app.system_set(
-  "bevy.render2d.extract",
+  "mgstudio.render2d.extract",
 )
 
 ///|
 pub let render2d_set_extract_materials : @app.SystemSet = @app.system_set(
-  "bevy.render2d.extract_materials",
+  "mgstudio.render2d.extract_materials",
 )
 
 ///|
 pub let render2d_set_prepare_materials : @app.SystemSet = @app.system_set(
-  "bevy.render2d.prepare_materials",
+  "mgstudio.render2d.prepare_materials",
 )
 
 ///|
 pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
-  "bevy.render2d.prepare",
+  "mgstudio.render2d.prepare",
 )
 
 ///|
 pub let render2d_set_queue : @app.SystemSet = @app.system_set(
-  "bevy.render2d.queue",
+  "mgstudio.render2d.queue",
 )
 
 ///|
 pub let render2d_set_render : @app.SystemSet = @app.system_set(
-  "bevy.render2d.render",
+  "mgstudio.render2d.render",
 )
 
 ///|

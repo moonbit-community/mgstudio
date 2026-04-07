@@ -126,17 +126,7 @@ fn create_help_text() -> String {
     "enable"
   }
 
-  marker_auto +
-  " (1) Switch from high-poly to low-poly based on camera distance\n" +
-  marker_high +
-  " (2) Show only the high-poly model\n" +
-  marker_low +
-  " (3) Show only the low-poly model\n" +
-  "Press 1, 2, or 3 to switch which model is shown\n" +
-  "Press WASD or use the mouse wheel to move the camera\n" +
-  "Press Space to " +
-  prepass_action +
-  " the prepass"
+  "\{marker_auto} (1) Switch from high-poly to low-poly based on camera distance\n\{marker_high} (2) Show only the high-poly model\n\{marker_low} (3) Show only the low-poly model\nPress 1, 2, or 3 to switch which model is shown\nPress WASD or use the mouse wheel to move the camera\nPress Space to \{prepass_action} the prepass"
 }
 
 ///|

@@ -94,13 +94,12 @@ fn[M] registered_mesh_material2d_component_key() -> @ecs.ComponentKey[
         Some(key) => key
         None =>
           abort(
-            "mesh material2d component registry contained a mismatched key for " +
-            type_name,
+            "mesh material2d component registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.ComponentKey[MeshMaterial2d[M]] = @ecs.register_component(
-        debug_name="bevy_sprite_render::" + type_name,
+        debug_name="bevy_sprite_render::\{type_name}",
       )
       mesh_material2d_component_registry.val.set(type_name, @any.of(key))
       key

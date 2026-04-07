@@ -138,7 +138,7 @@ fn update_resolution_text(
   guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text) else {
     return
   }
-  text.content = width.to_string() + " x " + height.to_string()
+  text.content = "\{width.to_string()} x \{height.to_string()}"
   try! (world.replace(entity, @text.ecs_key_text, text) |> ignore)
 }
 

@@ -82,14 +82,7 @@ fn instruction_text(
   action : LeftClickAction,
   direction : @math.CompassOctant,
 ) -> String {
-  "Demonstrate drag move and drag resize without window decorations.\n\n" +
-  "Controls:\n" +
-  "A - change left click action [" +
-  action.to_string() +
-  "]\n" +
-  "S / D - change resize direction [" +
-  direction.to_string() +
-  "]\n"
+  "Demonstrate drag move and drag resize without window decorations.\n\nControls:\nA - change left click action [\{action.to_string()}]\nS / D - change resize direction [\{direction.to_string()}]\n"
 }
 
 ///|

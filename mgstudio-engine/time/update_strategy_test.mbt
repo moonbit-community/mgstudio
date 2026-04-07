@@ -247,13 +247,7 @@ test "time: generic time switches to fixed during fixed update and restores afte
         .get_resource(fixed_time_resource_key())
         .unwrap()
       fixed_log.push(
-        generic_time.delta_seconds().to_string() +
-        "/" +
-        generic_time.elapsed_seconds().to_string() +
-        "|" +
-        fixed_time.delta_seconds().to_string() +
-        "/" +
-        fixed_time.elapsed_seconds().to_string(),
+        "\{generic_time.delta_seconds().to_string()}/\{generic_time.elapsed_seconds().to_string()}|\{fixed_time.delta_seconds().to_string()}/\{fixed_time.elapsed_seconds().to_string()}",
       )
     })
   app = set_virtual_max_delta_seconds(app, 1.0F)

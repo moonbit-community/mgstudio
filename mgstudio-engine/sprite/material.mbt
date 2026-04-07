@@ -91,13 +91,12 @@ fn[M] registered_render_material2d_instances_resource_key() -> @ecs.ResourceKey[
         Some(key) => key
         None =>
           abort(
-            "render material2d instances resource registry contained a mismatched key for " +
-            type_name,
+            "render material2d instances resource registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_resource(
-        debug_name="bevy_sprite_render::" + type_name,
+        debug_name="bevy_sprite_render::\{type_name}",
       )
       render_material2d_instances_resource_registry.val.set(
         type_name,
@@ -154,11 +153,6 @@ fn material2d_f32_bits(x : Float) -> UInt {
 }
 
 ///|
-fn material2d_f32le_pack(xs : Array[Float]) -> Bytes {
-  material2d_u32le_pack(xs.map(material2d_f32_bits))
-}
-
-///|
 fn material2d_alpha_mode_kind_bits(alpha_mode : AlphaMode2d) -> UInt {
   match alpha_mode {
     Opaque => 0U
@@ -169,12 +163,12 @@ fn material2d_alpha_mode_kind_bits(alpha_mode : AlphaMode2d) -> UInt {
 
 ///|
 fn material2d_bytes_bind_group_data(bytes : Bytes) -> String {
-  let mut data = "len=" + bytes.length().to_string() + ":"
+  let mut data = "len=\{bytes.length().to_string()}:"
   for i in 0..<bytes.length() {
     if i > 0 {
-      data = data + ","
+      data = "\{data},"
     }
-    data = data + bytes[i].to_int().to_string()
+    data = "\{data}\{bytes[i].to_int().to_string()}"
   }
   data
 }
@@ -228,20 +222,20 @@ fn material2d_binding_layout_kind_key(value : Material2dBindingValue) -> String 
 ///|
 fn material2d_binding_data_key(value : Material2dBindingValue) -> String {
   match value {
-    Uniform(bytes) => "uniform(" + material2d_bytes_bind_group_data(bytes) + ")"
+    Uniform(bytes) => "uniform(\{material2d_bytes_bind_group_data(bytes)})"
     Texture(texture) => {
       let texture_id = match texture {
         Some(value) => value.id().to_string()
         None => "none"
       }
-      "texture(" + texture_id + ")"
+      "texture(\{texture_id})"
     }
     Sampler(texture) => {
       let texture_id = match texture {
         Some(value) => value.id().to_string()
         None => "none"
       }
-      "sampler(" + texture_id + ")"
+      "sampler(\{texture_id})"
     }
   }
 }
@@ -268,8 +262,7 @@ pub fn Material2dBindGroup::new(
   for i in 1..<normalized.length() {
     if normalized[i - 1].binding == normalized[i].binding {
       abort(
-        "duplicate Material2d bind-group binding " +
-        normalized[i].binding.to_string(),
+        "duplicate Material2d bind-group binding \{normalized[i].binding.to_string()}",
       )
     }
   }
@@ -300,12 +293,9 @@ pub fn Material2dBindGroup::layout_key(self : Material2dBindGroup) -> String {
   for i in 0..<self.bindings.length() {
     let binding = self.bindings[i]
     if i > 0 {
-      data = data + ";"
+      data = "\{data};"
     }
-    data = data +
-      binding.binding.to_string() +
-      ":" +
-      material2d_binding_layout_kind_key(binding.value)
+    data = "\{data}\{binding.binding.to_string()}:\{material2d_binding_layout_kind_key(binding.value)}"
   }
   data
 }
@@ -318,12 +308,9 @@ pub fn Material2dBindGroup::bind_group_data(
   for i in 0..<self.bindings.length() {
     let binding = self.bindings[i]
     if i > 0 {
-      data = data + ";"
+      data = "\{data};"
     }
-    data = data +
-      binding.binding.to_string() +
-      ":" +
-      material2d_binding_data_key(binding.value)
+    data = "\{data}\{binding.binding.to_string()}:\{material2d_binding_data_key(binding.value)}"
   }
   data
 }
@@ -458,13 +445,12 @@ fn[M] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
         Some(key) => key
         None =>
           abort(
-            "material2d pipeline resource registry contained a mismatched key for " +
-            type_name,
+            "material2d pipeline resource registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_resource(
-        debug_name="bevy_sprite_render::" + type_name,
+        debug_name="bevy_sprite_render::\{type_name}",
       )
       material2d_pipeline_resource_registry.val.set(type_name, @any.of(key))
       key
@@ -513,7 +499,7 @@ fn render2d_register_shader_source_asset(
   let asset_server = render2d_asset_server_or_abort(world)
   let blob = asset_server.load_bytes(path)
   guard @asset.asset_blob_read_text(blob) is Some(source) else {
-    abort("failed to load render2d shader asset text: " + path)
+    abort("failed to load render2d shader asset text: \{path}")
   }
   @render.register_wgsl_source(path, source)
 }

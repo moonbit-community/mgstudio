@@ -730,10 +730,7 @@ fn tonemapping_pipeline_cache_key(
 ) -> String {
   let deband_bits = if deband_dither { "1" } else { "0" }
   format.raw.to_string() +
-  "_" +
-  tonemapping_mode_clamped(tonemapping_mode).to_string() +
-  "_" +
-  deband_bits
+  "_\{tonemapping_mode_clamped(tonemapping_mode).to_string()}_\{deband_bits}"
 }
 
 ///|
@@ -742,10 +739,10 @@ fn tonemapping_shader_text(lines : Array[String]) -> String {
   for i in 0..<lines.length() {
     out = out + lines[i]
     if i + 1 < lines.length() {
-      out = out + "\n"
+      out = "\{out}\n"
     }
   }
-  out + "\n"
+  "\{out}\n"
 }
 
 ///|
@@ -865,15 +862,7 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
     ),
   )
   let merged_source = merge_fullscreen_postprocess_source(
-    maths_source +
-    "\n" +
-    strip_tonemapping_color_operations_imports(color_operations_source) +
-    "\n" +
-    view_source +
-    "\n" +
-    tonemapping_shared_source +
-    "\n" +
-    main_source,
+    "\{maths_source}\n\{strip_tonemapping_color_operations_imports(color_operations_source)}\n\{view_source}\n\{tonemapping_shared_source}\n\{main_source}",
     fullscreen_source,
   )
   preprocess_manual_wgsl_source(backend, merged_source, define_keys, [
@@ -969,7 +958,7 @@ fn tonemapping_pipeline_for_format(
     format,
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_tonemapping_" + key,
+    "mgstudio_tonemapping_\{key}",
   )
   backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
     key,

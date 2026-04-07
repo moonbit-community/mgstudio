@@ -128,24 +128,7 @@ fn light_type_text(light_type : LightType) -> String {
 ///|
 fn help_text_content() -> String {
   let state = contact_shadows_state.val
-  "Contact Shadows (Bevy-aligned controls)\n" +
-  "1/2: Contact Shadows " +
-  on_off_text(state.contact_shadows == ContactShadowState::Enabled) +
-  "\n" +
-  "3/4: Shadow Maps " +
-  on_off_text(state.shadow_maps == ShadowMapsState::Enabled) +
-  "\n" +
-  "5/6: Light Rotation " +
-  on_off_text(state.light_rotation == LightRotationState::Rotating) +
-  "\n" +
-  "Q/W/E: Light Type " +
-  light_type_text(state.light_type) +
-  "\n" +
-  "A/S: Receive Shadows " +
-  on_off_text(state.receive_shadows == ReceiveShadowsState::Enabled) +
-  "\n" +
-  "Arrow Left/Right: Rotate model\n" +
-  "Primary pointer drag: Rotate model\n"
+  "Contact Shadows (Bevy-aligned controls)\n1/2: Contact Shadows \{on_off_text(state.contact_shadows == ContactShadowState::Enabled)}\n3/4: Shadow Maps \{on_off_text(state.shadow_maps == ShadowMapsState::Enabled)}\n5/6: Light Rotation \{on_off_text(state.light_rotation == LightRotationState::Rotating)}\nQ/W/E: Light Type \{light_type_text(state.light_type)}\nA/S: Receive Shadows \{on_off_text(state.receive_shadows == ReceiveShadowsState::Enabled)}\nArrow Left/Right: Rotate model\nPrimary pointer drag: Rotate model\n"
 }
 
 ///|

@@ -590,3 +590,109 @@ pub fn GpuBackend::draw_sprite_uv(
     })
   }
 }
+
+///|
+pub fn GpuBackend::draw_sprite_uv_slices(
+  self : GpuBackend,
+  texture_id : Int,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  slices_xy_uv : Array[Float],
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(_) else { return }
+  guard self.pass_state is Some(_) else { return }
+  if slices_xy_uv.length() < 6 {
+    return
+  }
+  flush_mesh2d_batches(self)
+  flush_ui_shadow_batches(self)
+  flush_ui_slice_batches(self)
+  flush_ui_batches(self)
+  ensure_sprite_resources(self)
+  guard resolve_draw_texture(self, texture_id) is Some(tex) else { return }
+  let cosv = cosf(rotation)
+  let sinv = sinf(rotation)
+  let base_size = 128.0F
+  let mut i = 0
+  let batch_first_instance = self.sprite_instance_count
+  let mut batch_instance_count = 0U
+  while i + 5 < slices_xy_uv.length() {
+    let x = slices_xy_uv[i]
+    let y = slices_xy_uv[i + 1]
+    let uv_min_x = slices_xy_uv[i + 2]
+    let uv_min_y = slices_xy_uv[i + 3]
+    let uv_max_x = slices_xy_uv[i + 4]
+    let uv_max_y = slices_xy_uv[i + 5]
+    let (uv_scale_x, region_w) = sprite_uv_axis_metrics(
+      uv_min_x,
+      uv_max_x,
+      tex.width,
+    )
+    let (uv_scale_y, region_h) = sprite_uv_axis_metrics(
+      uv_min_y,
+      uv_max_y,
+      tex.height,
+    )
+    let tex_scale_x = if region_w > 0.0F { region_w / base_size } else { 1.0F }
+    let tex_scale_y = if region_h > 0.0F { region_h / base_size } else { 1.0F }
+    let sprite_scale_x = scale_x * tex_scale_x
+    let sprite_scale_y = scale_y * tex_scale_y
+    let width = base_size * sprite_scale_x
+    let height = base_size * sprite_scale_y
+    let axis_x_x = cosv * width
+    let axis_x_y = sinv * width
+    let axis_y_x = sinv * height
+    let axis_y_y = -cosv * height
+    let translation_x = x - 0.5F * axis_x_x - 0.5F * axis_y_x
+    let translation_y = y - 0.5F * axis_x_y - 0.5F * axis_y_y
+    // i_model_transpose_col0
+    self.sprite_instance_data.push(axis_x_x)
+    self.sprite_instance_data.push(axis_y_x)
+    self.sprite_instance_data.push(0.0F)
+    self.sprite_instance_data.push(translation_x)
+    // i_model_transpose_col1
+    self.sprite_instance_data.push(axis_x_y)
+    self.sprite_instance_data.push(axis_y_y)
+    self.sprite_instance_data.push(0.0F)
+    self.sprite_instance_data.push(translation_y)
+    // i_model_transpose_col2
+    self.sprite_instance_data.push(0.0F)
+    self.sprite_instance_data.push(0.0F)
+    self.sprite_instance_data.push(1.0F)
+    self.sprite_instance_data.push(0.0F)
+    // i_color
+    self.sprite_instance_data.push(color_r)
+    self.sprite_instance_data.push(color_g)
+    self.sprite_instance_data.push(color_b)
+    self.sprite_instance_data.push(color_a)
+    // i_uv_offset_scale
+    self.sprite_instance_data.push(uv_min_x)
+    self.sprite_instance_data.push(uv_min_y)
+    self.sprite_instance_data.push(uv_scale_x)
+    self.sprite_instance_data.push(uv_scale_y)
+    self.sprite_instance_count = self.sprite_instance_count + 1U
+    batch_instance_count = batch_instance_count + 1U
+    i = i + 6
+  }
+  if batch_instance_count == 0U {
+    return
+  }
+  let batch_count = self.sprite_batches.length()
+  if batch_count > 0 &&
+    self.sprite_batches[batch_count - 1].texture_id == tex.id {
+    self.sprite_batches[batch_count - 1].instance_count = self.sprite_batches[batch_count -
+      1].instance_count +
+      batch_instance_count
+  } else {
+    self.sprite_batches.push(SpriteBatch::{
+      texture_id: tex.id,
+      first_instance: batch_first_instance,
+      instance_count: batch_instance_count,
+    })
+  }
+}

@@ -64,7 +64,7 @@ fn setup(commands : @app.Commands) -> Unit {
     ),
   )
   @window.host_debug_string(
-    value="[asset_saving] wrote texture to " + OUTPUT_PATH,
+    value="[asset_saving] wrote texture to \{OUTPUT_PATH}",
   )
 }
 

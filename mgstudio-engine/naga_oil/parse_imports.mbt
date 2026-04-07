@@ -155,7 +155,7 @@ fn parse_imports(
 
         if index < tokens.length() && tokens[index] is Token::Identifier(_, _) {
           is_deprecated_itemlist = true
-          stack.push(current + "::")
+          stack.push("\{current}::")
           current = ""
           as_name = None
         }
@@ -259,7 +259,7 @@ fn base32_nopad(input : String) -> String {
 
 ///|
 fn decorate(module_name : String) -> String {
-  "X_naga_oil_mod_X" + base32_nopad(module_name) + "X"
+  "X_naga_oil_mod_X\{base32_nopad(module_name)}X"
 }
 
 ///|
@@ -331,7 +331,7 @@ fn substitute_identifiers(
 
           for full_path_base in full_paths {
             let full_path = if residual != "" {
-              full_path_base + "::" + residual
+              "\{full_path_base}::\{residual}"
             } else {
               full_path_base
             }

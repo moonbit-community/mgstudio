@@ -99,13 +99,13 @@ fn spawn(commands : @app.Commands) -> Unit {
 ///|
 fn run_custom_query_param(param : MovementSystemParam) -> Unit {
   let moved = param.integrate()
-  println("Updated entities: " + moved.to_string())
+  println("Updated entities: \{moved.to_string()}")
 }
 
 ///|
 fn print_positions(query : @ecs.Query[@ecs.Comp[Position], @ecs.All]) -> Unit {
   try! query.view(fn(_entity, position) {
-    println("Position: " + position.value().x.to_string())
+    println("Position: \{position.value().x.to_string()}")
   })
 }
 

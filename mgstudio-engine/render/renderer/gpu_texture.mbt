@@ -187,10 +187,7 @@ pub fn GpuBackend::create_texture_rgba8(
   let expected_len = w.reinterpret_as_int() * h.reinterpret_as_int() * 4
   if pixels_rgba8.length() != expected_len {
     fatal(
-      "wgpu: invalid RGBA8 texture byte length, expected " +
-      expected_len.to_string() +
-      ", got " +
-      pixels_rgba8.length().to_string(),
+      "wgpu: invalid RGBA8 texture byte length, expected \{expected_len.to_string()}, got \{pixels_rgba8.length().to_string()}",
     )
   }
   self.queue.write_texture_rgba8_2d(tex, w, h, pixels_rgba8)
@@ -229,8 +226,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   }
   guard texture_block_info(format_raw) is Some(block_info) else {
     fatal(
-      "wgpu: unsupported texture format for upload: " +
-      format_raw.reinterpret_as_int().to_string(),
+      "wgpu: unsupported texture format for upload: \{format_raw.reinterpret_as_int().to_string()}",
     )
   }
 
@@ -293,7 +289,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     let level_data = levels[level_index]
     if level_data.length() < expected_bytes {
       fatal(
-        "wgpu: mip upload size mismatch at level " + level_index.to_string(),
+        "wgpu: mip upload size mismatch at level \{level_index.to_string()}",
       )
     }
     let upload_data = if level_data.length() == expected_bytes {
@@ -369,8 +365,7 @@ pub fn GpuBackend::create_texture_3d_with_format(
   }
   guard texture_block_info(format_raw) is Some(block_info) else {
     fatal(
-      "wgpu: unsupported 3D texture format for upload: " +
-      format_raw.reinterpret_as_int().to_string(),
+      "wgpu: unsupported 3D texture format for upload: \{format_raw.reinterpret_as_int().to_string()}",
     )
   }
 
@@ -437,7 +432,7 @@ pub fn GpuBackend::create_texture_3d_with_format(
     let level_data = levels[level_index]
     if level_data.length() < expected_bytes {
       fatal(
-        "wgpu: 3D mip upload size mismatch at level " + level_index.to_string(),
+        "wgpu: 3D mip upload size mismatch at level \{level_index.to_string()}",
       )
     }
     let upload_data = if level_data.length() == expected_bytes {
@@ -1000,8 +995,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   }
   guard texture_block_info(format_raw) is Some(block_info) else {
     fatal(
-      "wgpu: unsupported cube texture format for upload: " +
-      format_raw.reinterpret_as_int().to_string(),
+      "wgpu: unsupported cube texture format for upload: \{format_raw.reinterpret_as_int().to_string()}",
     )
   }
 
@@ -1050,8 +1044,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
     let level_data = levels[level_index]
     if level_data.length() < expected_bytes {
       fatal(
-        "wgpu: cube mip upload size mismatch at level " +
-        level_index.to_string(),
+        "wgpu: cube mip upload size mismatch at level \{level_index.to_string()}",
       )
     }
     let upload_data = if level_data.length() == expected_bytes {

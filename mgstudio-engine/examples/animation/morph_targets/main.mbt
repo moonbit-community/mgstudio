@@ -154,7 +154,8 @@ fn name_morph_targets(
     }
     guard meshes.get().get(mesh_handle) is Some(mesh_asset) else { continue }
     guard mesh_asset.morph_target_names() is Some(names) else { continue }
-    println("Morph target names: " + names.join(", "))
+    let joined_names = names.join(", ")
+    println("Morph target names: \{joined_names}")
     state.get_ref().val.named = true
   }
 }

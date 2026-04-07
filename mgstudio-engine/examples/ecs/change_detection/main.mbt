@@ -70,7 +70,7 @@ fn detect_added(
   added : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Added[MyComponent]],
 ) -> Unit {
   try! added.view(fn(_entity, component) {
-    println("Added MyComponent value=" + component.value().value.to_string())
+    println("Added MyComponent value=\{component.value().value.to_string()}")
   })
 }
 
@@ -79,7 +79,7 @@ fn detect_changed(
   changed : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Changed[MyComponent]],
 ) -> Unit {
   try! changed.view(fn(_entity, component) {
-    println("Changed MyComponent value=" + component.value().value.to_string())
+    println("Changed MyComponent value=\{component.value().value.to_string()}")
   })
 }
 
@@ -87,7 +87,7 @@ fn detect_changed(
 fn detect_resource_change(resource : @app.ResMut[MyResource]) -> Unit {
   if resource.get_ref().val.value != resource.get_ref().val.last_logged {
     resource.get_ref().val.last_logged = resource.get_ref().val.value
-    println("Resource changed to " + resource.get_ref().val.value.to_string())
+    println("Resource changed to \{resource.get_ref().val.value.to_string()}")
   }
 }
 

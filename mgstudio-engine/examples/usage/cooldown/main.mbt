@@ -229,18 +229,14 @@ fn activate_ability(
         .to_double()
         .ceil()
         .to_int()
-      let message = "You can eat " +
-        ability_name.value +
-        " again in " +
-        remaining_seconds.to_string() +
-        " seconds."
+      let message = "You can eat \{ability_name.value} again in \{remaining_seconds.to_string()} seconds."
       update_status_text(status_labels, message)
       return
     }
 
     cooldown_ref.val.timer = cooldown_ref.val.timer.reset()
     commands.entity(entity).insert_component(ActiveCooldown::{  })
-    update_status_text(status_labels, "You ate " + ability_name.value)
+    update_status_text(status_labels, "You ate \{ability_name.value}")
   })
 }
 

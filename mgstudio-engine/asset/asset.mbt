@@ -599,9 +599,7 @@ pub fn[T : @app.Resource] asset_resource_or_abort() -> T {
     Some(value) => value
     None =>
       abort(
-        "Missing asset-related resource " +
-        T::resource().debug_name() +
-        " in the active world",
+        "Missing asset-related resource \{T::resource().debug_name()} in the active world",
       )
   }
 }
@@ -613,9 +611,7 @@ pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T] {
     Some(value) => value
     None =>
       abort(
-        "Missing asset-related resource " +
-        T::resource().debug_name() +
-        " in the active world",
+        "Missing asset-related resource \{T::resource().debug_name()} in the active world",
       )
   }
 }
@@ -627,9 +623,7 @@ pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T] {
     Some(value) => value
     None =>
       abort(
-        "Missing asset-related resource " +
-        T::resource().debug_name() +
-        " in the active world",
+        "Missing asset-related resource \{T::resource().debug_name()} in the active world",
       )
   }
 }
@@ -824,7 +818,7 @@ pub fn asset_parse_path(path : String) -> AssetPath {
   asset_try_parse_path(path) catch {
     error =>
       abort(
-        "invalid asset path syntax: " + asset_parse_path_error_message(error),
+        "invalid asset path syntax: \{asset_parse_path_error_message(error)}",
       )
   }
 }
@@ -833,10 +827,10 @@ pub fn asset_parse_path(path : String) -> AssetPath {
 pub fn asset_format_path(parsed : AssetPath) -> String {
   let base = match parsed.source {
     AssetSourceId::Default => parsed.path
-    AssetSourceId::Named(name) => name + "://" + parsed.path
+    AssetSourceId::Named(name) => "\{name}://\{parsed.path}"
   }
   match parsed.label {
-    Some(label) if label.length() > 0 => base + "#" + label
+    Some(label) if label.length() > 0 => "\{base}#\{label}"
     _ => base
   }
 }
@@ -1007,10 +1001,10 @@ fn meta_image_filter_mode(
   content : String,
   field_name : String,
 ) -> ImageFilterMode? {
-  if string_contains(content, field_name + ": Nearest") {
+  if string_contains(content, "\{field_name}: Nearest") {
     return Some(ImageFilterMode::Nearest)
   }
-  if string_contains(content, field_name + ": Linear") {
+  if string_contains(content, "\{field_name}: Linear") {
     return Some(ImageFilterMode::Linear)
   }
   None
@@ -1021,16 +1015,16 @@ fn meta_image_address_mode(
   content : String,
   field_name : String,
 ) -> ImageAddressMode? {
-  if string_contains(content, field_name + ": ClampToEdge") {
+  if string_contains(content, "\{field_name}: ClampToEdge") {
     return Some(ImageAddressMode::ClampToEdge)
   }
-  if string_contains(content, field_name + ": Repeat") {
+  if string_contains(content, "\{field_name}: Repeat") {
     return Some(ImageAddressMode::Repeat)
   }
-  if string_contains(content, field_name + ": MirrorRepeat") {
+  if string_contains(content, "\{field_name}: MirrorRepeat") {
     return Some(ImageAddressMode::MirrorRepeat)
   }
-  if string_contains(content, field_name + ": ClampToBorder") {
+  if string_contains(content, "\{field_name}: ClampToBorder") {
     return Some(ImageAddressMode::ClampToBorder)
   }
   None
@@ -1057,7 +1051,7 @@ fn meta_render_asset_usages(content : String) -> RenderAssetUsages? {
 
 ///|
 fn image_meta_path(path : String) -> String {
-  path + ".meta"
+  "\{path}.meta"
 }
 
 ///|
@@ -1815,15 +1809,12 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
         Some(handle) => handle
         None =>
           abort(
-            "asset loader registry returned a mismatched handle type for " +
-            type_name,
+            "asset loader registry returned a mismatched handle type for \{type_name}",
           )
       }
     None =>
       abort(
-        "No asset loader is registered for " +
-        type_name +
-        "; load the plugin that owns this asset type before calling AssetServer::load",
+        "No asset loader is registered for \{type_name}; load the plugin that owns this asset type before calling AssetServer::load",
       )
   }
 }

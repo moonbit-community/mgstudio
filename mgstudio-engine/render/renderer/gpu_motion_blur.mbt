@@ -23,7 +23,7 @@ fn motion_blur_debug_enabled() -> Bool {
 ///|
 fn motion_blur_debug_log(message : String) -> Unit {
   if motion_blur_debug_enabled() {
-    println("[motion_blur] " + message)
+    println("[motion_blur] \{message}")
   }
 }
 

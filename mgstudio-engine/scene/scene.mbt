@@ -1038,7 +1038,7 @@ fn scene_spawn_instance_when_ready(
   let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
   let gltf_scene_asset_path = match scene_registry_find_scene_path(root.scene) {
     Some(path) => path
-    None => "scene#" + root.scene.id().to_string()
+    None => "scene#\{root.scene.id().to_string()}"
   }
   for node in scene.nodes3d {
     let child = world.spawn_empty()

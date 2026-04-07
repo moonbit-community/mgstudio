@@ -82,10 +82,7 @@ fn wireframe_color_text(color : @sprite.Color) -> String {
 ///|
 fn wireframe_overlay_text(config : @sprite.Wireframe2dConfig) -> String {
   let global_value = if config.global { "true" } else { "false" }
-  "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the circle wireframe\n\nWireframe2dConfig\n-------------\nGlobal: " +
-  global_value +
-  "\nColor: " +
-  wireframe_color_text(config.default_color)
+  "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the circle wireframe\n\nWireframe2dConfig\n-------------\nGlobal: \{global_value}\nColor: \{wireframe_color_text(config.default_color)}"
 }
 
 ///|

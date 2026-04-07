@@ -172,29 +172,16 @@ fn lighting_mode_eq(lhs : LightingMode, rhs : LightingMode) -> Bool {
 fn create_help_text(mode : LightingMode) -> String {
   let details = match mode {
     LightingMode::Baked =>
-      "Scenery: Static, baked direct light, baked indirect light\n" +
-      "Sphere: Static, baked direct light, baked indirect light"
+      "Scenery: Static, baked direct light, baked indirect light\nSphere: Static, baked direct light, baked indirect light"
     LightingMode::MixedDirect =>
-      "Scenery: Static, baked direct light, baked indirect light\n" +
-      "Sphere: Dynamic, real-time direct light, no indirect light\n" +
-      "Click in the scene to move the sphere"
+      "Scenery: Static, baked direct light, baked indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
     LightingMode::MixedIndirect =>
-      "Scenery: Static, real-time direct light, baked indirect light\n" +
-      "Sphere: Dynamic, real-time direct light, no indirect light\n" +
-      "Click in the scene to move the sphere"
+      "Scenery: Static, real-time direct light, baked indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
     LightingMode::RealTime =>
-      "Scenery: Dynamic, real-time direct light, no indirect light\n" +
-      "Sphere: Dynamic, real-time direct light, no indirect light\n" +
-      "Click in the scene to move the sphere"
+      "Scenery: Dynamic, real-time direct light, no indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
   }
 
-  details +
-  "\n\nControls:\n" +
-  "1: Baked, 2: Mixed (Direct), 3: Mixed (Indirect), 4: Real-Time\n" +
-  "Hold left mouse button and point to move sphere" +
-  "\n\nAdapted runtime note: lightmap component pipeline is not yet available; mode changes use real-time lighting proxies (target exposure " +
-  LIGHTMAP_EXPOSURE.to_string() +
-  ")."
+  "\{details}\n\nControls:\n1: Baked, 2: Mixed (Direct), 3: Mixed (Indirect), 4: Real-Time\nHold left mouse button and point to move sphere\n\nAdapted runtime note: lightmap component pipeline is not yet available; mode changes use real-time lighting proxies (target exposure \{LIGHTMAP_EXPOSURE.to_string()})."
 }
 
 ///|
@@ -202,9 +189,7 @@ fn update_help_text() -> Unit {
   if app_status.val.help_text is Some(help_text) {
     @text.text_set_content(
       help_text,
-      create_help_text(app_status.val.lighting_mode) +
-      "\n\nCurrent mode: " +
-      lighting_mode_name(app_status.val.lighting_mode),
+      "\{create_help_text(app_status.val.lighting_mode)}\n\nCurrent mode: \{lighting_mode_name(app_status.val.lighting_mode)}",
     )
   }
 }

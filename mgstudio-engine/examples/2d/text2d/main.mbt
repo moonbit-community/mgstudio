@@ -303,7 +303,7 @@ fn spawn_anchor_label(
     commands.spawn(
       (
         @hierarchy.Parent::new(label_entity),
-        @text.TextSpan::new(anchor_name(anchor) + " "),
+        @text.TextSpan::new("\{anchor_name(anchor)} "),
         font,
         @text.TextColor::new(color),
         @text.TextBackgroundColor::new(color_darker(color, 0.3F)),

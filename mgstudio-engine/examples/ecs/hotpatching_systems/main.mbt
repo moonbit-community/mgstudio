@@ -139,9 +139,7 @@ fn update_text(
     let (text, color) = data
     let message = if mode.get().value == 0 { "before" } else { "after" }
     text.set(
-      @text.Text::new(
-        message + " (clicks: " + clicks.get().value.to_string() + ")",
-      ),
+      @text.Text::new("\{message} (clicks: \{clicks.get().value.to_string()})"),
     )
     color.set(
       @text.TextColor::new(

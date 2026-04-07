@@ -114,10 +114,8 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 
 ///|
 fn help_text_content() -> String {
-  "Press T to toggle OIT\n" +
-  "OIT " +
-  (if oit_state.val.oit_enabled { "enabled" } else { "disabled" }) +
-  "\nPress C to cycle test scenes"
+  let oit_text = if oit_state.val.oit_enabled { "enabled" } else { "disabled" }
+  "Press T to toggle OIT\nOIT \{oit_text}\nPress C to cycle test scenes"
 }
 
 ///|

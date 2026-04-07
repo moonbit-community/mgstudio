@@ -412,7 +412,7 @@ pub fn[E : @ecs.TriggerEvent] Commands::trigger(
   self : Commands,
   event : E,
 ) -> Unit {
-  let source = "Commands::trigger(" + E::debug_name() + ")"
+  let source = "Commands::trigger(\{E::debug_name()})"
   self.queue.push({
     run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       world.trigger(event, caller=Some(source))
@@ -512,13 +512,13 @@ pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe_pointer(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer(\{K::source_label()})",
         Some(entity),
         system_param(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe_pointer(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer(\{K::source_label()})",
   })
   self
 }
@@ -535,13 +535,13 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointe
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe_pointer2(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer2(\{K::source_label()})",
         Some(entity),
         system_param2(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe_pointer2(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer2(\{K::source_label()})",
   })
   self
 }
@@ -558,13 +558,13 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityComman
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe_pointer3(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer3(\{K::source_label()})",
         Some(entity),
         system_param3(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe_pointer3(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer3(\{K::source_label()})",
   })
   self
 }
@@ -586,13 +586,13 @@ pub fn[
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe_pointer4(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer4(\{K::source_label()})",
         Some(entity),
         system_param4(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe_pointer4(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer4(\{K::source_label()})",
   })
   self
 }
@@ -642,7 +642,7 @@ pub fn[S : States] set_state(state : S) -> Unit {
   let world = current_world_or_abort()
   let next_key = next_state_resource_key(state)
   guard world_next_state(world, state) is Some(current) else {
-    abort("NextState resource is missing for " + state_type_debug_name(state))
+    abort("NextState resource is missing for \{state_type_debug_name(state)}")
   }
   world.insert_resource(next_key, current.set(state))
 }
@@ -652,7 +652,7 @@ pub fn[S : States] set_state_if_neq(state : S) -> Unit {
   let world = current_world_or_abort()
   let next_key = next_state_resource_key(state)
   guard world_next_state(world, state) is Some(current) else {
-    abort("NextState resource is missing for " + state_type_debug_name(state))
+    abort("NextState resource is missing for \{state_type_debug_name(state)}")
   }
   world.insert_resource(next_key, current.set_if_neq(state))
 }

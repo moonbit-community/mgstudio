@@ -521,7 +521,7 @@ fn update_ui() -> Unit {
     HAS_CAS && state.cas.enabled,
   )
   if HAS_CAS && state.cas.enabled {
-    ui.write_string("(-/=) Strength: " + state.cas.strength.to_string() + "\n")
+    ui.write_string("(-/=) Strength: \{state.cas.strength.to_string()}\n")
     draw_selectable_menu_item(
       ui,
       "Denoising".to_string(),
@@ -687,12 +687,26 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera_entity = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.3F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
+      @sprite.Camera::default(),
+      @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+        @math.Vec3::new(0.0F, 0.3F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_distance_fog(
+      Some(
+        @pbr.DistanceFog::new(
+          @sprite.Color::new(
+            43.0F / 255.0F,
+            44.0F / 255.0F,
+            47.0F / 255.0F,
+            1.0F,
+          ),
+          @pbr.FogFalloff3d::linear(1.0F, 4.0F),
+        ),
+      ),
+    )
+    .spawn(world)
   anti_aliasing_state.val.camera = Some(camera_entity)
   try! world.set_by_key(
     camera_entity,
@@ -701,13 +715,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       150.0F,
-    ),
-  )
-
-  @pbr.render3d_set_distance_fog(
-    @pbr.DistanceFog::new(
-      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @pbr.FogFalloff3d::linear(1.0F, 4.0F),
     ),
   )
 

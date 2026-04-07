@@ -39,8 +39,8 @@ fn schedule_graph_system_name(
     Some(name) => name
     None =>
       match cfg.set {
-        Some(set) => set + "#" + index.to_string()
-        None => "__system#" + index.to_string()
+        Some(set) => "\{set}#\{index.to_string()}"
+        None => "__system#\{index.to_string()}"
       }
   }
 }
@@ -118,7 +118,7 @@ pub fn App::schedule_graph_dot(
     let group = if cfg.set is Some(set) {
       set
     } else {
-      "__anon#" + i.to_string()
+      "__anon#\{i.to_string()}"
     }
     groups.push(group)
     push_unique(seen, set_order, group)
@@ -204,7 +204,7 @@ pub fn App::schedule_graph_dot(
     "digraph ScheduleGraph {",
     "  rankdir=LR;",
     "  labelloc=\"t\";",
-    "  label=\"stage: " + stage.to_string() + "\";",
+    "  label=\"stage: \{stage.to_string()}\";",
   ]
 
   let included_system_names : Array[String] = []
@@ -213,14 +213,14 @@ pub fn App::schedule_graph_dot(
     let name = schedule_graph_system_name(systems[system_i], system_i)
     if schedule_graph_include(settings, name) {
       included_system_names.push(name)
-      lines.push("  \"" + name + "\";")
+      lines.push("  \"\{name}\";")
     }
   }
 
   for i in 1..<included_system_names.length() {
     let prev = included_system_names[i - 1]
     let next = included_system_names[i]
-    lines.push("  \"" + prev + "\" -> \"" + next + "\";")
+    lines.push("  \"\{prev}\" -> \"\{next}\";")
   }
 
   lines.push("}")

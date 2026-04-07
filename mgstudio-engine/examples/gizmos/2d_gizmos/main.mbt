@@ -157,12 +157,7 @@ fn spawn_help_overlay(
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new(
-          "Arrow Left/Right: straight gizmo line width\n" +
-          "Arrow Up/Down: round gizmo line width\n" +
-          "1 / 2: toggle straight / round gizmos\n" +
-          "U / I: cycle line styles\n" +
-          "J / K: cycle line joins\n" +
-          "Space: pause virtual time",
+          "Arrow Left/Right: straight gizmo line width\nArrow Up/Down: round gizmo line width\n1 / 2: toggle straight / round gizmos\nU / I: cycle line styles\nJ / K: cycle line joins\nSpace: pause virtual time",
         ),
         @text.TextFont::default().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),

@@ -80,7 +80,7 @@ fn schedule_stage_storage_key(stage : ScheduleStage) -> String {
     SpawnScene => "SpawnScene"
     PostUpdate => "PostUpdate"
     Last => "Last"
-    Custom(name) => "__custom__:" + name
+    Custom(name) => "__custom__:\{name}"
   }
 }
 

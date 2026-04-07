@@ -253,7 +253,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       feature_span,
       @mgtext.ecs_key_text_span,
-      @mgtext.TextSpan::new(row.2 + "\n"),
+      @mgtext.TextSpan::new("\{row.2}\n"),
     )
     try! world.set_by_key(
       feature_span,

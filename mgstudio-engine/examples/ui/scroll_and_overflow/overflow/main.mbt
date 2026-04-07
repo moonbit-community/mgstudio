@@ -47,7 +47,7 @@ fn overflow_label(overflow : @ui.Overflow) -> String {
       @ui.OverflowAxis::Scroll => "Scroll"
     }
   }
-  "(" + axis(overflow.x) + ", " + axis(overflow.y) + ")"
+  "(\{axis(overflow.x)}, \{axis(overflow.y)})"
 }
 
 ///|

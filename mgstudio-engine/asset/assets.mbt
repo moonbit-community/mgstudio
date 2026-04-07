@@ -48,13 +48,12 @@ fn[T] registered_asset_event_message_key_with_type_name(
         Some(key) => key
         None =>
           abort(
-            "asset event message registry contained a mismatched key for " +
-            type_name,
+            "asset event message registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.MessageKey[AssetEvent[T]] = @ecs.register_message(
-        debug_name="bevy_asset::AssetEvent<" + type_name + ">",
+        debug_name="bevy_asset::AssetEvent<\{type_name}>",
       )
       asset_event_message_registry.val.set(type_name, @any.of(key))
       key
@@ -101,13 +100,12 @@ fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
         Some(key) => key
         None =>
           abort(
-            "asset resource registry contained a mismatched key for " +
-            type_name,
+            "asset resource registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_resource(
-        debug_name="bevy_asset::Assets<" + type_name + ">",
+        debug_name="bevy_asset::Assets<\{type_name}>",
       )
       assets_resource_registry.val.set(type_name, @any.of(key))
       key

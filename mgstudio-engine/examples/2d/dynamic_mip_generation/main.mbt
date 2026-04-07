@@ -613,12 +613,7 @@ fn spawn_mip_level_views(
 
 ///|
 fn mip_level_label(level : Int, size : @math.UVec2) -> String {
-  "Level " +
-  level.to_string() +
-  "\n" +
-  size.x.to_string() +
-  "x" +
-  size.y.to_string()
+  "Level \{level.to_string()}\n\{size.x.to_string()}x\{size.y.to_string()}"
 }
 
 ///|

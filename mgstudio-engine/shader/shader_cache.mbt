@@ -132,11 +132,10 @@ pub(all) suberror ShaderCacheError {
 pub fn ShaderCacheError::message(self : ShaderCacheError) -> String {
   match self {
     ShaderNotLoaded(asset_id) =>
-      "Pipeline could not be compiled because the shader was not loaded: " +
-      asset_id.index().to_string()
+      "Pipeline could not be compiled because the shader was not loaded: \{asset_id.index().to_string()}"
     ProcessShaderError(reason) => reason
     ShaderImportNotYetAvailable => "Shader import not yet available."
-    CreateShaderModule(reason) => "Could not create shader module: " + reason
+    CreateShaderModule(reason) => "Could not create shader module: \{reason}"
   }
 }
 

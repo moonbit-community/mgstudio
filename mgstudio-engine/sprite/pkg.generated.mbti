@@ -207,6 +207,8 @@ pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], 
 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[OverlaySpriteUvScissor]) -> Unit
 
+pub fn render2d_push_sprite_uv_scissor_slices_batch(@ecs.World, Array[OverlaySpriteUvScissorSlices]) -> Unit
+
 pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
 
 pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
@@ -670,6 +672,20 @@ pub(all) struct OverlaySpriteUvScissor {
   layers : RenderLayers
   scissor : @math.Rect?
   target_camera : @core.Entity?
+}
+
+pub(all) struct OverlaySpriteUvScissorSlices {
+  texture : @asset.Handle[@image.Image]
+  rotation : Float
+  draw_scale : @math.Vec2
+  z : Float
+  color : @color.Color
+  cull_center : @math.Vec2
+  cull_half_size : @math.Vec2
+  layers : RenderLayers
+  scissor : @math.Rect?
+  target_camera : @core.Entity?
+  slices_xy_uv : Array[Float]
 }
 
 pub(all) struct PanCamera {

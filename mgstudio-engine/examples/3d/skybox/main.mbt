@@ -132,7 +132,7 @@ fn supported_format_tags(supported_formats : Int) -> String {
   let mut out = ""
   for i in 0..<tags.length() {
     if i > 0 {
-      out = out + ","
+      out = "\{out},"
     }
     out = out + tags[i]
   }
@@ -182,27 +182,7 @@ fn update_help_text() -> Unit {
     }
     @text.text_set_content(
       handle,
-      "skybox\n" +
-      "Current cubemap: " +
-      cubemap_path(cubemap_state.val.index) +
-      "\n" +
-      "Format: " +
-      cubemap_format_name(cubemap_state.val.index) +
-      "\n" +
-      "Runtime supported formats: " +
-      supported_format_tags(cubemap_state.val.supported_formats) +
-      "\n" +
-      "Status: " +
-      status +
-      "\n\n" +
-      "Auto-swap interval: 3s\n" +
-      "Controls:\n" +
-      "  Hold left mouse: grab cursor and look around\n" +
-      "  M: toggle cursor grab\n" +
-      "  WASD/E/Q: move camera\n" +
-      "  Shift: run\n" +
-      "  Mouse wheel: adjust movement speed\n" +
-      capability_note,
+      "skybox\nCurrent cubemap: \{cubemap_path(cubemap_state.val.index)}\nFormat: \{cubemap_format_name(cubemap_state.val.index)}\nRuntime supported formats: \{supported_format_tags(cubemap_state.val.supported_formats)}\nStatus: \{status}\n\nAuto-swap interval: 3s\nControls:\n  Hold left mouse: grab cursor and look around\n  M: toggle cursor grab\n  WASD/E/Q: move camera\n  Shift: run\n  Mouse wheel: adjust movement speed\n\{capability_note}",
     )
   }
 }

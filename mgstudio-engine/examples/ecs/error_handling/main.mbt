@@ -137,10 +137,7 @@ fn capture_failing_system_error(
   context : @app.ErrorContext,
 ) -> Unit {
   println(
-    "captured error via per-system handler from " +
-    context.source() +
-    ": " +
-    error.to_string(),
+    "captured error via per-system handler from \{context.source()}: \{error.to_string()}",
   )
 }
 
@@ -154,10 +151,7 @@ fn failing_commands(commands : @app.Commands) -> Unit {
     fn(_world : @ecs.World) raise { raise MissingUninitializedResource },
     fn(error, context) {
       println(
-        "captured command-local error from " +
-        context.source() +
-        ": " +
-        error.to_string(),
+        "captured command-local error from \{context.source()}: \{error.to_string()}",
       )
     },
   )

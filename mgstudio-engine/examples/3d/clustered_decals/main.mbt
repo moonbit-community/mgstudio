@@ -122,10 +122,7 @@ fn drag_mode_text(mode : DragMode) -> String {
 
 ///|
 fn create_help_text() -> String {
-  "Click and drag to " +
-  drag_mode_text(clustered_decals_state.val.drag_mode) +
-  " " +
-  selection_text(clustered_decals_state.val.selection)
+  "Click and drag to \{drag_mode_text(clustered_decals_state.val.drag_mode)} \{selection_text(clustered_decals_state.val.selection)}"
 }
 
 ///|

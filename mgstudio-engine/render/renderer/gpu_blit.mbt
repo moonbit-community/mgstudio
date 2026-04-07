@@ -84,7 +84,7 @@ fn blit_pipeline_for_format(
     format,
     "fs_main",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_blit_" + format.raw.to_string(),
+    "mgstudio_blit_\{format.raw.to_string()}",
   )
   backend.blit_pipeline = Some(pipeline)
   backend.blit_pipeline_format = Some(format)

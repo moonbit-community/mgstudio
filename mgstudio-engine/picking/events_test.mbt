@@ -231,6 +231,233 @@ test "picking: handles multiple pointers independently" {
 }
 
 ///|
+test "picking: ui hit test respects transformed ui node" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  get_pointer_inputs_resource(world).insert(
+    PointerInputs::from_array([
+      PointerInput::new(
+        0,
+        Some(@math.Vec2::new(140.0F, 170.0F)),
+        false,
+        false,
+        false,
+      ),
+    ]),
+  )
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  @ui.get_ui_context_resource(world).insert(
+    @ui.UiContext::new(
+      @asset.Handle::new(1),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(800.0F, 600.0F),
+      Some(@core.Entity::new(0, 0)),
+      @transform.Transform::identity(),
+      1.0F,
+      Some(@math.Vec2::new(140.0F, 170.0F)),
+      false,
+    ),
+  )
+  let entity = world.spawn_empty()
+  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_ui_layout,
+    @ui.UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(40.0F, 50.0F),
+        @math.Vec2::new(240.0F, 110.0F),
+      ),
+    ),
+  )
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-260.0F, 220.0F),
+      1.5707964F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+  )
+  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
+  @ui.ui_stack_system(world)
+  picking_ui_hit_test_system(world)
+  let hits = get_picking_hits_resource(world)
+    .get()
+    .unwrap_or(PickingHits::default())
+  inspect(
+    hits.ui(0) is Some(hit) &&
+    hit.id == entity.id &&
+    hit.generation == entity.generation,
+    content="true",
+  )
+}
+
+///|
+test "picking: ui hit test keeps top and bottom rows distinct" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  get_pointer_inputs_resource(world).insert(PointerInputs::default())
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  @ui.get_ui_context_resource(world).insert(
+    @ui.UiContext::new(
+      @asset.Handle::new(1),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(800.0F, 600.0F),
+      Some(@core.Entity::new(0, 0)),
+      @transform.Transform::identity(),
+      1.0F,
+      None,
+      false,
+    ),
+  )
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
+    root,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F))
+    .with_display(@ui.Display::Grid)
+    .with_grid_template_columns([
+      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
+        @ui.GridTrack::Fr(1.0F),
+      ]),
+    ])
+    .with_grid_template_rows([
+      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
+        @ui.GridTrack::Fr(1.0F),
+      ]),
+    ]),
+  )
+  let top = world.spawn_empty()
+  try! world.set_by_key(
+    top,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(top, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    top,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+  )
+  let bottom = world.spawn_empty()
+  try! world.set_by_key(
+    bottom,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(bottom, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    bottom,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+  )
+  @ui.ui_layout_system(world)
+  @ui.ui_stack_system(world)
+
+  get_pointer_inputs_resource(world).insert(
+    PointerInputs::from_array([
+      PointerInput::new(
+        0,
+        Some(@math.Vec2::new(400.0F, 120.0F)),
+        false,
+        false,
+        false,
+      ),
+    ]),
+  )
+  picking_ui_hit_test_system(world)
+  let hits_top = get_picking_hits_resource(world)
+    .get()
+    .unwrap_or(PickingHits::default())
+  inspect(hits_top.ui(0) is Some(hit) && hit.id == top.id, content="true")
+
+  get_pointer_inputs_resource(world).insert(
+    PointerInputs::from_array([
+      PointerInput::new(
+        0,
+        Some(@math.Vec2::new(400.0F, 480.0F)),
+        false,
+        false,
+        false,
+      ),
+    ]),
+  )
+  picking_ui_hit_test_system(world)
+  let hits_bottom = get_picking_hits_resource(world)
+    .get()
+    .unwrap_or(PickingHits::default())
+  inspect(hits_bottom.ui(0) is Some(hit) && hit.id == bottom.id, content="true")
+}
+
+///|
+test "picking: ui hit test still matches button with Interaction component" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  get_pointer_inputs_resource(world).insert(
+    PointerInputs::from_array([
+      PointerInput::new(
+        0,
+        Some(@math.Vec2::new(120.0F, 80.0F)),
+        false,
+        false,
+        false,
+      ),
+    ]),
+  )
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  @ui.get_ui_context_resource(world).insert(
+    @ui.UiContext::new(
+      @asset.Handle::new(1),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(800.0F, 600.0F),
+      Some(@core.Entity::new(0, 0)),
+      @transform.Transform::identity(),
+      1.0F,
+      Some(@math.Vec2::new(120.0F, 80.0F)),
+      false,
+    ),
+  )
+  let entity = world.spawn_empty()
+  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_interaction,
+    @ui.Interaction::Hovered,
+  )
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_ui_layout,
+    @ui.UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(40.0F, 50.0F),
+        @math.Vec2::new(240.0F, 110.0F),
+      ),
+    ),
+  )
+  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
+  @ui.ui_stack_system(world)
+  picking_ui_hit_test_system(world)
+  let hits = get_picking_hits_resource(world)
+    .get()
+    .unwrap_or(PickingHits::default())
+  inspect(
+    hits.ui(0) is Some(hit) &&
+    hit.id == entity.id &&
+    hit.generation == entity.generation,
+    content="true",
+  )
+}
+
+///|
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
@@ -392,21 +619,21 @@ test "picking: pointer observers dispatch generated move enter and leave events"
     pointer : @app.OnPointer[@app.PointerMove],
   ) {
     if pointer.target() is Some(target) {
-      seen.push("move:" + target.id.to_string())
+      seen.push("move:\{target.id.to_string()}")
     }
   })
   app = app.add_pointer_observer(fn(
     pointer : @app.OnPointer[@app.PointerEnter],
   ) {
     if pointer.target() is Some(target) {
-      seen.push("enter:" + target.id.to_string())
+      seen.push("enter:\{target.id.to_string()}")
     }
   })
   app = app.add_pointer_observer(fn(
     pointer : @app.OnPointer[@app.PointerLeave],
   ) {
     if pointer.target() is Some(target) {
-      seen.push("leave:" + target.id.to_string())
+      seen.push("leave:\{target.id.to_string()}")
     }
   })
   let world = app.world()

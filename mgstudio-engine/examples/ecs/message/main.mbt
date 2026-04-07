@@ -132,7 +132,7 @@ fn apply_damage_to_health(
   damaged_received_writer : @ecs.MessageWriter[DamageReceived],
 ) -> Unit {
   for deal_damage in (try! deal_damage_reader.read()) {
-    @app.log_info("Applying " + deal_damage.amount.to_string() + " damage")
+    @app.log_info("Applying \{deal_damage.amount.to_string()} damage")
     if deal_damage.amount > 0 {
       ignore(damaged_received_writer.write_default())
     }

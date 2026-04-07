@@ -61,8 +61,6 @@ pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights]
 
 pub fn expire_transitions(@ecs.World) -> Unit
 
-pub fn thread_animation_graphs(@ecs.World) -> Unit
-
 pub fn trigger_events(@ecs.World) -> Unit
 
 // Errors
@@ -176,6 +174,7 @@ pub struct AnimationGraph {
   root : AnimationNodeIndex
   nodes : Array[AnimationGraphNode]
   mask_groups : Array[(AnimationTargetId, UInt)]
+  target_mask_index_by_key : Map[UInt64, Int]
 }
 pub fn AnimationGraph::add(Self, AnimationNodeType, Float, AnimationNodeIndex) -> AnimationNodeIndex
 pub fn AnimationGraph::add_add(Self, Float, AnimationNodeIndex) -> AnimationNodeIndex

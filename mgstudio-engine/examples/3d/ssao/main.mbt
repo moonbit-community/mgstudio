@@ -107,17 +107,16 @@ fn ssao_ui_text(
 
   let mut text = ""
   if ssao is Some(ssao) {
-    text = text +
-      "Constant object thickness: \{ssao.constant_object_thickness} (Up/Down)\n\n"
+    text = "\{text}Constant object thickness: \{ssao.constant_object_thickness} (Up/Down)\n\n"
   }
 
-  text = text + "SSAO Quality:\n"
-  text = text + "(1) \{o}Off\{o}\n"
-  text = text + "(2) \{l}Low\{l}\n"
-  text = text + "(3) \{m}Medium\{m}\n"
-  text = text + "(4) \{h}High\{h}\n"
-  text = text + "(5) \{u}Ultra\{u}\n\n"
-  text = text + "Temporal Antialiasing:\n"
+  text = "\{text}SSAO Quality:\n"
+  text = "\{text}(1) \{o}Off\{o}\n"
+  text = "\{text}(2) \{l}Low\{l}\n"
+  text = "\{text}(3) \{m}Medium\{m}\n"
+  text = "\{text}(4) \{h}High\{h}\n"
+  text = "\{text}(5) \{u}Ultra\{u}\n\n"
+  text = "\{text}Temporal Antialiasing:\n"
   text = text +
     (if temporal_jitter_enabled {
       "(Space) Enabled"

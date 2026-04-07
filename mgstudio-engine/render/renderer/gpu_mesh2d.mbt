@@ -77,22 +77,7 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   let deband_bits = if key.deband_dither { "1" } else { "0" }
   let discard_bits = if key.may_discard { "1" } else { "0" }
   let wireframe_bits = if key.wireframe { "1" } else { "0" }
-  format_bits +
-  "_" +
-  topology_bits +
-  "_" +
-  blend_bits +
-  hdr_bits +
-  tonemap_bits +
-  deband_bits +
-  discard_bits +
-  wireframe_bits +
-  "_" +
-  key.material_layout_key +
-  "_" +
-  key.vertex_shader_path +
-  "_" +
-  key.fragment_shader_path
+  "\{format_bits}_\{topology_bits}_\{blend_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}"
 }
 
 ///|
@@ -231,9 +216,9 @@ fn host_material2d_layout_signature_key(
   for i in 0..<signature.length() {
     let binding = signature[i]
     if i > 0 {
-      data = data + ";"
+      data = "\{data};"
     }
-    data = data + binding.0.to_string() + ":" + binding.1.to_string()
+    data = "\{data}\{binding.0.to_string()}:\{binding.1.to_string()}"
   }
   data
 }
@@ -392,9 +377,7 @@ fn load_wgsl_with_defines_required_mesh2d_material(
   let material_source = registered_wgsl_source_required(
     mesh2d_fragment_shader_path_or_default(fragment_shader_path),
   )
-  let combined_source = mesh2d_strip_fragment_entry(mesh_source) +
-    "\n" +
-    material_source
+  let combined_source = "\{mesh2d_strip_fragment_entry(mesh_source)}\n\{material_source}"
   preprocess_wgsl_source(
     "", combined_source, defines, value_defines, visited, modules,
   )
@@ -663,7 +646,7 @@ fn mesh2d_material_layout_for_bind_group(
   } else {
     builder.finish(
       backend.device,
-      label="mgstudio_mesh2d_material_bind_group_layout_" + layout_key_string,
+      label="mgstudio_mesh2d_material_bind_group_layout_\{layout_key_string}",
     )
   }
   let pipeline_layout = create_pipeline_layout_3(
@@ -673,7 +656,7 @@ fn mesh2d_material_layout_for_bind_group(
     material_bgl,
   )
   pipeline_layout.set_label(
-    "mgstudio_mesh2d_pipeline_layout_" + layout_key_string,
+    "mgstudio_mesh2d_pipeline_layout_\{layout_key_string}",
   )
   backend.mesh2d_material_layout_cache.push(Mesh2dMaterialLayoutCacheEntry::{
     key: layout_signature,

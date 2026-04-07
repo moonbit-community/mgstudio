@@ -135,7 +135,7 @@ fn schedule_stage_insert_after(
 ) -> Unit {
   match schedule_stage_position(labels, after) {
     Some(index) => labels.insert(index + 1, stage)
-    None => abort("Expected schedule stage to exist: " + after.to_string())
+    None => abort("Expected schedule stage to exist: \{after.to_string()}")
   }
 }
 
@@ -147,7 +147,7 @@ fn schedule_stage_insert_before(
 ) -> Unit {
   match schedule_stage_position(labels, before) {
     Some(index) => labels.insert(index, stage)
-    None => abort("Expected schedule stage to exist: " + before.to_string())
+    None => abort("Expected schedule stage to exist: \{before.to_string()}")
   }
 }
 

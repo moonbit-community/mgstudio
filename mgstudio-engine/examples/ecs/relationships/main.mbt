@@ -194,7 +194,7 @@ fn relationship_find_entity_by_name(
   })
   match found.val {
     Some(entity) => entity
-    None => abort("Missing expected entity name: " + target_name)
+    None => abort("Missing expected entity name: \{target_name}")
   }
 }
 
@@ -227,11 +227,7 @@ fn relationship_debug(world : @ecs.World) -> Unit {
     let target_name = world_name_or_abort(world, targeting_comp.value().target)
     let targeted_by = relationship_targeted_by_names(world, entity)
     lines.push(
-      name +
-      " is targeting " +
-      target_name +
-      ", and is targeted by " +
-      targeted_by,
+      "\{name} is targeting \{target_name}, and is targeted by \{targeted_by}",
     )
   })
   for line in lines {
@@ -288,7 +284,7 @@ fn main {
 
   relationship_debug(world)
   println(
-    "Cycle from Alice: " + relationship_has_cycle_from(world, alice).to_string(),
+    "Cycle from Alice: \{relationship_has_cycle_from(world, alice).to_string()}",
   )
   println("")
 
@@ -306,6 +302,6 @@ fn main {
   ignore(removed)
   relationship_debug(world)
   println(
-    "Cycle from Alice: " + relationship_has_cycle_from(world, alice).to_string(),
+    "Cycle from Alice: \{relationship_has_cycle_from(world, alice).to_string()}",
   )
 }

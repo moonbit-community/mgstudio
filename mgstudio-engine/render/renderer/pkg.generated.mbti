@@ -42,6 +42,8 @@ pub const SURFACE_PRESENT_MODE_IMMEDIATE : Int = 4
 
 pub const SURFACE_PRESENT_MODE_MAILBOX : Int = 5
 
+pub fn activate_auto_exposure_view_state(view_key_hi~ : Int, view_key_lo~ : Int) -> Unit
+
 pub fn apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scene_texture_id~ : Int, min_ev100~ : Float, max_ev100~ : Float, low_percent~ : Float, high_percent~ : Float, speed_brighten~ : Float, speed_darken~ : Float, exponential_transition_distance~ : Float, delta_time~ : Float, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float, metering_mask_texture_id~ : Int, compensation_curve_lut~ : Bytes, compensation_curve_min_log_lum~ : Float, compensation_curve_max_log_lum~ : Float, compensation_curve_min_compensation~ : Float, compensation_curve_max_compensation~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn apply_bloom(scene_texture_id~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
@@ -140,6 +142,8 @@ pub fn draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float,
 
 pub fn draw_sprite_uv(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, uv_min_x~ : Float, uv_min_y~ : Float, uv_max_x~ : Float, uv_max_y~ : Float) -> Unit
 
+pub fn draw_sprite_uv_slices(texture_id~ : Int, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, slices_xy_uv~ : Array[Float]) -> Unit
+
 pub fn draw_tonemapping2d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float) -> Unit
 
 pub fn draw_tonemapping3d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float) -> Unit
@@ -157,6 +161,8 @@ pub fn end_pass() -> Unit
 pub fn get_queue(Int) -> Int
 
 pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
+
+pub fn mesh3d_gpu_culling_supported() -> Bool
 
 pub fn mesh3d_indirect_first_instance_supported() -> Bool
 
@@ -511,6 +517,7 @@ pub struct GpuBackend {
   textures : Array[GpuTextureInfo]
   meshes : Array[GpuMeshInfo]
 }
+pub fn GpuBackend::activate_auto_exposure_view_state(Self, Int, Int) -> Unit
 pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::apply_bloom(Self, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_frame(Self) -> Unit
@@ -551,6 +558,7 @@ pub fn GpuBackend::draw_mesh3d(Self, Int, Int, Int, Int, Int, Int, Float, Float,
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_sprite_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping3d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError

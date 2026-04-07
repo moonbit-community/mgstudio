@@ -58,13 +58,12 @@ fn[Source] registered_audio_player_component_key() -> @ecs.ComponentKey[
         Some(key) => key
         None =>
           abort(
-            "audio player component registry contained a mismatched key for " +
-            type_name,
+            "audio player component registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.ComponentKey[AudioPlayer[Source]] = @ecs.register_component(
-        debug_name="bevy_audio::" + type_name,
+        debug_name="bevy_audio::\{type_name}",
       )
       audio_player_component_registry.val.set(type_name, @any.of(key))
       key

@@ -259,7 +259,7 @@ fn create_help_text() -> String {
   } else {
     "fox"
   }
-  "Click and drag to move the " + mode + "\n1: Move camera\n2: Move fox"
+  "Click and drag to move the \{mode}\n1: Move camera\n2: Move fox"
 }
 
 ///|

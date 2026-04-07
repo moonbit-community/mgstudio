@@ -25,7 +25,7 @@ test "ui_render boundary re-exports anti-alias and box shadow samples" {
 test "ui_render boundary re-exports render extract set" {
   inspect(
     @ui_render.ui_render_set_extract ==
-    @app.system_set("bevy.ui.render.extract"),
+    @app.system_set("mgstudio.ui.render.extract"),
     content="true",
   )
 }

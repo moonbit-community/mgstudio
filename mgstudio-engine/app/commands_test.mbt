@@ -172,14 +172,14 @@ fn commands_install_hook_test_hooks() -> Unit {
     try! hooks
     .on_add(fn(_world, context) {
       if context.caller is Some(caller) {
-        commands_hook_callers.push("add:" + caller)
+        commands_hook_callers.push("add:\{caller}")
       } else {
         commands_hook_callers.push("add:none")
       }
     })
     .on_remove(fn(_world, context) {
       if context.caller is Some(caller) {
-        commands_hook_callers.push("remove:" + caller)
+        commands_hook_callers.push("remove:\{caller}")
       } else {
         commands_hook_callers.push("remove:none")
       }
@@ -670,7 +670,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
       ) {
         guard pointer.target() is Some(entity) else { return }
         if (try! query.get(entity)) is Some(position) {
-          hits.push("enter:" + position.value().x.to_string())
+          hits.push("enter:\{position.value().x.to_string()}")
         }
       })
       .observe_pointer(fn(_pointer : OnPointer[PointerEnter]) {
@@ -736,11 +736,7 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
       ) {
         if (try! positions.get(target)) is Some(position) {
           hits.push(
-            resource.get().value.to_string() +
-            ":" +
-            position.value().x.to_string() +
-            ":" +
-            markers.count().to_string(),
+            "\{resource.get().value.to_string()}:\{position.value().x.to_string()}:\{markers.count().to_string()}",
           )
         }
       }),

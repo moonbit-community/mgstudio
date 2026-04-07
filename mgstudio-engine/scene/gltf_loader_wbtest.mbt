@@ -56,34 +56,29 @@ fn sampler_tag(sampler : @asset.ImageSampler) -> Int {
 ///|
 fn label_text(label : GltfAssetLabel) -> String {
   match label {
-    Scene(index) => "Scene" + index.to_string()
-    Node(index) => "Node" + index.to_string()
-    Mesh(index) => "Mesh" + index.to_string()
+    Scene(index) => "Scene\{index.to_string()}"
+    Node(index) => "Node\{index.to_string()}"
+    Mesh(index) => "Mesh\{index.to_string()}"
     Primitive(mesh, primitive) =>
-      "Mesh" + mesh.to_string() + "/Primitive" + primitive.to_string()
+      "Mesh\{mesh.to_string()}/Primitive\{primitive.to_string()}"
     MorphTarget(mesh, primitive) =>
-      "Mesh" +
-      mesh.to_string() +
-      "/Primitive" +
-      primitive.to_string() +
-      "/MorphTargets"
-    Texture(index) => "Texture" + index.to_string()
+      "Mesh\{mesh.to_string()}/Primitive\{primitive.to_string()}/MorphTargets"
+    Texture(index) => "Texture\{index.to_string()}"
     Material(index, is_scale_inverted) => {
       let suffix = if is_scale_inverted { " (inverted)" } else { "" }
-      "Material" + index.to_string() + suffix
+      "Material\{index.to_string()}\{suffix}"
     }
     DefaultMaterial => "DefaultMaterial"
-    Animation(index) => "Animation" + index.to_string()
-    Skin(index) => "Skin" + index.to_string()
-    InverseBindMatrices(index) =>
-      "Skin" + index.to_string() + "/InverseBindMatrices"
+    Animation(index) => "Animation\{index.to_string()}"
+    Skin(index) => "Skin\{index.to_string()}"
+    InverseBindMatrices(index) => "Skin\{index.to_string()}/InverseBindMatrices"
   }
 }
 
 ///|
 fn label_option_text(label : GltfAssetLabel?) -> String {
   match label {
-    Some(value) => "Some(" + label_text(value) + ")"
+    Some(value) => "Some(\{label_text(value)})"
     None => "None"
   }
 }
@@ -112,14 +107,7 @@ test "scene gltf wb: decode data uri percent encoding" {
 
 ///|
 test "scene gltf wb: parse glb container" {
-  let json = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"buffers\":[{\"byteLength\":0}]" +
-    "}"
+  let json = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"buffers\":[{\"byteLength\":0}]}"
   let payload : Array[Byte] = bytes_ascii(json).to_array()
   let space : Int = 0x20
   while payload.length() % 4 != 0 {
@@ -147,16 +135,7 @@ test "scene gltf wb: parse glb container" {
 
 ///|
 test "scene gltf wb: read vec3 from second buffer" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[0]}]," +
-    "\"nodes\":[{\"mesh\":0}]," +
-    "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0}}]}]," +
-    "\"buffers\":[{\"byteLength\":0},{\"byteLength\":12}]," +
-    "\"bufferViews\":[{\"buffer\":1,\"byteOffset\":0,\"byteLength\":12}]," +
-    "\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":1,\"type\":\"VEC3\"}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0}}]}],\"buffers\":[{\"byteLength\":0},{\"byteLength\":12}],\"bufferViews\":[{\"buffer\":1,\"byteOffset\":0,\"byteLength\":12}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":1,\"type\":\"VEC3\"}]}"
   let doc = gltf_parse_document(source).unwrap()
 
   let raw : Array[Byte] = []
@@ -177,16 +156,7 @@ test "scene gltf wb: read vec3 from second buffer" {
 
 ///|
 test "scene gltf wb: image bufferView bytes" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"buffers\":[{\"byteLength\":4}]," +
-    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":1,\"byteLength\":2}]," +
-    "\"images\":[{\"bufferView\":0,\"mimeType\":\"image/png\"}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"buffers\":[{\"byteLength\":4}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":1,\"byteLength\":2}],\"images\":[{\"bufferView\":0,\"mimeType\":\"image/png\"}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.images.length(), content="1")
   inspect(doc.images[0].buffer_view, content="Some(0)")
@@ -211,22 +181,7 @@ test "scene gltf wb: image bufferView bytes" {
 
 ///|
 test "scene gltf wb: parse sampler and texture mapping" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"samplers\":[" +
-    "{\"magFilter\":9728,\"wrapS\":10497,\"wrapT\":10497}," +
-    "{\"minFilter\":9984,\"wrapS\":33071,\"wrapT\":33071}" +
-    "]," +
-    "\"textures\":[" +
-    "{\"sampler\":0}," +
-    "{\"sampler\":1}," +
-    "{}" +
-    "]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"samplers\":[{\"magFilter\":9728,\"wrapS\":10497,\"wrapT\":10497},{\"minFilter\":9984,\"wrapS\":33071,\"wrapT\":33071}],\"textures\":[{\"sampler\":0},{\"sampler\":1},{}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.samplers.length(), content="2")
   inspect(doc.samplers[0].nearest, content="true")
@@ -240,26 +195,7 @@ test "scene gltf wb: parse sampler and texture mapping" {
 
 ///|
 test "scene gltf wb: parse KHR_texture_transform on base color texture" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"materials\":[{" +
-    "\"pbrMetallicRoughness\":{" +
-    "\"baseColorTexture\":{" +
-    "\"index\":3," +
-    "\"extensions\":{" +
-    "\"KHR_texture_transform\":{" +
-    "\"offset\":[0.25,0.5]," +
-    "\"scale\":[2.0,0.5]" +
-    "}" +
-    "}" +
-    "}" +
-    "}" +
-    "}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":3,\"extensions\":{\"KHR_texture_transform\":{\"offset\":[0.25,0.5],\"scale\":[2.0,0.5]}}}}}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.materials.length(), content="1")
   inspect(doc.materials[0].base_color_texture, content="Some(3)")
@@ -271,17 +207,7 @@ test "scene gltf wb: parse KHR_texture_transform on base color texture" {
 
 ///|
 test "scene gltf wb: parse scene mesh primitive and material extras" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[0],\"extras\":{\"scene\":\"root\"}}]," +
-    "\"nodes\":[{\"mesh\":0}]," +
-    "\"meshes\":[{\"name\":\"NamedMesh\",\"extras\":{\"mesh\":true},\"primitives\":[{\"attributes\":{\"POSITION\":0},\"material\":0,\"extras\":{\"primitive\":1}}]}]," +
-    "\"materials\":[{\"name\":\"Top\",\"extras\":{\"material\":\"value\"}}]," +
-    "\"buffers\":[{\"byteLength\":0}]," +
-    "\"bufferViews\":[]," +
-    "\"accessors\":[{\"componentType\":5126,\"count\":0,\"type\":\"VEC3\"}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0],\"extras\":{\"scene\":\"root\"}}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"name\":\"NamedMesh\",\"extras\":{\"mesh\":true},\"primitives\":[{\"attributes\":{\"POSITION\":0},\"material\":0,\"extras\":{\"primitive\":1}}]}],\"materials\":[{\"name\":\"Top\",\"extras\":{\"material\":\"value\"}}],\"buffers\":[{\"byteLength\":0}],\"bufferViews\":[],\"accessors\":[{\"componentType\":5126,\"count\":0,\"type\":\"VEC3\"}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.scenes[0].extras.unwrap_or(""), content="{\"scene\":\"root\"}")
   inspect(doc.meshes[0].name, content="NamedMesh")
@@ -298,24 +224,7 @@ test "scene gltf wb: parse scene mesh primitive and material extras" {
 
 ///|
 test "scene gltf wb: parse KHR_materials_clearcoat" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"materials\":[{" +
-    "\"extensions\":{" +
-    "\"KHR_materials_clearcoat\":{" +
-    "\"clearcoatFactor\":0.7," +
-    "\"clearcoatRoughnessFactor\":0.2," +
-    "\"clearcoatTexture\":{\"index\":3}," +
-    "\"clearcoatRoughnessTexture\":{\"index\":4}," +
-    "\"clearcoatNormalTexture\":{\"index\":5}" +
-    "}" +
-    "}" +
-    "}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_clearcoat\":{\"clearcoatFactor\":0.7,\"clearcoatRoughnessFactor\":0.2,\"clearcoatTexture\":{\"index\":3},\"clearcoatRoughnessTexture\":{\"index\":4},\"clearcoatNormalTexture\":{\"index\":5}}}}}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.materials.length(), content="1")
   inspect(doc.materials[0].clearcoat.to_double(), content="0.699999988079071")
@@ -330,22 +239,7 @@ test "scene gltf wb: parse KHR_materials_clearcoat" {
 
 ///|
 test "scene gltf wb: parse KHR_materials_anisotropy" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"materials\":[{" +
-    "\"extensions\":{" +
-    "\"KHR_materials_anisotropy\":{" +
-    "\"anisotropyStrength\":0.6," +
-    "\"anisotropyRotation\":1.25," +
-    "\"anisotropyTexture\":{\"index\":7}" +
-    "}" +
-    "}" +
-    "}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_anisotropy\":{\"anisotropyStrength\":0.6,\"anisotropyRotation\":1.25,\"anisotropyTexture\":{\"index\":7}}}}}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.materials.length(), content="1")
   inspect(
@@ -363,17 +257,7 @@ test "scene gltf wb: parse KHR_materials_anisotropy" {
 
 ///|
 test "scene gltf wb: parse node MSFT_lod ids" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[0]}]," +
-    "\"nodes\":[" +
-    "{\"mesh\":0,\"extensions\":{\"MSFT_lod\":{\"ids\":[1,2]}}}," +
-    "{\"mesh\":1}," +
-    "{\"mesh\":2}" +
-    "]," +
-    "\"meshes\":[]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0,\"extensions\":{\"MSFT_lod\":{\"ids\":[1,2]}}},{\"mesh\":1},{\"mesh\":2}],\"meshes\":[]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.nodes.length(), content="3")
   inspect(doc.nodes[0].lod_nodes.length(), content="2")
@@ -435,42 +319,7 @@ test "scene gltf wb: custom lod visibility policy and disable switch" {
 
 ///|
 test "scene gltf wb: parse animation channels and samplers" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[0]}]," +
-    "\"nodes\":[{\"children\":[1]},{}]," +
-    "\"meshes\":[]," +
-    "\"buffers\":[{\"byteLength\":104}]," +
-    "\"bufferViews\":[" +
-    "{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8}," +
-    "{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24}," +
-    "{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32}," +
-    "{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24}," +
-    "{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}" +
-    "]," +
-    "\"accessors\":[" +
-    "{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"}," +
-    "{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
-    "{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"}," +
-    "{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
-    "{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}" +
-    "]," +
-    "\"animations\":[{" +
-    "\"samplers\":[" +
-    "{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"}," +
-    "{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"}," +
-    "{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"}," +
-    "{\"input\":0,\"output\":4}" +
-    "]," +
-    "\"channels\":[" +
-    "{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}}," +
-    "{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}}," +
-    "{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}}," +
-    "{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}" +
-    "]" +
-    "}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"children\":[1]},{}],\"meshes\":[],\"buffers\":[{\"byteLength\":104}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32},{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"},{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"},{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}],\"animations\":[{\"samplers\":[{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"},{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"},{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"},{\"input\":0,\"output\":4}],\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}},{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}},{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}},{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}]}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.animations.length(), content="1")
   inspect(doc.animations[0].samplers.length(), content="4")
@@ -482,42 +331,7 @@ test "scene gltf wb: parse animation channels and samplers" {
 
 ///|
 test "scene gltf wb: build animation clip tracks and fallback node paths" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[0]}]," +
-    "\"nodes\":[{\"children\":[1]},{}]," +
-    "\"meshes\":[]," +
-    "\"buffers\":[{\"byteLength\":104}]," +
-    "\"bufferViews\":[" +
-    "{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8}," +
-    "{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24}," +
-    "{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32}," +
-    "{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24}," +
-    "{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}" +
-    "]," +
-    "\"accessors\":[" +
-    "{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"}," +
-    "{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
-    "{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"}," +
-    "{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
-    "{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}" +
-    "]," +
-    "\"animations\":[{" +
-    "\"samplers\":[" +
-    "{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"}," +
-    "{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"}," +
-    "{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"}," +
-    "{\"input\":0,\"output\":4}" +
-    "]," +
-    "\"channels\":[" +
-    "{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}}," +
-    "{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}}," +
-    "{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}}," +
-    "{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}" +
-    "]" +
-    "}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"children\":[1]},{}],\"meshes\":[],\"buffers\":[{\"byteLength\":104}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32},{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"},{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"},{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}],\"animations\":[{\"samplers\":[{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"},{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"},{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"},{\"input\":0,\"output\":4}],\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}},{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}},{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}},{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}]}]}"
   let doc = gltf_parse_document(source).unwrap()
   let raw : Array[Byte] = []
   // input timestamps
@@ -614,16 +428,7 @@ test "scene gltf wb: split labeled gltf path with extended labels" {
 
 ///|
 test "scene gltf wb: read MAT4 accessor as row-major SkinningMat4" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"buffers\":[{\"byteLength\":64}]," +
-    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":64}]," +
-    "\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":1,\"type\":\"MAT4\"}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"buffers\":[{\"byteLength\":64}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":64}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":1,\"type\":\"MAT4\"}]}"
   let doc = gltf_parse_document(source).unwrap()
   let raw : Array[Byte] = []
   for i in 1..<17 {
@@ -644,14 +449,7 @@ test "scene gltf wb: read MAT4 accessor as row-major SkinningMat4" {
 
 ///|
 test "scene gltf wb: parse skin joint node indices from gltf doc" {
-  let source = "{" +
-    "\"asset\":{\"version\":\"2.0\"}," +
-    "\"scene\":0," +
-    "\"scenes\":[{\"nodes\":[]}]," +
-    "\"nodes\":[]," +
-    "\"meshes\":[]," +
-    "\"skins\":[{\"joints\":[2,0,1,5]}]" +
-    "}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"skins\":[{\"joints\":[2,0,1,5]}]}"
   let doc = gltf_parse_document(source).unwrap()
   inspect(doc.skins.length(), content="1")
   inspect(doc.skins[0].joints.length(), content="4")

@@ -96,33 +96,7 @@ fn ui_text() -> String {
   let state = shadow_biases_state.val
   let p = state.light_position
 
-  "Controls:\n" +
-  "R / Z - reset biases to default / zero\n" +
-  "L     - switch between directional and point lights [" +
-  active_light_name() +
-  "]\n" +
-  "F     - switch directional light filter methods [" +
-  filter_method_name(state.filter_method) +
-  "]\n" +
-  "1/2   - change point light depth bias [" +
-  state.point_depth_bias.to_string() +
-  "]\n" +
-  "3/4   - change point light normal bias [" +
-  state.point_normal_bias.to_string() +
-  "]\n" +
-  "5/6   - change directional light depth bias [" +
-  state.directional_depth_bias.to_string() +
-  "]\n" +
-  "7/8   - change directional light normal bias [" +
-  state.directional_normal_bias.to_string() +
-  "]\n" +
-  "left/right/up/down/pgup/pgdown - adjust light position [" +
-  p.x.to_string() +
-  ", " +
-  p.y.to_string() +
-  ", " +
-  p.z.to_string() +
-  "]\n"
+  "Controls:\nR / Z - reset biases to default / zero\nL     - switch between directional and point lights [\{active_light_name()}]\nF     - switch directional light filter methods [\{filter_method_name(state.filter_method)}]\n1/2   - change point light depth bias [\{state.point_depth_bias.to_string()}]\n3/4   - change point light normal bias [\{state.point_normal_bias.to_string()}]\n5/6   - change directional light depth bias [\{state.directional_depth_bias.to_string()}]\n7/8   - change directional light normal bias [\{state.directional_normal_bias.to_string()}]\nleft/right/up/down/pgup/pgdown - adjust light position [\{p.x.to_string()}, \{p.y.to_string()}, \{p.z.to_string()}]\n"
 }
 
 ///|

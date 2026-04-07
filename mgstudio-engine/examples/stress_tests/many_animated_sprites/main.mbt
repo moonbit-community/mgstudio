@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-const GRID_HALF_X : Int = 90
+const GRID_HALF_X : Int = 160
 
 ///|
-const GRID_HALF_Y : Int = 60
+const GRID_HALF_Y : Int = 160
 
 ///|
-const TILE_SIZE : Float = 32.0F
+const TILE_SIZE : Float = 64.0F
 
 ///|
 const CAMERA_SPEED : Float = 1000.0F

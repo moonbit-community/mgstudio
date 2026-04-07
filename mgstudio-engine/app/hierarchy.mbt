@@ -69,7 +69,7 @@ fn[T] component_debug_name(key : @ecs.ComponentKey[T]) -> String {
   if key.debug_name() != "" {
     key.debug_name()
   } else {
-    "component#" + key.id().to_string()
+    "component#\{key.id().to_string()}"
   }
 }
 
@@ -78,9 +78,7 @@ pub fn[C] check_parent_has_component_message_key(
   component_key : @ecs.ComponentKey[C],
 ) -> @ecs.MessageKey[CheckParentHasComponent[C]] {
   @ecs.register_message(
-    debug_name="bevy_app::CheckParentHasComponent<" +
-      component_debug_name(component_key) +
-      ">",
+    debug_name="bevy_app::CheckParentHasComponent<\{component_debug_name(component_key)}>",
   )
 }
 
@@ -122,16 +120,12 @@ fn validate_parent_has_component_entity_label(
 ) -> String {
   if name is Some(name_value) {
     if is_parent {
-      "the " + name_value.as_str() + " entity"
+      "the \{name_value.as_str()} entity"
     } else {
-      "The " + name_value.as_str() + " entity"
+      "The \{name_value.as_str()} entity"
     }
   } else {
-    "Entity (" +
-    entity.id.to_string() +
-    ", " +
-    entity.generation.to_string() +
-    ")"
+    "Entity (\{entity.id.to_string()}, \{entity.generation.to_string()})"
   }
 }
 
@@ -145,23 +139,15 @@ fn validate_parent_has_component_warning(
   parent_name : @ecs.Name?,
 ) -> String {
   let caller_prefix = match caller {
-    Some(location) => location + ": "
+    Some(location) => "\{location}: "
     None => ""
   }
-  "warning[B0004]: " +
-  caller_prefix +
-  validate_parent_has_component_entity_label(child, child_name) +
-  " with the " +
-  component_name +
-  " component has a parent (" +
-  validate_parent_has_component_entity_label(
+  let parent_label = validate_parent_has_component_entity_label(
     parent,
     parent_name,
     is_parent=true,
-  ) +
-  ") without " +
-  component_name +
-  ". This will cause inconsistent behaviors! See: https://bevy.org/learn/errors/b0004"
+  )
+  "warning[B0004]: \{caller_prefix}\{validate_parent_has_component_entity_label(child, child_name)} with the \{component_name} component has a parent (\{parent_label}) without \{component_name}. This will cause inconsistent behaviors! See: https://bevy.org/learn/errors/b0004"
 }
 
 ///|

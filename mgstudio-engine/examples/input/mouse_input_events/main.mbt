@@ -119,5 +119,5 @@ fn format_vec2(v : @math.Vec2) -> String {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[mouse_input_events] " + text)
+  @window.host_debug_string(value="[mouse_input_events] \{text}")
 }

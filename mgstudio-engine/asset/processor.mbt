@@ -138,7 +138,7 @@ pub fn[T] register_asset_processor(
         Some(value) => value
         None =>
           abort(
-            "asset processor produced a mismatched asset value for " + type_name,
+            "asset processor produced a mismatched asset value for \{type_name}",
           )
       }
       ignore(assets_ref.val.insert(Handle::new(handle_id), value))

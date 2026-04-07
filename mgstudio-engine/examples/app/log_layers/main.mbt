@@ -17,19 +17,15 @@
 ///|
 fn custom_layer(record : @app.LogRecord) -> Unit {
   println("Got event!")
-  println("  level=" + record.level().to_string())
-  println("  target=" + record.target())
-  println("  name=" + record.name())
+  println("  level=\{record.level().to_string()}")
+  println("  target=\{record.target()}")
+  println("  name=\{record.name()}")
 }
 
 ///|
 fn fmt_layer(record : @app.LogRecord) -> Unit {
-  let prefix = if record.target() == "" {
-    ""
-  } else {
-    "[" + record.target() + "] "
-  }
-  println("[" + record.level().to_string() + "] " + prefix + record.message())
+  let prefix = if record.target() == "" { "" } else { "[\{record.target()}] " }
+  println("[\{record.level().to_string()}] \{prefix}\{record.message()}")
 }
 
 ///|
@@ -40,7 +36,7 @@ fn log_system(_world : @ecs.World) -> Unit {
   )
   @app.log_info("helpful information that is worth printing by default")
   let secret_message = "Bevy"
-  @app.log_info("Here's a log that uses the debug sigil: " + secret_message)
+  @app.log_info("Here's a log that uses the debug sigil: \{secret_message}")
   @app.log_debug("helpful for debugging")
   @app.log_trace("very noisy")
 }

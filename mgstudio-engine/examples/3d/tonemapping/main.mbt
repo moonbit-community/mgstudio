@@ -309,61 +309,16 @@ fn ui_text_content(
   color_grading : @post_process.ColorGrading,
   selected_parameter : Int,
 ) -> String {
-  let mut content = "(H) Hide UI\n\n" +
-    "Test Scene:\n" +
-    "(Q) " +
-    selected_marker(scene == 1) +
-    "Basic Scene\n" +
-    "(W) " +
-    selected_marker(scene == 2) +
-    "Color Sweep\n" +
-    "(E) " +
-    selected_marker(scene == 3) +
-    "Image Viewer\n\n" +
-    "Tonemapping Method:\n" +
-    "(1) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::None) +
-    "Disabled\n" +
-    "(2) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::Reinhard) +
-    "Reinhard\n" +
-    "(3) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance) +
-    "Reinhard Luminance\n" +
-    "(4) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted) +
-    "ACES Fitted\n" +
-    "(5) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::AgX) +
-    "AgX\n" +
-    "(6) " +
-    selected_marker(
-      tonemapping == @post_process.Tonemapping::SomewhatBoringDisplayTransform,
-    ) +
-    "SomewhatBoringDisplayTransform\n" +
-    "(7) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface) +
-    "TonyMcMapface\n" +
-    "(8) " +
-    selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic) +
-    "Blender Filmic\n\n" +
-    "Color Grading:\n" +
-    "(arrow keys)\n" +
-    selected_marker(selected_parameter == 0) +
-    "Exposure: \{color_grading.global.exposure}\n" +
-    selected_marker(selected_parameter == 1) +
-    "Gamma: \{color_grading.shadows.gamma}\n" +
-    selected_marker(selected_parameter == 2) +
-    "PreSaturation: \{color_grading.shadows.saturation}\n" +
-    selected_marker(selected_parameter == 3) +
-    "PostSaturation: \{color_grading.global.post_saturation}\n" +
-    "(Space) Reset all to default\n"
+  let some_marker = selected_marker(
+    tonemapping == @post_process.Tonemapping::SomewhatBoringDisplayTransform,
+  )
+  let mut content = "(H) Hide UI\n\nTest Scene:\n(Q) \{selected_marker(scene == 1)}Basic Scene\n(W) \{selected_marker(scene == 2)}Color Sweep\n(E) \{selected_marker(scene == 3)}Image Viewer\n\nTonemapping Method:\n(1) \{selected_marker(tonemapping == @post_process.Tonemapping::None)}Disabled\n(2) \{selected_marker(tonemapping == @post_process.Tonemapping::Reinhard)}Reinhard\n(3) \{selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance)}Reinhard Luminance\n(4) \{selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted)}ACES Fitted\n(5) \{selected_marker(tonemapping == @post_process.Tonemapping::AgX)}AgX\n(6) \{some_marker}SomewhatBoringDisplayTransform\n(7) \{selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface)}TonyMcMapface\n(8) \{selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic)}Blender Filmic\n\nColor Grading:\n(arrow keys)\n\{selected_marker(selected_parameter == 0)}Exposure: \{color_grading.global.exposure}\n\{selected_marker(selected_parameter == 1)}Gamma: \{color_grading.shadows.gamma}\n\{selected_marker(selected_parameter == 2)}PreSaturation: \{color_grading.shadows.saturation}\n\{selected_marker(selected_parameter == 3)}PostSaturation: \{color_grading.global.post_saturation}\n(Space) Reset all to default\n"
 
   if scene == 1 {
-    content = content + "(Enter) Reset all to scene recommendation\n"
+    content = "\{content}(Enter) Reset all to scene recommendation\n"
   }
 
-  content + "\nActive Method: " + method_name(tonemapping)
+  "\{content}\nActive Method: \{method_name(tonemapping)}"
 }
 
 ///|

@@ -160,13 +160,8 @@ fn anisotropy_help_text() -> String {
   } else {
     "Press Enter to enable anisotropy"
   }
-  let scene_text = "Press Q to change to " +
-    scene_name(anisotropy_state.val.visible_scene.next())
-  anisotropy_text +
-  "\n" +
-  light_mode_help_text(anisotropy_state.val.light_mode) +
-  "\n" +
-  scene_text
+  let scene_text = "Press Q to change to \{scene_name(anisotropy_state.val.visible_scene.next())}"
+  "\{anisotropy_text}\n\{light_mode_help_text(anisotropy_state.val.light_mode)}\n\{scene_text}"
 }
 
 ///|

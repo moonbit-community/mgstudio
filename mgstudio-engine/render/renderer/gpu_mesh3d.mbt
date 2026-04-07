@@ -4361,27 +4361,6 @@ pub fn GpuBackend::preprocess_mesh3d(
   }
   ensure_mesh3d_preprocess_indirect_resources(self)
   let state = self.mesh3d_preprocess_camera_upload_states[state_index]
-  let indexed_gpu_metadata_size = state.indexed_gpu_metadata_count.to_uint64() *
-    MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
-    4UL
-  let non_indexed_gpu_metadata_size = state.non_indexed_gpu_metadata_count.to_uint64() *
-    MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
-    4UL
-  if phase_kind != MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION &&
-    state.indexed_gpu_metadata_count > 0 &&
-    state.indexed_gpu_metadata_buffer is Some(indexed_gpu_metadata_buffer) {
-    frame.encoder.clear_buffer(
-      indexed_gpu_metadata_buffer, 0UL, indexed_gpu_metadata_size,
-    )
-  }
-  if phase_kind != MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION &&
-    state.non_indexed_gpu_metadata_count > 0 &&
-    state.non_indexed_gpu_metadata_buffer
-    is Some(non_indexed_gpu_metadata_buffer) {
-    frame.encoder.clear_buffer(
-      non_indexed_gpu_metadata_buffer, 0UL, non_indexed_gpu_metadata_size,
-    )
-  }
   let compute_pass = frame.encoder.begin_compute_pass()
   if phase_kind == MESH3D_PREPROCESS_PHASE_MAIN {
     if state.direct_workgroup_count > 0 &&

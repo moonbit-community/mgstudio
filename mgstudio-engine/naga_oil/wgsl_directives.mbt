@@ -37,7 +37,8 @@ pub fn WgslDirectives::to_wgsl_string(self : WgslDirectives) -> String {
   if !all_enables.is_empty() {
     let enables = all_enables.to_array()
     enables.sort()
-    result = result + "enable " + join_strings(enables, ", ") + ";\n"
+    let joined_enables = join_strings(enables, ", ")
+    result = "\{result}enable \{joined_enables};\n"
   }
 
   let all_requires : @hashset.HashSet[String] = @hashset.HashSet::new()
@@ -49,20 +50,16 @@ pub fn WgslDirectives::to_wgsl_string(self : WgslDirectives) -> String {
   if !all_requires.is_empty() {
     let requires = all_requires.to_array()
     requires.sort()
-    result = result + "requires " + join_strings(requires, ", ") + ";\n"
+    let joined_requires = join_strings(requires, ", ")
+    result = "\{result}requires \{joined_requires};\n"
   }
 
   for diagnostic in self.diagnostics {
-    result = result +
-      "diagnostic(" +
-      diagnostic.severity +
-      ", " +
-      diagnostic.rule +
-      ");\n"
+    result = "\{result}diagnostic(\{diagnostic.severity}, \{diagnostic.rule});\n"
   }
 
   if result != "" {
-    result = result + "\n"
+    result = "\{result}\n"
   }
   result
 }

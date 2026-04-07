@@ -144,25 +144,20 @@ fn update_display(
     }
 
     let entity_id = entity_ref.id()
+    let scene_text = format_optional_string(
+      scene_extras.map(fn(value) { value.as_str() }),
+    )
+    let primitive_text = format_optional_string(
+      primitive_extras.map(fn(value) { value.as_str() }),
+    )
+    let mesh_text = format_optional_string(
+      mesh_extras.map(fn(value) { value.as_str() }),
+    )
+    let material_text = format_optional_string(
+      material_extras.map(fn(value) { value.as_str() }),
+    )
     lines.push(
-      "Entity " +
-      entity_id.id.to_string() +
-      ":" +
-      entity_id.generation.to_string() +
-      " ('" +
-      format_optional_name(name) +
-      "'):\n" +
-      "  - scene extras:     " +
-      format_optional_string(scene_extras.map(fn(value) { value.as_str() })) +
-      "\n" +
-      "  - primitive extras: " +
-      format_optional_string(primitive_extras.map(fn(value) { value.as_str() })) +
-      "\n" +
-      "  - mesh extras:      " +
-      format_optional_string(mesh_extras.map(fn(value) { value.as_str() })) +
-      "\n" +
-      "  - material extras:  " +
-      format_optional_string(material_extras.map(fn(value) { value.as_str() })),
+      "Entity \{entity_id.id.to_string()}:\{entity_id.generation.to_string()} ('\{format_optional_name(name)}'):\n  - scene extras:     \{scene_text}\n  - primitive extras: \{primitive_text}\n  - mesh extras:      \{mesh_text}\n  - material extras:  \{material_text}",
     )
   })
 

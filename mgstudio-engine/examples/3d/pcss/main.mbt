@@ -109,16 +109,7 @@ fn on_off_text(enabled : Bool) -> String {
 ///|
 fn help_text_content() -> String {
   let state = pcss_state.val
-  "PCSS (Bevy-aligned controls)\n" +
-  "Q/W/E: Light Type " +
-  light_type_text(state.light_type) +
-  "\n" +
-  "A/S: Shadow Filter " +
-  shadow_filter_text(state.shadow_filter) +
-  "\n" +
-  "D/F: Soft Shadows " +
-  on_off_text(state.soft_shadows) +
-  "\n"
+  "PCSS (Bevy-aligned controls)\nQ/W/E: Light Type \{light_type_text(state.light_type)}\nA/S: Shadow Filter \{shadow_filter_text(state.shadow_filter)}\nD/F: Soft Shadows \{on_off_text(state.soft_shadows)}\n"
 }
 
 ///|

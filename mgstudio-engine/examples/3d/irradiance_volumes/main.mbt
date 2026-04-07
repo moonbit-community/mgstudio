@@ -187,15 +187,7 @@ fn create_help_text() -> String {
   } else {
     SWITCH_TO_SPHERE_HELP_TEXT
   }
-  CLICK_TO_MOVE_HELP_TEXT +
-  "\n" +
-  voxels_help_text +
-  "\n" +
-  irradiance_volume_help_text +
-  "\n" +
-  rotation_help_text +
-  "\n" +
-  switch_mesh_help_text
+  "\{CLICK_TO_MOVE_HELP_TEXT}\n\{voxels_help_text}\n\{irradiance_volume_help_text}\n\{rotation_help_text}\n\{switch_mesh_help_text}"
 }
 
 ///|

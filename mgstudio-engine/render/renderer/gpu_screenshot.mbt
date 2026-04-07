@@ -73,7 +73,7 @@ fn screenshot_debug_enabled() -> Bool {
 ///|
 fn screenshot_debug_log(message : String) -> Unit {
   if screenshot_debug_enabled() {
-    println("[screenshot] " + message)
+    println("[screenshot] \{message}")
   }
 }
 

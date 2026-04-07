@@ -192,25 +192,12 @@ fn log_diagnostic_message(diagnostic : Diagnostic) -> String {
       if diagnostic.get_max_history_length() > 1 {
         match diagnostic.average() {
           Some(average) =>
-            diagnostic.path().as_str() +
-            ": " +
-            value.to_string() +
-            diagnostic.suffix +
-            " (avg " +
-            average.to_string() +
-            diagnostic.suffix +
-            ")"
+            "\{diagnostic.path().as_str()}: \{value.to_string()}\{diagnostic.suffix} (avg \{average.to_string()}\{diagnostic.suffix})"
           None =>
-            diagnostic.path().as_str() +
-            ": " +
-            value.to_string() +
-            diagnostic.suffix
+            "\{diagnostic.path().as_str()}: \{value.to_string()}\{diagnostic.suffix}"
         }
       } else {
-        diagnostic.path().as_str() +
-        ": " +
-        value.to_string() +
-        diagnostic.suffix
+        "\{diagnostic.path().as_str()}: \{value.to_string()}\{diagnostic.suffix}"
       }
     None => ""
   }

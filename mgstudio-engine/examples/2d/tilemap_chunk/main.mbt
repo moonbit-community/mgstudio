@@ -308,7 +308,7 @@ fn log_tile(
 
   if tile.tileset_index != last_tileset_index.get() {
     @app.log_info(
-      "tile_data changed: tileset_index=" + tile.tileset_index.to_string(),
+      "tile_data changed: tileset_index=\{tile.tileset_index.to_string()}",
     )
     last_tileset_index.set(tile.tileset_index)
   }

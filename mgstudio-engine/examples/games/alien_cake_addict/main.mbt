@@ -171,8 +171,7 @@ fn collect_cakes(
       commands.entity(entity).despawn()
       score.get_ref().val.value += 1
       @window.host_debug_string(
-        value="[alien_cake_addict] score: " +
-          score.get_ref().val.value.to_string(),
+        value="[alien_cake_addict] score: \{score.get_ref().val.value.to_string()}",
       )
     } else {
       remaining += 1

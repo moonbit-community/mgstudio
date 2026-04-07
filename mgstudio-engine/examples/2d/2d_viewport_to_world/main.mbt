@@ -75,11 +75,7 @@ fn spawn_help_overlay(
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new(
-          "Move the mouse to see the circle follow your cursor.\n" +
-          "Use the arrow keys to move the camera.\n" +
-          "Use the comma and period keys to zoom in and out.\n" +
-          "Use the WASD keys to move the viewport.\n" +
-          "Use the IJKL keys to resize the viewport.",
+          "Move the mouse to see the circle follow your cursor.\nUse the arrow keys to move the camera.\nUse the comma and period keys to zoom in and out.\nUse the WASD keys to move the viewport.\nUse the IJKL keys to resize the viewport.",
         ),
         @text.TextFont::default().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),

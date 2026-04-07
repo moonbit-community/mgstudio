@@ -69,9 +69,7 @@ fn capture_system(
   let state_ref = state.get_ref()
   if state_ref.val.target is Some(target) {
     if state_ref.val.frame < 10 {
-      let path = "test_images/screenshot" +
-        state_ref.val.frame.to_string() +
-        ".png"
+      let path = "test_images/screenshot\{state_ref.val.frame.to_string()}.png"
       @asset.asset_save_texture_png(target, path)
     }
     state_ref.val.frame = state_ref.val.frame + 1

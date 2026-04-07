@@ -79,17 +79,7 @@ fn mode_label(mode : @post_process.BloomCompositeMode) -> String {
 fn bloom_text(bloom : @post_process.Bloom?) -> String {
   match bloom {
     Some(bloom) =>
-      "Bloom (Toggle: Space)\n" +
-      "(Q/A) Intensity: \{bloom.intensity}\n" +
-      "(W/S) Low-frequency boost: \{bloom.low_frequency_boost}\n" +
-      "(E/D) Low-frequency boost curvature: \{bloom.low_frequency_boost_curvature}\n" +
-      "(R/F) High-pass frequency: \{bloom.high_pass_frequency}\n" +
-      "(T/G) Mode: " +
-      mode_label(bloom.composite_mode) +
-      "\n" +
-      "(Y/H) Threshold: \{bloom.prefilter.threshold}\n" +
-      "(U/J) Threshold softness: \{bloom.prefilter.threshold_softness}\n" +
-      "(I/K) Horizontal Scale: \{bloom.scale.x}"
+      "Bloom (Toggle: Space)\n(Q/A) Intensity: \{bloom.intensity}\n(W/S) Low-frequency boost: \{bloom.low_frequency_boost}\n(E/D) Low-frequency boost curvature: \{bloom.low_frequency_boost_curvature}\n(R/F) High-pass frequency: \{bloom.high_pass_frequency}\n(T/G) Mode: \{mode_label(bloom.composite_mode)}\n(Y/H) Threshold: \{bloom.prefilter.threshold}\n(U/J) Threshold softness: \{bloom.prefilter.threshold_softness}\n(I/K) Horizontal Scale: \{bloom.scale.x}"
     None => "Bloom: Off (Toggle: Space)"
   }
 }

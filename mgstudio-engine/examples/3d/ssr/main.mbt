@@ -179,38 +179,7 @@ fn on_off_label(value : Bool) -> String {
 ///|
 fn ssr_ui_text() -> String {
   let state = ssr_state.val
-  "SSR Example (Bevy-aligned scene flow, adapted render path)\n" +
-  "\n" +
-  "SSR: 1=On 2=Off | Current: " +
-  on_off_label(state.ssr_on) +
-  "\n" +
-  "Model: 3=Cube 4=FlightHelmet 5=Capsules | Current: " +
-  model_name(state.displayed_model) +
-  "\n" +
-  "Base: 6=Water Q=Metallic E=RedPlane | Current: " +
-  base_name(state.displayed_base) +
-  "\n" +
-  "\n" +
-  "Camera: W/S zoom, A/D orbit, Mouse Wheel zoom\n" +
-  "\n" +
-  "Min Roughness Start: J-/U+ = " +
-  "\{state.min_roughness_start}" +
-  "\n" +
-  "Min Roughness End:   K-/I+ = " +
-  "\{state.min_roughness_end}" +
-  "\n" +
-  "Max Roughness Start: N-/M+ = " +
-  "\{state.max_roughness_start}" +
-  "\n" +
-  "Max Roughness End: ,-/ .+ = " +
-  "\{state.max_roughness_end}" +
-  "\n" +
-  "Edge Fadeout Start: R-/T+ = " +
-  "\{state.edge_fadeout_start}" +
-  "\n" +
-  "Edge Fadeout End:   F-/G+ = " +
-  "\{state.edge_fadeout_end}" +
-  "\n"
+  "SSR Example (Bevy-aligned scene flow, adapted render path)\n\nSSR: 1=On 2=Off | Current: \{on_off_label(state.ssr_on)}\nModel: 3=Cube 4=FlightHelmet 5=Capsules | Current: \{model_name(state.displayed_model)}\nBase: 6=Water Q=Metallic E=RedPlane | Current: \{base_name(state.displayed_base)}\n\nCamera: W/S zoom, A/D orbit, Mouse Wheel zoom\n\nMin Roughness Start: J-/U+ = \{state.min_roughness_start}\nMin Roughness End:   K-/I+ = \{state.min_roughness_end}\nMax Roughness Start: N-/M+ = \{state.max_roughness_start}\nMax Roughness End: ,-/ .+ = \{state.max_roughness_end}\nEdge Fadeout Start: R-/T+ = \{state.edge_fadeout_start}\nEdge Fadeout End:   F-/G+ = \{state.edge_fadeout_end}\n"
 }
 
 ///|

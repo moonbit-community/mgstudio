@@ -162,10 +162,7 @@ fn update_display_text() -> Unit {
     }
     @text.text_set_content(
       handle,
-      "Compensation Curve: " +
-      compensation_label +
-      "\nMetering Mask: " +
-      metering_label,
+      "Compensation Curve: \{compensation_label}\nMetering Mask: \{metering_label}",
     )
   }
 }
@@ -201,8 +198,7 @@ fn build_basic_compensation_curve(
   ) catch {
     err =>
       abort(
-        "Failed to build auto exposure compensation curve in example: " +
-        auto_exposure_curve_error_message(err),
+        "Failed to build auto exposure compensation curve in example: \{auto_exposure_curve_error_message(err)}",
       )
   }
   auto_exposure_curve_assets_ref_mut_or_abort(world).val.add(curve)

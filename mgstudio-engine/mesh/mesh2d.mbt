@@ -291,7 +291,7 @@ pub fn Mesh2dGeometry::encode_triangle_positions_csv(
       let n = values.length()
       for i in 0..<n {
         if i > 0 {
-          out = out + ","
+          out = "\{out},"
         }
         out = out + values[i].to_string()
       }
@@ -311,7 +311,7 @@ pub fn Mesh2dGeometry::encode_triangle_interleaved_xy_uv_rgba_csv(
       let n = values.length()
       for i in 0..<n {
         if i > 0 {
-          out = out + ","
+          out = "\{out},"
         }
         out = out + values[i].to_string()
       }

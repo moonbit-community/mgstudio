@@ -166,10 +166,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let instructions = @text.Text2dBundle::new(
       @text.Text2d::new(
-        "Press D to toggle gizmo depth bias\n" +
-        "Hold Left or Right to change line width\n" +
-        "Press A to toggle light gizmos\n" +
-        "Press C to cycle gizmo coloring modes",
+        "Press D to toggle gizmo depth bias\nHold Left or Right to change line width\nPress A to toggle light gizmos\nPress C to cycle gizmo coloring modes",
       ),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(

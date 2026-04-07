@@ -131,13 +131,12 @@ fn random_range(min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn help_text_content() -> String {
-  "Clustered Decal Maps (Bevy-aligned behavior)\n" +
-  "E: Emissive On, R: Emissive Off (" +
-  (if clustered_decal_maps_state.val.emissive_decals { "On" } else { "Off" }) +
-  ")\n" +
-  "Active decals: " +
-  clustered_decal_maps_state.val.decals.length().to_string() +
-  "\n"
+  let emissive_text = if clustered_decal_maps_state.val.emissive_decals {
+    "On"
+  } else {
+    "Off"
+  }
+  "Clustered Decal Maps (Bevy-aligned behavior)\nE: Emissive On, R: Emissive Off (\{emissive_text})\nActive decals: \{clustered_decal_maps_state.val.decals.length().to_string()}\n"
 }
 
 ///|

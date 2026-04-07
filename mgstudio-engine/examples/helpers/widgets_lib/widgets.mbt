@@ -99,14 +99,12 @@ pub impl @ecs.Component for RadioButtonText with component() {
 ///|
 pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]] {
   let probe : T? = None
-  let type_name = "examples.helpers.widgets_lib.WidgetClickEvent<" +
-    @any.of(probe).type_name() +
-    ">"
+  let type_name = "examples.helpers.widgets_lib.WidgetClickEvent<\{@any.of(probe).type_name()}>"
   match widget_click_event_registry.val.get(type_name) {
     Some(existing_key) =>
       match existing_key.try_to() {
         Some(key) => key
-        None => abort("widget click event registry mismatch for " + type_name)
+        None => abort("widget click event registry mismatch for \{type_name}")
       }
     None => {
       let key : @ecs.MessageKey[WidgetClickEvent[T]] = @ecs.register_message(
@@ -121,14 +119,12 @@ pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]] {
 ///|
 pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]] {
   let probe : T? = None
-  let type_name = "examples.helpers.widgets_lib.WidgetClickSender<" +
-    @any.of(probe).type_name() +
-    ">"
+  let type_name = "examples.helpers.widgets_lib.WidgetClickSender<\{@any.of(probe).type_name()}>"
   match widget_click_sender_registry.val.get(type_name) {
     Some(existing_key) =>
       match existing_key.try_to() {
         Some(key) => key
-        None => abort("widget click sender registry mismatch for " + type_name)
+        None => abort("widget click sender registry mismatch for \{type_name}")
       }
     None => {
       let key : @ecs.ComponentKey[WidgetClickSender[T]] = @ecs.register_component(

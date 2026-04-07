@@ -1,0 +1,809 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ldtk"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+pub const LDTK_PLUGIN_ID : String = "bevy_ecs_ldtk::LdtkPlugin"
+
+pub fn apply_level_selection(@ecs.World) -> Unit
+
+pub fn apply_level_set(@ecs.World) -> Unit
+
+pub fn calculate_transform_from_entity_instance(EntityInstance, Int) -> @transform.Transform
+
+pub fn calculate_transform_from_entity_instance_with_entity_definition_map(EntityInstance, @hashmap.HashMap[Int, EntityDefinition], Int) -> @transform.Transform
+
+pub fn clean_respawn_entities(@ecs.World) -> Unit
+
+pub fn create_entity_definition_map(Array[EntityDefinition]) -> @hashmap.HashMap[Int, EntityDefinition]
+
+pub fn create_layer_definition_map(Array[LayerDefinition]) -> @hashmap.HashMap[Int, LayerDefinition]
+
+pub fn detect_level_spawned_events(@ecs.MessageReader[LevelEvent], @app.ResMut[LdtkSpawnedLevelIids]) -> Unit
+
+pub let ecs_key_entity_iid : @ecs.ComponentKey[EntityIid]
+
+pub let ecs_key_grid_coords : @ecs.ComponentKey[GridCoords]
+
+pub let ecs_key_int_grid_cell : @ecs.ComponentKey[IntGridCell]
+
+pub let ecs_key_layer_metadata : @ecs.ComponentKey[LayerMetadata]
+
+pub let ecs_key_ldtk_project_handle : @ecs.ComponentKey[LdtkProjectHandle]
+
+pub let ecs_key_level_iid : @ecs.ComponentKey[LevelIid]
+
+pub let ecs_key_level_set : @ecs.ComponentKey[LevelSet]
+
+pub let ecs_key_respawn : @ecs.ComponentKey[Respawn]
+
+pub let ecs_key_tile_enum_tags : @ecs.ComponentKey[TileEnumTags]
+
+pub let ecs_key_tile_metadata : @ecs.ComponentKey[TileMetadata]
+
+pub let ecs_key_worldly : @ecs.ComponentKey[Worldly]
+
+pub fn[A : LevelMetadataAccessor + RawLevelAccessor] find_raw_level_by_level_selection(A, LevelSelection) -> Level?
+
+pub fn fire_level_transformed_events(@app.ResMut[LdtkSpawnedLevelIids], @ecs.MessageWriter[LevelEvent]) -> Unit
+
+pub fn[A : RawLevelAccessor] get_raw_level_at_indices(A, LevelIndices) -> Level?
+
+pub fn[A : LevelMetadataAccessor + RawLevelAccessor] get_raw_level_by_iid(A, String) -> Level?
+
+pub fn grid_coords_to_ldtk_grid_coords(GridCoords, Int) -> @math.IVec2
+
+pub fn grid_coords_to_translation(GridCoords, @math.IVec2) -> @math.Vec2
+
+pub fn grid_coords_to_translation_relative_to_tile_layer(GridCoords, @math.IVec2) -> @math.Vec2
+
+pub fn int_grid_index_to_grid_coords(Int, Int, Int) -> GridCoords?
+
+pub fn[A : RawLevelAccessor] iter_raw_levels(A) -> Array[Level]
+
+pub fn[A : RawLevelAccessor] iter_raw_levels_with_indices(A) -> Array[(LevelIndices, Level)]
+
+pub fn[A : RawLevelAccessor] iter_root_levels(A) -> Array[Level]
+
+pub fn[A : RawLevelAccessor] iter_root_levels_with_indices(A) -> Array[(LevelIndices, Level)]
+
+pub fn[A : RawLevelAccessor] iter_world_levels(A) -> Array[Level]
+
+pub fn[A : RawLevelAccessor] iter_world_levels_with_indices(A) -> Array[(LevelIndices, Level)]
+
+pub fn layer_grid_tiles(Array[TileInstance]) -> Array[Array[TileInstance]]
+
+pub fn[T] ldtk_all_some(Array[T?]) -> Array[T] raise AllSomeError
+
+pub fn ldtk_entity_dispatcher_for(@ecs.World, String, String) -> (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit
+
+pub fn ldtk_entity_map_default_dispatch(@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit
+
+pub fn[A : LdtkFields] ldtk_get_bool_field(A, String) -> Bool raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_bools_field(A, String) -> Array[Bool] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_color_field(A, String) -> @color.Color raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_colors_field(A, String) -> Array[@color.Color] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_entity_ref_field(A, String) -> ReferenceToAnEntityInstance raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_enum_field(A, String) -> String raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_field(A, String) -> FieldValue raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_field_instance(A, String) -> LdtkFieldInstance raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_file_path_field(A, String) -> String raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_float_field(A, String) -> Float raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_int_field(A, String) -> Int raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_entity_ref_field(A, String) -> ReferenceToAnEntityInstance? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_entity_refs_field(A, String) -> Array[ReferenceToAnEntityInstance?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_enum_field(A, String) -> String? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_enums_field(A, String) -> Array[String?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_file_path_field(A, String) -> String? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_file_paths_field(A, String) -> Array[String?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_float_field(A, String) -> Float? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_floats_field(A, String) -> Array[Float?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_int_field(A, String) -> Int? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_ints_field(A, String) -> Array[Int?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_point_field(A, String) -> @math.IVec2? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_points_field(A, String) -> Array[@math.IVec2?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_string_field(A, String) -> String? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_strings_field(A, String) -> Array[String?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_tile_field(A, String) -> TilesetRectangle? raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_maybe_tiles_field(A, String) -> Array[TilesetRectangle?] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_point_field(A, String) -> @math.IVec2 raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_string_field(A, String) -> String raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_get_tile_field(A, String) -> TilesetRectangle raise LdtkFieldsError
+
+pub fn ldtk_grid_coords_to_grid_coords(@math.IVec2, Int) -> GridCoords
+
+pub fn ldtk_grid_coords_to_translation(@math.IVec2, Int, @math.IVec2) -> @math.Vec2
+
+pub fn ldtk_grid_coords_to_translation_relative_to_tile_layer(@math.IVec2, Int, @math.IVec2) -> @math.Vec2
+
+pub fn ldtk_init_assets(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ldtk_int_cell_dispatcher_for(@ecs.World, String, Int) -> (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit
+
+pub fn ldtk_int_cell_map_default_dispatch(@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit
+
+pub fn[A : LdtkFields] ldtk_iter_entity_refs_field(A, String) -> Array[ReferenceToAnEntityInstance] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_enums_field(A, String) -> Array[String] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_file_paths_field(A, String) -> Array[String] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_floats_field(A, String) -> Array[Float] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_ints_field(A, String) -> Array[Int] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_points_field(A, String) -> Array[@math.IVec2] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_strings_field(A, String) -> Array[String] raise LdtkFieldsError
+
+pub fn[A : LdtkFields] ldtk_iter_tiles_field(A, String) -> Array[TilesetRectangle] raise LdtkFieldsError
+
+pub let ldtk_level_event_key : @ecs.MessageKey[LevelEvent]
+
+pub fn ldtk_parse_json(Bytes) -> LdtkJson
+
+pub fn ldtk_parse_json_from_text(String) -> LdtkJson
+
+pub fn ldtk_pixel_coords_to_grid_coords(@math.IVec2, Int, @math.IVec2) -> GridCoords
+
+pub fn ldtk_pixel_coords_to_translation(@math.IVec2, Int) -> @math.Vec2
+
+pub fn ldtk_pixel_coords_to_translation_pivoted(@math.IVec2, Int, @math.IVec2, @math.Vec2) -> @math.Vec2
+
+pub fn ldtk_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ldtk_plugin_with(@app.App[@ecs.World], LdtkPlugin) -> @app.App[@ecs.World]
+
+pub fn ldtk_send_level_event(@ecs.World, LevelEvent) -> Unit
+
+pub fn process_ldtk_assets(@ecs.World) -> Unit
+
+pub fn process_ldtk_levels(@ecs.World) -> Unit
+
+pub fn register_default_ldtk_entity(@app.App[@ecs.World], (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_default_ldtk_entity_for_layer(@app.App[@ecs.World], String, (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_default_ldtk_int_cell(@app.App[@ecs.World], (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_default_ldtk_int_cell_for_layer(@app.App[@ecs.World], String, (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_ldtk_entity(@app.App[@ecs.World], String, (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_ldtk_entity_for_layer(@app.App[@ecs.World], String, String, (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_ldtk_entity_for_layer_optional(@app.App[@ecs.World], String?, String?, (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_ldtk_int_cell(@app.App[@ecs.World], Int, (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_ldtk_int_cell_for_layer(@app.App[@ecs.World], String, Int, (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit) -> @app.App[@ecs.World]
+
+pub fn register_ldtk_int_cell_for_layer_optional(@app.App[@ecs.World], String?, Int?, (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit) -> @app.App[@ecs.World]
+
+pub fn spawn_level(Level, @asset.Handle[@image.Image]?, @ecs.World, @asset.AssetServer, @hashmap.HashMap[Int, @asset.Handle[@image.Image]], @asset.Handle[@image.Image]?, @core.Entity, LdtkSettings, @hashmap.HashMap[Int, EntityDefinition], @hashmap.HashMap[Int, LayerDefinition], @hashmap.HashMap[Int, TilesetDefinition]) -> Unit
+
+pub fn tile_in_layer_bounds(TileInstance, LayerInstance) -> Bool
+
+pub fn tile_to_grid_coords(TileInstance, Int, Int) -> GridCoords
+
+pub fn translation_to_grid_coords(@math.Vec2, @math.IVec2) -> GridCoords
+
+pub fn translation_to_ldtk_pixel_coords(@math.Vec2, Int) -> @math.IVec2
+
+pub fn worldly_adoption(@ecs.World) -> Unit
+
+// Errors
+pub suberror AllSomeError {
+  ContainsNull
+}
+
+pub suberror LdtkFieldsError {
+  FieldNotFound(String)
+  WrongFieldType(String)
+  UnexpectedNull(String)
+}
+
+pub suberror LevelLoadError {
+  LevelNotLoaded
+}
+
+// Types and methods
+pub(all) enum BgPos {
+  Contain
+  Cover
+  CoverDirty
+  Repeat
+  Unscaled
+}
+pub fn BgPos::default() -> Self
+
+pub struct Definitions {
+  entities : Array[EntityDefinition]
+  layers : Array[LayerDefinition]
+  tilesets : Array[TilesetDefinition]
+}
+pub fn Definitions::create_int_grid_image(Self) -> @image.Image?
+
+pub struct EntityDefinition {
+  uid : Int
+  identifier : String
+  width : Int
+  height : Int
+  tile_rect : EntityTileRect?
+}
+
+pub struct EntityIid {
+  iid : String
+}
+pub fn EntityIid::as_str(Self) -> String
+pub fn EntityIid::new(String) -> Self
+pub impl @ecs.Component for EntityIid
+
+pub struct EntityInstance {
+  iid : String
+  identifier : String
+  def_uid : Int
+  width : Int
+  height : Int
+  tags : Array[String]
+  grid : @math.IVec2
+  px : @math.IVec2
+  pivot : @math.Vec2
+  tile : TilesetRectangle?
+  world_x : Int?
+  world_y : Int?
+  field_instances : Array[LdtkFieldInstance]
+}
+pub impl LdtkFields for EntityInstance
+
+pub struct EntityTileRect {
+  w : Int
+  h : Int
+}
+
+pub struct ExternalLevelMetadata {
+  metadata : LevelMetadata
+  external_handle : @asset.Handle[@asset.Blob]
+}
+pub fn ExternalLevelMetadata::new(LevelMetadata, @asset.Handle[@asset.Blob]) -> Self
+
+pub(all) enum FieldValue {
+  Int(Int?)
+  Float(Float?)
+  Bool(Bool)
+  String(String?)
+  Color(@color.Color)
+  FilePath(String?)
+  Enum(String?)
+  Tile(TilesetRectangle?)
+  EntityRef(ReferenceToAnEntityInstance?)
+  Point(@math.IVec2?)
+  Ints(Array[Int?])
+  Floats(Array[Float?])
+  Bools(Array[Bool])
+  Strings(Array[String?])
+  Colors(Array[@color.Color])
+  FilePaths(Array[String?])
+  Enums(Array[String?])
+  Tiles(Array[TilesetRectangle?])
+  EntityRefs(Array[ReferenceToAnEntityInstance?])
+  Points(Array[@math.IVec2?])
+}
+
+pub struct GridCoords {
+  x : Int
+  y : Int
+}
+pub fn GridCoords::add(Self, Self) -> Self
+pub fn GridCoords::from_entity_info(EntityInstance, LayerInstance) -> Self
+pub fn GridCoords::mul(Self, Self) -> Self
+pub fn GridCoords::new(Int, Int) -> Self
+pub fn GridCoords::sub(Self, Self) -> Self
+pub impl @ecs.Component for GridCoords
+
+pub struct IntGridCell {
+  value : Int
+}
+pub fn IntGridCell::new(Int) -> Self
+pub impl @ecs.Component for IntGridCell
+
+pub(all) enum IntGridRendering {
+  Colorful
+  Invisible
+}
+pub fn IntGridRendering::default() -> Self
+
+pub struct IntGridValueDefinition {
+  value : Int
+  color : @color.Color
+}
+
+pub struct LayerDefinition {
+  uid : Int
+  identifier : String
+  layer_definition_type : Type
+  grid_size : Int
+  tileset_def_uid : Int?
+  tile_pivot_x : Float
+  tile_pivot_y : Float
+  int_grid_values : Array[IntGridValueDefinition]
+}
+
+pub struct LayerInstance {
+  c_hei : Int
+  c_wid : Int
+  grid_size : Int
+  identifier : String
+  opacity : Float
+  px_total_offset_x : Int
+  px_total_offset_y : Int
+  tileset_def_uid : Int?
+  tileset_rel_path : String?
+  layer_instance_type : Type
+  iid : String
+  layer_def_uid : Int
+  level_id : Int
+  optional_rules : Array[Int]
+  override_tileset_uid : Int?
+  px_offset_x : Int
+  px_offset_y : Int
+  seed : Int
+  visible : Bool
+  int_grid_csv : Array[Int]
+  grid_tiles : Array[TileInstance]
+  auto_layer_tiles : Array[TileInstance]
+  entity_instances : Array[EntityInstance]
+}
+
+pub struct LayerMetadata {
+  c_hei : Int
+  c_wid : Int
+  grid_size : Int
+  identifier : String
+  opacity : Float
+  px_total_offset_x : Int
+  px_total_offset_y : Int
+  tileset_def_uid : Int?
+  tileset_rel_path : String?
+  layer_instance_type : Type
+  iid : String
+  layer_def_uid : Int
+  level_id : Int
+  optional_rules : Array[Int]
+  override_tileset_uid : Int?
+  px_offset_x : Int
+  px_offset_y : Int
+  seed : Int
+  visible : Bool
+}
+pub fn LayerMetadata::from_layer_instance(LayerInstance) -> Self
+pub impl @ecs.Component for LayerMetadata
+
+pub struct LdtkEntityMap {
+  entries : @hashmap.HashMap[(String?, String?), (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit]
+}
+pub fn LdtkEntityMap::default() -> Self
+pub impl @app.Resource for LdtkEntityMap
+
+#alias(FieldInstance)
+pub struct LdtkFieldInstance {
+  identifier : String
+  tile : TilesetRectangle?
+  field_instance_type : String
+  value : FieldValue
+  def_uid : Int
+  real_editor_values : Array[Json?]
+}
+pub fn LdtkFieldInstance::new(String, TilesetRectangle?, String, FieldValue, Int, Array[Json?]) -> Self
+
+pub struct LdtkIntCellMap {
+  entries : @hashmap.HashMap[(String?, Int?), (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit]
+}
+pub fn LdtkIntCellMap::default() -> Self
+pub impl @app.Resource for LdtkIntCellMap
+
+pub struct LdtkJson {
+  iid : String
+  bg_color : @color.Color
+  default_level_bg_color : @color.Color
+  external_levels : Bool
+  world_layout : String?
+  world_grid_width : Int?
+  world_grid_height : Int?
+  levels : Array[Level]
+  worlds : Array[World]
+  defs : Definitions
+}
+pub impl RawLevelAccessor for LdtkJson
+
+pub struct LdtkJsonWithMetadata {
+  json_data : LdtkJson
+  level_map : @hashmap.HashMap[String, LevelMetadata]
+}
+pub fn LdtkJsonWithMetadata::find_loaded_level_by_level_selection(Self, LevelSelection) -> LoadedLevel?
+pub fn LdtkJsonWithMetadata::from_project(LdtkProject) -> Self
+pub fn LdtkJsonWithMetadata::get_loaded_level_at_indices(Self, LevelIndices) -> LoadedLevel?
+pub fn LdtkJsonWithMetadata::get_loaded_level_by_iid(Self, String) -> LoadedLevel?
+pub fn LdtkJsonWithMetadata::iter_loaded_levels(Self) -> Array[LoadedLevel]
+pub fn LdtkJsonWithMetadata::json_data(Self) -> LdtkJson
+pub fn LdtkJsonWithMetadata::level_map(Self) -> @hashmap.HashMap[String, LevelMetadata]
+pub fn LdtkJsonWithMetadata::new(LdtkJson, @hashmap.HashMap[String, LevelMetadata]) -> Self
+pub impl LevelMetadataAccessor for LdtkJsonWithMetadata
+pub impl RawLevelAccessor for LdtkJsonWithMetadata
+
+pub(all) struct LdtkPlugin {
+}
+pub fn LdtkPlugin::default() -> Self
+pub impl @app.PluginReplacement for LdtkPlugin
+
+pub struct LdtkProject {
+  data : LdtkJson
+  level_map : @hashmap.HashMap[String, LevelMetadata]
+  tileset_map : @hashmap.HashMap[Int, @asset.Handle[@image.Image]]
+  int_grid_image_handle : @asset.Handle[@image.Image]?
+  external_level_blob_handles : @hashmap.HashMap[String, @asset.Handle[@asset.Blob]]
+}
+pub fn LdtkProject::as_parent(Self) -> LdtkJsonWithMetadata
+pub fn LdtkProject::as_standalone(Self) -> LdtkJsonWithMetadata
+pub fn LdtkProject::find_raw_level_by_level_selection(Self, LevelSelection) -> Level?
+pub fn LdtkProject::get_level_metadata_by_iid(Self, String) -> LevelMetadata?
+pub fn LdtkProject::get_loaded_level_by_iid(Self, @asset.Assets[@asset.Blob], String) -> Level?
+pub fn LdtkProject::get_raw_level_at_indices(Self, LevelIndices) -> Level?
+pub fn LdtkProject::get_raw_level_by_iid(Self, String) -> Level?
+pub fn LdtkProject::int_grid_image_handle(Self) -> @asset.Handle[@image.Image]?
+pub fn LdtkProject::json_data(Self) -> LdtkJson
+pub fn LdtkProject::new(LdtkJson, @hashmap.HashMap[String, LevelMetadata], @hashmap.HashMap[Int, @asset.Handle[@image.Image]], @asset.Handle[@image.Image]?, @hashmap.HashMap[String, @asset.Handle[@asset.Blob]]) -> Self
+pub fn LdtkProject::project_data(Self) -> LdtkProjectData
+pub fn LdtkProject::root_levels(Self) -> Array[Level]
+pub fn LdtkProject::tileset_map(Self) -> @hashmap.HashMap[Int, @asset.Handle[@image.Image]]
+pub fn LdtkProject::worlds(Self) -> Array[World]
+pub impl LevelMetadataAccessor for LdtkProject
+pub impl RawLevelAccessor for LdtkProject
+
+pub(all) enum LdtkProjectData {
+  Standalone(LdtkJsonWithMetadata)
+  Parent(LdtkJsonWithMetadata)
+}
+pub fn LdtkProjectData::as_parent(Self) -> LdtkJsonWithMetadata
+pub fn LdtkProjectData::as_standalone(Self) -> LdtkJsonWithMetadata
+pub fn LdtkProjectData::from_project(LdtkProject) -> Self
+pub fn LdtkProjectData::json_data(Self) -> LdtkJson
+pub impl LevelMetadataAccessor for LdtkProjectData
+pub impl RawLevelAccessor for LdtkProjectData
+
+pub struct LdtkProjectHandle {
+  handle : @asset.Handle[LdtkProject]
+}
+pub fn LdtkProjectHandle::handle(Self) -> @asset.Handle[LdtkProject]
+pub fn LdtkProjectHandle::id(Self) -> Int
+pub fn LdtkProjectHandle::new(@asset.Handle[LdtkProject]) -> Self
+pub impl @ecs.Component for LdtkProjectHandle
+
+pub struct LdtkRuntimeState {
+  spawned_levels_by_world : @hashmap.HashMap[String, @hashmap.HashMap[String, @core.Entity]]
+}
+pub fn LdtkRuntimeState::default() -> Self
+pub fn LdtkRuntimeState::remove_world(Self, @core.Entity) -> Unit
+pub fn LdtkRuntimeState::world_spawned_levels(Self, @core.Entity) -> @hashmap.HashMap[String, @core.Entity]
+pub impl @app.Resource for LdtkRuntimeState
+
+pub struct LdtkSettings {
+  level_spawn_behavior : LevelSpawnBehavior
+  set_clear_color : SetClearColor
+  int_grid_rendering : IntGridRendering
+  level_background : LevelBackground
+  exclusions : SpawnExclusions
+}
+pub fn LdtkSettings::default() -> Self
+pub impl @app.Resource for LdtkSettings
+
+pub struct LdtkSpawnedLevelIids {
+  iids : Array[LevelIid]
+}
+pub fn LdtkSpawnedLevelIids::default() -> Self
+pub fn LdtkSpawnedLevelIids::iids(Self) -> Array[LevelIid]
+pub impl @app.Resource for LdtkSpawnedLevelIids
+
+pub struct LdtkTileEnumTags {
+  tags : Array[String]
+  source_enum_uid : Int?
+}
+pub fn LdtkTileEnumTags::new(Array[String], Int?) -> Self
+
+pub struct LdtkWorldBundle {
+  ldtk_handle : LdtkProjectHandle
+  level_set : LevelSet
+  transform : @transform.Transform
+  global_transform : @transform.GlobalTransform
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
+}
+pub fn LdtkWorldBundle::new(@asset.Handle[LdtkProject]) -> Self
+#callsite(autofill(loc))
+pub fn LdtkWorldBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
+pub impl @app.CommandSpawnComponents for LdtkWorldBundle
+
+pub struct Level {
+  iid : String
+  identifier : String
+  uid : Int
+  world_x : Int
+  world_y : Int
+  px_wid : Int
+  px_hei : Int
+  bg_color : @color.Color
+  bg_pos : LevelBackgroundPosition?
+  neighbours : Array[NeighbourLevel]
+  smart_color : @color.Color
+  level_bg_color : @color.Color?
+  bg_pivot_x : Float
+  bg_pivot_y : Float
+  level_bg_pos : BgPos?
+  bg_rel_path : String?
+  external_rel_path : String?
+  field_instances : Array[LdtkFieldInstance]
+  layer_instances : Array[LayerInstance]?
+  use_auto_identifier : Bool
+  world_depth : Int
+}
+pub impl LdtkFields for Level
+
+pub(all) enum LevelBackground {
+  Rendered
+  Nonexistent
+}
+pub fn LevelBackground::default() -> Self
+
+pub struct LevelBackgroundPosition {
+  crop_rect : Array[Float]
+  scale : @math.Vec2
+  top_left_px : @math.IVec2
+}
+
+pub(all) enum LevelEvent {
+  SpawnTriggered(LevelIid)
+  Spawned(LevelIid)
+  Transformed(LevelIid)
+  Despawned(LevelIid)
+}
+pub impl @ecs.Message for LevelEvent
+
+pub struct LevelIid {
+  iid : String
+}
+pub fn LevelIid::as_str(Self) -> String
+pub fn LevelIid::get(Self) -> String
+pub fn LevelIid::new(String) -> Self
+pub impl @ecs.Component for LevelIid
+
+pub struct LevelIndices {
+  world : Int?
+  level : Int
+}
+pub fn LevelIndices::in_root(Int) -> Self
+pub fn LevelIndices::in_world(Int, Int) -> Self
+
+pub struct LevelMetadata {
+  bg_image : @asset.Handle[@image.Image]?
+  indices : LevelIndices
+}
+pub fn LevelMetadata::new(@asset.Handle[@image.Image]?, LevelIndices) -> Self
+
+pub(all) enum LevelSelection {
+  Identifier(String)
+  Indices(LevelIndices)
+  Iid(LevelIid)
+  Uid(Int)
+}
+pub fn LevelSelection::default() -> Self
+pub fn LevelSelection::iid(String) -> Self
+pub fn LevelSelection::index(Int) -> Self
+pub fn LevelSelection::indices(Int, Int) -> Self
+pub fn LevelSelection::is_match(Self, LevelIndices, Level) -> Bool
+pub impl @app.Resource for LevelSelection
+
+pub struct LevelSet {
+  iids : Array[LevelIid]
+}
+pub fn LevelSet::contains(Self, LevelIid) -> Bool
+pub fn LevelSet::default() -> Self
+pub fn LevelSet::from_iids(Array[String]) -> Self
+pub fn LevelSet::iids(Self) -> Array[LevelIid]
+pub fn LevelSet::new(Array[LevelIid]) -> Self
+pub impl @ecs.Component for LevelSet
+
+pub(all) enum LevelSpawnBehavior {
+  UseZeroTranslation
+  UseWorldTranslation(Bool)
+}
+pub fn LevelSpawnBehavior::default() -> Self
+
+pub struct LoadedLevel {
+  level : Level
+}
+pub fn LoadedLevel::bg_color(Self) -> @color.Color
+pub fn LoadedLevel::bg_pivot_x(Self) -> Float
+pub fn LoadedLevel::bg_pivot_y(Self) -> Float
+pub fn LoadedLevel::bg_pos(Self) -> LevelBackgroundPosition?
+pub fn LoadedLevel::bg_rel_path(Self) -> String?
+pub fn LoadedLevel::external_rel_path(Self) -> String?
+pub fn LoadedLevel::field_instances(Self) -> Array[LdtkFieldInstance]
+pub fn LoadedLevel::identifier(Self) -> String
+pub fn LoadedLevel::iid(Self) -> String
+pub fn LoadedLevel::layer_instances(Self) -> Array[LayerInstance]
+pub fn LoadedLevel::level_bg_color(Self) -> @color.Color?
+pub fn LoadedLevel::level_bg_pos(Self) -> BgPos?
+pub fn LoadedLevel::neighbour_level_iids(Self) -> Array[String]
+pub fn LoadedLevel::neighbours(Self) -> Array[NeighbourLevel]
+pub fn LoadedLevel::px_hei(Self) -> Int
+pub fn LoadedLevel::px_wid(Self) -> Int
+pub fn LoadedLevel::raw(Self) -> Level
+pub fn LoadedLevel::smart_color(Self) -> @color.Color
+pub fn LoadedLevel::try_from(Level) -> Self raise LevelLoadError
+pub fn LoadedLevel::uid(Self) -> Int
+pub fn LoadedLevel::use_auto_identifier(Self) -> Bool
+pub fn LoadedLevel::world_depth(Self) -> Int
+pub fn LoadedLevel::world_x(Self) -> Int
+pub fn LoadedLevel::world_y(Self) -> Int
+pub impl LdtkFields for LoadedLevel
+
+pub struct NeighbourLevel {
+  dir : String
+  level_iid : String
+}
+
+pub(all) struct ProcessLdtkApi {
+}
+
+pub struct ReferenceToAnEntityInstance {
+  entity_iid : String
+  layer_iid : String
+  level_iid : String
+  world_iid : String
+}
+
+pub struct Respawn {
+}
+pub impl @ecs.Component for Respawn
+
+pub(all) enum SetClearColor {
+  No
+  FromLevelBackground
+  FromEditorBackground
+}
+pub fn SetClearColor::default() -> Self
+
+pub struct SpawnExclusions {
+  layer_identifiers : Array[String]
+}
+pub fn SpawnExclusions::default() -> Self
+
+pub struct TileEnumTags {
+  tags : Array[String]
+  source_enum_uid : Int?
+}
+pub fn TileEnumTags::new(Array[String], Int?) -> Self
+pub impl @ecs.Component for TileEnumTags
+
+pub struct TileInstance {
+  px : @math.IVec2
+  src : @math.IVec2
+  f : Int
+  t : Int
+  d : Array[Int]
+}
+
+pub struct TileMetadata {
+  data : String
+}
+pub fn TileMetadata::new(String) -> Self
+pub impl @ecs.Component for TileMetadata
+
+pub struct TilesetDefinition {
+  uid : Int
+  identifier : String
+  rel_path : String?
+  tile_grid_size : Int
+  px_wid : Int
+  px_hei : Int
+  c_wid : Int
+  c_hei : Int
+  spacing : Int
+  padding : Int
+  custom_data_by_tile : @hashmap.HashMap[Int, String]
+  enum_tags_by_tile : @hashmap.HashMap[Int, LdtkTileEnumTags]
+}
+
+pub struct TilesetRectangle {
+  h : Int
+  tileset_uid : Int
+  w : Int
+  x : Int
+  y : Int
+}
+
+pub(all) enum Type {
+  AutoLayer
+  Entities
+  IntGrid
+  Tiles
+}
+pub fn Type::default() -> Self
+
+pub struct World {
+  iid : String
+  identifier : String
+  world_grid_width : Int?
+  world_grid_height : Int?
+  world_layout : String?
+  levels : Array[Level]
+}
+
+pub struct Worldly {
+  entity_iid : String
+}
+pub fn Worldly::from_entity_info(EntityInstance) -> Self
+pub fn Worldly::new(String) -> Self
+pub impl @ecs.Component for Worldly
+
+// Type aliases
+pub type LdtkEntityDispatcher = (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit
+
+pub type LdtkIntCellDispatcher = (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit
+
+// Traits
+pub(open) trait LdtkFields {
+  field_instances(Self) -> Array[LdtkFieldInstance]
+}
+
+pub(open) trait LevelMetadataAccessor {
+  get_level_metadata_by_iid(Self, String) -> LevelMetadata?
+}
+
+pub(open) trait RawLevelAccessor {
+  root_levels(Self) -> Array[Level]
+  worlds(Self) -> Array[World]
+}
+

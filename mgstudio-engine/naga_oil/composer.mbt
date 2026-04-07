@@ -35,16 +35,16 @@ pub(all) suberror ComposerError {
 ///|
 pub fn ComposerError::message(self : ComposerError) -> String {
   match self {
-    EmptyAssetsBase(rel) => "assets_base is empty; cannot load shader: " + rel
+    EmptyAssetsBase(rel) => "assets_base is empty; cannot load shader: \{rel}"
     FailedToResolveImport(import_path) =>
-      "failed to resolve shader import: " + import_path
-    MissingRegisteredSource(rel) => "missing registered WGSL source: " + rel
+      "failed to resolve shader import: \{import_path}"
+    MissingRegisteredSource(rel) => "missing registered WGSL source: \{rel}"
     MissingStartupRegisteredSource(rel) =>
-      "shader source was not startup-registered: " + rel
+      "shader source was not startup-registered: \{rel}"
     FailedToReadShader(path, reason) =>
-      "failed to read shader: " + path + ": " + reason
+      "failed to read shader: \{path}: \{reason}"
     NoModuleName(path) =>
-      "shader module is missing #define_import_path: " + path
+      "shader module is missing #define_import_path: \{path}"
   }
 }
 
@@ -200,7 +200,7 @@ fn wgsl_import_requested_item_name(
   raw_path : String,
   module_path : String,
 ) -> String {
-  let prefix = module_path + "::"
+  let prefix = "\{module_path}::"
   if !starts_with_text(raw_path, prefix) {
     return ""
   }
@@ -213,7 +213,7 @@ fn collect_wgsl_alias_requested_items(
   alias_name : String,
   requested_items : Array[String],
 ) -> Unit {
-  let pattern = alias_name + "::"
+  let pattern = "\{alias_name}::"
   let mut search_from = 0
   while search_from + pattern.length() <= source.length() {
     let window = source[search_from:source.length()].to_string()
@@ -274,7 +274,7 @@ fn strip_wgsl_import_declarations(source : String) -> String {
       index = index + 1
       continue
     }
-    out = out + line + "\n"
+    out = "\{out}\{line}\n"
     index = index + 1
   }
   out
@@ -324,7 +324,7 @@ fn find_wgsl_import_request_index(
 fn wgsl_import_request_visit_key(request : WgslImportRequest) -> String {
   let mut key = request.rel_path
   if request.import_full_module {
-    key = key + "|*"
+    key = "\{key}|*"
   } else {
     let sorted_items : Array[String] = []
     for item in request.requested_items {
@@ -332,7 +332,7 @@ fn wgsl_import_request_visit_key(request : WgslImportRequest) -> String {
     }
     sorted_items.sort()
     for item in sorted_items {
-      key = key + "|" + item
+      key = "\{key}|\{item}"
     }
   }
   key
@@ -343,7 +343,7 @@ fn wgsl_visit_has_rel_prefix(
   visited : @hashmap.HashMap[String, Bool],
   rel_path : String,
 ) -> Bool {
-  let prefix = rel_path + "|"
+  let prefix = "\{rel_path}|"
   for entry in visited.iter() {
     let (key, _) = entry
     if starts_with_text(key, prefix) {
@@ -528,10 +528,10 @@ fn extract_wgsl_module_items(
       while balance > 0 && i + 1 < lines.length() {
         i = i + 1
         let next_line = lines[i]
-        import_block = import_block + "\n" + next_line
+        import_block = "\{import_block}\n\{next_line}"
         balance = balance + import_brace_balance(next_line)
       }
-      import_blocks.push(import_block + "\n")
+      import_blocks.push("\{import_block}\n")
       pending_prefix.clear()
       i = i + 1
       continue
@@ -567,7 +567,7 @@ fn extract_wgsl_module_items(
     }
     let mut block_text = ""
     for block_line in block_lines {
-      block_text = block_text + block_line + "\n"
+      block_text = "\{block_text}\{block_line}\n"
     }
     declaration_blocks.push(WgslDeclarationBlock::{
       name: decl_name,
@@ -905,7 +905,7 @@ fn apply_wgsl_ifdefs(
       continue
     }
     if active_stack[active_stack.length() - 1] {
-      out = out + line + "\n"
+      out = "\{out}\{line}\n"
     }
   }
   out
@@ -1069,7 +1069,7 @@ pub fn Composer::preprocess_wgsl_source(
       let parent = import_active_stack[import_active_stack.length() - 1]
       import_active_stack.push(parent && cond)
       import_branch_taken_stack.push(cond)
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1079,7 +1079,7 @@ pub fn Composer::preprocess_wgsl_source(
       let parent = import_active_stack[import_active_stack.length() - 1]
       import_active_stack.push(parent && cond)
       import_branch_taken_stack.push(cond)
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1089,7 +1089,7 @@ pub fn Composer::preprocess_wgsl_source(
       let parent = import_active_stack[import_active_stack.length() - 1]
       import_active_stack.push(parent && cond)
       import_branch_taken_stack.push(cond)
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1107,7 +1107,7 @@ pub fn Composer::preprocess_wgsl_source(
         import_active_stack[import_active_stack.length() - 1] = parent && cond
         import_branch_taken_stack[idx] = import_branch_taken_stack[idx] || cond
       }
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1125,7 +1125,7 @@ pub fn Composer::preprocess_wgsl_source(
         import_active_stack[import_active_stack.length() - 1] = parent && cond
         import_branch_taken_stack[idx] = import_branch_taken_stack[idx] || cond
       }
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1141,7 +1141,7 @@ pub fn Composer::preprocess_wgsl_source(
         import_active_stack[import_active_stack.length() - 1] = parent && cond
         import_branch_taken_stack[idx] = import_branch_taken_stack[idx] || cond
       }
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1152,7 +1152,7 @@ pub fn Composer::preprocess_wgsl_source(
       if import_branch_taken_stack.length() > 0 {
         import_branch_taken_stack.pop() |> ignore
       }
-      merged = merged + line + "\n"
+      merged = "\{merged}\{line}\n"
       line_index = line_index + 1
       continue
     }
@@ -1162,7 +1162,7 @@ pub fn Composer::preprocess_wgsl_source(
     }
     if starts_with_text(trimmed, "#import ") {
       if !import_active_stack[import_active_stack.length() - 1] {
-        merged = merged + line + "\n"
+        merged = "\{merged}\{line}\n"
         line_index = line_index + 1
         continue
       }
@@ -1171,7 +1171,7 @@ pub fn Composer::preprocess_wgsl_source(
       while brace_balance > 0 && line_index + 1 < lines.length() {
         line_index = line_index + 1
         let next_line = lines[line_index]
-        spec = spec + "\n" + next_line
+        spec = "\{spec}\n\{next_line}"
         brace_balance = brace_balance + import_brace_balance(next_line)
       }
       let targets : Array[WgslImportTarget] = []
@@ -1191,7 +1191,7 @@ pub fn Composer::preprocess_wgsl_source(
           ""
         }
         if module_alias != "" &&
-          !active_scan_source.contains(module_alias + "::") {
+          !active_scan_source.contains("\{module_alias}::") {
           continue
         }
         if module_alias != "" {
@@ -1270,7 +1270,7 @@ pub fn Composer::preprocess_wgsl_source(
           }
         }
         if !request.import_full_module {
-          let full_module_key = request.rel_path + "|*"
+          let full_module_key = "\{request.rel_path}|*"
           if visited.contains(full_module_key) {
             continue
           }
@@ -1302,24 +1302,24 @@ pub fn Composer::preprocess_wgsl_source(
           )
         }
         if module_source != "" {
-          merged = merged + module_source
+          merged = "\{merged}\{module_source}"
           let merged_len = merged.length()
           if merged_len == 0 ||
             merged.code_unit_at(merged_len - 1).to_int() != 10 {
-            merged = merged + "\n"
+            merged = "\{merged}\n"
           }
         }
       }
       line_index = line_index + 1
       continue
     }
-    merged = merged + line + "\n"
+    merged = "\{merged}\{line}\n"
     line_index = line_index + 1
   }
   let mut out = apply_wgsl_ifdefs(merged, defines, value_defines)
   out = apply_wgsl_template_consts(out, value_defines)
   for module_alias in aliases {
-    out = replace_substring_all(out, module_alias + "::", "")
+    out = replace_substring_all(out, "\{module_alias}::", "")
   }
   out
 }

@@ -34,7 +34,7 @@ pub fn Shader::composable_module_descriptor(
   self : Shader,
 ) -> @naga_oil.ComposableModuleDescriptor {
   let as_name = match self.import_path {
-    AssetPath(asset_path) => Some("\"" + asset_path + "\"")
+    AssetPath(asset_path) => Some("\"\{asset_path}\"")
     Custom(_) => None
   }
   @naga_oil.ComposableModuleDescriptor::{

@@ -467,7 +467,7 @@ fn update_ui(
   try! labels.view(fn(_entity, data) {
     let (label, text) = data
     let clip = label.value()
-    let content = clip.text + "\n" + weights[clip.index].to_string()
+    let content = "\{clip.text}\n\{weights[clip.index].to_string()}"
     text.set(@text.Text::new(content))
   })
   try! fills.view(fn(_entity, data) {

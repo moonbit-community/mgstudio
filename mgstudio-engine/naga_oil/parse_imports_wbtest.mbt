@@ -16,12 +16,13 @@
 fn parse_imports_snapshot(input : String) -> String {
   let declared_imports : Array[DeclaredImportBinding] = []
   parse_imports(input, declared_imports) catch {
-    Parse(message, offset) => return "ERR " + offset.to_string() + " " + message
+    Parse(message, offset) => return "ERR \{offset.to_string()} \{message}"
   }
 
   let rows : Array[String] = []
   for binding in declared_imports {
-    rows.push(binding.used_name + "=" + binding.full_paths.join(","))
+    let full_paths = binding.full_paths.join(",")
+    rows.push("\{binding.used_name}=\{full_paths}")
   }
   rows.join("\n")
 }

@@ -379,28 +379,6 @@ fn picking_option_entity_eq(a : @core.Entity?, b : @core.Entity?) -> Bool {
 }
 
 ///|
-fn picking_rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
-  let min_x = if a.min.x > b.min.x { a.min.x } else { b.min.x }
-  let min_y = if a.min.y > b.min.y { a.min.y } else { b.min.y }
-  let max_x = if a.max.x < b.max.x { a.max.x } else { b.max.x }
-  let max_y = if a.max.y < b.max.y { a.max.y } else { b.max.y }
-  let min = @math.Vec2::new(min_x, min_y)
-  let max = @math.Vec2::new(
-    if max_x < min_x {
-      min_x
-    } else {
-      max_x
-    },
-    if max_y < min_y {
-      min_y
-    } else {
-      max_y
-    },
-  )
-  @math.Rect::new(min, max)
-}
-
-///|
 fn picking_rotate_vec2(v : @math.Vec2, radians : Float) -> @math.Vec2 {
   let cosv = @math.cos(radians)
   let sinv = @math.sin(radians)
@@ -685,32 +663,20 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
   guard inputs_res.get() is Some(inputs0) else { return }
   guard hits_res.get() is Some(hits_value) else { return }
   let hits = Ref::new(hits_value)
-  let ctx_res = @ui.get_ui_context_resource(world)
-  guard ctx_res.get() is Some(ctx0) else { return }
   let stack_res = @ui.get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
   for input in inputs0.pointers {
     let pointer_id = input.pointer
-    let pointer_pos = match input.window_position {
-      Some(mouse) =>
-        @ui.ui_pointer_pos_in_viewport(
-          mouse,
-          ctx0.viewport_origin,
-          ctx0.viewport_size,
-        )
-      None => None
-    }
     let mut hit_top : @core.Entity? = None
     let mut captured = false
-    if pointer_pos is Some(p) {
+    if input.window_position is Some(pointer_window_pos) {
       for i in 0..<stack0.uinodes.length() {
         if captured {
           break
         }
         let idx = stack0.uinodes.length() - 1 - i
         let entity = stack0.uinodes[idx]
-        if !((try! world.contains_by_key(entity, @ui.ecs_key_button)) &&
-          !(try! world.contains_by_key(entity, @ui.ecs_key_interaction))) {
+        if !(try! world.contains_by_key(entity, @ui.ecs_key_button)) {
           continue
         }
         if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
@@ -718,21 +684,7 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
           !vv.is_visible() {
           continue
         }
-        guard (try! world.get_by_key(entity, @ui.ecs_key_ui_layout))
-          is Some(layout) else {
-          continue
-        }
-        let node_rect = layout.rect
-        if !node_rect.contains(p) {
-          continue
-        }
-        let clip_rect = match
-          (try! world.get_by_key(entity, @ui.ecs_key_calculated_clip)) {
-          Some(v) => v.clip
-          None => node_rect
-        }
-        let visible_rect = picking_rect_intersect(node_rect, clip_rect)
-        if !visible_rect.contains(p) {
+        if !@ui.ui_entity_contains_pointer(world, entity, pointer_window_pos) {
           continue
         }
         if hit_top is None {

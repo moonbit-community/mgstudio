@@ -259,21 +259,7 @@ fn help_text_content() -> String {
     "Off"
   }
 
-  "Light Probe Blending (Bevy-adapted controls)\n" +
-  "Tab: Object (Sphere/Prism) = " +
-  object_text +
-  "\n" +
-  "G: Gizmos = " +
-  gizmos_text +
-  "\n" +
-  "C: Camera Mode (Orbit/Free) = " +
-  camera_mode_text +
-  "\n" +
-  "\n" +
-  "Orbit: Hold primary pointer to orbit, wheel to zoom\n" +
-  "Free: Hold primary pointer to look, WASDEQ to move\n" +
-  "\n" +
-  "Gizmo colors: Tan=Probe bounds, Red=Falloff, Blue=Parallax bounds"
+  "Light Probe Blending (Bevy-adapted controls)\nTab: Object (Sphere/Prism) = \{object_text}\nG: Gizmos = \{gizmos_text}\nC: Camera Mode (Orbit/Free) = \{camera_mode_text}\n\nOrbit: Hold primary pointer to orbit, wheel to zoom\nFree: Hold primary pointer to look, WASDEQ to move\n\nGizmo colors: Tan=Probe bounds, Red=Falloff, Blue=Parallax bounds"
 }
 
 ///|

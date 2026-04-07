@@ -54,5 +54,5 @@ fn low_power_system(world : @ecs.World) -> Unit {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[low_power] " + text)
+  @window.host_debug_string(value="[low_power] \{text}")
 }

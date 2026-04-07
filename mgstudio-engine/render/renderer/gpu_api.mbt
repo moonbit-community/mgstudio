@@ -217,8 +217,7 @@ pub fn HostMaterial2dBindGroup::new(
   for i in 1..<normalized.length() {
     if normalized[i - 1].binding == normalized[i].binding {
       abort(
-        "duplicate HostMaterial2d bind-group binding " +
-        normalized[i].binding.to_string(),
+        "duplicate HostMaterial2d bind-group binding \{normalized[i].binding.to_string()}",
       )
     }
   }
@@ -249,27 +248,27 @@ fn host_material2d_color_material_bind_group(
   let bindings : Array[HostMaterial2dBinding] = [
     HostMaterial2dBinding::uniform(
       0U,
-      host_material2d_f32le_pack([
-        color_r,
-        color_g,
-        color_b,
-        color_a,
-        uv_scale_x,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        uv_scale_y,
-        0.0F,
-        0.0F,
-        uv_offset_x,
-        uv_offset_y,
-        1.0F,
-        0.0F,
-        Float::from_int(flags.reinterpret_as_int()),
-        alpha_cutoff,
-        0.0F,
-        0.0F,
+      host_material2d_u32le_pack([
+        f32_bits(color_r),
+        f32_bits(color_g),
+        f32_bits(color_b),
+        f32_bits(color_a),
+        f32_bits(uv_scale_x),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(uv_scale_y),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(uv_offset_x),
+        f32_bits(uv_offset_y),
+        f32_bits(1.0F),
+        f32_bits(0.0F),
+        flags,
+        f32_bits(alpha_cutoff),
+        0U,
+        0U,
       ]),
     ),
     HostMaterial2dBinding::texture(1U, texture_id),
@@ -748,7 +747,7 @@ pub fn mesh3d_preprocess_disabled_by_env() -> Bool {
 
 ///|
 fn debug_runtime_error(context : String, err : Error) -> Unit {
-  @debug.debug("[renderer] " + context + ": " + err.to_string())
+  @debug.debug("[renderer] \{context}: \{err.to_string()}")
 }
 
 ///|
@@ -845,6 +844,33 @@ pub fn mesh3d_indirect_first_instance_supported() -> Bool {
     return backend.device.supported_features_contains_u32(
       @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
     )
+  }
+  false
+}
+
+///|
+pub fn mesh3d_gpu_culling_supported() -> Bool {
+  if ensure_backend() is Some(backend) {
+    let backend_type = backend.device.info_backend_type_u32()
+    if backend_type == @wgpu.BACKEND_TYPE_OPEN_GL ||
+      backend_type == @wgpu.BACKEND_TYPE_OPEN_GLES {
+      return false
+    }
+    if backend.device.limits_max_compute_workgroup_size_x_u32() == 0U {
+      return false
+    }
+    if !backend.device.supported_features_contains_u32(
+        @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+      ) {
+      return false
+    }
+    if backend.device.limits_max_storage_textures_per_shader_stage_u32() < 12U {
+      return false
+    }
+    if backend.device.limits_max_compute_workgroup_storage_size_u32() == 0U {
+      return false
+    }
+    return true
   }
   false
 }
@@ -971,38 +997,6 @@ pub fn end_frame(frame : NativeGpuFrame) -> Unit {
   }
   debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
   if debug_frame_counter_ref.val % 60 == 0 {
-    @debug.debug(
-      "[renderer] draw stats(60f): mesh2d=" +
-      debug_mesh2d_draw_calls_ref.val.to_string() +
-      ", mesh2d_invalid_id=" +
-      debug_mesh2d_invalid_id_calls_ref.val.to_string() +
-      ", mesh2d_executed=" +
-      debug_mesh2d_executed_draw_calls_ref.val.to_string() +
-      ", mesh2d_drop(no_frame/no_pass/no_state/missing/stride/pipeline/ubo/bg/tex)=" +
-      debug_mesh2d_drop_no_frame_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_no_pass_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_no_pass_state_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_missing_mesh_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_bad_stride_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_no_pipeline_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_no_uniform_buf_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_no_uniform_bg_ref.val.to_string() +
-      "/" +
-      debug_mesh2d_drop_no_texture_ref.val.to_string() +
-      ", mesh3d=" +
-      debug_mesh3d_draw_calls_ref.val.to_string() +
-      ", mesh3d_invalid_id=" +
-      debug_mesh3d_invalid_id_calls_ref.val.to_string() +
-      ", mesh3d_executed=" +
-      debug_mesh3d_executed_draw_calls_ref.val.to_string(),
-    )
     debug_mesh2d_draw_calls_ref.val = 0
     debug_mesh3d_draw_calls_ref.val = 0
     debug_mesh2d_invalid_id_calls_ref.val = 0
@@ -1315,6 +1309,28 @@ pub fn draw_sprite_uv(
       uv_min_x, uv_min_y, uv_max_x, uv_max_y,
     ) catch {
       err => debug_runtime_error("draw_sprite_uv", err)
+    }
+  }
+}
+
+///|
+pub fn draw_sprite_uv_slices(
+  texture_id~ : Int,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  slices_xy_uv~ : Array[Float],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_sprite_uv_slices(
+      texture_id, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      slices_xy_uv,
+    ) catch {
+      err => debug_runtime_error("draw_sprite_uv_slices", err)
     }
   }
 }
@@ -2219,10 +2235,7 @@ pub fn asset_set_texture_sampler(
           Fatal(message) => message
         }
         abort(
-          "wgpu: failed to set texture sampler for texture " +
-          texture_id.to_string() +
-          ": " +
-          error_message,
+          "wgpu: failed to set texture sampler for texture \{texture_id.to_string()}: \{error_message}",
         )
       }
     }
@@ -2256,16 +2269,14 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
       let mesh_id = backend.create_mesh_triangles_xy(vertices)
       if mesh_id <= 0 {
         @debug.debug(
-          "[renderer] create_mesh_triangles failed: parsed_values=" +
-          vertices.length().to_string(),
+          "[renderer] create_mesh_triangles failed: parsed_values=\{vertices.length().to_string()}",
         )
       }
       return mesh_id
     }
   } else {
     @debug.debug(
-      "[renderer] create_mesh_triangles parse failed: csv_len=" +
-      vertices_xy_csv.length().to_string(),
+      "[renderer] create_mesh_triangles parse failed: csv_len=\{vertices_xy_csv.length().to_string()}",
     )
   }
   0
@@ -2278,16 +2289,14 @@ pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
       let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
       if mesh_id <= 0 {
         @debug.debug(
-          "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
-          vertices.length().to_string(),
+          "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=\{vertices.length().to_string()}",
         )
       }
       return mesh_id
     }
   } else {
     @debug.debug(
-      "[renderer] create_mesh_triangles_xyuvrgba parse failed: csv_len=" +
-      vertices_xyuvrgba_csv.length().to_string(),
+      "[renderer] create_mesh_triangles_xyuvrgba parse failed: csv_len=\{vertices_xyuvrgba_csv.length().to_string()}",
     )
   }
   0
@@ -2305,10 +2314,7 @@ pub fn create_mesh3d(
     )
   } else {
     @debug.debug(
-      "[renderer] create_mesh3d parse failed: csv_len=" +
-      vertices_xyzuvrgba_csv.length().to_string() +
-      ", topology=" +
-      primitive_topology.to_string(),
+      "[renderer] create_mesh3d parse failed: csv_len=\{vertices_xyzuvrgba_csv.length().to_string()}, topology=\{primitive_topology.to_string()}",
     )
   }
   0
@@ -2325,10 +2331,7 @@ pub fn create_mesh3d_xyznuvrgba(
     )
     if mesh_id <= 0 {
       @debug.debug(
-        "[renderer] create_mesh3d_xyznuvrgba failed: values=" +
-        vertices_xyznuvrgba.length().to_string() +
-        ", topology=" +
-        primitive_topology.to_string(),
+        "[renderer] create_mesh3d_xyznuvrgba failed: values=\{vertices_xyznuvrgba.length().to_string()}, topology=\{primitive_topology.to_string()}",
       )
     }
     return mesh_id

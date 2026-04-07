@@ -91,7 +91,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(scroll_area),
-        @text.Text::new("Scrollable line " + i.to_string()),
+        @text.Text::new("Scrollable line \{i.to_string()}"),
         @text.TextFont::default().with_font(font).with_font_size(16.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.92F, 0.92F, 0.92F)),
       ),

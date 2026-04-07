@@ -150,8 +150,7 @@ fn ensure_auto_exposure_resources(
     ) catch {
       err =>
         fatal(
-          "wgpu: failed to create auto exposure histogram pipeline: " +
-          err.message(),
+          "wgpu: failed to create auto exposure histogram pipeline: \{err.message()}",
         )
     }
     pipeline.set_label("mgstudio_auto_exposure_histogram")
@@ -171,8 +170,7 @@ fn ensure_auto_exposure_resources(
     ) catch {
       err =>
         fatal(
-          "wgpu: failed to create auto exposure average pipeline: " +
-          err.message(),
+          "wgpu: failed to create auto exposure average pipeline: \{err.message()}",
         )
     }
     pipeline.set_label("mgstudio_auto_exposure_average")
@@ -322,23 +320,48 @@ fn auto_exposure_view_state_buffer(
   backend : GpuBackend,
   key_hi : Int,
   key_lo : Int,
+  min_ev100 : Float,
+  max_ev100 : Float,
 ) -> @wgpu.Buffer {
   for entry in backend.auto_exposure_view_states {
     if entry.key_hi == key_hi && entry.key_lo == key_lo {
       return entry.state_buf
     }
   }
+  let safe_min = if min_ev100 < max_ev100 { min_ev100 } else { max_ev100 }
+  let safe_max = if max_ev100 > safe_min { max_ev100 } else { safe_min + 0.01F }
+  let initial_state = if 0.0F < safe_min {
+    safe_min
+  } else if 0.0F > safe_max {
+    safe_max
+  } else {
+    0.0F
+  }
   let state_buf = backend.device.create_buffer(
     size=4UL,
     usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
   )
-  backend.queue.write_buffer(state_buf, 0UL, f32le_pack([0.0F]))
+  backend.queue.write_buffer(state_buf, 0UL, f32le_pack([initial_state]))
   backend.auto_exposure_view_states.push(GpuAutoExposureViewState::{
     key_hi,
     key_lo,
     state_buf,
   })
   state_buf
+}
+
+///|
+fn auto_exposure_find_view_state_buffer(
+  backend : GpuBackend,
+  key_hi : Int,
+  key_lo : Int,
+) -> @wgpu.Buffer? {
+  for entry in backend.auto_exposure_view_states {
+    if entry.key_hi == key_hi && entry.key_lo == key_lo {
+      return Some(entry.state_buf)
+    }
+  }
+  None
 }
 
 ///|
@@ -469,7 +492,7 @@ pub fn GpuBackend::apply_auto_exposure(
     ensure_default_texture(self).view
   }
   let state_buf = auto_exposure_view_state_buffer(
-    self, view_key_hi, view_key_lo,
+    self, view_key_hi, view_key_lo, min_ev100, max_ev100,
   )
   self.queue.write_buffer(
     globals_buf,
@@ -559,8 +582,19 @@ pub fn GpuBackend::apply_auto_exposure(
   compute_pass.end()
   compute_pass.release()
   bind_group.release()
-  self.auto_exposure_active_state_buf = Some(state_buf)
   reopen_saved_pass(self, pass_state)
+  self.auto_exposure_active_state_buf = Some(state_buf)
+}
+
+///|
+pub fn GpuBackend::activate_auto_exposure_view_state(
+  self : GpuBackend,
+  view_key_hi : Int,
+  view_key_lo : Int,
+) -> Unit {
+  self.auto_exposure_active_state_buf = auto_exposure_find_view_state_buffer(
+    self, view_key_hi, view_key_lo,
+  )
 }
 
 ///|
@@ -634,5 +668,15 @@ pub fn apply_auto_exposure(
     ) catch {
       err => debug_runtime_error("apply_auto_exposure", err)
     }
+  }
+}
+
+///|
+pub fn activate_auto_exposure_view_state(
+  view_key_hi~ : Int,
+  view_key_lo~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.activate_auto_exposure_view_state(view_key_hi, view_key_lo)
   }
 }

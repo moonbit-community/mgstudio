@@ -34,7 +34,7 @@ fn composer_test_add_or_abort(
   desc : @naga_oil.ComposableModuleDescriptor,
 ) -> @naga_oil.ComposableModuleDefinition {
   composer.add_composable_module(desc) catch {
-    err => abort("expected add_composable_module success: " + err.message())
+    err => abort("expected add_composable_module success: \{err.message()}")
   }
 }
 

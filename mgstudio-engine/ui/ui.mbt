@@ -1403,13 +1403,15 @@ pub impl @json.FromJson for UiContext with from_json(json, path) {
 
 ///|
 /// Bevy-aligned UI system sets (`UiSystems::{Focus, Prepare, Propagate, Content, Layout, PostLayout, Stack}`).
-pub let ui_set_focus : @app.SystemSet = @app.system_set("bevy.ui.focus")
+pub let ui_set_focus : @app.SystemSet = @app.system_set("mgstudio.ui.focus")
 
 ///|
-pub let ui_set_prepare : @app.SystemSet = @app.system_set("bevy.ui.prepare")
+pub let ui_set_prepare : @app.SystemSet = @app.system_set("mgstudio.ui.prepare")
 
 ///|
-pub let ui_set_propagate : @app.SystemSet = @app.system_set("bevy.ui.propagate")
+pub let ui_set_propagate : @app.SystemSet = @app.system_set(
+  "mgstudio.ui.propagate",
+)
 
 ///|
 pub let ui_set_text_content : @app.SystemSet = @app.system_set(
@@ -1417,18 +1419,18 @@ pub let ui_set_text_content : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub let ui_set_content : @app.SystemSet = @app.system_set("bevy.ui.content")
+pub let ui_set_content : @app.SystemSet = @app.system_set("mgstudio.ui.content")
 
 ///|
-pub let ui_set_layout : @app.SystemSet = @app.system_set("bevy.ui.layout")
+pub let ui_set_layout : @app.SystemSet = @app.system_set("mgstudio.ui.layout")
 
 ///|
 pub let ui_set_post_layout : @app.SystemSet = @app.system_set(
-  "bevy.ui.post_layout",
+  "mgstudio.ui.post_layout",
 )
 
 ///|
-pub let ui_set_stack : @app.SystemSet = @app.system_set("bevy.ui.stack")
+pub let ui_set_stack : @app.SystemSet = @app.system_set("mgstudio.ui.stack")
 
 ///|
 /// Legacy aliases kept for source compatibility.
@@ -1644,7 +1646,7 @@ pub fn ui_pointer_pos_in_viewport(
 ) -> @math.Vec2? {
   let pos_in_view = @math.Vec2::new(
     mouse_pos.x - viewport_origin.x,
-    mouse_pos.y - viewport_origin.y,
+    viewport_size.y - (mouse_pos.y - viewport_origin.y),
   )
   if pos_in_view.x >= 0.0F &&
     pos_in_view.y >= 0.0F &&

@@ -121,9 +121,8 @@ fn ensure_fxaa_pipeline_rgba8(
   }
   guard backend.fxaa_pipeline_layout is Some(pipeline_layout) else { return }
   let define_keys = [
-    "EDGE_THRESH_" + fxaa_sensitivity_define_suffix(safe_edge_threshold_mode),
-    "EDGE_THRESH_MIN_" +
-    fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
+    "EDGE_THRESH_\{fxaa_sensitivity_define_suffix(safe_edge_threshold_mode)}",
+    "EDGE_THRESH_MIN_\{fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode)}",
   ]
   let source = load_fxaa_wgsl_with_defines_required(backend, define_keys)
   let pipeline = create_postprocess_pipeline(
@@ -168,9 +167,8 @@ fn ensure_fxaa_pipeline_surface(
   }
   guard backend.fxaa_pipeline_layout is Some(pipeline_layout) else { return }
   let define_keys = [
-    "EDGE_THRESH_" + fxaa_sensitivity_define_suffix(safe_edge_threshold_mode),
-    "EDGE_THRESH_MIN_" +
-    fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
+    "EDGE_THRESH_\{fxaa_sensitivity_define_suffix(safe_edge_threshold_mode)}",
+    "EDGE_THRESH_MIN_\{fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode)}",
   ]
   let source = load_fxaa_wgsl_with_defines_required(backend, define_keys)
   let pipeline = create_postprocess_pipeline(

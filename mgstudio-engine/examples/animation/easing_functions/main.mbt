@@ -504,11 +504,11 @@ fn format_progress(now : Float) -> String {
   let whole = scaled / 100
   let fraction = scaled % 100
   let fraction_text = if fraction < 10 {
-    "0" + fraction.to_string()
+    "0\{fraction.to_string()}"
   } else {
     fraction.to_string()
   }
-  "Progress: " + whole.to_string() + "." + fraction_text
+  "Progress: \{whole.to_string()}.\{fraction_text}"
 }
 
 ///|

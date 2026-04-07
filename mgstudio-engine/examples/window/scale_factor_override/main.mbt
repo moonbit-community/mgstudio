@@ -180,13 +180,13 @@ fn format_scale_factor(value : Float) -> String {
   let scaled = (value * 10.0F).to_int()
   let whole = scaled / 10
   let fractional = scaled % 10
-  whole.to_string() + "." + fractional.to_string()
+  "\{whole.to_string()}.\{fractional.to_string()}"
 }
 
 ///|
 fn display_text(scale_factor : Float, overridden : Bool) -> String {
   let state = if overridden { "(overridden)" } else { "(default)" }
-  "Scale factor: " + format_scale_factor(scale_factor) + " " + state
+  "Scale factor: \{format_scale_factor(scale_factor)} \{state}"
 }
 
 ///|

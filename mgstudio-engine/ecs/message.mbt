@@ -293,9 +293,7 @@ fn world_write_message_registry(
 ///|
 fn[T] queue_missing_abort(key : MessageKey[T]) -> Unit {
   abort(
-    "Unable to access message `" +
-    key.debug_name() +
-    "`\n\tMessages must be added to the app with `add_message()`",
+    "Unable to access message `\{key.debug_name()}`\n\tMessages must be added to the app with `add_message()`",
   )
 }
 

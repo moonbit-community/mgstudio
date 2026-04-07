@@ -54,10 +54,10 @@ fn abs_over_threshold(value : Float, threshold : Float) -> Bool {
 
 ///|
 fn entity_text(entity : @core.Entity) -> String {
-  "Entity(" + entity.id.to_string() + ", " + entity.generation.to_string() + ")"
+  "Entity(\{entity.id.to_string()}, \{entity.generation.to_string()})"
 }
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[gamepad_input] " + text)
+  @window.host_debug_string(value="[gamepad_input] \{text}")
 }

@@ -64,9 +64,7 @@ fn setup(commands : @app.Commands) -> Unit {
           bottom: @ui.Val::Px(2.0F * BOX_SIZE),
         },
         @text.Text::new(
-          "Each box is rendered by a different camera\n" +
-          "* left-click: increase the camera's order\n" +
-          "* right-click: decrease the camera's order",
+          "Each box is rendered by a different camera\n* left-click: increase the camera's order\n* right-click: decrease the camera's order",
         ),
         @text.TextFont::from_font_size(22.0F),
         @text.TextColor::new(@sprite.Color::white()),

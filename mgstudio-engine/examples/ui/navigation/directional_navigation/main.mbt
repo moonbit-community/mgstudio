@@ -360,9 +360,9 @@ fn navigate_ui(
     value => Some(value)
   }
   status.get_ref().val.label = if next_focus is Some(_) {
-    "Last Input: Navigate " + navigation_direction_text(direction)
+    "Last Input: Navigate \{navigation_direction_text(direction)}"
   } else {
-    "Last Input: Blocked " + navigation_direction_text(direction)
+    "Last Input: Blocked \{navigation_direction_text(direction)}"
   }
 }
 
@@ -425,7 +425,7 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
       Some(label) => label.value().label
       None => "Unknown"
     }
-    status_ref.val.label = "Last Input: Activate " + button_label
+    status_ref.val.label = "Last Input: Activate \{button_label}"
   }
 }
 
@@ -458,7 +458,7 @@ fn update_focus_display(world : @ecs.World) -> Unit {
     None => "None"
   }
   try! display_query.view(fn(_entity, text) {
-    text.set(@text.Text::new("Focused: " + label))
+    text.set(@text.Text::new("Focused: \{label}"))
   })
 }
 

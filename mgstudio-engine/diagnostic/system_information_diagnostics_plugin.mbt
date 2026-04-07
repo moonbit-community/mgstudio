@@ -119,12 +119,12 @@ fn format_one_decimal(value : Double) -> String {
   let whole = magnitude / 10
   let fractional = magnitude % 10
   let sign = if scaled < 0 { "-" } else { "" }
-  sign + whole.to_string() + "." + fractional.to_string()
+  "\{sign}\{whole.to_string()}.\{fractional.to_string()}"
 }
 
 ///|
 fn format_gib_string(bytes : UInt64) -> String {
-  format_one_decimal(bytes.to_double() * BYTES_TO_GIB) + " GiB"
+  "\{format_one_decimal(bytes.to_double() * BYTES_TO_GIB)} GiB"
 }
 
 ///|
@@ -226,7 +226,7 @@ fn collect_sysinfo_refresh_data_once() -> SysinfoRefreshData {
   let pid = match @sysinfo.get_current_pid() {
     Ok(pid) => pid
     Err(message) =>
-      abort("Failed to get current process id for diagnostics: " + message)
+      abort("Failed to get current process id for diagnostics: \{message}")
   }
   let system = @sysinfo.System::new_with_specifics(
     @sysinfo.RefreshKind::nothing()

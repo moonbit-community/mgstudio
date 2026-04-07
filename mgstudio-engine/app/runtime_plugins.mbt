@@ -131,7 +131,7 @@ pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
   match (render_error_handler_ref.val)(error) {
     RenderErrorPolicy::Ignore => ()
     RenderErrorPolicy::Panic =>
-      abort("render runtime error: " + error.to_string())
+      abort("render runtime error: \{error.to_string()}")
     RenderErrorPolicy::ExitApp => {
       if current_world() is Some(world) {
         let key = app_exit_message_key()
@@ -408,8 +408,8 @@ fn log_target_allowed(config : LogPlugin, target : String) -> Bool {
 
 ///|
 fn log_emit_default_fmt(record : LogRecord) -> Unit {
-  let prefix = if record.target == "" { "" } else { "[" + record.target + "] " }
-  println("[" + log_level_label(record.level) + "] " + prefix + record.message)
+  let prefix = if record.target == "" { "" } else { "[\{record.target}] " }
+  println("[\{log_level_label(record.level)}] \{prefix}\{record.message}")
 }
 
 ///|

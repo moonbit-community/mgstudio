@@ -542,6 +542,17 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 }
 
 ///|
+test "transform plugin: keeps preinserted static optimization resource" {
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(StaticTransformOptimizations::disabled())
+    .add_plugin(transform_plugin)
+  let value = (try! app
+  .world()
+  .get_resource(static_transform_optimizations_resource_key())).unwrap()
+  inspect(value.threshold == 0.0F && !value.enabled, content="true")
+}
+
+///|
 test "transform plugin: post update reflects update stage transform writes" {
   let entity_ref = Ref::new(@core.Entity::new(0, 0))
   let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])

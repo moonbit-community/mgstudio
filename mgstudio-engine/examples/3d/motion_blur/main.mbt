@@ -139,14 +139,7 @@ fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
 
 ///|
 fn help_text_content() -> String {
-  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\n" +
-  "Samples: \{motion_blur_state.val.samples}\n" +
-  "Camera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\n" +
-  "MSAA: Off (Bevy web compatibility path)\n" +
-  "Motion blur backend: temporarily disabled on native (pipeline guard)\n" +
-  "1/2: -/+ shutter angle (blur amount)\n" +
-  "3/4: -/+ sample count (blur quality)\n" +
-  "Spacebar: cycle camera\n"
+  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\nCamera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\nMSAA: Off (Bevy web compatibility path)\nMotion blur backend: temporarily disabled on native (pipeline guard)\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
 }
 
 ///|

@@ -399,16 +399,9 @@ fn overlay_text(current : Test) -> String {
   let mut content = "Intersection test:\n"
   for test_case in tests {
     let marker = if current == test_case { "*" } else { " " }
-    content = content +
-      " " +
-      marker +
-      " " +
-      test_name(test_case) +
-      " " +
-      marker +
-      "\n"
+    content = "\{content} \{marker} \{test_name(test_case)} \{marker}\n"
   }
-  content + "\nPress space to cycle"
+  "\{content}\nPress space to cycle"
 }
 
 ///|

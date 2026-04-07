@@ -31,7 +31,7 @@ impl @app.Resource for Input with resource() {
 
 ///|
 fn print_system(input : @app.Res[Input]) -> Unit {
-  println("You typed: " + input.get().value)
+  println("You typed: \{input.get().value}")
 }
 
 ///|

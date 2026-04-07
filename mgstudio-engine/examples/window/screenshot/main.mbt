@@ -187,7 +187,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
 
 ///|
 fn screenshot_path(index : Int) -> String {
-  "./screenshot-" + index.to_string() + ".png"
+  "./screenshot-\{index.to_string()}.png"
 }
 
 ///|

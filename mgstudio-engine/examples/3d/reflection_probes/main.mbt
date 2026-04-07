@@ -119,15 +119,7 @@ fn create_help_text() -> String {
     START_ROTATION_HELP_TEXT
   }
   reflection_mode_text(reflection_probes_state.val.reflection_mode) +
-  "\n" +
-  rotation_help_text +
-  "\n" +
-  "Roughness: " +
-  reflection_probes_state.val.sphere_roughness.to_string() +
-  "\n" +
-  REFLECTION_MODE_HELP_TEXT +
-  "\n" +
-  "Up/Down arrows to change roughness"
+  "\n\{rotation_help_text}\nRoughness: \{reflection_probes_state.val.sphere_roughness.to_string()}\n\{REFLECTION_MODE_HELP_TEXT}\nUp/Down arrows to change roughness"
 }
 
 ///|

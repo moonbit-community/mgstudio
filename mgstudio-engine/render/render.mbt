@@ -478,6 +478,11 @@ pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool {
 }
 
 ///|
+pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool {
+  @renderer.mesh3d_gpu_culling_supported()
+}
+
+///|
 pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool {
   @renderer.mesh3d_preprocess_disabled_by_env()
 }
@@ -931,6 +936,31 @@ pub fn host_gpu_draw_sprite_uv(
     uv_min_y~,
     uv_max_x~,
     uv_max_y~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_sprite_uv_slices(
+  texture_id~ : Int,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  slices_xy_uv~ : Array[Float],
+) -> Unit {
+  @renderer.draw_sprite_uv_slices(
+    texture_id~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    color_r~,
+    color_g~,
+    color_b~,
+    color_a~,
+    slices_xy_uv~,
   )
 }
 
@@ -1475,6 +1505,14 @@ pub fn host_gpu_apply_auto_exposure(
     view_width~,
     view_height~,
   )
+}
+
+///|
+pub fn host_gpu_activate_auto_exposure_view_state(
+  view_key_hi~ : Int,
+  view_key_lo~ : Int,
+) -> Unit {
+  @renderer.activate_auto_exposure_view_state(view_key_hi~, view_key_lo~)
 }
 
 ///|

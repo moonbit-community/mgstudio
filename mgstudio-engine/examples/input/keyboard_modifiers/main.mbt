@@ -37,5 +37,5 @@ fn keyboard_input_system(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[keyboard_modifiers] " + text)
+  @window.host_debug_string(value="[keyboard_modifiers] \{text}")
 }

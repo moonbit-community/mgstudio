@@ -51,9 +51,7 @@ fn[T : GizmoConfigGroup] gizmo_group_type_key(group : T) -> String {
 
 ///|
 fn[T : GizmoConfigGroup] gizmo_group_missing_message(group : T) -> String {
-  "Requested gizmo config group " +
-  gizmo_group_type_key(group) +
-  " does not exist in `GizmoConfigStore`; call `app.init_gizmo_group(...)` first"
+  "Requested gizmo config group \{gizmo_group_type_key(group)} does not exist in `GizmoConfigStore`; call `app.init_gizmo_group(...)` first"
 }
 
 ///|

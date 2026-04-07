@@ -982,21 +982,13 @@ priv struct PreparedSkinBinding3d {
 
 ///|
 priv struct MeshPreprocessStatic3d {
+  is_indexed : Bool
   first_vertex_index : Int
   first_index_index : Int
   index_count : Int
-  indexed : Bool
   has_local_aabb : Bool
   aabb_center : @math.Vec3
   aabb_half_extents : @math.Vec3
-}
-
-///|
-priv struct GpuPreprocessPrequeuedMeshItem3d {
-  entity : PhaseEntityRef3d
-  indexed : Bool
-  phase : Int
-  distance : Float
 }
 
 ///|
@@ -1050,10 +1042,7 @@ priv struct GpuPreprocessShaderWorkItem3d {
 
 ///|
 priv struct GpuOcclusionCullingWorkItemBuffers3d {
-  late_indexed : Array[GpuPreprocessShaderWorkItem3d]
-  late_non_indexed : Array[GpuPreprocessShaderWorkItem3d]
-  late_indirect_parameters_indexed_offset : Int
-  late_indirect_parameters_non_indexed_offset : Int
+  enabled : Bool
 }
 
 ///|
@@ -1079,22 +1068,14 @@ priv struct GpuPreprocessDispatchMetadata3d {
 }
 
 ///|
-priv struct GpuPreprocessCameraQueueEntry3d {
-  camera_entity : @core.Entity
-  items : Array[GpuPreprocessPrequeuedMeshItem3d]
-  phase_ranges : Array[GpuPreprocessPhaseRange3d]
-  indirect_metadata : GpuPreprocessIndirectMetadata3d
-  dispatch_metadata : GpuPreprocessDispatchMetadata3d
-  work_item_buffers : GpuPreprocessWorkItemBuffers3d
-}
-
-///|
 priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   draw_items : Array[MeshPhaseItem3d]
   phase_ranges : Array[GpuPreprocessPhaseRange3d]
   indirect_metadata : GpuPreprocessIndirectMetadata3d
   dispatch_metadata : GpuPreprocessDispatchMetadata3d
   work_item_buffers : GpuPreprocessWorkItemBuffers3d
+  mesh_culling_data : Array[@render.HostMesh3dPreprocessMeshCullingData]
+  mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput]
 }
 
 ///|
@@ -1140,7 +1121,6 @@ priv struct Render3dPhaseState {
   mut prepared_camera_order : Array[@core.Entity]
   mut camera_order_needs_refresh : Bool
   mut last_camera3d_count : Int
-  gpu_preprocess_camera_queues : Array[GpuPreprocessCameraQueueEntry3d]
   mesh_upload_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
@@ -1152,7 +1132,6 @@ fn Render3dPhaseState::new() -> Render3dPhaseState {
     prepared_camera_order: [],
     camera_order_needs_refresh: true,
     last_camera3d_count: 0,
-    gpu_preprocess_camera_queues: [],
     mesh_upload_cache: {},
     mesh_preprocess_static_cache: {},
     prepared_skin_bindings: {},
@@ -1227,6 +1206,42 @@ fn cmp_float(a : Float, b : Float) -> Int {
     1
   } else {
     0
+  }
+}
+
+///|
+fn render3d_pass_clear_enabled_for_target(
+  cleared_targets : Array[Int],
+  target_id : Int,
+  requested : Bool,
+) -> Int {
+  if !requested {
+    return 0
+  }
+  for cleared_target_id in cleared_targets {
+    if cleared_target_id == target_id {
+      return 0
+    }
+  }
+  cleared_targets.push(target_id)
+  1
+}
+
+///|
+fn render3d_pass_viewport_for_target(
+  pass_target_id : Int,
+  camera_target_id : Int,
+  camera_viewport_x : Int,
+  camera_viewport_y : Int,
+  camera_viewport_width : Int,
+  camera_viewport_height : Int,
+) -> (Int, Int, Int, Int) {
+  if pass_target_id == camera_target_id {
+    (
+      camera_viewport_x, camera_viewport_y, camera_viewport_width, camera_viewport_height,
+    )
+  } else {
+    (0, 0, camera_viewport_width, camera_viewport_height)
   }
 }
 
@@ -1841,18 +1856,18 @@ fn render3d_use_gpu_instance_buffer_builder(
 }
 
 ///|
-fn render3d_indirect_first_instance_supported() -> Bool {
-  @render.host_gpu_mesh3d_indirect_first_instance_supported()
+fn render3d_gpu_culling_supported() -> Bool {
+  @render.host_gpu_mesh3d_gpu_culling_supported()
 }
 
 ///|
 fn render3d_camera_indirect_enabled(
   use_gpu_instance_buffer_builder : Bool,
-  indirect_first_instance_supported : Bool,
+  gpu_culling_supported : Bool,
   no_indirect_drawing : Bool,
 ) -> Bool {
   use_gpu_instance_buffer_builder &&
-  indirect_first_instance_supported &&
+  gpu_culling_supported &&
   !no_indirect_drawing
 }
 
@@ -3657,7 +3672,6 @@ fn render3d_compose_transform(
 ///|
 priv struct Render3dWorldTransformCache {
   mut frame_stamp : Int
-  mut captured_frame_stamp : Int
   transforms : Array[@transform.Transform?]
   generations : Array[Int]
   visiting : Array[Bool]
@@ -3677,7 +3691,6 @@ priv struct Render3dWorldTransformCache {
 fn render3d_world_transform_cache_new() -> Render3dWorldTransformCache {
   {
     frame_stamp: 0,
-    captured_frame_stamp: 0,
     transforms: [],
     generations: [],
     visiting: [],
@@ -3724,7 +3737,6 @@ fn render3d_world_transform_cache_begin_frame(
       cache_ref.val.parent_stamps[i] = 0
     }
   }
-  cache_ref.val.captured_frame_stamp = 0
 }
 
 ///|
@@ -3751,47 +3763,6 @@ fn render3d_world_transform_cache_ensure_entity_slot(
     cache_ref.val.skinning_generations.push(0)
     cache_ref.val.skinning_stamps.push(0)
   }
-}
-
-///|
-fn render3d_world_transform_cache_capture_frame(
-  world : @ecs.World,
-  cache_ref : Ref[Render3dWorldTransformCache],
-) -> Unit {
-  let frame_stamp = cache_ref.val.frame_stamp
-  if frame_stamp <= 0 {
-    return
-  }
-  if cache_ref.val.captured_frame_stamp == frame_stamp {
-    return
-  }
-  let transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! transform_query.view(fn(entity, transform_comp) {
-    if entity.id < 0 {
-      return
-    }
-    render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-    cache_ref.val.local_transforms[entity.id] = Some(transform_comp.value())
-    cache_ref.val.local_generations[entity.id] = entity.generation
-    cache_ref.val.local_stamps[entity.id] = frame_stamp
-  })
-  let parent_query : @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! parent_query.view(fn(entity, parent_comp) {
-    if entity.id < 0 {
-      return
-    }
-    render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-    cache_ref.val.parent_entities[entity.id] = Some(
-      parent_comp.value().entity(),
-    )
-    cache_ref.val.parent_generations[entity.id] = entity.generation
-    cache_ref.val.parent_stamps[entity.id] = frame_stamp
-  })
-  cache_ref.val.captured_frame_stamp = frame_stamp
 }
 
 ///|
@@ -3943,18 +3914,6 @@ fn render3d_entity_world_transform_from_components(
 ) -> @transform.Transform {
   render3d_entity_world_transform_cached_with_local(
     world, entity, local_transform, cache_ref,
-  )
-}
-
-///|
-fn render3d_entity_world_transform(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> @transform.Transform {
-  render3d_entity_world_transform_cached(
-    world,
-    entity,
-    render3d_world_transform_cache_ref(),
   )
 }
 
@@ -4451,10 +4410,73 @@ fn render3d_visibility_range_visible(
 }
 
 ///|
+fn render3d_absf(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F - value
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_mesh_preprocess_static_for_payload(
+  payload : Mesh3dExtractedPayload,
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+) -> MeshPreprocessStatic3d? {
+  let mesh_handle_id = payload.mesh_handle.id()
+  if mesh_handle_id < 0 {
+    return None
+  }
+  match mesh_preprocess_static_cache.get(mesh_handle_id) {
+    Some(metadata) => Some(metadata)
+    None => Some(render3d_mesh_preprocess_static(payload.mesh_handle))
+  }
+}
+
+///|
+fn render3d_mesh_frustum_visible(
+  payload : Mesh3dExtractedPayload,
+  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+) -> Bool {
+  guard render3d_mesh_preprocess_static_for_payload(
+      payload, mesh_preprocess_static_cache,
+    )
+    is Some(mesh_static) else {
+    return true
+  }
+  if !mesh_static.has_local_aabb {
+    return true
+  }
+  let center_world = render3d_transform_point(
+    payload.transform,
+    mesh_static.aabb_center,
+  )
+  let scaled_half_extents = @math.Vec3::new(
+    mesh_static.aabb_half_extents.x * render3d_absf(payload.transform.scale.x),
+    mesh_static.aabb_half_extents.y * render3d_absf(payload.transform.scale.y),
+    mesh_static.aabb_half_extents.z * render3d_absf(payload.transform.scale.z),
+  )
+  let radius = scaled_half_extents.length()
+  for plane in camera_frustum_planes {
+    let signed_distance = plane.normal_x * center_world.x +
+      plane.normal_y * center_world.y +
+      plane.normal_z * center_world.z +
+      plane.distance
+    if signed_distance < 0.0F - radius {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
+  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -4472,6 +4494,12 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
         camera_transform,
         payload.transform,
         payload.aabb_center_world,
+      ) {
+      continue
+    }
+    if !payload.has_no_frustum_culling &&
+      !render3d_mesh_frustum_visible(
+        payload, camera_frustum_planes, mesh_preprocess_static_cache,
       ) {
       continue
     }
@@ -4521,6 +4549,8 @@ fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
+  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
   for i in 0..<meshes.length() {
@@ -4538,6 +4568,12 @@ fn render3d_collect_meshes_for_gpu_building(
         camera_transform,
         payload.transform,
         payload.aabb_center_world,
+      ) {
+      continue
+    }
+    if !payload.has_no_frustum_culling &&
+      !render3d_mesh_frustum_visible(
+        payload, camera_frustum_planes, mesh_preprocess_static_cache,
       ) {
       continue
     }
@@ -4572,20 +4608,6 @@ fn render3d_sort_gpu_preprocess_work_items(
       transparent_items.push(work_item)
     }
   }
-  opaque_items.sort_by(fn(a, b) {
-    let depth_cmp = cmp_float(a.distance, b.distance)
-    if depth_cmp != 0 {
-      return depth_cmp
-    }
-    phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
-  alpha_mask_items.sort_by(fn(a, b) {
-    let depth_cmp = cmp_float(a.distance, b.distance)
-    if depth_cmp != 0 {
-      return depth_cmp
-    }
-    phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
   transparent_items.sort_by(fn(a, b) {
     let depth_cmp = cmp_float(b.distance, a.distance)
     if depth_cmp != 0 {
@@ -4620,230 +4642,6 @@ fn render3d_write_batched_instance_buffers(
     })
   }
   phase_items
-}
-
-///|
-priv struct GpuPreprocessMeshCandidate3d {
-  entity : PhaseEntityRef3d
-  mesh_ready : Bool
-  indexed : Bool
-  layers : @sprite.RenderLayers
-  visibility_range : @visibility.VisibilityRange?
-  aabb_center_world : @math.Vec3?
-  transform : @transform.Transform
-  alpha_mode : AlphaMode3d
-  alpha : Float
-}
-
-///|
-fn phase_entity_ref3d_main_eq(
-  lhs : PhaseEntityRef3d,
-  rhs : PhaseEntityRef3d,
-) -> Bool {
-  lhs.main_entity.id == rhs.main_entity.id &&
-  lhs.main_entity.generation == rhs.main_entity.generation
-}
-
-///|
-fn render3d_mesh_handle_is_indexed(
-  mesh_handle : @asset.Handle[@mesh.Mesh],
-) -> Bool {
-  match @sprite.render_mesh_asset_get(mesh_handle) {
-    Some(mesh_asset) =>
-      match mesh_asset.geometry {
-        @mesh.MeshGeometry::Geometry3d(geometry3d) =>
-          geometry3d.indices is Some(_)
-        _ => false
-      }
-    None => false
-  }
-}
-
-///|
-fn render3d_sort_gpu_preprocess_prequeued_items(
-  items : Array[GpuPreprocessPrequeuedMeshItem3d],
-) -> Array[GpuPreprocessPrequeuedMeshItem3d] {
-  let opaque_items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
-  let alpha_mask_items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
-  let transparent_items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
-  for item in items {
-    if item.phase == RENDER3D_PHASE_OPAQUE {
-      opaque_items.push(item)
-    } else if item.phase == RENDER3D_PHASE_ALPHA_MASK {
-      alpha_mask_items.push(item)
-    } else if item.phase == RENDER3D_PHASE_TRANSPARENT {
-      transparent_items.push(item)
-    }
-  }
-  opaque_items.sort_by(fn(a, b) {
-    let depth_cmp = cmp_float(a.distance, b.distance)
-    if depth_cmp != 0 {
-      return depth_cmp
-    }
-    phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
-  alpha_mask_items.sort_by(fn(a, b) {
-    let depth_cmp = cmp_float(a.distance, b.distance)
-    if depth_cmp != 0 {
-      return depth_cmp
-    }
-    phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
-  transparent_items.sort_by(fn(a, b) {
-    let depth_cmp = cmp_float(b.distance, a.distance)
-    if depth_cmp != 0 {
-      return depth_cmp
-    }
-    phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
-  let sorted : Array[GpuPreprocessPrequeuedMeshItem3d] = []
-  for item in opaque_items {
-    sorted.push(item)
-  }
-  for item in alpha_mask_items {
-    sorted.push(item)
-  }
-  for item in transparent_items {
-    sorted.push(item)
-  }
-  sorted
-}
-
-///|
-fn render3d_collect_gpu_preprocess_mesh_candidates(
-  world : @ecs.World,
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
-) -> Array[GpuPreprocessMeshCandidate3d] {
-  let candidates : Array[GpuPreprocessMeshCandidate3d] = []
-  world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
-    if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
-      is Some(view_visibility) &&
-      !view_visibility.is_visible() {
-      return
-    }
-    guard (try! world.get_by_key(entity, ecs_key_mesh_material3d))
-      is Some(material_handle) else {
-      return
-    }
-    guard standard_material_get(material_handle.material) is Some(base_material) else {
-      return
-    }
-    let material = render3d_apply_extended_material_metadata(
-      base_material,
-      material_handle.extended_material,
-    )
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    let visibility_range = try! world.get_by_key(
-      entity, @visibility.ecs_key_visibility_range,
-    )
-    let static_metadata = render3d_mesh_preprocess_static_for_mesh_handle(
-      mesh3d.mesh,
-      mesh_preprocess_static_cache,
-    )
-    let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
-      match static_metadata {
-        Some(metadata) =>
-          Some(render3d_transform_point(transform, metadata.aabb_center))
-        None => None
-      }
-    } else {
-      None
-    }
-    let layers = match
-      (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
-      Some(value) => value
-      None => @sprite.RenderLayers::default()
-    }
-    let mesh_asset = @sprite.render_mesh_asset_get(mesh3d.mesh)
-    let mesh_ready = mesh_asset is Some(_)
-    let indexed = match static_metadata {
-      Some(metadata) => metadata.indexed
-      None => false
-    }
-    candidates.push(GpuPreprocessMeshCandidate3d::{
-      entity: phase_entity_ref3d_for_main(entity),
-      mesh_ready,
-      indexed,
-      layers,
-      visibility_range,
-      aabb_center_world,
-      transform,
-      alpha_mode: material.alpha_mode,
-      alpha: material.base_color.a,
-    })
-  })
-  candidates
-}
-
-///|
-fn render3d_collect_gpu_preprocess_camera_queue_items(
-  mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
-  layers : @sprite.RenderLayers,
-  camera_transform : @transform.Transform,
-) -> Array[GpuPreprocessPrequeuedMeshItem3d] {
-  let items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
-  for candidate in mesh_candidates {
-    if !candidate.mesh_ready {
-      continue
-    }
-    if !candidate.layers.matches(layers) {
-      continue
-    }
-    if candidate.visibility_range is Some(visibility_range) &&
-      !render3d_visibility_range_visible(
-        visibility_range,
-        camera_transform,
-        candidate.transform,
-        candidate.aabb_center_world,
-      ) {
-      continue
-    }
-    guard render3d_mesh_phase_kind(candidate.alpha_mode, candidate.alpha)
-      is Some(phase) else {
-      continue
-    }
-    items.push(GpuPreprocessPrequeuedMeshItem3d::{
-      entity: candidate.entity,
-      indexed: candidate.indexed,
-      phase,
-      distance: render3d_mesh_view_depth(candidate.transform, camera_transform),
-    })
-  }
-  render3d_sort_gpu_preprocess_prequeued_items(items)
-}
-
-///|
-fn render3d_build_gpu_preprocess_phase_ranges_from_prequeued_items(
-  items : Array[GpuPreprocessPrequeuedMeshItem3d],
-) -> Array[GpuPreprocessPhaseRange3d] {
-  let phase_ranges : Array[GpuPreprocessPhaseRange3d] = []
-  if items.length() == 0 {
-    return phase_ranges
-  }
-  let mut current_phase = items[0].phase
-  let mut range_start = 0
-  for i in 1..<items.length() {
-    if items[i].phase == current_phase {
-      continue
-    }
-    phase_ranges.push(GpuPreprocessPhaseRange3d::{
-      phase: current_phase,
-      start: range_start,
-      end: i,
-    })
-    current_phase = items[i].phase
-    range_start = i
-  }
-  phase_ranges.push(GpuPreprocessPhaseRange3d::{
-    phase: current_phase,
-    start: range_start,
-    end: items.length(),
-  })
-  phase_ranges
 }
 
 ///|
@@ -4903,21 +4701,28 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
     GpuPreprocessIndirectParametersGpuMetadata3d,
   ] = []
   let indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d] = []
+  let has_items = items.length() > 0
   for item in items {
     let indirect_parameters_index = item.output_or_indirect_parameters_index
     indirect_parameters_cpu_metadata.push(GpuPreprocessIndirectParametersCpuMetadata3d::{
       base_output_index: item.input_index,
-      // We currently issue one indirect draw per slot, not multi-draw-count batches.
-      batch_set_index: -1,
+      batch_set_index: if has_items {
+        0
+      } else {
+        -1
+      },
     })
     indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
       mesh_index: item.input_index,
       early_instance_count: 0,
       late_instance_count: 0,
     })
+    indirect_parameters_index |> ignore
+  }
+  if has_items {
     indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
-      indirect_parameters_count: 0,
-      indirect_parameters_base: indirect_parameters_index,
+      indirect_parameters_count: items.length(),
+      indirect_parameters_base: 0,
     })
   }
   GpuPreprocessIndirectMeshClassMetadata3d::{
@@ -4979,11 +4784,11 @@ fn render3d_build_gpu_preprocess_dispatch_metadata(
       }
     Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
       let late_indexed_item_count = match gpu_occlusion_culling {
-        Some(culling_buffers) => culling_buffers.late_indexed.length()
+        Some(_culling_buffers) => indexed_items.length()
         None => 0
       }
       let late_non_indexed_item_count = match gpu_occlusion_culling {
-        Some(culling_buffers) => culling_buffers.late_non_indexed.length()
+        Some(_culling_buffers) => non_indexed_items.length()
         None => 0
       }
       GpuPreprocessDispatchMetadata3d::{
@@ -5014,60 +4819,16 @@ fn render3d_build_gpu_occlusion_culling_work_item_buffers(
   if !enabled {
     return None
   }
-  let late_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
-  for item in indexed_work_items {
-    late_indexed.push(item)
-  }
-  let late_non_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
-  for item in non_indexed_work_items {
-    late_non_indexed.push(item)
-  }
-  Some(GpuOcclusionCullingWorkItemBuffers3d::{
-    late_indexed,
-    late_non_indexed,
-    late_indirect_parameters_indexed_offset: 0,
-    late_indirect_parameters_non_indexed_offset: 0,
-  })
+  ignore(indexed_work_items)
+  ignore(non_indexed_work_items)
+  Some(GpuOcclusionCullingWorkItemBuffers3d::{ enabled: true })
 }
 
 ///|
-fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
-  items : Array[GpuPreprocessPrequeuedMeshItem3d],
-  indirect_enabled : Bool,
-  gpu_occlusion_culling_enabled : Bool,
-) -> GpuPreprocessWorkItemBuffers3d {
-  if !indirect_enabled {
-    let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
-    for i in 0..<items.length() {
-      direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
-        input_index: i,
-        output_or_indirect_parameters_index: i,
-      })
-    }
-    return GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
-  }
-  let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
-  let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
-  for i in 0..<items.length() {
-    if items[i].indexed {
-      indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
-        input_index: i,
-        output_or_indirect_parameters_index: indexed_work_items.length(),
-      })
-    } else {
-      non_indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
-        input_index: i,
-        output_or_indirect_parameters_index: non_indexed_work_items.length(),
-      })
-    }
-  }
-  GpuPreprocessWorkItemBuffers3d::Indirect(
-    indexed_work_items,
-    non_indexed_work_items,
-    render3d_build_gpu_occlusion_culling_work_item_buffers(
-      indexed_work_items, non_indexed_work_items, gpu_occlusion_culling_enabled,
-    ),
-  )
+fn render3d_mesh_preprocess_indirect_eligible(
+  extracted_mesh : ExtractedMesh3d,
+) -> Bool {
+  extracted_mesh.payload.mesh_id > 0
 }
 
 ///|
@@ -5091,14 +4852,19 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
   let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   for i in 0..<draw_items.length() {
     let draw_item = draw_items[i]
-    let indexed = if draw_item.extracted_index >= 0 &&
-      draw_item.extracted_index < meshes.length() {
-      render3d_mesh_handle_is_indexed(
-        meshes[draw_item.extracted_index].payload.mesh_handle,
-      )
-    } else {
-      false
+    if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
+      draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
+      continue
     }
+    if draw_item.extracted_index < 0 ||
+      draw_item.extracted_index >= meshes.length() {
+      continue
+    }
+    let extracted_mesh = meshes[draw_item.extracted_index]
+    if !render3d_mesh_preprocess_indirect_eligible(extracted_mesh) {
+      continue
+    }
+    let indexed = extracted_mesh.payload.mesh_is_indexed
     if indexed {
       indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
         input_index: i,
@@ -5121,231 +4887,10 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
 }
 
 ///|
-fn render3d_resolve_prequeued_to_draw_item_indices(
-  prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
-  draw_items : Array[MeshPhaseItem3d],
-) -> Array[Int] {
-  let draw_item_index_by_entity_id : Map[Int, Int] = {}
-  for i in 0..<draw_items.length() {
-    draw_item_index_by_entity_id.set(draw_items[i].entity.main_entity.id, i)
-  }
-  let prequeued_to_draw_item_indices : Array[Int] = []
-  for prequeued_item in prequeued_items {
-    let draw_item_index = match
-      draw_item_index_by_entity_id.get(prequeued_item.entity.main_entity.id) {
-      Some(index) =>
-        if index >= 0 &&
-          index < draw_items.length() &&
-          phase_entity_ref3d_main_eq(
-            prequeued_item.entity,
-            draw_items[index].entity,
-          ) {
-          index
-        } else {
-          let mut fallback_index = -1
-          for i in 0..<draw_items.length() {
-            if phase_entity_ref3d_main_eq(
-                prequeued_item.entity,
-                draw_items[i].entity,
-              ) {
-              fallback_index = i
-              break
-            }
-          }
-          fallback_index
-        }
-      None => -1
-    }
-    prequeued_to_draw_item_indices.push(draw_item_index)
-  }
-  prequeued_to_draw_item_indices
-}
-
-///|
-fn render3d_remap_gpu_preprocess_work_item_buffers_to_resolved_draw_items(
-  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
-  prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
-  draw_items : Array[MeshPhaseItem3d],
-) -> GpuPreprocessWorkItemBuffers3d {
-  let prequeued_to_draw_item_indices = render3d_resolve_prequeued_to_draw_item_indices(
-    prequeued_items, draw_items,
-  )
-  let remap_index = fn(index : Int) -> Int {
-    if index < 0 || index >= prequeued_to_draw_item_indices.length() {
-      return -1
-    }
-    prequeued_to_draw_item_indices[index]
-  }
-  match work_item_buffers {
-    Direct(items) => {
-      let remapped_direct_items : Array[GpuPreprocessShaderWorkItem3d] = []
-      for item in items {
-        let input_index = remap_index(item.input_index)
-        let output_or_indirect_parameters_index = remap_index(
-          item.output_or_indirect_parameters_index,
-        )
-        if input_index < 0 || output_or_indirect_parameters_index < 0 {
-          continue
-        }
-        remapped_direct_items.push(GpuPreprocessShaderWorkItem3d::{
-          input_index,
-          output_or_indirect_parameters_index,
-        })
-      }
-      GpuPreprocessWorkItemBuffers3d::Direct(remapped_direct_items)
-    }
-    Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
-      let remapped_indexed_items : Array[GpuPreprocessShaderWorkItem3d] = []
-      for item in indexed_items {
-        let input_index = remap_index(item.input_index)
-        if input_index < 0 {
-          continue
-        }
-        remapped_indexed_items.push(GpuPreprocessShaderWorkItem3d::{
-          input_index,
-          output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
-        })
-      }
-      let remapped_non_indexed_items : Array[GpuPreprocessShaderWorkItem3d] = []
-      for item in non_indexed_items {
-        let input_index = remap_index(item.input_index)
-        if input_index < 0 {
-          continue
-        }
-        remapped_non_indexed_items.push(GpuPreprocessShaderWorkItem3d::{
-          input_index,
-          output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
-        })
-      }
-      let remapped_gpu_occlusion_culling = match gpu_occlusion_culling {
-        None => None
-        Some(buffers) => {
-          let remapped_late_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
-          for item in buffers.late_indexed {
-            let input_index = remap_index(item.input_index)
-            if input_index < 0 {
-              continue
-            }
-            remapped_late_indexed.push(GpuPreprocessShaderWorkItem3d::{
-              input_index,
-              output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
-            })
-          }
-          let remapped_late_non_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
-          for item in buffers.late_non_indexed {
-            let input_index = remap_index(item.input_index)
-            if input_index < 0 {
-              continue
-            }
-            remapped_late_non_indexed.push(GpuPreprocessShaderWorkItem3d::{
-              input_index,
-              output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
-            })
-          }
-          Some(GpuOcclusionCullingWorkItemBuffers3d::{
-            late_indexed: remapped_late_indexed,
-            late_non_indexed: remapped_late_non_indexed,
-            late_indirect_parameters_indexed_offset: buffers.late_indirect_parameters_indexed_offset,
-            late_indirect_parameters_non_indexed_offset: buffers.late_indirect_parameters_non_indexed_offset,
-          })
-        }
-      }
-      GpuPreprocessWorkItemBuffers3d::Indirect(
-        remapped_indexed_items, remapped_non_indexed_items, remapped_gpu_occlusion_culling,
-      )
-    }
-  }
-}
-
-///|
-fn render3d_build_gpu_preprocess_camera_queue_entry(
-  camera_entity : @core.Entity,
-  mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
-  camera_layers : @sprite.RenderLayers,
-  camera_transform : @transform.Transform,
-  indirect_enabled : Bool,
-  gpu_occlusion_culling_enabled : Bool,
-) -> GpuPreprocessCameraQueueEntry3d {
-  let items = render3d_collect_gpu_preprocess_camera_queue_items(
-    mesh_candidates, camera_layers, camera_transform,
-  )
-  let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_prequeued_items(
-    items,
-  )
-  let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
-    items, indirect_enabled, gpu_occlusion_culling_enabled,
-  )
-  let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
-    work_item_buffers,
-  )
-  let dispatch_metadata = render3d_build_gpu_preprocess_dispatch_metadata(
-    work_item_buffers,
-  )
-  GpuPreprocessCameraQueueEntry3d::{
-    camera_entity,
-    items,
-    phase_ranges,
-    indirect_metadata,
-    dispatch_metadata,
-    work_item_buffers,
-  }
-}
-
-///|
-fn render3d_resolve_prequeued_mesh_phase_items(
-  prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
-  meshes : Array[ExtractedMesh3d],
-) -> Array[MeshPhaseItem3d] {
-  let extracted_mesh_index_by_entity_id : Map[Int, Int] = {}
-  for i in 0..<meshes.length() {
-    extracted_mesh_index_by_entity_id.set(meshes[i].entity.main_entity.id, i)
-  }
-  let resolved : Array[MeshPhaseItem3d] = []
-  for prequeued_item in prequeued_items {
-    let extracted_index = match
-      extracted_mesh_index_by_entity_id.get(
-        prequeued_item.entity.main_entity.id,
-      ) {
-      Some(index) =>
-        if index >= 0 &&
-          index < meshes.length() &&
-          phase_entity_ref3d_main_eq(
-            meshes[index].entity,
-            prequeued_item.entity,
-          ) {
-          index
-        } else {
-          let mut fallback_index = -1
-          for i in 0..<meshes.length() {
-            if phase_entity_ref3d_main_eq(
-                meshes[i].entity,
-                prequeued_item.entity,
-              ) {
-              fallback_index = i
-              break
-            }
-          }
-          fallback_index
-        }
-      None => -1
-    }
-    if extracted_index < 0 {
-      continue
-    }
-    resolved.push(MeshPhaseItem3d::{
-      entity: prequeued_item.entity,
-      extracted_index,
-      phase: prequeued_item.phase,
-      distance: prequeued_item.distance,
-    })
-  }
-  resolved
-}
-
-///|
 fn render3d_make_fallback_gpu_preprocess_queue_entry(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   indirect_enabled : Bool,
   gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
@@ -5361,46 +4906,29 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
   let dispatch_metadata = render3d_build_gpu_preprocess_dispatch_metadata(
     work_item_buffers,
   )
+  let mesh_culling_data : Array[@render.HostMesh3dPreprocessMeshCullingData] = []
+  let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
+  for draw_item in draw_items {
+    mesh_culling_data.push(
+      render3d_host_preprocess_mesh_culling_data(
+        draw_item, meshes, mesh_preprocess_static_cache,
+      ),
+    )
+    mesh_inputs.push(
+      render3d_host_preprocess_mesh_input(
+        draw_item, meshes, mesh_preprocess_static_cache,
+      ),
+    )
+  }
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
     phase_ranges,
     indirect_metadata,
     dispatch_metadata,
     work_item_buffers,
+    mesh_culling_data,
+    mesh_inputs,
   }
-}
-
-///|
-fn render3d_take_gpu_preprocess_camera_queue_items(
-  world : @ecs.World,
-  camera_entity : @core.Entity,
-  meshes : Array[ExtractedMesh3d],
-) -> GpuPreprocessResolvedCameraQueueEntry3d? {
-  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
-  for i in 0..<phase_state_ref.val.gpu_preprocess_camera_queues.length() {
-    let queue_entry = phase_state_ref.val.gpu_preprocess_camera_queues[i]
-    if queue_entry.camera_entity.id == camera_entity.id &&
-      queue_entry.camera_entity.generation == camera_entity.generation {
-      phase_state_ref.val.gpu_preprocess_camera_queues.remove(i) |> ignore
-      let draw_items = render3d_resolve_prequeued_mesh_phase_items(
-        queue_entry.items,
-        meshes,
-      )
-      let work_item_buffers = render3d_remap_gpu_preprocess_work_item_buffers_to_resolved_draw_items(
-        queue_entry.work_item_buffers,
-        queue_entry.items,
-        draw_items,
-      )
-      return Some(GpuPreprocessResolvedCameraQueueEntry3d::{
-        draw_items,
-        phase_ranges: queue_entry.phase_ranges,
-        indirect_metadata: queue_entry.indirect_metadata,
-        dispatch_metadata: queue_entry.dispatch_metadata,
-        work_item_buffers,
-      })
-    }
-  }
-  None
 }
 
 ///|
@@ -5637,22 +5165,23 @@ fn render3d_host_preprocess_mesh_culling_data(
 ///|
 fn render3d_mesh_handle_preprocess_counts(
   mesh_handle : @asset.Handle[@mesh.Mesh],
-) -> (Int, Int, Int) {
+) -> (Bool, Int, Int, Int) {
   match @sprite.render_mesh_asset_get(mesh_handle) {
     Some(mesh_asset) =>
       match mesh_asset.geometry {
         @mesh.MeshGeometry::Geometry3d(geometry3d) => {
+          let is_indexed = geometry3d.indices is Some(_)
           let first_vertex_index = 0
           let first_index_index = 0
           let index_count = match geometry3d.indices {
             Some(indices) => indices.length()
             None => geometry3d.positions.length()
           }
-          (first_vertex_index, first_index_index, index_count)
+          (is_indexed, first_vertex_index, first_index_index, index_count)
         }
-        _ => (0, 0, 0)
+        _ => (false, 0, 0, 0)
       }
-    None => (0, 0, 0)
+    None => (false, 0, 0, 0)
   }
 }
 
@@ -5697,10 +5226,9 @@ fn render3d_mesh_handle_local_aabb(
 fn render3d_mesh_preprocess_static(
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> MeshPreprocessStatic3d {
-  let (first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
+  let (is_indexed, first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
     mesh_handle,
   )
-  let indexed = render3d_mesh_handle_is_indexed(mesh_handle)
   let (has_local_aabb, aabb_center, aabb_half_extents) = match
     render3d_mesh_handle_local_aabb(mesh_handle) {
     Some((min_corner, max_corner)) =>
@@ -5725,10 +5253,10 @@ fn render3d_mesh_preprocess_static(
       )
   }
   MeshPreprocessStatic3d::{
+    is_indexed,
     first_vertex_index,
     first_index_index,
     index_count,
-    indexed,
     has_local_aabb,
     aabb_center,
     aabb_half_extents,
@@ -5777,17 +5305,21 @@ fn render3d_mesh_preprocess_static_for_draw_item(
 }
 
 ///|
-fn render3d_mesh_preprocess_static_for_mesh_handle(
+fn render3d_mesh_handle_is_indexed_cached(
   mesh_handle : @asset.Handle[@mesh.Mesh],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
-) -> MeshPreprocessStatic3d? {
+) -> Bool {
   let mesh_handle_id = mesh_handle.id()
   if mesh_handle_id < 0 {
-    return None
+    return false
   }
   match mesh_preprocess_static_cache.get(mesh_handle_id) {
-    Some(metadata) => Some(metadata)
-    None => Some(render3d_mesh_preprocess_static(mesh_handle))
+    Some(metadata) => metadata.is_indexed
+    None => {
+      let metadata = render3d_mesh_preprocess_static(mesh_handle)
+      mesh_preprocess_static_cache.set(mesh_handle_id, metadata)
+      metadata.is_indexed
+    }
   }
 }
 
@@ -5888,10 +5420,10 @@ fn render3d_host_preprocess_mesh_input(
     Some(value) => value
     None =>
       MeshPreprocessStatic3d::{
+        is_indexed: false,
         first_vertex_index: 0,
         first_index_index: 0,
         index_count: 0,
-        indexed: false,
         has_local_aabb: false,
         aabb_center: @math.Vec3::new(0.0F, 0.0F, 0.0F),
         aabb_half_extents: @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -5934,8 +5466,6 @@ fn render3d_host_preprocess_mesh_input(
 ///|
 fn render3d_host_preprocess_camera_payload(
   queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
-  meshes : Array[ExtractedMesh3d],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   camera : Camera3dViewPayload,
   pass_projection : Render3dPassProjection,
   viewport_x : Int,
@@ -5959,20 +5489,8 @@ fn render3d_host_preprocess_camera_payload(
     camera.previous_transform,
     camera.previous_clip_from_world,
   )
-  let mesh_culling_data : Array[@render.HostMesh3dPreprocessMeshCullingData] = []
-  let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
-  for draw_item in queue_entry.draw_items {
-    mesh_culling_data.push(
-      render3d_host_preprocess_mesh_culling_data(
-        draw_item, meshes, mesh_preprocess_static_cache,
-      ),
-    )
-    mesh_inputs.push(
-      render3d_host_preprocess_mesh_input(
-        draw_item, meshes, mesh_preprocess_static_cache,
-      ),
-    )
-  }
+  let mesh_culling_data = queue_entry.mesh_culling_data
+  let mesh_inputs = queue_entry.mesh_inputs
   let direct_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
   let indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
   let non_indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
@@ -5997,15 +5515,17 @@ fn render3d_host_preprocess_camera_payload(
         )
       }
       if gpu_occlusion_culling is Some(culling) {
-        for item in culling.late_indexed {
-          late_indexed_work_items.push(
-            render3d_host_preprocess_shader_work_item(item),
-          )
-        }
-        for item in culling.late_non_indexed {
-          late_non_indexed_work_items.push(
-            render3d_host_preprocess_shader_work_item(item),
-          )
+        if culling.enabled {
+          for item in indexed_items {
+            late_indexed_work_items.push(
+              render3d_host_preprocess_shader_work_item(item),
+            )
+          }
+          for item in non_indexed_items {
+            late_non_indexed_work_items.push(
+              render3d_host_preprocess_shader_work_item(item),
+            )
+          }
         }
       }
     }
@@ -6095,12 +5615,20 @@ fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
     opaque_alpha_end_index_raw
   }
   let indices : Array[Int] = []
+  let included : Array[Bool] = []
+  for _ in draw_items {
+    included.push(false)
+  }
   let push_if_valid = fn(index : Int) {
     if index < 0 || index >= opaque_alpha_end_index {
       return
     }
     if draw_items[index].phase == RENDER3D_PHASE_OPAQUE ||
       draw_items[index].phase == RENDER3D_PHASE_ALPHA_MASK {
+      if included[index] {
+        return
+      }
+      included[index] = true
       indices.push(index)
     }
   }
@@ -6118,12 +5646,13 @@ fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
       }
     }
   }
-  if indices.length() > 0 {
-    return indices
-  }
   for i in 0..<opaque_alpha_end_index {
     if draw_items[i].phase == RENDER3D_PHASE_OPAQUE ||
       draw_items[i].phase == RENDER3D_PHASE_ALPHA_MASK {
+      if included[i] {
+        continue
+      }
+      included[i] = true
       indices.push(i)
     }
   }
@@ -6164,11 +5693,13 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
+  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
   // collect mesh work items, then write batched instance work payloads.
   let work_items = render3d_collect_meshes_for_gpu_building(
-    meshes, layers, camera_transform,
+    meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
   )
   render3d_write_batched_instance_buffers(work_items)
 }
@@ -6178,14 +5709,18 @@ fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
+  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   use_gpu_instance_buffer_builder : Bool,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
-      meshes, layers, camera_transform,
+      meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
     )
   }
-  render3d_queue_mesh_phase_items_cpu_builder(meshes, layers, camera_transform)
+  render3d_queue_mesh_phase_items_cpu_builder(
+    meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
+  )
 }
 
 ///|
@@ -6542,9 +6077,6 @@ fn render3d_prepare_skin_bindings(
   if source_world.component_count(@mesh.SkinnedMesh::component()) == 0 {
     return
   }
-  render3d_world_transform_cache_capture_frame(
-    source_world, world_transform_cache_ref,
-  )
   source_world.for_each_component(@mesh.SkinnedMesh::component(), fn(
     entity,
     _skinned_mesh,
@@ -6636,7 +6168,6 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   render3d_refresh_prepared_camera_order_if_needed(
     source_world, phase_state_ref,
   )
-  phase_state_ref.val.gpu_preprocess_camera_queues.clear()
   render3d_diagnostic_prepared_camera_count_ref.val = phase_state_ref.val.prepared_camera_order.length()
   render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
 }
@@ -6675,66 +6206,12 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   }
   let source_world = @render.render_source_world(world)
   let phase_state_ref = render3d_phase_state_ref_or_abort(world)
-  phase_state_ref.val.gpu_preprocess_camera_queues.clear()
   if phase_state_ref.val.prepared_camera_order.length() == 0 {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
     finish_queue()
     return
   }
-  let mut visible_mesh_count = 0
-  source_world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
-    if (try! source_world.get_by_key(
-        entity, @visibility.ecs_key_view_visibility,
-      ))
-      is Some(view_visibility) &&
-      !view_visibility.is_visible() {
-      return
-    }
-    visible_mesh_count = visible_mesh_count + 1
-  })
-  render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
-  let runtime_config = render3d_runtime_config_or_default(source_world)
-  let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
-    runtime_config,
-  )
-  let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
-  if !gpu_instance_buffer_builder_requested {
-    finish_queue()
-    return
-  }
-  let mesh_candidates = render3d_collect_gpu_preprocess_mesh_candidates(
-    source_world,
-    phase_state_ref.val.mesh_preprocess_static_cache,
-  )
-  for prepared_camera in phase_state_ref.val.prepared_camera_order {
-    let camera_entity = prepared_camera
-    let camera_layers = match
-      (try! source_world.get_by_key(
-        camera_entity, @sprite.ecs_key_render_layers,
-      )) {
-      Some(value) => value
-      None => @sprite.RenderLayers::default()
-    }
-    let camera_transform = render3d_entity_world_transform(
-      source_world, camera_entity,
-    )
-    let no_indirect_drawing = (try! source_world.get_by_key(
-        camera_entity, ecs_key_no_indirect_drawing,
-      ))
-      is Some(_)
-    let camera_indirect_enabled = render3d_camera_indirect_enabled(
-      gpu_instance_buffer_builder_requested, indirect_first_instance_supported, no_indirect_drawing,
-    )
-    let gpu_occlusion_culling_enabled = camera_indirect_enabled &&
-      (try! source_world.get_by_key(camera_entity, ecs_key_occlusion_culling))
-      is Some(_)
-    phase_state_ref.val.gpu_preprocess_camera_queues.push(
-      render3d_build_gpu_preprocess_camera_queue_entry(
-        camera_entity, mesh_candidates, camera_layers, camera_transform, camera_indirect_enabled,
-        gpu_occlusion_culling_enabled,
-      ),
-    )
-  }
+  source_world |> ignore
   finish_queue()
 }
 
@@ -7235,18 +6712,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let projection_runtime_removals : Array[@core.Entity] = []
   let world_transform_cache_ref = render3d_world_transform_cache_ref()
   let runtime_config = render3d_runtime_config_or_default(source_world)
-  render3d_world_transform_cache_capture_frame(
-    source_world, world_transform_cache_ref,
-  )
   let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
     runtime_config,
   )
   let prepass_enabled = standard_material_prepass_enabled(source_world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
     deferred_pbr_lighting_enabled(source_world)
-  let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
+  let gpu_culling_supported = render3d_gpu_culling_supported()
   let gpu_instance_buffer_builder_enabled = gpu_instance_buffer_builder_requested &&
-    indirect_first_instance_supported
+    gpu_culling_supported
   @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
     gpu_instance_buffer_builder_enabled,
   )
@@ -7346,7 +6820,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       ))
       is Some(_)
     let camera_indirect_enabled = render3d_camera_indirect_enabled(
-      gpu_instance_buffer_builder_requested, indirect_first_instance_supported, no_indirect_drawing,
+      gpu_instance_buffer_builder_requested, gpu_culling_supported, no_indirect_drawing,
     )
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
       camera_indirect_enabled &&
@@ -7539,6 +7013,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       ecs_key_not_shadow_caster,
     ) >
     0
+  let has_no_frustum_culling_components = source_world.component_count(
+      @visibility.ecs_key_no_frustum_culling,
+    ) >
+    0
   let has_not_shadow_receiver_components = source_world.component_count(
       ecs_key_not_shadow_receiver,
     ) >
@@ -7668,6 +7146,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       false
     }
+    let has_no_frustum_culling = if has_no_frustum_culling_components {
+      (try! source_world.get_by_key(
+        entity, @visibility.ecs_key_no_frustum_culling,
+      ))
+      is Some(_)
+    } else {
+      false
+    }
     let has_not_shadow_receiver = if has_not_shadow_receiver_components {
       (try! source_world.get_by_key(entity, ecs_key_not_shadow_receiver))
       is Some(_)
@@ -7700,6 +7186,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh,
         mesh_id,
+        mesh_is_indexed: render3d_mesh_handle_is_indexed_cached(
+          mesh3d.mesh,
+          phase_state_ref.val.mesh_preprocess_static_cache,
+        ),
         transform,
         previous_transform,
         visibility_range,
@@ -7713,6 +7203,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         has_not_shadow_caster,
         has_not_shadow_receiver,
         has_transmitted_shadow_receiver,
+        has_no_frustum_culling,
         layers,
         has_wireframe,
         has_no_wireframe,
@@ -7725,6 +7216,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   if needs_mesh_previous_transform {
     motion_blur_history_sync(meshes, motion_blur_frame_stamp)
   }
+  render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",
@@ -7744,6 +7236,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     Some(items) => items
     None => render3d_queue_camera_phase_items(cameras)
   }
+  let cleared_targets_this_frame : Array[Int] = []
   let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
   for camera_phase_item in camera_phase_items {
     let extracted_camera = cameras[camera_phase_item.extracted_index]
@@ -7785,6 +7278,16 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }
+    fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
+      render3d_pass_viewport_for_target(
+        target_id,
+        camera.target_id,
+        viewport_x,
+        viewport_y,
+        viewport_width,
+        viewport_height,
+      )
+    }
     let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
     let camera_pass_projection = render3d_camera_pass_projection(
       camera.projection,
@@ -7792,6 +7295,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera.temporal_jitter,
       view_width,
       view_height,
+    )
+    let camera_frustum_planes = render3d_host_preprocess_view_frustum_planes(
+      camera.projection,
+      camera.transform,
     )
     let camera_near = camera_pass_projection.camera_near
     let camera_far = camera_pass_projection.camera_far
@@ -7951,42 +7458,25 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       @app.TimelineTraceCategory::RenderQueue,
       "execute_3d_camera_queue_entry",
     )
-    let draw_queue_entry = if gpu_instance_buffer_builder_enabled {
-      match
-        render3d_take_gpu_preprocess_camera_queue_items(
-          world, camera_entity, meshes,
-        ) {
-        Some(prequeued_entry) => prequeued_entry
-        None =>
-          render3d_make_fallback_gpu_preprocess_queue_entry(
-            render3d_queue_mesh_phase_items(
-              meshes,
-              camera.layers,
-              camera.transform,
-              true,
-            ),
-            meshes,
-            render3d_camera_indirect_enabled(
-              gpu_instance_buffer_builder_enabled,
-              indirect_first_instance_supported,
-              camera.no_indirect_drawing,
-            ),
-            camera.gpu_occlusion_culling_enabled,
-          )
-      }
-    } else {
-      render3d_make_fallback_gpu_preprocess_queue_entry(
-        render3d_queue_mesh_phase_items(
-          meshes,
-          camera.layers,
-          camera.transform,
-          false,
-        ),
+    let camera_indirect_enabled = render3d_camera_indirect_enabled(
+      gpu_instance_buffer_builder_enabled,
+      gpu_culling_supported,
+      camera.no_indirect_drawing,
+    )
+    let draw_queue_entry = render3d_make_fallback_gpu_preprocess_queue_entry(
+      render3d_queue_mesh_phase_items(
         meshes,
-        false,
-        false,
-      )
-    }
+        camera.layers,
+        camera.transform,
+        camera_frustum_planes,
+        phase_state_ref.val.mesh_preprocess_static_cache,
+        camera_indirect_enabled,
+      ),
+      meshes,
+      phase_state_ref.val.mesh_preprocess_static_cache,
+      camera_indirect_enabled,
+      camera_indirect_enabled && camera.gpu_occlusion_culling_enabled,
+    )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
       "execute_3d_camera_queue_entry",
@@ -8009,66 +7499,100 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       draw_items,
       draw_queue_entry.work_item_buffers,
     )
+    let needs_gpu_preprocess = match draw_queue_entry.work_item_buffers {
+      Indirect(_, _, _) => true
+      _ => false
+    }
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
       "execute_3d_camera_queue_indices",
       trace_camera_queue_indices_start_us,
     )
-    let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_upload",
-    )
-    @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      payload=render3d_host_preprocess_camera_payload(
-        draw_queue_entry,
-        meshes,
-        phase_state_ref.val.mesh_preprocess_static_cache,
-        camera,
-        camera_pass_projection,
-        viewport_x,
-        viewport_y,
-        viewport_width,
-        viewport_height,
-        camera_exposure_value,
-      ),
-    )
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_upload",
-      trace_camera_queue_upload_start_us,
-    )
-    let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_preprocess",
-    )
-    if camera.gpu_occlusion_culling_enabled {
-      @render.host_gpu_preprocess_mesh3d(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
-        phase_kind=@render.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION,
+    if needs_gpu_preprocess {
+      let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "execute_3d_camera_queue_upload",
       )
-      @render.host_gpu_build_mesh3d_indirect_parameters(
+      @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
         camera_key_hi=camera_entity.id,
         camera_key_lo=camera_entity.generation,
-        phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
+        payload=render3d_host_preprocess_camera_payload(
+          draw_queue_entry, camera, camera_pass_projection, viewport_x, viewport_y,
+          viewport_width, viewport_height, camera_exposure_value,
+        ),
       )
-    } else {
-      @render.host_gpu_preprocess_mesh3d(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
+      @app.timeline_trace_end_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "execute_3d_camera_queue_upload",
+        trace_camera_queue_upload_start_us,
       )
-      @render.host_gpu_build_mesh3d_indirect_parameters(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
+      let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "execute_3d_camera_queue_preprocess",
+      )
+      if camera.gpu_occlusion_culling_enabled {
+        let trace_camera_preprocess_dispatch_start_us = @app.timeline_trace_begin_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_preprocess_dispatch",
+        )
+        @render.host_gpu_preprocess_mesh3d(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+          phase_kind=@render.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION,
+        )
+        @app.timeline_trace_end_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_preprocess_dispatch",
+          trace_camera_preprocess_dispatch_start_us,
+        )
+        let trace_camera_build_indirect_start_us = @app.timeline_trace_begin_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_build_indirect",
+        )
+        @render.host_gpu_build_mesh3d_indirect_parameters(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+          phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
+        )
+        @app.timeline_trace_end_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_build_indirect",
+          trace_camera_build_indirect_start_us,
+        )
+      } else {
+        let trace_camera_preprocess_dispatch_start_us = @app.timeline_trace_begin_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_preprocess_dispatch",
+        )
+        @render.host_gpu_preprocess_mesh3d(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+        )
+        @app.timeline_trace_end_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_preprocess_dispatch",
+          trace_camera_preprocess_dispatch_start_us,
+        )
+        let trace_camera_build_indirect_start_us = @app.timeline_trace_begin_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_build_indirect",
+        )
+        @render.host_gpu_build_mesh3d_indirect_parameters(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+        )
+        @app.timeline_trace_end_span(
+          @app.TimelineTraceCategory::RenderQueue,
+          "execute_3d_camera_build_indirect",
+          trace_camera_build_indirect_start_us,
+        )
+      }
+      @app.timeline_trace_end_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "execute_3d_camera_queue_preprocess",
+        trace_camera_queue_preprocess_start_us,
       )
     }
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_preprocess",
-      trace_camera_queue_preprocess_start_us,
-    )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
       "execute_3d_camera_queue_build",
@@ -8082,6 +7606,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         scene_target_id = shared_scene_id
       }
       velocity_target_id = shared_velocity_id
+      let (
+        motion_viewport_x,
+        motion_viewport_y,
+        motion_viewport_width,
+        motion_viewport_height,
+      ) = pass_viewport(shared_scene_id)
       render3d_begin_pass_3d(
         target_id=shared_scene_id,
         secondary_target_id=velocity_target_id,
@@ -8093,10 +7623,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clear_a=0.0F,
         camera.transform,
         camera_pass_projection,
-        viewport_x~,
-        viewport_y~,
-        viewport_width~,
-        viewport_height~,
+        viewport_x=motion_viewport_x,
+        viewport_y=motion_viewport_y,
+        viewport_width=motion_viewport_width,
+        viewport_height=motion_viewport_height,
         pass_lighting,
         camera_exposure=camera_exposure_value,
         previous_clip_from_world=camera.previous_clip_from_world,
@@ -8122,9 +7652,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         if draw_alpha < 0.999F {
           continue
         }
-        let motion_vector_indexed = render3d_mesh_handle_is_indexed(
-          mesh.mesh_handle,
-        )
+        let motion_vector_indexed = mesh.mesh_is_indexed
         let motion_vector_indirect_parameters_index = if motion_vector_indexed {
           indexed_indirect_parameter_indices[draw_item_index]
         } else {
@@ -8278,9 +7806,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           if shadow_alpha < 0.999F {
             continue
           }
-          let shadow_indexed = render3d_mesh_handle_is_indexed(
-            shadow_mesh.mesh_handle,
-          )
+          let shadow_indexed = shadow_mesh.mesh_is_indexed
           let shadow_indirect_parameters_index = if shadow_indexed {
             indexed_indirect_parameter_indices[draw_item_index]
           } else {
@@ -8366,6 +7892,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       @app.TimelineTraceCategory::RenderQueue,
       "execute_3d_camera_main_pass",
     )
+    let (
+      scene_viewport_x,
+      scene_viewport_y,
+      scene_viewport_width,
+      scene_viewport_height,
+    ) = pass_viewport(scene_target_id)
     render3d_begin_pass_3d(
       target_id=scene_target_id,
       width=view_width_logical,
@@ -8376,10 +7908,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       clear_a=clear_color.a,
       camera.transform,
       camera_pass_projection,
-      viewport_x~,
-      viewport_y~,
-      viewport_width~,
-      viewport_height~,
+      viewport_x=scene_viewport_x,
+      viewport_y=scene_viewport_y,
+      viewport_width=scene_viewport_width,
+      viewport_height=scene_viewport_height,
       pass_lighting,
       camera_exposure=camera_exposure_value,
       previous_clip_from_world=camera.previous_clip_from_world,
@@ -8392,7 +7924,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       environment_map_rotation=environment_map_state.rotation,
       point_shadow_near~,
       pass_kind=scene_pass_kind,
-      clear_enabled=if clear_enabled { 1 } else { 0 },
+      clear_enabled=render3d_pass_clear_enabled_for_target(
+        cleared_targets_this_frame, scene_target_id, clear_enabled,
+      ),
     )
     let main_pass_draws : Array[MeshGpuDrawPayload3d] = []
     let transmissive_phase_items : Array[TransmissivePhaseItem3d] = []
@@ -8582,7 +8116,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         draw_point_shadow_enabled = 0.0F
       }
       let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
-      let draw_indexed = render3d_mesh_handle_is_indexed(mesh.mesh_handle)
+      let draw_indexed = mesh.mesh_is_indexed
       let draw_indirect_parameters_index = if draw_indexed {
         indexed_indirect_parameter_indices[draw_item_index]
       } else {
@@ -8690,6 +8224,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
           )
         }
+        let (
+          transmission_viewport_x,
+          transmission_viewport_y,
+          transmission_viewport_width,
+          transmission_viewport_height,
+        ) = pass_viewport(scene_target_id)
         render3d_begin_pass_3d(
           target_id=scene_target_id,
           width=view_width_logical,
@@ -8700,10 +8240,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           clear_a=clear_color.a,
           camera.transform,
           camera_pass_projection,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
+          viewport_x=transmission_viewport_x,
+          viewport_y=transmission_viewport_y,
+          viewport_width=transmission_viewport_width,
+          viewport_height=transmission_viewport_height,
           pass_lighting,
           camera_exposure=camera_exposure_value,
           previous_clip_from_world=camera.previous_clip_from_world,
@@ -8823,6 +8363,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       )
     }
     if transparent_draws.length() > 0 || wireframe_draws.length() > 0 {
+      let (
+        transparent_viewport_x,
+        transparent_viewport_y,
+        transparent_viewport_width,
+        transparent_viewport_height,
+      ) = pass_viewport(scene_target_id)
       render3d_begin_pass_3d(
         target_id=scene_target_id,
         width=view_width_logical,
@@ -8833,10 +8379,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clear_a=clear_color.a,
         camera.transform,
         camera_pass_projection,
-        viewport_x~,
-        viewport_y~,
-        viewport_width~,
-        viewport_height~,
+        viewport_x=transparent_viewport_x,
+        viewport_y=transparent_viewport_y,
+        viewport_width=transparent_viewport_width,
+        viewport_height=transparent_viewport_height,
         pass_lighting,
         camera_exposure=camera_exposure_value,
         previous_clip_from_world=camera.previous_clip_from_world,
@@ -8876,6 +8422,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
           camera_entity, view_width, view_height,
         )
+        let (
+          post_motion_blur_viewport_x,
+          post_motion_blur_viewport_y,
+          post_motion_blur_viewport_width,
+          post_motion_blur_viewport_height,
+        ) = pass_viewport(post_motion_blur_target_id)
         @render.host_gpu_begin_pass(
           target_id=post_motion_blur_target_id,
           width=view_width_logical,
@@ -8888,13 +8440,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           camera_y=0.0F,
           camera_rotation=0.0F,
           camera_scale=1.0F,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
+          viewport_x=post_motion_blur_viewport_x,
+          viewport_y=post_motion_blur_viewport_y,
+          viewport_width=post_motion_blur_viewport_width,
+          viewport_height=post_motion_blur_viewport_height,
           viewport_depth_min~,
           viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
+          clear_enabled=render3d_pass_clear_enabled_for_target(
+            cleared_targets_this_frame, post_motion_blur_target_id, clear_enabled,
+          ),
         )
         @render.host_gpu_draw_motion_blur(
           scene_texture_id=scene_target_id,
@@ -8905,6 +8459,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         @render.host_gpu_end_pass()
         final_source_texture_id = post_motion_blur_target_id
       } else {
+        let (
+          motion_blur_present_viewport_x,
+          motion_blur_present_viewport_y,
+          motion_blur_present_viewport_width,
+          motion_blur_present_viewport_height,
+        ) = pass_viewport(camera.target_id)
         @render.host_gpu_begin_pass(
           target_id=camera.target_id,
           width=view_width_logical,
@@ -8917,13 +8477,17 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           camera_y=0.0F,
           camera_rotation=0.0F,
           camera_scale=1.0F,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
+          viewport_x=motion_blur_present_viewport_x,
+          viewport_y=motion_blur_present_viewport_y,
+          viewport_width=motion_blur_present_viewport_width,
+          viewport_height=motion_blur_present_viewport_height,
           viewport_depth_min~,
           viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
+          clear_enabled=render3d_pass_clear_enabled_for_target(
+            cleared_targets_this_frame,
+            camera.target_id,
+            clear_enabled,
+          ),
         )
         @render.host_gpu_draw_motion_blur(
           scene_texture_id=scene_target_id,
@@ -8944,6 +8508,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
       if postprocess_source_texture_id >= 0 {
         if camera.camera3d.auto_exposure is Some(auto_exposure_settings) {
+          let (
+            auto_exposure_viewport_x,
+            auto_exposure_viewport_y,
+            auto_exposure_viewport_width,
+            auto_exposure_viewport_height,
+          ) = pass_viewport(camera.target_id)
           @render.host_gpu_begin_pass(
             target_id=camera.target_id,
             width=view_width_logical,
@@ -8956,13 +8526,17 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             camera_y=0.0F,
             camera_rotation=0.0F,
             camera_scale=1.0F,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
+            viewport_x=auto_exposure_viewport_x,
+            viewport_y=auto_exposure_viewport_y,
+            viewport_width=auto_exposure_viewport_width,
+            viewport_height=auto_exposure_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
+            clear_enabled=render3d_pass_clear_enabled_for_target(
+              cleared_targets_this_frame,
+              camera.target_id,
+              clear_enabled,
+            ),
           )
           render3d_apply_camera_auto_exposure(
             world,
@@ -8977,6 +8551,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           @render.host_gpu_end_pass()
         }
         if bloom_enabled && camera.bloom is Some(bloom) {
+          let (
+            bloom_viewport_x,
+            bloom_viewport_y,
+            bloom_viewport_width,
+            bloom_viewport_height,
+          ) = pass_viewport(camera.target_id)
           @render.host_gpu_begin_pass(
             target_id=camera.target_id,
             width=view_width_logical,
@@ -8989,13 +8569,17 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             camera_y=0.0F,
             camera_rotation=0.0F,
             camera_scale=1.0F,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
+            viewport_x=bloom_viewport_x,
+            viewport_y=bloom_viewport_y,
+            viewport_width=bloom_viewport_width,
+            viewport_height=bloom_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
+            clear_enabled=render3d_pass_clear_enabled_for_target(
+              cleared_targets_this_frame,
+              camera.target_id,
+              clear_enabled,
+            ),
           )
           render3d_draw_camera_bloom_stage(
             postprocess_source_texture_id, bloom, view_width_logical, view_height_logical,
@@ -9025,6 +8609,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               stage_index,
               postprocess_stage_count,
             )
+            let (
+              effect_stack_viewport_x,
+              effect_stack_viewport_y,
+              effect_stack_viewport_width,
+              effect_stack_viewport_height,
+            ) = pass_viewport(stage_target_id)
             @render.host_gpu_begin_pass(
               target_id=stage_target_id,
               width=view_width_logical,
@@ -9037,13 +8627,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               camera_y=0.0F,
               camera_rotation=0.0F,
               camera_scale=1.0F,
-              viewport_x~,
-              viewport_y~,
-              viewport_width~,
-              viewport_height~,
+              viewport_x=effect_stack_viewport_x,
+              viewport_y=effect_stack_viewport_y,
+              viewport_width=effect_stack_viewport_width,
+              viewport_height=effect_stack_viewport_height,
               viewport_depth_min~,
               viewport_depth_max~,
-              clear_enabled=if clear_enabled { 1 } else { 0 },
+              clear_enabled=render3d_pass_clear_enabled_for_target(
+                cleared_targets_this_frame, stage_target_id, clear_enabled,
+              ),
             )
             render3d_draw_camera_effect_stack_stage(
               current_source_texture_id,
@@ -9065,6 +8657,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               stage_index,
               postprocess_stage_count,
             )
+            let (
+              custom_postprocess_viewport_x,
+              custom_postprocess_viewport_y,
+              custom_postprocess_viewport_width,
+              custom_postprocess_viewport_height,
+            ) = pass_viewport(stage_target_id)
             @render.host_gpu_begin_pass(
               target_id=stage_target_id,
               width=view_width_logical,
@@ -9077,13 +8675,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               camera_y=0.0F,
               camera_rotation=0.0F,
               camera_scale=1.0F,
-              viewport_x~,
-              viewport_y~,
-              viewport_width~,
-              viewport_height~,
+              viewport_x=custom_postprocess_viewport_x,
+              viewport_y=custom_postprocess_viewport_y,
+              viewport_width=custom_postprocess_viewport_width,
+              viewport_height=custom_postprocess_viewport_height,
               viewport_depth_min~,
               viewport_depth_max~,
-              clear_enabled=if clear_enabled { 1 } else { 0 },
+              clear_enabled=render3d_pass_clear_enabled_for_target(
+                cleared_targets_this_frame, stage_target_id, clear_enabled,
+              ),
             )
             render3d_draw_camera_custom_post_process_stage(
               current_source_texture_id,
@@ -9104,6 +8704,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               stage_index,
               postprocess_stage_count,
             )
+            let (
+              tonemapping_viewport_x,
+              tonemapping_viewport_y,
+              tonemapping_viewport_width,
+              tonemapping_viewport_height,
+            ) = pass_viewport(stage_target_id)
             @render.host_gpu_begin_pass(
               target_id=stage_target_id,
               width=view_width_logical,
@@ -9116,13 +8722,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               camera_y=0.0F,
               camera_rotation=0.0F,
               camera_scale=1.0F,
-              viewport_x~,
-              viewport_y~,
-              viewport_width~,
-              viewport_height~,
+              viewport_x=tonemapping_viewport_x,
+              viewport_y=tonemapping_viewport_y,
+              viewport_width=tonemapping_viewport_width,
+              viewport_height=tonemapping_viewport_height,
               viewport_depth_min~,
               viewport_depth_max~,
-              clear_enabled=if clear_enabled { 1 } else { 0 },
+              clear_enabled=render3d_pass_clear_enabled_for_target(
+                cleared_targets_this_frame, stage_target_id, clear_enabled,
+              ),
             )
             if camera.camera3d.auto_exposure is Some(_) {
               @render.host_gpu_activate_auto_exposure_view_state(
@@ -9154,6 +8762,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               stage_index,
               postprocess_stage_count,
             )
+            let (
+              fxaa_viewport_x,
+              fxaa_viewport_y,
+              fxaa_viewport_width,
+              fxaa_viewport_height,
+            ) = pass_viewport(stage_target_id)
             @render.host_gpu_begin_pass(
               target_id=stage_target_id,
               width=view_width_logical,
@@ -9166,13 +8780,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               camera_y=0.0F,
               camera_rotation=0.0F,
               camera_scale=1.0F,
-              viewport_x~,
-              viewport_y~,
-              viewport_width~,
-              viewport_height~,
+              viewport_x=fxaa_viewport_x,
+              viewport_y=fxaa_viewport_y,
+              viewport_width=fxaa_viewport_width,
+              viewport_height=fxaa_viewport_height,
               viewport_depth_min~,
               viewport_depth_max~,
-              clear_enabled=if clear_enabled { 1 } else { 0 },
+              clear_enabled=render3d_pass_clear_enabled_for_target(
+                cleared_targets_this_frame, stage_target_id, clear_enabled,
+              ),
             )
             render3d_draw_camera_fxaa_stage(
               current_source_texture_id,
@@ -9183,6 +8799,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             @render.host_gpu_end_pass()
           }
         } else if postprocess_source_texture_id != camera.target_id {
+          let (
+            postprocess_present_viewport_x,
+            postprocess_present_viewport_y,
+            postprocess_present_viewport_width,
+            postprocess_present_viewport_height,
+          ) = pass_viewport(camera.target_id)
           @render.host_gpu_begin_pass(
             target_id=camera.target_id,
             width=view_width_logical,
@@ -9195,13 +8817,17 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             camera_y=0.0F,
             camera_rotation=0.0F,
             camera_scale=1.0F,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
+            viewport_x=postprocess_present_viewport_x,
+            viewport_y=postprocess_present_viewport_y,
+            viewport_width=postprocess_present_viewport_width,
+            viewport_height=postprocess_present_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
+            clear_enabled=render3d_pass_clear_enabled_for_target(
+              cleared_targets_this_frame,
+              camera.target_id,
+              clear_enabled,
+            ),
           )
           if bloom_enabled {
             // Bloom can render through an fp16 intermediate even when camera
@@ -9242,6 +8868,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         }
       }
     } else if final_source_texture_id >= 0 {
+      let (
+        final_present_viewport_x,
+        final_present_viewport_y,
+        final_present_viewport_width,
+        final_present_viewport_height,
+      ) = pass_viewport(camera.target_id)
       @render.host_gpu_begin_pass(
         target_id=camera.target_id,
         width=view_width_logical,
@@ -9254,13 +8886,17 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         camera_y=0.0F,
         camera_rotation=0.0F,
         camera_scale=1.0F,
-        viewport_x~,
-        viewport_y~,
-        viewport_width~,
-        viewport_height~,
+        viewport_x=final_present_viewport_x,
+        viewport_y=final_present_viewport_y,
+        viewport_width=final_present_viewport_width,
+        viewport_height=final_present_viewport_height,
         viewport_depth_min~,
         viewport_depth_max~,
-        clear_enabled=if clear_enabled { 1 } else { 0 },
+        clear_enabled=render3d_pass_clear_enabled_for_target(
+          cleared_targets_this_frame,
+          camera.target_id,
+          clear_enabled,
+        ),
       )
       @render.host_gpu_draw_sprite_uv(
         texture_id=final_source_texture_id,

@@ -60,7 +60,7 @@ pub impl @ecs.Component for BoxShadowSamples with component() {
 
 ///|
 pub let ui_render_set_extract : @app.SystemSet = @app.system_set(
-  "bevy.ui.render.extract",
+  "mgstudio.ui.render.extract",
 )
 
 ///|

@@ -825,7 +825,7 @@ fn gltf_primitive_display_name(
 ) -> @ecs.Name? {
   let mesh_name = if mesh.name == "" { "Mesh" } else { mesh.name }
   match material_name {
-    Some(name) => Some(@ecs.Name::new(mesh_name + "." + name))
+    Some(name) => Some(@ecs.Name::new("\{mesh_name}.\{name}"))
     None => Some(@ecs.Name::new(mesh_name))
   }
 }
@@ -2071,7 +2071,7 @@ fn gltf_read_accessor_quat(
 ///|
 fn gltf_node_path_name(node : GltfNodeDef, node_index : Int) -> String {
   if node.name == "" {
-    "GltfNode" + node_index.to_string()
+    "GltfNode\{node_index.to_string()}"
   } else {
     node.name
   }
@@ -2278,7 +2278,7 @@ fn path_join(base_dir : String, relative : String) -> String {
   if base_dir == "" {
     normalized
   } else {
-    base_dir + "/" + normalized
+    "\{base_dir}/\{normalized}"
   }
 }
 

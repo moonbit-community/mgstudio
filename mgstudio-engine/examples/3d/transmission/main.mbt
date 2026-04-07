@@ -288,19 +288,7 @@ fn transmission_hud_text(world : @ecs.World) -> String {
     "OFF"
   }
 
-  " J / K / L / ;  Screen Space Specular Transmissive Quality: \{quality_label(transmission.quality)}\n" +
-  "         O / P  Screen Space Specular Transmissive Steps: \{transmission.steps}\n" +
-  "         1 / 2  Diffuse Transmission: \{transmission_state.val.diffuse_transmission}\n" +
-  "         Q / W  Specular Transmission: \{transmission_state.val.specular_transmission}\n" +
-  "         A / S  Thickness: \{transmission_state.val.thickness}\n" +
-  "         Z / X  IOR: \{transmission_state.val.ior}\n" +
-  "         E / R  Perceptual Roughness: \{transmission_state.val.perceptual_roughness}\n" +
-  "         U / I  Reflectance: \{transmission_state.val.reflectance}\n" +
-  "    Arrow Keys  Control Camera\n" +
-  "             C  Randomize Colors\n" +
-  "             H  HDR + Bloom: \{hdr_text}\n" +
-  "             D  Depth Prepass: \{depth_text}\n" +
-  "             T  TAA: \{taa_text}\n"
+  " J / K / L / ;  Screen Space Specular Transmissive Quality: \{quality_label(transmission.quality)}\n         O / P  Screen Space Specular Transmissive Steps: \{transmission.steps}\n         1 / 2  Diffuse Transmission: \{transmission_state.val.diffuse_transmission}\n         Q / W  Specular Transmission: \{transmission_state.val.specular_transmission}\n         A / S  Thickness: \{transmission_state.val.thickness}\n         Z / X  IOR: \{transmission_state.val.ior}\n         E / R  Perceptual Roughness: \{transmission_state.val.perceptual_roughness}\n         U / I  Reflectance: \{transmission_state.val.reflectance}\n    Arrow Keys  Control Camera\n             C  Randomize Colors\n             H  HDR + Bloom: \{hdr_text}\n             D  Depth Prepass: \{depth_text}\n             T  TAA: \{taa_text}\n"
 }
 
 ///|

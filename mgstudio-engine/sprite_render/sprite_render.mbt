@@ -106,22 +106,22 @@ pub type SceneCullContext = @sprite.SceneCullContext
 
 ///|
 pub let render2d_set_extract : @app.SystemSet = @app.system_set(
-  "bevy.render2d.extract",
+  "mgstudio.render2d.extract",
 )
 
 ///|
 pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
-  "bevy.render2d.prepare",
+  "mgstudio.render2d.prepare",
 )
 
 ///|
 pub let render2d_set_queue : @app.SystemSet = @app.system_set(
-  "bevy.render2d.queue",
+  "mgstudio.render2d.queue",
 )
 
 ///|
 pub let render2d_set_render : @app.SystemSet = @app.system_set(
-  "bevy.render2d.render",
+  "mgstudio.render2d.render",
 )
 
 ///|

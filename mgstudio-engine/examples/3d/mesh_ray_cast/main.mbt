@@ -396,10 +396,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
     @text.Text2d::new(
-      "mesh_ray_cast (Adapted)\n" +
-      "Red: automatic bouncing ray\n" +
-      "Green: cursor ray bounce\n" +
-      "MAX_BOUNCES = 64",
+      "mesh_ray_cast (Adapted)\nRed: automatic bouncing ray\nGreen: cursor ray bounce\nMAX_BOUNCES = 64",
     ),
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
     @transform.Transform::from_xy_rotation_scale(

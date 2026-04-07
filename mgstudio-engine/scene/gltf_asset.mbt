@@ -46,7 +46,7 @@ fn scene_gltf_scene_asset_path(
   scene_index : Int,
 ) -> String {
   @asset.asset_format_path(
-    root_path.with_label(Some("Scene" + scene_index.to_string())),
+    root_path.with_label(Some("Scene\{scene_index.to_string()}")),
   )
 }
 
@@ -60,7 +60,7 @@ fn scene_load_gltf_root_asset(
   let formatted_path = @asset.asset_format_path(root_path)
   let parsed = match gltf_parse_source(formatted_path, bytes) {
     Some(parsed) => parsed
-    None => abort("Failed to parse glTF asset " + formatted_path)
+    None => abort("Failed to parse glTF asset \{formatted_path}")
   }
   let (doc, _buffer_bytes) = parsed
   let scenes : Array[@asset.Handle[Scene]] = []
@@ -86,7 +86,7 @@ fn scene_load_gltf_root_asset(
     let handle = scene_load_gltf_animation(
       asset_server,
       @asset.asset_format_path(
-        root_path.with_label(Some("Animation" + animation_index.to_string())),
+        root_path.with_label(Some("Animation\{animation_index.to_string()}")),
       ),
     )
     animations.push(handle)

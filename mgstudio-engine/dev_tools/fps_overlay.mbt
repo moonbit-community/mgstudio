@@ -33,12 +33,12 @@ const DEFAULT_OVERLAY_TEXT : String = "FPS: --"
 
 ///|
 pub let fps_overlay_set_customize : @app.SystemSet = @app.system_set(
-  "bevy.dev_tools.fps_overlay.customize",
+  "mgstudio.dev_tools.fps_overlay.customize",
 )
 
 ///|
 pub let fps_overlay_set_update_text : @app.SystemSet = @app.system_set(
-  "bevy.dev_tools.fps_overlay.update_text",
+  "mgstudio.dev_tools.fps_overlay.update_text",
 )
 
 ///|
@@ -183,10 +183,7 @@ fn fps_overlay_warn_on_low_interval(config : FpsOverlayConfig) -> Unit {
   if config.refresh_interval.as_millis() < MIN_SAFE_INTERVAL_MILLIS {
     @app.log_record(
       @app.Warn,
-      message="Low refresh interval (" +
-        config.refresh_interval.to_string() +
-        ") may degrade performance. Min recommended: " +
-        @core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS).to_string(),
+      message="Low refresh interval (\{config.refresh_interval.to_string()}) may degrade performance. Min recommended: \{@core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS).to_string()}",
     )
   }
 }
@@ -302,12 +299,12 @@ fn fps_overlay_format_with_two_decimals(value : Float) -> String {
   let whole = magnitude / 100
   let fractional = magnitude % 100
   let fractional_string = if fractional < 10 {
-    "0" + fractional.to_string()
+    "0\{fractional.to_string()}"
   } else {
     fractional.to_string()
   }
   let prefix = if negative { "-" } else { "" }
-  prefix + whole.to_string() + "." + fractional_string
+  "\{prefix}\{whole.to_string()}.\{fractional_string}"
 }
 
 ///|

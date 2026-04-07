@@ -84,15 +84,7 @@ fn color_label(color : @sprite.Color) -> String {
   } else if color_approx_eq(color, color_deep_pink()) {
     "DeepPink"
   } else {
-    "rgba(" +
-    color.r.to_string() +
-    ", " +
-    color.g.to_string() +
-    ", " +
-    color.b.to_string() +
-    ", " +
-    color.a.to_string() +
-    ")"
+    "rgba(\{color.r.to_string()}, \{color.g.to_string()}, \{color.b.to_string()}, \{color.a.to_string()})"
   }
 }
 
@@ -180,15 +172,7 @@ fn update_controls_text(world : @ecs.World) -> Unit {
     is Some(text_value) else {
     return
   }
-  text_value.content = "Controls\n---------------\n" +
-    "Z - Toggle global\n" +
-    "X - Change global color\n" +
-    "C - Change color of the green cube wireframe\n\n" +
-    "WireframeConfig\n-------------\n" +
-    "Global: " +
-    config.global.to_string() +
-    "\nColor: " +
-    color_label(config.default_color)
+  text_value.content = "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the green cube wireframe\n\nWireframeConfig\n-------------\nGlobal: \{config.global.to_string()}\nColor: \{color_label(config.default_color)}"
   ignore(try! world.replace(text_entity, @text.ecs_key_text, text_value))
 }
 

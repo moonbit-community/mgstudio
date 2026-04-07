@@ -86,7 +86,7 @@ pub fn LoadContext::path(self : LoadContext) -> AssetPath {
 
 ///|
 fn typed_asset_loader_path_key(type_name : String, path : AssetPath) -> String {
-  type_name + "::" + asset_canonical_path(asset_format_path(path))
+  "\{type_name}::\{asset_canonical_path(asset_format_path(path))}"
 }
 
 ///|
@@ -204,8 +204,7 @@ pub fn[T] register_asset_loader(
         Some(value) => value
         None =>
           abort(
-            "typed asset loader returned a mismatched asset value for " +
-            type_name,
+            "typed asset loader returned a mismatched asset value for \{type_name}",
           )
       }
       ignore(assets_ref.val.insert(Handle::new(handle_id), value))
@@ -250,8 +249,7 @@ pub fn[P : IntoAssetPath] AssetServer::load_image_direct(
     Some(image) => image
     None =>
       abort(
-        "Failed to decode image asset bytes for " +
-        asset_format_path(parsed_path),
+        "Failed to decode image asset bytes for \{asset_format_path(parsed_path)}",
       )
   }
 }
@@ -273,15 +271,12 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
         Some(value) => value
         None =>
           abort(
-            "typed asset loader returned a mismatched asset value for " +
-            type_name,
+            "typed asset loader returned a mismatched asset value for \{type_name}",
           )
       }
     None =>
       abort(
-        "No typed asset loader is registered for " +
-        type_name +
-        "; register the loader before calling AssetServer::load_direct",
+        "No typed asset loader is registered for \{type_name}; register the loader before calling AssetServer::load_direct",
       )
   }
 }

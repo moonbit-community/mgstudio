@@ -85,11 +85,7 @@ fn setup(world : @ecs.World) -> Unit {
     text_entity,
     @text.ecs_key_text,
     @text.Text::new(
-      "Press 1 to toggle the overlay color.\n" +
-      "Press 2 to decrease the overlay size.\n" +
-      "Press 3 to increase the overlay size.\n" +
-      "Press 4 to toggle the text visibility.\n" +
-      "Press 5 to toggle the frame time graph.",
+      "Press 1 to toggle the overlay color.\nPress 2 to decrease the overlay size.\nPress 3 to increase the overlay size.\nPress 4 to toggle the text visibility.\nPress 5 to toggle the frame time graph.",
     ),
   )
   try! world.set_by_key(

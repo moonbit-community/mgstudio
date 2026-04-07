@@ -138,7 +138,7 @@ fn screenshot_captured_component(
 
 ///|
 fn screenshot_warn(message : String) -> Unit {
-  host_debug_string(value="[screenshot] " + message)
+  host_debug_string(value="[screenshot] \{message}")
 }
 
 ///|
@@ -161,11 +161,11 @@ fn screenshot_target_key(
       guard window_entity_for_ref(world, window_ref) is Some(window_entity) else {
         return None
       }
-      Some("window:" + window_entity.id.to_string())
+      Some("window:\{window_entity.id.to_string()}")
     }
-    Image(image) => Some("image:" + image.id().to_string())
+    Image(image) => Some("image:\{image.id().to_string()}")
     TextureView(texture_view) =>
-      Some("texture_view:" + texture_view.to_string())
+      Some("texture_view:\{texture_view.to_string()}")
   }
 }
 
@@ -214,8 +214,7 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
     }
     if array_contains(seen_targets, target_key) {
       screenshot_warn(
-        "duplicate screenshot target skipped for entity " +
-        entity.id.to_string(),
+        "duplicate screenshot target skipped for entity \{entity.id.to_string()}",
       )
       world.despawn(entity) catch {
         _ => ()

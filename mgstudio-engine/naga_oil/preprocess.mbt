@@ -612,7 +612,7 @@ pub fn Preprocessor::extract_wgsl_directives(
   let mut cleaned_source = ""
   for i in 0..<cleaned_lines.length() {
     if i > 0 {
-      cleaned_source = cleaned_source + "\n"
+      cleaned_source = "\{cleaned_source}\n"
     }
     cleaned_source = cleaned_source + cleaned_lines[i]
   }
@@ -669,11 +669,11 @@ pub fn Preprocessor::preprocess(
             final_string = final_string + spaces(line.length())
             offset = offset + line.length() + 1
             open_count = open_count + import_brace_balance(line)
-            import_lines = import_lines + line + "\n"
+            import_lines = "\{import_lines}\{line}\n"
             if open_count == 0 || line_index + 1 >= decommented_lines.length() {
               break
             }
-            final_string = final_string + "\n"
+            final_string = "\{final_string}\n"
             line_index = line_index + 1
             line = decommented_lines[line_index]
           }
@@ -711,10 +711,10 @@ pub fn Preprocessor::preprocess(
                 )
             },
           )
-          final_string = final_string + item_replaced_line
+          final_string = "\{final_string}\{item_replaced_line}"
           let diff = line.length() - item_replaced_line.length()
           if diff > 0 {
-            final_string = final_string + spaces(diff)
+            final_string = "\{final_string}\{spaces(diff)}"
           }
           offset = offset + original_line.length() + 1
           output = true
@@ -723,10 +723,10 @@ pub fn Preprocessor::preprocess(
     }
 
     if !output {
-      final_string = final_string + spaces(line.length())
+      final_string = "\{final_string}\{spaces(line.length())}"
       offset = offset + line.length() + 1
     }
-    final_string = final_string + "\n"
+    final_string = "\{final_string}\n"
     line_index = line_index + 1
   }
 
@@ -773,14 +773,14 @@ fn try_get_preprocessor_metadata(
         effective_defs.add(def_name)
       }
     } else if starts_with_text(trimmed, "#import ") {
-      let mut import_lines = line + "\n"
+      let mut import_lines = "\{line}\n"
       let mut open_count = import_brace_balance(line)
       let initial_offset = offset
 
       while open_count > 0 && line_index + 1 < lines.length() {
         line_index = line_index + 1
         let next_line = lines[line_index]
-        import_lines = import_lines + next_line + "\n"
+        import_lines = "\{import_lines}\{next_line}\n"
         open_count = open_count + import_brace_balance(next_line)
         offset = offset + next_line.length() + 1
       }

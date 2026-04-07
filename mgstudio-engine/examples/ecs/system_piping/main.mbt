@@ -51,7 +51,7 @@ impl @app.Resource for OptionalWarning with resource() {
 ///|
 fn parse_message(text : String) -> ParseOutcome {
   try @string.parse_int(text[:], base=10) catch {
-    _ => ParseError("failed to parse message: " + text)
+    _ => ParseError("failed to parse message: \{text}")
   } noraise {
     value => Parsed(value)
   }
@@ -73,8 +73,8 @@ fn parse_error_message_system(message : @app.Res[Message]) -> String? {
 ///|
 fn handler_system(result : @app.In[ParseOutcome]) -> Unit {
   match result.get() {
-    Parsed(value) => println("parsed message: " + value.to_string())
-    ParseError(err) => println("encountered an error: " + err)
+    Parsed(value) => println("parsed message: \{value.to_string()}")
+    ParseError(err) => println("encountered an error: \{err}")
   }
 }
 

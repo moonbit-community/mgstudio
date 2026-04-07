@@ -63,7 +63,7 @@ fn touch_system_piping_types() -> Unit {
 ///|
 fn parse_piped_message(text : String) -> Result[Int, String] {
   try @string.parse_int(text[:], base=10) catch {
-    _ => Err("invalid integer: " + text)
+    _ => Err("invalid integer: \{text}")
   } noraise {
     value => Ok(value)
   }
@@ -92,7 +92,7 @@ test "app system piping: pipe passes output into handler" {
       input : In[Result[Int, String]],
     ) {
       match input.get() {
-        Ok(value) => log.push("parsed " + value.to_string())
+        Ok(value) => log.push("parsed \{value.to_string()}")
         Err(message) => log.push(message)
       }
     }),
@@ -108,13 +108,13 @@ test "app system piping: map and pipe_param can use additional system params" {
   let log : Array[String] = []
   let map_config : SystemConfig[@ecs.World] = system_param_output(
     clone_piped_message_system,
-  ).map(fn(output : String) { log.push("map:" + output) })
+  ).map(fn(output : String) { log.push("map:\{output}") })
   let pipe_config : SystemConfig[@ecs.World] = system_param_output(
     clone_piped_message_system,
   ).pipe_param(fn(input : In[String], counter : ResMut[SystemPipingCounter]) {
     let output = input.get()
     counter.get_ref().val.value = counter.get_ref().val.value + output.length()
-    log.push("pipe:" + output)
+    log.push("pipe:\{output}")
   })
   let mut app = App::new(@ecs.World::new())
   app.world().insert_resource(system_piping_message_key, { value: "hello" })

@@ -202,7 +202,7 @@ fn read_quoted_string(content : String, start : Int) -> (String, Int)? {
 
 ///|
 fn field_marker(field_name : String) -> String {
-  field_name + ":"
+  "\{field_name}:"
 }
 
 ///|
@@ -342,7 +342,7 @@ fn load_text_with_settings(bytes : Bytes, settings : TextSettings) -> Text {
 fn transformer_appended_suffix(path : @asset.AssetPath) -> String {
   match
     @asset.load_optional_asset_source_text(
-      @asset.AssetPath::from_path(@asset.asset_format_path(path) + ".meta"),
+      @asset.AssetPath::from_path("\{@asset.asset_format_path(path)}.meta"),
     ) {
     Some(meta) => string_field(meta, "appended")
     None => ""
@@ -368,7 +368,7 @@ fn processed_text_from_path(
     let bytes = @asset.load_asset_source_bytes(asset_path)
     let processed = process_cool_text(asset_server, asset_path, bytes) catch {
       err =>
-        abort("Failed to process dependent cool text asset: " + err.message())
+        abort("Failed to process dependent cool text asset: \{err.message()}")
     }
     let text = processed.asset()
     match settings.text_override {
@@ -376,7 +376,7 @@ fn processed_text_from_path(
       None => text
     }
   } else {
-    abort("Unsupported processed text dependency path " + path)
+    abort("Unsupported processed text dependency path \{path}")
   }
 }
 
@@ -476,7 +476,7 @@ fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn text_asset_debug(text : Text?) -> String {
   match text {
-    Some(text) => "Some(Text(\"" + text.value + "\"))"
+    Some(text) => "Some(Text(\"\{text.value}\"))"
     None => "None"
   }
 }

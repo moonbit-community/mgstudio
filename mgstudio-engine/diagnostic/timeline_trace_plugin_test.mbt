@@ -14,9 +14,7 @@
 
 ///|
 fn timeline_trace_test_output_path() -> String {
-  "/tmp/mgstudio_timeline_trace_test_" +
-  @core.Instant::now().as_duration_since_start().as_nanos().to_string() +
-  ".json"
+  "/tmp/mgstudio_timeline_trace_test_\{@core.Instant::now().as_duration_since_start().as_nanos().to_string()}.json"
 }
 
 ///|

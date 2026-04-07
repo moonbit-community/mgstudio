@@ -69,9 +69,7 @@ fn capture_system(
 ) -> Unit {
   let state_ref = state.get_ref()
   if state_ref.val.target is Some(target) {
-    let path = "test_images/headless_renderer_" +
-      state_ref.val.frame.to_string() +
-      ".png"
+    let path = "test_images/headless_renderer_\{state_ref.val.frame.to_string()}.png"
     @asset.asset_save_texture_png(target, path)
     state_ref.val.frame = state_ref.val.frame + 1
     if state_ref.val.single_image {

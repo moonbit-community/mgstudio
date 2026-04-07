@@ -39,5 +39,5 @@ fn print_char_event_system(
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[char_input_events] " + text)
+  @window.host_debug_string(value="[char_input_events] \{text}")
 }

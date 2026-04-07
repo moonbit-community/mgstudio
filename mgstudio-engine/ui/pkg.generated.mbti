@@ -95,6 +95,8 @@ pub fn ui_build_a11y_tree_update(@ecs.World) -> @moon_accesskit.TreeUpdate
 
 pub fn ui_clip_system(@ecs.World) -> Unit
 
+pub fn ui_entity_contains_pointer(@ecs.World, @core.Entity, @math.Vec2) -> Bool
+
 pub fn ui_image_content_size_system(@ecs.World) -> Unit
 
 pub fn ui_interaction_system(@ecs.World) -> Unit
@@ -102,6 +104,8 @@ pub fn ui_interaction_system(@ecs.World) -> Unit
 pub fn ui_layout_system(@ecs.World) -> Unit
 
 pub fn ui_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ui_pointer_pos_for_entity(@ecs.World, @core.Entity, @math.Vec2) -> @math.Vec2?
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
 

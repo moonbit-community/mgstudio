@@ -235,3 +235,8 @@ pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[
     debug_name="bevy_transform::StaticTransformOptimizations",
   )
 }
+
+///|
+pub impl @app.Resource for StaticTransformOptimizations with resource() {
+  static_transform_optimizations_resource_key()
+}

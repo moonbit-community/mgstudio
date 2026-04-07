@@ -480,10 +480,7 @@ fn ui_shadow_pipeline_for_current_pass(
       return Some(entry.pipeline)
     }
   }
-  let label = "mgstudio_ui_box_shadow_" +
-    format.to_u32().reinterpret_as_int().to_string() +
-    "_" +
-    effective_samples.to_string()
+  let label = "mgstudio_ui_box_shadow_\{format.to_u32().reinterpret_as_int().to_string()}_\{effective_samples.to_string()}"
   let pipeline = create_ui_shadow_pipeline(
     backend, format, effective_samples, label,
   )

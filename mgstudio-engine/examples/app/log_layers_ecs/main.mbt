@@ -65,7 +65,7 @@ fn log_system(_world : @ecs.World) -> Unit {
 ///|
 fn print_logs(reader : @ecs.MessageReader[LogMessage]) -> Unit {
   for log_message in (try! reader.read()) {
-    println(log_message.level.to_string() + " " + log_message.message)
+    println("\{log_message.level.to_string()} \{log_message.message}")
   }
 }
 

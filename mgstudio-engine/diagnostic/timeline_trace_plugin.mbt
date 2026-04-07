@@ -298,15 +298,11 @@ fn timeline_trace_event_json_line(
 ) -> String {
   let safe_ts = if ts_us >= 0L { ts_us } else { 0L }
   let safe_dur = if dur_us >= 0L { dur_us } else { 0L }
-  "{\"name\":\"" +
-  timeline_trace_json_escape(name) +
-  "\",\"cat\":\"" +
-  timeline_trace_json_escape(@app.timeline_trace_category_label(category)) +
-  "\",\"ph\":\"X\",\"ts\":" +
-  safe_ts.to_string() +
-  ",\"dur\":" +
-  safe_dur.to_string() +
-  ",\"pid\":1,\"tid\":0}"
+  let safe_name = timeline_trace_json_escape(name)
+  let safe_category = timeline_trace_json_escape(
+    @app.timeline_trace_category_label(category),
+  )
+  "{\"name\":\"\{safe_name}\",\"cat\":\"\{safe_category}\",\"ph\":\"X\",\"ts\":\{safe_ts.to_string()},\"dur\":\{safe_dur.to_string()},\"pid\":1,\"tid\":0}"
 }
 
 ///|
@@ -331,11 +327,11 @@ fn timeline_trace_flush_to_disk(state : TimelineTraceState) -> Unit {
   let mut output = "{\"traceEvents\":["
   for i in 0..<state.events_json_lines.length() {
     if i > 0 {
-      output = output + ","
+      output = "\{output},"
     }
-    output = output + state.events_json_lines[i]
+    output = "\{output}\{state.events_json_lines[i]}"
   }
-  output = output + "],\"displayTimeUnit\":\"ms\"}"
+  output = "\{output}],\"displayTimeUnit\":\"ms\"}"
   @fs.write_string_to_file(state.config.output_path, output) catch {
     _ => ()
   }

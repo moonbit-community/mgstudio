@@ -114,15 +114,15 @@ impl Default for GameState with default() {
 ///|
 fn streak_text(streak : PlayerStreak) -> String {
   match streak {
-    Hot(rounds) => rounds.to_string() + " round hot streak"
+    Hot(rounds) => "\{rounds.to_string()} round hot streak"
     None => "0 round streak"
-    Cold(rounds) => rounds.to_string() + " round cold streak"
+    Cold(rounds) => "\{rounds.to_string()} round cold streak"
   }
 }
 
 ///|
 fn player_name(index : Int) -> String {
-  "Player " + index.to_string()
+  "Player \{index.to_string()}"
 }
 
 ///|
@@ -138,10 +138,7 @@ fn new_round_system(
   let state_ref = game_state.get_ref()
   state_ref.val.current_round = state_ref.val.current_round + 1
   println(
-    "Begin round " +
-    state_ref.val.current_round.to_string() +
-    " of " +
-    game_rules.get().max_rounds.to_string(),
+    "Begin round \{state_ref.val.current_round.to_string()} of \{game_rules.get().max_rounds.to_string()}",
   )
 }
 
@@ -172,12 +169,7 @@ fn score_system(
         None => Hot(1)
       }
       println(
-        player_name +
-        " scored a point! Their score is: " +
-        score_ref.val.value.to_string() +
-        " (" +
-        streak_text(streak_ref.val) +
-        ")",
+        "\{player_name} scored a point! Their score is: \{score_ref.val.value.to_string()} (\{streak_text(streak_ref.val)})",
       )
     } else {
       streak_ref.val = match streak_ref.val {
@@ -186,12 +178,7 @@ fn score_system(
         Cold(count) => Cold(count + 1)
       }
       println(
-        player_name +
-        " did not score a point! Their score is: " +
-        score_ref.val.value.to_string() +
-        " (" +
-        streak_text(streak_ref.val) +
-        ")",
+        "\{player_name} did not score a point! Their score is: \{score_ref.val.value.to_string()} (\{streak_text(streak_ref.val)})",
       )
     }
   })
@@ -221,7 +208,7 @@ fn game_over_system(
   app_exit_writer : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
   if game_state.get().winning_player is Some(player) {
-    println(player + " won the game!")
+    println("\{player} won the game!")
     ignore(app_exit_writer.write(@app.AppExit::Success))
   } else if game_state.get().current_round >= game_rules.get().max_rounds {
     println("Ran out of rounds. Nobody wins!")
@@ -265,7 +252,7 @@ fn new_player_system(
       ),
     )
     println(
-      "Player " + state_ref.val.total_players.to_string() + " joined the game!",
+      "Player \{state_ref.val.total_players.to_string()} joined the game!",
     )
   }
 }
@@ -299,7 +286,7 @@ fn exclusive_player_system(world : @ecs.World) -> Unit {
       None => return
     }
     game_state_ref.val.total_players = next_total
-    println("Player " + next_total.to_string() + " has joined the game!")
+    println("Player \{next_total.to_string()} has joined the game!")
   }
 }
 
@@ -307,7 +294,7 @@ fn exclusive_player_system(world : @ecs.World) -> Unit {
 fn print_at_end_round(counter : @app.Local[Int]) -> Unit {
   let counter_ref = counter.get_ref()
   counter_ref.val = counter_ref.val + 1
-  println("In set 'Last' for the " + counter_ref.val.to_string() + "th time")
+  println("In set 'Last' for the \{counter_ref.val.to_string()}th time")
   println("")
 }
 

@@ -54,5 +54,5 @@ fn keyboard_input_system(
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[keyboard_input] " + text)
+  @window.host_debug_string(value="[keyboard_input] \{text}")
 }

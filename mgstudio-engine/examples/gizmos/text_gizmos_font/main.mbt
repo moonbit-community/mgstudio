@@ -14,15 +14,7 @@
 
 ///|
 fn all_glyphs() -> String {
-  " !\\\"#$%&'()*\n" +
-  "+,-./012345\n" +
-  "6789:;<=>?@\n" +
-  "ABCDEFGHIJK\n" +
-  "LMNOPQRSTUV\n" +
-  "WXYZ[\\\\]^_`a\n" +
-  "bcdefghijkl\n" +
-  "mnopqrstuvw\n" +
-  "xyz{|}~"
+  " !\\\"#$%&'()*\n+,-./012345\n6789:;<=>?@\nABCDEFGHIJK\nLMNOPQRSTUV\nWXYZ[\\\\]^_`a\nbcdefghijkl\nmnopqrstuvw\nxyz{|}~"
 }
 
 ///|

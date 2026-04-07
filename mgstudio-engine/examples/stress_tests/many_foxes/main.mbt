@@ -267,9 +267,18 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true),
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::default()
+          .with_first_cascade_far_bound(0.9F * outer_radius)
+          .with_maximum_distance(2.8F * outer_radius),
+        ),
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -0.75F),
+          @math.Quat::from_euler(
+            @math.EulerRot::ZYX,
+            0.0F,
+            1.0F,
+            -3.141592653589793F / 4.0F,
+          ),
         ),
       ),
     ),
@@ -412,6 +421,7 @@ fn main {
     count: args.count,
     sync: args.sync,
   })
+  .insert_resource(@transform.StaticTransformOptimizations::disabled())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugin_group(fn() {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{

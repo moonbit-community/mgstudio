@@ -725,6 +725,24 @@ fn text_ecs_entity_id_set_contains(
 }
 
 ///|
+fn text_ecs_mark_span_parents_dirty(
+  span_edges : Array[(@core.Entity, @core.Entity)],
+  dirty_entities : Map[Int, Bool],
+  has_text_dirty_entities : Ref[Bool],
+) -> Unit {
+  for edge in span_edges {
+    let (parent, child) = edge
+    if !dirty_entities.contains(child.id) {
+      continue
+    }
+    if !dirty_entities.contains(parent.id) {
+      dirty_entities.set(parent.id, true)
+    }
+    has_text_dirty_entities.val = true
+  }
+}
+
+///|
 fn text_ecs_find_entry_index_from_index(
   world_id : Int,
   entity : @core.Entity,
@@ -1288,9 +1306,27 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       world, @visibility.ecs_key_view_visibility, sequence, dirty_entities, has_text_dirty_entities,
     ),
   )
-  if !has_any_spans &&
-    !has_text_dirty_entities.val &&
-    text_ecs_bridge_entries.length() > 0 {
+  if has_any_spans {
+    ignore(
+      text_ecs_union_changed_entities_into(
+        world, @hierarchy.ecs_key_children, sequence, dirty_entities, has_text_dirty_entities,
+      ),
+    )
+    ignore(
+      text_ecs_union_changed_entities_into(
+        world, @hierarchy.ecs_key_parent, sequence, dirty_entities, has_text_dirty_entities,
+      ),
+    )
+    ignore(
+      text_ecs_union_changed_entities_into(
+        world, ecs_key_text_span, sequence, dirty_entities, has_text_dirty_entities,
+      ),
+    )
+    text_ecs_mark_span_parents_dirty(
+      span_edges, dirty_entities, has_text_dirty_entities,
+    )
+  }
+  if !has_text_dirty_entities.val && text_ecs_bridge_entries.length() > 0 {
     text_diagnostic_sync_ecs_early_return_ref.val = true
     text_diagnostic_sync_ecs_cpu_ms_ref.val = (
         @time.host_time_now() - sync_start
@@ -1307,7 +1343,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
     let existing_index = text_ecs_find_entry_index_from_index(
       world_id, entity, index_by_entity_id,
     )
-    if existing_index is Some(_) && !has_any_spans {
+    if existing_index is Some(_) {
       if !text_ecs_entity_id_set_contains(dirty_entities, entity) {
         return
       }
@@ -1656,16 +1692,101 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
     world, world_id, sequence, index_by_entity_id,
   )
   let span_edges = text_ecs_collect_span_edges(world)
+  let has_any_spans = span_edges.length() > 0
+  let dirty_entities : Map[Int, Bool] = {}
+  let has_text_dirty_entities = Ref::new(false)
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_font, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_background_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_underline, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_underline_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_strikethrough, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_strikethrough_color, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_layout, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_line_height, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_shadow, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  if has_any_spans {
+    ignore(
+      text_ecs_union_changed_entities_into(
+        world, @hierarchy.ecs_key_children, sequence, dirty_entities, has_text_dirty_entities,
+      ),
+    )
+    ignore(
+      text_ecs_union_changed_entities_into(
+        world, @hierarchy.ecs_key_parent, sequence, dirty_entities, has_text_dirty_entities,
+      ),
+    )
+    ignore(
+      text_ecs_union_changed_entities_into(
+        world, ecs_key_text_span, sequence, dirty_entities, has_text_dirty_entities,
+      ),
+    )
+    text_ecs_mark_span_parents_dirty(
+      span_edges, dirty_entities, has_text_dirty_entities,
+    )
+  }
+  if !has_text_dirty_entities.val && ui_text_ecs_bridge_entries.length() > 0 {
+    return
+  }
   let query : @ecs.Query[@ecs.Comp[Text], @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, text) {
+    let existing_index = ui_text_ecs_find_entry_index_from_index(
+      world_id, entity, index_by_entity_id,
+    )
+    if existing_index is Some(_) &&
+      !text_ecs_entity_id_set_contains(dirty_entities, entity) {
+      return
+    }
     let bundle = ui_text_ecs_bundle_from_entity(world, entity, text.value())
     let span_bundles = text_ecs_collect_span_bundles_for_entity(
       world, entity, bundle, span_edges,
     )
-    match
-      ui_text_ecs_find_entry_index_from_index(
-        world_id, entity, index_by_entity_id,
-      ) {
+    match existing_index {
       Some(index) => {
         let entry = ui_text_ecs_bridge_entries[index]
         ui_text_ecs_bridge_entries[index] = ui_text_ecs_sync_existing_entry(

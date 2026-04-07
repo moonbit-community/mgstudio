@@ -120,7 +120,7 @@ fn spawn_tab_group(
       commands,
       group,
       font,
-      "TabIndex " + index.to_string(),
+      "TabIndex \{index.to_string()}",
       index,
     )
   }

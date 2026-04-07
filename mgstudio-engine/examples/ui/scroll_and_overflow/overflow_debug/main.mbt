@@ -162,7 +162,7 @@ fn overflow_label(overflow : @ui.Overflow) -> String {
       @ui.OverflowAxis::Scroll => "Scroll"
     }
   }
-  "Overflow(" + axis(overflow.x) + ", " + axis(overflow.y) + ")"
+  "Overflow(\{axis(overflow.x)}, \{axis(overflow.y)})"
 }
 
 ///|
@@ -182,16 +182,7 @@ fn instructions_text(
   let size_text = container_size(settings.size_index).to_string()
   let overflow_text = overflow_label(overflow_at(settings.overflow_index))
   let playing_text = if animation.playing { "Playing" } else { "Paused" }
-  "Next Overflow Setting (O)\n" +
-  "Next Container Size (S)\n" +
-  "Toggle Animation (Space)\n\n" +
-  overflow_text +
-  "\n" +
-  "Container size: " +
-  size_text +
-  " px\n" +
-  "Animation: " +
-  playing_text
+  "Next Overflow Setting (O)\nNext Container Size (S)\nToggle Animation (Space)\n\n\{overflow_text}\nContainer size: \{size_text} px\nAnimation: \{playing_text}"
 }
 
 ///|
@@ -266,7 +257,7 @@ fn spawn_demo_cell(
       (
         @hierarchy.Parent::new(cell),
         @text.Text::new(
-          content_title(content) + " / " + motion_title(motion_kind),
+          "\{content_title(content)} / \{motion_title(motion_kind)}",
         ),
         title_font(font),
         @text.TextColor::new(@sprite.Color::white()),

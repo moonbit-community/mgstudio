@@ -28,17 +28,14 @@ fn load_wgsl_asset_source_required(
 ) -> String raise GpuBackendError {
   let base = backend.assets_base.trim().to_string()
   if base == "" {
-    fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
+    fatal("wgpu: assets_base is empty; cannot load shader: \{rel}")
   }
   let normalized_rel = normalize_shader_rel_path(rel)
   let full_path = @path.Path::join(base, normalized_rel).normalize().to_string()
   @fs.read_file_to_string(full_path) catch {
     err =>
       fatal(
-        "wgpu: failed to read shader asset " +
-        normalized_rel +
-        ": " +
-        err.to_string(),
+        "wgpu: failed to read shader asset \{normalized_rel}: \{err.to_string()}",
       )
   }
 }
@@ -143,11 +140,9 @@ fn merge_fullscreen_postprocess_source(
     main_source.contains("fullscreen_vertex_shader::FullscreenVertexOutput")
   if main_source.contains("struct FullscreenVertexOutput") ||
     imports_fullscreen_vertex_output {
-    return main_source +
-      "\n" +
-      fullscreen_vertex_shader_function_source(fullscreen_source)
+    return "\{main_source}\n\{fullscreen_vertex_shader_function_source(fullscreen_source)}"
   }
-  fullscreen_source + "\n" + main_source
+  "\{fullscreen_source}\n\{main_source}"
 }
 
 ///|
@@ -173,7 +168,7 @@ fn postprocess_builder_set_blend_mode(
   } else if blend_mode == POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE {
     (@wgpu.BLEND_FACTOR_CONSTANT, @wgpu.BLEND_FACTOR_ONE)
   } else {
-    fatal("wgpu: unsupported postprocess blend mode: " + blend_mode.to_string())
+    fatal("wgpu: unsupported postprocess blend mode: \{blend_mode.to_string()}")
   }
   builder.set_blend_components(
     color_src,

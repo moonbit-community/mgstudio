@@ -21,7 +21,7 @@ fn empty_bool_defines() -> @hashmap.HashMap[String, Bool] {
 fn register_composer_test_shader_source(path : String) -> Unit {
   let full_path = @path.Path::join("assets", path).normalize().to_string()
   let source = @fs.read_file_to_string(full_path) catch {
-    _ => abort("failed to load composer test shader source: " + path)
+    _ => abort("failed to load composer test shader source: \{path}")
   }
   @naga_oil.register_wgsl_source(path, source)
 }
@@ -55,7 +55,7 @@ test "naga_oil: composer preprocess supports multiline grouped imports" {
     visited,
     modules,
   ) catch {
-    err => abort("expected composer preprocess success: " + err.message())
+    err => abort("expected composer preprocess success: \{err.message()}")
   }
   inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
   inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
@@ -76,7 +76,7 @@ test "naga_oil: composer preprocess strips module aliases" {
     visited,
     modules,
   ) catch {
-    err => abort("expected composer preprocess success: " + err.message())
+    err => abort("expected composer preprocess success: \{err.message()}")
   }
   inspect(preprocessed.contains("return PI_2;"), content="true")
   inspect(preprocessed.contains("maths::PI_2"), content="false")
@@ -98,7 +98,7 @@ test "naga_oil: composer item imports keep dependent view declarations" {
     modules,
   ) catch {
     err =>
-      abort("expected sprite composer preprocess success: " + err.message())
+      abort("expected sprite composer preprocess success: \{err.message()}")
   }
   inspect(sprite_preprocessed.contains("struct ColorGrading"), content="true")
   inspect(sprite_preprocessed.contains("struct View"), content="true")
@@ -113,7 +113,7 @@ test "naga_oil: composer item imports keep dependent view declarations" {
     modules,
   ) catch {
     err =>
-      abort("expected mesh2d composer preprocess success: " + err.message())
+      abort("expected mesh2d composer preprocess success: \{err.message()}")
   }
   inspect(mesh2d_preprocessed.contains("struct ColorGrading"), content="true")
   inspect(mesh2d_preprocessed.contains("struct View"), content="true")
@@ -135,7 +135,7 @@ test "naga_oil: composer drops preprocess previous-view imports outside active b
   ) catch {
     err =>
       abort(
-        "expected mesh preprocess composer preprocess success: " + err.message(),
+        "expected mesh preprocess composer preprocess success: \{err.message()}",
       )
   }
   inspect(
@@ -175,7 +175,7 @@ test "naga_oil: composer registered sources satisfy strict mesh2d preprocessing"
     modules,
   ) catch {
     err =>
-      abort("expected registered-source preprocess success: " + err.message())
+      abort("expected registered-source preprocess success: \{err.message()}")
   }
   inspect(preprocessed.contains("const PI_2"), content="true")
   inspect(preprocessed.contains("return twice_pi();"), content="true")

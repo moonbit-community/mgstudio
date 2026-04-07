@@ -21,9 +21,9 @@ fn file_drag_and_drop_system(
   for event in (try! reader.read()) {
     match event {
       @window.FileDragAndDrop::DroppedFile(window, path) =>
-        println("DroppedFile(window=\{window.id}, \"" + path + "\")")
+        println("DroppedFile(window=\{window.id}, \"\{path}\")")
       @window.FileDragAndDrop::HoveredFile(window, path) =>
-        println("HoveredFile(window=\{window.id}, \"" + path + "\")")
+        println("HoveredFile(window=\{window.id}, \"\{path}\")")
       @window.FileDragAndDrop::HoveredFileCanceled(window) =>
         println("HoveredFileCanceled(window=\{window.id})")
     }

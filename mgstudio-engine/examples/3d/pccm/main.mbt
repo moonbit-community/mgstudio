@@ -56,10 +56,7 @@ fn update_help_text() -> Unit {
   guard pccm_state.val.help_text is Some(handle) else { return }
   @text.text_set_content(
     handle,
-    "Parallax Correction: " +
-    status_text(pccm_state.val.pccm_enabled) +
-    "\n" +
-    "1: On, 2: Off",
+    "Parallax Correction: \{status_text(pccm_state.val.pccm_enabled)}\n1: On, 2: Off",
   )
 }
 

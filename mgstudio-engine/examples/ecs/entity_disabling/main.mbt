@@ -183,7 +183,7 @@ fn list_all_named_entities(
 
   let text_string = Ref::new("Named entities found:\n")
   for name in names {
-    text_string.val = text_string.val + name + "\n"
+    text_string.val = "\{text_string.val}\{name}\n"
   }
 
   try! name_text_query.view(fn(_entity, data) {

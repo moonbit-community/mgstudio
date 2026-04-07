@@ -269,7 +269,7 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
 
   ignore(
     world.add_entity_observer(parent, fn(event : On[ObserverAttack]) {
-      order.push("parent:" + event.event().damage.to_string())
+      order.push("parent:\{event.event().damage.to_string()}")
     }),
   )
 

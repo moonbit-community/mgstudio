@@ -366,21 +366,3 @@ pub fn DistanceFog::with_falloff(
 ) -> DistanceFog {
   DistanceFog::{ ..self, falloff, }
 }
-
-///|
-let distance_fog_state : Ref[DistanceFog] = Ref::new(
-  DistanceFog::new(
-    @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
-    FogFalloff3d::linear(0.0F, 0.0F),
-  ),
-)
-
-///|
-pub fn render3d_set_distance_fog(fog : DistanceFog) -> Unit {
-  distance_fog_state.val = fog
-}
-
-///|
-pub fn render3d_distance_fog() -> DistanceFog {
-  distance_fog_state.val
-}

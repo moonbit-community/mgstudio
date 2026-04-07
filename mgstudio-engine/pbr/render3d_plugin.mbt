@@ -186,27 +186,27 @@ fn pbr_plugin_sync_gltf_material_handler_state(
 
 ///|
 pub let render3d_set_extract : @app.SystemSet = @app.system_set(
-  "bevy.render3d.extract",
+  "mgstudio.render3d.extract",
 )
 
 ///|
 pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
-  "bevy.render3d.update_frusta",
+  "mgstudio.render3d.update_frusta",
 )
 
 ///|
 pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
-  "bevy.render3d.prepare",
+  "mgstudio.render3d.prepare",
 )
 
 ///|
 pub let render3d_set_queue : @app.SystemSet = @app.system_set(
-  "bevy.render3d.queue",
+  "mgstudio.render3d.queue",
 )
 
 ///|
 pub let render3d_set_render : @app.SystemSet = @app.system_set(
-  "bevy.render3d.render",
+  "mgstudio.render3d.render",
 )
 
 ///|

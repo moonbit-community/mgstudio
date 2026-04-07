@@ -150,7 +150,7 @@ fn spawn_vertical_panel(
     spawn_text(
       commands,
       list,
-      "Item " + i.to_string(),
+      "Item \{i.to_string()}",
       body_font(asset_server),
       column_item_node(),
     )
@@ -203,7 +203,7 @@ fn spawn_horizontal_panel(
     spawn_text(
       commands,
       item,
-      "Card " + i.to_string(),
+      "Card \{i.to_string()}",
       body_font(asset_server),
       @ui.Node::default(),
     )
@@ -273,7 +273,7 @@ fn spawn_bidirectional_panel(
       spawn_text(
         commands,
         cell,
-        "Cell " + x.to_string() + "," + y.to_string(),
+        "Cell \{x.to_string()},\{y.to_string()}",
         body_font(asset_server),
         @ui.Node::default(),
       )
@@ -318,7 +318,7 @@ fn spawn_nested_panel(
     spawn_text(
       commands,
       outer,
-      "Outer row " + i.to_string(),
+      "Outer row \{i.to_string()}",
       body_font(asset_server),
       @ui.Node::{
         ..@ui.Node::default(),
@@ -357,7 +357,7 @@ fn spawn_nested_panel(
     spawn_text(
       commands,
       inner,
-      "Inner row " + i.to_string(),
+      "Inner row \{i.to_string()}",
       body_font(asset_server),
       column_item_node(),
     )
@@ -367,7 +367,7 @@ fn spawn_nested_panel(
     spawn_text(
       commands,
       outer,
-      "Outer row " + i.to_string(),
+      "Outer row \{i.to_string()}",
       body_font(asset_server),
       @ui.Node::{
         ..@ui.Node::default(),

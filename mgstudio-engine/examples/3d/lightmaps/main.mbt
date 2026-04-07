@@ -76,15 +76,7 @@ fn status_text() -> String {
     "Waiting for SceneInstanceReady"
   }
 
-  "Bevy lightmaps\n" +
-  "Scene: models/CornellBox/CornellBox.glb\n" +
-  "Args.deferred = " +
-  bool_label(args.deferred) +
-  ", Args.bicubic = " +
-  bool_label(args.bicubic) +
-  "\n" +
-  "Lightmap status: " +
-  applied
+  "Bevy lightmaps\nScene: models/CornellBox/CornellBox.glb\nArgs.deferred = \{bool_label(args.deferred)}, Args.bicubic = \{bool_label(args.bicubic)}\nLightmap status: \{applied}"
 }
 
 ///|

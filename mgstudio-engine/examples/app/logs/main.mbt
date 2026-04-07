@@ -52,7 +52,7 @@ fn log_once_system(_world : @ecs.World) -> Unit {
   for i in 0..<10 {
     @app.log_info_once(
       "logs::loop_info_once",
-      "logs once per call site, so this works just fine: " + i.to_string(),
+      "logs once per call site, so this works just fine: \{i.to_string()}",
     )
   }
 
@@ -70,7 +70,7 @@ fn expensive_sum_message() -> String {
   for i in 0..<100000000 {
     sum = sum + Int64::from_int(i)
   }
-  "result of some expensive one time calculation: " + sum.to_string()
+  "result of some expensive one time calculation: \{sum.to_string()}"
 }
 
 ///|

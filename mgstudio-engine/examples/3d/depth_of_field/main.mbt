@@ -127,35 +127,9 @@ fn help_text() -> String {
   let focal_length_mm = compute_focal_length_meters(fov) * 1000.0F
   let sensor_mm = SENSOR_HEIGHT_METERS * 1000.0F
   if dof_state.val.mode is Off {
-    return "Mode: Off (Press Space to change)\n\n" +
-      "Focal distance: " +
-      dof_state.val.focal_distance.to_string() +
-      " m (Press Up/Down to change)\n" +
-      "Aperture F-stops: f/" +
-      dof_state.val.aperture_f_stops.to_string() +
-      " (Press Left/Right to change)\n" +
-      "Sensor height: " +
-      sensor_mm.to_string() +
-      " mm\n" +
-      "Focal length: " +
-      focal_length_mm.to_string() +
-      " mm"
+    return "Mode: Off (Press Space to change)\n\nFocal distance: \{dof_state.val.focal_distance.to_string()} m (Press Up/Down to change)\nAperture F-stops: f/\{dof_state.val.aperture_f_stops.to_string()} (Press Left/Right to change)\nSensor height: \{sensor_mm.to_string()} mm\nFocal length: \{focal_length_mm.to_string()} mm"
   }
-  "Focal distance: " +
-  dof_state.val.focal_distance.to_string() +
-  " m (Press Up/Down to change)\n" +
-  "Aperture F-stops: f/" +
-  dof_state.val.aperture_f_stops.to_string() +
-  " (Press Left/Right to change)\n" +
-  "Sensor height: " +
-  sensor_mm.to_string() +
-  " mm\n" +
-  "Focal length: " +
-  focal_length_mm.to_string() +
-  " mm\n" +
-  "Mode: " +
-  mode_name(dof_state.val.mode) +
-  " (Press Space to change)"
+  "Focal distance: \{dof_state.val.focal_distance.to_string()} m (Press Up/Down to change)\nAperture F-stops: f/\{dof_state.val.aperture_f_stops.to_string()} (Press Left/Right to change)\nSensor height: \{sensor_mm.to_string()} mm\nFocal length: \{focal_length_mm.to_string()} mm\nMode: \{mode_name(dof_state.val.mode)} (Press Space to change)"
 }
 
 ///|

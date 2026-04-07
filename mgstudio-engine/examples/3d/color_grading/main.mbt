@@ -164,13 +164,9 @@ fn section_option_name(option : SelectedSectionColorGradingOption) -> String {
 ///|
 fn selected_option_display(option : SelectedColorGradingOption) -> String {
   match option {
-    Global(global_option) => "\"" + global_option_name(global_option) + "\""
+    Global(global_option) => "\"\{global_option_name(global_option)}\""
     Section(section, section_option) =>
-      "\"" +
-      section_option_name(section_option) +
-      "\" for \"" +
-      section_name(section) +
-      "\""
+      "\"\{section_option_name(section_option)}\" for \"\{section_name(section)}\""
   }
 }
 
@@ -290,14 +286,14 @@ fn format_with_three_decimals(value : Float) -> String {
   let whole = magnitude / 1000
   let fractional = magnitude % 1000
   let fractional_string = if fractional < 10 {
-    "00" + fractional.to_string()
+    "00\{fractional.to_string()}"
   } else if fractional < 100 {
-    "0" + fractional.to_string()
+    "0\{fractional.to_string()}"
   } else {
     fractional.to_string()
   }
   let prefix = if negative { "-" } else { "" }
-  prefix + whole.to_string() + "." + fractional_string
+  "\{prefix}\{whole.to_string()}.\{fractional_string}"
 }
 
 ///|
@@ -310,7 +306,7 @@ fn option_value_text(
 
 ///|
 fn create_help_text(option : SelectedColorGradingOption) -> String {
-  "Press Left/Right to adjust " + selected_option_display(option)
+  "Press Left/Right to adjust \{selected_option_display(option)}"
 }
 
 ///|

@@ -255,9 +255,9 @@ fn diagnostics_overlay_round_precision(
     let frac = abs_scaled % scale
     let mut frac_text = frac.to_string()
     while frac_text.length() < precision {
-      frac_text = "0" + frac_text
+      frac_text = "0\{frac_text}"
     }
-    sign + whole.to_string() + "." + frac_text
+    "\{sign}\{whole.to_string()}.\{frac_text}"
   }
 }
 

@@ -163,36 +163,12 @@ fn control_text_content() -> String {
     "(T): Pathtracer request = Off"
   }
 
-  pause_text +
-  "\n" +
-  directional_text +
-  "\n" +
-  emissive_text +
-  "\n" +
-  "Denoising: App not compiled with DLSS support\n" +
-  "Scene: " +
-  scene_mode_text(solari_state.val.scene_mode) +
-  "\n" +
-  "(M): Switch scene mode (PicaPica/ManyLights)\n" +
-  pathtracer_text +
-  "\n\n" +
-  "Runtime note: Solari/pathtracer/DLSS are not available in current mgstudio runtime."
+  "\{pause_text}\n\{directional_text}\n\{emissive_text}\nDenoising: App not compiled with DLSS support\nScene: \{scene_mode_text(solari_state.val.scene_mode)}\n(M): Switch scene mode (PicaPica/ManyLights)\n\{pathtracer_text}\n\nRuntime note: Solari/pathtracer/DLSS are not available in current mgstudio runtime."
 }
 
 ///|
 fn performance_text_content(frame_delta_seconds : Float) -> String {
-  "Light tiles        N/A\n" +
-  "World cache        N/A\n" +
-  "Direct lighting    N/A\n" +
-  "Diffuse indirect   N/A\n" +
-  "Specular indirect  N/A\n" +
-  "DLSS-RR            N/A\n" +
-  "Total              N/A\n\n" +
-  "Frame (CPU): " +
-  (frame_delta_seconds * 1000.0F).to_string() +
-  " ms\n" +
-  "FPS (CPU est): " +
-  solari_state.val.perf_fps.to_string()
+  "Light tiles        N/A\nWorld cache        N/A\nDirect lighting    N/A\nDiffuse indirect   N/A\nSpecular indirect  N/A\nDLSS-RR            N/A\nTotal              N/A\n\nFrame (CPU): \{(frame_delta_seconds * 1000.0F).to_string()} ms\nFPS (CPU est): \{solari_state.val.perf_fps.to_string()}"
 }
 
 ///|

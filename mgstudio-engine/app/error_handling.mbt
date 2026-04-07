@@ -76,40 +76,40 @@ fn error_context_prefix(context : ErrorContext) -> String {
     ErrorContextKind::Validation => "Encountered a validation error"
   }
   let stage_suffix = match context.stage {
-    Some(stage) => " during " + stage.to_string()
+    Some(stage) => " during \{stage.to_string()}"
     None => ""
   }
-  base + " `" + context.source + "`" + stage_suffix
+  "\{base} `\{context.source}`\{stage_suffix}"
 }
 
 ///|
 pub fn ErrorHandlers::panic(error : Error, context : ErrorContext) -> Unit {
-  abort(error_context_prefix(context) + ": " + error.to_string())
+  abort("\{error_context_prefix(context)}: \{error.to_string()}")
 }
 
 ///|
 pub fn ErrorHandlers::error(error : Error, context : ErrorContext) -> Unit {
-  log_error(error_context_prefix(context) + ": " + error.to_string())
+  log_error("\{error_context_prefix(context)}: \{error.to_string()}")
 }
 
 ///|
 pub fn ErrorHandlers::warn(error : Error, context : ErrorContext) -> Unit {
-  log_warn(error_context_prefix(context) + ": " + error.to_string())
+  log_warn("\{error_context_prefix(context)}: \{error.to_string()}")
 }
 
 ///|
 pub fn ErrorHandlers::info(error : Error, context : ErrorContext) -> Unit {
-  log_info(error_context_prefix(context) + ": " + error.to_string())
+  log_info("\{error_context_prefix(context)}: \{error.to_string()}")
 }
 
 ///|
 pub fn ErrorHandlers::debug(error : Error, context : ErrorContext) -> Unit {
-  log_debug(error_context_prefix(context) + ": " + error.to_string())
+  log_debug("\{error_context_prefix(context)}: \{error.to_string()}")
 }
 
 ///|
 pub fn ErrorHandlers::trace(error : Error, context : ErrorContext) -> Unit {
-  log_trace(error_context_prefix(context) + ": " + error.to_string())
+  log_trace("\{error_context_prefix(context)}: \{error.to_string()}")
 }
 
 ///|

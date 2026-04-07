@@ -449,21 +449,14 @@ fn screenshot_capture_with_texture_fallback(
       continue
     }
     @window.host_debug_string(
-      value="[screenshot] surface capture is black; fallback texture_id=" +
-        texture_ref.id.to_string() +
-        " (" +
-        texture_ref.width.to_string() +
-        "x" +
-        texture_ref.height.to_string() +
-        ")",
+      value="[screenshot] surface capture is black; fallback texture_id=\{texture_ref.id.to_string()} (\{texture_ref.width.to_string()}x\{texture_ref.height.to_string()})",
     )
     return Some(texture_capture)
   }
   let fallback_upper_bound = @renderer.screenshot_resource_id_upper_bound()
   if fallback_upper_bound > 0 {
     @window.host_debug_string(
-      value="[screenshot] surface capture remains black; no non-black same-size texture in resource_id<= " +
-        fallback_upper_bound.to_string(),
+      value="[screenshot] surface capture remains black; no non-black same-size texture in resource_id<= \{fallback_upper_bound.to_string()}",
     )
   }
   Some(surface_capture)

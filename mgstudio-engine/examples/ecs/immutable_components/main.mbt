@@ -88,8 +88,8 @@ fn print_index(index : @app.Res[NameIndex]) -> Unit {
   let steven = index.get().entries.get("Steven")
   let alyssa_found = if alyssa is Some(_) { "true" } else { "false" }
   let steven_found = if steven is Some(_) { "true" } else { "false" }
-  println("Alyssa indexed: " + alyssa_found)
-  println("Steven indexed: " + steven_found)
+  println("Alyssa indexed: \{alyssa_found}")
+  println("Steven indexed: \{steven_found}")
 }
 
 ///|

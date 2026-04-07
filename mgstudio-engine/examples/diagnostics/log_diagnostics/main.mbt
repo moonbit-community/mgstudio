@@ -135,16 +135,7 @@ fn command_text_content(
   } else {
     "Private"
   }
-  "[Q] Toggle filtering: " +
-  status_label(status) +
-  "\n[1] Frame times: " +
-  bool_label(filters.frame_time) +
-  "\n[2] Entity count: " +
-  bool_label(filters.entity_count) +
-  "\n[3] System info: " +
-  bool_label(filters.system_info) +
-  "\n[4] Render diagnostics: " +
-  render_diagnostics_label
+  "[Q] Toggle filtering: \{status_label(status)}\n[1] Frame times: \{bool_label(filters.frame_time)}\n[2] Entity count: \{bool_label(filters.entity_count)}\n[3] System info: \{bool_label(filters.system_info)}\n[4] Render diagnostics: \{render_diagnostics_label}"
 }
 
 ///|

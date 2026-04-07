@@ -68,12 +68,12 @@ fn[T : Default] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] {
         Some(key) => key
         None =>
           abort(
-            "time resource registry contained a mismatched key for " + type_name,
+            "time resource registry contained a mismatched key for \{type_name}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[Time[T]] = @ecs.register_resource(
-        debug_name="bevy_time::" + type_name,
+        debug_name="bevy_time::\{type_name}",
       )
       time_resource_registry.val.set(type_name, @any.of(key))
       key

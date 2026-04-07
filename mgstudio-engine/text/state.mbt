@@ -777,6 +777,34 @@ fn text_update_instance(
 }
 
 ///|
+fn text_state_transform_eq(
+  lhs : @transform.Transform,
+  rhs : @transform.Transform,
+) -> Bool {
+  lhs.translation.x == rhs.translation.x &&
+  lhs.translation.y == rhs.translation.y &&
+  lhs.translation.z == rhs.translation.z &&
+  lhs.rotation.x == rhs.rotation.x &&
+  lhs.rotation.y == rhs.rotation.y &&
+  lhs.rotation.z == rhs.rotation.z &&
+  lhs.rotation.w == rhs.rotation.w &&
+  lhs.scale.x == rhs.scale.x &&
+  lhs.scale.y == rhs.scale.y &&
+  lhs.scale.z == rhs.scale.z
+}
+
+///|
+fn text_state_entity_opt_eq(lhs : @core.Entity?, rhs : @core.Entity?) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs_entity), Some(rhs_entity)) =>
+      lhs_entity.id == rhs_entity.id &&
+      lhs_entity.generation == rhs_entity.generation
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
 pub fn text_set_content(handle : TextHandle, content : String) -> Unit {
   text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => TextInstance::{
@@ -934,14 +962,20 @@ pub fn text_set_transform(
   handle : TextHandle,
   transform : @transform.Transform,
 ) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    transform,
-    cull_margin: text_compute_cull_margin(
-      instance.bounds,
-      instance.layout_info.size,
-      transform.scale,
-    ),
+  text_update_instance(handle, instance => {
+    if text_state_transform_eq(instance.transform, transform) {
+      instance
+    } else {
+      TextInstance::{
+        ..instance,
+        transform,
+        cull_margin: text_compute_cull_margin(
+          instance.bounds,
+          instance.layout_info.size,
+          transform.scale,
+        ),
+      }
+    }
   })
 }
 
@@ -960,7 +994,13 @@ pub fn text_set_layers(
   handle : TextHandle,
   layers : @sprite.RenderLayers,
 ) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{ ..instance, layers, })
+  text_update_instance(handle, instance => {
+    if instance.layers.mask == layers.mask {
+      instance
+    } else {
+      TextInstance::{ ..instance, layers, }
+    }
+  })
 }
 
 ///|
@@ -993,12 +1033,12 @@ pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
 ///|
 /// Update the y-axis orientation of a text handle without marking it as needing rerender.
 pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
-  text_runtime_mark_layout_dirty()
   // Orientation affects glyph coordinates, so we must relayout.
   text_update_instance(handle, instance => {
     if instance.y_axis == y_axis {
       instance
     } else {
+      text_runtime_mark_layout_dirty()
       TextInstance::{
         ..instance,
         y_axis,
@@ -1019,9 +1059,12 @@ pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
 ///|
 /// This does not affect shaping, but it changes how glyphs are positioned when rendered.
 pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    ui_node_size: size,
+  text_update_instance(handle, instance => {
+    if text_state_vec2_opt_eq(instance.ui_node_size, size) {
+      instance
+    } else {
+      TextInstance::{ ..instance, ui_node_size: size }
+    }
   })
 }
 
@@ -1039,7 +1082,6 @@ pub fn text_set_logical_viewport_size(
   handle : TextHandle,
   logical_viewport_size : @math.Vec2?,
 ) -> Unit {
-  text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => {
     if text_state_vec2_opt_eq(
         instance.logical_viewport_size,
@@ -1047,6 +1089,7 @@ pub fn text_set_logical_viewport_size(
       ) {
       instance
     } else {
+      text_runtime_mark_layout_dirty()
       TextInstance::{
         ..instance,
         logical_viewport_size,
@@ -1065,9 +1108,12 @@ pub fn text_set_ui_camera_entity(
   handle : TextHandle,
   camera_entity : @core.Entity?,
 ) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    ui_camera_entity: camera_entity,
+  text_update_instance(handle, instance => {
+    if text_state_entity_opt_eq(instance.ui_camera_entity, camera_entity) {
+      instance
+    } else {
+      TextInstance::{ ..instance, ui_camera_entity: camera_entity }
+    }
   })
 }
 

@@ -44,7 +44,7 @@ pub impl @app.Resource for B with resource() {
 
 ///|
 fn reads_a(a : @app.Res[A]) -> Unit {
-  println("reads_a: " + a.get().value.to_string())
+  println("reads_a: \{a.get().value.to_string()}")
 }
 
 ///|
@@ -64,16 +64,13 @@ fn doubles_b(b : @app.ResMut[B]) -> Unit {
 
 ///|
 fn reads_b(b : @app.Res[B]) -> Unit {
-  println("reads_b: " + b.get().value.to_string())
+  println("reads_b: \{b.get().value.to_string()}")
 }
 
 ///|
 fn reads_a_and_b(a : @app.Res[A], b : @app.Res[B]) -> Unit {
   println(
-    "reads_a_and_b: " +
-    a.get().value.to_string() +
-    ", " +
-    b.get().value.to_string(),
+    "reads_a_and_b: \{a.get().value.to_string()}, \{b.get().value.to_string()}",
   )
 }
 

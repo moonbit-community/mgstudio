@@ -100,6 +100,7 @@ priv struct ExtractedCamera3d {
 priv struct Mesh3dExtractedPayload {
   mesh_handle : @asset.Handle[@mesh.Mesh]
   mesh_id : Int
+  mesh_is_indexed : Bool
   transform : @transform.Transform
   previous_transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
@@ -113,6 +114,7 @@ priv struct Mesh3dExtractedPayload {
   has_not_shadow_caster : Bool
   has_not_shadow_receiver : Bool
   has_transmitted_shadow_receiver : Bool
+  has_no_frustum_culling : Bool
   layers : @sprite.RenderLayers
   has_wireframe : Bool
   has_no_wireframe : Bool

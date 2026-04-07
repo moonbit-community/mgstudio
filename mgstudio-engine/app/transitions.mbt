@@ -135,7 +135,7 @@ pub(all) enum StateTransitionSystems {
 
 ///|
 fn[S : States] state_transition_registration_key(state : S) -> String {
-  "bevy_state::transition<" + state_type_debug_name(state) + ">"
+  "bevy_state::transition<\{state_type_debug_name(state)}>"
 }
 
 ///|

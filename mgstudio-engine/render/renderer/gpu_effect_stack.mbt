@@ -51,11 +51,7 @@ fn load_effect_stack_wgsl_required(
     backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
   let merged_source = merge_fullscreen_postprocess_source(
-    chromatic_source +
-    "\n" +
-    stripped_vignette_source +
-    "\n" +
-    stripped_post_process_source,
+    "\{chromatic_source}\n\{stripped_vignette_source}\n\{stripped_post_process_source}",
     fullscreen_source,
   )
   preprocess_manual_wgsl_source(backend, merged_source, [], [])

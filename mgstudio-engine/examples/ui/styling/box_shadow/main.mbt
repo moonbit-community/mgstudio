@@ -261,10 +261,10 @@ fn apply_action(
 fn field_value(settings : ShadowSettings, field : ShadowField) -> String {
   match field {
     Shape => shape_label(settings.shape_index)
-    XOffset => "x = " + settings.x_offset.to_string()
-    YOffset => "y = " + settings.y_offset.to_string()
-    Blur => "blur = " + settings.blur.to_string()
-    Spread => "spread = " + settings.spread.to_string()
+    XOffset => "x = \{settings.x_offset.to_string()}"
+    YOffset => "y = \{settings.y_offset.to_string()}"
+    Blur => "blur = \{settings.blur.to_string()}"
+    Spread => "spread = \{settings.spread.to_string()}"
   }
 }
 

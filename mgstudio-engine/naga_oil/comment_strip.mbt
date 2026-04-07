@@ -72,7 +72,7 @@ fn replace_comments_line(
           CommentState::Block(level) => CommentState::Block(level + 1)
           CommentState::Quote => current_state
         }
-        output = output + "  "
+        output = "\{output}  "
       }
       "*/" => {
         current_state = match current_state {
@@ -80,7 +80,7 @@ fn replace_comments_line(
           CommentState::Block(level) => CommentState::Block(level - 1)
           _ => current_state
         }
-        output = output + "  "
+        output = "\{output}  "
       }
       "\"" => {
         current_state = match current_state {
@@ -88,7 +88,7 @@ fn replace_comments_line(
           CommentState::Quote => CommentState::None
           _ => current_state
         }
-        output = output + "\""
+        output = "\{output}\""
       }
       _ => abort("unreachable comment marker")
     }
@@ -169,7 +169,7 @@ fn replace_comments(source : String) -> String {
   let mut output = ""
   for i in 0..<output_lines.length() {
     if i > 0 {
-      output = output + "\n"
+      output = "\{output}\n"
     }
     output = output + output_lines[i]
   }

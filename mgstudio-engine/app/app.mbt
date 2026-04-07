@@ -59,7 +59,7 @@ pub fn[W] PluginGroupBuilder::start_named(
 
 ///|
 fn plugin_group_anonymous_id(index : Int) -> String {
-  "__plugin_group_anon__:" + index.to_string()
+  "__plugin_group_anon__:\{index.to_string()}"
 }
 
 ///|
@@ -232,7 +232,7 @@ fn app_label_storage_key(label : AppLabel) -> String {
   match label {
     MainApp => "__main__"
     RenderApp => "__render__"
-    Custom(name) => "__custom__:" + name
+    Custom(name) => "__custom__:\{name}"
   }
 }
 
@@ -1576,7 +1576,7 @@ pub fn[W] App::get_sub_app_mut(
 pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> SubApp[W] {
   match self.get_sub_app(label) {
     Some(sub_app) => sub_app
-    None => abort("Missing sub app for label: " + label.to_string())
+    None => abort("Missing sub app for label: \{label.to_string()}")
   }
 }
 
@@ -1584,7 +1584,7 @@ pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> SubApp[W] {
 pub fn[W] App::sub_app_mut(self : App[W], label : AppLabel) -> Ref[SubApp[W]] {
   match self.get_sub_app_mut(label) {
     Some(sub_app_ref) => sub_app_ref
-    None => abort("Missing sub app for label: " + label.to_string())
+    None => abort("Missing sub app for label: \{label.to_string()}")
   }
 }
 
@@ -2917,7 +2917,7 @@ fn run_systems(
   let groups : Array[SystemSet] = []
   for i in 0..<system_count {
     let cfg = systems[i]
-    let set = if cfg.set is Some(s) { s } else { "__anon#" + i.to_string() }
+    let set = if cfg.set is Some(s) { s } else { "__anon#\{i.to_string()}" }
     groups.push(set)
     push_unique(seen, set_order, set)
     for other in cfg.before {
@@ -3066,8 +3066,8 @@ fn run_systems(
         Some(name) => name
         None =>
           match cfg.set {
-            Some(set) => set + "#" + execution_i.to_string()
-            None => "__system#" + execution_i.to_string()
+            Some(set) => "\{set}#\{execution_i.to_string()}"
+            None => "__system#\{execution_i.to_string()}"
           }
       }
       timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
@@ -3101,8 +3101,8 @@ fn run_systems(
             Some(name) => name
             None =>
               match systems[system_i].set {
-                Some(set) => set + "#" + execution_i.to_string()
-                None => "__system#" + execution_i.to_string()
+                Some(set) => "\{set}#\{execution_i.to_string()}"
+                None => "__system#\{execution_i.to_string()}"
               }
           }
           timeline_trace_end_span(
@@ -3123,8 +3123,8 @@ fn run_systems(
             Some(name) => name
             None =>
               match systems[system_i].set {
-                Some(set) => set + "#" + execution_i.to_string()
-                None => "__system#" + execution_i.to_string()
+                Some(set) => "\{set}#\{execution_i.to_string()}"
+                None => "__system#\{execution_i.to_string()}"
               }
           }
           timeline_trace_end_span(
@@ -3150,8 +3150,8 @@ fn run_systems(
             Some(name) => name
             None =>
               match systems[system_i].set {
-                Some(set) => set + "#" + execution_i.to_string()
-                None => "__system#" + execution_i.to_string()
+                Some(set) => "\{set}#\{execution_i.to_string()}"
+                None => "__system#\{execution_i.to_string()}"
               }
           }
           timeline_trace_end_span(

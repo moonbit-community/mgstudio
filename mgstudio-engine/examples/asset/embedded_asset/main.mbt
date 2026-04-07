@@ -20,7 +20,7 @@ fn embedded_asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @asset.embedded_asset(
     app,
     @asset.AssetPath::from_path(
-      EMBEDDED_CRATE_NAME + "/files/bevy_pixel_light.png",
+      "\{EMBEDDED_CRATE_NAME}/files/bevy_pixel_light.png",
     ).with_source(@asset.AssetSourceId::from("embedded")),
     "examples/asset/files/bevy_pixel_light.png",
   )
@@ -34,7 +34,7 @@ fn setup(
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
   let asset_path = @asset.AssetPath::from_path(
-    EMBEDDED_CRATE_NAME + "/files/bevy_pixel_light.png",
+    "\{EMBEDDED_CRATE_NAME}/files/bevy_pixel_light.png",
   ).with_source(@asset.AssetSourceId::from("embedded"))
   if asset_path !=
     @asset.asset_parse_path(

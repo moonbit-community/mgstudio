@@ -97,5 +97,5 @@ fn gamepad_system(
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[gamepad_rumble] " + text)
+  @window.host_debug_string(value="[gamepad_rumble] \{text}")
 }

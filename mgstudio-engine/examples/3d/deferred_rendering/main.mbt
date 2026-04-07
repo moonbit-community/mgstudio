@@ -92,12 +92,7 @@ fn help_text_content() -> String {
     } else {
       "Playing"
     }
-    "(H) Hide UI\n" +
-    "(Space) Play/Pause (\{pause_label})\n\n" +
-    "Rendering Method:\n" +
-    "(1) \{mode_marker(DefaultRenderMode::Deferred)} Deferred\n" +
-    "(2) \{mode_marker(DefaultRenderMode::Forward)} Forward\n" +
-    "(3) \{mode_marker(DefaultRenderMode::ForwardPrepass)} Forward + Prepass"
+    "(H) Hide UI\n(Space) Play/Pause (\{pause_label})\n\nRendering Method:\n(1) \{mode_marker(DefaultRenderMode::Deferred)} Deferred\n(2) \{mode_marker(DefaultRenderMode::Forward)} Forward\n(3) \{mode_marker(DefaultRenderMode::ForwardPrepass)} Forward + Prepass"
   }
 }
 
@@ -200,12 +195,26 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.3F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
+      @sprite.Camera::default(),
+      @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+        @math.Vec3::new(0.0F, 0.3F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_distance_fog(
+      Some(
+        @pbr.DistanceFog::new(
+          @sprite.Color::new(
+            43.0F / 255.0F,
+            44.0F / 255.0F,
+            47.0F / 255.0F,
+            1.0F,
+          ),
+          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
+        ),
+      ),
+    )
+    .spawn(world)
   deferred_state.val.camera = Some(camera)
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
@@ -239,13 +248,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.ecs_key_transform,
     @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-0.7853981634F),
-    ),
-  )
-
-  @pbr.render3d_set_distance_fog(
-    @pbr.DistanceFog::new(
-      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @pbr.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
 

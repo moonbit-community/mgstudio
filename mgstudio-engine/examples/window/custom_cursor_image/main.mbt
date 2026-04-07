@@ -54,5 +54,5 @@ fn custom_cursor_system(world : @ecs.World) -> Unit {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[custom_cursor_image] " + text)
+  @window.host_debug_string(value="[custom_cursor_image] \{text}")
 }

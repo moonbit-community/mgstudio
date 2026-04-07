@@ -187,12 +187,7 @@ fn text_color() -> @sprite.Color {
 
 ///|
 fn resize_label_text(width : Float, height : Float) -> String {
-  TEXT_PREFIX +
-  "height: " +
-  height.to_string() +
-  "%, width: " +
-  width.to_string() +
-  "%"
+  "\{TEXT_PREFIX}height: \{height.to_string()}%, width: \{width.to_string()}%"
 }
 
 ///|

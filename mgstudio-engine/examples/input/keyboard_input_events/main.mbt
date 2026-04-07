@@ -146,5 +146,5 @@ fn format_keycode(code : @window.KeyCode) -> String {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[keyboard_input_events] " + text)
+  @window.host_debug_string(value="[keyboard_input_events] \{text}")
 }

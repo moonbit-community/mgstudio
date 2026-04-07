@@ -60,11 +60,11 @@ fn float_text_2(value : Float) -> String {
   let whole = abs_scaled / 100
   let fraction = abs_scaled % 100
   let fraction_text = if fraction < 10 {
-    "0" + fraction.to_string()
+    "0\{fraction.to_string()}"
   } else {
     fraction.to_string()
   }
-  sign + whole.to_string() + "." + fraction_text
+  "\{sign}\{whole.to_string()}.\{fraction_text}"
 }
 
 ///|
@@ -121,34 +121,10 @@ fn bloom_help_text(
 ) -> String {
   let mut text = match bloom {
     Some(bloom) =>
-      "Bloom (Toggle: Space)\n" +
-      "(Q/A) Intensity: " +
-      float_text_2(bloom.intensity) +
-      "\n" +
-      "(W/S) Low-frequency boost: " +
-      float_text_2(bloom.low_frequency_boost) +
-      "\n" +
-      "(E/D) Low-frequency boost curvature: " +
-      float_text_2(bloom.low_frequency_boost_curvature) +
-      "\n" +
-      "(R/F) High-pass frequency: " +
-      float_text_2(bloom.high_pass_frequency) +
-      "\n" +
-      "(T/G) Mode: " +
-      bloom_mode_text(bloom.composite_mode) +
-      "\n" +
-      "(Y/H) Threshold: " +
-      float_text_2(bloom.prefilter.threshold) +
-      "\n" +
-      "(U/J) Threshold softness: " +
-      float_text_2(bloom.prefilter.threshold_softness) +
-      "\n" +
-      "(I/K) Horizontal Scale: " +
-      float_text_2(bloom.scale.x) +
-      "\n"
+      "Bloom (Toggle: Space)\n(Q/A) Intensity: \{float_text_2(bloom.intensity)}\n(W/S) Low-frequency boost: \{float_text_2(bloom.low_frequency_boost)}\n(E/D) Low-frequency boost curvature: \{float_text_2(bloom.low_frequency_boost_curvature)}\n(R/F) High-pass frequency: \{float_text_2(bloom.high_pass_frequency)}\n(T/G) Mode: \{bloom_mode_text(bloom.composite_mode)}\n(Y/H) Threshold: \{float_text_2(bloom.prefilter.threshold)}\n(U/J) Threshold softness: \{float_text_2(bloom.prefilter.threshold_softness)}\n(I/K) Horizontal Scale: \{float_text_2(bloom.scale.x)}\n"
     None => "Bloom: Off (Toggle: Space)\n"
   }
-  text = text + "(O) Tonemapping: " + tonemapping_text(tonemapping) + "\n"
+  text = "\{text}(O) Tonemapping: \{tonemapping_text(tonemapping)}\n"
   text
 }
 

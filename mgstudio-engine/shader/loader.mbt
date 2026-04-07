@@ -32,8 +32,8 @@ pub(all) suberror ShaderLoaderError {
 ///|
 pub fn ShaderLoaderError::message(self : ShaderLoaderError) -> String {
   match self {
-    Io(reason) => "Could not load shader: " + reason
-    Parse(reason) => "Could not parse shader: " + reason
+    Io(reason) => "Could not load shader: \{reason}"
+    Parse(reason) => "Could not parse shader: \{reason}"
   }
 }
 
@@ -137,7 +137,7 @@ fn shader_blob_read_text_or_error(
     Some(source) => source
     None =>
       raise ShaderLoaderError::Parse(
-        "failed to decode shader text: " + canonical_path,
+        "failed to decode shader text: \{canonical_path}",
       )
   }
 }
@@ -151,7 +151,7 @@ fn shader_blob_read_bytes_or_error(
     Some(bytes) => bytes
     None =>
       raise ShaderLoaderError::Io(
-        "failed to read shader bytes: " + canonical_path,
+        "failed to read shader bytes: \{canonical_path}",
       )
   }
 }
@@ -206,7 +206,7 @@ pub fn ShaderLoader::load(
         ShaderStage::Compute,
         canonical_path,
       )
-    _ => abort("unhandled extension: " + extension)
+    _ => abort("unhandled extension: \{extension}")
   }
 
   for import_path in shader.imports {

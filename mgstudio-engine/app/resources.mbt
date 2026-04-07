@@ -114,14 +114,12 @@ fn[S] registered_state_resource_key() -> @ecs.ResourceKey[State[S]] {
         Some(key) => key
         None =>
           abort(
-            "state resource registry contained a mismatched key for " + type_key,
+            "state resource registry contained a mismatched key for \{type_key}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[State[S]] = @ecs.register_resource(
-        debug_name="bevy_state::State<" +
-          registered_state_type_debug_name(probe) +
-          ">",
+        debug_name="bevy_state::State<\{registered_state_type_debug_name(probe)}>",
       )
       state_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -141,15 +139,12 @@ fn[S] registered_previous_state_resource_key() -> @ecs.ResourceKey[
         Some(key) => key
         None =>
           abort(
-            "previous state resource registry contained a mismatched key for " +
-            type_key,
+            "previous state resource registry contained a mismatched key for \{type_key}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[PreviousState[S]] = @ecs.register_resource(
-        debug_name="bevy_state::PreviousState<" +
-          registered_state_type_debug_name(probe) +
-          ">",
+        debug_name="bevy_state::PreviousState<\{registered_state_type_debug_name(probe)}>",
       )
       previous_state_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -167,15 +162,12 @@ fn[S] registered_next_state_resource_key() -> @ecs.ResourceKey[NextState[S]] {
         Some(key) => key
         None =>
           abort(
-            "next state resource registry contained a mismatched key for " +
-            type_key,
+            "next state resource registry contained a mismatched key for \{type_key}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[NextState[S]] = @ecs.register_resource(
-        debug_name="bevy_state::NextState<" +
-          registered_state_type_debug_name(probe) +
-          ">",
+        debug_name="bevy_state::NextState<\{registered_state_type_debug_name(probe)}>",
       )
       next_state_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -195,15 +187,12 @@ fn[S] registered_state_transition_event_resource_key() -> @ecs.ResourceKey[
         Some(key) => key
         None =>
           abort(
-            "state transition event resource registry contained a mismatched key for " +
-            type_key,
+            "state transition event resource registry contained a mismatched key for \{type_key}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[StateTransitionEvent[S]] = @ecs.register_resource(
-        debug_name="bevy_state::StateTransitionEvent<" +
-          registered_state_type_debug_name(probe) +
-          ">",
+        debug_name="bevy_state::StateTransitionEvent<\{registered_state_type_debug_name(probe)}>",
       )
       state_transition_event_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -223,15 +212,12 @@ fn[S] registered_pending_state_transition_event_resource_key() -> @ecs.ResourceK
         Some(key) => key
         None =>
           abort(
-            "pending state transition event resource registry contained a mismatched key for " +
-            type_key,
+            "pending state transition event resource registry contained a mismatched key for \{type_key}",
           )
       }
     None => {
       let key : @ecs.ResourceKey[StateTransitionEvent[S]] = @ecs.register_resource(
-        debug_name="bevy_state::PendingStateTransitionEvent<" +
-          registered_state_type_debug_name(probe) +
-          ">",
+        debug_name="bevy_state::PendingStateTransitionEvent<\{registered_state_type_debug_name(probe)}>",
       )
       pending_state_transition_event_resource_registry.val.set(
         type_key,

@@ -84,6 +84,7 @@ pub struct StaticTransformOptimizations {
 pub fn StaticTransformOptimizations::disabled() -> Self
 pub fn StaticTransformOptimizations::enabled() -> Self
 pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
+pub impl @app.Resource for StaticTransformOptimizations
 pub impl Default for StaticTransformOptimizations
 
 pub(all) struct Transform {

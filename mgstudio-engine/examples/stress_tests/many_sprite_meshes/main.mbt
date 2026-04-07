@@ -13,16 +13,16 @@
 // limitations under the License.
 
 ///|
-const GRID_HALF_X : Int = 90
+const GRID_HALF_X : Int = 160
 
 ///|
-const GRID_HALF_Y : Int = 64
+const GRID_HALF_Y : Int = 160
 
 ///|
-const TILE_SIZE : Float = 30.0F
+const TILE_SIZE : Float = 64.0F
 
 ///|
-const CAMERA_RADIUS : Float = 700.0F
+const CAMERA_RADIUS : Float = 1000.0F
 
 ///|
 struct SpriteMeshTag {}
