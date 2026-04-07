@@ -3761,42 +3761,6 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
-  render3d_diagnostic_queued_visible_mesh_count_ref.val
-}
-
-///|
-pub fn render3d_diagnostic_prepared_camera_count() -> Int {
-  render3d_diagnostic_prepared_camera_count_ref.val
-}
-
-///|
-pub fn render3d_diagnostic_queue_cpu_ms() -> Float {
-  render3d_diagnostic_queue_cpu_ms_ref.val
-}
-
-///|
-pub fn render3d_diagnostic_execute_cpu_ms() -> Float {
-  render3d_diagnostic_execute_cpu_ms_ref.val
-}
-
-///|
-pub fn render3d_prepared_camera_count() -> Int? {
-  if !render3d_runtime_initialized_ref.val {
-    return Some(0)
-  }
-  Some(render3d_diagnostic_prepared_camera_count_ref.val)
-}
-
-///|
-pub fn render3d_queued_visible_mesh_count() -> Int? {
-  if !render3d_runtime_initialized_ref.val {
-    return Some(0)
-  }
-  Some(render3d_diagnostic_queued_visible_mesh_count_ref.val)
-}
-
-///|
 fn render3d_draw_gizmo_lines_3d(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
