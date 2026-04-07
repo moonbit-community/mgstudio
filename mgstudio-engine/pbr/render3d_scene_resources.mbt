@@ -13,6 +13,155 @@
 // limitations under the License.
 
 ///|
+priv struct MotionBlurHistoryDenseCache {
+  mut frame_stamp : Int
+  transforms : Array[@transform.Transform?]
+  generations : Array[Int]
+  stamps : Array[Int]
+}
+
+///|
+priv struct CameraMotionBlurHistoryEntry {
+  entity : @core.Entity
+  transform : @transform.Transform
+  clip_from_world : ProjectionMatrix3d
+}
+
+///|
+priv struct MotionBlurTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  scene_target_id : Int
+  velocity_target_id : Int
+}
+
+///|
+priv struct TransmissionSourceTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  source_target_id : Int
+}
+
+///|
+priv struct PointLightShadowTargetsEntry {
+  entity : @core.Entity
+  size : Int
+  target_id : Int
+}
+
+///|
+priv struct WireframeMeshCacheEntry {
+  source_mesh_handle_id : Int
+  wireframe_mesh_id : Int
+}
+
+///|
+let motion_blur_history : Ref[MotionBlurHistoryDenseCache] = Ref::new({
+  frame_stamp: 0,
+  transforms: [],
+  generations: [],
+  stamps: [],
+})
+
+///|
+let camera_motion_blur_history : Ref[Array[CameraMotionBlurHistoryEntry]] = Ref::new([],
+)
+
+///|
+let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
+
+///|
+let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
+)
+
+///|
+let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
+)
+
+///|
+let wireframe_mesh_cache : Ref[Array[WireframeMeshCacheEntry]] = Ref::new([])
+
+///|
+fn motion_blur_history_ensure_slot(entity_id : Int) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  while motion_blur_history.val.transforms.length() <= entity_id {
+    motion_blur_history.val.transforms.push(None)
+    motion_blur_history.val.generations.push(0)
+    motion_blur_history.val.stamps.push(0)
+  }
+}
+
+///|
+fn motion_blur_history_begin_frame() -> Int {
+  motion_blur_history.val.frame_stamp = motion_blur_history.val.frame_stamp + 1
+  if motion_blur_history.val.frame_stamp <= 0 {
+    motion_blur_history.val.frame_stamp = 1
+    for i in 0..<motion_blur_history.val.stamps.length() {
+      motion_blur_history.val.stamps[i] = 0
+    }
+  }
+  motion_blur_history.val.frame_stamp
+}
+
+///|
+fn motion_blur_history_get(
+  entity : @core.Entity,
+  previous_frame_stamp : Int,
+) -> @transform.Transform? {
+  if entity.id < 0 || entity.id >= motion_blur_history.val.transforms.length() {
+    return None
+  }
+  if motion_blur_history.val.stamps[entity.id] != previous_frame_stamp {
+    return None
+  }
+  if motion_blur_history.val.generations[entity.id] != entity.generation {
+    return None
+  }
+  motion_blur_history.val.transforms[entity.id]
+}
+
+///|
+fn motion_blur_history_sync(
+  meshes : Array[ExtractedMesh3d],
+  frame_stamp : Int,
+) -> Unit {
+  for mesh in meshes {
+    let entity = mesh.entity.main_entity
+    if entity.id < 0 {
+      continue
+    }
+    motion_blur_history_ensure_slot(entity.id)
+    motion_blur_history.val.transforms[entity.id] = Some(mesh.payload.transform)
+    motion_blur_history.val.generations[entity.id] = entity.generation
+    motion_blur_history.val.stamps[entity.id] = frame_stamp
+  }
+}
+
+///|
+fn camera_motion_blur_history_get(
+  entity : @core.Entity,
+) -> CameraMotionBlurHistoryEntry? {
+  for item in camera_motion_blur_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item)
+    }
+  }
+  None
+}
+
+///|
+fn camera_motion_blur_history_sync(
+  history : Array[CameraMotionBlurHistoryEntry],
+) -> Unit {
+  camera_motion_blur_history.val = history
+}
+
+///|
 fn render3d_motion_blur_targets_get_or_create(
   entity : @core.Entity,
   width : Int,

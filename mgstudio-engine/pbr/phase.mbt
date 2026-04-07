@@ -146,6 +146,12 @@ priv struct CameraPhaseItem3d {
 }
 
 ///|
+priv struct Render3dCameraOrderEntry {
+  entity : @core.Entity
+  order : Int
+}
+
+///|
 priv struct MeshPhaseItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
