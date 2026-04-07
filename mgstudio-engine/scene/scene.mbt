@@ -1290,103 +1290,6 @@ fn scene_spawn_instance_when_ready(
 }
 
 ///|
-fn scene_apply_morph_targets(
-  base_positions : Array[@math.Vec3],
-  morph_targets : Array[Array[@math.Vec3]],
-  weights : Array[Float],
-) -> Array[@math.Vec3] {
-  let positions : Array[@math.Vec3] = []
-  for position in base_positions {
-    positions.push(position)
-  }
-  let limit = if morph_targets.length() < weights.length() {
-    morph_targets.length()
-  } else {
-    weights.length()
-  }
-  for morph_index in 0..<limit {
-    let weight = weights[morph_index]
-    if weight == 0.0F {
-      continue
-    }
-    let morph_target = morph_targets[morph_index]
-    let vertex_limit = if morph_target.length() < positions.length() {
-      morph_target.length()
-    } else {
-      positions.length()
-    }
-    for vertex_index in 0..<vertex_limit {
-      positions[vertex_index] = @math.Vec3::add(
-        positions[vertex_index],
-        @math.Vec3::mul_scalar(morph_target[vertex_index], weight),
-      )
-    }
-  }
-  positions
-}
-
-///|
-fn scene_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
-  let mesh_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[@pbr.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
-
-  try! mesh_query.view(fn(_entity, data) {
-    let (entity, mesh_component, morph_target_mesh_component) = data
-    let animation_weights : @animation.AnimationWeights? = try! world
-      .entity(entity)
-      .get()
-    let morph_weights_component : @mesh.MorphWeights? = try! world
-      .entity(entity)
-      .get()
-    let source_mesh_handle = morph_target_mesh_component.value().source_mesh()
-    let instance_mesh_handle = mesh_component.value().mesh()
-    let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
-      Some(value) => value
-      None => return
-    }
-    let source_geometry = match source_mesh.as_3d_geometry() {
-      Some(value) => value
-      None => return
-    }
-
-    let active_morph_weights = match animation_weights {
-      Some(weights) => {
-        let values = weights.values()
-        try! world.set_by_key(
-          entity,
-          @mesh.MorphWeights::component(),
-          @mesh.MorphWeights::new(values),
-        )
-        values
-      }
-      None =>
-        match morph_weights_component {
-          Some(weights) => weights.values()
-          None => []
-        }
-    }
-
-    let mut positions = source_geometry.positions
-    if source_geometry.morph_target_positions() is Some(morph_targets) &&
-      active_morph_weights.length() > 0 {
-      positions = scene_apply_morph_targets(
-        positions, morph_targets, active_morph_weights,
-      )
-    }
-
-    let updated_geometry = scene_clone_mesh3d_geometry(source_geometry)
-    guard updated_geometry.replace_positions(positions) else { return }
-    guard source_mesh.with_3d_geometry(updated_geometry) is Some(updated_mesh) else {
-      return
-    }
-    ignore(mesh_assets_ref.val.set(instance_mesh_handle, updated_mesh))
-  })
-}
-
-///|
 pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   let modified_scene_ids : Array[Int] = []
   if scene_modified_event_cursor_world_id_ref.val != world.world_id() {
@@ -1475,7 +1378,7 @@ fn scene_runtime_plugin_base(
   .add_pre_update_system(scene_load_pending_system)
   .add_pre_update_system(scene_reload_modified_roots_system)
   .add_pre_update_system(scene_spawn_roots_system)
-  .add_pre_update_system(scene_sync_and_apply_deformed_meshes)
+  .add_pre_update_system(@pbr.render3d_sync_and_apply_deformed_meshes)
 }
 
 ///|

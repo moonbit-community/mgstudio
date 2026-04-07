@@ -25,7 +25,7 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh_bindings.rs` -> `mgstudio-engine/pbr/render3d_bindings.mbt` (`Create`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh_view_bindings.rs` -> `mgstudio-engine/pbr/render3d_view_bindings.mbt` (`Create`)
 - [x] `bevy/crates/bevy_pbr/src/render/skin.rs` -> `mgstudio-engine/pbr/render3d_skin.mbt` (`Create`)
-- [ ] `bevy/crates/bevy_pbr/src/render/morph.rs` -> `mgstudio-engine/pbr/render3d_morph.mbt` (`Create`)
+- [x] `bevy/crates/bevy_pbr/src/render/morph.rs` -> `mgstudio-engine/pbr/render3d_morph.mbt` (`Create`)
 - [x] `bevy/crates/bevy_pbr/src/render/light.rs` -> `mgstudio-engine/pbr/render3d_light.mbt` (`Create`)
 - [x] `bevy/crates/bevy_pbr/src/render/fog.rs` -> `mgstudio-engine/pbr/render3d_fog.mbt` (`Create`)
 - [x] `bevy/crates/bevy_pbr/src/render/gpu_preprocess.rs` -> `mgstudio-engine/pbr/render3d_gpu_preprocess.mbt` (`Create`)

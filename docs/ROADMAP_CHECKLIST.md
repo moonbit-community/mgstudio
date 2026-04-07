@@ -11,7 +11,8 @@ This file must not exceed 200 lines.
 - [ ] Package `text` (pending glyph/layout stress bottleneck closure).
 - [ ] Issue `render/bevy_file_mapping_matrix_lock`: matrix synced after `render3d_postprocess/render3d_world_transform_cache` split; unresolved render file remains `morph`.
 - [ ] Issue `render/bevy_stage_boundary_parity`: enforce Bevy-style Extract/Prepare/Queue/Execute ownership boundaries and remove mixed-stage logic in monolithic paths.
-- [ ] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/targets/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed; pending `morph`.
+- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/targets/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
+- [ ] Issue `pbr/morph_gpu_uniform_runtime_parity`: current morph path still deforms CPU-side mesh each frame, pending Bevy-like render-side morph index/uniform double-buffer pipeline.
 - [ ] Issue `roadmap/parity_first_acceptance_policy`: use source-structure + runtime-behavior parity as acceptance gate; keep stress/FPS data as secondary verification artifacts.
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
 - [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.

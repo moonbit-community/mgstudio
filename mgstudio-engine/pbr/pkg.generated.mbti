@@ -311,6 +311,8 @@ pub let render3d_set_render : String
 
 pub let render3d_set_update_frusta : String
 
+pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit
+
 pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
