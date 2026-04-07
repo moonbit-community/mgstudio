@@ -10,8 +10,8 @@ This file must not exceed 200 lines.
 - [ ] Package `solari` (current runtime boundary is still stubbed).
 - [ ] Package `text` (pending glyph/layout stress bottleneck closure).
 - [x] Issue `render/bevy_file_mapping_matrix_lock`: matrix now includes `render3d_morph` and latest `phase_state/math/material_flags/targets/systems` splits.
-- [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints + `execute` camera/mesh collection paths moved to dedicated modules; pending继续拆分 `render3d_execute_impl` camera render-pass/postprocess monolith.
-- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/runtime_config/targets/systems/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
+- [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints已独立，`execute_impl` 已迁至 `render3d_execute`，camera main-pass/point-shadow/postprocess 已独立；pending继续拆分 queue-build + motion-vector 余下 monolith 并按 Bevy 边界对齐。
+- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/runtime_config/targets/systems/execute/execute_collect/execute_mesh_collect/execute_camera_main_pass/execute_camera_point_shadow/execute_camera_postprocess/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
 - [ ] Issue `pbr/morph_gpu_uniform_runtime_parity`: current morph path still deforms CPU-side mesh each frame, pending Bevy-like render-side morph index/uniform double-buffer pipeline.
 - [ ] Issue `roadmap/parity_first_acceptance_policy`: use source-structure + runtime-behavior parity as acceptance gate; keep stress/FPS data as secondary verification artifacts.
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
