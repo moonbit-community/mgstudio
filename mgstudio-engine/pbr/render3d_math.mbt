@@ -14,46 +14,27 @@
 
 ///|
 fn cmp_int(a : Int, b : Int) -> Int {
-  if a < b {
-    -1
-  } else if a > b {
-    1
-  } else {
-    0
-  }
+  @pbr_render.cmp_int(a, b)
 }
 
 ///|
 fn cmp_float(a : Float, b : Float) -> Int {
-  if a < b {
-    -1
-  } else if a > b {
-    1
-  } else {
-    0
-  }
+  @pbr_render.cmp_float(a, b)
 }
 
 ///|
 fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
+  @pbr_render.quat_rotate_vec3(q, v)
 }
 
 ///|
 fn render3d_quat_inverse(q : @math.Quat) -> @math.Quat {
-  let length_squared = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w
-  if length_squared <= 1.0e-8F {
-    return @math.Quat::identity()
-  }
-  let inv = 1.0F / length_squared
-  @math.Quat::new(-q.x * inv, -q.y * inv, -q.z * inv, q.w * inv)
+  @pbr_render.render3d_quat_inverse(q)
 }
 
 ///|
 fn render3d_transform_forward(transform : @transform.Transform) -> @math.Vec3 {
-  quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
+  @pbr_render.render3d_transform_forward(transform)
 }
 
 ///|
@@ -62,57 +43,32 @@ fn render3d_float_clamp(
   min_value : Float,
   max_value : Float,
 ) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
-  }
+  @pbr_render.render3d_float_clamp(value, min_value, max_value)
 }
 
 ///|
 fn minf(a : Float, b : Float) -> Float {
-  if a < b {
-    a
-  } else {
-    b
-  }
+  @pbr_render.minf(a, b)
 }
 
 ///|
 fn maxf(a : Float, b : Float) -> Float {
-  if a > b {
-    a
-  } else {
-    b
-  }
+  @pbr_render.maxf(a, b)
 }
 
 ///|
 fn clamp01(value : Float) -> Float {
-  if value <= 0.0F {
-    0.0F
-  } else if value >= 1.0F {
-    1.0F
-  } else {
-    value
-  }
+  @pbr_render.clamp01(value)
 }
 
 ///|
 fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
+  @pbr_render.absf(value)
 }
 
 ///|
 fn render3d_lightmap_uv_transform(uv_rect : @math.Rect) -> @transform.Affine2 {
-  let size = uv_rect.size()
-  @transform.Affine2::from_scale_translation(size, uv_rect.min)
+  @pbr_render.render3d_lightmap_uv_transform(uv_rect)
 }
 
 ///|
@@ -120,23 +76,7 @@ fn render3d_inverse_transform_point(
   transform : @transform.Transform,
   world_point : @math.Vec3,
 ) -> @math.Vec3? {
-  if absf(transform.scale.x) <= 1.0e-9F ||
-    absf(transform.scale.y) <= 1.0e-9F ||
-    absf(transform.scale.z) <= 1.0e-9F {
-    return None
-  }
-  let translated = world_point.sub(transform.translation)
-  let rotated = render3d_rotate_by_quat(
-    translated,
-    render3d_quat_conjugate(transform.rotation),
-  )
-  Some(
-    @math.Vec3::new(
-      rotated.x / transform.scale.x,
-      rotated.y / transform.scale.y,
-      rotated.z / transform.scale.z,
-    ),
-  )
+  @pbr_render.render3d_inverse_transform_point(transform, world_point)
 }
 
 ///|
@@ -144,22 +84,7 @@ fn render3d_inverse_transform_direction(
   transform : @transform.Transform,
   world_direction : @math.Vec3,
 ) -> @math.Vec3? {
-  if absf(transform.scale.x) <= 1.0e-9F ||
-    absf(transform.scale.y) <= 1.0e-9F ||
-    absf(transform.scale.z) <= 1.0e-9F {
-    return None
-  }
-  let rotated = render3d_rotate_by_quat(
-    world_direction,
-    render3d_quat_conjugate(transform.rotation),
-  )
-  Some(
-    @math.Vec3::new(
-      rotated.x / transform.scale.x,
-      rotated.y / transform.scale.y,
-      rotated.z / transform.scale.z,
-    ),
-  )
+  @pbr_render.render3d_inverse_transform_direction(transform, world_direction)
 }
 
 ///|
@@ -167,29 +92,5 @@ fn render3d_transform_local_normal(
   transform : @transform.Transform,
   local_normal : @math.Vec3,
 ) -> @math.Vec3 {
-  let inv_scale = @math.Vec3::new(
-    if absf(transform.scale.x) <= 1.0e-9F {
-      0.0F
-    } else {
-      1.0F / transform.scale.x
-    },
-    if absf(transform.scale.y) <= 1.0e-9F {
-      0.0F
-    } else {
-      1.0F / transform.scale.y
-    },
-    if absf(transform.scale.z) <= 1.0e-9F {
-      0.0F
-    } else {
-      1.0F / transform.scale.z
-    },
-  )
-  quat_rotate_vec3(
-    transform.rotation,
-    @math.Vec3::new(
-      local_normal.x * inv_scale.x,
-      local_normal.y * inv_scale.y,
-      local_normal.z * inv_scale.z,
-    ),
-  ).normalize_or_zero()
+  @pbr_render.render3d_transform_local_normal(transform, local_normal)
 }

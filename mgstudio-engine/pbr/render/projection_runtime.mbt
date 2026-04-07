@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
-fn render3d_default_lighting_state() -> Render3dLightingState {
-  @pbr_render.render3d_default_lighting_state()
+pub(all) struct ProjectionRuntime3d {
+  last_view_width : Float
+  last_view_height : Float
 }
+
+///|
+pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
+  debug_name="render3d.projection_runtime3d",
+)

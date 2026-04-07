@@ -1,0 +1,275 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/render"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/transform",
+  "moonbitlang/core/ref",
+}
+
+// Values
+pub const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
+
+pub const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
+
+pub fn absf(Float) -> Float
+
+pub fn clamp01(Float) -> Float
+
+pub fn cmp_float(Float, Float) -> Int
+
+pub fn cmp_int(Int, Int) -> Int
+
+pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
+
+pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
+
+pub fn maxf(Float, Float) -> Float
+
+pub fn minf(Float, Float) -> Float
+
+pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
+
+pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
+
+pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
+
+pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
+
+pub fn render3d_default_lighting_state() -> Render3dLightingState
+
+pub fn render3d_default_time_or_default(@ecs.World) -> @time.Time[Unit]
+
+pub fn render3d_diagnostic_execute_cpu_ms() -> Float
+
+pub let render3d_diagnostic_execute_cpu_ms_ref : @ref.Ref[Float]
+
+pub fn render3d_diagnostic_prepared_camera_count() -> Int
+
+pub let render3d_diagnostic_prepared_camera_count_ref : @ref.Ref[Int]
+
+pub fn render3d_diagnostic_queue_cpu_ms() -> Float
+
+pub let render3d_diagnostic_queue_cpu_ms_ref : @ref.Ref[Float]
+
+pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
+
+pub let render3d_diagnostic_queued_visible_mesh_count_ref : @ref.Ref[Int]
+
+pub fn render3d_entity_global_or_cached_transform(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
+
+pub fn render3d_entity_local_transform_cached(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
+
+pub fn render3d_entity_parent_cached(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> @core.Entity?
+
+pub fn render3d_entity_world_transform_cached(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
+
+pub fn render3d_entity_world_transform_cached_with_local(@ecs.World, @core.Entity, @transform.Transform, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
+
+pub fn render3d_entity_world_transform_from_components(@ecs.World, @core.Entity, @transform.Transform, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
+
+pub fn render3d_extract_skin_bindings(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
+
+pub fn render3d_extract_skinning_matrices(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> Array[Float]?
+
+pub fn render3d_float_clamp(Float, Float, Float) -> Float
+
+pub fn render3d_gpu_culling_supported() -> Bool
+
+pub fn render3d_gpu_preprocess_forced_disabled() -> Bool
+
+pub fn render3d_inverse_transform_direction(@transform.Transform, @math.Vec3) -> @math.Vec3?
+
+pub fn render3d_inverse_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3?
+
+pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
+
+pub fn render3d_pass_clear_enabled_for_target(Array[Int], Int, Bool) -> Int
+
+pub fn render3d_pass_viewport_for_target(Int, Int, Int, Int, Int, Int) -> (Int, Int, Int, Int)
+
+pub let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState]
+
+pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
+
+pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
+
+pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
+
+pub fn render3d_prepared_camera_count() -> Int?
+
+pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
+
+pub fn render3d_quat_inverse(@math.Quat) -> @math.Quat
+
+pub fn render3d_queued_visible_mesh_count() -> Int?
+
+pub fn render3d_rotate_by_quat(@math.Vec3, @math.Quat) -> @math.Vec3
+
+pub let render3d_runtime_initialized_ref : @ref.Ref[Bool]
+
+pub fn render3d_target_info(@ecs.World, @sprite.RenderTarget) -> RenderTargetComputed3d?
+
+pub fn render3d_transform_forward(@transform.Transform) -> @math.Vec3
+
+pub fn render3d_transform_local_normal(@transform.Transform, @math.Vec3) -> @math.Vec3
+
+pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
+
+pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
+
+pub fn render3d_world_transform_cache_begin_frame(@ref.Ref[Render3dWorldTransformCache]) -> Unit
+
+pub fn render3d_world_transform_cache_ref() -> @ref.Ref[Render3dWorldTransformCache]
+
+// Errors
+
+// Types and methods
+pub(all) struct GpuOcclusionCullingWorkItemBuffers3d {
+  enabled : Bool
+}
+
+pub(all) struct GpuPreprocessDispatchMetadata3d {
+  direct_workgroup_count : Int
+  indexed_workgroup_count : Int
+  non_indexed_workgroup_count : Int
+  late_indexed_workgroup_count : Int
+  late_non_indexed_workgroup_count : Int
+}
+
+pub(all) struct GpuPreprocessIndirectBatchSet3d {
+  indirect_parameters_count : Int
+  indirect_parameters_base : Int
+}
+
+pub(all) struct GpuPreprocessIndirectMeshClassMetadata3d {
+  indirect_parameters_cpu_metadata : Array[GpuPreprocessIndirectParametersCpuMetadata3d]
+  indirect_parameters_gpu_metadata : Array[GpuPreprocessIndirectParametersGpuMetadata3d]
+  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+}
+
+pub(all) struct GpuPreprocessIndirectMetadata3d {
+  indexed : GpuPreprocessIndirectMeshClassMetadata3d
+  non_indexed : GpuPreprocessIndirectMeshClassMetadata3d
+}
+
+pub(all) struct GpuPreprocessIndirectParametersCpuMetadata3d {
+  base_output_index : Int
+  batch_set_index : Int
+}
+
+pub(all) struct GpuPreprocessIndirectParametersGpuMetadata3d {
+  mesh_index : Int
+  early_instance_count : Int
+  late_instance_count : Int
+}
+
+pub(all) struct GpuPreprocessPhaseRange3d {
+  phase : Int
+  start : Int
+  end : Int
+}
+
+pub(all) struct GpuPreprocessShaderWorkItem3d {
+  input_index : Int
+  output_or_indirect_parameters_index : Int
+}
+
+pub(all) enum GpuPreprocessWorkItemBuffers3d {
+  Direct(Array[GpuPreprocessShaderWorkItem3d])
+  Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
+}
+
+pub(all) struct MeshPreprocessStatic3d {
+  is_indexed : Bool
+  first_vertex_index : Int
+  first_index_index : Int
+  index_count : Int
+  has_local_aabb : Bool
+  aabb_center : @math.Vec3
+  aabb_half_extents : @math.Vec3
+}
+
+pub(all) struct PreparedSkinBinding3d {
+  entity_generation : Int
+  key_hi : Int
+  key_lo : Int
+}
+
+pub(all) struct ProjectionRuntime3d {
+  last_view_width : Float
+  last_view_height : Float
+}
+
+pub(all) struct Render3dLightingState {
+  ambient_color : @color.Color
+  ambient_brightness : Float
+  directional_dir : @math.Vec3
+  directional_color : @color.Color
+  directional_illuminance : Float
+  point_entity : @core.Entity
+  point_pos : @math.Vec3
+  point_color : @color.Color
+  point_intensity : Float
+  point_range : Float
+  point_shadow_maps_enabled : Bool
+  point_shadow_depth_bias : Float
+  point_shadow_map_near_z : Float
+  spot_pos : @math.Vec3
+  spot_dir : @math.Vec3
+  spot_color : @color.Color
+  spot_intensity : Float
+  spot_range : Float
+  spot_inner_angle : Float
+  spot_outer_angle : Float
+}
+
+pub(all) struct Render3dPhaseState {
+  mut prepared_camera_order : Array[@core.Entity]
+  mut camera_order_needs_refresh : Bool
+  mut last_camera3d_count : Int
+  mesh_upload_cache : Map[Int, Int]
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+  prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
+  skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
+  skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
+  skin_joint_count_by_skin : Map[UInt64, Int]
+  mut total_skin_joints : Int
+  skin_upload_queue : Array[@core.Entity]
+}
+pub fn Render3dPhaseState::new() -> Self
+pub impl @app.Resource for Render3dPhaseState
+
+pub struct Render3dWorldTransformCache {
+  mut frame_stamp : Int
+  transforms : Array[@transform.Transform?]
+  generations : Array[Int]
+  visiting : Array[Bool]
+  stamps : Array[Int]
+  local_transforms : Array[@transform.Transform?]
+  local_generations : Array[Int]
+  local_stamps : Array[Int]
+  parent_entities : Array[@core.Entity?]
+  parent_generations : Array[Int]
+  parent_stamps : Array[Int]
+  skinning_matrices : Array[Array[Float]?]
+  skinning_generations : Array[Int]
+  skinning_stamps : Array[Int]
+}
+
+pub struct RenderTargetComputed3d {
+  target_id : Int
+  target_size : @math.IVec2
+  scale_factor : Float
+}
+
+// Type aliases
+
+// Traits
+

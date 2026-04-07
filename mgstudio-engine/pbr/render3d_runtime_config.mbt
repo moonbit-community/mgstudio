@@ -14,10 +14,7 @@
 
 ///|
 fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in render3d systems")
-  }
+  @pbr_render.render3d_default_time_or_default(world)
 }
 
 ///|
@@ -31,21 +28,17 @@ fn render3d_runtime_config_or_default(
 }
 
 ///|
-fn render3d_gpu_preprocess_forced_disabled() -> Bool {
-  @render.host_gpu_mesh3d_preprocess_disabled()
-}
-
-///|
 fn render3d_use_gpu_instance_buffer_builder(
   runtime_config : PbrPluginRuntimeConfig,
 ) -> Bool {
-  runtime_config.use_gpu_instance_buffer_builder &&
-  !render3d_gpu_preprocess_forced_disabled()
+  @pbr_render.render3d_use_gpu_instance_buffer_builder(
+    runtime_config.use_gpu_instance_buffer_builder,
+  )
 }
 
 ///|
 fn render3d_gpu_culling_supported() -> Bool {
-  @render.host_gpu_mesh3d_gpu_culling_supported()
+  @pbr_render.render3d_gpu_culling_supported()
 }
 
 ///|
@@ -54,7 +47,7 @@ fn render3d_camera_indirect_enabled(
   gpu_culling_supported : Bool,
   no_indirect_drawing : Bool,
 ) -> Bool {
-  use_gpu_instance_buffer_builder &&
-  gpu_culling_supported &&
-  !no_indirect_drawing
+  @pbr_render.render3d_camera_indirect_enabled(
+    use_gpu_instance_buffer_builder, gpu_culling_supported, no_indirect_drawing,
+  )
 }

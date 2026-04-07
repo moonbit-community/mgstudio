@@ -364,133 +364,49 @@ pub type IrradianceVolume = @light.IrradianceVolume
 pub type GlobalAmbientLight = @light.GlobalAmbientLight
 
 ///|
-priv struct ProjectionRuntime3d {
-  last_view_width : Float
-  last_view_height : Float
-}
+type ProjectionRuntime3d = @pbr_render.ProjectionRuntime3d
 
 ///|
-let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
-  debug_name="render3d.projection_runtime3d",
-)
+let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @pbr_render.ecs_key_projection_runtime3d
 
 ///|
-priv struct Render3dLightingState {
-  ambient_color : @sprite.Color
-  ambient_brightness : Float
-  directional_dir : @math.Vec3
-  directional_color : @sprite.Color
-  directional_illuminance : Float
-  point_entity : @core.Entity
-  point_pos : @math.Vec3
-  point_color : @sprite.Color
-  point_intensity : Float
-  point_range : Float
-  point_shadow_maps_enabled : Bool
-  point_shadow_depth_bias : Float
-  point_shadow_map_near_z : Float
-  spot_pos : @math.Vec3
-  spot_dir : @math.Vec3
-  spot_color : @sprite.Color
-  spot_intensity : Float
-  spot_range : Float
-  spot_inner_angle : Float
-  spot_outer_angle : Float
-}
+type Render3dLightingState = @pbr_render.Render3dLightingState
 
 ///|
-priv struct PreparedSkinBinding3d {
-  entity_generation : Int
-  key_hi : Int
-  key_lo : Int
-}
+type MeshPreprocessStatic3d = @pbr_render.MeshPreprocessStatic3d
 
 ///|
-priv struct MeshPreprocessStatic3d {
-  is_indexed : Bool
-  first_vertex_index : Int
-  first_index_index : Int
-  index_count : Int
-  has_local_aabb : Bool
-  aabb_center : @math.Vec3
-  aabb_half_extents : @math.Vec3
-}
+type GpuPreprocessPhaseRange3d = @pbr_render.GpuPreprocessPhaseRange3d
 
 ///|
-priv struct GpuPreprocessPhaseRange3d {
-  phase : Int
-  start : Int
-  end : Int
-}
+type GpuPreprocessIndirectParametersCpuMetadata3d = @pbr_render.GpuPreprocessIndirectParametersCpuMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectParametersCpuMetadata3d {
-  base_output_index : Int
-  batch_set_index : Int
-}
+type GpuPreprocessIndirectParametersGpuMetadata3d = @pbr_render.GpuPreprocessIndirectParametersGpuMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectParametersGpuMetadata3d {
-  mesh_index : Int
-  early_instance_count : Int
-  late_instance_count : Int
-}
+type GpuPreprocessIndirectBatchSet3d = @pbr_render.GpuPreprocessIndirectBatchSet3d
 
 ///|
-priv struct GpuPreprocessIndirectBatchSet3d {
-  indirect_parameters_count : Int
-  indirect_parameters_base : Int
-}
+type GpuPreprocessIndirectMeshClassMetadata3d = @pbr_render.GpuPreprocessIndirectMeshClassMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectMeshClassMetadata3d {
-  indirect_parameters_cpu_metadata : Array[
-    GpuPreprocessIndirectParametersCpuMetadata3d,
-  ]
-  indirect_parameters_gpu_metadata : Array[
-    GpuPreprocessIndirectParametersGpuMetadata3d,
-  ]
-  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
-}
+type GpuPreprocessIndirectMetadata3d = @pbr_render.GpuPreprocessIndirectMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectMetadata3d {
-  indexed : GpuPreprocessIndirectMeshClassMetadata3d
-  non_indexed : GpuPreprocessIndirectMeshClassMetadata3d
-}
+type GpuPreprocessShaderWorkItem3d = @pbr_render.GpuPreprocessShaderWorkItem3d
 
 ///|
-priv struct GpuPreprocessShaderWorkItem3d {
-  input_index : Int
-  output_or_indirect_parameters_index : Int
-}
+type GpuOcclusionCullingWorkItemBuffers3d = @pbr_render.GpuOcclusionCullingWorkItemBuffers3d
 
 ///|
-priv struct GpuOcclusionCullingWorkItemBuffers3d {
-  enabled : Bool
-}
+type GpuPreprocessWorkItemBuffers3d = @pbr_render.GpuPreprocessWorkItemBuffers3d
 
 ///|
-priv enum GpuPreprocessWorkItemBuffers3d {
-  Direct(Array[GpuPreprocessShaderWorkItem3d])
-  Indirect(
-    Array[GpuPreprocessShaderWorkItem3d],
-    Array[GpuPreprocessShaderWorkItem3d],
-    GpuOcclusionCullingWorkItemBuffers3d?
-  )
-}
+const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = @pbr_render.RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE
 
 ///|
-const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
-
-///|
-priv struct GpuPreprocessDispatchMetadata3d {
-  direct_workgroup_count : Int
-  indexed_workgroup_count : Int
-  non_indexed_workgroup_count : Int
-  late_indexed_workgroup_count : Int
-  late_non_indexed_workgroup_count : Int
-}
+type GpuPreprocessDispatchMetadata3d = @pbr_render.GpuPreprocessDispatchMetadata3d
 
 ///|
 priv struct GpuPreprocessResolvedCameraQueueEntry3d {
@@ -504,19 +420,19 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
 }
 
 ///|
-let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
+let render3d_runtime_initialized_ref : Ref[Bool] = @pbr_render.render3d_runtime_initialized_ref
 
 ///|
-let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
+let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = @pbr_render.render3d_diagnostic_queued_visible_mesh_count_ref
 
 ///|
-let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = @pbr_render.render3d_diagnostic_prepared_camera_count_ref
 
 ///|
-let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = @pbr_render.render3d_diagnostic_queue_cpu_ms_ref
 
 ///|
-let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = @pbr_render.render3d_diagnostic_execute_cpu_ms_ref
 
 ///|
 fn render3d_ray_local_aabb_hit(

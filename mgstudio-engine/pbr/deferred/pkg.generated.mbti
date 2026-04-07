@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/deferred"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
+
+pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
+
+pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@pbr.DeferredPbrLightingState]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type DeferredPbrLightingPlugin}
+
+pub using @pbr {type DeferredPbrLightingState}
+
+// Traits
+

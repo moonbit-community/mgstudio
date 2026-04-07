@@ -13,73 +13,21 @@
 // limitations under the License.
 
 ///|
-priv struct Render3dPhaseState {
-  mut prepared_camera_order : Array[@core.Entity]
-  mut camera_order_needs_refresh : Bool
-  mut last_camera3d_count : Int
-  mesh_upload_cache : Map[Int, Int]
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
-  prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
-  skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
-  skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
-  skin_joint_count_by_skin : Map[UInt64, Int]
-  mut total_skin_joints : Int
-  skin_upload_queue : Array[@core.Entity]
-}
-
-///|
-fn Render3dPhaseState::new() -> Render3dPhaseState {
-  Render3dPhaseState::{
-    prepared_camera_order: [],
-    camera_order_needs_refresh: true,
-    last_camera3d_count: 0,
-    mesh_upload_cache: {},
-    mesh_preprocess_static_cache: {},
-    prepared_skin_bindings: {},
-    skin_joint_to_skins: {},
-    skin_joints_by_skin: {},
-    skin_joint_count_by_skin: {},
-    total_skin_joints: 0,
-    skin_upload_queue: [],
-  }
-}
-
-///|
-let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState] = @ecs.register_resource(
-  debug_name="bevy_pbr::Render3dPhaseState",
-)
-
-///|
-impl @app.Resource for Render3dPhaseState with resource() {
-  render3d_phase_state_key
-}
+type Render3dPhaseState = @pbr_render.Render3dPhaseState
 
 ///|
 fn ensure_render3d_phase_state_resource(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(Render3dPhaseState::resource())) is None {
-    world.insert_resource(
-      Render3dPhaseState::resource(),
-      Render3dPhaseState::new(),
-    )
-  }
+  @pbr_render.ensure_render3d_phase_state_resource(world)
 }
 
 ///|
 fn render3d_phase_state_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[Render3dPhaseState] {
-  ensure_render3d_phase_state_resource(world)
-  match (try! world.get_resource_ref_mut(Render3dPhaseState::resource())) {
-    Some(state) => state
-    None => abort("Missing Render3dPhaseState resource in render world")
-  }
+  @pbr_render.render3d_phase_state_ref_or_abort(world)
 }
 
 ///|
 fn render3d_phase_state_or_default(world : @ecs.World) -> Render3dPhaseState {
-  ensure_render3d_phase_state_resource(world)
-  match (try! world.get_resource(Render3dPhaseState::resource())) {
-    Some(state) => state
-    None => Render3dPhaseState::new()
-  }
+  @pbr_render.render3d_phase_state_or_default(world)
 }

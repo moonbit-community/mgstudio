@@ -13,31 +13,54 @@
 // limitations under the License.
 
 ///|
+pub let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
+
+///|
+pub let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(
+  0,
+)
+
+///|
+pub let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+pub let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
+pub let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+
+///|
 pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
-  @pbr_render.render3d_diagnostic_queued_visible_mesh_count()
+  render3d_diagnostic_queued_visible_mesh_count_ref.val
 }
 
 ///|
 pub fn render3d_diagnostic_prepared_camera_count() -> Int {
-  @pbr_render.render3d_diagnostic_prepared_camera_count()
+  render3d_diagnostic_prepared_camera_count_ref.val
 }
 
 ///|
 pub fn render3d_diagnostic_queue_cpu_ms() -> Float {
-  @pbr_render.render3d_diagnostic_queue_cpu_ms()
+  render3d_diagnostic_queue_cpu_ms_ref.val
 }
 
 ///|
 pub fn render3d_diagnostic_execute_cpu_ms() -> Float {
-  @pbr_render.render3d_diagnostic_execute_cpu_ms()
+  render3d_diagnostic_execute_cpu_ms_ref.val
 }
 
 ///|
 pub fn render3d_prepared_camera_count() -> Int? {
-  @pbr_render.render3d_prepared_camera_count()
+  if !render3d_runtime_initialized_ref.val {
+    return Some(0)
+  }
+  Some(render3d_diagnostic_prepared_camera_count_ref.val)
 }
 
 ///|
 pub fn render3d_queued_visible_mesh_count() -> Int? {
-  @pbr_render.render3d_queued_visible_mesh_count()
+  if !render3d_runtime_initialized_ref.val {
+    return Some(0)
+  }
+  Some(render3d_diagnostic_queued_visible_mesh_count_ref.val)
 }

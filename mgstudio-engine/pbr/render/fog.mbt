@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-fn render3d_default_lighting_state() -> Render3dLightingState {
-  @pbr_render.render3d_default_lighting_state()
-}
+// Bevy-aligned render module anchor.
