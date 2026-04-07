@@ -119,6 +119,10 @@ pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn text_render_system(@ecs.World) -> Unit
 
+pub fn text_render_transparent_2d_queue_system(@ecs.World) -> Unit
+
+pub fn text_render_transparent_ui_queue_system(@ecs.World) -> Unit
+
 pub fn text_reset_runtime_state_for_tests() -> Unit
 
 pub fn text_runtime_clear_layout_dirty() -> Unit
@@ -150,6 +154,14 @@ pub fn text_set_logical_viewport_size(TextHandle, @math.Vec2?) -> Unit
 pub fn text_set_no_frustum_culling(TextHandle, Bool) -> Unit
 
 pub let text_set_render_extract : String
+
+pub let text_set_render_prepare : String
+
+pub let text_set_render_queue : String
+
+pub let text_set_render_transparent_2d : String
+
+pub let text_set_render_transparent_ui : String
 
 pub fn text_set_runtime_rem_size(Float) -> Unit
 

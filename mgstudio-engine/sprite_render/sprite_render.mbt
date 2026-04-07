@@ -120,6 +120,9 @@ pub let render2d_set_queue : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render2d_set_transparent_2d : @app.SystemSet = render2d_set_queue
+
+///|
 pub let render2d_set_render : @app.SystemSet = @app.system_set(
   "mgstudio.render2d.render",
 )

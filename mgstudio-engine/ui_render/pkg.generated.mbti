@@ -18,6 +18,8 @@ pub fn ui_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ui_render_set_extract : String
 
+pub let ui_render_set_transparent_ui : String
+
 // Errors
 
 // Types and methods

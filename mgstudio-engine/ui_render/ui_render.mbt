@@ -64,6 +64,9 @@ pub let ui_render_set_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let ui_render_set_transparent_ui : @app.SystemSet = ui_render_set_extract
+
+///|
 const UI_DRAW_FLAG_TEXTURED : Int = 1
 
 ///|

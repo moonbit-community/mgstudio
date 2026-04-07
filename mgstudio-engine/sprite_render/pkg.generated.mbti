@@ -85,6 +85,8 @@ pub let render2d_set_queue : String
 
 pub let render2d_set_render : String
 
+pub let render2d_set_transparent_2d : String
+
 pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
 
 pub fn render2d_viewport_to_world_2d(@ecs.World, @math.Vec2) -> @math.Vec2?
