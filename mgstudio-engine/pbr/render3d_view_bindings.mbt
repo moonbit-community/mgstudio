@@ -27,43 +27,16 @@ fn render3d_projection_matrix_apply_temporal_jitter(
   view_width : Int,
   view_height : Int,
 ) -> ProjectionMatrix3d {
-  let width = Float::from_double(view_width.to_double())
-  let height = Float::from_double(view_height.to_double())
-  if width <= 0.0F || height <= 0.0F {
-    return clip_from_view
-  }
-  let mut jitter_x = temporal_jitter.offset.x * 2.0F / width
-  let mut jitter_y = temporal_jitter.offset.y * -2.0F / height
-  if clip_from_view.w_axis.w == 1.0F {
-    jitter_x = jitter_x * clip_from_view.x_axis.x * 0.5F
-    jitter_y = jitter_y * clip_from_view.y_axis.y * 0.5F
-  }
-  let z_axis = clip_from_view.z_axis
-  ProjectionMatrix3d::{
-    ..clip_from_view,
-    z_axis: @math.Vec4::new(
-      z_axis.x + jitter_x,
-      z_axis.y + jitter_y,
-      z_axis.z,
-      z_axis.w,
-    ),
-  }
+  @pbr_render.render3d_projection_matrix_apply_temporal_jitter(
+    clip_from_view, temporal_jitter, view_width, view_height,
+  )
 }
 
 ///|
 fn render3d_projection_near_from_clip_matrix(
   clip_from_view : ProjectionMatrix3d,
 ) -> Float {
-  if clip_from_view.w_axis.w == 0.0F {
-    maxf(0.0001F, clip_from_view.w_axis.z)
-  } else {
-    let safe_z = if clip_from_view.z_axis.z == 0.0F {
-      1.0F
-    } else {
-      clip_from_view.z_axis.z
-    }
-    clip_from_view.w_axis.z / safe_z
-  }
+  @pbr_render.render3d_projection_near_from_clip_matrix(clip_from_view)
 }
 
 ///|
@@ -161,22 +134,8 @@ fn render3d_orthographic_projection_matrix(
   near : Float,
   far : Float,
 ) -> ProjectionMatrix3d {
-  let width = right - left
-  let height = top - bottom
-  let depth = near - far
-  let safe_width = if width == 0.0F { 1.0F } else { width }
-  let safe_height = if height == 0.0F { 1.0F } else { height }
-  let safe_depth = if depth == 0.0F { 1.0F } else { depth }
-  ProjectionMatrix3d::from_cols(
-    @math.Vec4::new(2.0F / safe_width, 0.0F, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, 2.0F / safe_height, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, 0.0F, 1.0F / safe_depth, 0.0F),
-    @math.Vec4::new(
-      -(right + left) / safe_width,
-      -(top + bottom) / safe_height,
-      near / safe_depth,
-      1.0F,
-    ),
+  @pbr_render.render3d_orthographic_projection_matrix(
+    left, right, bottom, top, near, far,
   )
 }
 
@@ -392,22 +351,8 @@ fn render3d_perspective_projection_matrix_raw(
   fov : Float,
   aspect_ratio : Float,
 ) -> ProjectionMatrix3d {
-  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
-  let safe_near = if near <= 0.0F { 0.0001F } else { near }
-  let half_fov = fov * 0.5F
-  let cos_half_fov = @math.cos(half_fov)
-  let tan_half_fov = if cos_half_fov == 0.0F {
-    1.0F
-  } else {
-    @math.sin(half_fov) / cos_half_fov
-  }
-  let y = if tan_half_fov == 0.0F { 1.0F } else { 1.0F / tan_half_fov }
-  let x = y / safe_aspect
-  ProjectionMatrix3d::from_cols(
-    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
-    @math.Vec4::new(0.0F, 0.0F, safe_near, 0.0F),
+  @pbr_render.render3d_perspective_projection_matrix_raw(
+    near, fov, aspect_ratio,
   )
 }
 
@@ -483,27 +428,7 @@ fn render3d_perspective_frustum_corners(
   z_near : Float,
   z_far : Float,
 ) -> Array[@math.Vec3] {
-  let half_fov = fov * 0.5F
-  let cos_half_fov = @math.cos(half_fov)
-  let tan_half_fov = if cos_half_fov == 0.0F {
-    1.0F
-  } else {
-    @math.sin(half_fov) / cos_half_fov
-  }
-  let near_half_height = tan_half_fov *
-    (if z_near < 0.0F { -z_near } else { z_near })
-  let far_half_height = tan_half_fov *
-    (if z_far < 0.0F { -z_far } else { z_far })
-  let near_half_width = near_half_height * aspect_ratio
-  let far_half_width = far_half_height * aspect_ratio
-  [
-    @math.Vec3::new(near_half_width, -near_half_height, z_near),
-    @math.Vec3::new(near_half_width, near_half_height, z_near),
-    @math.Vec3::new(-near_half_width, near_half_height, z_near),
-    @math.Vec3::new(-near_half_width, -near_half_height, z_near),
-    @math.Vec3::new(far_half_width, -far_half_height, z_far),
-    @math.Vec3::new(far_half_width, far_half_height, z_far),
-    @math.Vec3::new(-far_half_width, far_half_height, z_far),
-    @math.Vec3::new(-far_half_width, -far_half_height, z_far),
-  ]
+  @pbr_render.render3d_perspective_frustum_corners(
+    aspect_ratio, fov, z_near, z_far,
+  )
 }
