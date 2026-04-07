@@ -133,26 +133,26 @@ fn render3d_compute_frustum(
 }
 
 ///|
-pub fn PerspectiveProjection3d::compute_frustum(
-  self : PerspectiveProjection3d,
+pub fn render3d_perspective_projection_compute_frustum(
+  projection : PerspectiveProjection3d,
   camera_transform : @transform.Transform,
 ) -> Frustum {
   render3d_compute_frustum(
-    self.get_clip_from_view(),
+    projection.get_clip_from_view(),
     camera_transform,
-    self.far,
+    projection.far,
   )
 }
 
 ///|
-pub fn OrthographicProjection3d::compute_frustum(
-  self : OrthographicProjection3d,
+pub fn render3d_orthographic_projection_compute_frustum(
+  projection : OrthographicProjection3d,
   camera_transform : @transform.Transform,
 ) -> Frustum {
   render3d_compute_frustum(
-    self.get_clip_from_view(),
+    projection.get_clip_from_view(),
     camera_transform,
-    self.far,
+    projection.far,
   )
 }
 
@@ -174,8 +174,14 @@ pub fn Projection::compute_frustum(
   camera_transform : @transform.Transform,
 ) -> Frustum {
   match self {
-    Perspective(projection) => projection.compute_frustum(camera_transform)
-    Orthographic(projection) => projection.compute_frustum(camera_transform)
+    Perspective(projection) =>
+      render3d_perspective_projection_compute_frustum(
+        projection, camera_transform,
+      )
+    Orthographic(projection) =>
+      render3d_orthographic_projection_compute_frustum(
+        projection, camera_transform,
+      )
     Custom(projection) => projection.compute_frustum(camera_transform)
   }
 }

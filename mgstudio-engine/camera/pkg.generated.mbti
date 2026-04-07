@@ -55,11 +55,11 @@ pub using @pbr {type MeshRayCastHit}
 
 pub using @pbr {type MeshRayCastSettings}
 
-pub using @pbr {type OrthographicProjection3d}
+pub using @render {type OrthographicProjection3d}
 
-pub using @pbr {type OrthographicScalingMode3d}
+pub using @render {type OrthographicScalingMode3d}
 
-pub using @pbr {type PerspectiveProjection3d}
+pub using @render {type PerspectiveProjection3d}
 
 pub using @pbr {type PhysicalCameraParameters}
 

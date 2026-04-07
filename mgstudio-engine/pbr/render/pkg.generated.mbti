@@ -85,6 +85,8 @@ pub fn maxf(Float, Float) -> Float
 
 pub fn minf(Float, Float) -> Float
 
+pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
+
 pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
 pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?) -> @material.StandardMaterial
@@ -157,7 +159,11 @@ pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
 
+pub fn render3d_orthographic_area(OrthographicProjection3d, Float, Float) -> @math.Rect
+
 pub fn render3d_orthographic_projection_matrix(Float, Float, Float, Float, Float, Float) -> ProjectionMatrix3d
+
+pub fn render3d_orthographic_projection_matrix_for_sub(OrthographicProjection3d, SubCameraView3d) -> ProjectionMatrix3d
 
 pub fn render3d_pass_clear_enabled_for_target(Array[Int], Int, Bool) -> Int
 
@@ -172,6 +178,10 @@ pub fn render3d_pass_projection_unjittered_clip_from_world(Render3dPassProjectio
 pub fn render3d_pass_viewport_for_target(Int, Int, Int, Int, Int, Int) -> (Int, Int, Int, Int)
 
 pub fn render3d_perspective_frustum_corners(Float, Float, Float, Float) -> Array[@math.Vec3]
+
+pub fn render3d_perspective_projection_matrix(PerspectiveProjection3d) -> ProjectionMatrix3d
+
+pub fn render3d_perspective_projection_matrix_for_sub(PerspectiveProjection3d, SubCameraView3d) -> ProjectionMatrix3d
 
 pub fn render3d_perspective_projection_matrix_raw(Float, Float, Float) -> ProjectionMatrix3d
 
@@ -352,6 +362,66 @@ pub(all) struct MeshPreprocessStatic3d {
   aabb_center : @math.Vec3
   aabb_half_extents : @math.Vec3
 }
+
+pub(all) struct OrthographicProjection3d {
+  mut near : Float
+  mut far : Float
+  mut viewport_origin : @math.Vec2
+  mut scaling_mode : OrthographicScalingMode3d
+  mut scale : Float
+  mut area : @math.Rect
+} derive(ToJson, @json.FromJson)
+pub fn OrthographicProjection3d::area(Self) -> @math.Rect
+pub fn OrthographicProjection3d::default() -> Self
+pub fn OrthographicProjection3d::default_2d() -> Self
+pub fn OrthographicProjection3d::default_3d() -> Self
+pub fn OrthographicProjection3d::far(Self) -> Float
+pub fn OrthographicProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn OrthographicProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn OrthographicProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn OrthographicProjection3d::near(Self) -> Float
+pub fn OrthographicProjection3d::scale(Self) -> Float
+pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
+pub fn OrthographicProjection3d::update(Self, Float, Float) -> Self
+pub fn OrthographicProjection3d::viewport_origin(Self) -> @math.Vec2
+pub fn OrthographicProjection3d::with_area(Self, @math.Rect) -> Self
+pub fn OrthographicProjection3d::with_far(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
+pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
+
+pub(all) enum OrthographicScalingMode3d {
+  WindowSize
+  Fixed(Float, Float)
+  AutoMin(Float, Float)
+  AutoMax(Float, Float)
+  FixedVertical(Float)
+  FixedHorizontal(Float)
+} derive(Eq, Show, ToJson, @json.FromJson)
+
+pub(all) struct PerspectiveProjection3d {
+  mut fov : Float
+  mut near : Float
+  mut far : Float
+  mut aspect_ratio : Float
+  mut near_clip_plane : @math.Vec4
+} derive(ToJson, @json.FromJson)
+pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
+pub fn PerspectiveProjection3d::default() -> Self
+pub fn PerspectiveProjection3d::far(Self) -> Float
+pub fn PerspectiveProjection3d::fov(Self) -> Float
+pub fn PerspectiveProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn PerspectiveProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn PerspectiveProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn PerspectiveProjection3d::near(Self) -> Float
+pub fn PerspectiveProjection3d::near_clip_plane(Self) -> @math.Vec4
+pub fn PerspectiveProjection3d::update(Self, Float, Float) -> Self
+pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
 
 pub(all) struct PreparedSkinBinding3d {
   entity_generation : Int

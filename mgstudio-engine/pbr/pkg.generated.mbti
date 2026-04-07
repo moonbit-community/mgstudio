@@ -280,6 +280,10 @@ pub fn render3d_execute_system(@ecs.World) -> Unit
 
 pub fn render3d_extract_system(@ecs.World) -> Unit
 
+pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> Frustum
+
+pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> Frustum
+
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit
@@ -747,41 +751,6 @@ pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Se
 pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
 pub impl @ecs.Component for OrderIndependentTransparencySettings
 
-pub(all) struct OrthographicProjection3d {
-  mut near : Float
-  mut far : Float
-  mut viewport_origin : @math.Vec2
-  mut scaling_mode : OrthographicScalingMode3d
-  mut scale : Float
-  mut area : @math.Rect
-} derive(ToJson, @json.FromJson)
-pub fn OrthographicProjection3d::area(Self) -> @math.Rect
-pub fn OrthographicProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn OrthographicProjection3d::default() -> Self
-pub fn OrthographicProjection3d::default_2d() -> Self
-pub fn OrthographicProjection3d::default_3d() -> Self
-pub fn OrthographicProjection3d::far(Self) -> Float
-pub fn OrthographicProjection3d::near(Self) -> Float
-pub fn OrthographicProjection3d::scale(Self) -> Float
-pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
-pub fn OrthographicProjection3d::viewport_origin(Self) -> @math.Vec2
-pub fn OrthographicProjection3d::with_area(Self, @math.Rect) -> Self
-pub fn OrthographicProjection3d::with_far(Self, Float) -> Self
-pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
-pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
-pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
-pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
-pub impl CameraProjection3d for OrthographicProjection3d
-
-pub(all) enum OrthographicScalingMode3d {
-  WindowSize
-  Fixed(Float, Float)
-  AutoMin(Float, Float)
-  AutoMax(Float, Float)
-  FixedVertical(Float)
-  FixedHorizontal(Float)
-} derive(Eq, Show, ToJson, @json.FromJson)
-
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
@@ -799,27 +768,6 @@ pub struct PbrPluginRuntimeConfig {
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
 
-pub(all) struct PerspectiveProjection3d {
-  mut fov : Float
-  mut near : Float
-  mut far : Float
-  mut aspect_ratio : Float
-  mut near_clip_plane : @math.Vec4
-} derive(ToJson, @json.FromJson)
-pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
-pub fn PerspectiveProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn PerspectiveProjection3d::default() -> Self
-pub fn PerspectiveProjection3d::far(Self) -> Float
-pub fn PerspectiveProjection3d::fov(Self) -> Float
-pub fn PerspectiveProjection3d::near(Self) -> Float
-pub fn PerspectiveProjection3d::near_clip_plane(Self) -> @math.Vec4
-pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
-pub impl CameraProjection3d for PerspectiveProjection3d
-
 pub(all) struct PhysicalCameraParameters {
   mut aperture_f_stops : Float
   mut shutter_speed_s : Float
@@ -830,8 +778,8 @@ pub fn PhysicalCameraParameters::default() -> Self
 pub fn PhysicalCameraParameters::ev100(Self) -> Float
 
 pub(all) enum Projection {
-  Perspective(PerspectiveProjection3d)
-  Orthographic(OrthographicProjection3d)
+  Perspective(@render.PerspectiveProjection3d)
+  Orthographic(@render.OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
 pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
@@ -1010,9 +958,15 @@ pub using @core_pipeline {type NormalPrepass}
 
 pub using @material {type OpaqueRendererMethod}
 
+pub using @render {type OrthographicProjection3d}
+
+pub using @render {type OrthographicScalingMode3d}
+
 pub using @light {type ParallaxCorrection}
 
 pub using @material {type ParallaxMappingMethod}
+
+pub using @render {type PerspectiveProjection3d}
 
 pub using @light {type PointLight}
 
@@ -1071,6 +1025,8 @@ pub(open) trait CameraProjection3d {
   compute_frustum(Self, @transform.Transform) -> Frustum
   get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
+pub impl CameraProjection3d for @render.OrthographicProjection3d
+pub impl CameraProjection3d for @render.PerspectiveProjection3d
 
 pub(open) trait IntoPbrMaterialAsset {
   into_pbr_material_asset(Self) -> @material.StandardMaterial

@@ -378,388 +378,13 @@ pub fn Camera3d::with_depth_of_field(
 }
 
 ///|
-pub(all) struct PerspectiveProjection3d {
-  mut fov : Float
-  mut near : Float
-  mut far : Float
-  mut aspect_ratio : Float
-  mut near_clip_plane : @math.Vec4
-} derive(ToJson, FromJson)
+pub type PerspectiveProjection3d = @pbr_render.PerspectiveProjection3d
 
 ///|
-pub fn PerspectiveProjection3d::default() -> PerspectiveProjection3d {
-  PerspectiveProjection3d::{
-    // Match Bevy's PerspectiveProjection::default() (PI / 4.0).
-    fov: @math.pi_half() * 0.5F,
-    near: 0.1F,
-    far: 1000.0F,
-    aspect_ratio: 1.0F,
-    near_clip_plane: @math.Vec4::new(0.0F, 0.0F, -1.0F, -0.1F),
-  }
-}
+pub type OrthographicProjection3d = @pbr_render.OrthographicProjection3d
 
 ///|
-pub fn PerspectiveProjection3d::with_aspect_ratio(
-  self : PerspectiveProjection3d,
-  aspect_ratio : Float,
-) -> PerspectiveProjection3d {
-  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
-  PerspectiveProjection3d::{
-    fov: self.fov,
-    near: self.near,
-    far: self.far,
-    aspect_ratio: safe_aspect,
-    near_clip_plane: self.near_clip_plane,
-  }
-}
-
-///|
-pub fn PerspectiveProjection3d::with_fov(
-  self : PerspectiveProjection3d,
-  fov : Float,
-) -> PerspectiveProjection3d {
-  let safe_fov = if fov <= 0.0F { @math.pi_half() * 0.5F } else { fov }
-  PerspectiveProjection3d::{
-    fov: safe_fov,
-    near: self.near,
-    far: self.far,
-    aspect_ratio: self.aspect_ratio,
-    near_clip_plane: self.near_clip_plane,
-  }
-}
-
-///|
-pub fn PerspectiveProjection3d::with_near(
-  self : PerspectiveProjection3d,
-  near : Float,
-) -> PerspectiveProjection3d {
-  let previous_default_near_clip_plane = @math.Vec4::new(
-    0.0F,
-    0.0F,
-    -1.0F,
-    -self.near,
-  )
-  let safe_near = if near <= 0.0F { 0.0001F } else { near }
-  let safe_far = if self.far <= safe_near {
-    safe_near + 0.0001F
-  } else {
-    self.far
-  }
-  let near_clip_plane = if self.near_clip_plane ==
-    previous_default_near_clip_plane {
-    @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
-  } else {
-    self.near_clip_plane
-  }
-  PerspectiveProjection3d::{
-    fov: self.fov,
-    near: safe_near,
-    far: safe_far,
-    aspect_ratio: self.aspect_ratio,
-    near_clip_plane,
-  }
-}
-
-///|
-pub fn PerspectiveProjection3d::with_far(
-  self : PerspectiveProjection3d,
-  far : Float,
-) -> PerspectiveProjection3d {
-  let safe_far = if far <= self.near { self.near + 0.0001F } else { far }
-  PerspectiveProjection3d::{
-    fov: self.fov,
-    near: self.near,
-    far: safe_far,
-    aspect_ratio: self.aspect_ratio,
-    near_clip_plane: self.near_clip_plane,
-  }
-}
-
-///|
-pub fn PerspectiveProjection3d::with_near_clip_plane(
-  self : PerspectiveProjection3d,
-  near_clip_plane : @math.Vec4,
-) -> PerspectiveProjection3d {
-  PerspectiveProjection3d::{
-    fov: self.fov,
-    near: self.near,
-    far: self.far,
-    aspect_ratio: self.aspect_ratio,
-    near_clip_plane,
-  }
-}
-
-///|
-pub fn PerspectiveProjection3d::fov(self : PerspectiveProjection3d) -> Float {
-  self.fov
-}
-
-///|
-pub fn PerspectiveProjection3d::near(self : PerspectiveProjection3d) -> Float {
-  self.near
-}
-
-///|
-pub fn PerspectiveProjection3d::far(self : PerspectiveProjection3d) -> Float {
-  self.far
-}
-
-///|
-pub fn PerspectiveProjection3d::aspect_ratio(
-  self : PerspectiveProjection3d,
-) -> Float {
-  self.aspect_ratio
-}
-
-///|
-pub fn PerspectiveProjection3d::near_clip_plane(
-  self : PerspectiveProjection3d,
-) -> @math.Vec4 {
-  self.near_clip_plane
-}
-
-///|
-pub(all) struct OrthographicProjection3d {
-  mut near : Float
-  mut far : Float
-  mut viewport_origin : @math.Vec2
-  mut scaling_mode : OrthographicScalingMode3d
-  mut scale : Float
-  mut area : @math.Rect
-} derive(ToJson, FromJson)
-
-///|
-pub(all) enum OrthographicScalingMode3d {
-  WindowSize
-  Fixed(Float, Float)
-  AutoMin(Float, Float)
-  AutoMax(Float, Float)
-  FixedVertical(Float)
-  FixedHorizontal(Float)
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-fn orthographic_scaling_mode_sanitize(
-  mode : OrthographicScalingMode3d,
-) -> OrthographicScalingMode3d {
-  match mode {
-    WindowSize => WindowSize
-    Fixed(width, height) =>
-      Fixed(
-        if width <= 0.0F {
-          1.0F
-        } else {
-          width
-        },
-        if height <= 0.0F {
-          1.0F
-        } else {
-          height
-        },
-      )
-    AutoMin(min_width, min_height) =>
-      AutoMin(
-        if min_width <= 0.0F {
-          1.0F
-        } else {
-          min_width
-        },
-        if min_height <= 0.0F {
-          1.0F
-        } else {
-          min_height
-        },
-      )
-    AutoMax(max_width, max_height) =>
-      AutoMax(
-        if max_width <= 0.0F {
-          1.0F
-        } else {
-          max_width
-        },
-        if max_height <= 0.0F {
-          1.0F
-        } else {
-          max_height
-        },
-      )
-    FixedVertical(viewport_height) =>
-      FixedVertical(
-        if viewport_height <= 0.0F {
-          1.0F
-        } else {
-          viewport_height
-        },
-      )
-    FixedHorizontal(viewport_width) =>
-      FixedHorizontal(
-        if viewport_width <= 0.0F {
-          1.0F
-        } else {
-          viewport_width
-        },
-      )
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::default_2d() -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    ..OrthographicProjection3d::default_3d(),
-    near: -1000.0F,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::default_3d() -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    near: 0.0F,
-    far: 1000.0F,
-    viewport_origin: @math.Vec2::new(0.5F, 0.5F),
-    scaling_mode: WindowSize,
-    scale: 1.0F,
-    area: @math.Rect::new(
-      @math.Vec2::new(-1.0F, -1.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
-  OrthographicProjection3d::default_3d()
-}
-
-///|
-pub fn OrthographicProjection3d::with_scale(
-  self : OrthographicProjection3d,
-  scale : Float,
-) -> OrthographicProjection3d {
-  let safe_scale = if scale <= 0.0F { 1.0F } else { scale }
-  OrthographicProjection3d::{
-    near: self.near,
-    far: self.far,
-    viewport_origin: self.viewport_origin,
-    scaling_mode: self.scaling_mode,
-    scale: safe_scale,
-    area: self.area,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::with_near(
-  self : OrthographicProjection3d,
-  near : Float,
-) -> OrthographicProjection3d {
-  let safe_far = if self.far <= near { near + 0.0001F } else { self.far }
-  OrthographicProjection3d::{
-    scale: self.scale,
-    near,
-    far: safe_far,
-    viewport_origin: self.viewport_origin,
-    scaling_mode: self.scaling_mode,
-    area: self.area,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::with_far(
-  self : OrthographicProjection3d,
-  far : Float,
-) -> OrthographicProjection3d {
-  let safe_far = if far <= self.near { self.near + 0.0001F } else { far }
-  OrthographicProjection3d::{
-    scale: self.scale,
-    near: self.near,
-    far: safe_far,
-    viewport_origin: self.viewport_origin,
-    scaling_mode: self.scaling_mode,
-    area: self.area,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::with_scaling_mode(
-  self : OrthographicProjection3d,
-  scaling_mode : OrthographicScalingMode3d,
-) -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    near: self.near,
-    far: self.far,
-    viewport_origin: self.viewport_origin,
-    scaling_mode: orthographic_scaling_mode_sanitize(scaling_mode),
-    scale: self.scale,
-    area: self.area,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::with_viewport_origin(
-  self : OrthographicProjection3d,
-  viewport_origin : @math.Vec2,
-) -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    near: self.near,
-    far: self.far,
-    viewport_origin,
-    scaling_mode: self.scaling_mode,
-    scale: self.scale,
-    area: self.area,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::with_area(
-  self : OrthographicProjection3d,
-  area : @math.Rect,
-) -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    near: self.near,
-    far: self.far,
-    viewport_origin: self.viewport_origin,
-    scaling_mode: self.scaling_mode,
-    scale: self.scale,
-    area,
-  }
-}
-
-///|
-pub fn OrthographicProjection3d::scale(
-  self : OrthographicProjection3d,
-) -> Float {
-  self.scale
-}
-
-///|
-pub fn OrthographicProjection3d::near(self : OrthographicProjection3d) -> Float {
-  self.near
-}
-
-///|
-pub fn OrthographicProjection3d::far(self : OrthographicProjection3d) -> Float {
-  self.far
-}
-
-///|
-pub fn OrthographicProjection3d::scaling_mode(
-  self : OrthographicProjection3d,
-) -> OrthographicScalingMode3d {
-  self.scaling_mode
-}
-
-///|
-pub fn OrthographicProjection3d::viewport_origin(
-  self : OrthographicProjection3d,
-) -> @math.Vec2 {
-  self.viewport_origin
-}
-
-///|
-pub fn OrthographicProjection3d::area(
-  self : OrthographicProjection3d,
-) -> @math.Rect {
-  self.area
-}
+pub type OrthographicScalingMode3d = @pbr_render.OrthographicScalingMode3d
 
 ///|
 pub type SubCameraView3d = @pbr_render.SubCameraView3d
@@ -1080,7 +705,7 @@ pub impl CameraProjection3d for Projection with get_frustum_corners(
 pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view(
   self,
 ) {
-  render3d_perspective_projection_matrix(self)
+  @pbr_render.render3d_perspective_projection_matrix(self)
 }
 
 ///|
@@ -1088,7 +713,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view_
   self,
   sub_view,
 ) {
-  render3d_perspective_projection_matrix_for_sub(self, sub_view)
+  @pbr_render.render3d_perspective_projection_matrix_for_sub(self, sub_view)
 }
 
 ///|
@@ -1097,7 +722,9 @@ pub impl CameraProjection3d for PerspectiveProjection3d with update(
   width,
   height,
 ) {
-  self.aspect_ratio = render3d_projection_aspect_ratio(width, height)
+  self.aspect_ratio = @pbr_render.render3d_projection_aspect_ratio(
+    width, height,
+  )
   self
 }
 
@@ -1111,7 +738,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with compute_frustum(
   self,
   camera_transform,
 ) {
-  self.compute_frustum(camera_transform)
+  render3d_perspective_projection_compute_frustum(self, camera_transform)
 }
 
 ///|
@@ -1147,7 +774,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view
   self,
   sub_view,
 ) {
-  render3d_orthographic_projection_matrix_for_sub(self, sub_view)
+  @pbr_render.render3d_orthographic_projection_matrix_for_sub(self, sub_view)
 }
 
 ///|
@@ -1156,7 +783,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with update(
   width,
   height,
 ) {
-  self.area = render3d_orthographic_area(self, width, height)
+  self.area = @pbr_render.render3d_orthographic_area(self, width, height)
   self
 }
 
@@ -1170,7 +797,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with compute_frustum(
   self,
   camera_transform,
 ) {
-  self.compute_frustum(camera_transform)
+  render3d_orthographic_projection_compute_frustum(self, camera_transform)
 }
 
 ///|
