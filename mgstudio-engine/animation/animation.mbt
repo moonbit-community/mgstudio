@@ -3204,11 +3204,8 @@ fn animation_apply_prepared_player_to_target(
     if (target_mask & sample.computed_mask) != 0U {
       continue
     }
-    guard clip_cache.get(sample.clip_id) is Some(clip) else {
-      continue
-    }
-    guard clip.sample_target(target_id, sample.seek_time)
-      is Some(clip_sample) else {
+    guard clip_cache.get(sample.clip_id) is Some(clip) else { continue }
+    guard clip.sample_target(target_id, sample.seek_time) is Some(clip_sample) else {
       continue
     }
     let combined_weight = sample.combined_weight
@@ -3721,7 +3718,8 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     if player_id < 0 {
       return
     }
-    let (graph_id, prepared_samples) = match prepared_player_cache.get(player_id) {
+    let (graph_id, prepared_samples) = match
+      prepared_player_cache.get(player_id) {
       Some(cached) => cached
       None => return
     }

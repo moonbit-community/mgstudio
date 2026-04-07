@@ -295,6 +295,16 @@ pub let render3d_set_extract : String
 
 pub let render3d_set_prepare : String
 
+pub let render3d_set_prepare_bind_groups : String
+
+pub let render3d_set_prepare_legacy : String
+
+pub let render3d_set_prepare_meshes : String
+
+pub let render3d_set_prepare_resources : String
+
+pub let render3d_set_prepare_resources_flush : String
+
 pub let render3d_set_queue : String
 
 pub let render3d_set_render : String

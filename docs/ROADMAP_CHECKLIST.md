@@ -46,8 +46,8 @@ This file must not exceed 200 lines.
 - [x] Package `ptr`.
 - [x] Package `reflect` (policy-locked minimal boundary).
 - [ ] Package `remote` (current plugin is still stubbed backend).
-- [ ] Package `render` (pending perf baseline tooling and heavy-scene optimization closure).
-- [ ] Package `render/renderer` (pending profiling/deep perf tooling and bottleneck closure).
+- [ ] Package `render` (pending Bevy file-topology + stage-ownership parity closure).
+- [ ] Package `render/renderer` (pending Bevy renderer module-boundary/source-shape parity closure).
 - [x] Package `scene`.
 - [x] Package `shader`.
 - [ ] Package `solari` (current runtime boundary is still stubbed).
@@ -88,6 +88,10 @@ This file must not exceed 200 lines.
 - [x] Issue `pbr/many_foxes_optional_component_query_gating`: gate sparse optional component lookups in `execute_3d_collect_meshes` by world-level component presence to cut hot-loop `get_by_key` overhead.
 - [x] Issue `pbr/mesh_index_kind_extract_cache`: cache `mesh_is_indexed` during 3D extract and reuse it in preprocess/motion-vector/shadow/main passes to remove repeated mesh-asset indexed lookups.
 - [x] Issue `render/mesh3d_skinning_upload_hotpath`: initialize skinning slot identity once and upload only used skinning rows per draw (remove per-draw full identity rebuild/upload).
+- [ ] Issue `render/bevy_file_mapping_matrix_lock`: keep `docs/BEVY_RENDER_FILE_MAPPING.md` synchronized with real file layout and leave no unresolved Bevy file in scoped render modules.
+- [ ] Issue `render/bevy_stage_boundary_parity`: enforce Bevy-style Extract/Prepare/Queue/Execute ownership boundaries and remove mixed-stage logic in monolithic paths.
+- [ ] Issue `pbr/bevy_render_file_decomposition`: split `render3d` monolith into Bevy-equivalent render units (`mesh/skin/light/bindings/fog/gpu_preprocess`).
+- [ ] Issue `roadmap/parity_first_acceptance_policy`: use source-structure + runtime-behavior parity as acceptance gate; keep stress/FPS data as secondary verification artifacts.
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
 - [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.
 - [ ] Issue `pbr/forward_decal_runtime`: implement projected forward decal shading path (replace current marker-only runtime note).
@@ -135,10 +139,6 @@ This file must not exceed 200 lines.
 - [x] Issue `stress_tests/text_example_flow_alignment`: align `many_glyphs`/`many_text2d`/`text_pipeline` control flow with Bevy-style args/camera/recompute/bounds patterns.
 - [ ] Issue `remote/transport_backend`: replace remote plugin stub with real transport backend.
 - [ ] Issue `remote/protocol_backend`: replace remote plugin stub with protocol/message runtime.
-- [x] Issue `render/profiler_hooks`: add render-stage profiling hooks for repeatable stress analysis.
-- [x] Issue `render_renderer/pass_timing`: expose per-pass/per-phase timing metrics for regressions.
-- [x] Issue `render_renderer/mesh2d_structural_cache_keys`: replace mesh2d material cache key heuristics with structural keys and collision-safe lookup.
-- [x] Issue `render_renderer/mesh2d_pass_uniform_sync`: move mesh2d view/global uniform upload from draw path to pass begin path.
 - [x] Issue `render_renderer/mesh2d_dynamic_offset_binding_window`: ensure mesh2d instance uniform capacity covers `dynamic_offset + bind_range` for all batch offsets.
 - [x] Issue `sprite/material2d_prepare_unique_handles`: prepare `PreparedMaterial2d` once per unique source handle instead of per mesh instance each frame.
 - [x] Issue `sprite/material2d_prepare_host_bind_group`: build host material bind-group once in prepare stage and reuse it in mesh draw path.

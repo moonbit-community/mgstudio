@@ -6329,10 +6329,9 @@ fn render3d_extract_skin_bindings(
     }
     render3d_phase_remove_skin(phase_state_ref, entity)
   }
-  let changed_joint_entities = source_world.changed_components(
-    @transform.ecs_key_global_transform,
-    sequence,
-  ).read()
+  let changed_joint_entities = source_world
+    .changed_components(@transform.ecs_key_global_transform, sequence)
+    .read()
   if phase_state_ref.val.total_skin_joints <= 0 {
     return
   }
