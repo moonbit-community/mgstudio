@@ -46,12 +46,14 @@ fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
 }
 
 ///|
-fn render3d_standard_material_alpha_cutoff(alpha_mode : AlphaMode3d) -> Float {
+pub fn render3d_standard_material_alpha_cutoff(
+  alpha_mode : AlphaMode3d,
+) -> Float {
   @pbr_render.render3d_standard_material_alpha_cutoff(alpha_mode)
 }
 
 ///|
-fn render3d_standard_material_flags(
+pub fn render3d_standard_material_flags(
   material : StandardMaterial,
   base_color_texture_id : Int,
   normal_texture_id : Int,

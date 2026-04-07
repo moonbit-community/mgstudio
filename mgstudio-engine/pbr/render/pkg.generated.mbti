@@ -91,6 +91,8 @@ pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @ma
 
 pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
+pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, Int, shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int) -> MeshGpuDrawPayload3d
+
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
@@ -98,6 +100,8 @@ pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float)
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
 
 pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
+
+pub fn render3d_cull_mode_value(@material.StandardMaterial, Int) -> Int
 
 pub fn render3d_default_lighting_state() -> Render3dLightingState
 
@@ -120,6 +124,8 @@ pub let render3d_diagnostic_queue_cpu_ms_ref : @ref.Ref[Float]
 pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
 
 pub let render3d_diagnostic_queued_visible_mesh_count_ref : @ref.Ref[Int]
+
+pub fn render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d) -> Unit
 
 pub fn render3d_entity_global_or_cached_transform(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
 
@@ -281,6 +287,60 @@ pub(all) struct GpuPreprocessShaderWorkItem3d {
 pub(all) enum GpuPreprocessWorkItemBuffers3d {
   Direct(Array[GpuPreprocessShaderWorkItem3d])
   Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
+}
+
+pub(all) struct MeshGpuDrawPayload3d {
+  mesh_id : Int
+  preprocess_camera_key_hi : Int
+  preprocess_camera_key_lo : Int
+  draw_storage_index : Int
+  indirect_kind : Int
+  indirect_parameters_index : Int
+  transform : @transform.Transform
+  previous_transform : @transform.Transform
+  color_r : Float
+  color_g : Float
+  color_b : Float
+  color_a : Float
+  texture_id : Int
+  uv_transform : @transform.Affine2
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  depth_texture_id : Int
+  emissive : @color.Color
+  metallic : Float
+  anisotropy_texture_id : Int
+  anisotropy_rotation : Float
+  specular_tint_texture_id : Int
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  surface_roughness : Float
+  reflectance : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  alpha_cutoff : Float
+  material_flags : UInt
+  transmission_source_texture_id : Int
+  transmission_blur_taps : Float
+  transmission_steps : Float
+  point_shadow_texture_id : Int
+  point_shadow_enabled : Float
+  point_shadow_depth_bias : Float
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
+  environment_map_intensity : Float
+  environment_map_rotation : @math.Quat
+  specular_tint : @color.Color
+  anisotropy_strength : Float
+  max_relief_mapping_search_steps : Float
+  cull_mode : Int
+  shader_path : String?
+  skinning_key_hi : Int
+  skinning_key_lo : Int
 }
 
 pub(all) struct MeshPreprocessStatic3d {

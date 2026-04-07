@@ -176,6 +176,22 @@ pub fn render3d_standard_material_flags(
 }
 
 ///|
+pub fn render3d_cull_mode_value(
+  material : @material.StandardMaterial,
+  draw_flags : Int,
+) -> Int {
+  let draw_cull_mode_base = match material.cull_mode {
+    None => 0
+    Some(face) =>
+      match face {
+        @material.Face3d::Front => 1
+        @material.Face3d::Back => 2
+      }
+  }
+  draw_cull_mode_base | draw_flags
+}
+
+///|
 pub fn render3d_apply_extended_material_metadata(
   material : @material.StandardMaterial,
   extension : @material.ExtendedMaterialMetadata3d?,

@@ -169,59 +169,7 @@ const MESH3D_DRAW_INDIRECT_KIND_INDEXED : Int = 1
 const MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED : Int = 2
 
 ///|
-priv struct MeshGpuDrawPayload3d {
-  mesh_id : Int
-  preprocess_camera_key_hi : Int
-  preprocess_camera_key_lo : Int
-  draw_storage_index : Int
-  indirect_kind : Int
-  indirect_parameters_index : Int
-  transform : @transform.Transform
-  previous_transform : @transform.Transform
-  color_r : Float
-  color_g : Float
-  color_b : Float
-  color_a : Float
-  texture_id : Int
-  uv_transform : @transform.Affine2
-  normal_texture_id : Int
-  emissive_texture_id : Int
-  metallic_roughness_texture_id : Int
-  occlusion_texture_id : Int
-  depth_texture_id : Int
-  emissive : @sprite.Color
-  metallic : Float
-  anisotropy_texture_id : Int
-  anisotropy_rotation : Float
-  specular_tint_texture_id : Int
-  parallax_depth_scale : Float
-  max_parallax_layer_count : Float
-  surface_roughness : Float
-  reflectance : Float
-  diffuse_transmission : Float
-  specular_transmission : Float
-  thickness : Float
-  ior : Float
-  alpha_cutoff : Float
-  material_flags : UInt
-  transmission_source_texture_id : Int
-  transmission_blur_taps : Float
-  transmission_steps : Float
-  point_shadow_texture_id : Int
-  point_shadow_enabled : Float
-  point_shadow_depth_bias : Float
-  environment_diffuse_texture_id : Int
-  environment_specular_texture_id : Int
-  environment_map_intensity : Float
-  environment_map_rotation : @math.Quat
-  specular_tint : @sprite.Color
-  anisotropy_strength : Float
-  max_relief_mapping_search_steps : Float
-  cull_mode : Int
-  shader_path : String?
-  skinning_key_hi : Int
-  skinning_key_lo : Int
-}
+type MeshGpuDrawPayload3d = @pbr_render.MeshGpuDrawPayload3d
 
 ///|
 priv struct TransmissivePhaseItem3d {
