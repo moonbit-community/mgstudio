@@ -6570,14 +6570,13 @@ fn render3d_collect_cached_extracted_meshes(
       stale_entity_ids.push(entity_id)
       continue
     }
-    if !needs_mesh_previous_transform {
-      meshes.push(extracted_mesh)
-      continue
-    }
-    let previous_transform = match
-      motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
-      Some(v) => v
-      None => extracted_mesh.payload.transform
+    let previous_transform = if needs_mesh_previous_transform {
+      match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
+        Some(v) => v
+        None => extracted_mesh.payload.transform
+      }
+    } else {
+      extracted_mesh.payload.transform
     }
     let payload = Mesh3dExtractedPayload::{
       ..extracted_mesh.payload,
