@@ -239,6 +239,88 @@ fn render3d_sort_transmissive_phase_items(
 }
 
 ///|
+fn render3d_queue_camera_phase_items(
+  cameras : Array[ExtractedCamera3d],
+) -> Array[CameraPhaseItem3d] {
+  let items : Array[CameraPhaseItem3d] = []
+  for i in 0..<cameras.length() {
+    let camera = cameras[i]
+    items.push(CameraPhaseItem3d::{
+      entity: camera.entity,
+      extracted_index: i,
+      order: camera.payload.camera.order,
+    })
+  }
+  items.sort_by(fn(a, b) {
+    let order_cmp = cmp_int(a.order, b.order)
+    if order_cmp != 0 {
+      return order_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  items
+}
+
+///|
+fn render3d_mesh_phase_kind(alpha_mode : AlphaMode3d, alpha : Float) -> Int? {
+  match alpha_mode {
+    Opaque => Some(RENDER3D_PHASE_OPAQUE)
+    AlphaToCoverage => Some(RENDER3D_PHASE_OPAQUE)
+    Mask(cutoff) =>
+      if alpha >= cutoff {
+        Some(RENDER3D_PHASE_ALPHA_MASK)
+      } else {
+        None
+      }
+    Blend => Some(RENDER3D_PHASE_TRANSPARENT)
+    Premultiplied => Some(RENDER3D_PHASE_TRANSPARENT)
+    Add => Some(RENDER3D_PHASE_TRANSPARENT)
+    Multiply => Some(RENDER3D_PHASE_TRANSPARENT)
+  }
+}
+
+///|
+fn render3d_split_phase_ranges(
+  length : Int,
+  max_num_splits : Int,
+) -> Array[(Int, Int)] {
+  if length <= 0 || max_num_splits <= 0 {
+    return []
+  }
+  let num_splits = if length < max_num_splits { length } else { max_num_splits }
+  let step = length / num_splits
+  let ranges : Array[(Int, Int)] = []
+  let mut remainder = length % num_splits
+  let mut start = 0
+  for _ in 0..<num_splits {
+    let extra = if remainder > 0 {
+      remainder = remainder - 1
+      1
+    } else {
+      0
+    }
+    let next_end = start + step + extra
+    let end_ = if next_end < length { next_end } else { length }
+    ranges.push((start, end_))
+    start = end_
+  }
+  ranges
+}
+
+///|
+fn render3d_mesh_draw_alpha(alpha_mode : AlphaMode3d, alpha : Float) -> Float? {
+  match alpha_mode {
+    Opaque => Some(1.0F)
+    Blend => Some(alpha)
+    Premultiplied => Some(alpha)
+    Add => Some(alpha)
+    Multiply => Some(alpha)
+    AlphaToCoverage => Some(alpha)
+    Mask(cutoff) => if alpha >= cutoff { Some(1.0F) } else { None }
+  }
+}
+
+///|
 fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
   let entries : Array[Render3dCameraOrderEntry] = []
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
