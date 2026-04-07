@@ -3,7 +3,7 @@ This file must not exceed 200 lines.
 - [ ] Package `ecs` (pending full change-detection boundary closure).
 - [ ] Package `ldtk` (system-chain/message parity landed; pending full bevy_ecs_ldtk module/API/example closure).
 - [ ] Package `material` (pending deferred-method runtime activation and forward-decal extension shader specialization).
-- [ ] Package `pbr` (pending decal/occlusion/OIT/transmitted-shadow backend closures).
+- [ ] Package `pbr` (pending bevy-like directory topology via subpackage split + decal/occlusion/OIT/transmitted-shadow backend closures).
 - [ ] Package `remote` (current plugin is still stubbed backend).
 - [ ] Package `render` (pending Bevy file-topology + stage-ownership parity closure).
 - [ ] Package `render/renderer` (pending Bevy renderer module-boundary/source-shape parity closure).
@@ -20,6 +20,7 @@ This file must not exceed 200 lines.
 - [ ] Issue `pbr/clustered_decal_runtime`: implement clustered decal projection/material application path (replace current metadata-only path).
 - [ ] Issue `pbr/occlusion_culling_runtime`: wire `OcclusionCulling` marker into actual renderer occlusion-culling path.
 - [ ] Issue `pbr/order_independent_transparency_runtime`: close weighted OIT runtime path behind `OrderIndependentTransparencySettings`.
+- [ ] Issue `pbr/directory_topology_subpackage_parity`: current Moon package compiles only `pbr/*.mbt` (flat), so Bevy-style `pbr/render/*` requires explicit subpackage migration (`pbr/render`, `pbr/deferred`, `pbr/decal`, ...), not raw file moves.
 - [ ] Issue `physics/examples_bevy_rapier_visual_parity`: run screenshot-by-screenshot visual audit against `bevy_rapier v0.32.0` and fix behavior/render mismatches.
 - [ ] Issue `examples_3d/atmosphere_visual_parity`: remove legacy fallback path in `atmosphere` and align with Bevy atmosphere/volumetric-fog/water material flow.
 - [ ] Issue `render/atmosphere_sky_render_runtime`: implement true atmosphere sky rendering path (not only distance-fog remap), current gap keeps `examples/3d/atmosphere` sky black and blocks visual parity.
