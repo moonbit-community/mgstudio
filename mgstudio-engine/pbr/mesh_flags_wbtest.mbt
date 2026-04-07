@@ -29,7 +29,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
     .with_double_sided(true)
     .with_flip_normal_map_y(true)
     .with_alpha_mode(Mask(0.37F))
-  let flags = render3d_standard_material_flags(
+  let flags = @pbr_render.render3d_standard_material_flags(
     material, 11, 12, 13, 14, 15, 16, 17, 18,
   )
   let ok = (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) !=
@@ -49,7 +49,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
   inspect(ok, content="true")
   inspect(
     render3d_flags_approx_eq(
-      render3d_standard_material_alpha_cutoff(material.alpha_mode),
+      @pbr_render.render3d_standard_material_alpha_cutoff(material.alpha_mode),
       0.37F,
     ),
     content="true",
@@ -58,7 +58,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
 
 ///|
 test "render3d: standard material flags keep opaque default when maps are absent" {
-  let flags = render3d_standard_material_flags(
+  let flags = @pbr_render.render3d_standard_material_flags(
     StandardMaterial::default(),
     -1,
     -1,
@@ -77,7 +77,7 @@ test "render3d: standard material flags keep opaque default when maps are absent
 
 ///|
 test "render3d: normal map encoding bits stay host-minimal without bound texture" {
-  let flags = render3d_standard_material_flags(
+  let flags = @pbr_render.render3d_standard_material_flags(
     StandardMaterial::default().with_flip_normal_map_y(true),
     -1,
     -1,

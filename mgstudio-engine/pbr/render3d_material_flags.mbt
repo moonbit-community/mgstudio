@@ -25,31 +25,6 @@ fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
 }
 
 ///|
-pub fn render3d_standard_material_alpha_cutoff(
-  alpha_mode : AlphaMode3d,
-) -> Float {
-  @pbr_render.render3d_standard_material_alpha_cutoff(alpha_mode)
-}
-
-///|
-pub fn render3d_standard_material_flags(
-  material : StandardMaterial,
-  base_color_texture_id : Int,
-  normal_texture_id : Int,
-  emissive_texture_id : Int,
-  metallic_roughness_texture_id : Int,
-  occlusion_texture_id : Int,
-  depth_texture_id : Int,
-  anisotropy_texture_id : Int,
-  specular_tint_texture_id : Int,
-) -> UInt {
-  @pbr_render.render3d_standard_material_flags(
-    material, base_color_texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
-    occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
-  )
-}
-
-///|
 fn render3d_decal_mode_allows_forward(mode : DecalRenderMode3d) -> Bool {
   match mode {
     Disabled => false
