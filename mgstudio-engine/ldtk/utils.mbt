@@ -75,7 +75,7 @@ pub fn ldtk_pixel_coords_to_translation(
   ldtk_pixel_height : Int,
 ) -> @math.Vec2 {
   let converted = ldtk_coord_conversion(ldtk_coords, ldtk_pixel_height)
-  @math.Vec2::new(converted.x.to_float(), converted.y.to_float())
+  @math.Vec2::new(Float::from_int(converted.x), Float::from_int(converted.y))
 }
 
 ///|
@@ -119,8 +119,8 @@ pub fn translation_to_grid_coords(
   let width = if grid_size.x <= 0 { 1 } else { grid_size.x }
   let height = if grid_size.y <= 0 { 1 } else { grid_size.y }
   GridCoords::new(
-    (translation.x / width.to_float()).to_int(),
-    (translation.y / height.to_float()).to_int(),
+    (translation.x / Float::from_int(width)).to_int(),
+    (translation.y / Float::from_int(height)).to_int(),
   )
 }
 
@@ -130,8 +130,8 @@ pub fn grid_coords_to_translation_relative_to_tile_layer(
   tile_size : @math.IVec2,
 ) -> @math.Vec2 {
   @math.Vec2::new(
-    (grid_coords.x * tile_size.x).to_float(),
-    (grid_coords.y * tile_size.y).to_float(),
+    Float::from_int(grid_coords.x * tile_size.x),
+    Float::from_int(grid_coords.y * tile_size.y),
   )
 }
 
@@ -144,8 +144,8 @@ pub fn grid_coords_to_translation(
     grid_coords, tile_size,
   )
   @math.Vec2::new(
-    relative.x + tile_size.x.to_float() / 2.0F,
-    relative.y + tile_size.y.to_float() / 2.0F,
+    relative.x + Float::from_int(tile_size.x) / 2.0F,
+    relative.y + Float::from_int(tile_size.y) / 2.0F,
   )
 }
 
@@ -177,7 +177,7 @@ pub fn ldtk_grid_coords_to_translation_relative_to_tile_layer(
     px,
     ldtk_grid_height * grid_size.y,
   )
-  @math.Vec2::new(converted.x, converted.y - grid_size.y.to_float())
+  @math.Vec2::new(converted.x, converted.y - Float::from_int(grid_size.y))
 }
 
 ///|
@@ -190,8 +190,8 @@ pub fn ldtk_grid_coords_to_translation(
     ldtk_coords, ldtk_grid_height, grid_size,
   )
   @math.Vec2::new(
-    relative.x + grid_size.x.to_float() / 2.0F,
-    relative.y + grid_size.y.to_float() / 2.0F,
+    relative.x + Float::from_int(grid_size.x) / 2.0F,
+    relative.y + Float::from_int(grid_size.y) / 2.0F,
   )
 }
 
@@ -207,8 +207,8 @@ pub fn ldtk_pixel_coords_to_translation_pivoted(
   )
   let adjusted_pivot = @math.Vec2::new(0.5F - pivot.x, pivot.y - 0.5F)
   let offset = @math.Vec2::new(
-    entity_size.x.to_float() * adjusted_pivot.x,
-    entity_size.y.to_float() * adjusted_pivot.y,
+    Float::from_int(entity_size.x) * adjusted_pivot.x,
+    Float::from_int(entity_size.y) * adjusted_pivot.y,
   )
   @math.Vec2::new(pivot_point.x + offset.x, pivot_point.y + offset.y)
 }

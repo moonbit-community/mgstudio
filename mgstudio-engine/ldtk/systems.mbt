@@ -127,8 +127,8 @@ fn ldtk_pre_spawn_level(
   let transform = match ldtk_settings.level_spawn_behavior {
     UseWorldTranslation(_) =>
       @transform.Transform::from_xyz(
-        level.world_x.to_float(),
-        (level.world_y + level.px_hei).to_float(),
+        Float::from_int(level.world_x),
+        Float::from_int(level.world_y + level.px_hei),
         0.0F,
       )
     UseZeroTranslation => @transform.Transform::identity()

@@ -56,25 +56,25 @@ fn ldtk_spawn_background_image(
   let crop_x = ldtk_crop_value(
     background_position.crop_rect[0],
     0.0F,
-    image.width.to_float(),
+    Float::from_int(image.width),
   )
   let crop_y = ldtk_crop_value(
     background_position.crop_rect[1],
     0.0F,
-    image.height.to_float(),
+    Float::from_int(image.height),
   )
   let crop_w = ldtk_crop_dimension(
     ldtk_crop_value(
       background_position.crop_rect[2],
       0.0F,
-      image.width.to_float() - crop_x,
+      Float::from_int(image.width) - crop_x,
     ),
   )
   let crop_h = ldtk_crop_dimension(
     ldtk_crop_value(
       background_position.crop_rect[3],
       0.0F,
-      image.height.to_float() - crop_y,
+      Float::from_int(image.height) - crop_y,
     ),
   )
 
@@ -123,10 +123,13 @@ fn ldtk_spawn_level_background(
   ldtk_entity : @core.Entity,
   layer_z : Float,
 ) -> Unit {
-  let size = @math.Vec2::new(level.px_wid.to_float(), level.px_hei.to_float())
+  let size = @math.Vec2::new(
+    Float::from_int(level.px_wid),
+    Float::from_int(level.px_hei),
+  )
   let translation = @transform.Transform::from_xyz(
-    level.px_wid.to_float() * 0.5F,
-    level.px_hei.to_float() * 0.5F,
+    Float::from_int(level.px_wid) * 0.5F,
+    Float::from_int(level.px_hei) * 0.5F,
     layer_z,
   )
   let sprite = @sprite.Sprite::sized(size).with_color(level.bg_color)
@@ -150,8 +153,8 @@ fn ldtk_spawn_layer_entity(
     entity,
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(
-      layer_instance.px_total_offset_x.to_float(),
-      -layer_instance.px_total_offset_y.to_float(),
+      Float::from_int(layer_instance.px_total_offset_x),
+      -Float::from_int(layer_instance.px_total_offset_y),
       layer_z,
     ),
   )
@@ -203,20 +206,22 @@ fn ldtk_tile_sprite(
     Some(handle) => @sprite.Sprite::from_image(handle)
     None =>
       @sprite.Sprite::sized(
-        @math.Vec2::new(tile_size.to_float(), tile_size.to_float()),
+        @math.Vec2::new(Float::from_int(tile_size), Float::from_int(tile_size)),
       )
   }
   let rect = @math.Rect::new(
-    @math.Vec2::new(tile.src.x.to_float(), tile.src.y.to_float()),
+    @math.Vec2::new(Float::from_int(tile.src.x), Float::from_int(tile.src.y)),
     @math.Vec2::new(
-      tile.src.x.to_float() + tile_size.to_float(),
-      tile.src.y.to_float() + tile_size.to_float(),
+      Float::from_int(tile.src.x) + Float::from_int(tile_size),
+      Float::from_int(tile.src.y) + Float::from_int(tile_size),
     ),
   )
   base
   .with_rect(Some(rect))
   .with_custom_size(
-    Some(@math.Vec2::new(tile_size.to_float(), tile_size.to_float())),
+    Some(
+      @math.Vec2::new(Float::from_int(tile_size), Float::from_int(tile_size)),
+    ),
   )
   .with_flip_x(ldtk_flip_x(tile.f))
   .with_flip_y(ldtk_flip_y(tile.f))
@@ -364,8 +369,8 @@ fn ldtk_spawn_int_grid_entities(
             .with_custom_size(
               Some(
                 @math.Vec2::new(
-                  safe_grid_size.to_float(),
-                  safe_grid_size.to_float(),
+                  Float::from_int(safe_grid_size),
+                  Float::from_int(safe_grid_size),
                 ),
               ),
             )
@@ -375,8 +380,8 @@ fn ldtk_spawn_int_grid_entities(
           None =>
             @sprite.Sprite::sized(
               @math.Vec2::new(
-                safe_grid_size.to_float(),
-                safe_grid_size.to_float(),
+                Float::from_int(safe_grid_size),
+                Float::from_int(safe_grid_size),
               ),
             ).with_color(
               ldtk_int_grid_color(layer_definition_map, layer_instance, value),
@@ -535,7 +540,7 @@ pub fn spawn_level(
               Some(uid) => tileset_definition_map.get(uid)
               None => None
             },
-            sublayer_index.to_float(),
+            Float::from_int(sublayer_index),
           )
         }
       Type::AutoLayer =>
@@ -556,7 +561,7 @@ pub fn spawn_level(
               Some(uid) => tileset_definition_map.get(uid)
               None => None
             },
-            sublayer_index.to_float(),
+            Float::from_int(sublayer_index),
           )
         }
     }
