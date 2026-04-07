@@ -53,6 +53,22 @@ test "material boundary re-exports material metadata APIs" {
 }
 
 ///|
+test "material boundary resolves auto opaque render method at runtime" {
+  let default_method = @material.OpaqueRendererMethod::Deferred
+  let resolved_auto = @material.OpaqueRendererMethod::Auto.resolve_runtime(
+    default_method,
+  )
+  let resolved_forward = @material.OpaqueRendererMethod::Forward.resolve_runtime(
+    default_method,
+  )
+  inspect(
+    resolved_auto is @material.OpaqueRendererMethod::Deferred &&
+    resolved_forward is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+}
+
+///|
 test "material boundary Assets::add accepts Color and Image handle inputs" {
   let materials : @asset.Assets[@material.StandardMaterial] = @asset.Assets::new()
   let expected_color = @sprite.Color::srgb(0.1F, 0.2F, 0.3F)

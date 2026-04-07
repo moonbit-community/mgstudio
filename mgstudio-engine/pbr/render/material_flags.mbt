@@ -62,6 +62,9 @@ pub const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT : UInt = 1U << 17
 pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 1U << 19
 
 ///|
+pub const STANDARD_MATERIAL_FLAGS_FORWARD_DECAL_BIT : UInt = 1U << 20
+
+///|
 pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE : UInt = 0U << 29
 
 ///|
@@ -138,6 +141,7 @@ pub fn render3d_standard_material_flags(
   depth_texture_id : Int,
   anisotropy_texture_id : Int,
   specular_tint_texture_id : Int,
+  forward_decal? : Bool = false,
 ) -> UInt {
   let mut flags = render3d_standard_material_alpha_mode_flags(
     material.alpha_mode,
@@ -171,6 +175,9 @@ pub fn render3d_standard_material_flags(
   }
   if specular_tint_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT
+  }
+  if forward_decal {
+    flags = flags | STANDARD_MATERIAL_FLAGS_FORWARD_DECAL_BIT
   }
   flags
 }

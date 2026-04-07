@@ -108,6 +108,7 @@ pub(all) enum OpaqueRendererMethod {
   Deferred
 } derive(Eq, Show, ToJson, @json.FromJson)
 pub fn OpaqueRendererMethod::default() -> Self
+pub fn OpaqueRendererMethod::resolve_runtime(Self, Self) -> Self
 
 pub(all) enum ParallaxMappingMethod {
   Occlusion

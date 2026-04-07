@@ -138,6 +138,17 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(
 }
 
 ///|
+pub fn OpaqueRendererMethod::resolve_runtime(
+  self : OpaqueRendererMethod,
+  default_renderer_method : OpaqueRendererMethod,
+) -> OpaqueRendererMethod {
+  match self {
+    OpaqueRendererMethod::Auto => default_renderer_method
+    _ => self
+  }
+}
+
+///|
 pub struct StandardMaterial {
   base_color : @sprite.Color
   base_color_texture : @asset.Handle[@asset.Image]?

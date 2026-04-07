@@ -46,7 +46,7 @@ fn render3d_execute_camera_main_pass(
   camera_forward_decal_enabled : Bool,
   camera_clustered_decal_enabled : Bool,
   camera_deferred_enabled : Bool,
-  camera_deferred_mode : OpaqueRendererMethod,
+  default_opaque_renderer_method : OpaqueRendererMethod,
   camera_near : Float,
   camera_far : Float,
   distance_fog : DistanceFog,
@@ -124,12 +124,9 @@ fn render3d_execute_camera_main_pass(
         continue
       }
     }
-    let mesh_opaque_mode = if mesh.material.opaque_render_method
-      is OpaqueRendererMethod::Auto {
-      camera_deferred_mode
-    } else {
-      mesh.material.opaque_render_method
-    }
+    let mesh_opaque_mode = mesh.material.opaque_render_method.resolve_runtime(
+      default_opaque_renderer_method,
+    )
     if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
       !camera_deferred_enabled {
       continue
@@ -346,6 +343,7 @@ fn render3d_execute_camera_main_pass(
       anisotropy_strength,
       max_relief_mapping_search_steps,
       draw_flags,
+      forward_decal=mesh.is_forward_decal,
       shader_path=draw_shader_path,
       skinning_key_hi=mesh.skinning_key_hi,
       skinning_key_lo=mesh.skinning_key_lo,

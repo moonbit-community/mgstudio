@@ -57,6 +57,26 @@ test "render3d: standard material flags pack current Bevy subset bits" {
 }
 
 ///|
+test "render3d: forward decal specialization bit is carried into material flags" {
+  let flags = @pbr_render.render3d_standard_material_flags(
+    StandardMaterial::default(),
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    forward_decal=true,
+  )
+  inspect(
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_FORWARD_DECAL_BIT) != 0U,
+    content="true",
+  )
+}
+
+///|
 test "render3d: standard material flags keep opaque default when maps are absent" {
   let flags = @pbr_render.render3d_standard_material_flags(
     StandardMaterial::default(),

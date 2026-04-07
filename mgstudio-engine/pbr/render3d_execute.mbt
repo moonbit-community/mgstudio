@@ -368,8 +368,8 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
       point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias, environment_map_state,
       point_shadow_near, scene_pass_kind, clear_enabled, cleared_targets_this_frame,
       camera_forward_decal_enabled, camera_clustered_decal_enabled, camera_deferred_enabled,
-      camera_deferred_mode, camera_near, camera_far, distance_fog, fog_enabled, transmission_enabled,
-      transmission_steps, transmission_blur_taps, wireframe_config,
+      default_opaque_renderer_method, camera_near, camera_far, distance_fog, fog_enabled,
+      transmission_enabled, transmission_steps, transmission_blur_taps, wireframe_config,
     )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,

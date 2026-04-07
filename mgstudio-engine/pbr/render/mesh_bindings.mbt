@@ -275,13 +275,22 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
+  forward_decal? : Bool = false,
   shader_path? : String? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
-    material, texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
-    occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
+    material,
+    texture_id,
+    normal_texture_id,
+    emissive_texture_id,
+    metallic_roughness_texture_id,
+    occlusion_texture_id,
+    depth_texture_id,
+    anisotropy_texture_id,
+    specular_tint_texture_id,
+    forward_decal~,
   )
   MeshGpuDrawPayload3d::{
     mesh_id,
