@@ -90,6 +90,8 @@ pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @ma
 
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
+pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
+
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
 
 pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
