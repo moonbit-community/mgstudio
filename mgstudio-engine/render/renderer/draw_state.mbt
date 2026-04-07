@@ -13,6 +13,215 @@
 // limitations under the License.
 
 ///|
+pub struct GpuClipMatrix {
+  x_axis_x : Float
+  x_axis_y : Float
+  x_axis_z : Float
+  x_axis_w : Float
+  y_axis_x : Float
+  y_axis_y : Float
+  y_axis_z : Float
+  y_axis_w : Float
+  z_axis_x : Float
+  z_axis_y : Float
+  z_axis_z : Float
+  z_axis_w : Float
+  w_axis_x : Float
+  w_axis_y : Float
+  w_axis_z : Float
+  w_axis_w : Float
+}
+
+///|
+pub fn gpu_clip_matrix(
+  x_axis_x : Float,
+  x_axis_y : Float,
+  x_axis_z : Float,
+  x_axis_w : Float,
+  y_axis_x : Float,
+  y_axis_y : Float,
+  y_axis_z : Float,
+  y_axis_w : Float,
+  z_axis_x : Float,
+  z_axis_y : Float,
+  z_axis_z : Float,
+  z_axis_w : Float,
+  w_axis_x : Float,
+  w_axis_y : Float,
+  w_axis_z : Float,
+  w_axis_w : Float,
+) -> GpuClipMatrix {
+  GpuClipMatrix::{
+    x_axis_x,
+    x_axis_y,
+    x_axis_z,
+    x_axis_w,
+    y_axis_x,
+    y_axis_y,
+    y_axis_z,
+    y_axis_w,
+    z_axis_x,
+    z_axis_y,
+    z_axis_z,
+    z_axis_w,
+    w_axis_x,
+    w_axis_y,
+    w_axis_z,
+    w_axis_w,
+  }
+}
+
+///|
+fn gpu_clip_matrix_identity() -> GpuClipMatrix {
+  gpu_clip_matrix(
+    1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 1.0F,
+  )
+}
+
+///|
+fn gpu_clip_matrix_2d(
+  width_logical : Float,
+  height_logical : Float,
+  camera_x : Float,
+  camera_y : Float,
+  camera_rot : Float,
+  camera_scale : Float,
+) -> GpuClipMatrix {
+  let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
+  let scale_x = if width_logical > 0.0F {
+    2.0F / width_logical / safe_scale
+  } else {
+    0.0F
+  }
+  let scale_y = if height_logical > 0.0F {
+    2.0F / height_logical / safe_scale
+  } else {
+    0.0F
+  }
+  let cosv = cosf(-camera_rot)
+  let sinv = sinf(-camera_rot)
+  gpu_clip_matrix(
+    scale_x * cosv,
+    scale_y * sinv,
+    0.0F,
+    0.0F,
+    -scale_x * sinv,
+    scale_y * cosv,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+    0.0F,
+    scale_x * (-cosv * camera_x + sinv * camera_y),
+    scale_y * (-sinv * camera_x - cosv * camera_y),
+    0.0F,
+    1.0F,
+  )
+}
+
+///|
+pub struct GpuPassState {
+  target_id : Int
+  target_layer : Int
+  secondary_target_id : Int
+  width_logical : Float
+  height_logical : Float
+  is_3d : Bool
+  camera_x : Float
+  camera_y : Float
+  camera_rot : Float
+  camera_scale : Float
+  camera_z : Float
+  camera_exposure : Float
+  camera_rot_x : Float
+  camera_rot_y : Float
+  camera_rot_z : Float
+  camera_rot_w : Float
+  clip_from_world : GpuClipMatrix
+  unjittered_clip_from_world : GpuClipMatrix
+  previous_clip_from_world : GpuClipMatrix
+  pass_kind : Int
+  viewport_x : UInt
+  viewport_y : UInt
+  viewport_w : UInt
+  viewport_h : UInt
+  viewport_depth_min : Float
+  viewport_depth_max : Float
+  ambient_r : Float
+  ambient_g : Float
+  ambient_b : Float
+  ambient_brightness : Float
+  directional_dir_x : Float
+  directional_dir_y : Float
+  directional_dir_z : Float
+  directional_color_r : Float
+  directional_color_g : Float
+  directional_color_b : Float
+  directional_illuminance : Float
+  point_pos_x : Float
+  point_pos_y : Float
+  point_pos_z : Float
+  point_color_r : Float
+  point_color_g : Float
+  point_color_b : Float
+  point_intensity : Float
+  point_range : Float
+  spot_pos_x : Float
+  spot_pos_y : Float
+  spot_pos_z : Float
+  spot_dir_x : Float
+  spot_dir_y : Float
+  spot_dir_z : Float
+  spot_color_r : Float
+  spot_color_g : Float
+  spot_color_b : Float
+  spot_intensity : Float
+  spot_range : Float
+  spot_inner_angle : Float
+  spot_outer_angle : Float
+  transmission_blur_taps : Float
+  transmission_steps : Float
+  point_shadow_texture_id : Int
+  point_shadow_enabled : Float
+  point_shadow_depth_bias : Float
+  transmission_source_texture_id : Int
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
+  environment_map_intensity : Float
+  environment_map_rotation_x : Float
+  environment_map_rotation_y : Float
+  environment_map_rotation_z : Float
+  environment_map_rotation_w : Float
+  point_shadow_near : Float
+}
+
+///|
+pub struct GpuFrameState {
+  surface_tex : @wgpu.SurfaceTexture
+  surface_texture : @wgpu.Texture
+  surface_view : @wgpu.TextureView
+  encoder : @wgpu.CommandEncoder
+  mut pass : @wgpu.RenderPass?
+}
+
+///|
+pub struct GpuSurfaceState {
+  surface_id : Int
+  target_id : Int
+  surface : @wgpu.Surface
+  mut surface_format : @wgpu.TextureFormat?
+  mut configured_width : Int
+  mut configured_height : Int
+  mut configured_present_mode : UInt
+  mut configured_alpha_mode : UInt
+  mut configured_desired_maximum_frame_latency : UInt
+  mut frame : GpuFrameState?
+  mut cleared_this_frame : Bool
+}
+
+///|
 fn reopen_saved_pass(
   backend : GpuBackend,
   pass_state : GpuPassState,

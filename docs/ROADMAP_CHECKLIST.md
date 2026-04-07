@@ -6,7 +6,7 @@ This file must not exceed 200 lines.
 - [ ] Package `pbr` (pending bevy-like directory topology via subpackage split + decal/occlusion/OIT/transmitted-shadow backend closures).
 - [ ] Package `remote` (current plugin is still stubbed backend).
 - [ ] Package `render` (pending Bevy file-topology + stage-ownership parity closure).
-- [ ] Package `render/renderer` (pending Bevy renderer module-boundary/source-shape parity closure).
+- [ ] Package `render/renderer` (pass/frame/surface state + clip-matrix helpers moved into `draw_state`; pending preprocess/backend-state split and remaining Bevy-like file-topology cleanup).
 - [ ] Package `solari` (current runtime boundary is still stubbed).
 - [ ] Package `text` (pending glyph/layout stress bottleneck closure).
 - [x] Issue `render/bevy_file_mapping_matrix_lock`: matrix now includes `render3d_morph` and latest `phase_state/math/material_flags/targets/systems` splits.
