@@ -1120,7 +1120,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners
   z_near,
   z_far,
 ) {
-  render3d_perspective_frustum_corners(
+  @pbr_render.render3d_perspective_frustum_corners(
     self.aspect_ratio,
     self.fov,
     z_near,
@@ -1132,7 +1132,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners
 pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view(
   self,
 ) {
-  render3d_orthographic_projection_matrix(
+  @pbr_render.render3d_orthographic_projection_matrix(
     self.area.min.x,
     self.area.max.x,
     self.area.min.y,

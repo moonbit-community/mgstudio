@@ -47,7 +47,7 @@ fn render3d_execute_camera_point_shadow_pass(
     0.0001F
   }
   let shadow_view_size = point_light_shadow_map_size
-  let point_shadow_pass_projection = render3d_point_shadow_pass_projection(
+  let point_shadow_pass_projection = @pbr_render.render3d_point_shadow_pass_projection(
     shadow_camera_near,
     pass_lighting.point_range,
   )

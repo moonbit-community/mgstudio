@@ -159,7 +159,7 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     )
     let camera_near = camera_pass_projection.camera_near
     let camera_far = camera_pass_projection.camera_far
-    let current_clip_from_world = render3d_pass_projection_clip_from_world(
+    let current_clip_from_world = @pbr_render.render3d_pass_projection_clip_from_world(
       camera_pass_projection,
       camera.transform,
     )
@@ -279,20 +279,20 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
       bloom_enabled ||
       tonemap_postprocess_enabled ||
       auto_exposure_enabled
-    let scene_pass_kind = render3d_pass_kind_encode(
-      RENDER3D_PASS_KIND_BASE_SCENE,
+    let scene_pass_kind = @pbr_render.render3d_pass_kind_encode(
+      @pbr_render.RENDER3D_PASS_KIND_BASE_SCENE,
       postprocess_enabled,
       fog_enabled,
       decal_enabled,
     )
-    let motion_vector_pass_kind = render3d_pass_kind_encode(
-      RENDER3D_PASS_KIND_BASE_MOTION_VECTOR,
+    let motion_vector_pass_kind = @pbr_render.render3d_pass_kind_encode(
+      @pbr_render.RENDER3D_PASS_KIND_BASE_MOTION_VECTOR,
       false,
       false,
       false,
     )
-    let point_shadow_pass_kind = render3d_pass_kind_encode(
-      RENDER3D_PASS_KIND_BASE_POINT_SHADOW,
+    let point_shadow_pass_kind = @pbr_render.render3d_pass_kind_encode(
+      @pbr_render.RENDER3D_PASS_KIND_BASE_POINT_SHADOW,
       false,
       false,
       false,

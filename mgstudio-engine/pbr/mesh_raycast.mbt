@@ -273,7 +273,9 @@ pub fn render3d_camera_viewport_to_world_ray(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> (@math.Vec3, @math.Vec3)? {
-  guard render3d_camera_viewport_rect_logical(camera, target_size, scale_factor)
+  guard @pbr_render.render3d_camera_viewport_rect_logical(
+      camera, target_size, scale_factor,
+    )
     is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
     return None
   }
@@ -291,7 +293,7 @@ pub fn render3d_camera_viewport_to_world_ray(
     projection, camera, target_size, scale_factor,
   )
   let clip_from_view = runtime_projection.get_clip_from_view()
-  guard render3d_projection_matrix_inverse(clip_from_view)
+  guard @pbr_render.render3d_projection_matrix_inverse(clip_from_view)
     is Some(view_from_clip) else {
     return None
   }
@@ -341,7 +343,9 @@ pub fn render3d_camera_world_to_viewport(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {
-  guard render3d_camera_viewport_rect_logical(camera, target_size, scale_factor)
+  guard @pbr_render.render3d_camera_viewport_rect_logical(
+      camera, target_size, scale_factor,
+    )
     is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
     return None
   }

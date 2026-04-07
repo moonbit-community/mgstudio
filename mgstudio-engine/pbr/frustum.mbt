@@ -120,7 +120,7 @@ fn render3d_compute_frustum(
   far : Float,
 ) -> Frustum {
   let clip_from_world = clip_from_view.mul(
-    render3d_view_from_world_matrix(camera_transform),
+    @pbr_render.render3d_view_from_world_matrix(camera_transform),
   )
   Frustum::new(
     ViewFrustum::from_clip_from_world_custom_far(

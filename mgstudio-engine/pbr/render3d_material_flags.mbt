@@ -13,28 +13,7 @@
 // limitations under the License.
 
 ///|
-const RENDER3D_PASS_KIND_BASE_SCENE : Int = @pbr_render.RENDER3D_PASS_KIND_BASE_SCENE
-
-///|
-const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = @pbr_render.RENDER3D_PASS_KIND_BASE_MOTION_VECTOR
-
-///|
-const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = @pbr_render.RENDER3D_PASS_KIND_BASE_POINT_SHADOW
-
-///|
 const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
-
-///|
-fn render3d_pass_kind_encode(
-  base_kind : Int,
-  postprocess_enabled : Bool,
-  fog_enabled : Bool,
-  decal_enabled : Bool,
-) -> Int {
-  @pbr_render.render3d_pass_kind_encode(
-    base_kind, postprocess_enabled, fog_enabled, decal_enabled,
-  )
-}
 
 ///|
 fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {

@@ -16,25 +16,6 @@
 type Render3dPassProjection = @pbr_render.Render3dPassProjection
 
 ///|
-fn render3d_projection_matrix_apply_temporal_jitter(
-  clip_from_view : ProjectionMatrix3d,
-  temporal_jitter : TemporalJitter,
-  view_width : Int,
-  view_height : Int,
-) -> ProjectionMatrix3d {
-  @pbr_render.render3d_projection_matrix_apply_temporal_jitter(
-    clip_from_view, temporal_jitter, view_width, view_height,
-  )
-}
-
-///|
-fn render3d_projection_near_from_clip_matrix(
-  clip_from_view : ProjectionMatrix3d,
-) -> Float {
-  @pbr_render.render3d_projection_near_from_clip_matrix(clip_from_view)
-}
-
-///|
 fn render3d_projection_near(
   projection : Projection,
   clip_from_view : ProjectionMatrix3d,
@@ -42,7 +23,8 @@ fn render3d_projection_near(
   match projection {
     Perspective(perspective) => maxf(0.0001F, perspective.near)
     Orthographic(orthographic) => orthographic.near
-    Custom(_) => render3d_projection_near_from_clip_matrix(clip_from_view)
+    Custom(_) =>
+      @pbr_render.render3d_projection_near_from_clip_matrix(clip_from_view)
   }
 }
 
@@ -60,7 +42,7 @@ fn render3d_camera_pass_projection(
   }
   let clip_from_view = match temporal_jitter {
     Some(temporal_jitter) =>
-      render3d_projection_matrix_apply_temporal_jitter(
+      @pbr_render.render3d_projection_matrix_apply_temporal_jitter(
         unjittered_clip_from_view, temporal_jitter, view_width, view_height,
       )
     None => unjittered_clip_from_view
@@ -70,55 +52,6 @@ fn render3d_camera_pass_projection(
     unjittered_clip_from_view,
     render3d_projection_near(projection, unjittered_clip_from_view),
     projection.far(),
-  )
-}
-
-///|
-fn render3d_point_shadow_pass_projection(
-  near : Float,
-  far : Float,
-) -> Render3dPassProjection {
-  @pbr_render.render3d_point_shadow_pass_projection(near, far)
-}
-
-///|
-fn render3d_view_from_world_matrix(
-  transform : @transform.Transform,
-) -> ProjectionMatrix3d {
-  @pbr_render.render3d_view_from_world_matrix(transform)
-}
-
-///|
-fn render3d_pass_projection_clip_from_world(
-  pass_projection : Render3dPassProjection,
-  camera_transform : @transform.Transform,
-) -> ProjectionMatrix3d {
-  @pbr_render.render3d_pass_projection_clip_from_world(
-    pass_projection, camera_transform,
-  )
-}
-
-///|
-fn render3d_pass_projection_unjittered_clip_from_world(
-  pass_projection : Render3dPassProjection,
-  camera_transform : @transform.Transform,
-) -> ProjectionMatrix3d {
-  @pbr_render.render3d_pass_projection_unjittered_clip_from_world(
-    pass_projection, camera_transform,
-  )
-}
-
-///|
-fn render3d_orthographic_projection_matrix(
-  left : Float,
-  right : Float,
-  bottom : Float,
-  top : Float,
-  near : Float,
-  far : Float,
-) -> ProjectionMatrix3d {
-  @pbr_render.render3d_orthographic_projection_matrix(
-    left, right, bottom, top, near, far,
   )
 }
 
@@ -151,31 +84,13 @@ fn render3d_orthographic_projection_matrix_for_sub(
   let right_prime = left_prime + scale_w * sub_width
   let top_prime = top - scale_h * sub_view.offset.y
   let bottom_prime = top_prime - scale_h * sub_height
-  render3d_orthographic_projection_matrix(
+  @pbr_render.render3d_orthographic_projection_matrix(
     left_prime,
     right_prime,
     bottom_prime,
     top_prime,
     orthographic.far,
     orthographic.near,
-  )
-}
-
-///|
-fn render3d_projection_matrix_inverse(
-  matrix : ProjectionMatrix3d,
-) -> ProjectionMatrix3d? {
-  @pbr_render.render3d_projection_matrix_inverse(matrix)
-}
-
-///|
-fn render3d_camera_viewport_rect_logical(
-  camera : @sprite.Camera,
-  target_size : @math.IVec2,
-  scale_factor : Float,
-) -> (Float, Float, Float, Float)? {
-  @pbr_render.render3d_camera_viewport_rect_logical(
-    camera, target_size, scale_factor,
   )
 }
 
@@ -229,7 +144,9 @@ fn render3d_projection_runtime_projection(
   scale_factor : Float,
 ) -> Projection {
   match
-    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    @pbr_render.render3d_camera_viewport_rect_logical(
+      camera, target_size, scale_factor,
+    ) {
     Some((_, _, viewport_width, viewport_height)) =>
       projection.update(viewport_width, viewport_height)
     None => projection
@@ -246,7 +163,9 @@ fn render3d_projection_runtime_update(
   scale_factor : Float,
 ) -> (Projection, ProjectionRuntime3d?) {
   match
-    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    @pbr_render.render3d_camera_viewport_rect_logical(
+      camera, target_size, scale_factor,
+    ) {
     Some((_, _, viewport_width, viewport_height)) => {
       let next_runtime = ProjectionRuntime3d::{
         last_view_width: viewport_width,
@@ -274,7 +193,7 @@ fn render3d_adjust_perspective_matrix_for_clip_plane(
   if clip_plane == render3d_default_near_clip_plane(projection.near) {
     return matrix
   }
-  match render3d_projection_matrix_inverse(matrix) {
+  match @pbr_render.render3d_projection_matrix_inverse(matrix) {
     None => matrix
     Some(inverse) => {
       let q_prime = @math.Vec4::new(
@@ -329,23 +248,12 @@ fn render3d_adjust_perspective_matrix_for_clip_plane(
 }
 
 ///|
-fn render3d_perspective_projection_matrix_raw(
-  near : Float,
-  fov : Float,
-  aspect_ratio : Float,
-) -> ProjectionMatrix3d {
-  @pbr_render.render3d_perspective_projection_matrix_raw(
-    near, fov, aspect_ratio,
-  )
-}
-
-///|
 fn render3d_perspective_projection_matrix(
   projection : PerspectiveProjection3d,
 ) -> ProjectionMatrix3d {
   render3d_adjust_perspective_matrix_for_clip_plane(
     projection,
-    render3d_perspective_projection_matrix_raw(
+    @pbr_render.render3d_perspective_projection_matrix_raw(
       projection.near,
       projection.fov,
       projection.aspect_ratio,
@@ -401,17 +309,5 @@ fn render3d_perspective_projection_matrix_for_sub(
       @math.Vec4::new(a, b, 0.0F, -1.0F),
       @math.Vec4::new(0.0F, 0.0F, near, 0.0F),
     ),
-  )
-}
-
-///|
-fn render3d_perspective_frustum_corners(
-  aspect_ratio : Float,
-  fov : Float,
-  z_near : Float,
-  z_far : Float,
-) -> Array[@math.Vec3] {
-  @pbr_render.render3d_perspective_frustum_corners(
-    aspect_ratio, fov, z_near, z_far,
   )
 }

@@ -624,21 +624,25 @@ fn render3d_host_preprocess_view(
   viewport_height : Int,
   camera_exposure_value : Float,
 ) -> @render.HostMesh3dPreprocessView {
-  let clip_from_world = render3d_pass_projection_clip_from_world(
+  let clip_from_world = @pbr_render.render3d_pass_projection_clip_from_world(
     pass_projection, camera_transform,
   )
-  let unjittered_clip_from_world = render3d_pass_projection_unjittered_clip_from_world(
+  let unjittered_clip_from_world = @pbr_render.render3d_pass_projection_unjittered_clip_from_world(
     pass_projection, camera_transform,
   )
-  let view_from_world = render3d_view_from_world_matrix(camera_transform)
+  let view_from_world = @pbr_render.render3d_view_from_world_matrix(
+    camera_transform,
+  )
   let world_from_view = render3d_world_from_view_matrix(camera_transform)
   let world_from_clip = match
-    render3d_projection_matrix_inverse(clip_from_world) {
+    @pbr_render.render3d_projection_matrix_inverse(clip_from_world) {
     Some(value) => value
     None => render3d_projection_matrix_identity()
   }
   let view_from_clip = match
-    render3d_projection_matrix_inverse(pass_projection.clip_from_view) {
+    @pbr_render.render3d_projection_matrix_inverse(
+      pass_projection.clip_from_view,
+    ) {
     Some(value) => value
     None => render3d_projection_matrix_identity()
   }
@@ -689,18 +693,20 @@ fn render3d_host_preprocess_previous_view(
   previous_transform : @transform.Transform,
   previous_clip_from_world : ProjectionMatrix3d?,
 ) -> @render.HostMesh3dPreprocessPreviousView {
-  let resolved_previous_view_from_world = render3d_view_from_world_matrix(
+  let resolved_previous_view_from_world = @pbr_render.render3d_view_from_world_matrix(
     previous_transform,
   )
   let resolved_previous_clip_from_world = match previous_clip_from_world {
     Some(value) => value
     None =>
-      render3d_pass_projection_clip_from_world(
+      @pbr_render.render3d_pass_projection_clip_from_world(
         pass_projection, previous_transform,
       )
   }
   let resolved_previous_world_from_clip = match
-    render3d_projection_matrix_inverse(resolved_previous_clip_from_world) {
+    @pbr_render.render3d_projection_matrix_inverse(
+      resolved_previous_clip_from_world,
+    ) {
     Some(value) => value
     None => render3d_projection_matrix_identity()
   }
@@ -711,7 +717,9 @@ fn render3d_host_preprocess_previous_view(
     resolved_previous_world_from_view,
   )
   let resolved_previous_view_from_clip = match
-    render3d_projection_matrix_inverse(resolved_previous_clip_from_view) {
+    @pbr_render.render3d_projection_matrix_inverse(
+      resolved_previous_clip_from_view,
+    ) {
     Some(value) => value
     None => render3d_projection_matrix_identity()
   }
