@@ -13,76 +13,16 @@
 // limitations under the License.
 
 ///|
-const RENDER3D_PASS_KIND_BASE_SCENE : Int = 0
+const RENDER3D_PASS_KIND_BASE_SCENE : Int = @pbr_render.RENDER3D_PASS_KIND_BASE_SCENE
 
 ///|
-const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = @pbr_render.RENDER3D_PASS_KIND_BASE_MOTION_VECTOR
 
 ///|
-const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = 2
-
-///|
-const RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 1 << 8
-
-///|
-const RENDER3D_PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
-
-///|
-const RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
+const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = @pbr_render.RENDER3D_PASS_KIND_BASE_POINT_SHADOW
 
 ///|
 const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
-
-///|
-const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : UInt = 1U << 0
-
-///|
-const STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT : UInt = 1U << 1
-
-///|
-const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT : UInt = 1U << 2
-
-///|
-const STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT : UInt = 1U << 3
-
-///|
-const STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT : UInt = 1U << 4
-
-///|
-const STANDARD_MATERIAL_FLAGS_UNLIT_BIT : UInt = 1U << 5
-
-///|
-const STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y : UInt = 1U << 7
-
-///|
-const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT : UInt = 1U << 9
-
-///|
-const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT : UInt = 1U << 17
-
-///|
-const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 1U << 19
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE : UInt = 0U << 29
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : UInt = 1U << 29
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND : UInt = 2U << 29
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED : UInt = 3U << 29
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD : UInt = 4U << 29
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY : UInt = 5U << 29
-
-///|
-const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE : UInt = 6U << 29
 
 ///|
 fn render3d_pass_kind_encode(
@@ -91,17 +31,9 @@ fn render3d_pass_kind_encode(
   fog_enabled : Bool,
   decal_enabled : Bool,
 ) -> Int {
-  let mut value = base_kind
-  if !postprocess_enabled {
-    value = value | RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG
-  }
-  if !fog_enabled {
-    value = value | RENDER3D_PASS_KIND_DISABLE_FOG_FLAG
-  }
-  if !decal_enabled {
-    value = value | RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG
-  }
-  value
+  @pbr_render.render3d_pass_kind_encode(
+    base_kind, postprocess_enabled, fog_enabled, decal_enabled,
+  )
 }
 
 ///|
@@ -114,26 +46,8 @@ fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
 }
 
 ///|
-fn render3d_standard_material_alpha_mode_flags(
-  alpha_mode : AlphaMode3d,
-) -> UInt {
-  match alpha_mode {
-    Opaque => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
-    Mask(_) => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
-    Blend => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND
-    Premultiplied => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED
-    Add => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD
-    Multiply => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY
-    AlphaToCoverage => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE
-  }
-}
-
-///|
 fn render3d_standard_material_alpha_cutoff(alpha_mode : AlphaMode3d) -> Float {
-  match alpha_mode {
-    Mask(cutoff) => cutoff
-    _ => 0.5F
-  }
+  @pbr_render.render3d_standard_material_alpha_cutoff(alpha_mode)
 }
 
 ///|
@@ -148,40 +62,10 @@ fn render3d_standard_material_flags(
   anisotropy_texture_id : Int,
   specular_tint_texture_id : Int,
 ) -> UInt {
-  let mut flags = render3d_standard_material_alpha_mode_flags(
-    material.alpha_mode,
+  @pbr_render.render3d_standard_material_flags(
+    material, base_color_texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
+    occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
   )
-  if base_color_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT
-  }
-  if emissive_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT
-  }
-  if metallic_roughness_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT
-  }
-  if occlusion_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT
-  }
-  if material.cull_mode is None {
-    flags = flags | STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT
-  }
-  if material.unlit {
-    flags = flags | STANDARD_MATERIAL_FLAGS_UNLIT_BIT
-  }
-  if normal_texture_id >= 0 && material.flip_normal_map_y {
-    flags = flags | STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y
-  }
-  if depth_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
-  }
-  if anisotropy_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT
-  }
-  if specular_tint_texture_id >= 0 {
-    flags = flags | STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT
-  }
-  flags
 }
 
 ///|
@@ -230,14 +114,5 @@ fn render3d_apply_extended_material_metadata(
   material : StandardMaterial,
   extension : ExtendedMaterialMetadata3d?,
 ) -> StandardMaterial {
-  guard extension is Some(extension_value) else { return material }
-  let mut out = material
-  if extension_value.alpha_mode_override is Some(alpha_mode_override) {
-    out = out.with_alpha_mode(alpha_mode_override)
-  }
-  if extension_value.opaque_render_method_override
-    is Some(opaque_render_method_override) {
-    out = out.with_opaque_render_method(opaque_render_method_override)
-  }
-  out
+  @pbr_render.render3d_apply_extended_material_metadata(material, extension)
 }

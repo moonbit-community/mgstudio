@@ -52,6 +52,42 @@ pub fn render3d_quat_inverse(q : @math.Quat) -> @math.Quat {
 }
 
 ///|
+pub fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-value.x, -value.y, -value.z, value.w)
+}
+
+///|
+pub fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
+  if width <= 0.0F || height <= 0.0F {
+    1.0F
+  } else {
+    width / height
+  }
+}
+
+///|
+pub fn render3d_signum(value : Float) -> Float {
+  if value < 0.0F {
+    -1.0F
+  } else if value > 0.0F {
+    1.0F
+  } else {
+    0.0F
+  }
+}
+
+///|
+pub fn render3d_vec4_dot(lhs : @math.Vec4, rhs : @math.Vec4) -> Float {
+  lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
+}
+
+///|
+pub fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
+}
+
+///|
 pub fn render3d_transform_forward(
   transform : @transform.Transform,
 ) -> @math.Vec3 {

@@ -48,7 +48,7 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (required-components + skinning sync API surface) -> `mgstudio-engine/pbr/render/mesh.mbt` (`Create`, subpackage bridge)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (render-target + viewport clamp helpers) -> `mgstudio-engine/pbr/render/targets.mbt` (`Migrated implementation`, root `render3d_targets.mbt` now bridge)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (runtime-config + indirect-enable helpers) -> `mgstudio-engine/pbr/render/runtime_config.mbt` (`Partial migrated implementation`, root `render3d_runtime_config.mbt` keeps PBR-config fetch)
-- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (math/comparison/transform helpers) -> `mgstudio-engine/pbr/render/math.mbt` (`Migrated implementation`, root `render3d_math.mbt` now bridge)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (math/comparison/transform helpers) -> `mgstudio-engine/pbr/render/math.mbt` (`Migrated implementation incl. quat inverse/conjugate + projection aspect/sign helpers + transform helpers`, root `render3d_math.mbt` now bridge)
 - [x] `bevy/crates/bevy_pbr/src/render/light.rs` (default lighting state + layout) -> `mgstudio-engine/pbr/render/light.mbt` (`Migrated implementation + type`, root `render3d_light.mbt` now bridge)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (projection runtime component + key) -> `mgstudio-engine/pbr/render/projection_runtime.mbt` (`Migrated implementation`, root `mesh.mbt` now aliases)
 - [x] `bevy/crates/bevy_pbr/src/render/gpu_preprocess.rs` (work item/dispatch/metadata helper types) -> `mgstudio-engine/pbr/render/gpu_preprocess_types.mbt` (`Migrated type layout`, root `mesh.mbt` now aliases)
@@ -56,6 +56,7 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (world transform cache + cached transform/skinning extraction helpers) -> `mgstudio-engine/pbr/render/world_transform_cache.mbt` (`Migrated implementation`, root `render3d_world_transform_cache.mbt` now bridge)
 - [x] `bevy/crates/bevy_pbr/src/render/skin.rs` (skin extraction/upload binding path) -> `mgstudio-engine/pbr/render/skin.mbt` (`Migrated implementation`, root `render3d_skin.mbt` now bridge)
 - [x] `bevy/crates/bevy_pbr/src/diagnostic.rs` (runtime diagnostic state + accessors) -> `mgstudio-engine/pbr/render/diagnostic.mbt` (`Migrated implementation`, root `diagnostic.mbt` now bridge)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (pass-kind + standard-material-flag encoding helpers) -> `mgstudio-engine/pbr/render/material_flags.mbt` (`Partial migrated implementation`, root `render3d_material_flags.mbt` keeps core_pipeline/decal/extracted-mesh dependent helpers)
 
 - [x] `bevy/crates/bevy_render/src/render_phase/mod.rs` -> `mgstudio-engine/render/render_phase.mbt` (`Create`)
 - [x] `bevy/crates/bevy_render/src/texture/mod.rs` -> `mgstudio-engine/render/texture.mbt` (`Create`)

@@ -32,17 +32,20 @@ test "render3d: standard material flags pack current Bevy subset bits" {
   let flags = render3d_standard_material_flags(
     material, 11, 12, 13, 14, 15, 16, 17, 18,
   )
-  let ok = (flags & STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_UNLIT_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT) != 0U &&
-    (flags & STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT) != 0U &&
-    (flags & (7U << 29)) == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
+  let ok = (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) !=
+    0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT) !=
+    0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_UNLIT_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT) !=
+    0U &&
+    (flags & (7U << 29)) == @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
   inspect(ok, content="true")
   inspect(
     render3d_flags_approx_eq(
@@ -66,7 +69,10 @@ test "render3d: standard material flags keep opaque default when maps are absent
     -1,
     -1,
   )
-  inspect(flags == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE, content="true")
+  inspect(
+    flags == @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
+    content="true",
+  )
 }
 
 ///|
@@ -83,7 +89,7 @@ test "render3d: normal map encoding bits stay host-minimal without bound texture
     -1,
   )
   inspect(
-    (flags & STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) == 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) == 0U &&
     (flags & (1U << 6)) == 0U,
     content="true",
   )

@@ -516,42 +516,6 @@ fn render3d_projection_runtime_update(
 }
 
 ///|
-fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
-  @math.Quat::new(-value.x, -value.y, -value.z, value.w)
-}
-
-///|
-fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
-  if width <= 0.0F || height <= 0.0F {
-    1.0F
-  } else {
-    width / height
-  }
-}
-
-///|
-fn render3d_signum(value : Float) -> Float {
-  if value < 0.0F {
-    -1.0F
-  } else if value > 0.0F {
-    1.0F
-  } else {
-    0.0F
-  }
-}
-
-///|
-fn render3d_vec4_dot(lhs : @math.Vec4, rhs : @math.Vec4) -> Float {
-  lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
-}
-
-///|
-fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
-  let safe_near = if near <= 0.0F { 0.0001F } else { near }
-  @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
-}
-
-///|
 fn render3d_adjust_perspective_matrix_for_clip_plane(
   projection : PerspectiveProjection3d,
   matrix : ProjectionMatrix3d,

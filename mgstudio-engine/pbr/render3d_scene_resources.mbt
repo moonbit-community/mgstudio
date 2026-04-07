@@ -762,9 +762,9 @@ fn render3d_draw_camera_skybox(
     thickness=0.0F,
     ior=1.5F,
     alpha_cutoff=0.5F,
-    material_flags=STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT |
-      STANDARD_MATERIAL_FLAGS_UNLIT_BIT |
-      STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
+    material_flags=@pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT |
+      @pbr_render.STANDARD_MATERIAL_FLAGS_UNLIT_BIT |
+      @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
     transmission_source_texture_id=-1,
     transmission_blur_taps=0.0F,
     transmission_steps=0.0F,

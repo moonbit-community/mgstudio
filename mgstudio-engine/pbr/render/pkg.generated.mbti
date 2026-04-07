@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
@@ -17,6 +18,52 @@ import {
 pub const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
 
 pub const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
+
+pub const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+pub const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = 2
+
+pub const RENDER3D_PASS_KIND_BASE_SCENE : Int = 0
+
+pub const RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG : Int = 1024
+
+pub const RENDER3D_PASS_KIND_DISABLE_FOG_FLAG : Int = 512
+
+pub const RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 256
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD : UInt = 2147483648
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE : UInt = 3221225472
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND : UInt = 1073741824
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : UInt = 536870912
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY : UInt = 2684354560
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE : UInt = 0
+
+pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED : UInt = 1610612736
+
+pub const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT : UInt = 131072
+
+pub const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : UInt = 1
+
+pub const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT : UInt = 512
+
+pub const STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT : UInt = 16
+
+pub const STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT : UInt = 2
+
+pub const STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y : UInt = 128
+
+pub const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT : UInt = 4
+
+pub const STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT : UInt = 8
+
+pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 524288
+
+pub const STANDARD_MATERIAL_FLAGS_UNLIT_BIT : UInt = 32
 
 pub fn absf(Float) -> Float
 
@@ -36,6 +83,8 @@ pub fn minf(Float, Float) -> Float
 
 pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
+pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?) -> @material.StandardMaterial
+
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
@@ -43,6 +92,8 @@ pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewpor
 pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
 
 pub fn render3d_default_lighting_state() -> Render3dLightingState
+
+pub fn render3d_default_near_clip_plane(Float) -> @math.Vec4
 
 pub fn render3d_default_time_or_default(@ecs.World) -> @time.Time[Unit]
 
@@ -92,6 +143,8 @@ pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
 pub fn render3d_pass_clear_enabled_for_target(Array[Int], Int, Bool) -> Int
 
+pub fn render3d_pass_kind_encode(Int, Bool, Bool, Bool) -> Int
+
 pub fn render3d_pass_viewport_for_target(Int, Int, Int, Int, Int, Int) -> (Int, Int, Int, Int)
 
 pub let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState]
@@ -106,6 +159,10 @@ pub fn render3d_prepared_camera_count() -> Int?
 
 pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
 
+pub fn render3d_projection_aspect_ratio(Float, Float) -> Float
+
+pub fn render3d_quat_conjugate(@math.Quat) -> @math.Quat
+
 pub fn render3d_quat_inverse(@math.Quat) -> @math.Quat
 
 pub fn render3d_queued_visible_mesh_count() -> Int?
@@ -113,6 +170,12 @@ pub fn render3d_queued_visible_mesh_count() -> Int?
 pub fn render3d_rotate_by_quat(@math.Vec3, @math.Quat) -> @math.Vec3
 
 pub let render3d_runtime_initialized_ref : @ref.Ref[Bool]
+
+pub fn render3d_signum(Float) -> Float
+
+pub fn render3d_standard_material_alpha_cutoff(@material.AlphaMode3d) -> Float
+
+pub fn render3d_standard_material_flags(@material.StandardMaterial, Int, Int, Int, Int, Int, Int, Int, Int) -> UInt
 
 pub fn render3d_target_info(@ecs.World, @sprite.RenderTarget) -> RenderTargetComputed3d?
 
@@ -123,6 +186,8 @@ pub fn render3d_transform_local_normal(@transform.Transform, @math.Vec3) -> @mat
 pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
 pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
+
+pub fn render3d_vec4_dot(@math.Vec4, @math.Vec4) -> Float
 
 pub fn render3d_world_transform_cache_begin_frame(@ref.Ref[Render3dWorldTransformCache]) -> Unit
 

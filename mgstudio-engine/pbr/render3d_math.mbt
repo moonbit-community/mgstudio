@@ -33,6 +33,31 @@ fn render3d_quat_inverse(q : @math.Quat) -> @math.Quat {
 }
 
 ///|
+fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
+  @pbr_render.render3d_quat_conjugate(value)
+}
+
+///|
+fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
+  @pbr_render.render3d_projection_aspect_ratio(width, height)
+}
+
+///|
+fn render3d_signum(value : Float) -> Float {
+  @pbr_render.render3d_signum(value)
+}
+
+///|
+fn render3d_vec4_dot(lhs : @math.Vec4, rhs : @math.Vec4) -> Float {
+  @pbr_render.render3d_vec4_dot(lhs, rhs)
+}
+
+///|
+fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
+  @pbr_render.render3d_default_near_clip_plane(near)
+}
+
+///|
 fn render3d_transform_forward(transform : @transform.Transform) -> @math.Vec3 {
   @pbr_render.render3d_transform_forward(transform)
 }
