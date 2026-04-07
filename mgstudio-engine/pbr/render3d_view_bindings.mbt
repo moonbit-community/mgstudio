@@ -361,3 +361,377 @@ fn render3d_projection_matrix_inverse(
     ),
   )
 }
+
+///|
+fn render3d_camera_viewport_rect_logical(
+  camera : @sprite.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (Float, Float, Float, Float)? {
+  let target_width = target_size.x
+  let target_height = target_size.y
+  if target_width <= 0 || target_height <= 0 {
+    return None
+  }
+  let mut viewport_x = 0
+  let mut viewport_y = 0
+  let mut viewport_width = target_width
+  let mut viewport_height = target_height
+  if camera.viewport is Some(viewport) {
+    viewport_x = if viewport.physical_position.x < 0 {
+      0
+    } else {
+      viewport.physical_position.x
+    }
+    viewport_y = if viewport.physical_position.y < 0 {
+      0
+    } else {
+      viewport.physical_position.y
+    }
+    viewport_width = if viewport.physical_size.x < 0 {
+      0
+    } else {
+      viewport.physical_size.x
+    }
+    viewport_height = if viewport.physical_size.y < 0 {
+      0
+    } else {
+      viewport.physical_size.y
+    }
+    let max_width = if target_width - viewport_x < 0 {
+      0
+    } else {
+      target_width - viewport_x
+    }
+    let max_height = if target_height - viewport_y < 0 {
+      0
+    } else {
+      target_height - viewport_y
+    }
+    if viewport_width > max_width {
+      viewport_width = max_width
+    }
+    if viewport_height > max_height {
+      viewport_height = max_height
+    }
+  }
+  if viewport_width <= 0 || viewport_height <= 0 {
+    return None
+  }
+  let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+  let logical_x = Float::from_double(viewport_x.to_double()) / sf
+  let logical_y = Float::from_double(viewport_y.to_double()) / sf
+  let logical_width = Float::from_double(viewport_width.to_double()) / sf
+  let logical_height = Float::from_double(viewport_height.to_double()) / sf
+  if logical_width <= 0.0F || logical_height <= 0.0F {
+    return None
+  }
+  Some((logical_x, logical_y, logical_width, logical_height))
+}
+
+///|
+fn render3d_orthographic_area(
+  orthographic : OrthographicProjection3d,
+  view_width : Float,
+  view_height : Float,
+) -> @math.Rect {
+  let safe_view_width = if view_width <= 0.0F { 1.0F } else { view_width }
+  let safe_view_height = if view_height <= 0.0F { 1.0F } else { view_height }
+  let (projection_width, projection_height) = match orthographic.scaling_mode {
+    WindowSize => (safe_view_width, safe_view_height)
+    AutoMin(min_width, min_height) =>
+      if safe_view_width * min_height > min_width * safe_view_height {
+        (safe_view_width * min_height / safe_view_height, min_height)
+      } else {
+        (min_width, safe_view_height * min_width / safe_view_width)
+      }
+    AutoMax(max_width, max_height) =>
+      if safe_view_width * max_height < max_width * safe_view_height {
+        (safe_view_width * max_height / safe_view_height, max_height)
+      } else {
+        (max_width, safe_view_height * max_width / safe_view_width)
+      }
+    FixedVertical(viewport_height) =>
+      (safe_view_width * viewport_height / safe_view_height, viewport_height)
+    FixedHorizontal(viewport_width) =>
+      (viewport_width, safe_view_height * viewport_width / safe_view_width)
+    Fixed(width, height) => (width, height)
+  }
+  let origin_x = projection_width * orthographic.viewport_origin.x
+  let origin_y = projection_height * orthographic.viewport_origin.y
+  @math.Rect::new(
+    @math.Vec2::new(
+      orthographic.scale * -origin_x,
+      orthographic.scale * -origin_y,
+    ),
+    @math.Vec2::new(
+      orthographic.scale * (projection_width - origin_x),
+      orthographic.scale * (projection_height - origin_y),
+    ),
+  )
+}
+
+///|
+fn render3d_projection_runtime_projection(
+  projection : Projection,
+  camera : @sprite.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> Projection {
+  match
+    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    Some((_, _, viewport_width, viewport_height)) =>
+      projection.update(viewport_width, viewport_height)
+    None => projection
+  }
+}
+
+///|
+fn render3d_projection_runtime_update(
+  projection : Projection,
+  runtime : ProjectionRuntime3d?,
+  force_update : Bool,
+  camera : @sprite.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (Projection, ProjectionRuntime3d?) {
+  match
+    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    Some((_, _, viewport_width, viewport_height)) => {
+      let next_runtime = ProjectionRuntime3d::{
+        last_view_width: viewport_width,
+        last_view_height: viewport_height,
+      }
+      if runtime is Some(previous_runtime) &&
+        previous_runtime.last_view_width == viewport_width &&
+        previous_runtime.last_view_height == viewport_height &&
+        !force_update {
+        (projection, None)
+      } else {
+        (projection.update(viewport_width, viewport_height), Some(next_runtime))
+      }
+    }
+    None => (projection, None)
+  }
+}
+
+///|
+fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-value.x, -value.y, -value.z, value.w)
+}
+
+///|
+fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
+  if width <= 0.0F || height <= 0.0F {
+    1.0F
+  } else {
+    width / height
+  }
+}
+
+///|
+fn render3d_signum(value : Float) -> Float {
+  if value < 0.0F {
+    -1.0F
+  } else if value > 0.0F {
+    1.0F
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn render3d_vec4_dot(lhs : @math.Vec4, rhs : @math.Vec4) -> Float {
+  lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
+}
+
+///|
+fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
+}
+
+///|
+fn render3d_adjust_perspective_matrix_for_clip_plane(
+  projection : PerspectiveProjection3d,
+  matrix : ProjectionMatrix3d,
+) -> ProjectionMatrix3d {
+  let clip_plane = projection.near_clip_plane
+  if clip_plane == render3d_default_near_clip_plane(projection.near) {
+    return matrix
+  }
+  match render3d_projection_matrix_inverse(matrix) {
+    None => matrix
+    Some(inverse) => {
+      let q_prime = @math.Vec4::new(
+        render3d_signum(clip_plane.x),
+        render3d_signum(clip_plane.y),
+        0.0F,
+        1.0F,
+      )
+      let q = inverse.mul_vec4(q_prime)
+      let denominator = render3d_vec4_dot(clip_plane, q)
+      let safe_denominator = if denominator >= -1.0e-12F &&
+        denominator <= 1.0e-12F {
+        1.0F
+      } else {
+        denominator
+      }
+      let a = -q.z / safe_denominator
+      let m3_prime = @math.Vec4::new(
+        -clip_plane.x * a,
+        -clip_plane.y * a,
+        -1.0F - clip_plane.z * a,
+        -clip_plane.w * a,
+      )
+      ProjectionMatrix3d::{
+        x_axis: @math.Vec4::new(
+          matrix.x_axis.x,
+          matrix.x_axis.y,
+          m3_prime.x,
+          matrix.x_axis.w,
+        ),
+        y_axis: @math.Vec4::new(
+          matrix.y_axis.x,
+          matrix.y_axis.y,
+          m3_prime.y,
+          matrix.y_axis.w,
+        ),
+        z_axis: @math.Vec4::new(
+          matrix.z_axis.x,
+          matrix.z_axis.y,
+          m3_prime.z,
+          matrix.z_axis.w,
+        ),
+        w_axis: @math.Vec4::new(
+          matrix.w_axis.x,
+          matrix.w_axis.y,
+          m3_prime.w,
+          matrix.w_axis.w,
+        ),
+      }
+    }
+  }
+}
+
+///|
+fn render3d_perspective_projection_matrix_raw(
+  near : Float,
+  fov : Float,
+  aspect_ratio : Float,
+) -> ProjectionMatrix3d {
+  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let y = if tan_half_fov == 0.0F { 1.0F } else { 1.0F / tan_half_fov }
+  let x = y / safe_aspect
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
+    @math.Vec4::new(0.0F, 0.0F, safe_near, 0.0F),
+  )
+}
+
+///|
+fn render3d_perspective_projection_matrix(
+  projection : PerspectiveProjection3d,
+) -> ProjectionMatrix3d {
+  render3d_adjust_perspective_matrix_for_clip_plane(
+    projection,
+    render3d_perspective_projection_matrix_raw(
+      projection.near,
+      projection.fov,
+      projection.aspect_ratio,
+    ),
+  )
+}
+
+///|
+fn render3d_perspective_projection_matrix_for_sub(
+  projection : PerspectiveProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  let full_width = Float::from_double(sub_view.full_size.x.to_double())
+  let full_height = Float::from_double(sub_view.full_size.y.to_double())
+  let sub_width = Float::from_double(sub_view.size.x.to_double())
+  let sub_height = Float::from_double(sub_view.size.y.to_double())
+  if full_width <= 0.0F ||
+    full_height <= 0.0F ||
+    sub_width <= 0.0F ||
+    sub_height <= 0.0F {
+    return projection.get_clip_from_view()
+  }
+  let near = if projection.near <= 0.0F { 0.0001F } else { projection.near }
+  let offset_x = sub_view.offset.x
+  let offset_y = full_height - (sub_view.offset.y + sub_height)
+  let full_aspect = full_width / full_height
+  let half_fov = projection.fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let top = near * tan_half_fov
+  let bottom = -top
+  let right = top * full_aspect
+  let left = -right
+  let width = right - left
+  let height = top - bottom
+  let left_prime = left + width * offset_x / full_width
+  let right_prime = left + width * (offset_x + sub_width) / full_width
+  let bottom_prime = bottom + height * offset_y / full_height
+  let top_prime = bottom + height * (offset_y + sub_height) / full_height
+  let x = 2.0F * near / (right_prime - left_prime)
+  let y = 2.0F * near / (top_prime - bottom_prime)
+  let a = (right_prime + left_prime) / (right_prime - left_prime)
+  let b = (top_prime + bottom_prime) / (top_prime - bottom_prime)
+  render3d_adjust_perspective_matrix_for_clip_plane(
+    projection,
+    ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+      @math.Vec4::new(a, b, 0.0F, -1.0F),
+      @math.Vec4::new(0.0F, 0.0F, near, 0.0F),
+    ),
+  )
+}
+
+///|
+fn render3d_perspective_frustum_corners(
+  aspect_ratio : Float,
+  fov : Float,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let near_half_height = tan_half_fov *
+    (if z_near < 0.0F { -z_near } else { z_near })
+  let far_half_height = tan_half_fov *
+    (if z_far < 0.0F { -z_far } else { z_far })
+  let near_half_width = near_half_height * aspect_ratio
+  let far_half_width = far_half_height * aspect_ratio
+  [
+    @math.Vec3::new(near_half_width, -near_half_height, z_near),
+    @math.Vec3::new(near_half_width, near_half_height, z_near),
+    @math.Vec3::new(-near_half_width, near_half_height, z_near),
+    @math.Vec3::new(-near_half_width, -near_half_height, z_near),
+    @math.Vec3::new(far_half_width, -far_half_height, z_far),
+    @math.Vec3::new(far_half_width, far_half_height, z_far),
+    @math.Vec3::new(-far_half_width, far_half_height, z_far),
+    @math.Vec3::new(-far_half_width, -far_half_height, z_far),
+  ]
+}
