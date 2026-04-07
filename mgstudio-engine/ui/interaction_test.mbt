@@ -94,7 +94,7 @@ test "ui: interaction updates component state" {
 }
 
 ///|
-test "ui: pointer viewport conversion normalizes y from top-left origin" {
+test "ui: pointer viewport conversion keeps top-left y direction" {
   let pointer = @math.Vec2::new(250.0F, 460.0F)
   let viewport_origin = @math.Vec2::new(200.0F, 100.0F)
   let viewport_size = @math.Vec2::new(400.0F, 500.0F)
@@ -103,7 +103,7 @@ test "ui: pointer viewport conversion normalizes y from top-left origin" {
   )
   let point = converted.unwrap()
   inspect(point.x == 50.0F, content="true")
-  inspect(point.y == 140.0F, content="true")
+  inspect(point.y == 360.0F, content="true")
 }
 
 ///|

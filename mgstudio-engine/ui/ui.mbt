@@ -1646,7 +1646,7 @@ pub fn ui_pointer_pos_in_viewport(
 ) -> @math.Vec2? {
   let pos_in_view = @math.Vec2::new(
     mouse_pos.x - viewport_origin.x,
-    viewport_size.y - (mouse_pos.y - viewport_origin.y),
+    mouse_pos.y - viewport_origin.y,
   )
   if pos_in_view.x >= 0.0F &&
     pos_in_view.y >= 0.0F &&
