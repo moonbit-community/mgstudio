@@ -114,44 +114,6 @@ pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
 }
 
 ///|
-pub fn ProjectionMatrix3d::row(
-  self : ProjectionMatrix3d,
-  index : Int,
-) -> @math.Vec4 {
-  match index {
-    0 =>
-      @math.Vec4::new(
-        self.x_axis.x,
-        self.y_axis.x,
-        self.z_axis.x,
-        self.w_axis.x,
-      )
-    1 =>
-      @math.Vec4::new(
-        self.x_axis.y,
-        self.y_axis.y,
-        self.z_axis.y,
-        self.w_axis.y,
-      )
-    2 =>
-      @math.Vec4::new(
-        self.x_axis.z,
-        self.y_axis.z,
-        self.z_axis.z,
-        self.w_axis.z,
-      )
-    3 =>
-      @math.Vec4::new(
-        self.x_axis.w,
-        self.y_axis.w,
-        self.z_axis.w,
-        self.w_axis.w,
-      )
-    _ => abort("ProjectionMatrix3d::row index out of bounds")
-  }
-}
-
-///|
 fn render3d_compute_frustum(
   clip_from_view : ProjectionMatrix3d,
   camera_transform : @transform.Transform,

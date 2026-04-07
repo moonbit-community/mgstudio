@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
 
@@ -74,6 +75,8 @@ pub fn cmp_float(Float, Float) -> Int
 pub fn cmp_int(Int, Int) -> Int
 
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
+
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
 pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
 
@@ -162,6 +165,8 @@ pub fn render3d_prepared_camera_count() -> Int?
 pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
 
 pub fn render3d_projection_aspect_ratio(Float, Float) -> Float
+
+pub fn render3d_projection_matrix_inverse(ProjectionMatrix3d) -> ProjectionMatrix3d?
 
 pub fn render3d_quat_conjugate(@math.Quat) -> @math.Quat
 
@@ -269,6 +274,19 @@ pub(all) struct PreparedSkinBinding3d {
   key_lo : Int
 }
 
+pub(all) struct ProjectionMatrix3d {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
+pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
+pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
+pub fn ProjectionMatrix3d::row(Self, Int) -> @math.Vec4
+pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
+
 pub(all) struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
@@ -335,6 +353,15 @@ pub struct RenderTargetComputed3d {
   target_size : @math.IVec2
   scale_factor : Float
 }
+
+pub struct SubCameraView3d {
+  full_size : @math.IVec2
+  offset : @math.Vec2
+  size : @math.IVec2
+} derive(ToJson, @json.FromJson)
+pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
+pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for SubCameraView3d
 
 // Type aliases
 

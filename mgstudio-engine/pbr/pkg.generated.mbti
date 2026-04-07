@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
@@ -171,7 +172,7 @@ pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
 
 pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[StandardMaterialPluginState]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
@@ -396,7 +397,7 @@ pub impl @ecs.Component for Camera3d
 pub struct Camera3dBundle {
   camera : @sprite.Camera
   projection : Projection
-  sub_camera_view : SubCameraView3d?
+  sub_camera_view : @render.SubCameraView3d?
   screen_space_transmission : @post_process.ScreenSpaceTransmission?
   screen_space_reflections : @post_process.ScreenSpaceReflections?
   bloom : @post_process.Bloom?
@@ -434,7 +435,7 @@ pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, @post_process.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_screen_space_transmission(Self, @post_process.ScreenSpaceTransmission?) -> Self
-pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_sub_camera_view(Self, @render.SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_target(Self, @sprite.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, @post_process.Vignette?) -> Self
@@ -499,8 +500,8 @@ pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustu
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T] CustomProjection3d::get(Self) -> T?
-pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
@@ -837,26 +838,13 @@ pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
-pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn Projection::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
 pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
 pub impl CameraProjection3d for Projection
-
-pub(all) struct ProjectionMatrix3d {
-  x_axis : @math.Vec4
-  y_axis : @math.Vec4
-  z_axis : @math.Vec4
-  w_axis : @math.Vec4
-}
-pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
-pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
-pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
-pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
-pub fn ProjectionMatrix3d::row(Self, Int) -> @math.Vec4
-pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
 
 type Render3dInternalAssetsState
 
@@ -891,15 +879,6 @@ pub struct StandardMaterialPluginState {
 }
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 
-pub struct SubCameraView3d {
-  full_size : @math.IVec2
-  offset : @math.Vec2
-  size : @math.IVec2
-} derive(ToJson, @json.FromJson)
-pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
-pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
-pub impl @ecs.Component for SubCameraView3d
-
 pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
 pub fn TransmittedShadowReceiver::default() -> Self
@@ -909,8 +888,8 @@ pub struct ViewFrustum {
   inner : @math.ViewFrustum
 } derive(Eq, ToJson, @json.FromJson)
 pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
-pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
-pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
+pub fn ViewFrustum::from_clip_from_world(@render.ProjectionMatrix3d) -> Self
+pub fn ViewFrustum::from_clip_from_world_custom_far(@render.ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
 pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 
 pub struct Wireframe {
@@ -1041,6 +1020,8 @@ pub using @light {type PointLightShadowMap}
 
 pub using @light {type PointLightTexture}
 
+pub using @render {type ProjectionMatrix3d}
+
 pub using @light {type ScatteringMedium}
 
 pub using @post_process {type ScreenSpaceAmbientOcclusion}
@@ -1060,6 +1041,8 @@ pub using @light {type SpotLight}
 pub using @light {type SpotLightTexture}
 
 pub using @material {type StandardMaterial}
+
+pub using @render {type SubCameraView3d}
 
 pub using @post_process {type TemporalAntiAliasing}
 
@@ -1081,8 +1064,8 @@ pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2]
 pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2]
 
 pub(open) trait CameraProjection3d {
-  get_clip_from_view(Self) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  get_clip_from_view(Self) -> @render.ProjectionMatrix3d
+  get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
   update(Self, Float, Float) -> Self
   far(Self) -> Float
   compute_frustum(Self, @transform.Transform) -> Frustum

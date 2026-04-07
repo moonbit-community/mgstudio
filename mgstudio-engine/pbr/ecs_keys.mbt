@@ -137,9 +137,7 @@ pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @ecs.re
 )
 
 ///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.register_component(
-  debug_name="render3d.sub_camera_view3d",
-)
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr_render.ecs_key_sub_camera_view3d
 
 ///|
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
@@ -319,11 +317,6 @@ pub impl @ecs.Component for FreeCameraState with component() {
 ///|
 pub impl @ecs.Component for NotShadowCaster with component() {
   ecs_key_not_shadow_caster
-}
-
-///|
-pub impl @ecs.Component for SubCameraView3d with component() {
-  ecs_key_sub_camera_view3d
 }
 
 ///|

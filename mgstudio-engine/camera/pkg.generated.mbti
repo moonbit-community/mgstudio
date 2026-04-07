@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
 }
@@ -19,7 +20,7 @@ pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
 
 pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@pbr.SubCameraView3d]
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
 
 pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> Array[(@core.Entity, @pbr.MeshRayCastHit)]
 
@@ -64,9 +65,9 @@ pub using @pbr {type PhysicalCameraParameters}
 
 pub using @pbr {type Projection}
 
-pub using @pbr {type ProjectionMatrix3d}
+pub using @render {type ProjectionMatrix3d}
 
-pub using @pbr {type SubCameraView3d}
+pub using @render {type SubCameraView3d}
 
 // Traits
 
