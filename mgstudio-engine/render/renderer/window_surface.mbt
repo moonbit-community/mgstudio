@@ -540,7 +540,7 @@ pub fn GpuBackend::end_frame_binding(
     flush_ui_slice_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
-    render_diagnostics_end_active_pass_timing()
+    render_pass_timing_end_active_pass()
     pass.end()
     pass.release()
     frame.pass = None

@@ -166,7 +166,7 @@ pub fn mesh3d_gpu_culling_supported() -> Bool
 
 pub fn mesh3d_indirect_first_instance_supported() -> Bool
 
-pub fn mesh3d_preprocess_disabled_by_env() -> Bool
+pub fn mesh3d_preprocess_disabled() -> Bool
 
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 

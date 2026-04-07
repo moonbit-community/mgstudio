@@ -605,7 +605,7 @@ let debug_mesh2d_drop_no_uniform_bg_ref : Ref[Int] = Ref::new(0)
 let debug_mesh2d_drop_no_texture_ref : Ref[Int] = Ref::new(0)
 
 ///|
-fn render_diagnostics_reset_pass_counters() -> Unit {
+fn render_pass_timing_reset_counters() -> Unit {
   current_frame_pass_total_count_ref.val = 0
   current_frame_pass_2d_count_ref.val = 0
   current_frame_pass_3d_main_count_ref.val = 0
@@ -619,7 +619,7 @@ fn render_diagnostics_reset_pass_counters() -> Unit {
 }
 
 ///|
-fn render_diagnostics_pass_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
+fn render_pass_timing_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
   match pass_kind_base_kind(pass_kind) {
     PASS_KIND_BASE_MOTION_VECTOR => RENDER_PASS_PHASE_3D_MOTION_VECTOR
     PASS_KIND_BASE_POINT_SHADOW => RENDER_PASS_PHASE_3D_POINT_SHADOW
@@ -628,7 +628,7 @@ fn render_diagnostics_pass_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
 }
 
 ///|
-fn render_diagnostics_end_active_pass_timing() -> Unit {
+fn render_pass_timing_end_active_pass() -> Unit {
   if active_pass_start_time_ref.val is Some(start_time) {
     let elapsed_ms = (@time.host_time_now() - start_time) * 1000.0F
     current_frame_pass_total_count_ref.val = current_frame_pass_total_count_ref.val +
@@ -668,7 +668,7 @@ fn render_diagnostics_end_active_pass_timing() -> Unit {
 }
 
 ///|
-fn render_diagnostics_begin_active_pass_timing(phase : Int) -> Unit {
+fn render_pass_timing_begin_active_pass(phase : Int) -> Unit {
   active_pass_phase_ref.val = phase
   active_pass_start_time_ref.val = Some(@time.host_time_now())
 }
@@ -738,7 +738,7 @@ fn env_or_default(key : String, default_value : String) -> String {
 }
 
 ///|
-pub fn mesh3d_preprocess_disabled_by_env() -> Bool {
+pub fn mesh3d_preprocess_disabled() -> Bool {
   match @sys.get_env_var("MGSTUDIO_RENDER3D_DISABLE_GPU_PREPROCESS") {
     Some(flag) => flag == "1"
     None => false
@@ -960,7 +960,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
   current_frame_mesh2d_executed_draw_calls_ref.val = 0
   current_frame_mesh3d_draw_calls_ref.val = 0
   current_frame_mesh3d_executed_draw_calls_ref.val = 0
-  render_diagnostics_reset_pass_counters()
+  render_pass_timing_reset_counters()
   if ensure_backend() is Some(backend) {
     backend.begin_frame_binding(surface)
     let frame_id = next_frame_id()
@@ -978,7 +978,7 @@ pub fn end_frame(frame : NativeGpuFrame) -> Unit {
       err => debug_runtime_error("end_frame", err)
     }
   }
-  render_diagnostics_end_active_pass_timing()
+  render_pass_timing_end_active_pass()
   last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
     mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
     mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
@@ -1776,7 +1776,7 @@ pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
 
 ///|
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
-  render_diagnostics_end_active_pass_timing()
+  render_pass_timing_end_active_pass()
   last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
     mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
     mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
@@ -1803,7 +1803,7 @@ pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
   current_frame_mesh2d_executed_draw_calls_ref.val = 0
   current_frame_mesh3d_draw_calls_ref.val = 0
   current_frame_mesh3d_executed_draw_calls_ref.val = 0
-  render_diagnostics_reset_pass_counters()
+  render_pass_timing_reset_counters()
   last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::default()
 }
 

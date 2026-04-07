@@ -193,7 +193,7 @@ pub fn GpuBackend::begin_pass(
     return
   }
   guard self.frame is Some(frame) else { return }
-  render_diagnostics_end_active_pass_timing()
+  render_pass_timing_end_active_pass()
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
@@ -338,7 +338,7 @@ pub fn GpuBackend::begin_pass(
   self.mesh3d_motion_vector_pass_view_uniform_bytes = None
   self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
-  render_diagnostics_begin_active_pass_timing(RENDER_PASS_PHASE_2D)
+  render_pass_timing_begin_active_pass(RENDER_PASS_PHASE_2D)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
     let w = Float::from_double(width_logical.to_double())
@@ -381,7 +381,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     return
   }
   guard self.frame is Some(frame) else { return }
-  render_diagnostics_end_active_pass_timing()
+  render_pass_timing_end_active_pass()
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
@@ -555,7 +555,7 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.mesh3d_motion_vector_pass_view_uniform_bytes = None
   self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
-  render_diagnostics_begin_active_pass_timing(RENDER_PASS_PHASE_2D)
+  render_pass_timing_begin_active_pass(RENDER_PASS_PHASE_2D)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
     let w = Float::from_double(width_logical.to_double())
@@ -700,7 +700,7 @@ pub fn GpuBackend::begin_pass_3d(
     return
   }
   guard self.frame is Some(frame) else { return }
-  render_diagnostics_end_active_pass_timing()
+  render_pass_timing_end_active_pass()
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
@@ -989,8 +989,8 @@ pub fn GpuBackend::begin_pass_3d(
   self.mesh3d_motion_vector_pass_view_uniform_bytes = None
   self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
-  render_diagnostics_begin_active_pass_timing(
-    render_diagnostics_pass_phase_from_3d_pass_kind(pass_kind),
+  render_pass_timing_begin_active_pass(
+    render_pass_timing_phase_from_3d_pass_kind(pass_kind),
   )
   if self.sprite_globals_buf is Some(globals_buf) {
     let w = Float::from_double(width_logical.to_double())
@@ -1067,7 +1067,7 @@ pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
     flush_ui_slice_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
-    render_diagnostics_end_active_pass_timing()
+    render_pass_timing_end_active_pass()
     pass.end()
     pass.release()
     frame.pass = None

@@ -446,7 +446,7 @@ pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool {
 
 ///|
 pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool {
-  @renderer.mesh3d_preprocess_disabled_by_env()
+  @renderer.mesh3d_preprocess_disabled()
 }
 
 ///|
@@ -515,7 +515,7 @@ pub fn host_gpu_begin_pass(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
-  render_timeline_begin_pass("pass_2d")
+  render_pass_trace_begin_span("pass_2d")
   @renderer.begin_pass(
     target_id~,
     width~,
@@ -559,7 +559,7 @@ pub fn host_gpu_begin_pass_with_depth(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
-  render_timeline_begin_pass("pass_2d_depth")
+  render_pass_trace_begin_span("pass_2d_depth")
   @renderer.begin_pass_with_depth(
     target_id~,
     width~,
@@ -702,7 +702,7 @@ pub fn host_gpu_begin_pass_3d(
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
-  render_timeline_begin_pass("pass_3d(kind=\{pass_kind})")
+  render_pass_trace_begin_span("pass_3d(kind=\{pass_kind})")
   @renderer.begin_pass_3d(
     target_id~,
     target_layer~,
@@ -1750,7 +1750,7 @@ pub fn host_gpu_draw_gizmo_line(
 ///|
 pub fn host_gpu_end_pass() -> Unit {
   @renderer.end_pass()
-  render_timeline_end_active_pass()
+  render_pass_trace_end_active_span()
 }
 
 ///|
