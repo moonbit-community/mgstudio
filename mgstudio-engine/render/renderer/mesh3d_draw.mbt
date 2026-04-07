@@ -2672,6 +2672,7 @@ fn mesh3d_custom_pipeline_cache_get(
   surface_format : @wgpu.TextureFormat?,
   topology : UInt,
   transparent : Bool,
+  forward_decal : Bool,
   cull_mode : Int,
 ) -> @wgpu.RenderPipeline? {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
@@ -2681,6 +2682,7 @@ fn mesh3d_custom_pipeline_cache_get(
     }
     if entry.topology != topology ||
       entry.transparent != transparent ||
+      entry.forward_decal != forward_decal ||
       entry.cull_mode != safe_cull_mode {
       continue
     }
@@ -2692,20 +2694,41 @@ fn mesh3d_custom_pipeline_cache_get(
 }
 
 ///|
+fn load_wgsl_required_mesh3d_forward_decal_pipeline(
+  assets_base : String,
+  shader_path : String,
+  forward_decal : Bool,
+) -> String raise GpuBackendError {
+  if !forward_decal {
+    return load_wgsl_from_assets_base_required(assets_base, shader_path)
+  }
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("FORWARD_DECAL", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, shader_path, defines, value_defines, visited, modules,
+  )
+}
+
+///|
 fn mesh3d_custom_pipeline_get_or_create(
   backend : GpuBackend,
   shader_path : String,
   surface_format : @wgpu.TextureFormat?,
   topology : UInt,
   transparent : Bool,
+  forward_decal : Bool,
   cull_mode : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_shader_path = mesh3d_shader_path_or_default(Some(shader_path))
-  if resolved_shader_path == MESH3D_FORWARD_SHADER_PATH {
+  if resolved_shader_path == MESH3D_FORWARD_SHADER_PATH && !forward_decal {
     return None
   }
   if mesh3d_custom_pipeline_cache_get(
-      backend, resolved_shader_path, surface_format, topology, transparent, cull_mode,
+      backend, resolved_shader_path, surface_format, topology, transparent, forward_decal,
+      cull_mode,
     )
     is Some(pipeline) {
     return Some(pipeline)
@@ -2714,8 +2737,10 @@ fn mesh3d_custom_pipeline_get_or_create(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return None }
-  let shader_source = load_wgsl_from_assets_required(
-    backend, resolved_shader_path,
+  let shader_source = load_wgsl_required_mesh3d_forward_decal_pipeline(
+    backend.assets_base,
+    resolved_shader_path,
+    forward_decal,
   )
   let shader_module = backend.device.create_shader_module_wgsl(shader_source)
   let color_format = match surface_format {
@@ -2731,6 +2756,11 @@ fn mesh3d_custom_pipeline_get_or_create(
     position3d=true,
     topology~,
     cull_mode=cull_mode_wgpu,
+    depth_compare_u32=if forward_decal {
+      @wgpu.COMPARE_FUNCTION_ALWAYS
+    } else {
+      @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+    },
   )
   let pipeline = backend.device.create_render_pipeline_ptr(descriptor)
   @wgpu_c.render_pipeline_descriptor_free(descriptor)
@@ -2740,6 +2770,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     "mgstudio_mesh3d_custom_rgba8_"
   }
   let transparent_suffix = if transparent { "1" } else { "0" }
+  let forward_decal_suffix = if forward_decal { "1" } else { "0" }
   pipeline.set_label(
     label_prefix +
     mesh3d_topology_suffix(topology) +
@@ -2747,6 +2778,8 @@ fn mesh3d_custom_pipeline_get_or_create(
     mesh3d_cull_mode_suffix(safe_cull_mode) +
     "_transparent_" +
     transparent_suffix +
+    "_forward_decal_" +
+    forward_decal_suffix +
     "_shader_" +
     resolved_shader_path,
   )
@@ -2755,6 +2788,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     surface_format,
     topology,
     transparent,
+    forward_decal,
     cull_mode: safe_cull_mode,
     pipeline,
   })
@@ -3142,12 +3176,13 @@ fn ensure_mesh3d_pipeline_surface(
 fn mesh3d_pipeline_for_current_pass(
   backend : GpuBackend,
   transparent : Bool,
+  forward_decal : Bool,
   topology : UInt,
   cull_mode : Int,
   shader_path : String?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_shader_path = mesh3d_shader_path_or_default(shader_path)
-  if resolved_shader_path != MESH3D_FORWARD_SHADER_PATH {
+  if resolved_shader_path != MESH3D_FORWARD_SHADER_PATH || forward_decal {
     let custom_surface_format = match current_pass_color_format(backend) {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) =>
         Some(format)
@@ -3155,7 +3190,7 @@ fn mesh3d_pipeline_for_current_pass(
     }
     return mesh3d_custom_pipeline_get_or_create(
       backend, resolved_shader_path, custom_surface_format, topology, transparent,
-      cull_mode,
+      forward_decal, cull_mode,
     )
   }
   match current_pass_color_format(backend) {
@@ -6097,9 +6132,11 @@ pub fn GpuBackend::draw_mesh3d(
     return
   }
   let draw_shader_path = if pass_kind == 0 { shader_path } else { None }
+  let forward_decal = (material_flags & (1U << 20)) != 0U
   guard mesh3d_pipeline_for_current_pass(
       self,
       transparent,
+      forward_decal,
       mesh.primitive_topology,
       cull_mode,
       draw_shader_path,

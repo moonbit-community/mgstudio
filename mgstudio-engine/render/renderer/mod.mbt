@@ -471,6 +471,7 @@ struct Mesh3dCustomPipelineCacheEntry {
   surface_format : @wgpu.TextureFormat?
   topology : UInt
   transparent : Bool
+  forward_decal : Bool
   cull_mode : Int
   pipeline : @wgpu.RenderPipeline
 }
@@ -1816,6 +1817,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   alpha_blend? : Bool = true,
   topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
   cull_mode? : UInt = @wgpu.CULL_MODE_NONE,
+  depth_compare_u32? : UInt = @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
@@ -1919,7 +1921,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
       builder,
       @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
       depth_write_enabled,
-      @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      depth_compare_u32,
     )
     if set_depth_err != 0U {
       @wgpu_c.render_pipeline_desc_builder_free(builder)

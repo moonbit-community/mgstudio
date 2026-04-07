@@ -15,7 +15,7 @@ This file must not exceed 200 lines.
 - [ ] Issue `pbr/morph_gpu_uniform_runtime_parity`: current morph path still deforms CPU-side mesh each frame, pending Bevy-like render-side morph index/uniform double-buffer pipeline.
 - [ ] Issue `roadmap/parity_first_acceptance_policy`: use source-structure + runtime-behavior parity as acceptance gate; keep stress/FPS data as secondary verification artifacts.
 - [ ] Issue `material/deferred_renderer_method_runtime`: landed `OpaqueRendererMethod::resolve_runtime` and main-pass runtime resolution path; pending full deferred parity audit against Bevy material pipeline.
-- [ ] Issue `material/forward_decal_material_ext_shader_specialization`: landed forward-decal bit threading (`STANDARD_MATERIAL_FLAGS_FORWARD_DECAL_BIT`) through pbr payload; pending renderer-side shader define + depth compare specialization (`FORWARD_DECAL`, `CompareFunction::Always`) parity.
+- [ ] Issue `material/forward_decal_material_ext_shader_specialization`: landed forward-decal bit threading + renderer pipeline specialization path (`FORWARD_DECAL` preprocess + `CompareFunction::Always` custom pipeline variant); pending full shader-side forward-decal behavior parity with Bevy forward decal flow.
 - [ ] Issue `pbr/forward_decal_runtime`: implement projected forward decal shading path (replace current marker-only runtime note).
 - [ ] Issue `pbr/clustered_decal_runtime`: implement clustered decal projection/material application path (replace current metadata-only path).
 - [ ] Issue `pbr/occlusion_culling_runtime`: wire `OcclusionCulling` marker into actual renderer occlusion-culling path.
