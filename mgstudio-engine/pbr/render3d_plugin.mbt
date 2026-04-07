@@ -200,6 +200,26 @@ pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render3d_set_prepare_resources_flush : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_resources_flush",
+)
+
+///|
+pub let render3d_set_prepare_resources : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_resources",
+)
+
+///|
+pub let render3d_set_prepare_meshes : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_meshes",
+)
+
+///|
+pub let render3d_set_prepare_bind_groups : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_bind_groups",
+)
+
+///|
 pub let render3d_set_queue : @app.SystemSet = @app.system_set(
   "mgstudio.render3d.queue",
 )
@@ -212,6 +232,10 @@ pub let render3d_set_render : @app.SystemSet = @app.system_set(
 ///|
 /// Legacy alias kept for source compatibility.
 pub let render3d_set_execute : @app.SystemSet = render3d_set_render
+
+///|
+/// Legacy alias kept for source compatibility.
+pub let render3d_set_prepare_legacy : @app.SystemSet = render3d_set_prepare
 
 ///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

@@ -137,7 +137,7 @@ fn configure_mesh_render_sub_app(
   .add_systems(
     @app.PostUpdate,
     @app.system(render3d_prepare_system_in_render_app).in_set(
-      render3d_set_prepare,
+      render3d_set_prepare_resources,
     ),
   )
   .add_systems(
@@ -151,6 +151,18 @@ fn configure_mesh_render_sub_app(
     ),
   )
   .configure_set(@app.PostUpdate, render3d_set_extract, before=[
+    render3d_set_prepare_resources_flush,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_prepare_resources_flush, before=[
+    render3d_set_prepare_resources,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_prepare_resources, before=[
+    render3d_set_prepare_meshes,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_prepare_meshes, before=[
+    render3d_set_prepare_bind_groups,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_prepare_bind_groups, before=[
     render3d_set_prepare,
   ])
   .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
