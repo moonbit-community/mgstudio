@@ -6329,18 +6329,15 @@ fn render3d_extract_skin_bindings(
     }
     render3d_phase_remove_skin(phase_state_ref, entity)
   }
-  let changed_joint_query : @ecs.Query[
-    @ecs.Comp[@transform.GlobalTransform],
-    @ecs.Changed[@transform.GlobalTransform],
-  ] = @ecs.query_filtered(
-    source_world,
-    @ecs.Changed::new(@transform.ecs_key_global_transform),
-  )
+  let changed_joint_entities = source_world.changed_components(
+    @transform.ecs_key_global_transform,
+    sequence,
+  ).read()
   if phase_state_ref.val.total_skin_joints <= 0 {
     return
   }
   let threshold = phase_state_ref.val.total_skin_joints / 4
-  let must_extract_all = changed_joint_query.count() > threshold
+  let must_extract_all = changed_joint_entities.length() > threshold
   if must_extract_all {
     source_world.for_each_component(skinned_mesh_key, fn(
       entity,
@@ -6364,7 +6361,7 @@ fn render3d_extract_skin_bindings(
     })
     return
   }
-  try! changed_joint_query.view(fn(joint_entity, _global_transform) {
+  for joint_entity in changed_joint_entities {
     let joint_key = render3d_skin_entity_key(joint_entity)
     match phase_state_ref.val.skin_joint_to_skins.get(joint_key) {
       Some(skins) =>
@@ -6394,7 +6391,7 @@ fn render3d_extract_skin_bindings(
         }
       None => ()
     }
-  })
+  }
 }
 
 ///|
