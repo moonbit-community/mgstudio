@@ -44,7 +44,7 @@ fn render3d_execute_camera_postprocess(
   cleared_targets_this_frame : Array[Int],
 ) -> Unit {
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
-    render3d_pass_viewport_for_target(
+    @pbr_render.render3d_pass_viewport_for_target(
       target_id,
       camera.target_id,
       viewport_x,
@@ -85,7 +85,7 @@ fn render3d_execute_camera_postprocess(
         viewport_height=post_motion_blur_viewport_height,
         viewport_depth_min~,
         viewport_depth_max~,
-        clear_enabled=render3d_pass_clear_enabled_for_target(
+        clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
           cleared_targets_this_frame, post_motion_blur_target_id, clear_enabled,
         ),
       )
@@ -122,7 +122,7 @@ fn render3d_execute_camera_postprocess(
         viewport_height=motion_blur_present_viewport_height,
         viewport_depth_min~,
         viewport_depth_max~,
-        clear_enabled=render3d_pass_clear_enabled_for_target(
+        clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
           cleared_targets_this_frame,
           camera.target_id,
           clear_enabled,
@@ -171,7 +171,7 @@ fn render3d_execute_camera_postprocess(
           viewport_height=auto_exposure_viewport_height,
           viewport_depth_min~,
           viewport_depth_max~,
-          clear_enabled=render3d_pass_clear_enabled_for_target(
+          clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
             cleared_targets_this_frame,
             camera.target_id,
             clear_enabled,
@@ -214,7 +214,7 @@ fn render3d_execute_camera_postprocess(
           viewport_height=bloom_viewport_height,
           viewport_depth_min~,
           viewport_depth_max~,
-          clear_enabled=render3d_pass_clear_enabled_for_target(
+          clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
             cleared_targets_this_frame,
             camera.target_id,
             clear_enabled,
@@ -272,7 +272,7 @@ fn render3d_execute_camera_postprocess(
             viewport_height=effect_stack_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=render3d_pass_clear_enabled_for_target(
+            clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
               cleared_targets_this_frame, stage_target_id, clear_enabled,
             ),
           )
@@ -320,7 +320,7 @@ fn render3d_execute_camera_postprocess(
             viewport_height=custom_postprocess_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=render3d_pass_clear_enabled_for_target(
+            clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
               cleared_targets_this_frame, stage_target_id, clear_enabled,
             ),
           )
@@ -367,7 +367,7 @@ fn render3d_execute_camera_postprocess(
             viewport_height=tonemapping_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=render3d_pass_clear_enabled_for_target(
+            clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
               cleared_targets_this_frame, stage_target_id, clear_enabled,
             ),
           )
@@ -425,7 +425,7 @@ fn render3d_execute_camera_postprocess(
             viewport_height=fxaa_viewport_height,
             viewport_depth_min~,
             viewport_depth_max~,
-            clear_enabled=render3d_pass_clear_enabled_for_target(
+            clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
               cleared_targets_this_frame, stage_target_id, clear_enabled,
             ),
           )
@@ -462,7 +462,7 @@ fn render3d_execute_camera_postprocess(
           viewport_height=postprocess_present_viewport_height,
           viewport_depth_min~,
           viewport_depth_max~,
-          clear_enabled=render3d_pass_clear_enabled_for_target(
+          clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
             cleared_targets_this_frame,
             camera.target_id,
             clear_enabled,
@@ -529,7 +529,7 @@ fn render3d_execute_camera_postprocess(
       viewport_height=final_present_viewport_height,
       viewport_depth_min~,
       viewport_depth_max~,
-      clear_enabled=render3d_pass_clear_enabled_for_target(
+      clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
         cleared_targets_this_frame,
         camera.target_id,
         clear_enabled,

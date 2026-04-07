@@ -148,11 +148,13 @@ pub fn mesh_ray_cast(
       Some(value) => value
       None => @transform.Transform::identity()
     }
-    guard render3d_inverse_transform_point(transform, origin)
+    guard @pbr_render.render3d_inverse_transform_point(transform, origin)
       is Some(local_origin) else {
       return
     }
-    guard render3d_inverse_transform_direction(transform, ray_direction)
+    guard @pbr_render.render3d_inverse_transform_direction(
+        transform, ray_direction,
+      )
       is Some(local_direction) else {
       return
     }
@@ -162,7 +164,9 @@ pub fn mesh_ray_cast(
       is Some((distance, local_normal)) else {
       return
     }
-    let normal = render3d_transform_local_normal(transform, local_normal)
+    let normal = @pbr_render.render3d_transform_local_normal(
+      transform, local_normal,
+    )
     if normal.length_squared() <= 1.0e-12F {
       return
     }
@@ -179,15 +183,15 @@ pub fn mesh_ray_cast(
   })
 
   hits.sort_by(fn(a, b) {
-    let distance_cmp = cmp_float(a.1.distance, b.1.distance)
+    let distance_cmp = @pbr_render.cmp_float(a.1.distance, b.1.distance)
     if distance_cmp != 0 {
       return distance_cmp
     }
-    let id_cmp = cmp_int(a.0.id, b.0.id)
+    let id_cmp = @pbr_render.cmp_int(a.0.id, b.0.id)
     if id_cmp != 0 {
       return id_cmp
     }
-    cmp_int(a.0.generation, b.0.generation)
+    @pbr_render.cmp_int(a.0.generation, b.0.generation)
   })
 
   let capped_hits : Array[(@core.Entity, MeshRayCastHit)] = []
@@ -320,14 +324,17 @@ pub fn render3d_camera_viewport_to_world_ray(
   if ray_camera.length_squared() <= 1.0e-12F {
     return None
   }
-  let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
+  let ray_world = @pbr_render.quat_rotate_vec3(
+    camera_transform.rotation,
+    ray_camera,
+  ).normalize_or_zero()
   if ray_world.length_squared() <= 1.0e-12F {
     return None
   }
   Some(
     (
       camera_transform.translation.add(
-        quat_rotate_vec3(camera_transform.rotation, near_view),
+        @pbr_render.quat_rotate_vec3(camera_transform.rotation, near_view),
       ),
       ray_world,
     ),
@@ -350,8 +357,10 @@ pub fn render3d_camera_world_to_viewport(
     return None
   }
   let to_world = world.sub(camera_transform.translation)
-  let inv_rotation = render3d_quat_conjugate(camera_transform.rotation).normalize()
-  let view_pos = quat_rotate_vec3(inv_rotation, to_world)
+  let inv_rotation = @pbr_render.render3d_quat_conjugate(
+    camera_transform.rotation,
+  ).normalize()
+  let view_pos = @pbr_render.quat_rotate_vec3(inv_rotation, to_world)
   let runtime_projection = render3d_projection_runtime_projection(
     projection, camera, target_size, scale_factor,
   )

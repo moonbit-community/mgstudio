@@ -56,7 +56,7 @@ fn render3d_execute_camera_motion_vector_pass(
     motion_viewport_y,
     motion_viewport_width,
     motion_viewport_height,
-  ) = render3d_pass_viewport_for_target(
+  ) = @pbr_render.render3d_pass_viewport_for_target(
     shared_scene_id,
     camera.target_id,
     viewport_x,

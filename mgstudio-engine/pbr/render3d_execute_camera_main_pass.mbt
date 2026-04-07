@@ -58,7 +58,7 @@ fn render3d_execute_camera_main_pass(
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
-    render3d_pass_viewport_for_target(
+    @pbr_render.render3d_pass_viewport_for_target(
       target_id,
       camera.target_id,
       viewport_x,
@@ -99,7 +99,7 @@ fn render3d_execute_camera_main_pass(
     environment_map_rotation=environment_map_state.rotation,
     point_shadow_near~,
     pass_kind=scene_pass_kind,
-    clear_enabled=render3d_pass_clear_enabled_for_target(
+    clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
       cleared_targets_this_frame, scene_target_id, clear_enabled,
     ),
   )
@@ -142,7 +142,9 @@ fn render3d_execute_camera_main_pass(
     if mesh.lightmap is Some(lightmap) && lightmap.image.id() > 0 {
       draw_material = draw_material
         .with_base_color_texture(Some(lightmap.image))
-        .with_uv_transform(render3d_lightmap_uv_transform(lightmap.uv_rect))
+        .with_uv_transform(
+          @pbr_render.render3d_lightmap_uv_transform(lightmap.uv_rect),
+        )
         .with_unlit(true)
     }
     let mut draw_alpha = base_draw_alpha
@@ -195,18 +197,18 @@ fn render3d_execute_camera_main_pass(
         emissive_texture_id = texture.id()
       }
     }
-    let anisotropy_strength = maxf(
+    let anisotropy_strength = @pbr_render.maxf(
       0.0F,
-      minf(1.0F, draw_material.anisotropy_strength),
+      @pbr_render.minf(1.0F, draw_material.anisotropy_strength),
     )
     let max_relief_mapping_search_steps = Float::from_double(
       draw_material.parallax_mapping_method.max_steps().to_double(),
     )
-    let mut clearcoat_reflectance = maxf(
+    let mut clearcoat_reflectance = @pbr_render.maxf(
       0.0F,
       draw_material.reflectance + draw_material.clearcoat * 0.5F,
     )
-    let clearcoat_roughness = minf(
+    let clearcoat_roughness = @pbr_render.minf(
       draw_material.perceptual_roughness,
       draw_material.clearcoat_perceptual_roughness,
     )
@@ -234,10 +236,14 @@ fn render3d_execute_camera_main_pass(
         depth_fade_factor
       }
       let decal_alpha = safe_depth_fade_factor /
-        (safe_depth_fade_factor + maxf(0.0F, mesh_distance - camera_near))
-      draw_alpha = draw_alpha * render3d_float_clamp(decal_alpha, 0.0F, 1.0F)
+        (
+          safe_depth_fade_factor +
+          @pbr_render.maxf(0.0F, mesh_distance - camera_near)
+        )
+      draw_alpha = draw_alpha *
+        @pbr_render.render3d_float_clamp(decal_alpha, 0.0F, 1.0F)
       clearcoat_reflectance = 0.0F
-      draw_roughness = maxf(draw_roughness, 0.85F)
+      draw_roughness = @pbr_render.maxf(draw_roughness, 0.85F)
     }
     let (fogged_r, fogged_g, fogged_b) = if fog_enabled {
       render3d_apply_distance_fog(
@@ -262,12 +268,14 @@ fn render3d_execute_camera_main_pass(
     let draw_color_b = fogged_b
     let draw_surface_roughness = draw_roughness
     let draw_reflectance = clearcoat_reflectance
-    let draw_diffuse_transmission = clamp01(draw_material.diffuse_transmission)
-    let draw_specular_transmission = clamp01(
+    let draw_diffuse_transmission = @pbr_render.clamp01(
+      draw_material.diffuse_transmission,
+    )
+    let draw_specular_transmission = @pbr_render.clamp01(
       draw_material.specular_transmission,
     )
-    let draw_thickness = maxf(0.0F, draw_material.thickness)
-    let draw_ior = maxf(1.0F, draw_material.ior)
+    let draw_thickness = @pbr_render.maxf(0.0F, draw_material.thickness)
+    let draw_ior = @pbr_render.maxf(1.0F, draw_material.ior)
     if draw_item.phase == RENDER3D_PHASE_TRANSPARENT &&
       camera.oit_settings is Some(oit_settings) &&
       draw_alpha < oit_settings.alpha_threshold {

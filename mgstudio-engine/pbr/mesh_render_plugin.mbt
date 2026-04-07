@@ -126,7 +126,7 @@ fn render3d_execute_system_in_render_app(world : @ecs.World) -> Unit {
 fn configure_mesh_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
-  ensure_render3d_phase_state_resource(sub_app.world())
+  @pbr_render.ensure_render3d_phase_state_resource(sub_app.world())
   sub_app
   .add_systems(
     @app.PostUpdate,

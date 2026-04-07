@@ -16,7 +16,7 @@
 fn free_camera_angles_from_transform(
   transform : @transform.Transform,
 ) -> (Float, Float) {
-  let forward = render3d_transform_forward(transform)
+  let forward = @pbr_render.render3d_transform_forward(transform)
   let horizontal = @math.sqrt(forward.x * forward.x + forward.z * forward.z)
   let pitch = @math.atan2(forward.y, horizontal)
   let yaw = @math.atan2(-forward.x, -forward.z)
@@ -45,7 +45,7 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
-  let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
+  let delta_seconds = @pbr_render.render3d_default_time_or_default(world).delta_seconds()
   let mut system_state = free_camera_system_state.val
 
   let controlled_entities : Array[@core.Entity] = []
@@ -177,8 +177,8 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   state = FreeCameraState::{ ..state, velocity, }
 
   if velocity.length_squared() > 0.0F {
-    let forward = render3d_transform_forward(transform)
-    let right = quat_rotate_vec3(
+    let forward = @pbr_render.render3d_transform_forward(transform)
+    let right = @pbr_render.quat_rotate_vec3(
       transform.rotation,
       @math.Vec3::new(1.0F, 0.0F, 0.0F),
     ).normalize_or_zero()

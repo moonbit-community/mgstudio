@@ -51,7 +51,7 @@ fn render3d_mesh_frustum_visible(
   if !mesh_static.has_local_aabb {
     return true
   }
-  let center_world = render3d_transform_point(
+  let center_world = @pbr_render.render3d_transform_point(
     payload.transform,
     mesh_static.aabb_center,
   )
@@ -115,21 +115,24 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      distance: render3d_mesh_view_depth(payload.transform, camera_transform),
+      distance: @pbr_render.render3d_mesh_view_depth(
+        payload.transform,
+        camera_transform,
+      ),
     })
   }
   items.sort_by(fn(a, b) {
-    let phase_cmp = cmp_int(a.phase, b.phase)
+    let phase_cmp = @pbr_render.cmp_int(a.phase, b.phase)
     if phase_cmp != 0 {
       return phase_cmp
     }
     if a.phase == RENDER3D_PHASE_TRANSPARENT {
-      let depth_cmp = cmp_float(b.distance, a.distance)
+      let depth_cmp = @pbr_render.cmp_float(b.distance, a.distance)
       if depth_cmp != 0 {
         return depth_cmp
       }
     } else {
-      let depth_cmp = cmp_float(a.distance, b.distance)
+      let depth_cmp = @pbr_render.cmp_float(a.distance, b.distance)
       if depth_cmp != 0 {
         return depth_cmp
       }
@@ -189,7 +192,10 @@ fn render3d_collect_meshes_for_gpu_building(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      distance: render3d_mesh_view_depth(payload.transform, camera_transform),
+      distance: @pbr_render.render3d_mesh_view_depth(
+        payload.transform,
+        camera_transform,
+      ),
     })
   }
   work_items
@@ -212,7 +218,7 @@ fn render3d_sort_gpu_preprocess_work_items(
     }
   }
   transparent_items.sort_by(fn(a, b) {
-    let depth_cmp = cmp_float(b.distance, a.distance)
+    let depth_cmp = @pbr_render.cmp_float(b.distance, a.distance)
     if depth_cmp != 0 {
       return depth_cmp
     }
@@ -813,12 +819,12 @@ fn render3d_mesh_handle_local_aabb(
           let mut max_z = geometry3d.positions[0].z
           for i in 1..<geometry3d.positions.length() {
             let p = geometry3d.positions[i]
-            min_x = minf(min_x, p.x)
-            min_y = minf(min_y, p.y)
-            min_z = minf(min_z, p.z)
-            max_x = maxf(max_x, p.x)
-            max_y = maxf(max_y, p.y)
-            max_z = maxf(max_z, p.z)
+            min_x = @pbr_render.minf(min_x, p.x)
+            min_y = @pbr_render.minf(min_y, p.y)
+            min_z = @pbr_render.minf(min_z, p.z)
+            max_x = @pbr_render.maxf(max_x, p.x)
+            max_y = @pbr_render.maxf(max_y, p.y)
+            max_z = @pbr_render.maxf(max_z, p.z)
           }
           Some(
             (
@@ -962,15 +968,15 @@ fn render3d_host_gpu_clip_matrix(
 fn render3d_world_from_view_matrix(
   transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
-  let x_axis = quat_rotate_vec3(
+  let x_axis = @pbr_render.quat_rotate_vec3(
     transform.rotation,
     @math.Vec3::new(transform.scale.x, 0.0F, 0.0F),
   )
-  let y_axis = quat_rotate_vec3(
+  let y_axis = @pbr_render.quat_rotate_vec3(
     transform.rotation,
     @math.Vec3::new(0.0F, transform.scale.y, 0.0F),
   )
-  let z_axis = quat_rotate_vec3(
+  let z_axis = @pbr_render.quat_rotate_vec3(
     transform.rotation,
     @math.Vec3::new(0.0F, 0.0F, transform.scale.z),
   )

@@ -21,7 +21,7 @@ fn render3d_projection_near(
   clip_from_view : ProjectionMatrix3d,
 ) -> Float {
   match projection {
-    Perspective(perspective) => maxf(0.0001F, perspective.near)
+    Perspective(perspective) => @pbr_render.maxf(0.0001F, perspective.near)
     Orthographic(orthographic) => orthographic.near
     Custom(_) =>
       @pbr_render.render3d_projection_near_from_clip_matrix(clip_from_view)

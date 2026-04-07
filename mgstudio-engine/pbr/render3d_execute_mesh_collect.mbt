@@ -15,8 +15,8 @@
 ///|
 fn render3d_execute_collect_meshes(
   source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   needs_mesh_previous_transform : Bool,
 ) -> Array[ExtractedMesh3d] {
   let meshes : Array[ExtractedMesh3d] = []
@@ -129,7 +129,7 @@ fn render3d_execute_collect_meshes(
     } else {
       @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform_from_components(
+    let transform = @pbr_render.render3d_entity_world_transform_from_components(
       source_world,
       entity,
       local_transform_comp.value(),
@@ -151,13 +151,13 @@ fn render3d_execute_collect_meshes(
     let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
       match render3d_mesh_local_aabb_center(mesh3d) {
         Some(local_center) =>
-          Some(render3d_transform_point(transform, local_center))
+          Some(@pbr_render.render3d_transform_point(transform, local_center))
         None => None
       }
     } else {
       None
     }
-    let (skinning_key_hi, skinning_key_lo) = render3d_prepared_skin_binding_keys(
+    let (skinning_key_hi, skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
       phase_state_ref, entity,
     )
     let mesh_id = render3d_upload_mesh_handle_cached(

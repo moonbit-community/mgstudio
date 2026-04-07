@@ -478,7 +478,7 @@ fn render3d_ray_local_aabb_hit(
     let d = axis_data.2
     let slab_min = axis_data.3
     let slab_max = axis_data.4
-    if absf(d) <= 1.0e-9F {
+    if @pbr_render.absf(d) <= 1.0e-9F {
       if o < slab_min || o > slab_max {
         return None
       }
@@ -542,12 +542,12 @@ fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
   let mut max_z = geometry3d.positions[0].z
   for i in 1..<geometry3d.positions.length() {
     let p = geometry3d.positions[i]
-    min_x = minf(min_x, p.x)
-    min_y = minf(min_y, p.y)
-    min_z = minf(min_z, p.z)
-    max_x = maxf(max_x, p.x)
-    max_y = maxf(max_y, p.y)
-    max_z = maxf(max_z, p.z)
+    min_x = @pbr_render.minf(min_x, p.x)
+    min_y = @pbr_render.minf(min_y, p.y)
+    min_z = @pbr_render.minf(min_z, p.z)
+    max_x = @pbr_render.maxf(max_x, p.x)
+    max_y = @pbr_render.maxf(max_y, p.y)
+    max_z = @pbr_render.maxf(max_z, p.z)
   }
   Some(
     (@math.Vec3::new(min_x, min_y, min_z), @math.Vec3::new(max_x, max_y, max_z)),

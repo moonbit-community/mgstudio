@@ -465,7 +465,7 @@ fn render3d_mesh_wireframe_color(
 
 ///|
 fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
-  let mut lighting = render3d_default_lighting_state()
+  let mut lighting = @pbr_render.render3d_default_lighting_state()
   let point_luminous_power_to_intensity = 4.0F * @math.pi()
   if (try! world.get_resource(ecs_key_global_ambient_light)) is Some(ambient) {
     lighting = Render3dLightingState::{
@@ -487,7 +487,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     directional_found = true
     lighting = Render3dLightingState::{
       ..lighting,
-      directional_dir: render3d_transform_forward(transform),
+      directional_dir: @pbr_render.render3d_transform_forward(transform),
       directional_color: light.color,
       directional_illuminance: light.illuminance,
     }
@@ -546,7 +546,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     lighting = Render3dLightingState::{
       ..lighting,
       spot_pos: transform.translation,
-      spot_dir: render3d_transform_forward(transform),
+      spot_dir: @pbr_render.render3d_transform_forward(transform),
       spot_color: light.color,
       spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
         light.intensity
@@ -660,7 +660,7 @@ fn render3d_camera_apply_environment_map_lighting(
 ) -> Render3dLightingState {
   let atmosphere_environment_intensity = if camera.payload.atmosphere_environment_map_light
     is Some(atmosphere_environment_map_light) {
-    maxf(0.0F, atmosphere_environment_map_light.intensity)
+    @pbr_render.maxf(0.0F, atmosphere_environment_map_light.intensity)
   } else {
     0.0F
   }
@@ -669,7 +669,7 @@ fn render3d_camera_apply_environment_map_lighting(
   }
   Render3dLightingState::{
     ..lighting,
-    ambient_brightness: maxf(
+    ambient_brightness: @pbr_render.maxf(
       lighting.ambient_brightness,
       atmosphere_environment_intensity,
     ),
@@ -698,9 +698,17 @@ fn render3d_draw_camera_skybox(
   if mesh_id <= 0 {
     return
   }
-  let brightness = maxf(0.0F, skybox.brightness * camera_exposure_value)
-  let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
-  let skybox_rotation_inverse = render3d_quat_inverse(skybox.rotation)
+  let brightness = @pbr_render.maxf(
+    0.0F,
+    skybox.brightness * camera_exposure_value,
+  )
+  let skybox_extent = @pbr_render.maxf(
+    5.0F,
+    @pbr_render.minf(camera_far * 0.45F, 20_000.0F),
+  )
+  let skybox_rotation_inverse = @pbr_render.render3d_quat_inverse(
+    skybox.rotation,
+  )
   // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
   @render.host_gpu_draw_mesh3d(
     mesh_id~,

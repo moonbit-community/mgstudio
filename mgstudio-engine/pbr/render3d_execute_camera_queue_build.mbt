@@ -22,7 +22,7 @@ priv struct Render3dExecuteCameraQueueBuildResult {
 
 ///|
 fn render3d_execute_camera_queue_build(
-  phase_state_ref : Ref[Render3dPhaseState],
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
@@ -44,7 +44,7 @@ fn render3d_execute_camera_queue_build(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_camera_queue_entry",
   )
-  let camera_indirect_enabled = render3d_camera_indirect_enabled(
+  let camera_indirect_enabled = @pbr_render.render3d_camera_indirect_enabled(
     gpu_instance_buffer_builder_enabled,
     gpu_culling_supported,
     camera.no_indirect_drawing,

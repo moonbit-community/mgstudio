@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+fn render3d_runtime_config_or_default(
+  world : @ecs.World,
+) -> PbrPluginRuntimeConfig {
+  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
+    Some(config) => config
+    None => pbr_plugin_runtime_config()
+  }
+}
+
+///|
 fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
   let execute_trace_start_us = @app.timeline_trace_begin_span(
@@ -31,22 +41,22 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     )
   }
   let source_world = @render.render_source_world(world)
-  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
-  let world_transform_cache_ref = render3d_world_transform_cache_ref()
+  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
   let runtime_config = render3d_runtime_config_or_default(source_world)
-  let gpu_instance_buffer_builder_requested = render3d_use_gpu_instance_buffer_builder(
-    runtime_config,
+  let gpu_instance_buffer_builder_requested = @pbr_render.render3d_use_gpu_instance_buffer_builder(
+    runtime_config.use_gpu_instance_buffer_builder,
   )
   let prepass_enabled = standard_material_prepass_enabled(source_world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
     deferred_pbr_lighting_enabled(source_world)
-  let gpu_culling_supported = render3d_gpu_culling_supported()
+  let gpu_culling_supported = @pbr_render.render3d_gpu_culling_supported()
   let gpu_instance_buffer_builder_enabled = gpu_instance_buffer_builder_requested &&
     gpu_culling_supported
   @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
     gpu_instance_buffer_builder_enabled,
   )
-  let delta_seconds = render3d_default_time_or_default(source_world).delta_seconds()
+  let delta_seconds = @pbr_render.render3d_default_time_or_default(source_world).delta_seconds()
   let mut default_opaque_renderer_method = if (try! source_world.get_resource(
       ecs_key_default_opaque_renderer_method,
     ))
@@ -400,7 +410,7 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     trace_render_cameras_start_us,
   )
   camera_motion_blur_history_sync(next_camera_motion_blur_history)
-  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()
   finish_execute()
 }

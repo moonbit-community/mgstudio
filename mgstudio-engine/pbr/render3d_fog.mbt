@@ -55,7 +55,7 @@ fn render3d_camera_distance_fog(
 ) -> DistanceFog {
   let mut fog = base_fog
   if volumetric_fog is Some(volumetric_fog_value) {
-    let ambient_mix = render3d_float_clamp(
+    let ambient_mix = @pbr_render.render3d_float_clamp(
       volumetric_fog_value.ambient_intensity,
       0.0F,
       1.0F,
@@ -80,9 +80,21 @@ fn render3d_camera_distance_fog(
   }
   if atmosphere is Some(atmosphere_value) {
     let albedo_color = @sprite.Color::new(
-      render3d_float_clamp(atmosphere_value.ground_albedo.x, 0.0F, 1.0F),
-      render3d_float_clamp(atmosphere_value.ground_albedo.y, 0.0F, 1.0F),
-      render3d_float_clamp(atmosphere_value.ground_albedo.z, 0.0F, 1.0F),
+      @pbr_render.render3d_float_clamp(
+        atmosphere_value.ground_albedo.x,
+        0.0F,
+        1.0F,
+      ),
+      @pbr_render.render3d_float_clamp(
+        atmosphere_value.ground_albedo.y,
+        0.0F,
+        1.0F,
+      ),
+      @pbr_render.render3d_float_clamp(
+        atmosphere_value.ground_albedo.z,
+        0.0F,
+        1.0F,
+      ),
       1.0F,
     )
     fog = DistanceFog::{
@@ -165,9 +177,12 @@ fn render3d_fog_falloff_factor(
       1.0F - render3d_pow_e(-(d * d))
     }
     Atmospheric(extinction, inscattering) => {
-      let extinction_max = maxf(maxf(extinction.x, extinction.y), extinction.z)
-      let inscattering_max = maxf(
-        maxf(inscattering.x, inscattering.y),
+      let extinction_max = @pbr_render.maxf(
+        @pbr_render.maxf(extinction.x, extinction.y),
+        extinction.z,
+      )
+      let inscattering_max = @pbr_render.maxf(
+        @pbr_render.maxf(inscattering.x, inscattering.y),
         inscattering.z,
       )
       let extinction_factor = render3d_fog_channel_factor(
@@ -176,7 +191,7 @@ fn render3d_fog_falloff_factor(
       let inscattering_factor = render3d_fog_channel_factor(
         inscattering_max, safe_distance,
       )
-      clamp01((extinction_factor + inscattering_factor) * 0.5F)
+      @pbr_render.clamp01((extinction_factor + inscattering_factor) * 0.5F)
     }
   }
 }
@@ -187,7 +202,7 @@ fn render3d_distance_fog_mix_factor(
   distance : Float,
 ) -> Float {
   let falloff_factor = render3d_fog_falloff_factor(fog.falloff, distance)
-  clamp01(falloff_factor * clamp01(fog.color.a))
+  @pbr_render.clamp01(falloff_factor * @pbr_render.clamp01(fog.color.a))
 }
 
 ///|
@@ -198,7 +213,7 @@ fn render3d_distance_fog_directional_mix(
   mesh_position : @math.Vec3,
   lighting : Render3dLightingState,
 ) -> Float {
-  let directional_alpha = clamp01(fog.directional_light_color.a)
+  let directional_alpha = @pbr_render.clamp01(fog.directional_light_color.a)
   if directional_alpha <= 0.0F {
     return 0.0F
   }
@@ -210,10 +225,16 @@ fn render3d_distance_fog_directional_mix(
   }
   let view_direction = mesh_position.sub(camera_position).normalize_or_zero()
   let light_direction = lighting.directional_dir.neg().normalize_or_zero()
-  let alignment = clamp01(light_direction.dot(view_direction) * 0.5F + 0.5F)
+  let alignment = @pbr_render.clamp01(
+    light_direction.dot(view_direction) * 0.5F + 0.5F,
+  )
   let phase = @math.pow(alignment, fog.directional_light_exponent)
-  let illuminance_mix = clamp01(lighting.directional_illuminance / 50_000.0F)
-  clamp01(phase * directional_alpha * illuminance_mix * fog_presence)
+  let illuminance_mix = @pbr_render.clamp01(
+    lighting.directional_illuminance / 50_000.0F,
+  )
+  @pbr_render.clamp01(
+    phase * directional_alpha * illuminance_mix * fog_presence,
+  )
 }
 
 ///|
@@ -227,7 +248,7 @@ fn render3d_apply_distance_fog(
   mesh_position : @math.Vec3,
   lighting : Render3dLightingState,
 ) -> (Float, Float, Float) {
-  let fog_alpha = clamp01(fog.color.a)
+  let fog_alpha = @pbr_render.clamp01(fog.color.a)
   let mut fogged_r = base_r
   let mut fogged_g = base_g
   let mut fogged_b = base_b
@@ -235,22 +256,22 @@ fn render3d_apply_distance_fog(
 
   match fog.falloff {
     Atmospheric(extinction, inscattering) => {
-      let extinction_r = clamp01(
+      let extinction_r = @pbr_render.clamp01(
         render3d_fog_channel_factor(extinction.x, distance) * fog_alpha,
       )
-      let extinction_g = clamp01(
+      let extinction_g = @pbr_render.clamp01(
         render3d_fog_channel_factor(extinction.y, distance) * fog_alpha,
       )
-      let extinction_b = clamp01(
+      let extinction_b = @pbr_render.clamp01(
         render3d_fog_channel_factor(extinction.z, distance) * fog_alpha,
       )
-      let inscattering_r = clamp01(
+      let inscattering_r = @pbr_render.clamp01(
         render3d_fog_channel_factor(inscattering.x, distance) * fog_alpha,
       )
-      let inscattering_g = clamp01(
+      let inscattering_g = @pbr_render.clamp01(
         render3d_fog_channel_factor(inscattering.y, distance) * fog_alpha,
       )
-      let inscattering_b = clamp01(
+      let inscattering_b = @pbr_render.clamp01(
         render3d_fog_channel_factor(inscattering.z, distance) * fog_alpha,
       )
 
@@ -258,12 +279,17 @@ fn render3d_apply_distance_fog(
       fogged_g = base_g * (1.0F - extinction_g) + fog.color.g * inscattering_g
       fogged_b = base_b * (1.0F - extinction_b) + fog.color.b * inscattering_b
 
-      let extinction_peak = maxf(maxf(extinction_r, extinction_g), extinction_b)
-      let inscattering_peak = maxf(
-        maxf(inscattering_r, inscattering_g),
+      let extinction_peak = @pbr_render.maxf(
+        @pbr_render.maxf(extinction_r, extinction_g),
+        extinction_b,
+      )
+      let inscattering_peak = @pbr_render.maxf(
+        @pbr_render.maxf(inscattering_r, inscattering_g),
         inscattering_b,
       )
-      fog_presence = clamp01((extinction_peak + inscattering_peak) * 0.5F)
+      fog_presence = @pbr_render.clamp01(
+        (extinction_peak + inscattering_peak) * 0.5F,
+      )
     }
     _ => {
       let fog_mix = render3d_distance_fog_mix_factor(fog, distance)
@@ -278,13 +304,13 @@ fn render3d_apply_distance_fog(
     fog, fog_presence, camera_position, mesh_position, lighting,
   )
   if directional_mix > 0.0F {
-    let directional_tint_r = clamp01(
+    let directional_tint_r = @pbr_render.clamp01(
       fog.directional_light_color.r * lighting.directional_color.r,
     )
-    let directional_tint_g = clamp01(
+    let directional_tint_g = @pbr_render.clamp01(
       fog.directional_light_color.g * lighting.directional_color.g,
     )
-    let directional_tint_b = clamp01(
+    let directional_tint_b = @pbr_render.clamp01(
       fog.directional_light_color.b * lighting.directional_color.b,
     )
     fogged_r = fogged_r * (1.0F - directional_mix) +
@@ -295,5 +321,9 @@ fn render3d_apply_distance_fog(
       directional_tint_b * directional_mix
   }
 
-  (clamp01(fogged_r), clamp01(fogged_g), clamp01(fogged_b))
+  (
+    @pbr_render.clamp01(fogged_r),
+    @pbr_render.clamp01(fogged_g),
+    @pbr_render.clamp01(fogged_b),
+  )
 }

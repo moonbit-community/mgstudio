@@ -175,10 +175,10 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
 ///|
 test "render3d: camera indirect path requires feature support and no marker" {
   inspect(
-    render3d_camera_indirect_enabled(true, true, false) &&
-    !render3d_camera_indirect_enabled(true, false, false) &&
-    !render3d_camera_indirect_enabled(true, true, true) &&
-    !render3d_camera_indirect_enabled(false, true, false),
+    @pbr_render.render3d_camera_indirect_enabled(true, true, false) &&
+    !@pbr_render.render3d_camera_indirect_enabled(true, false, false) &&
+    !@pbr_render.render3d_camera_indirect_enabled(true, true, true) &&
+    !@pbr_render.render3d_camera_indirect_enabled(false, true, false),
     content="true",
   )
 }

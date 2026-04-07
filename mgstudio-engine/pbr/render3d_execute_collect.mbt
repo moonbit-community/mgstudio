@@ -15,7 +15,7 @@
 ///|
 fn render3d_execute_collect_cameras(
   source_world : @ecs.World,
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   gpu_instance_buffer_builder_requested : Bool,
   gpu_culling_supported : Bool,
   prepass_enabled : Bool,
@@ -95,7 +95,7 @@ fn render3d_execute_collect_cameras(
         entity, ecs_key_no_indirect_drawing,
       ))
       is Some(_)
-    let camera_indirect_enabled = render3d_camera_indirect_enabled(
+    let camera_indirect_enabled = @pbr_render.render3d_camera_indirect_enabled(
       gpu_instance_buffer_builder_requested, gpu_culling_supported, no_indirect_drawing,
     )
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
@@ -125,7 +125,7 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = render3d_entity_world_transform_cached(
+    let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_ref,
     )
     let previous_camera_history = camera_motion_blur_history_get(entity)
@@ -133,11 +133,11 @@ fn render3d_execute_collect_cameras(
       Some(v) => v.transform
       None => transform
     }
-    match render3d_target_info(source_world, target) {
+    match @pbr_render.render3d_target_info(source_world, target) {
       Some(target_info) => {
         let mut camera_clamped = camera
         if camera.viewport is Some(viewport) {
-          let clamped = render3d_clamp_viewport(
+          let clamped = @pbr_render.render3d_clamp_viewport(
             viewport,
             target_info.target_size,
           )

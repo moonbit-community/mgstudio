@@ -37,7 +37,7 @@ fn render3d_execute_camera_point_shadow_pass(
   )
   let point_shadow_texture_id = shadow_target_id
   let point_shadow_enabled = 1.0F
-  let point_shadow_depth_bias = maxf(
+  let point_shadow_depth_bias = @pbr_render.maxf(
     0.0F,
     pass_lighting.point_shadow_depth_bias,
   )

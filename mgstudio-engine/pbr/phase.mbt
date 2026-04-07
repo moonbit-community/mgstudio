@@ -32,22 +32,25 @@ fn phase_entity_ref3d_cmp(
   lhs : PhaseEntityRef3d,
   rhs : PhaseEntityRef3d,
 ) -> Int {
-  let render_id = cmp_int(lhs.render_entity.id, rhs.render_entity.id)
+  let render_id = @pbr_render.cmp_int(
+    lhs.render_entity.id,
+    rhs.render_entity.id,
+  )
   if render_id != 0 {
     return render_id
   }
-  let render_generation = cmp_int(
+  let render_generation = @pbr_render.cmp_int(
     lhs.render_entity.generation,
     rhs.render_entity.generation,
   )
   if render_generation != 0 {
     return render_generation
   }
-  let main_id = cmp_int(lhs.main_entity.id, rhs.main_entity.id)
+  let main_id = @pbr_render.cmp_int(lhs.main_entity.id, rhs.main_entity.id)
   if main_id != 0 {
     return main_id
   }
-  cmp_int(lhs.main_entity.generation, rhs.main_entity.generation)
+  @pbr_render.cmp_int(lhs.main_entity.generation, rhs.main_entity.generation)
 }
 
 ///|
@@ -183,7 +186,7 @@ fn render3d_sort_transmissive_phase_items(
   items : Array[TransmissivePhaseItem3d],
 ) -> Array[TransmissivePhaseItem3d] {
   items.sort_by(fn(a, b) {
-    let distance_cmp = cmp_float(b.distance, a.distance)
+    let distance_cmp = @pbr_render.cmp_float(b.distance, a.distance)
     if distance_cmp != 0 {
       return distance_cmp
     }
@@ -206,7 +209,7 @@ fn render3d_queue_camera_phase_items(
     })
   }
   items.sort_by(fn(a, b) {
-    let order_cmp = cmp_int(a.order, b.order)
+    let order_cmp = @pbr_render.cmp_int(a.order, b.order)
     if order_cmp != 0 {
       return order_cmp
     }
@@ -285,15 +288,15 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
     entries.push(Render3dCameraOrderEntry::{ entity, order })
   })
   entries.sort_by(fn(a, b) {
-    let order_cmp = cmp_int(a.order, b.order)
+    let order_cmp = @pbr_render.cmp_int(a.order, b.order)
     if order_cmp != 0 {
       return order_cmp
     }
-    let id_cmp = cmp_int(a.entity.id, b.entity.id)
+    let id_cmp = @pbr_render.cmp_int(a.entity.id, b.entity.id)
     if id_cmp != 0 {
       return id_cmp
     }
-    cmp_int(a.entity.generation, b.entity.generation)
+    @pbr_render.cmp_int(a.entity.generation, b.entity.generation)
   })
   let sorted : Array[@core.Entity] = []
   for entry in entries {
@@ -324,7 +327,7 @@ fn render3d_camera_order_has_changes(world : @ecs.World) -> Bool {
 ///|
 fn render3d_refresh_prepared_camera_order_if_needed(
   source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
 ) -> Unit {
   let camera3d_count = source_world.component_count(ecs_key_camera3d)
   let must_refresh = phase_state_ref.val.camera_order_needs_refresh ||
@@ -346,7 +349,7 @@ fn render3d_prepared_camera_phase_items(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
 ) -> Array[CameraPhaseItem3d]? {
-  let prepared = render3d_phase_state_or_default(world).prepared_camera_order
+  let prepared = @pbr_render.render3d_phase_state_or_default(world).prepared_camera_order
   if prepared.length() != cameras.length() {
     return None
   }
@@ -376,7 +379,7 @@ fn render3d_prepared_camera_phase_items(
 
 ///|
 fn render3d_upload_mesh_handle_cached(
-  phase_state_ref : Ref[Render3dPhaseState],
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> Int {
   let mesh_handle_id = mesh_handle.id()
