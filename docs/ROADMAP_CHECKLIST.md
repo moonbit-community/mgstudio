@@ -11,7 +11,7 @@ This file must not exceed 200 lines.
 - [ ] Package `text` (pending glyph/layout stress bottleneck closure).
 - [x] Issue `render/bevy_file_mapping_matrix_lock`: matrix now includes `render3d_morph` and latest `phase_state/math/material_flags/targets/systems` splits.
 - [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints moved to `render3d_systems`; pending拆分 `render3d_execute_impl` 内的 mixed-stage monolithic logic.
-- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/targets/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
+- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/runtime_config/targets/systems/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
 - [ ] Issue `pbr/morph_gpu_uniform_runtime_parity`: current morph path still deforms CPU-side mesh each frame, pending Bevy-like render-side morph index/uniform double-buffer pipeline.
 - [ ] Issue `roadmap/parity_first_acceptance_policy`: use source-structure + runtime-behavior parity as acceptance gate; keep stress/FPS data as secondary verification artifacts.
 - [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.

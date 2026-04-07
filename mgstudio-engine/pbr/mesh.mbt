@@ -519,53 +519,6 @@ let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
 let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
 
 ///|
-fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in render3d systems")
-  }
-}
-
-///|
-fn render3d_runtime_config_or_default(
-  world : @ecs.World,
-) -> PbrPluginRuntimeConfig {
-  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
-    Some(config) => config
-    None => pbr_plugin_runtime_config()
-  }
-}
-
-///|
-fn render3d_gpu_preprocess_forced_disabled() -> Bool {
-  @render.host_gpu_mesh3d_preprocess_disabled()
-}
-
-///|
-fn render3d_use_gpu_instance_buffer_builder(
-  runtime_config : PbrPluginRuntimeConfig,
-) -> Bool {
-  runtime_config.use_gpu_instance_buffer_builder &&
-  !render3d_gpu_preprocess_forced_disabled()
-}
-
-///|
-fn render3d_gpu_culling_supported() -> Bool {
-  @render.host_gpu_mesh3d_gpu_culling_supported()
-}
-
-///|
-fn render3d_camera_indirect_enabled(
-  use_gpu_instance_buffer_builder : Bool,
-  gpu_culling_supported : Bool,
-  no_indirect_drawing : Bool,
-) -> Bool {
-  use_gpu_instance_buffer_builder &&
-  gpu_culling_supported &&
-  !no_indirect_drawing
-}
-
-///|
 fn render3d_ray_local_aabb_hit(
   origin : @math.Vec3,
   direction : @math.Vec3,
