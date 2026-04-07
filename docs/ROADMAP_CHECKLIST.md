@@ -17,6 +17,7 @@ This file must not exceed 200 lines.
 - [x] Issue `render/renderer_backend_init_split`: `GpuBackend::new` moved from `renderer/mod.mbt` into `renderer/backend_init.mbt`.
 - [x] Issue `render/renderer_backend_utils_split`: shared backend math/error/texture-layout/sampler helpers moved from `renderer/mod.mbt` into `renderer/backend_utils.mbt`.
 - [x] Issue `render/renderer_backend_constants_split`: backend constant table moved from `renderer/mod.mbt` into `renderer/backend_constants.mbt`.
+- [x] Issue `render/renderer_pass_types_split`: `GpuPassState`/`GpuFrameState`/`GpuSurfaceState` moved from `renderer/draw_state.mbt` into `renderer/pass_types.mbt`.
 - [x] Issue `render/renderer_clip_matrix_split`: `GpuClipMatrix` data/constructor helpers moved from `renderer/draw_state.mbt` into `renderer/clip_matrix.mbt`.
 - [x] Issue `render/renderer_pass_finalize_split`: pass scissor/end APIs moved from `renderer/draw_state.mbt` into `renderer/pass_finalize.mbt`.
 - [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints已独立，`execute_impl` 已迁至 `render3d_execute`，camera queue-build/motion-vector/main-pass/point-shadow/postprocess 已独立；pending按 Bevy 文件边界继续细化 execute orchestration 层。
