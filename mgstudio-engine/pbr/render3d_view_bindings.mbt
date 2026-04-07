@@ -13,12 +13,7 @@
 // limitations under the License.
 
 ///|
-priv struct Render3dPassProjection {
-  clip_from_view : ProjectionMatrix3d
-  unjittered_clip_from_view : ProjectionMatrix3d
-  camera_near : Float
-  camera_far : Float
-}
+type Render3dPassProjection = @pbr_render.Render3dPassProjection
 
 ///|
 fn render3d_projection_matrix_apply_temporal_jitter(
@@ -70,12 +65,12 @@ fn render3d_camera_pass_projection(
       )
     None => unjittered_clip_from_view
   }
-  Render3dPassProjection::{
+  @pbr_render.render3d_pass_projection(
     clip_from_view,
     unjittered_clip_from_view,
-    camera_near: render3d_projection_near(projection, unjittered_clip_from_view),
-    camera_far: projection.far(),
-  }
+    render3d_projection_near(projection, unjittered_clip_from_view),
+    projection.far(),
+  )
 }
 
 ///|
@@ -83,19 +78,7 @@ fn render3d_point_shadow_pass_projection(
   near : Float,
   far : Float,
 ) -> Render3dPassProjection {
-  let shadow_near = if near > 0.0001F { near } else { 0.0001F }
-  let shadow_far = if far > shadow_near { far } else { shadow_near + 1.0F }
-  let clip_from_view = render3d_perspective_projection_matrix_raw(
-    shadow_near,
-    @math.pi_half(),
-    1.0F,
-  )
-  Render3dPassProjection::{
-    clip_from_view,
-    unjittered_clip_from_view: clip_from_view,
-    camera_near: shadow_near,
-    camera_far: shadow_far,
-  }
+  @pbr_render.render3d_point_shadow_pass_projection(near, far)
 }
 
 ///|
@@ -110,8 +93,8 @@ fn render3d_pass_projection_clip_from_world(
   pass_projection : Render3dPassProjection,
   camera_transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
-  pass_projection.clip_from_view.mul(
-    render3d_view_from_world_matrix(camera_transform),
+  @pbr_render.render3d_pass_projection_clip_from_world(
+    pass_projection, camera_transform,
   )
 }
 
@@ -120,8 +103,8 @@ fn render3d_pass_projection_unjittered_clip_from_world(
   pass_projection : Render3dPassProjection,
   camera_transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
-  pass_projection.unjittered_clip_from_view.mul(
-    render3d_view_from_world_matrix(camera_transform),
+  @pbr_render.render3d_pass_projection_unjittered_clip_from_world(
+    pass_projection, camera_transform,
   )
 }
 

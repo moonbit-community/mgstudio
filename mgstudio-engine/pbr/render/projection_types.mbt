@@ -272,6 +272,66 @@ pub fn render3d_projection_matrix_inverse(
 }
 
 ///|
+pub(all) struct Render3dPassProjection {
+  clip_from_view : ProjectionMatrix3d
+  unjittered_clip_from_view : ProjectionMatrix3d
+  camera_near : Float
+  camera_far : Float
+}
+
+///|
+pub fn render3d_pass_projection(
+  clip_from_view : ProjectionMatrix3d,
+  unjittered_clip_from_view : ProjectionMatrix3d,
+  camera_near : Float,
+  camera_far : Float,
+) -> Render3dPassProjection {
+  Render3dPassProjection::{
+    clip_from_view,
+    unjittered_clip_from_view,
+    camera_near,
+    camera_far,
+  }
+}
+
+///|
+pub fn render3d_point_shadow_pass_projection(
+  near : Float,
+  far : Float,
+) -> Render3dPassProjection {
+  let shadow_near = if near > 0.0001F { near } else { 0.0001F }
+  let shadow_far = if far > shadow_near { far } else { shadow_near + 1.0F }
+  let clip_from_view = render3d_perspective_projection_matrix_raw(
+    shadow_near,
+    @math.pi_half(),
+    1.0F,
+  )
+  render3d_pass_projection(
+    clip_from_view, clip_from_view, shadow_near, shadow_far,
+  )
+}
+
+///|
+pub fn render3d_pass_projection_clip_from_world(
+  pass_projection : Render3dPassProjection,
+  camera_transform : @transform.Transform,
+) -> ProjectionMatrix3d {
+  pass_projection.clip_from_view.mul(
+    render3d_view_from_world_matrix(camera_transform),
+  )
+}
+
+///|
+pub fn render3d_pass_projection_unjittered_clip_from_world(
+  pass_projection : Render3dPassProjection,
+  camera_transform : @transform.Transform,
+) -> ProjectionMatrix3d {
+  pass_projection.unjittered_clip_from_view.mul(
+    render3d_view_from_world_matrix(camera_transform),
+  )
+}
+
+///|
 pub fn render3d_projection_matrix_apply_temporal_jitter(
   clip_from_view : ProjectionMatrix3d,
   temporal_jitter : @post_process.TemporalJitter,

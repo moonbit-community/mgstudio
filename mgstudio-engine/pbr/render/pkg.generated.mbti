@@ -89,6 +89,8 @@ pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
 pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?) -> @material.StandardMaterial
 
+pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
+
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
@@ -155,6 +157,12 @@ pub fn render3d_pass_clear_enabled_for_target(Array[Int], Int, Bool) -> Int
 
 pub fn render3d_pass_kind_encode(Int, Bool, Bool, Bool) -> Int
 
+pub fn render3d_pass_projection(ProjectionMatrix3d, ProjectionMatrix3d, Float, Float) -> Render3dPassProjection
+
+pub fn render3d_pass_projection_clip_from_world(Render3dPassProjection, @transform.Transform) -> ProjectionMatrix3d
+
+pub fn render3d_pass_projection_unjittered_clip_from_world(Render3dPassProjection, @transform.Transform) -> ProjectionMatrix3d
+
 pub fn render3d_pass_viewport_for_target(Int, Int, Int, Int, Int, Int) -> (Int, Int, Int, Int)
 
 pub fn render3d_perspective_frustum_corners(Float, Float, Float, Float) -> Array[@math.Vec3]
@@ -166,6 +174,8 @@ pub let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState]
 pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
 
 pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
+
+pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjection
 
 pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
 
@@ -328,6 +338,13 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+}
+
+pub(all) struct Render3dPassProjection {
+  clip_from_view : ProjectionMatrix3d
+  unjittered_clip_from_view : ProjectionMatrix3d
+  camera_near : Float
+  camera_far : Float
 }
 
 pub(all) struct Render3dPhaseState {
