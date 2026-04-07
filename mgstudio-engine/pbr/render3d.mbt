@@ -1123,8 +1123,6 @@ priv struct Render3dPhaseState {
   mut last_camera3d_count : Int
   mesh_upload_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
-  extracted_meshes : Map[Int, ExtractedMesh3d]
-  meshes_to_reextract_next_frame : Map[UInt64, @core.Entity]
   prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
@@ -1141,8 +1139,6 @@ fn Render3dPhaseState::new() -> Render3dPhaseState {
     last_camera3d_count: 0,
     mesh_upload_cache: {},
     mesh_preprocess_static_cache: {},
-    extracted_meshes: {},
-    meshes_to_reextract_next_frame: {},
     prepared_skin_bindings: {},
     skin_joint_to_skins: {},
     skin_joints_by_skin: {},
@@ -6082,13 +6078,6 @@ fn render3d_upload_mesh_handle_cached(
 }
 
 ///|
-priv enum Render3dExtractMeshResult {
-  Ready(ExtractedMesh3d)
-  RetryNextFrame
-  Remove
-}
-
-///|
 fn render3d_skin_entity_key(entity : @core.Entity) -> UInt64 {
   let hi = entity.id.reinterpret_as_uint().to_uint64()
   let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xffffffffUL
@@ -6098,508 +6087,6 @@ fn render3d_skin_entity_key(entity : @core.Entity) -> UInt64 {
 ///|
 fn render3d_skin_entities_equal(lhs : @core.Entity, rhs : @core.Entity) -> Bool {
   lhs.id == rhs.id && lhs.generation == rhs.generation
-}
-
-///|
-fn render3d_entity_has_live_mesh_or_cached(
-  source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-  entity : @core.Entity,
-) -> Bool {
-  if entity.id < 0 {
-    return false
-  }
-  if (try! source_world.contains_by_key(entity, ecs_key_mesh3d)) {
-    return true
-  }
-  match phase_state_ref.val.extracted_meshes.get(entity.id) {
-    Some(cached) =>
-      render3d_skin_entities_equal(cached.entity.main_entity, entity)
-    None => false
-  }
-}
-
-///|
-fn[F : @ecs.QueryFilter] render3d_collect_changed_mesh_entities_by_filter(
-  source_world : @ecs.World,
-  filter : F,
-  entities : Map[UInt64, @core.Entity],
-) -> Unit {
-  let changed_query : @ecs.Query[@ecs.Comp[Mesh3d], F] = @ecs.query_filtered(
-    source_world, filter,
-  )
-  try! changed_query.view(fn(entity, _mesh3d) {
-    if entity.id >= 0 {
-      entities.set(render3d_skin_entity_key(entity), entity)
-    }
-  })
-}
-
-///|
-fn[T] render3d_collect_removed_entities_for_component(
-  source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-  key : @ecs.ComponentKey[T],
-  sequence : @core.SystemSequence,
-  entities : Map[UInt64, @core.Entity],
-) -> Unit {
-  for entity in source_world.removed_components(key, sequence).read() {
-    if render3d_entity_has_live_mesh_or_cached(
-        source_world, phase_state_ref, entity,
-      ) {
-      entities.set(render3d_skin_entity_key(entity), entity)
-    }
-  }
-}
-
-///|
-fn render3d_entity_key_map_is_empty(
-  entities : Map[UInt64, @core.Entity],
-) -> Bool {
-  for _ in entities.iter() {
-    return false
-  }
-  true
-}
-
-///|
-fn render3d_extracted_mesh_cache_is_empty(
-  phase_state_ref : Ref[Render3dPhaseState],
-) -> Bool {
-  for _ in phase_state_ref.val.extracted_meshes.iter() {
-    return false
-  }
-  true
-}
-
-///|
-fn render3d_phase_enqueue_mesh_reextract(
-  phase_state_ref : Ref[Render3dPhaseState],
-  entity : @core.Entity,
-) -> Unit {
-  if entity.id < 0 {
-    return
-  }
-  phase_state_ref.val.meshes_to_reextract_next_frame.set(
-    render3d_skin_entity_key(entity),
-    entity,
-  )
-}
-
-///|
-fn render3d_collect_incremental_mesh_refresh_entities(
-  source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-) -> Map[UInt64, @core.Entity] {
-  let entities : Map[UInt64, @core.Entity] = {}
-  let sequence = source_world.get_sequence_context().sequence()
-  for entry in phase_state_ref.val.meshes_to_reextract_next_frame.iter() {
-    let (_key, entity) = entry
-    entities.set(render3d_skin_entity_key(entity), entity)
-  }
-  phase_state_ref.val.meshes_to_reextract_next_frame.clear()
-
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_mesh3d),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_mesh_material3d),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@visibility.ecs_key_view_visibility),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@transform.ecs_key_transform),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@transform.ecs_key_global_transform),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@sprite.ecs_key_render_layers),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@visibility.ecs_key_visibility_range),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_lightmap),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_forward_decal),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_forward_decal_material_ext),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_clustered_decal),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_not_shadow_caster),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@visibility.ecs_key_no_frustum_culling),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_not_shadow_receiver),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_transmitted_shadow_receiver),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_wireframe),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_no_wireframe),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(ecs_key_wireframe_color),
-    entities,
-  )
-  render3d_collect_changed_mesh_entities_by_filter(
-    source_world,
-    @ecs.Changed::new(@mesh.SkinnedMesh::component()),
-    entities,
-  )
-
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_mesh3d, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_mesh_material3d, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, @visibility.ecs_key_view_visibility, sequence,
-    entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, @transform.ecs_key_transform, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, @transform.ecs_key_global_transform, sequence,
-    entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, @sprite.ecs_key_render_layers, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, @visibility.ecs_key_visibility_range, sequence,
-    entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_lightmap, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_forward_decal, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_forward_decal_material_ext, sequence,
-    entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_clustered_decal, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_not_shadow_caster, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, @visibility.ecs_key_no_frustum_culling, sequence,
-    entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_not_shadow_receiver, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_transmitted_shadow_receiver, sequence,
-    entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_wireframe, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_no_wireframe, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world, phase_state_ref, ecs_key_wireframe_color, sequence, entities,
-  )
-  render3d_collect_removed_entities_for_component(
-    source_world,
-    phase_state_ref,
-    @mesh.SkinnedMesh::component(),
-    sequence,
-    entities,
-  )
-
-  if render3d_entity_key_map_is_empty(entities) &&
-    render3d_extracted_mesh_cache_is_empty(phase_state_ref) {
-    source_world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
-      if entity.id >= 0 {
-        entities.set(render3d_skin_entity_key(entity), entity)
-      }
-    })
-  }
-  entities
-}
-
-///|
-fn render3d_extract_mesh_for_cache(
-  source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
-  entity : @core.Entity,
-  needs_mesh_previous_transform : Bool,
-  previous_motion_blur_frame_stamp : Int,
-  standard_material_frame_cache : Map[Int, StandardMaterial],
-) -> Render3dExtractMeshResult {
-  if entity.id < 0 || !source_world.is_alive(entity) {
-    return Render3dExtractMeshResult::Remove
-  }
-  guard (try! source_world.get_by_key(entity, ecs_key_mesh3d)) is Some(mesh3d) else {
-    return Render3dExtractMeshResult::Remove
-  }
-  guard (try! source_world.get_by_key(entity, ecs_key_mesh_material3d))
-    is Some(material_handle) else {
-    return Render3dExtractMeshResult::Remove
-  }
-  guard (try! source_world.get_by_key(
-      entity, @visibility.ecs_key_view_visibility,
-    ))
-    is Some(view_visibility) else {
-    return Render3dExtractMeshResult::Remove
-  }
-  if !view_visibility.is_visible() {
-    return Render3dExtractMeshResult::Remove
-  }
-  let material_handle_id = material_handle.material.id()
-  let base_material = match
-    standard_material_frame_cache.get(material_handle_id) {
-    Some(cached_material) => cached_material
-    None =>
-      match standard_material_get(material_handle.material) {
-        Some(loaded_material) => {
-          standard_material_frame_cache.set(material_handle_id, loaded_material)
-          loaded_material
-        }
-        None => return Render3dExtractMeshResult::RetryNextFrame
-      }
-  }
-  let material = render3d_apply_extended_material_metadata(
-    base_material,
-    material_handle.extended_material,
-  )
-  let layers = match
-    (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
-    Some(v) => v
-    None => @sprite.RenderLayers::default()
-  }
-  let transform = match
-    (try! source_world.get_by_key(entity, @transform.ecs_key_global_transform)) {
-    Some(global_transform) => global_transform.to_transform_approx()
-    None => {
-      let local_transform = match
-        (try! source_world.get_by_key(entity, @transform.ecs_key_transform)) {
-        Some(v) => v
-        None => @transform.Transform::identity()
-      }
-      render3d_entity_world_transform_from_components(
-        source_world, entity, local_transform, world_transform_cache_ref,
-      )
-    }
-  }
-  let previous_transform = if needs_mesh_previous_transform {
-    match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
-      Some(v) => v
-      None => transform
-    }
-  } else {
-    transform
-  }
-  let visibility_range = try! source_world.get_by_key(
-    entity, @visibility.ecs_key_visibility_range,
-  )
-  let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
-    match render3d_mesh_local_aabb_center(mesh3d) {
-      Some(local_center) =>
-        Some(render3d_transform_point(transform, local_center))
-      None => None
-    }
-  } else {
-    None
-  }
-  let (skinning_key_hi, skinning_key_lo) = render3d_prepared_skin_binding_keys(
-    phase_state_ref, entity,
-  )
-  let mesh_id = render3d_upload_mesh_handle_cached(phase_state_ref, mesh3d.mesh)
-  let lightmap = try! source_world.get_by_key(entity, ecs_key_lightmap)
-  let is_forward_decal = (try! source_world.get_by_key(
-      entity, ecs_key_forward_decal,
-    ))
-    is Some(_)
-  let forward_decal_material_ext = try! source_world.get_by_key(
-    entity, ecs_key_forward_decal_material_ext,
-  )
-  let clustered_decal = try! source_world.get_by_key(
-    entity, ecs_key_clustered_decal,
-  )
-  let has_not_shadow_caster = (try! source_world.get_by_key(
-      entity, ecs_key_not_shadow_caster,
-    ))
-    is Some(_)
-  let has_no_frustum_culling = (try! source_world.get_by_key(
-      entity, @visibility.ecs_key_no_frustum_culling,
-    ))
-    is Some(_)
-  let has_not_shadow_receiver = (try! source_world.get_by_key(
-      entity, ecs_key_not_shadow_receiver,
-    ))
-    is Some(_)
-  let has_transmitted_shadow_receiver = (try! source_world.get_by_key(
-      entity, ecs_key_transmitted_shadow_receiver,
-    ))
-    is Some(_)
-  let has_wireframe = (try! source_world.get_by_key(entity, ecs_key_wireframe))
-    is Some(_)
-  let has_no_wireframe = (try! source_world.get_by_key(
-      entity, ecs_key_no_wireframe,
-    ))
-    is Some(_)
-  let wireframe_color = try! source_world.get_by_key(
-    entity, ecs_key_wireframe_color,
-  )
-  Render3dExtractMeshResult::Ready(ExtractedMesh3d::{
-    entity: phase_entity_ref3d_for_main(entity),
-    payload: Mesh3dExtractedPayload::{
-      mesh_handle: mesh3d.mesh,
-      mesh_id,
-      mesh_is_indexed: render3d_mesh_handle_is_indexed_cached(
-        mesh3d.mesh,
-        phase_state_ref.val.mesh_preprocess_static_cache,
-      ),
-      transform,
-      previous_transform,
-      visibility_range,
-      aabb_center_world,
-      material,
-      material_extension: material_handle.extended_material,
-      lightmap,
-      is_forward_decal,
-      forward_decal_material_ext,
-      clustered_decal,
-      has_not_shadow_caster,
-      has_not_shadow_receiver,
-      has_transmitted_shadow_receiver,
-      has_no_frustum_culling,
-      layers,
-      has_wireframe,
-      has_no_wireframe,
-      wireframe_color,
-      skinning_key_hi,
-      skinning_key_lo,
-    },
-  })
-}
-
-///|
-fn render3d_extract_meshes_for_gpu_building_incremental(
-  source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
-  needs_mesh_previous_transform : Bool,
-  previous_motion_blur_frame_stamp : Int,
-) -> Unit {
-  let entities = render3d_collect_incremental_mesh_refresh_entities(
-    source_world, phase_state_ref,
-  )
-  if render3d_entity_key_map_is_empty(entities) {
-    return
-  }
-  let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
-  for entry in entities.iter() {
-    let (_entity_key, entity) = entry
-    match
-      render3d_extract_mesh_for_cache(
-        source_world, phase_state_ref, world_transform_cache_ref, entity, needs_mesh_previous_transform,
-        previous_motion_blur_frame_stamp, standard_material_frame_cache,
-      ) {
-      Render3dExtractMeshResult::Ready(extracted_mesh) =>
-        phase_state_ref.val.extracted_meshes.set(entity.id, extracted_mesh)
-      Render3dExtractMeshResult::RetryNextFrame => {
-        phase_state_ref.val.extracted_meshes.remove(entity.id) |> ignore
-        render3d_phase_enqueue_mesh_reextract(phase_state_ref, entity)
-      }
-      Render3dExtractMeshResult::Remove =>
-        phase_state_ref.val.extracted_meshes.remove(entity.id) |> ignore
-    }
-  }
-}
-
-///|
-fn render3d_collect_cached_extracted_meshes(
-  source_world : @ecs.World,
-  phase_state_ref : Ref[Render3dPhaseState],
-  needs_mesh_previous_transform : Bool,
-  previous_motion_blur_frame_stamp : Int,
-) -> Array[ExtractedMesh3d] {
-  let meshes : Array[ExtractedMesh3d] = []
-  let stale_entity_ids : Array[Int] = []
-  for entry in phase_state_ref.val.extracted_meshes.iter() {
-    let (entity_id, extracted_mesh) = entry
-    let entity = extracted_mesh.entity.main_entity
-    if entity.id != entity_id || !source_world.is_alive(entity) {
-      stale_entity_ids.push(entity_id)
-      continue
-    }
-    let previous_transform = if needs_mesh_previous_transform {
-      match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
-        Some(v) => v
-        None => extracted_mesh.payload.transform
-      }
-    } else {
-      extracted_mesh.payload.transform
-    }
-    let payload = Mesh3dExtractedPayload::{
-      ..extracted_mesh.payload,
-      previous_transform,
-    }
-    meshes.push(ExtractedMesh3d::{ ..extracted_mesh, payload, })
-  }
-  for entity_id in stale_entity_ids {
-    phase_state_ref.val.extracted_meshes.remove(entity_id) |> ignore
-  }
-  meshes
 }
 
 ///|
@@ -7815,16 +7302,233 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",
   )
-  render3d_extract_meshes_for_gpu_building_incremental(
-    source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
-    previous_motion_blur_frame_stamp,
-  )
-  let extracted_meshes = render3d_collect_cached_extracted_meshes(
-    source_world, phase_state_ref, needs_mesh_previous_transform, previous_motion_blur_frame_stamp,
-  )
-  for extracted_mesh in extracted_meshes {
-    meshes.push(extracted_mesh)
-  }
+  let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
+  let has_render_layers_components = source_world.component_count(
+      @sprite.ecs_key_render_layers,
+    ) >
+    0
+  let has_visibility_range_components = source_world.component_count(
+      @visibility.ecs_key_visibility_range,
+    ) >
+    0
+  let has_lightmap_components = source_world.component_count(ecs_key_lightmap) >
+    0
+  let has_forward_decal_components = source_world.component_count(
+      ecs_key_forward_decal,
+    ) >
+    0
+  let has_forward_decal_material_ext_components = source_world.component_count(
+      ecs_key_forward_decal_material_ext,
+    ) >
+    0
+  let has_clustered_decal_components = source_world.component_count(
+      ecs_key_clustered_decal,
+    ) >
+    0
+  let has_not_shadow_caster_components = source_world.component_count(
+      ecs_key_not_shadow_caster,
+    ) >
+    0
+  let has_no_frustum_culling_components = source_world.component_count(
+      @visibility.ecs_key_no_frustum_culling,
+    ) >
+    0
+  let has_not_shadow_receiver_components = source_world.component_count(
+      ecs_key_not_shadow_receiver,
+    ) >
+    0
+  let has_transmitted_shadow_receiver_components = source_world.component_count(
+      ecs_key_transmitted_shadow_receiver,
+    ) >
+    0
+  let has_wireframe_components = source_world.component_count(ecs_key_wireframe) >
+    0
+  let has_no_wireframe_components = source_world.component_count(
+      ecs_key_no_wireframe,
+    ) >
+    0
+  let has_wireframe_color_components = source_world.component_count(
+      ecs_key_wireframe_color,
+    ) >
+    0
+  let mesh_extract_query : @ecs.Query[
+    (
+      @ecs.Comp[Mesh3d],
+      @ecs.Comp[MeshMaterial3d],
+      @ecs.Comp[@visibility.ViewVisibility],
+      @ecs.Comp[@transform.Transform],
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! mesh_extract_query.view(fn(entity, data) {
+    let (
+      mesh3d_comp,
+      material_handle_comp,
+      view_visibility_comp,
+      local_transform_comp,
+    ) = data
+    let mesh3d = mesh3d_comp.value()
+    let view_visibility = view_visibility_comp.value()
+    if !view_visibility.is_visible() {
+      return
+    }
+    let material_handle = material_handle_comp.value()
+    let material_handle_id = material_handle.material.id()
+    let base_material = match
+      standard_material_frame_cache.get(material_handle_id) {
+      Some(cached_material) => cached_material
+      None =>
+        match standard_material_get(material_handle.material) {
+          Some(loaded_material) => {
+            standard_material_frame_cache.set(
+              material_handle_id, loaded_material,
+            )
+            loaded_material
+          }
+          None => return
+        }
+    }
+    let material = render3d_apply_extended_material_metadata(
+      base_material,
+      material_handle.extended_material,
+    )
+    let layers = if has_render_layers_components {
+      match
+        (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+        Some(v) => v
+        None => @sprite.RenderLayers::default()
+      }
+    } else {
+      @sprite.RenderLayers::default()
+    }
+    let transform = render3d_entity_world_transform_from_components(
+      source_world,
+      entity,
+      local_transform_comp.value(),
+      world_transform_cache_ref,
+    )
+    let previous_transform = if needs_mesh_previous_transform {
+      match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
+        Some(v) => v
+        None => transform
+      }
+    } else {
+      transform
+    }
+    let visibility_range = if has_visibility_range_components {
+      try! source_world.get_by_key(entity, @visibility.ecs_key_visibility_range)
+    } else {
+      None
+    }
+    let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
+      match render3d_mesh_local_aabb_center(mesh3d) {
+        Some(local_center) =>
+          Some(render3d_transform_point(transform, local_center))
+        None => None
+      }
+    } else {
+      None
+    }
+    let (skinning_key_hi, skinning_key_lo) = render3d_prepared_skin_binding_keys(
+      phase_state_ref, entity,
+    )
+    let mesh_id = render3d_upload_mesh_handle_cached(
+      phase_state_ref,
+      mesh3d.mesh,
+    )
+    let lightmap = if has_lightmap_components {
+      try! source_world.get_by_key(entity, ecs_key_lightmap)
+    } else {
+      None
+    }
+    let is_forward_decal = if has_forward_decal_components {
+      (try! source_world.get_by_key(entity, ecs_key_forward_decal)) is Some(_)
+    } else {
+      false
+    }
+    let forward_decal_material_ext = if has_forward_decal_material_ext_components {
+      try! source_world.get_by_key(entity, ecs_key_forward_decal_material_ext)
+    } else {
+      None
+    }
+    let clustered_decal = if has_clustered_decal_components {
+      try! source_world.get_by_key(entity, ecs_key_clustered_decal)
+    } else {
+      None
+    }
+    let has_not_shadow_caster = if has_not_shadow_caster_components {
+      (try! source_world.get_by_key(entity, ecs_key_not_shadow_caster))
+      is Some(_)
+    } else {
+      false
+    }
+    let has_no_frustum_culling = if has_no_frustum_culling_components {
+      (try! source_world.get_by_key(
+        entity, @visibility.ecs_key_no_frustum_culling,
+      ))
+      is Some(_)
+    } else {
+      false
+    }
+    let has_not_shadow_receiver = if has_not_shadow_receiver_components {
+      (try! source_world.get_by_key(entity, ecs_key_not_shadow_receiver))
+      is Some(_)
+    } else {
+      false
+    }
+    let has_transmitted_shadow_receiver = if has_transmitted_shadow_receiver_components {
+      (try! source_world.get_by_key(entity, ecs_key_transmitted_shadow_receiver))
+      is Some(_)
+    } else {
+      false
+    }
+    let has_wireframe = if has_wireframe_components {
+      (try! source_world.get_by_key(entity, ecs_key_wireframe)) is Some(_)
+    } else {
+      false
+    }
+    let has_no_wireframe = if has_no_wireframe_components {
+      (try! source_world.get_by_key(entity, ecs_key_no_wireframe)) is Some(_)
+    } else {
+      false
+    }
+    let wireframe_color = if has_wireframe_color_components {
+      try! source_world.get_by_key(entity, ecs_key_wireframe_color)
+    } else {
+      None
+    }
+    meshes.push(ExtractedMesh3d::{
+      entity: phase_entity_ref3d_for_main(entity),
+      payload: Mesh3dExtractedPayload::{
+        mesh_handle: mesh3d.mesh,
+        mesh_id,
+        mesh_is_indexed: render3d_mesh_handle_is_indexed_cached(
+          mesh3d.mesh,
+          phase_state_ref.val.mesh_preprocess_static_cache,
+        ),
+        transform,
+        previous_transform,
+        visibility_range,
+        aabb_center_world,
+        material,
+        material_extension: material_handle.extended_material,
+        lightmap,
+        is_forward_decal,
+        forward_decal_material_ext,
+        clustered_decal,
+        has_not_shadow_caster,
+        has_not_shadow_receiver,
+        has_transmitted_shadow_receiver,
+        has_no_frustum_culling,
+        layers,
+        has_wireframe,
+        has_no_wireframe,
+        wireframe_color,
+        skinning_key_hi,
+        skinning_key_lo,
+      },
+    })
+  })
   if needs_mesh_previous_transform {
     motion_blur_history_sync(meshes, motion_blur_frame_stamp)
   }
