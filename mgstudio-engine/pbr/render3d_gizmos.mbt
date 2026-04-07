@@ -23,8 +23,8 @@ fn render3d_draw_gizmo_lines_3d(
   let material = StandardMaterial::from_color(@sprite.Color::white())
     .with_unlit(true)
     .with_cull_mode(None)
-  render3d_draw_mesh_gpu_payload(
-    render3d_build_mesh_gpu_draw_payload(
+  @pbr_render.render3d_draw_mesh_gpu_payload(
+    @pbr_render.render3d_build_mesh_gpu_draw_payload(
       mesh_id,
       camera_entity.id,
       camera_entity.generation,

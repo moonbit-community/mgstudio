@@ -56,7 +56,7 @@ fn render3d_execute_camera_point_shadow_pass(
       pass_lighting.point_pos,
       face_index,
     )
-    render3d_begin_pass_3d(
+    @pbr_render.render3d_begin_pass_3d(
       target_id=shadow_target_id,
       target_layer=face_index,
       width=shadow_view_size,
@@ -107,8 +107,8 @@ fn render3d_execute_camera_point_shadow_pass(
       } else {
         non_indexed_indirect_parameter_indices[draw_item_index]
       }
-      render3d_draw_mesh_gpu_payload(
-        render3d_build_mesh_gpu_draw_payload(
+      @pbr_render.render3d_draw_mesh_gpu_payload(
+        @pbr_render.render3d_build_mesh_gpu_draw_payload(
           shadow_mesh.mesh_id,
           camera_entity.id,
           camera_entity.generation,

@@ -64,7 +64,7 @@ fn render3d_execute_camera_motion_vector_pass(
     viewport_width,
     viewport_height,
   )
-  render3d_begin_pass_3d(
+  @pbr_render.render3d_begin_pass_3d(
     target_id=shared_scene_id,
     secondary_target_id=next_velocity_target_id,
     width=view_width_logical,
@@ -111,8 +111,8 @@ fn render3d_execute_camera_motion_vector_pass(
     } else {
       non_indexed_indirect_parameter_indices[draw_item_index]
     }
-    render3d_draw_mesh_gpu_payload(
-      render3d_build_mesh_gpu_draw_payload(
+    @pbr_render.render3d_draw_mesh_gpu_payload(
+      @pbr_render.render3d_build_mesh_gpu_draw_payload(
         mesh.mesh_id,
         camera_entity.id,
         camera_entity.generation,

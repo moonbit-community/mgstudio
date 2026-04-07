@@ -73,7 +73,7 @@ fn render3d_execute_camera_main_pass(
     scene_viewport_width,
     scene_viewport_height,
   ) = pass_viewport(scene_target_id)
-  render3d_begin_pass_3d(
+  @pbr_render.render3d_begin_pass_3d(
     target_id=scene_target_id,
     width=view_width_logical,
     height=view_height_logical,
@@ -296,7 +296,7 @@ fn render3d_execute_camera_main_pass(
       Some(extension) => extension.shader_path
       None => None
     }
-    let draw_payload = render3d_build_mesh_gpu_draw_payload(
+    let draw_payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
       mesh.mesh_id,
       camera_entity.id,
       camera_entity.generation,
@@ -365,7 +365,7 @@ fn render3d_execute_camera_main_pass(
     main_pass_draws.push(draw_payload)
   }
   for draw_payload in main_pass_draws {
-    render3d_draw_mesh_gpu_payload(draw_payload)
+    @pbr_render.render3d_draw_mesh_gpu_payload(draw_payload)
   }
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
   render3d_draw_camera_skybox(
@@ -400,7 +400,7 @@ fn render3d_execute_camera_main_pass(
         transmission_viewport_width,
         transmission_viewport_height,
       ) = pass_viewport(scene_target_id)
-      render3d_begin_pass_3d(
+      @pbr_render.render3d_begin_pass_3d(
         target_id=scene_target_id,
         width=view_width_logical,
         height=view_height_logical,
@@ -440,7 +440,7 @@ fn render3d_execute_camera_main_pass(
       for i in transmission_range.0..<transmission_range.1 {
         let transmissive_draw = transmissive_draws[i]
         transmissive_draw.entity |> ignore
-        render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
+        @pbr_render.render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
           ..transmissive_draw.payload,
           transmission_source_texture_id: if transmission_steps > 0 {
             transmission_source_target_id
@@ -485,7 +485,7 @@ fn render3d_execute_camera_main_pass(
       continue
     }
     wireframe_draws.push(
-      render3d_build_mesh_gpu_draw_payload(
+      @pbr_render.render3d_build_mesh_gpu_draw_payload(
         wireframe_mesh_id,
         camera_entity.id,
         camera_entity.generation,
@@ -537,7 +537,7 @@ fn render3d_execute_camera_main_pass(
       transparent_viewport_width,
       transparent_viewport_height,
     ) = pass_viewport(scene_target_id)
-    render3d_begin_pass_3d(
+    @pbr_render.render3d_begin_pass_3d(
       target_id=scene_target_id,
       width=view_width_logical,
       height=view_height_logical,
@@ -566,10 +566,10 @@ fn render3d_execute_camera_main_pass(
       clear_enabled=0,
     )
     for draw_payload in transparent_draws {
-      render3d_draw_mesh_gpu_payload(draw_payload)
+      @pbr_render.render3d_draw_mesh_gpu_payload(draw_payload)
     }
     for wireframe_draw in wireframe_draws {
-      render3d_draw_mesh_gpu_payload(wireframe_draw)
+      @pbr_render.render3d_draw_mesh_gpu_payload(wireframe_draw)
     }
     @render.host_gpu_end_pass()
   }
