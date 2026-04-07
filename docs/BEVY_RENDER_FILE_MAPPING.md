@@ -19,6 +19,7 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (material/pass flag encoding helpers) -> `mgstudio-engine/pbr/render3d_material_flags.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (runtime config + gpu preprocess capability helpers) -> `mgstudio-engine/pbr/render3d_runtime_config.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (extract/prepare/queue/execute system entrypoints) -> `mgstudio-engine/pbr/render3d_systems.mbt` (`Split`)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera collection + projection sync path) -> `mgstudio-engine/pbr/render3d_execute_collect.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (postprocess stack helpers) -> `mgstudio-engine/pbr/render3d_postprocess.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (world transform cache + skinning extraction helpers) -> `mgstudio-engine/pbr/render3d_world_transform_cache.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (scene target cache + lighting/environment/skybox helpers) -> `mgstudio-engine/pbr/render3d_scene_resources.mbt` (`Split`)
