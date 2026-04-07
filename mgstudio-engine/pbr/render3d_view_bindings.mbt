@@ -129,37 +129,7 @@ fn render3d_point_shadow_pass_projection(
 fn render3d_view_from_world_matrix(
   transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
-  let inverse_rotation = render3d_quat_conjugate(transform.rotation.normalize())
-  let x_axis = quat_rotate_vec3(
-    inverse_rotation,
-    @math.Vec3::new(1.0F, 0.0F, 0.0F),
-  )
-  let y_axis = quat_rotate_vec3(
-    inverse_rotation,
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
-  )
-  let z_axis = quat_rotate_vec3(
-    inverse_rotation,
-    @math.Vec3::new(0.0F, 0.0F, 1.0F),
-  )
-  let translation = transform.translation
-  // `x_axis/y_axis/z_axis` are columns of the inverse rotation matrix.
-  // Translation in view space is `-(R_inv * world_translation)`.
-  let offset_x = -(x_axis.x * translation.x +
-    y_axis.x * translation.y +
-    z_axis.x * translation.z)
-  let offset_y = -(x_axis.y * translation.x +
-    y_axis.y * translation.y +
-    z_axis.y * translation.z)
-  let offset_z = -(x_axis.z * translation.x +
-    y_axis.z * translation.y +
-    z_axis.z * translation.z)
-  ProjectionMatrix3d::from_cols(
-    @math.Vec4::new(x_axis.x, x_axis.y, x_axis.z, 0.0F),
-    @math.Vec4::new(y_axis.x, y_axis.y, y_axis.z, 0.0F),
-    @math.Vec4::new(z_axis.x, z_axis.y, z_axis.z, 0.0F),
-    @math.Vec4::new(offset_x, offset_y, offset_z, 1.0F),
-  )
+  @pbr_render.render3d_view_from_world_matrix(transform)
 }
 
 ///|

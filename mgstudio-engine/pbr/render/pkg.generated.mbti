@@ -198,6 +198,8 @@ pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
 
 pub fn render3d_vec4_dot(@math.Vec4, @math.Vec4) -> Float
 
+pub fn render3d_view_from_world_matrix(@transform.Transform) -> ProjectionMatrix3d
+
 pub fn render3d_world_transform_cache_begin_frame(@ref.Ref[Render3dWorldTransformCache]) -> Unit
 
 pub fn render3d_world_transform_cache_ref() -> @ref.Ref[Render3dWorldTransformCache]

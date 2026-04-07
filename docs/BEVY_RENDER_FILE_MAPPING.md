@@ -60,6 +60,7 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh_view_bindings.rs` (projection matrix shape + matrix ops) -> `mgstudio-engine/pbr/render/projection_types.mbt` (`Migrated ProjectionMatrix3d ownership + row/inverse ops`, root `core_pipeline.mbt` now aliases matrix type; root `render3d_view_bindings` uses bridge for inverse)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (`SubCameraView` component type/key ownership) -> `mgstudio-engine/pbr/render/projection_types.mbt` (`Migrated SubCameraView3d type + @ecs.Component impl + key`, root `core_pipeline.mbt` and `ecs_keys.mbt` now alias/bridge)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh_view_bindings.rs` (camera viewport logical-rect helper) -> `mgstudio-engine/pbr/render/view.mbt` (`Migrated implementation`, root `render3d_view_bindings.mbt` now bridge)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh_view_bindings.rs` (view-from-world matrix helper) -> `mgstudio-engine/pbr/render/view.mbt` (`Migrated implementation`, root `render3d_view_bindings.mbt` now bridge)
 
 - [x] `bevy/crates/bevy_render/src/render_phase/mod.rs` -> `mgstudio-engine/render/render_phase.mbt` (`Create`)
 - [x] `bevy/crates/bevy_render/src/texture/mod.rs` -> `mgstudio-engine/render/texture.mbt` (`Create`)
