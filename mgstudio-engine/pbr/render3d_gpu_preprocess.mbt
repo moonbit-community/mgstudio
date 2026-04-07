@@ -622,7 +622,7 @@ fn render3d_host_preprocess_view_frustum_planes(
 ///|
 fn render3d_host_preprocess_view(
   projection : Projection,
-  pass_projection : Render3dPassProjection,
+  pass_projection : @pbr_render.Render3dPassProjection,
   camera_transform : @transform.Transform,
   viewport_x : Int,
   viewport_y : Int,
@@ -695,7 +695,7 @@ fn render3d_projection_matrix_identity() -> ProjectionMatrix3d {
 
 ///|
 fn render3d_host_preprocess_previous_view(
-  pass_projection : Render3dPassProjection,
+  pass_projection : @pbr_render.Render3dPassProjection,
   previous_transform : @transform.Transform,
   previous_clip_from_world : ProjectionMatrix3d?,
 ) -> @render.HostMesh3dPreprocessPreviousView {
@@ -1084,7 +1084,7 @@ fn render3d_host_preprocess_mesh_input(
 fn render3d_host_preprocess_camera_payload(
   queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   camera : Camera3dViewPayload,
-  pass_projection : Render3dPassProjection,
+  pass_projection : @pbr_render.Render3dPassProjection,
   viewport_x : Int,
   viewport_y : Int,
   viewport_width : Int,

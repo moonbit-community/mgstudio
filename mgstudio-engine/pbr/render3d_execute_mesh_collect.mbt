@@ -116,7 +116,7 @@ fn render3d_execute_collect_meshes(
           None => return
         }
     }
-    let material = render3d_apply_extended_material_metadata(
+    let material = @pbr_render.render3d_apply_extended_material_metadata(
       base_material,
       material_handle.extended_material,
     )

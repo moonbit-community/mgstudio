@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-type Render3dPassProjection = @pbr_render.Render3dPassProjection
-
-///|
 fn render3d_projection_near(
   projection : Projection,
   clip_from_view : ProjectionMatrix3d,
@@ -35,7 +32,7 @@ fn render3d_camera_pass_projection(
   temporal_jitter : TemporalJitter?,
   view_width : Int,
   view_height : Int,
-) -> Render3dPassProjection {
+) -> @pbr_render.Render3dPassProjection {
   let unjittered_clip_from_view = match sub_camera_view {
     Some(sub_view) => projection.get_clip_from_view_for_sub(sub_view)
     None => projection.get_clip_from_view()

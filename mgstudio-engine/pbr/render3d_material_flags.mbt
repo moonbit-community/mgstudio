@@ -64,11 +64,3 @@ fn render3d_camera_deferred_mode(
       }
   }
 }
-
-///|
-fn render3d_apply_extended_material_metadata(
-  material : StandardMaterial,
-  extension : ExtendedMaterialMetadata3d?,
-) -> StandardMaterial {
-  @pbr_render.render3d_apply_extended_material_metadata(material, extension)
-}

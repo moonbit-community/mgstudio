@@ -29,7 +29,7 @@ fn render3d_execute_camera_queue_build(
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
-  camera_pass_projection : Render3dPassProjection,
+  camera_pass_projection : @pbr_render.Render3dPassProjection,
   viewport_x : Int,
   viewport_y : Int,
   viewport_width : Int,

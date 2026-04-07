@@ -6,7 +6,7 @@ This file must not exceed 200 lines.
 - [ ] Package `pbr` (pending bevy-like directory topology via subpackage split + decal/occlusion/OIT/transmitted-shadow backend closures).
 - [ ] Package `remote` (current plugin is still stubbed backend).
 - [ ] Package `render` (pending Bevy file-topology + stage-ownership parity closure).
-- [ ] Package `render/renderer` (pass/frame/surface state + clip-matrix helpers moved into `draw_state`; preprocess + pass-flag + backend-type + backend-state + backend-init + backend-utils split landed; pending backend runtime API split and remaining Bevy-like file-topology cleanup).
+- [ ] Package `render/renderer` (pass/frame/surface state moved into `draw_state`; clip-matrix + pass-finalize API split out; preprocess + pass-flag + backend-type + backend-state + backend-init + backend-utils + backend-constants split landed; pending backend runtime API split and remaining Bevy-like file-topology cleanup).
 - [ ] Package `solari` (current runtime boundary is still stubbed).
 - [ ] Package `text` (pending glyph/layout stress bottleneck closure).
 - [x] Issue `render/bevy_file_mapping_matrix_lock`: matrix now includes `render3d_morph` and latest `phase_state/math/material_flags/targets/systems` splits.
@@ -17,6 +17,8 @@ This file must not exceed 200 lines.
 - [x] Issue `render/renderer_backend_init_split`: `GpuBackend::new` moved from `renderer/mod.mbt` into `renderer/backend_init.mbt`.
 - [x] Issue `render/renderer_backend_utils_split`: shared backend math/error/texture-layout/sampler helpers moved from `renderer/mod.mbt` into `renderer/backend_utils.mbt`.
 - [x] Issue `render/renderer_backend_constants_split`: backend constant table moved from `renderer/mod.mbt` into `renderer/backend_constants.mbt`.
+- [x] Issue `render/renderer_clip_matrix_split`: `GpuClipMatrix` data/constructor helpers moved from `renderer/draw_state.mbt` into `renderer/clip_matrix.mbt`.
+- [x] Issue `render/renderer_pass_finalize_split`: pass scissor/end APIs moved from `renderer/draw_state.mbt` into `renderer/pass_finalize.mbt`.
 - [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints已独立，`execute_impl` 已迁至 `render3d_execute`，camera queue-build/motion-vector/main-pass/point-shadow/postprocess 已独立；pending按 Bevy 文件边界继续细化 execute orchestration 层。
 - [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/runtime_config/targets/systems/execute/execute_collect/execute_mesh_collect/execute_camera_queue_build/execute_camera_motion_vector/execute_camera_main_pass/execute_camera_point_shadow/execute_camera_postprocess/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
 - [ ] Issue `pbr/morph_gpu_uniform_runtime_parity`: current morph path still deforms CPU-side mesh each frame, pending Bevy-like render-side morph index/uniform double-buffer pipeline.

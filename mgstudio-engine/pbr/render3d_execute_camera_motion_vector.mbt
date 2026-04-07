@@ -33,7 +33,7 @@ fn render3d_execute_camera_motion_vector_pass(
   viewport_y : Int,
   viewport_width : Int,
   viewport_height : Int,
-  camera_pass_projection : Render3dPassProjection,
+  camera_pass_projection : @pbr_render.Render3dPassProjection,
   pass_lighting : Render3dLightingState,
   camera_exposure_value : Float,
   point_shadow_near : Float,
