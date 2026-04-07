@@ -6380,6 +6380,8 @@ fn render3d_extract_mesh_for_cache(
   phase_state_ref : Ref[Render3dPhaseState],
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
   entity : @core.Entity,
+  needs_mesh_previous_transform : Bool,
+  previous_motion_blur_frame_stamp : Int,
   standard_material_frame_cache : Map[Int, StandardMaterial],
 ) -> Render3dExtractMeshResult {
   if entity.id < 0 || !source_world.is_alive(entity) {
@@ -6437,7 +6439,14 @@ fn render3d_extract_mesh_for_cache(
       )
     }
   }
-  let previous_transform = transform
+  let previous_transform = if needs_mesh_previous_transform {
+    match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
+      Some(v) => v
+      None => transform
+    }
+  } else {
+    transform
+  }
   let visibility_range = try! source_world.get_by_key(
     entity, @visibility.ecs_key_visibility_range,
   )
@@ -6528,6 +6537,8 @@ fn render3d_extract_meshes_for_gpu_building_incremental(
   source_world : @ecs.World,
   phase_state_ref : Ref[Render3dPhaseState],
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  needs_mesh_previous_transform : Bool,
+  previous_motion_blur_frame_stamp : Int,
 ) -> Unit {
   let entities = render3d_collect_incremental_mesh_refresh_entities(
     source_world, phase_state_ref,
@@ -6540,7 +6551,8 @@ fn render3d_extract_meshes_for_gpu_building_incremental(
     let (_entity_key, entity) = entry
     match
       render3d_extract_mesh_for_cache(
-        source_world, phase_state_ref, world_transform_cache_ref, entity, standard_material_frame_cache,
+        source_world, phase_state_ref, world_transform_cache_ref, entity, needs_mesh_previous_transform,
+        previous_motion_blur_frame_stamp, standard_material_frame_cache,
       ) {
       Render3dExtractMeshResult::Ready(extracted_mesh) =>
         phase_state_ref.val.extracted_meshes.set(entity.id, extracted_mesh)
@@ -6987,9 +6999,6 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
     source_world, phase_state_ref,
   )
   render3d_extract_skin_bindings(
-    source_world, phase_state_ref, world_transform_cache_ref,
-  )
-  render3d_extract_meshes_for_gpu_building_incremental(
     source_world, phase_state_ref, world_transform_cache_ref,
   )
   render3d_diagnostic_prepared_camera_count_ref.val = phase_state_ref.val.prepared_camera_order.length()
@@ -7805,6 +7814,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",
+  )
+  render3d_extract_meshes_for_gpu_building_incremental(
+    source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
+    previous_motion_blur_frame_stamp,
   )
   let extracted_meshes = render3d_collect_cached_extracted_meshes(
     source_world, phase_state_ref, needs_mesh_previous_transform, previous_motion_blur_frame_stamp,

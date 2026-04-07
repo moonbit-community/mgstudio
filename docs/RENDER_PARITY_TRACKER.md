@@ -24,7 +24,7 @@ Last updated: 2026-04-07
 | RENDER-009 | bevy_pbr/render/morph.rs | Morph extraction/preparation lifecycle is not yet split and tracked like Bevy. | TODO | Add `extract_morphs/prepare_morphs` parity path and previous-frame indices behavior. |
 | RENDER-010 | bevy_pbr/render/mesh.rs | Queue/execute still carries non-queue responsibilities (build-time material readiness retries). | TODO | Move toward Bevy `collect_meshes_for_gpu_building` model and queue-only hot path. |
 | RENDER-011 | bevy_pbr/render/mesh.rs + occlusion_culling.wgsl | Occlusion/depth-pyramid preprocess integration is not fully staged like Bevy. | TODO | Match preprocess dispatch and indirect-parameter build boundaries. |
-| RENDER-012 | bevy_render schedule + bevy_pbr/render/mod.rs | Render schedule set topology differs from Bevy (`Extract/Prepare*/Queue/Render/Cleanup`). | IN_PROGRESS | 2026-04-07: added `prepare_resources_flush / prepare_resources / prepare_meshes / prepare_bind_groups` set families and ordering in `pbr/mesh_render_plugin.mbt`; mesh incremental extraction is now executed in `render3d_extract_system` (not render pass), next step is moving remaining queue/render responsibilities out of `render3d_execute_system`. |
+| RENDER-012 | bevy_render schedule + bevy_pbr/render/mod.rs | Render schedule set topology differs from Bevy (`Extract/Prepare*/Queue/Render/Cleanup`). | IN_PROGRESS | 2026-04-07: added `prepare_resources_flush / prepare_resources / prepare_meshes / prepare_bind_groups` set families and ordered them in `pbr/mesh_render_plugin.mbt`; next step is to move concrete mesh/bindgroup work into each dedicated set. |
 
 ## Current work queue
 
