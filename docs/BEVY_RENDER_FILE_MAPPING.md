@@ -22,6 +22,8 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute orchestration entry) -> `mgstudio-engine/pbr/render3d_execute.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera collection + projection sync path) -> `mgstudio-engine/pbr/render3d_execute_collect.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute mesh extraction/collection path) -> `mgstudio-engine/pbr/render3d_execute_mesh_collect.mbt` (`Split`)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera queue-build + gpu preprocess dispatch path) -> `mgstudio-engine/pbr/render3d_execute_camera_queue_build.mbt` (`Split`)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera motion-vector prepass path) -> `mgstudio-engine/pbr/render3d_execute_camera_motion_vector.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera main-pass/transmissive/transparent path) -> `mgstudio-engine/pbr/render3d_execute_camera_main_pass.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera point-light shadow pass) -> `mgstudio-engine/pbr/render3d_execute_camera_point_shadow.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (execute camera postprocess dispatch path) -> `mgstudio-engine/pbr/render3d_execute_camera_postprocess.mbt` (`Split`)

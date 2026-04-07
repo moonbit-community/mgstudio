@@ -145,16 +145,6 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }
-    fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
-      render3d_pass_viewport_for_target(
-        target_id,
-        camera.target_id,
-        viewport_x,
-        viewport_y,
-        viewport_width,
-        viewport_height,
-      )
-    }
     let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
     let camera_pass_projection = render3d_camera_pass_projection(
       camera.projection,
@@ -317,286 +307,25 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     } else {
       0.0001F
     }
-    let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_build",
+    let queue_build_result = render3d_execute_camera_queue_build(
+      phase_state_ref, camera_entity, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
+      gpu_culling_supported, camera_pass_projection, viewport_x, viewport_y, viewport_width,
+      viewport_height, camera_exposure_value,
     )
-    let trace_camera_queue_entry_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_entry",
+    let draw_queue_entry = queue_build_result.draw_queue_entry
+    let opaque_alpha_draw_item_indices = queue_build_result.opaque_alpha_draw_item_indices
+    let indexed_indirect_parameter_indices = queue_build_result.indexed_indirect_parameter_indices
+    let non_indexed_indirect_parameter_indices = queue_build_result.non_indexed_indirect_parameter_indices
+    let (scene_target_id_next, velocity_target_id_next) = render3d_execute_camera_motion_vector_pass(
+      camera_entity, camera, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
+      indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices,
+      motion_vector_prepass_enabled, motion_blur_active, scene_target_id, velocity_target_id,
+      view_width, view_height, view_width_logical, view_height_logical, viewport_x,
+      viewport_y, viewport_width, viewport_height, camera_pass_projection, pass_lighting,
+      camera_exposure_value, point_shadow_near, motion_vector_pass_kind,
     )
-    let camera_indirect_enabled = render3d_camera_indirect_enabled(
-      gpu_instance_buffer_builder_enabled,
-      gpu_culling_supported,
-      camera.no_indirect_drawing,
-    )
-    let draw_queue_entry = render3d_make_fallback_gpu_preprocess_queue_entry(
-      render3d_queue_mesh_phase_items(
-        meshes,
-        camera.layers,
-        camera.transform,
-        camera_frustum_planes,
-        phase_state_ref.val.mesh_preprocess_static_cache,
-        camera_indirect_enabled,
-      ),
-      meshes,
-      phase_state_ref.val.mesh_preprocess_static_cache,
-      camera_indirect_enabled,
-      camera_indirect_enabled && camera.gpu_occlusion_culling_enabled,
-    )
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_entry",
-      trace_camera_queue_entry_start_us,
-    )
-    let draw_items = draw_queue_entry.draw_items
-    let trace_camera_queue_indices_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_indices",
-    )
-    let opaque_alpha_draw_item_indices = render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
-      draw_items,
-      draw_queue_entry.phase_ranges,
-      draw_queue_entry.work_item_buffers,
-    )
-    let (
-      indexed_indirect_parameter_indices,
-      non_indexed_indirect_parameter_indices,
-    ) = render3d_gpu_preprocess_indirect_parameter_index_maps(
-      draw_items,
-      draw_queue_entry.work_item_buffers,
-    )
-    let needs_gpu_preprocess = match draw_queue_entry.work_item_buffers {
-      Indirect(_, _, _) => true
-      _ => false
-    }
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_indices",
-      trace_camera_queue_indices_start_us,
-    )
-    if needs_gpu_preprocess {
-      let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_queue_upload",
-      )
-      @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
-        payload=render3d_host_preprocess_camera_payload(
-          draw_queue_entry, camera, camera_pass_projection, viewport_x, viewport_y,
-          viewport_width, viewport_height, camera_exposure_value,
-        ),
-      )
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_queue_upload",
-        trace_camera_queue_upload_start_us,
-      )
-      let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_queue_preprocess",
-      )
-      if camera.gpu_occlusion_culling_enabled {
-        let trace_camera_preprocess_dispatch_start_us = @app.timeline_trace_begin_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_preprocess_dispatch",
-        )
-        @render.host_gpu_preprocess_mesh3d(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-          phase_kind=@render.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION,
-        )
-        @app.timeline_trace_end_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_preprocess_dispatch",
-          trace_camera_preprocess_dispatch_start_us,
-        )
-        let trace_camera_build_indirect_start_us = @app.timeline_trace_begin_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_build_indirect",
-        )
-        @render.host_gpu_build_mesh3d_indirect_parameters(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-          phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
-        )
-        @app.timeline_trace_end_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_build_indirect",
-          trace_camera_build_indirect_start_us,
-        )
-      } else {
-        let trace_camera_preprocess_dispatch_start_us = @app.timeline_trace_begin_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_preprocess_dispatch",
-        )
-        @render.host_gpu_preprocess_mesh3d(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-        )
-        @app.timeline_trace_end_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_preprocess_dispatch",
-          trace_camera_preprocess_dispatch_start_us,
-        )
-        let trace_camera_build_indirect_start_us = @app.timeline_trace_begin_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_build_indirect",
-        )
-        @render.host_gpu_build_mesh3d_indirect_parameters(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-        )
-        @app.timeline_trace_end_span(
-          @app.TimelineTraceCategory::RenderQueue,
-          "execute_3d_camera_build_indirect",
-          trace_camera_build_indirect_start_us,
-        )
-      }
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_queue_preprocess",
-        trace_camera_queue_preprocess_start_us,
-      )
-    }
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_build",
-      trace_camera_queue_build_start_us,
-    )
-    if motion_vector_prepass_enabled {
-      let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
-        camera_entity, view_width, view_height,
-      )
-      if motion_blur_active {
-        scene_target_id = shared_scene_id
-      }
-      velocity_target_id = shared_velocity_id
-      let (
-        motion_viewport_x,
-        motion_viewport_y,
-        motion_viewport_width,
-        motion_viewport_height,
-      ) = pass_viewport(shared_scene_id)
-      render3d_begin_pass_3d(
-        target_id=shared_scene_id,
-        secondary_target_id=velocity_target_id,
-        width=view_width_logical,
-        height=view_height_logical,
-        clear_r=0.0F,
-        clear_g=0.0F,
-        clear_b=0.0F,
-        clear_a=0.0F,
-        camera.transform,
-        camera_pass_projection,
-        viewport_x=motion_viewport_x,
-        viewport_y=motion_viewport_y,
-        viewport_width=motion_viewport_width,
-        viewport_height=motion_viewport_height,
-        pass_lighting,
-        camera_exposure=camera_exposure_value,
-        previous_clip_from_world=camera.previous_clip_from_world,
-        point_shadow_near~,
-        pass_kind=motion_vector_pass_kind,
-        clear_enabled=1,
-      )
-      for draw_item_index in opaque_alpha_draw_item_indices {
-        let draw_item = draw_items[draw_item_index]
-        if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-          draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-          continue
-        }
-        let extracted_mesh = meshes[draw_item.extracted_index]
-        let mesh = extracted_mesh.payload
-        guard render3d_mesh_draw_alpha(
-            mesh.material.alpha_mode,
-            mesh.material.base_color.a,
-          )
-          is Some(draw_alpha) else {
-          continue
-        }
-        if draw_alpha < 0.999F {
-          continue
-        }
-        let motion_vector_indexed = mesh.mesh_is_indexed
-        let motion_vector_indirect_parameters_index = if motion_vector_indexed {
-          indexed_indirect_parameter_indices[draw_item_index]
-        } else {
-          non_indexed_indirect_parameter_indices[draw_item_index]
-        }
-        render3d_draw_mesh_gpu_payload(
-          render3d_build_mesh_gpu_draw_payload(
-            mesh.mesh_id,
-            camera_entity.id,
-            camera_entity.generation,
-            draw_item_index,
-            if motion_vector_indirect_parameters_index >= 0 {
-              if motion_vector_indexed {
-                MESH3D_DRAW_INDIRECT_KIND_INDEXED
-              } else {
-                MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
-              }
-            } else {
-              MESH3D_DRAW_INDIRECT_KIND_NONE
-            },
-            motion_vector_indirect_parameters_index,
-            mesh.material,
-            mesh.transform,
-            mesh.previous_transform,
-            1.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            0.5F,
-            0.5F,
-            0.0F,
-            0.0F,
-            0.0F,
-            1.5F,
-            -1,
-            0.0F,
-            0.0F,
-            -1,
-            0.0F,
-            0.0F,
-            -1,
-            -1,
-            0.0F,
-            @math.Quat::identity(),
-            @sprite.Color::white(),
-            0.0F,
-            0.0F,
-            render3d_mesh_draw_flags(extracted_mesh),
-          ),
-        )
-      }
-      @render.host_gpu_end_pass()
-      if camera.gpu_occlusion_culling_enabled {
-        @render.host_gpu_downsample_mesh3d_depth_pyramid(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-        )
-        @render.host_gpu_preprocess_mesh3d(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-          phase_kind=@render.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION,
-        )
-        @render.host_gpu_build_mesh3d_indirect_parameters(
-          camera_key_hi=camera_entity.id,
-          camera_key_lo=camera_entity.generation,
-          phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_MAIN,
-        )
-      }
-    }
+    scene_target_id = scene_target_id_next
+    velocity_target_id = velocity_target_id_next
     let (
       point_shadow_texture_id_value,
       point_shadow_enabled_value,
