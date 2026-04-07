@@ -14,6 +14,8 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (core 3d extract/prepare/queue/execute) -> `mgstudio-engine/pbr/mesh.mbt` (`Rewrite`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (phase data helpers) -> `mgstudio-engine/pbr/phase.mbt` (`Rewrite`)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (phase-state resource helpers) -> `mgstudio-engine/pbr/render3d_phase_state.mbt` (`Split`)
+- [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (shared math/comparison helpers) -> `mgstudio-engine/pbr/render3d_math.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (postprocess stack helpers) -> `mgstudio-engine/pbr/render3d_postprocess.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (world transform cache + skinning extraction helpers) -> `mgstudio-engine/pbr/render3d_world_transform_cache.mbt` (`Split`)
 - [x] `bevy/crates/bevy_pbr/src/render/mesh.rs` (scene target cache + lighting/environment/skybox helpers) -> `mgstudio-engine/pbr/render3d_scene_resources.mbt` (`Split`)
