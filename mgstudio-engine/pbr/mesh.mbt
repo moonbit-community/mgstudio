@@ -726,7 +726,7 @@ fn render3d_visibility_range_visible(
 }
 
 ///|
-pub fn render3d_execute_system(world : @ecs.World) -> Unit {
+fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
   let execute_trace_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,

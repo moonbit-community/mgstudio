@@ -66,3 +66,8 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   source_world |> ignore
   finish_queue()
 }
+
+///|
+pub fn render3d_execute_system(world : @ecs.World) -> Unit {
+  render3d_execute_impl(world)
+}
