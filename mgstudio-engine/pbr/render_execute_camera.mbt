@@ -33,41 +33,20 @@ fn render3d_execute_camera(
   let camera_entity = extracted_camera.entity.main_entity
   let camera = extracted_camera.payload
   @render.host_gpu_set_active_surface_target(camera.target_id)
-  let target_width = camera.target_size.x
-  let target_height = camera.target_size.y
-  if target_width <= 0 || target_height <= 0 {
-    return
+  let viewport_state = match render3d_execute_camera_viewport_state(camera) {
+    Some(state) => state
+    None => return
   }
-  let mut viewport_x = 0
-  let mut viewport_y = 0
-  let mut viewport_width = target_width
-  let mut viewport_height = target_height
-  let mut viewport_depth_min = 0.0F
-  let mut viewport_depth_max = 1.0F
-  let mut view_width = target_width
-  let mut view_height = target_height
-  if camera.camera.viewport is Some(viewport) {
-    viewport_x = viewport.physical_position.x
-    viewport_y = viewport.physical_position.y
-    viewport_width = viewport.physical_size.x
-    viewport_height = viewport.physical_size.y
-    if viewport_width <= 0 || viewport_height <= 0 {
-      return
-    }
-    viewport_depth_min = viewport.depth_min
-    viewport_depth_max = viewport.depth_max
-    view_width = viewport_width
-    view_height = viewport_height
-  }
-  // Render target textures and viewport dimensions are in physical pixels.
-  // Do not divide by window scale factor here; doing so halves render size on
-  // high-DPI displays and breaks camera framing/post-process alignment.
-  camera.scale_factor |> ignore
-  let view_width_logical = view_width
-  let view_height_logical = view_height
-  if view_width_logical <= 0 || view_height_logical <= 0 {
-    return
-  }
+  let viewport_x = viewport_state.viewport_x
+  let viewport_y = viewport_state.viewport_y
+  let viewport_width = viewport_state.viewport_width
+  let viewport_height = viewport_state.viewport_height
+  let viewport_depth_min = viewport_state.viewport_depth_min
+  let viewport_depth_max = viewport_state.viewport_depth_max
+  let view_width = viewport_state.view_width
+  let view_height = viewport_state.view_height
+  let view_width_logical = viewport_state.view_width_logical
+  let view_height_logical = viewport_state.view_height_logical
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
   let camera_pass_projection = render3d_camera_pass_projection(
     camera.projection,

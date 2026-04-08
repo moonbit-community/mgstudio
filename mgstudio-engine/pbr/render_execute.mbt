@@ -33,29 +33,13 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
-  let runtime_config = render3d_runtime_config_or_default(source_world)
-  let gpu_instance_buffer_builder_requested = @pbr_render.render3d_use_gpu_instance_buffer_builder(
-    runtime_config.use_gpu_instance_buffer_builder,
-  )
-  let prepass_enabled = standard_material_prepass_enabled(source_world)
-  let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
-    deferred_pbr_lighting_enabled(source_world)
-  let gpu_culling_supported = @pbr_render.render3d_gpu_culling_supported()
-  let gpu_instance_buffer_builder_enabled = gpu_instance_buffer_builder_requested &&
-    gpu_culling_supported
-  @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
-    gpu_instance_buffer_builder_enabled,
-  )
-  let delta_seconds = @pbr_render.render3d_default_time_or_default(source_world).delta_seconds()
-  let default_opaque_renderer_method = render3d_default_opaque_renderer_method(
-    source_world, deferred_lighting_enabled,
-  )
-  let point_light_shadow_map_size = render3d_point_light_shadow_map_size(
-    source_world,
-  )
+  let frame_config = render3d_execute_frame_config(source_world)
   let (cameras, needs_mesh_previous_transform) = render3d_execute_collect_cameras(
-    source_world, world_transform_cache_ref, gpu_instance_buffer_builder_requested,
-    gpu_culling_supported, prepass_enabled,
+    source_world,
+    world_transform_cache_ref,
+    frame_config.gpu_instance_buffer_builder_requested,
+    frame_config.gpu_culling_supported,
+    frame_config.prepass_enabled,
   )
   if cameras.length() == 0 {
     phase_state_ref.val.prepared_camera_order.clear()
@@ -64,15 +48,23 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     finish_execute()
     return
   }
-  let wireframe_config = render3d_wireframe_config_or_none(source_world)
   let meshes = render3d_execute_collect_meshes(
     source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_execute_render_cameras(
-    world, source_world, phase_state_ref, cameras, meshes, point_light_shadow_map_size,
-    gpu_instance_buffer_builder_enabled, gpu_culling_supported, prepass_enabled,
-    deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
-    delta_seconds,
+    world,
+    source_world,
+    phase_state_ref,
+    cameras,
+    meshes,
+    frame_config.point_light_shadow_map_size,
+    frame_config.gpu_instance_buffer_builder_enabled,
+    frame_config.gpu_culling_supported,
+    frame_config.prepass_enabled,
+    frame_config.deferred_lighting_enabled,
+    frame_config.default_opaque_renderer_method,
+    frame_config.wireframe_config,
+    frame_config.delta_seconds,
   )
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()
