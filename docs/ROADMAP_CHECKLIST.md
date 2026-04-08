@@ -25,6 +25,7 @@ This file must not exceed 200 lines.
 - [x] Issue `pbr/render_execute_config_split`: moved runtime-config/decal-mode/deferred-mode/draw-flags helpers from `render_execute.mbt` into `render_execute_config.mbt`.
 - [x] Issue `pbr/render_execute_frame_config_split`: extracted execute-time runtime flag/material/shadow/wireframe/frame-delta setup into `render_execute_frame_config.mbt`.
 - [x] Issue `pbr/render_execute_camera_viewport_split`: extracted target/viewport/depth-range/logical-size resolution from `render_execute_camera.mbt` into `render_execute_camera_viewport.mbt`.
+- [x] Issue `pbr/render_execute_camera_pass_config_split`: extracted per-camera pass feature toggles (fog/decal/postprocess/motion-vector/clear/exposure/pass-kind/shadow-near) into `render_execute_camera_pass_config.mbt`.
 - [x] Issue `pbr/render_phase_items_split`: extracted phase item/entity/queue structs and phase sorting helpers from `phase.mbt` into `render_phase_items.mbt`.
 - [x] Issue `pbr/render_camera_order_and_mesh_upload_split`: removed legacy `phase.mbt`; moved camera order + prepared-camera phase helpers into `render_camera_order_runtime.mbt` and mesh upload cache helper into `render_mesh_upload_cache_runtime.mbt`.
 - [x] Issue `render/renderer_clip_matrix_split`: `GpuClipMatrix` data/constructor helpers moved from `renderer/draw_state.mbt` into `renderer/clip_matrix.mbt`.
