@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Keep camera-order/resource sync logic in this file.
-// Extracted phase item and phase sort data definitions live in `render_phase_items.mbt`.
+// Camera phase ordering runtime utilities kept as a dedicated unit to avoid
+// mixing ordering logic with mesh upload/runtime paths.
 
 ///|
 fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
@@ -113,38 +113,4 @@ fn render3d_prepared_camera_phase_items(
     })
   }
   Some(items)
-}
-
-///|
-fn render3d_upload_mesh_handle_cached(
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
-  mesh_handle : @asset.Handle[@mesh.Mesh],
-) -> Int {
-  let mesh_handle_id = mesh_handle.id()
-  if mesh_handle_id < 0 {
-    return -1
-  }
-  match phase_state_ref.val.mesh_upload_cache.get(mesh_handle_id) {
-    Some(mesh_id) =>
-      if mesh_id > 0 {
-        mesh_id
-      } else {
-        let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
-          mesh_handle,
-        )
-        phase_state_ref.val.mesh_upload_cache.set(
-          mesh_handle_id, uploaded_mesh_id,
-        )
-        uploaded_mesh_id
-      }
-    None => {
-      let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
-        mesh_handle,
-      )
-      phase_state_ref.val.mesh_upload_cache.set(
-        mesh_handle_id, uploaded_mesh_id,
-      )
-      uploaded_mesh_id
-    }
-  }
 }

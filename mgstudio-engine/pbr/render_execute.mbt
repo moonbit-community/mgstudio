@@ -47,30 +47,12 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     gpu_instance_buffer_builder_enabled,
   )
   let delta_seconds = @pbr_render.render3d_default_time_or_default(source_world).delta_seconds()
-  let mut default_opaque_renderer_method = if (try! source_world.get_resource(
-      ecs_key_default_opaque_renderer_method,
-    ))
-    is Some(default_method) {
-    default_method.renderer_method()
-  } else {
-    OpaqueRendererMethod::Forward
-  }
-  if !deferred_lighting_enabled &&
-    default_opaque_renderer_method is OpaqueRendererMethod::Deferred {
-    default_opaque_renderer_method = OpaqueRendererMethod::Forward
-  }
-  let point_light_shadow_map_size = if (try! source_world.get_resource(
-      ecs_key_point_light_shadow_map,
-    ))
-    is Some(shadow_map) {
-    if shadow_map.size <= 0 {
-      1
-    } else {
-      shadow_map.size
-    }
-  } else {
-    PointLightShadowMap::default().size
-  }
+  let default_opaque_renderer_method = render3d_default_opaque_renderer_method(
+    source_world, deferred_lighting_enabled,
+  )
+  let point_light_shadow_map_size = render3d_point_light_shadow_map_size(
+    source_world,
+  )
   let (cameras, needs_mesh_previous_transform) = render3d_execute_collect_cameras(
     source_world, world_transform_cache_ref, gpu_instance_buffer_builder_requested,
     gpu_culling_supported, prepass_enabled,
@@ -82,44 +64,16 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     finish_execute()
     return
   }
-  let wireframe_config = if (try! source_world.get_resource(
-      ecs_key_wireframe_config,
-    ))
-    is Some(config) {
-    Some(config)
-  } else {
-    None
-  }
+  let wireframe_config = render3d_wireframe_config_or_none(source_world)
   let meshes = render3d_execute_collect_meshes(
     source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
-  let trace_render_cameras_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_render_cameras",
+  render3d_execute_render_cameras(
+    world, source_world, phase_state_ref, cameras, meshes, point_light_shadow_map_size,
+    gpu_instance_buffer_builder_enabled, gpu_culling_supported, prepass_enabled,
+    deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
+    delta_seconds,
   )
-  let lighting = render3d_collect_lighting(source_world)
-  let camera_phase_items = match
-    render3d_prepared_camera_phase_items(world, cameras) {
-    Some(items) => items
-    None => render3d_queue_camera_phase_items(cameras)
-  }
-  let cleared_targets_this_frame : Array[Int] = []
-  let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
-  for camera_phase_item in camera_phase_items {
-    let extracted_camera = cameras[camera_phase_item.extracted_index]
-    render3d_execute_camera(
-      world, phase_state_ref, extracted_camera, meshes, point_light_shadow_map_size,
-      gpu_instance_buffer_builder_enabled, gpu_culling_supported, prepass_enabled,
-      deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
-      lighting, delta_seconds, cleared_targets_this_frame, next_camera_motion_blur_history,
-    )
-  }
-  @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_render_cameras",
-    trace_render_cameras_start_us,
-  )
-  camera_motion_blur_history_sync(next_camera_motion_blur_history)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()
   finish_execute()
