@@ -22,6 +22,7 @@ This file must not exceed 200 lines.
 - [x] Issue `render/renderer_pass_reopen_split`: saved-pass reopen path moved from `renderer/pass_begin.mbt` into `renderer/pass_reopen.mbt`.
 - [x] Issue `pbr/render_execute_camera_loop_split`: extracted per-camera execute loop from `render_execute.mbt` into `render_execute_camera.mbt` without behavior change.
 - [x] Issue `pbr/render_execute_config_split`: moved runtime-config/decal-mode/deferred-mode/draw-flags helpers from `render_execute.mbt` into `render_execute_config.mbt`.
+- [x] Issue `pbr/render_phase_items_split`: extracted phase item/entity/queue structs and phase sorting helpers from `phase.mbt` into `render_phase_items.mbt`.
 - [x] Issue `render/renderer_clip_matrix_split`: `GpuClipMatrix` data/constructor helpers moved from `renderer/draw_state.mbt` into `renderer/clip_matrix.mbt`.
 - [x] Issue `render/renderer_pass_finalize_split`: pass scissor/end APIs moved from `renderer/draw_state.mbt` into `renderer/pass_finalize.mbt`.
 - [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints已独立，`execute_impl` 已迁至 `render_execute`，camera queue-build/motion-vector/main-pass/point-shadow/postprocess 已独立，单相机执行循环与 execute config helpers 已拆到独立文件；pending按 Bevy 文件边界继续细化 execute orchestration 层。
