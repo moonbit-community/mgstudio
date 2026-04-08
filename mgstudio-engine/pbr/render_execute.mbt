@@ -13,69 +13,6 @@
 // limitations under the License.
 
 ///|
-fn render3d_runtime_config_or_default(
-  world : @ecs.World,
-) -> PbrPluginRuntimeConfig {
-  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
-    Some(config) => config
-    None => pbr_plugin_runtime_config()
-  }
-}
-
-///|
-const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
-
-///|
-fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
-  let mut flags = 0
-  if mesh.payload.is_forward_decal || mesh.payload.clustered_decal is Some(_) {
-    flags = flags | RENDER3D_MESH3D_DRAW_FLAG_DECAL
-  }
-  flags
-}
-
-///|
-fn render3d_decal_mode_allows_forward(mode : DecalRenderMode3d) -> Bool {
-  match mode {
-    Disabled => false
-    ForwardOnly => true
-    ClusteredOnly => false
-    ForwardAndClustered => true
-  }
-}
-
-///|
-fn render3d_decal_mode_allows_clustered(mode : DecalRenderMode3d) -> Bool {
-  match mode {
-    Disabled => false
-    ForwardOnly => false
-    ClusteredOnly => true
-    ForwardAndClustered => true
-  }
-}
-
-///|
-fn render3d_camera_deferred_mode(
-  config : CameraDeferredConfig3d,
-  default_method : OpaqueRendererMethod,
-  deferred_lighting_enabled : Bool,
-) -> OpaqueRendererMethod {
-  if !deferred_lighting_enabled {
-    return OpaqueRendererMethod::Forward
-  }
-  match config.mode {
-    CameraDeferredMode3d::Forward => OpaqueRendererMethod::Forward
-    CameraDeferredMode3d::Deferred => OpaqueRendererMethod::Deferred
-    CameraDeferredMode3d::Auto =>
-      match default_method {
-        OpaqueRendererMethod::Forward => OpaqueRendererMethod::Forward
-        OpaqueRendererMethod::Deferred => OpaqueRendererMethod::Deferred
-        OpaqueRendererMethod::Auto => OpaqueRendererMethod::Forward
-      }
-  }
-}
-
-///|
 fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
   let execute_trace_start_us = @app.timeline_trace_begin_span(
