@@ -14,4 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/auto_exposure/mod.rs`.
-// Pending scaffold placeholder; runtime split is still pending.
+// Bridge surface to the existing `@pbr` auto exposure runtime.
+
+///|
+pub type AutoExposure = @pbr.AutoExposure
+
+///|
+pub type AutoExposureCompensationCurve = @pbr.AutoExposureCompensationCurve
+
+///|
+pub type AutoExposureCompensationCurveError = @pbr.AutoExposureCompensationCurveError
+
+///|
+pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters

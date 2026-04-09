@@ -14,4 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/auto_exposure/settings.rs`.
-// Pending scaffold placeholder; runtime split is still pending.
+// Settings helpers over the existing `@pbr.AutoExposure` runtime.
+
+///|
+pub fn auto_exposure_range(settings : AutoExposure) -> (Float, Float) {
+  (settings.min_ev100, settings.max_ev100)
+}
+
+///|
+pub fn auto_exposure_filter(settings : AutoExposure) -> (Float, Float) {
+  (settings.low_percent, settings.high_percent)
+}
+
+///|
+pub fn auto_exposure_uses_mask(settings : AutoExposure) -> Bool {
+  settings.metering_mask is Some(_)
+}
+
+///|
+pub fn auto_exposure_uses_compensation_curve(settings : AutoExposure) -> Bool {
+  settings.compensation_curve is Some(_)
+}

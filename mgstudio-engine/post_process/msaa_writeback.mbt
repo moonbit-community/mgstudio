@@ -14,4 +14,43 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/msaa_writeback.rs`.
-// Pending scaffold placeholder; runtime split is still pending.
+// Host-side marker for explicit post-process MSAA resolve/writeback.
+
+///|
+pub struct MsaaWriteback {
+  enabled : Bool
+} derive(ToJson, FromJson)
+
+///|
+pub fn MsaaWriteback::default() -> MsaaWriteback {
+  MsaaWriteback::{ enabled: true }
+}
+
+///|
+pub fn MsaaWriteback::new(enabled : Bool) -> MsaaWriteback {
+  MsaaWriteback::{ enabled, }
+}
+
+///|
+pub fn msaa_writeback_required(
+  writeback : MsaaWriteback?,
+  sample_count : Int,
+) -> Bool {
+  if sample_count <= 1 {
+    return false
+  }
+  match writeback {
+    Some(value) => value.enabled
+    None => false
+  }
+}
+
+///|
+pub let ecs_key_msaa_writeback : @ecs.ComponentKey[MsaaWriteback] = @ecs.register_component(
+  debug_name="render3d.msaa_writeback",
+)
+
+///|
+pub impl @ecs.Component for MsaaWriteback with component() {
+  ecs_key_msaa_writeback
+}

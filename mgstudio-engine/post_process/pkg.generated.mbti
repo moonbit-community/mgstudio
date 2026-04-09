@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub const POST_PROCESS_RUNTIME_ROOT : String = "Milky2018/mgstudio/post_process"
+
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
 
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration]
@@ -23,6 +25,8 @@ pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa]
 
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
 
+pub let ecs_key_msaa_writeback : @ecs.ComponentKey[MsaaWriteback]
+
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[ScreenSpaceAmbientOcclusion]
 
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[ScreenSpaceReflections]
@@ -36,6 +40,14 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter]
 pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping]
 
 pub let ecs_key_vignette : @ecs.ComponentKey[Vignette]
+
+pub fn msaa_writeback_required(MsaaWriteback?, Int) -> Bool
+
+pub fn post_process_effect_count(Bloom?, Vignette?, MotionBlur?, ChromaticAberration?, MsaaWriteback?) -> Int
+
+pub fn post_process_feature_names() -> Array[String]
+
+pub fn post_process_has_effects(Bloom?, Vignette?, MotionBlur?, ChromaticAberration?, MsaaWriteback?) -> Bool
 
 pub fn screen_space_transmission_blur_taps(ScreenSpaceTransmissionQuality) -> Int
 
@@ -190,6 +202,13 @@ pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 pub impl @ecs.Component for MotionBlur
+
+pub struct MsaaWriteback {
+  enabled : Bool
+} derive(ToJson, @json.FromJson)
+pub fn MsaaWriteback::default() -> Self
+pub fn MsaaWriteback::new(Bool) -> Self
+pub impl @ecs.Component for MsaaWriteback
 
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel

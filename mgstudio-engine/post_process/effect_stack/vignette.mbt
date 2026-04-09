@@ -14,4 +14,34 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/effect_stack/vignette.rs`.
-// Pending scaffold placeholder; runtime split is still pending.
+// Host-side uniform packing for the stable root `Vignette` runtime.
+
+///|
+pub struct VignetteUniform {
+  intensity : Float
+  radius : Float
+  smoothness : Float
+  roundness : Float
+  center : @math.Vec2
+  edge_compensation : Float
+  color : @color.Color
+} derive(ToJson, FromJson)
+
+///|
+pub fn VignetteUniform::from_settings(settings : Vignette) -> VignetteUniform {
+  VignetteUniform::{
+    intensity: settings.intensity,
+    radius: settings.radius,
+    smoothness: settings.smoothness,
+    roundness: settings.roundness,
+    center: settings.center,
+    edge_compensation: settings.edge_compensation,
+    color: settings.color,
+  }
+}
+
+///|
+pub fn vignette_screen_centered(settings : Vignette) -> Bool {
+  (settings.center.x - 0.5F).abs() <= 0.000001F &&
+  (settings.center.y - 0.5F).abs() <= 0.000001F
+}

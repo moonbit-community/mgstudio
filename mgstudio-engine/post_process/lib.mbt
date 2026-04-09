@@ -14,4 +14,56 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/lib.rs`.
-// Pending scaffold placeholder; runtime split is still pending.
+// Root runtime boundary for the stable `Milky2018/mgstudio/post_process` API.
+
+///|
+pub const POST_PROCESS_RUNTIME_ROOT : String = "Milky2018/mgstudio/post_process"
+
+///|
+pub fn post_process_feature_names() -> Array[String] {
+  [
+    "auto_exposure", "bloom", "dof", "effect_stack", "motion_blur", "msaa_writeback",
+  ]
+}
+
+///|
+pub fn post_process_effect_count(
+  bloom : Bloom?,
+  vignette : Vignette?,
+  motion_blur : MotionBlur?,
+  chromatic_aberration : ChromaticAberration?,
+  msaa_writeback : MsaaWriteback?,
+) -> Int {
+  let mut count = 0
+  if bloom is Some(_) {
+    count = count + 1
+  }
+  if vignette is Some(_) {
+    count = count + 1
+  }
+  if motion_blur is Some(_) {
+    count = count + 1
+  }
+  if chromatic_aberration is Some(_) {
+    count = count + 1
+  }
+  match msaa_writeback {
+    Some(writeback) => if writeback.enabled { count = count + 1 }
+    None => ()
+  }
+  count
+}
+
+///|
+pub fn post_process_has_effects(
+  bloom : Bloom?,
+  vignette : Vignette?,
+  motion_blur : MotionBlur?,
+  chromatic_aberration : ChromaticAberration?,
+  msaa_writeback : MsaaWriteback?,
+) -> Bool {
+  post_process_effect_count(
+    bloom, vignette, motion_blur, chromatic_aberration, msaa_writeback,
+  ) >
+  0
+}
