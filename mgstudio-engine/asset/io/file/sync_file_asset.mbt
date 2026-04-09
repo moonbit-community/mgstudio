@@ -17,7 +17,7 @@
 
 ///|
 pub fn sync_file_asset_bytes(path : String, bytes : Bytes) -> Unit {
-  @asset.host_asset_save_bytes(path=path, bytes~)
+  @asset.host_asset_save_bytes(path~, bytes~)
 }
 
 ///|
