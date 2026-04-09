@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gltf_lib_pending() -> Unit {
+pub type GltfLoaderRegistration = () -> Unit
 
+///|
+pub fn gltf_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  gltf_register_asset_loaders_once()
+  app
 }

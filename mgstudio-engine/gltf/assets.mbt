@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/assets.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gltf_assets_pending() -> Unit {
+pub fn gltf_scene_asset_label(scene : GltfSceneIndex) -> GltfAssetLabel {
+  GltfAssetLabel::Scene(scene.index())
+}
 
+///|
+pub fn gltf_node_asset_label(node : GltfNodeIndex) -> GltfAssetLabel {
+  GltfAssetLabel::Node(node.index())
+}
+
+///|
+pub fn gltf_mesh_asset_label(mesh : GltfMeshIndex) -> GltfAssetLabel {
+  GltfAssetLabel::Mesh(mesh.index())
+}
+
+///|
+pub fn gltf_primitive_asset_label(
+  primitive : GltfPrimitiveIndex,
+) -> GltfAssetLabel {
+  GltfAssetLabel::Primitive(primitive.mesh_index(), primitive.primitive_index())
+}
+
+///|
+pub fn gltf_skin_asset_label(skin : GltfSkinIndex) -> GltfAssetLabel {
+  GltfAssetLabel::Skin(skin.index())
 }

@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/embedded/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_io_embedded_top_pending() -> Unit {
-
+pub fn[P : @asset.IntoAssetPath] embedded_asset(
+  app : @app.App[@ecs.World],
+  asset_path : P,
+  source_path : String,
+) -> @app.App[@ecs.World] {
+  @asset.embedded_asset(app, asset_path, source_path)
 }

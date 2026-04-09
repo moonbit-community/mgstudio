@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/reflect.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_reflect_pending() -> Unit {
-
+pub fn[T] asset_type_name(_probe : Handle[T]) -> String {
+  let probe : Handle[T] = Handle::new(0)
+  asset_loader_type_name(probe)
 }

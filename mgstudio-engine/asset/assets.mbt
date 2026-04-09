@@ -320,11 +320,3 @@ pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
 pub fn[T] Assets::push_event(self : Assets[T], event : AssetEvent[T]) -> Unit {
   self.events.push(event)
 }
-
-///|
-pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
-  for entry in asset_event_bridge_registry.val.iter() {
-    let (_type_name, bridge) = entry
-    bridge(world)
-  }
-}

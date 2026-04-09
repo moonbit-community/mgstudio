@@ -14,7 +14,151 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_lib_pending() -> Unit {
+pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
 
+///|
+pub(all) struct AssetPlugin {
+  default_sampler_nearest : Bool
+  mode : AssetMode
+  file_path : String?
+  processed_file_path : String?
+}
+
+///|
+pub fn AssetPlugin::default() -> AssetPlugin {
+  AssetPlugin::{
+    default_sampler_nearest: false,
+    mode: AssetMode::Unprocessed,
+    file_path: None,
+    processed_file_path: None,
+  }
+}
+
+///|
+pub fn AssetPlugin::default_nearest() -> AssetPlugin {
+  AssetPlugin::{
+    default_sampler_nearest: true,
+    mode: AssetMode::Unprocessed,
+    file_path: None,
+    processed_file_path: None,
+  }
+}
+
+///|
+pub fn AssetPlugin::with_default_sampler_nearest(
+  self : AssetPlugin,
+  enabled : Bool,
+) -> AssetPlugin {
+  AssetPlugin::{
+    default_sampler_nearest: enabled,
+    mode: self.mode,
+    file_path: self.file_path,
+    processed_file_path: self.processed_file_path,
+  }
+}
+
+///|
+pub fn AssetPlugin::with_mode(
+  self : AssetPlugin,
+  mode : AssetMode,
+) -> AssetPlugin {
+  AssetPlugin::{ ..self, mode, }
+}
+
+///|
+pub fn AssetPlugin::with_file_path(
+  self : AssetPlugin,
+  file_path : String,
+) -> AssetPlugin {
+  AssetPlugin::{
+    default_sampler_nearest: self.default_sampler_nearest,
+    mode: self.mode,
+    file_path: Some(file_path),
+    processed_file_path: self.processed_file_path,
+  }
+}
+
+///|
+pub fn AssetPlugin::with_processed_file_path(
+  self : AssetPlugin,
+  processed_file_path : String,
+) -> AssetPlugin {
+  AssetPlugin::{ ..self, processed_file_path: Some(processed_file_path) }
+}
+
+///|
+fn asset_plugin_with_server(
+  app : @app.App[@ecs.World],
+  asset_server : AssetServer,
+  file_path : String?,
+  mode : AssetMode,
+  processed_file_path : String?,
+) -> @app.App[@ecs.World] {
+  asset_register_builtin_loaders()
+  set_runtime_assets_dir_override(resolve_assets_dir_override(file_path))
+  set_runtime_asset_source_dir_overrides(asset_registered_source_dir_entries())
+  set_runtime_asset_source_readers(asset_registered_source_reader_entries())
+  asset_server.mode.val = mode
+  asset_server.processed_file_path.val = resolve_assets_dir_override(
+    processed_file_path,
+  )
+  app
+  .insert_resource(asset_server)
+  .init_resource(fn() {
+    let assets : Assets[LoadedFolder] = Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : Assets[Image] = Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : Assets[TextureAtlasLayout] = Assets::new()
+    assets
+  })
+  .add_pre_update_system(asset_system)
+}
+
+///|
+pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  asset_plugin_with_server(
+    app,
+    asset_server_standalone(),
+    None,
+    AssetMode::Unprocessed,
+    None,
+  )
+}
+
+///|
+pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let asset_server = asset_server_standalone()
+  asset_server.default_sampler_nearest.val = true
+  asset_plugin_with_server(
+    app,
+    asset_server,
+    None,
+    AssetMode::Unprocessed,
+    None,
+  )
+}
+
+///|
+pub impl @app.PluginReplacement for AssetPlugin with replacement_id(_self) {
+  ASSET_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for AssetPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    let asset_server = asset_server_standalone()
+    asset_server.default_sampler_nearest.val = self.default_sampler_nearest
+    asset_plugin_with_server(
+      app,
+      asset_server,
+      self.file_path,
+      self.mode,
+      self.processed_file_path,
+    )
+  }
 }

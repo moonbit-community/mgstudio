@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/material.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gltf_material_pending() -> Unit {
+pub fn gltf_material_asset_label(
+  material_index : Int,
+  is_scale_inverted : Bool,
+) -> GltfAssetLabel {
+  GltfAssetLabel::Material(material_index, is_scale_inverted)
+}
 
+///|
+pub fn gltf_default_material_asset_label() -> GltfAssetLabel {
+  GltfAssetLabel::DefaultMaterial
+}
+
+///|
+pub fn gltf_material_name(name : String) -> GltfMaterialName {
+  GltfMaterialName::new(name)
+}
+
+///|
+pub fn gltf_material_extras(value : String) -> GltfMaterialExtras {
+  GltfMaterialExtras::new(value)
 }

@@ -14,7 +14,63 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/convert_coordinates.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gltf_convert_coordinates_pending() -> Unit {
+pub(all) struct GltfConvertCoordinates {
+  rotate_scene_entity : Bool
+  rotate_meshes : Bool
+}
 
+///|
+pub fn gltf_convert_coordinates_vec3(value : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(-value.x, value.y, -value.z)
+}
+
+///|
+pub fn gltf_convert_coordinates_quat(value : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-value.x, value.y, -value.z, value.w)
+}
+
+///|
+pub fn gltf_convert_coordinates_vec3_components(
+  value : (Float, Float, Float),
+) -> (Float, Float, Float) {
+  (-value.0, value.1, -value.2)
+}
+
+///|
+pub fn GltfConvertCoordinates::default() -> GltfConvertCoordinates {
+  { rotate_scene_entity: false, rotate_meshes: false }
+}
+
+///|
+fn gltf_coordinate_conversion_transform() -> @transform.Transform {
+  @transform.Transform::from_rotation(@math.Quat::from_rotation_y(@math.pi()))
+}
+
+///|
+pub fn GltfConvertCoordinates::scene_conversion_transform(
+  self : GltfConvertCoordinates,
+) -> @transform.Transform {
+  if self.rotate_scene_entity {
+    gltf_coordinate_conversion_transform()
+  } else {
+    @transform.Transform::identity()
+  }
+}
+
+///|
+pub fn GltfConvertCoordinates::mesh_conversion_transform(
+  self : GltfConvertCoordinates,
+) -> @transform.Transform {
+  if self.rotate_meshes {
+    gltf_coordinate_conversion_transform()
+  } else {
+    @transform.Transform::identity()
+  }
+}
+
+///|
+pub fn GltfConvertCoordinates::mesh_conversion_transform_inverse(
+  self : GltfConvertCoordinates,
+) -> @transform.Transform {
+  self.mesh_conversion_transform()
 }

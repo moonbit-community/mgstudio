@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/transformer.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_transformer_pending() -> Unit {
+pub fn[T] asset_processed(asset : T) -> ProcessedAsset[T] {
+  ProcessedAsset::new(asset)
+}
 
+///|
+pub fn[T] asset_transform_and_save(
+  extensions : Array[String],
+  process : (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError,
+) -> LoadTransformAndSave[T] {
+  LoadTransformAndSave::new(extensions, process)
 }

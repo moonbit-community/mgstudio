@@ -14,7 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/asset_changed.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_asset_changed_pending() -> Unit {
+pub fn[T] asset_events_include_change(
+  events : Array[AssetEvent[T]],
+  handle : Handle[T],
+) -> Bool {
+  for event in events {
+    match event {
+      AssetEvent::Added(changed)
+      | AssetEvent::Modified(changed)
+      | AssetEvent::LoadedWithDependencies(changed) =>
+        if changed.id() == handle.id() {
+          return true
+        }
+      AssetEvent::Removed(_) => ()
+    }
+  }
+  false
+}
 
+///|
+pub fn[T] asset_events_include_removal(
+  events : Array[AssetEvent[T]],
+  handle : Handle[T],
+) -> Bool {
+  for event in events {
+    if event is AssetEvent::Removed(changed) && changed.id() == handle.id() {
+      return true
+    }
+  }
+  false
 }

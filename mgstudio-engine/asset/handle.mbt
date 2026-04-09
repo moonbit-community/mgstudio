@@ -14,7 +14,43 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/handle.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_handle_pending() -> Unit {
+pub struct Handle[T] {
+  id : Int
+  phantom : T?
+}
 
+///|
+pub fn[T] Handle::new(id : Int) -> Handle[T] {
+  Handle::{ id, phantom: None }
+}
+
+///|
+pub impl[T] ToJson for Handle[T] with to_json(self) {
+  self.id.to_json()
+}
+
+///|
+pub impl[T] @json.FromJson for Handle[T] with from_json(json, path) {
+  let id : Int = @json.from_json(json, path~)
+  Handle::new(id)
+}
+
+///|
+pub fn[T] Handle::id(self : Handle[T]) -> Int {
+  self.id
+}
+
+///|
+pub fn[T] Handle::asset_id(self : Handle[T]) -> AssetId[T] {
+  AssetId::new(self.id)
+}
+
+///|
+pub fn[T] Handle::from_asset_id(asset_id : AssetId[T]) -> Handle[T] {
+  Handle::new(asset_id.index())
+}
+
+///|
+pub impl @image.TextureHandle for Handle[Image] with texture_id(self) {
+  self.id()
 }

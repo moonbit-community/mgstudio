@@ -25,14 +25,6 @@ pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[
 }
 
 ///|
-pub(all) enum AssetEvent[T] {
-  Added(Handle[T])
-  Modified(Handle[T])
-  Removed(Handle[T])
-  LoadedWithDependencies(Handle[T])
-}
-
-///|
 pub fn host_asset_load_folder(path~ : String) -> Int {
   load_folder(path~)
 }

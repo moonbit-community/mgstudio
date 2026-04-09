@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/id.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_id_pending() -> Unit {
+pub struct AssetId[T] {
+  id : Int
+  phantom : T?
+} derive(Eq, Show)
 
+///|
+pub fn[T] AssetId::new(id : Int) -> AssetId[T] {
+  AssetId::{ id, phantom: None }
+}
+
+///|
+pub fn[T] AssetId::index(self : AssetId[T]) -> Int {
+  self.id
 }

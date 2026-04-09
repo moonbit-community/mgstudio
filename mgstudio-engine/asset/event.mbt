@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/event.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_event_pending() -> Unit {
+pub(all) enum AssetEvent[T] {
+  Added(Handle[T])
+  Modified(Handle[T])
+  Removed(Handle[T])
+  LoadedWithDependencies(Handle[T])
+}
 
+///|
+pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
+  for entry in asset_event_bridge_registry.val.iter() {
+    let (_type_name, bridge) = entry
+    bridge(world)
+  }
 }

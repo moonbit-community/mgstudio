@@ -14,7 +14,40 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/render_asset.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_render_asset_pending() -> Unit {
+pub struct RenderAssetUsages {
+  bits : Int
+} derive(Eq, Show)
 
+///|
+const RENDER_ASSET_USAGE_MAIN_WORLD_BIT : Int = 1
+
+///|
+const RENDER_ASSET_USAGE_RENDER_WORLD_BIT : Int = 2
+
+///|
+pub fn RenderAssetUsages::main_world() -> RenderAssetUsages {
+  RenderAssetUsages::{ bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT }
+}
+
+///|
+pub fn RenderAssetUsages::render_world() -> RenderAssetUsages {
+  RenderAssetUsages::{ bits: RENDER_ASSET_USAGE_RENDER_WORLD_BIT }
+}
+
+///|
+pub fn RenderAssetUsages::all() -> RenderAssetUsages {
+  RenderAssetUsages::{
+    bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT |
+    RENDER_ASSET_USAGE_RENDER_WORLD_BIT,
+  }
+}
+
+///|
+pub fn RenderAssetUsages::contains(
+  self : RenderAssetUsages,
+  other : RenderAssetUsages,
+) -> Bool {
+  let lhs = self.bits.reinterpret_as_uint()
+  let rhs = other.bits.reinterpret_as_uint()
+  (lhs & rhs) == rhs
 }

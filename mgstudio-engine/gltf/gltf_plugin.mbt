@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-pub type GltfLoaderRegistration = () -> Unit
-
-///|
 let gltf_loader_registration_ref : Ref[GltfLoaderRegistration?] = Ref::new(None)
 
 ///|
@@ -56,10 +53,4 @@ fn gltf_register_asset_loaders_once() -> Unit {
   }
   register()
   gltf_loader_registered_ref.val = true
-}
-
-///|
-pub fn gltf_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gltf_register_asset_loaders_once()
-  app
 }
