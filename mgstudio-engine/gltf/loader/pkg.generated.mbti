@@ -1,13 +1,65 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/gltf/loader"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gltf",
+}
+
 // Values
+pub fn gltf_add_custom_vertex_attribute(String, String) -> Unit
 
-// Errors
+pub fn gltf_clear_custom_vertex_attributes() -> Unit
 
-// Types and methods
+pub fn gltf_custom_vertex_attributes() -> Array[@gltf.GltfCustomVertexAttribute]
+
+pub fn gltf_install_loader_registration(() -> Unit) -> Unit
+
+pub fn gltf_pbr_material_handler_enabled() -> Bool
+
+pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gltf_register_extension_handler(@gltf.GltfExtensionHandler) -> Unit
+
+pub fn gltf_resolve_custom_vertex_attribute_name(String) -> String?
+
+pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
 
 // Type aliases
+pub using @gltf {type GltfAssetLabel}
+
+pub using @gltf {type GltfCustomVertexAttribute}
+
+pub using @gltf {type GltfExtensionHandler}
+
+pub using @gltf {type GltfExtensionHandlers}
+
+pub using @gltf {type GltfExtras}
+
+pub type GltfLoaderRegistration = () -> Unit
+
+pub using @gltf {type GltfLoaderSettings}
+
+pub using @gltf {type GltfMaterialExtras}
+
+pub using @gltf {type GltfMaterialName}
+
+pub using @gltf {type GltfMeshExtras}
+
+pub using @gltf {type GltfMeshIndex}
+
+pub using @gltf {type GltfNodeIndex}
+
+pub using @gltf {type GltfPrimitiveIndex}
+
+pub using @gltf {type GltfSceneExtras}
+
+pub using @gltf {type GltfSceneIndex}
+
+pub using @gltf {type GltfSkinIndex}
+
+// Errors
+// Types and methods
 
 // Traits
-

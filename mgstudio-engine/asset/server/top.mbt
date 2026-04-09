@@ -14,7 +14,58 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/server/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_server_top_scaffold_owner() -> Unit {
+// Bridge surface to the root `asset` package implementation.
 
+///|
+pub type AssetLoaderKind = @asset.AssetLoaderKind
+
+///|
+pub type AssetServer = @asset.AssetServer
+
+///|
+pub fn asset_loader_kind_for_path(path : String) -> AssetLoaderKind {
+  @asset.asset_loader_kind_for_path(path)
+}
+
+///|
+pub fn asset_register_loader_extension(
+  extension : String,
+  kind : AssetLoaderKind,
+) -> Unit {
+  @asset.asset_register_loader_extension(extension, kind)
+}
+
+///|
+pub fn asset_remove_loader_extension(extension : String) -> Unit {
+  @asset.asset_remove_loader_extension(extension)
+}
+
+///|
+pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer] {
+  @asset.asset_server_resource_key()
+}
+
+///|
+pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
+  @asset.asset_set_default_sampler_nearest(enabled)
+}
+
+///|
+pub fn asset_supported_compressed_image_formats() -> Int {
+  @asset.asset_supported_compressed_image_formats()
+}
+
+///|
+pub fn asset_system(world : @ecs.World) -> Unit {
+  @asset.asset_system(world)
+}
+
+///|
+pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
+  @asset.asset_update_event_messages(world)
+}
+
+///|
+pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
+  @asset.asset_update_loaded_folders(world)
 }

@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/memory.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_io_memory_scaffold_owner() -> Unit {
-
-}
+// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
