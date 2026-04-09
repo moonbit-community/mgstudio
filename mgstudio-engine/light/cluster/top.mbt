@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _light_cluster_top_scaffold_owner() -> Unit {
-
-}
+//
+// Pending bridge surface:
+// keep this cluster boundary explicit until the package-level bridge is
+// needed.

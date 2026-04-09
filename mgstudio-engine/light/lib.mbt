@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _light_lib_scaffold_owner() -> Unit {
-
-}
+//
+// Pending bridge surface:
+// keep this package root as an explicit boundary marker until a package-level
+// bridge is needed.

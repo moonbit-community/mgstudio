@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_image/src/lib.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _lib_scaffold_owner() -> Unit {
-
-}
+//
+// Pending bridge surface:
+// keep this package root as an explicit boundary marker until a package-level
+// bridge is needed.
