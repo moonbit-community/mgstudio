@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/segment3d.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_segment3d_scaffold_owner() -> Unit {
+fn _mesh_primitives_dim3_segment3d_pending() -> Unit {
 
 }

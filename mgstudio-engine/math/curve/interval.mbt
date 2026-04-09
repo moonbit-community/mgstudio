@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/interval.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_curve_interval_scaffold_owner() -> Unit {
+fn _math_curve_interval_pending() -> Unit {
 
 }

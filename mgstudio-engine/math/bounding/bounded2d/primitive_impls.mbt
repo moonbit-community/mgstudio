@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded2d/primitive_impls.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_bounding_bounded2d_primitive_impls_scaffold_owner() -> Unit {
+fn _math_bounding_bounded2d_primitive_impls_pending() -> Unit {
 
 }

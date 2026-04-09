@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/palettes/basic.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_palettes_basic_scaffold_owner() -> Unit {
+fn _color_palettes_basic_pending() -> Unit {
 
 }

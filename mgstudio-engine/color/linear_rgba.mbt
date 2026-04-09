@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/linear_rgba.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_linear_rgba_scaffold_owner() -> Unit {
+fn _color_linear_rgba_pending() -> Unit {
 
 }

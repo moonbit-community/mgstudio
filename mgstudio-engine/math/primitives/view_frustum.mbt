@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/view_frustum.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_primitives_view_frustum_scaffold_owner() -> Unit {
+fn _math_primitives_view_frustum_pending() -> Unit {
 
 }

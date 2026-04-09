@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/extrusion.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_extrusion_scaffold_owner() -> Unit {
+fn _mesh_primitives_extrusion_pending() -> Unit {
 
 }

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/cuboid.rs`.
 // Source-shape scaffold; runtime split is pending package-boundary support.
-fn _mesh_primitives_dim3_cuboid_scaffold_owner() -> Unit {
+fn _mesh_primitives_dim3_cuboid_pending() -> Unit {
 
 }

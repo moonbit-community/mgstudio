@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/cubic_splines/curve_impls.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_cubic_splines_curve_impls_scaffold_owner() -> Unit {
+fn _math_cubic_splines_curve_impls_pending() -> Unit {
 
 }

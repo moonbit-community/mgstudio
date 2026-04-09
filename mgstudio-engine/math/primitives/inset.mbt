@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/inset.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_primitives_inset_scaffold_owner() -> Unit {
+fn _math_primitives_inset_pending() -> Unit {
 
 }

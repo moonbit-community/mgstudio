@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/torus.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_torus_scaffold_owner() -> Unit {
+fn _mesh_primitives_dim3_torus_pending() -> Unit {
 
 }

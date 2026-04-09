@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/testing.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_testing_scaffold_owner() -> Unit {
+fn _color_testing_pending() -> Unit {
 
 }

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/palettes/tailwind.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_palettes_tailwind_scaffold_owner() -> Unit {
+fn _color_palettes_tailwind_pending() -> Unit {
 
 }

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/half_space.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_primitives_half_space_scaffold_owner() -> Unit {
+fn _math_primitives_half_space_pending() -> Unit {
 
 }

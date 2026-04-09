@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/oklcha.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_oklcha_scaffold_owner() -> Unit {
+fn _color_oklcha_pending() -> Unit {
 
 }

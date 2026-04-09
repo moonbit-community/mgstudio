@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/sampling/shape_sampling.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_sampling_shape_sampling_scaffold_owner() -> Unit {
+fn _math_sampling_shape_sampling_pending() -> Unit {
 
 }

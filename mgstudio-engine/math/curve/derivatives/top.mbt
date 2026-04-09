@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_derivatives_top_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
-}
+///|
+pub type WithDerivative[T] = @math.WithDerivative[T]
+
+///|
+pub type WithTwoDerivatives[T] = @math.WithTwoDerivatives[T]

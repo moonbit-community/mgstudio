@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/dim3.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_primitives_dim3_scaffold_owner() -> Unit {
+fn _math_primitives_dim3_pending() -> Unit {
 
 }

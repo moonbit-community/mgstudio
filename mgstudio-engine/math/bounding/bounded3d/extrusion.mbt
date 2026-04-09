@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded3d/extrusion.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_bounding_bounded3d_extrusion_scaffold_owner() -> Unit {
+fn _math_bounding_bounded3d_extrusion_pending() -> Unit {
 
 }

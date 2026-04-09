@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/adaptors.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_curve_adaptors_scaffold_owner() -> Unit {
+fn _math_curve_adaptors_pending() -> Unit {
 
 }

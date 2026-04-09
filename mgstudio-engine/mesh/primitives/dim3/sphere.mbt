@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/sphere.rs`.
 // Source-shape scaffold; runtime split is pending package-boundary support.
-fn _mesh_primitives_dim3_sphere_scaffold_owner() -> Unit {
+fn _mesh_primitives_dim3_sphere_pending() -> Unit {
 
 }

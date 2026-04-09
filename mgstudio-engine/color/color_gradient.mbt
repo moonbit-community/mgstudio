@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/color_gradient.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_color_gradient_scaffold_owner() -> Unit {
+fn _color_color_gradient_pending() -> Unit {
 
 }

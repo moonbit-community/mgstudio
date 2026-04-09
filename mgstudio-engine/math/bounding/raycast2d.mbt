@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/raycast2d.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _math_bounding_raycast2d_scaffold_owner() -> Unit {
+fn _math_bounding_raycast2d_pending() -> Unit {
 
 }

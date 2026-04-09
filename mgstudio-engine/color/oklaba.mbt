@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_color/src/oklaba.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _color_oklaba_scaffold_owner() -> Unit {
+fn _color_oklaba_pending() -> Unit {
 
 }
