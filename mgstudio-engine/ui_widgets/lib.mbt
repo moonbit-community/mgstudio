@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widgets_lib_bridge_pending() -> Unit {
-
+// Bridge surface to the root `ui` package implementation.
+pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

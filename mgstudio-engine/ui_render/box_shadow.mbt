@@ -14,7 +14,27 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/box_shadow.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_box_shadow_bridge_pending() -> Unit {
+pub struct BoxShadowSamples {
+  samples : Int
+} derive(ToJson, FromJson)
 
+///|
+pub fn BoxShadowSamples::new(samples : Int) -> BoxShadowSamples {
+  let safe = if samples < 0 { 0 } else { samples }
+  BoxShadowSamples::{ samples: safe }
+}
+
+///|
+pub fn BoxShadowSamples::default() -> BoxShadowSamples {
+  BoxShadowSamples::new(4)
+}
+
+///|
+pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[BoxShadowSamples] = @ecs.register_component(
+  debug_name="ui.ui_box_shadow_samples",
+)
+
+///|
+pub impl @ecs.Component for BoxShadowSamples with component() {
+  ecs_key_ui_box_shadow_samples
 }

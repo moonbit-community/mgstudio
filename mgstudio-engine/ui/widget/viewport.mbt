@@ -14,7 +14,40 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/viewport.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widget_viewport_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type ComputedUiRenderTargetInfo}
 
+///|
+pub using @ui {type ComputedUiTargetCamera}
+
+///|
+pub using @ui {type IsDefaultUiCamera}
+
+///|
+pub using @ui {type UiTargetCamera}
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
+  @ui.ComputedUiRenderTargetInfo,
+] = @ui.ecs_key_computed_ui_render_target_info
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[
+  @ui.ComputedUiTargetCamera,
+] = @ui.ecs_key_computed_ui_target_camera
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_is_default_ui_camera : @ecs.ComponentKey[@ui.IsDefaultUiCamera] = @ui.ecs_key_is_default_ui_camera
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_ui_target_camera : @ecs.ComponentKey[@ui.UiTargetCamera] = @ui.ecs_key_ui_target_camera
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
+  @ui.ui_propagate_target_cameras_system(world)
 }

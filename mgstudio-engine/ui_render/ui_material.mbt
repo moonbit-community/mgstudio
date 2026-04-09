@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/ui_material.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_ui_material_bridge_pending() -> Unit {
+fn rotate_vec2(v : @math.Vec2, radians : Float) -> @math.Vec2 {
+  let cosv = @math.cos(radians)
+  let sinv = @math.sin(radians)
+  @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
+}
 
+///|
+fn button_color_for_state(
+  colors : @ui.ButtonColors,
+  state : @ui.Interaction?,
+) -> @sprite.Color {
+  match state {
+    Some(s) =>
+      match s {
+        @ui.Interaction::Pressed => colors.pressed
+        @ui.Interaction::Hovered => colors.hovered
+        @ui.Interaction::None => colors.normal
+      }
+    None => colors.normal
+  }
 }

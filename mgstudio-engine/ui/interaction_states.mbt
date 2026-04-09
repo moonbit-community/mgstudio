@@ -14,7 +14,51 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/interaction_states.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_interaction_states_bridge_pending() -> Unit {
+pub struct RelativeCursorPosition {
+  normalized_visible_node_rect : @math.Rect
+  normalized : @math.Vec2?
+} derive(ToJson, FromJson)
 
+///|
+pub fn RelativeCursorPosition::default() -> RelativeCursorPosition {
+  RelativeCursorPosition::{
+    normalized_visible_node_rect: @math.Rect::new(
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+    normalized: None,
+  }
+}
+
+///|
+pub fn RelativeCursorPosition::cursor_over(
+  self : RelativeCursorPosition,
+) -> Bool {
+  match self.normalized {
+    Some(normalized) => self.normalized_visible_node_rect.contains(normalized)
+    None => false
+  }
+}
+
+///|
+pub(all) enum Interaction {
+  None
+  Hovered
+  Pressed
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub struct ButtonColors {
+  normal : @sprite.Color
+  hovered : @sprite.Color
+  pressed : @sprite.Color
+} derive(ToJson, FromJson)
+
+///|
+pub fn ButtonColors::new(
+  normal : @sprite.Color,
+  hovered : @sprite.Color,
+  pressed : @sprite.Color,
+) -> ButtonColors {
+  ButtonColors::{ normal, hovered, pressed }
 }

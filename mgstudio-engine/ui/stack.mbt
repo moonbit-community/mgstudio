@@ -14,7 +14,51 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/stack.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_stack_bridge_pending() -> Unit {
+pub struct ZIndex {
+  value : Int
+} derive(ToJson, FromJson)
 
+///|
+pub fn ZIndex::new(value : Int) -> ZIndex {
+  ZIndex::{ value, }
+}
+
+///|
+pub struct GlobalZIndex {
+  value : Int
+} derive(ToJson, FromJson)
+
+///|
+pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
+  GlobalZIndex::{ value, }
+}
+
+///|
+pub struct UiScale {
+  value : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn UiScale::new(value : Float) -> UiScale {
+  UiScale::{ value, }
+}
+
+///|
+pub struct UiStack {
+  mut uinodes : Array[@core.Entity]
+} derive(ToJson, FromJson)
+
+///|
+pub fn UiStack::default() -> UiStack {
+  UiStack::{ uinodes: [] }
+}
+
+///|
+pub fn UiStack::uinodes(self : UiStack) -> Array[@core.Entity] {
+  self.uinodes
+}
+
+///|
+pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
+  self.val.uinodes = []
 }

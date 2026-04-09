@@ -14,41 +14,5 @@
 
 ///|
 /// UI-widgets API boundary aligned with Bevy crate responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/ui`.
-
-///|
-pub type Interaction = @ui.Interaction
-
-///|
-pub type Button = @ui.Button
-
-///|
-pub type Label = @ui.Label
-
-///|
-pub type ButtonColors = @ui.ButtonColors
-
-///|
-pub let ecs_key_interaction : @ecs.ComponentKey[Interaction] = @ui.ecs_key_interaction
-
-///|
-pub let ecs_key_button : @ecs.ComponentKey[Button] = @ui.ecs_key_button
-
-///|
-pub let ecs_key_label : @ecs.ComponentKey[Label] = @ui.ecs_key_label
-
-///|
-pub let ecs_key_button_colors : @ecs.ComponentKey[ButtonColors] = @ui.ecs_key_button_colors
-
-///|
-pub let ui_widgets_set_interaction : @app.SystemSet = @ui.ui_set_interaction
-
-///|
-pub fn ui_interaction_system(world : @ecs.World) -> Unit {
-  @ui.ui_interaction_system(world)
-}
-
-///|
-pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-}
+/// Runtime bridge surface is distributed across the bevy-shaped files in this
+/// package.

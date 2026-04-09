@@ -14,7 +14,81 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_lib_bridge_pending() -> Unit {
+fn register_ui_text_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(@text.ecs_key_text, ecs_key_node, fn() {
+    Node::default()
+  })
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_font,
+    fn() { @text.TextFont::default() },
+  )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_color,
+    fn() { @text.TextColor::default() },
+  )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_layout,
+    fn() { @text.TextLayout::default() },
+  )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_line_height,
+    fn() { @text.LineHeight::default() },
+  )
+}
 
+///|
+fn register_ui_ghost_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_ghost_node,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+}
+
+///|
+pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_ui_text_required_components(app.world())
+  try! register_ui_ghost_required_components(app.world())
+  app
+  .add_pre_update_system_config(
+    @app.system(ui_update_context_system).in_set(ui_set_focus),
+  )
+  .add_pre_update_system_config(
+    @app.system(ui_interaction_system).in_set(ui_set_focus),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_update_context_system).in_set(ui_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_propagate_target_cameras_system).in_set(ui_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_scroll_system).in_set(ui_set_propagate),
+  )
+  .add_post_update_system_config(
+    @app.system(@text.ui_text_sync_ecs_system).in_set(ui_set_text_content),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_image_content_size_system).in_set(ui_set_content),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_layout_system).in_set(ui_set_layout),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_clip_system).in_set(ui_set_post_layout),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_stack_system).in_set(ui_set_stack),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_a11y_update_system).in_set(ui_set_post_layout),
+  )
 }

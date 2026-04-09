@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/accessibility.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_accessibility_bridge_pending() -> Unit {
 
+///|
+/// Optional accessibility label for UI nodes (used by the host a11y bridge).
+pub struct AccessibilityLabel {
+  text : String
+} derive(ToJson, FromJson)
+
+///|
+pub fn AccessibilityLabel::new(text : String) -> AccessibilityLabel {
+  AccessibilityLabel::{ text, }
 }
+
+///|
+pub let ui_set_a11y : @app.SystemSet = ui_set_post_layout
+
+///|
+pub let ui_set_a11y_apply : @app.SystemSet = ui_set_post_layout

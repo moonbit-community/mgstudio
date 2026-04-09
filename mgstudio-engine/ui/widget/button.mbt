@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/button.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widget_button_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type Button}
 
-}
+///|
+pub using @ui {type ButtonColors}
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_button : @ecs.ComponentKey[@ui.Button] = @ui.ecs_key_button
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_button_colors : @ecs.ComponentKey[@ui.ButtonColors] = @ui.ecs_key_button_colors

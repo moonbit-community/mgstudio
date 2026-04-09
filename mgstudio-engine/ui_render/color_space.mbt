@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/color_space.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_color_space_bridge_pending() -> Unit {
+pub(all) enum UiAntiAlias {
+  Off
+  On
+} derive(Eq, Show, ToJson, FromJson)
 
+///|
+pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias] = @ecs.register_component(
+  debug_name="ui.ui_anti_alias",
+)
+
+///|
+pub impl @ecs.Component for UiAntiAlias with component() {
+  ecs_key_ui_anti_alias
 }

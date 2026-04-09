@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/ui_material_pipeline.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_ui_material_pipeline_bridge_pending() -> Unit {
-
+fn transform_with_z(
+  t : @transform.Transform,
+  z : Float,
+) -> @transform.Transform {
+  @transform.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(t.translation.x, t.translation.y),
+    t.rotation_z(),
+    @math.Vec2::new(t.scale.x, t.scale.y),
+    z~,
+  )
 }

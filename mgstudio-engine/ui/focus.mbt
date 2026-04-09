@@ -14,7 +14,12 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/focus.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_focus_bridge_pending() -> Unit {
+pub(all) enum FocusPolicy {
+  Block
+  Pass
+} derive(Eq, Show, ToJson, FromJson)
 
+///|
+pub fn FocusPolicy::default() -> FocusPolicy {
+  FocusPolicy::Pass
 }

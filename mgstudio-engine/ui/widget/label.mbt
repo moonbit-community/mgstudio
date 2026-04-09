@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/label.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widget_label_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type Label}
 
-}
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_label : @ecs.ComponentKey[@ui.Label] = @ui.ecs_key_label

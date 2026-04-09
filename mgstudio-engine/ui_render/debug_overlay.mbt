@@ -14,7 +14,36 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/debug_overlay.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_debug_overlay_bridge_pending() -> Unit {
+const UI_STACK_Z_BASE : Float = 10000.0F
 
+///|
+const UI_STACK_Z_STEP : Float = 10.0F
+
+///|
+const UI_STACK_Z_BACKGROUND : Float = 0.0F
+
+///|
+const UI_STACK_Z_SHADOW : Float = -1.0F
+
+///|
+const UI_STACK_Z_CONTENT : Float = 1.0F
+
+///|
+const UI_STACK_Z_BORDER : Float = 2.0F
+
+///|
+const UI_STACK_Z_OUTLINE : Float = 4.0F
+
+///|
+fn int_to_float(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn safe_scale_factor(scale : Float) -> Float {
+  if scale <= 0.0F {
+    1.0F
+  } else {
+    scale
+  }
 }

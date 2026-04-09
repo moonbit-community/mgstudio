@@ -14,7 +14,35 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/image.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widget_image_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type BorderRect}
 
-}
+///|
+pub using @ui {type ImageNode}
+
+///|
+pub using @ui {type ImageNodeSize}
+
+///|
+pub using @ui {type NodeImageMode}
+
+///|
+pub using @ui {type SliceScaleMode}
+
+///|
+pub using @ui {type TextureSlicer}
+
+///|
+pub using @ui {type UiImage}
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_image_node : @ecs.ComponentKey[@ui.ImageNode] = @ui.ecs_key_image_node
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_image_node_size : @ecs.ComponentKey[@ui.ImageNodeSize] = @ui.ecs_key_image_node_size
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_ui_image : @ecs.ComponentKey[@ui.UiImage] = @ui.ecs_key_ui_image

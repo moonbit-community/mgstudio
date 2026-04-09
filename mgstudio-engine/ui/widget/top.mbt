@@ -15,32 +15,11 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/mod.rs`.
 // Bridge surface to the root `ui_widgets` package implementation.
-pub using @ui_widgets {type Button}
-
-///|
-pub using @ui_widgets {type ButtonColors}
-
-///|
 pub using @ui_widgets {type Interaction}
-
-///|
-pub using @ui_widgets {type Label}
-
-///|
-// Bridge surface to the root `ui_widgets` package implementation.
-pub let ecs_key_button : @ecs.ComponentKey[@ui_widgets.Button] = @ui_widgets.ecs_key_button
-
-///|
-// Bridge surface to the root `ui_widgets` package implementation.
-pub let ecs_key_button_colors : @ecs.ComponentKey[@ui_widgets.ButtonColors] = @ui_widgets.ecs_key_button_colors
 
 ///|
 // Bridge surface to the root `ui_widgets` package implementation.
 pub let ecs_key_interaction : @ecs.ComponentKey[@ui_widgets.Interaction] = @ui_widgets.ecs_key_interaction
-
-///|
-// Bridge surface to the root `ui_widgets` package implementation.
-pub let ecs_key_label : @ecs.ComponentKey[@ui_widgets.Label] = @ui_widgets.ecs_key_label
 
 ///|
 // Bridge surface to the root `ui_widgets` package implementation.

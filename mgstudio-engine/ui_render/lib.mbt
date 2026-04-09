@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_lib_bridge_pending() -> Unit {
-
+pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @render.with_render_app(app, fn(render_app) {
+    render_app
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(ui_render_extract_system_in_render_app).in_set(
+        ui_render_set_extract,
+      ),
+    )
+    .configure_set(@app.PostUpdate, ui_render_set_extract, before=[
+      @sprite_render.render2d_set_extract,
+    ])
+  })
 }

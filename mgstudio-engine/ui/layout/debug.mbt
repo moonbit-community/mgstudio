@@ -14,7 +14,45 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/layout/debug.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_layout_debug_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_text_content : @app.SystemSet = @ui.ui_set_text_content
 
-}
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_interaction : @app.SystemSet = @ui.ui_set_interaction
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_content : @app.SystemSet = @ui.ui_set_content
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_measure : @app.SystemSet = @ui.ui_set_measure
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_layout : @app.SystemSet = @ui.ui_set_layout
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_post_layout : @app.SystemSet = @ui.ui_set_post_layout
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_stack : @app.SystemSet = @ui.ui_set_stack
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_scroll : @app.SystemSet = @ui.ui_set_scroll
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_clip : @app.SystemSet = @ui.ui_set_clip
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_a11y : @app.SystemSet = @ui.ui_set_a11y
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_a11y_apply : @app.SystemSet = @ui.ui_set_a11y_apply

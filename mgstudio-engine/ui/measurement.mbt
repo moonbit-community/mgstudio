@@ -14,7 +14,64 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/measurement.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_measurement_bridge_pending() -> Unit {
+pub struct ScrollPosition {
+  offset_x : Float
+  offset_y : Float
+} derive(ToJson, FromJson)
 
+///|
+pub fn ScrollPosition::default() -> ScrollPosition {
+  ScrollPosition::{ offset_x: 0.0F, offset_y: 0.0F }
+}
+
+///|
+pub fn ScrollPosition::new(
+  offset_x : Float,
+  offset_y : Float,
+) -> ScrollPosition {
+  ScrollPosition::{ offset_x, offset_y }
+}
+
+///|
+pub fn ScrollPosition::with_delta(
+  self : ScrollPosition,
+  dx : Float,
+  dy : Float,
+) -> ScrollPosition {
+  ScrollPosition::{ offset_x: self.offset_x + dx, offset_y: self.offset_y + dy }
+}
+
+///|
+pub struct CalculatedClip {
+  clip : @math.Rect
+} derive(ToJson, FromJson)
+
+///|
+pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
+  CalculatedClip::{ clip, }
+}
+
+///|
+pub struct ContentSize {
+  size : @math.Vec2
+} derive(ToJson, FromJson)
+
+///|
+pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
+  ContentSize::{ size, }
+}
+
+///|
+pub struct ImageNodeSize {
+  size : @math.UVec2
+} derive(ToJson, FromJson)
+
+///|
+pub fn ImageNodeSize::default() -> ImageNodeSize {
+  ImageNodeSize::{ size: @math.UVec2::zero() }
+}
+
+///|
+pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
+  self.size
 }

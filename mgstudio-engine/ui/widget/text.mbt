@@ -14,7 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/text.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widget_text_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type AccessibilityLabel}
 
-}
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel] = @ui.ecs_key_accessibility_label
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_text_content : @app.SystemSet = @ui.ui_set_text_content

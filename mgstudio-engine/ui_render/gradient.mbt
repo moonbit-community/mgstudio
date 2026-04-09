@@ -14,7 +14,100 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/gradient.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_render_gradient_bridge_pending() -> Unit {
+fn clamp_nonneg(v : Float) -> Float {
+  if v < 0.0F {
+    0.0F
+  } else {
+    v
+  }
+}
 
+///|
+fn resolve_axis(
+  val : @ui.Val,
+  node_axis : Float,
+  viewport_size : @math.Vec2,
+) -> Float {
+  match val {
+    @ui.Val::Auto => 0.0F
+    @ui.Val::Px(px) => px
+    @ui.Val::Percent(p) => node_axis * (p / 100.0F)
+    @ui.Val::Vw(p) => viewport_size.x * (p / 100.0F)
+    @ui.Val::Vh(p) => viewport_size.y * (p / 100.0F)
+    @ui.Val::VMin(p) => {
+      let m = if viewport_size.x < viewport_size.y {
+        viewport_size.x
+      } else {
+        viewport_size.y
+      }
+      m * (p / 100.0F)
+    }
+    @ui.Val::VMax(p) => {
+      let m = if viewport_size.x > viewport_size.y {
+        viewport_size.x
+      } else {
+        viewport_size.y
+      }
+      m * (p / 100.0F)
+    }
+  }
+}
+
+///|
+fn resolve_radius_single(
+  val : @ui.Val,
+  node_size : @math.Vec2,
+  viewport_size : @math.Vec2,
+) -> Float {
+  let min_elem = if node_size.x < node_size.y {
+    node_size.x
+  } else {
+    node_size.y
+  }
+  let raw = match val {
+    @ui.Val::Auto => 0.0F
+    @ui.Val::Px(px) => px
+    @ui.Val::Percent(p) => min_elem * (p / 100.0F)
+    @ui.Val::Vw(p) => viewport_size.x * (p / 100.0F)
+    @ui.Val::Vh(p) => viewport_size.y * (p / 100.0F)
+    @ui.Val::VMin(p) => {
+      let m = if viewport_size.x < viewport_size.y {
+        viewport_size.x
+      } else {
+        viewport_size.y
+      }
+      m * (p / 100.0F)
+    }
+    @ui.Val::VMax(p) => {
+      let m = if viewport_size.x > viewport_size.y {
+        viewport_size.x
+      } else {
+        viewport_size.y
+      }
+      m * (p / 100.0F)
+    }
+  }
+  let clamped = clamp_nonneg(raw)
+  let max_r = 0.5F * min_elem
+  if clamped > max_r {
+    max_r
+  } else {
+    clamped
+  }
+}
+
+///|
+fn clamp_radius_nonneg(radius : Float, node_size : @math.Vec2) -> Float {
+  let clamped = clamp_nonneg(radius)
+  let min_elem = if node_size.x < node_size.y {
+    node_size.x
+  } else {
+    node_size.y
+  }
+  let max_r = 0.5F * min_elem
+  if clamped > max_r {
+    max_r
+  } else {
+    clamped
+  }
 }

@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/slider.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_widgets_slider_bridge_pending() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type ContentSize}
 
-}
+///|
+pub using @ui {type UiLayout}
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize] = @ui.ecs_key_content_size
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout] = @ui.ecs_key_ui_layout
