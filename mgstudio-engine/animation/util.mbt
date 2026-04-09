@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/util.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _animation_util_scaffold_owner() -> Unit {
+fn _animation_util_pending() -> Unit {
 
 }

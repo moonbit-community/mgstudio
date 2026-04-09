@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/easy_screenshot.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _dev_tools_easy_screenshot_scaffold_owner() -> Unit {
+fn _dev_tools_easy_screenshot_pending() -> Unit {
 
 }

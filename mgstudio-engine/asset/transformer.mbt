@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/transformer.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _asset_transformer_scaffold_owner() -> Unit {
+fn _asset_transformer_pending() -> Unit {
 
 }

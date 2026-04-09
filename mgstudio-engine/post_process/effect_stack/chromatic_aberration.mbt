@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/effect_stack/chromatic_aberration.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_effect_stack_chromatic_aberration_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/convert_coordinates.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _gltf_convert_coordinates_scaffold_owner() -> Unit {
+fn _gltf_convert_coordinates_pending() -> Unit {
 
 }

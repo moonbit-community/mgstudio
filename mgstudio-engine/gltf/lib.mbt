@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/lib.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _gltf_lib_scaffold_owner() -> Unit {
+fn _gltf_lib_pending() -> Unit {
 
 }

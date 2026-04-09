@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/auto_exposure/pipeline.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_auto_exposure_pipeline_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

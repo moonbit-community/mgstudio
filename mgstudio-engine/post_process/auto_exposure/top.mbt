@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/auto_exposure/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_auto_exposure_top_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

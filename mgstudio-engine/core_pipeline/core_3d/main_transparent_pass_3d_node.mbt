@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/main_transparent_pass_3d_node.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _core_pipeline_core_3d_main_transparent_pass_3d_node_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

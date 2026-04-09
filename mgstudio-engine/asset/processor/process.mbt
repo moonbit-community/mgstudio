@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/process.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _asset_processor_process_scaffold_owner() -> Unit {
+fn _asset_processor_process_pending() -> Unit {
 
 }

@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/bloom/downsampling_pipeline.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_bloom_downsampling_pipeline_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

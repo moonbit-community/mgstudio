@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/copy_lighting_id.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _core_pipeline_deferred_copy_lighting_id_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

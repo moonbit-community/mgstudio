@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/extensions/khr_materials_clearcoat.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _gltf_loader_extensions_khr_materials_clearcoat_scaffold_owner() -> Unit {
+fn _gltf_loader_extensions_khr_materials_clearcoat_pending() -> Unit {
 
 }

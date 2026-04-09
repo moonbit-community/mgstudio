@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/picking_debug.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _dev_tools_picking_debug_scaffold_owner() -> Unit {
+fn _dev_tools_picking_debug_pending() -> Unit {
 
 }

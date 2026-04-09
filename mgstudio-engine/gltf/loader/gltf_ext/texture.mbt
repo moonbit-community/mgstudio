@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/texture.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _gltf_loader_gltf_ext_texture_scaffold_owner() -> Unit {
+fn _gltf_loader_gltf_ext_texture_pending() -> Unit {
 
 }

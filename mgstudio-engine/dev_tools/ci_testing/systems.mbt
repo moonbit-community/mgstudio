@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/ci_testing/systems.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _dev_tools_ci_testing_systems_scaffold_owner() -> Unit {
+fn _dev_tools_ci_testing_systems_pending() -> Unit {
 
 }

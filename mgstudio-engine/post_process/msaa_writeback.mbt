@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/msaa_writeback.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_msaa_writeback_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

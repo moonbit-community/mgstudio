@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/core_2d/main_opaque_pass_2d_node.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _core_pipeline_core_2d_main_opaque_pass_2d_node_scaffold_owner() -> Unit {
-
-}
+// Pending scaffold placeholder; runtime split is still pending.

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/animation_event.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _animation_animation_event_scaffold_owner() -> Unit {
+fn _animation_animation_event_pending() -> Unit {
 
 }
