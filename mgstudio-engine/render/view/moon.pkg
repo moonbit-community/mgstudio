@@ -1,1 +1,6 @@
+import {
+  "Milky2018/mgstudio/core_pipeline" @core_pipeline,
+  "Milky2018/mgstudio/visibility" @visibility,
+}
+
 supported_targets = "native"

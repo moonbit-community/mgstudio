@@ -14,3 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/renderer/raw_vulkan_init.rs`.
+
+///|
+pub type RawVulkanBackend = GpuBackend
+
+///|
+pub type RawVulkanBackendError = GpuBackendError
+
+///|
+pub fn raw_vulkan_backend_new(
+  assets_base? : String = "",
+) -> RawVulkanBackend raise RawVulkanBackendError {
+  if assets_base == "" {
+    GpuBackend::new()
+  } else {
+    GpuBackend::new(assets_base~)
+  }
+}

@@ -14,8 +14,31 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
-//
-// Pending bridge surface:
-// no stable MoonBit surface exists here yet, so do not invent new view
-// behavior. Add only explicit bridges once the root `render` package exposes
-// the matching semantics.
+
+///|
+pub type Msaa = @core_pipeline.Msaa
+
+///|
+pub type Visibility = @visibility.Visibility
+
+///|
+pub type InheritedVisibility = @visibility.InheritedVisibility
+
+///|
+pub type ViewVisibility = @visibility.ViewVisibility
+
+///|
+pub type NoFrustumCulling = @visibility.NoFrustumCulling
+
+///|
+pub type VisibilityRange = @visibility.VisibilityRange
+
+///|
+pub fn view_visibility_range_always_visible() -> VisibilityRange {
+  @visibility.VisibilityRange::always_visible()
+}
+
+///|
+pub fn view_visibility_range_invisible() -> VisibilityRange {
+  @visibility.VisibilityRange::invisible()
+}

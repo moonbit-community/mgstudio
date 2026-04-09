@@ -14,3 +14,44 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/texture/texture_cache.rs`.
+
+///|
+pub struct TextureCache {
+  texture_ids : Array[Int]
+}
+
+///|
+pub fn TextureCache::new() -> TextureCache {
+  TextureCache::{ texture_ids: [] }
+}
+
+///|
+pub fn TextureCache::insert(
+  self : TextureCache,
+  texture_id : Int,
+) -> TextureCache {
+  if !self.contains(texture_id) {
+    self.texture_ids.push(texture_id)
+  }
+  self
+}
+
+///|
+pub fn TextureCache::contains(self : TextureCache, texture_id : Int) -> Bool {
+  for cached_texture_id in self.texture_ids {
+    if cached_texture_id == texture_id {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn TextureCache::len(self : TextureCache) -> Int {
+  self.texture_ids.length()
+}
+
+///|
+pub fn TextureCache::is_empty(self : TextureCache) -> Bool {
+  self.texture_ids.is_empty()
+}

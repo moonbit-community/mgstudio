@@ -14,3 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/texture/fallback_image.rs`.
+
+///|
+pub const FALLBACK_TEXTURE_ID : Int = -1
+
+///|
+pub fn fallback_image_texture_id() -> Int {
+  FALLBACK_TEXTURE_ID
+}
+
+///|
+pub fn fallback_image_is_default(texture_id : Int) -> Bool {
+  texture_id < 0
+}

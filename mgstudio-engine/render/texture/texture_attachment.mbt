@@ -14,3 +14,41 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/texture/texture_attachment.rs`.
+
+///|
+pub struct TextureAttachment {
+  texture_id : Int
+  mip_level : Int
+  layer : Int
+}
+
+///|
+pub fn TextureAttachment::new(
+  texture_id : Int,
+  mip_level : Int,
+  layer : Int,
+) -> TextureAttachment {
+  TextureAttachment::{ texture_id, mip_level, layer }
+}
+
+///|
+pub fn TextureAttachment::texture_id(self : TextureAttachment) -> Int {
+  self.texture_id
+}
+
+///|
+pub fn TextureAttachment::mip_level(self : TextureAttachment) -> Int {
+  self.mip_level
+}
+
+///|
+pub fn TextureAttachment::layer(self : TextureAttachment) -> Int {
+  self.layer
+}
+
+///|
+pub fn TextureAttachment::as_manual_texture_view(
+  self : TextureAttachment,
+) -> ManualTextureViewHandle {
+  self.texture_id + self.mip_level + self.layer
+}

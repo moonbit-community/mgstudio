@@ -14,8 +14,45 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/view/window/mod.rs`.
-//
-// Bridge surface note:
-// the working screenshot API lives in `screenshot.mbt` and forwards to the
-// stable root `Milky2018/mgstudio/render/renderer` surface.
-// Keep this module free of new behavior; add only compatibility shims here.
+
+///|
+pub type ManualTextureViewHandle = Int
+
+///|
+pub fn window_screenshot_capture_surface_request() -> Int {
+  screenshot_capture_surface_request()
+}
+
+///|
+pub fn window_screenshot_capture_surface_target_request(
+  target_id~ : Int,
+) -> Int {
+  screenshot_capture_surface_target_request(target_id~)
+}
+
+///|
+pub fn window_screenshot_capture_texture_request(texture_id~ : Int) -> Int {
+  screenshot_capture_texture_request(texture_id~)
+}
+
+///|
+pub fn window_screenshot_take_capture_result(
+  capture_id : Int,
+) -> ScreenshotCaptureResult? {
+  screenshot_take_capture_result(capture_id)
+}
+
+///|
+pub fn window_screenshot_capture_texture_sync(
+  texture_id~ : Int,
+) -> ScreenshotCaptureResult? {
+  screenshot_capture_texture_sync(texture_id~)
+}
+
+///|
+pub fn window_manual_texture_view_handle(
+  texture_id~ : Int,
+  mip_level~ : Int,
+) -> ManualTextureViewHandle {
+  texture_id * 10_000 + mip_level
+}

@@ -14,3 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/occlusion_culling/mod.rs`.
+
+///|
+pub fn occlusion_culling_set_mesh3d_gpu_instance_builder_enabled(
+  enabled : Bool,
+) -> Unit {
+  @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(enabled)
+}
+
+///|
+pub fn occlusion_culling_mesh3d_gpu_culling_supported() -> Bool {
+  @render.host_gpu_mesh3d_gpu_culling_supported()
+}
+
+///|
+pub fn occlusion_culling_mesh3d_preprocess_disabled() -> Bool {
+  @render.host_gpu_mesh3d_preprocess_disabled()
+}
+
+///|
+pub fn occlusion_culling_mesh3d_indirect_first_instance_supported() -> Bool {
+  @render.host_gpu_mesh3d_indirect_first_instance_supported()
+}

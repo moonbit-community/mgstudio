@@ -14,3 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_phase/rangefinder.rs`.
+
+///|
+pub struct ViewRangefinder3d {
+  world_from_view_origin_z : Float
+}
+
+///|
+pub fn ViewRangefinder3d::from_world_from_view(
+  world_from_view : @math.Affine3,
+) -> ViewRangefinder3d {
+  let origin = world_from_view.transform_point3(@math.Vec3::zero())
+  ViewRangefinder3d::{ world_from_view_origin_z: origin.z }
+}
+
+///|
+pub fn ViewRangefinder3d::distance(
+  self : ViewRangefinder3d,
+  position : @math.Vec3,
+) -> Float {
+  position.z - self.world_from_view_origin_z
+}

@@ -14,3 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_phase/draw_state.rs`.
+
+///|
+pub type DrawState = @renderer.GpuPassState

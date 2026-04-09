@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs`.
-//
-// Pending bridge surface:
-// keep this as a placeholder until the root `Milky2018/mgstudio/render`
-// visibility semantics are available to bridge without inventing behavior.
+
+///|
+pub type Visibility = @root_visibility.Visibility
+
+///|
+pub type InheritedVisibility = @root_visibility.InheritedVisibility
+
+///|
+pub type ViewVisibility = @root_visibility.ViewVisibility
+
+///|
+pub type NoFrustumCulling = @root_visibility.NoFrustumCulling
+
+///|
+pub type VisibilityRange = @root_visibility.VisibilityRange
+
+///|
+pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @root_visibility.visibility_plugin(app)
+}
+
+///|
+pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
+  @root_visibility.visibility_propagate_system(world)
+}

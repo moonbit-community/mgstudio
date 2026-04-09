@@ -14,3 +14,38 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/texture/manual_texture_view.rs`.
+
+///|
+pub type ManualTextureViewHandle = Int
+
+///|
+pub struct ManualTextureView {
+  texture_id : Int
+  mip_level : Int
+}
+
+///|
+pub fn ManualTextureView::new(
+  texture_id : Int,
+  mip_level : Int,
+) -> ManualTextureView {
+  ManualTextureView::{ texture_id, mip_level }
+}
+
+///|
+pub fn ManualTextureView::texture_id(self : ManualTextureView) -> Int {
+  self.texture_id
+}
+
+///|
+pub fn ManualTextureView::mip_level(self : ManualTextureView) -> Int {
+  self.mip_level
+}
+
+///|
+pub fn manual_texture_view_handle(
+  texture_id~ : Int,
+  mip_level~ : Int,
+) -> ManualTextureViewHandle {
+  texture_id + mip_level
+}

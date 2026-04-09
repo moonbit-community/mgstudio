@@ -14,3 +14,41 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/texture/gpu_image.rs`.
+
+///|
+pub struct GpuImage {
+  texture_id : Int
+}
+
+///|
+pub fn GpuImage::new(texture_id : Int) -> GpuImage {
+  GpuImage::{ texture_id, }
+}
+
+///|
+pub fn GpuImage::texture_id(self : GpuImage) -> Int {
+  self.texture_id
+}
+
+///|
+pub fn GpuImage::width(self : GpuImage) -> Int {
+  @renderer.asset_texture_width(texture_id=self.texture_id)
+}
+
+///|
+pub fn GpuImage::height(self : GpuImage) -> Int {
+  @renderer.asset_texture_height(texture_id=self.texture_id)
+}
+
+///|
+pub fn GpuImage::is_loaded(self : GpuImage) -> Bool {
+  @renderer.asset_is_texture_loaded(texture_id=self.texture_id)
+}
+
+///|
+pub fn GpuImage::create_mip_view(self : GpuImage, mip_level : Int) -> Int {
+  @renderer.asset_create_texture_mip_view(
+    texture_id=self.texture_id,
+    mip_level~,
+  )
+}
