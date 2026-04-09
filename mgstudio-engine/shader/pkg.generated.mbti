@@ -16,6 +16,8 @@ pub fn shader_def(String) -> ShaderDefVal
 
 pub fn shader_from_source(String) -> Shader
 
+pub fn shader_lib_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn shader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors

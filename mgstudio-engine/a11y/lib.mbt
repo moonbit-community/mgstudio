@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_a11y/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _a11y_lib_scaffold_owner() -> Unit {
-
+// Bridge entrypoint for the crate-level source shape.
+pub fn a11y_lib_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  a11y_plugin(app)
 }

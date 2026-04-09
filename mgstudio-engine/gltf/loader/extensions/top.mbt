@@ -73,7 +73,9 @@ pub fn gltf_extension_notify_node_spawned(
   entity : @core.Entity,
   world : @ecs.World,
 ) -> Unit {
-  @root_gltf.gltf_extension_notify_node_spawned(source, node_index, entity, world)
+  @root_gltf.gltf_extension_notify_node_spawned(
+    source, node_index, entity, world,
+  )
 }
 
 ///|

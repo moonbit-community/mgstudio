@@ -17,6 +17,11 @@ pub fn urect(@math.UVec2, @math.UVec2) -> @math.URect
 // Types and methods
 
 // Type aliases
+pub using @math {type IRect}
+
+pub using @math {type Rect}
+
+pub using @math {type URect}
 
 // Traits
 

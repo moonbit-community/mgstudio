@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_shader/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _shader_lib_scaffold_owner() -> Unit {
-
+// Bridge entrypoint for the crate-level source shape.
+pub fn shader_lib_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  shader_plugin(app)
 }

@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/gltf/loader"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf",
 }
@@ -26,6 +27,10 @@ pub fn gltf_resolve_custom_vertex_attribute_name(String) -> String?
 
 pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
 
+// Errors
+
+// Types and methods
+
 // Type aliases
 pub using @gltf {type GltfAssetLabel}
 
@@ -39,7 +44,7 @@ pub using @gltf {type GltfExtras}
 
 pub type GltfLoaderRegistration = () -> Unit
 
-pub using @gltf {type GltfLoaderSettings}
+pub using @asset {type ImageLoaderSettings as GltfLoaderSettings}
 
 pub using @gltf {type GltfMaterialExtras}
 
@@ -59,7 +64,5 @@ pub using @gltf {type GltfSceneIndex}
 
 pub using @gltf {type GltfSkinIndex}
 
-// Errors
-// Types and methods
-
 // Traits
+

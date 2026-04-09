@@ -17,3 +17,4 @@ pub let ecs_key_ghost_node : @ecs.ComponentKey[@ui.GhostNode]
 pub using @ui {type GhostNode}
 
 // Traits
+

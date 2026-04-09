@@ -23,6 +23,8 @@ pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedI
 
 pub fn input_dispatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn input_focus_lib_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn input_focus_system_set_name(InputFocusSystems) -> String
 
 pub fn is_focus_visible(@ecs.World, @core.Entity) -> Bool

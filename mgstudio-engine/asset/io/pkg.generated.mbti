@@ -1,13 +1,41 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/asset/io"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub fn asset_format_path(@asset.AssetPath) -> String
+
+pub fn asset_parse_path(String) -> @asset.AssetPath
+
+pub fn asset_try_parse_path(String) -> @asset.AssetPath raise @asset.ParseAssetPathError
+
+pub fn[P : @asset.IntoAssetPath] load_asset_source_bytes(P) -> Bytes
+
+pub fn[P : @asset.IntoAssetPath] load_optional_asset_source_text(P) -> String?
+
+pub fn register_asset_source(@app.App[@ecs.World], @asset.AssetSourceId, @asset.AssetSourceBuilder) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @asset {type AssetLoaderKind}
+
+pub using @asset {type AssetPath}
+
+pub using @asset {type AssetReader}
+
+pub using @asset {type AssetSourceBuilder}
+
+pub using @asset {type AssetSourceId}
+
+pub using @asset {type AssetPath as ParsedAssetPath}
 
 // Traits
 

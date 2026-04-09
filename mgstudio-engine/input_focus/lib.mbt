@@ -14,7 +14,11 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_input_focus/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _input_focus_lib_scaffold_owner() -> Unit {
-
+// Bridge entrypoint for the crate-level source shape.
+pub fn input_focus_lib_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  tab_navigation_plugin(
+    directional_navigation_plugin(input_dispatch_plugin(app)),
+  )
 }

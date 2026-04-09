@@ -24,13 +24,14 @@ pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.Wor
 
 pub fn gltf_register_extension_handler(@gltf.GltfExtensionHandler) -> Unit
 
+// Errors
+
+// Types and methods
+
 // Type aliases
 pub using @gltf {type GltfExtensionHandler}
 
 pub using @gltf {type GltfExtensionHandlers}
 
-// Errors
-
-// Types and methods
-
 // Traits
+

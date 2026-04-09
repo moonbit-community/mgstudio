@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn[W] bevy_log_lib_plugin(@app.LogPlugin) -> (@app.App[W]) -> @app.App[W]
+
 pub fn[W] log_plugin(@app.LogPlugin) -> (@app.App[W]) -> @app.App[W]
 
 // Errors

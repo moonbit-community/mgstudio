@@ -19,6 +19,8 @@ pub using @math {type Curve}
 
 pub using @math {type CurveChainError}
 
+pub using @math {type EaseFunction}
+
 pub using @math {type EasingCurve}
 
 pub using @math {type EvenCore}
@@ -32,6 +34,8 @@ pub using @math {type Interval}
 pub using @math {type InvalidIntervalError}
 
 pub using @math {type IterableCurve}
+
+pub using @math {type JumpAt}
 
 pub using @math {type LinearMapError}
 

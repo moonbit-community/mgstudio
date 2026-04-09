@@ -16,5 +16,9 @@ pub fn[T] sample_points(@math.SamplingDistribution[T], @random.Rand, Int) -> Arr
 // Type aliases
 pub using @math {type SamplingDistribution}
 
+pub using @math {type UniformMeshSampler}
+
+pub using @math {type UniformMeshSamplerError}
+
 // Traits
 

@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ptr/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ptr_lib_scaffold_owner() -> Unit {
-
+// Bridge entrypoint for the crate-level source shape.
+pub fn[T] bevy_ptr_lib(value : T) -> Ptr[T] {
+  ptr(value)
 }

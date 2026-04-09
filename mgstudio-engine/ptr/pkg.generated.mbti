@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn[T] bevy_ptr_lib(T) -> @ref.Ref[T]
+
 pub fn[T] ptr(T) -> @ref.Ref[T]
 
 pub fn[T] read(@ref.Ref[T]) -> T

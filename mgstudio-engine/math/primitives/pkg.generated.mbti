@@ -10,6 +10,12 @@ pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
+pub fn is_polygon_simple(Array[@math.Vec2]) -> Bool
+
+pub fn polygon_signed_area(Array[@math.Vec2]) -> Float
+
+pub fn polygon_winding_order(Array[@math.Vec2]) -> @math.WindingOrder
+
 // Errors
 
 // Types and methods

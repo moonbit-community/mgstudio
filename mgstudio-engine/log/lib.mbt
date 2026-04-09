@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_log/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _log_lib_scaffold_owner() -> Unit {
-
+// Bridge entrypoint for the crate-level source shape.
+pub fn[W] bevy_log_lib_plugin(plugin : LogPlugin) -> @app.Plugin[W] {
+  log_plugin(plugin)
 }
