@@ -14,3 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/extract_component.rs`.
+
+///|
+pub fn extract_component_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn extract_component_source_world(world : @ecs.World) -> @ecs.World {
+  render_source_world(world)
+}

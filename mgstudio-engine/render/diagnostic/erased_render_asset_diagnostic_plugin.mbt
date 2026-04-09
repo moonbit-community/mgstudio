@@ -14,3 +14,101 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/diagnostic/erased_render_asset_diagnostic_plugin.rs`.
+
+///|
+pub struct ErasedRenderAssetDiagnosticPlugin {
+  suffix : String
+}
+
+///|
+pub fn ErasedRenderAssetDiagnosticPlugin::default() -> ErasedRenderAssetDiagnosticPlugin {
+  ErasedRenderAssetDiagnosticPlugin::{ suffix: " assets" }
+}
+
+///|
+pub fn ErasedRenderAssetDiagnosticPlugin::new(
+  suffix : String,
+) -> ErasedRenderAssetDiagnosticPlugin {
+  ErasedRenderAssetDiagnosticPlugin::{ suffix, }
+}
+
+///|
+pub struct ErasedRenderAssetDiagnosticState {
+  suffix : String
+  mut snapshot : @renderer.RenderDiagnosticsSnapshot
+  mut sample_count : Int
+  mut last_sample_us : Float
+}
+
+///|
+fn erased_render_asset_diagnostic_state_debug_name() -> String {
+  "bevy_render::ErasedRenderAssetDiagnosticState"
+}
+
+///|
+let erased_render_asset_diagnostic_state_key : @ecs.ResourceKey[
+  ErasedRenderAssetDiagnosticState,
+] = @ecs.register_resource(
+  debug_name=erased_render_asset_diagnostic_state_debug_name(),
+)
+
+///|
+pub impl @app.Resource for ErasedRenderAssetDiagnosticState with resource() {
+  erased_render_asset_diagnostic_state_key
+}
+
+///|
+pub fn ErasedRenderAssetDiagnosticState::new(
+  suffix : String,
+) -> ErasedRenderAssetDiagnosticState {
+  ErasedRenderAssetDiagnosticState::{
+    suffix,
+    snapshot: @renderer.RenderDiagnosticsSnapshot::default(),
+    sample_count: 0,
+    last_sample_us: 0.0F,
+  }
+}
+
+///|
+fn erased_render_asset_diagnostic_sample_system(world : @ecs.World) -> Unit {
+  match
+    (try
+      world.get_resource_ref_mut(erased_render_asset_diagnostic_state_key)
+    catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(state_ref) => {
+      state_ref.val.sample_count = state_ref.val.sample_count + 1
+      state_ref.val.snapshot = @renderer.render_diagnostics_snapshot()
+      state_ref.val.last_sample_us = @time.host_time_now()
+    }
+    None => ()
+  }
+}
+
+///|
+pub fn erased_render_asset_diagnostic_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  erased_render_asset_diagnostic_plugin_with(
+    app,
+    ErasedRenderAssetDiagnosticPlugin::default(),
+  )
+}
+
+///|
+pub fn erased_render_asset_diagnostic_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : ErasedRenderAssetDiagnosticPlugin,
+) -> @app.App[@ecs.World] {
+  let mut next = app
+  if !next.contains_resource(erased_render_asset_diagnostic_state_key) {
+    next = next.insert_world_resource(
+      erased_render_asset_diagnostic_state_key,
+      ErasedRenderAssetDiagnosticState::new(plugin.suffix),
+    )
+  }
+  next.add_post_update_system(erased_render_asset_diagnostic_sample_system)
+}

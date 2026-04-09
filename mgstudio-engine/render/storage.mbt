@@ -14,3 +14,63 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/storage.rs`.
+
+///|
+pub struct RenderStorage[K, V] {
+  values : @hashmap.HashMap[K, V]
+}
+
+///|
+pub fn[K, V] RenderStorage::new() -> RenderStorage[K, V] {
+  RenderStorage::{ values: @hashmap.HashMap::new() }
+}
+
+///|
+pub fn[K, V] RenderStorage::len(self : RenderStorage[K, V]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[K, V] RenderStorage::is_empty(self : RenderStorage[K, V]) -> Bool {
+  self.values.is_empty()
+}
+
+///|
+pub fn[K : Hash + Eq, V] RenderStorage::contains(
+  self : RenderStorage[K, V],
+  key : K,
+) -> Bool {
+  self.values.contains(key)
+}
+
+///|
+pub fn[K : Hash + Eq, V] RenderStorage::get(
+  self : RenderStorage[K, V],
+  key : K,
+) -> V? {
+  self.values.get(key)
+}
+
+///|
+pub fn[K : Hash + Eq, V] RenderStorage::insert(
+  self : RenderStorage[K, V],
+  key : K,
+  value : V,
+) -> Unit {
+  self.values.set(key, value)
+}
+
+///|
+pub fn[K : Hash + Eq, V] RenderStorage::remove(
+  self : RenderStorage[K, V],
+  key : K,
+) -> V? {
+  guard self.values.get(key) is Some(value) else { return None }
+  self.values.remove(key)
+  Some(value)
+}
+
+///|
+pub fn[K, V] RenderStorage::clear(self : RenderStorage[K, V]) -> Unit {
+  self.values.clear()
+}

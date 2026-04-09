@@ -1,1 +1,8 @@
+import {
+  "Milky2018/mgstudio/app" @app,
+  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/render/render_resource" @render_resource,
+  "moonbitlang/core/hashmap",
+}
+
 supported_targets = "native"

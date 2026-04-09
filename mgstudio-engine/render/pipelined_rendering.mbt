@@ -14,3 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/pipelined_rendering.rs`.
+
+///|
+pub fn pipelined_rendering_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn render_extract_app_label() -> @app.AppLabel {
+  @app.RenderApp
+}

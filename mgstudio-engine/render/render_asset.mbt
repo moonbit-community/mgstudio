@@ -14,3 +14,168 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_asset.rs`.
+
+///|
+pub(all) suberror PrepareAssetError {
+  RetryNextUpdate(String)
+  AsBindGroupError(String)
+}
+
+///|
+pub struct AssetExtractionSystems {}
+
+///|
+pub struct ExtractedAssets[A] {
+  pub extracted : Array[(Int, A)]
+  pub removed : @hashset.HashSet[Int]
+  pub modified : @hashset.HashSet[Int]
+  pub added : @hashset.HashSet[Int]
+}
+
+///|
+pub fn[A] ExtractedAssets::new() -> ExtractedAssets[A] {
+  ExtractedAssets::{
+    extracted: [],
+    removed: @hashset.HashSet::new(),
+    modified: @hashset.HashSet::new(),
+    added: @hashset.HashSet::new(),
+  }
+}
+
+///|
+pub struct RenderAssets[A] {
+  items : @hashmap.HashMap[Int, Ref[A]]
+}
+
+///|
+fn[A] render_assets_debug_name() -> String {
+  let probe : RenderAssets[A] = RenderAssets::new()
+  "bevy_render::RenderAssets<\{@any.of(probe).type_name()}>"
+}
+
+///|
+pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[RenderAssets[A]] {
+  @ecs.register_resource(debug_name=render_assets_debug_name())
+}
+
+///|
+pub impl[A] @app.Resource for RenderAssets[A] with resource() {
+  RenderAssets::resource()
+}
+
+///|
+pub fn[A] RenderAssets::new() -> RenderAssets[A] {
+  RenderAssets::{ items: @hashmap.HashMap::new() }
+}
+
+///|
+pub fn[A] RenderAssets::len(self : RenderAssets[A]) -> Int {
+  self.items.length()
+}
+
+///|
+pub fn[A] RenderAssets::is_empty(self : RenderAssets[A]) -> Bool {
+  self.items.is_empty()
+}
+
+///|
+pub fn[A] RenderAssets::contains(self : RenderAssets[A], id : Int) -> Bool {
+  self.items.contains(id)
+}
+
+///|
+pub fn[A] RenderAssets::get(self : RenderAssets[A], id : Int) -> A? {
+  match self.items.get(id) {
+    Some(value_ref) => Some(value_ref.val)
+    None => None
+  }
+}
+
+///|
+pub fn[A] RenderAssets::get_mut(self : RenderAssets[A], id : Int) -> Ref[A]? {
+  self.items.get(id)
+}
+
+///|
+pub fn[A] RenderAssets::insert(
+  self : RenderAssets[A],
+  id : Int,
+  value : A,
+) -> Unit {
+  self.items.set(id, Ref::new(value))
+}
+
+///|
+pub fn[A] RenderAssets::remove(self : RenderAssets[A], id : Int) -> A? {
+  guard self.items.get(id) is Some(value_ref) else { return None }
+  self.items.remove(id)
+  Some(value_ref.val)
+}
+
+///|
+pub fn[A] RenderAssets::clear(self : RenderAssets[A]) -> Unit {
+  self.items.clear()
+}
+
+///|
+pub fn[A] RenderAssets::to_array(
+  self : RenderAssets[A],
+) -> Array[(Int, Ref[A])] {
+  self.items.to_array()
+}
+
+///|
+pub struct PrepareNextFrameAssets[A] {
+  values : Array[(Int, A)]
+}
+
+///|
+fn[A] prepare_next_frame_assets_debug_name() -> String {
+  let probe : PrepareNextFrameAssets[A] = PrepareNextFrameAssets::new()
+  "bevy_render::PrepareNextFrameAssets<\{@any.of(probe).type_name()}>"
+}
+
+///|
+pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
+  PrepareNextFrameAssets[A],
+] {
+  @ecs.register_resource(debug_name=prepare_next_frame_assets_debug_name())
+}
+
+///|
+pub impl[A] @app.Resource for PrepareNextFrameAssets[A] with resource() {
+  PrepareNextFrameAssets::resource()
+}
+
+///|
+pub fn[A] PrepareNextFrameAssets::new() -> PrepareNextFrameAssets[A] {
+  PrepareNextFrameAssets::{ values: [] }
+}
+
+///|
+pub fn[A] PrepareNextFrameAssets::len(self : PrepareNextFrameAssets[A]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[A] PrepareNextFrameAssets::clear(
+  self : PrepareNextFrameAssets[A],
+) -> Unit {
+  self.values.clear()
+}
+
+///|
+pub fn[A] PrepareNextFrameAssets::push(
+  self : PrepareNextFrameAssets[A],
+  id : Int,
+  value : A,
+) -> Unit {
+  self.values.push((id, value))
+}
+
+///|
+pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[
+  RenderAssets[A],
+] {
+  RenderAssets::resource()
+}

@@ -14,3 +14,47 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/error_handler.rs`.
+
+///|
+pub type RenderRuntimeError = @app.RenderRuntimeError
+
+///|
+pub type RenderErrorPolicy = @app.RenderErrorPolicy
+
+///|
+pub type RenderErrorHandler = @app.RenderErrorHandler
+
+///|
+pub fn render_runtime_error() -> RenderRuntimeError? {
+  @app.render_runtime_error()
+}
+
+///|
+pub fn app_rendering_enabled() -> Bool {
+  @app.app_rendering_enabled()
+}
+
+///|
+pub fn app_rendering_stop() -> Unit {
+  @app.app_rendering_stop()
+}
+
+///|
+pub fn app_rendering_resume() -> Unit {
+  @app.app_rendering_resume()
+}
+
+///|
+pub fn set_render_error_handler(handler : RenderErrorHandler) -> Unit {
+  @app.set_render_error_handler(handler)
+}
+
+///|
+pub fn reset_render_error_handler() -> Unit {
+  @app.reset_render_error_handler()
+}
+
+///|
+pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
+  @app.report_render_runtime_error(error)
+}

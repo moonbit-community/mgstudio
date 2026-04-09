@@ -14,3 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/sync_world.rs`.
+
+///|
+pub fn sync_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn sync_world(main_world : @ecs.World, render_world : @ecs.World) -> Unit {
+  ignore(main_world)
+  ignore(render_world)
+}

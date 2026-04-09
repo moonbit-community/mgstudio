@@ -14,3 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/gpu_component_array_buffer.rs`.
+
+///|
+pub fn gpu_component_array_buffer_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn prepare_gpu_component_array_buffers() -> Unit {
+  ()
+}
