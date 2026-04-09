@@ -46,8 +46,8 @@
   - `mod_rule_violation_count=0`
 - Source-shape scaffold status:
   - `pure_anchor_files=0` (`rg -l "Bevy source-shape anchor\\." mgstudio-engine | wc -l`)
-  - `scaffold_files_with_explicit_bevy_source=180/180` (`scripts/check_bevy_rs_to_mbt_paths.sh`, `scaffold_without_bevy_source=0`)
-  - `_scaffold_owner marker files=90` (`rg -l "_scaffold_owner" mgstudio-engine | wc -l`)
+  - `scaffold_files_with_explicit_bevy_source=46/46` (`scripts/check_bevy_rs_to_mbt_paths.sh`, `scaffold_without_bevy_source=0`)
+  - `_scaffold_owner marker files=0` (`rg -l "_scaffold_owner" mgstudio-engine | wc -l`)
 
 ## Notes
 
