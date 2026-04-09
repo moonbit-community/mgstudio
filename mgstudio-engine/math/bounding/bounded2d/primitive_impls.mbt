@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded2d/primitive_impls.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_bounding_bounded2d_primitive_impls_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn[T : @math.Bounded2d] aabb_2d_of(
+  shape : T,
+  isometry : @math.Isometry2d,
+) -> @math.Aabb2d {
+  @math.aabb_2d_of(shape, isometry)
+}
+
+///|
+pub fn[T : @math.Bounded2d] bounding_circle_of(
+  shape : T,
+  isometry : @math.Isometry2d,
+) -> @math.BoundingCircle {
+  @math.bounding_circle_of(shape, isometry)
 }

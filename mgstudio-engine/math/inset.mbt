@@ -13,6 +13,10 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_math/src/primitives/inset.rs`.
+// Runtime owner for inset primitives.
+
+///|
 pub(open) trait Inset {
   inset(self : Self, distance : Float) -> Self
 }

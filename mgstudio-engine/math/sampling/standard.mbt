@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/sampling/standard.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_sampling_standard_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn sample_dir2(rng : @random.Rand) -> @math.Dir2 {
+  @math.Dir2::from_rng(rng)
+}
+
+///|
+pub fn sample_dir3(rng : @random.Rand) -> @math.Dir3 {
+  @math.Dir3::from_rng(rng)
+}
+
+///|
+pub fn sample_quat(rng : @random.Rand) -> @math.Quat {
+  @math.Quat::from_rng(rng)
+}
+
+///|
+pub fn sample_rot2(rng : @random.Rand) -> @math.Rot2 {
+  @math.Rot2::from_rng(rng)
 }

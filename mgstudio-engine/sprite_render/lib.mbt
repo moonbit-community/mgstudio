@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_lib_bridge_pending() -> Unit {
+// Runtime owner split out of `sprite_render/sprite_render.mbt`.
 
+///|
+pub const SPRITE_RENDER_PLUGIN_ID : String = "bevy_sprite_render::SpriteRenderPlugin"
+
+///|
+pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite.render2d_plugin(app)
+}
+
+///|
+pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite.render2d_plugin_ecs(app)
+}
+
+///|
+pub fn sprite_render_plugin_ecs(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  render2d_plugin_ecs(app)
 }

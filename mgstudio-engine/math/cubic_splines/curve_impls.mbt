@@ -14,7 +14,40 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/cubic_splines/curve_impls.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_cubic_splines_curve_impls_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
+pub using @math {type WithDerivative}
 
+///|
+pub using @math {type WithTwoDerivatives}
+
+///|
+pub fn[P : @math.SplinePoint] cubic_curve_sample_with_derivative(
+  curve : @math.CubicCurve[P],
+  t : Float,
+) -> @math.WithDerivative[P] {
+  curve.sample_with_derivative(t)
+}
+
+///|
+pub fn[P : @math.SplinePoint] cubic_curve_sample_with_two_derivatives(
+  curve : @math.CubicCurve[P],
+  t : Float,
+) -> @math.WithTwoDerivatives[P] {
+  curve.sample_with_two_derivatives(t)
+}
+
+///|
+pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(
+  segment : @math.CubicSegment[P],
+  t : Float,
+) -> @math.WithDerivative[P] {
+  segment.sample_with_derivative(t)
+}
+
+///|
+pub fn[P : @math.SplinePoint] cubic_segment_sample_with_two_derivatives(
+  segment : @math.CubicSegment[P],
+  t : Float,
+) -> @math.WithTwoDerivatives[P] {
+  segment.sample_with_two_derivatives(t)
 }

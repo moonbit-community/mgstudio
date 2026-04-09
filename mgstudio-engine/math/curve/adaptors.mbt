@@ -14,7 +14,26 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/adaptors.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_adaptors_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type ConstantCurve[T] = @math.ConstantCurve[T]
+
+///|
+pub type FunctionCurve[T] = @math.FunctionCurve[T]
+
+///|
+pub fn[T] constant_curve(
+  domain : @math.Interval,
+  value : T,
+) -> ConstantCurve[T] {
+  @math.ConstantCurve::new(domain, value)
+}
+
+///|
+pub fn[T] function_curve(
+  domain : @math.Interval,
+  f : (Float) -> T,
+) -> FunctionCurve[T] {
+  @math.FunctionCurve::new(domain, f)
 }

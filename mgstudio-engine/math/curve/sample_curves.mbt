@@ -14,7 +14,38 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/sample_curves.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_sample_curves_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type SampleCurve[T] = @math.SampleCurve[T]
+
+///|
+pub type SampleAutoCurve[T] = @math.SampleAutoCurve[T]
+
+///|
+pub type UnevenSampleCurve[T] = @math.UnevenSampleCurve[T]
+
+///|
+pub fn[T] sample_curve(
+  domain : @math.Interval,
+  samples : Array[T],
+  interpolation : (T, T, Float) -> T,
+) -> SampleCurve[T] raise EvenCoreError {
+  @math.SampleCurve::new(domain, samples, interpolation)
+}
+
+///|
+pub fn[T] sample_auto_curve(
+  domain : @math.Interval,
+  samples : Array[T],
+) -> SampleAutoCurve[T] raise EvenCoreError {
+  @math.SampleAutoCurve::new(domain, samples)
+}
+
+///|
+pub fn[T] uneven_sample_curve(
+  sample_points : Array[(Float, T)],
+  interpolation : (T, T, Float) -> T,
+) -> UnevenSampleCurve[T] raise UnevenCoreError {
+  @math.UnevenSampleCurve::new(sample_points, interpolation)
 }

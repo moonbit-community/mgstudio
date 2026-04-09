@@ -14,7 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_lib_pending() -> Unit {
+// Runtime owner split out of `mesh/mesh.mbt`.
 
+///|
+pub(all) enum MeshGeometry {
+  Geometry2d(Mesh2dGeometry)
+  Geometry3d(Mesh3dGeometry)
+}
+
+///|
+pub struct Mesh {
+  geometry : MeshGeometry
 }

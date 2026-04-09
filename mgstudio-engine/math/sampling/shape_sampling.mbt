@@ -14,7 +14,184 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/sampling/shape_sampling.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_sampling_shape_sampling_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn sphere_boundary_distribution(
+  shape : @math.Sphere,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.boundary_dist()
+}
+
+///|
+pub fn sphere_interior_distribution(
+  shape : @math.Sphere,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.interior_dist()
+}
+
+///|
+pub fn sphere_sample_boundary(
+  shape : @math.Sphere,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_boundary(rng)
+}
+
+///|
+pub fn sphere_sample_interior(
+  shape : @math.Sphere,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_interior(rng)
+}
+
+///|
+pub fn cylinder_boundary_distribution(
+  shape : @math.Cylinder,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.boundary_dist()
+}
+
+///|
+pub fn cylinder_interior_distribution(
+  shape : @math.Cylinder,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.interior_dist()
+}
+
+///|
+pub fn cylinder_sample_boundary(
+  shape : @math.Cylinder,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_boundary(rng)
+}
+
+///|
+pub fn cylinder_sample_interior(
+  shape : @math.Cylinder,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_interior(rng)
+}
+
+///|
+pub fn capsule3d_boundary_distribution(
+  shape : @math.Capsule3d,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.boundary_dist()
+}
+
+///|
+pub fn capsule3d_interior_distribution(
+  shape : @math.Capsule3d,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.interior_dist()
+}
+
+///|
+pub fn capsule3d_sample_boundary(
+  shape : @math.Capsule3d,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_boundary(rng)
+}
+
+///|
+pub fn capsule3d_sample_interior(
+  shape : @math.Capsule3d,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_interior(rng)
+}
+
+///|
+pub fn triangle3d_boundary_distribution(
+  shape : @math.Triangle3d,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.boundary_dist()
+}
+
+///|
+pub fn triangle3d_interior_distribution(
+  shape : @math.Triangle3d,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.interior_dist()
+}
+
+///|
+pub fn triangle3d_sample_boundary(
+  shape : @math.Triangle3d,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_boundary(rng)
+}
+
+///|
+pub fn triangle3d_sample_interior(
+  shape : @math.Triangle3d,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_interior(rng)
+}
+
+///|
+pub fn tetrahedron_boundary_distribution(
+  shape : @math.Tetrahedron,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.boundary_dist()
+}
+
+///|
+pub fn tetrahedron_interior_distribution(
+  shape : @math.Tetrahedron,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.interior_dist()
+}
+
+///|
+pub fn tetrahedron_sample_boundary(
+  shape : @math.Tetrahedron,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_boundary(rng)
+}
+
+///|
+pub fn tetrahedron_sample_interior(
+  shape : @math.Tetrahedron,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_interior(rng)
+}
+
+///|
+pub fn cuboid_boundary_distribution(
+  shape : @math.Cuboid,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.boundary_dist()
+}
+
+///|
+pub fn cuboid_interior_distribution(
+  shape : @math.Cuboid,
+) -> @math.SamplingDistribution[@math.Vec3] {
+  shape.interior_dist()
+}
+
+///|
+pub fn cuboid_sample_boundary(
+  shape : @math.Cuboid,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_boundary(rng)
+}
+
+///|
+pub fn cuboid_sample_interior(
+  shape : @math.Cuboid,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  shape.sample_interior(rng)
 }

@@ -14,7 +14,35 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/wireframe2d.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_mesh2d_wireframe2d_bridge_pending() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type NoWireframe2d}
 
+///|
+pub using @sprite_render {type Wireframe2d}
+
+///|
+pub using @sprite_render {type Wireframe2dColor}
+
+///|
+pub using @sprite_render {type Wireframe2dConfig}
+
+///|
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@sprite_render.NoWireframe2d] = @sprite_render.ecs_key_no_wireframe2d
+
+///|
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[@sprite_render.Wireframe2d] = @sprite_render.ecs_key_wireframe2d
+
+///|
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[
+  @sprite_render.Wireframe2dColor,
+] = @sprite_render.ecs_key_wireframe2d_color
+
+///|
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[
+  @sprite_render.Wireframe2dConfig,
+] = @sprite_render.ecs_key_wireframe2d_config
+
+///|
+pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.wireframe2d_plugin(app)
 }

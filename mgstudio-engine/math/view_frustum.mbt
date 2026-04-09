@@ -13,6 +13,10 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_math/src/primitives/view_frustum.rs`.
+// Runtime owner for frustum primitives.
+
+///|
 pub struct ViewFrustum {
   half_spaces : Array[HalfSpace]
 } derive(Eq, ToJson, FromJson)
@@ -22,13 +26,6 @@ pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
 ///|
 pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
-
-///|
-fn view_frustum_assert_half_spaces(half_spaces : Array[HalfSpace]) -> Unit {
-  if half_spaces.length() != 6 {
-    abort("ViewFrustum requires exactly 6 half spaces")
-  }
-}
 
 ///|
 pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
@@ -77,4 +74,11 @@ pub fn ViewFrustum::corners(self : ViewFrustum) -> Array[Vec3]? {
     near_top_left, near_top_right, near_bottom_right, near_bottom_left, far_top_left,
     far_top_right, far_bottom_right, far_bottom_left,
   ])
+}
+
+///|
+fn view_frustum_assert_half_spaces(half_spaces : Array[HalfSpace]) -> Unit {
+  if half_spaces.length() != 6 {
+    abort("ViewFrustum requires exactly 6 half spaces")
+  }
 }

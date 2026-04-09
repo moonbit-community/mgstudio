@@ -14,7 +14,42 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/raycast2d.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_bounding_raycast2d_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
+pub using @math {type AabbCast2d}
 
+///|
+pub using @math {type BoundingCircleCast}
+
+///|
+pub using @math {type Ray2d}
+
+///|
+pub using @math {type RayCast2d}
+
+///|
+pub fn ray2d(origin : @math.Vec2, direction : @math.Dir2) -> @math.Ray2d {
+  @math.Ray2d::new(origin, direction)
+}
+
+///|
+pub fn ray_cast2d_from_ray(ray : @math.Ray2d, max_t : Float) -> @math.RayCast2d {
+  @math.RayCast2d::from_ray(ray, max_t)
+}
+
+///|
+pub fn aabb_cast2d_from_ray(
+  aabb : @math.Aabb2d,
+  ray : @math.Ray2d,
+  max_t : Float,
+) -> @math.AabbCast2d {
+  @math.AabbCast2d::from_ray(aabb, ray, max_t)
+}
+
+///|
+pub fn bounding_circle_cast_from_ray(
+  circle : @math.BoundingCircle,
+  ray : @math.Ray2d,
+  max_t : Float,
+) -> @math.BoundingCircleCast {
+  @math.BoundingCircleCast::from_ray(circle, ray, max_t)
 }

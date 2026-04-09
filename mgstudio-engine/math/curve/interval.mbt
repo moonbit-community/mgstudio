@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/interval.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_interval_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type Interval = @math.Interval
+
+///|
+pub type InvalidIntervalError = @math.InvalidIntervalError
+
+///|
+pub type LinearMapError = @math.LinearMapError
+
+///|
+pub type SpacedPointsError = @math.SpacedPointsError
+
+///|
+pub fn interval(
+  start : Float,
+  end_ : Float,
+) -> Interval raise InvalidIntervalError {
+  @math.interval(start, end_)
 }

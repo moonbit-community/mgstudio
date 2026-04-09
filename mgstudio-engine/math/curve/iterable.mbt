@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/iterable.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_iterable_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type IterableCurve[T] = @math.IterableCurve[T]
+
+///|
+pub fn[T] iterable_curve(
+  domain : @math.Interval,
+  sample_iter_unchecked : (Float) -> Iter[T],
+) -> IterableCurve[T] {
+  @math.IterableCurve::new(domain, sample_iter_unchecked)
+}
+
+///|
+pub fn[T] sample_iter(curve : IterableCurve[T], t : Float) -> Iter[T]? {
+  curve.sample_iter(t)
 }

@@ -14,7 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/texture_slice/computed_slices.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_texture_slice_computed_slices_bridge_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/sprite` runtime owner.
 
+///|
+pub fn compute_slices(
+  slicer : @sprite.TextureSlicer,
+  texture_rect : @math.Rect,
+  draw_size : @math.Vec2?,
+) -> Array[@sprite.TextureSlice] {
+  slicer.compute_slices(texture_rect, draw_size)
 }

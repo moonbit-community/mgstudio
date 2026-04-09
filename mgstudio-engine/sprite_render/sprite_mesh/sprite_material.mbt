@@ -14,7 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/sprite_mesh/sprite_material.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_sprite_mesh_material_bridge_pending() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type OverlaySpriteUvScissor}
 
+///|
+pub fn render2d_push_sprite_uv_scissor_batch(
+  world : @ecs.World,
+  sprites : Array[@sprite_render.OverlaySpriteUvScissor],
+) -> Unit {
+  @sprite_render.render2d_push_sprite_uv_scissor_batch(world, sprites)
 }

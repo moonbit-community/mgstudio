@@ -14,7 +14,36 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/half_space.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_primitives_half_space_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub using @math {type HalfSpace}
+
+///|
+pub fn half_space(normal_d : @math.Vec4) -> @math.HalfSpace {
+  @math.HalfSpace::new(normal_d)
+}
+
+///|
+pub fn half_space_normal(shape : @math.HalfSpace) -> @math.Vec3 {
+  shape.normal()
+}
+
+///|
+pub fn half_space_d(shape : @math.HalfSpace) -> Float {
+  shape.d()
+}
+
+///|
+pub fn half_space_normal_d(shape : @math.HalfSpace) -> @math.Vec4 {
+  shape.normal_d()
+}
+
+///|
+pub fn half_space_intersection_point(
+  a : @math.HalfSpace,
+  b : @math.HalfSpace,
+  c : @math.HalfSpace,
+) -> @math.Vec3? {
+  @math.HalfSpace::intersection_point(a, b, c)
 }

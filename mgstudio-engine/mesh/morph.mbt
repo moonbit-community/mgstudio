@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/morph.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_morph_pending() -> Unit {
+// Runtime owner split out of `mesh/mesh.mbt`.
 
+///|
+pub fn Mesh::morph_target_names(self : Mesh) -> Array[String]? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry3d(geometry3d) => geometry3d.morph_target_names()
+  }
+}
+
+///|
+pub fn Mesh::custom_attribute_vec3(
+  self : Mesh,
+  name : String,
+) -> Array[@math.Vec3]? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry3d(geometry3d) =>
+      geometry3d.custom_attribute_vec3(name)
+  }
 }

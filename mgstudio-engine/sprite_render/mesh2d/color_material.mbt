@@ -14,7 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/color_material.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_mesh2d_color_material_bridge_pending() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type ColorMaterial}
 
+///|
+pub using @sprite_render {type ColorMaterialAsset}
+
+///|
+pub using @sprite_render {type ColorMaterialPlugin}
+
+///|
+pub let ecs_key_color_material : @ecs.ComponentKey[@sprite_render.ColorMaterial] = @sprite_render.ecs_key_color_material
+
+///|
+pub fn color_material_plugin(
+  plugin : @sprite_render.ColorMaterialPlugin,
+) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.color_material_plugin(plugin)
 }

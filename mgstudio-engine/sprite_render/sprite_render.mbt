@@ -16,9 +16,6 @@
 /// Sprite-render API boundary aligned with Bevy crate responsibilities.
 
 ///|
-pub const SPRITE_RENDER_PLUGIN_ID : String = "bevy_sprite_render::SpriteRenderPlugin"
-
-///|
 pub type AlphaMode2d = @sprite.AlphaMode2d
 
 ///|
@@ -352,23 +349,6 @@ pub fn color_material_plugin(
 }
 
 ///|
-pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin(app)
-}
-
-///|
 pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @sprite.wireframe2d_plugin(app)
-}
-
-///|
-pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin_ecs(app)
-}
-
-///|
-pub fn sprite_render_plugin_ecs(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  render2d_plugin_ecs(app)
 }

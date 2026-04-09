@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/view_frustum.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_primitives_view_frustum_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub using @math {type ViewFrustum}
+
+///|
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
+
+///|
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX
+
+///|
+pub fn view_frustum(half_spaces : Array[@math.HalfSpace]) -> @math.ViewFrustum {
+  @math.ViewFrustum::new(half_spaces)
+}
+
+///|
+pub fn view_frustum_corners(frustum : @math.ViewFrustum) -> Array[@math.Vec3]? {
+  frustum.corners()
 }

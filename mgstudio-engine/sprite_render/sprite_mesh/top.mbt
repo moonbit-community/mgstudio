@@ -15,9 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/sprite_mesh/mod.rs`.
 // Bridge surface to the root `sprite_render` package implementation.
-pub using @sprite_render {type OverlaySpriteUvScissor}
-
-///|
 pub using @sprite_render {type SceneCullContext}
 
 ///|
@@ -31,14 +28,6 @@ pub fn render2d_primary_scene_cull_context(
   world : @ecs.World,
 ) -> @sprite_render.SceneCullContext? {
   @sprite_render.render2d_primary_scene_cull_context(world)
-}
-
-///|
-pub fn render2d_push_sprite_uv_scissor_batch(
-  world : @ecs.World,
-  sprites : Array[@sprite_render.OverlaySpriteUvScissor],
-) -> Unit {
-  @sprite_render.render2d_push_sprite_uv_scissor_batch(world, sprites)
 }
 
 ///|

@@ -14,7 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/mesh.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_mesh2d_mesh_bridge_pending() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type Mesh2d}
 
-}
+///|
+pub using @sprite_render {type Mesh2dBundle}
+
+///|
+pub using @sprite_render {type MeshMaterial2d}
+
+///|
+pub let ecs_key_mesh2d : @ecs.ComponentKey[@sprite_render.Mesh2d] = @sprite_render.ecs_key_mesh2d
+
+///|
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
+  @sprite_render.MeshMaterial2d[@sprite_render.ColorMaterialAsset],
+] = @sprite_render.ecs_key_mesh_material2d

@@ -13,31 +13,13 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_math/src/primitives/half_space.rs`.
+// Runtime owner for half-space primitives.
+
+///|
 pub struct HalfSpace {
   normal_d : Vec4
 } derive(Eq, ToJson, FromJson)
-
-///|
-fn half_space_normal3(normal_d : Vec4) -> Vec3 {
-  Vec3::new(normal_d.x, normal_d.y, normal_d.z)
-}
-
-///|
-fn half_space_normalize(normal_d : Vec4) -> Vec4 {
-  let normal = half_space_normal3(normal_d)
-  let length = normal.length()
-  if length <= 1.0e-12F || length.is_nan() || length.is_inf() {
-    normal_d
-  } else {
-    let inv_length = 1.0F / length
-    Vec4::new(
-      normal_d.x * inv_length,
-      normal_d.y * inv_length,
-      normal_d.z * inv_length,
-      normal_d.w * inv_length,
-    )
-  }
-}
 
 ///|
 pub fn HalfSpace::new(normal_d : Vec4) -> HalfSpace {
@@ -80,9 +62,31 @@ pub fn HalfSpace::intersection_point(
     half_space_normal3(c.normal_d).length() <= 1.0e-12F ||
     denom.is_nan() ||
     denom.is_inf() ||
-    (if denom < 0.0F { -denom } else { denom }) <= 1.0e-12F {
+    abs(denom) <= 1.0e-12F {
     None
   } else {
     Some(Vec3::new(d.dot(u) / denom, z.dot(v) / denom, -y.dot(v) / denom))
+  }
+}
+
+///|
+fn half_space_normal3(normal_d : Vec4) -> Vec3 {
+  Vec3::new(normal_d.x, normal_d.y, normal_d.z)
+}
+
+///|
+fn half_space_normalize(normal_d : Vec4) -> Vec4 {
+  let normal = half_space_normal3(normal_d)
+  let length = normal.length()
+  if length <= 1.0e-12F || length.is_nan() || length.is_inf() {
+    normal_d
+  } else {
+    let inv_length = 1.0F / length
+    Vec4::new(
+      normal_d.x * inv_length,
+      normal_d.y * inv_length,
+      normal_d.z * inv_length,
+      normal_d.w * inv_length,
+    )
   }
 }

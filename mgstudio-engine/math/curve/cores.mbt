@@ -14,7 +14,31 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/cores.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_cores_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type EvenCoreError = @math.EvenCoreError
+
+///|
+pub type UnevenCoreError = @math.UnevenCoreError
+
+///|
+pub type EvenCore[T] = @math.EvenCore[T]
+
+///|
+pub type UnevenCore[T] = @math.UnevenCore[T]
+
+///|
+pub fn[T] even_core(
+  domain : @math.Interval,
+  samples : Array[T],
+) -> EvenCore[T] raise EvenCoreError {
+  @math.EvenCore::new(domain, samples)
+}
+
+///|
+pub fn[T] uneven_core(
+  sample_points : Array[(Float, T)],
+) -> UnevenCore[T] raise UnevenCoreError {
+  @math.UnevenCore::new(sample_points)
 }

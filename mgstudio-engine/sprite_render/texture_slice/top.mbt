@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/texture_slice/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_texture_slice_top_bridge_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/sprite` runtime owner.
+pub using @sprite {type BorderRect}
 
+///|
+pub using @sprite {type SliceScaleMode}
+
+///|
+pub using @sprite {type TextureSlice}
+
+///|
+pub using @sprite {type TextureSlicer}
+
+///|
+pub fn texture_slice_tiled(
+  slice : @sprite.TextureSlice,
+  stretch_value : Float,
+  tile : (Bool, Bool),
+) -> Array[@sprite.TextureSlice] {
+  slice.tiled(stretch_value, tile)
 }

@@ -14,7 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/adaptor_impls.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_derivatives_adaptor_impls_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
+pub using @math {type WithDerivative}
 
-}
+///|
+pub using @math {type WithTwoDerivatives}

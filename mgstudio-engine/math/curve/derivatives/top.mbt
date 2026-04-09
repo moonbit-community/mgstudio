@@ -14,10 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
-
-///|
-pub type WithDerivative[T] = @math.WithDerivative[T]
-
-///|
-pub type WithTwoDerivatives[T] = @math.WithTwoDerivatives[T]
+// Runtime-bearing exports live in `adaptor_impls.mbt` to avoid duplicate aliases.

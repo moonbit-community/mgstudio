@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/mikktspace.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_mikktspace_pending() -> Unit {
+// Runtime owner split out of `mesh/mesh.mbt`.
 
+///|
+pub(all) enum MeshGenerateTangentsError {
+  Not3dGeometry
+  GeometryError(Mesh3dGenerateTangentsError)
+} derive(Eq, Show)
+
+///|
+pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) =>
+      Some(MeshGenerateTangentsError::Not3dGeometry)
+    MeshGeometry::Geometry3d(geometry3d) =>
+      match geometry3d.generate_tangents() {
+        Some(err) => Some(MeshGenerateTangentsError::GeometryError(err))
+        None => None
+      }
+  }
 }

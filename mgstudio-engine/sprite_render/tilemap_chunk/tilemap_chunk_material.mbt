@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/tilemap_chunk_material.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_tilemap_chunk_material_bridge_pending() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type TileData}
 
+///|
+pub using @sprite_render {type TilemapChunk}
+
+///|
+pub using @sprite_render {type TilemapChunkTileData}
+
+///|
+pub fn tilemap_chunk_tile_capacity(chunk : @sprite_render.TilemapChunk) -> Int {
+  chunk.tile_capacity()
 }

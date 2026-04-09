@@ -141,15 +141,3 @@ pub type ConicalFrustum = @math.ConicalFrustum
 
 ///|
 pub type Torus = @math.Torus
-
-///|
-pub type HalfSpace = @math.HalfSpace
-
-///|
-pub type ViewFrustum = @math.ViewFrustum
-
-///|
-pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
-
-///|
-pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX

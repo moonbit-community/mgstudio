@@ -13,66 +13,6 @@
 // limitations under the License.
 
 ///|
-pub(all) enum MeshGeometry {
-  Geometry2d(Mesh2dGeometry)
-  Geometry3d(Mesh3dGeometry)
-}
-
-///|
-pub struct Mesh {
-  geometry : MeshGeometry
-}
-
-///|
-pub(open) trait IntoMeshAsset {
-  into_mesh_asset(Self) -> Mesh
-}
-
-///|
-pub(all) enum MeshGenerateTangentsError {
-  Not3dGeometry
-  GeometryError(Mesh3dGenerateTangentsError)
-} derive(Eq, Show)
-
-///|
-pub fn Mesh::from_2d_geometry(geometry2d : Mesh2dGeometry) -> Mesh {
-  Mesh::{ geometry: MeshGeometry::Geometry2d(geometry2d) }
-}
-
-///|
-pub fn Mesh2dGeometry::to_mesh(self : Mesh2dGeometry) -> Mesh {
-  Mesh::from_2d_geometry(self)
-}
-
-///|
-pub impl IntoMeshAsset for Mesh2dGeometry with into_mesh_asset(self) {
-  self.to_mesh()
-}
-
-///|
-pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
-  Mesh::{ geometry: MeshGeometry::Geometry3d(geometry3d) }
-}
-
-///|
-pub fn Mesh3dGeometry::to_mesh(self : Mesh3dGeometry) -> Mesh {
-  Mesh::from_3d_geometry(self)
-}
-
-///|
-pub impl IntoMeshAsset for Mesh3dGeometry with into_mesh_asset(self) {
-  self.to_mesh()
-}
-
-///|
-pub fn[S : IntoMeshAsset] add(
-  assets : @asset.Assets[Mesh],
-  value : S,
-) -> @asset.Handle[Mesh] {
-  assets.add(value.into_mesh_asset())
-}
-
-///|
 pub fn Mesh::as_3d_geometry(self : Mesh) -> Mesh3dGeometry? {
   match self.geometry {
     MeshGeometry::Geometry3d(geometry3d) => Some(geometry3d)
@@ -88,38 +28,5 @@ pub fn Mesh::with_3d_geometry(
   match self.geometry {
     MeshGeometry::Geometry3d(_) => Some(Mesh::from_3d_geometry(geometry3d))
     MeshGeometry::Geometry2d(_) => None
-  }
-}
-
-///|
-pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {
-  match self.geometry {
-    MeshGeometry::Geometry2d(_) =>
-      Some(MeshGenerateTangentsError::Not3dGeometry)
-    MeshGeometry::Geometry3d(geometry3d) =>
-      match geometry3d.generate_tangents() {
-        Some(err) => Some(MeshGenerateTangentsError::GeometryError(err))
-        None => None
-      }
-  }
-}
-
-///|
-pub fn Mesh::morph_target_names(self : Mesh) -> Array[String]? {
-  match self.geometry {
-    MeshGeometry::Geometry2d(_) => None
-    MeshGeometry::Geometry3d(geometry3d) => geometry3d.morph_target_names()
-  }
-}
-
-///|
-pub fn Mesh::custom_attribute_vec3(
-  self : Mesh,
-  name : String,
-) -> Array[@math.Vec3]? {
-  match self.geometry {
-    MeshGeometry::Geometry2d(_) => None
-    MeshGeometry::Geometry3d(geometry3d) =>
-      geometry3d.custom_attribute_vec3(name)
   }
 }

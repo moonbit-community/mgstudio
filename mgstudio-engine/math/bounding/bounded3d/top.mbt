@@ -14,7 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded3d/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_bounding_bounded3d_top_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
+pub using @math {type Aabb3d}
 
-}
+///|
+pub using @math {type BoundingSphere}
