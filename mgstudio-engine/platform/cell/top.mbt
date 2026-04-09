@@ -14,7 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_platform/src/cell/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _platform_cell_top_scaffold_owner() -> Unit {
+// Root `Milky2018/mgstudio/platform` does not expose a cell surface yet.
+// pending: bridge once a real root symbol exists for this module.
+fn _platform_cell_top_bridge_pending() -> Unit {
 
 }

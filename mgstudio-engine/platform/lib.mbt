@@ -14,7 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_platform/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _platform_lib_scaffold_owner() -> Unit {
+// Root `Milky2018/mgstudio/platform` already owns the runtime surface; this
+// file remains a scaffold placeholder until a package-level bridge exists.
+fn _platform_lib_bridge_pending() -> Unit {
 
 }
