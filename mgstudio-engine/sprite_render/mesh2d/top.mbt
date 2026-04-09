@@ -14,7 +14,102 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_mesh2d_top_scaffold_owner() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type AlphaMode2d}
 
+///|
+pub using @sprite_render {type ColorMaterial}
+
+///|
+pub using @sprite_render {type ColorMaterialAsset}
+
+///|
+pub using @sprite_render {type ColorMaterialPlugin}
+
+///|
+pub using @sprite_render {type Material2dKey}
+
+///|
+pub using @sprite_render {type Material2dPipeline}
+
+///|
+pub using @sprite_render {type Material2dPlugin}
+
+///|
+pub using @sprite_render {type Mesh2d}
+
+///|
+pub using @sprite_render {type Mesh2dBundle}
+
+///|
+pub using @sprite_render {type MeshMaterial2d}
+
+///|
+pub using @sprite_render {type NoWireframe2d}
+
+///|
+pub using @sprite_render {type Wireframe2d}
+
+///|
+pub using @sprite_render {type Wireframe2dColor}
+
+///|
+pub using @sprite_render {type Wireframe2dConfig}
+
+///|
+pub let ecs_key_color_material : @ecs.ComponentKey[@sprite_render.ColorMaterial] = @sprite_render.ecs_key_color_material
+
+///|
+pub let ecs_key_mesh2d : @ecs.ComponentKey[@sprite_render.Mesh2d] = @sprite_render.ecs_key_mesh2d
+
+///|
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
+  @sprite_render.MeshMaterial2d[@sprite_render.ColorMaterialAsset],
+] = @sprite_render.ecs_key_mesh_material2d
+
+///|
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@sprite_render.NoWireframe2d] = @sprite_render.ecs_key_no_wireframe2d
+
+///|
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[@sprite_render.Wireframe2d] = @sprite_render.ecs_key_wireframe2d
+
+///|
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[
+  @sprite_render.Wireframe2dColor,
+] = @sprite_render.ecs_key_wireframe2d_color
+
+///|
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[
+  @sprite_render.Wireframe2dConfig,
+] = @sprite_render.ecs_key_wireframe2d_config
+
+///|
+pub fn color_material_plugin(
+  plugin : @sprite_render.ColorMaterialPlugin,
+) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.color_material_plugin(plugin)
+}
+
+///|
+pub fn[M : @sprite.Material2d] material2d_plugin(
+  plugin : @sprite_render.Material2dPlugin[M],
+) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.material2d_plugin(plugin)
+}
+
+///|
+pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.sprite_render_plugin(app)
+}
+
+///|
+pub fn sprite_render_plugin_ecs(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  @sprite_render.sprite_render_plugin_ecs(app)
+}
+
+///|
+pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.wireframe2d_plugin(app)
 }

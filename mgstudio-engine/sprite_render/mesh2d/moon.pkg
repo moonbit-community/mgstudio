@@ -1,1 +1,8 @@
+import {
+  "Milky2018/mgstudio/app" @app,
+  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/sprite" @sprite,
+  "Milky2018/mgstudio/sprite_render" @sprite_render,
+}
+
 supported_targets = "native"

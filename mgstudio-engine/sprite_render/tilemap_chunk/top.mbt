@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_tilemap_chunk_top_scaffold_owner() -> Unit {
+// Bridge surface to the root `sprite_render` package implementation.
+pub using @sprite_render {type TileData}
 
+///|
+pub using @sprite_render {type TilemapChunk}
+
+///|
+pub using @sprite_render {type TilemapChunkTileData}
+
+///|
+pub fn render2d_draw_tilemap_chunk(
+  world : @ecs.World,
+  chunk : @sprite_render.TilemapChunk,
+  tile_data : @sprite_render.TilemapChunkTileData,
+  transform : @transform.Transform,
+  layers : @sprite.RenderLayers,
+) -> Unit {
+  @sprite_render.render2d_draw_tilemap_chunk(
+    world, chunk, tile_data, transform, layers,
+  )
 }

@@ -1,13 +1,85 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/sprite_render/render"
 
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
+}
+
 // Values
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
+
+pub fn render2d_clear_overlay_ui_rects(@ecs.World) -> Unit
+
+pub fn render2d_clear_overlay_ui_texture_slices(@ecs.World) -> Unit
+
+pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@image.Image]
+
+pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@image.Image]
+
+pub fn render2d_diagnostic_execute_cpu_ms() -> Float
+
+pub fn render2d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render2d_diagnostic_queue_cpu_ms() -> Float
+
+pub fn render2d_diagnostic_queued_draw_item_count() -> Int
+
+pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @transform.Transform, @sprite.RenderLayers) -> Unit
+
+pub fn render2d_primary_scene_cull_context(@ecs.World) -> @sprite.SceneCullContext?
+
+pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit
+
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
+
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
+
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+
+pub fn render2d_scene_cull_context_values(@sprite.SceneCullContext) -> (Float, Float, Float, Float, Float, Float)
+
+pub fn render2d_scene_item_visible(@sprite.SceneCullContext, Float, Float, Float) -> Bool
+
+pub let render2d_set_execute : String
+
+pub let render2d_set_extract : String
+
+pub let render2d_set_prepare : String
+
+pub let render2d_set_queue : String
+
+pub let render2d_set_render : String
+
+pub let render2d_set_transparent_2d : String
+
+pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
+
+pub fn render2d_viewport_to_world_2d(@ecs.World, @math.Vec2) -> @math.Vec2?
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @sprite {type OverlaySpriteUvScissor}
+
+pub using @sprite {type SceneCullContext}
+
+pub using @sprite {type UiBorderRect}
+
+pub using @sprite {type UiCornerRadii}
 
 // Traits
 
