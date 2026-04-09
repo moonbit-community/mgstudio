@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/toggle_switch.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_toggle_switch_scaffold_owner() -> Unit {
+fn _feathers_controls_toggle_switch_bridge_pending() -> Unit {
 
 }

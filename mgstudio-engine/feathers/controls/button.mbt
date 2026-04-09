@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/button.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_button_scaffold_owner() -> Unit {
+fn _feathers_controls_button_bridge_pending() -> Unit {
 
 }

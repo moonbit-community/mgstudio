@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/handle_or_path.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_handle_or_path_scaffold_owner() -> Unit {
+fn _feathers_handle_or_path_bridge_pending() -> Unit {
 
 }

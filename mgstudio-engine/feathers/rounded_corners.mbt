@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/rounded_corners.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_rounded_corners_scaffold_owner() -> Unit {
+fn _feathers_rounded_corners_bridge_pending() -> Unit {
 
 }

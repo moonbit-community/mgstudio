@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/color_swatch.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_color_swatch_scaffold_owner() -> Unit {
+fn _feathers_controls_color_swatch_bridge_pending() -> Unit {
 
 }

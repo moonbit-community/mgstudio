@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/alpha_pattern.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_alpha_pattern_scaffold_owner() -> Unit {
+fn _feathers_alpha_pattern_bridge_pending() -> Unit {
 
 }

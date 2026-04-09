@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/tokens.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_tokens_scaffold_owner() -> Unit {
+fn _feathers_tokens_bridge_pending() -> Unit {
 
 }

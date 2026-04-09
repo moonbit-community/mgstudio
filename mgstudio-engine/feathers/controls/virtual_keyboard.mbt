@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/virtual_keyboard.rs`.
 // Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_virtual_keyboard_scaffold_owner() -> Unit {
+fn _feathers_controls_virtual_keyboard_bridge_pending() -> Unit {
 
 }
