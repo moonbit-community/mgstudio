@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_platform/src/dirs/windows.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _platform_dirs_windows_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _platform_dirs_windows_bridge_pending() -> Unit {
 
 }

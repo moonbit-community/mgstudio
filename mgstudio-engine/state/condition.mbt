@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/condition.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _state_condition_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _state_condition_bridge_pending() -> Unit {
 
 }

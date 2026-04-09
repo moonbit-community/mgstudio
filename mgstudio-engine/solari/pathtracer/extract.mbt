@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/pathtracer/extract.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _solari_pathtracer_extract_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _solari_pathtracer_extract_bridge_pending() -> Unit {
 
 }

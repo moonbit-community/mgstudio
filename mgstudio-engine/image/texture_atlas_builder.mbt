@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_image/src/texture_atlas_builder.rs`.
 // Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _texture_atlas_builder_scaffold_owner() -> Unit {
+fn _texture_atlas_builder_bridge_pending() -> Unit {
 
 }

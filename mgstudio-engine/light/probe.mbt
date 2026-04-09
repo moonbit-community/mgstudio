@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/probe.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _light_probe_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _light_probe_bridge_pending() -> Unit {
 
 }

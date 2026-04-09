@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _solari_lib_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _solari_lib_bridge_pending() -> Unit {
 
 }

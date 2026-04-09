@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_platform/src/thread.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _platform_thread_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _platform_thread_bridge_pending() -> Unit {
 
 }

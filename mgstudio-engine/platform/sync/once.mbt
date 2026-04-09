@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_platform/src/sync/once.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _platform_sync_once_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _platform_sync_once_bridge_pending() -> Unit {
 
 }

@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/scene/blas.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _solari_scene_blas_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _solari_scene_blas_bridge_pending() -> Unit {
 
 }

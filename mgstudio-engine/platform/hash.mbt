@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_platform/src/hash.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _platform_hash_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _platform_hash_bridge_pending() -> Unit {
 
 }

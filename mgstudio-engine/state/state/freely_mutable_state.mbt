@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/freely_mutable_state.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _state_freely_mutable_state_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _state_freely_mutable_state_bridge_pending() -> Unit {
 
 }

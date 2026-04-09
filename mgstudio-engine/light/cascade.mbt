@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cascade.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _light_cascade_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _light_cascade_bridge_pending() -> Unit {
 
 }

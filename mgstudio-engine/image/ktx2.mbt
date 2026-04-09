@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_image/src/ktx2.rs`.
 // Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _ktx2_scaffold_owner() -> Unit {
+fn _ktx2_bridge_pending() -> Unit {
 
 }

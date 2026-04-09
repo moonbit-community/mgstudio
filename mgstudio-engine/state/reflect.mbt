@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/reflect.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _state_reflect_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _state_reflect_bridge_pending() -> Unit {
 
 }

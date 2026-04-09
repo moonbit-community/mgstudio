@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_image/src/basis.rs`.
 // Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _basis_scaffold_owner() -> Unit {
+fn _basis_bridge_pending() -> Unit {
 
 }

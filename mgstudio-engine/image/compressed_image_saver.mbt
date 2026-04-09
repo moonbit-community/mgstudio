@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_image/src/compressed_image_saver.rs`.
 // Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _compressed_image_saver_scaffold_owner() -> Unit {
+fn _compressed_image_saver_bridge_pending() -> Unit {
 
 }
