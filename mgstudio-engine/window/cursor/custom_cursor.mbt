@@ -15,3 +15,6 @@
 ///|
 // Bevy source-shape anchor (`bevy_window/src/cursor/custom_cursor.rs`).
 // Pending stub: no root-package semantic has been identified for this file yet.
+fn window_custom_cursor_bevy_shape_anchor() -> Unit {
+  ignore(0)
+}

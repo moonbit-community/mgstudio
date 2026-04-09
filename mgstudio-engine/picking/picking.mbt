@@ -17,3 +17,6 @@
 ///
 /// The runtime implementation is split across `lib`, `pointer`, `input`,
 /// `hover`, `backend`, `events`, and `window` following the Bevy file shape.
+fn picking_bevy_shape_anchor() -> Unit {
+  ignore(0)
+}

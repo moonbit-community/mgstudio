@@ -18,3 +18,6 @@
 // Pending bridge surface:
 // keep this package root as an explicit boundary marker until a package-level
 // bridge is needed.
+fn light_module_anchor() -> Unit {
+  ignore(0)
+}

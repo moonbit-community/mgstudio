@@ -15,3 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
 // Package-root bridge surface now lives in `lib.mbt`.
+fn gizmos_render_bevy_shape_anchor() -> Unit {
+  ignore(0)
+}

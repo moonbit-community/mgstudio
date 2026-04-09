@@ -18,3 +18,6 @@
 // Pending bridge surface:
 // keep this cluster boundary explicit until the package-level bridge is
 // needed.
+fn light_cluster_module_anchor() -> Unit {
+  ignore(0)
+}

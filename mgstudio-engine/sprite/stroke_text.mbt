@@ -8,3 +8,6 @@
 ///|
 // Runtime implementation now lives in `text2d.mbt` in this package.
 // This file remains a Bevy shape anchor only.
+fn stroke_text_bevy_shape_anchor() -> Unit {
+  ignore(0)
+}

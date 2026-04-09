@@ -15,3 +15,6 @@
 ///|
 // Bridge surface is provided by `top.mbt` in this package.
 // This file remains a Bevy shape anchor only.
+fn texture_slice_border_rect_bevy_shape_anchor() -> Unit {
+  ignore(0)
+}

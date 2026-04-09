@@ -14,3 +14,6 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_winit/src/cursor/custom_cursor.rs`).
+fn winit_custom_cursor_bevy_shape_anchor() -> Unit {
+  ignore(0)
+}
