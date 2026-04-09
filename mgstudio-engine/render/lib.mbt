@@ -19,12 +19,6 @@ pub type HostGpuDevice = Int
 pub type HostGpuQueue = Int
 
 ///|
-pub type HostGpuSurface = Int
-
-///|
-pub type HostGpuFrame = Int
-
-///|
 pub type HostMaterial2dBindingValue = @renderer.HostMaterial2dBindingValue
 
 ///|
@@ -32,241 +26,6 @@ pub type HostMaterial2dBinding = @renderer.HostMaterial2dBinding
 
 ///|
 pub type HostMaterial2dBindGroup = @renderer.HostMaterial2dBindGroup
-
-///|
-pub(all) enum HostGpuPresentMode {
-  AutoVsync
-  AutoNoVsync
-  Fifo
-  FifoRelaxed
-  Immediate
-  Mailbox
-} derive(Eq, Show)
-
-///|
-pub fn HostGpuPresentMode::default() -> HostGpuPresentMode {
-  AutoVsync
-}
-
-///|
-pub(all) enum HostGpuCompositeAlphaMode {
-  Auto
-  Opaque
-  PreMultiplied
-  PostMultiplied
-  Inherit
-} derive(Eq, Show)
-
-///|
-pub fn HostGpuCompositeAlphaMode::default() -> HostGpuCompositeAlphaMode {
-  Auto
-}
-
-///|
-pub const HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = @renderer.SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
-
-///|
-fn host_gpu_present_mode_kind(mode : HostGpuPresentMode) -> Int {
-  match mode {
-    AutoVsync => @renderer.SURFACE_PRESENT_MODE_AUTO_VSYNC
-    AutoNoVsync => @renderer.SURFACE_PRESENT_MODE_AUTO_NO_VSYNC
-    Fifo => @renderer.SURFACE_PRESENT_MODE_FIFO
-    FifoRelaxed => @renderer.SURFACE_PRESENT_MODE_FIFO_RELAXED
-    Immediate => @renderer.SURFACE_PRESENT_MODE_IMMEDIATE
-    Mailbox => @renderer.SURFACE_PRESENT_MODE_MAILBOX
-  }
-}
-
-///|
-fn host_gpu_composite_alpha_mode_kind(mode : HostGpuCompositeAlphaMode) -> Int {
-  match mode {
-    Auto => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_AUTO
-    Opaque => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_OPAQUE
-    PreMultiplied => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_PRE_MULTIPLIED
-    PostMultiplied => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_POST_MULTIPLIED
-    Inherit => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_INHERIT
-  }
-}
-
-///|
-pub(all) struct HostColorGrading {
-  balance_x_axis_x : Float
-  balance_x_axis_y : Float
-  balance_x_axis_z : Float
-  balance_y_axis_x : Float
-  balance_y_axis_y : Float
-  balance_y_axis_z : Float
-  balance_z_axis_x : Float
-  balance_z_axis_y : Float
-  balance_z_axis_z : Float
-  saturation_shadows : Float
-  saturation_midtones : Float
-  saturation_highlights : Float
-  contrast_shadows : Float
-  contrast_midtones : Float
-  contrast_highlights : Float
-  gamma_shadows : Float
-  gamma_midtones : Float
-  gamma_highlights : Float
-  gain_shadows : Float
-  gain_midtones : Float
-  gain_highlights : Float
-  lift_shadows : Float
-  lift_midtones : Float
-  lift_highlights : Float
-  midtones_start : Float
-  midtones_end : Float
-  exposure : Float
-  hue : Float
-  post_saturation : Float
-}
-
-///|
-pub fn HostColorGrading::default() -> HostColorGrading {
-  HostColorGrading::{
-    balance_x_axis_x: 1.0F,
-    balance_x_axis_y: 0.0F,
-    balance_x_axis_z: 0.0F,
-    balance_y_axis_x: 0.0F,
-    balance_y_axis_y: 1.0F,
-    balance_y_axis_z: 0.0F,
-    balance_z_axis_x: 0.0F,
-    balance_z_axis_y: 0.0F,
-    balance_z_axis_z: 1.0F,
-    saturation_shadows: 1.0F,
-    saturation_midtones: 1.0F,
-    saturation_highlights: 1.0F,
-    contrast_shadows: 1.0F,
-    contrast_midtones: 1.0F,
-    contrast_highlights: 1.0F,
-    gamma_shadows: 1.0F,
-    gamma_midtones: 1.0F,
-    gamma_highlights: 1.0F,
-    gain_shadows: 1.0F,
-    gain_midtones: 1.0F,
-    gain_highlights: 1.0F,
-    lift_shadows: 0.0F,
-    lift_midtones: 0.0F,
-    lift_highlights: 0.0F,
-    midtones_start: 0.2F,
-    midtones_end: 0.7F,
-    exposure: 0.0F,
-    hue: 0.0F,
-    post_saturation: 1.0F,
-  }
-}
-
-///|
-const HOST_COLOR_GRADING_D65_X : Float = 0.31272F
-
-///|
-const HOST_COLOR_GRADING_D65_Y : Float = 0.32903F
-
-///|
-const HOST_COLOR_GRADING_D65_LMS_X : Float = 0.975538F
-
-///|
-const HOST_COLOR_GRADING_D65_LMS_Y : Float = 1.01648F
-
-///|
-const HOST_COLOR_GRADING_D65_LMS_Z : Float = 1.08475F
-
-///|
-fn host_color_grading_mat3_mul_vec3(
-  x_axis : @math.Vec3,
-  y_axis : @math.Vec3,
-  z_axis : @math.Vec3,
-  value : @math.Vec3,
-) -> @math.Vec3 {
-  x_axis
-  .mul_scalar(value.x)
-  .add(y_axis.mul_scalar(value.y))
-  .add(z_axis.mul_scalar(value.z))
-}
-
-///|
-pub fn host_color_grading_from_post_process(
-  color_grading : @post_process.ColorGrading?,
-) -> HostColorGrading {
-  let grading = match color_grading {
-    Some(value) => value
-    None => @post_process.ColorGrading::default()
-  }
-  let white_point_x = HOST_COLOR_GRADING_D65_X - grading.global.temperature
-  let white_point_y = HOST_COLOR_GRADING_D65_Y + grading.global.tint
-  let white_point_lms = @math.Vec3::new(
-    0.701634F + (-0.051461F + 0.452749F * white_point_x) / white_point_y,
-    1.15856F + (0.045854F - 0.296122F * white_point_x) / white_point_y,
-    -0.904175F + (0.953127F - 0.955206F * white_point_x) / white_point_y,
-  )
-  let white_point_adjustment = @math.Vec3::new(
-    HOST_COLOR_GRADING_D65_LMS_X / white_point_lms.x,
-    HOST_COLOR_GRADING_D65_LMS_Y / white_point_lms.y,
-    HOST_COLOR_GRADING_D65_LMS_Z / white_point_lms.z,
-  )
-  let rgb_to_lms_x_axis = @math.Vec3::new(0.311692F, 0.0905138F, 0.00764433F)
-  let rgb_to_lms_y_axis = @math.Vec3::new(0.652085F, 0.901341F, 0.0486554F)
-  let rgb_to_lms_z_axis = @math.Vec3::new(0.0362225F, 0.00814478F, 0.943700F)
-  let lms_to_rgb_x_axis = @math.Vec3::new(4.06305F, -0.40791F, -0.0118812F)
-  let lms_to_rgb_y_axis = @math.Vec3::new(-2.93241F, 1.40437F, -0.0486532F)
-  let lms_to_rgb_z_axis = @math.Vec3::new(-0.130646F, 0.00353630F, 1.0605344F)
-  let scaled_rgb_to_lms_x_axis = @math.Vec3::new(
-    rgb_to_lms_x_axis.x * white_point_adjustment.x,
-    rgb_to_lms_x_axis.y * white_point_adjustment.y,
-    rgb_to_lms_x_axis.z * white_point_adjustment.z,
-  )
-  let scaled_rgb_to_lms_y_axis = @math.Vec3::new(
-    rgb_to_lms_y_axis.x * white_point_adjustment.x,
-    rgb_to_lms_y_axis.y * white_point_adjustment.y,
-    rgb_to_lms_y_axis.z * white_point_adjustment.z,
-  )
-  let scaled_rgb_to_lms_z_axis = @math.Vec3::new(
-    rgb_to_lms_z_axis.x * white_point_adjustment.x,
-    rgb_to_lms_z_axis.y * white_point_adjustment.y,
-    rgb_to_lms_z_axis.z * white_point_adjustment.z,
-  )
-  let balance_x_axis = host_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_x_axis,
-  )
-  let balance_y_axis = host_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_y_axis,
-  )
-  let balance_z_axis = host_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_z_axis,
-  )
-  let midtones_range = grading.global.midtones_range
-  HostColorGrading::{
-    balance_x_axis_x: balance_x_axis.x,
-    balance_x_axis_y: balance_x_axis.y,
-    balance_x_axis_z: balance_x_axis.z,
-    balance_y_axis_x: balance_y_axis.x,
-    balance_y_axis_y: balance_y_axis.y,
-    balance_y_axis_z: balance_y_axis.z,
-    balance_z_axis_x: balance_z_axis.x,
-    balance_z_axis_y: balance_z_axis.y,
-    balance_z_axis_z: balance_z_axis.z,
-    saturation_shadows: grading.shadows.saturation,
-    saturation_midtones: grading.midtones.saturation,
-    saturation_highlights: grading.highlights.saturation,
-    contrast_shadows: grading.shadows.contrast,
-    contrast_midtones: grading.midtones.contrast,
-    contrast_highlights: grading.highlights.contrast,
-    gamma_shadows: grading.shadows.gamma,
-    gamma_midtones: grading.midtones.gamma,
-    gamma_highlights: grading.highlights.gamma,
-    gain_shadows: grading.shadows.gain,
-    gain_midtones: grading.midtones.gain,
-    gain_highlights: grading.highlights.gain,
-    lift_shadows: grading.shadows.lift,
-    lift_midtones: grading.midtones.lift,
-    lift_highlights: grading.highlights.lift,
-    midtones_start: midtones_range.start,
-    midtones_end: midtones_range.end_,
-    exposure: grading.global.exposure,
-    hue: grading.global.hue,
-    post_saturation: grading.global.post_saturation,
-  }
-}
 
 ///|
 pub type HostMesh3dPreprocessShaderWorkItem = @renderer.HostMesh3dPreprocessShaderWorkItem
@@ -280,7 +39,11 @@ pub fn host_gpu_prepare_mesh3d_skin_binding(
   key_lo~ : Int,
   skinning_matrices~ : Array[Float],
 ) -> Unit {
-  @renderer.prepare_mesh3d_skin_binding(key_hi~, key_lo~, skinning_matrices~)
+  @render_mesh.host_gpu_prepare_mesh3d_skin_binding(
+    key_hi~,
+    key_lo~,
+    skinning_matrices~,
+  )
 }
 
 ///|
@@ -377,81 +140,6 @@ pub fn clear_registered_wgsl_source_registry() -> Unit {
 }
 
 ///|
-pub fn host_gpu_create_surface(window : Int) -> HostGpuSurface {
-  @renderer.create_surface(window)
-}
-
-///|
-pub fn host_gpu_surface_target_id(surface : HostGpuSurface) -> Int {
-  @renderer.surface_target_id(surface)
-}
-
-///|
-pub fn host_gpu_surface_target_id_for_window(window : Int) -> Int {
-  @renderer.surface_target_id_for_window(window)
-}
-
-///|
-pub fn host_gpu_configure_surface(
-  device~ : HostGpuDevice,
-  surface~ : HostGpuSurface,
-  width~ : Int,
-  height~ : Int,
-  present_mode? : HostGpuPresentMode = HostGpuPresentMode::default(),
-  composite_alpha_mode? : HostGpuCompositeAlphaMode = HostGpuCompositeAlphaMode::default(),
-  desired_maximum_frame_latency? : Int = HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
-) -> Unit {
-  @renderer.configure_surface(
-    device~,
-    surface~,
-    width~,
-    height~,
-    present_mode_kind=host_gpu_present_mode_kind(present_mode),
-    composite_alpha_mode_kind=host_gpu_composite_alpha_mode_kind(
-      composite_alpha_mode,
-    ),
-    desired_maximum_frame_latency~,
-  )
-}
-
-///|
-pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame {
-  @renderer.begin_frame(surface)
-}
-
-///|
-pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit {
-  @renderer.end_frame(frame)
-}
-
-///|
-pub fn host_gpu_set_active_surface_target(target_id : Int) -> Unit {
-  @renderer.set_active_surface_target(target_id)
-}
-
-///|
-pub fn host_gpu_set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit {
-  @renderer.set_mesh3d_gpu_instance_builder_enabled(enabled)
-}
-
-///|
-pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool {
-  @renderer.mesh3d_indirect_first_instance_supported()
-}
-
-///|
-pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool {
-  @renderer.mesh3d_gpu_culling_supported()
-}
-
-///|
-pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool {
-  @renderer.mesh3d_preprocess_disabled()
-}
-
-///|
-
-///|
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
@@ -515,8 +203,7 @@ pub fn host_gpu_begin_pass(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
-  render_pass_trace_begin_span("pass_2d")
-  @renderer.begin_pass(
+  @render_phase_api.host_gpu_begin_pass(
     target_id~,
     width~,
     height~,
@@ -559,8 +246,7 @@ pub fn host_gpu_begin_pass_with_depth(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
-  render_pass_trace_begin_span("pass_2d_depth")
-  @renderer.begin_pass_with_depth(
+  @render_phase_api.host_gpu_begin_pass_with_depth(
     target_id~,
     width~,
     height~,
@@ -702,8 +388,7 @@ pub fn host_gpu_begin_pass_3d(
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
-  render_pass_trace_begin_span("pass_3d(kind=\{pass_kind})")
-  @renderer.begin_pass_3d(
+  @render_phase_api.host_gpu_begin_pass_3d(
     target_id~,
     target_layer~,
     secondary_target_id~,
@@ -1749,8 +1434,7 @@ pub fn host_gpu_draw_gizmo_line(
 
 ///|
 pub fn host_gpu_end_pass() -> Unit {
-  @renderer.end_pass()
-  render_pass_trace_end_active_span()
+  @render_phase_api.host_gpu_end_pass()
 }
 
 ///|
@@ -1759,31 +1443,31 @@ pub fn host_gpu_create_mesh_capsule(
   half_length~ : Float,
   segments~ : Int,
 ) -> Int {
-  @renderer.create_mesh_capsule(radius~, half_length~, segments~)
+  @render_mesh.host_gpu_create_mesh_capsule(radius~, half_length~, segments~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
-  @renderer.create_mesh_rectangle(width~, height~)
+  @render_mesh.host_gpu_create_mesh_rectangle(width~, height~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
-  @renderer.create_mesh_triangles(vertices_xy_csv~)
+  @render_mesh.host_gpu_create_mesh_triangles(vertices_xy_csv~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles_xyuvrgba(
   vertices_xyuvrgba_csv~ : String,
 ) -> Int {
-  @renderer.create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
+  @render_mesh.host_gpu_create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles3d(
   vertices_xyzuvrgba_csv~ : String,
 ) -> Int {
-  host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology=0)
+  @render_mesh.host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv~)
 }
 
 ///|
@@ -1791,7 +1475,10 @@ pub fn host_gpu_create_mesh3d(
   vertices_xyzuvrgba_csv~ : String,
   primitive_topology~ : Int,
 ) -> Int {
-  @renderer.create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology~)
+  @render_mesh.host_gpu_create_mesh3d(
+    vertices_xyzuvrgba_csv~,
+    primitive_topology~,
+  )
 }
 
 ///|
@@ -1799,7 +1486,10 @@ pub fn host_gpu_create_mesh3d_xyznuvrgba(
   vertices_xyznuvrgba~ : Array[Float],
   primitive_topology~ : Int,
 ) -> Int {
-  @renderer.create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~, primitive_topology~)
+  @render_mesh.host_gpu_create_mesh3d_xyznuvrgba(
+    vertices_xyznuvrgba~,
+    primitive_topology~,
+  )
 }
 
 ///|
@@ -1808,7 +1498,7 @@ pub fn host_gpu_update_mesh3d_xyznuvrgba(
   vertices_xyznuvrgba~ : Array[Float],
   primitive_topology~ : Int,
 ) -> Bool {
-  @renderer.update_mesh3d_xyznuvrgba(
+  @render_mesh.host_gpu_update_mesh3d_xyznuvrgba(
     mesh_id~,
     vertices_xyznuvrgba~,
     primitive_topology~,
@@ -1821,45 +1511,16 @@ pub fn host_debug_string(value~ : String) -> Unit {
 }
 
 ///|
-pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot {
-  @renderer.render_diagnostics_snapshot()
+pub fn render_diagnostics_snapshot() -> @render_diagnostic.RenderDiagnosticsSnapshot {
+  @render_diagnostic.render_diagnostics_snapshot()
 }
 
 ///|
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
-  @renderer.render_diagnostics_commit_current_frame_snapshot()
+  @render_diagnostic.render_diagnostics_commit_current_frame_snapshot()
 }
 
 ///|
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
-  @renderer.render_diagnostics_reset_current_frame_counters()
-}
-
-///|
-pub fn screenshot_capture_surface_request() -> Int {
-  @renderer.screenshot_capture_surface_request()
-}
-
-///|
-pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
-  @renderer.screenshot_capture_surface_target_request(target_id~)
-}
-
-///|
-pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
-  @renderer.screenshot_capture_texture_request(texture_id~)
-}
-
-///|
-pub fn screenshot_take_capture_result(
-  capture_id : Int,
-) -> @renderer.ScreenshotCaptureResult? {
-  @renderer.screenshot_take_capture_result(capture_id)
-}
-
-///|
-pub fn screenshot_capture_texture_sync(
-  texture_id~ : Int,
-) -> @renderer.ScreenshotCaptureResult? {
-  @renderer.screenshot_capture_texture_sync(texture_id~)
+  @render_diagnostic.render_diagnostics_reset_current_frame_counters()
 }

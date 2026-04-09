@@ -3,7 +3,12 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/diagnostic" @render_diagnostic,
+  "Milky2018/mgstudio/render/mesh" @render_mesh,
+  "Milky2018/mgstudio/render/render_phase" @render_phase_api,
   "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/render/texture" @render_texture,
+  "Milky2018/mgstudio/render/view/window" @render_view_window,
   "moonbitlang/core/ref",
 }
 
