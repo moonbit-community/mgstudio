@@ -14,7 +14,5 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/frame_time_graph/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _dev_tools_frame_time_graph_top_scaffold_owner() -> Unit {
-
-}
+// Bridge surface to the root `dev_tools` package implementation.
+pub using @dev_tools {type FrameTimeGraphConfig}

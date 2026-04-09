@@ -16,8 +16,14 @@
 // Bevy source: `bevy/crates/bevy_ui/src/layout/mod.rs`.
 // Bridge surface to the root `ui` package implementation.
 pub using @ui {type ComputedUiRenderTargetInfo}
+
+///|
 pub using @ui {type ContentSize}
+
+///|
 pub using @ui {type ScrollPosition}
+
+///|
 pub using @ui {type UiLayout}
 
 ///|
@@ -28,18 +34,15 @@ pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
 
 ///|
 // Bridge surface to the root `ui` package implementation.
-pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize] =
-  @ui.ecs_key_content_size
+pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize] = @ui.ecs_key_content_size
 
 ///|
 // Bridge surface to the root `ui` package implementation.
-pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition] =
-  @ui.ecs_key_scroll_position
+pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition] = @ui.ecs_key_scroll_position
 
 ///|
 // Bridge surface to the root `ui` package implementation.
-pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout] =
-  @ui.ecs_key_ui_layout
+pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout] = @ui.ecs_key_ui_layout
 
 ///|
 // Bridge surface to the root `ui` package implementation.
@@ -84,46 +87,57 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_content : String = @ui.ui_set_content
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_text_content : @app.SystemSet = @ui.ui_set_text_content
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_measure : String = @ui.ui_set_measure
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_prepare : @app.SystemSet = @ui.ui_set_prepare
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_prepare : String = @ui.ui_set_prepare
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_context : @app.SystemSet = @ui.ui_set_context
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_layout : String = @ui.ui_set_layout
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_interaction : @app.SystemSet = @ui.ui_set_interaction
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_post_layout : String = @ui.ui_set_post_layout
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_content : @app.SystemSet = @ui.ui_set_content
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_stack : String = @ui.ui_set_stack
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_measure : @app.SystemSet = @ui.ui_set_measure
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_propagate : String = @ui.ui_set_propagate
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_layout : @app.SystemSet = @ui.ui_set_layout
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_scroll : String = @ui.ui_set_scroll
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_post_layout : @app.SystemSet = @ui.ui_set_post_layout
 
 ///|
-// Pending: layout-internal types like `LayoutContext` and `LayoutError` do not
-// have a verified root-package bridge yet.
-pub let ui_set_clip : String = @ui.ui_set_clip
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_stack : @app.SystemSet = @ui.ui_set_stack
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_propagate : @app.SystemSet = @ui.ui_set_propagate
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_scroll : @app.SystemSet = @ui.ui_set_scroll
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_clip : @app.SystemSet = @ui.ui_set_clip
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_a11y : @app.SystemSet = @ui.ui_set_a11y
+
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ui_set_a11y_apply : @app.SystemSet = @ui.ui_set_a11y_apply

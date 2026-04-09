@@ -1,1 +1,5 @@
+import {
+  "Milky2018/mgstudio/dev_tools" @dev_tools,
+}
+
 supported_targets = "native"
