@@ -14,7 +14,34 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/input.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _picking_input_bridge_pending() -> Unit {
+/// Input collection systems.
 
+///|
+pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
+  let res = get_pointer_inputs_resource(world)
+  if res.get() is None {
+    res.insert(PointerInputs::default())
+  }
+}
+
+///|
+pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
+  let res = get_pointer_inputs_resource(world)
+  guard res.get() is Some(inputs_value) else { return }
+  let inputs = Ref::new(inputs_value)
+  PointerInputs::clear(inputs)
+  let pointer : @pointer_events.PointerId = 0
+  let window_position = @input.mouse_position()
+  let down = @input.mouse_button_pressed(@window.MouseButton::Left)
+  let just_pressed = @input.mouse_button_just_pressed(@window.MouseButton::Left)
+  let just_released = @input.mouse_button_just_released(
+    @window.MouseButton::Left,
+  )
+  PointerInputs::push(
+    inputs,
+    PointerInput::new(
+      pointer, window_position, down, just_pressed, just_released,
+    ),
+  )
+  res.insert(inputs.val)
 }
