@@ -12,5 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/texture_atlas.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub struct TextureAtlasRegion {
+  x : Int
+  y : Int
+  width : Int
+  height : Int
+}
+
+///|
+pub struct TextureAtlasLayout {
+  width : Int
+  height : Int
+  regions : Array[TextureAtlasRegion]
+}
+
+///|
+pub fn TextureAtlasLayout::new(width : Int, height : Int) -> TextureAtlasLayout {
+  TextureAtlasLayout::{
+    width: if width <= 0 {
+      1
+    } else {
+      width
+    },
+    height: if height <= 0 {
+      1
+    } else {
+      height
+    },
+    regions: [],
+  }
+}
+
+///|
+pub fn TextureAtlasLayout::add_region(
+  self : TextureAtlasLayout,
+  region : TextureAtlasRegion,
+) -> Int {
+  self.regions.push(region)
+  self.regions.length() - 1
+}
+
+///|
+pub fn TextureAtlasLayout::region(
+  self : TextureAtlasLayout,
+  index : Int,
+) -> TextureAtlasRegion? {
+  if index < 0 || index >= self.regions.length() {
+    None
+  } else {
+    Some(self.regions[index])
+  }
+}

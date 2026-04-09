@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/hdr_texture_loader.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub fn image_is_hdr_extension(extension : String) -> Bool {
+  extension == "hdr"
+}
+
+///|
+pub fn hdr_default_texture_format() -> TextureFormat {
+  TextureFormat::Rgba16Float
+}

@@ -12,5 +12,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/texture_atlas_builder.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub struct TextureAtlasBuilder {
+  atlas_width : Int
+  atlas_height : Int
+  padding : Int
+}
+
+///|
+pub fn TextureAtlasBuilder::new(
+  atlas_width : Int,
+  atlas_height : Int,
+) -> TextureAtlasBuilder {
+  TextureAtlasBuilder::{
+    atlas_width: if atlas_width <= 0 {
+      1
+    } else {
+      atlas_width
+    },
+    atlas_height: if atlas_height <= 0 {
+      1
+    } else {
+      atlas_height
+    },
+    padding: 0,
+  }
+}
+
+///|
+pub fn TextureAtlasBuilder::with_padding(
+  self : TextureAtlasBuilder,
+  padding : Int,
+) -> TextureAtlasBuilder {
+  TextureAtlasBuilder::{
+    ..self,
+    padding: if padding < 0 {
+      0
+    } else {
+      padding
+    },
+  }
+}
+
+///|
+pub fn TextureAtlasBuilder::build_grid(
+  self : TextureAtlasBuilder,
+  cell_width : Int,
+  cell_height : Int,
+) -> TextureAtlasLayout {
+  let layout = TextureAtlasLayout::new(self.atlas_width, self.atlas_height)
+  if cell_width <= 0 || cell_height <= 0 {
+    return layout
+  }
+  let stride_x = cell_width + self.padding
+  let stride_y = cell_height + self.padding
+  if stride_x <= 0 || stride_y <= 0 {
+    return layout
+  }
+  let mut y = 0
+  while y + cell_height <= self.atlas_height {
+    let mut x = 0
+    while x + cell_width <= self.atlas_width {
+      ignore(
+        layout.add_region(TextureAtlasRegion::{
+          x,
+          y,
+          width: cell_width,
+          height: cell_height,
+        }),
+      )
+      x = x + stride_x
+    }
+    y = y + stride_y
+  }
+  layout
+}

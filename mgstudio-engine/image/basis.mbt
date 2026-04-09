@@ -12,5 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/basis.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub(all) enum BasisContainer {
+  Basis
+  Ktx2Basis
+} derive(Eq)
+
+///|
+pub fn image_is_basis_extension(extension : String) -> Bool {
+  extension == "basis"
+}
+
+///|
+pub fn basis_requires_transcode(container : BasisContainer) -> Bool {
+  match container {
+    Basis => true
+    Ktx2Basis => false
+  }
+}

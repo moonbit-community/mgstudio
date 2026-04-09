@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/ktx2.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub fn image_is_ktx2_extension(extension : String) -> Bool {
+  extension == "ktx2"
+}
+
+///|
+pub fn ktx2_default_texture_format() -> TextureFormat {
+  TextureFormat::Rgba8Unorm
+}

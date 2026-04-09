@@ -12,5 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/image_texture_conversion.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub fn image_to_target_texture(image : Image) -> Image {
+  Image::new_target_texture(
+    image.width,
+    image.height,
+    image.format,
+    image.view_format,
+  )
+}
+
+///|
+pub fn image_with_srgb_view(image : Image) -> Image {
+  let view_format = match image.format {
+    TextureFormat::Rgba8Unorm => Some(TextureFormat::Rgba8UnormSrgb)
+    TextureFormat::Rgba8UnormSrgb => Some(TextureFormat::Rgba8UnormSrgb)
+    _ => image.view_format
+  }
+  Image::{
+    width: image.width,
+    height: image.height,
+    pixels: image.pixels,
+    format: image.format,
+    view_format,
+    kind: image.kind,
+  }
+}

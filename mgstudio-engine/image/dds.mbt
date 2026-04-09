@@ -12,5 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/dds.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub(all) enum DdsCompression {
+  Bc1
+  Bc2
+  Bc3
+  Bc4
+  Bc5
+  Bc6h
+  Bc7
+  Unknown
+} derive(Eq)
+
+///|
+pub fn image_is_dds_extension(extension : String) -> Bool {
+  extension == "dds"
+}
+
+///|
+pub fn dds_default_texture_format() -> TextureFormat {
+  TextureFormat::Rgba8Unorm
+}

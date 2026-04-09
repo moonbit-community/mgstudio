@@ -12,5 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_image/src/serialized_image.rs`.
-// Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
+
+///|
+pub struct SerializedImage {
+  width : Int
+  height : Int
+  pixels : Bytes
+  format : TextureFormat
+}
+
+///|
+pub fn SerializedImage::from_image(image : Image) -> SerializedImage {
+  SerializedImage::{
+    width: image.width,
+    height: image.height,
+    pixels: image.pixels,
+    format: image.format,
+  }
+}
+
+///|
+pub fn SerializedImage::into_image(self : SerializedImage) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: None,
+    kind: ImageKind::Data,
+  }
+}
