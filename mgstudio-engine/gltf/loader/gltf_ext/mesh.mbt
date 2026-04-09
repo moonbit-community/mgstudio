@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/mesh.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _gltf_loader_gltf_ext_mesh_pending() -> Unit {
-
-}

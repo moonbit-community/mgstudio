@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/log.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _asset_processor_log_pending() -> Unit {
-
-}

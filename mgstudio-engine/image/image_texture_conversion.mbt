@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
 // Bevy source: `bevy/crates/bevy_image/src/image_texture_conversion.rs`.
 // Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _image_texture_conversion_bridge_pending() -> Unit {
-
-}

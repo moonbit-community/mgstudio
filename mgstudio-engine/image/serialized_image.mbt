@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
 // Bevy source: `bevy/crates/bevy_image/src/serialized_image.rs`.
 // Source-shape scaffold; runtime split will move from `image.mbt` in a follow-up wave.
-fn _serialized_image_bridge_pending() -> Unit {
-
-}
