@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/color_plane.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Pending bridge stub; no safe root symbol yet.
 fn _feathers_controls_color_plane_scaffold_owner() -> Unit {
 
 }

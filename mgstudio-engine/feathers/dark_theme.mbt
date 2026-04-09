@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/dark_theme.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Pending bridge stub; no safe root symbol yet.
 fn _feathers_dark_theme_scaffold_owner() -> Unit {
 
 }
