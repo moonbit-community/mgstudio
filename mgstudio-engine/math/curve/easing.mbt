@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/easing.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_easing_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
-}
+///|
+pub type JumpAt = @math.JumpAt
+
+///|
+pub type EaseFunction = @math.EaseFunction

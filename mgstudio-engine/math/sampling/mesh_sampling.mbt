@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/sampling/mesh_sampling.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_sampling_mesh_sampling_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
-}
+///|
+pub type UniformMeshSampler = @math.UniformMeshSampler
+
+///|
+pub type UniformMeshSamplerError = @math.UniformMeshSamplerError

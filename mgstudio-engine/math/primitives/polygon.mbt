@@ -14,7 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/polygon.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_primitives_polygon_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn is_polygon_simple(points : Array[@math.Vec2]) -> Bool {
+  @math.is_polygon_simple(points)
+}
+
+///|
+pub fn polygon_signed_area(points : Array[@math.Vec2]) -> Float {
+  @math.polygon_signed_area(points)
+}
+
+///|
+pub fn polygon_winding_order(points : Array[@math.Vec2]) -> @math.WindingOrder {
+  @math.polygon_winding_order(points)
 }

@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/rects/irect.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_rects_irect_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
-}
+///|
+pub type IRect = @math.IRect
