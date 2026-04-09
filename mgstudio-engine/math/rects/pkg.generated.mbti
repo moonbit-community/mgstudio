@@ -1,7 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math/rects"
 
+import {
+  "Milky2018/mgstudio/math",
+}
+
 // Values
+pub fn irect(@math.IVec2, @math.IVec2) -> @math.IRect
+
+pub fn rect(@math.Vec2, @math.Vec2) -> @math.Rect
+
+pub fn urect(@math.UVec2, @math.UVec2) -> @math.URect
 
 // Errors
 

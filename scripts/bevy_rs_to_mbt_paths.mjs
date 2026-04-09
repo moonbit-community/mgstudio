@@ -15,6 +15,7 @@
 
 import fs from "node:fs"
 import path from "node:path"
+import { excludeReasonForSource } from "./bevy_rs_to_mbt_excludes.mjs"
 
 const REPO_ROOT = process.cwd()
 const args = new Set(process.argv.slice(2))
@@ -34,15 +35,8 @@ const syncMode = args.has("--sync")
 const jsonMode = args.has("--json")
 const strictExamples = args.has("--examples-strict")
 const includeNonGoal = args.has("--include-non-goal")
+const includeExcluded = args.has("--include-excluded")
 const includeTarget = args.has("--include-target")
-
-const NON_GOAL_EXAMPLE_PREFIXES = [
-  "async_tasks/",
-  "ecs/dynamic.rs",
-  "mobile/",
-  "no_std/",
-  "reflection/",
-]
 
 const HEADER = `// Copyright 2025 International Digital Economy Academy
 //
@@ -84,15 +78,15 @@ function rsToMbtSubpath(sub) {
   return `${sub.slice(0, -".rs".length)}.mbt`
 }
 
-function isNonGoalExample(rsSub) {
-  return NON_GOAL_EXAMPLE_PREFIXES.some((prefix) => rsSub.startsWith(prefix))
-}
-
 function buildExampleRecord(exampleSub, source) {
   const mbtSub = rsToMbtSubpath(exampleSub)
   const topTarget = `mgstudio-engine/examples/${mbtSub}`
   const mainTarget = `mgstudio-engine/examples/${exampleSub.slice(0, -".rs".length)}/main.mbt`
-  const excluded = !includeNonGoal && isNonGoalExample(exampleSub)
+  const excludeReason = excludeReasonForSource(source, {
+    includeNonGoal,
+    includeExcluded,
+    exampleSub,
+  })
   const candidates =
     strictExamples || exampleSub === "mod.rs" || exampleSub.endsWith("/mod.rs")
       ? [topTarget]
@@ -101,7 +95,8 @@ function buildExampleRecord(exampleSub, source) {
     source,
     target: candidates[0],
     candidates,
-    excluded,
+    excluded: excludeReason !== null,
+    exclude_reason: excludeReason,
   }
 }
 
@@ -112,11 +107,13 @@ function tryMapCrateSourceRecord(rsSub, source) {
   const srcSub = match[2]
   const mbtSub = rsToMbtSubpath(srcSub)
   const target = `mgstudio-engine/${crate}/${mbtSub}`
+  const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
   return {
     source,
     target,
     candidates: [target],
-    excluded: false,
+    excluded: excludeReason !== null,
+    exclude_reason: excludeReason,
   }
 }
 
@@ -136,11 +133,14 @@ function bevyCrateRecords() {
     for (const rs of rsFiles) {
       const rsSub = rel(rs).slice(`bevy/crates/bevy_${crate}/src/`.length)
       const mbtSub = rsToMbtSubpath(rsSub)
+      const source = rel(rs)
+      const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
       records.push({
-        source: rel(rs),
+        source,
         target: `mgstudio-engine/${crate}/${mbtSub}`,
         candidates: [`mgstudio-engine/${crate}/${mbtSub}`],
-        excluded: false,
+        excluded: excludeReason !== null,
+        exclude_reason: excludeReason,
       })
     }
   }
@@ -171,11 +171,14 @@ function bevyExtraRecords() {
         return null
       }
       const mbtSub = rsToMbtSubpath(rsSub)
+      const source = rel(rs)
+      const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
       return {
-        source: rel(rs),
+        source,
         target: `mgstudio-engine/bevy_workspace/${mbtSub}`,
         candidates: [`mgstudio-engine/bevy_workspace/${mbtSub}`],
-        excluded: false,
+        excluded: excludeReason !== null,
+        exclude_reason: excludeReason,
       }
     })
     .filter((v) => v !== null)
@@ -199,11 +202,13 @@ function bevyFullRecords() {
 
       const mbtSub = rsToMbtSubpath(rsSub)
       const target = `mgstudio-engine/bevy_workspace/${mbtSub}`
+      const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
       return {
         source,
         target,
         candidates: [target],
-        excluded: false,
+        excluded: excludeReason !== null,
+        exclude_reason: excludeReason,
       }
     })
     .filter((v) => v !== null)
@@ -247,6 +252,12 @@ const records =
         ? bevyFullRecords()
         : bevyCrateRecords()
 const effective = records.filter((r) => !r.excluded)
+const excludedByReason = new Map()
+for (const record of records) {
+  if (!record.excluded || record.exclude_reason === null) continue
+  const prev = excludedByReason.get(record.exclude_reason) ?? 0
+  excludedByReason.set(record.exclude_reason, prev + 1)
+}
 const targetToSources = new Map()
 for (const record of effective) {
   const sources = targetToSources.get(record.target) ?? []
@@ -281,7 +292,11 @@ const payload = {
   excluded_rs: records.length - effective.length,
   strict_examples: strictExamples,
   include_non_goal: includeNonGoal,
+  include_excluded: includeExcluded,
   include_target: includeTarget,
+  excluded_by_reason: Object.fromEntries(
+    Array.from(excludedByReason.entries()).sort((a, b) => a[0].localeCompare(b[0])),
+  ),
   collision_count: collisions.length,
   mod_rule_violation_count: modRuleViolations.length,
   missing: missing.length,

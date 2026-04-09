@@ -19,17 +19,26 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
 INCLUDE_TARGET="${INCLUDE_TARGET:-0}"
+INCLUDE_NON_GOAL="${INCLUDE_NON_GOAL:-0}"
+INCLUDE_EXCLUDED="${INCLUDE_EXCLUDED:-0}"
 
 ARGS=(
   --scope=all
   --examples-strict
-  --include-non-goal
   --sync
   --json
 )
 
 if [[ "$INCLUDE_TARGET" == "1" ]]; then
   ARGS+=(--include-target)
+fi
+
+if [[ "$INCLUDE_NON_GOAL" == "1" ]]; then
+  ARGS+=(--include-non-goal)
+fi
+
+if [[ "$INCLUDE_EXCLUDED" == "1" ]]; then
+  ARGS+=(--include-excluded)
 fi
 
 node scripts/bevy_rs_to_mbt_paths.mjs "${ARGS[@]}"

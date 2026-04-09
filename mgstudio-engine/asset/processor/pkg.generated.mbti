@@ -1,13 +1,25 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/asset/processor"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub fn[T] init_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+
+pub fn[T] register_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+
+pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @asset {type LoadTransformAndSave}
 
 // Traits
 

@@ -13,8 +13,31 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_asset/src/processor/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _asset_processor_top_scaffold_owner() -> Unit {
+pub using @asset {type LoadTransformAndSave}
 
+///|
+// Bridge surface to the root `asset` package implementation.
+pub fn[T] init_asset_processor(
+  app : @app.App[@ecs.World],
+  processor : @asset.LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  @asset.init_asset_processor(app, processor)
+}
+
+///|
+// Bridge surface to the root `asset` package implementation.
+pub fn[T] register_asset_processor(
+  app : @app.App[@ecs.World],
+  processor : @asset.LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  @asset.register_asset_processor(app, processor)
+}
+
+///|
+// Bridge surface to the root `asset` package implementation.
+pub fn set_default_asset_processor(
+  app : @app.App[@ecs.World],
+  name : String,
+) -> @app.App[@ecs.World] {
+  @asset.set_default_asset_processor(app, name)
 }

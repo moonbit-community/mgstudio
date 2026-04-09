@@ -1,7 +1,18 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math/bounding"
 
+import {
+  "Milky2018/mgstudio/math",
+}
+
 // Values
+pub fn[T : @math.Bounded2d] aabb_2d_of(T, @math.Isometry2d) -> @math.Aabb2d
+
+pub fn[T : @math.Bounded3d] aabb_3d_of(T, @math.Isometry3d) -> @math.Aabb3d
+
+pub fn[T : @math.Bounded2d] bounding_circle_of(T, @math.Isometry2d) -> @math.BoundingCircle
+
+pub fn[T : @math.Bounded3d] bounding_sphere_of(T, @math.Isometry3d) -> @math.BoundingSphere
 
 // Errors
 

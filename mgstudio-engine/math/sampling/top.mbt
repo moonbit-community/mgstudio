@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/sampling/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_sampling_top_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type SamplingDistribution[T] = @math.SamplingDistribution[T]
+
+///|
+pub fn[T] sample_points(
+  distribution : SamplingDistribution[T],
+  rng : @random.Rand,
+  count : Int,
+) -> Array[T] {
+  @math.sample_points(distribution, rng, count)
 }

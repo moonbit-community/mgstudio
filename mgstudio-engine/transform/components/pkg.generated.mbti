@@ -1,13 +1,26 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/transform/components"
 
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/transform",
+}
+
 // Values
+pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[@transform.StaticTransformOptimizations]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @transform {type Affine2}
+
+pub using @transform {type GlobalTransform}
+
+pub using @transform {type StaticTransformOptimizations}
+
+pub using @transform {type TransformTreeChanged}
 
 // Traits
 

@@ -1,13 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math/sampling"
 
+import {
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/random",
+}
+
 // Values
+pub fn[T] sample_points(@math.SamplingDistribution[T], @random.Rand, Int) -> Array[T]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @math {type SamplingDistribution}
 
 // Traits
 

@@ -13,4 +13,24 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/components/mod.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/components/mod.rs`.
+// Bridge surface to current `Milky2018/mgstudio/transform` runtime owner.
+
+///|
+pub type Affine2 = @transform.Affine2
+
+///|
+pub type GlobalTransform = @transform.GlobalTransform
+
+///|
+pub type TransformTreeChanged = @transform.TransformTreeChanged
+
+///|
+pub type StaticTransformOptimizations = @transform.StaticTransformOptimizations
+
+///|
+pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[
+  StaticTransformOptimizations,
+] {
+  @transform.static_transform_optimizations_resource_key()
+}

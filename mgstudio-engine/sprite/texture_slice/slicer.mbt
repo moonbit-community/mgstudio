@@ -13,8 +13,5 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_sprite/src/texture_slice/slicer.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_texture_slice_slicer_scaffold_owner() -> Unit {
-
-}
+// Bridge surface is provided by `top.mbt` in this package.
+// This file remains a Bevy shape anchor only.

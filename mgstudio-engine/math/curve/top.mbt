@@ -68,6 +68,9 @@ pub type EvenCore[T] = @math.EvenCore[T]
 pub type UnevenCore[T] = @math.UnevenCore[T]
 
 ///|
-pub fn interval(start : Float, end_ : Float) -> Interval raise InvalidIntervalError {
+pub fn interval(
+  start : Float,
+  end_ : Float,
+) -> Interval raise InvalidIntervalError {
   @math.interval(start, end_)
 }

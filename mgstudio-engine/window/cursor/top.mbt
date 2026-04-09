@@ -13,4 +13,20 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_window/src/cursor/mod.rs`).
+// Bevy source: `bevy/crates/bevy_window/src/cursor/mod.rs`.
+// Bridge surface to current `Milky2018/mgstudio/window` runtime owner.
+
+///|
+pub type CursorGrabMode = @window.CursorGrabMode
+
+///|
+pub type CursorIcon = @window.CursorIcon
+
+///|
+pub type CursorOptions = @window.CursorOptions
+
+///|
+pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @window.ecs_key_cursor_options
+
+///|
+pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @window.ecs_key_cursor_icon

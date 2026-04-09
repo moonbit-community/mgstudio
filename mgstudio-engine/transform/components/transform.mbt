@@ -13,4 +13,5 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/components/transform.rs`).
+// Bridge surface is provided by `top.mbt` in this package.
+// This file remains a Bevy shape anchor only.

@@ -1,13 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/sprite/texture_slice"
 
+import {
+  "Milky2018/mgstudio/sprite",
+}
+
 // Values
+pub fn texture_slice_tiled(@sprite.TextureSlice, Float, (Bool, Bool)) -> Array[@sprite.TextureSlice]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @sprite {type TextureSlice}
 
 // Traits
 

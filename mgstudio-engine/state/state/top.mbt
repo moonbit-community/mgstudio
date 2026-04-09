@@ -14,7 +14,95 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _state_state_top_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/state` runtime owner.
 
+///|
+pub type State[S] = @state_root.State[S]
+
+///|
+pub type NextState[S] = @state_root.NextState[S]
+
+///|
+pub type StateTransitionEvent[S] = @state_root.StateTransitionEvent[S]
+
+///|
+pub type StateTransitionSystems = @state_root.StateTransitionSystems
+
+///|
+pub type OnEnter[S] = @state_root.OnEnter[S]
+
+///|
+pub type OnExit[S] = @state_root.OnExit[S]
+
+///|
+pub type OnTransition[S] = @state_root.OnTransition[S]
+
+///|
+pub type OnReenter[S] = @state_root.OnReenter[S]
+
+///|
+pub type OnReexit[S] = @state_root.OnReexit[S]
+
+///|
+pub type DespawnOnExit = @state_root.DespawnOnExit
+
+///|
+pub type DespawnOnEnter = @state_root.DespawnOnEnter
+
+///|
+pub type OptionalStateSource[S] = @state_root.OptionalStateSource[S]
+
+///|
+pub type StatesPlugin = @state_root.StatesPlugin
+
+///|
+pub fn states_plugin(plugin : StatesPlugin) -> @app.Plugin[@ecs.World] {
+  @state_root.states_plugin(plugin)
+}
+
+///|
+pub fn[S : @app.States] insert_state_app(
+  app : @app.App[@ecs.World],
+  state : S,
+) -> @app.App[@ecs.World] {
+  @state_root.insert_state_app(app, state)
+}
+
+///|
+pub fn[S : @app.States] in_state(state : S) -> (@ecs.World) -> Bool {
+  @state_root.in_state(state)
+}
+
+///|
+pub fn[S] optional_state(state : S) -> @state_root.OptionalStateSource[S] {
+  @state_root.optional_state(state)
+}
+
+///|
+pub fn[S : @app.States] state_changed(state : S) -> (@ecs.World) -> Bool {
+  @state_root.state_changed(state)
+}
+
+///|
+pub fn[S : @app.States] state_exists(state : S) -> (@ecs.World) -> Bool {
+  @state_root.state_exists(state)
+}
+
+///|
+pub fn[S : @app.States] state_resource_key(
+  state : S,
+) -> @ecs.ResourceKey[State[S]] {
+  @state_root.state_resource_key(state)
+}
+
+///|
+pub fn[S : @app.States] state_transition_event_resource_key(
+  state : S,
+) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
+  @state_root.state_transition_event_resource_key(state)
+}
+
+///|
+pub fn[S : @app.States] state_set_dependency_depth(state : S) -> Int {
+  @state_root.state_set_dependency_depth(state)
 }
