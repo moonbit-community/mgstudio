@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/glyph.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _text_glyph_bridge_pending() -> Unit {
+fn _text_glyph_scaffold_owner() -> Unit {
 
 }

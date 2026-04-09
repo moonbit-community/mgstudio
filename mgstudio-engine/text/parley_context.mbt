@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/parley_context.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _text_parley_context_bridge_pending() -> Unit {
+fn _text_parley_context_scaffold_owner() -> Unit {
 
 }

@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/rounded_box.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_rounded_box_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_rounded_box_bridge_pending() -> Unit {
 
 }

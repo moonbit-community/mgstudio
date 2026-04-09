@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/simplex_stroke_font.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_simplex_stroke_font_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_simplex_stroke_font_bridge_pending() -> Unit {
 
 }

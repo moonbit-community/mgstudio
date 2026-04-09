@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/stroke_text.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_stroke_text_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_stroke_text_bridge_pending() -> Unit {
 
 }

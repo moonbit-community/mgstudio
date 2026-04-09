@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/text.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _text_text_bridge_pending() -> Unit {
+fn _text_text_scaffold_owner() -> Unit {
 
 }

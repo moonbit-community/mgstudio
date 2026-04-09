@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/helpers.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_primitives_helpers_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_primitives_helpers_bridge_pending() -> Unit {
 
 }

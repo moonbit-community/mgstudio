@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/bounds.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _text_bounds_bridge_pending() -> Unit {
+fn _text_bounds_scaffold_owner() -> Unit {
 
 }

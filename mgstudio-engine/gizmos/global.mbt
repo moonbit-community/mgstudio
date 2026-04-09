@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/global.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_global_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_global_bridge_pending() -> Unit {
 
 }

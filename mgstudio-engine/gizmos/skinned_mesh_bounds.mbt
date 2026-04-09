@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/skinned_mesh_bounds.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_skinned_mesh_bounds_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_skinned_mesh_bounds_bridge_pending() -> Unit {
 
 }

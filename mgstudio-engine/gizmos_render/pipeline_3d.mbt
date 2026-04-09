@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/pipeline_3d.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_render_pipeline_3d_scaffold_owner() -> Unit {
+// Pending bridge surface; runtime split is pending.
+fn _gizmos_render_pipeline_3d_bridge_pending() -> Unit {
 
 }
