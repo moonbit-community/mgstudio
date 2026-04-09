@@ -14,5 +14,9 @@
 
 ///|
 /// UI-widgets API boundary aligned with Bevy crate responsibilities.
-/// Runtime bridge surface is distributed across the bevy-shaped files in this
-/// package.
+/// Keep the boundary file non-empty by anchoring the root runtime plugin.
+fn ui_widgets_runtime_anchor(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  @ui.ui_plugin(app)
+}

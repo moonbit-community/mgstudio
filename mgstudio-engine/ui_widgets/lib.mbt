@@ -16,5 +16,5 @@
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/lib.rs`.
 // Bridge surface to the root `ui` package implementation.
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  @ui.ui_plugin(app)
 }

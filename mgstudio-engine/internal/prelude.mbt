@@ -20,3 +20,10 @@
 /// MoonBit exports package-level public symbols directly, so the internal
 /// prelude is represented by this file while the actual public items remain
 /// available from the `internal` package namespace.
+fn internal_prelude_runtime_anchor() -> (
+  Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]],
+  Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]],
+  Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]],
+) {
+  (default_plugins(), default_plugins_nearest(), minimal_plugins())
+}
