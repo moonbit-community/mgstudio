@@ -1,4 +1,8 @@
 import {
+  "Milky2018/mgstudio/core_pipeline/core_3d" @core_3d,
+  "Milky2018/mgstudio/core_pipeline/deferred" @deferred,
   "Milky2018/mgstudio/ecs",
-  "moonbitlang/core/json",
+  "Milky2018/mgstudio/core_pipeline/prepass" @prepass,
 }
+
+supported_targets = "native"

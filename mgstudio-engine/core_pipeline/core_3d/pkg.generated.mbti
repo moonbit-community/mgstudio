@@ -2,39 +2,35 @@
 package "Milky2018/mgstudio/core_pipeline/core_3d"
 
 import {
-  "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
 
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[@core_pipeline.DepthPrepass]
-
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
-
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@core_pipeline.MotionVectorPrepass]
-
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_pipeline.Msaa]
-
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[@core_pipeline.NormalPrepass]
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
 
 // Errors
 
 // Types and methods
+pub struct Hdr {
+} derive(ToJson, @json.FromJson)
+pub fn Hdr::default() -> Self
+pub impl @ecs.Component for Hdr
+
+pub(all) enum Msaa {
+  Off
+  Sample2
+  Sample4
+  Sample8
+} derive(Eq, Show, ToJson, @json.FromJson)
+pub fn Msaa::default() -> Self
+pub fn Msaa::from_samples(Int) -> Self
+pub fn Msaa::samples(Self) -> Int
+pub impl @ecs.Component for Msaa
 
 // Type aliases
-pub using @core_pipeline {type DeferredPrepass}
-
-pub using @core_pipeline {type DepthPrepass}
-
-pub using @core_pipeline {type Hdr}
-
-pub using @core_pipeline {type MotionVectorPrepass}
-
-pub using @core_pipeline {type Msaa}
-
-pub using @core_pipeline {type NormalPrepass}
 
 // Traits
 

@@ -2,31 +2,36 @@
 package "Milky2018/mgstudio/core_pipeline/prepass"
 
 import {
-  "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass]
 
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[@core_pipeline.DepthPrepass]
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass]
 
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@core_pipeline.MotionVectorPrepass]
-
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[@core_pipeline.NormalPrepass]
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass]
 
 // Errors
 
 // Types and methods
+pub struct DepthPrepass {
+} derive(ToJson, @json.FromJson)
+pub fn DepthPrepass::default() -> Self
+pub impl @ecs.Component for DepthPrepass
+
+pub struct MotionVectorPrepass {
+} derive(ToJson, @json.FromJson)
+pub fn MotionVectorPrepass::default() -> Self
+pub impl @ecs.Component for MotionVectorPrepass
+
+pub struct NormalPrepass {
+} derive(ToJson, @json.FromJson)
+pub fn NormalPrepass::default() -> Self
+pub impl @ecs.Component for NormalPrepass
 
 // Type aliases
-pub using @core_pipeline {type DeferredPrepass}
-
-pub using @core_pipeline {type DepthPrepass}
-
-pub using @core_pipeline {type MotionVectorPrepass}
-
-pub using @core_pipeline {type NormalPrepass}
 
 // Traits
 

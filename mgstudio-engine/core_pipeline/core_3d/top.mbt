@@ -14,40 +14,66 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`.
-// Bridge surface to the stable root `Milky2018/mgstudio/core_pipeline` API.
+pub(all) enum Msaa {
+  Off
+  Sample2
+  Sample4
+  Sample8
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
-pub using @core_pipeline {type DeferredPrepass}
+pub fn Msaa::default() -> Msaa {
+  Msaa::Sample4
+}
 
 ///|
-pub using @core_pipeline {type DepthPrepass}
+pub fn Msaa::samples(self : Msaa) -> Int {
+  match self {
+    Off => 1
+    Sample2 => 2
+    Sample4 => 4
+    Sample8 => 8
+  }
+}
 
 ///|
-pub using @core_pipeline {type Hdr}
+pub fn Msaa::from_samples(samples : Int) -> Msaa {
+  if samples <= 1 {
+    Msaa::Off
+  } else if samples <= 2 {
+    Msaa::Sample2
+  } else if samples <= 4 {
+    Msaa::Sample4
+  } else {
+    Msaa::Sample8
+  }
+}
 
 ///|
-pub using @core_pipeline {type MotionVectorPrepass}
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`.
+pub struct Hdr {} derive(ToJson, FromJson)
 
 ///|
-pub using @core_pipeline {type Msaa}
+pub fn Hdr::default() -> Hdr {
+  Hdr::{  }
+}
 
 ///|
-pub using @core_pipeline {type NormalPrepass}
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @ecs.register_component(
+  debug_name="render3d.hdr",
+)
 
 ///|
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
+  debug_name="render3d.msaa",
+)
 
 ///|
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
+pub impl @ecs.Component for Hdr with component() {
+  ecs_key_hdr
+}
 
 ///|
-pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
-
-///|
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
-
-///|
-pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
-
-///|
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @core_pipeline.ecs_key_normal_prepass
+pub impl @ecs.Component for Msaa with component() {
+  ecs_key_msaa
+}

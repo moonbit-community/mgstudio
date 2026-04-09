@@ -14,10 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/mod.rs`.
-// Bridge surface to the stable root `Milky2018/mgstudio/core_pipeline` API.
+pub struct DeferredPrepass {} derive(ToJson, FromJson)
 
 ///|
-pub using @core_pipeline {type DeferredPrepass}
+pub fn DeferredPrepass::default() -> DeferredPrepass {
+  DeferredPrepass::{  }
+}
 
 ///|
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @ecs.register_component(
+  debug_name="render3d.deferred_prepass",
+)
+
+///|
+pub impl @ecs.Component for DeferredPrepass with component() {
+  ecs_key_deferred_prepass
+}

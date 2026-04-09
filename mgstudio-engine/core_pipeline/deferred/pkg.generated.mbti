@@ -2,19 +2,22 @@
 package "Milky2018/mgstudio/core_pipeline/deferred"
 
 import {
-  "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass]
 
 // Errors
 
 // Types and methods
+pub struct DeferredPrepass {
+} derive(ToJson, @json.FromJson)
+pub fn DeferredPrepass::default() -> Self
+pub impl @ecs.Component for DeferredPrepass
 
 // Type aliases
-pub using @core_pipeline {type DeferredPrepass}
 
 // Traits
 
