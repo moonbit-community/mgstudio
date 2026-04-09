@@ -57,6 +57,7 @@ function walk(dir, out = []) {
   if (!fs.existsSync(dir)) return out
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     if (ent.name.startsWith(".")) continue
+    if (ent.isDirectory() && ent.name === "_build") continue
     const p = path.join(dir, ent.name)
     if (ent.isDirectory()) walk(p, out)
     else out.push(p)
