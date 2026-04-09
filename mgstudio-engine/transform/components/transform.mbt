@@ -16,19 +16,16 @@
 // Bevy source-shape anchor (`bevy_transform/src/components/transform.rs`).
 
 ///|
-pub fn Transform::transform_point(
-  self : Transform,
+pub fn transform_component_transform_point(
+  value : @transform.Transform,
   point : @math.Vec3,
 ) -> @math.Vec3 {
-  let scaled = @math.Vec3::new(
-    point.x * self.scale.x,
-    point.y * self.scale.y,
-    point.z * self.scale.z,
-  )
-  transform_rotate_vec3(self.rotation, scaled).add(self.translation)
+  value.transform_point(point)
 }
 
 ///|
-pub fn Transform::compute_global_transform(self : Transform) -> GlobalTransform {
-  GlobalTransform::from_transform(self)
+pub fn transform_component_compute_global_transform(
+  value : @transform.Transform,
+) -> @transform.GlobalTransform {
+  @transform.GlobalTransform::from_transform(value)
 }

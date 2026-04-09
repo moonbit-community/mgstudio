@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/lib.rs`.
-//
-// Pending bridge surface:
-// keep this package root as an explicit boundary marker until a package-level
-// bridge is needed.
+
+///|
+pub fn material_package_bevy_source() -> String {
+  "bevy/crates/bevy_material/src/lib.rs"
+}
+
+///|
+pub fn standard_material_default() -> StandardMaterial {
+  StandardMaterial::default()
+}
+
+///|
+pub fn standard_material_from_color(color : @sprite.Color) -> StandardMaterial {
+  StandardMaterial::from_color(color)
+}

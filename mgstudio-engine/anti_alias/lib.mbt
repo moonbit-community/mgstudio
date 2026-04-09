@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/lib.rs`.
-//
-// Pending bridge surface:
-// keep this package root as an explicit boundary marker until a package-level
-// bridge is needed.
+
+///|
+pub fn anti_alias_package_bevy_source() -> String {
+  "bevy/crates/bevy_anti_alias/src/lib.rs"
+}
+
+///|
+pub fn anti_alias_default_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  anti_alias_plugin(app)
+}
+
+///|
+pub fn anti_alias_default() -> AntiAliasPlugin {
+  AntiAliasPlugin::default()
+}

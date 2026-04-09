@@ -39,26 +39,3 @@ pub fn RelativeCursorPosition::cursor_over(
     None => false
   }
 }
-
-///|
-pub(all) enum Interaction {
-  None
-  Hovered
-  Pressed
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub struct ButtonColors {
-  normal : @sprite.Color
-  hovered : @sprite.Color
-  pressed : @sprite.Color
-} derive(ToJson, FromJson)
-
-///|
-pub fn ButtonColors::new(
-  normal : @sprite.Color,
-  hovered : @sprite.Color,
-  pressed : @sprite.Color,
-) -> ButtonColors {
-  ButtonColors::{ normal, hovered, pressed }
-}

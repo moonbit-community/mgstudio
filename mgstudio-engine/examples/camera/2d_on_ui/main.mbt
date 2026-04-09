@@ -13,21 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
-struct OverlaySprite {}
-
-///|
-let overlay_sprite_key : @ecs.ComponentKey[OverlaySprite] = @ecs.register_component(
-  debug_name="examples.camera.2d_on_ui.OverlaySprite",
-)
-
-///|
-pub impl @ecs.Component for OverlaySprite with component() {
-  overlay_sprite_key
-}
-
-///|
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
@@ -78,37 +63,36 @@ fn setup(
     ),
   )
 
-  let overlay_sprite = commands.spawn(
-    @sprite.SpriteBundle::new_with_layers(
-      @sprite.Sprite::from_image(
-        asset_server.get().load("textures/rpg/chars/sensei/sensei.png"),
-      ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
-      @transform.Transform::identity(),
-      @sprite.RenderLayers::layer(1),
+  ignore(
+    commands.spawn(
+      @sprite.SpriteBundle::new_with_layers(
+        @sprite.Sprite::from_image(
+          asset_server.get().load("textures/rpg/chars/sensei/sensei.png"),
+        ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
+        @transform.Transform::identity(),
+        @sprite.RenderLayers::layer(1),
+      ),
     ),
   )
-  commands.entity(overlay_sprite).insert_component(OverlaySprite::{  })
 }
 
 ///|
 fn rotate_sprite(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[OverlaySprite]),
-    @ecs.All,
+  sprite : @app.Single[
+    @ecs.Mut[@transform.Transform],
+    @ecs.With[@sprite.Sprite],
   ],
 ) -> Unit {
   let delta_seconds = time.get().delta_seconds()
   let rotation = @math.Quat::from_rotation_z(delta_seconds * 0.5F).mul(
     @math.Quat::from_rotation_y(delta_seconds),
   )
-  try! query.for_each(fn(_entity, data) {
-    let (transform, _overlay_sprite) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = rotation
-      .mul(transform_ref.val.rotation)
-      .normalize()
-  })
+  let transform = sprite.get()
+  let transform_ref = transform.get_ref()
+  transform_ref.val.rotation = rotation
+    .mul(transform_ref.val.rotation)
+    .normalize()
 }
 
 ///|

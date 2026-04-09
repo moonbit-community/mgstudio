@@ -36,7 +36,7 @@ fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
 
 ///|
 fn ui_is_ghost_node(world : @ecs.World, entity : @core.Entity) -> Bool {
-  try! world.contains_by_key(entity, @ui.ecs_key_ghost_node)
+  try! world.contains_by_key(entity, ecs_key_ghost_node)
 }
 
 ///|
@@ -99,7 +99,7 @@ fn ui_collect_effective_children(
 fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
   let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   let roots : Array[@core.Entity] = []
-  world.for_each_component(@ui.ecs_key_node, fn(entity, _node) {
+  world.for_each_component(ecs_key_node, fn(entity, _node) {
     if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
       return
     }
@@ -110,7 +110,7 @@ fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
     visited.set(key, true)
     roots.push(entity)
   })
-  world.for_each_component(@ui.ecs_key_ui_root, fn(entity, _marker) {
+  world.for_each_component(ecs_key_ui_root, fn(entity, _marker) {
     let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
@@ -118,7 +118,7 @@ fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
     visited.set(key, true)
     roots.push(entity)
   })
-  world.for_each_component(@ui.ecs_key_ghost_node, fn(entity, _ghost) {
+  world.for_each_component(ecs_key_ghost_node, fn(entity, _ghost) {
     if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
       return
     }

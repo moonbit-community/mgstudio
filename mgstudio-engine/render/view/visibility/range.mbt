@@ -22,18 +22,18 @@ pub fn visibility_range_new(
   end_margin_min : Float,
   end_margin_max : Float,
   use_aabb : Bool,
-) -> @visibility.VisibilityRange {
-  @visibility.VisibilityRange::new(
+) -> @root_visibility.VisibilityRange {
+  @root_visibility.VisibilityRange::new(
     start_margin_min, start_margin_max, end_margin_min, end_margin_max, use_aabb,
   )
 }
 
 ///|
-pub fn visibility_range_always_visible() -> @visibility.VisibilityRange {
-  @visibility.VisibilityRange::always_visible()
+pub fn visibility_range_always_visible() -> @root_visibility.VisibilityRange {
+  @root_visibility.VisibilityRange::always_visible()
 }
 
 ///|
-pub fn visibility_range_invisible() -> @visibility.VisibilityRange {
-  @visibility.VisibilityRange::invisible()
+pub fn visibility_range_invisible() -> @root_visibility.VisibilityRange {
+  @root_visibility.VisibilityRange::invisible()
 }

@@ -14,7 +14,22 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_image/src/lib.rs`.
-//
-// Pending bridge surface:
-// keep this package root as an explicit boundary marker until a package-level
-// bridge is needed.
+
+///|
+pub fn image_package_bevy_source() -> String {
+  "bevy/crates/bevy_image/src/lib.rs"
+}
+
+///|
+pub fn image_new_rgba8(width : Int, height : Int, pixels : Bytes) -> Image {
+  Image::new(width, height, pixels).with_format(TextureFormat::Rgba8Unorm)
+}
+
+///|
+pub fn image_new_target_texture(
+  width : Int,
+  height : Int,
+  format? : TextureFormat = TextureFormat::Rgba8Unorm,
+) -> Image {
+  Image::new_target_texture(width, height, format, None)
+}

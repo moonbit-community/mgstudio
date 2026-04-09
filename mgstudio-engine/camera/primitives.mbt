@@ -30,12 +30,12 @@ pub(open) trait MeshAabb {
 }
 
 ///|
-pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
-  let vertex_count = self.vertex_count()
+fn mesh3d_geometry_compute_aabb(geometry : @mesh.Mesh3dGeometry) -> Aabb? {
+  let vertex_count = geometry.vertex_count()
   if vertex_count == 0 {
     return None
   }
-  guard self.vertex_position(0) is Some(first) else { return None }
+  guard geometry.vertex_position(0) is Some(first) else { return None }
   let mut min_x = first.x
   let mut min_y = first.y
   let mut min_z = first.z
@@ -43,7 +43,7 @@ pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
   let mut max_y = first.y
   let mut max_z = first.z
   for index in 1..<vertex_count {
-    guard self.vertex_position(index) is Some(position) else { continue }
+    guard geometry.vertex_position(index) is Some(position) else { continue }
     if position.x < min_x {
       min_x = position.x
     }
@@ -72,9 +72,14 @@ pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
 }
 
 ///|
+pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
+  mesh3d_geometry_compute_aabb(self)
+}
+
+///|
 pub impl MeshAabb for @mesh.Mesh with compute_aabb(self) {
   match self.as_3d_geometry() {
-    Some(geometry) => geometry.compute_aabb()
+    Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
     None => None
   }
 }

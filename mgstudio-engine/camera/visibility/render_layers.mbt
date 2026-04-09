@@ -22,7 +22,7 @@ pub type RenderLayers = @sprite.RenderLayers
 pub type Layer = Int
 
 ///|
-pub let DEFAULT_LAYERS : RenderLayers = @sprite.RenderLayers::default()
+pub let default_layers : RenderLayers = @sprite.RenderLayers::default()
 
 ///|
 pub fn render_layers_default() -> RenderLayers {

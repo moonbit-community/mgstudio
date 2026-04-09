@@ -13,4 +13,19 @@
 // limitations under the License.
 
 ///|
-/// Bevy-aligned audio package root.
+// Bevy source: `bevy/crates/bevy_audio/src/lib.rs`.
+
+///|
+pub fn audio_package_bevy_source() -> String {
+  "bevy/crates/bevy_audio/src/lib.rs"
+}
+
+///|
+pub fn audio_default_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  audio_plugin(app)
+}
+
+///|
+pub fn audio_playback_once() -> PlaybackSettings {
+  PlaybackSettings::once()
+}

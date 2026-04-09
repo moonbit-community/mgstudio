@@ -18,3 +18,23 @@
 
 ///|
 /// Package root for Bevy-aligned internal engine aggregation.
+
+///|
+pub fn internal_package_bevy_source() -> String {
+  "bevy/crates/bevy_internal/src/lib.rs"
+}
+
+///|
+pub fn internal_default_plugins() -> Array[@app.Plugin[@ecs.World]] {
+  default_plugins()
+}
+
+///|
+pub fn internal_minimal_plugins() -> Array[@app.Plugin[@ecs.World]] {
+  minimal_plugins()
+}
+
+///|
+pub fn internal_default_plugins_builder() -> DefaultPlugins {
+  DefaultPlugins::{  }
+}

@@ -18,7 +18,7 @@
 ///|
 pub struct MemoryAssetSource {
   name : String
-  mut blobs : Array[(String, Bytes)]
+  blobs : Array[(String, Bytes)]
 }
 
 ///|
@@ -41,8 +41,12 @@ pub fn MemoryAssetSource::insert(
 }
 
 ///|
-pub fn MemoryAssetSource::read(self : MemoryAssetSource, path : String) -> Bytes? {
-  for (entry_path, entry_bytes) in self.blobs {
+pub fn MemoryAssetSource::read(
+  self : MemoryAssetSource,
+  path : String,
+) -> Bytes? {
+  for entry in self.blobs {
+    let (entry_path, entry_bytes) = entry
     if entry_path == path {
       return Some(entry_bytes)
     }

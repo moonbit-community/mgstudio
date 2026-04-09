@@ -454,6 +454,14 @@ fn register_embedded_asset_bytes(path : String, bytes : Bytes) -> Unit {
 }
 
 ///|
+pub fn register_embedded_asset_virtual_bytes(
+  path : String,
+  bytes : Bytes,
+) -> Unit {
+  register_embedded_asset_bytes(path, bytes)
+}
+
+///|
 fn embedded_asset_bytes(path : String) -> Bytes? {
   embedded_assets_ref.val.get(canonical_virtual_asset_path(path))
 }

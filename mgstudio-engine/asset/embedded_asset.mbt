@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_scene/src/lib.rs`.
-
-///|
-pub fn scene_package_bevy_source() -> String {
-  "bevy/crates/bevy_scene/src/lib.rs"
-}
-
-///|
-pub fn scene_default_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_plugin(app)
-}
-
-///|
-pub fn scene_make_root(scene_handle : @asset.Handle[Scene]) -> SceneRoot {
-  SceneRoot::new(scene_handle)
+// Bevy source: `bevy/crates/bevy_asset/src/io/embedded/mod.rs`.
+pub fn[P : IntoAssetPath] embedded_asset(
+  app : @app.App[@ecs.World],
+  asset_path : P,
+  source_path : String,
+) -> @app.App[@ecs.World] {
+  let virtual_path = asset_format_path(asset_path.into_asset_path())
+  let bytes = @fs.read_file_to_bytes(source_path) catch {
+    _ =>
+      abort(
+        "embedded_asset: failed to read source path `\{source_path}` for `\{virtual_path}`",
+      )
+  }
+  register_embedded_asset_virtual_bytes(virtual_path, bytes)
+  app
 }

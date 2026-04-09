@@ -16,10 +16,10 @@
 
 ///|
 pub struct MeshViewBindings3d {
-  viewport : @render.HostMesh3dViewport?
+  viewport : (Int, Int, Int, Int)?
   clear_enabled : Bool
-  logical_rect : @math.Vec4
-  view_matrix : @math.Mat4
+  logical_rect : (Float, Float, Float, Float)
+  view_matrix : ProjectionMatrix3d
 }
 
 ///|
@@ -27,32 +27,45 @@ pub fn MeshViewBindings3d::default() -> MeshViewBindings3d {
   MeshViewBindings3d::{
     viewport: None,
     clear_enabled: true,
-    logical_rect: @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-    view_matrix: @math.Mat4::identity(),
+    logical_rect: (0.0F, 0.0F, 1.0F, 1.0F),
+    view_matrix: ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+    ),
   }
 }
 
 ///|
 pub fn render3d_mesh_view_bindings(
-  target_info : RenderTargetInfo3d,
+  target_info : RenderTargetComputed3d,
   camera_transform : @transform.Transform,
 ) -> MeshViewBindings3d {
-  let logical_rect = match render3d_camera_viewport_rect_logical(target_info) {
-    Some(value) => value
-    None =>
-      @math.Vec4::new(
-        0.0F,
-        0.0F,
-        target_info.width.to_float(),
-        target_info.height.to_float(),
-      )
-  }
+  let logical_rect = (
+    0.0F,
+    0.0F,
+    Float::from_int(target_info.target_size.x),
+    Float::from_int(target_info.target_size.y),
+  )
+  let viewport = render3d_pass_viewport_for_target(
+    target_info.target_id,
+    target_info.target_id,
+    0,
+    0,
+    target_info.target_size.x,
+    target_info.target_size.y,
+  )
+  let clear_enabled = render3d_pass_clear_enabled_for_target(
+      [],
+      target_info.target_id,
+      true,
+    ) ==
+    1
   MeshViewBindings3d::{
-    viewport: render3d_pass_viewport_for_target(target_info),
-    clear_enabled: render3d_pass_clear_enabled_for_target(target_info),
+    viewport: Some(viewport),
+    clear_enabled,
     logical_rect,
-    view_matrix: render3d_view_from_world_matrix(
-      camera_transform.compute_matrix(),
-    ),
+    view_matrix: render3d_view_from_world_matrix(camera_transform),
   }
 }

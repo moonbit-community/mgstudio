@@ -34,7 +34,7 @@ pub fn render3d_camera_depth_for_mesh(
 
 ///|
 pub fn render3d_build_mesh_view_bindings(
-  target_info : RenderTargetInfo3d,
+  target_info : RenderTargetComputed3d,
   camera_transform : @transform.Transform,
 ) -> MeshViewBindings3d {
   render3d_mesh_view_bindings(target_info, camera_transform)
