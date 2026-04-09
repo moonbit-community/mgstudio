@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/cubic_splines/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_cubic_splines_top_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
-}
+///|
+pub type CubicCurve[P] = @math.CubicCurve[P]
+
+///|
+pub type CubicSegment[P] = @math.CubicSegment[P]
+
+///|
+pub type CubicHermite[P] = @math.CubicHermite[P]
+
+///|
+pub type CubicCardinalSpline[P] = @math.CubicCardinalSpline[P]
+
+///|
+pub type CubicBSpline[P] = @math.CubicBSpline[P]
+
+///|
+pub type LinearSpline[P] = @math.LinearSpline[P]
+
+///|
+pub type Interval = @math.Interval
+
+///|
+pub type InsufficientDataError = @math.InsufficientDataError

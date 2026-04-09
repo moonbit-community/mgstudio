@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math/cubic_splines"
 
+import {
+  "Milky2018/mgstudio/math",
+}
+
 // Values
 
 // Errors
@@ -8,6 +12,21 @@ package "Milky2018/mgstudio/math/cubic_splines"
 // Types and methods
 
 // Type aliases
+pub using @math {type CubicBSpline}
+
+pub using @math {type CubicCardinalSpline}
+
+pub using @math {type CubicCurve}
+
+pub using @math {type CubicHermite}
+
+pub using @math {type CubicSegment}
+
+pub using @math {type InsufficientDataError}
+
+pub using @math {type Interval}
+
+pub using @math {type LinearSpline}
 
 // Traits
 

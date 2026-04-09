@@ -1,13 +1,51 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math/curve"
 
+import {
+  "Milky2018/mgstudio/math",
+}
+
 // Values
+pub fn interval(Float, Float) -> @math.Interval raise @math.InvalidIntervalError
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @math {type ConstantCurve}
+
+pub using @math {type Curve}
+
+pub using @math {type CurveChainError}
+
+pub using @math {type EasingCurve}
+
+pub using @math {type EvenCore}
+
+pub using @math {type EvenCoreError}
+
+pub using @math {type FunctionCurve}
+
+pub using @math {type Interval}
+
+pub using @math {type InvalidIntervalError}
+
+pub using @math {type IterableCurve}
+
+pub using @math {type LinearMapError}
+
+pub using @math {type SampleAutoCurve}
+
+pub using @math {type SampleCurve}
+
+pub using @math {type SpacedPointsError}
+
+pub using @math {type UnevenCore}
+
+pub using @math {type UnevenCoreError}
+
+pub using @math {type UnevenSampleCurve}
 
 // Traits
 

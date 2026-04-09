@@ -14,7 +14,60 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_curve_top_scaffold_owner() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub type Curve[T] = @math.Curve[T]
+
+///|
+pub type ConstantCurve[T] = @math.ConstantCurve[T]
+
+///|
+pub type FunctionCurve[T] = @math.FunctionCurve[T]
+
+///|
+pub type IterableCurve[T] = @math.IterableCurve[T]
+
+///|
+pub type SampleCurve[T] = @math.SampleCurve[T]
+
+///|
+pub type SampleAutoCurve[T] = @math.SampleAutoCurve[T]
+
+///|
+pub type UnevenSampleCurve[T] = @math.UnevenSampleCurve[T]
+
+///|
+pub type EasingCurve[T] = @math.EasingCurve[T]
+
+///|
+pub type Interval = @math.Interval
+
+///|
+pub type CurveChainError = @math.CurveChainError
+
+///|
+pub type LinearMapError = @math.LinearMapError
+
+///|
+pub type SpacedPointsError = @math.SpacedPointsError
+
+///|
+pub type InvalidIntervalError = @math.InvalidIntervalError
+
+///|
+pub type EvenCoreError = @math.EvenCoreError
+
+///|
+pub type UnevenCoreError = @math.UnevenCoreError
+
+///|
+pub type EvenCore[T] = @math.EvenCore[T]
+
+///|
+pub type UnevenCore[T] = @math.UnevenCore[T]
+
+///|
+pub fn interval(start : Float, end_ : Float) -> Interval raise InvalidIntervalError {
+  @math.interval(start, end_)
 }

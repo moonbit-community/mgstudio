@@ -1,13 +1,107 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math/primitives"
 
+import {
+  "Milky2018/mgstudio/math",
+}
+
 // Values
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @math {type Annulus}
+
+pub using @math {type Arc2d}
+
+pub using @math {type Capsule2d}
+
+pub using @math {type Capsule2dRing}
+
+pub using @math {type Capsule3d}
+
+pub using @math {type Circle}
+
+pub using @math {type CircularSector}
+
+pub using @math {type CircularSectorRing}
+
+pub using @math {type CircularSegment}
+
+pub using @math {type CircularSegmentRing}
+
+pub using @math {type Cone}
+
+pub using @math {type ConicalFrustum}
+
+pub using @math {type ConvexPolygon}
+
+pub using @math {type Cuboid}
+
+pub using @math {type Cylinder}
+
+pub using @math {type Ellipse}
+
+pub using @math {type EllipseRing}
+
+pub using @math {type HalfSpace}
+
+pub using @math {type InfinitePlane3d}
+
+pub using @math {type Line2d}
+
+pub using @math {type Line3d}
+
+pub using @math {type Plane2d}
+
+pub using @math {type Plane3d}
+
+pub using @math {type Polygon}
+
+pub using @math {type Polyline2d}
+
+pub using @math {type Polyline3d}
+
+pub using @math {type Rectangle}
+
+pub using @math {type RectangleRing}
+
+pub using @math {type RegularPolygon}
+
+pub using @math {type RegularPolygonRing}
+
+pub using @math {type Rhombus}
+
+pub using @math {type RhombusRing}
+
+pub using @math {type Ring}
+
+pub using @math {type Ring2d}
+
+pub using @math {type Segment2d}
+
+pub using @math {type Segment3d}
+
+pub using @math {type Sphere}
+
+pub using @math {type Tetrahedron}
+
+pub using @math {type Torus}
+
+pub using @math {type Triangle2d}
+
+pub using @math {type Triangle2dRing}
+
+pub using @math {type Triangle3d}
+
+pub using @math {type ViewFrustum}
+
+pub using @math {type WindingOrder}
 
 // Traits
 
