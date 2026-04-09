@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/view/window/mod.rs`.
+//
+// Bridge surface note:
+// the working screenshot API lives in `screenshot.mbt` and forwards to the
+// stable root `Milky2018/mgstudio/render/renderer` surface.
+// Keep this module free of new behavior; add only compatibility shims here.

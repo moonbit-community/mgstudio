@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/diagnostic/mod.rs`.
+//
+// Bridge surface note:
+// the implemented diagnostics helpers already forward through the stable
+// root `Milky2018/mgstudio/render` API. Do not add new render diagnostics
+// behavior here without a matching root-level semantic.

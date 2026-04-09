@@ -14,3 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs`.
+//
+// Pending bridge surface:
+// keep this as a placeholder until the root `Milky2018/mgstudio/render`
+// visibility semantics are available to bridge without inventing behavior.

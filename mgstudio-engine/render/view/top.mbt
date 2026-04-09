@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
+//
+// Pending bridge surface:
+// no stable MoonBit surface exists here yet, so do not invent new view
+// behavior. Add only explicit bridges once the root `render` package exposes
+// the matching semantics.

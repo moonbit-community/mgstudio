@@ -14,3 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/mod.rs`.
+//
+// Pending bridge surface:
+// keep this package aligned with the stable root `Milky2018/mgstudio/render`
+// API shape once the corresponding render resource symbols are ported.
