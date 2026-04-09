@@ -14,3 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/specializer.rs`.
+
+///|
+pub struct Specializer[T] {
+  key : T
+  label : String
+}
+
+///|
+pub fn[T] Specializer::new(key : T, label : String) -> Specializer[T] {
+  Specializer::{ key, label }
+}
+
+///|
+pub fn[T] Specializer::key(self : Specializer[T]) -> T {
+  self.key
+}
+
+///|
+pub fn[T] Specializer::label(self : Specializer[T]) -> String {
+  self.label
+}

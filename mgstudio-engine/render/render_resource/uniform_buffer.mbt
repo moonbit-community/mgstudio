@@ -14,3 +14,40 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/uniform_buffer.rs`.
+
+///|
+pub struct UniformBuffer[T] {
+  mut value : T?
+  mut dirty : Bool
+}
+
+///|
+pub fn[T] UniformBuffer::new() -> UniformBuffer[T] {
+  UniformBuffer::{ value: None, dirty: false }
+}
+
+///|
+pub fn[T] UniformBuffer::with_value(value : T) -> UniformBuffer[T] {
+  UniformBuffer::{ value: Some(value), dirty: true }
+}
+
+///|
+pub fn[T] UniformBuffer::set(self : UniformBuffer[T], value : T) -> Unit {
+  self.value = Some(value)
+  self.dirty = true
+}
+
+///|
+pub fn[T] UniformBuffer::take(self : UniformBuffer[T]) -> T? {
+  self.value
+}
+
+///|
+pub fn[T] UniformBuffer::is_dirty(self : UniformBuffer[T]) -> Bool {
+  self.dirty
+}
+
+///|
+pub fn[T] UniformBuffer::clear_dirty(self : UniformBuffer[T]) -> Unit {
+  self.dirty = false
+}

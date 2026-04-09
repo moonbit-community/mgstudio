@@ -14,3 +14,44 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/storage_buffer.rs`.
+
+///|
+pub struct StorageBuffer[T] {
+  data : BufferVec[T]
+  label : String?
+}
+
+///|
+pub fn[T] StorageBuffer::new() -> StorageBuffer[T] {
+  StorageBuffer::{ data: BufferVec::new(), label: None }
+}
+
+///|
+pub fn[T] StorageBuffer::with_label(label : String) -> StorageBuffer[T] {
+  StorageBuffer::{ data: BufferVec::new(), label: Some(label) }
+}
+
+///|
+pub fn[T] StorageBuffer::push(self : StorageBuffer[T], value : T) -> Unit {
+  self.data.push(value)
+}
+
+///|
+pub fn[T] StorageBuffer::clear(self : StorageBuffer[T]) -> Unit {
+  self.data.clear()
+}
+
+///|
+pub fn[T] StorageBuffer::len(self : StorageBuffer[T]) -> Int {
+  self.data.len()
+}
+
+///|
+pub fn[T] StorageBuffer::label(self : StorageBuffer[T]) -> String? {
+  self.label
+}
+
+///|
+pub fn[T] StorageBuffer::values(self : StorageBuffer[T]) -> Array[T] {
+  self.data.values()
+}

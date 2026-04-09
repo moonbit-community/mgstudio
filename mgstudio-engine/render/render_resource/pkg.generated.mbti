@@ -1,13 +1,293 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/render/render_resource"
 
+import {
+  "Milky2018/wgpu_mbt",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub struct BatchedUniformBuffer[T] {
+  values : Array[T]
+  batch_size : Int
+}
+pub fn[T] BatchedUniformBuffer::batch_size(Self[T]) -> Int
+pub fn[T] BatchedUniformBuffer::clear(Self[T]) -> Unit
+pub fn[T] BatchedUniformBuffer::len(Self[T]) -> Int
+pub fn[T] BatchedUniformBuffer::new(Int) -> Self[T]
+pub fn[T] BatchedUniformBuffer::push(Self[T], T) -> Unit
+pub fn[T] BatchedUniformBuffer::values(Self[T]) -> Array[T]
+
+pub struct BindGroup {
+  id : UInt64
+  value : @wgpu_mbt.BindGroup
+}
+pub fn BindGroup::from_wgpu(@wgpu_mbt.BindGroup) -> Self
+pub fn BindGroup::id(Self) -> UInt64
+pub fn BindGroup::into_inner(Self) -> @wgpu_mbt.BindGroup
+pub fn BindGroup::new(@wgpu_mbt.BindGroup) -> Self
+pub fn BindGroup::same_id(Self, Self) -> Bool
+pub fn BindGroup::set_label(Self, String) -> Unit
+
+pub struct BindGroupDescriptor {
+  entries : Array[BindGroupEntry]
+}
+pub fn BindGroupDescriptor::entries(Self) -> Array[BindGroupEntry]
+pub fn BindGroupDescriptor::new(Array[BindGroupEntry]) -> Self
+
+pub struct BindGroupEntry {
+  binding : Int
+  resource : BindingResource
+}
+pub fn BindGroupEntry::binding(Self) -> Int
+pub fn BindGroupEntry::buffer(Int, UInt64) -> Self
+pub fn BindGroupEntry::resource(Self) -> BindingResource
+pub fn BindGroupEntry::sampler(Int, UInt64) -> Self
+pub fn BindGroupEntry::texture_view(Int, UInt64) -> Self
+
+pub struct BindGroupLayout {
+  id : UInt64
+  value : @wgpu_mbt.BindGroupLayout
+}
+pub fn BindGroupLayout::from_wgpu(@wgpu_mbt.BindGroupLayout) -> Self
+pub fn BindGroupLayout::id(Self) -> UInt64
+pub fn BindGroupLayout::into_inner(Self) -> @wgpu_mbt.BindGroupLayout
+pub fn BindGroupLayout::new(@wgpu_mbt.BindGroupLayout) -> Self
+pub fn BindGroupLayout::set_label(Self, String) -> Unit
+
+pub struct BindGroupLayoutDescriptor {
+  entries : Array[BindGroupLayoutEntry]
+}
+pub fn BindGroupLayoutDescriptor::entries(Self) -> Array[BindGroupLayoutEntry]
+pub fn BindGroupLayoutDescriptor::new(Array[BindGroupLayoutEntry]) -> Self
+
+pub struct BindGroupLayoutEntry {
+  binding : Int
+  visibility : UInt
+  kind : BindingType
+}
+pub fn BindGroupLayoutEntry::binding(Self) -> Int
+pub fn BindGroupLayoutEntry::kind(Self) -> BindingType
+pub fn BindGroupLayoutEntry::new(Int, UInt, BindingType) -> Self
+pub fn BindGroupLayoutEntry::visibility(Self) -> UInt
+
+pub(all) enum BindingResource {
+  Buffer(UInt64)
+  TextureView(UInt64)
+  Sampler(UInt64)
+  Label(String)
+}
+
+pub(all) enum BindingType {
+  Buffer
+  Texture
+  Sampler
+  StorageTexture
+  External
+}
+
+pub struct BindlessDescriptor {
+  max_storage_buffers : Int
+  max_textures : Int
+  max_samplers : Int
+}
+pub fn BindlessDescriptor::new(Int, Int, Int) -> Self
+pub fn BindlessDescriptor::slab_limit(Self) -> BindlessSlabResourceLimit
+
+pub struct BindlessSlabResourceLimit {
+  storage_buffers : Int
+  textures : Int
+  samplers : Int
+}
+pub fn BindlessSlabResourceLimit::new(Int, Int, Int) -> Self
+
+pub struct Buffer {
+  id : UInt64
+  value : @wgpu_mbt.Buffer
+}
+pub fn Buffer::destroy(Self) -> Unit
+pub fn Buffer::from_wgpu(@wgpu_mbt.Buffer) -> Self
+pub fn Buffer::id(Self) -> UInt64
+pub fn Buffer::into_inner(Self) -> @wgpu_mbt.Buffer
+pub fn Buffer::new(@wgpu_mbt.Buffer) -> Self
+pub fn Buffer::slice(Self, UInt64, UInt64) -> BufferSlice
+pub fn Buffer::unmap(Self) -> Unit
+
+pub struct BufferSlice {
+  buffer_id : UInt64
+  start : UInt64
+  end : UInt64
+}
+pub fn BufferSlice::id(Self) -> UInt64
+pub fn BufferSlice::range(Self) -> (UInt64, UInt64)
+
+pub struct BufferVec[T] {
+  values : Array[T]
+  buffer_id : UInt64
+}
+pub fn[T] BufferVec::buffer_id(Self[T]) -> UInt64
+pub fn[T] BufferVec::clear(Self[T]) -> Unit
+pub fn[T] BufferVec::extend(Self[T], Array[T]) -> Unit
+pub fn[T] BufferVec::is_empty(Self[T]) -> Bool
+pub fn[T] BufferVec::len(Self[T]) -> Int
+pub fn[T] BufferVec::new() -> Self[T]
+pub fn[T] BufferVec::push(Self[T], T) -> Unit
+pub fn[T] BufferVec::values(Self[T]) -> Array[T]
+pub fn[T] BufferVec::with_buffer_id(UInt64) -> Self[T]
+
+pub struct ComputePipeline {
+  id : UInt64
+  value : @wgpu_mbt.ComputePipeline
+}
+pub fn ComputePipeline::from_wgpu(@wgpu_mbt.ComputePipeline) -> Self
+pub fn ComputePipeline::get_bind_group_layout(Self, UInt) -> BindGroupLayout
+pub fn ComputePipeline::id(Self) -> UInt64
+pub fn ComputePipeline::into_inner(Self) -> @wgpu_mbt.ComputePipeline
+pub fn ComputePipeline::new(@wgpu_mbt.ComputePipeline) -> Self
+pub fn ComputePipeline::set_label(Self, String) -> Unit
+
+pub struct DefaultImageSampler {
+  sampler : Sampler
+}
+pub fn DefaultImageSampler::new(Sampler) -> Self
+pub fn DefaultImageSampler::sampler(Self) -> Sampler
+
+pub struct GpuArrayBuffer[T] {
+  values : Array[T]
+  buffer_id : UInt64
+}
+pub fn[T] GpuArrayBuffer::buffer_id(Self[T]) -> UInt64
+pub fn[T] GpuArrayBuffer::clear(Self[T]) -> Unit
+pub fn[T] GpuArrayBuffer::len(Self[T]) -> Int
+pub fn[T] GpuArrayBuffer::new() -> Self[T]
+pub fn[T] GpuArrayBuffer::push(Self[T], T) -> Unit
+pub fn[T] GpuArrayBuffer::values(Self[T]) -> Array[T]
+
+pub struct PipelineCache {
+  render_pipelines : Map[String, UInt64]
+  compute_pipelines : Map[String, UInt64]
+}
+pub fn PipelineCache::clear(Self) -> Unit
+pub fn PipelineCache::compute_pipeline(Self, String) -> UInt64?
+pub fn PipelineCache::insert_compute(Self, String, UInt64) -> Unit
+pub fn PipelineCache::insert_render(Self, String, UInt64) -> Unit
+pub fn PipelineCache::new() -> Self
+pub fn PipelineCache::render_pipeline(Self, String) -> UInt64?
+
+pub struct PipelineSpecializer[T] {
+  entries : Array[Specializer[T]]
+}
+pub fn[T] PipelineSpecializer::entries(Self[T]) -> Array[Specializer[T]]
+pub fn[T] PipelineSpecializer::find_label(Self[T], String) -> Specializer[T]?
+pub fn[T] PipelineSpecializer::len(Self[T]) -> Int
+pub fn[T] PipelineSpecializer::new() -> Self[T]
+pub fn[T] PipelineSpecializer::push(Self[T], Specializer[T]) -> Unit
+
+pub struct RenderPipeline {
+  id : UInt64
+  value : @wgpu_mbt.RenderPipeline
+}
+pub fn RenderPipeline::from_wgpu(@wgpu_mbt.RenderPipeline) -> Self
+pub fn RenderPipeline::get_bind_group_layout(Self, UInt) -> BindGroupLayout
+pub fn RenderPipeline::id(Self) -> UInt64
+pub fn RenderPipeline::into_inner(Self) -> @wgpu_mbt.RenderPipeline
+pub fn RenderPipeline::new(@wgpu_mbt.RenderPipeline) -> Self
+pub fn RenderPipeline::set_label(Self, String) -> Unit
+
+pub struct Sampler {
+  id : UInt64
+  value : @wgpu_mbt.Sampler
+}
+pub fn Sampler::from_wgpu(@wgpu_mbt.Sampler) -> Self
+pub fn Sampler::id(Self) -> UInt64
+pub fn Sampler::into_inner(Self) -> @wgpu_mbt.Sampler
+pub fn Sampler::new(@wgpu_mbt.Sampler) -> Self
+pub fn Sampler::set_label(Self, String) -> Unit
+
+pub(all) enum SamplerBindingType {
+  Filtering
+  NonFiltering
+  Comparison
+}
+
+pub struct Specializer[T] {
+  key : T
+  label : String
+}
+pub fn[T] Specializer::key(Self[T]) -> T
+pub fn[T] Specializer::label(Self[T]) -> String
+pub fn[T] Specializer::new(T, String) -> Self[T]
+
+pub struct StorageBuffer[T] {
+  data : BufferVec[T]
+  label : String?
+}
+pub fn[T] StorageBuffer::clear(Self[T]) -> Unit
+pub fn[T] StorageBuffer::label(Self[T]) -> String?
+pub fn[T] StorageBuffer::len(Self[T]) -> Int
+pub fn[T] StorageBuffer::new() -> Self[T]
+pub fn[T] StorageBuffer::push(Self[T], T) -> Unit
+pub fn[T] StorageBuffer::values(Self[T]) -> Array[T]
+pub fn[T] StorageBuffer::with_label(String) -> Self[T]
+
+pub struct SurfaceTexture {
+  value : @wgpu_mbt.SurfaceTexture
+}
+pub fn SurfaceTexture::from_wgpu(@wgpu_mbt.SurfaceTexture) -> Self
+pub fn SurfaceTexture::present(Self) -> Unit
+pub fn SurfaceTexture::take_texture(Self) -> Texture
+
+pub struct Texture {
+  id : UInt64
+  value : @wgpu_mbt.Texture
+}
+pub fn Texture::create_view(Self) -> TextureView
+pub fn Texture::from_wgpu(@wgpu_mbt.Texture) -> Self
+pub fn Texture::id(Self) -> UInt64
+pub fn Texture::into_inner(Self) -> @wgpu_mbt.Texture
+pub fn Texture::new(@wgpu_mbt.Texture) -> Self
+pub fn Texture::set_label(Self, String) -> Unit
+
+pub struct TextureView {
+  id : UInt64
+  value : @wgpu_mbt.TextureView
+}
+pub fn TextureView::id(Self) -> UInt64
+pub fn TextureView::into_inner(Self) -> @wgpu_mbt.TextureView
+pub fn TextureView::set_label(Self, String) -> Unit
+
+pub struct UniformBuffer[T] {
+  mut value : T?
+  mut dirty : Bool
+}
+pub fn[T] UniformBuffer::clear_dirty(Self[T]) -> Unit
+pub fn[T] UniformBuffer::is_dirty(Self[T]) -> Bool
+pub fn[T] UniformBuffer::new() -> Self[T]
+pub fn[T] UniformBuffer::set(Self[T], T) -> Unit
+pub fn[T] UniformBuffer::take(Self[T]) -> T?
+pub fn[T] UniformBuffer::with_value(T) -> Self[T]
 
 // Type aliases
+pub type BindGroupId = UInt64
+
+pub type BindGroupLayoutId = UInt64
+
+pub type BufferAddress = UInt64
+
+pub type BufferId = UInt64
+
+pub type ComputePipelineId = UInt64
+
+pub type RenderPipelineId = UInt64
+
+pub type SamplerId = UInt64
+
+pub type TextureId = UInt64
+
+pub type TextureViewId = UInt64
 
 // Traits
 

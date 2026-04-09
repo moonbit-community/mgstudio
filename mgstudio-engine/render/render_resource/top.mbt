@@ -15,6 +15,103 @@
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/mod.rs`.
 //
-// Pending bridge surface:
-// keep this package aligned with the stable root `Milky2018/mgstudio/render`
-// API shape once the corresponding render resource symbols are ported.
+// The package now owns lightweight Bevy-shaped wrappers around the GPU
+// resource primitives used by the render stack.
+
+///|
+pub type BufferId = UInt64
+
+///|
+pub type TextureId = UInt64
+
+///|
+pub type TextureViewId = UInt64
+
+///|
+pub type SamplerId = UInt64
+
+///|
+pub type BindGroupId = UInt64
+
+///|
+pub type BindGroupLayoutId = UInt64
+
+///|
+pub type RenderPipelineId = UInt64
+
+///|
+pub type ComputePipelineId = UInt64
+
+///|
+pub type BufferAddress = UInt64
+
+///|
+let buffer_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let texture_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let texture_view_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let sampler_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let bind_group_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let bind_group_layout_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let render_pipeline_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+let compute_pipeline_id_seed : Ref[UInt64] = Ref::new(0)
+
+///|
+fn next_id(seed : Ref[UInt64]) -> UInt64 {
+  let id = seed.val
+  seed.val = id + 1
+  id
+}
+
+///|
+fn next_buffer_id() -> BufferId {
+  next_id(buffer_id_seed)
+}
+
+///|
+fn next_texture_id() -> TextureId {
+  next_id(texture_id_seed)
+}
+
+///|
+fn next_texture_view_id() -> TextureViewId {
+  next_id(texture_view_id_seed)
+}
+
+///|
+fn next_sampler_id() -> SamplerId {
+  next_id(sampler_id_seed)
+}
+
+///|
+fn next_bind_group_id() -> BindGroupId {
+  next_id(bind_group_id_seed)
+}
+
+///|
+fn next_bind_group_layout_id() -> BindGroupLayoutId {
+  next_id(bind_group_layout_id_seed)
+}
+
+///|
+fn next_render_pipeline_id() -> RenderPipelineId {
+  next_id(render_pipeline_id_seed)
+}
+
+///|
+fn next_compute_pipeline_id() -> ComputePipelineId {
+  next_id(compute_pipeline_id_seed)
+}

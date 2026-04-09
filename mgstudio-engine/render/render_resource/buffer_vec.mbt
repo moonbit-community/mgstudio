@@ -14,3 +14,54 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/buffer_vec.rs`.
+
+///|
+pub struct BufferVec[T] {
+  values : Array[T]
+  buffer_id : BufferId
+}
+
+///|
+pub fn[T] BufferVec::new() -> BufferVec[T] {
+  BufferVec::{ values: [], buffer_id: 0 }
+}
+
+///|
+pub fn[T] BufferVec::with_buffer_id(buffer_id : BufferId) -> BufferVec[T] {
+  BufferVec::{ values: [], buffer_id }
+}
+
+///|
+pub fn[T] BufferVec::buffer_id(self : BufferVec[T]) -> BufferId {
+  self.buffer_id
+}
+
+///|
+pub fn[T] BufferVec::push(self : BufferVec[T], value : T) -> Unit {
+  self.values.push(value)
+}
+
+///|
+pub fn[T] BufferVec::extend(self : BufferVec[T], values : Array[T]) -> Unit {
+  self.values.append(values.view())
+}
+
+///|
+pub fn[T] BufferVec::clear(self : BufferVec[T]) -> Unit {
+  self.values.clear()
+}
+
+///|
+pub fn[T] BufferVec::len(self : BufferVec[T]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[T] BufferVec::is_empty(self : BufferVec[T]) -> Bool {
+  self.values.is_empty()
+}
+
+///|
+pub fn[T] BufferVec::values(self : BufferVec[T]) -> Array[T] {
+  self.values
+}

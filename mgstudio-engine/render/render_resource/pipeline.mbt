@@ -14,3 +14,92 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/pipeline.rs`.
+
+///|
+pub struct RenderPipeline {
+  id : RenderPipelineId
+  value : @wgpu.RenderPipeline
+}
+
+///|
+pub struct ComputePipeline {
+  id : ComputePipelineId
+  value : @wgpu.ComputePipeline
+}
+
+///|
+pub fn RenderPipeline::new(value : @wgpu.RenderPipeline) -> RenderPipeline {
+  RenderPipeline::{ id: next_render_pipeline_id(), value }
+}
+
+///|
+pub fn RenderPipeline::from_wgpu(
+  value : @wgpu.RenderPipeline,
+) -> RenderPipeline {
+  RenderPipeline::new(value)
+}
+
+///|
+pub fn RenderPipeline::id(self : RenderPipeline) -> RenderPipelineId {
+  self.id
+}
+
+///|
+pub fn RenderPipeline::get_bind_group_layout(
+  self : RenderPipeline,
+  index : UInt,
+) -> BindGroupLayout {
+  BindGroupLayout::from_wgpu(self.value.get_bind_group_layout(index))
+}
+
+///|
+pub fn RenderPipeline::set_label(self : RenderPipeline, label : String) -> Unit {
+  self.value.set_label(label)
+}
+
+///|
+pub fn RenderPipeline::into_inner(
+  self : RenderPipeline,
+) -> @wgpu.RenderPipeline {
+  self.value
+}
+
+///|
+pub fn ComputePipeline::new(value : @wgpu.ComputePipeline) -> ComputePipeline {
+  ComputePipeline::{ id: next_compute_pipeline_id(), value }
+}
+
+///|
+pub fn ComputePipeline::from_wgpu(
+  value : @wgpu.ComputePipeline,
+) -> ComputePipeline {
+  ComputePipeline::new(value)
+}
+
+///|
+pub fn ComputePipeline::id(self : ComputePipeline) -> ComputePipelineId {
+  self.id
+}
+
+///|
+pub fn ComputePipeline::get_bind_group_layout(
+  self : ComputePipeline,
+  index : UInt,
+) -> BindGroupLayout {
+  BindGroupLayout::from_wgpu(self.value.get_bind_group_layout(index))
+}
+
+///|
+pub fn ComputePipeline::set_label(
+  self : ComputePipeline,
+  label : String,
+) -> Unit {
+  self.value.set_label(label)
+}
+
+///|
+pub fn ComputePipeline::into_inner(
+  self : ComputePipeline,
+) -> @wgpu.ComputePipeline {
+  self.value
+}

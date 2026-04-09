@@ -1,1 +1,6 @@
+import {
+  "Milky2018/wgpu_mbt" @wgpu,
+  "moonbitlang/core/ref",
+}
+
 supported_targets = "native"

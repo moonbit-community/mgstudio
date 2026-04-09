@@ -14,3 +14,46 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/bindless.rs`.
+
+///|
+pub struct BindlessDescriptor {
+  max_storage_buffers : Int
+  max_textures : Int
+  max_samplers : Int
+}
+
+///|
+pub struct BindlessSlabResourceLimit {
+  storage_buffers : Int
+  textures : Int
+  samplers : Int
+}
+
+///|
+pub fn BindlessDescriptor::new(
+  max_storage_buffers : Int,
+  max_textures : Int,
+  max_samplers : Int,
+) -> BindlessDescriptor {
+  BindlessDescriptor::{ max_storage_buffers, max_textures, max_samplers }
+}
+
+///|
+pub fn BindlessSlabResourceLimit::new(
+  storage_buffers : Int,
+  textures : Int,
+  samplers : Int,
+) -> BindlessSlabResourceLimit {
+  BindlessSlabResourceLimit::{ storage_buffers, textures, samplers }
+}
+
+///|
+pub fn BindlessDescriptor::slab_limit(
+  self : BindlessDescriptor,
+) -> BindlessSlabResourceLimit {
+  BindlessSlabResourceLimit::{
+    storage_buffers: self.max_storage_buffers,
+    textures: self.max_textures,
+    samplers: self.max_samplers,
+  }
+}

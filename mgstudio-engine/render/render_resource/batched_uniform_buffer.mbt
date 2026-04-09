@@ -14,3 +14,48 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/batched_uniform_buffer.rs`.
+
+///|
+pub struct BatchedUniformBuffer[T] {
+  values : Array[T]
+  batch_size : Int
+}
+
+///|
+pub fn[T] BatchedUniformBuffer::new(
+  batch_size : Int,
+) -> BatchedUniformBuffer[T] {
+  BatchedUniformBuffer::{ values: [], batch_size }
+}
+
+///|
+pub fn[T] BatchedUniformBuffer::push(
+  self : BatchedUniformBuffer[T],
+  value : T,
+) -> Unit {
+  self.values.push(value)
+}
+
+///|
+pub fn[T] BatchedUniformBuffer::clear(self : BatchedUniformBuffer[T]) -> Unit {
+  self.values.clear()
+}
+
+///|
+pub fn[T] BatchedUniformBuffer::len(self : BatchedUniformBuffer[T]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[T] BatchedUniformBuffer::batch_size(
+  self : BatchedUniformBuffer[T],
+) -> Int {
+  self.batch_size
+}
+
+///|
+pub fn[T] BatchedUniformBuffer::values(
+  self : BatchedUniformBuffer[T],
+) -> Array[T] {
+  self.values
+}

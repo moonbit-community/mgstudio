@@ -14,3 +14,39 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/bind_group.rs`.
+
+///|
+pub struct BindGroup {
+  id : BindGroupId
+  value : @wgpu.BindGroup
+}
+
+///|
+pub fn BindGroup::new(value : @wgpu.BindGroup) -> BindGroup {
+  BindGroup::{ id: next_bind_group_id(), value }
+}
+
+///|
+pub fn BindGroup::from_wgpu(value : @wgpu.BindGroup) -> BindGroup {
+  BindGroup::new(value)
+}
+
+///|
+pub fn BindGroup::id(self : BindGroup) -> BindGroupId {
+  self.id
+}
+
+///|
+pub fn BindGroup::set_label(self : BindGroup, label : String) -> Unit {
+  self.value.set_label(label)
+}
+
+///|
+pub fn BindGroup::into_inner(self : BindGroup) -> @wgpu.BindGroup {
+  self.value
+}
+
+///|
+pub fn BindGroup::same_id(self : BindGroup, other : BindGroup) -> Bool {
+  self.id == other.id
+}

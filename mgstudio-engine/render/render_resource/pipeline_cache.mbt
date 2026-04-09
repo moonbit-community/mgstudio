@@ -14,3 +14,54 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/pipeline_cache.rs`.
+
+///|
+pub struct PipelineCache {
+  render_pipelines : Map[String, RenderPipelineId]
+  compute_pipelines : Map[String, ComputePipelineId]
+}
+
+///|
+pub fn PipelineCache::new() -> PipelineCache {
+  PipelineCache::{ render_pipelines: Map::new(), compute_pipelines: Map::new() }
+}
+
+///|
+pub fn PipelineCache::insert_render(
+  self : PipelineCache,
+  key : String,
+  pipeline_id : RenderPipelineId,
+) -> Unit {
+  self.render_pipelines[key] = pipeline_id
+}
+
+///|
+pub fn PipelineCache::insert_compute(
+  self : PipelineCache,
+  key : String,
+  pipeline_id : ComputePipelineId,
+) -> Unit {
+  self.compute_pipelines[key] = pipeline_id
+}
+
+///|
+pub fn PipelineCache::render_pipeline(
+  self : PipelineCache,
+  key : String,
+) -> RenderPipelineId? {
+  self.render_pipelines.get(key)
+}
+
+///|
+pub fn PipelineCache::compute_pipeline(
+  self : PipelineCache,
+  key : String,
+) -> ComputePipelineId? {
+  self.compute_pipelines.get(key)
+}
+
+///|
+pub fn PipelineCache::clear(self : PipelineCache) -> Unit {
+  self.render_pipelines.clear()
+  self.compute_pipelines.clear()
+}

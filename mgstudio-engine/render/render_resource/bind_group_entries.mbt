@@ -14,3 +14,89 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/bind_group_entries.rs`.
+
+///|
+pub(all) enum BindingType {
+  Buffer
+  Texture
+  Sampler
+  StorageTexture
+  External
+}
+
+///|
+pub(all) enum SamplerBindingType {
+  Filtering
+  NonFiltering
+  Comparison
+}
+
+///|
+pub(all) enum BindingResource {
+  Buffer(BufferId)
+  TextureView(TextureViewId)
+  Sampler(SamplerId)
+  Label(String)
+}
+
+///|
+pub struct BindGroupEntry {
+  binding : Int
+  resource : BindingResource
+}
+
+///|
+pub struct BindGroupDescriptor {
+  entries : Array[BindGroupEntry]
+}
+
+///|
+pub fn BindGroupEntry::buffer(
+  binding : Int,
+  buffer : BufferId,
+) -> BindGroupEntry {
+  BindGroupEntry::{ binding, resource: BindingResource::Buffer(buffer) }
+}
+
+///|
+pub fn BindGroupEntry::texture_view(
+  binding : Int,
+  texture_view : TextureViewId,
+) -> BindGroupEntry {
+  BindGroupEntry::{
+    binding,
+    resource: BindingResource::TextureView(texture_view),
+  }
+}
+
+///|
+pub fn BindGroupEntry::sampler(
+  binding : Int,
+  sampler : SamplerId,
+) -> BindGroupEntry {
+  BindGroupEntry::{ binding, resource: BindingResource::Sampler(sampler) }
+}
+
+///|
+pub fn BindGroupEntry::binding(self : BindGroupEntry) -> Int {
+  self.binding
+}
+
+///|
+pub fn BindGroupEntry::resource(self : BindGroupEntry) -> BindingResource {
+  self.resource
+}
+
+///|
+pub fn BindGroupDescriptor::new(
+  entries : Array[BindGroupEntry],
+) -> BindGroupDescriptor {
+  BindGroupDescriptor::{ entries, }
+}
+
+///|
+pub fn BindGroupDescriptor::entries(
+  self : BindGroupDescriptor,
+) -> Array[BindGroupEntry] {
+  self.entries
+}

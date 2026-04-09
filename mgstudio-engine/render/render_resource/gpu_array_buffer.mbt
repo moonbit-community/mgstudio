@@ -14,3 +14,39 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/gpu_array_buffer.rs`.
+
+///|
+pub struct GpuArrayBuffer[T] {
+  values : Array[T]
+  buffer_id : BufferId
+}
+
+///|
+pub fn[T] GpuArrayBuffer::new() -> GpuArrayBuffer[T] {
+  GpuArrayBuffer::{ values: [], buffer_id: 0 }
+}
+
+///|
+pub fn[T] GpuArrayBuffer::push(self : GpuArrayBuffer[T], value : T) -> Unit {
+  self.values.push(value)
+}
+
+///|
+pub fn[T] GpuArrayBuffer::clear(self : GpuArrayBuffer[T]) -> Unit {
+  self.values.clear()
+}
+
+///|
+pub fn[T] GpuArrayBuffer::len(self : GpuArrayBuffer[T]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[T] GpuArrayBuffer::buffer_id(self : GpuArrayBuffer[T]) -> BufferId {
+  self.buffer_id
+}
+
+///|
+pub fn[T] GpuArrayBuffer::values(self : GpuArrayBuffer[T]) -> Array[T] {
+  self.values
+}
