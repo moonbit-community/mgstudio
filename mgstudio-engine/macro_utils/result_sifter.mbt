@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/result_sifter.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _macro_utils_result_sifter_scaffold_owner() -> Unit {
+fn _macro_utils_result_sifter_bridge_pending() -> Unit {
 
 }

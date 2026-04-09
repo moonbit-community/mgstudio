@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/font_loader.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _text_font_loader_scaffold_owner() -> Unit {
+fn _text_font_loader_bridge_pending() -> Unit {
 
 }

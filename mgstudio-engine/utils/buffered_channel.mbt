@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/buffered_channel.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _utils_buffered_channel_scaffold_owner() -> Unit {
+fn _utils_buffered_channel_bridge_pending() -> Unit {
 
 }

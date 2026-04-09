@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/parallel_queue.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _utils_parallel_queue_scaffold_owner() -> Unit {
+fn _utils_parallel_queue_bridge_pending() -> Unit {
 
 }

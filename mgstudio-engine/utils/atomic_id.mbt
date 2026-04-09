@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/atomic_id.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _utils_atomic_id_scaffold_owner() -> Unit {
+fn _utils_atomic_id_bridge_pending() -> Unit {
 
 }
