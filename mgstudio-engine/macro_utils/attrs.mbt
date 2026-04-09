@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/attrs.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _macro_utils_attrs_scaffold_owner() -> Unit {
+fn _macro_utils_attrs_bridge_pending() -> Unit {
 
 }

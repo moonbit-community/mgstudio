@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/parser.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _macro_utils_parser_scaffold_owner() -> Unit {
+fn _macro_utils_parser_bridge_pending() -> Unit {
 
 }

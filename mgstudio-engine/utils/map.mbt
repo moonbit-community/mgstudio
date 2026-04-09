@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/map.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _utils_map_scaffold_owner() -> Unit {
+fn _utils_map_bridge_pending() -> Unit {
 
 }

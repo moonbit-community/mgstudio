@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/phase.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _material_phase_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _material_phase_bridge_pending() -> Unit {
 
 }

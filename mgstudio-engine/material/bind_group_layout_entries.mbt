@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/bind_group_layout_entries.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _material_bind_group_layout_entries_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _material_bind_group_layout_entries_bridge_pending() -> Unit {
 
 }

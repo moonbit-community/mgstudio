@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/extract.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _anti_alias_dlss_extract_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _anti_alias_dlss_extract_bridge_pending() -> Unit {
 
 }

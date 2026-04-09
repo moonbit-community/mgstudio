@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_input_focus/src/autofocus.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _input_focus_autofocus_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _input_focus_autofocus_bridge_pending() -> Unit {
 
 }

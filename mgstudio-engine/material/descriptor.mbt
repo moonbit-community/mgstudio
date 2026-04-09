@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/descriptor.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _material_descriptor_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _material_descriptor_bridge_pending() -> Unit {
 
 }

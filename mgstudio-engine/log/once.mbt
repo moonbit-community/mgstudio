@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_log/src/once.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _log_once_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _log_once_bridge_pending() -> Unit {
 
 }

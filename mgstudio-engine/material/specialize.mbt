@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _material_specialize_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _material_specialize_bridge_pending() -> Unit {
 
 }

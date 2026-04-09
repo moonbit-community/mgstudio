@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/components.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _scene_components_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _scene_components_bridge_pending() -> Unit {
 
 }
