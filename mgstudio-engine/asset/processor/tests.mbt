@@ -12,5 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/tests.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Test-oriented helpers for processor matching.
+fn asset_processor_normalize_extension(extension : String) -> String {
+  if extension.length() > 0 && extension.code_unit_at(0) == 46 {
+    extension[1:extension.length()].to_string()
+  } else {
+    extension
+  }
+}
+
+///|
+pub fn[T] asset_processor_supports_extension(
+  processor : LoadTransformAndSave[T],
+  extension : String,
+) -> Bool {
+  let normalized = asset_processor_normalize_extension(extension)
+  for supported in processor.extensions {
+    if asset_processor_normalize_extension(supported) == normalized {
+      return true
+    }
+  }
+  false
+}

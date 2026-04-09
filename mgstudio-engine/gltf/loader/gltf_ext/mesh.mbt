@@ -12,5 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/mesh.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Bridge surface for mesh and skin metadata extracted from glTF.
+pub fn gltf_mesh_extras(value : String) -> GltfMeshExtras {
+  GltfMeshExtras::new(value)
+}
+
+///|
+pub fn gltf_mesh_index(mesh_index : Int) -> GltfMeshIndex {
+  GltfMeshIndex::new(mesh_index)
+}
+
+///|
+pub fn gltf_primitive_index(
+  mesh_index : Int,
+  primitive_index : Int,
+) -> GltfPrimitiveIndex {
+  GltfPrimitiveIndex::new(mesh_index, primitive_index)
+}
+
+///|
+pub fn gltf_skin_index(skin_index : Int) -> GltfSkinIndex {
+  GltfSkinIndex::new(skin_index)
+}
+
+///|
+pub fn gltf_mesh_asset_label(mesh_index : Int) -> GltfAssetLabel {
+  GltfAssetLabel::Mesh(mesh_index)
+}
+
+///|
+pub fn gltf_primitive_asset_label(
+  mesh_index : Int,
+  primitive_index : Int,
+) -> GltfAssetLabel {
+  GltfAssetLabel::Primitive(mesh_index, primitive_index)
+}
+
+///|
+pub fn gltf_skin_asset_label(skin_index : Int) -> GltfAssetLabel {
+  GltfAssetLabel::Skin(skin_index)
+}

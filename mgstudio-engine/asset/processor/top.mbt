@@ -17,24 +17,6 @@ pub using @asset {type LoadTransformAndSave}
 
 ///|
 // Bridge surface to the root `asset` package implementation.
-pub fn[T] init_asset_processor(
-  app : @app.App[@ecs.World],
-  processor : @asset.LoadTransformAndSave[T],
-) -> @app.App[@ecs.World] {
-  @asset.init_asset_processor(app, processor)
-}
-
-///|
-// Bridge surface to the root `asset` package implementation.
-pub fn[T] register_asset_processor(
-  app : @app.App[@ecs.World],
-  processor : @asset.LoadTransformAndSave[T],
-) -> @app.App[@ecs.World] {
-  @asset.register_asset_processor(app, processor)
-}
-
-///|
-// Bridge surface to the root `asset` package implementation.
 pub fn set_default_asset_processor(
   app : @app.App[@ecs.World],
   name : String,

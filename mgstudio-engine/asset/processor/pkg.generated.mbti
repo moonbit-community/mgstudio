@@ -8,6 +8,16 @@ import {
 }
 
 // Values
+pub fn asset_processor_error_message(@asset.AssetProcessError) -> String
+
+pub fn[T] asset_processor_extensions(@asset.LoadTransformAndSave[T]) -> Array[String]
+
+pub fn asset_processor_log_line(String, @asset.AssetProcessError) -> String
+
+pub fn[T] asset_processor_process(@asset.LoadTransformAndSave[T], @asset.AssetServer, @asset.AssetPath, Bytes) -> @asset.ProcessedAsset[T] raise @asset.AssetProcessError
+
+pub fn[T] asset_processor_supports_extension(@asset.LoadTransformAndSave[T], String) -> Bool
+
 pub fn[T] init_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
 pub fn[T] register_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
@@ -19,7 +29,11 @@ pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ec
 // Types and methods
 
 // Type aliases
+pub using @asset {type AssetProcessError}
+
 pub using @asset {type LoadTransformAndSave}
+
+pub using @asset {type ProcessedAsset}
 
 // Traits
 

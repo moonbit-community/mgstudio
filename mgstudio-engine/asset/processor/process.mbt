@@ -12,5 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/process.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Bridge surface for processor registration and execution.
+pub using @asset {type ProcessedAsset}
+
+///|
+pub fn[T] init_asset_processor(
+  app : @app.App[@ecs.World],
+  processor : LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  @asset.init_asset_processor(app, processor)
+}
+
+///|
+pub fn[T] register_asset_processor(
+  app : @app.App[@ecs.World],
+  processor : LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  @asset.register_asset_processor(app, processor)
+}
+
+///|
+pub fn[T] asset_processor_extensions(
+  processor : LoadTransformAndSave[T],
+) -> Array[String] {
+  processor.extensions
+}
+
+///|
+pub fn[T] asset_processor_process(
+  processor : LoadTransformAndSave[T],
+  asset_server : @asset.AssetServer,
+  path : @asset.AssetPath,
+  bytes : Bytes,
+) -> ProcessedAsset[T] raise @asset.AssetProcessError {
+  (processor.process)(asset_server, path, bytes)
+}

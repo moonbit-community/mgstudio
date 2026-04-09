@@ -12,5 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/texture.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Bridge surface for texture asset labels extracted from glTF.
+pub fn gltf_texture_asset_label(texture_index : Int) -> GltfAssetLabel {
+  GltfAssetLabel::Texture(texture_index)
+}

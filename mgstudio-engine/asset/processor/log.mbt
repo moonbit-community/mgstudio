@@ -12,5 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/log.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Bridge surface for processor error reporting.
+pub using @asset {type AssetProcessError}
+
+///|
+pub fn asset_processor_error_message(error : AssetProcessError) -> String {
+  error.message()
+}
+
+///|
+pub fn asset_processor_log_line(
+  processor_name : String,
+  error : AssetProcessError,
+) -> String {
+  "asset_processor[\{processor_name}]: \{error.message()}"
+}

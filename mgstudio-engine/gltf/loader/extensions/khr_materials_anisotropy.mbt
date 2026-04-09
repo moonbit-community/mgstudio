@@ -12,5 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/extensions/khr_materials_anisotropy.rs`.
-// Source-shape scaffold; runtime split is pending.
+// Bridge surface for the shared PBR-backed anisotropy handler.
+pub fn gltf_register_khr_materials_anisotropy_handler(
+  handler : GltfExtensionHandler,
+) -> Unit {
+  @root_gltf.gltf_register_extension_handler(handler)
+}
+
+///|
+pub fn gltf_khr_materials_anisotropy_handler_enabled() -> Bool {
+  @root_gltf.gltf_pbr_material_handler_enabled()
+}
+
+///|
+pub fn gltf_set_khr_materials_anisotropy_handler_enabled(
+  enabled : Bool,
+) -> Unit {
+  @root_gltf.gltf_set_pbr_material_handler_enabled(enabled)
+}

@@ -1,13 +1,77 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/gltf/loader/gltf_ext"
 
+import {
+  "Milky2018/mgstudio/gltf",
+}
+
 // Values
+pub fn gltf_animation_asset_label(Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_default_material_asset_label() -> @gltf.GltfAssetLabel
+
+pub fn gltf_extras(String) -> @gltf.GltfExtras
+
+pub fn gltf_inverse_bind_matrices_asset_label(Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_material_asset_label(Int, Bool) -> @gltf.GltfAssetLabel
+
+pub fn gltf_material_extras(String) -> @gltf.GltfMaterialExtras
+
+pub fn gltf_material_name(String) -> @gltf.GltfMaterialName
+
+pub fn gltf_mesh_asset_label(Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_mesh_extras(String) -> @gltf.GltfMeshExtras
+
+pub fn gltf_mesh_index(Int) -> @gltf.GltfMeshIndex
+
+pub fn gltf_node_asset_label(Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_node_index(Int) -> @gltf.GltfNodeIndex
+
+pub fn gltf_primitive_asset_label(Int, Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_primitive_index(Int, Int) -> @gltf.GltfPrimitiveIndex
+
+pub fn gltf_scene_asset_label(Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_scene_extras(String) -> @gltf.GltfSceneExtras
+
+pub fn gltf_scene_index(Int) -> @gltf.GltfSceneIndex
+
+pub fn gltf_skin_asset_label(Int) -> @gltf.GltfAssetLabel
+
+pub fn gltf_skin_index(Int) -> @gltf.GltfSkinIndex
+
+pub fn gltf_texture_asset_label(Int) -> @gltf.GltfAssetLabel
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @gltf {type GltfAssetLabel}
+
+pub using @gltf {type GltfExtras}
+
+pub using @gltf {type GltfMaterialExtras}
+
+pub using @gltf {type GltfMaterialName}
+
+pub using @gltf {type GltfMeshExtras}
+
+pub using @gltf {type GltfMeshIndex}
+
+pub using @gltf {type GltfNodeIndex}
+
+pub using @gltf {type GltfPrimitiveIndex}
+
+pub using @gltf {type GltfSceneExtras}
+
+pub using @gltf {type GltfSceneIndex}
+
+pub using @gltf {type GltfSkinIndex}
 
 // Traits
 

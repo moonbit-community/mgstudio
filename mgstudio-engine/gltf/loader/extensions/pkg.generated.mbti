@@ -22,7 +22,25 @@ pub fn gltf_extension_notify_node_spawned(String, Int, @core.Entity, @ecs.World)
 
 pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.World) -> Unit
 
+pub fn gltf_khr_materials_anisotropy_handler_enabled() -> Bool
+
+pub fn gltf_khr_materials_clearcoat_handler_enabled() -> Bool
+
+pub fn gltf_khr_materials_specular_handler_enabled() -> Bool
+
 pub fn gltf_register_extension_handler(@gltf.GltfExtensionHandler) -> Unit
+
+pub fn gltf_register_khr_materials_anisotropy_handler(@gltf.GltfExtensionHandler) -> Unit
+
+pub fn gltf_register_khr_materials_clearcoat_handler(@gltf.GltfExtensionHandler) -> Unit
+
+pub fn gltf_register_khr_materials_specular_handler(@gltf.GltfExtensionHandler) -> Unit
+
+pub fn gltf_set_khr_materials_anisotropy_handler_enabled(Bool) -> Unit
+
+pub fn gltf_set_khr_materials_clearcoat_handler_enabled(Bool) -> Unit
+
+pub fn gltf_set_khr_materials_specular_handler_enabled(Bool) -> Unit
 
 // Errors
 
