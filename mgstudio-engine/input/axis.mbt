@@ -14,3 +14,22 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_input/src/axis.rs`).
+
+///|
+pub fn[T] axis_new() -> Axis[T] {
+  Axis::new()
+}
+
+///|
+pub fn[T : Eq] axis_set(
+  axis : Axis[T],
+  input_device : T,
+  value : Float,
+) -> Float? {
+  axis.set(input_device, value)
+}
+
+///|
+pub fn[T : Eq] axis_get(axis : Axis[T], input_device : T) -> Float? {
+  axis.get(input_device)
+}

@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/propagate.rs`).
+
+///|
+pub fn run_fixed_update_schedule(world : @ecs.World) -> Unit {
+  run_current_fixed_update_schedule(world)
+}

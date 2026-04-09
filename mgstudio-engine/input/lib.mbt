@@ -724,39 +724,6 @@ pub fn AccumulatedMouseScroll::new_with_unit(
 }
 
 ///|
-let keyboard_input_message_key : @ecs.MessageKey[KeyboardInput] = @input_events.ecs_key_keyboard_input
-
-///|
-let keyboard_character_message_key : @ecs.MessageKey[KeyboardCharacter] = @input_events.ecs_key_keyboard_character
-
-///|
-let keyboard_focus_lost_message_key : @ecs.MessageKey[KeyboardFocusLost] = @input_events.ecs_key_keyboard_focus_lost
-
-///|
-let mouse_button_input_message_key : @ecs.MessageKey[MouseButtonInput] = @input_events.ecs_key_mouse_button_input
-
-///|
-let mouse_motion_message_key : @ecs.MessageKey[MouseMotion] = @input_events.ecs_key_mouse_motion
-
-///|
-let mouse_wheel_message_key : @ecs.MessageKey[MouseWheel] = @input_events.ecs_key_mouse_wheel
-
-///|
-let pinch_gesture_message_key : @ecs.MessageKey[PinchGesture] = @input_events.ecs_key_pinch_gesture
-
-///|
-let rotation_gesture_message_key : @ecs.MessageKey[RotationGesture] = @input_events.ecs_key_rotation_gesture
-
-///|
-let double_tap_gesture_message_key : @ecs.MessageKey[DoubleTapGesture] = @input_events.ecs_key_double_tap_gesture
-
-///|
-let pan_gesture_message_key : @ecs.MessageKey[PanGesture] = @input_events.ecs_key_pan_gesture
-
-///|
-let touch_input_message_key : @ecs.MessageKey[TouchInput] = @input_events.ecs_key_touch_input
-
-///|
 pub let input_systems_set : @app.SystemSet = @app.system_set(
   "bevy_input::InputSystems",
 )
@@ -1594,7 +1561,7 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
-  let character_writer = world.message_writer(keyboard_character_message_key)
+  let character_writer = world.message_writer(keyboard_character_message_key())
   let keyboard_event_count = host_input_keyboard_event_count()
   for i in 0..<keyboard_event_count {
     let key_id = host_input_keyboard_event_key_id(index=i)
@@ -2060,17 +2027,17 @@ pub fn input_plugin_with(
   .init_resource(AccumulatedMouseMotion::new)
   .init_resource(AccumulatedMouseScroll::new)
   .init_resource(Touches::new)
-  .add_message(keyboard_input_message_key)
-  .add_message(keyboard_character_message_key)
-  .add_message(keyboard_focus_lost_message_key)
-  .add_message(mouse_button_input_message_key)
-  .add_message(mouse_motion_message_key)
-  .add_message(mouse_wheel_message_key)
-  .add_message(pinch_gesture_message_key)
-  .add_message(rotation_gesture_message_key)
-  .add_message(double_tap_gesture_message_key)
-  .add_message(pan_gesture_message_key)
-  .add_message(touch_input_message_key)
+  .add_message(keyboard_input_message_key())
+  .add_message(keyboard_character_message_key())
+  .add_message(keyboard_focus_lost_message_key())
+  .add_message(mouse_button_message_key())
+  .add_message(mouse_motion_message_key())
+  .add_message(mouse_wheel_message_key())
+  .add_message(pinch_gesture_message_key())
+  .add_message(rotation_gesture_message_key())
+  .add_message(double_tap_gesture_message_key())
+  .add_message(pan_gesture_message_key())
+  .add_message(touch_input_message_key())
   .add_pre_update_system_config(
     @app.system(input_poll_keyboard_system).in_set(input_systems_set),
   )

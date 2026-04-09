@@ -14,3 +14,18 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_input/src/gestures.rs`).
+
+///|
+pub fn rotation_gesture_message_key() -> @ecs.MessageKey[RotationGesture] {
+  @input_events.ecs_key_rotation_gesture
+}
+
+///|
+pub fn double_tap_gesture_message_key() -> @ecs.MessageKey[DoubleTapGesture] {
+  @input_events.ecs_key_double_tap_gesture
+}
+
+///|
+pub fn pan_gesture_message_key() -> @ecs.MessageKey[PanGesture] {
+  @input_events.ecs_key_pan_gesture
+}

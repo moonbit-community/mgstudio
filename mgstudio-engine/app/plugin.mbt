@@ -14,3 +14,15 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/plugin.rs`).
+
+///|
+pub fn[W] plugin_from_system(system : SystemFn[W]) -> Plugin[W] {
+  fn(app : App[W]) -> App[W] { app.add_system(system) }
+}
+
+///|
+pub fn[W, P : SystemParam] plugin_from_system_param(
+  system : (P) -> Unit,
+) -> Plugin[W] {
+  fn(app : App[W]) -> App[W] { app.add_system_param(system) }
+}

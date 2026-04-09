@@ -14,3 +14,18 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/hotpatch.rs`).
+
+///|
+pub fn hotpatch_reset_runtime() -> Unit {
+  app_runtime_reset()
+}
+
+///|
+pub fn hotpatch_stop_rendering() -> Unit {
+  app_rendering_stop()
+}
+
+///|
+pub fn hotpatch_resume_rendering() -> Unit {
+  app_rendering_resume()
+}

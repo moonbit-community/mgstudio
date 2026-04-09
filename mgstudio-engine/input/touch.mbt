@@ -14,3 +14,18 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_input/src/touch.rs`).
+
+///|
+pub fn touch_input_message_key() -> @ecs.MessageKey[TouchInput] {
+  @input_events.ecs_key_touch_input
+}
+
+///|
+pub fn touches_new() -> Touches {
+  Touches::new()
+}
+
+///|
+pub fn touches_any_just_pressed(touches : Touches) -> Bool {
+  touches.any_just_pressed()
+}

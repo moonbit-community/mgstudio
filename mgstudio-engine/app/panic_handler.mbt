@@ -14,3 +14,13 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/panic_handler.rs`).
+
+///|
+pub fn panic_handler_default(error : Error, context : ErrorContext) -> Unit {
+  ErrorHandlers::panic(error, context)
+}
+
+///|
+pub fn panic_handler_log(error : Error, context : ErrorContext) -> Unit {
+  ErrorHandlers::error(error, context)
+}

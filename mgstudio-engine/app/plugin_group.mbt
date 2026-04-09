@@ -14,3 +14,15 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/plugin_group.rs`).
+
+///|
+pub fn[W] plugin_group_start() -> PluginGroupBuilder[W] {
+  PluginGroupBuilder::start()
+}
+
+///|
+pub fn[W] plugin_group_start_named(
+  group_name : String,
+) -> PluginGroupBuilder[W] {
+  PluginGroupBuilder::start_named(group_name)
+}

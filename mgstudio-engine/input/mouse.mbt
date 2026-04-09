@@ -14,3 +14,33 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_input/src/mouse.rs`).
+
+///|
+pub fn mouse_button_message_key() -> @ecs.MessageKey[MouseButtonInput] {
+  @input_events.ecs_key_mouse_button_input
+}
+
+///|
+pub fn mouse_motion_message_key() -> @ecs.MessageKey[MouseMotion] {
+  @input_events.ecs_key_mouse_motion
+}
+
+///|
+pub fn mouse_wheel_message_key() -> @ecs.MessageKey[MouseWheel] {
+  @input_events.ecs_key_mouse_wheel
+}
+
+///|
+pub fn pinch_gesture_message_key() -> @ecs.MessageKey[PinchGesture] {
+  @input_events.ecs_key_pinch_gesture
+}
+
+///|
+pub fn mouse_button_snapshot() -> ButtonInput[@window.MouseButton] {
+  read_mouse_button_input()
+}
+
+///|
+pub fn mouse_position_snapshot() -> @math.Vec2? {
+  mouse_position()
+}

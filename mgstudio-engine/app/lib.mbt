@@ -14,3 +14,23 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/lib.rs`).
+
+///|
+pub fn app_new(world : @ecs.World) -> App[@ecs.World] {
+  App::new(world)
+}
+
+///|
+pub fn app_run(app : App[@ecs.World]) -> Unit {
+  app.run()
+}
+
+///|
+pub fn app_run_once(app : App[@ecs.World]) -> App[@ecs.World] {
+  app.run_once()
+}
+
+///|
+pub fn app_update(app : App[@ecs.World]) -> App[@ecs.World] {
+  app.update()
+}

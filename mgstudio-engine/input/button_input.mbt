@@ -14,3 +14,23 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_input/src/button_input.rs`).
+
+///|
+pub fn[T] ButtonInput::is_empty(self : ButtonInput[T]) -> Bool {
+  self.pressed.length() == 0
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::contains(
+  self : ButtonInput[T],
+  button : T,
+) -> Bool {
+  self.pressed(button) ||
+  self.just_pressed(button) ||
+  self.just_released(button)
+}
+
+///|
+pub fn[T] ButtonInput::pressed_count(self : ButtonInput[T]) -> Int {
+  self.pressed.length()
+}

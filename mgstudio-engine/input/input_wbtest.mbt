@@ -240,7 +240,7 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
 
   let focus_lost_reader = app
     .world()
-    .message_reader(keyboard_focus_lost_message_key, Ref::new(0))
+    .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
   inspect((try! focus_lost_reader.read()).length(), content="1")
 
   let window_event_reader = app

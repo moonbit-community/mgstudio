@@ -14,3 +14,15 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_app/src/schedule_runner.rs`).
+
+///|
+pub fn schedule_runner_plugin_once() -> Plugin[@ecs.World] {
+  schedule_runner_plugin(ScheduleRunnerPlugin::run_once())
+}
+
+///|
+pub fn schedule_runner_plugin_loop(
+  interval_seconds : Float,
+) -> Plugin[@ecs.World] {
+  schedule_runner_plugin(ScheduleRunnerPlugin::run_loop(interval_seconds))
+}

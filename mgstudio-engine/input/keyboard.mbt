@@ -14,3 +14,28 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_input/src/keyboard.rs`).
+
+///|
+pub fn keyboard_input_message_key() -> @ecs.MessageKey[KeyboardInput] {
+  @input_events.ecs_key_keyboard_input
+}
+
+///|
+pub fn keyboard_character_message_key() -> @ecs.MessageKey[KeyboardCharacter] {
+  @input_events.ecs_key_keyboard_character
+}
+
+///|
+pub fn keyboard_focus_lost_message_key() -> @ecs.MessageKey[KeyboardFocusLost] {
+  @input_events.ecs_key_keyboard_focus_lost
+}
+
+///|
+pub fn keyboard_input_snapshot() -> ButtonInput[@window.KeyCode] {
+  read_keycode_button_input()
+}
+
+///|
+pub fn logical_key_snapshot() -> ButtonInput[Key] {
+  read_logical_key_button_input()
+}
