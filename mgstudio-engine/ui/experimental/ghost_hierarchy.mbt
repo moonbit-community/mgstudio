@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/experimental/ghost_hierarchy.rs`.
-fn ui_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
+fn _ui_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
   a.id == b.id && a.generation == b.generation
 }
 
@@ -24,7 +24,7 @@ fn ui_entity_key(entity : @core.Entity) -> (Int, Int) {
 }
 
 ///|
-fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
+fn _ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
   if a.id > b.id {
     true
   } else if a.id < b.id {
@@ -40,7 +40,7 @@ fn ui_is_ghost_node(world : @ecs.World, entity : @core.Entity) -> Bool {
 }
 
 ///|
-fn ui_effective_parent(
+fn _ui_effective_parent(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @core.Entity? {
@@ -81,7 +81,7 @@ fn ui_collect_effective_child_entities(
 }
 
 ///|
-fn ui_collect_effective_children(
+fn _ui_collect_effective_children(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Array[@core.Entity] {
@@ -96,7 +96,7 @@ fn ui_collect_effective_children(
 }
 
 ///|
-fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
+fn _ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
   let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   let roots : Array[@core.Entity] = []
   world.for_each_component(@ui.ecs_key_node, fn(entity, _node) {

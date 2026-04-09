@@ -62,9 +62,9 @@ pub fn GpuPreprocessingSupport::is_culling_supported(
 
 ///|
 pub struct BatchedInstanceBuffers[BD, BDI] {
-  pub current_input_buffer : @render_resource.GpuArrayBuffer[BDI]
-  pub previous_input_buffer : @render_resource.GpuArrayBuffer[BDI]
-  pub phase_instance_buffers : @hashmap.HashMap[
+  current_input_buffer : @render_resource.GpuArrayBuffer[BDI]
+  previous_input_buffer : @render_resource.GpuArrayBuffer[BDI]
+  phase_instance_buffers : @hashmap.HashMap[
     String,
     PhaseBatchedInstanceBuffers[BD],
   ]
@@ -101,7 +101,7 @@ pub fn[BD, BDI] BatchedInstanceBuffers::swap_input_buffers(
 
 ///|
 pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
-  pub values : @render_resource.GpuArrayBuffer[BD]
+  values : @render_resource.GpuArrayBuffer[BD]
 }
 
 ///|
@@ -115,7 +115,7 @@ pub fn[BD] UntypedPhaseBatchedInstanceBuffers::new() -> UntypedPhaseBatchedInsta
 
 ///|
 pub struct PhaseBatchedInstanceBuffers[BD] {
-  pub buffers : UntypedPhaseBatchedInstanceBuffers[BD]
+  buffers : UntypedPhaseBatchedInstanceBuffers[BD]
   mut marker : Int
 }
 

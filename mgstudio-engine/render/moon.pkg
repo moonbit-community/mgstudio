@@ -1,5 +1,4 @@
 import {
-  "tonyfettes/any",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
   "Milky2018/mgstudio/app",

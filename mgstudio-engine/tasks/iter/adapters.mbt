@@ -16,3 +16,8 @@
 
 ///|
 pub struct ParallelIteratorAdapter {}
+
+///|
+pub fn ParallelIteratorAdapter::new() -> ParallelIteratorAdapter {
+  ParallelIteratorAdapter::{  }
+}

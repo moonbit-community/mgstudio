@@ -25,11 +25,16 @@ pub(all) suberror PrepareAssetError {
 pub struct AssetExtractionSystems {}
 
 ///|
+pub fn AssetExtractionSystems::new() -> AssetExtractionSystems {
+  AssetExtractionSystems::{  }
+}
+
+///|
 pub struct ExtractedAssets[A] {
-  pub extracted : Array[(Int, A)]
-  pub removed : @hashset.HashSet[Int]
-  pub modified : @hashset.HashSet[Int]
-  pub added : @hashset.HashSet[Int]
+  extracted : Array[(Int, A)]
+  removed : @hashset.HashSet[Int]
+  modified : @hashset.HashSet[Int]
+  added : @hashset.HashSet[Int]
 }
 
 ///|
@@ -48,9 +53,8 @@ pub struct RenderAssets[A] {
 }
 
 ///|
-fn[A] render_assets_debug_name() -> String {
-  let probe : RenderAssets[A] = RenderAssets::new()
-  "bevy_render::RenderAssets<\{@any.of(probe).type_name()}>"
+fn render_assets_debug_name() -> String {
+  "bevy_render::RenderAssets"
 }
 
 ///|
@@ -130,9 +134,8 @@ pub struct PrepareNextFrameAssets[A] {
 }
 
 ///|
-fn[A] prepare_next_frame_assets_debug_name() -> String {
-  let probe : PrepareNextFrameAssets[A] = PrepareNextFrameAssets::new()
-  "bevy_render::PrepareNextFrameAssets<\{@any.of(probe).type_name()}>"
+fn prepare_next_frame_assets_debug_name() -> String {
+  "bevy_render::PrepareNextFrameAssets"
 }
 
 ///|

@@ -28,7 +28,7 @@ pub fn TransformHelper::compute_global_transform(
   _self : TransformHelper,
   world : @ecs.World,
   entity : @core.Entity,
-) -> GlobalTransform? raise @ecs.EcsError {
+) -> GlobalTransform? {
   compute_global_transform(world, entity)
 }
 
@@ -36,7 +36,7 @@ pub fn TransformHelper::compute_global_transform(
 pub fn compute_global_transform(
   world : @ecs.World,
   entity : @core.Entity,
-) -> GlobalTransform? raise @ecs.EcsError {
+) -> GlobalTransform? {
   let entity_ref = try! world.entity(entity)
   let local_transform = match
     (

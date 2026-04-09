@@ -20,11 +20,11 @@ pub fn set_parent_in_place(
   world : @ecs.World,
   child : @core.Entity,
   parent : @core.Entity,
-) -> Unit raise @ecs.EcsError {
+) -> Unit {
   ignore(try! world.entity(child))
   ignore(try! world.entity(parent))
-  let child_global = try! compute_global_transform(world, child)
-  let parent_global = try! compute_global_transform(world, parent)
+  let child_global = compute_global_transform(world, child)
+  let parent_global = compute_global_transform(world, parent)
   if child_global is Some(child_global) && parent_global is Some(parent_global) {
     let next_local = child_global
       .reparented_to(parent_global)
@@ -43,12 +43,9 @@ pub fn set_parent_in_place(
 }
 
 ///|
-pub fn remove_parent_in_place(
-  world : @ecs.World,
-  child : @core.Entity,
-) -> Unit raise @ecs.EcsError {
+pub fn remove_parent_in_place(world : @ecs.World, child : @core.Entity) -> Unit {
   ignore(try! world.entity(child))
-  guard (try! compute_global_transform(world, child)) is Some(global) else {
+  guard compute_global_transform(world, child) is Some(global) else {
     if (try! world.contains_by_key(child, @hierarchy.ecs_key_parent)) {
       try! (world.remove_by_key(child, @hierarchy.ecs_key_parent) |> ignore)
     }

@@ -16,3 +16,8 @@
 
 ///|
 pub struct ParallelIterator {}
+
+///|
+pub fn ParallelIterator::new() -> ParallelIterator {
+  ParallelIterator::{  }
+}

@@ -15,6 +15,6 @@
 ///|
 // Bridge surface is provided by `lib.mbt` in this package.
 // This file remains a Bevy shape anchor only.
-fn sprite_plugin_bevy_shape_anchor() -> Unit {
+fn _sprite_plugin_bevy_shape_anchor() -> Unit {
   ignore(0)
 }

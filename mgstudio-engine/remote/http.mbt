@@ -25,9 +25,18 @@ pub(all) enum RemoteHttpMethod {
 
 ///|
 pub struct RemoteHttpRequest {
-  method : RemoteHttpMethod
+  http_method : RemoteHttpMethod
   path : String
   body : String?
+}
+
+///|
+pub fn RemoteHttpRequest::new(
+  http_method : RemoteHttpMethod,
+  path : String,
+  body? : String? = None,
+) -> RemoteHttpRequest {
+  RemoteHttpRequest::{ http_method, path, body }
 }
 
 ///|

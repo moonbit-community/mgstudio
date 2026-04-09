@@ -28,14 +28,18 @@ pub(all) suberror ErasedPrepareAssetError {
 pub struct ErasedAssetExtractionSystems {}
 
 ///|
+pub fn ErasedAssetExtractionSystems::new() -> ErasedAssetExtractionSystems {
+  ErasedAssetExtractionSystems::{  }
+}
+
+///|
 pub struct ErasedRenderAssets[A] {
   items : @hashmap.HashMap[UntypedRenderAssetId, Ref[A]]
 }
 
 ///|
-fn[A] erased_render_assets_debug_name() -> String {
-  let probe : ErasedRenderAssets[A] = ErasedRenderAssets::new()
-  "bevy_render::ErasedRenderAssets<\{@any.of(probe).type_name()}>"
+fn erased_render_assets_debug_name() -> String {
+  "bevy_render::ErasedRenderAssets"
 }
 
 ///|
@@ -129,9 +133,8 @@ pub struct ErasedPrepareNextFrameAssets[A] {
 }
 
 ///|
-fn[A] erased_prepare_next_frame_assets_debug_name() -> String {
-  let probe : ErasedPrepareNextFrameAssets[A] = ErasedPrepareNextFrameAssets::new()
-  "bevy_render::ErasedPrepareNextFrameAssets<\{@any.of(probe).type_name()}>"
+fn erased_prepare_next_frame_assets_debug_name() -> String {
+  "bevy_render::ErasedPrepareNextFrameAssets"
 }
 
 ///|

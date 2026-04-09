@@ -14,6 +14,6 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_gilrs/src/rumble.rs`).
-fn gilrs_rumble_bevy_shape_anchor() -> Unit {
+fn _gilrs_rumble_bevy_shape_anchor() -> Unit {
   ignore(0)
 }

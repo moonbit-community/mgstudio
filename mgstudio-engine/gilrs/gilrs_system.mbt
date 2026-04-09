@@ -14,6 +14,6 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_gilrs/src/gilrs_system.rs`).
-fn gilrs_system_bevy_shape_anchor() -> Unit {
+fn _gilrs_system_bevy_shape_anchor() -> Unit {
   ignore(0)
 }

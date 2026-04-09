@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/mod.rs`.
 // Source-shape ownership stays here; concrete primitive bridges are pending.
-fn gizmos_primitives_module_anchor() -> Unit {
+fn _gizmos_primitives_module_anchor() -> Unit {
   ignore(0)
 }

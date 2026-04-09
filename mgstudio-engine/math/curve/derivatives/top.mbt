@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/mod.rs`.
 // Runtime-bearing exports live in `adaptor_impls.mbt` to avoid duplicate aliases.
-fn curve_derivatives_module_anchor() -> Unit {
+fn _curve_derivatives_module_anchor() -> Unit {
   ignore(0)
 }

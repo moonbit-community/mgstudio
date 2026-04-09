@@ -14,6 +14,6 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera_controller/src/lib.rs`).
-fn camera_controller_lib_bevy_shape_anchor() -> Unit {
+fn _camera_controller_lib_bevy_shape_anchor() -> Unit {
   ignore(0)
 }

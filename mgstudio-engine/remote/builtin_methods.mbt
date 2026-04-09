@@ -24,8 +24,10 @@ pub(all) enum RemoteBuiltinMethod {
 } derive(Eq, Show)
 
 ///|
-pub fn remote_builtin_method_name(method : RemoteBuiltinMethod) -> String {
-  match method {
+pub fn remote_builtin_method_name(
+  builtin_method : RemoteBuiltinMethod,
+) -> String {
+  match builtin_method {
     Inspect => "inspect"
     List => "list"
     Query => "query"
