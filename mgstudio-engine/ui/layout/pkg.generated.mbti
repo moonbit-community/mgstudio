@@ -1,7 +1,60 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/ui/layout"
 
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/ui",
+}
+
 // Values
+pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[@ui.ComputedUiRenderTargetInfo]
+
+pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize]
+
+pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition]
+
+pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout]
+
+pub fn ui_layout_system(@ecs.World) -> Unit
+
+pub fn ui_image_content_size_system(@ecs.World) -> Unit
+
+pub fn ui_clip_system(@ecs.World) -> Unit
+
+pub fn ui_update_context_system(@ecs.World) -> Unit
+
+pub fn ui_propagate_target_cameras_system(@ecs.World) -> Unit
+
+pub fn ui_scroll_system(@ecs.World) -> Unit
+
+pub fn ui_stack_system(@ecs.World) -> Unit
+
+pub let ui_set_content : String
+
+pub let ui_set_measure : String
+
+pub let ui_set_prepare : String
+
+pub let ui_set_layout : String
+
+pub let ui_set_post_layout : String
+
+pub let ui_set_stack : String
+
+pub let ui_set_propagate : String
+
+pub let ui_set_scroll : String
+
+pub let ui_set_clip : String
+
+// Type aliases
+pub using @ui {type ComputedUiRenderTargetInfo}
+
+pub using @ui {type ContentSize}
+
+pub using @ui {type ScrollPosition}
+
+pub using @ui {type UiLayout}
 
 // Errors
 
@@ -10,4 +63,3 @@ package "Milky2018/mgstudio/ui/layout"
 // Type aliases
 
 // Traits
-

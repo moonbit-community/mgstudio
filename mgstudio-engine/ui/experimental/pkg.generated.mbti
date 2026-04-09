@@ -1,13 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/ui/experimental"
 
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/ui",
+}
+
 // Values
+pub let ecs_key_ghost_node : @ecs.ComponentKey[@ui.GhostNode]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @ui {type GhostNode}
 
 // Traits
-

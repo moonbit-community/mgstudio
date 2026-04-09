@@ -14,7 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/experimental/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _ui_experimental_top_scaffold_owner() -> Unit {
+// Bridge surface to the root `ui` package implementation.
+pub using @ui {type GhostNode}
 
-}
+///|
+// Bridge surface to the root `ui` package implementation.
+pub let ecs_key_ghost_node : @ecs.ComponentKey[@ui.GhostNode] =
+  @ui.ecs_key_ghost_node
+
+///|
+// Pending: the Bevy experimental module also exposes `UiChildren` and
+// `UiRootNodes`, but the root `ui` package does not currently provide a
+// verified bridge for those helpers.
