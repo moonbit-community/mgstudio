@@ -14,3 +14,26 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/projection.rs`).
+
+///|
+pub type PerspectiveProjection = @pbr.PerspectiveProjection3d
+
+///|
+pub type OrthographicProjection2d = @sprite.OrthographicProjection
+
+///|
+pub fn orthographic_projection_2d_default() -> OrthographicProjection2d {
+  @sprite.OrthographicProjection::default_2d()
+}
+
+///|
+pub fn orthographic_projection_2d_with_scale(
+  scale : Float,
+) -> OrthographicProjection2d {
+  @sprite.OrthographicProjection::new(scale)
+}
+
+///|
+pub fn perspective_projection_3d_default() -> PerspectiveProjection {
+  @pbr.PerspectiveProjection3d::default()
+}

@@ -13,3 +13,26 @@
 // limitations under the License.
 
 // Bevy-aligned render module anchor.
+
+///|
+pub fn render3d_gpu_preprocess_enabled() -> Bool {
+  !render3d_gpu_preprocess_forced_disabled()
+}
+
+///|
+pub fn render3d_gpu_preprocess_builder_enabled(
+  use_gpu_instance_buffer_builder : Bool,
+) -> Bool {
+  render3d_use_gpu_instance_buffer_builder(use_gpu_instance_buffer_builder)
+}
+
+///|
+pub fn render3d_gpu_preprocess_camera_indirect_enabled(
+  use_gpu_instance_buffer_builder : Bool,
+  no_indirect_drawing : Bool,
+) -> Bool {
+  let gpu_culling_supported = render3d_gpu_culling_supported()
+  render3d_camera_indirect_enabled(
+    use_gpu_instance_buffer_builder, gpu_culling_supported, no_indirect_drawing,
+  )
+}

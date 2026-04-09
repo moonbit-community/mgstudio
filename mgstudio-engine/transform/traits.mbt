@@ -14,3 +14,32 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_transform/src/traits.rs`).
+
+///|
+pub(open) trait TransformPoint {
+  transform_point(self : Self, point : @math.Vec3) -> @math.Vec3
+}
+
+///|
+pub impl TransformPoint for Transform with transform_point(self, point) {
+  let scaled = @math.Vec3::new(
+    point.x * self.scale.x,
+    point.y * self.scale.y,
+    point.z * self.scale.z,
+  )
+  transform_rotate_vec3(self.rotation, scaled).add(self.translation)
+}
+
+///|
+pub impl TransformPoint for GlobalTransform with transform_point(self, point) {
+  @math.Vec3::new(
+    self.affine.a * point.x + self.affine.c * point.y + self.affine.tx,
+    self.affine.b * point.x + self.affine.d * point.y + self.affine.ty,
+    point.z + self.z,
+  )
+}
+
+///|
+pub impl TransformPoint for @math.Isometry3d with transform_point(self, point) {
+  self.transform_point3(point)
+}

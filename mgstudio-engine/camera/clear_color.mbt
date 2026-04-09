@@ -14,3 +14,27 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/clear_color.rs`).
+
+///|
+pub type ClearColor = @sprite.ClearColor
+
+///|
+pub type ClearColorConfig = @sprite.ClearColorConfig
+
+///|
+pub type MsaaWriteback = @post_process.MsaaWriteback
+
+///|
+pub fn camera_clear_color_default() -> ClearColor {
+  @sprite.ClearColor::default()
+}
+
+///|
+pub fn camera_clear_color_config_default() -> ClearColorConfig {
+  @sprite.ClearColorConfig::default()
+}
+
+///|
+pub fn camera_msaa_writeback_default() -> MsaaWriteback {
+  @post_process.MsaaWriteback::default()
+}

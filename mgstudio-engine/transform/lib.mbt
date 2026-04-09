@@ -14,3 +14,10 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_transform/src/lib.rs`).
+
+///|
+pub fn transform_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  transform_plugin(app)
+}

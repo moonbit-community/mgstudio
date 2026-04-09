@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/camera/camera_orbit.rs
+pub fn camera_orbit_bevy_source() -> String {
+  "bevy/examples/camera/camera_orbit.rs"
+}

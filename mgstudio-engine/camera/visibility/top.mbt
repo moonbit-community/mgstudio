@@ -14,3 +14,20 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/visibility/mod.rs`).
+
+///|
+pub type Visibility = @root_visibility.Visibility
+
+///|
+pub type InheritedVisibility = @root_visibility.InheritedVisibility
+
+///|
+pub type ViewVisibility = @root_visibility.ViewVisibility
+
+///|
+pub type NoFrustumCulling = @root_visibility.NoFrustumCulling
+
+///|
+pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @root_visibility.visibility_plugin(app)
+}

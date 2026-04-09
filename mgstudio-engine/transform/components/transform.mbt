@@ -13,5 +13,22 @@
 // limitations under the License.
 
 ///|
-// Bridge surface is provided by `top.mbt` in this package.
-// This file remains a Bevy shape anchor only.
+// Bevy source-shape anchor (`bevy_transform/src/components/transform.rs`).
+
+///|
+pub fn Transform::transform_point(
+  self : Transform,
+  point : @math.Vec3,
+) -> @math.Vec3 {
+  let scaled = @math.Vec3::new(
+    point.x * self.scale.x,
+    point.y * self.scale.y,
+    point.z * self.scale.z,
+  )
+  transform_rotate_vec3(self.rotation, scaled).add(self.translation)
+}
+
+///|
+pub fn Transform::compute_global_transform(self : Transform) -> GlobalTransform {
+  GlobalTransform::from_transform(self)
+}

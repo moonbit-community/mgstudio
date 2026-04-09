@@ -13,3 +13,23 @@
 // limitations under the License.
 
 // Bevy-aligned `pbr/render/systems` container.
+
+///|
+pub let render3d_extract_system_label : String = "mgstudio.render3d.extract"
+
+///|
+pub let render3d_prepare_system_label : String = "mgstudio.render3d.prepare"
+
+///|
+pub let render3d_queue_system_label : String = "mgstudio.render3d.queue"
+
+///|
+pub let render3d_execute_system_label : String = "mgstudio.render3d.execute"
+
+///|
+pub fn render3d_system_labels() -> Array[String] {
+  [
+    render3d_extract_system_label, render3d_prepare_system_label, render3d_queue_system_label,
+    render3d_execute_system_label,
+  ]
+}

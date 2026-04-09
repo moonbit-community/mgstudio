@@ -14,3 +14,33 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/components.rs`).
+
+///|
+pub type Camera = @sprite.Camera
+
+///|
+pub type Camera2d = @sprite.Camera2d
+
+///|
+pub type Camera2dBundle = @sprite.Camera2dBundle
+
+///|
+pub type Hdr = @core_pipeline.Hdr
+
+///|
+pub fn camera_2d_bundle_new(
+  camera : Camera,
+  transform : @transform.Transform,
+) -> Camera2dBundle {
+  @sprite.Camera2dBundle::new(camera, transform)
+}
+
+///|
+pub fn camera_2d_bundle_new_with_layers(
+  camera : Camera,
+  transform : @transform.Transform,
+  target : @sprite.RenderTarget,
+  layers : @sprite.RenderLayers,
+) -> Camera2dBundle {
+  @sprite.Camera2dBundle::new_with_layers(camera, transform, target, layers)
+}

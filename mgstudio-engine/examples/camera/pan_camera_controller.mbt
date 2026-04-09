@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/camera/pan_camera_controller.rs
+pub fn camera_pan_camera_controller_bevy_source() -> String {
+  "bevy/examples/camera/pan_camera_controller.rs"
+}

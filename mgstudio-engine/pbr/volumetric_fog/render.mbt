@@ -14,3 +14,29 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/volumetric_fog/render.rs`.
+
+///|
+pub fn volumetric_fog_default_settings() -> VolumetricFog {
+  VolumetricFog::default()
+}
+
+///|
+pub fn fog_volume_default_settings() -> FogVolume {
+  FogVolume::default()
+}
+
+///|
+pub fn volumetric_fog_with_step_count(
+  fog : VolumetricFog,
+  step_count : Int,
+) -> VolumetricFog {
+  fog.with_step_count(step_count)
+}
+
+///|
+pub fn fog_volume_with_density(
+  volume : FogVolume,
+  density_factor : Float,
+) -> FogVolume {
+  volume.with_density_factor(density_factor)
+}

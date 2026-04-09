@@ -14,3 +14,67 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/primitives.rs`).
+
+///|
+pub type Aabb = @math.Aabb3d
+
+///|
+pub type Sphere = @math.BoundingSphere
+
+///|
+pub type Frustum = @pbr.Frustum
+
+///|
+pub(open) trait MeshAabb {
+  compute_aabb(self : Self) -> Aabb?
+}
+
+///|
+pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
+  let vertex_count = self.vertex_count()
+  if vertex_count == 0 {
+    return None
+  }
+  guard self.vertex_position(0) is Some(first) else { return None }
+  let mut min_x = first.x
+  let mut min_y = first.y
+  let mut min_z = first.z
+  let mut max_x = first.x
+  let mut max_y = first.y
+  let mut max_z = first.z
+  for index in 1..<vertex_count {
+    guard self.vertex_position(index) is Some(position) else { continue }
+    if position.x < min_x {
+      min_x = position.x
+    }
+    if position.y < min_y {
+      min_y = position.y
+    }
+    if position.z < min_z {
+      min_z = position.z
+    }
+    if position.x > max_x {
+      max_x = position.x
+    }
+    if position.y > max_y {
+      max_y = position.y
+    }
+    if position.z > max_z {
+      max_z = position.z
+    }
+  }
+  Some(
+    Aabb::from_min_max(
+      @math.Vec3::new(min_x, min_y, min_z),
+      @math.Vec3::new(max_x, max_y, max_z),
+    ),
+  )
+}
+
+///|
+pub impl MeshAabb for @mesh.Mesh with compute_aabb(self) {
+  match self.as_3d_geometry() {
+    Some(geometry) => geometry.compute_aabb()
+    None => None
+  }
+}

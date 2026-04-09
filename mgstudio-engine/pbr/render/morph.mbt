@@ -13,3 +13,31 @@
 // limitations under the License.
 
 // Bevy-aligned render module anchor.
+
+///|
+pub fn render3d_morph_weights_all_zero(weights : Array[Float]) -> Bool {
+  for weight in weights {
+    if weight != 0.0F {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn render3d_normalize_morph_weights(weights : Array[Float]) -> Array[Float] {
+  let normalized : Array[Float] = []
+  let mut sum = 0.0F
+  for weight in weights {
+    let safe = if weight < 0.0F { 0.0F } else { weight }
+    normalized.push(safe)
+    sum = sum + safe
+  }
+  if sum <= 0.0F {
+    return normalized
+  }
+  for index in 0..<normalized.length() {
+    normalized[index] = normalized[index] / sum
+  }
+  normalized
+}

@@ -14,3 +14,29 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/visibility/range.rs`).
+
+///|
+pub type VisibilityRange = @root_visibility.VisibilityRange
+
+///|
+pub fn visibility_range_always_visible() -> VisibilityRange {
+  @root_visibility.VisibilityRange::always_visible()
+}
+
+///|
+pub fn visibility_range_invisible() -> VisibilityRange {
+  @root_visibility.VisibilityRange::invisible()
+}
+
+///|
+pub fn visibility_range_new(
+  start_margin_min : Float,
+  start_margin_max : Float,
+  end_margin_min : Float,
+  end_margin_max : Float,
+  use_aabb : Bool,
+) -> VisibilityRange {
+  @root_visibility.VisibilityRange::new(
+    start_margin_min, start_margin_max, end_margin_min, end_margin_max, use_aabb,
+  )
+}

@@ -14,3 +14,27 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_camera/src/visibility/render_layers.rs`).
+
+///|
+pub type RenderLayers = @sprite.RenderLayers
+
+///|
+pub type Layer = Int
+
+///|
+pub let DEFAULT_LAYERS : RenderLayers = @sprite.RenderLayers::default()
+
+///|
+pub fn render_layers_default() -> RenderLayers {
+  @sprite.RenderLayers::default()
+}
+
+///|
+pub fn render_layers_none() -> RenderLayers {
+  @sprite.RenderLayers::none()
+}
+
+///|
+pub fn render_layers_layer(index : Layer) -> RenderLayers {
+  @sprite.RenderLayers::layer(index)
+}

@@ -14,3 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/decal/mod.rs`.
+
+///|
+pub fn forward_decal() -> ForwardDecal {
+  ForwardDecal::default()
+}
+
+///|
+pub fn clustered_decal() -> ClusteredDecal {
+  ClusteredDecal::default()
+}
+
+///|
+pub fn clustered_decal_with_tag(tag : Int) -> ClusteredDecal {
+  ClusteredDecal::default().with_tag(tag)
+}
+
+///|
+pub fn clustered_decal_with_base_color_texture(
+  texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::default().with_base_color_texture(texture)
+}

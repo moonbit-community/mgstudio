@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/camera/first_person_view_model.rs
+pub fn camera_first_person_view_model_bevy_source() -> String {
+  "bevy/examples/camera/first_person_view_model.rs"
+}
