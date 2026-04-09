@@ -13,11 +13,5 @@
 // limitations under the License.
 
 ///|
-pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
-
-///|
-/// Keep an explicit sprite plugin boundary so default plugins can mirror
-/// Bevy's `SpritePlugin` + `SpriteRenderPlugin` layering.
-pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-}
+// Bridge surface is provided by `lib.mbt` in this package.
+// This file remains a Bevy shape anchor only.

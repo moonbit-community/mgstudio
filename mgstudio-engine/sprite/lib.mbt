@@ -14,7 +14,12 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_lib_bridge_pending() -> Unit {
+// Package-level plugin boundary aligned with Bevy crate responsibilities.
+pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
 
+///|
+/// Keep an explicit sprite plugin boundary so default plugins can mirror
+/// Bevy's `SpritePlugin` + `SpriteRenderPlugin` layering.
+pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

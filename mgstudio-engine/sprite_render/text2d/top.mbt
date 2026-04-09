@@ -14,7 +14,29 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/text2d/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _sprite_render_text2d_top_bridge_pending() -> Unit {
+// Bridge surface to the current `Milky2018/mgstudio/text` runtime owner.
+pub let text_set_render_extract : @app.SystemSet = @text.text_set_render_extract
 
+///|
+pub let text_set_render_prepare : @app.SystemSet = @text.text_set_render_prepare
+
+///|
+pub let text_set_render_queue : @app.SystemSet = @text.text_set_render_queue
+
+///|
+pub let text_set_render_transparent_2d : @app.SystemSet = @text.text_set_render_transparent_2d
+
+///|
+pub fn text_runtime_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @text.text_runtime_plugin(app)
+}
+
+///|
+pub fn text_render_system(world : @ecs.World) -> Unit {
+  @text.text_render_system(world)
+}
+
+///|
+pub fn text_render_transparent_2d_queue_system(world : @ecs.World) -> Unit {
+  @text.text_render_transparent_2d_queue_system(world)
 }
