@@ -1,1 +1,6 @@
+import {
+  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/post_process" @post_process,
+}
+
 supported_targets = "native"

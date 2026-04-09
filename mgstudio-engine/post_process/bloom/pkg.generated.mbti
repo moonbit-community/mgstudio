@@ -1,13 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/post_process/bloom"
 
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+}
+
 // Values
+pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @post_process {type Bloom}
+
+pub using @post_process {type BloomCompositeMode}
+
+pub using @post_process {type BloomPrefilter}
 
 // Traits
 

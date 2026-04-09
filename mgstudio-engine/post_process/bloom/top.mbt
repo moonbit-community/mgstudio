@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/bloom/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_bloom_top_scaffold_owner() -> Unit {
+// Bridge surface to the stable root `Milky2018/mgstudio/post_process` API.
 
-}
+///|
+pub using @post_process {type Bloom}
+
+///|
+pub using @post_process {type BloomCompositeMode}
+
+///|
+pub using @post_process {type BloomPrefilter}
+
+///|
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom

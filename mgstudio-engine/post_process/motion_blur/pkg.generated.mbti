@@ -1,13 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/post_process/motion_blur"
 
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+}
+
 // Values
+pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @post_process {type MotionBlur}
 
 // Traits
 

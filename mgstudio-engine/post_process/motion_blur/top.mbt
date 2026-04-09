@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/motion_blur/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_motion_blur_top_scaffold_owner() -> Unit {
+// Bridge surface to the stable root `Milky2018/mgstudio/post_process` API.
 
-}
+///|
+pub using @post_process {type MotionBlur}
+
+///|
+pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process.ecs_key_motion_blur

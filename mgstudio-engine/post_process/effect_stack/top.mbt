@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/effect_stack/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _post_process_effect_stack_top_scaffold_owner() -> Unit {
+// Bridge surface to the stable root `Milky2018/mgstudio/post_process` API.
 
-}
+///|
+pub using @post_process {type ChromaticAberration}
+
+///|
+pub using @post_process {type Vignette}
+
+///|
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process.ecs_key_chromatic_aberration
+
+///|
+pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process.ecs_key_vignette

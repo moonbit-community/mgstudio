@@ -14,7 +14,10 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _core_pipeline_deferred_top_scaffold_owner() -> Unit {
+// Bridge surface to the stable root `Milky2018/mgstudio/core_pipeline` API.
 
-}
+///|
+pub using @core_pipeline {type DeferredPrepass}
+
+///|
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass

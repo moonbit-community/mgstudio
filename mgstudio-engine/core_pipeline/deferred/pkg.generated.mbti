@@ -1,13 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/deferred"
 
+import {
+  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @core_pipeline {type DeferredPrepass}
 
 // Traits
 
