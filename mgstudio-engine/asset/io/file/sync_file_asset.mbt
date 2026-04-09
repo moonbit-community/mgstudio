@@ -14,4 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/file/sync_file_asset.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub fn sync_file_asset_bytes(path : String, bytes : Bytes) -> Unit {
+  @asset.host_asset_save_bytes(path=path, bytes~)
+}
+
+///|
+pub fn sync_file_asset_texture_png(path : String, bytes : Bytes) -> Unit {
+  sync_file_asset_bytes(path, bytes)
+}

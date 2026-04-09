@@ -14,4 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/server/info.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct AssetServerInfo {
+  supported_compressed_image_formats : Int
+  default_sampler_nearest : Bool
+}
+
+///|
+pub fn AssetServerInfo::default() -> AssetServerInfo {
+  AssetServerInfo::{
+    supported_compressed_image_formats: @asset.asset_supported_compressed_image_formats(),
+    default_sampler_nearest: false,
+  }
+}
+
+///|
+pub fn asset_server_info_loader_kind(path : String) -> @asset.AssetLoaderKind {
+  @asset.asset_loader_kind_for_path(path)
+}
+
+///|
+pub fn asset_server_info_supported_compressed_image_formats() -> Int {
+  @asset.asset_supported_compressed_image_formats()
+}
+
+///|
+pub fn asset_server_info_default_sampler_nearest() -> Bool {
+  false
+}

@@ -14,4 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/processor_gated.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct ProcessorGatedAssetIo {
+  enabled : Bool
+  extension : String
+}
+
+///|
+pub fn ProcessorGatedAssetIo::new(extension : String) -> ProcessorGatedAssetIo {
+  ProcessorGatedAssetIo::{ enabled: true, extension }
+}
+
+///|
+pub fn ProcessorGatedAssetIo::enabled(self : ProcessorGatedAssetIo) -> Bool {
+  self.enabled
+}
+
+///|
+pub fn ProcessorGatedAssetIo::extension(self : ProcessorGatedAssetIo) -> String {
+  self.extension
+}

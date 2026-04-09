@@ -14,4 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/web.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub const WEB_ASSET_SOURCE_NAME : String = "web"
+
+///|
+pub fn asset_io_web_source_name() -> String {
+  WEB_ASSET_SOURCE_NAME
+}
+
+///|
+pub fn asset_io_web_supported() -> Bool {
+  false
+}

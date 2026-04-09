@@ -14,3 +14,30 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_remote/src/schemas/open_rpc.rs`).
+
+///|
+pub struct RemoteOpenRpcMethod {
+  name : String
+  summary : String?
+}
+
+///|
+pub struct RemoteOpenRpcDocument {
+  title : String
+  version : String
+  methods : Array[RemoteOpenRpcMethod]
+}
+
+///|
+pub fn RemoteOpenRpcDocument::default() -> RemoteOpenRpcDocument {
+  RemoteOpenRpcDocument::{
+    title: "mgstudio-remote",
+    version: "1.0",
+    methods: [],
+  }
+}
+
+///|
+pub fn RemoteOpenRpcMethod::new(name : String) -> RemoteOpenRpcMethod {
+  RemoteOpenRpcMethod::{ name, summary: None }
+}

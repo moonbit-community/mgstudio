@@ -14,3 +14,26 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_remote/src/builtin_methods.rs`).
+
+///|
+pub(all) enum RemoteBuiltinMethod {
+  Inspect
+  List
+  Query
+  Subscribe
+} derive(Eq, Show)
+
+///|
+pub fn remote_builtin_method_name(method : RemoteBuiltinMethod) -> String {
+  match method {
+    Inspect => "inspect"
+    List => "list"
+    Query => "query"
+    Subscribe => "subscribe"
+  }
+}
+
+///|
+pub fn remote_builtin_methods() -> Array[RemoteBuiltinMethod] {
+  [Inspect, List, Query, Subscribe]
+}

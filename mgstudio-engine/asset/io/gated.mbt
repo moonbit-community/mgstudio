@@ -14,4 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/gated.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub fn asset_io_is_gated() -> Bool {
+  true
+}
+
+///|
+pub fn asset_io_gated_source_name() -> String {
+  "gated"
+}

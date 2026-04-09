@@ -14,4 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/embedded/embedded_watcher.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct EmbeddedAssetWatcher {
+  asset_path : String
+  source_path : String
+}
+
+///|
+pub fn EmbeddedAssetWatcher::new(
+  asset_path : String,
+  source_path : String,
+) -> EmbeddedAssetWatcher {
+  EmbeddedAssetWatcher::{ asset_path, source_path }
+}
+
+///|
+pub fn EmbeddedAssetWatcher::asset_path(self : EmbeddedAssetWatcher) -> String {
+  self.asset_path
+}
+
+///|
+pub fn EmbeddedAssetWatcher::source_path(self : EmbeddedAssetWatcher) -> String {
+  self.source_path
+}
+
+///|
+pub fn embedded_asset_watcher_canonical_path(path : String) -> String {
+  @asset.asset_canonical_path(path)
+}

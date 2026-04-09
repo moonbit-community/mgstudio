@@ -14,3 +14,39 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_remote/src/http.rs`).
+
+///|
+pub(all) enum RemoteHttpMethod {
+  Get
+  Post
+  Put
+  Delete
+} derive(Eq, Show)
+
+///|
+pub struct RemoteHttpRequest {
+  method : RemoteHttpMethod
+  path : String
+  body : String?
+}
+
+///|
+pub struct RemoteHttpResponse {
+  status : Int
+  body : String
+}
+
+///|
+pub fn RemoteHttpResponse::ok(body : String) -> RemoteHttpResponse {
+  RemoteHttpResponse::{ status: 200, body }
+}
+
+///|
+pub fn RemoteHttpResponse::not_found() -> RemoteHttpResponse {
+  RemoteHttpResponse::{ status: 404, body: "not found" }
+}
+
+///|
+pub fn remote_http_default_bind_address() -> String {
+  "127.0.0.1:0"
+}

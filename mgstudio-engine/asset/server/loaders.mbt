@@ -14,4 +14,49 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/server/loaders.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct AssetServerLoaderInfo {
+  extension : String
+  kind : @asset.AssetLoaderKind
+}
+
+///|
+pub fn AssetServerLoaderInfo::new(
+  extension : String,
+  kind : @asset.AssetLoaderKind,
+) -> AssetServerLoaderInfo {
+  AssetServerLoaderInfo::{ extension, kind }
+}
+
+///|
+pub fn AssetServerLoaderInfo::extension(self : AssetServerLoaderInfo) -> String {
+  self.extension
+}
+
+///|
+pub fn AssetServerLoaderInfo::kind(
+  self : AssetServerLoaderInfo,
+) -> @asset.AssetLoaderKind {
+  self.kind
+}
+
+///|
+pub fn asset_server_register_loader_extension(
+  extension : String,
+  kind : @asset.AssetLoaderKind,
+) -> Unit {
+  @asset.asset_register_loader_extension(extension, kind)
+}
+
+///|
+pub fn asset_server_remove_loader_extension(extension : String) -> Unit {
+  @asset.asset_remove_loader_extension(extension)
+}
+
+///|
+pub fn asset_server_loader_info_for_path(
+  path : String,
+) -> AssetServerLoaderInfo {
+  AssetServerLoaderInfo::new(path, @asset.asset_loader_kind_for_path(path))
+}

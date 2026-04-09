@@ -14,4 +14,29 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/file/file_asset.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct FileAsset {
+  path : String
+  bytes : Bytes
+}
+
+///|
+pub fn FileAsset::new(path : String, bytes : Bytes) -> FileAsset {
+  FileAsset::{ path, bytes }
+}
+
+///|
+pub fn FileAsset::path(self : FileAsset) -> String {
+  self.path
+}
+
+///|
+pub fn FileAsset::bytes(self : FileAsset) -> Bytes {
+  self.bytes
+}
+
+///|
+pub fn FileAsset::size(self : FileAsset) -> Int {
+  self.bytes.length()
+}

@@ -17,11 +17,40 @@
 /// Transport and protocol backends are not implemented yet in mgstudio.
 
 ///|
-pub struct RemotePlugin {}
+pub struct RemotePlugin {
+  enabled : Bool
+  bind_address : String
+}
 
 ///|
 pub fn RemotePlugin::default() -> RemotePlugin {
-  RemotePlugin::{  }
+  RemotePlugin::{ enabled: true, bind_address: "127.0.0.1:0" }
+}
+
+///|
+pub fn RemotePlugin::with_enabled(
+  self : RemotePlugin,
+  enabled : Bool,
+) -> RemotePlugin {
+  RemotePlugin::{ ..self, enabled, }
+}
+
+///|
+pub fn RemotePlugin::with_bind_address(
+  self : RemotePlugin,
+  bind_address : String,
+) -> RemotePlugin {
+  RemotePlugin::{ ..self, bind_address, }
+}
+
+///|
+pub fn RemotePlugin::enabled(self : RemotePlugin) -> Bool {
+  self.enabled
+}
+
+///|
+pub fn RemotePlugin::bind_address(self : RemotePlugin) -> String {
+  self.bind_address
 }
 
 ///|

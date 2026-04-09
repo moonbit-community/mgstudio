@@ -14,4 +14,38 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/memory.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct MemoryAssetSource {
+  name : String
+  mut blobs : Array[(String, Bytes)]
+}
+
+///|
+pub fn MemoryAssetSource::new(name : String) -> MemoryAssetSource {
+  MemoryAssetSource::{ name, blobs: [] }
+}
+
+///|
+pub fn MemoryAssetSource::name(self : MemoryAssetSource) -> String {
+  self.name
+}
+
+///|
+pub fn MemoryAssetSource::insert(
+  self : MemoryAssetSource,
+  path : String,
+  bytes : Bytes,
+) -> Unit {
+  self.blobs.push((path, bytes))
+}
+
+///|
+pub fn MemoryAssetSource::read(self : MemoryAssetSource, path : String) -> Bytes? {
+  for (entry_path, entry_bytes) in self.blobs {
+    if entry_path == path {
+      return Some(entry_bytes)
+    }
+  }
+  None
+}

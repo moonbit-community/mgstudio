@@ -14,4 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/android.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub const ANDROID_ASSET_SOURCE_NAME : String = "android"
+
+///|
+pub fn asset_io_android_source_name() -> String {
+  ANDROID_ASSET_SOURCE_NAME
+}
+
+///|
+pub fn asset_io_android_supported() -> Bool {
+  false
+}

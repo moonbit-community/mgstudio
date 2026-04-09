@@ -14,4 +14,27 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/source.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub struct AssetSourcePath {
+  source_name : String?
+  path : String
+}
+
+///|
+pub fn AssetSourcePath::new(path : String) -> AssetSourcePath {
+  AssetSourcePath::{ source_name: None, path }
+}
+
+///|
+pub fn AssetSourcePath::with_source_name(
+  self : AssetSourcePath,
+  source_name : String?,
+) -> AssetSourcePath {
+  AssetSourcePath::{ ..self, source_name, }
+}
+
+///|
+pub fn AssetSourcePath::canonical(self : AssetSourcePath) -> String {
+  @asset.asset_canonical_path(self.path)
+}

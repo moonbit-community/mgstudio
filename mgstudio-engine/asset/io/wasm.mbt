@@ -14,4 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/wasm.rs`.
-// Pending: root `Milky2018/mgstudio/asset` does not expose this Bevy shape yet.
+
+///|
+pub const WASM_ASSET_SOURCE_NAME : String = "wasm"
+
+///|
+pub fn asset_io_wasm_source_name() -> String {
+  WASM_ASSET_SOURCE_NAME
+}
+
+///|
+pub fn asset_io_wasm_supported() -> Bool {
+  false
+}

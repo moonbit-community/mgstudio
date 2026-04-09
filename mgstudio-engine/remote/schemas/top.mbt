@@ -14,3 +14,13 @@
 
 ///|
 // Bevy source-shape anchor (`bevy_remote/src/schemas/mod.rs`).
+
+///|
+pub fn remote_schema_package_name() -> String {
+  "remote"
+}
+
+///|
+pub fn remote_schema_version() -> Int {
+  1
+}
