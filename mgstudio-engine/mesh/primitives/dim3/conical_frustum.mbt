@@ -14,7 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/conical_frustum.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_conical_frustum_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn conical_frustum(
+  radius_top : Float,
+  radius_bottom : Float,
+  height : Float,
+) -> @math.ConicalFrustum {
+  @math.ConicalFrustum::new(radius_top, radius_bottom, height)
 }

@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/polyline3d.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_polyline3d_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn polyline3d(vertices : Array[@math.Vec3]) -> @math.Polyline3d {
+  @math.Polyline3d::new(vertices)
 }

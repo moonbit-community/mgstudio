@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/dim2.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_primitives_dim2_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn[T : @math.Measured2d] perimeter_2d_of(shape : T) -> Float {
+  shape.perimeter()
+}
+
+///|
+pub fn[T : @math.Measured2d] area_2d_of(shape : T) -> Float {
+  shape.area()
+}
+
+///|
+pub fn circle_diameter(shape : @math.Circle) -> Float {
+  shape.diameter()
+}
+
+///|
+pub fn arc2d_length(shape : @math.Arc2d) -> Float {
+  shape.length()
 }

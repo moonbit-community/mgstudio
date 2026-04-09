@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/plane.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_plane_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn plane3d(normal : @math.Vec3, half_size : @math.Vec2) -> @math.Plane3d {
+  @math.Plane3d::new(normal, half_size)
 }

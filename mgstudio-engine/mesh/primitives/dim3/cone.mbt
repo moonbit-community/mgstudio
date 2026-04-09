@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/cone.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_cone_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn cone(radius : Float, height : Float) -> @math.Cone {
+  @math.Cone::new(radius, height)
 }

@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/primitives/dim3.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_primitives_dim3_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn[T : @math.Measured3d] area_3d_of(shape : T) -> Float {
+  shape.area()
+}
+
+///|
+pub fn[T : @math.Measured3d] volume_3d_of(shape : T) -> Float {
+  shape.volume()
+}
+
+///|
+pub fn cuboid_size(shape : @math.Cuboid) -> @math.Vec3 {
+  shape.size()
+}
+
+///|
+pub fn sphere_diameter(shape : @math.Sphere) -> Float {
+  shape.diameter()
 }

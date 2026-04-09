@@ -14,7 +14,12 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/extrusion.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_extrusion_pending() -> Unit {
+// Bridge surface for wireframe-style extrusion helpers on top of the current
+// `Milky2018/mgstudio/mesh` runtime owner.
 
+///|
+pub fn extrusion_wireframe_mesh(
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3dGeometry? {
+  geometry.to_wireframe_line_list()
 }

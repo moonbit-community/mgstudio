@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_lib_pending() -> Unit {
-
+// Runtime anchor for the current package-level math surface.
+fn _math_lib_default_primitives() -> (Circle, Cuboid) {
+  (Circle::default(), Cuboid::default())
 }

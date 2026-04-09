@@ -14,7 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/sphere.rs`.
-// Source-shape scaffold; runtime split is pending package-boundary support.
-fn _mesh_primitives_dim3_sphere_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` and
+// `Milky2018/mgstudio/mesh` runtime owners.
 
+///|
+pub fn sphere(radius : Float) -> @math.Sphere {
+  @math.Sphere::new(radius)
+}
+
+///|
+pub fn sphere_mesh(radius : Float, subdivisions : Int) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::icosphere(radius, subdivisions)
 }

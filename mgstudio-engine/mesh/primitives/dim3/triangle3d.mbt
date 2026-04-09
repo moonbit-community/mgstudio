@@ -14,7 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/triangle3d.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_triangle3d_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn triangle3d(
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+) -> @math.Triangle3d {
+  @math.Triangle3d::new(a, b, c)
 }

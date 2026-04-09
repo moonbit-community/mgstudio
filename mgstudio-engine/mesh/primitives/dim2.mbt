@@ -14,7 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim2.rs`.
-// Source-shape scaffold; runtime split is pending package-boundary support.
-fn _mesh_primitives_dim2_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` and
+// `Milky2018/mgstudio/mesh` runtime owners.
 
+///|
+pub fn circle(radius : Float) -> @math.Circle {
+  @math.Circle::new(radius)
+}
+
+///|
+pub fn circle_mesh(radius : Float, segments : Int) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::circle(radius, segments)
+}
+
+///|
+pub fn circle_line_strip_mesh(
+  radius : Float,
+  segments : Int,
+) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::circle_line_strip(radius, segments)
+}
+
+///|
+pub fn rectangle(width : Float, height : Float) -> @math.Rectangle {
+  @math.Rectangle::new(width, height)
+}
+
+///|
+pub fn rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::rectangle(width, height)
 }

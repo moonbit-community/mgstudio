@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/cylinder.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_cylinder_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn cylinder(radius : Float, height : Float) -> @math.Cylinder {
+  @math.Cylinder::new(radius, height)
 }

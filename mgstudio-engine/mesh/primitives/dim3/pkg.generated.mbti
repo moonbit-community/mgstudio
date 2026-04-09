@@ -1,13 +1,74 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/mesh/primitives/dim3"
 
+import {
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+}
+
 // Values
+pub fn capsule3d(Float, Float) -> @math.Capsule3d
+
+pub fn cone(Float, Float) -> @math.Cone
+
+pub fn conical_frustum(Float, Float, Float) -> @math.ConicalFrustum
+
+pub fn cuboid(Float, Float, Float) -> @math.Cuboid
+
+pub fn cuboid_mesh(@math.Cuboid) -> @mesh.Mesh3dGeometry
+
+pub fn cylinder(Float, Float) -> @math.Cylinder
+
+pub fn plane3d(@math.Vec3, @math.Vec2) -> @math.Plane3d
+
+pub fn polyline3d(Array[@math.Vec3]) -> @math.Polyline3d
+
+pub fn segment3d(@math.Vec3, @math.Vec3) -> @math.Segment3d
+
+pub fn segment3d_line_list(@math.Segment3d) -> @mesh.Mesh3dGeometry
+
+pub fn sphere(Float) -> @math.Sphere
+
+pub fn sphere_mesh(Float, Int) -> @mesh.Mesh3dGeometry
+
+pub fn tetrahedron(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> @math.Tetrahedron
+
+pub fn torus(Float, Float) -> @math.Torus
+
+pub fn triangle3d(@math.Vec3, @math.Vec3, @math.Vec3) -> @math.Triangle3d
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @math {type Capsule3d}
+
+pub using @math {type Cone}
+
+pub using @math {type ConicalFrustum}
+
+pub using @math {type Cuboid}
+
+pub using @math {type Cylinder}
+
+pub using @mesh {type Mesh3dGeometry}
+
+pub using @mesh {type Mesh3dPrimitiveTopology}
+
+pub using @math {type Plane3d}
+
+pub using @math {type Polyline3d}
+
+pub using @math {type Segment3d}
+
+pub using @math {type Sphere}
+
+pub using @math {type Tetrahedron}
+
+pub using @math {type Torus}
+
+pub using @math {type Triangle3d}
 
 // Traits
 

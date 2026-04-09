@@ -14,7 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded3d/extrusion.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _math_bounding_bounded3d_extrusion_pending() -> Unit {
+// Bridge surface for extrusion-style point-cloud bounds on top of the current
+// `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn extrusion_aabb_3d(
+  isometry : @math.Isometry3d,
+  points : Array[@math.Vec3],
+) -> @math.Aabb3d {
+  @math.Aabb3d::from_point_cloud(isometry, points)
+}
+
+///|
+pub fn extrusion_bounding_sphere(
+  isometry : @math.Isometry3d,
+  points : Array[@math.Vec3],
+) -> @math.BoundingSphere {
+  @math.BoundingSphere::from_point_cloud(isometry, points)
 }

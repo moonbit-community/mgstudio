@@ -14,7 +14,47 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_top_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` and
+// `Milky2018/mgstudio/mesh` runtime owners.
 
-}
+///|
+pub using @math {type Capsule3d}
+
+///|
+pub using @math {type Cone}
+
+///|
+pub using @math {type ConicalFrustum}
+
+///|
+pub using @math {type Cuboid}
+
+///|
+pub using @math {type Cylinder}
+
+///|
+pub using @math {type Plane3d}
+
+///|
+pub using @math {type Polyline3d}
+
+///|
+pub using @math {type Segment3d}
+
+///|
+pub using @math {type Sphere}
+
+///|
+pub using @math {type Tetrahedron}
+
+///|
+pub using @math {type Torus}
+
+///|
+pub using @math {type Triangle3d}
+
+///|
+pub using @mesh {type Mesh3dGeometry}
+
+///|
+pub using @mesh {type Mesh3dPrimitiveTopology}

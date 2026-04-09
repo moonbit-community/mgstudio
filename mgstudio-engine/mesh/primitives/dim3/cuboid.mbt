@@ -14,7 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/cuboid.rs`.
-// Source-shape scaffold; runtime split is pending package-boundary support.
-fn _mesh_primitives_dim3_cuboid_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` and
+// `Milky2018/mgstudio/mesh` runtime owners.
 
+///|
+pub fn cuboid(
+  x_length : Float,
+  y_length : Float,
+  z_length : Float,
+) -> @math.Cuboid {
+  @math.Cuboid::new(x_length, y_length, z_length)
+}
+
+///|
+pub fn cuboid_mesh(shape : @math.Cuboid) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::cuboid(shape)
 }

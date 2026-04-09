@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/tetrahedron.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_dim3_tetrahedron_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
+///|
+pub fn tetrahedron(
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+  d : @math.Vec3,
+) -> @math.Tetrahedron {
+  @math.Tetrahedron::new(a, b, c, d)
 }

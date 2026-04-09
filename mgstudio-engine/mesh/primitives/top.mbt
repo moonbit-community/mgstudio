@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _mesh_primitives_top_pending() -> Unit {
+// Bridge surface to current `Milky2018/mgstudio/math` and
+// `Milky2018/mgstudio/mesh` runtime owners.
 
-}
+///|
+pub using @math {type Circle}
+
+///|
+pub using @math {type Rectangle}
+
+///|
+pub using @mesh {type Mesh2dGeometry}
+
+///|
+pub using @mesh {type Mesh3dGeometry}
+
+///|
+pub using @mesh {type Mesh3dPrimitiveTopology}
