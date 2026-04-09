@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/color_space.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_render_color_space_scaffold_owner() -> Unit {
+fn _ui_render_color_space_bridge_pending() -> Unit {
 
 }

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/mod.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _picking_mesh_picking_ray_cast_top_scaffold_owner() -> Unit {
+fn _picking_mesh_picking_ray_cast_top_bridge_pending() -> Unit {
 
 }

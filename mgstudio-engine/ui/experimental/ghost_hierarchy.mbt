@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/experimental/ghost_hierarchy.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_experimental_ghost_hierarchy_scaffold_owner() -> Unit {
+fn _ui_experimental_ghost_hierarchy_bridge_pending() -> Unit {
 
 }

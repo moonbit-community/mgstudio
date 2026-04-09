@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/gradients.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_gradients_scaffold_owner() -> Unit {
+fn _ui_gradients_bridge_pending() -> Unit {
 
 }

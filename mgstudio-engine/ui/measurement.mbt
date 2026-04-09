@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/measurement.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_measurement_scaffold_owner() -> Unit {
+fn _ui_measurement_bridge_pending() -> Unit {
 
 }

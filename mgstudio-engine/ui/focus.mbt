@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/focus.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_focus_scaffold_owner() -> Unit {
+fn _ui_focus_bridge_pending() -> Unit {
 
 }

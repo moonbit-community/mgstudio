@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/mesh.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _sprite_render_mesh2d_mesh_scaffold_owner() -> Unit {
+fn _sprite_render_mesh2d_mesh_bridge_pending() -> Unit {
 
 }

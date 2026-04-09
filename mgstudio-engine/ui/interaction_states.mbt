@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/interaction_states.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_interaction_states_scaffold_owner() -> Unit {
+fn _ui_interaction_states_bridge_pending() -> Unit {
 
 }

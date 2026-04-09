@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite/src/picking_backend.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _sprite_picking_backend_scaffold_owner() -> Unit {
+fn _sprite_picking_backend_bridge_pending() -> Unit {
 
 }

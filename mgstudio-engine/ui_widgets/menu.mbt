@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/menu.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_widgets_menu_scaffold_owner() -> Unit {
+fn _ui_widgets_menu_bridge_pending() -> Unit {
 
 }

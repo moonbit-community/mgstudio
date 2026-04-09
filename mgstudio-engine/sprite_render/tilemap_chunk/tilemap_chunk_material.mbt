@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/tilemap_chunk_material.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _sprite_render_tilemap_chunk_material_scaffold_owner() -> Unit {
+fn _sprite_render_tilemap_chunk_material_bridge_pending() -> Unit {
 
 }

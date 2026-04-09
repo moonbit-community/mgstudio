@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/sprite_mesh/sprite_material.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _sprite_render_sprite_mesh_material_scaffold_owner() -> Unit {
+fn _sprite_render_sprite_mesh_material_bridge_pending() -> Unit {
 
 }

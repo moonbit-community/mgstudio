@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/label.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_widget_label_scaffold_owner() -> Unit {
+fn _ui_widget_label_bridge_pending() -> Unit {
 
 }

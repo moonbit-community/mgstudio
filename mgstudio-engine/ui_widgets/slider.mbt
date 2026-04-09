@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/slider.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_widgets_slider_scaffold_owner() -> Unit {
+fn _ui_widgets_slider_bridge_pending() -> Unit {
 
 }

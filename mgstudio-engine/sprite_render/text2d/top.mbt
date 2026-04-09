@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/text2d/mod.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _sprite_render_text2d_top_scaffold_owner() -> Unit {
+fn _sprite_render_text2d_top_bridge_pending() -> Unit {
 
 }

@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/ui_texture_slice_pipeline.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_render_ui_texture_slice_pipeline_scaffold_owner() -> Unit {
+fn _ui_render_ui_texture_slice_pipeline_bridge_pending() -> Unit {
 
 }

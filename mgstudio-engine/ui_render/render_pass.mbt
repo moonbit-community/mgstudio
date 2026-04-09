@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/render_pass.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_render_render_pass_scaffold_owner() -> Unit {
+fn _ui_render_render_pass_bridge_pending() -> Unit {
 
 }

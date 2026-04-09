@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/box_shadow.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _ui_render_box_shadow_scaffold_owner() -> Unit {
+fn _ui_render_box_shadow_bridge_pending() -> Unit {
 
 }
