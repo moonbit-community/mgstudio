@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/bevy_manifest.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _macro_utils_bevy_manifest_scaffold_owner() -> Unit {
+// Pending bridge stub; no safe root symbol yet.
+fn _macro_utils_bevy_manifest_bridge_pending() -> Unit {
 
 }
