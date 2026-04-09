@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/render_debug.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _dev_tools_render_debug_pending() -> Unit {
+// Runtime wrappers live in this file while the broader dev-tools implementation stays split across the package.
 
+///|
+pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay {
+  DiagnosticsOverlay::render()
 }

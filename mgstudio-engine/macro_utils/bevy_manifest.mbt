@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/bevy_manifest.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _macro_utils_bevy_manifest_bridge_pending() -> Unit {
+// The current runtime does not expose Bevy's proc-macro manifest surface.
 
+///|
+pub fn macro_utils_bevy_manifest_runtime_available() -> Bool {
+  macro_utils_runtime_available()
 }

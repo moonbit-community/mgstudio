@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/material_pipeline_prepare.rs`.
+
+///|
+pub fn meshlet_material_pipeline_prepare_runtime_available() -> Bool {
+  meshlet_runtime_available()
+}

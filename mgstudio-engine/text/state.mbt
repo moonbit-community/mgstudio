@@ -13,31 +13,6 @@
 // limitations under the License.
 
 ///|
-pub struct TextHandle {
-  id : Int
-}
-
-///|
-pub fn TextHandle::new(id : Int) -> TextHandle {
-  TextHandle::{ id, }
-}
-
-///|
-pub fn TextHandle::id(self : TextHandle) -> Int {
-  self.id
-}
-
-///|
-pub struct TextSpanHandle {
-  id : Int
-}
-
-///|
-pub fn TextSpanHandle::new(id : Int) -> TextSpanHandle {
-  TextSpanHandle::{ id, }
-}
-
-///|
 pub struct Text2dBundle {
   text : Text2d
   font : TextFont

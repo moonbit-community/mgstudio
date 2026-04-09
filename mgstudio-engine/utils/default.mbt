@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/default.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _utils_default_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader utils implementation stays split across the package.
 
+///|
+pub fn[T : Default] default() -> T {
+  Default::default()
 }

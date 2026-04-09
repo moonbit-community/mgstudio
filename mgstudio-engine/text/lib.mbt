@@ -14,7 +14,12 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/lib.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _text_lib_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub const HAS_TEXT_RUNTIME : Bool = true
+
+///|
+pub fn text_runtime_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  text_plugin(app)
 }

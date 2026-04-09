@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/states.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _dev_tools_states_pending() -> Unit {
+// The current runtime does not expose Bevy's state-debug helper surface.
 
+///|
+pub fn dev_tools_states_debug_available() -> Bool {
+  false
 }

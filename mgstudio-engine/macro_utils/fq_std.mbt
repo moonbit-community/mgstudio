@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/fq_std.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _macro_utils_fq_std_bridge_pending() -> Unit {
+// The current runtime does not expose Bevy's proc-macro fq-std surface.
 
+///|
+pub fn macro_utils_fq_std_runtime_available() -> Bool {
+  macro_utils_runtime_available()
 }

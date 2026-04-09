@@ -14,7 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/graph.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_graph_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_graph() -> AnimationGraph {
+  AnimationGraph::new()
+}
+
+///|
+pub fn animation_graph_root_node(graph : AnimationGraph) -> AnimationNodeIndex {
+  graph.root()
+}
+
+///|
+pub fn animation_graph_from_clip_handle(
+  clip : @asset.Handle[AnimationClip],
+) -> (AnimationGraph, AnimationNodeIndex) {
+  AnimationGraph::from_clip(clip)
 }

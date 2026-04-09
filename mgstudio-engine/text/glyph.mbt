@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/glyph.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_glyph_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub fn text_measure_glyph_advance(
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  codepoint : Int,
+) -> Float {
+  font_measure_advance(font, font_size, codepoint)
+}
+
+///|
+pub fn text_rasterize_glyph(
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  codepoint : Int,
+  smoothing : FontSmoothing,
+) -> GlyphRaster? {
+  font_rasterize_glyph(font, font_size, codepoint, smoothing)
 }

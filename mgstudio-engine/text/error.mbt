@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/error.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_error_bridge_pending() -> Unit {
+// The current runtime does not expose Bevy's public text error enums.
 
+///|
+pub fn text_public_error_surface_available() -> Bool {
+  false
 }

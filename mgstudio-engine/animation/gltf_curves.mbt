@@ -14,7 +14,31 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/gltf_curves.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_gltf_curves_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_clip_add_translation_track(
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+  keyframes : Array[KeyframeVec3],
+) -> AnimationClip {
+  clip.add_translation_curve(target_id, keyframes)
+}
+
+///|
+pub fn animation_clip_add_rotation_track(
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+  keyframes : Array[KeyframeQuat],
+) -> AnimationClip {
+  clip.add_rotation_curve(target_id, keyframes)
+}
+
+///|
+pub fn animation_clip_add_scale_track(
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+  keyframes : Array[KeyframeVec3],
+) -> AnimationClip {
+  clip.add_scale_curve(target_id, keyframes)
 }

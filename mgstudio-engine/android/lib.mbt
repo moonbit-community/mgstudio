@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_android/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _android_lib_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader android boundary stays split across the package.
 
+///|
+pub fn android_runtime_available() -> Bool {
+  android_app_available()
 }

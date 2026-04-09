@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/material_shade_nodes.rs`.
+
+///|
+pub fn meshlet_material_shade_nodes_runtime_available() -> Bool {
+  meshlet_runtime_available()
+}

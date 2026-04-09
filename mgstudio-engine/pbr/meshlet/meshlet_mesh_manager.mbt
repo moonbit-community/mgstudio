@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/meshlet_mesh_manager.rs`.
+
+///|
+pub fn meshlet_mesh_manager_runtime_available() -> Bool {
+  meshlet_runtime_available()
+}

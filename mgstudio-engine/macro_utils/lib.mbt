@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/lib.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _macro_utils_lib_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader boundary stays split across the package.
 
+///|
+pub fn macro_utils_runtime_available() -> Bool {
+  HAS_MACRO_UTILS_RUNTIME
 }

@@ -14,7 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/transition.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_transition_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_transitions() -> AnimationTransitions {
+  AnimationTransitions::new()
+}
+
+///|
+pub fn animation_transitions_play(
+  transitions : AnimationTransitions,
+  player : AnimationPlayer,
+  node : AnimationNodeIndex,
+  duration_seconds : Float,
+) -> AnimationPlayerEntry {
+  transitions.play(player, node, duration_seconds)
 }

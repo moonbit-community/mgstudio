@@ -14,7 +14,58 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/text.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_text_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub(all) struct Text {
+  mut content : String
+}
+
+///|
+pub fn Text::default() -> Text {
+  Text::new("")
+}
+
+///|
+pub fn Text::new(content : String) -> Text {
+  Text::{ content, }
+}
+
+///|
+pub(all) struct Text2d {
+  mut content : String
+}
+
+///|
+pub fn Text2d::default() -> Text2d {
+  Text2d::new("")
+}
+
+///|
+pub fn Text2d::new(content : String) -> Text2d {
+  Text2d::{ content, }
+}
+
+///|
+pub(all) struct TextSpan {
+  mut content : String
+}
+
+///|
+pub fn TextSpan::default() -> TextSpan {
+  TextSpan::new("")
+}
+
+///|
+pub fn TextSpan::new(content : String) -> TextSpan {
+  TextSpan::{ content, }
+}
+
+///|
+pub fn text_bundle(
+  content : String,
+  font : TextFont,
+  transform : @transform.Transform,
+) -> Text2dBundle {
+  Text2dBundle::new(Text2d::new(content), font, transform)
 }

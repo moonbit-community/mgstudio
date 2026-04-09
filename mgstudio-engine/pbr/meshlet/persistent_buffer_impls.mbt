@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/persistent_buffer_impls.rs`.
+
+///|
+pub fn meshlet_persistent_buffer_impls_runtime_available() -> Bool {
+  meshlet_runtime_available()
+}

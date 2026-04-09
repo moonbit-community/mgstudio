@@ -14,7 +14,44 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/text_access.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_text_access_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub struct TextHandle {
+  id : Int
+}
+
+///|
+pub fn TextHandle::new(id : Int) -> TextHandle {
+  TextHandle::{ id, }
+}
+
+///|
+pub fn TextHandle::id(self : TextHandle) -> Int {
+  self.id
+}
+
+///|
+pub struct TextSpanHandle {
+  id : Int
+}
+
+///|
+pub fn TextSpanHandle::new(id : Int) -> TextSpanHandle {
+  TextSpanHandle::{ id, }
+}
+
+///|
+pub fn text_content(handle : TextHandle) -> String? {
+  text_get_content(handle)
+}
+
+///|
+pub fn text_layout_size(handle : TextHandle) -> @math.Vec2? {
+  text_get_layout_size(handle)
+}
+
+///|
+pub fn text_visual_bounds(handle : TextHandle) -> @math.Rect? {
+  text_get_visual_bounds(handle)
 }

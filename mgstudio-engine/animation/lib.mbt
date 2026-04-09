@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_lib_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub const HAS_ANIMATION_RUNTIME : Bool = true
+
+///|
+pub fn animation_runtime_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  animation_plugin(app)
 }

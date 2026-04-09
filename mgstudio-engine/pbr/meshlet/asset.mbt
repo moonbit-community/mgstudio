@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/asset.rs`.
+
+///|
+pub fn meshlet_asset_runtime_available() -> Bool {
+  meshlet_runtime_available()
+}

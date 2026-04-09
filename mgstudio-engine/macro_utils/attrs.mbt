@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_macro_utils/src/attrs.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _macro_utils_attrs_bridge_pending() -> Unit {
+// The current runtime does not expose Bevy's proc-macro attrs surface.
 
+///|
+pub fn macro_utils_attrs_runtime_available() -> Bool {
+  macro_utils_runtime_available()
 }

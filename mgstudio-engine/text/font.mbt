@@ -14,7 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/font.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_font_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub fn[S : IntoFontSize] text_font_with_size(font_size : S) -> TextFont {
+  TextFont::from_font_size(font_size)
+}
+
+///|
+pub fn text_font_source_from_family(family : String) -> FontSource {
+  FontSource::from_family(family)
+}
+
+///|
+pub fn text_font_source_from_asset(
+  font : @asset.Handle[@asset.Font],
+) -> FontSource {
+  FontSource::from_font(font)
 }

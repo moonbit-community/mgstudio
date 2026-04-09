@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/parley_context.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_parley_context_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub fn text_font_context() -> FontCx {
+  FontCx::default()
+}
+
+///|
+pub fn text_font_family_names(font_cx : FontCx) -> Array[String] {
+  font_cx.family_names()
 }

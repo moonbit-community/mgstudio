@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/once.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _utils_once_bridge_pending() -> Unit {
+// The current runtime does not expose Bevy's once-cell helpers.
 
+///|
+pub fn utils_once_available() -> Bool {
+  false
 }

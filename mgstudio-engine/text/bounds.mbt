@@ -14,7 +14,30 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/bounds.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _text_bounds_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader text implementation stays split across the package.
 
+///|
+pub struct TextBounds {
+  width : Float?
+  height : Float?
+}
+
+///|
+pub fn TextBounds::default() -> TextBounds {
+  TextBounds::{ width: None, height: None }
+}
+
+///|
+pub fn TextBounds::new(width : Float, height : Float) -> TextBounds {
+  TextBounds::{ width: Some(width), height: Some(height) }
+}
+
+///|
+pub fn TextBounds::new_horizontal(width : Float) -> TextBounds {
+  TextBounds::{ width: Some(width), height: None }
+}
+
+///|
+pub fn TextBounds::new_vertical(height : Float) -> TextBounds {
+  TextBounds::{ width: None, height: Some(height) }
 }

@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/animatable.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_animatable_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_translation_keyframe(
+  time : Float,
+  value : @math.Vec3,
+) -> KeyframeVec3 {
+  KeyframeVec3::new(time, value)
+}
+
+///|
+pub fn animation_rotation_keyframe(
+  time : Float,
+  value : @math.Quat,
+) -> KeyframeQuat {
+  KeyframeQuat::new(time, value)
+}
+
+///|
+pub fn animation_scale_keyframe(
+  time : Float,
+  value : @math.Vec3,
+) -> KeyframeVec3 {
+  KeyframeVec3::new(time, value)
 }

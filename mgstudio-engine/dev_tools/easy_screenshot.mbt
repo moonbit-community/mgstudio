@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/easy_screenshot.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _dev_tools_easy_screenshot_pending() -> Unit {
+// The current runtime does not expose Bevy's screenshot helper surface.
 
+///|
+pub fn dev_tools_easy_screenshot_available() -> Bool {
+  false
 }

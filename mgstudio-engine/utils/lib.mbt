@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/lib.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _utils_lib_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader utils implementation stays split across the package.
 
-}
+///|
+pub const HAS_UTILS_RUNTIME : Bool = true

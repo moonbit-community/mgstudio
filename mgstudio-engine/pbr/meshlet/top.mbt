@@ -16,7 +16,13 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/mod.rs`.
 
 ///|
-// Source-shape scaffold; runtime not implemented yet.
-fn _pbr_meshlet_runtime_not_implemented_owner() -> Unit {
+/// Meshlet boundary aligned with Bevy's `bevy_pbr::meshlet` module.
+/// The current MoonBit runtime does not expose meshlet rendering systems.
 
+///|
+pub const HAS_MESHLET_RUNTIME : Bool = false
+
+///|
+pub fn meshlet_runtime_available() -> Bool {
+  HAS_MESHLET_RUNTIME
 }

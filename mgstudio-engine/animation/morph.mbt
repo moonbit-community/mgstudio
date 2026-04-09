@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/morph.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_morph_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_weights(values : Array[Float]) -> AnimationWeights {
+  AnimationWeights::new(values)
+}
+
+///|
+pub fn animation_clip_add_morph_weights_curve(
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+  keyframes : Array[KeyframeWeights],
+) -> AnimationClip {
+  clip.add_weights_curve(target_id, keyframes)
 }

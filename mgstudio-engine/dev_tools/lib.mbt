@@ -14,7 +14,12 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _dev_tools_lib_pending() -> Unit {
+// Runtime wrappers live in this file while the broader dev-tools implementation stays split across the package.
 
+///|
+pub const HAS_DEV_TOOLS_RUNTIME : Bool = true
+
+///|
+pub fn dev_tools_default_fps_overlay_config() -> FpsOverlayConfig {
+  FpsOverlayConfig::default()
 }

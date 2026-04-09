@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_encase_derive/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _encase_derive_lib_bridge_pending() -> Unit {
+// Runtime wrappers live in this file while the broader boundary stays split across the package.
 
+///|
+pub fn encase_derive_runtime_available() -> Bool {
+  HAS_ENCASE_DERIVE_RUNTIME
 }

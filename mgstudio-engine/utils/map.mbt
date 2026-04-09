@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/map.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _utils_map_bridge_pending() -> Unit {
+// The current runtime relies on MoonBit's built-in `Map` instead of a dedicated Bevy map wrapper.
 
+///|
+pub fn utils_map_helpers_available() -> Bool {
+  false
 }

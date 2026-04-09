@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/animation_event.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_animation_event_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_clip_event(
+  time : Float,
+  label : String,
+  payload : String,
+) -> AnimationClipEvent {
+  AnimationClipEvent::new(time, label, payload)
+}
+
+///|
+pub fn animation_clip_callback_event(
+  time : Float,
+  callback_id : Int,
+) -> AnimationClipEvent {
+  AnimationClipEvent::new_callback(time, callback_id)
+}
+
+///|
+pub fn animation_register_clip_event_callback(
+  callback : AnimationEventCallback,
+) -> Int {
+  animation_register_event_callback(callback)
 }

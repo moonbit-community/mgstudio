@@ -14,3 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/visibility_buffer_raster_node.rs`.
+
+///|
+pub fn meshlet_visibility_buffer_raster_runtime_available() -> Bool {
+  meshlet_runtime_available()
+}

@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/util.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_util_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_target_id_for_name(name : String) -> AnimationTargetId {
+  AnimationTargetId::from_name(name)
+}
+
+///|
+pub fn animation_target_id_for_names(
+  names : Array[String],
+) -> AnimationTargetId {
+  AnimationTargetId::from_names(names)
 }

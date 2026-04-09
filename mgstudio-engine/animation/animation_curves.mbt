@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_animation/src/animation_curves.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _animation_animation_curves_pending() -> Unit {
+// Runtime wrappers live in this file while the broader animation implementation stays split across the package.
 
+///|
+pub fn animation_clip_add_animatable_curve(
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+  curve : AnimatableCurve,
+  sample_count? : Int = 121,
+) -> AnimationClip {
+  clip.add_curve_to_target(target_id, curve, sample_count~)
+}
+
+///|
+pub fn animation_clip_sample(
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+  time_seconds : Float,
+) -> AnimationSample? {
+  clip.sample_target(target_id, time_seconds)
 }

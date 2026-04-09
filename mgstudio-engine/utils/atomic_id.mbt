@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/atomic_id.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _utils_atomic_id_bridge_pending() -> Unit {
+// The current runtime does not expose Bevy's atomic-id allocator helpers.
 
+///|
+pub fn utils_atomic_id_available() -> Bool {
+  false
 }

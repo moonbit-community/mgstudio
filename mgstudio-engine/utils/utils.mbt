@@ -20,19 +20,6 @@
 pub type TypeId = @any.TypeId
 
 ///|
-pub type TypeInfo = @any.TypeInfo
-
-///|
-pub fn[T : Default] default() -> T {
-  Default::default()
-}
-
-///|
-pub fn type_id(value : @any.Any) -> TypeId {
-  value.type_id()
-}
-
-///|
-pub fn type_name(value : @any.Any) -> String {
-  value.type_name()
+pub fn utils_runtime_type_support_available() -> Bool {
+  true
 }

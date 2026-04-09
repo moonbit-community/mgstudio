@@ -14,7 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/ci_testing/systems.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _dev_tools_ci_testing_systems_pending() -> Unit {
+// The current runtime does not expose Bevy's CI-testing systems surface.
 
+///|
+pub fn dev_tools_ci_testing_systems_available() -> Bool {
+  false
 }
