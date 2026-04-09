@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_render_lib_scaffold_owner() -> Unit {
+// Bridge surface for the package root lives here; runtime implementation
+// remains delegated to `sprite_render` and `pbr`.
 
+///|
+pub(all) enum GizmoRenderSystems {
+  QueueLineGizmos2d
+  QueueLineGizmos3d
+} derive(Eq, Show)
+
+///|
+pub fn gizmo_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite_render.sprite_render_plugin(app)
+}
+
+///|
+pub fn gizmo_render_system_set(system : GizmoRenderSystems) -> @app.SystemSet {
+  match system {
+    QueueLineGizmos2d => @sprite_render.render2d_set_queue
+    QueueLineGizmos3d => @pbr.render3d_set_queue
+  }
 }

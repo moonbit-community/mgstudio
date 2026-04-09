@@ -14,7 +14,60 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_lib_scaffold_owner() -> Unit {
+// Bridge surface for the package root lives here; runtime implementation
+// remains delegated to `sprite`.
 
+///|
+pub type Isometry2d = @sprite.Isometry2d
+
+///|
+pub type GizmoLineJoint = @sprite.GizmoLineJoint
+
+///|
+pub type GizmoLineStyle = @sprite.GizmoLineStyle
+
+///|
+pub type GizmoLineConfig = @sprite.GizmoLineConfig
+
+///|
+pub type GizmoConfig = @sprite.GizmoConfig
+
+///|
+pub type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
+
+///|
+pub type GizmoConfigStore = @sprite.GizmoConfigStore
+
+///|
+pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(
+  app : @app.App[@ecs.World],
+  group : G,
+) -> @app.App[@ecs.World] {
+  @sprite.init_gizmo_group(app, group)
+}
+
+///|
+pub type Gizmos[G] = @sprite.Gizmos[G]
+
+///|
+pub type RoundedRectBuilder = @sprite.RoundedRectBuilder
+
+///|
+pub type Ellipse2dBuilder = @sprite.Ellipse2dBuilder
+
+///|
+pub type Arc2dBuilder = @sprite.Arc2dBuilder
+
+///|
+pub type ArrowBuilder = @sprite.ArrowBuilder
+
+///|
+pub type Grid2dBuilder = @sprite.Grid2dBuilder
+
+///|
+pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite.init_gizmo_group(
+    @sprite_render.sprite_render_plugin(app),
+    DefaultGizmoConfigGroup::default(),
+  )
 }

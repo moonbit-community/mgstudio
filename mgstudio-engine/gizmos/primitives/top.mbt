@@ -14,7 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _gizmos_primitives_top_scaffold_owner() -> Unit {
-
-}
+// Source-shape ownership stays here; concrete primitive bridges are pending.
