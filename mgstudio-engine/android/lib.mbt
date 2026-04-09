@@ -15,6 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_android/src/lib.rs`.
 // Source-shape scaffold; runtime split is pending.
-fn _android_lib_scaffold_owner() -> Unit {
+fn _android_lib_bridge_pending() -> Unit {
 
 }
