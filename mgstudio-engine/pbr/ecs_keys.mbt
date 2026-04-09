@@ -95,7 +95,7 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.
 pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
 
 ///|
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @pbr_prepass.ecs_key_depth_prepass
 
 ///|
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_component(
@@ -103,7 +103,7 @@ pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_
 )
 
 ///|
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @core_pipeline.ecs_key_normal_prepass
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @pbr_prepass.ecs_key_normal_prepass
 
 ///|
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
@@ -124,7 +124,7 @@ pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor] = @ecs.regis
 )
 
 ///|
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @pbr_prepass.ecs_key_deferred_prepass
 
 ///|
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.register_component(
@@ -192,7 +192,7 @@ pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = 
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] = @light.ecs_key_environment_map_light
 
 ///|
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @pbr_prepass.ecs_key_motion_vector_prepass
 
 ///|
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing

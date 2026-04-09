@@ -16,7 +16,25 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/prepass/mod.rs`.
 
 ///|
-// Source-shape scaffold; runtime split is pending.
-fn _pbr_prepass_top_scaffold_owner() -> Unit {
+pub type DepthPrepass = @core_pipeline.DepthPrepass
 
-}
+///|
+pub type NormalPrepass = @core_pipeline.NormalPrepass
+
+///|
+pub type MotionVectorPrepass = @core_pipeline.MotionVectorPrepass
+
+///|
+pub type DeferredPrepass = @core_pipeline.DeferredPrepass
+
+///|
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
+
+///|
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @core_pipeline.ecs_key_normal_prepass
+
+///|
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
+
+///|
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass

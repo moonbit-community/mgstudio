@@ -50,3 +50,132 @@ fn gpu_mesh_bind_index_buffer(
     pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
   }
 }
+
+///|
+fn parse_f32_csv(csv : String) -> Array[Float]? {
+  let trimmed = csv.trim().to_string()
+  if trimmed == "" {
+    return Some([])
+  }
+  let values : Array[Float] = []
+  for part in csv.split(",") {
+    let token = part.to_string().trim().to_string()
+    if token == "" {
+      continue
+    }
+    let parsed = @string.parse_double(token) catch { _ => return None }
+    values.push(Float::from_double(parsed))
+  }
+  Some(values)
+}
+
+///|
+pub fn create_mesh_capsule(
+  radius~ : Float,
+  half_length~ : Float,
+  segments~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    return backend.create_mesh_capsule(radius, half_length, segments)
+  }
+  0
+}
+
+///|
+pub fn create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
+  if ensure_backend() is Some(backend) {
+    return backend.create_mesh_rectangle(width, height)
+  }
+  0
+}
+
+///|
+pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
+  if parse_f32_csv(vertices_xy_csv) is Some(vertices) {
+    if ensure_backend() is Some(backend) {
+      let mesh_id = backend.create_mesh_triangles_xy(vertices)
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh_triangles failed: parsed_values=\{vertices.length().to_string()}",
+        )
+      }
+      return mesh_id
+    }
+  } else {
+    @debug.debug(
+      "[renderer] create_mesh_triangles parse failed: csv_len=\{vertices_xy_csv.length().to_string()}",
+    )
+  }
+  0
+}
+
+///|
+pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
+  if parse_f32_csv(vertices_xyuvrgba_csv) is Some(vertices) {
+    if ensure_backend() is Some(backend) {
+      let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=\{vertices.length().to_string()}",
+        )
+      }
+      return mesh_id
+    }
+  } else {
+    @debug.debug(
+      "[renderer] create_mesh_triangles_xyuvrgba parse failed: csv_len=\{vertices_xyuvrgba_csv.length().to_string()}",
+    )
+  }
+  0
+}
+
+///|
+pub fn create_mesh3d(
+  vertices_xyzuvrgba_csv~ : String,
+  primitive_topology~ : Int,
+) -> Int {
+  if parse_f32_csv(vertices_xyzuvrgba_csv) is Some(vertices) {
+    return create_mesh3d_xyznuvrgba(
+      vertices_xyznuvrgba=vertices,
+      primitive_topology~,
+    )
+  } else {
+    @debug.debug(
+      "[renderer] create_mesh3d parse failed: csv_len=\{vertices_xyzuvrgba_csv.length().to_string()}, topology=\{primitive_topology.to_string()}",
+    )
+  }
+  0
+}
+
+///|
+pub fn create_mesh3d_xyznuvrgba(
+  vertices_xyznuvrgba~ : Array[Float],
+  primitive_topology~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    let mesh_id = backend.create_mesh3d_xyznuvrgba(
+      vertices_xyznuvrgba, primitive_topology,
+    )
+    if mesh_id <= 0 {
+      @debug.debug(
+        "[renderer] create_mesh3d_xyznuvrgba failed: values=\{vertices_xyznuvrgba.length().to_string()}, topology=\{primitive_topology.to_string()}",
+      )
+    }
+    return mesh_id
+  }
+  0
+}
+
+///|
+pub fn update_mesh3d_xyznuvrgba(
+  mesh_id~ : Int,
+  vertices_xyznuvrgba~ : Array[Float],
+  primitive_topology~ : Int,
+) -> Bool {
+  if ensure_backend() is Some(backend) {
+    return backend.update_mesh3d_xyznuvrgba(
+      mesh_id, vertices_xyznuvrgba, primitive_topology,
+    )
+  }
+  false
+}

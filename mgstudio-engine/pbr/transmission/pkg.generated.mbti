@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/transmission"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const TRANSMISSION_MODULE_TAG : String = "bevy_pbr::transmission"
+
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+
+pub fn screen_space_transmission_blur_taps(@post_process.ScreenSpaceTransmissionQuality) -> Int
+
+// Errors
+
+// Types and methods
+pub struct TransmittedShadowReceiver {
+} derive(ToJson, @json.FromJson)
+pub fn TransmittedShadowReceiver::default() -> Self
+pub impl @ecs.Component for TransmittedShadowReceiver
+
+// Type aliases
+pub using @post_process {type ScreenSpaceTransmission}
+
+pub using @post_process {type ScreenSpaceTransmissionQuality}
+
+// Traits
+

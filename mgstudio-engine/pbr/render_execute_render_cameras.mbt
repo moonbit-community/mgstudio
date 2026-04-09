@@ -32,7 +32,7 @@ fn render3d_execute_render_cameras(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_render_cameras",
   )
-  let lighting = render3d_collect_lighting(source_world)
+  let lighting = @pbr_render.render3d_collect_lighting(source_world)
   let camera_phase_items = match
     render3d_prepared_camera_phase_items(world, cameras) {
     Some(items) => items

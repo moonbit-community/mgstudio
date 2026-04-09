@@ -52,7 +52,7 @@ fn render3d_execute_camera_point_shadow_pass(
     pass_lighting.point_range,
   )
   for face_index in 0..<6 {
-    let shadow_camera_transform = render3d_point_shadow_face_transform(
+    let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
       face_index,
     )

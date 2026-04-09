@@ -1,0 +1,6 @@
+import {
+  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/ecs",
+}
+
+supported_targets = "native"

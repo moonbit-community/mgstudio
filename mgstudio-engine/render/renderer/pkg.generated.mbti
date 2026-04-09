@@ -162,6 +162,26 @@ pub fn get_queue(Int) -> Int
 
 pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
 
+pub fn host_debug_string(value~ : String) -> Unit
+
+pub fn host_gpu_build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
+
+pub fn host_gpu_clear_registered_wgsl_source_registry() -> Unit
+
+pub fn host_gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
+
+pub fn host_gpu_downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+
+pub fn host_gpu_get_queue(Int) -> Int
+
+pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
+
+pub fn host_gpu_register_wgsl_source(String, String) -> Unit
+
+pub fn host_gpu_request_device() -> Int
+
+pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
+
 pub fn mesh3d_gpu_culling_supported() -> Bool
 
 pub fn mesh3d_indirect_first_instance_supported() -> Bool

@@ -3,11 +3,13 @@ package "Milky2018/mgstudio/pbr/render"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
@@ -103,6 +105,8 @@ pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float)
 
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
 
+pub fn render3d_collect_lighting(@ecs.World) -> Render3dLightingState
+
 pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
 
 pub fn render3d_cull_mode_value(@material.StandardMaterial, Int) -> Int
@@ -193,6 +197,10 @@ pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
 
 pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
 
+pub fn render3d_point_light_shadow_map_size(@ecs.World) -> Int
+
+pub fn render3d_point_shadow_face_transform(@math.Vec3, Int) -> @transform.Transform
+
 pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjection
 
 pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
@@ -233,6 +241,8 @@ pub fn render3d_transform_local_normal(@transform.Transform, @math.Vec3) -> @mat
 
 pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
+pub fn render3d_upload_mesh_handle_cached(@ref.Ref[Render3dPhaseState], @asset.Handle[@mesh.Mesh]) -> Int
+
 pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
 
 pub fn render3d_vec4_dot(@math.Vec4, @math.Vec4) -> Float
@@ -246,6 +256,39 @@ pub fn render3d_world_transform_cache_ref() -> @ref.Ref[Render3dWorldTransformCa
 // Errors
 
 // Types and methods
+pub struct DistanceFog {
+  color : @color.Color
+  directional_light_color : @color.Color
+  directional_light_exponent : Float
+  falloff : FogFalloff3d
+} derive(ToJson, @json.FromJson)
+pub fn DistanceFog::default() -> Self
+pub fn DistanceFog::new(@color.Color, FogFalloff3d) -> Self
+pub fn DistanceFog::with_color(Self, @color.Color) -> Self
+pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
+pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
+pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
+
+pub(all) enum FogFalloff3d {
+  Linear(Float, Float)
+  Exponential(Float)
+  ExponentialSquared(Float)
+  Atmospheric(@math.Vec3, @math.Vec3)
+} derive(ToJson, @json.FromJson)
+pub fn FogFalloff3d::atmospheric(@math.Vec3, @math.Vec3) -> Self
+pub fn FogFalloff3d::exponential(Float) -> Self
+pub fn FogFalloff3d::exponential_squared(Float) -> Self
+pub fn FogFalloff3d::from_visibility(Float) -> Self
+pub fn FogFalloff3d::from_visibility_color(Float, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_colors(Float, @color.Color, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast(Float, Float) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_color(Float, Float, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_colors(Float, Float, @color.Color, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
+pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
+pub fn FogFalloff3d::linear(Float, Float) -> Self
+pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
+
 pub(all) struct GpuOcclusionCullingWorkItemBuffers3d {
   enabled : Bool
 }

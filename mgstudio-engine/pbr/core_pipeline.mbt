@@ -919,16 +919,16 @@ pub type Fxaa = @post_process.Fxaa
 pub type CustomPostProcess3d = @post_process.CustomPostProcess3d
 
 ///|
-pub type DepthPrepass = @core_pipeline.DepthPrepass
+pub type DepthPrepass = @pbr_prepass.DepthPrepass
 
 ///|
-pub type NormalPrepass = @core_pipeline.NormalPrepass
+pub type NormalPrepass = @pbr_prepass.NormalPrepass
 
 ///|
-pub type MotionVectorPrepass = @core_pipeline.MotionVectorPrepass
+pub type MotionVectorPrepass = @pbr_prepass.MotionVectorPrepass
 
 ///|
-pub type DeferredPrepass = @core_pipeline.DeferredPrepass
+pub type DeferredPrepass = @pbr_prepass.DeferredPrepass
 
 ///|
 /// Marker component aligned with Bevy's `OcclusionCulling`.
@@ -1332,68 +1332,6 @@ pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbi
 
 ///|
 pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
-
-///|
-/// Camera contact shadow settings aligned with Bevy's `ContactShadows`.
-pub struct ContactShadows {
-  linear_steps : Int
-  thickness : Float
-  length : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn ContactShadows::default() -> ContactShadows {
-  ContactShadows::{ linear_steps: 16, thickness: 0.1F, length: 0.3F }
-}
-
-///|
-pub fn ContactShadows::new(
-  linear_steps : Int,
-  thickness : Float,
-  length : Float,
-) -> ContactShadows {
-  ContactShadows::{
-    linear_steps: if linear_steps <= 0 {
-      1
-    } else {
-      linear_steps
-    },
-    thickness: if thickness < 0.0F {
-      0.0F
-    } else {
-      thickness
-    },
-    length: if length < 0.0F {
-      0.0F
-    } else {
-      length
-    },
-  }
-}
-
-///|
-pub fn ContactShadows::with_linear_steps(
-  self : ContactShadows,
-  linear_steps : Int,
-) -> ContactShadows {
-  ContactShadows::new(linear_steps, self.thickness, self.length)
-}
-
-///|
-pub fn ContactShadows::with_thickness(
-  self : ContactShadows,
-  thickness : Float,
-) -> ContactShadows {
-  ContactShadows::new(self.linear_steps, thickness, self.length)
-}
-
-///|
-pub fn ContactShadows::with_length(
-  self : ContactShadows,
-  length : Float,
-) -> ContactShadows {
-  ContactShadows::new(self.linear_steps, self.thickness, length)
-}
 
 ///|
 /// Camera shadow filtering mode aligned with Bevy's `ShadowFilteringMethod`.

@@ -224,5 +224,21 @@ pub fn GpuBackend::draw_motion_blur(
 }
 
 ///|
+pub fn draw_motion_blur(
+  scene_texture_id~ : Int,
+  velocity_texture_id~ : Int,
+  shutter_angle~ : Float,
+  samples~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_motion_blur(
+      scene_texture_id, velocity_texture_id, shutter_angle, samples,
+    ) catch {
+      err => debug_runtime_error("draw_motion_blur", err)
+    }
+  }
+}
+
+///|
 
 ///|

@@ -160,7 +160,7 @@ fn render3d_execute_collect_meshes(
     let (skinning_key_hi, skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
       phase_state_ref, entity,
     )
-    let mesh_id = render3d_upload_mesh_handle_cached(
+    let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
       phase_state_ref,
       mesh3d.mesh,
     )

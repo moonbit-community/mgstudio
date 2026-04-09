@@ -96,17 +96,17 @@ pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = @renderer.MESH3D_BUILD_INDIR
 
 ///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
-  @renderer.request_device()
+  @renderer.host_gpu_request_device()
 }
 
 ///|
 pub fn host_gpu_get_queue(device : HostGpuDevice) -> HostGpuQueue {
-  @renderer.get_queue(device)
+  @renderer.host_gpu_get_queue(device)
 }
 
 ///|
 pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
-  @renderer.register_wgsl_source(rel_path, source)
+  @renderer.host_gpu_register_wgsl_source(rel_path, source)
 }
 
 ///|
@@ -128,7 +128,7 @@ pub fn host_gpu_clip_matrix(
   w_axis_z : Float,
   w_axis_w : Float,
 ) -> HostGpuClipMatrix {
-  @renderer.gpu_clip_matrix(
+  @renderer.host_gpu_clip_matrix(
     x_axis_x, x_axis_y, x_axis_z, x_axis_w, y_axis_x, y_axis_y, y_axis_z, y_axis_w,
     z_axis_x, z_axis_y, z_axis_z, z_axis_w, w_axis_x, w_axis_y, w_axis_z, w_axis_w,
   )
@@ -136,7 +136,7 @@ pub fn host_gpu_clip_matrix(
 
 ///|
 pub fn clear_registered_wgsl_source_registry() -> Unit {
-  @renderer.clear_registered_wgsl_source_registry()
+  @renderer.host_gpu_clear_registered_wgsl_source_registry()
 }
 
 ///|
@@ -145,7 +145,7 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
 ) -> Unit {
-  @renderer.upload_mesh3d_preprocess_camera_payload(
+  @renderer.host_gpu_upload_mesh3d_preprocess_camera_payload(
     camera_key_hi~,
     camera_key_lo~,
     payload~,
@@ -158,7 +158,7 @@ pub fn host_gpu_build_mesh3d_indirect_parameters(
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_BUILD_INDIRECT_PHASE_MAIN,
 ) -> Unit {
-  @renderer.build_mesh3d_indirect_parameters(
+  @renderer.host_gpu_build_mesh3d_indirect_parameters(
     camera_key_hi~,
     camera_key_lo~,
     phase_kind~,
@@ -171,7 +171,11 @@ pub fn host_gpu_preprocess_mesh3d(
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_PREPROCESS_PHASE_MAIN,
 ) -> Unit {
-  @renderer.preprocess_mesh3d(camera_key_hi~, camera_key_lo~, phase_kind~)
+  @renderer.host_gpu_preprocess_mesh3d(
+    camera_key_hi~,
+    camera_key_lo~,
+    phase_kind~,
+  )
 }
 
 ///|
@@ -179,7 +183,10 @@ pub fn host_gpu_downsample_mesh3d_depth_pyramid(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
 ) -> Unit {
-  @renderer.downsample_mesh3d_depth_pyramid(camera_key_hi~, camera_key_lo~)
+  @renderer.host_gpu_downsample_mesh3d_depth_pyramid(
+    camera_key_hi~,
+    camera_key_lo~,
+  )
 }
 
 ///|
@@ -1507,7 +1514,7 @@ pub fn host_gpu_update_mesh3d_xyznuvrgba(
 
 ///|
 pub fn host_debug_string(value~ : String) -> Unit {
-  @renderer.debug_string(value~)
+  @renderer.host_debug_string(value~)
 }
 
 ///|

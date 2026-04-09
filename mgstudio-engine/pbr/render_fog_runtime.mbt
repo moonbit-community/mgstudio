@@ -60,23 +60,26 @@ fn render3d_camera_distance_fog(
       0.0F,
       1.0F,
     )
-    fog = DistanceFog::{
-      ..fog,
-      color: render3d_color_lerp(
+    fog = fog.with_color(
+      render3d_color_lerp(
         fog.color,
         volumetric_fog_value.ambient_color,
         ambient_mix,
       ),
-      directional_light_color: render3d_color_lerp(
+    )
+    fog = fog.with_directional_light_color(
+      render3d_color_lerp(
         fog.directional_light_color,
         volumetric_fog_value.ambient_color,
         ambient_mix * 0.6F,
       ),
-      directional_light_exponent: fog.directional_light_exponent +
+    )
+    fog = fog.with_directional_light_exponent(
+      fog.directional_light_exponent +
       Float::from_double(volumetric_fog_value.step_count.to_double()) /
       64.0F *
       0.5F,
-    }
+    )
   }
   if atmosphere is Some(atmosphere_value) {
     let albedo_color = @sprite.Color::new(
@@ -97,10 +100,7 @@ fn render3d_camera_distance_fog(
       ),
       1.0F,
     )
-    fog = DistanceFog::{
-      ..fog,
-      color: render3d_color_lerp(fog.color, albedo_color, 0.15F),
-    }
+    fog = fog.with_color(render3d_color_lerp(fog.color, albedo_color, 0.15F))
   }
   if atmosphere_settings is Some(atmosphere_settings_value) {
     let unit_scale = if atmosphere_settings_value.scene_units_to_m <= 0.0F {
@@ -121,12 +121,11 @@ fn render3d_camera_distance_fog(
           inscattering.mul_scalar(1.0F / unit_scale),
         )
     }
-    fog = DistanceFog::{ ..fog, falloff, }
+    fog = fog.with_falloff(falloff)
     if atmosphere_settings_value.rendering_method is AtmosphereMode::Raymarched {
-      fog = DistanceFog::{
-        ..fog,
-        directional_light_exponent: fog.directional_light_exponent + 1.0F,
-      }
+      fog = fog.with_directional_light_exponent(
+        fog.directional_light_exponent + 1.0F,
+      )
     }
   }
   fog

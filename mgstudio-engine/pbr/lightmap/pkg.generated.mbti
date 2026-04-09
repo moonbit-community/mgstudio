@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/lightmap"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
+
+// Errors
+
+// Types and methods
+pub struct Lightmap {
+  image : @asset.Handle[@image.Image]
+  uv_rect : @math.Rect
+  bicubic_sampling : Bool
+} derive(ToJson, @json.FromJson)
+pub fn Lightmap::default() -> Self
+pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
+pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
+pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
+pub impl @ecs.Component for Lightmap
+
+// Type aliases
+
+// Traits
+

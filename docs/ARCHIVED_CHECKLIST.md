@@ -9,6 +9,12 @@ Archived completed checklist items moved out of ROADMAP_CHECKLIST to keep line b
 - [x] Issue `render_renderer/mesh2d_structural_cache_keys`: replace mesh2d material cache key heuristics with structural keys and collision-safe lookup.
 - [x] Issue `render_renderer/mesh2d_pass_uniform_sync`: move mesh2d view/global uniform upload from draw path to pass begin path.
 
+- [x] Batch archive `roadmap/2026-04-09-render-pbr-topology`: moved completed render/pbr migration items from ROADMAP_CHECKLIST.
+- [x] Issue `render/top_mbt_source_ownership_activation`: all render `top.mbt` directories are package-activated; runtime owner migration from root bridge files to Bevy-aligned subdirectory owners landed for pass tracing and mesh creation/update helpers.
+- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/runtime_config/targets/systems/execute/execute_collect/execute_mesh_collect/execute_camera_queue_build/execute_camera_motion_vector/execute_camera_main_pass/execute_camera_point_shadow/execute_camera_postprocess/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
+- [x] Issue `pbr/render3d_legacy_filenames_removed`: removed all root `render3d_*.mbt` filenames by migrating to `render_*` runtime file names.
+- [x] Issue `pbr/plugin_file_ownership_realignment`: migrated plugin runtime from `materials_plugin/standard_material_plugin/mesh_render_plugin` into `material/pbr_material/mesh_material` and removed legacy filenames.
+
 - [x] Batch archive `roadmap/2026-04-07`: moved all completed checklist items from ROADMAP_CHECKLIST.
 - [x] Package `a11y`.
 - [x] Package `android`.

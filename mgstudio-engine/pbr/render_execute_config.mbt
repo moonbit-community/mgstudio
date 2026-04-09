@@ -96,20 +96,6 @@ fn render3d_default_opaque_renderer_method(
 }
 
 ///|
-fn render3d_point_light_shadow_map_size(world : @ecs.World) -> Int {
-  if (try! world.get_resource(ecs_key_point_light_shadow_map))
-    is Some(shadow_map) {
-    if shadow_map.size <= 0 {
-      1
-    } else {
-      shadow_map.size
-    }
-  } else {
-    PointLightShadowMap::default().size
-  }
-}
-
-///|
 fn render3d_wireframe_config_or_none(world : @ecs.World) -> WireframeConfig? {
   if (try! world.get_resource(ecs_key_wireframe_config)) is Some(config) {
     Some(config)

@@ -281,29 +281,6 @@ fn render3d_point_light_shadow_target_get_or_create(
 }
 
 ///|
-fn render3d_point_shadow_face_transform(
-  light_position : @math.Vec3,
-  face_index : Int,
-) -> @transform.Transform {
-  let (forward, up) = match face_index {
-    // Match Bevy's `CUBE_MAP_FACES` exactly:
-    // [+X, -X, +Y, -Y, +Z, -Z] face order with left-handed cubemap conventions.
-    0 => (@math.Vec3::new(1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    1 => (@math.Vec3::new(-1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    2 => (@math.Vec3::new(0.0F, 1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, 1.0F))
-    3 =>
-      (@math.Vec3::new(0.0F, -1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, -1.0F))
-    4 => (@math.Vec3::new(0.0F, 0.0F, -1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    _ => (@math.Vec3::new(0.0F, 0.0F, 1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  }
-  @transform.Transform::from_xyz(
-    light_position.x,
-    light_position.y,
-    light_position.z,
-  ).looking_at(light_position.add(forward), up)
-}
-
-///|
 fn render3d_blit_texture_to_target(
   source_texture_id : Int,
   target_id : Int,
@@ -464,106 +441,6 @@ fn render3d_mesh_wireframe_color(
 }
 
 ///|
-fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
-  let mut lighting = @pbr_render.render3d_default_lighting_state()
-  let point_luminous_power_to_intensity = 4.0F * @math.pi()
-  if (try! world.get_resource(ecs_key_global_ambient_light)) is Some(ambient) {
-    lighting = Render3dLightingState::{
-      ..lighting,
-      ambient_color: ambient.color,
-      ambient_brightness: ambient.brightness,
-    }
-  }
-  let mut directional_found = false
-  world.for_each_component(ecs_key_directional_light, fn(entity, light) {
-    if directional_found {
-      return
-    }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    directional_found = true
-    lighting = Render3dLightingState::{
-      ..lighting,
-      directional_dir: @pbr_render.render3d_transform_forward(transform),
-      directional_color: light.color,
-      directional_illuminance: light.illuminance,
-    }
-  })
-  let mut point_found = false
-  world.for_each_component(ecs_key_point_light, fn(entity, light) {
-    if point_found {
-      return
-    }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    point_found = true
-    lighting = Render3dLightingState::{
-      ..lighting,
-      point_entity: entity,
-      point_pos: transform.translation,
-      point_color: light.color,
-      point_intensity: if point_luminous_power_to_intensity <= 0.0F {
-        light.intensity
-      } else {
-        light.intensity / point_luminous_power_to_intensity
-      },
-      point_range: if light.range > 0.0F {
-        light.range
-      } else {
-        1.0F
-      },
-      point_shadow_maps_enabled: light.shadow_maps_enabled,
-      point_shadow_depth_bias: light.shadow_depth_bias,
-      point_shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
-        light.shadow_map_near_z
-      } else {
-        0.0001F
-      },
-    }
-  })
-  let mut spot_found = false
-  world.for_each_component(ecs_key_spot_light, fn(entity, light) {
-    if spot_found {
-      return
-    }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    let inner = light.inner_angle
-    let mut outer = light.outer_angle
-    if outer < inner {
-      outer = inner
-    }
-    spot_found = true
-    lighting = Render3dLightingState::{
-      ..lighting,
-      spot_pos: transform.translation,
-      spot_dir: @pbr_render.render3d_transform_forward(transform),
-      spot_color: light.color,
-      spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
-        light.intensity
-      } else {
-        light.intensity / point_luminous_power_to_intensity
-      },
-      spot_range: if light.range > 0.0F {
-        light.range
-      } else {
-        1.0F
-      },
-      spot_inner_angle: inner,
-      spot_outer_angle: outer,
-    }
-  })
-  lighting
-}
 
 ///|
 priv struct Render3dEnvironmentMapState {

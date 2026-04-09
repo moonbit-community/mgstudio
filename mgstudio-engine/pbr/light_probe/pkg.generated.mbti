@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/light_probe"
+
+import {
+  "Milky2018/mgstudio/light",
+}
+
+// Values
+pub const MAX_VIEW_LIGHT_PROBES : Int = 8
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @light {type EnvironmentMapLight}
+
+pub using @light {type GeneratedEnvironmentMapLight}
+
+pub using @light {type IrradianceVolume}
+
+pub using @light {type LightProbe}
+
+pub using @light {type ParallaxCorrection}
+
+// Traits
+

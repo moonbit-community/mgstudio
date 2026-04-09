@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/volumetric_fog"
+
+import {
+  "Milky2018/mgstudio/light",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @light {type FogVolume}
+
+pub using @light {type VolumetricFog}
+
+// Traits
+

@@ -81,3 +81,30 @@ pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
   self.pass_state = None
   self.pass_has_depth = false
 }
+
+///|
+pub fn set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.set_scissor(x, y, width, height) catch {
+      _ => ()
+    }
+  }
+}
+
+///|
+pub fn clear_scissor() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.clear_scissor() catch {
+      _ => ()
+    }
+  }
+}
+
+///|
+pub fn end_pass() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.end_pass() catch {
+      err => debug_runtime_error("end_pass", err)
+    }
+  }
+}

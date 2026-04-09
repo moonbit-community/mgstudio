@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/view/window"
+
+import {
+  "Milky2018/mgstudio/render/renderer",
+}
+
+// Values
+pub fn screenshot_capture_surface_request() -> Int
+
+pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int
+
+pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int
+
+pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.ScreenshotCaptureResult?
+
+pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @renderer {type ScreenshotCaptureResult}
+
+// Traits
+

@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/mod.rs`.
 
 ///|
-// Source-shape scaffold; runtime split is pending.
-fn _pbr_meshlet_top_scaffold_owner() -> Unit {
+// Source-shape scaffold; runtime not implemented yet.
+fn _pbr_meshlet_runtime_not_implemented_owner() -> Unit {
 
 }

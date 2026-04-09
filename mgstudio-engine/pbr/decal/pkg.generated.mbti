@@ -1,0 +1,43 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/decal"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
+
+pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
+
+// Errors
+
+// Types and methods
+pub struct ClusteredDecal {
+  base_color_texture : @asset.Handle[@image.Image]?
+  normal_map_texture : @asset.Handle[@image.Image]?
+  metallic_roughness_texture : @asset.Handle[@image.Image]?
+  emissive_texture : @asset.Handle[@image.Image]?
+  tag : Int
+} derive(ToJson, @json.FromJson)
+pub fn ClusteredDecal::default() -> Self
+pub fn ClusteredDecal::new() -> Self
+pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_tag(Self, Int) -> Self
+pub impl @ecs.Component for ClusteredDecal
+
+pub struct ForwardDecal {
+} derive(ToJson, @json.FromJson)
+pub fn ForwardDecal::default() -> Self
+pub impl @ecs.Component for ForwardDecal
+
+// Type aliases
+
+// Traits
+

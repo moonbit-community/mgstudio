@@ -15,24 +15,6 @@
 // Core pipeline and camera settings live in `core_pipeline.mbt`.
 
 ///|
-pub type AlphaMode3d = @material.AlphaMode3d
-
-///|
-pub type Face3d = @material.Face3d
-
-///|
-pub type ParallaxMappingMethod = @material.ParallaxMappingMethod
-
-///|
-pub type OpaqueRendererMethod = @material.OpaqueRendererMethod
-
-///|
-pub type DefaultOpaqueRendererMethod = @material.DefaultOpaqueRendererMethod
-
-///|
-pub type StandardMaterial = @material.StandardMaterial
-
-///|
 pub(open) trait IntoPbrMaterialAsset {
   into_pbr_material_asset(Self) -> StandardMaterial
 }
@@ -67,15 +49,6 @@ pub impl IntoPbrMaterialAsset for @asset.Handle[@asset.Image] with into_pbr_mate
 }
 
 ///|
-pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
-
-///|
-pub type MeshMaterial3d = @material.MeshMaterial3d
-
-///|
-pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
-
-///|
 /// Light-facing ownership lives in `Milky2018/mgstudio/light`.
 pub type VolumetricLight = @light.VolumetricLight
 
@@ -90,9 +63,6 @@ pub type AtmosphereMode = @light.AtmosphereMode
 
 ///|
 pub type AtmosphereSettings = @light.AtmosphereSettings
-
-///|
-pub type ScatteringMedium = @light.ScatteringMedium
 
 ///|
 pub type Atmosphere = @light.Atmosphere

@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/atmosphere"
+
+import {
+  "Milky2018/mgstudio/light",
+}
+
+// Values
+pub const ATMOSPHERE_PLUGIN_ID : String = "bevy_pbr::AtmospherePlugin"
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @light {type Atmosphere}
+
+pub using @light {type AtmosphereEnvironmentMapLight}
+
+pub using @light {type AtmosphereMode}
+
+pub using @light {type AtmosphereSettings}
+
+// Traits
+

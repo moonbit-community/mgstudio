@@ -47,3 +47,17 @@ pub fn render3d_camera_indirect_enabled(
   gpu_culling_supported &&
   !no_indirect_drawing
 }
+
+///|
+pub fn render3d_point_light_shadow_map_size(world : @ecs.World) -> Int {
+  if (try! world.get_resource(@light.ecs_key_point_light_shadow_map))
+    is Some(shadow_map) {
+    if shadow_map.size <= 0 {
+      1
+    } else {
+      shadow_map.size
+    }
+  } else {
+    @light.PointLightShadowMap::default().size
+  }
+}

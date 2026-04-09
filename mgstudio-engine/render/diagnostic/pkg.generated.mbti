@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/diagnostic"
+
+import {
+  "Milky2018/mgstudio/render/renderer",
+}
+
+// Values
+pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
+
+pub fn render_diagnostics_reset_current_frame_counters() -> Unit
+
+pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @renderer {type RenderDiagnosticsSnapshot}
+
+// Traits
+

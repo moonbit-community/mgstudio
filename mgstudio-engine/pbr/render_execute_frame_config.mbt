@@ -45,7 +45,7 @@ fn render3d_execute_frame_config(
   let default_opaque_renderer_method = render3d_default_opaque_renderer_method(
     source_world, deferred_lighting_enabled,
   )
-  let point_light_shadow_map_size = render3d_point_light_shadow_map_size(
+  let point_light_shadow_map_size = @pbr_render.render3d_point_light_shadow_map_size(
     source_world,
   )
   let delta_seconds = @pbr_render.render3d_default_time_or_default(source_world).delta_seconds()
