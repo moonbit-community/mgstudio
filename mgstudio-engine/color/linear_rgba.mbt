@@ -13,8 +13,62 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/linear_rgba.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_linear_rgba_pending() -> Unit {
+pub type LinearRgba = Color
 
+///|
+fn color_srgb_to_linear(value : Float) -> Float {
+  if value <= 0.0F {
+    value
+  } else if value <= 0.04045F {
+    value / 12.92F
+  } else {
+    @math.pow((value + 0.055F) / 1.055F, 2.4F)
+  }
+}
+
+///|
+fn color_linear_to_srgb(value : Float) -> Float {
+  let clamped = color_clamp_unit(value)
+  if clamped <= 0.0031308F {
+    clamped * 12.92F
+  } else {
+    1.055F * @math.pow(clamped, 1.0F / 2.4F) - 0.055F
+  }
+}
+
+///|
+pub fn linear_rgba(red : Float, green : Float, blue : Float) -> LinearRgba {
+  Color::new(red, green, blue, 1.0F)
+}
+
+///|
+pub fn linear_rgba_with_alpha(
+  red : Float,
+  green : Float,
+  blue : Float,
+  alpha : Float,
+) -> LinearRgba {
+  Color::new(red, green, blue, color_clamp_unit(alpha))
+}
+
+///|
+pub fn linear_rgba_from_color(color : Color) -> LinearRgba {
+  color
+}
+
+///|
+pub fn linear_rgba_to_color(color : LinearRgba) -> Color {
+  color
+}
+
+///|
+pub fn Color::as_linear_rgba(self : Color) -> LinearRgba {
+  self
+}
+
+///|
+pub fn Color::to_linear_rgba_tuple(
+  self : Color,
+) -> (Float, Float, Float, Float) {
+  (self.r, self.g, self.b, self.a)
 }

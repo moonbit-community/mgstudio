@@ -13,8 +13,54 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/lib.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_lib_pending() -> Unit {
+pub fn color_clear() -> Color {
+  Color::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
 
+///|
+pub fn color_gray(lightness : Float) -> Color {
+  let level = color_clamp_unit(lightness)
+  Color::new(level, level, level, 1.0F)
+}
+
+///|
+pub fn color_from_hsla(hsla : Hsla) -> Color {
+  hsla.to_color()
+}
+
+///|
+pub fn color_from_hsva(hsva : Hsva) -> Color {
+  hsva.to_color()
+}
+
+///|
+pub fn color_from_hwba(hwba : Hwba) -> Color {
+  hwba.to_color()
+}
+
+///|
+pub fn color_from_linear_rgba(color : LinearRgba) -> Color {
+  linear_rgba_to_color(color)
+}
+
+///|
+pub fn color_range(start : Color, end_ : Color) -> ColorRange {
+  ColorRange::new(start, end_)
+}
+
+///|
+pub fn color_gradient(
+  colors : Array[Color],
+) -> ColorGradient raise ColorGradientError {
+  ColorGradient::new(colors)
+}
+
+///|
+pub fn Color::white() -> Color {
+  Color::new(1.0F, 1.0F, 1.0F, 1.0F)
+}
+
+///|
+pub fn Color::black() -> Color {
+  Color::new(0.0F, 0.0F, 0.0F, 1.0F)
 }

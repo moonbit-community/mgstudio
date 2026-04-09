@@ -1,7 +1,108 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/color/palettes"
 
+import {
+  "Milky2018/mgstudio/color",
+}
+
 // Values
+pub fn basic_aqua() -> @color.Color
+
+pub fn basic_black() -> @color.Color
+
+pub fn basic_blue() -> @color.Color
+
+pub fn basic_fuchsia() -> @color.Color
+
+pub fn basic_gray() -> @color.Color
+
+pub fn basic_green() -> @color.Color
+
+pub fn basic_lime() -> @color.Color
+
+pub fn basic_maroon() -> @color.Color
+
+pub fn basic_navy() -> @color.Color
+
+pub fn basic_olive() -> @color.Color
+
+pub fn basic_palette() -> Array[@color.Color]
+
+pub fn basic_purple() -> @color.Color
+
+pub fn basic_red() -> @color.Color
+
+pub fn basic_silver() -> @color.Color
+
+pub fn basic_teal() -> @color.Color
+
+pub fn basic_white() -> @color.Color
+
+pub fn basic_yellow() -> @color.Color
+
+pub fn css_alice_blue() -> @color.Color
+
+pub fn css_antique_white() -> @color.Color
+
+pub fn css_aquamarine() -> @color.Color
+
+pub fn css_beige() -> @color.Color
+
+pub fn css_coral() -> @color.Color
+
+pub fn css_cornflower_blue() -> @color.Color
+
+pub fn css_crimson() -> @color.Color
+
+pub fn css_dark_orange() -> @color.Color
+
+pub fn css_gainsboro() -> @color.Color
+
+pub fn css_gold() -> @color.Color
+
+pub fn css_hot_pink() -> @color.Color
+
+pub fn css_indigo() -> @color.Color
+
+pub fn css_orange_red() -> @color.Color
+
+pub fn css_palette() -> Array[@color.Color]
+
+pub fn css_rebecca_purple() -> @color.Color
+
+pub fn css_sky_blue() -> @color.Color
+
+pub fn tailwind_amber_300() -> @color.Color
+
+pub fn tailwind_amber_500() -> @color.Color
+
+pub fn tailwind_amber_700() -> @color.Color
+
+pub fn tailwind_blue_300() -> @color.Color
+
+pub fn tailwind_blue_500() -> @color.Color
+
+pub fn tailwind_blue_700() -> @color.Color
+
+pub fn tailwind_emerald_300() -> @color.Color
+
+pub fn tailwind_emerald_500() -> @color.Color
+
+pub fn tailwind_emerald_700() -> @color.Color
+
+pub fn tailwind_palette() -> Array[@color.Color]
+
+pub fn tailwind_rose_300() -> @color.Color
+
+pub fn tailwind_rose_500() -> @color.Color
+
+pub fn tailwind_rose_700() -> @color.Color
+
+pub fn tailwind_slate_50() -> @color.Color
+
+pub fn tailwind_slate_500() -> @color.Color
+
+pub fn tailwind_slate_950() -> @color.Color
 
 // Errors
 

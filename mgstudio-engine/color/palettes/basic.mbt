@@ -13,8 +13,81 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/palettes/basic.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_palettes_basic_pending() -> Unit {
+pub fn basic_aqua() -> @color.Color {
+  @color.Color::srgba(0.0F, 1.0F, 1.0F, 1.0F)
+}
 
+///|
+pub fn basic_black() -> @color.Color {
+  @color.Color::srgba(0.0F, 0.0F, 0.0F, 1.0F)
+}
+
+///|
+pub fn basic_blue() -> @color.Color {
+  @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
+}
+
+///|
+pub fn basic_fuchsia() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.0F, 1.0F, 1.0F)
+}
+
+///|
+pub fn basic_gray() -> @color.Color {
+  @color.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F)
+}
+
+///|
+pub fn basic_green() -> @color.Color {
+  @color.Color::srgba(0.0F, 0.5019608F, 0.0F, 1.0F)
+}
+
+///|
+pub fn basic_lime() -> @color.Color {
+  @color.Color::srgba(0.0F, 1.0F, 0.0F, 1.0F)
+}
+
+///|
+pub fn basic_maroon() -> @color.Color {
+  @color.Color::srgba(0.5019608F, 0.0F, 0.0F, 1.0F)
+}
+
+///|
+pub fn basic_navy() -> @color.Color {
+  @color.Color::srgba(0.0F, 0.0F, 0.5019608F, 1.0F)
+}
+
+///|
+pub fn basic_olive() -> @color.Color {
+  @color.Color::srgba(0.5019608F, 0.5019608F, 0.0F, 1.0F)
+}
+
+///|
+pub fn basic_purple() -> @color.Color {
+  @color.Color::srgba(0.5019608F, 0.0F, 0.5019608F, 1.0F)
+}
+
+///|
+pub fn basic_red() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
+}
+
+///|
+pub fn basic_silver() -> @color.Color {
+  @color.Color::srgba(0.7529412F, 0.7529412F, 0.7529412F, 1.0F)
+}
+
+///|
+pub fn basic_teal() -> @color.Color {
+  @color.Color::srgba(0.0F, 0.5019608F, 0.5019608F, 1.0F)
+}
+
+///|
+pub fn basic_white() -> @color.Color {
+  @color.Color::srgba(1.0F, 1.0F, 1.0F, 1.0F)
+}
+
+///|
+pub fn basic_yellow() -> @color.Color {
+  @color.Color::srgba(1.0F, 1.0F, 0.0F, 1.0F)
 }

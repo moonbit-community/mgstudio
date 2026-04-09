@@ -13,8 +13,76 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/palettes/css.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_palettes_css_pending() -> Unit {
+pub fn css_alice_blue() -> @color.Color {
+  @color.Color::srgba(0.941F, 0.973F, 1.0F, 1.0F)
+}
 
+///|
+pub fn css_antique_white() -> @color.Color {
+  @color.Color::srgba(0.98F, 0.922F, 0.843F, 1.0F)
+}
+
+///|
+pub fn css_aquamarine() -> @color.Color {
+  @color.Color::srgba(0.498F, 1.0F, 0.831F, 1.0F)
+}
+
+///|
+pub fn css_beige() -> @color.Color {
+  @color.Color::srgba(0.961F, 0.961F, 0.863F, 1.0F)
+}
+
+///|
+pub fn css_coral() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.498F, 0.314F, 1.0F)
+}
+
+///|
+pub fn css_cornflower_blue() -> @color.Color {
+  @color.Color::srgba(0.392F, 0.584F, 0.929F, 1.0F)
+}
+
+///|
+pub fn css_crimson() -> @color.Color {
+  @color.Color::srgba(0.863F, 0.078F, 0.235F, 1.0F)
+}
+
+///|
+pub fn css_dark_orange() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.549F, 0.0F, 1.0F)
+}
+
+///|
+pub fn css_gainsboro() -> @color.Color {
+  @color.Color::srgba(0.863F, 0.863F, 0.863F, 1.0F)
+}
+
+///|
+pub fn css_gold() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.843F, 0.0F, 1.0F)
+}
+
+///|
+pub fn css_hot_pink() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.412F, 0.706F, 1.0F)
+}
+
+///|
+pub fn css_indigo() -> @color.Color {
+  @color.Color::srgba(0.294F, 0.0F, 0.51F, 1.0F)
+}
+
+///|
+pub fn css_orange_red() -> @color.Color {
+  @color.Color::srgba(1.0F, 0.271F, 0.0F, 1.0F)
+}
+
+///|
+pub fn css_rebecca_purple() -> @color.Color {
+  @color.Color::srgba(0.4F, 0.2F, 0.6F, 1.0F)
+}
+
+///|
+pub fn css_sky_blue() -> @color.Color {
+  @color.Color::srgba(0.529F, 0.808F, 0.922F, 1.0F)
 }

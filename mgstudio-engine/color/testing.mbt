@@ -13,8 +13,17 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/testing.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_testing_pending() -> Unit {
+pub fn color_approx_eq(lhs : Color, rhs : Color, tolerance : Float) -> Bool {
+  color_abs(lhs.r - rhs.r) <= tolerance &&
+  color_abs(lhs.g - rhs.g) <= tolerance &&
+  color_abs(lhs.b - rhs.b) <= tolerance &&
+  color_abs(lhs.a - rhs.a) <= tolerance
+}
 
+///|
+pub fn color_component_delta(
+  lhs : Color,
+  rhs : Color,
+) -> (Float, Float, Float, Float) {
+  (lhs.r - rhs.r, lhs.g - rhs.g, lhs.b - rhs.b, lhs.a - rhs.a)
 }

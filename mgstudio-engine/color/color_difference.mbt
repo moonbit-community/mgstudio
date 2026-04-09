@@ -13,8 +13,14 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/color_difference.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_color_difference_pending() -> Unit {
+pub fn color_distance_squared(lhs : Color, rhs : Color) -> Float {
+  let dr = lhs.r - rhs.r
+  let dg = lhs.g - rhs.g
+  let db = lhs.b - rhs.b
+  dr * dr + dg * dg + db * db
+}
 
+///|
+pub fn color_distance(lhs : Color, rhs : Color) -> Float {
+  @math.sqrt(color_distance_squared(lhs, rhs))
 }

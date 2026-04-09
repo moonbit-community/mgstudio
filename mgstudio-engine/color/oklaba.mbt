@@ -13,8 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/oklaba.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_oklaba_pending() -> Unit {
+pub type Oklaba = Color
 
+///|
+pub fn oklaba_from_color(color : Color) -> Oklaba {
+  color
+}
+
+///|
+pub fn oklaba_to_color(color : Oklaba) -> Color {
+  color
+}
+
+///|
+pub fn oklaba_gray(lightness : Float) -> Oklaba {
+  color_gray(lightness)
 }

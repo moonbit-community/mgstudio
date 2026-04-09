@@ -13,8 +13,36 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/srgba.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_srgba_pending() -> Unit {
+pub fn Color::srgb(r : Float, g : Float, b : Float) -> Color {
+  Color::srgba(r, g, b, 1.0F)
+}
 
+///|
+pub fn Color::srgba(r : Float, g : Float, b : Float, a : Float) -> Color {
+  Color::{
+    r: color_srgb_to_linear(r),
+    g: color_srgb_to_linear(g),
+    b: color_srgb_to_linear(b),
+    a: color_clamp_unit(a),
+  }
+}
+
+///|
+pub fn color_srgb(r : Float, g : Float, b : Float) -> Color {
+  Color::srgb(r, g, b)
+}
+
+///|
+pub fn color_srgba(r : Float, g : Float, b : Float, a : Float) -> Color {
+  Color::srgba(r, g, b, a)
+}
+
+///|
+pub fn Color::to_srgba_tuple(self : Color) -> (Float, Float, Float, Float) {
+  (
+    color_linear_to_srgb(self.r),
+    color_linear_to_srgb(self.g),
+    color_linear_to_srgb(self.b),
+    color_clamp_unit(self.a),
+  )
 }

@@ -13,8 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/oklcha.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_oklcha_pending() -> Unit {
+pub type Oklcha = Color
 
+///|
+pub fn oklcha_from_color(color : Color) -> Oklcha {
+  color
+}
+
+///|
+pub fn oklcha_to_color(color : Oklcha) -> Color {
+  color
+}
+
+///|
+pub fn oklcha_gray(lightness : Float) -> Oklcha {
+  color_gray(lightness)
 }

@@ -13,8 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/laba.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_laba_pending() -> Unit {
+pub type Laba = Color
 
+///|
+pub fn laba_from_color(color : Color) -> Laba {
+  color
+}
+
+///|
+pub fn laba_to_color(color : Laba) -> Color {
+  color
+}
+
+///|
+pub fn laba_gray(lightness : Float) -> Laba {
+  color_gray(lightness)
 }

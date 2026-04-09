@@ -13,8 +13,40 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/palettes/mod.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_palettes_top_pending() -> Unit {
+pub fn basic_palette() -> Array[@color.Color] {
+  [
+    basic_black(),
+    basic_white(),
+    basic_red(),
+    basic_yellow(),
+    basic_lime(),
+    basic_aqua(),
+    basic_blue(),
+    basic_fuchsia(),
+  ]
+}
 
+///|
+pub fn css_palette() -> Array[@color.Color] {
+  [
+    css_alice_blue(),
+    css_cornflower_blue(),
+    css_gold(),
+    css_coral(),
+    css_crimson(),
+    css_hot_pink(),
+    css_rebecca_purple(),
+  ]
+}
+
+///|
+pub fn tailwind_palette() -> Array[@color.Color] {
+  [
+    tailwind_slate_50(),
+    tailwind_blue_500(),
+    tailwind_emerald_500(),
+    tailwind_amber_500(),
+    tailwind_rose_500(),
+    tailwind_slate_950(),
+  ]
 }

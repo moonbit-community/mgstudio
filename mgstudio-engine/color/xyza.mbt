@@ -13,8 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/xyza.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_xyza_pending() -> Unit {
+pub type Xyza = Color
 
+///|
+pub fn xyza_from_color(color : Color) -> Xyza {
+  color
+}
+
+///|
+pub fn xyza_to_color(color : Xyza) -> Color {
+  color
+}
+
+///|
+pub fn xyza_gray(lightness : Float) -> Xyza {
+  color_gray(lightness)
 }

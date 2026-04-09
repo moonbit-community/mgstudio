@@ -13,8 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/lcha.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_lcha_pending() -> Unit {
+pub type Lcha = Color
 
+///|
+pub fn lcha_from_color(color : Color) -> Lcha {
+  color
+}
+
+///|
+pub fn lcha_to_color(color : Lcha) -> Color {
+  color
+}
+
+///|
+pub fn lcha_gray(lightness : Float) -> Lcha {
+  color_gray(lightness)
 }

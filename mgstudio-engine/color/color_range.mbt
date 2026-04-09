@@ -13,8 +13,22 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_color/src/color_range.rs`.
-// Source-shape scaffold; runtime split is pending.
-fn _color_color_range_pending() -> Unit {
+pub struct ColorRange {
+  start : Color
+  end_ : Color
+}
 
+///|
+pub fn ColorRange::new(start : Color, end_ : Color) -> ColorRange {
+  ColorRange::{ start, end_ }
+}
+
+///|
+pub fn ColorRange::at(self : ColorRange, factor : Float) -> Color {
+  self.start.mix(self.end_, factor)
+}
+
+///|
+pub fn Color::range_to(self : Color, end_ : Color) -> ColorRange {
+  ColorRange::new(self, end_)
 }
