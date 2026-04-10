@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/picking/dragdrop_picking.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_DRAGDROP_PICKING : String = "examples/picking/dragdrop_picking/main.mbt"
+

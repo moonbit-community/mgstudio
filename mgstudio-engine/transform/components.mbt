@@ -221,7 +221,7 @@ pub fn GlobalTransform::compute_transform(self : GlobalTransform) -> Transform {
 }
 
 ///|
-pub struct TransformTreeChanged {} derive(Eq, Show, ToJson, FromJson)
+pub struct TransformTreeChanged {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub impl Default for TransformTreeChanged with default() {
@@ -232,7 +232,7 @@ pub impl Default for TransformTreeChanged with default() {
 pub struct StaticTransformOptimizations {
   threshold : Float
   mut enabled : Bool
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn StaticTransformOptimizations::from_threshold(

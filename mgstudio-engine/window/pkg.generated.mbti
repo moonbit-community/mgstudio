@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -322,7 +323,7 @@ pub(all) enum AppLifecycle {
   WillSuspend
   Suspended
   WillResume
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn AppLifecycle::is_active(Self) -> Bool
 pub impl @ecs.Message for AppLifecycle
 
@@ -335,7 +336,7 @@ pub struct Capturing {
 pub impl @ecs.Component for Capturing
 
 pub(all) struct ClosingWindow {
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl @ecs.Component for ClosingWindow
 
 pub(all) enum CompositeAlphaMode {
@@ -344,7 +345,7 @@ pub(all) enum CompositeAlphaMode {
   PreMultiplied
   PostMultiplied
   Inherit
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn CompositeAlphaMode::default() -> Self
 
 pub(all) struct CursorEntered {
@@ -356,13 +357,15 @@ pub(all) enum CursorGrabMode {
   GrabNone
   GrabConfined
   GrabLocked
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum CursorIcon {
   System(@Milky2018/window/core.CursorIcon)
-} derive(Eq, Show)
+  Custom(CustomCursor)
+}
 pub fn CursorIcon::as_system(Self) -> @Milky2018/window/core.CursorIcon?
 pub fn CursorIcon::from(@Milky2018/window/core.CursorIcon) -> Self
+pub fn CursorIcon::from_custom(CustomCursor) -> Self
 pub impl @ecs.Component for CursorIcon
 pub impl Default for CursorIcon
 
@@ -382,22 +385,43 @@ pub(all) struct CursorOptions {
   mut visible : Bool
   mut grab_mode : CursorGrabMode
   hit_test : Bool
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn CursorOptions::default() -> Self
 pub impl @ecs.Component for CursorOptions
+
+pub(all) enum CustomCursor {
+  Image(CustomCursorImage)
+  Url(CustomCursorUrl)
+}
+
+pub struct CustomCursorImage {
+  handle : @asset.Handle[@image.Image]
+  texture_atlas : @asset.TextureAtlas?
+  flip_x : Bool
+  flip_y : Bool
+  rect : @math.URect?
+  hotspot : (Int, Int)
+}
+pub fn CustomCursorImage::new(@asset.Handle[@image.Image], (Int, Int), texture_atlas? : @asset.TextureAtlas?, flip_x? : Bool, flip_y? : Bool, rect? : @math.URect?) -> Self
+
+pub struct CustomCursorUrl {
+  url : String
+  hotspot : (Int, Int)
+}
+pub fn CustomCursorUrl::new(String, (Int, Int)) -> Self
 
 pub(all) struct EnabledButtons {
   mut minimize : Bool
   mut maximize : Bool
   mut close : Bool
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn EnabledButtons::default() -> Self
 
 pub(all) enum ExitCondition {
   OnPrimaryClosed
   OnAllClosed
   DontExit
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum FileDragAndDrop {
   DroppedFile(@Milky2018/mgstudio/core.Entity, String)
@@ -429,7 +453,7 @@ pub impl @ecs.Message for Ime
 pub(all) struct ImeCursorRange {
   start : Int
   end : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ImeCursorRange::new(Int, Int) -> Self
 
 pub(all) struct Monitor {
@@ -458,19 +482,19 @@ pub(all) enum PresentMode {
   FifoRelaxed
   Immediate
   Mailbox
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) struct PrimaryMonitor {
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl @ecs.Component for PrimaryMonitor
 
 pub(all) struct PrimaryWindow {
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl @ecs.Component for PrimaryWindow
 
 pub(all) struct RawHandleWrapper {
   window : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn RawHandleWrapper::new(WindowWrapper) -> Self
 pub fn RawHandleWrapper::window(Self) -> Int
 pub impl @ecs.Component for RawHandleWrapper
@@ -492,7 +516,7 @@ pub(all) enum ScreenEdge {
   Bottom
   Right
   All
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ScreenEdge::default() -> Self
 
 pub struct Screenshot {
@@ -713,7 +737,7 @@ pub(all) struct WindowResizeConstraints {
   min_height : Float
   max_width : Float
   max_height : Float
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn WindowResizeConstraints::check_constraints(Self) -> Self
 pub fn WindowResizeConstraints::default() -> Self
 
@@ -729,7 +753,7 @@ pub(all) struct WindowResolution {
   mut physical_height : Int
   mut scale_factor_override : Float?
   mut scale_factor : Float
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn WindowResolution::base_scale_factor(Self) -> Float
 pub fn WindowResolution::default() -> Self
 pub fn WindowResolution::height(Self) -> Float
@@ -759,7 +783,7 @@ pub impl @ecs.Message for WindowThemeChanged
 
 pub(all) struct WindowWrapper {
   window : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn WindowWrapper::new(Int) -> Self
 
 // Type aliases

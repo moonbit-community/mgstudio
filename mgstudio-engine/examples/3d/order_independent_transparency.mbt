@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/order_independent_transparency.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ORDER_INDEPENDENT_TRANSPARENCY : String = "examples/3d/order_independent_transparency/main.mbt"
+

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/animation/animated_ui.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ANIMATED_UI : String = "examples/animation/animated_ui/main.mbt"
+

@@ -17,6 +17,17 @@
 // The current runtime does not expose Bevy's buffered-channel helpers.
 
 ///|
+pub const BUFFERED_CHANNEL_MODULE_TAG : String = "bevy_utils::buffered_channel"
+
+///|
 pub fn utils_buffered_channel_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub type BufferedChannelBuffer[T] = Array[T]
+
+///|
+pub fn[T] buffered_channel_new_buffer() -> BufferedChannelBuffer[T] {
+  []
 }

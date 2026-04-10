@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/occlusion_culling.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_OCCLUSION_CULLING : String = "examples/3d/occlusion_culling/main.mbt"
+

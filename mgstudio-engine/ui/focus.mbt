@@ -17,7 +17,7 @@
 pub(all) enum FocusPolicy {
   Block
   Pass
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn FocusPolicy::default() -> FocusPolicy {

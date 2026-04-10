@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gltf/gltf_skinned_mesh.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_GLTF_SKINNED_MESH : String = "examples/gltf/gltf_skinned_mesh/main.mbt"
+

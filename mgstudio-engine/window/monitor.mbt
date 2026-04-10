@@ -47,7 +47,7 @@ pub fn Monitor::physical_size(self : Monitor) -> @math.UVec2 {
 }
 
 ///|
-pub(all) struct PrimaryMonitor {} derive(Eq, Show)
+pub(all) struct PrimaryMonitor {} derive(Eq, Debug)
 
 ///|
 pub let ecs_key_monitor : @ecs.ComponentKey[Monitor] = @ecs.register_component(

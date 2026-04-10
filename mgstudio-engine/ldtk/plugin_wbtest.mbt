@@ -39,7 +39,7 @@ test "plugin: ldtk_plugin installs its schedule after Update" {
     None => abort("Expected ProcessLdtkApi schedule stage")
   }
 
-  inspect(ldtk_index > update_index, content="true")
+  debug_inspect(ldtk_index > update_index, content="true")
 }
 
 ///|
@@ -47,19 +47,19 @@ test "plugin: ldtk_plugin initializes runtime resources" {
   let app = ldtk_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
 
-  inspect(
+  debug_inspect(
     (try! world.get_resource(LevelSelection::resource())) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_resource(LdtkSettings::resource())) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_resource(LdtkRuntimeState::resource())) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_resource(LdtkSpawnedLevelIids::resource())) is Some(_),
     content="true",
   )

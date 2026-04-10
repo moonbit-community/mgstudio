@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/2d/mesh2d_alpha_mode.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_MESH2D_ALPHA_MODE : String = "examples/2d/mesh2d_alpha_mode/main.mbt"
+

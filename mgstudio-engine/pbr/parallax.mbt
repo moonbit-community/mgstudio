@@ -13,4 +13,25 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/parallax.rs`.
+
+///|
 pub type ParallaxMappingMethod = @material.ParallaxMappingMethod
+
+///|
+pub const PARALLAX_MODULE_TAG : String = "bevy_pbr::parallax"
+
+///|
+pub fn pbr_parallax_default_method() -> ParallaxMappingMethod {
+  ParallaxMappingMethod::default()
+}
+
+///|
+pub fn pbr_parallax_relief_default_method() -> ParallaxMappingMethod {
+  ParallaxMappingMethod::relief_default()
+}
+
+///|
+pub fn pbr_parallax_max_steps(mapping_method : ParallaxMappingMethod) -> Int {
+  mapping_method.max_steps()
+}

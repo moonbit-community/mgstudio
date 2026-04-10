@@ -12,14 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/edge_executor.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/edge_executor.rs`.
 
+///|
+pub const EDGE_EXECUTOR_BACKEND : String = "edge_executor"
+
+///|
 pub struct EdgeExecutor {}
 
+///|
 pub fn EdgeExecutor::new() -> EdgeExecutor {
-  {  }
+  EdgeExecutor::{  }
 }
 
+///|
 pub fn EdgeExecutor::tick(self : EdgeExecutor) -> Unit {
   ignore(self)
+}
+
+///|
+pub fn EdgeExecutor::run_once(self : EdgeExecutor) -> Unit {
+  self.tick()
 }

@@ -23,3 +23,16 @@ pub type DistanceFog = @pbr_render.DistanceFog
 
 ///|
 const FOG_FALLOFF_E : Float = 2.718281828459045F
+
+///|
+pub const PBR_FOG_MODULE_TAG : String = "bevy_pbr::fog"
+
+///|
+pub fn pbr_fog_falloff_e() -> Float {
+  FOG_FALLOFF_E
+}
+
+///|
+pub fn pbr_distance_fog_identity(value : DistanceFog) -> DistanceFog {
+  value
+}

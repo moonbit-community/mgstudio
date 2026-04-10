@@ -100,10 +100,10 @@ test "physics2d: falling body collides and writes back transform" {
     i = i + 1
   }
   let final_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
-  inspect(final_y < initial_y, content="true")
+  debug_inspect(final_y < initial_y, content="true")
   let events = get_physics2d_events_resource(world).get().unwrap()
-  inspect(events.collisions.length() > 0, content="true")
-  inspect(events.contact_forces.length() > 0, content="true")
+  debug_inspect(events.collisions.length() > 0, content="true")
+  debug_inspect(events.contact_forces.length() > 0, content="true")
 }
 
 ///|
@@ -171,8 +171,8 @@ test "physics2d: gravity scale 0 disables gravity" {
   // assertions focused and avoid relying on exact floating-point equality.
   let y0_final = try! world.get_by_key(no_grav, ecs_key_transform).unwrap().translation.y
   let y1_final = try! world.get_by_key(grav, ecs_key_transform).unwrap().translation.y
-  inspect(y0_final > y0 - 0.01F, content="true")
-  inspect(y1_final < y1, content="true")
+  debug_inspect(y0_final > y0 - 0.01F, content="true")
+  debug_inspect(y1_final < y1, content="true")
 }
 
 ///|
@@ -221,7 +221,7 @@ test "physics2d: damping reduces velocity" {
   }
   let v_no = try! world.get_by_key(no_damp, ecs_key_velocity2d).unwrap().linvel.x
   let v_damp = try! world.get_by_key(damp, ecs_key_velocity2d).unwrap().linvel.x
-  inspect(v_damp < v_no, content="true")
+  debug_inspect(v_damp < v_no, content="true")
 }
 
 ///|
@@ -261,9 +261,9 @@ test "physics2d: external impulse applies once and clears" {
   physics2d_step_system(world)
   physics2d_writeback_system(world)
   let v = try! world.get_by_key(e, ecs_key_velocity2d).unwrap()
-  inspect(v.linvel.x > 0.0F, content="true")
+  debug_inspect(v.linvel.x > 0.0F, content="true")
   let imp = try! world.get_by_key(e, ecs_key_external_impulse2d).unwrap()
-  inspect(imp.impulse.x == 0.0F, content="true")
+  debug_inspect(imp.impulse.x == 0.0F, content="true")
 }
 
 ///|
@@ -303,12 +303,15 @@ test "physics2d: default collider density yields non-zero mass" {
   physics2d_sync_insertions_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
   let bh = try! world.get_by_key(e, ecs_key_rapier_body_handle2d).unwrap().handle
-  inspect(ctx.rigid_bodies.get(bh).unwrap().inv_mass() > 0.0F, content="true")
+  debug_inspect(
+    ctx.rigid_bodies.get(bh).unwrap().inv_mass() > 0.0F,
+    content="true",
+  )
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
   physics2d_writeback_system(world)
   let v = try! world.get_by_key(e, ecs_key_velocity2d).unwrap()
-  inspect(v.linvel.x > 0.0F, content="true")
+  debug_inspect(v.linvel.x > 0.0F, content="true")
 }
 
 ///|
@@ -354,7 +357,7 @@ test "physics2d: external force persists" {
     i = i + 1
   }
   let x1 = try! world.get_by_key(e, ecs_key_transform).unwrap().translation.x
-  inspect(x1 > x0, content="true")
+  debug_inspect(x1 > x0, content="true")
 }
 
 ///|
@@ -418,8 +421,8 @@ test "physics2d: CCD prevents tunneling through thin floor" {
 
   let y_no_ccd = run(false)
   let y_ccd = run(true)
-  inspect(y_no_ccd < -0.5F, content="true")
-  inspect(y_ccd > -0.5F, content="true")
+  debug_inspect(y_no_ccd < -0.5F, content="true")
+  debug_inspect(y_ccd > -0.5F, content="true")
 }
 
 ///|
@@ -479,7 +482,7 @@ test "physics2d: collision groups filter collision events" {
   physics2d_step_system(world)
   physics2d_writeback_system(world)
   let events = get_physics2d_events_resource(world).get().unwrap()
-  inspect(events.collisions.length() == 0, content="true")
+  debug_inspect(events.collisions.length() == 0, content="true")
 }
 
 ///|
@@ -563,22 +566,22 @@ test "physics2d: collider material and active event properties sync to rapier" {
     .get_by_key(e_default, ecs_key_rapier_collider_handle2d)
     .unwrap().handle
   let collider0 = ctx.colliders.get(ch0).unwrap()
-  inspect(approx_eq_f32(collider0.density(), 2.5F), content="true")
-  inspect(approx_eq_f32(collider0.friction(), 0.25F), content="true")
-  inspect(approx_eq_f32(collider0.restitution(), 0.75F), content="true")
-  inspect(
+  debug_inspect(approx_eq_f32(collider0.density(), 2.5F), content="true")
+  debug_inspect(approx_eq_f32(collider0.friction(), 0.25F), content="true")
+  debug_inspect(approx_eq_f32(collider0.restitution(), 0.75F), content="true")
+  debug_inspect(
     collider0
     .active_events()
     .contains(@collision.ActiveEvents::collision_events()),
     content="true",
   )
-  inspect(
+  debug_inspect(
     collider0
     .active_events()
     .contains(@collision.ActiveEvents::contact_force_events()),
     content="true",
   )
-  inspect(
+  debug_inspect(
     approx_eq_f32(collider0.contact_force_event_threshold(), 0.125F),
     content="true",
   )
@@ -587,13 +590,13 @@ test "physics2d: collider material and active event properties sync to rapier" {
     .get_by_key(e_override, ecs_key_rapier_collider_handle2d)
     .unwrap().handle
   let collider1 = ctx.colliders.get(ch1).unwrap()
-  inspect(
+  debug_inspect(
     collider1
     .active_events()
     .contains(@collision.ActiveEvents::collision_events()),
     content="true",
   )
-  inspect(
+  debug_inspect(
     !collider1
     .active_events()
     .contains(@collision.ActiveEvents::contact_force_events()),
@@ -635,14 +638,14 @@ test "physics2d: query pipeline sees inserted colliders" {
     100.0F,
     true,
   )
-  inspect(hit is Some(_), content="true")
+  debug_inspect(hit is Some(_), content="true")
   match hit {
-    Some(h) => inspect(h.entity.id == floor.id, content="true")
-    None => inspect(false, content="false")
+    Some(h) => debug_inspect(h.entity.id == floor.id, content="true")
+    None => debug_inspect(false, content="false")
   }
   let at_origin = ctx.intersect_point_entities(@math.Vec2::new(0.0F, 0.0F))
-  inspect(at_origin.length() > 0, content="true")
-  inspect(at_origin[0].id == floor.id, content="true")
+  debug_inspect(at_origin.length() > 0, content="true")
+  debug_inspect(at_origin[0].id == floor.id, content="true")
   let excluded = ctx.query_filter_exclude_entity(
     @collision.QueryFilter::new(),
     floor,
@@ -654,12 +657,12 @@ test "physics2d: query pipeline sees inserted colliders" {
     true,
     excluded,
   )
-  inspect(miss is None, content="true")
+  debug_inspect(miss is None, content="true")
   let proj = ctx.project_point_entity(@math.Vec2::new(0.0F, 3.0F), 10.0F, true)
-  inspect(proj is Some(_), content="true")
+  debug_inspect(proj is Some(_), content="true")
   match proj {
-    Some(p) => inspect(p.entity.id == floor.id, content="true")
-    None => inspect(false, content="false")
+    Some(p) => debug_inspect(p.entity.id == floor.id, content="true")
+    None => debug_inspect(false, content="false")
   }
   let proj2 = ctx.project_point_entity_with_filter(
     @math.Vec2::new(0.0F, 3.0F),
@@ -667,16 +670,16 @@ test "physics2d: query pipeline sees inserted colliders" {
     true,
     excluded,
   )
-  inspect(proj2 is None, content="true")
+  debug_inspect(proj2 is None, content="true")
   let feat = ctx.project_point_and_get_feature_entity(
     @math.Vec2::new(0.0F, 3.0F),
     10.0F,
     true,
   )
-  inspect(feat is Some(_), content="true")
+  debug_inspect(feat is Some(_), content="true")
   match feat {
-    Some(p) => inspect(p.entity.id == floor.id, content="true")
-    None => inspect(false, content="false")
+    Some(p) => debug_inspect(p.entity.id == floor.id, content="true")
+    None => debug_inspect(false, content="false")
   }
   let shape_hits = ctx.intersect_shape_entities(
     ColliderShape2d::ball(0.5F),
@@ -687,13 +690,13 @@ test "physics2d: query pipeline sees inserted colliders" {
       z=0.0F,
     ),
   )
-  inspect(shape_hits.length() > 0, content="true")
-  inspect(shape_hits[0].id == floor.id, content="true")
+  debug_inspect(shape_hits.length() > 0, content="true")
+  debug_inspect(shape_hits[0].id == floor.id, content="true")
   let aabb_hits = ctx.intersect_aabb_entities_conservative(
     @math.Rect::new(@math.Vec2::new(-1.0F, -1.0F), @math.Vec2::new(1.0F, 1.0F)),
   )
-  inspect(aabb_hits.length() > 0, content="true")
-  inspect(aabb_hits[0].id == floor.id, content="true")
+  debug_inspect(aabb_hits.length() > 0, content="true")
+  debug_inspect(aabb_hits[0].id == floor.id, content="true")
   let sweep = ctx.cast_shape_entity(
     ColliderShape2d::ball(0.5F),
     @transform.Transform::from_xy_rotation_scale(
@@ -705,10 +708,10 @@ test "physics2d: query pipeline sees inserted colliders" {
     @math.Vec2::new(0.0F, -1.0F),
     @collision.ShapeCastOptions::new(10.0F, false),
   )
-  inspect(sweep is Some(_), content="true")
+  debug_inspect(sweep is Some(_), content="true")
   match sweep {
-    Some(s) => inspect(s.entity.id == floor.id, content="true")
-    None => inspect(false, content="false")
+    Some(s) => debug_inspect(s.entity.id == floor.id, content="true")
+    None => debug_inspect(false, content="false")
   }
 }
 
@@ -794,7 +797,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
       has_convex = true
     }
   }
-  inspect(has_convex, content="true")
+  debug_inspect(has_convex, content="true")
   let hits2 = ctx.intersect_aabb_entities_conservative(
     @math.Rect::new(@math.Vec2::new(-6.0F, -2.0F), @math.Vec2::new(-4.0F, 2.0F)),
   )
@@ -804,7 +807,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
       has_compound = true
     }
   }
-  inspect(has_compound, content="true")
+  debug_inspect(has_compound, content="true")
 }
 
 ///|
@@ -882,10 +885,10 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
-  inspect(called.val, content="true")
-  inspect(mapped.val, content="true")
+  debug_inspect(called.val, content="true")
+  debug_inspect(mapped.val, content="true")
   let events = get_physics2d_events_resource(world).get().unwrap()
-  inspect(events.collisions.length() == 0, content="true")
+  debug_inspect(events.collisions.length() == 0, content="true")
   physics2d_hooks_set_config(world, old_hooks)
 }
 
@@ -944,8 +947,8 @@ test "physics2d: impulse joint is inserted and cleaned up" {
   physics2d_sync_insertions_system(world)
   physics2d_sync_joints_system(world)
   let ctx = get_physics2d_context_resource(world).get().unwrap()
-  inspect(ctx.impulse_joints.len() == 1, content="true")
-  inspect(
+  debug_inspect(ctx.impulse_joints.len() == 1, content="true")
+  debug_inspect(
     try! world.contains_by_key(a, ecs_key_rapier_impulse_joint_handle2d),
     content="true",
   )
@@ -953,8 +956,8 @@ test "physics2d: impulse joint is inserted and cleaned up" {
   // Remove authoring component and verify cleanup removes the Rapier joint.
   try! (world.take(a, ecs_key_impulse_joint2d) |> ignore)
   physics2d_cleanup_despawned_system(world)
-  inspect(ctx.impulse_joints.len() == 0, content="true")
-  inspect(
+  debug_inspect(ctx.impulse_joints.len() == 0, content="true")
+  debug_inspect(
     !(try! world.contains_by_key(a, ecs_key_rapier_impulse_joint_handle2d)),
     content="true",
   )
@@ -1009,12 +1012,12 @@ test "physics2d: child collider attaches to parent body" {
     .get_by_key(child, ecs_key_rapier_collider_handle2d)
     .unwrap().handle
   let collider = ctx.colliders.get(ch).unwrap()
-  inspect(
+  debug_inspect(
     collider.parent().unwrap().into_raw_parts() == bh.into_raw_parts(),
     content="true",
   )
   let rel = collider.position_wrt_parent().unwrap()
-  inspect(rel.translation.x == 1.0F, content="true")
+  debug_inspect(rel.translation.x == 1.0F, content="true")
 }
 
 ///|
@@ -1134,9 +1137,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     )).unwrap().handle
   let inv_single = ctx.rigid_bodies.get(bh_single).unwrap().inv_mass()
   let inv_double = ctx.rigid_bodies.get(bh_double).unwrap().inv_mass()
-  inspect(inv_single > 0.0F, content="true")
-  inspect(inv_double > 0.0F, content="true")
-  inspect(inv_double < inv_single, content="true")
+  debug_inspect(inv_single > 0.0F, content="true")
+  debug_inspect(inv_double > 0.0F, content="true")
+  debug_inspect(inv_double < inv_single, content="true")
 }
 
 ///|
@@ -1223,8 +1226,8 @@ test "physics2d: collision events use child collider entity mapping" {
       }
     }
   }
-  inspect(seen_child, content="true")
-  inspect(!seen_parent, content="true")
+  debug_inspect(seen_child, content="true")
+  debug_inspect(!seen_parent, content="true")
 }
 
 ///|
@@ -1280,14 +1283,14 @@ test "physics2d: kinematic character controller moves and outputs" {
   physics2d_sync_world_to_rapier_system(world)
   physics2d_character_controller_system(world)
   let y = try! world.get_by_key(character, ecs_key_transform).unwrap().translation.y
-  inspect(y > 0.9F, content="true")
+  debug_inspect(y > 0.9F, content="true")
   let kcc_after = (try! world.get_by_key(
     character, ecs_key_kinematic_character_controller2d,
   )).unwrap()
-  inspect(kcc_after.translation.y == 0.0F, content="true")
+  debug_inspect(kcc_after.translation.y == 0.0F, content="true")
   let out = (try! world.get_by_key(
     character, ecs_key_kinematic_character_controller_output2d,
   )).unwrap()
-  inspect(out.effective_translation.y <= 0.0F, content="true")
-  inspect(out.collisions.length() > 0, content="true")
+  debug_inspect(out.effective_translation.y <= 0.0F, content="true")
+  debug_inspect(out.collisions.length() > 0, content="true")
 }

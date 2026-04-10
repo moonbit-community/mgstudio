@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/async_tasks/external_source_external_thread.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH : String = "examples/async_tasks/external_source_external_thread/main.mbt"
+

@@ -18,19 +18,25 @@ test "window runtime: create requests logical size from resolution scale factor"
   resolution.set_physical_resolution(800, 600)
   resolution.set_scale_factor(2.0F)
 
-  inspect(window_requested_logical_width(resolution), content="400")
-  inspect(window_requested_logical_height(resolution), content="300")
+  debug_inspect(window_requested_logical_width(resolution), content="400")
+  debug_inspect(window_requested_logical_height(resolution), content="300")
 }
 
 ///|
 test "window runtime: create forces physical request only when override exists" {
   let resolution = WindowResolution::default()
-  inspect(window_uses_physical_request_on_create(resolution), content="false")
+  debug_inspect(
+    window_uses_physical_request_on_create(resolution),
+    content="false",
+  )
 
   resolution.set_scale_factor_override(Some(1.0F))
-  inspect(window_uses_physical_request_on_create(resolution), content="true")
-  inspect(window_requested_logical_width(resolution), content="1280")
-  inspect(window_requested_logical_height(resolution), content="720")
+  debug_inspect(
+    window_uses_physical_request_on_create(resolution),
+    content="true",
+  )
+  debug_inspect(window_requested_logical_width(resolution), content="1280")
+  debug_inspect(window_requested_logical_height(resolution), content="720")
 }
 
 ///|
@@ -47,13 +53,13 @@ test "window runtime: create pass is separated from prepare pass" {
   try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
 
   window_backend_prepare_system(world)
-  inspect(window_host_entries(world).length(), content="0")
+  debug_inspect(window_host_entries(world).length(), content="0")
 
   window_backend_create_windows_system(world)
-  inspect(window_host_entries(world).length(), content="1")
+  debug_inspect(window_host_entries(world).length(), content="1")
 
   try! world.despawn(entity)
-  inspect(window_host_entries(world).length(), content="0")
+  debug_inspect(window_host_entries(world).length(), content="0")
 }
 
 ///|
@@ -77,8 +83,8 @@ test "window runtime: minimize request is consumed during apply" {
     Some(window) => window
     None => abort("missing window component")
   }
-  inspect(stored_window.maximize_request, content="None")
-  inspect(stored_window.minimize_request, content="None")
+  debug_inspect(stored_window.maximize_request, content="None")
+  debug_inspect(stored_window.minimize_request, content="None")
 
   try! world.despawn(entity)
 }
@@ -107,8 +113,8 @@ test "window runtime: unsupported transparent and canvas updates are reverted" {
     Some(window) => window
     None => abort("missing window component")
   }
-  inspect(stored_window.transparent, content="false")
-  inspect(stored_window.canvas, content="Some(\"#existing\")")
+  debug_inspect(stored_window.transparent, content="false")
+  debug_inspect(stored_window.canvas, content="Some(\"#existing\")")
 
   try! world.despawn(entity)
 }
@@ -140,9 +146,9 @@ test "window runtime: unsupported create-only name taskbar and clip updates are 
     Some(window) => window
     None => abort("missing window component")
   }
-  inspect(stored_window.name, content="Some(\"main-window\")")
-  inspect(stored_window.skip_taskbar, content="true")
-  inspect(stored_window.clip_children, content="false")
+  debug_inspect(stored_window.name, content="Some(\"main-window\")")
+  debug_inspect(stored_window.skip_taskbar, content="true")
+  debug_inspect(stored_window.clip_children, content="false")
 
   try! world.despawn(entity)
 }
@@ -170,9 +176,9 @@ test "window runtime: iOS preference fields remain mutable at runtime" {
     Some(window) => window
     None => abort("missing window component")
   }
-  inspect(stored_window.prefers_home_indicator_hidden, content="true")
-  inspect(stored_window.prefers_status_bar_hidden, content="true")
-  inspect(
+  debug_inspect(stored_window.prefers_home_indicator_hidden, content="true")
+  debug_inspect(stored_window.prefers_status_bar_hidden, content="true")
+  debug_inspect(
     stored_window.preferred_screen_edges_deferring_system_gestures,
     content="All",
   )

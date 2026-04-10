@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/2d/transparency_2d.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_TRANSPARENCY_2D : String = "examples/2d/transparency_2d/main.mbt"
+

@@ -14,7 +14,11 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/sub_states.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_sub_states_bridge_pending() -> Unit {
+// Bridge helpers for sub-state optional source wiring.
 
+///|
+pub fn[S] sub_state_optional_source(
+  state : S,
+) -> @state_root.OptionalStateSource[S] {
+  @state_root.optional_state(state)
 }

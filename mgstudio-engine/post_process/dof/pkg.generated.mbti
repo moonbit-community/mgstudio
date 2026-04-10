@@ -1,13 +1,34 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/post_process/dof"
 
+import {
+  "Milky2018/mgstudio/pbr",
+  "moonbitlang/core/json",
+}
+
 // Values
+pub fn depth_of_field_from_physical_camera(@pbr.PhysicalCameraParameters) -> @pbr.DepthOfField
 
 // Errors
 
 // Types and methods
+pub struct DepthOfFieldUniform {
+  mode : @pbr.DepthOfFieldMode
+  focal_distance : Float
+  sensor_height : Float
+  aperture_f_stops : Float
+  max_circle_of_confusion_diameter : Float
+  max_depth : Float
+  coc_scale_factor : Float
+} derive(ToJson, @json.FromJson)
+pub fn DepthOfFieldUniform::from_settings(@pbr.DepthOfField) -> Self
 
 // Type aliases
+pub using @pbr {type DepthOfField}
+
+pub using @pbr {type DepthOfFieldMode}
+
+pub using @pbr {type PhysicalCameraParameters}
 
 // Traits
 

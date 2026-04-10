@@ -16,6 +16,13 @@
 // Bevy source: `bevy/crates/bevy_ui/src/layout/mod.rs`.
 // Runtime bridge surface is distributed across `convert.mbt`, `debug.mbt`,
 // and `ui_surface.mbt`.
-fn _ui_layout_module_anchor() -> Unit {
-  ignore(0)
+pub const UI_LAYOUT_MODULE_ID : String = "bevy_ui::layout"
+
+///|
+pub fn ui_layout_system_sets() -> Array[@app.SystemSet] {
+  [
+    ui_set_prepare, ui_set_context, ui_set_propagate, ui_set_text_content, ui_set_interaction,
+    ui_set_content, ui_set_measure, ui_set_layout, ui_set_post_layout, ui_set_stack,
+    ui_set_scroll, ui_set_clip, ui_set_a11y, ui_set_a11y_apply,
+  ]
 }

@@ -15,6 +15,14 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
 // Package-root bridge surface now lives in `lib.mbt`.
-fn _gizmos_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub const GIZMOS_PLUGIN_ID : String = "bevy_gizmos::GizmoPlugin"
+
+///|
+pub fn gizmos_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  gizmo_plugin(app)
+}
+
+///|
+pub fn gizmos_default_group() -> DefaultGizmoConfigGroup {
+  DefaultGizmoConfigGroup::default()
 }

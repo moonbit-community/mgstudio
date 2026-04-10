@@ -14,7 +14,37 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/alpha_pattern.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_alpha_pattern_bridge_pending() -> Unit {
 
+///|
+pub struct AlphaPatternMaterial {}
+
+///|
+pub fn AlphaPatternMaterial::default() -> AlphaPatternMaterial {
+  AlphaPatternMaterial::{  }
+}
+
+///|
+pub struct AlphaPatternResource {
+  material_id : Int
+}
+
+///|
+pub struct AlphaPattern {} derive(Default, Debug)
+
+///|
+pub fn AlphaPatternResource::default() -> AlphaPatternResource {
+  AlphaPatternResource::{ material_id: -1 }
+}
+
+///|
+pub struct AlphaPatternPlugin {}
+
+///|
+pub fn AlphaPatternPlugin::default() -> AlphaPatternPlugin {
+  AlphaPatternPlugin::{  }
+}
+
+///|
+pub fn alpha_pattern_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

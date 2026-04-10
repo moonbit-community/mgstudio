@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gltf/gltf_extension_mesh_2d.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_GLTF_EXTENSION_MESH_2D : String = "examples/gltf/gltf_extension_mesh_2d/main.mbt"
+

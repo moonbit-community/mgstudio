@@ -17,6 +17,17 @@
 // The current runtime does not expose Bevy's CI-testing configuration surface.
 
 ///|
+pub struct CiTestingConfig {
+  enabled : Bool
+  capture_frames : Int
+}
+
+///|
+pub fn CiTestingConfig::default() -> CiTestingConfig {
+  CiTestingConfig::{ enabled: false, capture_frames: 1 }
+}
+
+///|
 pub fn dev_tools_ci_testing_config_available() -> Bool {
-  false
+  true
 }

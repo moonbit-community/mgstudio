@@ -14,7 +14,17 @@
 
 ///|
 // Bridge surface is provided by `top.mbt` in this package.
-// This file remains a Bevy shape anchor only.
-fn _texture_slice_slicer_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub type TextureSliceScaleMode = @sprite.SliceScaleMode
+
+///|
+pub type TextureSliceSlicer = @sprite.TextureSlicer
+
+///|
+pub fn texture_slice_slicer(border : @sprite.BorderRect) -> TextureSliceSlicer {
+  TextureSliceSlicer::new(border)
+}
+
+///|
+pub fn texture_slice_default_slicer() -> TextureSliceSlicer {
+  TextureSliceSlicer::default()
 }

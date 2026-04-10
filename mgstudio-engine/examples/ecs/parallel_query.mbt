@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/parallel_query.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_PARALLEL_QUERY : String = "examples/ecs/parallel_query/main.mbt"
+

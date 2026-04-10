@@ -18,7 +18,7 @@
 pub(all) enum AppState {
   MainMenu
   InGame
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct TextToPrint {

@@ -17,7 +17,7 @@ enum Token {
   Identifier(String, Int)
   Other(Int, Int)
   Whitespace(String, Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn Token::pos(self : Token) -> Int {

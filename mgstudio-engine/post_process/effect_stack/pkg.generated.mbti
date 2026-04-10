@@ -2,18 +2,41 @@
 package "Milky2018/mgstudio/post_process/effect_stack"
 
 import {
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/json",
 }
 
 // Values
+pub fn chromatic_aberration_sample_offsets(@post_process.ChromaticAberration) -> Array[Float]
+
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@post_process.ChromaticAberration]
 
 pub let ecs_key_vignette : @ecs.ComponentKey[@post_process.Vignette]
 
+pub fn vignette_screen_centered(@post_process.Vignette) -> Bool
+
 // Errors
 
 // Types and methods
+pub struct ChromaticAberrationUniform {
+  intensity : Float
+  inverse_max_samples : Float
+} derive(ToJson, @json.FromJson)
+pub fn ChromaticAberrationUniform::from_settings(@post_process.ChromaticAberration) -> Self
+
+pub struct VignetteUniform {
+  intensity : Float
+  radius : Float
+  smoothness : Float
+  roundness : Float
+  center : @math.Vec2
+  edge_compensation : Float
+  color : @color.Color
+} derive(ToJson, @json.FromJson)
+pub fn VignetteUniform::from_settings(@post_process.Vignette) -> Self
 
 // Type aliases
 pub using @post_process {type ChromaticAberration}

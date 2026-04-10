@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_remote/src/schemas/open_rpc.rs`).
+// Bevy source: `bevy/crates/bevy_remote/src/schemas/open_rpc.rs`.
 
 ///|
 pub struct RemoteOpenRpcMethod {
@@ -40,4 +40,22 @@ pub fn RemoteOpenRpcDocument::default() -> RemoteOpenRpcDocument {
 ///|
 pub fn RemoteOpenRpcMethod::new(name : String) -> RemoteOpenRpcMethod {
   RemoteOpenRpcMethod::{ name, summary: None }
+}
+
+///|
+pub fn RemoteOpenRpcMethod::with_summary(
+  self : RemoteOpenRpcMethod,
+  summary : String,
+) -> RemoteOpenRpcMethod {
+  RemoteOpenRpcMethod::{ ..self, summary: Some(summary) }
+}
+
+///|
+pub fn RemoteOpenRpcDocument::add_method(
+  self : RemoteOpenRpcDocument,
+  rpc_method : RemoteOpenRpcMethod,
+) -> RemoteOpenRpcDocument {
+  let methods = self.methods
+  methods.push(rpc_method)
+  RemoteOpenRpcDocument::{ ..self, methods, }
 }

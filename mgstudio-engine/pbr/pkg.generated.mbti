@@ -6,7 +6,9 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
+  "Milky2018/mgstudio/core_pipeline/deferred",
+  "Milky2018/mgstudio/core_pipeline/prepass",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -14,11 +16,15 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr/cluster",
+  "Milky2018/mgstudio/pbr/lightmap",
+  "Milky2018/mgstudio/pbr/material_bind_groups",
   "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -28,13 +34,21 @@ pub const CLUSTER_MODULE_TAG : String = "bevy_pbr::cluster"
 
 pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
 
+pub const EXTENDED_MATERIAL_MODULE_TAG : String = "bevy_pbr::extended_material"
+
 pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
 
 pub const MATERIALS_PLUGIN_ID : String = "bevy_pbr::MaterialsPlugin"
 
 pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = "bevy_pbr::material_bind_groups"
 
+pub const MEDIUM_MODULE_TAG : String = "bevy_pbr::medium"
+
 pub const MESH_RENDER_PLUGIN_ID : String = "bevy_pbr::MeshRenderPlugin"
+
+pub const PARALLAX_MODULE_TAG : String = "bevy_pbr::parallax"
+
+pub const PBR_FOG_MODULE_TAG : String = "bevy_pbr::fog"
 
 pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
 
@@ -76,9 +90,9 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.Defa
 
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[DeferredPbrLightingState]
 
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[@core_pipeline.DepthPrepass]
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
 
 pub let ecs_key_directional_light : @ecs.ComponentKey[@light.DirectionalLight]
 
@@ -102,7 +116,7 @@ pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
 
-pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
+pub let ecs_key_frustum : @ecs.ComponentKey[@render.Frustum]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
@@ -110,7 +124,7 @@ pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[@light.Gener
 
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@light.GlobalAmbientLight]
 
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
+pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState]
 
@@ -118,7 +132,7 @@ pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@light.IrradianceVolume]
 
 pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
 
-pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
+pub let ecs_key_lightmap : @ecs.ComponentKey[@lightmap.Lightmap]
 
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
@@ -130,15 +144,15 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginStat
 
 pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
 
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@core_pipeline.MotionVectorPrepass]
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@prepass.MotionVectorPrepass]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_pipeline.Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
 pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing]
 
 pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
 
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[@core_pipeline.NormalPrepass]
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@prepass.NormalPrepass]
 
 pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
 
@@ -252,11 +266,43 @@ pub fn mesh_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn mesh_render_plugin_with(@app.App[@ecs.World], MeshRenderPlugin) -> @app.App[@ecs.World]
 
+pub fn pbr_cluster_config_default() -> @cluster.ClusterConfig3d
+
+pub fn pbr_cluster_module_tag() -> String
+
+pub fn pbr_cluster_runtime_available() -> Bool
+
+pub fn pbr_cluster_tile_count(@cluster.ClusterConfig3d) -> Int
+
 pub fn pbr_deferred_lighting_enabled() -> Bool
+
+pub fn pbr_distance_fog_identity(@render.DistanceFog) -> @render.DistanceFog
+
+pub fn pbr_extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
+
+pub fn pbr_extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
+
+pub fn pbr_fog_falloff_e() -> Float
+
+pub fn pbr_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
+
+pub fn pbr_forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialExt
 
 pub fn pbr_gltf_render_enabled() -> Bool
 
 pub fn pbr_gpu_instance_buffer_builder_enabled() -> Bool
+
+pub fn pbr_material_bind_groups_default() -> @material_bind_groups.MaterialBindGroups
+
+pub fn pbr_material_bind_groups_module_tag() -> String
+
+pub fn pbr_material_bind_groups_runtime_available() -> Bool
+
+pub fn pbr_parallax_default_method() -> @material.ParallaxMappingMethod
+
+pub fn pbr_parallax_max_steps(@material.ParallaxMappingMethod) -> Int
+
+pub fn pbr_parallax_relief_default_method() -> @material.ParallaxMappingMethod
 
 pub fn pbr_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -266,11 +312,21 @@ pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
 pub fn pbr_prepass_enabled() -> Bool
 
+pub fn pbr_scattering_medium_default() -> @light.ScatteringMedium
+
+pub fn pbr_scattering_medium_earthlike() -> @light.ScatteringMedium
+
+pub fn pbr_scattering_medium_with_density_multiplier(@light.ScatteringMedium, Float) -> @light.ScatteringMedium
+
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render3d_clear_mesh_upload_cache(@ref.Ref[@render.Render3dPhaseState]) -> Unit
+
+pub fn render3d_clear_mesh_upload_cache_for_world(@ecs.World) -> Unit
 
 pub fn render3d_diagnostic_execute_cpu_ms() -> Float
 
@@ -284,9 +340,9 @@ pub fn render3d_execute_system(@ecs.World) -> Unit
 
 pub fn render3d_extract_system(@ecs.World) -> Unit
 
-pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> Frustum
+pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
 
-pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> Frustum
+pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
 
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -323,6 +379,8 @@ pub let render3d_set_update_frusta : String
 pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit
 
 pub fn render3d_update_frusta_system(@ecs.World) -> Unit
+
+pub fn render3d_upload_mesh_handle_cached(@ref.Ref[@render.Render3dPhaseState], @asset.Handle[@mesh.Mesh]) -> Int
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
@@ -472,7 +530,7 @@ pub(all) enum CameraDeferredMode3d {
   Auto
   Forward
   Deferred
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn CameraDeferredMode3d::default() -> Self
 
 pub struct ClusteredDecal {
@@ -504,7 +562,7 @@ pub fn ContactShadows::with_thickness(Self, Float) -> Self
 pub impl @ecs.Component for ContactShadows
 
 type CustomProjection3d
-pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
+pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @render.Frustum
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T] CustomProjection3d::get(Self) -> T?
@@ -521,7 +579,7 @@ pub(all) enum DecalRenderMode3d {
   ForwardOnly
   ClusteredOnly
   ForwardAndClustered
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DecalRenderMode3d::default() -> Self
 
 pub struct DeferredPbrLightingPlugin {
@@ -549,7 +607,7 @@ pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
 pub(all) enum DepthOfFieldMode {
   Bokeh
   Gaussian
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DepthOfFieldMode::default() -> Self
 
 pub struct Exposure {
@@ -603,25 +661,6 @@ pub(all) struct FreeCameraState {
 } derive(ToJson, @json.FromJson)
 pub fn FreeCameraState::default() -> Self
 pub impl @ecs.Component for FreeCameraState
-
-pub struct Frustum {
-  half_spaces : Array[@math.HalfSpace]
-} derive(Eq, ToJson, @json.FromJson)
-pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
-pub fn Frustum::new(ViewFrustum) -> Self
-pub fn Frustum::view_frustum(Self) -> ViewFrustum
-pub impl @ecs.Component for Frustum
-
-pub struct Lightmap {
-  image : @asset.Handle[@image.Image]
-  uv_rect : @math.Rect
-  bicubic_sampling : Bool
-} derive(ToJson, @json.FromJson)
-pub fn Lightmap::default() -> Self
-pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
-pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
-pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
-pub impl @ecs.Component for Lightmap
 
 pub struct MaterialsPlugin {
 }
@@ -753,7 +792,7 @@ pub(all) enum Projection {
   Orthographic(@render.OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
-pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
+pub fn Projection::compute_frustum(Self, @transform.Transform) -> @render.Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
@@ -771,7 +810,7 @@ pub(all) enum ShadowFilteringMethod {
   Hardware2x2
   Gaussian
   Temporal
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl @ecs.Component for ShadowFilteringMethod
 
@@ -802,14 +841,6 @@ pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
 pub fn TransmittedShadowReceiver::default() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
-
-pub struct ViewFrustum {
-  inner : @math.ViewFrustum
-} derive(Eq, ToJson, @json.FromJson)
-pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
-pub fn ViewFrustum::from_clip_from_world(@render.ProjectionMatrix3d) -> Self
-pub fn ViewFrustum::from_clip_from_world_custom_far(@render.ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
-pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 
 pub struct Wireframe {
 } derive(ToJson, @json.FromJson)
@@ -857,6 +888,8 @@ pub using @light {type CascadeShadowConfigBuilder}
 
 pub using @post_process {type ChromaticAberration}
 
+pub using @cluster {type ClusterConfig3d}
+
 pub using @post_process {type ColorGrading}
 
 pub using @post_process {type ColorGradingGlobal}
@@ -873,9 +906,9 @@ pub using @post_process {type DebandDither}
 
 pub using @material {type DefaultOpaqueRendererMethod}
 
-pub using @core_pipeline {type DeferredPrepass}
+pub using @deferred {type DeferredPrepass}
 
-pub using @core_pipeline {type DepthPrepass}
+pub using @prepass {type DepthPrepass}
 
 pub using @light {type DirectionalLight}
 
@@ -897,6 +930,8 @@ pub using @light {type FogVolume}
 
 pub using @material {type ForwardDecalMaterialExt}
 
+pub using @render {type Frustum}
+
 pub using @post_process {type Fxaa}
 
 pub using @post_process {type FxaaSensitivity}
@@ -907,7 +942,7 @@ pub using @light {type GlobalAmbientLight}
 
 pub using @math {type HalfSpace}
 
-pub using @core_pipeline {type Hdr}
+pub using @core_3d {type Hdr}
 
 pub using @light {type IrradianceVolume}
 
@@ -917,6 +952,12 @@ pub using @light {type LightGizmoConfigGroup}
 
 pub using @light {type LightProbe}
 
+pub using @lightmap {type Lightmap}
+
+pub using @material_bind_groups {type MaterialBindGroupEntry}
+
+pub using @material_bind_groups {type MaterialBindGroups}
+
 pub using @mesh {type Mesh}
 
 pub using @mesh {type Mesh3dGeometry}
@@ -925,11 +966,11 @@ pub using @material {type MeshMaterial3d}
 
 pub using @post_process {type MotionBlur}
 
-pub using @core_pipeline {type MotionVectorPrepass}
+pub using @prepass {type MotionVectorPrepass}
 
-pub using @core_pipeline {type Msaa}
+pub using @core_3d {type Msaa}
 
-pub using @core_pipeline {type NormalPrepass}
+pub using @prepass {type NormalPrepass}
 
 pub using @material {type OpaqueRendererMethod}
 
@@ -979,6 +1020,8 @@ pub using @post_process {type TemporalJitter}
 
 pub using @post_process {type Tonemapping}
 
+pub using @render {type ViewFrustum}
+
 pub using @post_process {type Vignette}
 
 pub using @light {type VolumetricFog}
@@ -997,7 +1040,7 @@ pub(open) trait CameraProjection3d {
   get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
   update(Self, Float, Float) -> Self
   far(Self) -> Float
-  compute_frustum(Self, @transform.Transform) -> Frustum
+  compute_frustum(Self, @transform.Transform) -> @render.Frustum
   get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
 pub impl CameraProjection3d for @render.OrthographicProjection3d

@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_accesskit",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -167,7 +168,7 @@ pub(all) enum AlignContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum AlignItems {
   Baseline
@@ -178,7 +179,7 @@ pub(all) enum AlignItems {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum AlignSelf {
   Auto
@@ -189,7 +190,7 @@ pub(all) enum AlignSelf {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct AutoDirectionalNavigation {
   respect_tab_order : Bool
@@ -300,25 +301,25 @@ pub(all) enum Display {
   Flex
   Grid
   None
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum FlexDirection {
   Column
   ColumnReverse
   Row
   RowReverse
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum FlexWrap {
   NoWrap
   Wrap
   WrapReverse
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum FocusPolicy {
   Block
   Pass
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FocusPolicy::default() -> Self
 pub impl @ecs.Component for FocusPolicy
 
@@ -338,7 +339,7 @@ pub(all) enum GridAutoFlow {
   ColumnDense
   Row
   RowDense
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct GridPlacement {
   start : Int?
@@ -361,13 +362,13 @@ pub(all) enum GridTrack {
   Fr(Float)
   MinContent
   MaxContent
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum GridTrackRepetition {
   Count(Int)
   AutoFill
   AutoFit
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct ImageNode {
   color : @color.Color
@@ -400,7 +401,7 @@ pub(all) enum Interaction {
   None
   Hovered
   Pressed
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for Interaction
 
 pub struct IsDefaultUiCamera {
@@ -419,7 +420,7 @@ pub(all) enum JustifyContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum JustifyItems {
   Baseline
@@ -428,7 +429,7 @@ pub(all) enum JustifyItems {
   End
   Start
   Stretch
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum JustifySelf {
   Auto
@@ -437,7 +438,7 @@ pub(all) enum JustifySelf {
   End
   Start
   Stretch
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct Label {
 } derive(ToJson, @json.FromJson)
@@ -540,13 +541,13 @@ pub(all) enum OverflowAxis {
   Hidden
   Scroll
   Visible
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) enum OverflowClipBox {
   BorderBox
   PaddingBox
   ContentBox
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct OverflowClipMargin {
   visual_box : OverflowClipBox
@@ -562,7 +563,7 @@ pub fn OverflowClipMargin::with_margin(Self, Float) -> Self
 pub(all) enum PositionType {
   Relative
   Absolute
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
@@ -591,7 +592,7 @@ pub impl @ecs.Component for ScrollPosition
 pub(all) enum SliceScaleMode {
   Stretch
   Tile(Float)
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn SliceScaleMode::default() -> Self
 
 pub struct TextureSlicer {
@@ -688,7 +689,7 @@ pub(all) enum Val {
   Vh(Float)
   VMin(Float)
   VMax(Float)
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct ZIndex {
   value : Int

@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_log/src/android_tracing.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _log_android_tracing_bridge_pending() -> Unit {
 
+///|
+pub struct AndroidTracingPlugin {}
+
+///|
+pub fn AndroidTracingPlugin::default() -> AndroidTracingPlugin {
+  AndroidTracingPlugin::{  }
+}
+
+///|
+pub fn[W] android_tracing_plugin(
+  _plugin : AndroidTracingPlugin,
+) -> @app.Plugin[W] {
+  fn(app : @app.App[W]) { app }
 }

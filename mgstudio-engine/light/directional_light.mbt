@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/directional_light.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_directional_light_bridge_pending() -> Unit {
+// Bridge aliases for directional-light components.
 
-}
+///|
+pub type DirectionalLightComponent = DirectionalLight
+
+///|
+pub type DirectionalLightTextureComponent = DirectionalLightTexture
+
+///|
+pub let ecs_key_directional_light_component : @ecs.ComponentKey[
+  DirectionalLightComponent,
+] = ecs_key_directional_light
+
+///|
+pub let ecs_key_directional_light_texture_component : @ecs.ComponentKey[
+  DirectionalLightTextureComponent,
+] = ecs_key_directional_light_texture

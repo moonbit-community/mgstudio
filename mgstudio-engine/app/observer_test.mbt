@@ -15,7 +15,7 @@
 ///|
 struct ObserverMarker {
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let observer_marker_key : @ecs.ComponentKey[ObserverMarker] = @ecs.register_component(
@@ -30,7 +30,7 @@ pub impl @ecs.Component for ObserverMarker with component() {
 ///|
 struct ObserverPulse {
   amount : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let observer_pulse_event_key : @ecs.EventKey[ObserverPulse] = @ecs.register_event(
@@ -142,8 +142,8 @@ test "app observer: add_observer2 exposes On<E> with MessageWriter" {
 
   let reader = world.message_reader(message_key, Ref::new(0))
   let messages = try! reader.read()
-  inspect(messages.length(), content="1")
-  inspect(messages[0].amount, content="13")
+  debug_inspect(messages.length(), content="1")
+  debug_inspect(messages[0].amount, content="13")
 }
 
 ///|
@@ -161,9 +161,9 @@ test "app observer: add_component_observer2 exposes ComponentOn<Insert, C> with 
 
   let reader = world.message_reader(message_key, Ref::new(0))
   let messages = try! reader.read()
-  inspect(messages.length(), content="1")
-  inspect(messages[0].entity_id, content="0")
-  inspect(messages[0].entity_generation, content="1")
+  debug_inspect(messages.length(), content="1")
+  debug_inspect(messages[0].entity_id, content="0")
+  debug_inspect(messages[0].entity_generation, content="1")
 }
 
 ///|
@@ -182,9 +182,9 @@ test "app observer: add_component_observer2 exposes ComponentOn<Remove, C> with 
 
   let reader = world.message_reader(message_key, Ref::new(0))
   let messages = try! reader.read()
-  inspect(messages.length(), content="1")
-  inspect(messages[0].entity_id, content="0")
-  inspect(messages[0].entity_generation, content="1")
+  debug_inspect(messages.length(), content="1")
+  debug_inspect(messages[0].entity_id, content="0")
+  debug_inspect(messages[0].entity_generation, content="1")
 }
 
 ///|
@@ -208,9 +208,9 @@ test "app observer: fallible component insert observers route errors through the
     value: 5,
   })
 
-  inspect(kinds.length(), content="1")
-  inspect(kinds[0] == ErrorContextKind::Observer, content="true")
-  inspect(sources[0], content="<component-observer>")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  debug_inspect(sources[0], content="<component-observer>")
 }
 
 ///|
@@ -231,8 +231,8 @@ test "app observer: fallible component remove observers route errors through the
   })
   ignore(try! world.remove_by_key(entity, observer_marker_key))
 
-  inspect(kinds.length(), content="1")
-  inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
 }
 
 ///|
@@ -251,7 +251,7 @@ test "app observer: fallible trigger observers route errors through the default 
 
   world.trigger(ObserverPulse::{ amount: 5 })
 
-  inspect(kinds.length(), content="1")
-  inspect(kinds[0] == ErrorContextKind::Observer, content="true")
-  inspect(sources[0], content="<observer>")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  debug_inspect(sources[0], content="<observer>")
 }

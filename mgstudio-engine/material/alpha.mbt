@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/alpha.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_alpha_bridge_pending() -> Unit {
+// Bridge aliases and helpers for alpha-mode surface.
 
+///|
+pub type MaterialAlphaMode = AlphaMode
+
+///|
+pub fn material_alpha_is_blended(alpha_mode : MaterialAlphaMode) -> Bool {
+  match alpha_mode {
+    Blend => true
+    Premultiplied => true
+    Add => true
+    Multiply => true
+    _ => false
+  }
 }

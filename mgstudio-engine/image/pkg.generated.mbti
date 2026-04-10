@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/image"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 pub fn basis_requires_transcode(BasisContainer) -> Bool
 
@@ -27,6 +31,12 @@ pub fn image_is_exr_extension(String) -> Bool
 pub fn image_is_hdr_extension(String) -> Bool
 
 pub fn image_is_ktx2_extension(String) -> Bool
+
+pub fn image_new_rgba8(Int, Int, Bytes) -> Image
+
+pub fn image_new_target_texture(Int, Int, format? : TextureFormat) -> Image
+
+pub fn image_package_bevy_source() -> String
 
 pub fn image_sampler_is_nearest(ImageSampler) -> Bool
 
@@ -98,7 +108,7 @@ pub(all) enum ImageAddressMode {
   Repeat
   MirrorRepeat
   ClampToBorder
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ImageAddressMode::default() -> Self
 
 pub(all) enum ImageArrayLayout {
@@ -115,7 +125,7 @@ pub(all) enum ImageCompareFunction {
   NotEqual
   GreaterEqual
   Always
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ImageContainerFormat {
   Png
@@ -131,13 +141,13 @@ pub(all) enum ImageContainerFormat {
 pub(all) enum ImageFilterMode {
   Nearest
   Linear
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ImageFilterMode::default() -> Self
 
 pub(all) enum ImageKind {
   Data
   TargetTexture
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ImageSampler {
   Default
@@ -152,7 +162,7 @@ pub(all) enum ImageSamplerBorderColor {
   OpaqueBlack
   OpaqueWhite
   Zero
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) struct ImageSamplerDescriptor {
   mut label : String?
@@ -214,7 +224,7 @@ pub(all) enum TextureFormat {
   Rgba8UnormSrgb
   Rgba16Float
   Rg16Float
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn TextureFormat::default() -> Self
 
 // Type aliases

@@ -14,7 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/prepare.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_dlss_prepare_bridge_pending() -> Unit {
+// Bridge preparation gate for optional DLSS runtime path.
 
+///|
+pub const DLSS_PREPARE_MODULE_TAG : String = "bevy_anti_alias::dlss::prepare"
+
+///|
+pub struct DlssPrepareBridge {
+  prepare_label : String
+}
+
+///|
+pub fn DlssPrepareBridge::default() -> DlssPrepareBridge {
+  DlssPrepareBridge::{ prepare_label: DLSS_PREPARE_MODULE_TAG }
+}
+
+///|
+pub fn dlss_prepare_enabled() -> Bool {
+  DLSS_RUNTIME_SUPPORTED
+}
+
+///|
+pub fn dlss_prepare_bridge_enabled(bridge : DlssPrepareBridge) -> Bool {
+  bridge.prepare_label == DLSS_PREPARE_MODULE_TAG && dlss_prepare_enabled()
+}
+
+///|
+pub fn dlss_prepare_bridge_label(bridge : DlssPrepareBridge) -> String {
+  bridge.prepare_label
 }

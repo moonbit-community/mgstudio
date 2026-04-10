@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/simplex_stroke_font.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_simplex_stroke_font_bridge_pending() -> Unit {
+// Bridge capability for simplex stroke font path.
+pub const SIMPLEX_STROKE_FONT_MODULE_TAG : String = "bevy_gizmos::simplex_stroke_font"
 
+///|
+pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
+
+///|
+pub fn simplex_stroke_font_supported() -> Bool {
+  SIMPLEX_STROKE_FONT_SUPPORTED
+}
+
+///|
+pub fn simplex_stroke_font_module_tag() -> String {
+  SIMPLEX_STROKE_FONT_MODULE_TAG
 }

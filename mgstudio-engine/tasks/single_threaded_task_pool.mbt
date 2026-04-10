@@ -12,12 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/single_threaded_task_pool.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/single_threaded_task_pool.rs`.
 
-pub struct SingleThreadedScope {}
+///|
+pub type SingleThreadedScope[T] = Scope[T]
 
-pub struct SingleThreadedTaskPool {}
+///|
+pub type SingleThreadedTaskPool = TaskPool
 
-pub struct SingleThreadedTaskPoolBuilder {}
+///|
+pub type SingleThreadedTaskPoolBuilder = TaskPoolBuilder
 
-pub struct SingleThreadedThreadExecutor {}
+///|
+pub type SingleThreadedThreadExecutor = ThreadExecutor
+
+///|
+pub fn single_threaded_task_pool_builder() -> SingleThreadedTaskPoolBuilder {
+  TaskPoolBuilder::new()
+}

@@ -8,7 +8,29 @@ import {
 }
 
 // Values
+pub const ANDROID_ASSET_SOURCE_NAME : String = "android"
+
+pub const WASM_ASSET_SOURCE_NAME : String = "wasm"
+
+pub const WEB_ASSET_SOURCE_NAME : String = "web"
+
 pub fn asset_format_path(@asset.AssetPath) -> String
+
+pub fn asset_io_android_source_name() -> String
+
+pub fn asset_io_android_supported() -> Bool
+
+pub fn asset_io_gated_source_name() -> String
+
+pub fn asset_io_is_gated() -> Bool
+
+pub fn asset_io_wasm_source_name() -> String
+
+pub fn asset_io_wasm_supported() -> Bool
+
+pub fn asset_io_web_source_name() -> String
+
+pub fn asset_io_web_supported() -> Bool
 
 pub fn asset_parse_path(String) -> @asset.AssetPath
 
@@ -23,6 +45,30 @@ pub fn register_asset_source(@app.App[@ecs.World], @asset.AssetSourceId, @asset.
 // Errors
 
 // Types and methods
+pub struct AssetSourcePath {
+  source_name : String?
+  path : String
+}
+pub fn AssetSourcePath::canonical(Self) -> String
+pub fn AssetSourcePath::new(String) -> Self
+pub fn AssetSourcePath::with_source_name(Self, String?) -> Self
+
+pub struct MemoryAssetSource {
+  name : String
+  blobs : Array[(String, Bytes)]
+}
+pub fn MemoryAssetSource::insert(Self, String, Bytes) -> Unit
+pub fn MemoryAssetSource::name(Self) -> String
+pub fn MemoryAssetSource::new(String) -> Self
+pub fn MemoryAssetSource::read(Self, String) -> Bytes?
+
+pub struct ProcessorGatedAssetIo {
+  enabled : Bool
+  extension : String
+}
+pub fn ProcessorGatedAssetIo::enabled(Self) -> Bool
+pub fn ProcessorGatedAssetIo::extension(Self) -> String
+pub fn ProcessorGatedAssetIo::new(String) -> Self
 
 // Type aliases
 pub using @asset {type AssetLoaderKind}

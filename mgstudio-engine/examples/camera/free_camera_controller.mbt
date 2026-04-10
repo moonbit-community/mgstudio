@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub fn camera_free_camera_controller_bevy_source() -> String {
-  "bevy/examples/camera/free_camera_controller.rs"
-}
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_FREE_CAMERA_CONTROLLER : String = "examples/camera/free_camera_controller/main.mbt"
+

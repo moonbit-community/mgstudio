@@ -16,6 +16,38 @@
 // Bevy source: `bevy/crates/bevy_render/src/sync_component.rs`.
 
 ///|
+pub struct SyncComponentPlugin[_, _] {}
+
+///|
+pub fn[C, F] SyncComponentPlugin::default() -> SyncComponentPlugin[C, F] {
+  SyncComponentPlugin::{  }
+}
+
+///|
+pub struct SyncComponentHooksState {
+  mut removed_component_records : Int
+}
+
+///|
+pub fn SyncComponentHooksState::default() -> SyncComponentHooksState {
+  SyncComponentHooksState::{ removed_component_records: 0 }
+}
+
+///|
+pub fn SyncComponentHooksState::record_component_removed(
+  self : SyncComponentHooksState,
+) -> Unit {
+  self.removed_component_records = self.removed_component_records + 1
+}
+
+///|
+pub fn SyncComponentHooksState::removed_component_records(
+  self : SyncComponentHooksState,
+) -> Int {
+  self.removed_component_records
+}
+
+///|
 pub fn sync_component_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

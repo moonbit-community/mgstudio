@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/mod.rs`.
-// Source-shape ownership stays here; concrete primitive bridges are pending.
-fn _gizmos_primitives_module_anchor() -> Unit {
-  ignore(0)
+// Ownership entrypoint for 2D/3D primitive bridge modules.
+
+///|
+pub const GIZMOS_PRIMITIVES_MODULE_ID : String = "bevy_gizmos::primitives"
+
+///|
+pub fn gizmos_primitives_helper_epsilon() -> Float {
+  gizmo_primitive_helper_epsilon()
+}
+
+///|
+pub fn gizmos_primitives_module_id() -> String {
+  GIZMOS_PRIMITIVES_MODULE_ID
 }

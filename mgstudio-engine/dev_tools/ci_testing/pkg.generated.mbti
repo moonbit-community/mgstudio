@@ -2,10 +2,33 @@
 package "Milky2018/mgstudio/dev_tools/ci_testing"
 
 // Values
+pub const CI_TESTING_MODULE_TAG : String = "bevy_dev_tools::ci_testing"
+
+pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.systems"
+
+pub fn ci_testing_module_tag(CiTestingPlugin) -> String
+
+pub fn dev_tools_ci_testing_available() -> Bool
+
+pub fn dev_tools_ci_testing_config_available() -> Bool
+
+pub fn dev_tools_ci_testing_stage() -> String
+
+pub fn dev_tools_ci_testing_systems_available() -> Bool
 
 // Errors
 
 // Types and methods
+pub struct CiTestingConfig {
+  enabled : Bool
+  capture_frames : Int
+}
+pub fn CiTestingConfig::default() -> Self
+
+pub struct CiTestingPlugin {
+  module_tag : String
+}
+pub fn CiTestingPlugin::default() -> Self
 
 // Type aliases
 

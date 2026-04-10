@@ -14,7 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state_scoped.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_state_scoped_bridge_pending() -> Unit {
+// Bridge aliases and helpers for state-scoped entity workflows.
 
+///|
+pub type StateScopedDespawnOnExit = DespawnOnExit
+
+///|
+pub type StateScopedDespawnOnEnter = DespawnOnEnter
+
+///|
+pub fn[S] state_scoped_optional_source(state : S) -> OptionalStateSource[S] {
+  optional_state(state)
 }

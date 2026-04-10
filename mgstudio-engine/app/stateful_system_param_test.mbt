@@ -15,7 +15,7 @@
 ///|
 struct LocalCounter {
   mut value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 impl FromWorld for LocalCounter with from_world(_world) {
@@ -23,7 +23,7 @@ impl FromWorld for LocalCounter with from_world(_world) {
 }
 
 ///|
-struct RemovedMarker {} derive(Eq, Show)
+struct RemovedMarker {} derive(Eq, Debug)
 
 ///|
 let removed_marker_key : @ecs.ComponentKey[RemovedMarker] = @ecs.register_component(
@@ -55,8 +55,8 @@ test "app: Local persists independently per system instance" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(seen_first, content="[1, 2]")
-  inspect(seen_second, content="[10, 20]")
+  debug_inspect(seen_first, content="[1, 2]")
+  debug_inspect(seen_second, content="[10, 20]")
 }
 
 ///|
@@ -74,7 +74,7 @@ test "app: Local Array FromWorld starts empty and persists" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(lengths, content="[1, 2]")
+  debug_inspect(lengths, content="[1, 2]")
 }
 
 ///|
@@ -104,9 +104,9 @@ test "app: Local primitive FromWorld defaults are available" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(seen_counters, content="[1, 2]")
-  inspect(seen_elapsed_ok, content="[true, true]")
-  inspect(seen_labels, content="[\"tick\", \"tick\"]")
+  debug_inspect(seen_counters, content="[1, 2]")
+  debug_inspect(seen_elapsed_ok, content="[true, true]")
+  debug_inspect(seen_labels, content="[\"tick\", \"tick\"]")
 }
 
 ///|
@@ -126,7 +126,7 @@ test "app: ParamSet2 keeps each nested SystemParam state independently" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(seen, content="[(1, 10), (2, 20)]")
+  debug_inspect(seen, content="[(1, 10), (2, 20)]")
 }
 
 ///|
@@ -158,6 +158,6 @@ test "app: RemovedComponents typed system param observes fresh removals" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(observed_lengths, content="[1, 0]")
-  inspect(observed_entities, content="[true]")
+  debug_inspect(observed_lengths, content="[1, 0]")
+  debug_inspect(observed_entities, content="[true]")
 }

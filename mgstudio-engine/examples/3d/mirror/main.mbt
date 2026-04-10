@@ -49,7 +49,7 @@ const LAYER_MIRROR_SURFACE : Int = 1
 pub(all) enum DragAction {
   MoveCamera
   MoveFox
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct MirrorState {

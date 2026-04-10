@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/scene/blas.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_scene_blas_bridge_pending() -> Unit {
 
+///|
+pub struct BlasManager {
+  prepared_mesh_count : Int
+}
+
+///|
+pub fn BlasManager::default() -> BlasManager {
+  BlasManager::{ prepared_mesh_count: 0 }
+}
+
+///|
+pub fn prepare_raytracing_blas(_world : @ecs.World) -> Unit {
+  ()
+}
+
+///|
+pub fn compact_raytracing_blas(_world : @ecs.World) -> Unit {
+  ()
 }

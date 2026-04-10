@@ -12,4 +12,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/tools/compile_fail_utils/tests/example_tests/basic_test.rs

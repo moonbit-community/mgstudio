@@ -15,5 +15,5 @@
 ///|
 test "solari boundary exposes plugin group entry" {
   let _group = @solari.solari_plugins()
-  inspect(@solari.required_wgpu_features().to_string(), content="0")
+  debug_inspect(@solari.required_wgpu_features().to_string(), content="0")
 }

@@ -14,7 +14,27 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/scene_filter.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _scene_scene_filter_bridge_pending() -> Unit {
+// Scene filter API is gated by dynamic-scene reflection support.
 
+///|
+pub const SCENE_FILTER_MODULE_TAG : String = "bevy_scene::scene_filter"
+
+///|
+pub struct SceneFilterBridge {
+  supported : Bool
+}
+
+///|
+pub fn SceneFilterBridge::default() -> SceneFilterBridge {
+  SceneFilterBridge::{ supported: DYNAMIC_SCENE_SUPPORTED }
+}
+
+///|
+pub fn scene_filter_supported() -> Bool {
+  DYNAMIC_SCENE_SUPPORTED
+}
+
+///|
+pub fn scene_filter_bridge_supported(bridge : SceneFilterBridge) -> Bool {
+  bridge.supported
 }

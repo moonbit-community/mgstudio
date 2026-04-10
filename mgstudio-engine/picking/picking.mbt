@@ -17,6 +17,18 @@
 ///
 /// The runtime implementation is split across `lib`, `pointer`, `input`,
 /// `hover`, `backend`, `events`, and `window` following the Bevy file shape.
-fn _picking_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub const PICKING_PLUGIN_ID : String = "bevy_picking::PickingPlugin"
+
+///|
+pub fn picking_plugin_entry(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  picking_plugin(app)
+}
+
+///|
+pub fn picking_pre_update_sets() -> (
+  @app.SystemSet,
+  @app.SystemSet,
+  @app.SystemSet,
+) {
+  (picking_set_input, picking_set_hits, picking_set_events)
 }

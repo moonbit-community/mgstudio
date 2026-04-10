@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/examples/ui/layout/display_and_visibility"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -11,19 +12,19 @@ import {
 // Errors
 
 // Types and methods
-type ButtonPressState derive(Eq, Show, ToJson, @json.FromJson)
+type ButtonPressState derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for ButtonPressState
 
-type TargetPanel derive(Eq, Show, ToJson, @json.FromJson)
+type TargetPanel derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for TargetPanel
 
-type ToggleButtonAction derive(Eq, Show, ToJson, @json.FromJson)
+type ToggleButtonAction derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for ToggleButtonAction
 
 pub(all) enum ToggleKind {
   DisplayTarget
   VisibilityTarget
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 // Type aliases
 

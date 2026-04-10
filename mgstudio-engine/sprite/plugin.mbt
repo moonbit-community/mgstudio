@@ -14,7 +14,22 @@
 
 ///|
 // Bridge surface is provided by `lib.mbt` in this package.
-// This file remains a Bevy shape anchor only.
-fn _sprite_plugin_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub struct SpritePlugin {}
+
+///|
+pub fn sprite_plugin_id() -> String {
+  SPRITE_PLUGIN_ID
+}
+
+///|
+pub fn sprite_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : SpritePlugin,
+) -> @app.App[@ecs.World] {
+  sprite_plugin(app)
+}
+
+///|
+pub fn SpritePlugin::default() -> SpritePlugin {
+  SpritePlugin::{  }
 }

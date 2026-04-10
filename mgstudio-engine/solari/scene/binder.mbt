@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/scene/binder.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_scene_binder_bridge_pending() -> Unit {
 
+///|
+pub struct RaytracingSceneBindings {
+  bind_group_id : Int
+}
+
+///|
+pub fn RaytracingSceneBindings::default() -> RaytracingSceneBindings {
+  RaytracingSceneBindings::{ bind_group_id: -1 }
+}
+
+///|
+pub fn prepare_raytracing_scene_bindings(_world : @ecs.World) -> Unit {
+  ()
 }

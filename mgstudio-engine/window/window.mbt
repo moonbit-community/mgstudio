@@ -16,10 +16,10 @@
 const DEFAULT_WINDOW_TITLE : String = "App"
 
 ///|
-pub(all) struct PrimaryWindow {} derive(Eq, Show)
+pub(all) struct PrimaryWindow {} derive(Eq, Debug)
 
 ///|
-pub(all) struct ClosingWindow {} derive(Eq, Show)
+pub(all) struct ClosingWindow {} derive(Eq, Debug)
 
 ///|
 pub(all) enum WindowRef {
@@ -76,7 +76,7 @@ pub(all) struct WindowResizeConstraints {
   min_height : Float
   max_width : Float
   max_height : Float
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn WindowResizeConstraints::default() -> WindowResizeConstraints {
@@ -114,7 +114,7 @@ pub(all) enum CompositeAlphaMode {
   PreMultiplied
   PostMultiplied
   Inherit
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn CompositeAlphaMode::default() -> CompositeAlphaMode {
@@ -136,7 +136,7 @@ pub(all) enum PresentMode {
   FifoRelaxed
   Immediate
   Mailbox
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub type WindowLevel = @window_core.WindowLevel
@@ -152,7 +152,7 @@ pub(all) enum ScreenEdge {
   Bottom
   Right
   All
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ScreenEdge::default() -> ScreenEdge {
@@ -164,7 +164,7 @@ pub(all) struct EnabledButtons {
   mut minimize : Bool
   mut maximize : Bool
   mut close : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn EnabledButtons::default() -> EnabledButtons {
@@ -177,7 +177,7 @@ pub(all) struct WindowResolution {
   mut physical_height : Int
   mut scale_factor_override : Float?
   mut scale_factor : Float
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn WindowResolution::default() -> WindowResolution {
@@ -454,7 +454,7 @@ pub(all) enum ExitCondition {
   OnPrimaryClosed
   OnAllClosed
   DontExit
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct WindowPlugin {

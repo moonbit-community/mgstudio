@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/text/text_background_colors.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_TEXT_BACKGROUND_COLORS : String = "examples/ui/text/text_background_colors/main.mbt"
+

@@ -17,6 +17,24 @@
 // The current runtime does not expose Bevy's CI-testing module surface.
 
 ///|
+pub const CI_TESTING_MODULE_TAG : String = "bevy_dev_tools::ci_testing"
+
+///|
+pub struct CiTestingPlugin {
+  module_tag : String
+}
+
+///|
+pub fn CiTestingPlugin::default() -> CiTestingPlugin {
+  CiTestingPlugin::{ module_tag: CI_TESTING_MODULE_TAG }
+}
+
+///|
 pub fn dev_tools_ci_testing_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub fn ci_testing_module_tag(plugin : CiTestingPlugin) -> String {
+  plugin.module_tag
 }

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/animation/easing_functions.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_EASING_FUNCTIONS : String = "examples/animation/easing_functions/main.mbt"
+

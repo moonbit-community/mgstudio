@@ -14,7 +14,22 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/virtual_keyboard.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_virtual_keyboard_bridge_pending() -> Unit {
 
+///|
+pub struct VirtualKeyPressed[T] {
+  entity_id : Int
+  key : T
+}
+
+///|
+pub fn[T] VirtualKeyPressed::new(
+  entity_id : Int,
+  key : T,
+) -> VirtualKeyPressed[T] {
+  VirtualKeyPressed::{ entity_id, key }
+}
+
+///|
+pub fn[T] virtual_keyboard(rows : Array[Array[T]]) -> Array[Array[T]] {
+  rows
 }

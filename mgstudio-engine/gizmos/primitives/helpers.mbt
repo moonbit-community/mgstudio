@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/helpers.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_primitives_helpers_bridge_pending() -> Unit {
+// Shared helper constants for primitive gizmo bridges.
 
+///|
+pub const GIZMO_PRIMITIVE_HELPER_EPSILON : Float = 0.00001F
+
+///|
+pub fn gizmo_primitive_helper_epsilon() -> Float {
+  GIZMO_PRIMITIVE_HELPER_EPSILON
+}
+
+///|
+pub fn gizmo_primitive_near_zero(value : Float) -> Bool {
+  value <= GIZMO_PRIMITIVE_HELPER_EPSILON &&
+  value >= -GIZMO_PRIMITIVE_HELPER_EPSILON
 }

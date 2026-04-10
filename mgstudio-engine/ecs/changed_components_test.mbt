@@ -15,7 +15,7 @@
 ///|
 struct ChangedMarker {
   mut value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 let changed_marker_key : ComponentKey[ChangedMarker] = register_component(
@@ -37,8 +37,8 @@ test "ecs changed components: insert emits entity in tick range" {
   let changed = world
     .changed_components(changed_marker_key, @core.SystemSequence::new(0, 1))
     .read()
-  inspect(changed.length(), content="1")
-  inspect(changed[0] == entity, content="true")
+  debug_inspect(changed.length(), content="1")
+  debug_inspect(changed[0] == entity, content="true")
 }
 
 ///|
@@ -49,11 +49,11 @@ test "ecs changed components: replace and update emit changed events" {
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
-  inspect(
+  debug_inspect(
     try! world.replace(entity, changed_marker_key, ChangedMarker::{ value: 2 }),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! world.update_by_key(entity, changed_marker_key, fn(marker) {
       ChangedMarker::{ value: marker.value + 1 }
     }),
@@ -63,7 +63,7 @@ test "ecs changed components: replace and update emit changed events" {
   let changed = world
     .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
     .read()
-  inspect(changed.contains(entity), content="true")
+  debug_inspect(changed.contains(entity), content="true")
 }
 
 ///|
@@ -84,7 +84,7 @@ test "ecs changed components: Mut::set emits changed event" {
   let changed = world
     .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
     .read()
-  inspect(changed.contains(entity), content="true")
+  debug_inspect(changed.contains(entity), content="true")
 }
 
 ///|
@@ -105,5 +105,5 @@ test "ecs changed components: Mut::get_ref marks changed on mutable borrow" {
   let changed = world
     .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
     .read()
-  inspect(changed.contains(entity), content="true")
+  debug_inspect(changed.contains(entity), content="true")
 }

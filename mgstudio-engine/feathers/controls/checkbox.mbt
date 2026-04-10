@@ -14,7 +14,38 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/checkbox.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_checkbox_bridge_pending() -> Unit {
 
+///|
+pub struct CheckboxProps {
+  checked : Bool
+  disabled : Bool
+}
+
+///|
+pub fn CheckboxProps::default() -> CheckboxProps {
+  CheckboxProps::{ checked: false, disabled: false }
+}
+
+///|
+pub struct Checkbox {
+  props : CheckboxProps
+  label : String
+}
+
+///|
+pub fn checkbox(props : CheckboxProps, label : String) -> Checkbox {
+  Checkbox::{ props, label }
+}
+
+///|
+pub struct CheckboxPlugin {}
+
+///|
+pub fn CheckboxPlugin::default() -> CheckboxPlugin {
+  CheckboxPlugin::{  }
+}
+
+///|
+pub fn checkbox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

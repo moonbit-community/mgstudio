@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/cross.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_cross_bridge_pending() -> Unit {
+// Bridge capability flag for cross gizmo shapes.
 
+///|
+pub const GIZMO_CROSS_MODULE_TAG : String = "bevy_gizmos::cross"
+
+///|
+pub fn gizmo_cross_supported() -> Bool {
+  true
+}
+
+///|
+pub fn gizmo_cross_module_tag() -> String {
+  GIZMO_CROSS_MODULE_TAG
 }

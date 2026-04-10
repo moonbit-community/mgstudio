@@ -196,13 +196,13 @@ pub(all) enum RawWinitWindowEventData {
   ScaleFactorChanged(Double, @window_dpi.PhysicalSize)
   ThemeChanged(@window_core.Theme)
   TouchpadPressure(@window_core.DeviceId?, Double, Int)
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 pub(all) struct RawWinitWindowEventSnapshot {
   window_id : Int
   event : RawWinitWindowEventData
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 fn new_bool_state(size : Int) -> Array[Bool] {

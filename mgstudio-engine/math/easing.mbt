@@ -30,7 +30,7 @@ pub(all) enum JumpAt {
   End
   None
   Both
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub impl Default for JumpAt with default() {
@@ -78,7 +78,7 @@ pub(all) enum EaseFunction {
   BounceInOut
   Steps(Int, JumpAt)
   Elastic(Float)
-} derive(Show, ToJson, FromJson)
+} derive(Debug, ToJson, FromJson)
 
 ///|
 pub impl Default for EaseFunction with default() {

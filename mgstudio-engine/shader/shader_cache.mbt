@@ -18,7 +18,7 @@
 pub(all) enum ShaderCacheSource {
   SpirV(Bytes)
   Wgsl(String)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 /// An id of a cached pipeline, typically representing a unique shader +

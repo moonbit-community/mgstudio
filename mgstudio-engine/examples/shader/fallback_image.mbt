@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/fallback_image.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_FALLBACK_IMAGE : String = "examples/shader/fallback_image/main.mbt"
+

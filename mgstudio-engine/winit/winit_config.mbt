@@ -16,7 +16,7 @@
 pub(all) enum UpdateMode {
   Continuous
   Reactive(@core.Duration, Bool, Bool, Bool)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn UpdateMode::reactive(wait : @core.Duration) -> UpdateMode {
@@ -32,7 +32,7 @@ pub fn UpdateMode::reactive_low_power(wait : @core.Duration) -> UpdateMode {
 pub(all) struct WinitSettings {
   focused_mode : UpdateMode
   unfocused_mode : UpdateMode
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn WinitSettings::game() -> WinitSettings {

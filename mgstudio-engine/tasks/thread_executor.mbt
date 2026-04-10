@@ -12,17 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/thread_executor.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/thread_executor.rs`.
 
+///|
 pub struct ThreadExecutor {}
 
+///|
 pub struct ThreadExecutorTicker {}
 
+///|
 pub fn ThreadExecutor::new() -> ThreadExecutor {
-  {  }
+  ThreadExecutor::{  }
 }
 
+///|
 pub fn ThreadExecutor::ticker(self : ThreadExecutor) -> ThreadExecutorTicker {
   ignore(self)
-  {  }
+  ThreadExecutorTicker::{  }
+}
+
+///|
+pub fn ThreadExecutor::tick(self : ThreadExecutor) -> Unit {
+  ignore(self)
+}
+
+///|
+pub fn ThreadExecutorTicker::tick(self : ThreadExecutorTicker) -> Unit {
+  ignore(self)
 }

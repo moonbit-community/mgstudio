@@ -87,7 +87,7 @@ fn animation_hash_names(names : Array[String]) -> (UInt, UInt) {
 pub struct AnimationTargetId {
   high : Int
   low : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn AnimationTargetId::new(high : Int, low : Int) -> AnimationTargetId {
@@ -1281,7 +1281,7 @@ pub fn AnimationTriggeredEvent::payload(
 ///|
 pub struct AnimationNodeIndex {
   index : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn AnimationNodeIndex::new(index : Int) -> AnimationNodeIndex {

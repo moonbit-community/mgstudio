@@ -14,7 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/opaque.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_opaque_bridge_pending() -> Unit {
+// Bridge aliases and helpers for opaque renderer method resources.
 
+///|
+pub type MaterialDefaultOpaqueMethod = DefaultOpaqueRendererMethod
+
+///|
+pub let ecs_key_material_default_opaque_method : @ecs.ResourceKey[
+  MaterialDefaultOpaqueMethod,
+] = ecs_key_default_opaque_renderer_method
+
+///|
+pub fn material_default_opaque_method_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[MaterialDefaultOpaqueMethod] {
+  get_default_opaque_renderer_method_resource(world)
 }

@@ -46,7 +46,7 @@ test "app: insert_resource and ResMut parameter updates value" {
     Some(resource) => resource.value
     None => -1
   }
-  inspect(value, content="3")
+  debug_inspect(value, content="3")
 }
 
 ///|
@@ -58,7 +58,7 @@ test "app: Res parameter reads inserted resource value" {
       observed.val = resource.get().value
     })
   app.run_once() |> ignore
-  inspect(observed.val, content="7")
+  debug_inspect(observed.val, content="7")
 }
 
 ///|
@@ -66,12 +66,15 @@ test "app: init_resource inserts only when missing" {
   let app = App::new(@ecs.World::new()).init_resource(fn() {
     CounterResource::{ value: 11 }
   })
-  inspect(app.contains_resource(CounterResource::resource()), content="true")
+  debug_inspect(
+    app.contains_resource(CounterResource::resource()),
+    content="true",
+  )
   let inserted_value = match read_counter_resource(app.world()) {
     Some(resource) => resource.value
     None => -1
   }
-  inspect(inserted_value, content="11")
+  debug_inspect(inserted_value, content="11")
 
   app
   .insert_resource(CounterResource::{ value: 4 })
@@ -82,7 +85,7 @@ test "app: init_resource inserts only when missing" {
     Some(resource) => resource.value
     None => -1
   }
-  inspect(kept_value, content="4")
+  debug_inspect(kept_value, content="4")
 }
 
 ///|
@@ -90,12 +93,18 @@ test "app: resource_remove clears custom resource" {
   let app = App::new(@ecs.World::new()).insert_resource(CounterResource::{
     value: 9,
   })
-  inspect(app.contains_resource(CounterResource::resource()), content="true")
-  inspect(
+  debug_inspect(
+    app.contains_resource(CounterResource::resource()),
+    content="true",
+  )
+  debug_inspect(
     app.remove_resource(CounterResource::resource()) is Some(_),
     content="true",
   )
-  inspect(app.contains_resource(CounterResource::resource()), content="false")
+  debug_inspect(
+    app.contains_resource(CounterResource::resource()),
+    content="false",
+  )
 }
 
 ///|
@@ -108,11 +117,11 @@ test "app: resource_exists gates system execution on resource presence" {
   )
 
   app.run_once() |> ignore
-  inspect(log.length(), content="0")
+  debug_inspect(log.length(), content="0")
 
   app.insert_resource(CounterResource::{ value: 3 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  debug_inspect(log.length(), content="1")
 }
 
 ///|
@@ -125,7 +134,7 @@ test "app: any_with_component gates system execution on component presence" {
   )
 
   app.run_once() |> ignore
-  inspect(log.length(), content="0")
+  debug_inspect(log.length(), content="0")
 
   let entity = app.world().spawn()
   try! app
@@ -133,8 +142,8 @@ test "app: any_with_component gates system execution on component presence" {
   .set_by_key(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
   app.run_once() |> ignore
 
-  inspect(log.length(), content="1")
-  inspect(log[0], content="0")
+  debug_inspect(log.length(), content="1")
+  debug_inspect(log[0], content="0")
 }
 
 ///|
@@ -147,15 +156,15 @@ test "app: resource_added tracks added events" {
   )
 
   app.run_once() |> ignore
-  inspect(log.length(), content="0")
+  debug_inspect(log.length(), content="0")
 
   app.insert_resource(CounterResource::{ value: 5 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
-  inspect(log[0], content="0")
+  debug_inspect(log.length(), content="1")
+  debug_inspect(log[0], content="0")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  debug_inspect(log.length(), content="1")
 }
 
 ///|
@@ -173,16 +182,16 @@ test "app: resource_exists_and_changed tracks change events" {
     )
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
-  inspect(log[0], content="1")
+  debug_inspect(log.length(), content="1")
+  debug_inspect(log[0], content="1")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  debug_inspect(log.length(), content="1")
 
   app.insert_resource(CounterResource::{ value: 8 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[1], content="8")
+  debug_inspect(log.length(), content="2")
+  debug_inspect(log[1], content="8")
 }
 
 ///|
@@ -200,16 +209,16 @@ test "app: resource_changed tracks change events" {
     )
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
-  inspect(log[0], content="1")
+  debug_inspect(log.length(), content="1")
+  debug_inspect(log[0], content="1")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  debug_inspect(log.length(), content="1")
 
   app.insert_resource(CounterResource::{ value: 9 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[1], content="9")
+  debug_inspect(log.length(), content="2")
+  debug_inspect(log[1], content="9")
 }
 
 ///|
@@ -226,7 +235,7 @@ test "app: Res exposes stable resource values across runs" {
   app.insert_resource(CounterResource::{ value: 6 }) |> ignore
   app.run_once() |> ignore
 
-  inspect(observed, content="[2, 2, 6]")
+  debug_inspect(observed, content="[2, 2, 6]")
 }
 
 ///|
@@ -236,13 +245,13 @@ test "app: Res can read inserted State resource" {
     .add_plugins([states_plugin(StatesPlugin::default())])
     .insert_state(TestState::A)
     .add_system_param(fn(state : Res[State[TestState]]) {
-      observed.val = state.get().get().to_string()
+      observed.val = to_repr(state.get().get()).to_string()
     })
 
   app.run_startup() |> ignore
   app.run_once() |> ignore
 
-  inspect(observed.val, content="A")
+  debug_inspect(observed.val, content="A")
 }
 
 ///|
@@ -257,7 +266,7 @@ test "app: ResMut can update NextState resource" {
   app.run_startup() |> ignore
   app.run_once() |> ignore
 
-  inspect(
+  debug_inspect(
     world_next_state(app.world(), TestState::A),
     content="Some(Pending(B))",
   )
@@ -302,19 +311,19 @@ test "app: run condition combinators short-circuit and compose" {
     )
 
   app.run_once() |> ignore
-  inspect(or_runs.val, content="1")
-  inspect(or_rhs_calls.val, content="0")
-  inspect(and_runs.val, content="0")
-  inspect(and_rhs_calls.val, content="0")
-  inspect(not_log.length(), content="0")
+  debug_inspect(or_runs.val, content="1")
+  debug_inspect(or_rhs_calls.val, content="0")
+  debug_inspect(and_runs.val, content="0")
+  debug_inspect(and_rhs_calls.val, content="0")
+  debug_inspect(not_log.length(), content="0")
 
   app.remove_resource(CounterResource::resource()) |> ignore
   app.run_once() |> ignore
-  inspect(or_runs.val, content="1")
-  inspect(or_rhs_calls.val, content="1")
-  inspect(and_runs.val, content="1")
-  inspect(and_rhs_calls.val, content="1")
-  inspect(not_log.length(), content="1")
+  debug_inspect(or_runs.val, content="1")
+  debug_inspect(or_rhs_calls.val, content="1")
+  debug_inspect(and_runs.val, content="1")
+  debug_inspect(and_rhs_calls.val, content="1")
+  debug_inspect(not_log.length(), content="1")
 }
 
 ///|
@@ -343,5 +352,5 @@ test "app: Query and ResMut compose in a single system signature" {
     Some(resource) => resource.value
     None => -1
   }
-  inspect(value, content="11")
+  debug_inspect(value, content="11")
 }

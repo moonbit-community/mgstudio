@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/games/alien_cake_addict.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ALIEN_CAKE_ADDICT : String = "examples/games/alien_cake_addict/main.mbt"
+

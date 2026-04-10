@@ -82,22 +82,22 @@ fn sampling_test_capsule_distance_to_segment(
 
 ///|
 test "math: 3d primitive defaults match Bevy sampling primitives" {
-  inspect(
+  debug_inspect(
     sampling_test_approx_eq(Sphere::default().radius, 0.5F),
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_approx_eq(Cylinder::default().radius, 0.5F) &&
     sampling_test_approx_eq(Cylinder::default().half_height, 0.5F),
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_approx_eq(Capsule3d::default().radius, 0.5F) &&
     sampling_test_approx_eq(Capsule3d::default().half_length, 0.5F),
     content="true",
   )
-  inspect(Triangle3d::default().vertices.length() == 3, content="true")
-  inspect(Tetrahedron::default().vertices.length() == 4, content="true")
+  debug_inspect(Triangle3d::default().vertices.length() == 3, content="true")
+  debug_inspect(Tetrahedron::default().vertices.length() == 4, content="true")
 }
 
 ///|
@@ -107,8 +107,8 @@ test "math: cuboid boundary and distribution surface are deterministic" {
   let rng1 = @random.Rand::chacha8(seed=b"cuboid-boundary-seed-00000000001")
   let sample0 = cuboid.sample_boundary(rng0)
   let sample1 = cuboid.sample_boundary(rng1)
-  inspect(sampling_test_approx_vec3(sample0, sample1), content="true")
-  inspect(
+  debug_inspect(sampling_test_approx_vec3(sample0, sample1), content="true")
+  debug_inspect(
     sampling_test_on_cuboid_boundary(sample0, cuboid.half_size),
     content="true",
   )
@@ -126,10 +126,10 @@ test "math: cuboid boundary and distribution surface are deterministic" {
     )
     .take(3)
     .collect()
-  inspect(iter0.length() == 3 && iter1.length() == 3, content="true")
-  inspect(sampling_test_approx_vec3(iter0[0], iter1[0]), content="true")
-  inspect(sampling_test_approx_vec3(iter0[1], iter1[1]), content="true")
-  inspect(sampling_test_approx_vec3(iter0[2], iter1[2]), content="true")
+  debug_inspect(iter0.length() == 3 && iter1.length() == 3, content="true")
+  debug_inspect(sampling_test_approx_vec3(iter0[0], iter1[0]), content="true")
+  debug_inspect(sampling_test_approx_vec3(iter0[1], iter1[1]), content="true")
+  debug_inspect(sampling_test_approx_vec3(iter0[2], iter1[2]), content="true")
 }
 
 ///|
@@ -141,8 +141,11 @@ test "math: sphere sampling stays in volume and on surface" {
   let boundary = sphere.sample_boundary(
     @random.Rand::chacha8(seed=b"sphere-boundary-seed-00000000001"),
   )
-  inspect(interior.length() <= 1.25F + 0.0001F, content="true")
-  inspect(sampling_test_approx_eq(boundary.length(), 1.25F), content="true")
+  debug_inspect(interior.length() <= 1.25F + 0.0001F, content="true")
+  debug_inspect(
+    sampling_test_approx_eq(boundary.length(), 1.25F),
+    content="true",
+  )
 }
 
 ///|
@@ -155,11 +158,11 @@ test "math: cylinder and capsule boundary samples satisfy geometric constraints"
     cylinder_sample.x * cylinder_sample.x +
     cylinder_sample.z * cylinder_sample.z,
   )
-  inspect(
+  debug_inspect(
     sampling_test_abs_float(cylinder_sample.y) <= 0.75F + 0.0001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_approx_eq(sampling_test_abs_float(cylinder_sample.y), 0.75F) ||
     sampling_test_approx_eq(cylinder_radial, 0.5F),
     content="true",
@@ -172,12 +175,12 @@ test "math: cylinder and capsule boundary samples satisfy geometric constraints"
   let capsule_boundary = capsule.sample_boundary(
     @random.Rand::chacha8(seed=b"capsule-boundary-seed-0000000001"),
   )
-  inspect(
+  debug_inspect(
     sampling_test_capsule_distance_to_segment(capsule_interior, 1.0F) <=
     0.5F + 0.0001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_approx_eq(
       sampling_test_capsule_distance_to_segment(capsule_boundary, 1.0F),
       0.5F,
@@ -199,8 +202,14 @@ test "math: triangle and tetrahedron sampling respect barycentric bounds" {
   let triangle_boundary = triangle.sample_boundary(
     @random.Rand::chacha8(seed=b"triangle-boundary-seed-000000001"),
   )
-  inspect(sampling_test_approx_eq(triangle_interior.z, 0.0F), content="true")
-  inspect(sampling_test_approx_eq(triangle_boundary.z, 0.0F), content="true")
+  debug_inspect(
+    sampling_test_approx_eq(triangle_interior.z, 0.0F),
+    content="true",
+  )
+  debug_inspect(
+    sampling_test_approx_eq(triangle_boundary.z, 0.0F),
+    content="true",
+  )
   guard sampling_test_triangle_barycentric(
       triangle.vertices[0],
       triangle.vertices[1],
@@ -208,11 +217,14 @@ test "math: triangle and tetrahedron sampling respect barycentric bounds" {
       triangle_interior,
     )
     is Some((u0, v0, w0)) else {
-    inspect(false, content="true")
+    debug_inspect(false, content="true")
     return
   }
-  inspect(u0 >= -0.0001F && v0 >= -0.0001F && w0 >= -0.0001F, content="true")
-  inspect(u0 <= 1.0001F && v0 <= 1.0001F && w0 <= 1.0001F, content="true")
+  debug_inspect(
+    u0 >= -0.0001F && v0 >= -0.0001F && w0 >= -0.0001F,
+    content="true",
+  )
+  debug_inspect(u0 <= 1.0001F && v0 <= 1.0001F && w0 <= 1.0001F, content="true")
   guard sampling_test_triangle_barycentric(
       triangle.vertices[0],
       triangle.vertices[1],
@@ -220,10 +232,10 @@ test "math: triangle and tetrahedron sampling respect barycentric bounds" {
       triangle_boundary,
     )
     is Some((u1, v1, w1)) else {
-    inspect(false, content="true")
+    debug_inspect(false, content="true")
     return
   }
-  inspect(
+  debug_inspect(
     sampling_test_abs_float(u1) < 0.0001F ||
     sampling_test_abs_float(v1) < 0.0001F ||
     sampling_test_abs_float(w1) < 0.0001F,
@@ -242,24 +254,24 @@ test "math: triangle and tetrahedron sampling respect barycentric bounds" {
   let tetrahedron_boundary = tetrahedron.sample_boundary(
     @random.Rand::chacha8(seed=b"tetrahedron-boundary-seed-000001"),
   )
-  inspect(
+  debug_inspect(
     tetrahedron_interior.x >= -0.0001F &&
     tetrahedron_interior.y >= -0.0001F &&
     tetrahedron_interior.z >= -0.0001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     tetrahedron_interior.x + tetrahedron_interior.y + tetrahedron_interior.z <=
     1.0001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     tetrahedron_boundary.x >= -0.0001F &&
     tetrahedron_boundary.y >= -0.0001F &&
     tetrahedron_boundary.z >= -0.0001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_abs_float(tetrahedron_boundary.x) < 0.0001F ||
     sampling_test_abs_float(tetrahedron_boundary.y) < 0.0001F ||
     sampling_test_abs_float(tetrahedron_boundary.z) < 0.0001F ||

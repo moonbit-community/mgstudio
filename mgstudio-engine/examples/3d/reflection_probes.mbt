@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/reflection_probes.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_REFLECTION_PROBES : String = "examples/3d/reflection_probes/main.mbt"
+

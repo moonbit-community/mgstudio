@@ -70,12 +70,12 @@ test "ui: layout computes rect and camera-compensated transform" {
     rect.min.y == 50.0F &&
     rect.max.x == 240.0F &&
     rect.max.y == 110.0F
-  inspect(ok_rect, content="true")
+  debug_inspect(ok_rect, content="true")
   let t = try! world.get_by_key(node, @transform.ecs_key_transform).unwrap()
   // Expected center in viewport coords: (140, 80)
   // Viewport center origin (+Y up): (-260, 220)
   let ok_pos = t.translation.x == -260.0F && t.translation.y == 220.0F
-  inspect(ok_pos, content="true")
+  debug_inspect(ok_pos, content="true")
 
   // Camera move + scale compensation.
   let ctx2 = UiContext::new(
@@ -93,9 +93,9 @@ test "ui: layout computes rect and camera-compensated transform" {
   let t2 = try! world.get_by_key(node, @transform.ecs_key_transform).unwrap()
   // (-260, 220) * 2 + (100, 50) = (-420, 490)
   let ok_pos2 = t2.translation.x == -420.0F && t2.translation.y == 490.0F
-  inspect(ok_pos2, content="true")
+  debug_inspect(ok_pos2, content="true")
   let ok_scale2 = t2.scale.x == 2.0F && t2.scale.y == 2.0F
-  inspect(ok_scale2, content="true")
+  debug_inspect(ok_scale2, content="true")
 }
 
 ///|
@@ -104,7 +104,7 @@ test "ui: pointer conversion to viewport space" {
   let origin = @math.Vec2::new(10.0F, 15.0F)
   let size = @math.Vec2::new(100.0F, 100.0F)
   let in_view = ui_pointer_pos_in_viewport(pos, origin, size)
-  inspect(
+  debug_inspect(
     in_view.unwrap().x == 10.0F && in_view.unwrap().y == 25.0F,
     content="true",
   )
@@ -113,7 +113,7 @@ test "ui: pointer conversion to viewport space" {
     origin,
     size,
   )
-  inspect(out_view is None, content="true")
+  debug_inspect(out_view is None, content="true")
 }
 
 ///|
@@ -172,8 +172,8 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
   ui_layout_system(world)
   let panel_rect = try! world.get_by_key(panel, ecs_key_ui_layout).unwrap().rect
   let child_rect = try! world.get_by_key(child, ecs_key_ui_layout).unwrap().rect
-  inspect(child_rect.min.x == panel_rect.min.x, content="true")
-  inspect(child_rect.min.y == panel_rect.min.y - 24.0F, content="true")
+  debug_inspect(child_rect.min.x == panel_rect.min.x, content="true")
+  debug_inspect(child_rect.min.y == panel_rect.min.y - 24.0F, content="true")
 }
 
 ///|
@@ -240,17 +240,17 @@ test "ui: ghost node children layout as direct descendants" {
 
   ui_layout_system(world)
 
-  inspect(
+  debug_inspect(
     try! (world.get_by_key(ghost, ecs_key_ui_layout) is None),
     content="true",
   )
   let first_rect = try! world.get_by_key(first, ecs_key_ui_layout).unwrap().rect
   let second_rect = try! world.get_by_key(second, ecs_key_ui_layout).unwrap().rect
-  inspect(second_rect.min.x == first_rect.max.x, content="true")
-  inspect(second_rect.min.y == first_rect.min.y, content="true")
+  debug_inspect(second_rect.min.x == first_rect.max.x, content="true")
+  debug_inspect(second_rect.min.y == first_rect.min.y, content="true")
   ui_stack_system(world)
   let stack = get_ui_stack_resource(world).get().unwrap().uinodes()
-  inspect(stack.length() == 4, content="true")
+  debug_inspect(stack.length() == 4, content="true")
 }
 
 ///|
@@ -311,18 +311,21 @@ test "ui: editable text transform stays in input content box and in front" {
   let expected_y = 300.0F - center.y
   let text_handle = @text.ui_text_ecs_handle(world, editable).unwrap()
   let t0 = @text.text_get_transform(text_handle).unwrap()
-  inspect(t0.translation.x == expected_x, content="true")
-  inspect(t0.translation.y == expected_y, content="true")
+  debug_inspect(t0.translation.x == expected_x, content="true")
+  debug_inspect(t0.translation.y == expected_y, content="true")
   let text_size = @text.text_get_layout_size(text_handle).unwrap()
-  inspect(text_size.y <= 32.0F, content="true")
+  debug_inspect(text_size.y <= 32.0F, content="true")
   ui_stack_system(world)
   let editable_transform = try! world
     .get_by_key(editable, @transform.ecs_key_transform)
     .unwrap()
   let t1 = @text.text_get_transform(text_handle).unwrap()
-  inspect(t1.translation.x == expected_x, content="true")
-  inspect(t1.translation.y == expected_y, content="true")
-  inspect(t1.translation.z > editable_transform.translation.z, content="true")
+  debug_inspect(t1.translation.x == expected_x, content="true")
+  debug_inspect(t1.translation.y == expected_y, content="true")
+  debug_inspect(
+    t1.translation.z > editable_transform.translation.z,
+    content="true",
+  )
 }
 
 ///|
@@ -384,7 +387,7 @@ test "ui: editable status text renders in front of editable background (z-order)
     .unwrap()
   let text_handle = @text.ui_text_ecs_handle(world, editable).unwrap()
   let text_transform = @text.text_get_transform(text_handle).unwrap()
-  inspect(
+  debug_inspect(
     text_transform.translation.z > background_transform.translation.z,
     content="true",
   )
@@ -460,8 +463,8 @@ test "ui: editable label node is laid out above input box node" {
   let editable_rect = try! world
     .get_by_key(editable, ecs_key_ui_layout)
     .unwrap().rect
-  inspect(label_rect.max.y <= editable_rect.min.y, content="true")
-  inspect(editable_rect.min.y - label_rect.max.y == 8.0F, content="true")
+  debug_inspect(label_rect.max.y <= editable_rect.min.y, content="true")
+  debug_inspect(editable_rect.min.y - label_rect.max.y == 8.0F, content="true")
 }
 
 ///|
@@ -544,12 +547,12 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   let panel_rect = try! world.get_by_key(panel, ecs_key_ui_layout).unwrap().rect
   let handle = @text.ui_text_ecs_handle(world, panel_text).unwrap()
   let clip_opt = @text.text_get_ui_scissor(handle)
-  inspect(clip_opt is Some(_), content="true")
+  debug_inspect(clip_opt is Some(_), content="true")
   let clip = clip_opt.unwrap()
-  inspect(clip.min.x == panel_rect.min.x + 10.0F, content="true")
-  inspect(clip.min.y == panel_rect.min.y + 10.0F, content="true")
-  inspect(clip.max.x == panel_rect.max.x - 10.0F, content="true")
-  inspect(clip.max.y == panel_rect.max.y - 10.0F, content="true")
+  debug_inspect(clip.min.x == panel_rect.min.x + 10.0F, content="true")
+  debug_inspect(clip.min.y == panel_rect.min.y + 10.0F, content="true")
+  debug_inspect(clip.max.x == panel_rect.max.x - 10.0F, content="true")
+  debug_inspect(clip.max.y == panel_rect.max.y - 10.0F, content="true")
 }
 
 ///|
@@ -676,5 +679,5 @@ test "ui: panel text scissor stays above editable title block" {
   let title_rect = try! world
     .get_by_key(editable_title, ecs_key_ui_layout)
     .unwrap().rect
-  inspect(scissor.max.y <= title_rect.min.y, content="true")
+  debug_inspect(scissor.max.y <= title_rect.min.y, content="true")
 }

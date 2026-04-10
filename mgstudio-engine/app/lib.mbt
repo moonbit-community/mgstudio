@@ -13,11 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/lib.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/lib.rs`.
+
+///|
+pub const APP_CRATE_ID : String = "bevy_app"
 
 ///|
 pub fn app_new(world : @ecs.World) -> App[@ecs.World] {
   App::new(world)
+}
+
+///|
+pub fn app_default() -> App[@ecs.World] {
+  App::new(@ecs.World::new())
 }
 
 ///|

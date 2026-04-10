@@ -18,6 +18,31 @@
 /// `prepass`, and `deferred`.
 
 ///|
+pub const CORE_PIPELINE_PLUGIN_ID : String = "bevy_core_pipeline::CorePipelinePlugin"
+
+///|
+pub struct CorePipelinePlugin {}
+
+///|
+pub fn CorePipelinePlugin::default() -> CorePipelinePlugin {
+  CorePipelinePlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for CorePipelinePlugin with replacement_id(
+  _self,
+) {
+  CORE_PIPELINE_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for CorePipelinePlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    core_pipeline_plugin_with(app, self)
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/lib.rs`.
 pub using @core_3d {type Hdr}
 
@@ -42,6 +67,14 @@ pub using @prepass {type MotionVectorPrepass}
 pub using @prepass {type NormalPrepass}
 
 ///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/lib.rs`.
+pub using @fullscreen_vertex_shader {type FullscreenShader}
+
+///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/lib.rs`.
+pub using @skybox {type Skybox}
+
+///|
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @deferred.ecs_key_deferred_prepass
 
 ///|
@@ -58,3 +91,26 @@ pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_3d.ecs_key_msaa
 
 ///|
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @prepass.ecs_key_normal_prepass
+
+///|
+pub fn core_pipeline_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  core_pipeline_plugin_with(app, CorePipelinePlugin::default())
+}
+
+///|
+pub fn core_pipeline_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : CorePipelinePlugin,
+) -> @app.App[@ecs.World] {
+  app
+  .init_resource(fn() { FullscreenShader::default() })
+  .add_system(camera_driver)
+  .add_plugin(@core_2d.core_2d_plugin)
+  .add_plugin(@core_3d.core_3d_plugin)
+  .add_plugin(@deferred.copy_deferred_lighting_id_plugin)
+  .add_plugin(@blit.blit_plugin)
+  .add_plugin(@tonemapping.tonemapping_plugin)
+  .add_plugin(@upscaling.upscaling_plugin)
+  .add_plugin(@oit.oit_plugin)
+  .add_plugin(@mip_generation.mip_generation_plugin)
+}

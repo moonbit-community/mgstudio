@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -59,6 +60,10 @@ pub fn asset_create_dynamic_texture_with_mips(@math.UVec2, Int, Bool) -> Handle[
 
 pub fn asset_create_texture_mip_view(Handle[@image.Image], Int) -> Handle[@image.Image]
 
+pub fn[T] asset_events_include_change(Array[AssetEvent[T]], Handle[T]) -> Bool
+
+pub fn[T] asset_events_include_removal(Array[AssetEvent[T]], Handle[T]) -> Bool
+
 pub fn asset_font_read_bytes(Handle[Font]) -> Bytes?
 
 pub fn asset_format_path(AssetPath) -> String
@@ -94,6 +99,8 @@ pub fn asset_parse_path(String) -> AssetPath
 pub fn asset_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn asset_plugin_nearest(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[T] asset_processed(T) -> ProcessedAsset[T]
 
 pub fn[T] asset_register_loader((AssetServer, String) -> Handle[T]) -> Unit
 
@@ -131,6 +138,8 @@ pub fn asset_texture_height(Handle[@image.Image]) -> Int
 
 pub fn asset_texture_width(Handle[@image.Image]) -> Int
 
+pub fn[T] asset_transform_and_save(Array[String], (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError) -> LoadTransformAndSave[T]
+
 pub fn asset_transparent_texture() -> Handle[@image.Image]
 
 pub fn asset_try_parse_path(String) -> AssetPath raise ParseAssetPathError
@@ -148,6 +157,12 @@ pub fn asset_update_texture_region_rgba8_mip(Handle[@image.Image], @math.URect, 
 pub fn asset_white_texture() -> Handle[@image.Image]
 
 pub fn[T] asset_with_world(@ecs.World, () -> T) -> T
+
+pub fn[T] asset_world_add(@ecs.World, T) -> Handle[T]
+
+pub fn[T, P : IntoAssetPath] asset_world_load(@ecs.World, P) -> Handle[T]
+
+pub fn[T, P : IntoAssetPath] asset_world_load_with_settings(@ecs.World, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
 
 pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
 
@@ -241,6 +256,8 @@ pub fn[T] register_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]
 
 pub fn register_asset_source(@app.App[@ecs.World], AssetSourceId, AssetSourceBuilder) -> @app.App[@ecs.World]
 
+pub fn register_embedded_asset_virtual_bytes(String, Bytes) -> Unit
+
 pub fn[T, Settings, P : IntoAssetPath] save_using_saver(AssetServer, AssetSaver[T, Settings], P, SavedAsset[T], Settings) -> Unit raise AssetSaveError
 
 pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
@@ -277,7 +294,7 @@ pub impl[T] @ecs.Message for AssetEvent[T]
 pub struct AssetId[T] {
   id : Int
   phantom : T?
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[T] AssetId::index(Self[T]) -> Int
 pub fn[T] AssetId::new(Int) -> Self[T]
 
@@ -299,14 +316,14 @@ pub(all) enum AssetLoaderKind {
 pub(all) enum AssetMode {
   Unprocessed
   Processed
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 #alias(ParsedAssetPath)
 pub struct AssetPath {
   source : AssetSourceId
   path : String
   label : String?
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, @debug.Debug)
 pub fn AssetPath::from_path(String) -> Self
 pub fn AssetPath::with_label(Self, String?) -> Self
 pub fn AssetPath::with_source(Self, AssetSourceId) -> Self
@@ -390,7 +407,7 @@ pub fn AssetSourceBuilder::with_reader(Self, (AssetReader) -> AssetReader) -> Se
 pub(all) enum AssetSourceId {
   Default
   Named(String)
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, @debug.Debug)
 pub fn AssetSourceId::from(String) -> Self
 
 pub struct Assets[T] {
@@ -489,7 +506,7 @@ pub fn[T] ProcessedAsset::with_saved_bytes(Self[T], Bytes) -> Self[T]
 
 pub struct RenderAssetUsages {
   bits : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn RenderAssetUsages::all() -> Self
 pub fn RenderAssetUsages::contains(Self, Self) -> Bool
 pub fn RenderAssetUsages::main_world() -> Self

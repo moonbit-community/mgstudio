@@ -13,7 +13,10 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/visibility/mod.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs`.
+
+///|
+pub const CAMERA_VISIBILITY_MODULE_ID : String = "bevy_camera::visibility"
 
 ///|
 pub type Visibility = @root_visibility.Visibility
@@ -30,4 +33,16 @@ pub type NoFrustumCulling = @root_visibility.NoFrustumCulling
 ///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @root_visibility.visibility_plugin(app)
+}
+
+///|
+pub fn visibility_component_keys() -> (
+  @ecs.ComponentKey[Visibility],
+  @ecs.ComponentKey[InheritedVisibility],
+  @ecs.ComponentKey[ViewVisibility],
+) {
+  (
+    @root_visibility.ecs_key_visibility, @root_visibility.ecs_key_inherited_visibility,
+    @root_visibility.ecs_key_view_visibility,
+  )
 }

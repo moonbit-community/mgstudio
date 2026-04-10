@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/ui/scroll_and_overflow/overflow_debug"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -11,7 +12,7 @@ import {
 // Errors
 
 // Types and methods
-type AnimationMotion derive(Eq, Show)
+type AnimationMotion derive(Eq, @debug.Debug)
 pub impl @ecs.Component for AnimationMotion
 
 type AnimationState
@@ -23,7 +24,7 @@ pub impl @ecs.Component for Container
 pub(all) enum ContentKind {
   Image
   Text
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type InstructionsText
 pub impl @ecs.Component for InstructionsText
@@ -32,7 +33,7 @@ pub(all) enum MotionKind {
   Move
   Scale
   Rotate
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type OverflowDebugSettings
 pub impl @app.Resource for OverflowDebugSettings

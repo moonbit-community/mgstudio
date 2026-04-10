@@ -133,7 +133,7 @@ test "render3d: camera pass projection keeps custom clip matrices alive" {
     ) &&
     projection_approx_eq_wb(pass_projection.camera_near, 0.0F) &&
     projection_approx_eq_wb(pass_projection.camera_far, 500.0F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -169,7 +169,7 @@ test "render3d: camera pass projection applies Bevy temporal jitter" {
       pass_projection.unjittered_clip_from_view.z_axis.y,
       base_clip_from_view.z_axis.y,
     )
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -190,7 +190,7 @@ test "render3d: perspective clip plane rewrites third row without changing rende
   let ok = projection_approx_eq_wb(clip_from_view.z_axis.z, 0.0F) &&
     projection_approx_eq_wb(clip_from_view.w_axis.z, 2.0F) &&
     projection_approx_eq_wb(pass_projection.camera_near, 0.1F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -222,5 +222,5 @@ test "render3d: projection runtime updates changed orthographic projection at st
     Projection::Perspective(_) => false
     Projection::Custom(_) => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

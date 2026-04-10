@@ -204,7 +204,7 @@ pub fn App::schedule_graph_dot(
     "digraph ScheduleGraph {",
     "  rankdir=LR;",
     "  labelloc=\"t\";",
-    "  label=\"stage: \{stage.to_string()}\";",
+    "  label=\"stage: \{to_repr(stage).to_string()}\";",
   ]
 
   let included_system_names : Array[String] = []

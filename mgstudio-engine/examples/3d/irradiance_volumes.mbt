@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/irradiance_volumes.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_IRRADIANCE_VOLUMES : String = "examples/3d/irradiance_volumes/main.mbt"
+

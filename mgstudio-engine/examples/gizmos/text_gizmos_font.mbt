@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gizmos/text_gizmos_font.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_TEXT_GIZMOS_FONT : String = "examples/gizmos/text_gizmos_font/main.mbt"
+

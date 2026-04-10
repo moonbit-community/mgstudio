@@ -2,11 +2,14 @@
 package "Milky2018/mgstudio/math"
 
 import {
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/random",
 }
 
 // Values
+pub const MATH_LIB_MODULE_TAG : String = "bevy_math::lib"
+
 pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
@@ -34,6 +37,10 @@ pub fn interval(Float, Float) -> Interval raise InvalidIntervalError
 pub fn irect(IVec2, IVec2) -> IRect
 
 pub fn is_polygon_simple(Array[Vec2]) -> Bool
+
+pub fn math_lib_default_primitives() -> (Circle, Cuboid)
+
+pub fn math_lib_runtime_available() -> Bool
 
 pub fn pi() -> Float
 
@@ -372,14 +379,14 @@ pub(all) enum CompassOctant {
   SouthWest
   West
   NorthWest
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum CompassQuadrant {
   NorthEast
   SouthEast
   SouthWest
   NorthWest
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct Cone {
   radius : Float
@@ -605,7 +612,7 @@ pub(all) enum EaseFunction {
   BounceInOut
   Steps(Int, JumpAt)
   Elastic(Float)
-} derive(Show, ToJson, @json.FromJson)
+} derive(ToJson, @debug.Debug, @json.FromJson)
 pub fn EaseFunction::sample(Self, Float) -> Float?
 pub fn EaseFunction::sample_clamped(Self, Float) -> Float
 pub impl Default for EaseFunction
@@ -652,7 +659,7 @@ pub(all) enum EulerRot {
   YZXEx
   XYZEx
   XZYEx
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct EvenCore[T] {
   domain_ : Interval
@@ -665,7 +672,7 @@ pub fn[T] EvenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
 
 pub struct FloatOrd {
   value : Float
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn FloatOrd::new(Float) -> Self
 pub fn FloatOrd::value(Self) -> Float
 
@@ -733,7 +740,7 @@ pub fn[T, S] InterpolationDatum::map(Self[T], (T) -> S) -> Self[S]
 pub(all) struct Interval {
   start_ : Float
   end_ : Float
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Interval::clamp(Self, Float) -> Float
 pub fn Interval::contains(Self, Float) -> Bool
 pub fn Interval::contains_interval(Self, Self) -> Bool
@@ -783,7 +790,7 @@ pub(all) enum JumpAt {
   End
   None
   Both
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl Default for JumpAt
 
 pub struct Line2d {
@@ -1274,7 +1281,7 @@ pub(all) enum WindingOrder {
   Clockwise
   CounterClockwise
   Invalid
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct WithDerivative[T] {
   value : T

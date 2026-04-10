@@ -17,6 +17,14 @@
 // The current runtime relies on MoonBit's built-in `Map` instead of a dedicated Bevy map wrapper.
 
 ///|
+pub const MAP_MODULE_TAG : String = "bevy_utils::map"
+
+///|
 pub fn utils_map_helpers_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub fn[K, V] map_entries_identity(entries : Array[(K, V)]) -> Array[(K, V)] {
+  entries
 }

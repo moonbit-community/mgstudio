@@ -12,14 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/executor.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/executor.rs`.
 
+///|
+pub const EXECUTOR_BACKEND : String = "single_threaded"
+
+///|
 pub struct Executor {}
 
+///|
 pub fn Executor::new() -> Executor {
-  {  }
+  Executor::{  }
 }
 
+///|
 pub fn Executor::run_once(self : Executor) -> Unit {
   ignore(self)
+}
+
+///|
+pub fn Executor::tick(self : Executor) -> Unit {
+  self.run_once()
 }

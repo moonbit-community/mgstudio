@@ -27,7 +27,7 @@ pub(all) enum MessagePalette {
   None
   Hello
   Bye
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct MessageFade {

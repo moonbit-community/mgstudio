@@ -5,25 +5,39 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/sprite",
 }
 
 // Values
+pub fn camera_controller_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let ecs_key_free_camera : @ecs.ComponentKey[@pbr.FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[@pbr.FreeCameraState]
 
+pub let ecs_key_pan_camera : @ecs.ComponentKey[@sprite.PanCamera]
+
 pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn run_free_camera_controller(@ecs.World) -> Unit
+
+pub fn run_pan_camera_controller(@ecs.World) -> Unit
 
 // Errors
 
 // Types and methods
+pub struct CameraControllerPlugin {
+}
+pub fn CameraControllerPlugin::default() -> Self
 
 // Type aliases
 pub using @pbr {type FreeCamera}
 
 pub using @pbr {type FreeCameraState}
+
+pub using @sprite {type PanCamera}
 
 // Traits
 

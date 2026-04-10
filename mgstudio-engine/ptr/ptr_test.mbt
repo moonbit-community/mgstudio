@@ -16,5 +16,5 @@
 test "ptr boundary maps pointer operations to Ref" {
   let value = @ptr.ptr(1)
   @ptr.write(value, 2)
-  inspect(@ptr.read(value).to_string(), content="2")
+  debug_inspect(@ptr.read(value).to_string(), content="2")
 }

@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/circles.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_circles_bridge_pending() -> Unit {
+// Bridge aliases for circle/arc primitive inputs.
 
+///|
+pub type GizmoCircle = @math.Circle
+
+///|
+pub type GizmoArc2d = @math.Arc2d
+
+///|
+pub const GIZMO_CIRCLES_MODULE_TAG : String = "bevy_gizmos::circles"
+
+///|
+pub fn gizmo_circle_identity(circle : GizmoCircle) -> GizmoCircle {
+  circle
+}
+
+///|
+pub fn gizmo_arc2d_identity(arc : GizmoArc2d) -> GizmoArc2d {
+  arc
 }

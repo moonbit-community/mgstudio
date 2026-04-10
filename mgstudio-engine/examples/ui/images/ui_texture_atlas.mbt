@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/images/ui_texture_atlas.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_UI_TEXTURE_ATLAS : String = "examples/ui/images/ui_texture_atlas/main.mbt"
+

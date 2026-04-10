@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/text/generic_font_families.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_GENERIC_FONT_FAMILIES : String = "examples/ui/text/generic_font_families/main.mbt"
+

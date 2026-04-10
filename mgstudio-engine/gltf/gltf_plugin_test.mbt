@@ -16,8 +16,48 @@
 test "gltf: pbr material handler toggle can be switched at runtime" {
   let original = gltf_pbr_material_handler_enabled()
   gltf_set_pbr_material_handler_enabled(false)
-  inspect(gltf_pbr_material_handler_enabled(), content="false")
+  debug_inspect(gltf_pbr_material_handler_enabled(), content="false")
   gltf_set_pbr_material_handler_enabled(true)
-  inspect(gltf_pbr_material_handler_enabled(), content="true")
+  debug_inspect(gltf_pbr_material_handler_enabled(), content="true")
   gltf_set_pbr_material_handler_enabled(original)
+}
+
+///|
+test "gltf: plugin surface can configure skinned mesh bounds policy" {
+  let original = gltf_default_skinned_mesh_bounds_policy()
+  gltf_set_default_skinned_mesh_bounds_policy(
+    GltfSkinnedMeshBoundsPolicy::BindPose,
+  )
+  debug_inspect(
+    gltf_default_skinned_mesh_bounds_policy() ==
+    GltfSkinnedMeshBoundsPolicy::BindPose,
+    content="true",
+  )
+  gltf_set_default_skinned_mesh_bounds_policy(
+    GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+  )
+  debug_inspect(
+    gltf_default_skinned_mesh_bounds_policy() ==
+    GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    content="true",
+  )
+  gltf_set_default_skinned_mesh_bounds_policy(original)
+}
+
+///|
+test "gltf: plugin surface can configure default coordinate conversion" {
+  let original = gltf_default_convert_coordinates()
+  gltf_set_default_convert_coordinates({
+    rotate_scene_entity: true,
+    rotate_meshes: false,
+  })
+  debug_inspect(
+    gltf_default_convert_coordinates().rotate_scene_entity,
+    content="true",
+  )
+  debug_inspect(
+    gltf_default_convert_coordinates().rotate_meshes,
+    content="false",
+  )
+  gltf_set_default_convert_coordinates(original)
 }

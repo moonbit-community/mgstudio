@@ -55,13 +55,13 @@ test "tab_navigation follows child order when TabIndex values are equal" {
   insert_component(world, second, TabIndex::new(0))
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(first), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(first), content="true")
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(second), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(second), content="true")
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(first), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(first), content="true")
 }
 
 ///|
@@ -90,16 +90,16 @@ test "tab_navigation orders groups first, then TabIndex, and supports reverse tr
   insert_component(world, late_second, TabIndex::new(3))
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(early), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(early), content="true")
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(late_first), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(late_first), content="true")
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(late_second), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(late_second), content="true")
 
   advance_tab_focus(world, true)
-  inspect(tab_focus_entity(world) == Some(late_first), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(late_first), content="true")
 }
 
 ///|
@@ -125,5 +125,5 @@ test "tab_navigation restricts traversal to modal groups when present" {
   insert_component(world, modal_button, TabIndex::new(0))
 
   advance_tab_focus(world, false)
-  inspect(tab_focus_entity(world) == Some(modal_button), content="true")
+  debug_inspect(tab_focus_entity(world) == Some(modal_button), content="true")
 }

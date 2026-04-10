@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/app/custom_loop.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CUSTOM_LOOP : String = "examples/app/custom_loop/main.mbt"
+

@@ -16,6 +16,86 @@
 // Bevy source: `bevy/crates/bevy_render/src/sync_world.rs`.
 
 ///|
+pub struct SyncWorldPlugin {}
+
+///|
+pub fn SyncWorldPlugin::default() -> SyncWorldPlugin {
+  SyncWorldPlugin::{  }
+}
+
+///|
+pub struct SyncToRenderWorld {}
+
+///|
+pub fn SyncToRenderWorld::default() -> SyncToRenderWorld {
+  SyncToRenderWorld::{  }
+}
+
+///|
+pub struct RenderEntity {
+  id : Int
+}
+
+///|
+pub fn RenderEntity::new(id : Int) -> RenderEntity {
+  RenderEntity::{ id, }
+}
+
+///|
+pub fn RenderEntity::id(self : RenderEntity) -> Int {
+  self.id
+}
+
+///|
+pub struct MainEntity {
+  id : Int
+}
+
+///|
+pub fn MainEntity::new(id : Int) -> MainEntity {
+  MainEntity::{ id, }
+}
+
+///|
+pub fn MainEntity::id(self : MainEntity) -> Int {
+  self.id
+}
+
+///|
+pub(all) enum EntityRecord {
+  Added(Int)
+  Removed(RenderEntity)
+  ComponentRemoved(Int)
+}
+
+///|
+pub struct PendingSyncEntity {
+  records : Array[EntityRecord]
+}
+
+///|
+pub fn PendingSyncEntity::default() -> PendingSyncEntity {
+  PendingSyncEntity::{ records: [] }
+}
+
+///|
+pub fn PendingSyncEntity::push(
+  self : PendingSyncEntity,
+  record : EntityRecord,
+) -> Unit {
+  self.records.push(record)
+}
+
+///|
+pub fn PendingSyncEntity::drain(
+  self : PendingSyncEntity,
+) -> Array[EntityRecord] {
+  let out = self.records
+  self.records.clear()
+  out
+}
+
+///|
 pub fn sync_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   render_plugin(app)
 }

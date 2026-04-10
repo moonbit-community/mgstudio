@@ -14,7 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/volumetric.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_volumetric_bridge_pending() -> Unit {
+// Bridge aliases for volumetric-light and fog components.
 
-}
+///|
+pub type VolumetricLightComponent = VolumetricLight
+
+///|
+pub type VolumetricFogComponent = VolumetricFog
+
+///|
+pub type FogVolumeComponent = FogVolume
+
+///|
+pub let ecs_key_volumetric_light_component : @ecs.ComponentKey[
+  VolumetricLightComponent,
+] = ecs_key_volumetric_light
+
+///|
+pub let ecs_key_fog_volume_component : @ecs.ComponentKey[FogVolumeComponent] = ecs_key_fog_volume

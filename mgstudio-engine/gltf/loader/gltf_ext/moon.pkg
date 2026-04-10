@@ -1,5 +1,6 @@
 import {
-  "Milky2018/mgstudio/gltf" @root_gltf,
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio/ecs",
 }
 
 supported_targets = "native"

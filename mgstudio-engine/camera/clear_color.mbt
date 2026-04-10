@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/clear_color.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/clear_color.rs`.
 
 ///|
 pub type ClearColor = @sprite.ClearColor
@@ -37,4 +37,16 @@ pub fn camera_clear_color_config_default() -> ClearColorConfig {
 ///|
 pub fn camera_msaa_writeback_default() -> MsaaWriteback {
   @post_process.MsaaWriteback::default()
+}
+
+///|
+pub fn camera_clear_color_new(color : @color.Color) -> ClearColor {
+  @sprite.ClearColor::new(color)
+}
+
+///|
+pub fn camera_clear_color_config_resolve(
+  config : ClearColorConfig,
+) -> (Bool, @color.Color) {
+  config.resolve()
 }

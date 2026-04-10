@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/2d/text2d.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_TEXT2D : String = "examples/2d/text2d/main.mbt"
+

@@ -25,7 +25,7 @@ struct DebugMessage {
   resend_from_param_set : Bool
   resend_from_local_message_reader : Bool
   times_sent : Int
-} derive(Show)
+} derive(Debug)
 
 ///|
 let a_key : @ecs.MessageKey[A] = @ecs.register_message(
@@ -138,7 +138,7 @@ fn send_messages(
 ///|
 fn debug_messages(messages : @ecs.MessageReader[DebugMessage]) -> Unit {
   for message in (try! messages.read()) {
-    println(message.to_string())
+    println(to_repr(message).to_string())
   }
 }
 

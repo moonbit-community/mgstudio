@@ -27,7 +27,7 @@ fn system_information_diagnostic_registered(
 ///|
 test "diagnostics: diagnostics plugin initializes system info resource" {
   let app = @app.App::new(@ecs.World::new()).add_plugins([diagnostics_plugin])
-  inspect(
+  debug_inspect(
     app.world().get_resource(SystemInfo::resource()) is Some(_),
     content="true",
   )
@@ -39,25 +39,25 @@ test "diagnostics: system information plugin registers diagnostic paths" {
     diagnostics_plugin, system_information_diagnostics_plugin,
   ])
 
-  inspect(
+  debug_inspect(
     system_information_diagnostic_registered(
       app, system_information_diagnostic_system_cpu_usage,
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     system_information_diagnostic_registered(
       app, system_information_diagnostic_system_mem_usage,
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     system_information_diagnostic_registered(
       app, system_information_diagnostic_process_cpu_usage,
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     system_information_diagnostic_registered(
       app, system_information_diagnostic_process_mem_usage,
     ),

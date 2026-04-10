@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -71,6 +72,10 @@ pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 524288
 
 pub const STANDARD_MATERIAL_FLAGS_UNLIT_BIT : UInt = 32
 
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
 pub fn absf(Float) -> Float
 
 pub fn clamp01(Float) -> Float
@@ -78,6 +83,8 @@ pub fn clamp01(Float) -> Float
 pub fn cmp_float(Float, Float) -> Int
 
 pub fn cmp_int(Int, Int) -> Int
+
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
 
@@ -99,6 +106,10 @@ pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_t
 
 pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, Int, forward_decal? : Bool, shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int) -> MeshGpuDrawPayload3d
 
+pub fn render3d_build_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
+
+pub fn render3d_camera_depth_for_mesh(@transform.Transform, @transform.Transform) -> Float
+
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
@@ -108,6 +119,8 @@ pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewpor
 pub fn render3d_collect_lighting(@ecs.World) -> Render3dLightingState
 
 pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
+
+pub fn render3d_compute_frustum(ProjectionMatrix3d, @transform.Transform, Float) -> Frustum
 
 pub fn render3d_cull_mode_value(@material.StandardMaterial, Int) -> Int
 
@@ -147,13 +160,23 @@ pub fn render3d_entity_world_transform_cached_with_local(@ecs.World, @core.Entit
 
 pub fn render3d_entity_world_transform_from_components(@ecs.World, @core.Entity, @transform.Transform, @ref.Ref[Render3dWorldTransformCache]) -> @transform.Transform
 
+pub let render3d_execute_system_label : String
+
 pub fn render3d_extract_skin_bindings(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
 
 pub fn render3d_extract_skinning_matrices(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> Array[Float]?
 
+pub let render3d_extract_system_label : String
+
 pub fn render3d_float_clamp(Float, Float, Float) -> Float
 
 pub fn render3d_gpu_culling_supported() -> Bool
+
+pub fn render3d_gpu_preprocess_builder_enabled(Bool) -> Bool
+
+pub fn render3d_gpu_preprocess_camera_indirect_enabled(Bool, Bool) -> Bool
+
+pub fn render3d_gpu_preprocess_enabled() -> Bool
 
 pub fn render3d_gpu_preprocess_forced_disabled() -> Bool
 
@@ -163,9 +186,17 @@ pub fn render3d_inverse_transform_point(@transform.Transform, @math.Vec3) -> @ma
 
 pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
+pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
+
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
 
+pub fn render3d_morph_weights_all_zero(Array[Float]) -> Bool
+
+pub fn render3d_normalize_morph_weights(Array[Float]) -> Array[Float]
+
 pub fn render3d_orthographic_area(OrthographicProjection3d, Float, Float) -> @math.Rect
+
+pub fn render3d_orthographic_projection_compute_frustum(OrthographicProjection3d, @transform.Transform) -> Frustum
 
 pub fn render3d_orthographic_projection_matrix(Float, Float, Float, Float, Float, Float) -> ProjectionMatrix3d
 
@@ -184,6 +215,8 @@ pub fn render3d_pass_projection_unjittered_clip_from_world(Render3dPassProjectio
 pub fn render3d_pass_viewport_for_target(Int, Int, Int, Int, Int, Int) -> (Int, Int, Int, Int)
 
 pub fn render3d_perspective_frustum_corners(Float, Float, Float, Float) -> Array[@math.Vec3]
+
+pub fn render3d_perspective_projection_compute_frustum(PerspectiveProjection3d, @transform.Transform) -> Frustum
 
 pub fn render3d_perspective_projection_matrix(PerspectiveProjection3d) -> ProjectionMatrix3d
 
@@ -205,6 +238,8 @@ pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjec
 
 pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
 
+pub let render3d_prepare_system_label : String
+
 pub fn render3d_prepared_camera_count() -> Int?
 
 pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
@@ -221,6 +256,10 @@ pub fn render3d_quat_conjugate(@math.Quat) -> @math.Quat
 
 pub fn render3d_quat_inverse(@math.Quat) -> @math.Quat
 
+pub fn render3d_queue_diagnostics_snapshot() -> (Int, Int, Float, Float)
+
+pub let render3d_queue_system_label : String
+
 pub fn render3d_queued_visible_mesh_count() -> Int?
 
 pub fn render3d_rotate_by_quat(@math.Vec3, @math.Quat) -> @math.Vec3
@@ -232,6 +271,8 @@ pub fn render3d_signum(Float) -> Float
 pub fn render3d_standard_material_alpha_cutoff(@material.AlphaMode3d) -> Float
 
 pub fn render3d_standard_material_flags(@material.StandardMaterial, Int, Int, Int, Int, Int, Int, Int, Int, forward_decal? : Bool) -> UInt
+
+pub fn render3d_system_labels() -> Array[String]
 
 pub fn render3d_target_info(@ecs.World, @sprite.RenderTarget) -> RenderTargetComputed3d?
 
@@ -288,6 +329,14 @@ pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
 pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
 pub fn FogFalloff3d::linear(Float, Float) -> Self
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
+
+pub struct Frustum {
+  half_spaces : Array[@math.HalfSpace]
+} derive(Eq, ToJson, @json.FromJson)
+pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
+pub fn Frustum::new(ViewFrustum) -> Self
+pub fn Frustum::view_frustum(Self) -> ViewFrustum
+pub impl @ecs.Component for Frustum
 
 pub(all) struct GpuOcclusionCullingWorkItemBuffers3d {
   enabled : Bool
@@ -408,6 +457,14 @@ pub(all) struct MeshPreprocessStatic3d {
   aabb_half_extents : @math.Vec3
 }
 
+pub struct MeshViewBindings3d {
+  viewport : (Int, Int, Int, Int)?
+  clear_enabled : Bool
+  logical_rect : (Float, Float, Float, Float)
+  view_matrix : ProjectionMatrix3d
+}
+pub fn MeshViewBindings3d::default() -> Self
+
 pub(all) struct OrthographicProjection3d {
   mut near : Float
   mut far : Float
@@ -443,7 +500,7 @@ pub(all) enum OrthographicScalingMode3d {
   AutoMax(Float, Float)
   FixedVertical(Float)
   FixedHorizontal(Float)
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct PerspectiveProjection3d {
   mut fov : Float
@@ -570,7 +627,16 @@ pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for SubCameraView3d
 
+pub struct ViewFrustum {
+  inner : @math.ViewFrustum
+} derive(Eq, ToJson, @json.FromJson)
+pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
+pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
+pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
+pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
+
 // Type aliases
+pub using @math {type HalfSpace}
 
 // Traits
 

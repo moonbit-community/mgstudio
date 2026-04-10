@@ -20,10 +20,10 @@ test "curve: interval spaced_points follows bounded interval layout" {
   let values = interval.spaced_points(3) catch {
     _ => abort("expected bounded interval")
   }
-  inspect(values.length() == 3, content="true")
-  inspect(values[0] == -1.0F, content="true")
-  inspect(values[1] == 0.0F, content="true")
-  inspect(values[2] == 1.0F, content="true")
+  debug_inspect(values.length() == 3, content="true")
+  debug_inspect(values[0] == -1.0F, content="true")
+  debug_inspect(values[1] == 0.0F, content="true")
+  debug_inspect(values[2] == 1.0F, content="true")
 }
 
 ///|
@@ -31,9 +31,9 @@ test "curve: function curve map and graph preserve domain" {
   let source = FunctionCurve::new(Interval::unit(), fn(t) { t * 2.0F })
   let mapped = source.to_curve().map(fn(value) { value + 1.0F })
   let graphed = mapped.graph()
-  inspect(mapped.sample(0.25F).unwrap() == 1.5F, content="true")
-  inspect(graphed.sample(0.5F).unwrap().0 == 0.5F, content="true")
-  inspect(graphed.sample(0.5F).unwrap().1 == 2.0F, content="true")
+  debug_inspect(mapped.sample(0.25F).unwrap() == 1.5F, content="true")
+  debug_inspect(graphed.sample(0.5F).unwrap().0 == 0.5F, content="true")
+  debug_inspect(graphed.sample(0.5F).unwrap().1 == 2.0F, content="true")
 }
 
 ///|
@@ -41,13 +41,13 @@ test "curve: sample auto curve interpolates stable values" {
   let curve = SampleAutoCurve::new(Interval::unit(), [0.0F, 10.0F]) catch {
     _ => abort("expected stable sample curve")
   }
-  inspect(curve.sample(0.5F).unwrap() == 5.0F, content="true")
+  debug_inspect(curve.sample(0.5F).unwrap() == 5.0F, content="true")
 }
 
 ///|
 test "curve: cubic curve adapters expose derivative carriers" {
   let segment = CubicSegment::new_bezier(0.0F, 1.0F, 2.0F, 3.0F)
   let sample = segment.sample_with_two_derivatives(0.5F)
-  inspect(sample.value > 0.0F, content="true")
-  inspect(sample.derivative > 0.0F, content="true")
+  debug_inspect(sample.value > 0.0F, content="true")
+  debug_inspect(sample.derivative > 0.0F, content="true")
 }

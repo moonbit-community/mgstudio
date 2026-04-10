@@ -20,3 +20,16 @@
 pub fn cone(radius : Float, height : Float) -> @math.Cone {
   @math.Cone::new(radius, height)
 }
+
+///|
+pub const MESH_CONE_MODULE_TAG : String = "bevy_mesh::primitives::dim3::cone"
+
+///|
+pub fn cone_unit() -> @math.Cone {
+  cone(0.5, 1.0)
+}
+
+///|
+pub fn cone_module_tag() -> String {
+  MESH_CONE_MODULE_TAG
+}

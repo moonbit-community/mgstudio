@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/large_scenes/mipmap_generator/examples/load_gltf.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_LOAD_GLTF : String = "examples/large_scenes/mipmap_generator/examples/load_gltf/main.mbt"
+

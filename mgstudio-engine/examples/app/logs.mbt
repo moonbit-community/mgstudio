@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/app/logs.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_LOGS : String = "examples/app/logs/main.mbt"
+

@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state_scoped_events.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_state_scoped_events_bridge_pending() -> Unit {
+// Bridge helpers for state transition event lookup and registration.
 
+///|
+pub type StateScopedTransitionSystems = StateTransitionSystems
+
+///|
+pub fn[S : @app.States] state_scoped_transition_event_key(
+  state : S,
+) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
+  state_transition_event_resource_key(state)
 }

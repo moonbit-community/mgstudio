@@ -123,19 +123,19 @@ test "diagnostics: render diagnostics plugin records native gpu frame counters" 
   @render.render_diagnostics_commit_current_frame_snapshot()
   app.run_once() |> ignore
 
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_mesh2d_draw_calls),
     content="1",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_mesh3d_draw_calls),
     content="1",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_mesh2d_executed_draw_calls),
     content="0",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_mesh3d_executed_draw_calls),
     content="0",
   )
@@ -148,78 +148,78 @@ test "diagnostics: render diagnostics plugin reports zero scene counters without
   ])
   app.run_once() |> ignore
 
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_prepared_cameras_2d),
     content="0",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_queued_draw_items_2d),
     content="0",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_queue_cpu_ms_2d) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_execute_cpu_ms_2d) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_prepared_cameras_3d),
     content="0",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_visible_meshes_3d),
     content="0",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_queue_cpu_ms_3d) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_execute_cpu_ms_3d) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_total_count) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_2d_count) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_3d_main_count) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_3d_motion_vector_count) >=
     0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_3d_point_shadow_count) >=
     0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_total_cpu_ms) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_2d_cpu_ms) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_3d_main_cpu_ms) >= 0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_3d_motion_vector_cpu_ms) >=
     0.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     read_diagnostic_value(app, render_diagnostic_pass_3d_point_shadow_cpu_ms) >=
     0.0F,
     content="true",

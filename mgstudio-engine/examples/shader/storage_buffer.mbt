@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/storage_buffer.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_STORAGE_BUFFER : String = "examples/shader/storage_buffer/main.mbt"
+

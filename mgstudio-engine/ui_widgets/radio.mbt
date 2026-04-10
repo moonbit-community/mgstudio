@@ -20,3 +20,13 @@ pub using @ui {type FocusPolicy}
 ///|
 // Bridge surface to the root `ui` package implementation.
 pub let ecs_key_focus_policy : @ecs.ComponentKey[@ui.FocusPolicy] = @ui.ecs_key_focus_policy
+
+///|
+pub const UI_WIDGET_RADIO_MODULE_TAG : String = "bevy_ui_widgets::radio"
+
+///|
+pub fn ui_widget_radio_focus_policy_identity(
+  value : FocusPolicy,
+) -> FocusPolicy {
+  value
+}

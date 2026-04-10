@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/rounded_corners.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_rounded_corners_bridge_pending() -> Unit {
 
+///|
+pub(all) enum RoundedCorners {
+  None
+  All
+  Top
+  Bottom
+  Left
+  Right
+} derive(Eq, Debug)
+
+///|
+pub fn RoundedCorners::to_radius4(
+  self : RoundedCorners,
+  radius : Float,
+) -> (Float, Float, Float, Float) {
+  match self {
+    None => (0.0, 0.0, 0.0, 0.0)
+    All => (radius, radius, radius, radius)
+    Top => (radius, radius, 0.0, 0.0)
+    Bottom => (0.0, 0.0, radius, radius)
+    Left => (radius, 0.0, 0.0, radius)
+    Right => (0.0, radius, radius, 0.0)
+  }
 }

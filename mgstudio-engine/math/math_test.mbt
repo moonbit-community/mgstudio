@@ -56,26 +56,26 @@ fn vec3_within_half_size(value : Vec3, half_size : Vec3) -> Bool {
 ///|
 test "math: cuboid constructors preserve Bevy full-size semantics" {
   let cuboid = Cuboid::new(3.0F, 7.0F, 2.0F)
-  inspect(
+  debug_inspect(
     approx_vec3(cuboid.half_size, Vec3::new(1.5F, 3.5F, 1.0F)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     approx_vec3(cuboid.size(), Vec3::new(3.0F, 7.0F, 2.0F)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     approx_vec3(
       Cuboid::from_size(Vec3::new(3.0F, 7.0F, 2.0F)).half_size,
       cuboid.half_size,
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     approx_vec3(Cuboid::from_length(2.0F).half_size, Vec3::splat(1.0F)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     approx_vec3(Cuboid::default().half_size, Vec3::splat(0.5F)),
     content="true",
   )
@@ -91,11 +91,11 @@ test "math: cuboid from_corners ignores corner order like Bevy" {
     Vec3::new(1.5F, 3.5F, 1.0F),
     Vec3::new(-1.5F, -3.5F, -1.0F),
   )
-  inspect(
+  debug_inspect(
     approx_vec3(lhs.half_size, Vec3::new(1.5F, 3.5F, 1.0F)),
     content="true",
   )
-  inspect(approx_vec3(lhs.half_size, rhs.half_size), content="true")
+  debug_inspect(approx_vec3(lhs.half_size, rhs.half_size), content="true")
 }
 
 ///|
@@ -105,57 +105,63 @@ test "math: cuboid sample_interior is seeded and stays inside bounds" {
   let rng1 = @random.Rand::chacha8(seed=b"mathcuboidsampleseed000000000001")
   let sample0 = cuboid.sample_interior(rng0)
   let sample1 = cuboid.sample_interior(rng1)
-  inspect(approx_vec3(sample0, sample1), content="true")
-  inspect(vec3_within_half_size(sample0, cuboid.half_size), content="true")
+  debug_inspect(approx_vec3(sample0, sample1), content="true")
+  debug_inspect(
+    vec3_within_half_size(sample0, cuboid.half_size),
+    content="true",
+  )
 
   let degenerate = Cuboid::from_size(Vec3::zero())
   let zero_sample = degenerate.sample_interior(
     @random.Rand::chacha8(seed=b"mathcuboidzeroseed00000000000001"),
   )
-  inspect(approx_vec3(zero_sample, Vec3::zero()), content="true")
+  debug_inspect(approx_vec3(zero_sample, Vec3::zero()), content="true")
 }
 
 ///|
 test "math: vec3 smooth_nudge moves towards target" {
   let value = Vec3::new(0.0F, 0.0F, 0.0F)
   value.smooth_nudge(Vec3::new(10.0F, 0.0F, 0.0F), 1.0F, 1.0F)
-  inspect(value.x > 6.3F && value.x < 6.4F, content="true")
-  inspect(value.y == 0.0F && value.z == 0.0F, content="true")
+  debug_inspect(value.x > 6.3F && value.x < 6.4F, content="true")
+  debug_inspect(value.y == 0.0F && value.z == 0.0F, content="true")
 }
 
 ///|
 test "math: vec3 element helpers follow bevy-style scale helpers" {
   let value = Vec3::new(1.25F, -2.75F, 0.5F)
-  inspect(value.max_element() == 1.25F, content="true")
-  inspect(value.min_element() == -2.75F, content="true")
+  debug_inspect(value.max_element() == 1.25F, content="true")
+  debug_inspect(value.min_element() == -2.75F, content="true")
   let floored = value.floor()
-  inspect(
+  debug_inspect(
     floored.x == 1.0F && floored.y == -3.0F && floored.z == 0.0F,
     content="true",
   )
   let ceiled = value.ceil()
-  inspect(
+  debug_inspect(
     ceiled.x == 2.0F && ceiled.y == -2.0F && ceiled.z == 1.0F,
     content="true",
   )
   let zxy = value.zxy()
-  inspect(zxy.x == 0.5F && zxy.y == 1.25F && zxy.z == -2.75F, content="true")
+  debug_inspect(
+    zxy.x == 0.5F && zxy.y == 1.25F && zxy.z == -2.75F,
+    content="true",
+  )
 }
 
 ///|
 test "math: vec2 normalize_or_zero normalizes nonzero vectors" {
   let value = Vec2::new(3.0F, 4.0F).normalize_or_zero()
-  inspect(value.x == 0.6F, content="true")
-  inspect(value.y == 0.8F, content="true")
+  debug_inspect(value.x == 0.6F, content="true")
+  debug_inspect(value.y == 0.8F, content="true")
   let zero = Vec2::zero().normalize_or_zero()
-  inspect(zero.x == 0.0F, content="true")
-  inspect(zero.y == 0.0F, content="true")
+  debug_inspect(zero.x == 0.0F, content="true")
+  debug_inspect(zero.y == 0.0F, content="true")
 }
 
 ///|
 test "math: pi matches two half turns" {
-  inspect(pi() > 3.1415F && pi() < 3.1416F, content="true")
-  inspect(pi_half() * 2.0F == pi(), content="true")
+  debug_inspect(pi() > 3.1415F && pi() < 3.1416F, content="true")
+  debug_inspect(pi_half() * 2.0F == pi(), content="true")
 }
 
 ///|
@@ -163,14 +169,14 @@ test "math: quat to_euler YXZ roundtrips orbit rotations" {
   let rotation = Quat::from_euler(EulerRot::YXZ, 0.65F, -0.31F, 0.42F)
   let (yaw, pitch, roll) = rotation.to_euler(EulerRot::YXZ)
   let rebuilt = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll)
-  inspect(quat_same_rotation(rotation, rebuilt), content="true")
+  debug_inspect(quat_same_rotation(rotation, rebuilt), content="true")
 }
 
 ///|
 test "math: quat to_euler supports XYZ and ZYX orders" {
   let xyz = Quat::from_euler(EulerRot::XYZ, 0.25F, -0.5F, 0.75F)
   let xyz_angles = xyz.to_euler(EulerRot::XYZ)
-  inspect(
+  debug_inspect(
     quat_same_rotation(
       xyz,
       Quat::from_euler(EulerRot::XYZ, xyz_angles.0, xyz_angles.1, xyz_angles.2),
@@ -180,7 +186,7 @@ test "math: quat to_euler supports XYZ and ZYX orders" {
 
   let zyx = Quat::from_euler(EulerRot::ZYX, 0.9F, -0.2F, 0.3F)
   let zyx_angles = zyx.to_euler(EulerRot::ZYX)
-  inspect(
+  debug_inspect(
     quat_same_rotation(
       zyx,
       Quat::from_euler(EulerRot::ZYX, zyx_angles.0, zyx_angles.1, zyx_angles.2),
@@ -195,7 +201,7 @@ test "math: quat lerp normalizes and takes the shortest path" {
   let end_90 = Quat::from_rotation_y(pi_half())
   let halfway = start.lerp(end_90, 0.5F)
   let expected_half = Quat::from_rotation_y(pi_half() / 2.0F)
-  inspect(quat_same_rotation(halfway, expected_half), content="true")
+  debug_inspect(quat_same_rotation(halfway, expected_half), content="true")
 
   let end_180 = Quat::from_rotation_y(pi())
   let negated = Quat::{
@@ -204,7 +210,7 @@ test "math: quat lerp normalizes and takes the shortest path" {
     z: -end_180.z,
     w: -end_180.w,
   }
-  inspect(
+  debug_inspect(
     quat_same_rotation(start.lerp(negated, 1.0F), end_180),
     content="true",
   )
@@ -214,10 +220,10 @@ test "math: quat lerp normalizes and takes the shortest path" {
 test "math: extrinsic EulerRot aliases reverse intrinsic order" {
   let intrinsic = Quat::from_euler(EulerRot::ZXY, 0.2F, 0.4F, -0.6F)
   let extrinsic = Quat::from_euler(EulerRot::YXZEx, -0.6F, 0.4F, 0.2F)
-  inspect(quat_same_rotation(intrinsic, extrinsic), content="true")
+  debug_inspect(quat_same_rotation(intrinsic, extrinsic), content="true")
 
   let extrinsic_angles = extrinsic.to_euler(EulerRot::YXZEx)
-  inspect(
+  debug_inspect(
     quat_same_rotation(
       extrinsic,
       Quat::from_euler(

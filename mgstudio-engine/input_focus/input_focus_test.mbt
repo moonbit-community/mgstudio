@@ -110,8 +110,11 @@ test "input_focus runtime plugin initializes resources and focused message queue
     .add_plugin(@input_focus.input_dispatch_plugin)
     .run_once()
 
-  inspect(read_focus_resource(app.world()).get() is None, content="true")
-  inspect(read_focus_visible_resource(app.world()).visible(), content="false")
+  debug_inspect(read_focus_resource(app.world()).get() is None, content="true")
+  debug_inspect(
+    read_focus_visible_resource(app.world()).visible(),
+    content="false",
+  )
   let keyboard_key : @ecs.MessageKey[
     @input_focus.FocusedInput[@input.KeyboardInput],
   ] = @input_focus.focused_input_message_key()
@@ -119,9 +122,9 @@ test "input_focus runtime plugin initializes resources and focused message queue
     @input_focus.FocusedInput[@input.GamepadButtonChangedEvent],
   ] = @input_focus.focused_input_message_key()
   let wheel_key : @ecs.MessageKey[@input_focus.FocusedInput[@input.MouseWheel]] = @input_focus.focused_input_message_key()
-  inspect(app.world().contains_message(keyboard_key), content="true")
-  inspect(app.world().contains_message(gamepad_key), content="true")
-  inspect(app.world().contains_message(wheel_key), content="true")
+  debug_inspect(app.world().contains_message(keyboard_key), content="true")
+  debug_inspect(app.world().contains_message(gamepad_key), content="true")
+  debug_inspect(app.world().contains_message(wheel_key), content="true")
 }
 
 ///|
@@ -138,7 +141,7 @@ test "input_focus runtime sets initial focus to primary window" {
     Some(entity) => entity
     None => abort("missing primary window")
   }
-  inspect(
+  debug_inspect(
     read_focus_resource(app.world()).get() == Some(primary),
     content="true",
   )
@@ -178,10 +181,10 @@ test "input_focus runtime dispatches and clears stale focus" {
 
   let app = app.update()
   let focused_messages = read_focused_mock_inputs(app.world())
-  inspect(focused_messages.length(), content="1")
-  inspect(focused_messages[0].focused_entity == focused, content="true")
-  inspect(focused_messages[0].window == primary, content="true")
-  inspect(focused_messages[0].input.id, content="7")
+  debug_inspect(focused_messages.length(), content="1")
+  debug_inspect(focused_messages[0].focused_entity == focused, content="true")
+  debug_inspect(focused_messages[0].window == primary, content="true")
+  debug_inspect(focused_messages[0].input.id, content="7")
 
   app.world().clear_messages(focused_key)
   app.world().despawn(focused)
@@ -189,11 +192,11 @@ test "input_focus runtime dispatches and clears stale focus" {
 
   let app = app.update()
   let focused_messages = read_focused_mock_inputs(app.world())
-  inspect(focused_messages.length(), content="1")
-  inspect(focused_messages[0].focused_entity == primary, content="true")
-  inspect(focused_messages[0].window == primary, content="true")
-  inspect(focused_messages[0].input.id, content="11")
-  inspect(read_focus_resource(app.world()).get() is None, content="true")
+  debug_inspect(focused_messages.length(), content="1")
+  debug_inspect(focused_messages[0].focused_entity == primary, content="true")
+  debug_inspect(focused_messages[0].window == primary, content="true")
+  debug_inspect(focused_messages[0].input.id, content="11")
+  debug_inspect(read_focus_resource(app.world()).get() is None, content="true")
 }
 
 ///|
@@ -240,19 +243,19 @@ test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
 
   let app = app.update()
 
-  inspect(
+  debug_inspect(
     @input_focus.IsFocused::is_focused(app.world(), child),
     content="true",
   )
-  inspect(
+  debug_inspect(
     @input_focus.IsFocused::is_focus_within(app.world(), parent),
     content="true",
   )
-  inspect(
+  debug_inspect(
     @input_focus.IsFocused::is_focus_within_visible(app.world(), parent),
     content="true",
   )
-  inspect(helper_focus_within_parent.val, content="true")
-  inspect(helper_focus_visible_parent.val, content="true")
-  inspect(helper_focus_visible_child.val, content="true")
+  debug_inspect(helper_focus_within_parent.val, content="true")
+  debug_inspect(helper_focus_visible_parent.val, content="true")
+  debug_inspect(helper_focus_visible_child.val, content="true")
 }

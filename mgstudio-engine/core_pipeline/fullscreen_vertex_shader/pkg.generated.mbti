@@ -1,11 +1,28 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub const FULLSCREEN_SHADER_ENTRY_POINT : String = "vertex"
+
+pub const FULLSCREEN_SHADER_PATH : String = "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl"
+
+pub let ecs_key_fullscreen_shader : @ecs.ResourceKey[FullscreenShader]
 
 // Errors
 
 // Types and methods
+pub struct FullscreenShader {
+  path : String
+  entry_point : String
+}
+pub fn FullscreenShader::default() -> Self
+pub fn FullscreenShader::new(path? : String, entry_point? : String) -> Self
+pub impl @app.Resource for FullscreenShader
 
 // Type aliases
 

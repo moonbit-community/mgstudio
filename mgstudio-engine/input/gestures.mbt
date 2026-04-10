@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_input/src/gestures.rs`).
+// Bevy source: `bevy/crates/bevy_input/src/gestures.rs`.
 
 ///|
 pub fn rotation_gesture_message_key() -> @ecs.MessageKey[RotationGesture] {
@@ -28,4 +28,16 @@ pub fn double_tap_gesture_message_key() -> @ecs.MessageKey[DoubleTapGesture] {
 ///|
 pub fn pan_gesture_message_key() -> @ecs.MessageKey[PanGesture] {
   @input_events.ecs_key_pan_gesture
+}
+
+///|
+pub fn gesture_message_keys() -> (
+  @ecs.MessageKey[RotationGesture],
+  @ecs.MessageKey[DoubleTapGesture],
+  @ecs.MessageKey[PanGesture],
+) {
+  (
+    @input_events.ecs_key_rotation_gesture, @input_events.ecs_key_double_tap_gesture,
+    @input_events.ecs_key_pan_gesture,
+  )
 }

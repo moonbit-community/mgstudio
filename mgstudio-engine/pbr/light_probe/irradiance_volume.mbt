@@ -13,7 +13,20 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/light_probe/irradiance_volume.rs`.
+
+///|
 pub type ParallaxCorrection = @light.ParallaxCorrection
 
 ///|
 pub type IrradianceVolume = @light.IrradianceVolume
+
+///|
+pub fn pbr_parallax_correction_default() -> ParallaxCorrection {
+  ParallaxCorrection::default()
+}
+
+///|
+pub fn pbr_irradiance_volume_default() -> IrradianceVolume {
+  IrradianceVolume::default()
+}

@@ -15,13 +15,13 @@
 ///|
 struct TestAppMessage {
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct TestCursorAppMessage {
   resend : Bool
   times_sent : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl @ecs.Message for TestAppMessage with message() {
@@ -38,7 +38,7 @@ impl @ecs.Message for TestCursorAppMessage with message() {
 ///|
 struct TestDefaultAppMessage {
   mut value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl @ecs.Message for TestDefaultAppMessage with message() {
@@ -108,7 +108,7 @@ test "app: add_message wires MessageWriter and MessageReader through world queue
   app = app.run_once()
   app = app.run_once()
 
-  inspect(seen, content="[7]")
+  debug_inspect(seen, content="[7]")
 }
 
 ///|
@@ -144,7 +144,7 @@ test "app: on_message consumes unread messages once per condition state" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(triggered.val, content="1")
+  debug_inspect(triggered.val, content="1")
 }
 
 ///|
@@ -196,7 +196,7 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
   app = app.run_once()
   app = app.run_once()
 
-  inspect(seen, content="[9]")
+  debug_inspect(seen, content="[9]")
 }
 
 ///|
@@ -261,5 +261,5 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
   app = app.run_once()
   app = app.run_once()
 
-  inspect(seen, content="[1, 11, 2, 21]")
+  debug_inspect(seen, content="[1, 11, 2, 21]")
 }

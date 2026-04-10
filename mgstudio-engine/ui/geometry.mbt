@@ -22,7 +22,7 @@ pub(all) enum Val {
   Vh(Float)
   VMin(Float)
   VMax(Float)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct UiRect {

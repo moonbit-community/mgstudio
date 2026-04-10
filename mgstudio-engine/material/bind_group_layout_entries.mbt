@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/bind_group_layout_entries.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_bind_group_layout_entries_bridge_pending() -> Unit {
+// Bridge capability gate for material bind-group layout specialization.
+pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_MODULE_TAG : String = "bevy_material::bind_group_layout_entries"
 
+///|
+pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
+
+///|
+pub fn material_bind_group_layout_entries_supported() -> Bool {
+  MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED
+}
+
+///|
+pub fn material_bind_group_layout_entries_module_tag() -> String {
+  MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_MODULE_TAG
 }

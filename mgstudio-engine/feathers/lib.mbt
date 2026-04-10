@@ -14,7 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/lib.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_lib_bridge_pending() -> Unit {
 
+///|
+pub const FEATHERS_PLUGIN_ID : String = "bevy_feathers::FeathersPlugin"
+
+///|
+pub const FEATHERS_PLUGINS_ID : String = "bevy_feathers::FeathersPlugins"
+
+///|
+pub fn feathers_plugin_entry(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  feathers_plugin(app)
+}
+
+///|
+pub fn feathers_plugins_entry() -> @app.PluginGroup[@ecs.World] {
+  feathers_plugins()
 }

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/blend_modes.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_BLEND_MODES : String = "examples/3d/blend_modes/main.mbt"
+

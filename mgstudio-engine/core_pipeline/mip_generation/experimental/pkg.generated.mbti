@@ -1,11 +1,76 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/mip_generation/experimental"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub const DEPTH_PYRAMID_MIP_COUNT : Int = 12
+
+pub const EXPERIMENTAL_DEPTH_MIP_GENERATION_LABEL : String = "mip_generation.experimental.depth"
+
+pub const EXPERIMENTAL_MIP_GENERATION_MODULE_ID : String = "bevy_core_pipeline::mip_generation::experimental"
+
+pub fn downsample_depth_pass_label(DownsampleDepthPassKind) -> String
+
+pub fn downsample_depth_pipeline_pair_ready(DownsampleDepthPipelinePairState, multisampled~ : Bool) -> Bool
+
+pub fn downsample_depth_should_run(DownsampleDepthViewState, DownsampleDepthPipelinePairState) -> Bool
+
+pub fn downsample_depth_view_has_valid_size(DownsampleDepthViewState) -> Bool
+
+pub fn downsample_depth_view_is_multisampled(DownsampleDepthViewState) -> Bool
+
+pub let ecs_key_downsample_depth_pipeline_pair_state : @ecs.ResourceKey[DownsampleDepthPipelinePairState]
+
+pub fn experimental_mip_generation_depth_pass_labels() -> Array[String]
+
+pub fn experimental_mip_generation_has_depth_support() -> Bool
+
+pub fn experimental_mip_generation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn experimental_mip_generation_plugin_with(@app.App[@ecs.World], ExperimentalMipGeneration) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub(all) enum DownsampleDepthPassKind {
+  Early
+  Late
+} derive(Eq, @debug.Debug)
+
+pub struct DownsampleDepthPipelinePairState {
+  first_pipeline_ready : Bool
+  second_pipeline_ready : Bool
+  first_multisample_pipeline_ready : Bool
+  second_multisample_pipeline_ready : Bool
+}
+pub fn DownsampleDepthPipelinePairState::default() -> Self
+pub fn DownsampleDepthPipelinePairState::new(first_pipeline_ready? : Bool, second_pipeline_ready? : Bool, first_multisample_pipeline_ready? : Bool, second_multisample_pipeline_ready? : Bool) -> Self
+pub impl @app.Resource for DownsampleDepthPipelinePairState
+
+pub struct DownsampleDepthViewState {
+  has_depth_pyramid : Bool
+  has_downsample_bind_group : Bool
+  depth_texture_width : Int
+  depth_texture_height : Int
+  depth_texture_sample_count : Int
+}
+pub fn DownsampleDepthViewState::new(has_depth_pyramid? : Bool, has_downsample_bind_group? : Bool, depth_texture_width? : Int, depth_texture_height? : Int, depth_texture_sample_count? : Int) -> Self
+
+pub struct ExperimentalDepthMipGenerationNode {
+  label : String
+}
+pub fn ExperimentalDepthMipGenerationNode::default() -> Self
+pub fn ExperimentalDepthMipGenerationNode::label(Self) -> String
+
+pub struct ExperimentalMipGeneration {
+}
+pub fn ExperimentalMipGeneration::default() -> Self
+pub impl @app.PluginReplacement for ExperimentalMipGeneration
 
 // Type aliases
 

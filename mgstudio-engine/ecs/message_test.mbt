@@ -15,7 +15,7 @@
 ///|
 struct TestRuntimeMessage {
   mut value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl Message for TestRuntimeMessage with message() {
@@ -25,7 +25,7 @@ impl Message for TestRuntimeMessage with message() {
 ///|
 struct TestDefaultRuntimeMessage {
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl Message for TestDefaultRuntimeMessage with message() {
@@ -50,15 +50,15 @@ test "ecs message: mutator reads unread messages as in-place refs" {
   let cursor = Ref::new(0)
   let mutator = world.message_mutator(key, cursor)
   let unread = try! mutator.read()
-  inspect(unread.length(), content="2")
+  debug_inspect(unread.length(), content="2")
   unread[0].val.value = unread[0].val.value + 9
   unread[1].val.value = unread[1].val.value + 18
-  inspect(mutator.is_empty(), content="true")
+  debug_inspect(mutator.is_empty(), content="true")
 
   let reader = world.message_reader(key, Ref::new(0))
   let messages = try! reader.read()
-  inspect(messages[0].value, content="10")
-  inspect(messages[1].value, content="20")
+  debug_inspect(messages[0].value, content="10")
+  debug_inspect(messages[1].value, content="20")
 }
 
 ///|
@@ -72,6 +72,6 @@ test "ecs message: writer write_default sends default message" {
 
   let reader = world.message_reader(key, Ref::new(0))
   let messages = try! reader.read()
-  inspect(messages.length(), content="1")
-  inspect(messages[0].value, content="42")
+  debug_inspect(messages.length(), content="1")
+  debug_inspect(messages[0].value, content="42")
 }

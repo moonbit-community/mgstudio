@@ -17,6 +17,19 @@
 // Runtime wrappers live in this file while the broader utils implementation stays split across the package.
 
 ///|
+pub const DEFAULT_MODULE_TAG : String = "bevy_utils::default"
+
+///|
 pub fn[T : Default] default() -> T {
   Default::default()
+}
+
+///|
+pub fn default_module_tag() -> String {
+  DEFAULT_MODULE_TAG
+}
+
+///|
+pub fn[T : Default] default_of() -> T {
+  default()
 }

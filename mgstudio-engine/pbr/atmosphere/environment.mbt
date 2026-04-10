@@ -13,4 +13,31 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/atmosphere/environment.rs`.
+
+///|
 pub type AtmosphereEnvironmentMapLight = @light.AtmosphereEnvironmentMapLight
+
+///|
+pub fn pbr_atmosphere_environment_map_light_default() -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::default()
+}
+
+///|
+pub fn pbr_atmosphere_environment_map_light_new(
+  intensity : Float,
+  affects_lightmapped_mesh_diffuse : Bool,
+  size : @math.UVec2,
+) -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::new(
+    intensity, affects_lightmapped_mesh_diffuse, size,
+  )
+}
+
+///|
+pub fn pbr_atmosphere_environment_map_light_with_intensity(
+  light : AtmosphereEnvironmentMapLight,
+  intensity : Float,
+) -> AtmosphereEnvironmentMapLight {
+  light.with_intensity(intensity)
+}

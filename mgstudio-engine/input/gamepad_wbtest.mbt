@@ -111,12 +111,15 @@ test "input gamepad: connection event inserts gamepad and settings" {
   let world = app.world()
   let entity = world.spawn_empty()
 
-  inspect(world_gamepad(world, entity) is Some(_), content="false")
+  debug_inspect(world_gamepad(world, entity) is Some(_), content="false")
   send_connection(world, entity)
   app = app.run_once()
 
-  inspect(world_gamepad(world, entity) is Some(_), content="true")
-  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
+  debug_inspect(world_gamepad(world, entity) is Some(_), content="true")
+  debug_inspect(
+    world_gamepad_settings(world, entity) is Some(_),
+    content="true",
+  )
 }
 
 ///|
@@ -132,14 +135,20 @@ test "input gamepad: disconnection removes gamepad but preserves settings" {
   send_disconnection(world, entity)
   app = app.run_once()
 
-  inspect(world_gamepad(world, entity) is Some(_), content="false")
-  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
+  debug_inspect(world_gamepad(world, entity) is Some(_), content="false")
+  debug_inspect(
+    world_gamepad_settings(world, entity) is Some(_),
+    content="true",
+  )
 
   send_disconnection(world, entity)
   app = app.run_once()
 
-  inspect(world_gamepad(world, entity) is Some(_), content="false")
-  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
+  debug_inspect(world_gamepad(world, entity) is Some(_), content="false")
+  debug_inspect(
+    world_gamepad_settings(world, entity) is Some(_),
+    content="true",
+  )
 }
 
 ///|
@@ -152,8 +161,11 @@ test "input gamepad: connection and disconnection in the same frame keeps settin
   send_disconnection(world, entity)
   app = app.run_once()
 
-  inspect(world_gamepad(world, entity) is Some(_), content="false")
-  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
+  debug_inspect(world_gamepad(world, entity) is Some(_), content="false")
+  debug_inspect(
+    world_gamepad_settings(world, entity) is Some(_),
+    content="true",
+  )
 }
 
 ///|
@@ -168,7 +180,7 @@ test "input gamepad: reconnection preserves settings component state" {
   send_connection(world, entity)
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     try! @ecs.World::update(world, entity, fn(settings : GamepadSettings) {
       GamepadSettings::{ ..settings, default_button_settings: button_settings }
     }),
@@ -182,7 +194,10 @@ test "input gamepad: reconnection preserves settings component state" {
   app = app.run_once()
 
   let settings = world_gamepad_settings(world, entity).unwrap()
-  inspect(settings.default_button_settings == button_settings, content="true")
+  debug_inspect(
+    settings.default_button_settings == button_settings,
+    content="true",
+  )
 }
 
 ///|
@@ -211,7 +226,7 @@ test "input gamepad: valid axis changes emit processed axis events" {
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_axis_changed_event_message_key).length(),
     content="4",
   )
@@ -254,7 +269,7 @@ test "input gamepad: axis threshold filter ignores changes below threshold" {
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_axis_changed_event_message_key).length(),
     content="2",
   )
@@ -289,7 +304,7 @@ test "input gamepad: axis deadzone filter drops zeroed changes" {
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_axis_changed_event_message_key).length(),
     content="0",
   )
@@ -331,11 +346,11 @@ test "input gamepad: axis deadzone inputs are rounded to zero when crossing from
   app = app.run_once()
 
   let events = read_messages(world, gamepad_axis_changed_event_message_key)
-  inspect(events.length(), content="4")
-  inspect(events[0].value == 1.0F, content="true")
-  inspect(events[1].value == 0.0F, content="true")
-  inspect(events[2].value == 1.0F, content="true")
-  inspect(events[3].value == 0.0F, content="true")
+  debug_inspect(events.length(), content="4")
+  debug_inspect(events[0].value == 1.0F, content="true")
+  debug_inspect(events[1].value == 0.0F, content="true")
+  debug_inspect(events[2].value == 1.0F, content="true")
+  debug_inspect(events[3].value == 0.0F, content="true")
 }
 
 ///|
@@ -373,7 +388,7 @@ test "input gamepad: axis livezone filter ignores clamped changes beyond the edg
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_axis_changed_event_message_key).length(),
     content="2",
   )
@@ -409,9 +424,9 @@ test "input gamepad: axis livezone values are rounded to the extremes" {
   app = app.run_once()
 
   let events = read_messages(world, gamepad_axis_changed_event_message_key)
-  inspect(events.length(), content="2")
-  inspect(events[0].value == 1.0F, content="true")
-  inspect(events[1].value == -1.0F, content="true")
+  debug_inspect(events.length(), content="2")
+  debug_inspect(events[0].value == 1.0F, content="true")
+  debug_inspect(events[1].value == -1.0F, content="true")
 }
 
 ///|
@@ -439,10 +454,10 @@ test "input gamepad: button press emits state change and updates digital state" 
   let state_events = read_messages(
     world, gamepad_button_state_changed_event_message_key,
   )
-  inspect(state_events.length(), content="1")
-  inspect(state_events[0].button, content="DPadDown")
-  inspect(state_events[0].state, content="Pressed")
-  inspect(
+  debug_inspect(state_events.length(), content="1")
+  debug_inspect(state_events[0].button, content="DPadDown")
+  debug_inspect(state_events[0].state, content="Pressed")
+  debug_inspect(
     world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
     content="true",
   )
@@ -450,11 +465,11 @@ test "input gamepad: button press emits state change and updates digital state" 
   clear_gamepad_messages(world)
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_button_state_changed_event_message_key).length(),
     content="0",
   )
-  inspect(
+  debug_inspect(
     world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
     content="true",
   )
@@ -482,13 +497,13 @@ test "input gamepad: just_pressed lasts for one frame" {
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     world_gamepad(world, entity).unwrap().just_pressed(GamepadButton::DPadDown),
     content="true",
   )
   clear_gamepad_messages(world)
   app = app.run_once()
-  inspect(
+  debug_inspect(
     world_gamepad(world, entity).unwrap().just_pressed(GamepadButton::DPadDown),
     content="false",
   )
@@ -531,16 +546,16 @@ test "input gamepad: button release emits state change and clears digital state"
   let state_events = read_messages(
     world, gamepad_button_state_changed_event_message_key,
   )
-  inspect(state_events.length(), content="1")
-  inspect(state_events[0].state, content="Released")
-  inspect(
+  debug_inspect(state_events.length(), content="1")
+  debug_inspect(state_events[0].state, content="Released")
+  debug_inspect(
     world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
     content="false",
   )
 
   clear_gamepad_messages(world)
   app = app.run_once()
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_button_state_changed_event_message_key).length(),
     content="0",
   )
@@ -575,13 +590,13 @@ test "input gamepad: just_released lasts for one frame" {
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     world_gamepad(world, entity).unwrap().just_released(GamepadButton::DPadDown),
     content="true",
   )
   clear_gamepad_messages(world)
   app = app.run_once()
-  inspect(
+  debug_inspect(
     world_gamepad(world, entity).unwrap().just_released(GamepadButton::DPadDown),
     content="false",
   )
@@ -638,11 +653,11 @@ test "input gamepad: button axis filtering matches bevy analog and digital count
   ])
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_button_state_changed_event_message_key).length(),
     content="2",
   )
-  inspect(
+  debug_inspect(
     read_messages(world, gamepad_button_changed_event_message_key).length(),
     content="4",
   )
@@ -671,11 +686,11 @@ test "input gamepad: rumble add requests reach backend output" {
   app = app.run_once()
 
   let commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
-  inspect(commands.length(), content="1")
-  inspect(commands[0].gamepad_id, content="0")
-  inspect(commands[0].strong_motor == 0.0F, content="true")
-  inspect(commands[0].weak_motor == 0.25F, content="true")
-  inspect(commands[0].duration_ms, content="500")
+  debug_inspect(commands.length(), content="1")
+  debug_inspect(commands[0].gamepad_id, content="0")
+  debug_inspect(commands[0].strong_motor == 0.0F, content="true")
+  debug_inspect(commands[0].weak_motor == 0.25F, content="true")
+  debug_inspect(commands[0].duration_ms, content="500")
 }
 
 ///|
@@ -713,10 +728,10 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
   app = app.run_once()
 
   let add_commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
-  inspect(add_commands.length(), content="1")
-  inspect(add_commands[0].strong_motor == 1.0F, content="true")
-  inspect(add_commands[0].weak_motor == 0.25F, content="true")
-  inspect(add_commands[0].duration_ms, content="5000")
+  debug_inspect(add_commands.length(), content="1")
+  debug_inspect(add_commands[0].strong_motor == 1.0F, content="true")
+  debug_inspect(add_commands[0].weak_motor == 0.25F, content="true")
+  debug_inspect(add_commands[0].duration_ms, content="5000")
 
   world.send_message(
     gamepad_rumble_request_message_key,
@@ -726,10 +741,10 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
   app = app.run_once()
 
   let stop_commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
-  inspect(stop_commands.length(), content="1")
-  inspect(stop_commands[0].strong_motor == 0.0F, content="true")
-  inspect(stop_commands[0].weak_motor == 0.0F, content="true")
-  inspect(stop_commands[0].duration_ms, content="0")
+  debug_inspect(stop_commands.length(), content="1")
+  debug_inspect(stop_commands[0].strong_motor == 0.0F, content="true")
+  debug_inspect(stop_commands[0].weak_motor == 0.0F, content="true")
+  debug_inspect(stop_commands[0].duration_ms, content="0")
 }
 
 ///|
@@ -755,9 +770,9 @@ test "input gamepad: unsupported rumble requests are dropped" {
   app = app.run_once()
 
   let commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
-  inspect(commands.length(), content="0")
+  debug_inspect(commands.length(), content="0")
   let running_rumbles : RunningRumbleEffects = try! world
     .get_resource(RunningRumbleEffects::resource())
     .unwrap()
-  inspect(running_rumbles.entries.length(), content="0")
+  debug_inspect(running_rumbles.entries.length(), content="0")
 }

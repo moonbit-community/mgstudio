@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/shader_prepass.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_SHADER_PREPASS : String = "examples/shader/shader_prepass/main.mbt"
+

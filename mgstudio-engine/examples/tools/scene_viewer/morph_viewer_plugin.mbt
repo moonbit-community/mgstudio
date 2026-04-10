@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/tools/scene_viewer/morph_viewer_plugin.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_MORPH_VIEWER_PLUGIN : String = "examples/tools/scene_viewer/morph_viewer_plugin/main.mbt"
+

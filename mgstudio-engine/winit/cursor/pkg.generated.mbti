@@ -1,13 +1,29 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/winit/cursor"
 
+import {
+  "Milky2018/mgstudio/window",
+}
+
 // Values
+pub fn cursor_icon_from_custom(@window.CustomCursor) -> @window.CursorIcon
+
+pub fn winit_cursor_icon_from_custom(@window.CustomCursor) -> @window.CursorIcon
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @window {type CursorIcon}
+
+pub using @window {type CursorOptions as WinitCursorOptions}
+
+pub using @window {type CustomCursor as WinitCustomCursor}
+
+pub using @window {type CustomCursorImage as WinitCustomCursorImage}
+
+pub using @window {type CustomCursorUrl as WinitCustomCursorUrl}
 
 // Traits
 

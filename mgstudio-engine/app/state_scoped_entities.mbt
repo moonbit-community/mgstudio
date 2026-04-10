@@ -79,7 +79,7 @@ fn[S : States] despawn_on_exit_entities(world : @ecs.World, state : S) -> Unit {
   guard pending_transition(world, state) is Some(event) else { return }
   guard event.exited is Some(exited) else { return }
   let transition_key = state_transition_registration_key(state)
-  let exited_debug = exited.to_string()
+  let exited_debug = to_repr(exited).to_string()
   let entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_despawn_on_exit, fn(entity, marker) {
     if marker.transition_key() == transition_key &&
@@ -97,7 +97,7 @@ fn[S : States] despawn_on_enter_entities(world : @ecs.World, state : S) -> Unit 
   guard pending_transition(world, state) is Some(event) else { return }
   guard event.entered is Some(entered) else { return }
   let transition_key = state_transition_registration_key(state)
-  let entered_debug = entered.to_string()
+  let entered_debug = to_repr(entered).to_string()
   let entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_despawn_on_enter, fn(entity, marker) {
     if marker.transition_key() == transition_key &&
@@ -157,7 +157,7 @@ pub fn[S : States] DespawnOnExit::new(state : S) -> DespawnOnExit {
   ensure_despawn_on_exit_registered(state)
   {
     transition_key: state_transition_registration_key(state),
-    state_debug: state.to_string(),
+    state_debug: to_repr(state).to_string(),
   }
 }
 
@@ -166,6 +166,6 @@ pub fn[S : States] DespawnOnEnter::new(state : S) -> DespawnOnEnter {
   ensure_despawn_on_enter_registered(state)
   {
     transition_key: state_transition_registration_key(state),
-    state_debug: state.to_string(),
+    state_debug: to_repr(state).to_string(),
   }
 }

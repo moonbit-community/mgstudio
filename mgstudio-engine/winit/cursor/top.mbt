@@ -13,7 +13,16 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_winit/src/cursor/mod.rs`).
-fn _winit_cursor_module_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_winit/src/cursor/mod.rs`.
+// Bridge surface to `window/cursor` and local custom-cursor helpers.
+
+///|
+pub type CursorIcon = @window.CursorIcon
+
+///|
+pub type WinitCursorOptions = @window.CursorOptions
+
+///|
+pub fn winit_cursor_icon_from_custom(cursor : WinitCustomCursor) -> CursorIcon {
+  cursor_icon_from_custom(cursor)
 }

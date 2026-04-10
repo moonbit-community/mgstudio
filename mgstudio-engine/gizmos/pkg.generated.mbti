@@ -4,13 +4,102 @@ package "Milky2018/mgstudio/gizmos"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
 }
 
 // Values
+pub const GIZMOS_PLUGIN_ID : String = "bevy_gizmos::GizmoPlugin"
+
+pub const GIZMO_AABB_MODULE_TAG : String = "bevy_gizmos::aabb"
+
+pub const GIZMO_ARCS_MODULE_TAG : String = "bevy_gizmos::arcs"
+
+pub const GIZMO_ARROWS_MODULE_TAG : String = "bevy_gizmos::arrows"
+
+pub const GIZMO_CIRCLES_MODULE_TAG : String = "bevy_gizmos::circles"
+
+pub const GIZMO_CROSS_MODULE_TAG : String = "bevy_gizmos::cross"
+
+pub const GIZMO_CURVES_MODULE_TAG : String = "bevy_gizmos::curves"
+
+pub const GIZMO_FRUSTUM_MODULE_TAG : String = "bevy_gizmos::frustum"
+
+pub const GIZMO_GLOBAL_MODULE_TAG : String = "bevy_gizmos::global"
+
+pub const GIZMO_GRID_MODULE_TAG : String = "bevy_gizmos::grid"
+
+pub const GIZMO_RETAINED_MODULE_TAG : String = "bevy_gizmos::retained"
+
+pub const GIZMO_RETAINED_SUPPORTED : Bool = true
+
+pub const GIZMO_ROUNDED_BOX_MODULE_TAG : String = "bevy_gizmos::rounded_box"
+
+pub const GIZMO_SKINNED_MESH_BOUNDS_MODULE_TAG : String = "bevy_gizmos::skinned_mesh_bounds"
+
+pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
+
+pub const GIZMO_STROKE_TEXT_MODULE_TAG : String = "bevy_gizmos::stroke_text"
+
+pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
+
+pub const SIMPLEX_STROKE_FONT_MODULE_TAG : String = "bevy_gizmos::simplex_stroke_font"
+
+pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
+
+pub fn gizmo_aabb2d_identity(@math.Aabb2d) -> @math.Aabb2d
+
+pub fn gizmo_aabb3d_identity(@math.Aabb3d) -> @math.Aabb3d
+
+pub fn gizmo_arc2d_builder_identity(@sprite.Arc2dBuilder) -> @sprite.Arc2dBuilder
+
+pub fn gizmo_arc2d_identity(@math.Arc2d) -> @math.Arc2d
+
+pub fn gizmo_arrow_builder_identity(@sprite.ArrowBuilder) -> @sprite.ArrowBuilder
+
+pub fn gizmo_circle_identity(@math.Circle) -> @math.Circle
+
+pub fn gizmo_cross_module_tag() -> String
+
+pub fn gizmo_cross_supported() -> Bool
+
+pub fn gizmo_curve2d_identity(@math.CubicCurve[@math.Vec2]) -> @math.CubicCurve[@math.Vec2]
+
+pub fn gizmo_curve3d_identity(@math.CubicCurve[@math.Vec3]) -> @math.CubicCurve[@math.Vec3]
+
+pub fn gizmo_global_init(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gizmo_global_module_tag() -> String
+
+pub fn gizmo_grid_builder_identity(@sprite.Grid2dBuilder) -> @sprite.Grid2dBuilder
+
 pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn gizmo_retained_module_tag() -> String
+
+pub fn gizmo_retained_supported() -> Bool
+
+pub fn gizmo_rounded_rect_builder_identity(@sprite.RoundedRectBuilder) -> @sprite.RoundedRectBuilder
+
+pub fn gizmo_skinned_mesh_bounds_module_tag() -> String
+
+pub fn gizmo_skinned_mesh_bounds_supported() -> Bool
+
+pub fn gizmo_stroke_text_module_tag() -> String
+
+pub fn gizmo_stroke_text_supported() -> Bool
+
+pub fn gizmo_view_frustum_identity(@math.ViewFrustum) -> @math.ViewFrustum
+
+pub fn gizmos_default_group() -> @sprite.DefaultGizmoConfigGroup
+
+pub fn gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
+
+pub fn simplex_stroke_font_module_tag() -> String
+
+pub fn simplex_stroke_font_supported() -> Bool
 
 // Errors
 
@@ -23,17 +112,49 @@ pub using @sprite {type ArrowBuilder}
 
 pub using @sprite {type DefaultGizmoConfigGroup}
 
+pub using @sprite {type DefaultGizmoConfigGroup as DefaultGizmoConfigValue}
+
 pub using @sprite {type Ellipse2dBuilder}
+
+pub using @math {type Aabb2d as GizmoAabb2d}
+
+pub using @math {type Aabb3d as GizmoAabb3d}
+
+pub using @math {type Arc2d as GizmoArc2d}
+
+pub using @sprite {type Arc2dBuilder as GizmoArc2dBuilder}
+
+pub using @sprite {type ArrowBuilder as GizmoArrowBuilder}
+
+pub using @math {type Circle as GizmoCircle}
 
 pub using @sprite {type GizmoConfig}
 
 pub using @sprite {type GizmoConfigStore}
 
+pub using @sprite {type GizmoConfigStore as GizmoConfigStoreValue}
+
+pub using @sprite {type GizmoConfig as GizmoConfigValue}
+
+pub type GizmoCubicCurve2d = @math.CubicCurve[@math.Vec2]
+
+pub type GizmoCubicCurve3d = @math.CubicCurve[@math.Vec3]
+
+pub using @sprite {type DefaultGizmoConfigGroup as GizmoGlobalDefaultGroup}
+
+pub using @sprite {type Grid2dBuilder as GizmoGrid2dBuilder}
+
 pub using @sprite {type GizmoLineConfig}
+
+pub using @sprite {type GizmoLineConfig as GizmoLineConfigValue}
 
 pub using @sprite {type GizmoLineJoint}
 
 pub using @sprite {type GizmoLineStyle}
+
+pub using @sprite {type RoundedRectBuilder as GizmoRoundedRectBuilder}
+
+pub using @math {type ViewFrustum as GizmoViewFrustum}
 
 pub using @sprite {type Gizmos}
 

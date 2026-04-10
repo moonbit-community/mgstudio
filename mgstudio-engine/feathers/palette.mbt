@@ -14,7 +14,42 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/palette.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_palette_bridge_pending() -> Unit {
 
-}
+///|
+pub const BLACK : String = "#000000"
+
+///|
+pub const GRAY_0 : String = "#1F1F24"
+
+///|
+pub const GRAY_1 : String = "#2A2A2E"
+
+///|
+pub const GRAY_2 : String = "#36373B"
+
+///|
+pub const GRAY_3 : String = "#46474D"
+
+///|
+pub const WARM_GRAY_1 : String = "#414142"
+
+///|
+pub const LIGHT_GRAY_1 : String = "#B1B1B2"
+
+///|
+pub const LIGHT_GRAY_2 : String = "#838385"
+
+///|
+pub const WHITE : String = "#FFFFFF"
+
+///|
+pub const ACCENT : String = "#206EC9"
+
+///|
+pub const X_AXIS : String = "#AB4051"
+
+///|
+pub const Y_AXIS : String = "#5D8D0A"
+
+///|
+pub const Z_AXIS : String = "#2160A3"

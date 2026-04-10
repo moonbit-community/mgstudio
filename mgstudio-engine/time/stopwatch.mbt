@@ -20,7 +20,7 @@
 pub struct Stopwatch {
   elapsed : @core.Duration
   paused : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn Stopwatch::new() -> Stopwatch {

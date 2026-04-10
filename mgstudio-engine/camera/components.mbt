@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/components.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/components.rs`.
 
 ///|
 pub type Camera = @sprite.Camera
@@ -43,4 +43,22 @@ pub fn camera_2d_bundle_new_with_layers(
   layers : @sprite.RenderLayers,
 ) -> Camera2dBundle {
   @sprite.Camera2dBundle::new_with_layers(camera, transform, target, layers)
+}
+
+///|
+pub fn camera_2d_bundle_new_with_target(
+  camera : Camera,
+  transform : @transform.Transform,
+  target : @sprite.RenderTarget,
+) -> Camera2dBundle {
+  @sprite.Camera2dBundle::new_with_target(camera, transform, target)
+}
+
+///|
+pub fn camera_2d_bundle_new_with_projection(
+  camera : Camera,
+  projection : @sprite.Projection,
+  transform : @transform.Transform,
+) -> Camera2dBundle {
+  @sprite.Camera2dBundle::new_with_projection(camera, projection, transform)
 }

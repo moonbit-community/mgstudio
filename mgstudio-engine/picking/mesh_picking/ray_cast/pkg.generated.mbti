@@ -1,13 +1,27 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/picking/mesh_picking/ray_cast"
 
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/picking",
+}
+
 // Values
+pub const PICKING_MESH_RAY_CAST_MODULE_TAG : String = "bevy_picking::mesh_picking::ray_cast"
+
+pub fn mesh_picking_hit_entity(@picking.PickingHits, Int) -> @core.Entity?
+
+pub fn picking_mesh3d_hit_test_system(@ecs.World) -> Unit
+
+pub fn picking_mesh_ray_cast_module_tag() -> String
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @picking {type PickingHits}
 
 // Traits
 

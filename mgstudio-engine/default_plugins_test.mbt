@@ -47,19 +47,25 @@ fn plugin_index(
 ///|
 test "default plugins: include winit plugin after window plugin" {
   let builder = @internal.DefaultPlugins::build()
-  inspect(builder.contains(@window.WINDOW_PLUGIN_ID), content="true")
-  inspect(builder.contains("bevy_winit::WinitPlugin"), content="true")
-  inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_SHADER), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SHADER), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
+  debug_inspect(builder.contains(@window.WINDOW_PLUGIN_ID), content="true")
+  debug_inspect(builder.contains("bevy_winit::WinitPlugin"), content="true")
+  debug_inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
+  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_SHADER), content="true")
+  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_SHADER), content="true")
+  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
+  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
+  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
+  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
+  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE), content="true")
+  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE), content="true")
+  debug_inspect(
+    builder.contains(DEFAULT_PLUGIN_ID_SPRITE_RENDER),
+    content="true",
+  )
+  debug_inspect(
+    builder.enabled(DEFAULT_PLUGIN_ID_SPRITE_RENDER),
+    content="true",
+  )
   let shader_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SHADER)
   let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_ID_WEB_ASSET)
   let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER3D)
@@ -69,16 +75,16 @@ test "default plugins: include winit plugin after window plugin" {
     builder,
     DEFAULT_PLUGIN_ID_SPRITE_RENDER,
   )
-  inspect(
+  debug_inspect(
     web_asset_index < plugin_index(builder, "bevy_asset::AssetPlugin"),
     content="true",
   )
-  inspect(shader_index < render3d_index, content="true")
-  inspect(render3d_index < anti_alias_index, content="true")
-  inspect(anti_alias_index < sprite_index, content="true")
-  inspect(sprite_index < sprite_render_index, content="true")
-  inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
-  inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
+  debug_inspect(shader_index < render3d_index, content="true")
+  debug_inspect(render3d_index < anti_alias_index, content="true")
+  debug_inspect(anti_alias_index < sprite_index, content="true")
+  debug_inspect(sprite_index < sprite_render_index, content="true")
+  debug_inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
+  debug_inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
 }
 
 ///|
@@ -123,10 +129,13 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     None => abort("missing window component")
   }
 
-  inspect(stored_window.title, content="Scale Override")
-  inspect(stored_window.physical_width(), content="500")
-  inspect(stored_window.physical_height(), content="300")
-  inspect(stored_window.resolution.scale_factor_override(), content="Some(1)")
+  debug_inspect(stored_window.title, content="Scale Override")
+  debug_inspect(stored_window.physical_width(), content="500")
+  debug_inspect(stored_window.physical_height(), content="300")
+  debug_inspect(
+    stored_window.resolution.scale_factor_override(),
+    content="Some(1)",
+  )
 }
 
 ///|
@@ -141,7 +150,7 @@ test "default plugins: set(AssetPlugin::default_nearest()) replaces default asse
     None => abort("missing asset server resource")
   }
 
-  inspect(asset_server.default_sampler_nearest.val, content="true")
+  debug_inspect(asset_server.default_sampler_nearest.val, content="true")
 }
 
 ///|
@@ -165,9 +174,9 @@ test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root"
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(handle), content="true")
-  inspect(@asset.asset_texture_width(handle), content="16")
-  inspect(@asset.asset_texture_height(handle), content="12")
+  debug_inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  debug_inspect(@asset.asset_texture_width(handle), content="16")
+  debug_inspect(@asset.asset_texture_height(handle), content="12")
 }
 
 ///|
@@ -195,9 +204,9 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(handle), content="true")
-  inspect(@asset.asset_texture_width(handle), content="128")
-  inspect(@asset.asset_texture_height(handle), content="96")
+  debug_inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  debug_inspect(@asset.asset_texture_width(handle), content="128")
+  debug_inspect(@asset.asset_texture_height(handle), content="96")
 }
 
 ///|
@@ -253,12 +262,18 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(image_handle), content="true")
-  inspect(reads.val.contains("bevy_pixel_dark_with_meta.png"), content="true")
-  inspect(metas.val.contains("bevy_pixel_dark_with_meta.png"), content="true")
-  inspect(directories.val.contains(""), content="true")
-  inspect(dir_checks.val.contains(""), content="true")
-  inspect(
+  debug_inspect(@asset.asset_is_texture_loaded(image_handle), content="true")
+  debug_inspect(
+    reads.val.contains("bevy_pixel_dark_with_meta.png"),
+    content="true",
+  )
+  debug_inspect(
+    metas.val.contains("bevy_pixel_dark_with_meta.png"),
+    content="true",
+  )
+  debug_inspect(directories.val.contains(""), content="true")
+  debug_inspect(dir_checks.val.contains(""), content="true")
+  debug_inspect(
     match
       (try! app.world().get_resource(@asset.loaded_folder_assets_resource_key())) {
       Some(loaded_folders) =>
@@ -309,6 +324,6 @@ test "default plugins: register_asset_source can wrap the default source reader"
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(handle), content="true")
-  inspect(reads.val.contains("branding/icon.png"), content="true")
+  debug_inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  debug_inspect(reads.val.contains("branding/icon.png"), content="true")
 }

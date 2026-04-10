@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/generate_custom_mesh.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_GENERATE_CUSTOM_MESH : String = "examples/3d/generate_custom_mesh/main.mbt"
+

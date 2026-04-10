@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/hotpatching_systems.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_HOTPATCHING_SYSTEMS : String = "examples/ecs/hotpatching_systems/main.mbt"
+

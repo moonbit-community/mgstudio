@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/pathtracer/prepare.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_pathtracer_prepare_bridge_pending() -> Unit {
 
+///|
+pub struct PathtracerAccumulationTexture {
+  texture_id : Int
+}
+
+///|
+pub fn PathtracerAccumulationTexture::default() -> PathtracerAccumulationTexture {
+  PathtracerAccumulationTexture::{ texture_id: -1 }
+}
+
+///|
+pub fn prepare_pathtracer_accumulation_texture(_world : @ecs.World) -> Unit {
+  ()
 }

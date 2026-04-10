@@ -14,7 +14,14 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/serde.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _scene_serde_bridge_pending() -> Unit {
+// Bridge helpers for scene handle JSON serde surface.
 
+///|
+pub fn scene_root_to_json(root : SceneRoot) -> Json {
+  root.to_json()
+}
+
+///|
+pub fn scene_instance_to_json(instance : SceneInstance) -> Json {
+  instance.to_json()
 }

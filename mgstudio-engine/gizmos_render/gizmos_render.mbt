@@ -15,6 +15,19 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
 // Package-root bridge surface now lives in `lib.mbt`.
-fn _gizmos_render_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub const GIZMOS_RENDER_PLUGIN_ID : String = "bevy_gizmos_render::GizmoRenderPlugin"
+
+///|
+pub fn gizmos_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  gizmo_render_plugin(app)
+}
+
+///|
+pub fn gizmos_render_system_set_2d() -> @app.SystemSet {
+  gizmo_render_system_set(QueueLineGizmos2d)
+}
+
+///|
+pub fn gizmos_render_system_set_3d() -> @app.SystemSet {
+  gizmo_render_system_set(QueueLineGizmos3d)
 }

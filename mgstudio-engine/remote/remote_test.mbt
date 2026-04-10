@@ -17,5 +17,5 @@ test "remote boundary exposes plugin entry" {
   let app = @app.App::new(@ecs.World::new())
   let apply = @remote.remote_plugin(@remote.RemotePlugin::default())
   let _ = apply(app)
-  inspect("ok", content="ok")
+  debug_inspect("ok", content="ok")
 }

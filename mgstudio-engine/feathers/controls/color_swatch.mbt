@@ -14,7 +14,39 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/color_swatch.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_color_swatch_bridge_pending() -> Unit {
 
+///|
+pub struct ColorSwatch {} derive(Default, Debug)
+
+///|
+pub struct ColorSwatchValue {
+  color_hex : String
+}
+
+///|
+pub struct ColorSwatchFg {} derive(Default, Debug)
+
+///|
+pub fn ColorSwatchValue::new(color_hex : String) -> ColorSwatchValue {
+  ColorSwatchValue::{ color_hex, }
+}
+
+///|
+pub fn color_swatch(
+  color_hex : String,
+) -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg) {
+  (ColorSwatch::{  }, ColorSwatchValue::new(color_hex), ColorSwatchFg::{  })
+}
+
+///|
+pub struct ColorSwatchPlugin {}
+
+///|
+pub fn ColorSwatchPlugin::default() -> ColorSwatchPlugin {
+  ColorSwatchPlugin::{  }
+}
+
+///|
+pub fn color_swatch_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

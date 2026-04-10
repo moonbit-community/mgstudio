@@ -13,7 +13,18 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/transmission/mod.rs`.
+
+///|
 pub type ScreenSpaceTransmissionQuality = @post_process.ScreenSpaceTransmissionQuality
 
 ///|
 pub type ScreenSpaceTransmission = @post_process.ScreenSpaceTransmission
+
+///|
+pub const TRANSMISSION_MODULE_TAG : String = "bevy_pbr::transmission"
+
+///|
+pub fn pbr_screen_space_transmission_default() -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::default()
+}

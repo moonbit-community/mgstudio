@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/pipeline_3d.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_render_pipeline_3d_bridge_pending() -> Unit {
 
+///|
+pub struct LineGizmo3dPlugin {}
+
+///|
+pub fn LineGizmo3dPlugin::default() -> LineGizmo3dPlugin {
+  LineGizmo3dPlugin::{  }
+}
+
+///|
+pub fn line_gizmo_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @pbr.render3d_plugin(app)
 }

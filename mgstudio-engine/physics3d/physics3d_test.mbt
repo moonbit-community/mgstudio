@@ -80,7 +80,7 @@ test "physics3d: falling body collides and writes back transform" {
     i = i + 1
   }
   let final_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
-  inspect(final_y < initial_y, content="true")
+  debug_inspect(final_y < initial_y, content="true")
 }
 
 ///|
@@ -133,7 +133,7 @@ test "physics3d: sensor collision events are emitted" {
     i = i + 1
   }
   let events = get_physics3d_events_resource(world).get().unwrap()
-  inspect(events.collisions.length() > 0, content="true")
+  debug_inspect(events.collisions.length() > 0, content="true")
 }
 
 ///|
@@ -185,7 +185,7 @@ test "physics3d: contact force events are emitted" {
     i = i + 1
   }
   let events = get_physics3d_events_resource(world).get().unwrap()
-  inspect(events.contact_forces.length() > 0, content="true")
+  debug_inspect(events.contact_forces.length() > 0, content="true")
 }
 
 ///|
@@ -216,7 +216,7 @@ test "physics3d: active collision type and hook components are accepted" {
     ActiveHooks3d::new(@collision.ActiveHooks::all()),
   )
   physics3d_sync_insertions_system(world)
-  inspect(
+  debug_inspect(
     try! world.contains_by_key(body, ecs_key_rapier_collider_handle3d),
     content="true",
   )
@@ -247,7 +247,7 @@ test "physics3d: query context returns entity-mapped hits and supports exclude f
     10.0F,
     true,
   )
-  inspect(hit is Some(_), content="true")
+  debug_inspect(hit is Some(_), content="true")
   let filter = ctx.query_filter_exclude_entity(
     @collision.QueryFilter3DReal::new(),
     floor,
@@ -259,7 +259,7 @@ test "physics3d: query context returns entity-mapped hits and supports exclude f
     true,
     filter,
   )
-  inspect(excluded_hit is None, content="true")
+  debug_inspect(excluded_hit is None, content="true")
 }
 
 ///|
@@ -293,17 +293,20 @@ test "physics3d: impulse joint handles are created and cleaned up" {
   )
 
   run_fixed_step(world)
-  inspect(
+  debug_inspect(
     try! world.contains_by_key(b, ecs_key_rapier_impulse_joint_handle3d),
     content="true",
   )
   let ctx_before = get_physics3d_context_resource(world).get().unwrap()
-  inspect(ctx_before.entity_to_impulse_joint.length() == 1, content="true")
+  debug_inspect(
+    ctx_before.entity_to_impulse_joint.length() == 1,
+    content="true",
+  )
 
   try! (world.despawn(b) |> ignore)
   physics3d_cleanup_despawned_system(world)
   let ctx_after = get_physics3d_context_resource(world).get().unwrap()
-  inspect(ctx_after.entity_to_impulse_joint.length() == 0, content="true")
+  debug_inspect(ctx_after.entity_to_impulse_joint.length() == 0, content="true")
 }
 
 ///|
@@ -348,13 +351,13 @@ test "physics3d: kinematic character controller applies translation and writes o
   let transform_after = try! world
     .get_by_key(player, ecs_key_transform)
     .unwrap()
-  inspect(transform_after.translation.x > 0.0F, content="true")
+  debug_inspect(transform_after.translation.x > 0.0F, content="true")
   let output = try! world
     .get_by_key(player, ecs_key_kinematic_character_controller_output3d)
     .unwrap()
-  inspect(output.effective_translation.x > 0.0F, content="true")
+  debug_inspect(output.effective_translation.x > 0.0F, content="true")
   let kcc = try! world
     .get_by_key(player, ecs_key_kinematic_character_controller3d)
     .unwrap()
-  inspect(kcc.translation.x == 0.0F, content="true")
+  debug_inspect(kcc.translation.x == 0.0F, content="true")
 }

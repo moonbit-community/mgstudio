@@ -84,15 +84,15 @@ test "transform ecs world: child global uses parent and local transforms" {
   sync_simple_transforms_world(world)
 
   let children = (try! world.get_by_key(parent, @hierarchy.ecs_key_children)).unwrap()
-  inspect(children.entities().length(), content="1")
-  inspect(
+  debug_inspect(children.entities().length(), content="1")
+  debug_inspect(
     children.entities()[0].id == child.id &&
     children.entities()[0].generation == child.generation,
     content="true",
   )
 
   let child_global = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq_ecs(child_global.affine.tx, 1.0F) &&
     approx_eq_ecs(child_global.affine.ty, 2.0F),
     content="true",
@@ -110,13 +110,13 @@ test "transform ecs world: hierarchy hooks clear stale Children components" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(parent, @hierarchy.ecs_key_children)) is Some(_),
     content="true",
   )
 
   try! world.despawn(child)
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(parent, @hierarchy.ecs_key_children)) is None,
     content="true",
   )
@@ -136,6 +136,6 @@ test "transform plugin: sync_simple_transforms skips dead entities from removed 
   app.update() |> ignore
   try! world.despawn(child)
   app.update() |> ignore
-  inspect(world.is_alive(parent), content="true")
-  inspect(world.is_alive(child), content="false")
+  debug_inspect(world.is_alive(parent), content="true")
+  debug_inspect(world.is_alive(child), content="false")
 }

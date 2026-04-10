@@ -15,7 +15,7 @@
 ///|
 struct AddedMarker {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 let added_marker_key : ComponentKey[AddedMarker] = register_component(
@@ -37,8 +37,8 @@ test "ecs added components: insert emits entity in tick range" {
   let added = world
     .added_components(added_marker_key, @core.SystemSequence::new(0, 1))
     .read()
-  inspect(added.length(), content="1")
-  inspect(added[0] == entity, content="true")
+  debug_inspect(added.length(), content="1")
+  debug_inspect(added[0] == entity, content="true")
 }
 
 ///|
@@ -49,11 +49,11 @@ test "ecs added components: replace and update do not emit new add events" {
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
-  inspect(
+  debug_inspect(
     try! world.replace(entity, added_marker_key, AddedMarker::{ value: 2 }),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! world.update_by_key(entity, added_marker_key, fn(marker) {
       AddedMarker::{ value: marker.value + 1 }
     }),
@@ -63,7 +63,7 @@ test "ecs added components: replace and update do not emit new add events" {
   let added = world
     .added_components(added_marker_key, @core.SystemSequence::new(1, 2))
     .read()
-  inspect(added.length(), content="0")
+  debug_inspect(added.length(), content="0")
 }
 
 ///|
@@ -73,13 +73,16 @@ test "ecs added components: remove then reinsert emits a fresh add event" {
 
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
   world.advance_sequence() |> ignore
-  inspect(try! world.remove_by_key(entity, added_marker_key), content="true")
+  debug_inspect(
+    try! world.remove_by_key(entity, added_marker_key),
+    content="true",
+  )
   world.advance_sequence() |> ignore
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 3 })
 
   let added = world
     .added_components(added_marker_key, @core.SystemSequence::new(1, 2))
     .read()
-  inspect(added.length(), content="1")
-  inspect(added[0] == entity, content="true")
+  debug_inspect(added.length(), content="1")
+  debug_inspect(added[0] == entity, content="true")
 }

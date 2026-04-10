@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/ambient_light.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_ambient_light_bridge_pending() -> Unit {
+// Bridge aliases for ambient-light resources.
 
+///|
+pub type AmbientLightResource = GlobalAmbientLight
+
+///|
+pub let ecs_key_ambient_light_resource : @ecs.ResourceKey[AmbientLightResource] = ecs_key_global_ambient_light
+
+///|
+pub fn ambient_light_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[AmbientLightResource] {
+  get_global_ambient_light_resource(world)
 }

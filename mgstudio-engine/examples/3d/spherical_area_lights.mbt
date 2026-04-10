@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/spherical_area_lights.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_SPHERICAL_AREA_LIGHTS : String = "examples/3d/spherical_area_lights/main.mbt"
+

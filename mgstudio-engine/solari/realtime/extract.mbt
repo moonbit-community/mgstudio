@@ -14,7 +14,37 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/realtime/extract.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_realtime_extract_bridge_pending() -> Unit {
 
+///|
+pub const SOLARI_REALTIME_EXTRACT_MODULE_TAG : String = "bevy_solari::realtime::extract"
+
+///|
+pub struct SolariRealtimeExtractBridge {
+  module_tag : String
+}
+
+///|
+pub fn SolariRealtimeExtractBridge::default() -> SolariRealtimeExtractBridge {
+  SolariRealtimeExtractBridge::{
+    module_tag: SOLARI_REALTIME_EXTRACT_MODULE_TAG,
+  }
+}
+
+///|
+pub fn extract_solari_lighting(_world : @ecs.World) -> Unit {
+  ()
+}
+
+///|
+pub fn solari_realtime_extract_bridge_enabled(
+  bridge : SolariRealtimeExtractBridge,
+) -> Bool {
+  bridge.module_tag == SOLARI_REALTIME_EXTRACT_MODULE_TAG
+}
+
+///|
+pub fn solari_realtime_extract_bridge_module_tag(
+  bridge : SolariRealtimeExtractBridge,
+) -> String {
+  bridge.module_tag
 }

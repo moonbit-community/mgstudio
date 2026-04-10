@@ -13,36 +13,6 @@
 // limitations under the License.
 
 ///|
-pub struct GltfSkinIndex {
-  index : Int
-}
-
-///|
-pub fn GltfSkinIndex::new(index : Int) -> GltfSkinIndex {
-  { index, }
-}
-
-///|
-pub fn GltfSkinIndex::index(self : GltfSkinIndex) -> Int {
-  self.index
-}
-
-///|
-pub impl ToJson for GltfSkinIndex with to_json(self) {
-  self.index.to_json()
-}
-
-///|
-pub impl @json.FromJson for GltfSkinIndex with from_json(json, path) {
-  GltfSkinIndex::new(@json.from_json(json, path~))
-}
-
-///|
-let ecs_key_gltf_skin_index : @ecs.ComponentKey[GltfSkinIndex] = @ecs.register_component(
-  debug_name="bevy_gltf::GltfSkinIndex",
-)
-
-///|
-pub impl @ecs.Component for GltfSkinIndex with component() {
-  ecs_key_gltf_skin_index
-}
+// Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/mesh.rs`.
+// Owner lives in `gltf/loader/gltf_ext`; root keeps a compatibility bridge.
+pub type GltfSkinIndex = @gltf_gltf_ext.GltfSkinIndex

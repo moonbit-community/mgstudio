@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/dim3.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_primitives_dim3_bridge_pending() -> Unit {
+// Bridge aliases for 3D gizmo primitives.
 
-}
+///|
+pub type GizmoPrimitiveSphere3d = @math.Sphere
+
+///|
+pub type GizmoPrimitiveCapsule3d = @math.Capsule3d
+
+///|
+pub type GizmoPrimitiveCone3d = @math.Cone
+
+///|
+pub type GizmoPrimitiveTorus3d = @math.Torus

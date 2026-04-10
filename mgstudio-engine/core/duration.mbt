@@ -27,7 +27,7 @@ const DURATION_MAX_NANOS : Int64 = 9_223_372_036_854_775_807L
 ///|
 pub struct Duration {
   nanos : Int64
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 fn duration_clamp_non_negative_nanos(nanos : Int64) -> Int64 {

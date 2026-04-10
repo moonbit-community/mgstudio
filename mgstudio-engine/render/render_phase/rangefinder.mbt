@@ -17,7 +17,7 @@
 
 ///|
 pub struct ViewRangefinder3d {
-  world_from_view_origin_z : Float
+  view_from_world_row_2 : @math.Vec4
 }
 
 ///|
@@ -25,7 +25,18 @@ pub fn ViewRangefinder3d::from_world_from_view(
   world_from_view : @math.Affine3,
 ) -> ViewRangefinder3d {
   let origin = world_from_view.transform_point3(@math.Vec3::zero())
-  ViewRangefinder3d::{ world_from_view_origin_z: origin.z }
+  let z_axis = world_from_view.transform_point3(
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+  )
+  let forward = z_axis.sub(origin)
+  ViewRangefinder3d::{
+    view_from_world_row_2: @math.Vec4::new(
+      forward.x,
+      forward.y,
+      forward.z,
+      -forward.dot(origin),
+    ),
+  }
 }
 
 ///|
@@ -33,5 +44,8 @@ pub fn ViewRangefinder3d::distance(
   self : ViewRangefinder3d,
   position : @math.Vec3,
 ) -> Float {
-  position.z - self.world_from_view_origin_z
+  self.view_from_world_row_2.x * position.x +
+  self.view_from_world_row_2.y * position.y +
+  self.view_from_world_row_2.z * position.z +
+  self.view_from_world_row_2.w
 }

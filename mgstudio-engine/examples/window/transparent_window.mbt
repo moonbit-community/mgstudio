@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/window/transparent_window.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_TRANSPARENT_WINDOW : String = "examples/window/transparent_window/main.mbt"
+

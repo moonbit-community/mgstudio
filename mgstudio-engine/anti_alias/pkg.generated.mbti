@@ -3,7 +3,7 @@ package "Milky2018/mgstudio/anti_alias"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
 }
@@ -11,11 +11,17 @@ import {
 // Values
 pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
 
+pub fn anti_alias_default() -> AntiAliasPlugin
+
+pub fn anti_alias_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn anti_alias_package_bevy_source() -> String
+
 pub fn anti_alias_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_pipeline.Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
@@ -33,7 +39,7 @@ pub using @post_process {type Fxaa}
 
 pub using @post_process {type FxaaSensitivity}
 
-pub using @core_pipeline {type Msaa}
+pub using @core_3d {type Msaa}
 
 pub using @post_process {type TemporalAntiAliasing}
 

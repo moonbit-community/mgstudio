@@ -1,1 +1,6 @@
+import {
+  "Milky2018/mgstudio/anti_alias" @anti_alias,
+  "Milky2018/mgstudio/ecs",
+}
+
 supported_targets = "native"

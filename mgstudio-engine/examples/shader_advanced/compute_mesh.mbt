@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader_advanced/compute_mesh.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_COMPUTE_MESH : String = "examples/shader_advanced/compute_mesh/main.mbt"
+

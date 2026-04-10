@@ -40,7 +40,7 @@ pub(all) enum Face3d {
 pub(all) enum ParallaxMappingMethod {
   Occlusion
   Relief(Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ParallaxMappingMethod::default() -> ParallaxMappingMethod {
@@ -69,7 +69,7 @@ pub(all) enum OpaqueRendererMethod {
   Auto
   Forward
   Deferred
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {

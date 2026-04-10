@@ -13,9 +13,14 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/propagate.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/propagate.rs`.
 
 ///|
 pub fn run_fixed_update_schedule(world : @ecs.World) -> Unit {
   run_current_fixed_update_schedule(world)
+}
+
+///|
+pub fn run_fixed_main_stage(world : @ecs.World) -> Unit {
+  run_current_fixed_main_schedule(world)
 }

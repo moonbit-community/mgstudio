@@ -19,7 +19,7 @@
 ///|
 pub struct FrameCount {
   mut value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn FrameCount::default() -> FrameCount {

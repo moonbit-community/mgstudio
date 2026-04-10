@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/scene/mod.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_scene_top_bridge_pending() -> Unit {
 
+///|
+pub struct RaytracingScenePlugin {}
+
+///|
+pub fn RaytracingScenePlugin::default() -> RaytracingScenePlugin {
+  RaytracingScenePlugin::{  }
+}
+
+///|
+pub fn raytracing_scene_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
 }

@@ -13,7 +13,10 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/lib.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/lib.rs`.
+
+///|
+pub const CAMERA_PLUGIN_ID : String = "bevy_camera::CameraPlugin"
 
 ///|
 pub let camera_update_systems : @app.SystemSet = @app.system_set(
@@ -25,4 +28,11 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @visibility.visibility_plugin(
     app.init_resource(fn() { @sprite.ClearColor::default() }),
   )
+}
+
+///|
+pub fn camera_plugin_without_visibility(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app.init_resource(fn() { @sprite.ClearColor::default() })
 }

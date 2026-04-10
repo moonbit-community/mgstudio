@@ -13,7 +13,26 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_gilrs/src/rumble.rs`).
-fn _gilrs_rumble_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_gilrs/src/rumble.rs`.
+
+///|
+pub fn to_gilrs_magnitude(ratio : Float) -> Int {
+  let clamped = if ratio <= 0.0F {
+    0.0F
+  } else if ratio >= 1.0F {
+    1.0F
+  } else {
+    ratio
+  }
+  (clamped * 65535.0F).to_int()
+}
+
+///|
+pub fn play_gilrs_rumble(
+  gamepad_id : Int,
+  strong_motor : Float,
+  weak_motor : Float,
+  duration_ms : Int64,
+) -> GamepadRumbleResult {
+  gamepad_set_rumble(gamepad_id, strong_motor, weak_motor, duration_ms)
 }

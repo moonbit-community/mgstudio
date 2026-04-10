@@ -37,16 +37,16 @@ test "mesh: Mesh3dGeometry::circle lies on the XY plane" {
       outline_on_xy = false
     }
   }
-  inspect(
+  debug_inspect(
     (filled.positions[1].x, filled.positions[1].y, filled.positions[1].z),
     content="(2, 0, 0)",
   )
-  inspect(filled_on_xy, content="true")
-  inspect(
+  debug_inspect(filled_on_xy, content="true")
+  debug_inspect(
     (outline.positions[0].x, outline.positions[0].y, outline.positions[0].z),
     content="(2, 0, 0)",
   )
-  inspect(outline_on_xy, content="true")
+  debug_inspect(outline_on_xy, content="true")
 }
 
 ///|
@@ -78,8 +78,8 @@ test "mesh: Mesh3dGeometry::cuboid matches primitive size" {
       max_z = position.z
     }
   }
-  inspect(geometry.positions.length(), content="36")
-  inspect(
+  debug_inspect(geometry.positions.length(), content="36")
+  debug_inspect(
     (min_x, max_x, min_y, max_y, min_z, max_z),
     content="(-1, 1, -2, 2, -3, 3)",
   )
@@ -110,9 +110,9 @@ test "mesh: Mesh3dGeometry::rectangle lies on the XY plane" {
       max_y = position.y
     }
   }
-  inspect(geometry.positions.length(), content="6")
-  inspect(on_xy, content="true")
-  inspect((min_x, max_x, min_y, max_y), content="(-1, 1, -2, 2)")
+  debug_inspect(geometry.positions.length(), content="6")
+  debug_inspect(on_xy, content="true")
+  debug_inspect((min_x, max_x, min_y, max_y), content="(-1, 1, -2, 2)")
 }
 
 ///|
@@ -120,8 +120,8 @@ test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba emits flat tr
   let geometry = Mesh3dGeometry::rectangle(2.0F, 4.0F)
   match geometry.flatten_interleaved_xyz_normal_uv_rgba() {
     Some(values) => {
-      inspect(values.length(), content="72")
-      inspect(
+      debug_inspect(values.length(), content="72")
+      debug_inspect(
         (values[3], values[4], values[5], values[15], values[16], values[17]),
         content="(0, 0, 1, 0, 0, 1)",
       )
@@ -135,8 +135,8 @@ test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba gives default
   let geometry = Mesh3dGeometry::circle_line_strip(2.0F, 4)
   match geometry.flatten_interleaved_xyz_normal_uv_rgba() {
     Some(values) => {
-      inspect(values.length() % 12, content="0")
-      inspect((values[3], values[4], values[5]), content="(0, 0, 1)")
+      debug_inspect(values.length() % 12, content="0")
+      debug_inspect((values[3], values[4], values[5]), content="(0, 0, 1)")
     }
     None => abort("expected line-strip normal-aware flatten data")
   }

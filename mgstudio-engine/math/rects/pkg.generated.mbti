@@ -6,11 +6,23 @@ import {
 }
 
 // Values
+pub const MATH_IRECT_MODULE_TAG : String = "bevy_math::rects::irect"
+
+pub const MATH_RECT_MODULE_TAG : String = "bevy_math::rects::rect"
+
+pub const MATH_URECT_MODULE_TAG : String = "bevy_math::rects::urect"
+
 pub fn irect(@math.IVec2, @math.IVec2) -> @math.IRect
+
+pub fn irect_identity(@math.IRect) -> @math.IRect
 
 pub fn rect(@math.Vec2, @math.Vec2) -> @math.Rect
 
+pub fn rect_identity(@math.Rect) -> @math.Rect
+
 pub fn urect(@math.UVec2, @math.UVec2) -> @math.URect
+
+pub fn urect_identity(@math.URect) -> @math.URect
 
 // Errors
 

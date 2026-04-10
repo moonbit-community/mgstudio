@@ -14,7 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/commands.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_commands_bridge_pending() -> Unit {
+// Bridge aliases for command-level state-scoped behaviors.
 
+///|
+pub type StateCommandDespawnOnExit = DespawnOnExit
+
+///|
+pub type StateCommandDespawnOnEnter = DespawnOnEnter
+
+///|
+pub const STATE_COMMANDS_MODULE_TAG : String = "bevy_state::commands"
+
+///|
+pub struct StateCommandsBridge {
+  module_tag : String
+}
+
+///|
+pub fn StateCommandsBridge::default() -> StateCommandsBridge {
+  StateCommandsBridge::{ module_tag: STATE_COMMANDS_MODULE_TAG }
+}
+
+///|
+pub fn state_commands_bridge_enabled(bridge : StateCommandsBridge) -> Bool {
+  bridge.module_tag == STATE_COMMANDS_MODULE_TAG
+}
+
+///|
+pub fn state_commands_bridge_module_tag(bridge : StateCommandsBridge) -> String {
+  bridge.module_tag
 }

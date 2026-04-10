@@ -24,10 +24,10 @@ test "app schedule graph dot includes filtered system order for stage" {
       system(fn(_world : @ecs.World) { () }).named("tests.b"),
     )
   let dot = app.schedule_graph_dot(PostUpdate)
-  inspect(dot.contains("stage: PostUpdate"), content="true")
-  inspect(dot.contains("\"tests.a\""), content="true")
-  inspect(dot.contains("\"tests.b\""), content="true")
-  inspect(dot.contains("\"tests.a\" -> \"tests.b\""), content="true")
+  debug_inspect(dot.contains("stage: PostUpdate"), content="true")
+  debug_inspect(dot.contains("\"tests.a\""), content="true")
+  debug_inspect(dot.contains("\"tests.b\""), content="true")
+  debug_inspect(dot.contains("\"tests.a\" -> \"tests.b\""), content="true")
 
   let filtered = app.schedule_graph_dot(
     PostUpdate,
@@ -37,6 +37,6 @@ test "app schedule graph dot includes filtered system order for stage" {
       name.contains("tests.b")
     }),
   )
-  inspect(filtered.contains("\"tests.a\""), content="false")
-  inspect(filtered.contains("\"tests.b\""), content="true")
+  debug_inspect(filtered.contains("\"tests.a\""), content="false")
+  debug_inspect(filtered.contains("\"tests.b\""), content="true")
 }

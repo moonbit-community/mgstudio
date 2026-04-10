@@ -133,19 +133,19 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   .run_once()
   |> ignore
 
-  inspect(instance_id.val, content="1")
-  inspect(spawned_entities.val, content="1")
-  inspect(child_count.val, content="1")
-  inspect(has_mesh.val, content="true")
-  inspect(has_material.val, content="true")
-  inspect(has_transform.val, content="true")
-  inspect(has_visibility.val, content="true")
-  inspect(has_target.val, content="true")
-  inspect(has_animated_by.val, content="true")
-  inspect(instance_after_second_tick.val, content="1")
-  inspect(ready_after_second_tick.val, content="1")
-  inspect(ready_entity_count.val, content="1")
-  inspect(ready_entity_matches_root.val, content="true")
+  debug_inspect(instance_id.val, content="1")
+  debug_inspect(spawned_entities.val, content="1")
+  debug_inspect(child_count.val, content="1")
+  debug_inspect(has_mesh.val, content="true")
+  debug_inspect(has_material.val, content="true")
+  debug_inspect(has_transform.val, content="true")
+  debug_inspect(has_visibility.val, content="true")
+  debug_inspect(has_target.val, content="true")
+  debug_inspect(has_animated_by.val, content="true")
+  debug_inspect(instance_after_second_tick.val, content="1")
+  debug_inspect(ready_after_second_tick.val, content="1")
+  debug_inspect(ready_entity_count.val, content="1")
+  debug_inspect(ready_entity_matches_root.val, content="true")
 }
 
 ///|
@@ -270,9 +270,9 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   .run_once()
   |> ignore
 
-  inspect(old_instance_id.val == new_instance_id.val, content="false")
-  inspect(ready_instance_matches.val, content="true")
-  inspect(old_child_alive.val, content="false")
-  inspect(new_child_count.val, content="1")
-  inspect(new_child_x.val, content="9")
+  debug_inspect(old_instance_id.val == new_instance_id.val, content="false")
+  debug_inspect(ready_instance_matches.val, content="true")
+  debug_inspect(old_child_alive.val, content="false")
+  debug_inspect(new_child_count.val, content="1")
+  debug_inspect(new_child_x.val, content="9")
 }

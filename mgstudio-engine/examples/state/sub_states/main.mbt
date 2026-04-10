@@ -18,13 +18,13 @@
 pub(all) enum AppState {
   Menu
   InGame
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum IsPaused {
   Running
   Paused
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct MenuData {

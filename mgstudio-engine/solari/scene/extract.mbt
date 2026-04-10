@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/scene/extract.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_scene_extract_bridge_pending() -> Unit {
 
+///|
+pub struct StandardMaterialAssets {
+  material_ids : Array[Int]
+}
+
+///|
+pub fn StandardMaterialAssets::default() -> StandardMaterialAssets {
+  StandardMaterialAssets::{ material_ids: [] }
+}
+
+///|
+pub fn extract_raytracing_scene(_world : @ecs.World) -> Unit {
+  ()
 }

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/text/strikethrough_and_underline.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_STRIKETHROUGH_AND_UNDERLINE : String = "examples/ui/text/strikethrough_and_underline/main.mbt"
+

@@ -14,7 +14,36 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/realtime/mod.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_realtime_top_bridge_pending() -> Unit {
 
+///|
+pub const SOLARI_LIGHTING_PLUGIN_ID : String = "bevy_solari::realtime::SolariLightingPlugin"
+
+///|
+pub struct SolariLightingPlugin {}
+
+///|
+pub fn SolariLightingPlugin::default() -> SolariLightingPlugin {
+  SolariLightingPlugin::{  }
+}
+
+///|
+pub struct SolariLighting {
+  enabled : Bool
+}
+
+///|
+pub fn SolariLighting::default() -> SolariLighting {
+  SolariLighting::{ enabled: true }
+}
+
+///|
+pub fn SolariLighting::enabled(self : SolariLighting) -> Bool {
+  self.enabled
+}
+
+///|
+pub fn solari_lighting_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
 }

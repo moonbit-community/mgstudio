@@ -21,5 +21,5 @@ test "fixed update: app does not run fixed loop without time plugin runner" {
     counter.val = counter.val + 1
   })
   app.run_once() |> ignore
-  inspect(counter.val, content="0")
+  debug_inspect(counter.val, content="0")
 }

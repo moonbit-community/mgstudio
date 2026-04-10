@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_remote/src/schemas/mod.rs`).
+// Bevy source: `bevy/crates/bevy_remote/src/schemas/mod.rs`.
 
 ///|
 pub fn remote_schema_package_name() -> String {
@@ -23,4 +23,9 @@ pub fn remote_schema_package_name() -> String {
 ///|
 pub fn remote_schema_version() -> Int {
   1
+}
+
+///|
+pub fn remote_schema_id() -> String {
+  "remote.v\{remote_schema_version()}"
 }

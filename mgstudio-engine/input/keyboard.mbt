@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_input/src/keyboard.rs`).
+// Bevy source: `bevy/crates/bevy_input/src/keyboard.rs`.
 
 ///|
 pub fn keyboard_input_message_key() -> @ecs.MessageKey[KeyboardInput] {
@@ -38,4 +38,14 @@ pub fn keyboard_input_snapshot() -> ButtonInput[@window.KeyCode] {
 ///|
 pub fn logical_key_snapshot() -> ButtonInput[Key] {
   read_logical_key_button_input()
+}
+
+///|
+pub fn keyboard_keycode_pressed(keycode : @window.KeyCode) -> Bool {
+  read_keycode_button_input().pressed(keycode)
+}
+
+///|
+pub fn keyboard_logical_key_pressed(key : Key) -> Bool {
+  read_logical_key_button_input().pressed(key)
 }

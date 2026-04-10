@@ -86,20 +86,20 @@ pub(all) enum KeyCode {
   BracketLeft
   BracketRight
   Quote
-} derive(Eq, Hash, Show, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum MouseButton {
   Left
   Right
   Middle
-} derive(Eq, Hash, Show, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum ButtonState {
   Pressed
   Released
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn ButtonState::is_pressed(self : ButtonState) -> Bool {

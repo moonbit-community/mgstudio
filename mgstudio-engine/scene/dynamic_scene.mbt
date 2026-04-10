@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/dynamic_scene.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _scene_dynamic_scene_bridge_pending() -> Unit {
+// Dynamic scene reflection path is not implemented in mgstudio.
+pub const SCENE_DYNAMIC_SCENE_MODULE_TAG : String = "bevy_scene::dynamic_scene"
 
+///|
+pub const DYNAMIC_SCENE_SUPPORTED : Bool = false
+
+///|
+pub fn dynamic_scene_supported() -> Bool {
+  DYNAMIC_SCENE_SUPPORTED
+}
+
+///|
+pub fn dynamic_scene_module_tag() -> String {
+  SCENE_DYNAMIC_SCENE_MODULE_TAG
 }

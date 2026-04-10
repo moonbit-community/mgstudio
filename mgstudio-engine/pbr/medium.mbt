@@ -13,4 +13,28 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/medium.rs`.
+
+///|
 pub type ScatteringMedium = @light.ScatteringMedium
+
+///|
+pub const MEDIUM_MODULE_TAG : String = "bevy_pbr::medium"
+
+///|
+pub fn pbr_scattering_medium_default() -> ScatteringMedium {
+  ScatteringMedium::default()
+}
+
+///|
+pub fn pbr_scattering_medium_earthlike() -> ScatteringMedium {
+  ScatteringMedium::earthlike()
+}
+
+///|
+pub fn pbr_scattering_medium_with_density_multiplier(
+  medium : ScatteringMedium,
+  density_multiplier : Float,
+) -> ScatteringMedium {
+  medium.with_density_multiplier(density_multiplier)
+}

@@ -14,7 +14,11 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/assign.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_cluster_assign_bridge_pending() -> Unit {
+// Bridge entrypoint for clustered-light assignment stage.
 
+///|
+pub fn cluster_assign_lights(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
 }

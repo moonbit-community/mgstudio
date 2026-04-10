@@ -18,9 +18,7 @@ pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @ecs.register_component(
-  debug_name="render3d.lightmap",
-)
+pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @lightmap.ecs_key_lightmap
 
 ///|
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @material.ecs_key_mesh_material3d
@@ -178,9 +176,7 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_compo
 )
 
 ///|
-pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
-  debug_name="render3d.frustum",
-)
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @pbr_render.ecs_key_frustum
 
 ///|
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @light.ecs_key_parallax_correction
@@ -252,11 +248,6 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 ///|
 pub impl @ecs.Component for Mesh3d with component() {
   ecs_key_mesh3d
-}
-
-///|
-pub impl @ecs.Component for Lightmap with component() {
-  ecs_key_lightmap
 }
 
 ///|
@@ -337,11 +328,6 @@ pub impl @ecs.Component for NotShadowReceiver with component() {
 ///|
 pub impl @ecs.Component for Projection with component() {
   ecs_key_projection
-}
-
-///|
-pub impl @ecs.Component for Frustum with component() {
-  ecs_key_frustum
 }
 
 ///|

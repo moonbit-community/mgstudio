@@ -31,6 +31,69 @@ pub type NoFrustumCulling = @root_visibility.NoFrustumCulling
 pub type VisibilityRange = @root_visibility.VisibilityRange
 
 ///|
+pub struct RenderVisibleEntities {
+  entities : @hashmap.HashMap[String, Array[(Int, Int)]]
+}
+
+///|
+pub fn RenderVisibleEntities::default() -> RenderVisibleEntities {
+  RenderVisibleEntities::{ entities: @hashmap.HashMap::new() }
+}
+
+///|
+pub fn RenderVisibleEntities::clear(self : RenderVisibleEntities) -> Unit {
+  self.entities.clear()
+}
+
+///|
+pub fn RenderVisibleEntities::set(
+  self : RenderVisibleEntities,
+  filter_key : String,
+  entities : Array[(Int, Int)],
+) -> Unit {
+  self.entities.set(filter_key, entities)
+}
+
+///|
+pub fn RenderVisibleEntities::get(
+  self : RenderVisibleEntities,
+  filter_key : String,
+) -> Array[(Int, Int)] {
+  match self.entities.get(filter_key) {
+    Some(entities) => entities
+    None => []
+  }
+}
+
+///|
+pub fn RenderVisibleEntities::len(
+  self : RenderVisibleEntities,
+  filter_key : String,
+) -> Int {
+  self.get(filter_key).length()
+}
+
+///|
+pub fn RenderVisibleEntities::is_empty(
+  self : RenderVisibleEntities,
+  filter_key : String,
+) -> Bool {
+  self.len(filter_key) == 0
+}
+
+///|
+pub let ecs_key_render_visible_entities : @ecs.ComponentKey[
+  RenderVisibleEntities,
+] = @ecs.register_component(
+  debug_name="render.view.visibility.render_visible_entities",
+)
+
+///|
+pub impl @ecs.Component for RenderVisibleEntities with component() {
+  ecs_key_render_visible_entities
+}
+
+///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @root_visibility.visibility_plugin(app)
 }

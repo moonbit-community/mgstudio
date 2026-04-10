@@ -115,7 +115,7 @@ pub(all) enum AppLifecycle {
   WillSuspend
   Suspended
   WillResume
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn AppLifecycle::is_active(self : AppLifecycle) -> Bool {
@@ -129,7 +129,7 @@ pub fn AppLifecycle::is_active(self : AppLifecycle) -> Bool {
 pub(all) struct ImeCursorRange {
   start : Int
   end : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ImeCursorRange::new(start : Int, end : Int) -> ImeCursorRange {

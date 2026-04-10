@@ -183,7 +183,7 @@ fn fps_overlay_warn_on_low_interval(config : FpsOverlayConfig) -> Unit {
   if config.refresh_interval.as_millis() < MIN_SAFE_INTERVAL_MILLIS {
     @app.log_record(
       @app.Warn,
-      message="Low refresh interval (\{config.refresh_interval.to_string()}) may degrade performance. Min recommended: \{@core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS).to_string()}",
+      message="Low refresh interval (\{to_repr(config.refresh_interval).to_string()}) may degrade performance. Min recommended: \{to_repr(@core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS)).to_string()}",
     )
   }
 }

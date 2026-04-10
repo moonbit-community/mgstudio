@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -51,12 +52,17 @@ pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_positions_xy(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_triangle_interleaved_xy_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_triangle_positions_xy(Self) -> Array[Double]?
+pub fn Mesh2dGeometry::has_indices(Self) -> Bool
+pub fn Mesh2dGeometry::indices_or_sequential(Self) -> Array[Int]
 pub fn Mesh2dGeometry::new(Array[@math.Vec2], Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh2dGeometry::new_with_colors(Array[@math.Vec2], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
 pub fn Mesh2dGeometry::to_mesh(Self) -> Mesh
 pub fn Mesh2dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh2dGeometry::validate(Self) -> Mesh2dValidationError?
+pub fn Mesh2dGeometry::vertex_color(Self, Int) -> @math.Vec4?
 pub fn Mesh2dGeometry::vertex_count(Self) -> Int
+pub fn Mesh2dGeometry::vertex_position(Self, Int) -> @math.Vec2?
+pub fn Mesh2dGeometry::vertex_uv(Self, Int) -> @math.Vec2?
 pub fn Mesh2dGeometry::wireframe_segments(Self) -> Array[(@math.Vec2, @math.Vec2)]?
 pub impl IntoMeshAsset for Mesh2dGeometry
 
@@ -68,13 +74,13 @@ pub(all) enum Mesh2dValidationError {
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)
   IndexOutOfBounds(Int, Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Mesh3dGenerateTangentsError {
   InvalidGeometry(Mesh3dValidationError)
   UnsupportedTopology(Mesh3dPrimitiveTopology)
   DegenerateUvTriangle(Int, Int, Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
@@ -105,8 +111,10 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(Sel
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?
+pub fn Mesh3dGeometry::has_indices(Self) -> Bool
 pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
 pub fn Mesh3dGeometry::icosphere(Float, Int) -> Self
+pub fn Mesh3dGeometry::indices_or_sequential(Self) -> Array[Int]
 pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
 pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
 pub fn Mesh3dGeometry::morph_target_names(Self) -> Array[String]?
@@ -132,7 +140,10 @@ pub fn Mesh3dGeometry::to_wireframe_line_list(Self) -> Self?
 pub fn Mesh3dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh3dGeometry::uv(Self, Int) -> @math.Vec2?
 pub fn Mesh3dGeometry::validate(Self) -> Mesh3dValidationError?
+pub fn Mesh3dGeometry::vertex_color(Self, Int) -> @math.Vec4?
 pub fn Mesh3dGeometry::vertex_count(Self) -> Int
+pub fn Mesh3dGeometry::vertex_position(Self, Int) -> @math.Vec3?
+pub fn Mesh3dGeometry::vertex_uv(Self, Int) -> @math.Vec2?
 pub fn Mesh3dGeometry::with_colors(Self, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_custom_attribute_vec3(Self, String, Array[@math.Vec3]) -> Self
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
@@ -145,7 +156,7 @@ pub(all) enum Mesh3dPrimitiveTopology {
   TriangleList
   LineList
   LineStrip
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn Mesh3dPrimitiveTopology::to_int(Self) -> Int
 
 pub(all) enum Mesh3dValidationError {
@@ -160,7 +171,7 @@ pub(all) enum Mesh3dValidationError {
   NonLineStripVertexCount(Int)
   NonLineStripIndexCount(Int)
   IndexOutOfBounds(Int, Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct MeshCustomAttributeVec3 {
   name : String
@@ -173,7 +184,7 @@ pub fn MeshCustomAttributeVec3::values(Self) -> Array[@math.Vec3]
 pub(all) enum MeshGenerateTangentsError {
   Not3dGeometry
   GeometryError(Mesh3dGenerateTangentsError)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum MeshGeometry {
   Geometry2d(Mesh2dGeometry)

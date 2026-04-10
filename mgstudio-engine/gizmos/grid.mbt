@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/grid.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_grid_bridge_pending() -> Unit {
+// Bridge alias for 2D grid builder surface.
 
+///|
+pub type GizmoGrid2dBuilder = @sprite.Grid2dBuilder
+
+///|
+pub const GIZMO_GRID_MODULE_TAG : String = "bevy_gizmos::grid"
+
+///|
+pub fn gizmo_grid_builder_identity(
+  builder : GizmoGrid2dBuilder,
+) -> GizmoGrid2dBuilder {
+  builder
 }

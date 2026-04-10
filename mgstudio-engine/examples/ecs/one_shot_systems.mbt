@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/one_shot_systems.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ONE_SHOT_SYSTEMS : String = "examples/ecs/one_shot_systems/main.mbt"
+

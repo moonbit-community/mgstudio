@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/remote/server.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_SERVER : String = "examples/remote/server/main.mbt"
+

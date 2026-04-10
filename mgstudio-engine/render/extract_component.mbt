@@ -16,6 +16,69 @@
 // Bevy source: `bevy/crates/bevy_render/src/extract_component.rs`.
 
 ///|
+pub struct DynamicUniformIndex[_] {
+  index : UInt
+}
+
+///|
+pub fn[C] DynamicUniformIndex::new(index : UInt) -> DynamicUniformIndex[C] {
+  DynamicUniformIndex::{ index, }
+}
+
+///|
+pub fn[C] DynamicUniformIndex::index(self : DynamicUniformIndex[C]) -> UInt {
+  self.index
+}
+
+///|
+pub struct ComponentUniforms[C] {
+  uniforms : Array[C]
+}
+
+///|
+pub fn[C] ComponentUniforms::default() -> ComponentUniforms[C] {
+  ComponentUniforms::{ uniforms: [] }
+}
+
+///|
+pub fn[C] ComponentUniforms::push(
+  self : ComponentUniforms[C],
+  component : C,
+) -> Unit {
+  self.uniforms.push(component)
+}
+
+///|
+pub fn[C] ComponentUniforms::len(self : ComponentUniforms[C]) -> Int {
+  self.uniforms.length()
+}
+
+///|
+pub struct ExtractComponentPlugin[_, _] {
+  only_extract_visible : Bool
+}
+
+///|
+pub fn[C, F] ExtractComponentPlugin::default() -> ExtractComponentPlugin[C, F] {
+  ExtractComponentPlugin::{ only_extract_visible: false }
+}
+
+///|
+pub fn[C, F] ExtractComponentPlugin::extract_visible() -> ExtractComponentPlugin[
+  C,
+  F,
+] {
+  ExtractComponentPlugin::{ only_extract_visible: true }
+}
+
+///|
+pub fn[C, F] extract_component_only_extract_visible(
+  plugin : ExtractComponentPlugin[C, F],
+) -> Bool {
+  plugin.only_extract_visible
+}
+
+///|
 pub fn extract_component_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

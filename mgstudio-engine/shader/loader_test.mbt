@@ -17,7 +17,7 @@ test "shader plugin initializes Assets<Shader> resource" {
   let app = shader_plugin(@asset.asset_plugin(@app.App::new(@ecs.World::new())))
   let world = app.world()
   let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
-  inspect(
+  debug_inspect(
     (try! world.get_resource(shader_assets_key)) is Some(_),
     content="true",
   )
@@ -71,11 +71,11 @@ test "shader loader stores typed shader assets and direct file dependencies" {
 
   app = app.update()
 
-  inspect(loaded_handle_ids.length(), content="3")
-  inspect(loaded_handle_ids[0] == loaded_handle_ids[1], content="false")
-  inspect(loaded_handle_ids[1] == loaded_handle_ids[2], content="true")
-  inspect(root_paths[0], content="tests/shader_loader/root.wgsl")
-  inspect(dep_paths[0], content="tests/shader_loader/dep.wgsl")
-  inspect(root_dependency_lengths[0], content="1")
-  inspect(dep_dependency_lengths[0], content="0")
+  debug_inspect(loaded_handle_ids.length(), content="3")
+  debug_inspect(loaded_handle_ids[0] == loaded_handle_ids[1], content="false")
+  debug_inspect(loaded_handle_ids[1] == loaded_handle_ids[2], content="true")
+  debug_inspect(root_paths[0], content="tests/shader_loader/root.wgsl")
+  debug_inspect(dep_paths[0], content="tests/shader_loader/dep.wgsl")
+  debug_inspect(root_dependency_lengths[0], content="1")
+  debug_inspect(dep_dependency_lengths[0], content="0")
 }

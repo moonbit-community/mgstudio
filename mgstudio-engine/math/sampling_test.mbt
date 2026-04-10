@@ -27,15 +27,15 @@ test "sampling: from_rng stays deterministic for seeded sources" {
   let rng1 = @random.Rand::chacha8(seed=b"mathfromrngseed00000000000000000")
   let dir0 = Dir3::from_rng(rng0)
   let dir1 = Dir3::from_rng(rng1)
-  inspect(
+  debug_inspect(
     sampling_test_absf(dir0.as_vec3().x - dir1.as_vec3().x) < 0.000001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_absf(dir0.as_vec3().y - dir1.as_vec3().y) < 0.000001F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     sampling_test_absf(dir0.as_vec3().z - dir1.as_vec3().z) < 0.000001F,
     content="true",
   )
@@ -60,5 +60,5 @@ test "sampling: uniform mesh sampler produces points on triangle faces" {
   let point = sampler.sample(
     @random.Rand::chacha8(seed=b"uniformmeshsamplerseed0000000000"),
   )
-  inspect(point.z == 0.0F || point.z == 1.0F, content="true")
+  debug_inspect(point.z == 0.0F || point.z == 1.0F, content="true")
 }

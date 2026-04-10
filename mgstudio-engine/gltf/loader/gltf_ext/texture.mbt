@@ -15,6 +15,30 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/texture.rs`.
 // Bridge surface for texture asset labels extracted from glTF.
+
+///|
+pub const GLTF_TEXTURE_EXT_MODULE_TAG : String = "bevy_gltf::loader::gltf_ext::texture"
+
+///|
+pub struct GltfTextureAssetLabelBridge {
+  texture_index : Int
+}
+
+///|
+pub fn GltfTextureAssetLabelBridge::new(
+  texture_index : Int,
+) -> GltfTextureAssetLabelBridge {
+  GltfTextureAssetLabelBridge::{ texture_index, }
+}
+
+///|
 pub fn gltf_texture_asset_label(texture_index : Int) -> GltfAssetLabel {
   GltfAssetLabel::Texture(texture_index)
+}
+
+///|
+pub fn gltf_texture_asset_label_bridge(
+  bridge : GltfTextureAssetLabelBridge,
+) -> GltfAssetLabel {
+  gltf_texture_asset_label(bridge.texture_index)
 }

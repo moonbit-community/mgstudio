@@ -13,7 +13,24 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_gilrs/src/converter.rs`).
-fn _gilrs_converter_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_gilrs/src/converter.rs`.
+
+///|
+pub fn convert_button(button : @gamepad.Button) -> Int? {
+  let index = button.to_index()
+  if index >= 0 && index < @gamepad.BUTTON_COUNT {
+    Some(index)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn convert_axis(axis : @gamepad.Axis) -> Int? {
+  let index = axis.to_index()
+  if index >= 0 && index < @gamepad.AXIS_COUNT {
+    Some(index)
+  } else {
+    None
+  }
 }

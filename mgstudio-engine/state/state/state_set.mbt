@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/state_set.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_state_set_bridge_pending() -> Unit {
+// Bridge helpers for state-set dependency metadata.
+pub const STATE_SET_MODULE_TAG : String = "bevy_state::state::state_set"
 
+///|
+pub type StateSetTransitionSystems = @state_root.StateTransitionSystems
+
+///|
+pub fn[S : @app.States] state_set_depth(state : S) -> Int {
+  @state_root.state_set_dependency_depth(state)
+}
+
+///|
+pub fn state_set_module_tag() -> String {
+  STATE_SET_MODULE_TAG
 }

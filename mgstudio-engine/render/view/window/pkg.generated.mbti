@@ -16,11 +16,25 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
+pub fn window_manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
+
+pub fn window_screenshot_capture_surface_request() -> Int
+
+pub fn window_screenshot_capture_surface_target_request(target_id~ : Int) -> Int
+
+pub fn window_screenshot_capture_texture_request(texture_id~ : Int) -> Int
+
+pub fn window_screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.ScreenshotCaptureResult?
+
+pub fn window_screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
+
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub type ManualTextureViewHandle = Int
+
 pub using @renderer {type ScreenshotCaptureResult}
 
 // Traits

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/camera_sub_view.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CAMERA_SUB_VIEW : String = "examples/3d/camera_sub_view/main.mbt"
+

@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/rounded_box.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_rounded_box_bridge_pending() -> Unit {
+// Bridge alias for rounded-box gizmo builder.
 
+///|
+pub type GizmoRoundedRectBuilder = @sprite.RoundedRectBuilder
+
+///|
+pub const GIZMO_ROUNDED_BOX_MODULE_TAG : String = "bevy_gizmos::rounded_box"
+
+///|
+pub fn gizmo_rounded_rect_builder_identity(
+  builder : GizmoRoundedRectBuilder,
+) -> GizmoRoundedRectBuilder {
+  builder
 }

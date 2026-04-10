@@ -13,4 +13,39 @@
 // limitations under the License.
 
 ///|
-pub const TRANSMISSION_MODULE_TAG : String = "bevy_pbr::transmission"
+// Bevy source: `bevy/crates/bevy_pbr/src/transmission/texture.rs`.
+
+///|
+pub const TRANSMISSION_TEXTURE_MODULE_TAG : String = "bevy_pbr::transmission::texture"
+
+///|
+pub fn transmission_texture_runtime_available() -> Bool {
+  true
+}
+
+///|
+pub struct TransmissionTextureState {
+  source_texture_id : Int
+  blur_texture_id : Int
+}
+
+///|
+pub fn TransmissionTextureState::default() -> TransmissionTextureState {
+  TransmissionTextureState::{ source_texture_id: -1, blur_texture_id: -1 }
+}
+
+///|
+pub fn TransmissionTextureState::with_source_texture_id(
+  self : TransmissionTextureState,
+  source_texture_id : Int,
+) -> TransmissionTextureState {
+  TransmissionTextureState::{ ..self, source_texture_id, }
+}
+
+///|
+pub fn TransmissionTextureState::with_blur_texture_id(
+  self : TransmissionTextureState,
+  blur_texture_id : Int,
+) -> TransmissionTextureState {
+  TransmissionTextureState::{ ..self, blur_texture_id, }
+}

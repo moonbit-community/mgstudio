@@ -16,7 +16,7 @@
 test "ui_widgets boundary re-exports widget markers and interaction" {
   @ui_widgets.Button::default() |> ignore
   @ui_widgets.Label::default() |> ignore
-  inspect(
+  debug_inspect(
     @ui_widgets.Interaction::Hovered.to_json().to_string(),
     content="String(\"Hovered\")",
   )
@@ -24,11 +24,11 @@ test "ui_widgets boundary re-exports widget markers and interaction" {
 
 ///|
 test "ui_widgets boundary re-exports interaction set and ecs keys" {
-  inspect(
+  debug_inspect(
     @ui_widgets.ui_widgets_set_interaction == @ui.ui_set_interaction,
     content="true",
   )
   let app = @app.App::new(@ecs.World::new())
   @ui_widgets.ui_widgets_plugin(app) |> ignore
-  inspect(true, content="true")
+  debug_inspect(true, content="true")
 }

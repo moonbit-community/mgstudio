@@ -43,7 +43,7 @@ fn quat_to_z_rotation(x : Float, y : Float, z : Float, w : Float) -> Float {
 ///|
 pub(all) suberror GpuBackendError {
   Fatal(String)
-} derive(Show)
+} derive(Debug)
 
 ///|
 fn[T] fatal(message : String) -> T raise GpuBackendError {

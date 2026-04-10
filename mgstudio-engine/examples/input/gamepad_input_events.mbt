@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/input/gamepad_input_events.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_GAMEPAD_INPUT_EVENTS : String = "examples/input/gamepad_input_events/main.mbt"
+

@@ -1,11 +1,210 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/feathers/controls"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub fn button(ButtonProps, String) -> Button
+
+pub fn button_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn checkbox(CheckboxProps, String) -> Checkbox
+
+pub fn checkbox_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn color_plane(ColorPlane, ColorPlaneValue) -> ColorPlaneWidget
+
+pub fn color_plane_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn color_slider(ColorSliderProps) -> ColorSlider
+
+pub fn color_slider_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn color_swatch(String) -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg)
+
+pub fn color_swatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn controls_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn radio(RadioProps, String) -> RadioButton
+
+pub fn radio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn slider(SliderProps) -> Slider
+
+pub fn slider_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn toggle_switch(ToggleSwitchProps) -> ToggleSwitch
+
+pub fn toggle_switch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[T] virtual_keyboard(Array[Array[T]]) -> Array[Array[T]]
 
 // Errors
 
 // Types and methods
+pub struct Button {
+  props : ButtonProps
+  label : String
+}
+
+pub struct ButtonPlugin {
+}
+pub fn ButtonPlugin::default() -> Self
+
+pub struct ButtonProps {
+  variant : ButtonVariant
+  disabled : Bool
+}
+pub fn ButtonProps::default() -> Self
+
+pub(all) enum ButtonVariant {
+  Default
+  Primary
+} derive(Eq, @debug.Debug)
+
+pub struct Checkbox {
+  props : CheckboxProps
+  label : String
+}
+
+pub struct CheckboxPlugin {
+}
+pub fn CheckboxPlugin::default() -> Self
+
+pub struct CheckboxProps {
+  checked : Bool
+  disabled : Bool
+}
+pub fn CheckboxProps::default() -> Self
+
+pub(all) enum ColorChannel {
+  Red
+  Green
+  Blue
+  Alpha
+  Hue
+  Saturation
+  Value
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ColorPlane {
+  Rg
+  Rb
+  Gb
+  HueSat
+  HueValue
+  SatValue
+} derive(Eq, @debug.Debug)
+
+pub struct ColorPlanePlugin {
+}
+pub fn ColorPlanePlugin::default() -> Self
+
+pub struct ColorPlaneValue {
+  x : Float
+  y : Float
+  z : Float
+}
+pub fn ColorPlaneValue::new(Float, Float, Float) -> Self
+
+pub struct ColorPlaneWidget {
+  plane : ColorPlane
+  value : ColorPlaneValue
+}
+
+pub struct ColorSlider {
+  props : ColorSliderProps
+}
+
+pub struct ColorSliderPlugin {
+}
+pub fn ColorSliderPlugin::default() -> Self
+
+pub struct ColorSliderProps {
+  channel : ColorChannel
+  value : Float
+  base_color : SliderBaseColor
+}
+pub fn ColorSliderProps::default() -> Self
+
+pub struct ColorSwatch {
+} derive(Default, @debug.Debug)
+
+pub struct ColorSwatchFg {
+} derive(Default, @debug.Debug)
+
+pub struct ColorSwatchPlugin {
+}
+pub fn ColorSwatchPlugin::default() -> Self
+
+pub struct ColorSwatchValue {
+  color_hex : String
+}
+pub fn ColorSwatchValue::new(String) -> Self
+
+pub struct ControlsPlugin {
+}
+pub fn ControlsPlugin::default() -> Self
+
+pub struct RadioButton {
+  props : RadioProps
+  label : String
+}
+
+pub struct RadioPlugin {
+}
+pub fn RadioPlugin::default() -> Self
+
+pub struct RadioProps {
+  selected : Bool
+  disabled : Bool
+}
+pub fn RadioProps::default() -> Self
+
+pub struct Slider {
+  props : SliderProps
+}
+
+pub struct SliderBaseColor {
+  color_hex : String
+}
+pub fn SliderBaseColor::new(String) -> Self
+
+pub struct SliderPlugin {
+}
+pub fn SliderPlugin::default() -> Self
+
+pub struct SliderProps {
+  value : Float
+  min : Float
+  max : Float
+}
+pub fn SliderProps::default() -> Self
+
+pub struct ToggleSwitch {
+  props : ToggleSwitchProps
+}
+
+pub struct ToggleSwitchPlugin {
+}
+pub fn ToggleSwitchPlugin::default() -> Self
+
+pub struct ToggleSwitchProps {
+  checked : Bool
+  disabled : Bool
+}
+pub fn ToggleSwitchProps::default() -> Self
+
+pub struct VirtualKeyPressed[T] {
+  entity_id : Int
+  key : T
+}
+pub fn[T] VirtualKeyPressed::new(Int, T) -> Self[T]
 
 // Type aliases
 

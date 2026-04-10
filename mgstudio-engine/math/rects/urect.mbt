@@ -18,3 +18,11 @@
 
 ///|
 pub type URect = @math.URect
+
+///|
+pub const MATH_URECT_MODULE_TAG : String = "bevy_math::rects::urect"
+
+///|
+pub fn urect_identity(value : URect) -> URect {
+  value
+}

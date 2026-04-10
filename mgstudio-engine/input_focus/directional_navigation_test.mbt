@@ -77,26 +77,26 @@ test "directional_navigation_map supports manual edges and removal" {
   map_ref.val.add_symmetrical_edge(a, b, @math.CompassOctant::East)
   map_ref.val.add_edge(b, c, @math.CompassOctant::South)
 
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(a, @math.CompassOctant::East) == Some(b),
     content="true",
   )
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(b, @math.CompassOctant::West) == Some(a),
     content="true",
   )
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(b, @math.CompassOctant::South) == Some(c),
     content="true",
   )
 
   map_ref.val.remove(b)
 
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(a, @math.CompassOctant::East) is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(c, @math.CompassOctant::North) is None,
     content="true",
   )
@@ -115,11 +115,11 @@ test "directional_navigation navigate follows manual map and updates focus" {
     @math.CompassOctant::East,
   )
 
-  inspect(
+  debug_inspect(
     navigate_direction(world, @math.CompassOctant::East) == Some(b),
     content="true",
   )
-  inspect(directional_navigation_focus(world) == Some(b), content="true")
+  debug_inspect(directional_navigation_focus(world) == Some(b), content="true")
 }
 
 ///|
@@ -158,11 +158,11 @@ test "auto_generate_navigation_edges connects nearest candidate without overwrit
 
   auto_generate_navigation_edges(map_ref, nodes, config)
 
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(origin, @math.CompassOctant::East) == Some(manual),
     content="true",
   )
-  inspect(
+  debug_inspect(
     map_ref.val.get_neighbor(origin, @math.CompassOctant::South) == Some(south),
     content="true",
   )

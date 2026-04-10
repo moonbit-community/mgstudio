@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/mod.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_top_bridge_pending() -> Unit {
 
+///|
+pub struct ControlsPlugin {}
+
+///|
+pub fn ControlsPlugin::default() -> ControlsPlugin {
+  ControlsPlugin::{  }
+}
+
+///|
+pub fn controls_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

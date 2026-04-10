@@ -16,14 +16,17 @@
 test "instant supports duration arithmetic" {
   let start = Instant::from_millis(100L)
   let later = start.saturating_add(Duration::from_millis(250L))
-  inspect(later.as_millis(), content="350")
-  inspect(later.duration_since(start).as_millis(), content="250")
+  debug_inspect(later.as_millis(), content="350")
+  debug_inspect(later.duration_since(start).as_millis(), content="250")
 }
 
 ///|
 test "instant checked duration since returns none when inverted" {
   let start = Instant::from_millis(100L)
   let earlier = Instant::from_millis(50L)
-  inspect(earlier.checked_duration_since(start), content="None")
-  inspect(earlier.saturating_duration_since(start).as_millis(), content="0")
+  debug_inspect(earlier.checked_duration_since(start), content="None")
+  debug_inspect(
+    earlier.saturating_duration_since(start).as_millis(),
+    content="0",
+  )
 }

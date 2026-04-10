@@ -42,13 +42,13 @@ pub(all) enum LightType {
   Directional
   Point
   Spot
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ShadowFilter {
   NonTemporal
   Temporal
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct PcssState {

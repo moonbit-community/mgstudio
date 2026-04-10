@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader_advanced/custom_post_processing.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CUSTOM_POST_PROCESSING : String = "examples/shader_advanced/custom_post_processing/main.mbt"
+

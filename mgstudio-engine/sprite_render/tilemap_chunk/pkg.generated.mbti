@@ -10,6 +10,8 @@ import {
 // Values
 pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @transform.Transform, @sprite.RenderLayers) -> Unit
 
+pub fn tilemap_chunk_tile_capacity(@sprite.TilemapChunk) -> Int
+
 // Errors
 
 // Types and methods

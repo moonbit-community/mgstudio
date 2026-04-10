@@ -9,9 +9,17 @@ import {
 }
 
 // Values
+pub fn clustered_decal() -> ClusteredDecal
+
+pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> ClusteredDecal
+
+pub fn clustered_decal_with_tag(Int) -> ClusteredDecal
+
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
+
+pub fn forward_decal() -> ForwardDecal
 
 // Errors
 

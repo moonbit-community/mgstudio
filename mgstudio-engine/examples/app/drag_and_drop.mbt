@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/app/drag_and_drop.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_DRAG_AND_DROP : String = "examples/app/drag_and_drop/main.mbt"
+

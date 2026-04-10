@@ -16,23 +16,23 @@
 pub(all) enum ToggleKind {
   DisplayTarget
   VisibilityTarget
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct TargetPanel {
   index : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ToggleButtonAction {
   target_index : Int
   kind : ToggleKind
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ButtonPressState {
   pressed : Bool
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 let target_panel_key : @ecs.ComponentKey[TargetPanel] = @ecs.register_component(

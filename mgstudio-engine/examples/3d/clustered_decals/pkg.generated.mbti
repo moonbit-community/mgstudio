@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/clustered_decals"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -10,13 +14,13 @@ pub(all) enum DragMode {
   Move
   Scale
   Roll
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Selection {
   Camera
   DecalA
   DecalB
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

@@ -8,12 +8,53 @@ import {
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/text",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const DEV_TOOLS_PLUGIN_ID : String = "bevy_dev_tools::DevToolsPlugin"
+
+pub const EASY_SCREENSHOT_MODULE_TAG : String = "bevy_dev_tools::easy_screenshot"
+
 pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
 
+pub const HAS_DEV_TOOLS_RUNTIME : Bool = true
+
 pub const INITIAL_DIAGNOSTICS_OVERLAY_PLANE_Z_INDEX : Int = 1_000_000
+
+pub const PICKING_DEBUG_MODULE_TAG : String = "bevy_dev_tools::picking_debug"
+
+pub const RENDER_DEBUG_MODULE_TAG : String = "bevy_dev_tools::render_debug"
+
+pub const STATES_DEBUG_MODULE_TAG : String = "bevy_dev_tools::states"
+
+pub fn dev_tools_default_fps_overlay_config() -> FpsOverlayConfig
+
+pub fn dev_tools_easy_screenshot_available() -> Bool
+
+pub fn dev_tools_easy_screenshot_enabled(EasyScreenshotConfig) -> Bool
+
+pub fn dev_tools_easy_screenshot_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn dev_tools_picking_debug_available() -> Bool
+
+pub fn dev_tools_picking_debug_enabled(PickingDebugConfig) -> Bool
+
+pub fn dev_tools_picking_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn dev_tools_plugin_id() -> String
+
+pub fn dev_tools_render_debug_available() -> Bool
+
+pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay
+
+pub fn dev_tools_runtime_available() -> Bool
+
+pub fn dev_tools_states_debug_available() -> Bool
+
+pub fn dev_tools_states_debug_enabled(StatesDebugConfig) -> Bool
+
+pub fn dev_tools_states_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn diagnostics_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -59,8 +100,14 @@ pub(all) enum DiagnosticsOverlayStatistic {
   Value
   Average
   Smoothed
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn DiagnosticsOverlayStatistic::default() -> Self
+
+pub struct EasyScreenshotConfig {
+  enabled : Bool
+  delay_frames : Int
+}
+pub fn EasyScreenshotConfig::default() -> Self
 
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
@@ -84,6 +131,16 @@ pub(all) struct FrameTimeGraphConfig {
 }
 pub fn FrameTimeGraphConfig::default() -> Self
 pub fn FrameTimeGraphConfig::target_fps(Float) -> Self
+
+pub struct PickingDebugConfig {
+  enabled : Bool
+}
+pub fn PickingDebugConfig::default() -> Self
+
+pub struct StatesDebugConfig {
+  enabled : Bool
+}
+pub fn StatesDebugConfig::default() -> Self
 
 // Type aliases
 

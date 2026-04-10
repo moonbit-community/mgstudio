@@ -17,6 +17,31 @@
 // The current runtime does not expose Bevy's state-debug helper surface.
 
 ///|
+pub const STATES_DEBUG_MODULE_TAG : String = "bevy_dev_tools::states"
+
+///|
+pub struct StatesDebugConfig {
+  enabled : Bool
+}
+
+///|
+pub fn StatesDebugConfig::default() -> StatesDebugConfig {
+  StatesDebugConfig::{ enabled: false }
+}
+
+///|
 pub fn dev_tools_states_debug_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub fn dev_tools_states_debug_enabled(config : StatesDebugConfig) -> Bool {
+  config.enabled
+}
+
+///|
+pub fn dev_tools_states_debug_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
 }

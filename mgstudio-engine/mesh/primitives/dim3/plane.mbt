@@ -20,3 +20,16 @@
 pub fn plane3d(normal : @math.Vec3, half_size : @math.Vec2) -> @math.Plane3d {
   @math.Plane3d::new(normal, half_size)
 }
+
+///|
+pub const MESH_PLANE3D_MODULE_TAG : String = "bevy_mesh::primitives::dim3::plane"
+
+///|
+pub fn plane3d_unit() -> @math.Plane3d {
+  plane3d(@math.Vec3::new(0.0, 1.0, 0.0), @math.Vec2::new(0.5, 0.5))
+}
+
+///|
+pub fn plane3d_module_tag() -> String {
+  MESH_PLANE3D_MODULE_TAG
+}

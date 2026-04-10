@@ -89,7 +89,7 @@ pub fn[M] FocusedInput::new(
 ///|
 pub(all) enum InputFocusSystems {
   Dispatch
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn input_focus_system_set_name(

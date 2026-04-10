@@ -13,11 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/lib.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/lib.rs`.
+
+///|
+pub const TRANSFORM_PLUGIN_ID : String = "bevy_transform::TransformPlugin"
 
 ///|
 pub fn transform_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   transform_plugin(app)
+}
+
+///|
+pub fn transform_propagate_set() -> @app.SystemSet {
+  transform_set_propagate
 }

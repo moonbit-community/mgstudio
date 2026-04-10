@@ -16,16 +16,34 @@
 test "text: font size units and selectors follow the Bevy-shaped surface" {
   let viewport = @math.Vec2::new(200.0F, 100.0F)
 
-  inspect(FontSize::Px(12.0F).eval(viewport, 18.0F) == 12.0F, content="true")
-  inspect(FontSize::Vw(10.0F).eval(viewport, 18.0F) == 20.0F, content="true")
-  inspect(FontSize::Vh(10.0F).eval(viewport, 18.0F) == 10.0F, content="true")
-  inspect(FontSize::VMin(10.0F).eval(viewport, 18.0F) == 10.0F, content="true")
-  inspect(FontSize::VMax(10.0F).eval(viewport, 18.0F) == 20.0F, content="true")
-  inspect(FontSize::Rem(2.0F).eval(viewport, 18.0F) == 36.0F, content="true")
-  inspect(FontWeight::VALUE(1200).clamp().raw_value(), content="1000")
-  inspect(FontWeight::VALUE(-5).clamp().raw_value(), content="400")
-  inspect(FontWidth::SEMI_EXPANDED.percentage(), content="112.5")
-  inspect(
+  debug_inspect(
+    FontSize::Px(12.0F).eval(viewport, 18.0F) == 12.0F,
+    content="true",
+  )
+  debug_inspect(
+    FontSize::Vw(10.0F).eval(viewport, 18.0F) == 20.0F,
+    content="true",
+  )
+  debug_inspect(
+    FontSize::Vh(10.0F).eval(viewport, 18.0F) == 10.0F,
+    content="true",
+  )
+  debug_inspect(
+    FontSize::VMin(10.0F).eval(viewport, 18.0F) == 10.0F,
+    content="true",
+  )
+  debug_inspect(
+    FontSize::VMax(10.0F).eval(viewport, 18.0F) == 20.0F,
+    content="true",
+  )
+  debug_inspect(
+    FontSize::Rem(2.0F).eval(viewport, 18.0F) == 36.0F,
+    content="true",
+  )
+  debug_inspect(FontWeight::VALUE(1200).clamp().raw_value(), content="1000")
+  debug_inspect(FontWeight::VALUE(-5).clamp().raw_value(), content="400")
+  debug_inspect(FontWidth::SEMI_EXPANDED.percentage(), content="112.5")
+  debug_inspect(
     match FontStyle::Oblique(Some(17.5F)) {
       FontStyle::Oblique(Some(angle)) => angle == 17.5F
       _ => false
@@ -43,21 +61,21 @@ test "text: font features and family mapping cover the Bevy-facing selectors" {
   let cosmic_features = font_features_to_cosmic(features)
   let feature_list = cosmic_features.features()
 
-  inspect(feature_list.length(), content="2")
-  inspect(
+  debug_inspect(feature_list.length(), content="2")
+  debug_inspect(
     feature_list[0] == @cosmic.Feature::new(@cosmic.FeatureTag::new("smcp"), 1U),
     content="true",
   )
-  inspect(
+  debug_inspect(
     feature_list[1] == @cosmic.Feature::new(@cosmic.FeatureTag::new("frac"), 3U),
     content="true",
   )
-  inspect(
+  debug_inspect(
     text_font_source_family(FontSource::UiSansSerif)
     is Some(@cosmic.Family::UiSansSerif),
     content="true",
   )
-  inspect(
+  debug_inspect(
     text_font_source_family(FontSource::FangSong)
     is Some(@cosmic.Family::FangSong),
     content="true",
@@ -86,16 +104,28 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
     ),
   )
   text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
-  inspect(text_state.val.texts[0].layout_info.glyphs.length(), content="0")
-  inspect(text_state.val.texts[0].computed.uses_viewport_sizes, content="true")
+  debug_inspect(
+    text_state.val.texts[0].layout_info.glyphs.length(),
+    content="0",
+  )
+  debug_inspect(
+    text_state.val.texts[0].computed.uses_viewport_sizes,
+    content="true",
+  )
   text_set_logical_viewport_size(
     viewport_handle,
     Some(@math.Vec2::new(300.0F, 200.0F)),
   )
   text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
-  inspect(text_state.val.texts[0].computed.uses_viewport_sizes, content="true")
-  inspect(text_state.val.texts[0].computed.uses_rem_sizes, content="false")
-  inspect(
+  debug_inspect(
+    text_state.val.texts[0].computed.uses_viewport_sizes,
+    content="true",
+  )
+  debug_inspect(
+    text_state.val.texts[0].computed.uses_rem_sizes,
+    content="false",
+  )
+  debug_inspect(
     text_state.val.texts[0].computed.buffer.font_size == 20.0F,
     content="true",
   )
@@ -104,9 +134,12 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
     viewport_handle,
     Some(@math.Vec2::new(300.0F, 400.0F)),
   )
-  inspect(text_layout_needs_update(text_state.val.texts[0]), content="true")
+  debug_inspect(
+    text_layout_needs_update(text_state.val.texts[0]),
+    content="true",
+  )
   text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
-  inspect(
+  debug_inspect(
     text_state.val.texts[0].computed.buffer.font_size == 40.0F,
     content="true",
   )
@@ -120,19 +153,25 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
   )
   text_set_runtime_rem_size(18.0F)
   text_state.val.texts[1] = text_update_layout(text_state.val.texts[1])
-  inspect(text_state.val.texts[1].computed.uses_viewport_sizes, content="false")
-  inspect(text_state.val.texts[1].computed.uses_rem_sizes, content="true")
-  inspect(
+  debug_inspect(
+    text_state.val.texts[1].computed.uses_viewport_sizes,
+    content="false",
+  )
+  debug_inspect(text_state.val.texts[1].computed.uses_rem_sizes, content="true")
+  debug_inspect(
     text_state.val.texts[1].computed.buffer.font_size == 27.0F,
     content="true",
   )
 
   text_set_runtime_rem_size(12.0F)
-  inspect(text_layout_needs_update(text_state.val.texts[1]), content="true")
+  debug_inspect(
+    text_layout_needs_update(text_state.val.texts[1]),
+    content="true",
+  )
   text_state.val.texts[1] = text_update_layout(text_state.val.texts[1])
-  inspect(
+  debug_inspect(
     text_state.val.texts[1].computed.buffer.font_size == 18.0F,
     content="true",
   )
-  inspect(text_get_content(rem_handle), content="Some(\"Rem text\")")
+  debug_inspect(text_get_content(rem_handle), content="Some(\"Rem text\")")
 }

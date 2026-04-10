@@ -14,7 +14,21 @@
 
 ///|
 // Bridge surface is provided by `top.mbt` in this package.
-// This file remains a Bevy shape anchor only.
-fn _texture_slice_border_rect_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub type TextureSliceBorderRect = @sprite.BorderRect
+
+///|
+pub fn texture_slice_border_rect(
+  left : Float,
+  right : Float,
+  top : Float,
+  bottom : Float,
+) -> TextureSliceBorderRect {
+  @sprite.BorderRect::new(left, right, top, bottom)
+}
+
+///|
+pub fn texture_slice_border_rect_square(
+  value : Float,
+) -> TextureSliceBorderRect {
+  @sprite.BorderRect::square(value)
 }

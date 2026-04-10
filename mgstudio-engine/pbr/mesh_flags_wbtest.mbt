@@ -46,8 +46,8 @@ test "render3d: standard material flags pack current Bevy subset bits" {
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT) !=
     0U &&
     (flags & (7U << 29)) == @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
-  inspect(ok, content="true")
-  inspect(
+  debug_inspect(ok, content="true")
+  debug_inspect(
     render3d_flags_approx_eq(
       @pbr_render.render3d_standard_material_alpha_cutoff(material.alpha_mode),
       0.37F,
@@ -70,7 +70,7 @@ test "render3d: forward decal specialization bit is carried into material flags"
     -1,
     forward_decal=true,
   )
-  inspect(
+  debug_inspect(
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_FORWARD_DECAL_BIT) != 0U,
     content="true",
   )
@@ -89,7 +89,7 @@ test "render3d: standard material flags keep opaque default when maps are absent
     -1,
     -1,
   )
-  inspect(
+  debug_inspect(
     flags == @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
     content="true",
   )
@@ -108,7 +108,7 @@ test "render3d: normal map encoding bits stay host-minimal without bound texture
     -1,
     -1,
   )
-  inspect(
+  debug_inspect(
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) == 0U &&
     (flags & (1U << 6)) == 0U,
     content="true",
@@ -159,7 +159,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       None,
     ),
   )
-  inspect(
+  debug_inspect(
     indexed.length() == 3 &&
     non_indexed.length() == 3 &&
     indexed[0] == 0 &&
@@ -174,7 +174,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
 
 ///|
 test "render3d: camera indirect path requires feature support and no marker" {
-  inspect(
+  debug_inspect(
     @pbr_render.render3d_camera_indirect_enabled(true, true, false) &&
     !@pbr_render.render3d_camera_indirect_enabled(true, false, false) &&
     !@pbr_render.render3d_camera_indirect_enabled(true, true, true) &&
@@ -212,5 +212,5 @@ test "render3d: indirect metadata starts visible counts at zero" {
     metadata.indirect_batch_sets[0].indirect_parameters_base == 0 &&
     metadata.indirect_batch_sets[1].indirect_parameters_count == 0 &&
     metadata.indirect_batch_sets[1].indirect_parameters_base == 1
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

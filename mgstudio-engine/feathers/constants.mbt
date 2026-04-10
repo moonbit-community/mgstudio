@@ -14,7 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/constants.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_constants_bridge_pending() -> Unit {
 
-}
+///|
+pub const FONT_REGULAR : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Regular.ttf"
+
+///|
+pub const FONT_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Italic.ttf"
+
+///|
+pub const FONT_BOLD : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Bold.ttf"
+
+///|
+pub const FONT_BOLD_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-BoldItalic.ttf"
+
+///|
+pub const FONT_MONO : String = "embedded://bevy_feathers/assets/fonts/FiraMono-Medium.ttf"
+
+///|
+pub const ROW_HEIGHT_PX : Float = 24.0
+
+///|
+pub const CHECKBOX_SIZE_PX : Float = 18.0
+
+///|
+pub const RADIO_SIZE_PX : Float = 18.0
+
+///|
+pub const TOGGLE_WIDTH_PX : Float = 32.0
+
+///|
+pub const TOGGLE_HEIGHT_PX : Float = 18.0

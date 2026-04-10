@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/state_scoped.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_STATE_SCOPED : String = "examples/ecs/state_scoped/main.mbt"
+

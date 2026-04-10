@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_input/src/touch.rs`).
+// Bevy source: `bevy/crates/bevy_input/src/touch.rs`.
 
 ///|
 pub fn touch_input_message_key() -> @ecs.MessageKey[TouchInput] {
@@ -28,4 +28,19 @@ pub fn touches_new() -> Touches {
 ///|
 pub fn touches_any_just_pressed(touches : Touches) -> Bool {
   touches.any_just_pressed()
+}
+
+///|
+pub fn touches_iter_active(touches : Touches) -> Array[Touch] {
+  touches.iter()
+}
+
+///|
+pub fn touches_iter_just_pressed(touches : Touches) -> Array[Touch] {
+  touches.iter_just_pressed()
+}
+
+///|
+pub fn touches_iter_just_released(touches : Touches) -> Array[Touch] {
+  touches.iter_just_released()
 }

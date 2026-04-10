@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/retained.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_render_retained_bridge_pending() -> Unit {
 
+///|
+pub struct RetainedLineGizmo {
+  entity : @core.Entity
+}
+
+///|
+pub fn RetainedLineGizmo::new(entity : @core.Entity) -> RetainedLineGizmo {
+  RetainedLineGizmo::{ entity, }
+}
+
+///|
+pub fn extract_line_gizmos(_world : @ecs.World) -> Unit {
+  ()
 }

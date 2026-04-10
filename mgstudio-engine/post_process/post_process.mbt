@@ -218,7 +218,7 @@ pub(all) enum FxaaSensitivity {
   High
   Ultra
   Extreme
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn FxaaSensitivity::default() -> FxaaSensitivity {
@@ -561,7 +561,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-} derive(Eq, Hash, Show, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {
@@ -573,7 +573,7 @@ pub fn Tonemapping::default() -> Tonemapping {
 pub(all) enum DebandDither {
   Disabled
   Enabled
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn DebandDither::default() -> DebandDither {
@@ -632,7 +632,7 @@ pub fn BloomPrefilter::with_threshold_softness(
 pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn BloomCompositeMode::default() -> BloomCompositeMode {
@@ -856,7 +856,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientOcclusionQualityLevel {
@@ -910,7 +910,7 @@ pub(all) enum ScreenSpaceTransmissionQuality {
   Medium
   High
   Ultra
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {

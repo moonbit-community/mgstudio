@@ -1,11 +1,99 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/render/batching"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
+}
+
 // Values
+pub fn[T] batch_and_prepare_binned_render_phase(Array[BatchMeta[T]], (T, T) -> Bool) -> Array[BatchMeta[T]]
+
+pub fn[T] batch_and_prepare_sorted_render_phase(Array[BatchMeta[T]], (T, T) -> Bool) -> Array[BatchMeta[T]]
+
+pub fn[T] batch_meta_merge_adjacent(Array[BatchMeta[T]], (T, T) -> Bool) -> Array[BatchMeta[T]]
+
+pub fn[T] batch_meta_sort(Array[BatchMeta[T]]) -> Array[BatchMeta[T]]
+
+pub fn[T] batch_meta_sort_and_merge(Array[BatchMeta[T]], (T, T) -> Bool) -> Array[BatchMeta[T]]
+
+pub fn[T] clear_batched_cpu_instance_buffers(BatchedInstanceBuffer[T]?) -> Unit
+
+pub fn gpu_preprocessing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gpu_preprocessing_plugin_with(@app.App[@ecs.World], GpuPreprocessingPlugin) -> @app.App[@ecs.World]
+
+pub fn[T] write_batched_instance_buffer(BatchedInstanceBuffer[T]) -> Array[T]
 
 // Errors
 
 // Types and methods
+pub struct BatchMeta[T] {
+  pipeline_id : Int
+  draw_function_id : Int
+  dynamic_offset : Int?
+  user_data : T
+}
+pub fn[T] BatchMeta::can_merge(Self[T], Self[T], (T, T) -> Bool) -> Bool
+pub fn[T] BatchMeta::new(Int, Int, Int?, T) -> Self[T]
+
+pub struct BatchedInstanceBuffer[T] {
+  values : @render_resource.GpuArrayBuffer[T]
+}
+pub fn[T] BatchedInstanceBuffer::clear(Self[T]) -> Unit
+pub fn[T] BatchedInstanceBuffer::len(Self[T]) -> Int
+pub fn[T] BatchedInstanceBuffer::new() -> Self[T]
+pub fn[T] BatchedInstanceBuffer::push(Self[T], T) -> Unit
+pub fn[T] BatchedInstanceBuffer::values(Self[T]) -> Array[T]
+
+pub struct BatchedInstanceBuffers[BD, BDI] {
+  current_input_buffer : @render_resource.GpuArrayBuffer[BDI]
+  previous_input_buffer : @render_resource.GpuArrayBuffer[BDI]
+  phase_instance_buffers : @hashmap.HashMap[String, PhaseBatchedInstanceBuffers[BD]]
+}
+pub fn[BD, BDI] BatchedInstanceBuffers::clear(Self[BD, BDI]) -> Unit
+pub fn[BD, BDI] BatchedInstanceBuffers::new() -> Self[BD, BDI]
+pub fn[BD, BDI] BatchedInstanceBuffers::swap_input_buffers(Self[BD, BDI]) -> Unit
+
+pub(all) enum GpuPreprocessingMode {
+  None
+  PreprocessingOnly
+  Culling
+} derive(Eq, @debug.Debug)
+
+pub struct GpuPreprocessingPlugin {
+  mode : GpuPreprocessingMode
+}
+pub fn GpuPreprocessingPlugin::default() -> Self
+pub fn GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode) -> Self
+
+pub struct GpuPreprocessingSupport {
+  max_supported_mode : GpuPreprocessingMode
+}
+pub fn GpuPreprocessingSupport::default() -> Self
+pub fn GpuPreprocessingSupport::is_available(Self) -> Bool
+pub fn GpuPreprocessingSupport::is_culling_supported(Self) -> Bool
+pub fn GpuPreprocessingSupport::min(Self, GpuPreprocessingMode) -> GpuPreprocessingMode
+pub impl @app.Resource for GpuPreprocessingSupport
+
+pub struct NoAutomaticBatching {
+}
+pub fn NoAutomaticBatching::default() -> Self
+
+pub struct PhaseBatchedInstanceBuffers[BD] {
+  buffers : UntypedPhaseBatchedInstanceBuffers[BD]
+  mut marker : Int
+}
+pub fn[BD] PhaseBatchedInstanceBuffers::clear(Self[BD]) -> Unit
+pub fn[BD] PhaseBatchedInstanceBuffers::new() -> Self[BD]
+
+pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
+  values : @render_resource.GpuArrayBuffer[BD]
+}
+pub fn[BD] UntypedPhaseBatchedInstanceBuffers::new() -> Self[BD]
 
 // Type aliases
 

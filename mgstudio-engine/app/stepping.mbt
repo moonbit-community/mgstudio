@@ -18,7 +18,7 @@ pub(all) enum SteppingAction {
   Waiting
   Continue
   Step
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum SystemSteppingBehavior {
@@ -26,7 +26,7 @@ pub(all) enum SystemSteppingBehavior {
   NeverRun
   Break
   Continue
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct SteppingScheduleState {
@@ -190,7 +190,7 @@ pub fn Stepping::cursor(self : Stepping) -> (ScheduleStage, Int)? {
 
 ///|
 fn stepping_schedule_key(schedule : ScheduleStage) -> String {
-  schedule.to_string()
+  to_repr(schedule).to_string()
 }
 
 ///|

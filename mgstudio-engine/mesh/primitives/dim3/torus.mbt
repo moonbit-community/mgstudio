@@ -20,3 +20,16 @@
 pub fn torus(major_radius : Float, minor_radius : Float) -> @math.Torus {
   @math.Torus::new(major_radius, minor_radius)
 }
+
+///|
+pub const MESH_TORUS_MODULE_TAG : String = "bevy_mesh::primitives::dim3::torus"
+
+///|
+pub fn torus_unit() -> @math.Torus {
+  torus(1.0, 0.3)
+}
+
+///|
+pub fn torus_module_tag() -> String {
+  MESH_TORUS_MODULE_TAG
+}

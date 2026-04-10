@@ -14,7 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/extract.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_dlss_extract_bridge_pending() -> Unit {
+// Bridge extraction gate for optional DLSS runtime path.
 
+///|
+pub const DLSS_EXTRACT_MODULE_TAG : String = "bevy_anti_alias::dlss::extract"
+
+///|
+pub struct DlssExtractBridge {
+  extract_label : String
+}
+
+///|
+pub fn DlssExtractBridge::default() -> DlssExtractBridge {
+  DlssExtractBridge::{ extract_label: DLSS_EXTRACT_MODULE_TAG }
+}
+
+///|
+pub fn dlss_extract_enabled() -> Bool {
+  DLSS_RUNTIME_SUPPORTED
+}
+
+///|
+pub fn dlss_extract_bridge_enabled(bridge : DlssExtractBridge) -> Bool {
+  bridge.extract_label == DLSS_EXTRACT_MODULE_TAG && dlss_extract_enabled()
+}
+
+///|
+pub fn dlss_extract_bridge_label(bridge : DlssExtractBridge) -> String {
+  bridge.extract_label
 }

@@ -47,7 +47,7 @@ let on_transition_registrations : Array[StateTransitionHookRegistration] = []
 ///|
 pub struct OnEnter[S] {
   state : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] OnEnter::new(state : S) -> OnEnter[S] {
@@ -62,7 +62,7 @@ pub fn[S] OnEnter::state(self : OnEnter[S]) -> S {
 ///|
 pub struct OnExit[S] {
   state : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] OnExit::new(state : S) -> OnExit[S] {
@@ -78,7 +78,7 @@ pub fn[S] OnExit::state(self : OnExit[S]) -> S {
 pub struct OnTransition[S] {
   exited : S
   entered : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] OnTransition::new(exited : S, entered : S) -> OnTransition[S] {
@@ -131,7 +131,7 @@ pub(all) enum StateTransitionSystems {
   ExitSchedules
   TransitionSchedules
   EnterSchedules
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn[S : States] state_transition_registration_key(state : S) -> String {

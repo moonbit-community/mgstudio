@@ -18,15 +18,15 @@
 pub fn gltf_register_khr_materials_specular_handler(
   handler : GltfExtensionHandler,
 ) -> Unit {
-  @root_gltf.gltf_register_extension_handler(handler)
+  gltf_register_extension_handler(handler)
 }
 
 ///|
 pub fn gltf_khr_materials_specular_handler_enabled() -> Bool {
-  @root_gltf.gltf_pbr_material_handler_enabled()
+  gltf_pbr_material_handler_enabled()
 }
 
 ///|
 pub fn gltf_set_khr_materials_specular_handler_enabled(enabled : Bool) -> Unit {
-  @root_gltf.gltf_set_pbr_material_handler_enabled(enabled)
+  gltf_set_pbr_material_handler_enabled(enabled)
 }

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/widgets/vertical_slider.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_VERTICAL_SLIDER : String = "examples/ui/widgets/vertical_slider/main.mbt"
+

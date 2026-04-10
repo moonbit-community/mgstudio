@@ -13,4 +13,28 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material_bind_groups.rs`.
+
+///|
 pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = @pbr_material_bind_groups.MATERIAL_BIND_GROUPS_MODULE_TAG
+
+///|
+pub fn pbr_material_bind_groups_module_tag() -> String {
+  MATERIAL_BIND_GROUPS_MODULE_TAG
+}
+
+///|
+pub fn pbr_material_bind_groups_runtime_available() -> Bool {
+  true
+}
+
+///|
+pub type MaterialBindGroupEntry = @pbr_material_bind_groups.MaterialBindGroupEntry
+
+///|
+pub type MaterialBindGroups = @pbr_material_bind_groups.MaterialBindGroups
+
+///|
+pub fn pbr_material_bind_groups_default() -> MaterialBindGroups {
+  MaterialBindGroups::default()
+}

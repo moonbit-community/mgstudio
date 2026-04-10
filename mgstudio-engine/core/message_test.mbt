@@ -19,15 +19,15 @@ test "messages: reader returns only messages in system sequence range" {
   messages.send(4, "four")
 
   let r0 = messages.reader(SystemSequence::new(0, 2)).read()
-  inspect(r0.length(), content="0")
+  debug_inspect(r0.length(), content="0")
 
   let r1 = messages.reader(SystemSequence::new(2, 3)).read()
-  inspect(r1.length(), content="1")
-  inspect(r1[0] == "three", content="true")
+  debug_inspect(r1.length(), content="1")
+  debug_inspect(r1[0] == "three", content="true")
 
   let r2 = messages.reader(SystemSequence::new(3, 4)).read()
-  inspect(r2.length(), content="1")
-  inspect(r2[0] == "four", content="true")
+  debug_inspect(r2.length(), content="1")
+  debug_inspect(r2[0] == "four", content="true")
 }
 
 ///|
@@ -38,9 +38,9 @@ test "messages: keeps current and previous sequences only" {
   messages.send(3, "c")
 
   let r = messages.reader(SystemSequence::new(0, 3)).read()
-  inspect(r.length(), content="2")
-  inspect(r[0] == "b", content="true")
-  inspect(r[1] == "c", content="true")
+  debug_inspect(r.length(), content="2")
+  debug_inspect(r[0] == "b", content="true")
+  debug_inspect(r[1] == "c", content="true")
 }
 
 ///|
@@ -50,7 +50,7 @@ test "messages: clear resets history" {
   messages.send(2, "b")
   messages.clear()
   let r = messages.reader(SystemSequence::new(0, 10)).read()
-  inspect(r.length(), content="0")
+  debug_inspect(r.length(), content="0")
 }
 
 ///|
@@ -59,10 +59,10 @@ test "messages: reader.read is consuming" {
   messages.send(2, "a")
   let reader = messages.reader(SystemSequence::new(0, 2))
   let first = reader.read()
-  inspect(first.length(), content="1")
-  inspect(first[0] == "a", content="true")
+  debug_inspect(first.length(), content="1")
+  debug_inspect(first[0] == "a", content="true")
   let second = reader.read()
-  inspect(second.length(), content="0")
+  debug_inspect(second.length(), content="0")
 }
 
 ///|
@@ -71,8 +71,8 @@ test "messages: writer appends at writer sequence" {
   let writer = messages.writer(5)
   writer.write("value")
   let read = messages.reader(SystemSequence::new(0, 5)).read()
-  inspect(read.length(), content="1")
-  inspect(read[0] == "value", content="true")
+  debug_inspect(read.length(), content="1")
+  debug_inspect(read[0] == "value", content="true")
 }
 
 ///|
@@ -81,8 +81,8 @@ test "messages: writer.write_batch appends all messages at writer sequence" {
   let writer = messages.writer(7)
   writer.write_batch(["first", "second", "third"])
   let read = messages.reader(SystemSequence::new(0, 7)).read()
-  inspect(read.length(), content="3")
-  inspect(read[0] == "first", content="true")
-  inspect(read[1] == "second", content="true")
-  inspect(read[2] == "third", content="true")
+  debug_inspect(read.length(), content="3")
+  debug_inspect(read[0] == "first", content="true")
+  debug_inspect(read[1] == "second", content="true")
+  debug_inspect(read[2] == "third", content="true")
 }

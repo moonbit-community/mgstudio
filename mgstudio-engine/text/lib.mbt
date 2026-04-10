@@ -20,6 +20,19 @@
 pub const HAS_TEXT_RUNTIME : Bool = true
 
 ///|
+pub const TEXT_PLUGIN_ID : String = "bevy_text::TextPlugin"
+
+///|
 pub fn text_runtime_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   text_plugin(app)
+}
+
+///|
+pub fn text_runtime_available() -> Bool {
+  HAS_TEXT_RUNTIME
+}
+
+///|
+pub fn text_plugin_id() -> String {
+  TEXT_PLUGIN_ID
 }

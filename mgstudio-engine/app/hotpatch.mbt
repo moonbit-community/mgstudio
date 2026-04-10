@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/hotpatch.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/hotpatch.rs`.
 
 ///|
 pub fn hotpatch_reset_runtime() -> Unit {
@@ -27,5 +27,11 @@ pub fn hotpatch_stop_rendering() -> Unit {
 
 ///|
 pub fn hotpatch_resume_rendering() -> Unit {
+  app_rendering_resume()
+}
+
+///|
+pub fn hotpatch_restart_runtime() -> Unit {
+  app_runtime_reset()
   app_rendering_resume()
 }

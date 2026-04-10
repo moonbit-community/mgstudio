@@ -17,7 +17,7 @@
 pub(all) enum AppExit {
   Success
   Error(Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn AppExit::error() -> AppExit {
@@ -63,7 +63,7 @@ pub(all) enum RenderRuntimeError {
   DeviceLost
   Loop
   Unknown(String)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum RenderErrorPolicy {
@@ -72,7 +72,7 @@ pub(all) enum RenderErrorPolicy {
   ExitApp
   StopRendering
   Recover
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub type RenderErrorHandler = (RenderRuntimeError) -> RenderErrorPolicy
@@ -131,7 +131,7 @@ pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
   match (render_error_handler_ref.val)(error) {
     RenderErrorPolicy::Ignore => ()
     RenderErrorPolicy::Panic =>
-      abort("render runtime error: \{error.to_string()}")
+      abort("render runtime error: \{to_repr(error).to_string()}")
     RenderErrorPolicy::ExitApp => {
       if current_world() is Some(world) {
         let key = app_exit_message_key()
@@ -284,7 +284,7 @@ pub(all) enum LogLevel {
   Info
   Debug
   Trace
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct LogRecord {

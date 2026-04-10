@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_specialize_bridge_pending() -> Unit {
+// Bridge capability for material specialization path.
+pub const MATERIAL_SPECIALIZATION_MODULE_TAG : String = "bevy_material::specialize"
 
+///|
+pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
+
+///|
+pub fn material_specialization_supported() -> Bool {
+  MATERIAL_SPECIALIZATION_SUPPORTED
+}
+
+///|
+pub fn material_specialization_module_tag() -> String {
+  MATERIAL_SPECIALIZATION_MODULE_TAG
 }

@@ -51,8 +51,8 @@ test "naga_oil: composer add_composable_module mirrors module bookkeeping" {
       "tests/base.wgsl", base_shader_defs,
     ),
   )
-  inspect(base_definition.name, content="test::base")
-  inspect(base_definition.all_imports.is_empty(), content="true")
+  debug_inspect(base_definition.name, content="test::base")
+  debug_inspect(base_definition.all_imports.is_empty(), content="true")
 
   let child_definition = composer_test_add_or_abort(
     composer,
@@ -63,12 +63,18 @@ test "naga_oil: composer add_composable_module mirrors module bookkeeping" {
     ),
   )
 
-  inspect(composer.contains_module("test::base"), content="true")
-  inspect(composer.contains_module("test::child"), content="true")
-  inspect(child_definition.name, content="test::child")
-  inspect(child_definition.all_imports.contains("test::base"), content="true")
-  inspect(child_definition.effective_defs.contains("USE_CHILD"), content="true")
-  inspect(
+  debug_inspect(composer.contains_module("test::base"), content="true")
+  debug_inspect(composer.contains_module("test::child"), content="true")
+  debug_inspect(child_definition.name, content="test::child")
+  debug_inspect(
+    child_definition.all_imports.contains("test::base"),
+    content="true",
+  )
+  debug_inspect(
+    child_definition.effective_defs.contains("USE_CHILD"),
+    content="true",
+  )
+  debug_inspect(
     child_definition.shader_defs.get("BASE_DEF"),
     content="Some(Bool(true))",
   )
@@ -100,8 +106,8 @@ test "naga_oil: composer remove_composable_module removes dependent modules" {
 
   composer.remove_composable_module("test::base")
 
-  inspect(composer.contains_module("test::base"), content="false")
-  inspect(composer.contains_module("test::child"), content="false")
+  debug_inspect(composer.contains_module("test::base"), content="false")
+  debug_inspect(composer.contains_module("test::child"), content="false")
 }
 
 ///|
@@ -122,7 +128,7 @@ test "naga_oil: composer rejects modules without an import path name" {
   guard message is Some(error_message) else {
     abort("expected missing module-name error")
   }
-  inspect(
+  debug_inspect(
     error_message,
     content="shader module is missing #define_import_path: tests/no_name.wgsl",
   )

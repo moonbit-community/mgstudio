@@ -17,7 +17,7 @@
 pub(all) enum UiAntiAlias {
   Off
   On
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias] = @ecs.register_component(

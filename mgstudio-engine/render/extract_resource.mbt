@@ -16,6 +16,44 @@
 // Bevy source: `bevy/crates/bevy_render/src/extract_resource.rs`.
 
 ///|
+pub struct ExtractResourcePlugin[_, _] {}
+
+///|
+pub fn[R, F] ExtractResourcePlugin::default() -> ExtractResourcePlugin[R, F] {
+  ExtractResourcePlugin::{  }
+}
+
+///|
+pub struct ExtractedResourceState[R] {
+  mut has_value : Bool
+  mut value : R?
+}
+
+///|
+pub fn[R] ExtractedResourceState::default() -> ExtractedResourceState[R] {
+  ExtractedResourceState::{ has_value: false, value: None }
+}
+
+///|
+pub fn[R] ExtractedResourceState::replace(
+  self : ExtractedResourceState[R],
+  value : R,
+) -> Unit {
+  self.has_value = true
+  self.value = Some(value)
+}
+
+///|
+pub fn[R] ExtractedResourceState::get(self : ExtractedResourceState[R]) -> R? {
+  self.value
+}
+
+///|
+pub fn[R, S] extract_resource_once(source : S, extract : (S) -> R) -> R {
+  extract(source)
+}
+
+///|
 pub fn extract_resource_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

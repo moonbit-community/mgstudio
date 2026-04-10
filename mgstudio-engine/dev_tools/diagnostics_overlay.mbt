@@ -20,7 +20,7 @@ pub(all) enum DiagnosticsOverlayStatistic {
   Value
   Average
   Smoothed
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn DiagnosticsOverlayStatistic::default() -> DiagnosticsOverlayStatistic {

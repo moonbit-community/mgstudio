@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/change_detection.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CHANGE_DETECTION : String = "examples/ecs/change_detection/main.mbt"
+

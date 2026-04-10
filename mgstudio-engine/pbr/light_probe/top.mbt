@@ -13,4 +13,49 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/light_probe/mod.rs`.
+
+///|
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
+
+///|
+pub const LIGHT_PROBE_MODULE_TAG : String = "bevy_pbr::light_probe"
+
+///|
+pub fn max_view_light_probes() -> Int {
+  MAX_VIEW_LIGHT_PROBES
+}
+
+///|
+pub struct LightProbePlugin {}
+
+///|
+pub fn LightProbePlugin::default() -> LightProbePlugin {
+  LightProbePlugin::{  }
+}
+
+///|
+pub struct LightProbesUniform {
+  reflection_probe_count : Int
+  irradiance_volume_count : Int
+  view_cubemap_index : Int
+}
+
+///|
+pub fn LightProbesUniform::default() -> LightProbesUniform {
+  LightProbesUniform::{
+    reflection_probe_count: 0,
+    irradiance_volume_count: 0,
+    view_cubemap_index: -1,
+  }
+}
+
+///|
+pub struct ViewLightProbesUniformOffset {
+  offset : UInt
+}
+
+///|
+pub fn ViewLightProbesUniformOffset::default() -> ViewLightProbesUniformOffset {
+  ViewLightProbesUniformOffset::{ offset: 0U }
+}

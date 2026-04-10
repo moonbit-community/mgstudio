@@ -14,7 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/point_light.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_point_light_bridge_pending() -> Unit {
+// Bridge aliases for point-light components and resources.
 
+///|
+pub type PointLightComponent = PointLight
+
+///|
+pub type PointLightTextureComponent = PointLightTexture
+
+///|
+pub type PointLightShadowMapResource = PointLightShadowMap
+
+///|
+pub let ecs_key_point_light_component : @ecs.ComponentKey[PointLightComponent] = ecs_key_point_light
+
+///|
+pub let ecs_key_point_light_texture_component : @ecs.ComponentKey[
+  PointLightTextureComponent,
+] = ecs_key_point_light_texture
+
+///|
+pub let ecs_key_point_light_shadow_map_resource : @ecs.ResourceKey[
+  PointLightShadowMapResource,
+] = ecs_key_point_light_shadow_map
+
+///|
+pub fn point_light_shadow_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PointLightShadowMapResource] {
+  get_point_light_shadow_map_resource(world)
 }

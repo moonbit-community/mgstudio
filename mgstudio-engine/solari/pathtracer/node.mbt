@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/pathtracer/node.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_pathtracer_node_bridge_pending() -> Unit {
 
+///|
+pub struct PathtracerPipelines {
+  pathtracer_pipeline_id : Int
+}
+
+///|
+pub fn PathtracerPipelines::default() -> PathtracerPipelines {
+  PathtracerPipelines::{ pathtracer_pipeline_id: -1 }
+}
+
+///|
+pub fn init_pathtracer_pipelines(_world : @ecs.World) -> Unit {
+  ()
+}
+
+///|
+pub fn pathtracer(_world : @ecs.World) -> Unit {
+  ()
 }

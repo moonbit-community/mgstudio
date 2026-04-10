@@ -13,38 +13,69 @@
 // limitations under the License.
 
 ///|
-let gltf_loader_registration_ref : Ref[GltfLoaderRegistration?] = Ref::new(None)
+priv struct GltfPluginRuntimeState {
+  mut registration : GltfLoaderRegistration?
+  mut registered : Bool
+  mut default_convert_coordinates : GltfConvertCoordinates
+  mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
+}
 
 ///|
-let gltf_loader_registered_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let gltf_pbr_material_handler_enabled_ref : Ref[Bool] = Ref::new(true)
+let gltf_plugin_runtime_state_ref : Ref[GltfPluginRuntimeState] = Ref::new({
+  registration: None,
+  registered: false,
+  default_convert_coordinates: GltfConvertCoordinates::default(),
+  default_skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::Dynamic,
+})
 
 ///|
 pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
-  gltf_pbr_material_handler_enabled_ref.val = enabled
+  @gltf_loader_extensions.gltf_set_pbr_material_handler_enabled(enabled)
 }
 
 ///|
 pub fn gltf_pbr_material_handler_enabled() -> Bool {
-  gltf_pbr_material_handler_enabled_ref.val
+  @gltf_loader_extensions.gltf_pbr_material_handler_enabled()
+}
+
+///|
+pub fn gltf_set_default_convert_coordinates(
+  convert_coordinates : GltfConvertCoordinates,
+) -> Unit {
+  gltf_plugin_runtime_state_ref.val.default_convert_coordinates = convert_coordinates
+}
+
+///|
+pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
+  gltf_plugin_runtime_state_ref.val.default_convert_coordinates
+}
+
+///|
+pub fn gltf_set_default_skinned_mesh_bounds_policy(
+  policy : GltfSkinnedMeshBoundsPolicy,
+) -> Unit {
+  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy = policy
+}
+
+///|
+pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy {
+  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy
 }
 
 ///|
 pub fn gltf_install_loader_registration(
   register : GltfLoaderRegistration,
 ) -> Unit {
-  gltf_loader_registration_ref.val = Some(register)
-  gltf_loader_registered_ref.val = false
+  gltf_plugin_runtime_state_ref.val.registration = Some(register)
+  gltf_plugin_runtime_state_ref.val.registered = false
 }
 
 ///|
 fn gltf_register_asset_loaders_once() -> Unit {
-  if gltf_loader_registered_ref.val {
+  if gltf_plugin_runtime_state_ref.val.registered {
     return
   }
-  let register = match gltf_loader_registration_ref.val {
+  let register = match gltf_plugin_runtime_state_ref.val.registration {
     Some(value) => value
     None =>
       abort(
@@ -52,5 +83,5 @@ fn gltf_register_asset_loaders_once() -> Unit {
       )
   }
   register()
-  gltf_loader_registered_ref.val = true
+  gltf_plugin_runtime_state_ref.val.registered = true
 }

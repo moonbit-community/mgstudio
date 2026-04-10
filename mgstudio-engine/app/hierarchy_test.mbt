@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-struct HierarchyValidationMarker {} derive(Eq, Show)
+struct HierarchyValidationMarker {} derive(Eq, Debug)
 
 ///|
 let hierarchy_validation_marker_key : @ecs.ComponentKey[
@@ -48,10 +48,10 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
     Ref::new(0),
   )
-  inspect(reader.len(), content="1")
+  debug_inspect(reader.len(), content="1")
   let pending = try! reader.read()
-  inspect(pending.length(), content="1")
-  inspect(pending[0].caller is None, content="true")
+  debug_inspect(pending.length(), content="1")
+  debug_inspect(pending[0].caller is None, content="true")
 }
 
 ///|
@@ -80,7 +80,7 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
     Ref::new(0),
   )
-  inspect(reader.len(), content="0")
+  debug_inspect(reader.len(), content="0")
 }
 
 ///|
@@ -109,7 +109,7 @@ test "app hierarchy: validate-parent plugin rechecks on component replace" {
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
     Ref::new(0),
   )
-  inspect(reader.len(), content="2")
+  debug_inspect(reader.len(), content="2")
 }
 
 ///|
@@ -119,11 +119,11 @@ test "app hierarchy: check-parent message preserves explicit caller" {
     entity,
     caller=Some("caller-location"),
   )
-  inspect(
+  debug_inspect(
     message.entity().id == 10 && message.entity().generation == 1,
     content="true",
   )
-  inspect(message.caller(), content="Some(\"caller-location\")")
+  debug_inspect(message.caller(), content="Some(\"caller-location\")")
 }
 
 ///|
@@ -132,9 +132,9 @@ test "app hierarchy: check-parent message defaults caller to none" {
   let message : CheckParentHasComponent[HierarchyValidationMarker] = CheckParentHasComponent::new(
     entity,
   )
-  inspect(
+  debug_inspect(
     message.entity().id == 11 && message.entity().generation == 3,
     content="true",
   )
-  inspect(message.caller() is None, content="true")
+  debug_inspect(message.caller() is None, content="true")
 }

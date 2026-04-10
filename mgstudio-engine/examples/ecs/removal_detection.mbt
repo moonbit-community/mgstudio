@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/removal_detection.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_REMOVAL_DETECTION : String = "examples/ecs/removal_detection/main.mbt"
+

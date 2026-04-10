@@ -13,7 +13,39 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/atmosphere/resources.rs`.
+
+///|
 pub type AtmosphereMode = @light.AtmosphereMode
 
 ///|
 pub type AtmosphereSettings = @light.AtmosphereSettings
+
+///|
+pub fn pbr_atmosphere_settings_default() -> AtmosphereSettings {
+  AtmosphereSettings::default()
+}
+
+///|
+pub fn pbr_atmosphere_settings_with_scene_units_to_m(
+  settings : AtmosphereSettings,
+  scene_units_to_m : Float,
+) -> AtmosphereSettings {
+  settings.with_scene_units_to_m(scene_units_to_m)
+}
+
+///|
+pub fn pbr_atmosphere_settings_with_sky_max_samples(
+  settings : AtmosphereSettings,
+  sky_max_samples : Int,
+) -> AtmosphereSettings {
+  settings.with_sky_max_samples(sky_max_samples)
+}
+
+///|
+pub fn pbr_atmosphere_settings_with_rendering_method(
+  settings : AtmosphereSettings,
+  rendering_method : AtmosphereMode,
+) -> AtmosphereSettings {
+  settings.with_rendering_method(rendering_method)
+}

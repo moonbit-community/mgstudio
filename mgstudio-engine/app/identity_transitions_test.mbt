@@ -85,13 +85,13 @@ test "app identity transition: default enter and exit ignore same-state transiti
     .add_systems(Update, system(system_param(trigger_identity_transition_once)))
 
   app.run_startup() |> ignore
-  inspect(transition_entries, content="[\"enter\"]")
+  debug_inspect(transition_entries, content="[\"enter\"]")
   transition_entries.clear()
 
   app.run_once() |> ignore
   app.run_once() |> ignore
 
-  inspect(transition_entries, content="[\"reexit\", \"reenter\"]")
+  debug_inspect(transition_entries, content="[\"reexit\", \"reenter\"]")
 }
 
 ///|
@@ -115,7 +115,7 @@ test "app identity transition: DespawnOnExit removes scoped entities" {
   let result : Result[DespawnMarker?, @ecs.EcsError] = try? app
     .world()
     .get_by_key(entity, despawn_marker_key)
-  inspect(result is Err(_), content="true")
+  debug_inspect(result is Err(_), content="true")
 }
 
 ///|
@@ -146,5 +146,5 @@ test "app identity transition: DespawnOnEnter removes scoped entities" {
   let result : Result[DespawnMarker?, @ecs.EcsError] = try? app
     .world()
     .get_by_key(entity, despawn_marker_key)
-  inspect(result is Err(_), content="true")
+  debug_inspect(result is Err(_), content="true")
 }

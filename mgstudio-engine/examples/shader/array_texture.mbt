@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/array_texture.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ARRAY_TEXTURE : String = "examples/shader/array_texture/main.mbt"
+

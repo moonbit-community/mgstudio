@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_input/src/mouse.rs`).
+// Bevy source: `bevy/crates/bevy_input/src/mouse.rs`.
 
 ///|
 pub fn mouse_button_message_key() -> @ecs.MessageKey[MouseButtonInput] {
@@ -43,4 +43,9 @@ pub fn mouse_button_snapshot() -> ButtonInput[@window.MouseButton] {
 ///|
 pub fn mouse_position_snapshot() -> @math.Vec2? {
   mouse_position()
+}
+
+///|
+pub fn mouse_button_pressed_snapshot(button : @window.MouseButton) -> Bool {
+  read_mouse_button_input().pressed(button)
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/visibility/range.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/range.rs`.
 
 ///|
 pub type VisibilityRange = @root_visibility.VisibilityRange
@@ -39,4 +39,9 @@ pub fn visibility_range_new(
   @root_visibility.VisibilityRange::new(
     start_margin_min, start_margin_max, end_margin_min, end_margin_max, use_aabb,
   )
+}
+
+///|
+pub fn visibility_range_component_key() -> @ecs.ComponentKey[VisibilityRange] {
+  @root_visibility.VisibilityRange::component()
 }

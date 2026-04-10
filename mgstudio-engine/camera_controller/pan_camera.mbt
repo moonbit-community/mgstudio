@@ -13,7 +13,21 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera_controller/src/pan_camera.rs`).
-fn _camera_controller_pan_camera_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_camera_controller/src/pan_camera.rs`.
+// Bridge surface to `Milky2018/mgstudio/sprite` pan-camera runtime owner.
+
+///|
+pub type PanCamera = @sprite.PanCamera
+
+///|
+pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @sprite.ecs_key_pan_camera
+
+///|
+pub fn pan_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite.pan_camera_plugin(app)
+}
+
+///|
+pub fn run_pan_camera_controller(world : @ecs.World) -> Unit {
+  @sprite.run_pancamera_controller(world)
 }

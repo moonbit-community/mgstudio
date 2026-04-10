@@ -22,6 +22,6 @@ test "host_time_now advances without whole-second quantization" {
       break
     }
   }
-  inspect(current > start, content="true")
-  inspect(current - start < 1.0F, content="true")
+  debug_inspect(current > start, content="true")
+  debug_inspect(current - start < 1.0F, content="true")
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/components/transform.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/components/transform.rs`.
 
 ///|
 pub fn transform_component_transform_point(
@@ -28,4 +28,9 @@ pub fn transform_component_compute_global_transform(
   value : @transform.Transform,
 ) -> @transform.GlobalTransform {
   @transform.GlobalTransform::from_transform(value)
+}
+
+///|
+pub fn transform_component_identity() -> @transform.Transform {
+  @transform.Transform::identity()
 }

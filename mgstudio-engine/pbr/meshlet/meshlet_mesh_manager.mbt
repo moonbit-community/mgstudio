@@ -16,6 +16,46 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/meshlet_mesh_manager.rs`.
 
 ///|
+pub struct MeshletMeshManager {
+  mut pending_mesh_writes : Int
+  mut committed_mesh_writes : Int
+}
+
+///|
+pub fn MeshletMeshManager::default() -> MeshletMeshManager {
+  MeshletMeshManager::{ pending_mesh_writes: 0, committed_mesh_writes: 0 }
+}
+
+///|
+pub fn MeshletMeshManager::queue_mesh_write(self : MeshletMeshManager) -> Unit {
+  self.pending_mesh_writes = self.pending_mesh_writes + 1
+}
+
+///|
+pub fn MeshletMeshManager::perform_pending_mesh_writes(
+  self : MeshletMeshManager,
+) -> Int {
+  let pending = self.pending_mesh_writes
+  self.pending_mesh_writes = 0
+  self.committed_mesh_writes = self.committed_mesh_writes + pending
+  pending
+}
+
+///|
+pub fn MeshletMeshManager::pending_mesh_writes(
+  self : MeshletMeshManager,
+) -> Int {
+  self.pending_mesh_writes
+}
+
+///|
+pub fn MeshletMeshManager::committed_mesh_writes(
+  self : MeshletMeshManager,
+) -> Int {
+  self.committed_mesh_writes
+}
+
+///|
 pub fn meshlet_mesh_manager_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

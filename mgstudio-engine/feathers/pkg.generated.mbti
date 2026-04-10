@@ -4,16 +4,171 @@ package "Milky2018/mgstudio/feathers"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const ACCENT : String = "#206EC9"
+
+pub const BLACK : String = "#000000"
+
+pub const BUTTON_BG : String = "feathers.button.bg"
+
+pub const BUTTON_BG_DISABLED : String = "feathers.button.bg.disabled"
+
+pub const BUTTON_BG_HOVER : String = "feathers.button.bg.hover"
+
+pub const BUTTON_BG_PRESSED : String = "feathers.button.bg.pressed"
+
+pub const BUTTON_PRIMARY_BG : String = "feathers.button.primary.bg"
+
+pub const BUTTON_PRIMARY_BG_DISABLED : String = "feathers.button.primary.bg.disabled"
+
+pub const BUTTON_PRIMARY_BG_HOVER : String = "feathers.button.primary.bg.hover"
+
+pub const BUTTON_PRIMARY_BG_PRESSED : String = "feathers.button.primary.bg.pressed"
+
+pub const BUTTON_PRIMARY_TEXT : String = "feathers.button.primary.txt"
+
+pub const BUTTON_PRIMARY_TEXT_DISABLED : String = "feathers.button.primary.txt.disabled"
+
+pub const BUTTON_TEXT : String = "feathers.button.txt"
+
+pub const BUTTON_TEXT_DISABLED : String = "feathers.button.txt.disabled"
+
+pub const CHECKBOX_BG : String = "feathers.checkbox.bg"
+
+pub const CHECKBOX_BORDER : String = "feathers.checkbox.border"
+
+pub const CHECKBOX_MARK : String = "feathers.checkbox.mark"
+
+pub const CHECKBOX_SIZE_PX : Float = 18.0
+
+pub const CHECKBOX_TEXT : String = "feathers.checkbox.text"
+
+pub const COLOR_PLANE_BG : String = "feathers.colorplane.bg"
+
+pub const FEATHERS_PLUGINS_ID : String = "bevy_feathers::FeathersPlugins"
+
+pub const FEATHERS_PLUGIN_ID : String = "bevy_feathers::FeathersPlugin"
+
+pub const FOCUS_RING : String = "feathers.focus"
+
+pub const FONT_BOLD : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Bold.ttf"
+
+pub const FONT_BOLD_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-BoldItalic.ttf"
+
+pub const FONT_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Italic.ttf"
+
+pub const FONT_MONO : String = "embedded://bevy_feathers/assets/fonts/FiraMono-Medium.ttf"
+
+pub const FONT_REGULAR : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Regular.ttf"
+
+pub const GRAY_0 : String = "#1F1F24"
+
+pub const GRAY_1 : String = "#2A2A2E"
+
+pub const GRAY_2 : String = "#36373B"
+
+pub const GRAY_3 : String = "#46474D"
+
+pub const LIGHT_GRAY_1 : String = "#B1B1B2"
+
+pub const LIGHT_GRAY_2 : String = "#838385"
+
+pub const RADIO_BORDER : String = "feathers.radio.border"
+
+pub const RADIO_MARK : String = "feathers.radio.mark"
+
+pub const RADIO_SIZE_PX : Float = 18.0
+
+pub const RADIO_TEXT : String = "feathers.radio.text"
+
+pub const ROW_HEIGHT_PX : Float = 24.0
+
+pub const SLIDER_BAR : String = "feathers.slider.bar"
+
+pub const SLIDER_BAR_DISABLED : String = "feathers.slider.bar.disabled"
+
+pub const SLIDER_BG : String = "feathers.slider.bg"
+
+pub const SLIDER_TEXT : String = "feathers.slider.text"
+
+pub const SLIDER_TEXT_DISABLED : String = "feathers.slider.text.disabled"
+
+pub const SWITCH_BG : String = "feathers.switch.bg"
+
+pub const SWITCH_BORDER : String = "feathers.switch.border"
+
+pub const SWITCH_SLIDE : String = "feathers.switch.slide"
+
+pub const TEXT_DIM : String = "feathers.text.dim"
+
+pub const TEXT_MAIN : String = "feathers.text.main"
+
+pub const TOGGLE_HEIGHT_PX : Float = 18.0
+
+pub const TOGGLE_WIDTH_PX : Float = 32.0
+
+pub const WARM_GRAY_1 : String = "#414142"
+
+pub const WHITE : String = "#FFFFFF"
+
+pub const WINDOW_BG : String = "feathers.window.bg"
+
+pub const X_AXIS : String = "#AB4051"
+
+pub const Y_AXIS : String = "#5D8D0A"
+
+pub const Z_AXIS : String = "#2160A3"
+
+pub fn alpha_pattern_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn create_dark_theme() -> ThemeProps
+
+pub fn cursor_icon_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn feathers_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn feathers_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn feathers_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
+
+pub fn feathers_plugins_entry() -> () -> @app.PluginGroupBuilder[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub struct AlphaPattern {
+} derive(Default, @debug.Debug)
+
+pub struct AlphaPatternMaterial {
+}
+pub fn AlphaPatternMaterial::default() -> Self
+
+pub struct AlphaPatternPlugin {
+}
+pub fn AlphaPatternPlugin::default() -> Self
+
+pub struct AlphaPatternResource {
+  material_id : Int
+}
+pub fn AlphaPatternResource::default() -> Self
+
+pub struct CursorIconPlugin {
+}
+pub fn CursorIconPlugin::default() -> Self
+
+pub struct DefaultCursor {
+  cursor : EntityCursor
+}
+pub fn DefaultCursor::default() -> Self
+
+pub(all) enum EntityCursor {
+  System(String)
+  Hidden
+} derive(Eq, @debug.Debug)
+
 pub struct FeathersPlugin {
 }
 pub fn FeathersPlugin::default() -> Self
@@ -21,6 +176,84 @@ pub fn FeathersPlugin::default() -> Self
 pub struct FeathersPlugins {
 }
 pub fn FeathersPlugins::default() -> Self
+
+pub(all) enum HandleOrPath[T] {
+  Handle(T)
+  Path(String)
+}
+pub fn[T] HandleOrPath::from_handle(T) -> Self[T]
+pub fn[T] HandleOrPath::from_path(String) -> Self[T]
+
+pub struct InheritableFont {
+  font : HandleOrPath[String]
+  font_size_px : Float
+}
+pub fn InheritableFont::default() -> Self
+pub fn InheritableFont::from_handle(String) -> Self
+pub fn InheritableFont::from_path(String) -> Self
+pub impl @ecs.Component for InheritableFont
+
+pub struct OverrideCursor {
+  cursor : EntityCursor?
+}
+pub fn OverrideCursor::default() -> Self
+
+pub(all) enum RoundedCorners {
+  None
+  All
+  Top
+  Bottom
+  Left
+  Right
+} derive(Eq, @debug.Debug)
+pub fn RoundedCorners::to_radius4(Self, Float) -> (Float, Float, Float, Float)
+
+pub struct ThemeBackgroundColor {
+  token : ThemeToken
+} derive(@debug.Debug)
+pub fn ThemeBackgroundColor::new(ThemeToken) -> Self
+pub fn ThemeBackgroundColor::token(Self) -> ThemeToken
+pub impl @ecs.Component for ThemeBackgroundColor
+
+pub struct ThemeBorderColor {
+  token : ThemeToken
+} derive(@debug.Debug)
+pub fn ThemeBorderColor::new(ThemeToken) -> Self
+pub fn ThemeBorderColor::token(Self) -> ThemeToken
+pub impl @ecs.Component for ThemeBorderColor
+
+pub struct ThemeFontColor {
+  token : ThemeToken
+} derive(@debug.Debug)
+pub fn ThemeFontColor::new(ThemeToken) -> Self
+pub fn ThemeFontColor::token(Self) -> ThemeToken
+pub impl @ecs.Component for ThemeFontColor
+
+pub struct ThemeProps {
+  color : Array[(ThemeToken, String)]
+}
+pub fn ThemeProps::default() -> Self
+pub fn ThemeProps::get_color(Self, ThemeToken) -> String?
+pub fn ThemeProps::set_color(Self, ThemeToken, String) -> Unit
+
+pub struct ThemeToken {
+  name : String
+} derive(Eq, @debug.Debug)
+pub fn ThemeToken::name(Self) -> String
+pub fn ThemeToken::new(String) -> Self
+pub fn ThemeToken::new_static(String) -> Self
+
+pub struct ThemedText {
+} derive(Default, @debug.Debug)
+pub impl @ecs.Component for ThemedText
+
+pub struct UiTheme {
+  props : ThemeProps
+}
+pub fn UiTheme::color(Self, ThemeToken) -> String
+pub fn UiTheme::default() -> Self
+pub fn UiTheme::set_color(Self, String, String) -> Unit
+pub impl @app.Resource for UiTheme
 
 // Type aliases
 

@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/stroke_text.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_stroke_text_bridge_pending() -> Unit {
+// Bridge capability for stroke-text gizmo path.
+pub const GIZMO_STROKE_TEXT_MODULE_TAG : String = "bevy_gizmos::stroke_text"
 
+///|
+pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
+
+///|
+pub fn gizmo_stroke_text_supported() -> Bool {
+  GIZMO_STROKE_TEXT_SUPPORTED
+}
+
+///|
+pub fn gizmo_stroke_text_module_tag() -> String {
+  GIZMO_STROKE_TEXT_MODULE_TAG
 }

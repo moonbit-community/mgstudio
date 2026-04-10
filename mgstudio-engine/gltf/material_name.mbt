@@ -13,26 +13,6 @@
 // limitations under the License.
 
 ///|
-pub struct GltfMaterialName {
-  name : String
-}
-
-///|
-let gltf_material_name_component_key : @ecs.ComponentKey[GltfMaterialName] = @ecs.register_component(
-  debug_name="gltf.material_name",
-)
-
-///|
-pub impl @ecs.Component for GltfMaterialName with component() {
-  gltf_material_name_component_key
-}
-
-///|
-pub fn GltfMaterialName::new(name : String) -> GltfMaterialName {
-  { name, }
-}
-
-///|
-pub fn GltfMaterialName::as_str(self : GltfMaterialName) -> String {
-  self.name
-}
+// Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/material.rs`.
+// Owner lives in `gltf/loader/gltf_ext`; root keeps a compatibility bridge.
+pub type GltfMaterialName = @gltf_gltf_ext.GltfMaterialName

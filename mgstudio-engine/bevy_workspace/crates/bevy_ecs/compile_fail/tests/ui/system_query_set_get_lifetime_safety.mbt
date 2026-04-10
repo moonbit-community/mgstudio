@@ -12,4 +12,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/crates/bevy_ecs/compile_fail/tests/ui/system_query_set_get_lifetime_safety.rs

@@ -259,7 +259,7 @@ fn log_diagnostics_debug_system(
     }
     @app.log_record(
       @app.Debug,
-      message=diagnostic.to_string(),
+      message=to_repr(diagnostic).to_string(),
       target="bevy_diagnostic",
     )
   }

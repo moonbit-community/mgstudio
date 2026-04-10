@@ -13,4 +13,32 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/atmosphere/mod.rs`.
+
+///|
 pub const ATMOSPHERE_PLUGIN_ID : String = "bevy_pbr::AtmospherePlugin"
+
+///|
+pub fn atmosphere_plugin_id() -> String {
+  ATMOSPHERE_PLUGIN_ID
+}
+
+///|
+pub fn atmosphere_runtime_available() -> Bool {
+  true
+}
+
+///|
+pub struct AtmospherePlugin {
+  enabled : Bool
+}
+
+///|
+pub fn AtmospherePlugin::default() -> AtmospherePlugin {
+  AtmospherePlugin::{ enabled: atmosphere_runtime_available() }
+}
+
+///|
+pub fn atmosphere_plugin() -> AtmospherePlugin {
+  AtmospherePlugin::default()
+}

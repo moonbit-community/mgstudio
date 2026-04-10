@@ -3,13 +3,29 @@ package "Milky2018/mgstudio/gizmos_render"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const GIZMOS_RENDER_PLUGIN_ID : String = "bevy_gizmos_render::GizmoRenderPlugin"
+
+pub fn extract_line_gizmos(@ecs.World) -> Unit
+
 pub fn gizmo_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gizmo_render_system_set(GizmoRenderSystems) -> String
+
+pub fn gizmos_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gizmos_render_system_set_2d() -> String
+
+pub fn gizmos_render_system_set_3d() -> String
+
+pub fn line_gizmo_2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn line_gizmo_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -17,7 +33,20 @@ pub fn gizmo_render_system_set(GizmoRenderSystems) -> String
 pub(all) enum GizmoRenderSystems {
   QueueLineGizmos2d
   QueueLineGizmos3d
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
+
+pub struct LineGizmo2dPlugin {
+}
+pub fn LineGizmo2dPlugin::default() -> Self
+
+pub struct LineGizmo3dPlugin {
+}
+pub fn LineGizmo3dPlugin::default() -> Self
+
+pub struct RetainedLineGizmo {
+  entity : @core.Entity
+}
+pub fn RetainedLineGizmo::new(@core.Entity) -> Self
 
 // Type aliases
 

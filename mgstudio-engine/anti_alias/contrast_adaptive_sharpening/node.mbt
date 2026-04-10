@@ -14,7 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/contrast_adaptive_sharpening/node.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_contrast_adaptive_sharpening_node_bridge_pending() -> Unit {
+// Bridge node gate for optional CAS runtime path.
 
+///|
+pub const CAS_NODE_MODULE_TAG : String = "bevy_anti_alias::contrast_adaptive_sharpening::node"
+
+///|
+pub struct CasNodeBridge {
+  node_label : String
+}
+
+///|
+pub fn CasNodeBridge::default() -> CasNodeBridge {
+  CasNodeBridge::{ node_label: CAS_NODE_MODULE_TAG }
+}
+
+///|
+pub fn cas_node_enabled() -> Bool {
+  CAS_RUNTIME_SUPPORTED
+}
+
+///|
+pub fn cas_node_bridge_enabled(bridge : CasNodeBridge) -> Bool {
+  bridge.node_label == CAS_NODE_MODULE_TAG && cas_node_enabled()
+}
+
+///|
+pub fn cas_node_bridge_label(bridge : CasNodeBridge) -> String {
+  bridge.node_label
 }

@@ -2,31 +2,43 @@
 package "Milky2018/mgstudio/pbr/prepass"
 
 import {
-  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/ecs",
 }
 
 // Values
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[@core_pipeline.DepthPrepass]
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.DepthPrepass]
 
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@core_pipeline.MotionVectorPrepass]
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.MotionVectorPrepass]
 
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[@core_pipeline.NormalPrepass]
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.NormalPrepass]
+
+pub fn render3d_prepass_any_enabled(PrepassBindings3d) -> Bool
+
+pub fn render3d_prepass_bindings_for_entity(@ecs.World, @core.Entity) -> PrepassBindings3d
 
 // Errors
 
 // Types and methods
+pub struct PrepassBindings3d {
+  depth : Bool
+  normal : Bool
+  motion_vector : Bool
+  deferred : Bool
+}
+pub fn PrepassBindings3d::default() -> Self
 
 // Type aliases
-pub using @core_pipeline {type DeferredPrepass}
+pub using @deferred {type DeferredPrepass}
 
-pub using @core_pipeline {type DepthPrepass}
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type DepthPrepass}
 
-pub using @core_pipeline {type MotionVectorPrepass}
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type MotionVectorPrepass}
 
-pub using @core_pipeline {type NormalPrepass}
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 
 // Traits
 

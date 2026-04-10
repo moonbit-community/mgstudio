@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gltf/gltf_extension_animation_graph.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_GLTF_EXTENSION_ANIMATION_GRAPH : String = "examples/gltf/gltf_extension_animation_graph/main.mbt"
+

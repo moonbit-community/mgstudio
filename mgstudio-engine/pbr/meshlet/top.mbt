@@ -16,13 +16,49 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/mod.rs`.
 
 ///|
-/// Meshlet boundary aligned with Bevy's `bevy_pbr::meshlet` module.
-/// The current MoonBit runtime does not expose meshlet rendering systems.
-
-///|
 pub const HAS_MESHLET_RUNTIME : Bool = false
 
 ///|
 pub fn meshlet_runtime_available() -> Bool {
   HAS_MESHLET_RUNTIME
+}
+
+///|
+pub(all) enum MeshletRuntimeStatus {
+  Disabled
+  RuntimeUnavailable
+}
+
+///|
+pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
+  if meshlet_runtime_available() {
+    MeshletRuntimeStatus::Disabled
+  } else {
+    MeshletRuntimeStatus::RuntimeUnavailable
+  }
+}
+
+///|
+pub struct MeshletPlugin {
+  status : MeshletRuntimeStatus
+}
+
+///|
+pub fn MeshletPlugin::default() -> MeshletPlugin {
+  MeshletPlugin::{ status: meshlet_runtime_status() }
+}
+
+///|
+pub fn meshlet_plugin() -> MeshletPlugin {
+  MeshletPlugin::default()
+}
+
+///|
+pub struct MeshletMesh3d {
+  meshlet_mesh_id : Int
+}
+
+///|
+pub fn MeshletMesh3d::new(meshlet_mesh_id : Int) -> MeshletMesh3d {
+  MeshletMesh3d::{ meshlet_mesh_id, }
 }

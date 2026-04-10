@@ -7,21 +7,74 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const MATERIAL_BIND_GROUP_LABEL : String = "bevy_material::bind_group"
+
+pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_MODULE_TAG : String = "bevy_material::bind_group_layout_entries"
+
+pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
+
+pub const MATERIAL_DESCRIPTOR_MODULE_TAG : String = "bevy_material::descriptor"
+
+pub const MATERIAL_KEY_MODULE_TAG : String = "bevy_material::key"
+
+pub const MATERIAL_LABELS_MODULE_TAG : String = "bevy_material::labels"
+
+pub const MATERIAL_PIPELINE_LABEL : String = "bevy_material::pipeline"
+
+pub const MATERIAL_SPECIALIZATION_MODULE_TAG : String = "bevy_material::specialize"
+
+pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
+
 pub fn[S : IntoStandardMaterialAsset] add(@asset.Assets[StandardMaterial], S) -> @asset.Handle[StandardMaterial]
 
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
 
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
 
+pub let ecs_key_material_default_opaque_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
+
+pub let ecs_key_material_forward_decal_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
+
+pub let ecs_key_material_mesh3d : @ecs.ComponentKey[MeshMaterial3d]
+
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d]
 
 pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
+pub fn material_alpha_is_blended(AlphaMode3d) -> Bool
+
+pub fn material_bind_group_layout_entries_module_tag() -> String
+
+pub fn material_bind_group_layout_entries_supported() -> Bool
+
+pub fn material_default_opaque_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
+
+pub fn material_descriptor_identity(StandardMaterial) -> StandardMaterial
+
+pub fn material_labels_runtime_tag() -> String
+
+pub fn material_mesh3d_identity(MeshMaterial3d) -> MeshMaterial3d
+
+pub fn material_opaque_renderer_method_identity(OpaqueRendererMethod) -> OpaqueRendererMethod
+
+pub fn material_package_bevy_source() -> String
+
+pub fn material_parallax_method_identity(ParallaxMappingMethod) -> ParallaxMappingMethod
+
+pub fn material_specialization_module_tag() -> String
+
+pub fn material_specialization_supported() -> Bool
+
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
+
+pub fn standard_material_default() -> StandardMaterial
+
+pub fn standard_material_from_color(@color.Color) -> StandardMaterial
 
 pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMaterial?
 
@@ -31,6 +84,7 @@ pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) 
 
 // Types and methods
 #alias(AlphaMode)
+#alias(MaterialAlphaMode)
 pub(all) enum AlphaMode3d {
   Opaque
   Mask(Float)
@@ -41,6 +95,7 @@ pub(all) enum AlphaMode3d {
   AlphaToCoverage
 }
 
+#alias(MaterialDefaultOpaqueMethod)
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 } derive(ToJson, @json.FromJson)
@@ -77,6 +132,7 @@ pub(all) enum Face3d {
   Back
 }
 
+#alias(MaterialForwardDecalExt)
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
 } derive(ToJson, @json.FromJson)
@@ -85,6 +141,8 @@ pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
 pub impl @ecs.Component for ForwardDecalMaterialExt
 
+#alias(MaterialMesh3d)
+#alias(MaterialMesh3dComponent)
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
   extended_material : ExtendedMaterialMetadata3d?
@@ -102,22 +160,25 @@ pub impl @ecs.Component for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d
 pub impl @json.FromJson for MeshMaterial3d
 
+#alias(MaterialOpaqueRendererMethod)
 pub(all) enum OpaqueRendererMethod {
   Auto
   Forward
   Deferred
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn OpaqueRendererMethod::default() -> Self
 pub fn OpaqueRendererMethod::resolve_runtime(Self, Self) -> Self
 
+#alias(MaterialParallaxMethod)
 pub(all) enum ParallaxMappingMethod {
   Occlusion
   Relief(Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ParallaxMappingMethod::default() -> Self
 pub fn ParallaxMappingMethod::max_steps(Self) -> Int
 pub fn ParallaxMappingMethod::relief_default() -> Self
 
+#alias(MaterialDescriptor)
 pub struct StandardMaterial {
   base_color : @color.Color
   base_color_texture : @asset.Handle[@image.Image]?

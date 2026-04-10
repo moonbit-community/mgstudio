@@ -17,3 +17,30 @@
 
 ///|
 pub const CLUSTER_MODULE_TAG : String = "bevy_pbr::cluster"
+
+///|
+pub struct ClusterConfig3d {
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
+}
+
+///|
+pub fn ClusterConfig3d::default() -> ClusterConfig3d {
+  ClusterConfig3d::{ dimensions_x: 16, dimensions_y: 9, dimensions_z: 24 }
+}
+
+///|
+pub fn ClusterConfig3d::with_dimensions(
+  _self : ClusterConfig3d,
+  dimensions_x : Int,
+  dimensions_y : Int,
+  dimensions_z : Int,
+) -> ClusterConfig3d {
+  ClusterConfig3d::{ dimensions_x, dimensions_y, dimensions_z }
+}
+
+///|
+pub fn pbr_cluster_tile_count(config : ClusterConfig3d) -> Int {
+  config.dimensions_x * config.dimensions_y * config.dimensions_z
+}

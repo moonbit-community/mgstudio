@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/traits.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/traits.rs`.
 
 ///|
 pub(open) trait TransformPoint {
@@ -42,4 +42,16 @@ pub impl TransformPoint for GlobalTransform with transform_point(self, point) {
 ///|
 pub impl TransformPoint for @math.Isometry3d with transform_point(self, point) {
   self.transform_point3(point)
+}
+
+///|
+pub fn[T : TransformPoint] transform_points(
+  transform : T,
+  points : Array[@math.Vec3],
+) -> Array[@math.Vec3] {
+  let mapped : Array[@math.Vec3] = []
+  for point in points {
+    mapped.push(transform.transform_point(point))
+  }
+  mapped
 }

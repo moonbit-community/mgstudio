@@ -16,6 +16,29 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/material_shade_nodes.rs`.
 
 ///|
+pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "bevy_pbr::meshlet::main_opaque_pass"
+
+///|
+pub const MESHLET_PREPASS_NODE : String = "bevy_pbr::meshlet::prepass"
+
+///|
+pub const MESHLET_DEFERRED_GBUFFER_PREPASS_NODE : String = "bevy_pbr::meshlet::deferred_gbuffer_prepass"
+
+///|
+pub fn meshlet_material_shade_nodes() -> Array[String] {
+  [
+    MESHLET_MAIN_OPAQUE_PASS_NODE,
+    MESHLET_PREPASS_NODE,
+    MESHLET_DEFERRED_GBUFFER_PREPASS_NODE,
+  ]
+}
+
+///|
+pub fn meshlet_material_shade_node_count() -> Int {
+  meshlet_material_shade_nodes().length()
+}
+
+///|
 pub fn meshlet_material_shade_nodes_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/large_scenes/mipmap_generator/src/lib.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_LIB : String = "examples/large_scenes/mipmap_generator/src/lib/main.mbt"
+

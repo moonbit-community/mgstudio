@@ -26,6 +26,15 @@ pub type CursorIcon = @window.CursorIcon
 pub type CursorOptions = @window.CursorOptions
 
 ///|
+pub type CustomCursor = @window.CustomCursor
+
+///|
+pub type CustomCursorImage = @window.CustomCursorImage
+
+///|
+pub type CustomCursorUrl = @window.CustomCursorUrl
+
+///|
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @window.ecs_key_cursor_options
 
 ///|

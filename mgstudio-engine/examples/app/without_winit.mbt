@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/app/without_winit.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_WITHOUT_WINIT : String = "examples/app/without_winit/main.mbt"
+

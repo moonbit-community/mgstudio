@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/window/window_settings.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_WINDOW_SETTINGS : String = "examples/window/window_settings/main.mbt"
+

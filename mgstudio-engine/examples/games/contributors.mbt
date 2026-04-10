@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/games/contributors.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CONTRIBUTORS : String = "examples/games/contributors/main.mbt"
+

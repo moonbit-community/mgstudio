@@ -15,7 +15,7 @@
 ///|
 
 ///|
-struct CustomText {} derive(Eq, Show)
+struct CustomText {} derive(Eq, Debug)
 
 ///|
 let custom_text_key : @ecs.ComponentKey[CustomText] = @ecs.register_component(

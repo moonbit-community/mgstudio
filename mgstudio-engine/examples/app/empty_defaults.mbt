@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/app/empty_defaults.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_EMPTY_DEFAULTS : String = "examples/app/empty_defaults/main.mbt"
+

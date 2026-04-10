@@ -4,9 +4,18 @@ package "Milky2018/mgstudio/pbr/cluster"
 // Values
 pub const CLUSTER_MODULE_TAG : String = "bevy_pbr::cluster"
 
+pub fn pbr_cluster_tile_count(ClusterConfig3d) -> Int
+
 // Errors
 
 // Types and methods
+pub struct ClusterConfig3d {
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
+}
+pub fn ClusterConfig3d::default() -> Self
+pub fn ClusterConfig3d::with_dimensions(Self, Int, Int, Int) -> Self
 
 // Type aliases
 

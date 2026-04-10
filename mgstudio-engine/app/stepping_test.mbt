@@ -76,18 +76,18 @@ test "app: stepping waits then steps and continues through a schedule" {
 
   stepping.val = stepping.val.add_schedule(Update).enable()
   app = app.update()
-  inspect(log.join(","), content="pre")
+  debug_inspect(log.join(","), content="pre")
 
   stepping.val = stepping.val.step_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,pre,one")
+  debug_inspect(log.join(","), content="pre,pre,one")
 
   app = app.update()
-  inspect(log.join(","), content="pre,pre,one,pre")
+  debug_inspect(log.join(","), content="pre,pre,one,pre")
 
   stepping.val = stepping.val.continue_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,pre,one,pre,pre,two,three,four")
+  debug_inspect(log.join(","), content="pre,pre,one,pre,pre,two,three,four")
 }
 
 ///|
@@ -103,15 +103,15 @@ test "app: stepping always_run and never_run affect gated systems only" {
     .enable()
 
   app = app.update()
-  inspect(log.join(","), content="pre,two")
+  debug_inspect(log.join(","), content="pre,two")
 
   stepping.val = stepping.val.step_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,two,pre,one,two")
+  debug_inspect(log.join(","), content="pre,two,pre,one,two")
 
   stepping.val = stepping.val.continue_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,two,pre,one,two,pre,two,four")
+  debug_inspect(log.join(","), content="pre,two,pre,one,two,pre,two,four")
 }
 
 ///|
@@ -127,20 +127,20 @@ test "app: stepping breakpoint stops continue before the marked system" {
 
   stepping.val = stepping.val.continue_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,one")
+  debug_inspect(log.join(","), content="pre,one")
 
   stepping.val = stepping.val.step_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,one,pre,two")
+  debug_inspect(log.join(","), content="pre,one,pre,two")
 
   stepping.val = stepping.val.continue_frame()
   app = app.update()
-  inspect(log.join(","), content="pre,one,pre,two,pre,three,four")
+  debug_inspect(log.join(","), content="pre,one,pre,two,pre,three,four")
 
   stepping.val = stepping.val.clear_breakpoint(Update, UPDATE_SYSTEM_TWO_NAME)
   stepping.val = stepping.val.continue_frame()
   app = app.update()
-  inspect(
+  debug_inspect(
     log.join(","),
     content="pre,one,pre,two,pre,three,four,pre,one,two,three,four",
   )

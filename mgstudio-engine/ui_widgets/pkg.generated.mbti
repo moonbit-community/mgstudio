@@ -8,17 +8,55 @@ import {
 }
 
 // Values
+pub const UI_WIDGETS_LIB_MODULE_TAG : String = "bevy_ui_widgets::lib"
+
+pub const UI_WIDGETS_PLUGIN_ID : String = "bevy_ui_widgets::UiWidgetsPlugin"
+
+pub const UI_WIDGET_CHECKBOX_MODULE_TAG : String = "bevy_ui_widgets::checkbox"
+
+pub const UI_WIDGET_MENU_MODULE_TAG : String = "bevy_ui_widgets::menu"
+
+pub const UI_WIDGET_RADIO_MODULE_TAG : String = "bevy_ui_widgets::radio"
+
+pub const UI_WIDGET_SCROLLBAR_MODULE_TAG : String = "bevy_ui_widgets::scrollbar"
+
+pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel]
+
 pub let ecs_key_button : @ecs.ComponentKey[@ui.Button]
 
 pub let ecs_key_button_colors : @ecs.ComponentKey[@ui.ButtonColors]
+
+pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[@ui.ComputedUiTargetCamera]
+
+pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize]
+
+pub let ecs_key_focus_policy : @ecs.ComponentKey[@ui.FocusPolicy]
 
 pub let ecs_key_interaction : @ecs.ComponentKey[@ui.Interaction]
 
 pub let ecs_key_label : @ecs.ComponentKey[@ui.Label]
 
+pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition]
+
+pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout]
+
+pub let ecs_key_ui_target_camera : @ecs.ComponentKey[@ui.UiTargetCamera]
+
 pub fn ui_interaction_system(@ecs.World) -> Unit
 
+pub fn ui_widget_checkbox_label_identity(@ui.Label) -> @ui.Label
+
+pub fn ui_widget_menu_accessibility_label_identity(@ui.AccessibilityLabel) -> @ui.AccessibilityLabel
+
+pub fn ui_widget_radio_focus_policy_identity(@ui.FocusPolicy) -> @ui.FocusPolicy
+
+pub fn ui_widget_scroll_position_identity(@ui.ScrollPosition) -> @ui.ScrollPosition
+
 pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ui_widgets_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ui_widgets_runtime_available() -> Bool
 
 pub let ui_widgets_set_interaction : String
 
@@ -27,13 +65,27 @@ pub let ui_widgets_set_interaction : String
 // Types and methods
 
 // Type aliases
+pub using @ui {type AccessibilityLabel}
+
 pub using @ui {type Button}
 
 pub using @ui {type ButtonColors}
 
+pub using @ui {type ComputedUiTargetCamera}
+
+pub using @ui {type ContentSize}
+
+pub using @ui {type FocusPolicy}
+
 pub using @ui {type Interaction}
 
 pub using @ui {type Label}
+
+pub using @ui {type ScrollPosition}
+
+pub using @ui {type UiLayout}
+
+pub using @ui {type UiTargetCamera}
 
 // Traits
 

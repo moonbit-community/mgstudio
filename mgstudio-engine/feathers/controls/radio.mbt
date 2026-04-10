@@ -14,7 +14,38 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/radio.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_radio_bridge_pending() -> Unit {
 
+///|
+pub struct RadioProps {
+  selected : Bool
+  disabled : Bool
+}
+
+///|
+pub fn RadioProps::default() -> RadioProps {
+  RadioProps::{ selected: false, disabled: false }
+}
+
+///|
+pub struct RadioButton {
+  props : RadioProps
+  label : String
+}
+
+///|
+pub fn radio(props : RadioProps, label : String) -> RadioButton {
+  RadioButton::{ props, label }
+}
+
+///|
+pub struct RadioPlugin {}
+
+///|
+pub fn RadioPlugin::default() -> RadioPlugin {
+  RadioPlugin::{  }
+}
+
+///|
+pub fn radio_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

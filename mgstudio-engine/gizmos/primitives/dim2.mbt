@@ -14,7 +14,37 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/dim2.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_primitives_dim2_bridge_pending() -> Unit {
+// Bridge aliases for 2D gizmo primitives.
 
+///|
+pub type GizmoPrimitiveCircle2d = @math.Circle
+
+///|
+pub type GizmoPrimitiveRect2d = @math.Rectangle
+
+///|
+pub type GizmoPrimitiveCapsule2d = @math.Capsule2d
+
+///|
+pub const GIZMO_PRIMITIVES_DIM2_MODULE_TAG : String = "bevy_gizmos::primitives::dim2"
+
+///|
+pub fn gizmo_primitive_circle2d_identity(
+  shape : GizmoPrimitiveCircle2d,
+) -> GizmoPrimitiveCircle2d {
+  shape
+}
+
+///|
+pub fn gizmo_primitive_rect2d_identity(
+  shape : GizmoPrimitiveRect2d,
+) -> GizmoPrimitiveRect2d {
+  shape
+}
+
+///|
+pub fn gizmo_primitive_capsule2d_identity(
+  shape : GizmoPrimitiveCapsule2d,
+) -> GizmoPrimitiveCapsule2d {
+  shape
 }

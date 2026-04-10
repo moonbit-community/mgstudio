@@ -14,6 +14,50 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/prepass/mod.rs`.
+pub const PREPASS_PLUGIN_ID : String = "bevy_core_pipeline::prepass::PrepassPlugin"
+
+///|
+pub const EARLY_PREPASS_LABEL : String = "early prepass"
+
+///|
+pub const LATE_PREPASS_LABEL : String = "late prepass"
+
+///|
+pub struct PrepassPlugin {}
+
+///|
+pub fn PrepassPlugin::default() -> PrepassPlugin {
+  PrepassPlugin::{  }
+}
+
+///|
+pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  prepass_plugin_with(app, PrepassPlugin::default())
+}
+
+///|
+pub impl @app.PluginReplacement for PrepassPlugin with replacement_id(_self) {
+  PREPASS_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for PrepassPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    prepass_plugin_with(app, self)
+  }
+}
+
+///|
+pub fn prepass_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : PrepassPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  app.init_resource(fn() { PrepassViewState::default() })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/prepass/mod.rs`.
 pub struct DepthPrepass {} derive(ToJson, FromJson)
 
 ///|
@@ -67,4 +111,14 @@ pub impl @ecs.Component for NormalPrepass with component() {
 ///|
 pub impl @ecs.Component for MotionVectorPrepass with component() {
   ecs_key_motion_vector_prepass
+}
+
+///|
+pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState] = @ecs.register_resource(
+  debug_name="core_pipeline.prepass.view_state",
+)
+
+///|
+pub impl @app.Resource for PrepassViewState with resource() {
+  ecs_key_prepass_view_state
 }

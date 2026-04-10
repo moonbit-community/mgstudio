@@ -21,7 +21,7 @@
 pub(all) enum GizmoRenderSystems {
   QueueLineGizmos2d
   QueueLineGizmos3d
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn gizmo_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

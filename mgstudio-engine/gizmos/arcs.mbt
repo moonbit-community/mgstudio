@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/arcs.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_arcs_bridge_pending() -> Unit {
+// Bridge alias for arc builder surface.
 
+///|
+pub type GizmoArc2dBuilder = @sprite.Arc2dBuilder
+
+///|
+pub const GIZMO_ARCS_MODULE_TAG : String = "bevy_gizmos::arcs"
+
+///|
+pub fn gizmo_arc2d_builder_identity(
+  builder : GizmoArc2dBuilder,
+) -> GizmoArc2dBuilder {
+  builder
 }

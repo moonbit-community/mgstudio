@@ -14,7 +14,99 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/tokens.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_tokens_bridge_pending() -> Unit {
 
-}
+///|
+pub const WINDOW_BG : String = "feathers.window.bg"
+
+///|
+pub const FOCUS_RING : String = "feathers.focus"
+
+///|
+pub const TEXT_MAIN : String = "feathers.text.main"
+
+///|
+pub const TEXT_DIM : String = "feathers.text.dim"
+
+///|
+pub const BUTTON_BG : String = "feathers.button.bg"
+
+///|
+pub const BUTTON_BG_HOVER : String = "feathers.button.bg.hover"
+
+///|
+pub const BUTTON_BG_DISABLED : String = "feathers.button.bg.disabled"
+
+///|
+pub const BUTTON_BG_PRESSED : String = "feathers.button.bg.pressed"
+
+///|
+pub const BUTTON_TEXT : String = "feathers.button.txt"
+
+///|
+pub const BUTTON_TEXT_DISABLED : String = "feathers.button.txt.disabled"
+
+///|
+pub const BUTTON_PRIMARY_BG : String = "feathers.button.primary.bg"
+
+///|
+pub const BUTTON_PRIMARY_BG_HOVER : String = "feathers.button.primary.bg.hover"
+
+///|
+pub const BUTTON_PRIMARY_BG_DISABLED : String = "feathers.button.primary.bg.disabled"
+
+///|
+pub const BUTTON_PRIMARY_BG_PRESSED : String = "feathers.button.primary.bg.pressed"
+
+///|
+pub const BUTTON_PRIMARY_TEXT : String = "feathers.button.primary.txt"
+
+///|
+pub const BUTTON_PRIMARY_TEXT_DISABLED : String = "feathers.button.primary.txt.disabled"
+
+///|
+pub const SLIDER_BG : String = "feathers.slider.bg"
+
+///|
+pub const SLIDER_BAR : String = "feathers.slider.bar"
+
+///|
+pub const SLIDER_BAR_DISABLED : String = "feathers.slider.bar.disabled"
+
+///|
+pub const SLIDER_TEXT : String = "feathers.slider.text"
+
+///|
+pub const SLIDER_TEXT_DISABLED : String = "feathers.slider.text.disabled"
+
+///|
+pub const CHECKBOX_BG : String = "feathers.checkbox.bg"
+
+///|
+pub const CHECKBOX_BORDER : String = "feathers.checkbox.border"
+
+///|
+pub const CHECKBOX_MARK : String = "feathers.checkbox.mark"
+
+///|
+pub const CHECKBOX_TEXT : String = "feathers.checkbox.text"
+
+///|
+pub const RADIO_BORDER : String = "feathers.radio.border"
+
+///|
+pub const RADIO_MARK : String = "feathers.radio.mark"
+
+///|
+pub const RADIO_TEXT : String = "feathers.radio.text"
+
+///|
+pub const SWITCH_BG : String = "feathers.switch.bg"
+
+///|
+pub const SWITCH_BORDER : String = "feathers.switch.border"
+
+///|
+pub const SWITCH_SLIDE : String = "feathers.switch.slide"
+
+///|
+pub const COLOR_PLANE_BG : String = "feathers.colorplane.bg"

@@ -1,11 +1,64 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/solari/realtime"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub const LIGHT_TILE_BLOCKS : Int64 = 128
+
+pub const LIGHT_TILE_SAMPLES_PER_BLOCK : Int64 = 1024
+
+pub const SOLARI_LIGHTING_PLUGIN_ID : String = "bevy_solari::realtime::SolariLightingPlugin"
+
+pub const SOLARI_REALTIME_EXTRACT_MODULE_TAG : String = "bevy_solari::realtime::extract"
+
+pub const WORLD_CACHE_SIZE : Int64 = 1_048_576
+
+pub fn extract_solari_lighting(@ecs.World) -> Unit
+
+pub fn init_solari_lighting_pipelines(@ecs.World) -> Unit
+
+pub fn prepare_solari_lighting_resources(@ecs.World) -> Unit
+
+pub fn solari_lighting(@ecs.World) -> Unit
+
+pub fn solari_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn solari_realtime_extract_bridge_enabled(SolariRealtimeExtractBridge) -> Bool
+
+pub fn solari_realtime_extract_bridge_module_tag(SolariRealtimeExtractBridge) -> String
 
 // Errors
 
 // Types and methods
+pub struct SolariLighting {
+  enabled : Bool
+}
+pub fn SolariLighting::default() -> Self
+pub fn SolariLighting::enabled(Self) -> Bool
+
+pub struct SolariLightingPipelines {
+  lighting_pipeline_id : Int
+}
+pub fn SolariLightingPipelines::default() -> Self
+
+pub struct SolariLightingPlugin {
+}
+pub fn SolariLightingPlugin::default() -> Self
+
+pub struct SolariLightingResources {
+  world_cache_buffer_id : Int
+  light_tile_buffer_id : Int
+}
+pub fn SolariLightingResources::default() -> Self
+
+pub struct SolariRealtimeExtractBridge {
+  module_tag : String
+}
+pub fn SolariRealtimeExtractBridge::default() -> Self
 
 // Type aliases
 

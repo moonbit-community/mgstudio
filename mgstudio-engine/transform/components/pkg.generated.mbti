@@ -3,11 +3,28 @@ package "Milky2018/mgstudio/transform/components"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
 }
 
 // Values
 pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[@transform.StaticTransformOptimizations]
+
+pub fn transform_component_compute_global_transform(@transform.Transform) -> @transform.GlobalTransform
+
+pub fn transform_component_global_compute_transform(@transform.GlobalTransform) -> @transform.Transform
+
+pub fn transform_component_global_identity() -> @transform.GlobalTransform
+
+pub fn transform_component_global_inverse(@transform.GlobalTransform) -> @transform.GlobalTransform
+
+pub fn transform_component_global_reparented_to(@transform.GlobalTransform, @transform.GlobalTransform) -> @transform.GlobalTransform
+
+pub fn transform_component_global_transform_point(@transform.GlobalTransform, @math.Vec3) -> @math.Vec3
+
+pub fn transform_component_identity() -> @transform.Transform
+
+pub fn transform_component_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
 // Errors
 

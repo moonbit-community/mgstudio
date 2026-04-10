@@ -14,7 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/descriptor.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_descriptor_bridge_pending() -> Unit {
+// Bridge aliases for material descriptor surface.
 
+///|
+pub type MaterialDescriptor = StandardMaterial
+
+///|
+pub type MaterialMesh3d = MeshMaterial3d
+
+///|
+pub const MATERIAL_DESCRIPTOR_MODULE_TAG : String = "bevy_material::descriptor"
+
+///|
+pub fn material_descriptor_identity(
+  value : MaterialDescriptor,
+) -> MaterialDescriptor {
+  value
+}
+
+///|
+pub fn material_mesh3d_identity(value : MaterialMesh3d) -> MaterialMesh3d {
+  value
 }

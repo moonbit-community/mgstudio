@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/asset/custom_asset_reader.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CUSTOM_ASSET_READER : String = "examples/asset/custom_asset_reader/main.mbt"
+

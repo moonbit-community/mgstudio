@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/contact_shadows"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -9,28 +13,28 @@ package "Milky2018/mgstudio/examples/3d/contact_shadows"
 pub(all) enum ContactShadowState {
   Enabled
   Disabled
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum LightRotationState {
   Rotating
   Stationary
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum LightType {
   Directional
   Point
   Spot
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ReceiveShadowsState {
   Enabled
   Disabled
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ShadowMapsState {
   Enabled
   Disabled
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

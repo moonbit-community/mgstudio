@@ -17,6 +17,14 @@
 // Runtime wrappers live in this file while the broader dev-tools implementation stays split across the package.
 
 ///|
+pub const RENDER_DEBUG_MODULE_TAG : String = "bevy_dev_tools::render_debug"
+
+///|
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay {
   DiagnosticsOverlay::render()
+}
+
+///|
+pub fn dev_tools_render_debug_available() -> Bool {
+  true
 }

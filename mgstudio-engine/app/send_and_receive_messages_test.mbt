@@ -16,13 +16,13 @@
 struct TestCursorMessage {
   resend : Bool
   times_sent : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct TestParamSetMessage {
   resend : Bool
   times_sent : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl @ecs.Message for TestCursorMessage with message() {
@@ -124,7 +124,10 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
   app = app.run_once()
   app = app.run_once()
 
-  inspect(observed, content="[(true, 1), (true, 11), (false, 2), (true, 21)]")
+  debug_inspect(
+    observed,
+    content="[(true, 1), (true, 11), (false, 2), (true, 21)]",
+  )
 }
 
 ///|
@@ -195,5 +198,5 @@ test "app: ParamSet2 can read and write the same message type in one system" {
   app = app.run_once()
   app = app.run_once()
 
-  inspect(observed, content="[1, 1, 2, 3]")
+  debug_inspect(observed, content="[1, 1, 2, 3]")
 }

@@ -1,11 +1,77 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/upscaling"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub const UPSCALING_PASS_LABEL : String = "upscaling"
+
+pub const UPSCALING_PLUGIN_ID : String = "bevy_core_pipeline::upscaling::UpscalingPlugin"
+
+pub let ecs_key_view_upscaling_pipeline : @ecs.ResourceKey[ViewUpscalingPipeline]
+
+pub fn upscaling_bind_group_cache_hit(UpscalingBindGroupCacheState, main_texture_view_id~ : Int) -> Bool
+
+pub fn upscaling_bind_group_cache_record(UpscalingBindGroupCacheState, main_texture_view_id~ : Int) -> UpscalingBindGroupCacheState
+
+pub fn upscaling_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn upscaling_plugin_with(@app.App[@ecs.World], UpscalingPlugin) -> @app.App[@ecs.World]
+
+pub fn upscaling_should_apply_viewport_scissor(UpscalingNodeState) -> Bool
+
+pub fn upscaling_should_force_alpha_blending(UpscalingPrepareViewState) -> Bool
+
+pub fn upscaling_should_prepare_target(UpscalingNodeState) -> Bool
+
+pub fn upscaling_should_prepare_view_pipeline(UpscalingPrepareViewState) -> Bool
+
+pub fn upscaling_should_run(UpscalingNodeState) -> Bool
 
 // Errors
 
 // Types and methods
+pub struct UpscalingBindGroupCacheState {
+  has_cached_bind_group : Bool
+  cached_main_texture_view_id : Int
+}
+pub fn UpscalingBindGroupCacheState::new(has_cached_bind_group? : Bool, cached_main_texture_view_id? : Int) -> Self
+
+pub struct UpscalingNode {
+  label : String
+}
+pub fn UpscalingNode::default() -> Self
+pub fn UpscalingNode::label(Self) -> String
+
+pub struct UpscalingNodeState {
+  camera_output_mode_skip : Bool
+  has_specialized_pipeline : Bool
+  has_camera_viewport : Bool
+}
+pub fn UpscalingNodeState::new(camera_output_mode_skip? : Bool, has_specialized_pipeline? : Bool, has_camera_viewport? : Bool) -> Self
+
+pub struct UpscalingPlugin {
+}
+pub fn UpscalingPlugin::default() -> Self
+pub impl @app.PluginReplacement for UpscalingPlugin
+
+pub struct UpscalingPrepareViewState {
+  out_texture_id : Int
+  camera_output_mode_skip : Bool
+  output_texture_seen_before : Bool
+  camera_has_explicit_output_blend_state : Bool
+}
+pub fn UpscalingPrepareViewState::new(out_texture_id~ : Int, camera_output_mode_skip? : Bool, output_texture_seen_before? : Bool, camera_has_explicit_output_blend_state? : Bool) -> Self
+
+pub struct ViewUpscalingPipeline {
+  pipeline_id : Int
+}
+pub fn ViewUpscalingPipeline::default() -> Self
+pub fn ViewUpscalingPipeline::new(pipeline_id~ : Int) -> Self
+pub impl @app.Resource for ViewUpscalingPipeline
 
 // Type aliases
 

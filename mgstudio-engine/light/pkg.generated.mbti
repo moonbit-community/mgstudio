@@ -10,47 +10,88 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const LIGHT_MODULE_TAG : String = "bevy_light::lib"
+
+pub fn ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLight]
+
+pub fn directional_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
+
 pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
 
 pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
+
+pub let ecs_key_ambient_light_resource : @ecs.ResourceKey[GlobalAmbientLight]
+
+pub let ecs_key_atmosphere_env_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
 
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight]
 
+pub let ecs_key_directional_light_component : @ecs.ComponentKey[DirectionalLight]
+
 pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[DirectionalLightShadowMap]
 
 pub let ecs_key_directional_light_texture : @ecs.ComponentKey[DirectionalLightTexture]
 
+pub let ecs_key_directional_light_texture_component : @ecs.ComponentKey[DirectionalLightTexture]
+
+pub let ecs_key_directional_shadow_map_resource : @ecs.ResourceKey[DirectionalLightShadowMap]
+
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight]
+
+pub let ecs_key_environment_map_light_component : @ecs.ComponentKey[EnvironmentMapLight]
 
 pub let ecs_key_fog_volume : @ecs.ComponentKey[FogVolume]
 
+pub let ecs_key_fog_volume_component : @ecs.ComponentKey[FogVolume]
+
 pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[GeneratedEnvironmentMapLight]
+
+pub let ecs_key_generated_environment_map_light_component : @ecs.ComponentKey[GeneratedEnvironmentMapLight]
 
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight]
 
 pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume]
 
+pub let ecs_key_irradiance_volume_component : @ecs.ComponentKey[IrradianceVolume]
+
 pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe]
+
+pub let ecs_key_light_probe_component : @ecs.ComponentKey[LightProbe]
 
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection]
 
+pub let ecs_key_parallax_correction_component : @ecs.ComponentKey[ParallaxCorrection]
+
 pub let ecs_key_point_light : @ecs.ComponentKey[PointLight]
+
+pub let ecs_key_point_light_component : @ecs.ComponentKey[PointLight]
 
 pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap]
 
+pub let ecs_key_point_light_shadow_map_resource : @ecs.ResourceKey[PointLightShadowMap]
+
 pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture]
+
+pub let ecs_key_point_light_texture_component : @ecs.ComponentKey[PointLightTexture]
 
 pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight]
 
+pub let ecs_key_spot_light_component : @ecs.ComponentKey[SpotLight]
+
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture]
 
+pub let ecs_key_spot_light_texture_component : @ecs.ComponentKey[SpotLightTexture]
+
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight]
+
+pub let ecs_key_volumetric_light_component : @ecs.ComponentKey[VolumetricLight]
 
 pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
 
@@ -58,9 +99,18 @@ pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[Glob
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
+pub fn light_module_anchor_enabled() -> Bool
+
+pub fn light_runtime_bridge_enabled(LightRuntimeBridge) -> Bool
+
+pub fn light_runtime_bridge_module_tag(LightRuntimeBridge) -> String
+
+pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
+
 // Errors
 
 // Types and methods
+#alias(AtmosphereComponent)
 pub struct Atmosphere {
   bottom_radius : Float
   top_radius : Float
@@ -73,6 +123,7 @@ pub fn Atmosphere::with_ground_albedo(Self, @math.Vec3) -> Self
 pub fn Atmosphere::with_medium(Self, ScatteringMedium) -> Self
 pub fn Atmosphere::with_radii(Self, Float, Float) -> Self
 
+#alias(AtmosphereEnvMapLight)
 pub struct AtmosphereEnvironmentMapLight {
   intensity : Float
   affects_lightmapped_mesh_diffuse : Bool
@@ -85,12 +136,14 @@ pub fn AtmosphereEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn AtmosphereEnvironmentMapLight::with_size(Self, @math.UVec2) -> Self
 pub impl @ecs.Component for AtmosphereEnvironmentMapLight
 
+#alias(AtmosphereRenderMode)
 pub(all) enum AtmosphereMode {
   LookupTexture
   Raymarched
 } derive(ToJson, @json.FromJson)
 pub fn AtmosphereMode::default() -> Self
 
+#alias(AtmosphereRenderSettings)
 pub struct AtmosphereSettings {
   scene_units_to_m : Float
   sky_max_samples : Int
@@ -101,6 +154,7 @@ pub fn AtmosphereSettings::with_rendering_method(Self, AtmosphereMode) -> Self
 pub fn AtmosphereSettings::with_scene_units_to_m(Self, Float) -> Self
 pub fn AtmosphereSettings::with_sky_max_samples(Self, Int) -> Self
 
+#alias(CascadeConfig)
 pub struct CascadeShadowConfig {
   bounds : Array[Float]
   overlap_proportion : Float
@@ -108,6 +162,7 @@ pub struct CascadeShadowConfig {
 } derive(ToJson, @json.FromJson)
 pub fn CascadeShadowConfig::default() -> Self
 
+#alias(CascadeConfigBuilder)
 pub struct CascadeShadowConfigBuilder {
   num_cascades : Int
   minimum_distance : Float
@@ -131,9 +186,10 @@ pub(all) enum CubemapLayout3d {
   LineHorizontal
   Equirectangular
   Faces
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn CubemapLayout3d::default() -> Self
 
+#alias(DirectionalLightComponent)
 pub struct DirectionalLight {
   color : @color.Color
   illuminance : Float
@@ -155,6 +211,7 @@ pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_soft_shadow_size(Self, Float?) -> Self
 pub impl @ecs.Component for DirectionalLight
 
+#alias(DirectionalShadowMapResource)
 pub struct DirectionalLightShadowMap {
   size : Int
 } derive(ToJson, @json.FromJson)
@@ -162,6 +219,7 @@ pub fn DirectionalLightShadowMap::default() -> Self
 pub fn DirectionalLightShadowMap::new(Int) -> Self
 pub fn DirectionalLightShadowMap::with_size(Self, Int) -> Self
 
+#alias(DirectionalLightTextureComponent)
 pub struct DirectionalLightTexture {
   image : @asset.Handle[@image.Image]?
   tiled : Bool
@@ -172,6 +230,7 @@ pub fn DirectionalLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -
 pub fn DirectionalLightTexture::with_tiled(Self, Bool) -> Self
 pub impl @ecs.Component for DirectionalLightTexture
 
+#alias(EnvironmentMapLightComponent)
 pub struct EnvironmentMapLight {
   diffuse_map : @asset.Handle[@image.Image]?
   specular_map : @asset.Handle[@image.Image]?
@@ -188,6 +247,7 @@ pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for EnvironmentMapLight
 
+#alias(FogVolumeComponent)
 pub struct FogVolume {
   fog_color : @color.Color
   density_factor : Float
@@ -211,6 +271,7 @@ pub fn FogVolume::with_scattering(Self, Float) -> Self
 pub fn FogVolume::with_scattering_asymmetry(Self, Float) -> Self
 pub impl @ecs.Component for FogVolume
 
+#alias(GeneratedEnvironmentMapLightComponent)
 pub struct GeneratedEnvironmentMapLight {
   environment_map : @asset.Handle[@image.Image]?
   intensity : Float
@@ -225,6 +286,7 @@ pub fn GeneratedEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn GeneratedEnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for GeneratedEnvironmentMapLight
 
+#alias(AmbientLightResource)
 pub struct GlobalAmbientLight {
   color : @color.Color
   brightness : Float
@@ -232,6 +294,7 @@ pub struct GlobalAmbientLight {
 pub fn GlobalAmbientLight::default() -> Self
 pub fn GlobalAmbientLight::new(@color.Color, Float) -> Self
 
+#alias(IrradianceVolumeComponent)
 pub struct IrradianceVolume {
   voxels : @asset.Handle[@image.Image]?
   intensity : Float
@@ -261,6 +324,7 @@ pub fn LightGizmoConfigGroup::default() -> Self
 pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup
 pub impl Default for LightGizmoConfigGroup
 
+#alias(LightProbeComponent)
 pub struct LightProbe {
   falloff : @math.Vec3
 } derive(ToJson, @json.FromJson)
@@ -269,6 +333,12 @@ pub fn LightProbe::new() -> Self
 pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for LightProbe
 
+pub struct LightRuntimeBridge {
+  module_tag : String
+}
+pub fn LightRuntimeBridge::default() -> Self
+
+#alias(ParallaxCorrectionComponent)
 pub(all) enum ParallaxCorrection {
   None
   Auto
@@ -277,6 +347,7 @@ pub(all) enum ParallaxCorrection {
 pub fn ParallaxCorrection::default() -> Self
 pub impl @ecs.Component for ParallaxCorrection
 
+#alias(PointLightComponent)
 pub struct PointLight {
   color : @color.Color
   intensity : Float
@@ -305,6 +376,7 @@ pub fn PointLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn PointLight::with_soft_shadows_enabled(Self, Bool) -> Self
 pub impl @ecs.Component for PointLight
 
+#alias(PointLightShadowMapResource)
 pub struct PointLightShadowMap {
   size : Int
 } derive(ToJson, @json.FromJson)
@@ -312,6 +384,7 @@ pub fn PointLightShadowMap::default() -> Self
 pub fn PointLightShadowMap::new(Int) -> Self
 pub fn PointLightShadowMap::with_size(Self, Int) -> Self
 
+#alias(PointLightTextureComponent)
 pub struct PointLightTexture {
   image : @asset.Handle[@image.Image]?
   cubemap_layout : CubemapLayout3d
@@ -322,6 +395,7 @@ pub fn PointLightTexture::with_cubemap_layout(Self, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for PointLightTexture
 
+#alias(AtmosphereMedium)
 pub struct ScatteringMedium {
   density_multiplier : Float
 } derive(ToJson, @json.FromJson)
@@ -336,6 +410,7 @@ pub fn ShowLightGizmo::default() -> Self
 pub fn ShowLightGizmo::with_color(Self, LightGizmoColor?) -> Self
 pub impl @ecs.Component for ShowLightGizmo
 
+#alias(SpotLightComponent)
 pub struct SpotLight {
   color : @color.Color
   intensity : Float
@@ -363,6 +438,7 @@ pub fn SpotLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn SpotLight::with_soft_shadows_enabled(Self, Bool) -> Self
 pub impl @ecs.Component for SpotLight
 
+#alias(SpotLightTextureComponent)
 pub struct SpotLightTexture {
   image : @asset.Handle[@image.Image]?
 } derive(ToJson, @json.FromJson)
@@ -371,6 +447,7 @@ pub fn SpotLightTexture::new(@asset.Handle[@image.Image]?) -> Self
 pub fn SpotLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for SpotLightTexture
 
+#alias(VolumetricFogComponent)
 pub struct VolumetricFog {
   ambient_color : @color.Color
   ambient_intensity : Float
@@ -383,6 +460,7 @@ pub fn VolumetricFog::with_ambient_intensity(Self, Float) -> Self
 pub fn VolumetricFog::with_jitter(Self, Float) -> Self
 pub fn VolumetricFog::with_step_count(Self, Int) -> Self
 
+#alias(VolumetricLightComponent)
 pub struct VolumetricLight {
 }
 pub fn VolumetricLight::default() -> Self

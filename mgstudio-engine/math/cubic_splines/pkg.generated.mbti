@@ -6,6 +6,13 @@ import {
 }
 
 // Values
+pub fn[P : @math.SplinePoint] cubic_curve_sample_with_derivative(@math.CubicCurve[P], Float) -> @math.WithDerivative[P]
+
+pub fn[P : @math.SplinePoint] cubic_curve_sample_with_two_derivatives(@math.CubicCurve[P], Float) -> @math.WithTwoDerivatives[P]
+
+pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(@math.CubicSegment[P], Float) -> @math.WithDerivative[P]
+
+pub fn[P : @math.SplinePoint] cubic_segment_sample_with_two_derivatives(@math.CubicSegment[P], Float) -> @math.WithTwoDerivatives[P]
 
 // Errors
 
@@ -27,6 +34,10 @@ pub using @math {type InsufficientDataError}
 pub using @math {type Interval}
 
 pub using @math {type LinearSpline}
+
+pub using @math {type WithDerivative}
+
+pub using @math {type WithTwoDerivatives}
 
 // Traits
 

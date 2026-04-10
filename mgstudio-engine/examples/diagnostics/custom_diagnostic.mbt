@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/diagnostics/custom_diagnostic.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CUSTOM_DIAGNOSTIC : String = "examples/diagnostics/custom_diagnostic/main.mbt"
+

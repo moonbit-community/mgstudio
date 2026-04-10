@@ -14,7 +14,34 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/freely_mutable_state.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_freely_mutable_state_bridge_pending() -> Unit {
+// Bridge aliases for freely-mutable next-state resources.
 
+///|
+pub type FreelyMutableNextState[S] = @state_root.NextState[S]
+
+///|
+pub const FREELY_MUTABLE_STATE_MODULE_TAG : String = "bevy_state::state::freely_mutable_state"
+
+///|
+pub struct FreelyMutableStateBridge {
+  module_tag : String
+}
+
+///|
+pub fn FreelyMutableStateBridge::default() -> FreelyMutableStateBridge {
+  FreelyMutableStateBridge::{ module_tag: FREELY_MUTABLE_STATE_MODULE_TAG }
+}
+
+///|
+pub fn freely_mutable_state_bridge_enabled(
+  bridge : FreelyMutableStateBridge,
+) -> Bool {
+  bridge.module_tag == FREELY_MUTABLE_STATE_MODULE_TAG
+}
+
+///|
+pub fn freely_mutable_state_bridge_module_tag(
+  bridge : FreelyMutableStateBridge,
+) -> String {
+  bridge.module_tag
 }

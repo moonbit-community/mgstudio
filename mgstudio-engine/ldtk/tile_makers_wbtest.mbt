@@ -56,33 +56,33 @@ test "tile makers: layer_grid_tiles keep stable sublayers for overlapping tiles"
     test_tile_instance(0, 0, 5),
   ])
 
-  inspect(layered.length(), content="3")
-  inspect(test_tile_tags(layered[0]), content="[1, 2]")
-  inspect(test_tile_tags(layered[1]), content="[3, 4]")
-  inspect(test_tile_tags(layered[2]), content="[5]")
+  debug_inspect(layered.length(), content="3")
+  debug_inspect(test_tile_tags(layered[0]), content="[1, 2]")
+  debug_inspect(test_tile_tags(layered[1]), content="[3, 4]")
+  debug_inspect(test_tile_tags(layered[2]), content="[5]")
 }
 
 ///|
 test "tile makers: tile_in_layer_bounds follows layer dimensions" {
   let layer = test_layer_instance()
 
-  inspect(
+  debug_inspect(
     tile_in_layer_bounds(test_tile_instance(0, 0, 1), layer),
     content="true",
   )
-  inspect(
+  debug_inspect(
     tile_in_layer_bounds(test_tile_instance(31, 47, 2), layer),
     content="true",
   )
-  inspect(
+  debug_inspect(
     tile_in_layer_bounds(test_tile_instance(-1, 0, 3), layer),
     content="false",
   )
-  inspect(
+  debug_inspect(
     tile_in_layer_bounds(test_tile_instance(32, 0, 4), layer),
     content="false",
   )
-  inspect(
+  debug_inspect(
     tile_in_layer_bounds(test_tile_instance(0, 48, 5), layer),
     content="false",
   )

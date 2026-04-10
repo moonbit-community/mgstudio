@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/input/events"
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -36,7 +37,7 @@ pub let ecs_key_touch_input : @ecs.MessageKey[TouchInput]
 pub(all) enum ButtonState {
   Pressed
   Released
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ButtonState::is_pressed(Self) -> Bool
 
 pub(all) struct DoubleTapGesture {
@@ -134,7 +135,7 @@ pub(all) enum KeyCode {
   BracketLeft
   BracketRight
   Quote
-} derive(Eq, Hash, Show, ToJson, @json.FromJson)
+} derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct KeyboardCharacter {
   character : String
@@ -158,7 +159,7 @@ pub(all) enum MouseButton {
   Left
   Right
   Middle
-} derive(Eq, Hash, Show, ToJson, @json.FromJson)
+} derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct MouseButtonInput {
   button : MouseButton

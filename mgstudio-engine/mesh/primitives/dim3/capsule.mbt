@@ -20,3 +20,16 @@
 pub fn capsule3d(radius : Float, length : Float) -> @math.Capsule3d {
   @math.Capsule3d::new(radius, length)
 }
+
+///|
+pub const MESH_CAPSULE3D_MODULE_TAG : String = "bevy_mesh::primitives::dim3::capsule"
+
+///|
+pub fn capsule3d_unit() -> @math.Capsule3d {
+  capsule3d(0.5, 1.0)
+}
+
+///|
+pub fn capsule3d_module_tag() -> String {
+  MESH_CAPSULE3D_MODULE_TAG
+}

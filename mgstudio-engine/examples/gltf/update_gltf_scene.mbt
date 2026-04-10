@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gltf/update_gltf_scene.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_UPDATE_GLTF_SCENE : String = "examples/gltf/update_gltf_scene/main.mbt"
+

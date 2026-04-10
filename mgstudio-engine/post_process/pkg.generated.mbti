@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -86,7 +87,7 @@ pub impl @ecs.Component for Bloom
 pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn BloomCompositeMode::default() -> Self
 
 pub struct BloomPrefilter {
@@ -166,7 +167,7 @@ pub impl @ecs.Component for CustomPostProcess3d
 pub(all) enum DebandDither {
   Disabled
   Enabled
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DebandDither::default() -> Self
 pub impl @ecs.Component for DebandDither
 
@@ -190,7 +191,7 @@ pub(all) enum FxaaSensitivity {
   High
   Ultra
   Extreme
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FxaaSensitivity::default() -> Self
 
 pub struct MotionBlur {
@@ -224,7 +225,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> Self
 
 pub struct ScreenSpaceReflections {
@@ -266,7 +267,7 @@ pub(all) enum ScreenSpaceTransmissionQuality {
   Medium
   High
   Ultra
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ScreenSpaceTransmissionQuality::default() -> Self
 
 pub struct TemporalAntiAliasing {
@@ -294,7 +295,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-} derive(Eq, Hash, Show, ToJson, @json.FromJson)
+} derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
 

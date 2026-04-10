@@ -17,6 +17,31 @@
 // The current runtime does not expose Bevy's picking-debug helper surface.
 
 ///|
+pub const PICKING_DEBUG_MODULE_TAG : String = "bevy_dev_tools::picking_debug"
+
+///|
+pub struct PickingDebugConfig {
+  enabled : Bool
+}
+
+///|
+pub fn PickingDebugConfig::default() -> PickingDebugConfig {
+  PickingDebugConfig::{ enabled: false }
+}
+
+///|
 pub fn dev_tools_picking_debug_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub fn dev_tools_picking_debug_enabled(config : PickingDebugConfig) -> Bool {
+  config.enabled
+}
+
+///|
+pub fn dev_tools_picking_debug_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
 }

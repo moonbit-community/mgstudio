@@ -57,13 +57,16 @@ test "picking: generates enter/leave and click events (single pointer)" {
     PickingHits::from_arrays([Some(e1)], [None]),
   )
   let ev0 = drain_events(world)
-  inspect(ev0.length(), content="2")
-  inspect(ev0[0].kind == @pointer_events.PointerEventKind::Move, content="true")
-  inspect(
+  debug_inspect(ev0.length(), content="2")
+  debug_inspect(
+    ev0[0].kind == @pointer_events.PointerEventKind::Move,
+    content="true",
+  )
+  debug_inspect(
     ev0[1].kind == @pointer_events.PointerEventKind::Enter,
     content="true",
   )
-  inspect(ev0[1].target.unwrap().id == e1.id, content="true")
+  debug_inspect(ev0[1].target.unwrap().id == e1.id, content="true")
 
   // Frame 2: move (same hit).
   set_frame(
@@ -74,8 +77,11 @@ test "picking: generates enter/leave and click events (single pointer)" {
     PickingHits::from_arrays([Some(e1)], [None]),
   )
   let ev1 = drain_events(world)
-  inspect(ev1.length(), content="1")
-  inspect(ev1[0].kind == @pointer_events.PointerEventKind::Move, content="true")
+  debug_inspect(ev1.length(), content="1")
+  debug_inspect(
+    ev1[0].kind == @pointer_events.PointerEventKind::Move,
+    content="true",
+  )
 
   // Frame 3: switch hover to e2.
   set_frame(
@@ -86,17 +92,17 @@ test "picking: generates enter/leave and click events (single pointer)" {
     PickingHits::from_arrays([Some(e2)], [None]),
   )
   let ev2 = drain_events(world)
-  inspect(ev2.length(), content="2")
-  inspect(
+  debug_inspect(ev2.length(), content="2")
+  debug_inspect(
     ev2[0].kind == @pointer_events.PointerEventKind::Leave,
     content="true",
   )
-  inspect(ev2[0].target.unwrap().id == e1.id, content="true")
-  inspect(
+  debug_inspect(ev2[0].target.unwrap().id == e1.id, content="true")
+  debug_inspect(
     ev2[1].kind == @pointer_events.PointerEventKind::Enter,
     content="true",
   )
-  inspect(ev2[1].target.unwrap().id == e2.id, content="true")
+  debug_inspect(ev2[1].target.unwrap().id == e2.id, content="true")
 
   // Frame 4: press e2.
   set_frame(
@@ -107,9 +113,12 @@ test "picking: generates enter/leave and click events (single pointer)" {
     PickingHits::from_arrays([Some(e2)], [None]),
   )
   let ev3 = drain_events(world)
-  inspect(ev3.length(), content="1")
-  inspect(ev3[0].kind == @pointer_events.PointerEventKind::Down, content="true")
-  inspect(ev3[0].target.unwrap().id == e2.id, content="true")
+  debug_inspect(ev3.length(), content="1")
+  debug_inspect(
+    ev3[0].kind == @pointer_events.PointerEventKind::Down,
+    content="true",
+  )
+  debug_inspect(ev3[0].target.unwrap().id == e2.id, content="true")
 
   // Frame 5: release on e2 (click).
   set_frame(
@@ -120,9 +129,12 @@ test "picking: generates enter/leave and click events (single pointer)" {
     PickingHits::from_arrays([Some(e2)], [None]),
   )
   let ev4 = drain_events(world)
-  inspect(ev4.length(), content="2")
-  inspect(ev4[0].kind == @pointer_events.PointerEventKind::Up, content="true")
-  inspect(
+  debug_inspect(ev4.length(), content="2")
+  debug_inspect(
+    ev4[0].kind == @pointer_events.PointerEventKind::Up,
+    content="true",
+  )
+  debug_inspect(
     ev4[1].kind == @pointer_events.PointerEventKind::Click,
     content="true",
   )
@@ -152,8 +164,8 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     ]),
   )
   let ui_events = drain_events(world)
-  inspect(ui_events.length(), content="2")
-  inspect(ui_events[1].target.unwrap().id == ui_entity.id, content="true")
+  debug_inspect(ui_events.length(), content="2")
+  debug_inspect(ui_events[1].target.unwrap().id == ui_entity.id, content="true")
 
   set_frame(
     world,
@@ -165,13 +177,16 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     ]),
   )
   let sprite_events = drain_events(world)
-  inspect(sprite_events.length(), content="2")
-  inspect(
+  debug_inspect(sprite_events.length(), content="2")
+  debug_inspect(
     sprite_events[0].kind == @pointer_events.PointerEventKind::Leave,
     content="true",
   )
-  inspect(sprite_events[0].target.unwrap().id == ui_entity.id, content="true")
-  inspect(
+  debug_inspect(
+    sprite_events[0].target.unwrap().id == ui_entity.id,
+    content="true",
+  )
+  debug_inspect(
     sprite_events[1].target.unwrap().id == sprite_entity.id,
     content="true",
   )
@@ -184,13 +199,19 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     PickingHits::from_arrays([None], [None], mesh3d=[Some(mesh_entity)]),
   )
   let mesh_events = drain_events(world)
-  inspect(mesh_events.length(), content="2")
-  inspect(
+  debug_inspect(mesh_events.length(), content="2")
+  debug_inspect(
     mesh_events[0].kind == @pointer_events.PointerEventKind::Leave,
     content="true",
   )
-  inspect(mesh_events[0].target.unwrap().id == sprite_entity.id, content="true")
-  inspect(mesh_events[1].target.unwrap().id == mesh_entity.id, content="true")
+  debug_inspect(
+    mesh_events[0].target.unwrap().id == sprite_entity.id,
+    content="true",
+  )
+  debug_inspect(
+    mesh_events[1].target.unwrap().id == mesh_entity.id,
+    content="true",
+  )
 }
 
 ///|
@@ -215,16 +236,16 @@ test "picking: handles multiple pointers independently" {
     PickingHits::from_arrays([Some(e1), Some(e2)], [None, None]),
   )
   let events = drain_events(world)
-  inspect(events.length(), content="4")
-  inspect(events[0].pointer == 0, content="true")
-  inspect(events[1].pointer == 0, content="true")
-  inspect(events[2].pointer == 1, content="true")
-  inspect(events[3].pointer == 1, content="true")
-  inspect(
+  debug_inspect(events.length(), content="4")
+  debug_inspect(events[0].pointer == 0, content="true")
+  debug_inspect(events[1].pointer == 0, content="true")
+  debug_inspect(events[2].pointer == 1, content="true")
+  debug_inspect(events[3].pointer == 1, content="true")
+  debug_inspect(
     events[1].kind == @pointer_events.PointerEventKind::Enter,
     content="true",
   )
-  inspect(
+  debug_inspect(
     events[3].kind == @pointer_events.PointerEventKind::Enter,
     content="true",
   )
@@ -286,7 +307,7 @@ test "picking: ui hit test respects transformed ui node" {
   let hits = get_picking_hits_resource(world)
     .get()
     .unwrap_or(PickingHits::default())
-  inspect(
+  debug_inspect(
     hits.ui(0) is Some(hit) &&
     hit.id == entity.id &&
     hit.generation == entity.generation,
@@ -378,7 +399,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
   let hits_top = get_picking_hits_resource(world)
     .get()
     .unwrap_or(PickingHits::default())
-  inspect(hits_top.ui(0) is Some(hit) && hit.id == top.id, content="true")
+  debug_inspect(hits_top.ui(0) is Some(hit) && hit.id == top.id, content="true")
 
   get_pointer_inputs_resource(world).insert(
     PointerInputs::from_array([
@@ -395,7 +416,10 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
   let hits_bottom = get_picking_hits_resource(world)
     .get()
     .unwrap_or(PickingHits::default())
-  inspect(hits_bottom.ui(0) is Some(hit) && hit.id == bottom.id, content="true")
+  debug_inspect(
+    hits_bottom.ui(0) is Some(hit) && hit.id == bottom.id,
+    content="true",
+  )
 }
 
 ///|
@@ -449,7 +473,7 @@ test "picking: ui hit test still matches button with Interaction component" {
   let hits = get_picking_hits_resource(world)
     .get()
     .unwrap_or(PickingHits::default())
-  inspect(
+  debug_inspect(
     hits.ui(0) is Some(hit) &&
     hit.id == entity.id &&
     hit.generation == entity.generation,
@@ -477,7 +501,7 @@ test "picking: a11y focus action maps to hovered interaction" {
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
   let interaction = try! world.get_by_key(entity, @ui.ecs_key_interaction)
-  inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
+  debug_inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
 }
 
 ///|
@@ -545,12 +569,12 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
   let scroll = try! world.get_by_key(entity, @ui.ecs_key_scroll_position)
-  inspect(
+  debug_inspect(
     scroll is Some(v) && v.offset_x == 0.0F && v.offset_y == 24.0F,
     content="true",
   )
   let events = drain_events(world)
-  inspect(events.length(), content="0")
+  debug_inspect(events.length(), content="0")
 }
 
 ///|
@@ -575,12 +599,12 @@ test "picking: a11y set-value action updates Text content" {
   @a11y.A11yState::push_action(state, req)
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
-  inspect(
+  debug_inspect(
     world.get_by_key(entity, @text.ecs_key_text).unwrap().content,
     content="Updated",
   )
   let events = drain_events(world)
-  inspect(events.length(), content="0")
+  debug_inspect(events.length(), content="0")
 }
 
 ///|
@@ -603,13 +627,13 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   state_res.insert(state.val)
   picking_apply_a11y_actions_system(world)
   let state_after = @a11y.get_a11y_state_resource(world).get().unwrap()
-  inspect(
+  debug_inspect(
     state_after.focused_node() == @moon_accesskit.NodeId::root(),
     content="true",
   )
-  inspect(world.is_alive(dead_entity), content="false")
+  debug_inspect(world.is_alive(dead_entity), content="false")
   let events = drain_events(world)
-  inspect(events.length(), content="0")
+  debug_inspect(events.length(), content="0")
 }
 
 ///|
@@ -666,5 +690,8 @@ test "picking: pointer observers dispatch generated move enter and leave events"
   )
   @app.dispatch_pointer_observers_system(world)
 
-  inspect(seen, content="[\"move:1\", \"enter:1\", \"leave:1\", \"enter:2\"]")
+  debug_inspect(
+    seen,
+    content="[\"move:1\", \"enter:1\", \"leave:1\", \"enter:2\"]",
+  )
 }

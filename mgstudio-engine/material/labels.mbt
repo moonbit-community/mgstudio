@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/labels.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_labels_bridge_pending() -> Unit {
+// Bridge constants for material pipeline labels.
 
+///|
+pub const MATERIAL_PIPELINE_LABEL : String = "bevy_material::pipeline"
+
+///|
+pub const MATERIAL_BIND_GROUP_LABEL : String = "bevy_material::bind_group"
+
+///|
+pub const MATERIAL_LABELS_MODULE_TAG : String = "bevy_material::labels"
+
+///|
+pub fn material_labels_runtime_tag() -> String {
+  MATERIAL_LABELS_MODULE_TAG
 }

@@ -1,11 +1,36 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/oit"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
 // Values
+pub const OIT_PLUGIN_ID : String = "bevy_core_pipeline::oit::OrderIndependentTransparencyPlugin"
+
+pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[OrderIndependentTransparencySettings]
+
+pub fn oit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn oit_plugin_with(@app.App[@ecs.World], OrderIndependentTransparencyPlugin) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub struct OrderIndependentTransparencyPlugin {
+}
+pub fn OrderIndependentTransparencyPlugin::default() -> Self
+pub impl @app.PluginReplacement for OrderIndependentTransparencyPlugin
+
+pub struct OrderIndependentTransparencySettings {
+  alpha_threshold : Float
+  fragments_per_pixel_average : Float
+  sorted_fragment_max_count : Int
+} derive(ToJson, @json.FromJson)
+pub fn OrderIndependentTransparencySettings::default() -> Self
+pub impl @ecs.Component for OrderIndependentTransparencySettings
 
 // Type aliases
 

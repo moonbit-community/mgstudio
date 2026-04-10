@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/2d/rotation.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ROTATION : String = "examples/2d/rotation/main.mbt"
+

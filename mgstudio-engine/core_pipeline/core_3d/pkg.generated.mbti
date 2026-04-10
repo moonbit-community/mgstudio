@@ -2,33 +2,211 @@
 package "Milky2018/mgstudio/core_pipeline/core_3d"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const CORE_3D_DEPTH_FORMAT : String = "depth32float"
+
+pub const CORE_3D_PLUGIN_ID : String = "bevy_core_pipeline::core_3d::Core3dPlugin"
+
+pub const DEPTH_TEXTURE_SAMPLING_SUPPORTED : Bool = true
+
+pub const MAIN_OPAQUE_PASS_3D_LABEL : String = "main_opaque_pass_3d"
+
+pub const MAIN_TRANSPARENT_PASS_3D_LABEL : String = "main_transparent_pass_3d"
+
+pub const RESET_VIEWPORT_PASS_3D_LABEL : String = "reset_viewport_pass_3d"
+
+pub fn core_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn core_3d_plugin_with(@app.App[@ecs.World], Core3dPlugin) -> @app.App[@ecs.World]
+
+pub let core_3d_set_main_pass : String
+
+pub let core_3d_set_post_process : String
+
+pub let core_3d_set_prepass : String
+
+pub let ecs_key_alpha_mask3d_phase : @ecs.ResourceKey[AlphaMask3dPhase]
+
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
 
+pub let ecs_key_opaque3d_phase : @ecs.ResourceKey[Opaque3dPhase]
+
+pub let ecs_key_transparent3d_phase : @ecs.ResourceKey[Transparent3dPhase]
+
+pub fn main_opaque_pass_3d_should_draw_alpha_mask(MainOpaquePass3dState) -> Bool
+
+pub fn main_opaque_pass_3d_should_draw_opaque(MainOpaquePass3dState) -> Bool
+
+pub fn main_opaque_pass_3d_should_draw_skybox(MainOpaquePass3dState) -> Bool
+
+pub fn main_opaque_pass_3d_should_run(MainOpaquePass3dState) -> Bool
+
+pub fn main_transparent_pass_3d_is_oit_ready(MainTransparentPass3dState) -> Bool
+
+pub fn main_transparent_pass_3d_requires_reset_viewport_pass(MainTransparentPass3dState) -> Bool
+
+pub fn main_transparent_pass_3d_should_render(MainTransparentPass3dState) -> Bool
+
+pub fn main_transparent_pass_3d_should_run(MainTransparentPass3dState) -> Bool
+
 // Errors
 
 // Types and methods
+pub struct AlphaMask3d {
+  batch_set_key : OpaqueNoLightmap3dBatchSetKey
+  bin_key : OpaqueNoLightmap3dBinKey
+  representative_entity_id : Int
+  main_entity_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  extra_index : Int
+} derive(Eq, @debug.Debug)
+pub fn AlphaMask3d::cached_pipeline_id(Self) -> Int
+pub fn AlphaMask3d::draw_function_id(Self) -> Int
+pub fn AlphaMask3d::new(OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey, representative_entity_id~ : Int, main_entity_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int) -> Self
+
+pub struct AlphaMask3dPhase {
+  items : Array[AlphaMask3d]
+}
+pub fn AlphaMask3dPhase::clear(Self) -> Unit
+pub fn AlphaMask3dPhase::default() -> Self
+pub fn AlphaMask3dPhase::is_empty(Self) -> Bool
+pub fn AlphaMask3dPhase::push(Self, AlphaMask3d) -> Unit
+pub impl @app.Resource for AlphaMask3dPhase
+
+pub struct Core3dPlugin {
+}
+pub fn Core3dPlugin::default() -> Self
+pub impl @app.PluginReplacement for Core3dPlugin
+
 pub struct Hdr {
-} derive(ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Hdr::default() -> Self
 pub impl @ecs.Component for Hdr
+
+pub struct MainOpaquePass3dNode {
+  label : String
+}
+pub fn MainOpaquePass3dNode::default() -> Self
+pub fn MainOpaquePass3dNode::label(Self) -> String
+
+pub struct MainOpaquePass3dState {
+  has_opaque_phase : Bool
+  has_alpha_mask_phase : Bool
+  has_skybox_pipeline : Bool
+  has_skybox_bind_group : Bool
+}
+pub fn MainOpaquePass3dState::new(has_opaque_phase? : Bool, has_alpha_mask_phase? : Bool, has_skybox_pipeline? : Bool, has_skybox_bind_group? : Bool) -> Self
+
+pub struct MainTransparentPass3dNode {
+  label : String
+}
+pub fn MainTransparentPass3dNode::default() -> Self
+pub fn MainTransparentPass3dNode::label(Self) -> String
+
+pub struct MainTransparentPass3dState {
+  has_transparent_phase : Bool
+  has_oit : Bool
+  has_oit_resolve_pipeline : Bool
+  has_custom_viewport : Bool
+  webgl_requires_viewport_reset : Bool
+}
+pub fn MainTransparentPass3dState::new(has_transparent_phase? : Bool, has_oit? : Bool, has_oit_resolve_pipeline? : Bool, has_custom_viewport? : Bool, webgl_requires_viewport_reset? : Bool) -> Self
 
 pub(all) enum Msaa {
   Off
   Sample2
   Sample4
   Sample8
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Msaa::default() -> Self
 pub fn Msaa::from_samples(Int) -> Self
 pub fn Msaa::samples(Self) -> Int
 pub impl @ecs.Component for Msaa
+
+pub struct Opaque3d {
+  batch_set_key : Opaque3dBatchSetKey
+  bin_key : Opaque3dBinKey
+  representative_entity_id : Int
+  main_entity_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  extra_index : Int
+} derive(Eq, @debug.Debug)
+pub fn Opaque3d::cached_pipeline_id(Self) -> Int
+pub fn Opaque3d::draw_function_id(Self) -> Int
+pub fn Opaque3d::new(Opaque3dBatchSetKey, Opaque3dBinKey, representative_entity_id~ : Int, main_entity_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int) -> Self
+
+pub struct Opaque3dBatchSetKey {
+  pipeline_id : Int
+  draw_function_id : Int
+  material_bind_group_index : Int?
+  vertex_slab_id : Int
+  index_slab_id : Int?
+  lightmap_slab_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn Opaque3dBatchSetKey::indexed(Self) -> Bool
+pub fn Opaque3dBatchSetKey::new(pipeline_id~ : Int, draw_function_id~ : Int, material_bind_group_index? : Int?, vertex_slab_id? : Int, index_slab_id? : Int?, lightmap_slab_id? : Int?) -> Self
+
+pub struct Opaque3dBinKey {
+  asset_id : Int
+} derive(Eq, @debug.Debug)
+pub fn Opaque3dBinKey::new(asset_id~ : Int) -> Self
+
+pub struct Opaque3dPhase {
+  items : Array[Opaque3d]
+}
+pub fn Opaque3dPhase::clear(Self) -> Unit
+pub fn Opaque3dPhase::default() -> Self
+pub fn Opaque3dPhase::is_empty(Self) -> Bool
+pub fn Opaque3dPhase::push(Self, Opaque3d) -> Unit
+pub impl @app.Resource for Opaque3dPhase
+
+pub struct OpaqueNoLightmap3dBatchSetKey {
+  pipeline_id : Int
+  draw_function_id : Int
+  material_bind_group_index : Int?
+  vertex_slab_id : Int
+  index_slab_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn OpaqueNoLightmap3dBatchSetKey::indexed(Self) -> Bool
+pub fn OpaqueNoLightmap3dBatchSetKey::new(pipeline_id~ : Int, draw_function_id~ : Int, material_bind_group_index? : Int?, vertex_slab_id? : Int, index_slab_id? : Int?) -> Self
+
+pub struct OpaqueNoLightmap3dBinKey {
+  asset_id : Int
+} derive(Eq, @debug.Debug)
+pub fn OpaqueNoLightmap3dBinKey::new(asset_id~ : Int) -> Self
+
+pub struct Transparent3d {
+  distance : Float
+  pipeline_id : Int
+  entity_id : Int
+  main_entity_id : Int
+  draw_function_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  extra_index : Int
+  indexed : Bool
+} derive(Eq, @debug.Debug)
+pub fn Transparent3d::new(distance~ : Float, pipeline_id~ : Int, entity_id~ : Int, main_entity_id~ : Int, draw_function_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int, indexed? : Bool) -> Self
+pub fn Transparent3d::sort_key(Self) -> Float
+
+pub struct Transparent3dPhase {
+  items : Array[Transparent3d]
+}
+pub fn Transparent3dPhase::clear(Self) -> Unit
+pub fn Transparent3dPhase::default() -> Self
+pub fn Transparent3dPhase::is_empty(Self) -> Bool
+pub fn Transparent3dPhase::push(Self, Transparent3d) -> Unit
+pub impl @app.Resource for Transparent3dPhase
 
 // Type aliases
 

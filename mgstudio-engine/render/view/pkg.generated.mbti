@@ -1,13 +1,32 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/render/view"
 
+import {
+  "Milky2018/mgstudio/core_pipeline/core_3d",
+  "Milky2018/mgstudio/visibility",
+}
+
 // Values
+pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange
+
+pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @visibility {type InheritedVisibility}
+
+pub using @core_3d {type Msaa}
+
+pub using @visibility {type NoFrustumCulling}
+
+pub using @visibility {type ViewVisibility}
+
+pub using @visibility {type Visibility}
+
+pub using @visibility {type VisibilityRange}
 
 // Traits
 

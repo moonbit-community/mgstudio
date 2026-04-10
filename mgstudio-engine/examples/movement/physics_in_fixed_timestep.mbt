@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/movement/physics_in_fixed_timestep.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_PHYSICS_IN_FIXED_TIMESTEP : String = "examples/movement/physics_in_fixed_timestep/main.mbt"
+

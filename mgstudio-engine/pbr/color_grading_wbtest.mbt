@@ -54,7 +54,7 @@ test "render3d: default color grading host uniform matches Bevy defaults" {
     color_grading_approx_eq(uniform.exposure, 0.0F) &&
     color_grading_approx_eq(uniform.hue, 0.0F) &&
     color_grading_approx_eq(uniform.post_saturation, 1.0F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -111,7 +111,7 @@ test "render3d: custom color grading host uniform preserves Bevy section values"
     color_grading_approx_eq(uniform.exposure, 1.25F) &&
     color_grading_approx_eq(uniform.hue, 0.4F) &&
     color_grading_approx_eq(uniform.post_saturation, 1.6F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -129,7 +129,7 @@ test "render3d: direct color grading field mutation matches Bevy-style usage" {
     color_grading_approx_eq(uniform.midtones_end, 0.6F) &&
     color_grading_approx_eq(uniform.gamma_midtones, 1.1F) &&
     color_grading_approx_eq(uniform.gain_highlights, 1.25F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -146,7 +146,7 @@ test "render3d: color grading all_sections iterates in Bevy order" {
     color_grading_approx_eq(values[0], 1.1F) &&
     color_grading_approx_eq(values[1], 1.2F) &&
     color_grading_approx_eq(values[2], 1.3F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -162,7 +162,7 @@ test "render3d: color grading all_sections_mut updates original sections" {
     color_grading_approx_eq(grading.shadows.saturation, 1.25F) &&
     color_grading_approx_eq(grading.midtones.saturation, 1.25F) &&
     color_grading_approx_eq(grading.highlights.saturation, 1.25F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -173,5 +173,5 @@ test "render3d: color grading alone enables tonemap postprocess path" {
     false,
     Some(ColorGrading::default()),
   )
-  inspect(enabled, content="true")
+  debug_inspect(enabled, content="true")
 }

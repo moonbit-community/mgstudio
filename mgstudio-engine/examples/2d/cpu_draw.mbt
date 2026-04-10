@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/2d/cpu_draw.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CPU_DRAW : String = "examples/2d/cpu_draw/main.mbt"
+

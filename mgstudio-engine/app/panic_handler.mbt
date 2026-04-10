@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/panic_handler.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/panic_handler.rs`.
 
 ///|
 pub fn panic_handler_default(error : Error, context : ErrorContext) -> Unit {
@@ -23,4 +23,14 @@ pub fn panic_handler_default(error : Error, context : ErrorContext) -> Unit {
 ///|
 pub fn panic_handler_log(error : Error, context : ErrorContext) -> Unit {
   ErrorHandlers::error(error, context)
+}
+
+///|
+pub fn panic_handler_warn(error : Error, context : ErrorContext) -> Unit {
+  ErrorHandlers::warn(error, context)
+}
+
+///|
+pub fn panic_handler_ignore(error : Error, context : ErrorContext) -> Unit {
+  ErrorHandlers::ignore(error, context)
 }

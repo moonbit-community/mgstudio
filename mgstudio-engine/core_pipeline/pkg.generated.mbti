@@ -2,16 +2,58 @@
 package "Milky2018/mgstudio/core_pipeline"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/core_pipeline/deferred",
+  "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/core_pipeline/prepass",
+  "Milky2018/mgstudio/core_pipeline/skybox",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const CORE_2D_SCHEDULE_LABEL : String = "mgstudio.core_pipeline.core_2d"
+
+pub const CORE_3D_SCHEDULE_LABEL : String = "mgstudio.core_pipeline.core_3d"
+
+pub const CORE_PIPELINE_PLUGIN_ID : String = "bevy_core_pipeline::CorePipelinePlugin"
+
+pub const FULLSCREEN_MATERIAL_PASS_LABEL : String = "fullscreen_material_pass"
+
+pub const FULLSCREEN_MATERIAL_PLUGIN_ID : String = "bevy_core_pipeline::fullscreen_material::FullscreenMaterialPlugin"
+
+pub fn camera_driver(@ecs.World) -> Unit
+
+pub fn camera_driver_prepare_state(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn core2d_base_schedule() -> @app.Schedule
+
+pub fn core2d_system_set_main_pass() -> String
+
+pub fn core2d_system_set_post_process() -> String
+
+pub fn core3d_base_schedule() -> @app.Schedule
+
+pub fn core3d_system_set_main_pass() -> String
+
+pub fn core3d_system_set_post_process() -> String
+
+pub fn core3d_system_set_prepass() -> String
+
+pub fn core_pipeline_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn core_pipeline_plugin_with(@app.App[@ecs.World], CorePipelinePlugin) -> @app.App[@ecs.World]
+
+pub fn core_pipeline_schedule_enabled() -> Bool
+
+pub let ecs_key_camera_driver_state : @ecs.ResourceKey[CameraDriverState]
+
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
+
+pub let ecs_key_fullscreen_material_pipeline : @ecs.ResourceKey[FullscreenMaterialPipelineState]
 
 pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
@@ -21,14 +63,106 @@ pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[@prepass.NormalPrepass]
 
+pub fn fullscreen_material_bind_group_for_source_a(FullscreenMaterialBindGroupState, source_texture_view_id~ : Int) -> Bool
+
+pub fn fullscreen_material_bind_group_for_source_b(FullscreenMaterialBindGroupState, source_texture_view_id~ : Int) -> Bool
+
+pub fn fullscreen_material_bind_group_matches_source(FullscreenMaterialBindGroupState, source_texture_view_id~ : Int) -> Bool
+
+pub fn fullscreen_material_pipeline_id(FullscreenMaterialPipelineState, view_target_is_hdr~ : Bool) -> Int
+
+pub fn fullscreen_material_pipeline_ready(FullscreenMaterialPipelineState) -> Bool
+
+pub fn fullscreen_material_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn fullscreen_material_plugin_with(@app.App[@ecs.World], FullscreenMaterialPlugin) -> @app.App[@ecs.World]
+
+pub fn fullscreen_material_requires_bind_group_build(FullscreenMaterialPrepareViewState) -> Bool
+
+pub fn fullscreen_material_requires_bind_group_update(FullscreenMaterialPrepareViewState, FullscreenMaterialBindGroupState) -> Bool
+
+pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShader
+
 // Errors
 
 // Types and methods
+pub struct CameraDriverSortedCamera {
+  entity_id : Int
+  order : Int
+  schedule_label : String
+  target_window_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn CameraDriverSortedCamera::new(entity_id~ : Int, order~ : Int, schedule_label~ : String, target_window_id? : Int?) -> Self
+
+pub struct CameraDriverState {
+  sorted_cameras : Array[CameraDriverSortedCamera]
+  covered_window_ids : Array[Int]
+}
+pub fn CameraDriverState::clear(Self) -> Unit
+pub fn CameraDriverState::default() -> Self
+pub fn CameraDriverState::mark_window_covered(Self, Int) -> Unit
+pub fn CameraDriverState::push_sorted_camera(Self, CameraDriverSortedCamera) -> Unit
+pub fn CameraDriverState::window_is_covered(Self, Int) -> Bool
+pub impl @app.Resource for CameraDriverState
+
+pub struct Core2d {
+}
+pub fn Core2d::default() -> Self
+
+pub(all) enum Core2dSystems {
+  MainPass
+  PostProcess
+} derive(Eq, @debug.Debug)
+
+pub struct Core3d {
+}
+pub fn Core3d::default() -> Self
+
+pub(all) enum Core3dSystems {
+  Prepass
+  MainPass
+  PostProcess
+} derive(Eq, @debug.Debug)
+
+pub struct CorePipelinePlugin {
+}
+pub fn CorePipelinePlugin::default() -> Self
+pub impl @app.PluginReplacement for CorePipelinePlugin
+
+pub struct FullscreenMaterialBindGroupState {
+  source_a_texture_view_id : Int
+  source_b_texture_view_id : Int
+}
+pub fn FullscreenMaterialBindGroupState::new(source_a_texture_view_id~ : Int, source_b_texture_view_id~ : Int) -> Self
+
+pub struct FullscreenMaterialPipelineState {
+  has_bind_group_layout : Bool
+  has_sampler : Bool
+  ldr_pipeline_id : Int
+  hdr_pipeline_id : Int
+}
+pub fn FullscreenMaterialPipelineState::default() -> Self
+pub fn FullscreenMaterialPipelineState::new(has_bind_group_layout? : Bool, has_sampler? : Bool, ldr_pipeline_id? : Int, hdr_pipeline_id? : Int) -> Self
+pub impl @app.Resource for FullscreenMaterialPipelineState
+
+pub struct FullscreenMaterialPlugin {
+}
+pub fn FullscreenMaterialPlugin::default() -> Self
+pub impl @app.PluginReplacement for FullscreenMaterialPlugin
+
+pub struct FullscreenMaterialPrepareViewState {
+  main_texture_view_id : Int
+  main_texture_other_view_id : Int
+  has_existing_bind_groups : Bool
+}
+pub fn FullscreenMaterialPrepareViewState::new(main_texture_view_id~ : Int, main_texture_other_view_id~ : Int, has_existing_bind_groups? : Bool) -> Self
 
 // Type aliases
 pub using @deferred {type DeferredPrepass}
 
 pub using @prepass {type DepthPrepass}
+
+pub using @fullscreen_vertex_shader {type FullscreenShader}
 
 pub using @core_3d {type Hdr}
 
@@ -37,6 +171,8 @@ pub using @prepass {type MotionVectorPrepass}
 pub using @core_3d {type Msaa}
 
 pub using @prepass {type NormalPrepass}
+
+pub using @skybox {type Skybox}
 
 // Traits
 

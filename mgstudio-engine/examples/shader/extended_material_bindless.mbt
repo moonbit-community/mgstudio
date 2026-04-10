@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/extended_material_bindless.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_EXTENDED_MATERIAL_BINDLESS : String = "examples/shader/extended_material_bindless/main.mbt"
+

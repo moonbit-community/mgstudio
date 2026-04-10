@@ -1,1 +1,6 @@
+import {
+  "Milky2018/mgstudio/app" @app,
+  "Milky2018/mgstudio/ecs" @ecs,
+}
+
 supported_targets = "native"

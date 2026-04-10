@@ -13,7 +13,15 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_gilrs/src/gilrs_system.rs`).
-fn _gilrs_system_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_gilrs/src/gilrs_system.rs`.
+// Mgstudio polls the backend on-demand and maps events through `input/gamepad`.
+
+///|
+pub fn gilrs_event_startup_system() -> Unit {
+  gamepad_poll()
+}
+
+///|
+pub fn gilrs_event_system() -> Unit {
+  gamepad_poll()
 }

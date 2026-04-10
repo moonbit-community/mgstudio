@@ -72,13 +72,13 @@ test "ui: unparented node acts as implicit root for layout" {
   ui_layout_system(world)
 
   let rect = try! world.get_by_key(root, ecs_key_ui_layout).unwrap().rect
-  inspect(rect.min.x == 24.0F && rect.min.y == 32.0F, content="true")
-  inspect(rect.max.x == 144.0F && rect.max.y == 80.0F, content="true")
+  debug_inspect(rect.min.x == 24.0F && rect.min.y == 32.0F, content="true")
+  debug_inspect(rect.max.x == 144.0F && rect.max.y == 80.0F, content="true")
   let transform = try! world
     .get_by_key(root, @transform.ecs_key_transform)
     .unwrap()
-  inspect(transform.translation.x == -316.0F, content="true")
-  inspect(transform.translation.y == 244.0F, content="true")
+  debug_inspect(transform.translation.x == -316.0F, content="true")
+  debug_inspect(transform.translation.y == 244.0F, content="true")
 }
 
 ///|
@@ -107,13 +107,13 @@ test "ui: unparented ghost node acts as implicit root for layout" {
 
   ui_layout_system(world)
 
-  inspect(
+  debug_inspect(
     try! (world.get_by_key(ghost_root, ecs_key_ui_layout) is None),
     content="true",
   )
   let rect = try! world.get_by_key(child, ecs_key_ui_layout).unwrap().rect
-  inspect(rect.min.x == 24.0F && rect.min.y == 32.0F, content="true")
-  inspect(rect.max.x == 144.0F && rect.max.y == 80.0F, content="true")
+  debug_inspect(rect.min.x == 24.0F && rect.min.y == 32.0F, content="true")
+  debug_inspect(rect.max.x == 144.0F && rect.max.y == 80.0F, content="true")
 }
 
 ///|
@@ -152,7 +152,7 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
 
   ui_propagate_target_cameras_system(world)
 
-  inspect(
+  debug_inspect(
     try! (world
     .get_by_key(root, ecs_key_computed_ui_target_camera)
     .unwrap()
@@ -160,7 +160,7 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
     Some(target_camera)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! (world
     .get_by_key(child, ecs_key_computed_ui_target_camera)
     .unwrap()
@@ -201,7 +201,7 @@ test "ui: unparented ghost node acts as implicit root for target camera propagat
 
   ui_propagate_target_cameras_system(world)
 
-  inspect(
+  debug_inspect(
     try! (world
     .get_by_key(ghost_root, ecs_key_computed_ui_target_camera)
     .unwrap()
@@ -209,7 +209,7 @@ test "ui: unparented ghost node acts as implicit root for target camera propagat
     Some(target_camera)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! (world
     .get_by_key(child, ecs_key_computed_ui_target_camera)
     .unwrap()

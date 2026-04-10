@@ -12,9 +12,18 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_cosmic",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const HAS_TEXT_RUNTIME : Bool = true
+
+pub const TEXT_ERROR_MODULE_TAG : String = "bevy_text::error"
+
+pub const TEXT_FONT_LOADER_MODULE_TAG : String = "bevy_text::font_loader"
+
+pub const TEXT_PLUGIN_ID : String = "bevy_text::TextPlugin"
+
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
 
 pub let ecs_key_text : @ecs.ComponentKey[Text]
@@ -61,7 +70,11 @@ pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, 
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
+pub fn text_bundle(String, TextFont, @transform.Transform) -> Text2dBundle
+
 pub fn text_compute_cull_margin(TextBounds, @math.Vec2, @math.Vec3) -> Float
+
+pub fn text_content(TextHandle) -> String?
 
 pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw]
 
@@ -105,6 +118,26 @@ pub fn text_diagnostic_update_cpu_ms() -> Float
 
 pub fn text_diagnostic_update_pending_layout_count() -> Int
 
+pub fn text_error_bridge_enabled(TextErrorBridge) -> Bool
+
+pub fn text_error_bridge_module_tag(TextErrorBridge) -> String
+
+pub fn text_font_context() -> FontCx
+
+pub fn text_font_family_names(FontCx) -> Array[String]
+
+pub fn text_font_loader_available() -> Bool
+
+pub fn text_font_loader_bridge_enabled(TextFontLoaderBridge) -> Bool
+
+pub fn text_font_loader_bridge_module_tag(TextFontLoaderBridge) -> String
+
+pub fn text_font_source_from_asset(@asset.Handle[@asset.Font]) -> FontSource
+
+pub fn text_font_source_from_family(String) -> FontSource
+
+pub fn[S : IntoFontSize] text_font_with_size(S) -> TextFont
+
 pub fn text_get_content(TextHandle) -> String?
 
 pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
@@ -115,7 +148,17 @@ pub fn text_get_ui_scissor(TextHandle) -> @math.Rect?
 
 pub fn text_get_visual_bounds(TextHandle) -> @math.Rect?
 
+pub fn text_layout_size(TextHandle) -> @math.Vec2?
+
+pub fn text_measure_glyph_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
+
 pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn text_plugin_id() -> String
+
+pub fn text_public_error_surface_available() -> Bool
+
+pub fn text_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
 pub fn text_render_system(@ecs.World) -> Unit
 
@@ -125,11 +168,15 @@ pub fn text_render_transparent_ui_queue_system(@ecs.World) -> Unit
 
 pub fn text_reset_runtime_state_for_tests() -> Unit
 
+pub fn text_runtime_available() -> Bool
+
 pub fn text_runtime_clear_layout_dirty() -> Unit
 
 pub fn text_runtime_layout_dirty() -> Bool
 
 pub fn text_runtime_mark_layout_dirty() -> Unit
+
+pub fn text_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn text_set_anchor(TextHandle, @sprite.Anchor) -> Unit
 
@@ -194,6 +241,8 @@ pub fn text_spawn(Text2dBundle) -> TextHandle
 pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
 
 pub fn text_update_system(@ecs.World) -> Unit
+
+pub fn text_visual_bounds(TextHandle) -> @math.Rect?
 
 pub fn ui_text_ecs_handle(@ecs.World, @core.Entity) -> TextHandle?
 
@@ -598,6 +647,11 @@ pub struct TextEntity {
   font_smoothing : FontSmoothing
 }
 
+pub struct TextErrorBridge {
+  module_tag : String
+}
+pub fn TextErrorBridge::default() -> Self
+
 pub(all) struct TextFont {
   mut font : FontSource
   mut font_size : FontSize
@@ -618,6 +672,11 @@ pub fn TextFont::with_style(Self, FontStyle) -> Self
 pub fn TextFont::with_weight(Self, FontWeight) -> Self
 pub fn TextFont::with_width(Self, FontWidth) -> Self
 pub impl @ecs.Component for TextFont
+
+pub struct TextFontLoaderBridge {
+  module_tag : String
+}
+pub fn TextFontLoaderBridge::default() -> Self
 
 pub struct TextHandle {
   id : Int
@@ -714,7 +773,7 @@ pub impl @ecs.Component for UnderlineColor
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl @ecs.Component for YAxisOrientation
 
 // Type aliases

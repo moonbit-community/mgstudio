@@ -16,7 +16,7 @@
 pub(all) enum ShaderImport {
   AssetPath(String)
   Custom(String)
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, Debug)
 
 ///|
 pub fn ShaderImport::module_name(self : ShaderImport) -> String {

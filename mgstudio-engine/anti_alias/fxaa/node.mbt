@@ -14,7 +14,12 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/fxaa/node.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_fxaa_node_bridge_pending() -> Unit {
+// Bridge node-level FXAA activation helper.
 
+///|
+pub fn fxaa_node_enabled(world : @ecs.World, entity : @core.Entity) -> Bool {
+  match (try! world.entity(entity).get() : Fxaa?) {
+    Some(_) => true
+    None => false
+  }
 }

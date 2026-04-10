@@ -34,32 +34,32 @@ const MODEL_DRAG_ROTATION_SPEED : Float = 0.01F
 pub(all) enum ContactShadowState {
   Enabled
   Disabled
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ShadowMapsState {
   Enabled
   Disabled
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum LightRotationState {
   Rotating
   Stationary
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum LightType {
   Directional
   Point
   Spot
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ReceiveShadowsState {
   Enabled
   Disabled
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct ContactShadowsExampleState {

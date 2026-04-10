@@ -4,14 +4,27 @@ package "Milky2018/mgstudio/post_process/motion_blur"
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/json",
 }
 
 // Values
+pub const MOTION_BLUR_MODULE_TAG : String = "bevy_post_process::motion_blur"
+
 pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
+
+pub fn motion_blur_module_tag() -> String
+
+pub fn motion_blur_runtime_available() -> Bool
+
+pub fn motion_blur_samples(@post_process.MotionBlur) -> Array[MotionBlurSample]
 
 // Errors
 
 // Types and methods
+pub struct MotionBlurSample {
+  offset : Float
+  weight : Float
+} derive(ToJson, @json.FromJson)
 
 // Type aliases
 pub using @post_process {type MotionBlur}

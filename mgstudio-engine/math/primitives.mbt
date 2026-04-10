@@ -17,7 +17,7 @@ pub(all) enum WindingOrder {
   Clockwise
   CounterClockwise
   Invalid
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(open) trait Primitive2d {}

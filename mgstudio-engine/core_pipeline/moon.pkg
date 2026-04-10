@@ -1,8 +1,17 @@
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core_pipeline/blit" @blit,
+  "Milky2018/mgstudio/core_pipeline/core_2d" @core_2d,
   "Milky2018/mgstudio/core_pipeline/core_3d" @core_3d,
   "Milky2018/mgstudio/core_pipeline/deferred" @deferred,
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader" @fullscreen_vertex_shader,
+  "Milky2018/mgstudio/core_pipeline/mip_generation" @mip_generation,
+  "Milky2018/mgstudio/core_pipeline/oit" @oit,
   "Milky2018/mgstudio/core_pipeline/prepass" @prepass,
+  "Milky2018/mgstudio/core_pipeline/skybox" @skybox,
+  "Milky2018/mgstudio/core_pipeline/tonemapping" @tonemapping,
+  "Milky2018/mgstudio/core_pipeline/upscaling" @upscaling,
 }
 
 supported_targets = "native"

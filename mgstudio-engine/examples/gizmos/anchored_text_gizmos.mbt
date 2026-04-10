@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gizmos/anchored_text_gizmos.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ANCHORED_TEXT_GIZMOS : String = "examples/gizmos/anchored_text_gizmos/main.mbt"
+

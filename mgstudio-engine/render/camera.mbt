@@ -29,7 +29,7 @@ pub(all) enum HostGpuPresentMode {
   FifoRelaxed
   Immediate
   Mailbox
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn HostGpuPresentMode::default() -> HostGpuPresentMode {
@@ -43,7 +43,7 @@ pub(all) enum HostGpuCompositeAlphaMode {
   PreMultiplied
   PostMultiplied
   Inherit
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn HostGpuCompositeAlphaMode::default() -> HostGpuCompositeAlphaMode {

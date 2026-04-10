@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/images/ui_texture_slice_flip_and_tile.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_UI_TEXTURE_SLICE_FLIP_AND_TILE : String = "examples/ui/images/ui_texture_slice_flip_and_tile/main.mbt"
+

@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_log/src/once.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _log_once_bridge_pending() -> Unit {
 
+///|
+pub fn log_once(
+  level : @app.LogLevel,
+  callsite : String,
+  message : String,
+  target? : String = "bevy_log::once",
+  name? : String = "bevy_log_once",
+) -> Unit {
+  @app.log_once(level, callsite~, message~, target~, name~)
+}
+
+///|
+pub fn warn_once(callsite : String, message : String) -> Unit {
+  @app.log_warn_once(callsite, message)
+}
+
+///|
+pub fn info_once(callsite : String, message : String) -> Unit {
+  @app.log_info_once(callsite, message)
 }

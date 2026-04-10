@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/app.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_app_bridge_pending() -> Unit {
+// Bridge helpers for app/plugin-facing state integration.
 
+///|
+pub type StateAppPlugin = StatesPlugin
+
+///|
+pub fn state_app_plugin(plugin : StateAppPlugin) -> @app.Plugin[@ecs.World] {
+  states_plugin(plugin)
+}
+
+///|
+pub fn[S : @app.States] state_app_insert(
+  app : @app.App[@ecs.World],
+  state : S,
+) -> @app.App[@ecs.World] {
+  insert_state_app(app, state)
 }

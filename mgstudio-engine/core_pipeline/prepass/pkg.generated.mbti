@@ -2,16 +2,43 @@
 package "Milky2018/mgstudio/core_pipeline/prepass"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const EARLY_PREPASS_LABEL : String = "early prepass"
+
+pub const LATE_PREPASS_LABEL : String = "late prepass"
+
+pub const PREPASS_PLUGIN_ID : String = "bevy_core_pipeline::prepass::PrepassPlugin"
+
+pub fn early_prepass_should_run(PrepassViewState) -> Bool
+
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass]
 
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass]
+
+pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState]
+
+pub fn late_prepass_should_run(PrepassViewState) -> Bool
+
+pub fn prepass_any_color_attachment_enabled(has_normal~ : Bool, has_motion_vectors~ : Bool, has_deferred~ : Bool, has_deferred_lighting_pass_id~ : Bool) -> Bool
+
+pub fn prepass_has_any_color_attachment(PrepassViewState) -> Bool
+
+pub fn prepass_has_any_phase(PrepassViewState) -> Bool
+
+pub fn prepass_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn prepass_plugin_with(@app.App[@ecs.World], PrepassPlugin) -> @app.App[@ecs.World]
+
+pub fn prepass_should_copy_depth_to_prepass_depth(PrepassViewState) -> Bool
+
+pub fn prepass_should_skip_due_to_deferred(PrepassViewState) -> Bool
 
 // Errors
 
@@ -30,6 +57,34 @@ pub struct NormalPrepass {
 } derive(ToJson, @json.FromJson)
 pub fn NormalPrepass::default() -> Self
 pub impl @ecs.Component for NormalPrepass
+
+pub struct PrepassNode {
+  label : String
+}
+pub fn PrepassNode::early() -> Self
+pub fn PrepassNode::label(Self) -> String
+pub fn PrepassNode::late() -> Self
+
+pub struct PrepassPlugin {
+}
+pub fn PrepassPlugin::default() -> Self
+pub impl @app.PluginReplacement for PrepassPlugin
+
+pub struct PrepassViewState {
+  has_deferred_prepass_component : Bool
+  has_opaque_prepass_phase : Bool
+  has_alpha_mask_prepass_phase : Bool
+  has_normal_attachment : Bool
+  has_motion_vectors_attachment : Bool
+  has_deferred_attachment : Bool
+  has_deferred_lighting_pass_id_attachment : Bool
+  occlusion_culling_enabled : Bool
+  no_indirect_drawing : Bool
+  has_prepass_depth_attachment : Bool
+}
+pub fn PrepassViewState::default() -> Self
+pub fn PrepassViewState::new(has_deferred_prepass_component? : Bool, has_opaque_prepass_phase? : Bool, has_alpha_mask_prepass_phase? : Bool, has_normal_attachment? : Bool, has_motion_vectors_attachment? : Bool, has_deferred_attachment? : Bool, has_deferred_lighting_pass_id_attachment? : Bool, occlusion_culling_enabled? : Bool, no_indirect_drawing? : Bool, has_prepass_depth_attachment? : Bool) -> Self
+pub impl @app.Resource for PrepassViewState
 
 // Type aliases
 

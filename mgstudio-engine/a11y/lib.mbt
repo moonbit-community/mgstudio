@@ -14,7 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_a11y/src/lib.rs`.
-// Bridge entrypoint for the crate-level source shape.
+// Crate-root plugin surface.
+pub const A11Y_CRATE_ID : String = "bevy_a11y"
+
+///|
+pub const A11Y_DEFAULT_PLUGIN_ID : String = "bevy_a11y::AccessibilityPlugin"
+
+///|
+pub fn accessibility_plugin_default() -> AccessibilityPlugin {
+  AccessibilityPlugin::default()
+}
+
+///|
+pub fn accessibility_plugin_run(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  accessibility_plugin(app)
+}
+
+///|
 pub fn a11y_lib_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   a11y_plugin(app)
 }

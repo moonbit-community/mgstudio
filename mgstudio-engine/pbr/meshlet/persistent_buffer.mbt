@@ -16,6 +16,44 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/persistent_buffer.rs`.
 
 ///|
+pub(open) trait PersistentGpuBufferable {}
+
+///|
+pub struct PersistentGpuBuffer[T] {
+  elements : Array[T]
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::new() -> PersistentGpuBuffer[T] {
+  PersistentGpuBuffer::{ elements: [] }
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::len(self : PersistentGpuBuffer[T]) -> Int {
+  self.elements.length()
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::clear(self : PersistentGpuBuffer[T]) -> Unit {
+  self.elements.clear()
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::push(
+  self : PersistentGpuBuffer[T],
+  value : T,
+) -> Unit {
+  self.elements.push(value)
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::snapshot(
+  self : PersistentGpuBuffer[T],
+) -> Array[T] {
+  self.elements
+}
+
+///|
 pub fn meshlet_persistent_buffer_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

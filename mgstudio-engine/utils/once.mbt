@@ -17,6 +17,31 @@
 // The current runtime does not expose Bevy's once-cell helpers.
 
 ///|
+pub const ONCE_MODULE_TAG : String = "bevy_utils::once"
+
+///|
 pub fn utils_once_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub struct OnceCellBridge[T] {
+  mut value : T?
+}
+
+///|
+pub fn[T] OnceCellBridge::new() -> OnceCellBridge[T] {
+  OnceCellBridge::{ value: None }
+}
+
+///|
+pub fn[T] OnceCellBridge::set(self : OnceCellBridge[T], value : T) -> Unit {
+  if self.value is None {
+    self.value = Some(value)
+  }
+}
+
+///|
+pub fn[T] OnceCellBridge::get(self : OnceCellBridge[T]) -> T? {
+  self.value
 }

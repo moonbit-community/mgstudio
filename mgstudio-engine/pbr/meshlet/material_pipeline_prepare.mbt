@@ -16,6 +16,47 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/material_pipeline_prepare.rs`.
 
 ///|
+pub struct MeshletViewMaterialsMainOpaquePass {
+  entries : Array[(Int, Int, Int)]
+}
+
+///|
+pub fn MeshletViewMaterialsMainOpaquePass::default() -> MeshletViewMaterialsMainOpaquePass {
+  MeshletViewMaterialsMainOpaquePass::{ entries: [] }
+}
+
+///|
+pub struct MeshletViewMaterialsPrepass {
+  entries : Array[(Int, Int, Int)]
+}
+
+///|
+pub fn MeshletViewMaterialsPrepass::default() -> MeshletViewMaterialsPrepass {
+  MeshletViewMaterialsPrepass::{ entries: [] }
+}
+
+///|
+pub struct MeshletViewMaterialsDeferredGBufferPrepass {
+  entries : Array[(Int, Int, Int)]
+}
+
+///|
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> MeshletViewMaterialsDeferredGBufferPrepass {
+  MeshletViewMaterialsDeferredGBufferPrepass::{ entries: [] }
+}
+
+///|
+pub fn meshlet_material_prepare_entry_count(
+  main_opaque : MeshletViewMaterialsMainOpaquePass,
+  prepass : MeshletViewMaterialsPrepass,
+  deferred_prepass : MeshletViewMaterialsDeferredGBufferPrepass,
+) -> Int {
+  main_opaque.entries.length() +
+  prepass.entries.length() +
+  deferred_prepass.entries.length()
+}
+
+///|
 pub fn meshlet_material_pipeline_prepare_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

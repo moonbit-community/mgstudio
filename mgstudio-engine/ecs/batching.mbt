@@ -23,7 +23,7 @@ pub struct BatchingStrategy {
   min_batch_size : Int
   max_batch_size : Int
   batches_per_thread : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub impl Default for BatchingStrategy with default() {

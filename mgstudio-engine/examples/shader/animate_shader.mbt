@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/animate_shader.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ANIMATE_SHADER : String = "examples/shader/animate_shader/main.mbt"
+

@@ -20,7 +20,7 @@
 pub(all) enum MeshGenerateTangentsError {
   Not3dGeometry
   GeometryError(Mesh3dGenerateTangentsError)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {

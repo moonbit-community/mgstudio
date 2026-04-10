@@ -1,11 +1,37 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/anti_alias/smaa"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub const SMAA_RUNTIME_SUPPORTED : Bool = false
+
+pub fn smaa_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub struct Smaa {
+  preset : SmaaPreset
+} derive(Eq, @debug.Debug)
+pub fn Smaa::default() -> Self
+pub impl @ecs.Component for Smaa
+
+pub struct SmaaPlugin {
+}
+pub fn SmaaPlugin::default() -> Self
+
+pub(all) enum SmaaPreset {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, @debug.Debug)
+pub fn SmaaPreset::default() -> Self
 
 // Type aliases
 

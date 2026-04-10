@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_remote/src/schemas/json_schema.rs`).
+// Bevy source: `bevy/crates/bevy_remote/src/schemas/json_schema.rs`.
 
 ///|
 pub(all) enum RemoteJsonSchemaType {
@@ -23,7 +23,7 @@ pub(all) enum RemoteJsonSchemaType {
   String
   Array
   Object
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct RemoteJsonSchema {
@@ -46,4 +46,14 @@ pub fn RemoteJsonSchema::with_description(
   description : String,
 ) -> RemoteJsonSchema {
   RemoteJsonSchema::{ ..self, description: Some(description) }
+}
+
+///|
+pub fn remote_json_schema_string(title : String) -> RemoteJsonSchema {
+  RemoteJsonSchema::new(title, String)
+}
+
+///|
+pub fn remote_json_schema_object(title : String) -> RemoteJsonSchema {
+  RemoteJsonSchema::new(title, Object)
 }

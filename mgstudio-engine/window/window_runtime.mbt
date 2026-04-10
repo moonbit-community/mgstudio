@@ -950,13 +950,26 @@ fn window_sync_requested_cursor_state(
     runtime_ref.val.last_applied_cursor_grab_mode = cursor_options.grab_mode
   }
   let cursor_icon = window_current_cursor_icon(world, entity)
-  if cursor_icon != runtime_ref.val.last_applied_cursor_icon {
+  if !window_cursor_icon_option_eq(
+      cursor_icon,
+      runtime_ref.val.last_applied_cursor_icon,
+    ) {
     if cursor_icon is Some(cursor_icon0) {
       host_window_set_cursor_icon(host_window, icon=cursor_icon0)
     } else {
       host_window_set_cursor_icon(host_window, icon=CursorIcon::default())
     }
     runtime_ref.val.last_applied_cursor_icon = cursor_icon
+  }
+}
+
+///|
+fn window_cursor_icon_option_eq(lhs : CursorIcon?, rhs : CursorIcon?) -> Bool {
+  match (lhs, rhs) {
+    (None, None) => true
+    (Some(System(a)), Some(System(b))) => a == b
+    (Some(Custom(_)), Some(Custom(_))) => true
+    _ => false
   }
 }
 

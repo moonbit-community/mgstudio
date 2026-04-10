@@ -1,11 +1,49 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/solari/scene"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub fn compact_raytracing_blas(@ecs.World) -> Unit
+
+pub fn extract_raytracing_scene(@ecs.World) -> Unit
+
+pub fn prepare_raytracing_blas(@ecs.World) -> Unit
+
+pub fn prepare_raytracing_scene_bindings(@ecs.World) -> Unit
+
+pub fn raytracing_scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub struct BlasManager {
+  prepared_mesh_count : Int
+}
+pub fn BlasManager::default() -> Self
+
+pub struct RaytracingMesh3d {
+  mesh_id : Int
+}
+pub fn RaytracingMesh3d::mesh_id(Self) -> Int
+pub fn RaytracingMesh3d::new(Int) -> Self
+
+pub struct RaytracingSceneBindings {
+  bind_group_id : Int
+}
+pub fn RaytracingSceneBindings::default() -> Self
+
+pub struct RaytracingScenePlugin {
+}
+pub fn RaytracingScenePlugin::default() -> Self
+
+pub struct StandardMaterialAssets {
+  material_ids : Array[Int]
+}
+pub fn StandardMaterialAssets::default() -> Self
 
 // Type aliases
 

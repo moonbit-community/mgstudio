@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/input/mouse_grab.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_MOUSE_GRAB : String = "examples/input/mouse_grab/main.mbt"
+

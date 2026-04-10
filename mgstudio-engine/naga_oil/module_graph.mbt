@@ -16,13 +16,13 @@
 pub struct WgslImportTarget {
   raw_path : String
   alias_name : String
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct WgslResolvedImportModule {
   module_path : String
   rel_path : String
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn join_wgsl_import_prefix(prefix : String, path : String) -> String {

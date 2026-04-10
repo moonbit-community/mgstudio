@@ -26,7 +26,7 @@ struct OptionalWarning {
 enum ParseOutcome {
   Parsed(Int)
   ParseError(String)
-} derive(Show)
+} derive(Debug)
 
 ///|
 let message_resource_key : @ecs.ResourceKey[Message] = @ecs.register_resource(
@@ -95,7 +95,7 @@ fn print_info(output : String) -> Unit {
 
 ///|
 fn print_debug(result : ParseOutcome) -> Unit {
-  @app.log_debug(result.to_string())
+  @app.log_debug(to_repr(result).to_string())
 }
 
 ///|

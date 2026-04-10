@@ -14,7 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cascade.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_cascade_bridge_pending() -> Unit {
+// Bridge aliases for cascade shadow configuration.
 
+///|
+pub type CascadeConfig = CascadeShadowConfig
+
+///|
+pub type CascadeConfigBuilder = CascadeShadowConfigBuilder
+
+///|
+pub type DirectionalShadowMapResource = DirectionalLightShadowMap
+
+///|
+pub let ecs_key_directional_shadow_map_resource : @ecs.ResourceKey[
+  DirectionalShadowMapResource,
+] = ecs_key_directional_light_shadow_map
+
+///|
+pub fn directional_shadow_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[DirectionalShadowMapResource] {
+  get_directional_light_shadow_map_resource(world)
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub struct Disabled {} derive(Eq, Show, ToJson, FromJson)
+pub struct Disabled {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn Disabled::new() -> Disabled {

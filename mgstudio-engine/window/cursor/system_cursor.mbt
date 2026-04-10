@@ -18,3 +18,11 @@
 
 ///|
 pub type SystemCursorIcon = @window.SystemCursorIcon
+
+///|
+pub const SYSTEM_CURSOR_MODULE_TAG : String = "bevy_window::cursor::system_cursor"
+
+///|
+pub fn system_cursor_icon_identity(icon : SystemCursorIcon) -> SystemCursorIcon {
+  icon
+}

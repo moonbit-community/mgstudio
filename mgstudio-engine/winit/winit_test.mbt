@@ -114,7 +114,7 @@ fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
 ///|
 test "winit: plugin replacement id aligns with bevy_winit" {
   let plugin = WinitPlugin::default()
-  inspect(plugin.replacement_id(), content=WINIT_PLUGIN_ID)
+  debug_inspect(plugin.replacement_id(), content=WINIT_PLUGIN_ID)
 }
 
 ///|
@@ -124,7 +124,7 @@ test "winit: plugin forwards run_on_any_thread setting to native backend" {
     @window.window_plugin(@app.App::new(@ecs.World::new())),
     WinitPlugin::{ run_on_any_thread: true },
   ).run_once()
-  inspect(@windowing.event_loop_any_thread_requested(), content="true")
+  debug_inspect(@windowing.event_loop_any_thread_requested(), content="true")
   @windowing.set_event_loop_any_thread(false)
 }
 
@@ -133,12 +133,18 @@ test "winit: backend sync is owned by winit plugin" {
   let app_without_winit = @window.window_plugin(
     @app.App::new(@ecs.World::new()),
   ).run_once()
-  inspect(read_window_created(app_without_winit.world()).length(), content="0")
+  debug_inspect(
+    read_window_created(app_without_winit.world()).length(),
+    content="0",
+  )
 
   let app_with_winit = winit_plugin(
     @window.window_plugin(@app.App::new(@ecs.World::new())),
   ).run_once()
-  inspect(read_window_created(app_with_winit.world()).length(), content="1")
+  debug_inspect(
+    read_window_created(app_with_winit.world()).length(),
+    content="1",
+  )
 }
 
 ///|
@@ -151,16 +157,16 @@ test "winit: plugin initializes bevy-aligned default settings resource" {
     None => abort("missing WinitSettings resource")
   }
 
-  inspect(settings.update_mode(true), content="Continuous")
+  debug_inspect(settings.update_mode(true), content="Continuous")
   match settings.update_mode(false) {
     Reactive(wait, react_to_device, react_to_user, react_to_window) => {
-      inspect(
+      debug_inspect(
         wait.as_secs_f64() > 0.016 && wait.as_secs_f64() < 0.017,
         content="true",
       )
-      inspect(react_to_device, content="false")
-      inspect(react_to_user, content="true")
-      inspect(react_to_window, content="true")
+      debug_inspect(react_to_device, content="false")
+      debug_inspect(react_to_user, content="true")
+      debug_inspect(react_to_window, content="true")
     }
     _ => abort("expected reactive unfocused mode")
   }
@@ -179,9 +185,9 @@ test "winit: plugin initializes bevy-aligned monitors resource" {
 
   assert_eq(monitors.monitors.length(), native_monitor_count)
   if native_monitor_count == 0 {
-    inspect(monitors.nth(0) is None, content="true")
+    debug_inspect(monitors.nth(0) is None, content="true")
   } else {
-    inspect(monitors.nth(0) is Some(_), content="true")
+    debug_inspect(monitors.nth(0) is Some(_), content="true")
   }
 }
 
@@ -213,7 +219,7 @@ test "winit: windows resource mirrors host window runtime mapping" {
   assert_eq(windows.windows.length(), host_entries.length())
   for entry in host_entries {
     assert_eq(windows.get_window(entry.entity), Some(entry.host_window))
-    inspect(
+    debug_inspect(
       windows.get_window_entity(entry.host_window) is Some(entity) &&
       entity == entry.entity,
       content="true",
@@ -232,7 +238,7 @@ test "winit: windows resource supports remove by entity" {
 
   assert_eq(windows.remove_window(entity_a), Some(101))
   assert_eq(windows.get_window(entity_a), None)
-  inspect(windows.get_window_entity(101) is None, content="true")
+  debug_inspect(windows.get_window_entity(101) is None, content="true")
   assert_eq(windows.get_window(entity_b), Some(202))
   assert_eq(windows.windows.length(), 1)
 }
@@ -242,17 +248,17 @@ test "winit: monitors resource provides nth and find_entity accessors" {
   let world = @ecs.World::new()
   let missing_entity = world.spawn()
   let monitors = WinitMonitors::default()
-  inspect(monitors.nth(0) is None, content="true")
-  inspect(monitors.nth(-1) is None, content="true")
-  inspect(monitors.find_entity(world.spawn()) is None, content="true")
-  inspect(monitors.find_entity(missing_entity) is None, content="true")
+  debug_inspect(monitors.nth(0) is None, content="true")
+  debug_inspect(monitors.nth(-1) is None, content="true")
+  debug_inspect(monitors.find_entity(world.spawn()) is None, content="true")
+  debug_inspect(monitors.find_entity(missing_entity) is None, content="true")
 }
 
 ///|
 test "winit: select_monitor aligns with bevy monitor selection semantics" {
   let native_monitors = @windowing.available_monitors()
   if native_monitors.length() == 0 {
-    inspect(true, content="true")
+    debug_inspect(true, content="true")
     return
   }
 
@@ -306,7 +312,7 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
     ),
     Some(monitor_a),
   )
-  inspect(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
@@ -316,7 +322,7 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
     is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
@@ -326,7 +332,7 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
     is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
@@ -342,7 +348,7 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
 test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
   let native_monitors = @windowing.available_monitors()
   if native_monitors.length() == 0 {
-    inspect(true, content="true")
+    debug_inspect(true, content="true")
     return
   }
 
@@ -354,7 +360,7 @@ test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
         Some(current_mode),
       )
     None =>
-      inspect(
+      debug_inspect(
         get_selected_videomode(monitor, @window.VideoModeSelection::Current)
         is None,
         content="true",
@@ -408,7 +414,7 @@ test "winit: monitor sync mirrors native monitor snapshot" {
 
   match native_primary {
     Some(primary_monitor) => {
-      inspect(primary_count, content="1")
+      debug_inspect(primary_count, content="1")
       let mut primary_matched = false
       for entry in monitors.monitors {
         if has_primary_monitor(world, entry.entity) &&
@@ -418,7 +424,7 @@ test "winit: monitor sync mirrors native monitor snapshot" {
       }
       assert_true(primary_matched)
     }
-    None => inspect(primary_count, content="0")
+    None => debug_inspect(primary_count, content="0")
   }
 }
 
@@ -427,10 +433,10 @@ test "winit: update mode constructors align with bevy settings semantics" {
   let reactive = UpdateMode::reactive(@core.Duration::from_secs(5L))
   match reactive {
     Reactive(wait, react_to_device, react_to_user, react_to_window) => {
-      assert_eq(wait, @core.Duration::from_secs(5L))
-      inspect(react_to_device, content="true")
-      inspect(react_to_user, content="true")
-      inspect(react_to_window, content="true")
+      debug_inspect(wait == @core.Duration::from_secs(5L), content="true")
+      debug_inspect(react_to_device, content="true")
+      debug_inspect(react_to_user, content="true")
+      debug_inspect(react_to_window, content="true")
     }
     _ => abort("expected reactive mode")
   }
@@ -438,10 +444,10 @@ test "winit: update mode constructors align with bevy settings semantics" {
   let low_power = UpdateMode::reactive_low_power(@core.Duration::from_secs(60L))
   match low_power {
     Reactive(wait, react_to_device, react_to_user, react_to_window) => {
-      assert_eq(wait, @core.Duration::from_secs(60L))
-      inspect(react_to_device, content="false")
-      inspect(react_to_user, content="true")
-      inspect(react_to_window, content="true")
+      debug_inspect(wait == @core.Duration::from_secs(60L), content="true")
+      debug_inspect(react_to_device, content="false")
+      debug_inspect(react_to_user, content="true")
+      debug_inspect(react_to_window, content="true")
     }
     _ => abort("expected reactive_low_power mode")
   }
@@ -513,7 +519,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
 
   app = app.run_once()
 
-  inspect(read_keyboard_focus_lost(app.world()).length(), content="1")
+  debug_inspect(read_keyboard_focus_lost(app.world()).length(), content="1")
 
   let window_event_reader = app
     .world()
@@ -525,7 +531,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
       focus_lost_count = focus_lost_count + 1
     }
   }
-  inspect(focus_lost_count, content="1")
+  debug_inspect(focus_lost_count, content="1")
 }
 
 ///|
@@ -556,10 +562,10 @@ test "winit: close request is despawned by Last-stage winit system" {
 
   app = app.run_once()
 
-  inspect(app.world().is_alive(window_entity), content="false")
-  inspect(read_window_closing(app.world()).length(), content="1")
-  inspect(read_window_closed(app.world()).length(), content="1")
-  inspect(read_window_destroyed(app.world()).length(), content="1")
+  debug_inspect(app.world().is_alive(window_entity), content="false")
+  debug_inspect(read_window_closing(app.world()).length(), content="1")
+  debug_inspect(read_window_closed(app.world()).length(), content="1")
+  debug_inspect(read_window_destroyed(app.world()).length(), content="1")
 }
 
 ///|
@@ -617,5 +623,5 @@ test "winit: plugin owns accessibility update commit" {
   @a11y.a11y_host_apply_update_payload(payload)
   app = app.run_once()
 
-  inspect(@windowing.last_accessibility_update_payload(), content=payload)
+  debug_inspect(@windowing.last_accessibility_update_payload(), content=payload)
 }

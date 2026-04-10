@@ -18,7 +18,7 @@ test "audio source asset registry stores bytes" {
   let world = app.world()
   let source = AudioSource::new(b"abc")
   let handle = audio_source_add(world, source)
-  inspect(audio_source_get(world, handle) is Some(_), content="true")
+  debug_inspect(audio_source_get(world, handle) is Some(_), content="true")
 }
 
 ///|
@@ -48,10 +48,10 @@ test "audio source AssetServer loader registers direct handle flow" {
 
   app = app.update()
 
-  inspect(loaded_handle_ids.length(), content="2")
-  inspect(loaded_handle_ids[0] == loaded_handle_ids[1], content="true")
-  inspect(loaded_lengths.length(), content="1")
-  inspect(loaded_lengths[0] > 0, content="true")
+  debug_inspect(loaded_handle_ids.length(), content="2")
+  debug_inspect(loaded_handle_ids[0] == loaded_handle_ids[1], content="true")
+  debug_inspect(loaded_lengths.length(), content="1")
+  debug_inspect(loaded_lengths[0] > 0, content="true")
 }
 
 ///|
@@ -59,5 +59,5 @@ test "pitch asset registry stores pitch data" {
   let app = audio_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
   let handle = pitch_add(world, Pitch::new(440.0F, 1.0F))
-  inspect(pitch_get(world, handle) is Some(_), content="true")
+  debug_inspect(pitch_get(world, handle) is Some(_), content="true")
 }

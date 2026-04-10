@@ -2,6 +2,8 @@
 package "Milky2018/mgstudio/render/texture"
 
 // Values
+pub const FALLBACK_TEXTURE_ID : Int = -1
+
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn asset_create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format_raw~ : Int, sample_format_raw~ : Int) -> Int
@@ -30,6 +32,10 @@ pub fn asset_write_texture_region_rgba8(texture_id~ : Int, x~ : Int, y~ : Int, w
 
 pub fn asset_write_texture_region_rgba8_mip(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, pixels_rgba8~ : Bytes) -> Unit
 
+pub fn fallback_image_is_default(Int) -> Bool
+
+pub fn fallback_image_texture_id() -> Int
+
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn host_gpu_create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
@@ -38,11 +44,51 @@ pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~
 
 pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 
+pub fn manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
+
 // Errors
 
 // Types and methods
+pub struct GpuImage {
+  texture_id : Int
+}
+pub fn GpuImage::create_mip_view(Self, Int) -> Int
+pub fn GpuImage::height(Self) -> Int
+pub fn GpuImage::is_loaded(Self) -> Bool
+pub fn GpuImage::new(Int) -> Self
+pub fn GpuImage::texture_id(Self) -> Int
+pub fn GpuImage::width(Self) -> Int
+
+pub struct ManualTextureView {
+  texture_id : Int
+  mip_level : Int
+}
+pub fn ManualTextureView::mip_level(Self) -> Int
+pub fn ManualTextureView::new(Int, Int) -> Self
+pub fn ManualTextureView::texture_id(Self) -> Int
+
+pub struct TextureAttachment {
+  texture_id : Int
+  mip_level : Int
+  layer : Int
+}
+pub fn TextureAttachment::as_manual_texture_view(Self) -> Int
+pub fn TextureAttachment::layer(Self) -> Int
+pub fn TextureAttachment::mip_level(Self) -> Int
+pub fn TextureAttachment::new(Int, Int, Int) -> Self
+pub fn TextureAttachment::texture_id(Self) -> Int
+
+pub struct TextureCache {
+  texture_ids : Array[Int]
+}
+pub fn TextureCache::contains(Self, Int) -> Bool
+pub fn TextureCache::insert(Self, Int) -> Self
+pub fn TextureCache::is_empty(Self) -> Bool
+pub fn TextureCache::len(Self) -> Int
+pub fn TextureCache::new() -> Self
 
 // Type aliases
+pub type ManualTextureViewHandle = Int
 
 // Traits
 

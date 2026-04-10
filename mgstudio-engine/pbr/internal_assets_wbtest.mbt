@@ -29,19 +29,19 @@ test "render3d: internal assets are stored per world resource" {
 
   init_mesh_render_resources(world_a)
   init_mesh_render_resources(world_b)
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_a).unwrap().val.skybox_proxy_mesh is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_b).unwrap().val.skybox_proxy_mesh is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_a).unwrap().val.tonemapping_luts is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_b).unwrap().val.tonemapping_luts is None,
     content="true",
   )
@@ -51,21 +51,21 @@ test "render3d: internal assets are stored per world resource" {
   )
   render3d_tonemapping_lut_handles(world_a) |> ignore
 
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_a).unwrap().val.skybox_proxy_mesh
     is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_b).unwrap().val.skybox_proxy_mesh is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_a).unwrap().val.tonemapping_luts
     is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     render3d_internal_assets_ref(world_b).unwrap().val.tonemapping_luts is None,
     content="true",
   )

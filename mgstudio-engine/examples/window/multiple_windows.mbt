@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/window/multiple_windows.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_MULTIPLE_WINDOWS : String = "examples/window/multiple_windows/main.mbt"
+

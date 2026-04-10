@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/stress_tests/bevymark_3d.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_BEVYMARK_3D : String = "examples/stress_tests/bevymark_3d/main.mbt"
+

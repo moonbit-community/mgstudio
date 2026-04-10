@@ -45,11 +45,11 @@ test "diagnostics: frame time diagnostics use real time instead of virtual time"
     )
     .run_once()
 
-  inspect(
+  debug_inspect(
     read_frame_time_diagnostic_value(app, frame_time_diagnostic_frame_time),
     content="1000",
   )
-  inspect(
+  debug_inspect(
     read_frame_time_diagnostic_value(app, frame_time_diagnostic_fps),
     content="1",
   )

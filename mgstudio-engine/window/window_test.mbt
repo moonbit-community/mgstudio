@@ -104,24 +104,24 @@ fn read_window_events(world : @ecs.World) -> Array[WindowEvent] {
 ///|
 test "window: default window fields align with bevy defaults" {
   let window = Window::default()
-  inspect(window.composite_alpha_mode, content="Auto")
-  inspect(window.resize_constraints.min_width, content="180")
-  inspect(window.resize_constraints.min_height, content="120")
-  inspect(window.canvas, content="None")
-  inspect(window.skip_taskbar, content="false")
-  inspect(window.clip_children, content="true")
-  inspect(window.desired_maximum_frame_latency, content="None")
-  inspect(window.movable_by_window_background, content="false")
-  inspect(window.fullsize_content_view, content="false")
-  inspect(window.has_shadow, content="true")
-  inspect(window.titlebar_shown, content="true")
-  inspect(window.titlebar_transparent, content="false")
-  inspect(window.titlebar_show_title, content="true")
-  inspect(window.titlebar_show_buttons, content="true")
-  inspect(window.borderless_game, content="true")
-  inspect(window.prefers_home_indicator_hidden, content="false")
-  inspect(window.prefers_status_bar_hidden, content="false")
-  inspect(
+  debug_inspect(window.composite_alpha_mode, content="Auto")
+  debug_inspect(window.resize_constraints.min_width, content="180")
+  debug_inspect(window.resize_constraints.min_height, content="120")
+  debug_inspect(window.canvas, content="None")
+  debug_inspect(window.skip_taskbar, content="false")
+  debug_inspect(window.clip_children, content="true")
+  debug_inspect(window.desired_maximum_frame_latency, content="None")
+  debug_inspect(window.movable_by_window_background, content="false")
+  debug_inspect(window.fullsize_content_view, content="false")
+  debug_inspect(window.has_shadow, content="true")
+  debug_inspect(window.titlebar_shown, content="true")
+  debug_inspect(window.titlebar_transparent, content="false")
+  debug_inspect(window.titlebar_show_title, content="true")
+  debug_inspect(window.titlebar_show_buttons, content="true")
+  debug_inspect(window.borderless_game, content="true")
+  debug_inspect(window.prefers_home_indicator_hidden, content="false")
+  debug_inspect(window.prefers_status_bar_hidden, content="false")
+  debug_inspect(
     window.preferred_screen_edges_deferring_system_gestures,
     content="None",
   )
@@ -136,10 +136,10 @@ test "window: resize constraints clamp invalid values" {
     max_height: -2.0F,
   }.check_constraints()
 
-  inspect(checked.min_width, content="1")
-  inspect(checked.min_height, content="1")
-  inspect(checked.max_width, content="1")
-  inspect(checked.max_height, content="1")
+  debug_inspect(checked.min_width, content="1")
+  debug_inspect(checked.min_height, content="1")
+  debug_inspect(checked.max_width, content="1")
+  debug_inspect(checked.max_height, content="1")
 }
 
 ///|
@@ -174,87 +174,126 @@ test "window: plugin spawns configured primary window entity and messages" {
     close_when_requested: false,
   }).run_once()
 
-  inspect(app.world().contains_message(ecs_key_window_created), content="true")
-  inspect(app.world().contains_message(ecs_key_window_event), content="true")
-  inspect(app.world().contains_message(ecs_key_request_redraw), content="true")
-  inspect(
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_created),
+    content="true",
+  )
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_event),
+    content="true",
+  )
+  debug_inspect(
+    app.world().contains_message(ecs_key_request_redraw),
+    content="true",
+  )
+  debug_inspect(
     app.world().contains_message(ecs_key_window_close_requested),
     content="true",
   )
-  inspect(app.world().contains_message(ecs_key_window_closing), content="true")
-  inspect(app.world().contains_message(ecs_key_window_closed), content="true")
-  inspect(
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_closing),
+    content="true",
+  )
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_closed),
+    content="true",
+  )
+  debug_inspect(
     app.world().contains_message(ecs_key_window_destroyed),
     content="true",
   )
-  inspect(app.world().contains_message(ecs_key_cursor_moved), content="true")
-  inspect(app.world().contains_message(ecs_key_cursor_entered), content="true")
-  inspect(app.world().contains_message(ecs_key_cursor_left), content="true")
-  inspect(
+  debug_inspect(
+    app.world().contains_message(ecs_key_cursor_moved),
+    content="true",
+  )
+  debug_inspect(
+    app.world().contains_message(ecs_key_cursor_entered),
+    content="true",
+  )
+  debug_inspect(
+    app.world().contains_message(ecs_key_cursor_left),
+    content="true",
+  )
+  debug_inspect(
     app.world().contains_message(ecs_key_file_drag_and_drop),
     content="true",
   )
-  inspect(app.world().contains_message(ecs_key_window_moved), content="true")
-  inspect(
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_moved),
+    content="true",
+  )
+  debug_inspect(
     app.world().contains_message(ecs_key_window_scale_factor_changed),
     content="true",
   )
-  inspect(
+  debug_inspect(
     app.world().contains_message(ecs_key_window_backend_scale_factor_changed),
     content="true",
   )
-  inspect(app.world().contains_message(ecs_key_window_focused), content="true")
-  inspect(app.world().contains_message(ecs_key_window_occluded), content="true")
-  inspect(
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_focused),
+    content="true",
+  )
+  debug_inspect(
+    app.world().contains_message(ecs_key_window_occluded),
+    content="true",
+  )
+  debug_inspect(
     app.world().contains_message(ecs_key_window_theme_changed),
     content="true",
   )
-  inspect(app.world().contains_message(ecs_key_app_lifecycle), content="true")
+  debug_inspect(
+    app.world().contains_message(ecs_key_app_lifecycle),
+    content="true",
+  )
 
   let entity = match primary_window_entity(app.world()) {
     Some(entity) => entity
     None => abort("missing primary window entity")
   }
-  inspect(app.world().is_alive(entity), content="true")
+  debug_inspect(app.world().is_alive(entity), content="true")
 
   let stored_window = match window_component_value(app.world(), entity) {
     Some(window) => window
     None => abort("missing window component")
   }
-  inspect(stored_window.title, content="Configured Window")
-  inspect(stored_window.physical_width(), content="800")
-  inspect(stored_window.physical_height(), content="600")
-  inspect(stored_window.scale_factor(), content="2")
-  inspect(stored_window.present_mode, content="AutoNoVsync")
-  inspect(stored_window.position == WindowPosition::new(12, 34), content="true")
-  inspect(
+  debug_inspect(stored_window.title, content="Configured Window")
+  debug_inspect(stored_window.physical_width(), content="800")
+  debug_inspect(stored_window.physical_height(), content="600")
+  debug_inspect(stored_window.scale_factor(), content="2")
+  debug_inspect(stored_window.present_mode, content="AutoNoVsync")
+  debug_inspect(
+    stored_window.position == WindowPosition::new(12, 34),
+    content="true",
+  )
+  debug_inspect(
     stored_window.mode ==
     WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
     content="true",
   )
-  inspect(stored_window.resizable, content="false")
-  inspect(stored_window.enabled_buttons.minimize, content="false")
-  inspect(stored_window.enabled_buttons.maximize, content="false")
-  inspect(stored_window.enabled_buttons.close, content="false")
-  inspect(stored_window.decorations, content="false")
-  inspect(stored_window.transparent, content="true")
-  inspect(stored_window.focused, content="false")
-  inspect(stored_window.window_level, content="AlwaysOnTop")
-  inspect(stored_window.window_theme, content="Some(Dark)")
-  inspect(stored_window.visible, content="false")
+  debug_inspect(stored_window.resizable, content="false")
+  debug_inspect(stored_window.enabled_buttons.minimize, content="false")
+  debug_inspect(stored_window.enabled_buttons.maximize, content="false")
+  debug_inspect(stored_window.enabled_buttons.close, content="false")
+  debug_inspect(stored_window.decorations, content="false")
+  debug_inspect(stored_window.transparent, content="true")
+  debug_inspect(stored_window.focused, content="false")
+  debug_inspect(stored_window.window_level.to_string(), content="AlwaysOnTop")
+  debug_inspect(stored_window.window_theme.to_string(), content="Some(Dark)")
+  debug_inspect(stored_window.visible, content="false")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
     None => abort("missing cursor options")
   }
-  inspect(stored_cursor.visible, content="false")
-  inspect(stored_cursor.grab_mode, content="GrabLocked")
+  debug_inspect(stored_cursor.visible, content="false")
+  debug_inspect(stored_cursor.grab_mode, content="GrabLocked")
 
   let raw_handle_holder = match raw_handle_holder_value(app.world(), entity) {
     Some(holder) => holder
     None => abort("missing raw handle holder")
   }
-  inspect(raw_handle_holder.handle.val is Some(_), content="false")
+  debug_inspect(raw_handle_holder.handle.val is Some(_), content="false")
 }
 
 ///|
@@ -307,22 +346,25 @@ test "window: compatibility helpers read and write ECS primary window state" {
   )
   let app = app.run_once()
 
-  inspect(seen_width.val, content="320")
-  inspect(seen_height.val, content="180")
-  inspect(seen_position_x.val, content="3")
-  inspect(seen_position_y.val, content="4")
-  inspect(seen_scale_factor.val, content="2")
+  debug_inspect(seen_width.val, content="320")
+  debug_inspect(seen_height.val, content="180")
+  debug_inspect(seen_position_x.val, content="3")
+  debug_inspect(seen_position_y.val, content="4")
+  debug_inspect(seen_scale_factor.val, content="2")
 
   let stored_window = match window_component_value(app.world(), entity) {
     Some(window) => window
     None => abort("missing updated window")
   }
-  inspect(stored_window.title, content="Updated")
-  inspect(stored_window.physical_width(), content="640")
-  inspect(stored_window.physical_height(), content="360")
-  inspect(stored_window.present_mode, content="AutoNoVsync")
-  inspect(stored_window.position == WindowPosition::new(30, 40), content="true")
-  inspect(
+  debug_inspect(stored_window.title, content="Updated")
+  debug_inspect(stored_window.physical_width(), content="640")
+  debug_inspect(stored_window.physical_height(), content="360")
+  debug_inspect(stored_window.present_mode, content="AutoNoVsync")
+  debug_inspect(
+    stored_window.position == WindowPosition::new(30, 40),
+    content="true",
+  )
+  debug_inspect(
     stored_window.mode ==
     WindowMode::Fullscreen(
       MonitorSelection::Primary,
@@ -330,25 +372,29 @@ test "window: compatibility helpers read and write ECS primary window state" {
     ),
     content="true",
   )
-  inspect(stored_window.resizable, content="false")
-  inspect(stored_window.visible, content="false")
-  inspect(stored_window.decorations, content="false")
-  inspect(stored_window.transparent, content="true")
-  inspect(stored_window.enabled_buttons.minimize, content="false")
-  inspect(stored_window.enabled_buttons.maximize, content="false")
-  inspect(stored_window.enabled_buttons.close, content="false")
-  inspect(stored_window.window_level, content="AlwaysOnTop")
-  inspect(stored_window.window_theme, content="Some(Dark)")
+  debug_inspect(stored_window.resizable, content="false")
+  debug_inspect(stored_window.visible, content="false")
+  debug_inspect(stored_window.decorations, content="false")
+  debug_inspect(stored_window.transparent, content="true")
+  debug_inspect(stored_window.enabled_buttons.minimize, content="false")
+  debug_inspect(stored_window.enabled_buttons.maximize, content="false")
+  debug_inspect(stored_window.enabled_buttons.close, content="false")
+  debug_inspect(stored_window.window_level.to_string(), content="AlwaysOnTop")
+  debug_inspect(stored_window.window_theme.to_string(), content="Some(Dark)")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
     None => abort("missing updated cursor options")
   }
-  inspect(stored_cursor.visible, content="false")
-  inspect(stored_cursor.grab_mode, content="GrabConfined")
-  inspect(
-    cursor_icon_value(app.world(), entity),
-    content="Some(System(EwResize))",
+  debug_inspect(stored_cursor.visible, content="false")
+  debug_inspect(stored_cursor.grab_mode, content="GrabConfined")
+  debug_inspect(
+    match cursor_icon_value(app.world(), entity) {
+      Some(System(icon)) => icon == SystemCursorIcon::EwResize
+      Some(_) => false
+      None => false
+    },
+    content="true",
   )
 }
 
@@ -359,10 +405,10 @@ test "window: drag request helpers write pending requests" {
   window.set_minimized(true)
   window.start_drag_move()
   window.start_drag_resize(@math.CompassOctant::North)
-  inspect(window.maximize_request, content="Some(true)")
-  inspect(window.minimize_request, content="Some(true)")
-  inspect(window.drag_move_request, content="true")
-  inspect(window.drag_resize_request, content="Some(North)")
+  debug_inspect(window.maximize_request, content="Some(true)")
+  debug_inspect(window.minimize_request, content="Some(true)")
+  debug_inspect(window.drag_move_request, content="true")
+  debug_inspect(window.drag_resize_request, content="Some(North)")
 }
 
 ///|
@@ -383,21 +429,24 @@ test "window: window refs resolve entity-backed metrics" {
   let secondary = world.spawn()
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
-  inspect(
+  debug_inspect(
     window_entity_for_ref(world, WindowRef::Primary) == Some(primary),
     content="true",
   )
-  inspect(
+  debug_inspect(
     window_entity_for_ref(world, WindowRef::Entity(secondary)) ==
     Some(secondary),
     content="true",
   )
-  inspect(window_physical_width_for(world, WindowRef::Primary), content="320")
-  inspect(
+  debug_inspect(
+    window_physical_width_for(world, WindowRef::Primary),
+    content="320",
+  )
+  debug_inspect(
     window_physical_height_for(world, WindowRef::Entity(secondary)),
     content="360",
   )
-  inspect(
+  debug_inspect(
     window_scale_factor_for(world, WindowRef::Entity(secondary)),
     content="2",
   )
@@ -414,14 +463,20 @@ test "window: primary refs do not fall back to secondary windows" {
   let secondary = world.spawn()
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
-  inspect(
+  debug_inspect(
     window_entity_for_ref(world, WindowRef::Primary) is None,
     content="true",
   )
-  inspect(window_physical_width_for(world, WindowRef::Primary), content="0")
-  inspect(window_physical_height_for(world, WindowRef::Primary), content="0")
-  inspect(window_scale_factor_for(world, WindowRef::Primary), content="1")
-  inspect(window_ensure_primary_host(world), content="None")
+  debug_inspect(
+    window_physical_width_for(world, WindowRef::Primary),
+    content="0",
+  )
+  debug_inspect(
+    window_physical_height_for(world, WindowRef::Primary),
+    content="0",
+  )
+  debug_inspect(window_scale_factor_for(world, WindowRef::Primary), content="1")
+  debug_inspect(window_ensure_primary_host(world), content="None")
 }
 
 ///|
@@ -462,24 +517,30 @@ test "window: singleton helpers no-op when no primary window exists" {
     }),
   )
   let app = app.run_once()
-  inspect(width.val, content="0")
-  inspect(height.val, content="0")
-  inspect(scale_factor.val, content="1")
-  inspect(position_x.val, content="0")
-  inspect(position_y.val, content="0")
+  debug_inspect(width.val, content="0")
+  debug_inspect(height.val, content="0")
+  debug_inspect(scale_factor.val, content="1")
+  debug_inspect(position_x.val, content="0")
+  debug_inspect(position_y.val, content="0")
   let stored_window = match window_component_value(app.world(), secondary) {
     Some(window) => window
     None => abort("missing secondary window")
   }
 
-  inspect(stored_window.title, content="Secondary")
-  inspect(stored_window.physical_width(), content="640")
-  inspect(stored_window.physical_height(), content="360")
-  inspect(stored_window.position == WindowPosition::Automatic, content="true")
-  inspect(stored_window.mode == WindowMode::Windowed, content="true")
-  inspect(stored_window.resizable, content="true")
-  inspect(cursor_options_value(app.world(), secondary), content="None")
-  inspect(cursor_icon_value(app.world(), secondary), content="None")
+  debug_inspect(stored_window.title, content="Secondary")
+  debug_inspect(stored_window.physical_width(), content="640")
+  debug_inspect(stored_window.physical_height(), content="360")
+  debug_inspect(
+    stored_window.position == WindowPosition::Automatic,
+    content="true",
+  )
+  debug_inspect(stored_window.mode == WindowMode::Windowed, content="true")
+  debug_inspect(stored_window.resizable, content="true")
+  debug_inspect(cursor_options_value(app.world(), secondary), content="None")
+  debug_inspect(
+    cursor_icon_value(app.world(), secondary) is None,
+    content="true",
+  )
 }
 
 ///|
@@ -510,14 +571,14 @@ test "window: scale-factor helper prefers override over observed host scale" {
     None => abort("missing updated window")
   }
 
-  inspect(seen_scale_factor.val, content="1")
-  inspect(stored_window.scale_factor(), content="1")
+  debug_inspect(seen_scale_factor.val, content="1")
+  debug_inspect(stored_window.scale_factor(), content="1")
 }
 
 ///|
 test "window: plugin does not own backend window synchronization" {
   let app = window_plugin(@app.App::new(@ecs.World::new())).run_once()
-  inspect(read_window_created(app.world()).length(), content="0")
+  debug_inspect(read_window_created(app.world()).length(), content="0")
 }
 
 ///|
@@ -543,10 +604,10 @@ test "window: close_when_requested marks windows without immediate despawn" {
   )
 
   app = app.run_once()
-  inspect(app.world().is_alive(entity), content="true")
-  inspect(has_closing_window(app.world(), entity), content="true")
-  inspect(read_window_closing(app.world()).length(), content="0")
-  inspect(read_window_destroyed(app.world()).length(), content="0")
+  debug_inspect(app.world().is_alive(entity), content="true")
+  debug_inspect(has_closing_window(app.world(), entity), content="true")
+  debug_inspect(read_window_closing(app.world()).length(), content="0")
+  debug_inspect(read_window_destroyed(app.world()).length(), content="0")
 }
 
 ///|
@@ -559,7 +620,7 @@ test "window: exit_on_all_closed sends AppExit when no windows remain" {
     )
 
   app = app.run_once()
-  inspect(app.should_exit(), content="Some(Success)")
+  debug_inspect(app.should_exit(), content="Some(Success)")
 }
 
 ///|
@@ -581,11 +642,11 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
     )
 
   app = app.run_once()
-  inspect(app.should_exit() is None, content="true")
+  debug_inspect(app.should_exit() is None, content="true")
 
   try! app.world().despawn(primary)
   app = app.run_once()
-  inspect(app.should_exit(), content="Some(Success)")
+  debug_inspect(app.should_exit(), content="Some(Success)")
 }
 
 ///|
@@ -594,10 +655,10 @@ test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
   key_index.set(KeyCode::KeyA, 1)
   key_index.set(KeyCode::Space, 2)
 
-  inspect(key_index.get(KeyCode::KeyA), content="Some(1)")
-  inspect(key_index.get(KeyCode::Space), content="Some(2)")
-  inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
-  inspect(KeyCode::KeyA.to_string(), content="KeyA")
+  debug_inspect(key_index.get(KeyCode::KeyA), content="Some(1)")
+  debug_inspect(key_index.get(KeyCode::Space), content="Some(2)")
+  debug_inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
+  debug_inspect(to_repr(KeyCode::KeyA).to_string(), content="KeyA")
 }
 
 ///|
@@ -645,11 +706,11 @@ test "window: monitor ECS types align with bevy monitor data model" {
 
 ///|
 test "window: app lifecycle active states align with bevy semantics" {
-  inspect(AppLifecycle::Idle.is_active(), content="false")
-  inspect(AppLifecycle::Running.is_active(), content="true")
-  inspect(AppLifecycle::WillSuspend.is_active(), content="true")
-  inspect(AppLifecycle::Suspended.is_active(), content="false")
-  inspect(AppLifecycle::WillResume.is_active(), content="true")
+  debug_inspect(AppLifecycle::Idle.is_active(), content="false")
+  debug_inspect(AppLifecycle::Running.is_active(), content="true")
+  debug_inspect(AppLifecycle::WillSuspend.is_active(), content="true")
+  debug_inspect(AppLifecycle::Suspended.is_active(), content="false")
+  debug_inspect(AppLifecycle::WillResume.is_active(), content="true")
 }
 
 ///|
@@ -748,19 +809,19 @@ test "window: aggregate event bus mirrors window-owned emit helpers" {
     }
   }
 
-  inspect(cursor_moved_count, content="1")
-  inspect(cursor_entered_count, content="1")
-  inspect(cursor_left_count, content="1")
-  inspect(drag_count, content="1")
-  inspect(ime_count, content="1")
-  inspect(mouse_button_count, content="1")
-  inspect(mouse_motion_count, content="1")
-  inspect(mouse_wheel_count, content="1")
-  inspect(pinch_count, content="1")
-  inspect(rotation_count, content="1")
-  inspect(double_tap_count, content="1")
-  inspect(pan_count, content="1")
-  inspect(touch_count, content="1")
-  inspect(keyboard_input_count, content="1")
-  inspect(keyboard_focus_lost_count, content="1")
+  debug_inspect(cursor_moved_count, content="1")
+  debug_inspect(cursor_entered_count, content="1")
+  debug_inspect(cursor_left_count, content="1")
+  debug_inspect(drag_count, content="1")
+  debug_inspect(ime_count, content="1")
+  debug_inspect(mouse_button_count, content="1")
+  debug_inspect(mouse_motion_count, content="1")
+  debug_inspect(mouse_wheel_count, content="1")
+  debug_inspect(pinch_count, content="1")
+  debug_inspect(rotation_count, content="1")
+  debug_inspect(double_tap_count, content="1")
+  debug_inspect(pan_count, content="1")
+  debug_inspect(touch_count, content="1")
+  debug_inspect(keyboard_input_count, content="1")
+  debug_inspect(keyboard_focus_lost_count, content="1")
 }

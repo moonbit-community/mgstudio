@@ -15,7 +15,7 @@
 ///|
 pub struct Name {
   name : String
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn Name::new(name : String) -> Name {

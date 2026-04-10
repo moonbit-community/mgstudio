@@ -475,7 +475,7 @@ pub fn GpuBackend::configure_surface_binding(
     self.active_surface_target_id = state.target_id
   }
   sync_active_surface_legacy_state(self)
-  @debug.debug(
+  debug(
     "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{configured_format.to_u32().to_string()}",
   )
 }

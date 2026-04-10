@@ -56,7 +56,7 @@ test "visibility: inherited child is hidden when parent is hidden" {
   )
   @visibility.visibility_propagate_system(world)
   let iv = try! world.get_by_key(child, ecs_key_inherited_visibility)
-  inspect(iv.unwrap().is_visible(), content="false")
+  debug_inspect(iv.unwrap().is_visible(), content="false")
 }
 
 ///|
@@ -103,7 +103,7 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
   )
   @visibility.visibility_propagate_system(world)
   let iv = try! world.get_by_key(child, ecs_key_inherited_visibility)
-  inspect(iv.unwrap().is_visible(), content="true")
+  debug_inspect(iv.unwrap().is_visible(), content="true")
 }
 
 ///|
@@ -137,18 +137,18 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
   )
   @visibility.visibility_propagate_system(world)
   let iv = try! world.get_by_key(child, ecs_key_inherited_visibility)
-  inspect(iv.unwrap().is_visible(), content="true")
+  debug_inspect(iv.unwrap().is_visible(), content="true")
 }
 
 ///|
 test "visibility: VisibilityRange constructors" {
   let always = @visibility.VisibilityRange::always_visible()
-  inspect(always.start_margin_min, content="0")
-  inspect(always.end_margin_max, content="1000000")
-  inspect(always.use_aabb, content="false")
+  debug_inspect(always.start_margin_min, content="0")
+  debug_inspect(always.end_margin_max, content="1000000")
+  debug_inspect(always.use_aabb, content="false")
 
   let invisible = @visibility.VisibilityRange::invisible()
-  inspect(invisible.start_margin_max, content="0")
-  inspect(invisible.end_margin_min, content="0")
-  inspect(invisible.use_aabb, content="false")
+  debug_inspect(invisible.start_margin_max, content="0")
+  debug_inspect(invisible.end_margin_min, content="0")
+  debug_inspect(invisible.use_aabb, content="false")
 }

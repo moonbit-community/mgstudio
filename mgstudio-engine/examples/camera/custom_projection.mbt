@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub fn camera_custom_projection_bevy_source() -> String {
-  "bevy/examples/camera/custom_projection.rs"
-}
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CUSTOM_PROJECTION : String = "examples/camera/custom_projection/main.mbt"
+

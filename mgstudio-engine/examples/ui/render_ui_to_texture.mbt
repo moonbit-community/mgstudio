@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/render_ui_to_texture.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_RENDER_UI_TO_TEXTURE : String = "examples/ui/render_ui_to_texture/main.mbt"
+

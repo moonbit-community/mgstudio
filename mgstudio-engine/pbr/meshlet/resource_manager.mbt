@@ -16,6 +16,75 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/resource_manager.rs`.
 
 ///|
+pub struct ResourceManager {
+  mut frame_index : Int
+  mut meshlet_buffer_count : Int
+}
+
+///|
+pub fn ResourceManager::default() -> ResourceManager {
+  ResourceManager::{ frame_index: 0, meshlet_buffer_count: 0 }
+}
+
+///|
+pub fn ResourceManager::advance_frame(self : ResourceManager) -> Unit {
+  self.frame_index = self.frame_index + 1
+}
+
+///|
+pub fn ResourceManager::set_meshlet_buffer_count(
+  self : ResourceManager,
+  count : Int,
+) -> Unit {
+  self.meshlet_buffer_count = if count < 0 { 0 } else { count }
+}
+
+///|
+pub struct MeshletViewResources {
+  view_entity : Int
+  meshlet_count : Int
+}
+
+///|
+pub fn MeshletViewResources::new(
+  view_entity : Int,
+  meshlet_count : Int,
+) -> MeshletViewResources {
+  MeshletViewResources::{ view_entity, meshlet_count }
+}
+
+///|
+pub struct MeshletViewBindGroups {
+  view_entity : Int
+  bind_group_count : Int
+}
+
+///|
+pub fn MeshletViewBindGroups::new(
+  view_entity : Int,
+  bind_group_count : Int,
+) -> MeshletViewBindGroups {
+  MeshletViewBindGroups::{ view_entity, bind_group_count }
+}
+
+///|
+pub fn prepare_meshlet_per_frame_resources(
+  manager : ResourceManager,
+  meshlet_buffer_count : Int,
+) -> Unit {
+  manager.set_meshlet_buffer_count(meshlet_buffer_count)
+  manager.advance_frame()
+}
+
+///|
+pub fn prepare_meshlet_view_bind_groups(
+  view_entity : Int,
+  bind_group_count : Int,
+) -> MeshletViewBindGroups {
+  MeshletViewBindGroups::new(view_entity, bind_group_count)
+}
+
+///|
 pub fn meshlet_resource_manager_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

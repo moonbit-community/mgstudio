@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/2d/rotate_to_cursor.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ROTATE_TO_CURSOR : String = "examples/2d/rotate_to_cursor/main.mbt"
+

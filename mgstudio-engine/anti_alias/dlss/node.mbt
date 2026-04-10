@@ -14,7 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/node.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_dlss_node_bridge_pending() -> Unit {
+// Bridge node gate for optional DLSS runtime path.
 
+///|
+pub const DLSS_NODE_MODULE_TAG : String = "bevy_anti_alias::dlss::node"
+
+///|
+pub struct DlssNodeBridge {
+  node_label : String
+}
+
+///|
+pub fn DlssNodeBridge::default() -> DlssNodeBridge {
+  DlssNodeBridge::{ node_label: DLSS_NODE_MODULE_TAG }
+}
+
+///|
+pub fn dlss_node_enabled() -> Bool {
+  DLSS_RUNTIME_SUPPORTED
+}
+
+///|
+pub fn dlss_node_bridge_enabled(bridge : DlssNodeBridge) -> Bool {
+  bridge.node_label == DLSS_NODE_MODULE_TAG && dlss_node_enabled()
+}
+
+///|
+pub fn dlss_node_bridge_label(bridge : DlssNodeBridge) -> String {
+  bridge.node_label
 }

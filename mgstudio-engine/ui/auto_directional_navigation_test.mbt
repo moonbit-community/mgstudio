@@ -109,11 +109,11 @@ test "auto directional navigator selects the nearest visible candidate" {
   )
   set_auto_navigation_focus(world, origin)
 
-  inspect(
+  debug_inspect(
     navigate_auto(world, @math.CompassOctant::East) == Some(east),
     content="true",
   )
-  inspect(auto_navigation_focus(world) == Some(east), content="true")
+  debug_inspect(auto_navigation_focus(world) == Some(east), content="true")
 }
 
 ///|
@@ -156,9 +156,9 @@ test "auto directional navigator respects manual override edges first" {
     None => abort("missing DirectionalNavigationMap resource")
   }
 
-  inspect(
+  debug_inspect(
     navigate_auto(world, @math.CompassOctant::East) == Some(manual),
     content="true",
   )
-  inspect(auto_navigation_focus(world) == Some(manual), content="true")
+  debug_inspect(auto_navigation_focus(world) == Some(manual), content="true")
 }

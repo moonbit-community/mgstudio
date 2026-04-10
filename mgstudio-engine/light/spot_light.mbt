@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/spot_light.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_spot_light_bridge_pending() -> Unit {
+// Bridge aliases for spot-light components.
 
-}
+///|
+pub type SpotLightComponent = SpotLight
+
+///|
+pub type SpotLightTextureComponent = SpotLightTexture
+
+///|
+pub let ecs_key_spot_light_component : @ecs.ComponentKey[SpotLightComponent] = ecs_key_spot_light
+
+///|
+pub let ecs_key_spot_light_texture_component : @ecs.ComponentKey[
+  SpotLightTextureComponent,
+] = ecs_key_spot_light_texture

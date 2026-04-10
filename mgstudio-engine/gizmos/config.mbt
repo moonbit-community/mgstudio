@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/config.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_config_bridge_pending() -> Unit {
+// Bridge aliases for gizmo config resources.
 
-}
+///|
+pub type GizmoConfigValue = @sprite.GizmoConfig
+
+///|
+pub type GizmoLineConfigValue = @sprite.GizmoLineConfig
+
+///|
+pub type GizmoConfigStoreValue = @sprite.GizmoConfigStore
+
+///|
+pub type DefaultGizmoConfigValue = @sprite.DefaultGizmoConfigGroup

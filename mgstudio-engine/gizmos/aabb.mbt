@@ -14,7 +14,23 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/aabb.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_aabb_bridge_pending() -> Unit {
+// Bridge aliases for axis-aligned bounding-box gizmo inputs.
 
+///|
+pub type GizmoAabb2d = @math.Aabb2d
+
+///|
+pub type GizmoAabb3d = @math.Aabb3d
+
+///|
+pub const GIZMO_AABB_MODULE_TAG : String = "bevy_gizmos::aabb"
+
+///|
+pub fn gizmo_aabb2d_identity(aabb : GizmoAabb2d) -> GizmoAabb2d {
+  aabb
+}
+
+///|
+pub fn gizmo_aabb3d_identity(aabb : GizmoAabb3d) -> GizmoAabb3d {
+  aabb
 }

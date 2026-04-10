@@ -1,11 +1,97 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/anti_alias/dlss"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub const DLSS_EXTRACT_MODULE_TAG : String = "bevy_anti_alias::dlss::extract"
+
+pub const DLSS_NODE_MODULE_TAG : String = "bevy_anti_alias::dlss::node"
+
+pub const DLSS_PREPARE_MODULE_TAG : String = "bevy_anti_alias::dlss::prepare"
+
+pub const DLSS_RUNTIME_SUPPORTED : Bool = false
+
+pub fn dlss_extract_bridge_enabled(DlssExtractBridge) -> Bool
+
+pub fn dlss_extract_bridge_label(DlssExtractBridge) -> String
+
+pub fn dlss_extract_enabled() -> Bool
+
+pub fn dlss_init_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn dlss_node_bridge_enabled(DlssNodeBridge) -> Bool
+
+pub fn dlss_node_bridge_label(DlssNodeBridge) -> String
+
+pub fn dlss_node_enabled() -> Bool
+
+pub fn dlss_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn dlss_prepare_bridge_enabled(DlssPrepareBridge) -> Bool
+
+pub fn dlss_prepare_bridge_label(DlssPrepareBridge) -> String
+
+pub fn dlss_prepare_enabled() -> Bool
 
 // Errors
 
 // Types and methods
+pub struct Dlss {
+  perf_quality_mode : DlssPerfQualityMode
+  reset : Bool
+}
+pub fn Dlss::default() -> Self
+
+pub struct DlssExtractBridge {
+  extract_label : String
+}
+pub fn DlssExtractBridge::default() -> Self
+
+pub struct DlssInitPlugin {
+}
+pub fn DlssInitPlugin::default() -> Self
+
+pub struct DlssNodeBridge {
+  node_label : String
+}
+pub fn DlssNodeBridge::default() -> Self
+
+pub(all) enum DlssPerfQualityMode {
+  Auto
+  Dlaa
+  Quality
+  Balanced
+  Performance
+  UltraPerformance
+} derive(Eq, @debug.Debug)
+pub fn DlssPerfQualityMode::default() -> Self
+
+pub struct DlssPlugin {
+}
+pub fn DlssPlugin::default() -> Self
+
+pub struct DlssPrepareBridge {
+  prepare_label : String
+}
+pub fn DlssPrepareBridge::default() -> Self
+
+pub struct DlssProjectId {
+  value : String
+}
+pub fn DlssProjectId::new(String) -> Self
+pub fn DlssProjectId::value(Self) -> String
+pub impl @app.Resource for DlssProjectId
+
+pub struct DlssRayReconstructionSupported {
+} derive(Default, Eq, @debug.Debug)
+
+pub struct DlssSuperResolutionSupported {
+} derive(Default, Eq, @debug.Debug)
 
 // Type aliases
 

@@ -14,7 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/handle_or_path.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_handle_or_path_bridge_pending() -> Unit {
 
+///|
+pub(all) enum HandleOrPath[T] {
+  Handle(T)
+  Path(String)
+}
+
+///|
+pub fn[T] HandleOrPath::from_handle(handle : T) -> HandleOrPath[T] {
+  Handle(handle)
+}
+
+///|
+pub fn[T] HandleOrPath::from_path(path : String) -> HandleOrPath[T] {
+  Path(path)
 }

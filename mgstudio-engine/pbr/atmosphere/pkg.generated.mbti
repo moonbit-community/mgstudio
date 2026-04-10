@@ -3,14 +3,45 @@ package "Milky2018/mgstudio/pbr/atmosphere"
 
 import {
   "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/math",
 }
 
 // Values
 pub const ATMOSPHERE_PLUGIN_ID : String = "bevy_pbr::AtmospherePlugin"
 
+pub fn atmosphere_plugin() -> AtmospherePlugin
+
+pub fn atmosphere_plugin_id() -> String
+
+pub fn atmosphere_runtime_available() -> Bool
+
+pub fn pbr_atmosphere_default() -> @light.Atmosphere
+
+pub fn pbr_atmosphere_earthlike(@light.ScatteringMedium) -> @light.Atmosphere
+
+pub fn pbr_atmosphere_environment_map_light_default() -> @light.AtmosphereEnvironmentMapLight
+
+pub fn pbr_atmosphere_environment_map_light_new(Float, Bool, @math.UVec2) -> @light.AtmosphereEnvironmentMapLight
+
+pub fn pbr_atmosphere_environment_map_light_with_intensity(@light.AtmosphereEnvironmentMapLight, Float) -> @light.AtmosphereEnvironmentMapLight
+
+pub fn pbr_atmosphere_settings_default() -> @light.AtmosphereSettings
+
+pub fn pbr_atmosphere_settings_with_rendering_method(@light.AtmosphereSettings, @light.AtmosphereMode) -> @light.AtmosphereSettings
+
+pub fn pbr_atmosphere_settings_with_scene_units_to_m(@light.AtmosphereSettings, Float) -> @light.AtmosphereSettings
+
+pub fn pbr_atmosphere_settings_with_sky_max_samples(@light.AtmosphereSettings, Int) -> @light.AtmosphereSettings
+
+pub fn pbr_atmosphere_with_radii(@light.Atmosphere, Float, Float) -> @light.Atmosphere
+
 // Errors
 
 // Types and methods
+pub struct AtmospherePlugin {
+  enabled : Bool
+}
+pub fn AtmospherePlugin::default() -> Self
 
 // Type aliases
 pub using @light {type Atmosphere}

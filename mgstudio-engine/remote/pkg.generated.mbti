@@ -4,17 +4,62 @@ package "Milky2018/mgstudio/remote"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub fn remote_builtin_method_name(RemoteBuiltinMethod) -> String
+
+pub fn remote_builtin_method_parse(String) -> RemoteBuiltinMethod?
+
+pub fn remote_builtin_methods() -> Array[RemoteBuiltinMethod]
+
+pub fn remote_http_default_bind_address() -> String
+
 pub fn remote_plugin(RemotePlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
-pub struct RemotePlugin {
+pub(all) enum RemoteBuiltinMethod {
+  Inspect
+  List
+  Query
+  Subscribe
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RemoteHttpMethod {
+  Get
+  Post
+  Put
+  Delete
+} derive(Eq, @debug.Debug)
+
+pub struct RemoteHttpRequest {
+  http_method : RemoteHttpMethod
+  path : String
+  body : String?
 }
+pub fn RemoteHttpRequest::get(String) -> Self
+pub fn RemoteHttpRequest::new(RemoteHttpMethod, String, body? : String?) -> Self
+pub fn RemoteHttpRequest::post(String, String) -> Self
+
+pub struct RemoteHttpResponse {
+  status : Int
+  body : String
+}
+pub fn RemoteHttpResponse::not_found() -> Self
+pub fn RemoteHttpResponse::ok(String) -> Self
+
+pub struct RemotePlugin {
+  enabled : Bool
+  bind_address : String
+}
+pub fn RemotePlugin::bind_address(Self) -> String
 pub fn RemotePlugin::default() -> Self
+pub fn RemotePlugin::enabled(Self) -> Bool
+pub fn RemotePlugin::with_bind_address(Self, String) -> Self
+pub fn RemotePlugin::with_enabled(Self, Bool) -> Self
 
 // Type aliases
 

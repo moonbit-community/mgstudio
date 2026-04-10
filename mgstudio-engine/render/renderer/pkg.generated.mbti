@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/render/renderer"
 import {
   "Milky2018/wgpu_mbt",
   "Milky2018/wgpu_mbt/c",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
 
@@ -196,6 +197,8 @@ pub fn prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matric
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
+pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBackendError
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
@@ -235,15 +238,17 @@ pub fn update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Flo
 pub fn upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
 
 // Errors
+#alias(RawVulkanBackendError)
 pub(all) suberror GpuBackendError {
   Fatal(String)
-} derive(Show)
+} derive(@debug.Debug)
 
 // Types and methods
 type CustomPostProcessPipelineCacheEntry
 
 type GpuAutoExposureViewState
 
+#alias(RawVulkanBackend)
 pub struct GpuBackend {
   instance : @wgpu_mbt.Instance
   adapter : @wgpu_mbt.Adapter
@@ -644,6 +649,7 @@ pub struct GpuMeshInfo {
   index_buf : @wgpu_mbt.Buffer
 }
 
+#alias(DrawState)
 pub struct GpuPassState {
   target_id : Int
   target_layer : Int
@@ -718,6 +724,12 @@ pub struct GpuPassState {
   environment_map_rotation_w : Float
   point_shadow_near : Float
 }
+pub fn GpuPassState::is_3d(Self) -> Bool
+pub fn GpuPassState::pass_kind(Self) -> Int
+pub fn GpuPassState::secondary_target_id(Self) -> Int
+pub fn GpuPassState::target_id(Self) -> Int
+pub fn GpuPassState::target_layer(Self) -> Int
+pub fn GpuPassState::viewport(Self) -> (UInt, UInt, UInt, UInt)
 
 type GpuStorageSlot
 

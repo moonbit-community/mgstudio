@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/futures.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/futures.rs`.
 
+///|
 pub fn[T] poll_once(value : T?) -> T? {
   value
+}
+
+///|
+pub fn[T] ready(value : T) -> T? {
+  Some(value)
 }

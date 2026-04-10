@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/math/cubic_splines"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -10,7 +14,7 @@ type ControlPoints
 
 type Curve
 
-type CyclingMode derive(Eq, Show)
+type CyclingMode derive(Eq, @debug.Debug)
 
 type CyclingModeTextHandle
 
@@ -18,7 +22,7 @@ type MouseEditMove
 
 type MousePosition
 
-type SplineMode derive(Eq, Show)
+type SplineMode derive(Eq, @debug.Debug)
 
 type SplineModeTextHandle
 

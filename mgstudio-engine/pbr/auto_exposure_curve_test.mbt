@@ -24,11 +24,11 @@ test "render3d: auto exposure compensation curve matches Bevy linear spline defa
   ) catch {
     _ => abort("expected valid compensation curve")
   }
-  inspect(value.min_log_lum, content="-4")
-  inspect(value.max_log_lum, content="4")
-  inspect(value.min_compensation, content="-2")
-  inspect(value.max_compensation, content="2")
-  inspect(value.lut.length(), content="256")
+  debug_inspect(value.min_log_lum, content="-4")
+  debug_inspect(value.max_log_lum, content="4")
+  debug_inspect(value.min_compensation, content="-2")
+  debug_inspect(value.max_compensation, content="2")
+  debug_inspect(value.lut.length(), content="256")
 }
 
 ///|
@@ -40,9 +40,9 @@ test "render3d: auto exposure compensation curve rejects non-monotonic points" {
         @math.Vec2::new(-1.0F, 1.0F),
       ]),
     ) catch {
-      NotMonotonic => return inspect(true, content="true")
-      _ => return inspect(false, content="true")
+      NotMonotonic => return debug_inspect(true, content="true")
+      _ => return debug_inspect(false, content="true")
     },
   )
-  inspect(false, content="true")
+  debug_inspect(false, content="true")
 }

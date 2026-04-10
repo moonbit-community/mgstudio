@@ -1,11 +1,55 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/mip_generation"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub const MIP_GENERATION_PLUGIN_ID : String = "bevy_core_pipeline::mip_generation::MipGenerationPlugin"
+
+pub const REQUIRED_STORAGE_TEXTURES : Int = 12
+
+pub fn mip_generation_job_should_run(Int, Int) -> Bool
+
+pub fn mip_generation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn mip_generation_plugin_with(@app.App[@ecs.World], MipGenerationPlugin) -> @app.App[@ecs.World]
+
+pub fn mip_generation_supports_downsample(Int) -> Bool
 
 // Errors
 
 // Types and methods
+pub struct DownsampleShaders {
+  depth_shader_path : String
+  general_shader_count : Int
+}
+pub fn DownsampleShaders::new(depth_shader_path? : String, general_shader_count? : Int) -> Self
+
+pub struct MipGenerationJob {
+  phase : MipGenerationPhaseId
+  image_asset_id : Int
+}
+pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : Int) -> Self
+
+pub struct MipGenerationPhaseId {
+  value : Int
+} derive(Eq, @debug.Debug)
+pub fn MipGenerationPhaseId::new(value~ : Int) -> Self
+
+pub struct MipGenerationPipelinesState {
+  texture_format_pipeline_count : Int
+  bind_group_cache_count : Int
+}
+pub fn MipGenerationPipelinesState::new(texture_format_pipeline_count? : Int, bind_group_cache_count? : Int) -> Self
+
+pub struct MipGenerationPlugin {
+}
+pub fn MipGenerationPlugin::default() -> Self
+pub impl @app.PluginReplacement for MipGenerationPlugin
 
 // Type aliases
 

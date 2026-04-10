@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/rotate_environment_map.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ROTATE_ENVIRONMENT_MAP : String = "examples/3d/rotate_environment_map/main.mbt"
+

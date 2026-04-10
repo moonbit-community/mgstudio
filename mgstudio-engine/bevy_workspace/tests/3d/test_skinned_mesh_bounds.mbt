@@ -12,4 +12,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/tests/3d/test_skinned_mesh_bounds.rs

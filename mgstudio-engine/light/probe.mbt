@@ -14,7 +14,42 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/probe.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_probe_bridge_pending() -> Unit {
+// Bridge aliases for probe/environment-map components.
 
-}
+///|
+pub type LightProbeComponent = LightProbe
+
+///|
+pub type EnvironmentMapLightComponent = EnvironmentMapLight
+
+///|
+pub type GeneratedEnvironmentMapLightComponent = GeneratedEnvironmentMapLight
+
+///|
+pub type IrradianceVolumeComponent = IrradianceVolume
+
+///|
+pub type ParallaxCorrectionComponent = ParallaxCorrection
+
+///|
+pub let ecs_key_light_probe_component : @ecs.ComponentKey[LightProbeComponent] = ecs_key_light_probe
+
+///|
+pub let ecs_key_environment_map_light_component : @ecs.ComponentKey[
+  EnvironmentMapLightComponent,
+] = ecs_key_environment_map_light
+
+///|
+pub let ecs_key_generated_environment_map_light_component : @ecs.ComponentKey[
+  GeneratedEnvironmentMapLightComponent,
+] = ecs_key_generated_environment_map_light
+
+///|
+pub let ecs_key_irradiance_volume_component : @ecs.ComponentKey[
+  IrradianceVolumeComponent,
+] = ecs_key_irradiance_volume
+
+///|
+pub let ecs_key_parallax_correction_component : @ecs.ComponentKey[
+  ParallaxCorrectionComponent,
+] = ecs_key_parallax_correction

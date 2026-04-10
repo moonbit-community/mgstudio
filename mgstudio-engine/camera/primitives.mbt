@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/primitives.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs`.
 
 ///|
 pub type Aabb = @math.Aabb3d
@@ -79,6 +79,14 @@ pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
 ///|
 pub impl MeshAabb for @mesh.Mesh with compute_aabb(self) {
   match self.as_3d_geometry() {
+    Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
+    None => None
+  }
+}
+
+///|
+pub fn mesh_compute_aabb(mesh : @mesh.Mesh) -> Aabb? {
+  match mesh.as_3d_geometry() {
     Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
     None => None
   }

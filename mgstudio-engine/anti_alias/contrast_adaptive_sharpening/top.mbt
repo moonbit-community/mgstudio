@@ -14,7 +14,87 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/contrast_adaptive_sharpening/mod.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_contrast_adaptive_sharpening_top_bridge_pending() -> Unit {
 
+///|
+pub const CAS_RUNTIME_SUPPORTED : Bool = false
+
+///|
+pub struct CasPlugin {}
+
+///|
+pub fn CasPlugin::default() -> CasPlugin {
+  CasPlugin::{  }
+}
+
+///|
+pub struct ContrastAdaptiveSharpening {
+  enabled : Bool
+  sharpening_strength : Float
+  denoise : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn ContrastAdaptiveSharpening::default() -> ContrastAdaptiveSharpening {
+  ContrastAdaptiveSharpening::{
+    enabled: true,
+    sharpening_strength: 0.6,
+    denoise: false,
+  }
+}
+
+///|
+pub struct DenoiseCas {
+  enabled : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn DenoiseCas::default() -> DenoiseCas {
+  DenoiseCas::{ enabled: false }
+}
+
+///|
+pub struct CasUniform {
+  sharpness : Float
+} derive(Eq, Debug)
+
+///|
+pub fn CasUniform::default() -> CasUniform {
+  CasUniform::{ sharpness: 0.0 }
+}
+
+///|
+let ecs_key_contrast_adaptive_sharpening : @ecs.ComponentKey[
+  ContrastAdaptiveSharpening,
+] = @ecs.register_component(
+  debug_name="bevy_anti_alias::ContrastAdaptiveSharpening",
+)
+
+///|
+let ecs_key_denoise_cas : @ecs.ComponentKey[DenoiseCas] = @ecs.register_component(
+  debug_name="bevy_anti_alias::DenoiseCas",
+)
+
+///|
+let ecs_key_cas_uniform : @ecs.ComponentKey[CasUniform] = @ecs.register_component(
+  debug_name="bevy_anti_alias::CasUniform",
+)
+
+///|
+pub impl @ecs.Component for ContrastAdaptiveSharpening with component() {
+  ecs_key_contrast_adaptive_sharpening
+}
+
+///|
+pub impl @ecs.Component for DenoiseCas with component() {
+  ecs_key_denoise_cas
+}
+
+///|
+pub impl @ecs.Component for CasUniform with component() {
+  ecs_key_cas_uniform
+}
+
+///|
+pub fn cas_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader_advanced/specialized_mesh_pipeline.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_SPECIALIZED_MESH_PIPELINE : String = "examples/shader_advanced/specialized_mesh_pipeline/main.mbt"
+

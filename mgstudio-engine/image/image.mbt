@@ -55,7 +55,7 @@ pub(all) enum TextureFormat {
   Rgba8UnormSrgb
   Rgba16Float
   Rg16Float
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn TextureFormat::default() -> TextureFormat {
@@ -66,7 +66,7 @@ pub fn TextureFormat::default() -> TextureFormat {
 pub(all) enum ImageKind {
   Data
   TargetTexture
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn Image::new_target_texture(
@@ -116,7 +116,7 @@ pub(all) enum ImageAddressMode {
   Repeat
   MirrorRepeat
   ClampToBorder
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ImageAddressMode::default() -> ImageAddressMode {
@@ -127,7 +127,7 @@ pub fn ImageAddressMode::default() -> ImageAddressMode {
 pub(all) enum ImageFilterMode {
   Nearest
   Linear
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ImageFilterMode::default() -> ImageFilterMode {
@@ -144,7 +144,7 @@ pub(all) enum ImageCompareFunction {
   NotEqual
   GreaterEqual
   Always
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ImageSamplerBorderColor {
@@ -152,7 +152,7 @@ pub(all) enum ImageSamplerBorderColor {
   OpaqueBlack
   OpaqueWhite
   Zero
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct ImageSamplerDescriptor {

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gltf/query_gltf_primitives.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_QUERY_GLTF_PRIMITIVES : String = "examples/gltf/query_gltf_primitives/main.mbt"
+

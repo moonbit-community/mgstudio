@@ -16,6 +16,48 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/instance_manager.rs`.
 
 ///|
+pub struct InstanceManager {
+  mut instance_count : Int
+}
+
+///|
+pub fn InstanceManager::default() -> InstanceManager {
+  InstanceManager::{ instance_count: 0 }
+}
+
+///|
+fn non_negative(value : Int) -> Int {
+  if value < 0 {
+    0
+  } else {
+    value
+  }
+}
+
+///|
+pub fn InstanceManager::set_instance_count(
+  self : InstanceManager,
+  count : Int,
+) -> Unit {
+  self.instance_count = non_negative(count)
+}
+
+///|
+pub fn InstanceManager::instance_count(self : InstanceManager) -> Int {
+  self.instance_count
+}
+
+///|
+pub fn extract_meshlet_mesh_entities(instance_count : Int) -> InstanceManager {
+  InstanceManager::{ instance_count: non_negative(instance_count) }
+}
+
+///|
+pub fn queue_material_meshlet_meshes(instance_manager : InstanceManager) -> Int {
+  instance_manager.instance_count()
+}
+
+///|
 pub fn meshlet_instance_manager_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

@@ -87,19 +87,19 @@ const SPECULAR_ROOM2_ASSET : String = "light_probe_blending/specular_room2.ktx2"
 pub(all) enum GizmosEnabled {
   On
   Off
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ObjectToShow {
   Sphere
   Prism
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum CameraMode {
   Orbit
   Free
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct LightProbeBlendingState {

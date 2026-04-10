@@ -100,7 +100,7 @@ const SWITCH_TO_SPHERE_HELP_TEXT : String = "Tab: Switch to a plain sphere mesh"
 pub(all) enum ExampleModel {
   Sphere
   Fox
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct IrradianceVolumesState {

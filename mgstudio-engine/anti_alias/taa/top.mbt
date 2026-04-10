@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/taa/mod.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_taa_top_bridge_pending() -> Unit {
+// Bridge aliases for temporal anti-aliasing surface.
 
-}
+///|
+pub type TemporalAntiAliasing = @anti_alias.TemporalAntiAliasing
+
+///|
+pub type TemporalJitter = @anti_alias.TemporalJitter
+
+///|
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @anti_alias.ecs_key_temporal_anti_aliasing
+
+///|
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @anti_alias.ecs_key_temporal_jitter

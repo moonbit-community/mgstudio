@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/startup_system.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_STARTUP_SYSTEM : String = "examples/ecs/startup_system/main.mbt"
+

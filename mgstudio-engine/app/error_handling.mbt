@@ -18,7 +18,7 @@ pub(all) enum ErrorContextKind {
   Command
   Observer
   Validation
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct ErrorContext {
@@ -76,7 +76,7 @@ fn error_context_prefix(context : ErrorContext) -> String {
     ErrorContextKind::Validation => "Encountered a validation error"
   }
   let stage_suffix = match context.stage {
-    Some(stage) => " during \{stage.to_string()}"
+    Some(stage) => " during \{to_repr(stage).to_string()}"
     None => ""
   }
   "\{base} `\{context.source}`\{stage_suffix}"

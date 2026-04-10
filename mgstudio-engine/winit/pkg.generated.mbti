@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/window/windowing_native",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -53,13 +54,13 @@ pub fn winit_write_raw_winit_window_events_system(@ecs.World) -> Unit
 pub(all) struct RawWinitWindowEvent {
   window_id : Int
   event : @windowing_native.RawWinitWindowEventData
-} derive(Eq, Show)
+} derive(Eq)
 pub impl @ecs.Message for RawWinitWindowEvent
 
 pub(all) enum UpdateMode {
   Continuous
   Reactive(@Milky2018/mgstudio/core.Duration, Bool, Bool, Bool)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn UpdateMode::reactive(@Milky2018/mgstudio/core.Duration) -> Self
 pub fn UpdateMode::reactive_low_power(@Milky2018/mgstudio/core.Duration) -> Self
 
@@ -87,7 +88,7 @@ pub impl @app.PluginReplacement for WinitPlugin
 pub(all) struct WinitSettings {
   focused_mode : UpdateMode
   unfocused_mode : UpdateMode
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn WinitSettings::continuous() -> Self
 pub fn WinitSettings::desktop_app() -> Self
 pub fn WinitSettings::game() -> Self

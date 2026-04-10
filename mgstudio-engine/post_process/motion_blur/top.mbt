@@ -21,3 +21,16 @@ pub using @post_process {type MotionBlur}
 
 ///|
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process.ecs_key_motion_blur
+
+///|
+pub const MOTION_BLUR_MODULE_TAG : String = "bevy_post_process::motion_blur"
+
+///|
+pub fn motion_blur_module_tag() -> String {
+  MOTION_BLUR_MODULE_TAG
+}
+
+///|
+pub fn motion_blur_runtime_available() -> Bool {
+  true
+}

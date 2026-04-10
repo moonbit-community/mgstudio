@@ -14,7 +14,29 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_input_focus/src/autofocus.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _input_focus_autofocus_bridge_pending() -> Unit {
 
+///|
+pub struct AutoFocus {} derive(Default, Debug)
+
+///|
+let auto_focus_component_key : @ecs.ComponentKey[AutoFocus] = @ecs.register_component(
+  debug_name="bevy_input_focus::AutoFocus",
+)
+
+///|
+pub impl @ecs.Component for AutoFocus with component() {
+  auto_focus_component_key
+}
+
+///|
+pub fn on_auto_focus_added(world : @ecs.World, entity : @core.Entity) -> Unit {
+  let focus = try world.get_resource_ref_mut(InputFocus::resource()) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+  match focus {
+    Some(input_focus) => input_focus.val.set(entity)
+    None => ()
+  }
 }

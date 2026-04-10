@@ -6,11 +6,14 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
 
 // Values
+pub const PICKING_PLUGIN_ID : String = "bevy_picking::PickingPlugin"
+
 pub let ecs_components : Array[String]
 
 pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits]
@@ -44,6 +47,10 @@ pub fn picking_generate_events_system(@ecs.World) -> Unit
 pub fn picking_mesh3d_hit_test_system(@ecs.World) -> Unit
 
 pub fn picking_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn picking_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn picking_pre_update_sets() -> (String, String, String)
 
 pub let picking_set : String
 
@@ -93,7 +100,7 @@ pub(all) enum PointerButton {
   Primary
   Secondary
   Middle
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct PointerInput {
   pointer : Int

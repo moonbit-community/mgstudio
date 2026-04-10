@@ -16,6 +16,26 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/persistent_buffer_impls.rs`.
 
 ///|
+pub fn meshlet_persistent_buffer_supports_int() -> Bool {
+  true
+}
+
+///|
+pub fn meshlet_persistent_buffer_supports_uint() -> Bool {
+  true
+}
+
+///|
+pub fn meshlet_persistent_buffer_supports_float() -> Bool {
+  true
+}
+
+///|
+pub fn meshlet_persistent_buffer_supported_scalar_types() -> Array[String] {
+  ["Int", "UInt", "Float"]
+}
+
+///|
 pub fn meshlet_persistent_buffer_impls_runtime_available() -> Bool {
   meshlet_runtime_available()
 }

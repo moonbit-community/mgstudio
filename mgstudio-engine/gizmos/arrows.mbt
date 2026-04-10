@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/arrows.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_arrows_bridge_pending() -> Unit {
+// Bridge alias for arrow builder surface.
 
+///|
+pub type GizmoArrowBuilder = @sprite.ArrowBuilder
+
+///|
+pub const GIZMO_ARROWS_MODULE_TAG : String = "bevy_gizmos::arrows"
+
+///|
+pub fn gizmo_arrow_builder_identity(
+  builder : GizmoArrowBuilder,
+) -> GizmoArrowBuilder {
+  builder
 }

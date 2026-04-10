@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/frustum.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _gizmos_frustum_bridge_pending() -> Unit {
+// Bridge alias for view-frustum gizmo input.
 
+///|
+pub type GizmoViewFrustum = @math.ViewFrustum
+
+///|
+pub const GIZMO_FRUSTUM_MODULE_TAG : String = "bevy_gizmos::frustum"
+
+///|
+pub fn gizmo_view_frustum_identity(
+  frustum : GizmoViewFrustum,
+) -> GizmoViewFrustum {
+  frustum
 }

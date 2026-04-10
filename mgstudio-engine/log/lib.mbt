@@ -14,7 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_log/src/lib.rs`.
-// Bridge entrypoint for the crate-level source shape.
+// Crate-root plugin surface.
+pub const LOG_CRATE_ID : String = "bevy_log"
+
+///|
+pub fn default_log_plugin() -> LogPlugin {
+  LogPlugin::default()
+}
+
+///|
 pub fn[W] bevy_log_lib_plugin(plugin : LogPlugin) -> @app.Plugin[W] {
   log_plugin(plugin)
 }

@@ -20,3 +20,11 @@
 pub fn polyline3d(vertices : Array[@math.Vec3]) -> @math.Polyline3d {
   @math.Polyline3d::new(vertices)
 }
+
+///|
+pub const MESH_POLYLINE3D_MODULE_TAG : String = "bevy_mesh::primitives::dim3::polyline3d"
+
+///|
+pub fn polyline3d_module_tag() -> String {
+  MESH_POLYLINE3D_MODULE_TAG
+}

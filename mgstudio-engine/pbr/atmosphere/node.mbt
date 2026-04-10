@@ -13,4 +13,26 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/atmosphere/node.rs`.
+
+///|
 pub type Atmosphere = @light.Atmosphere
+
+///|
+pub fn pbr_atmosphere_default() -> Atmosphere {
+  Atmosphere::default()
+}
+
+///|
+pub fn pbr_atmosphere_earthlike(medium : @light.ScatteringMedium) -> Atmosphere {
+  Atmosphere::earthlike(medium)
+}
+
+///|
+pub fn pbr_atmosphere_with_radii(
+  atmosphere : Atmosphere,
+  bottom_radius : Float,
+  top_radius : Float,
+) -> Atmosphere {
+  atmosphere.with_radii(bottom_radius, top_radius)
+}

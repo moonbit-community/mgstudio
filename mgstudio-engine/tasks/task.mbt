@@ -12,16 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/task.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/task.rs`.
 
+///|
 pub struct Task[T] {
   value : T?
+  detached : Bool
 }
 
+///|
 pub fn[T] Task::ready(value : T) -> Task[T] {
-  { value: Some(value) }
+  { value: Some(value), detached: false }
 }
 
+///|
 pub fn[T] Task::poll(self : Task[T]) -> T? {
   self.value
+}
+
+///|
+pub fn[T] Task::detach(self : Task[T]) -> Task[T] {
+  Task::{ ..self, detached: true }
+}
+
+///|
+pub fn[T] Task::cancel(self : Task[T]) -> T? {
+  self.value
+}
+
+///|
+pub fn[T] Task::is_finished(self : Task[T]) -> Bool {
+  self.value is Some(_)
 }

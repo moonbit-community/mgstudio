@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/time/virtual_time.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_VIRTUAL_TIME : String = "examples/time/virtual_time/main.mbt"
+

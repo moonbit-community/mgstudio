@@ -21,17 +21,17 @@ test "render3d: triangle helper builds valid geometry" {
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
     ),
   )
-  inspect(geometry.validate(), content="None")
-  inspect(geometry.vertex_count(), content="3")
-  inspect(geometry.triangle_count(), content="Some(1)")
+  debug_inspect(geometry.validate(), content="None")
+  debug_inspect(geometry.vertex_count(), content="3")
+  debug_inspect(geometry.triangle_count(), content="Some(1)")
 }
 
 ///|
 test "render3d: cylinder helper builds valid geometry" {
   let geometry = mesh3d_geometry_cylinder_shape(@math.Cylinder::new(0.5F, 1.0F))
-  inspect(geometry.validate(), content="None")
-  inspect(geometry.vertex_count() > 0, content="true")
-  inspect(
+  debug_inspect(geometry.validate(), content="None")
+  debug_inspect(geometry.vertex_count() > 0, content="true")
+  debug_inspect(
     match geometry.triangle_count() {
       Some(_) => true
       None => false
@@ -43,9 +43,9 @@ test "render3d: cylinder helper builds valid geometry" {
 ///|
 test "render3d: capsule helper builds valid geometry" {
   let geometry = mesh3d_geometry_capsule_shape(@math.Capsule3d::new(0.5F, 1.0F))
-  inspect(geometry.validate(), content="None")
-  inspect(geometry.vertex_count() > 0, content="true")
-  inspect(
+  debug_inspect(geometry.validate(), content="None")
+  debug_inspect(geometry.vertex_count() > 0, content="true")
+  debug_inspect(
     match geometry.triangle_count() {
       Some(_) => true
       None => false
@@ -64,9 +64,9 @@ test "render3d: tetrahedron-shape helper builds valid geometry" {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   )
-  inspect(geometry.validate(), content="None")
-  inspect(geometry.vertex_count(), content="12")
-  inspect(geometry.triangle_count(), content="Some(4)")
+  debug_inspect(geometry.validate(), content="None")
+  debug_inspect(geometry.vertex_count(), content="12")
+  debug_inspect(geometry.triangle_count(), content="Some(4)")
 }
 
 ///|
@@ -101,5 +101,5 @@ test "render3d: Assets::add accepts common primitive authoring values" {
   } else {
     false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

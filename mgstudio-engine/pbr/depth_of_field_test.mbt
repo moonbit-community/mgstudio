@@ -15,11 +15,11 @@
 ///|
 test "render3d: PhysicalCameraParameters default and ev100 match Bevy semantics" {
   let params = PhysicalCameraParameters::default()
-  inspect(params.aperture_f_stops == 1.0F, content="true")
-  inspect(params.shutter_speed_s == 1.0F / 125.0F, content="true")
-  inspect(params.sensitivity_iso == 100.0F, content="true")
-  inspect(params.sensor_height == 0.01866F, content="true")
-  inspect((params.ev100() - 6.965784F).abs() < 0.0001F, content="true")
+  debug_inspect(params.aperture_f_stops == 1.0F, content="true")
+  debug_inspect(params.shutter_speed_s == 1.0F / 125.0F, content="true")
+  debug_inspect(params.sensitivity_iso == 100.0F, content="true")
+  debug_inspect(params.sensor_height == 0.01866F, content="true")
+  debug_inspect((params.ev100() - 6.965784F).abs() < 0.0001F, content="true")
 }
 
 ///|
@@ -29,22 +29,22 @@ test "render3d: Exposure and DepthOfField can be created from physical camera pa
   params.sensor_height = 0.024F
 
   let exposure = Exposure::from_physical_camera(params)
-  inspect(
+  debug_inspect(
     (exposure.exposure() - 0.00085034016F).abs() < 0.000001F,
     content="true",
   )
 
   let dof = DepthOfField::from_physical_camera(params)
-  inspect(dof.sensor_height == 0.024F, content="true")
-  inspect(dof.aperture_f_stops == 2.8F, content="true")
-  inspect(dof.focal_distance == 10.0F, content="true")
+  debug_inspect(dof.sensor_height == 0.024F, content="true")
+  debug_inspect(dof.aperture_f_stops == 2.8F, content="true")
+  debug_inspect(dof.focal_distance == 10.0F, content="true")
 }
 
 ///|
 test "render3d: DepthOfField default and direct field mutation align with Bevy component style" {
   let dof = DepthOfField::default()
-  inspect(dof.mode == DepthOfFieldMode::Gaussian, content="true")
-  inspect(dof.max_depth.is_inf(), content="true")
+  debug_inspect(dof.mode == DepthOfFieldMode::Gaussian, content="true")
+  debug_inspect(dof.max_depth.is_inf(), content="true")
 
   dof.mode = DepthOfFieldMode::Bokeh
   dof.focal_distance = 4.0F
@@ -53,10 +53,10 @@ test "render3d: DepthOfField default and direct field mutation align with Bevy c
   dof.max_circle_of_confusion_diameter = 32.0F
   dof.max_depth = 75.0F
 
-  inspect(dof.mode == DepthOfFieldMode::Bokeh, content="true")
-  inspect(dof.focal_distance == 4.0F, content="true")
-  inspect(dof.sensor_height == 0.021F, content="true")
-  inspect(dof.aperture_f_stops == 1.4F, content="true")
-  inspect(dof.max_circle_of_confusion_diameter == 32.0F, content="true")
-  inspect(dof.max_depth == 75.0F, content="true")
+  debug_inspect(dof.mode == DepthOfFieldMode::Bokeh, content="true")
+  debug_inspect(dof.focal_distance == 4.0F, content="true")
+  debug_inspect(dof.sensor_height == 0.021F, content="true")
+  debug_inspect(dof.aperture_f_stops == 1.4F, content="true")
+  debug_inspect(dof.max_circle_of_confusion_diameter == 32.0F, content="true")
+  debug_inspect(dof.max_depth == 75.0F, content="true")
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_input/src/axis.rs`).
+// Bevy source: `bevy/crates/bevy_input/src/axis.rs`.
 
 ///|
 pub fn[T] axis_new() -> Axis[T] {
@@ -32,4 +32,19 @@ pub fn[T : Eq] axis_set(
 ///|
 pub fn[T : Eq] axis_get(axis : Axis[T], input_device : T) -> Float? {
   axis.get(input_device)
+}
+
+///|
+pub fn[T : Eq] axis_get_unclamped(axis : Axis[T], input_device : T) -> Float? {
+  axis.get_unclamped(input_device)
+}
+
+///|
+pub fn[T : Eq] axis_remove(axis : Axis[T], input_device : T) -> Float? {
+  axis.remove(input_device)
+}
+
+///|
+pub fn[T] axis_all(axis : Axis[T]) -> Array[T] {
+  axis.all_axes()
 }

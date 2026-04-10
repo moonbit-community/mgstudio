@@ -28,24 +28,24 @@ test "dynamic texture atlas: packs non-overlapping rects" {
   let rects : Array[@math.URect] = []
   for _ in 0..<4 {
     let allocation = builder.add_texture(layout, @math.UVec2::new(3, 3))
-    inspect(allocation is Some(_), content="true")
+    debug_inspect(allocation is Some(_), content="true")
     if allocation is Some(value) {
       rects.push(value.1)
     }
   }
-  inspect(layout.len(), content="4")
+  debug_inspect(layout.len(), content="4")
   for rect in rects {
     let size = rect.size()
-    inspect(size.x, content="3")
-    inspect(size.y, content="3")
-    inspect(rect.min.x >= 0, content="true")
-    inspect(rect.min.y >= 0, content="true")
-    inspect(rect.max.x <= atlas_size.x, content="true")
-    inspect(rect.max.y <= atlas_size.y, content="true")
+    debug_inspect(size.x, content="3")
+    debug_inspect(size.y, content="3")
+    debug_inspect(rect.min.x >= 0, content="true")
+    debug_inspect(rect.min.y >= 0, content="true")
+    debug_inspect(rect.max.x <= atlas_size.x, content="true")
+    debug_inspect(rect.max.y <= atlas_size.y, content="true")
   }
   for i in 0..<rects.length() {
     for j in (i + 1)..<rects.length() {
-      inspect(rects_overlap(rects[i], rects[j]), content="false")
+      debug_inspect(rects_overlap(rects[i], rects[j]), content="false")
     }
   }
 }
@@ -56,7 +56,7 @@ test "dynamic texture atlas: fails to allocate when atlas too small" {
   let builder = DynamicTextureAtlasBuilder::new(atlas_size, 1)
   let layout = TextureAtlasLayout::new_empty(atlas_size)
   let allocation = builder.add_texture(layout, @math.UVec2::new(4, 4))
-  inspect(allocation is None, content="true")
+  debug_inspect(allocation is None, content="true")
 }
 
 ///|
@@ -85,21 +85,21 @@ test "dynamic texture atlas: stress non-overlap with varied sizes" {
         let rect = value.1
         rects.push(rect)
         let rect_size = rect.size()
-        inspect(rect_size.x, content=w.to_string())
-        inspect(rect_size.y, content=h.to_string())
+        debug_inspect(rect_size.x, content=w.to_string())
+        debug_inspect(rect_size.y, content=h.to_string())
       }
     }
   }
   for rect in rects {
-    inspect(rect.min.x >= 0, content="true")
-    inspect(rect.min.y >= 0, content="true")
-    inspect(rect.max.x <= atlas_size.x, content="true")
-    inspect(rect.max.y <= atlas_size.y, content="true")
+    debug_inspect(rect.min.x >= 0, content="true")
+    debug_inspect(rect.min.y >= 0, content="true")
+    debug_inspect(rect.max.x <= atlas_size.x, content="true")
+    debug_inspect(rect.max.y <= atlas_size.y, content="true")
   }
   for i in 0..<rects.length() {
     for j in (i + 1)..<rects.length() {
-      inspect(rects_overlap(rects[i], rects[j]), content="false")
+      debug_inspect(rects_overlap(rects[i], rects[j]), content="false")
     }
   }
-  inspect(layout.len(), content=rects.length().to_string())
+  debug_inspect(layout.len(), content=rects.length().to_string())
 }

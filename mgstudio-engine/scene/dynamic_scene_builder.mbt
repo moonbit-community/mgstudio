@@ -14,7 +14,29 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/dynamic_scene_builder.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _scene_dynamic_scene_builder_bridge_pending() -> Unit {
+// Dynamic scene builder is gated by reflection support.
 
+///|
+pub const DYNAMIC_SCENE_BUILDER_MODULE_TAG : String = "bevy_scene::dynamic_scene_builder"
+
+///|
+pub struct DynamicSceneBuilderBridge {
+  supported : Bool
+}
+
+///|
+pub fn DynamicSceneBuilderBridge::default() -> DynamicSceneBuilderBridge {
+  DynamicSceneBuilderBridge::{ supported: DYNAMIC_SCENE_SUPPORTED }
+}
+
+///|
+pub fn dynamic_scene_builder_supported() -> Bool {
+  DYNAMIC_SCENE_SUPPORTED
+}
+
+///|
+pub fn dynamic_scene_builder_bridge_supported(
+  bridge : DynamicSceneBuilderBridge,
+) -> Bool {
+  bridge.supported
 }

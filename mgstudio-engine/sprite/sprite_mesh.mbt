@@ -53,7 +53,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
             None => {
               let message = match geometry2d.validate() {
                 Some(err) =>
-                  "Mesh2dGeometry validation failed: \{err.to_string()}"
+                  "Mesh2dGeometry validation failed: \{to_repr(err).to_string()}"
                 None => "Mesh2dGeometry flatten failed"
               }
               @window.host_debug_string(value=message)
@@ -72,7 +72,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
             None => {
               let message = match geometry3d.validate() {
                 Some(err) =>
-                  "Mesh3dGeometry validation failed: \{err.to_string()}"
+                  "Mesh3dGeometry validation failed: \{to_repr(err).to_string()}"
                 None => "Mesh3dGeometry flatten failed"
               }
               @window.host_debug_string(value=message)

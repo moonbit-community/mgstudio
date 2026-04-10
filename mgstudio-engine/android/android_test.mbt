@@ -14,5 +14,5 @@
 
 ///|
 test "android boundary package compiles" {
-  inspect(@android.android_app_available().to_string(), content="false")
+  debug_inspect(@android.android_app_available().to_string(), content="false")
 }

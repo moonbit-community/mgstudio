@@ -14,7 +14,17 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/resources.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_resources_bridge_pending() -> Unit {
+// Bridge aliases and key lookup helpers for state resources.
 
+///|
+pub type StateResource[S] = @state_root.State[S]
+
+///|
+pub type NextStateResource[S] = @state_root.NextState[S]
+
+///|
+pub fn[S : @app.States] state_resource_component_key(
+  state : S,
+) -> @ecs.ResourceKey[StateResource[S]] {
+  @state_root.state_resource_key(state)
 }

@@ -7,9 +7,29 @@ import {
 }
 
 // Values
+pub const MESH_CAPSULE3D_MODULE_TAG : String = "bevy_mesh::primitives::dim3::capsule"
+
+pub const MESH_CONE_MODULE_TAG : String = "bevy_mesh::primitives::dim3::cone"
+
+pub const MESH_CYLINDER_MODULE_TAG : String = "bevy_mesh::primitives::dim3::cylinder"
+
+pub const MESH_PLANE3D_MODULE_TAG : String = "bevy_mesh::primitives::dim3::plane"
+
+pub const MESH_POLYLINE3D_MODULE_TAG : String = "bevy_mesh::primitives::dim3::polyline3d"
+
+pub const MESH_TORUS_MODULE_TAG : String = "bevy_mesh::primitives::dim3::torus"
+
 pub fn capsule3d(Float, Float) -> @math.Capsule3d
 
+pub fn capsule3d_module_tag() -> String
+
+pub fn capsule3d_unit() -> @math.Capsule3d
+
 pub fn cone(Float, Float) -> @math.Cone
+
+pub fn cone_module_tag() -> String
+
+pub fn cone_unit() -> @math.Cone
 
 pub fn conical_frustum(Float, Float, Float) -> @math.ConicalFrustum
 
@@ -19,9 +39,19 @@ pub fn cuboid_mesh(@math.Cuboid) -> @mesh.Mesh3dGeometry
 
 pub fn cylinder(Float, Float) -> @math.Cylinder
 
+pub fn cylinder_module_tag() -> String
+
+pub fn cylinder_unit() -> @math.Cylinder
+
 pub fn plane3d(@math.Vec3, @math.Vec2) -> @math.Plane3d
 
+pub fn plane3d_module_tag() -> String
+
+pub fn plane3d_unit() -> @math.Plane3d
+
 pub fn polyline3d(Array[@math.Vec3]) -> @math.Polyline3d
+
+pub fn polyline3d_module_tag() -> String
 
 pub fn segment3d(@math.Vec3, @math.Vec3) -> @math.Segment3d
 
@@ -34,6 +64,10 @@ pub fn sphere_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 pub fn tetrahedron(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> @math.Tetrahedron
 
 pub fn torus(Float, Float) -> @math.Torus
+
+pub fn torus_module_tag() -> String
+
+pub fn torus_unit() -> @math.Torus
 
 pub fn triangle3d(@math.Vec3, @math.Vec3, @math.Vec3) -> @math.Triangle3d
 

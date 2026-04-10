@@ -6,11 +6,50 @@ import {
 }
 
 // Values
+pub const LIGHT_PROBE_MODULE_TAG : String = "bevy_pbr::light_probe"
+
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
+
+pub fn max_view_light_probes() -> Int
+
+pub fn pbr_environment_map_light_default() -> @light.EnvironmentMapLight
+
+pub fn pbr_generated_environment_map_light_default() -> @light.GeneratedEnvironmentMapLight
+
+pub fn pbr_generated_environment_map_light_new() -> @light.GeneratedEnvironmentMapLight
+
+pub fn pbr_generated_environment_map_light_with_intensity(@light.GeneratedEnvironmentMapLight, Float) -> @light.GeneratedEnvironmentMapLight
+
+pub fn pbr_irradiance_volume_default() -> @light.IrradianceVolume
+
+pub fn pbr_light_probe_default() -> @light.LightProbe
+
+pub fn pbr_light_probe_new() -> @light.LightProbe
+
+pub fn pbr_parallax_correction_default() -> @light.ParallaxCorrection
 
 // Errors
 
 // Types and methods
+pub struct EnvironmentMapGenerationPlugin {
+}
+pub fn EnvironmentMapGenerationPlugin::default() -> Self
+
+pub struct LightProbePlugin {
+}
+pub fn LightProbePlugin::default() -> Self
+
+pub struct LightProbesUniform {
+  reflection_probe_count : Int
+  irradiance_volume_count : Int
+  view_cubemap_index : Int
+}
+pub fn LightProbesUniform::default() -> Self
+
+pub struct ViewLightProbesUniformOffset {
+  offset : UInt
+}
+pub fn ViewLightProbesUniformOffset::default() -> Self
 
 // Type aliases
 pub using @light {type EnvironmentMapLight}

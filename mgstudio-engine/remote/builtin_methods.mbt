@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_remote/src/builtin_methods.rs`).
+// Bevy source: `bevy/crates/bevy_remote/src/builtin_methods.rs`.
 
 ///|
 pub(all) enum RemoteBuiltinMethod {
@@ -21,7 +21,7 @@ pub(all) enum RemoteBuiltinMethod {
   List
   Query
   Subscribe
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn remote_builtin_method_name(
@@ -38,4 +38,15 @@ pub fn remote_builtin_method_name(
 ///|
 pub fn remote_builtin_methods() -> Array[RemoteBuiltinMethod] {
   [Inspect, List, Query, Subscribe]
+}
+
+///|
+pub fn remote_builtin_method_parse(name : String) -> RemoteBuiltinMethod? {
+  match name {
+    "inspect" => Some(Inspect)
+    "list" => Some(List)
+    "query" => Some(Query)
+    "subscribe" => Some(Subscribe)
+    _ => None
+  }
 }

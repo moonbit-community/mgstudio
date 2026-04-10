@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/ecs_guide.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_ECS_GUIDE : String = "examples/ecs/ecs_guide/main.mbt"
+

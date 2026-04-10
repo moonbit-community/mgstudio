@@ -14,7 +14,31 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/realtime/prepare.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_realtime_prepare_bridge_pending() -> Unit {
 
+///|
+pub const LIGHT_TILE_BLOCKS : Int64 = 128L
+
+///|
+pub const LIGHT_TILE_SAMPLES_PER_BLOCK : Int64 = 1024L
+
+///|
+pub const WORLD_CACHE_SIZE : Int64 = 1_048_576L
+
+///|
+pub struct SolariLightingResources {
+  world_cache_buffer_id : Int
+  light_tile_buffer_id : Int
+}
+
+///|
+pub fn SolariLightingResources::default() -> SolariLightingResources {
+  SolariLightingResources::{
+    world_cache_buffer_id: -1,
+    light_tile_buffer_id: -1,
+  }
+}
+
+///|
+pub fn prepare_solari_lighting_resources(_world : @ecs.World) -> Unit {
+  ()
 }

@@ -12,5 +12,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-// Bevy source-shape anchor (`bevy/crates/bevy_ecs/src/bundle/mod.rs`).

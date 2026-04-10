@@ -1,7 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/render/render_phase"
 
+import {
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render/renderer",
+}
+
 // Values
+pub const DRAW_STATE_MODULE_TAG : String = "bevy_render::render_phase::draw_state"
+
+pub fn draw_state_is_3d(@renderer.GpuPassState) -> Bool
+
+pub fn draw_state_module_tag() -> String
+
+pub fn draw_state_runtime_available(@renderer.GpuPassState) -> Bool
+
+pub fn draw_state_target_id(@renderer.GpuPassState) -> Int
+
+pub fn draw_state_viewport(@renderer.GpuPassState) -> (UInt, UInt, UInt, UInt)
+
 pub fn host_gpu_begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
 pub fn host_gpu_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_exposure~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
@@ -14,11 +31,25 @@ pub fn render_pass_trace_begin_span(String) -> Unit
 
 pub fn render_pass_trace_end_active_span() -> Unit
 
+pub fn render_phase_begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
+
+pub fn render_phase_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_exposure~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
+
+pub fn render_phase_begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
+
+pub fn render_phase_end_pass() -> Unit
+
 // Errors
 
 // Types and methods
+pub struct ViewRangefinder3d {
+  view_from_world_row_2 : @math.Vec4
+}
+pub fn ViewRangefinder3d::distance(Self, @math.Vec3) -> Float
+pub fn ViewRangefinder3d::from_world_from_view(@math.Affine3) -> Self
 
 // Type aliases
+pub using @renderer {type GpuPassState as DrawState}
 
 // Traits
 

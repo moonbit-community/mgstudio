@@ -17,7 +17,7 @@
 pub struct AssetId[T] {
   id : Int
   phantom : T?
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[T] AssetId::new(id : Int) -> AssetId[T] {

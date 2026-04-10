@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/relative_cursor_position.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_RELATIVE_CURSOR_POSITION : String = "examples/ui/relative_cursor_position/main.mbt"
+

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/widgets/viewport_node.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_VIEWPORT_NODE : String = "examples/ui/widgets/viewport_node/main.mbt"
+

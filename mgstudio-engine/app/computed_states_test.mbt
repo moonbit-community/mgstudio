@@ -15,35 +15,35 @@
 ///|
 pub(all) enum DerivedState {
   Active
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum PairState {
   Disabled
   Enabled
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum OptionalParentState {
   Disabled
   Enabled
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum OptionalChildState {
   Present
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum MultiSourceDerivedState {
   Ready
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum OptionalDerivedState {
   Missing
   Present
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl States for DerivedState with debug_name(self) {
@@ -145,24 +145,24 @@ test "app computed state: follows source transitions" {
     )
 
   app.run_startup() |> ignore
-  inspect(
+  debug_inspect(
     world_state(app.world(), DerivedState::Active),
     content="Some({value: Active})",
   )
-  inspect(
+  debug_inspect(
     last_transition(app.world(), DerivedState::Active),
     content="Some({exited: None, entered: Some(Active), allow_same_state_transitions: true})",
   )
 
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     world_state(app.world(), DerivedState::Active),
     content="Some({value: Active})",
   )
 
   app.run_once() |> ignore
-  inspect(world_state(app.world(), DerivedState::Active), content="None")
-  inspect(
+  debug_inspect(world_state(app.world(), DerivedState::Active), content="None")
+  debug_inspect(
     last_transition(app.world(), DerivedState::Active),
     content="Some({exited: Some(Active), entered: None, allow_same_state_transitions: true})",
   )
@@ -187,19 +187,19 @@ test "app computed state: supports two source states" {
     )
 
   app.run_startup() |> ignore
-  inspect(
+  debug_inspect(
     world_state(app.world(), MultiSourceDerivedState::Ready),
     content="None",
   )
 
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     world_next_state(app.world(), PairState::Disabled),
     content="Some(Pending(Enabled))",
   )
 
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     world_state(app.world(), MultiSourceDerivedState::Ready),
     content="Some({value: Ready})",
   )
@@ -231,19 +231,19 @@ test "app computed state: supports optional source states" {
     )
 
   app.run_startup() |> ignore
-  inspect(
+  debug_inspect(
     world_state(app.world(), OptionalDerivedState::Missing),
     content="Some({value: Missing})",
   )
 
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     world_next_state(app.world(), OptionalParentState::Disabled),
     content="Some(Pending(Enabled))",
   )
 
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     world_state(app.world(), OptionalDerivedState::Missing),
     content="Some({value: Present})",
   )

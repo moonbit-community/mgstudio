@@ -220,7 +220,7 @@ pub(all) enum AppLabel {
   MainApp
   RenderApp
   Custom(String)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn app_label(name : String) -> AppLabel {
@@ -257,7 +257,7 @@ pub(all) enum ScheduleStage {
   PostUpdate
   Last
   Custom(String)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn schedule_label(name : String) -> ScheduleStage {
@@ -268,7 +268,7 @@ pub fn schedule_label(name : String) -> ScheduleStage {
 pub(all) enum ExecutorKind {
   SingleThreaded
   MultiThreaded
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(open) trait SystemParam {
@@ -1576,7 +1576,7 @@ pub fn[W] App::get_sub_app_mut(
 pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> SubApp[W] {
   match self.get_sub_app(label) {
     Some(sub_app) => sub_app
-    None => abort("Missing sub app for label: \{label.to_string()}")
+    None => abort("Missing sub app for label: \{to_repr(label).to_string()}")
   }
 }
 
@@ -1584,7 +1584,7 @@ pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> SubApp[W] {
 pub fn[W] App::sub_app_mut(self : App[W], label : AppLabel) -> Ref[SubApp[W]] {
   match self.get_sub_app_mut(label) {
     Some(sub_app_ref) => sub_app_ref
-    None => abort("Missing sub app for label: \{label.to_string()}")
+    None => abort("Missing sub app for label: \{to_repr(label).to_string()}")
   }
 }
 
@@ -3199,7 +3199,7 @@ fn run_schedule_stage(
 ) -> Unit {
   let stage_trace_start_us = timeline_trace_begin_span(
     TimelineTraceCategory::ScheduleStage,
-    stage.to_string(),
+    to_repr(stage).to_string(),
   )
   current_schedule_stage_ref.val = Some(stage)
   run_systems(
@@ -3211,7 +3211,7 @@ fn run_schedule_stage(
   current_schedule_stage_ref.val = None
   timeline_trace_end_span(
     TimelineTraceCategory::ScheduleStage,
-    stage.to_string(),
+    to_repr(stage).to_string(),
     stage_trace_start_us,
   )
 }

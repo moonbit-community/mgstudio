@@ -14,7 +14,44 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/button.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_button_bridge_pending() -> Unit {
 
+///|
+pub(all) enum ButtonVariant {
+  Default
+  Primary
+} derive(Eq, Debug)
+
+///|
+pub struct ButtonProps {
+  variant : ButtonVariant
+  disabled : Bool
+}
+
+///|
+pub fn ButtonProps::default() -> ButtonProps {
+  ButtonProps::{ variant: Default, disabled: false }
+}
+
+///|
+pub struct Button {
+  props : ButtonProps
+  label : String
+}
+
+///|
+pub fn button(props : ButtonProps, label : String) -> Button {
+  Button::{ props, label }
+}
+
+///|
+pub struct ButtonPlugin {}
+
+///|
+pub fn ButtonPlugin::default() -> ButtonPlugin {
+  ButtonPlugin::{  }
+}
+
+///|
+pub fn button_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

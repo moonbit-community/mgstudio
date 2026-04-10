@@ -23,3 +23,8 @@ pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
 pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
 }
+
+///|
+pub fn sprite_plugin_boundary_id() -> String {
+  SPRITE_PLUGIN_ID
+}

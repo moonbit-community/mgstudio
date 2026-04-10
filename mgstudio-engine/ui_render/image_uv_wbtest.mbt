@@ -38,7 +38,7 @@ test "ui_render: ui_uv_from_image_rects handles atlas + rect + flips" {
     uv_min.y == 0.3125F &&
     uv_max.x == 0.625F &&
     uv_max.y == 0.4375F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
   let flipped = ui_uv_from_image_rects(
     image_size,
     Some(atlas_rect),
@@ -52,7 +52,7 @@ test "ui_render: ui_uv_from_image_rects handles atlas + rect + flips" {
     uv_max2.x == 0.375F &&
     uv_min2.y == 0.4375F &&
     uv_max2.y == 0.3125F
-  inspect(ok_flip, content="true")
+  debug_inspect(ok_flip, content="true")
 }
 
 ///|
@@ -63,5 +63,5 @@ test "ui_render: ui_uv_from_image_rects defaults to full UVs" {
     pair.0.y == 0.0F &&
     pair.1.x == 1.0F &&
     pair.1.y == 1.0F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

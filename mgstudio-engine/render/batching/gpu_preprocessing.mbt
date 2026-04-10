@@ -20,7 +20,7 @@ pub(all) enum GpuPreprocessingMode {
   None
   PreprocessingOnly
   Culling
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct GpuPreprocessingSupport {

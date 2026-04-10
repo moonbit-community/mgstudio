@@ -1,13 +1,57 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/camera/visibility"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/sprite",
+}
+
 // Values
+pub const CAMERA_VISIBILITY_MODULE_ID : String = "bevy_camera::visibility"
+
+pub let default_layers : @sprite.RenderLayers
+
+pub fn render_layers_default() -> @sprite.RenderLayers
+
+pub fn render_layers_from_indices(Array[Int]) -> @sprite.RenderLayers
+
+pub fn render_layers_layer(Int) -> @sprite.RenderLayers
+
+pub fn render_layers_matches(@sprite.RenderLayers, @sprite.RenderLayers) -> Bool
+
+pub fn render_layers_none() -> @sprite.RenderLayers
+
+pub fn visibility_component_keys() -> (@ecs.ComponentKey[@Milky2018/mgstudio/visibility.Visibility], @ecs.ComponentKey[@Milky2018/mgstudio/visibility.InheritedVisibility], @ecs.ComponentKey[@Milky2018/mgstudio/visibility.ViewVisibility])
+
+pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn visibility_range_always_visible() -> @Milky2018/mgstudio/visibility.VisibilityRange
+
+pub fn visibility_range_component_key() -> @ecs.ComponentKey[@Milky2018/mgstudio/visibility.VisibilityRange]
+
+pub fn visibility_range_invisible() -> @Milky2018/mgstudio/visibility.VisibilityRange
+
+pub fn visibility_range_new(Float, Float, Float, Float, Bool) -> @Milky2018/mgstudio/visibility.VisibilityRange
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @Milky2018/mgstudio/visibility {type InheritedVisibility}
+
+pub type Layer = Int
+
+pub using @Milky2018/mgstudio/visibility {type NoFrustumCulling}
+
+pub using @sprite {type RenderLayers}
+
+pub using @Milky2018/mgstudio/visibility {type ViewVisibility}
+
+pub using @Milky2018/mgstudio/visibility {type Visibility}
+
+pub using @Milky2018/mgstudio/visibility {type VisibilityRange}
 
 // Traits
 

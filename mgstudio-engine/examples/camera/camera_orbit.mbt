@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub fn camera_orbit_bevy_source() -> String {
-  "bevy/examples/camera/camera_orbit.rs"
-}
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CAMERA_ORBIT : String = "examples/camera/camera_orbit/main.mbt"
+

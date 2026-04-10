@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_input/src/button_input.rs`).
+// Bevy source: `bevy/crates/bevy_input/src/button_input.rs`.
 
 ///|
 pub fn[T] ButtonInput::is_empty(self : ButtonInput[T]) -> Bool {
@@ -33,4 +33,25 @@ pub fn[T : ButtonInputButton] ButtonInput::contains(
 ///|
 pub fn[T] ButtonInput::pressed_count(self : ButtonInput[T]) -> Int {
   self.pressed.length()
+}
+
+///|
+pub fn[T : ButtonInputButton] button_input_press(
+  input : ButtonInput[T],
+  button : T,
+) -> Unit {
+  input.press(button)
+}
+
+///|
+pub fn[T : ButtonInputButton] button_input_release(
+  input : ButtonInput[T],
+  button : T,
+) -> Unit {
+  input.release(button)
+}
+
+///|
+pub fn[T] button_input_clear(input : ButtonInput[T]) -> Unit {
+  input.clear()
 }

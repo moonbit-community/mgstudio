@@ -29,16 +29,16 @@ fn parse_imports_snapshot(input : String) -> String {
 
 ///|
 test "naga_oil wb: parse_imports matches upstream top-level item-list disambiguation" {
-  inspect(
+  debug_inspect(
     parse_imports_snapshot("#import a::b c, d\n"),
     content="c=a::b::c\nd=a::b::d",
   )
-  inspect(parse_imports_snapshot("#import a::b c\n"), content="c=a::b::c")
+  debug_inspect(parse_imports_snapshot("#import a::b c\n"), content="c=a::b::c")
 }
 
 ///|
 test "naga_oil wb: parse_imports matches upstream grouped nested imports" {
-  inspect(
+  debug_inspect(
     parse_imports_snapshot(
       "#import a::b::{c::{d, e}, f, g::{h as i, j::k::l as m}}\n",
     ),
@@ -48,7 +48,7 @@ test "naga_oil wb: parse_imports matches upstream grouped nested imports" {
 
 ///|
 test "naga_oil wb: parse_imports matches upstream quoted path grouping" {
-  inspect(
+  debug_inspect(
     parse_imports_snapshot(
       "#import \"path//with\\\\ all sorts of .stuff\"::{a, b}\n",
     ),
@@ -58,11 +58,11 @@ test "naga_oil wb: parse_imports matches upstream quoted path grouping" {
 
 ///|
 test "naga_oil wb: parse_imports rejects malformed imports like upstream" {
-  inspect(
+  debug_inspect(
     parse_imports_snapshot("#import a::b::{{c}\n").has_prefix("ERR "),
     content="true",
   )
-  inspect(
+  debug_inspect(
     parse_imports_snapshot("#import a:b\n").has_prefix("ERR "),
     content="true",
   )

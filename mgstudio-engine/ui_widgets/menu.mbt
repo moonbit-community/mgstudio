@@ -20,3 +20,13 @@ pub using @ui {type AccessibilityLabel}
 ///|
 // Bridge surface to the root `ui` package implementation.
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel] = @ui.ecs_key_accessibility_label
+
+///|
+pub const UI_WIDGET_MENU_MODULE_TAG : String = "bevy_ui_widgets::menu"
+
+///|
+pub fn ui_widget_menu_accessibility_label_identity(
+  value : AccessibilityLabel,
+) -> AccessibilityLabel {
+  value
+}

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/picking/debug_picking.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_DEBUG_PICKING : String = "examples/picking/debug_picking/main.mbt"
+

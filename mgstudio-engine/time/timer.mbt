@@ -20,7 +20,7 @@
 pub(all) enum TimerMode {
   Once
   Repeating
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct Timer {
@@ -29,7 +29,7 @@ pub struct Timer {
   mode : TimerMode
   finished : Bool
   times_finished_this_tick : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn timer_fraction(elapsed : @core.Duration, duration : @core.Duration) -> Float {

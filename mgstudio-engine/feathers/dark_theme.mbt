@@ -14,7 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/dark_theme.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_dark_theme_bridge_pending() -> Unit {
 
+///|
+pub fn create_dark_theme() -> ThemeProps {
+  let props = ThemeProps::default()
+  let tok = fn(name : String) { ThemeToken::new_static(name) }
+  props.set_color(tok(WINDOW_BG), GRAY_0)
+  props.set_color(tok(BUTTON_BG), GRAY_3)
+  props.set_color(tok(BUTTON_BG_HOVER), GRAY_2)
+  props.set_color(tok(BUTTON_BG_PRESSED), GRAY_1)
+  props.set_color(tok(BUTTON_BG_DISABLED), GRAY_2)
+  props.set_color(tok(BUTTON_TEXT), WHITE)
+  props.set_color(tok(BUTTON_TEXT_DISABLED), LIGHT_GRAY_2)
+  props.set_color(tok(BUTTON_PRIMARY_BG), ACCENT)
+  props.set_color(tok(BUTTON_PRIMARY_TEXT), WHITE)
+  props.set_color(tok(SLIDER_BG), GRAY_1)
+  props.set_color(tok(SLIDER_BAR), ACCENT)
+  props.set_color(tok(SLIDER_TEXT), WHITE)
+  props.set_color(tok(CHECKBOX_BG), GRAY_2)
+  props.set_color(tok(CHECKBOX_BORDER), WARM_GRAY_1)
+  props.set_color(tok(CHECKBOX_MARK), WHITE)
+  props.set_color(tok(CHECKBOX_TEXT), WHITE)
+  props.set_color(tok(RADIO_BORDER), WARM_GRAY_1)
+  props.set_color(tok(RADIO_MARK), WHITE)
+  props.set_color(tok(RADIO_TEXT), WHITE)
+  props.set_color(tok(SWITCH_BG), GRAY_2)
+  props.set_color(tok(SWITCH_BORDER), WARM_GRAY_1)
+  props.set_color(tok(SWITCH_SLIDE), WHITE)
+  props.set_color(tok(COLOR_PLANE_BG), GRAY_1)
+  props
 }

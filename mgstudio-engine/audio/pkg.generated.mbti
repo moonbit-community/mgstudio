@@ -8,10 +8,17 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub fn audio_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn audio_package_bevy_source() -> String
+
+pub fn audio_playback_once() -> PlaybackSettings
+
 pub fn audio_playback_system(@ecs.World) -> Unit
 
 pub fn audio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -139,7 +146,7 @@ pub(all) enum PlaybackMode {
   Loop
   Despawn
   Remove
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct PlaybackRemoveMarker {
 } derive(ToJson, @json.FromJson)

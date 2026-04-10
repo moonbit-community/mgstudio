@@ -13,7 +13,23 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/volumetric_fog/mod.rs`.
+
+///|
 pub type VolumetricFog = @light.VolumetricFog
 
 ///|
 pub type FogVolume = @light.FogVolume
+
+///|
+pub const VOLUMETRIC_FOG_MODULE_TAG : String = "bevy_pbr::volumetric_fog"
+
+///|
+pub fn pbr_volumetric_fog_default() -> VolumetricFog {
+  VolumetricFog::default()
+}
+
+///|
+pub fn pbr_fog_volume_default() -> FogVolume {
+  FogVolume::default()
+}

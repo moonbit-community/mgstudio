@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/solari"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -9,7 +13,7 @@ package "Milky2018/mgstudio/examples/3d/solari"
 pub(all) enum SolariSceneMode {
   PicaPica
   ManyLights
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

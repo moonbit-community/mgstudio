@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/terminal_ctrl_c_handler.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/terminal_ctrl_c_handler.rs`.
 
 ///|
 pub fn terminal_ctrl_c_request_close() -> Unit {
@@ -22,5 +22,11 @@ pub fn terminal_ctrl_c_request_close() -> Unit {
 
 ///|
 pub fn terminal_ctrl_c_reset() -> Unit {
+  host_app_reset_close()
+}
+
+///|
+pub fn terminal_ctrl_c_request_close_and_reset() -> Unit {
+  host_app_request_close()
   host_app_reset_close()
 }

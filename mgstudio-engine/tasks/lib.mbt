@@ -12,19 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/lib.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/lib.rs`.
 
-/// First-pass MoonBit migration skeleton for `bevy_tasks`.
-///
-/// This package is currently kept as a source-shape owner:
-/// - file topology mirrors Bevy paths
-/// - API items below are placeholder surface stubs
-/// - runtime semantics are intentionally not implemented yet
+///|
+pub const TASKS_CRATE_ID : String = "bevy_tasks"
 
+///|
+pub const TASKS_BACKEND : String = "single_threaded"
+
+///|
+pub using @iter {type ParallelIterator}
+
+///|
 pub fn available_parallelism() -> Int {
   1
 }
 
+///|
 pub fn[T] block_on(value : T) -> T {
   value
 }

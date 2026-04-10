@@ -79,7 +79,7 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   )
 
   ui_update_context_system(world)
-  inspect(
+  debug_inspect(
     get_ui_context_resource(world).get().unwrap().camera_entity == Some(marked),
     content="true",
   )
@@ -158,7 +158,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   )
 
   ui_update_context_system(world)
-  inspect(
+  debug_inspect(
     get_ui_context_resource(world).get().unwrap().camera_entity ==
     Some(primary_entity),
     content="true",
@@ -213,7 +213,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
 
   ui_propagate_target_cameras_system(world)
 
-  inspect(
+  debug_inspect(
     try! (world
     .get_by_key(root, ecs_key_computed_ui_target_camera)
     .unwrap()
@@ -221,7 +221,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
     Some(target_camera)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! (world
     .get_by_key(child, ecs_key_computed_ui_target_camera)
     .unwrap()
@@ -232,9 +232,12 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
   let child_target_info = try! world
     .get_by_key(child, ecs_key_computed_ui_render_target_info)
     .unwrap()
-  inspect(child_target_info.scale_factor() == 4.0F, content="true")
+  debug_inspect(child_target_info.scale_factor() == 4.0F, content="true")
   let logical_size = child_target_info.logical_size()
-  inspect(logical_size.x == 160.0F && logical_size.y == 90.0F, content="true")
+  debug_inspect(
+    logical_size.x == 160.0F && logical_size.y == 90.0F,
+    content="true",
+  )
 }
 
 ///|
@@ -275,9 +278,12 @@ test "ui: propagated target info falls back to camera target when computed info 
   let target_info = try! world
     .get_by_key(root, ecs_key_computed_ui_render_target_info)
     .unwrap()
-  inspect(target_info.scale_factor() == 1.5F, content="true")
+  debug_inspect(target_info.scale_factor() == 1.5F, content="true")
   let logical_size = target_info.logical_size()
-  inspect(logical_size.x == 640.0F && logical_size.y == 360.0F, content="true")
+  debug_inspect(
+    logical_size.x == 640.0F && logical_size.y == 360.0F,
+    content="true",
+  )
 }
 
 ///|
@@ -313,7 +319,7 @@ test "ui: perspective target camera keeps overlays in screen space" {
   let transform = try! world
     .get_by_key(root, @transform.ecs_key_transform)
     .unwrap()
-  inspect(
+  debug_inspect(
     transform.translation.x == 0.0F && transform.translation.y == 0.0F,
     content="true",
   )
@@ -361,11 +367,11 @@ test "ui: layout resolves each root against its propagated target viewport" {
 
   let rect_a = try! world.get_by_key(root_a, ecs_key_ui_layout).unwrap().rect
   let rect_b = try! world.get_by_key(root_b, ecs_key_ui_layout).unwrap().rect
-  inspect(
+  debug_inspect(
     rect_a.size().x == 200.0F && rect_a.size().y == 100.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     rect_b.size().x == 300.0F && rect_b.size().y == 150.0F,
     content="true",
   )

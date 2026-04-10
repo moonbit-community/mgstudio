@@ -14,7 +14,29 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/pathtracer/mod.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_pathtracer_top_bridge_pending() -> Unit {
 
+///|
+pub const PATHTRACING_PLUGIN_ID : String = "bevy_solari::pathtracer::PathtracingPlugin"
+
+///|
+pub struct PathtracingPlugin {}
+
+///|
+pub fn PathtracingPlugin::default() -> PathtracingPlugin {
+  PathtracingPlugin::{  }
+}
+
+///|
+pub struct Pathtracer {
+  samples_per_pixel : Int
+}
+
+///|
+pub fn Pathtracer::default() -> Pathtracer {
+  Pathtracer::{ samples_per_pixel: 1 }
+}
+
+///|
+pub fn pathtracing_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

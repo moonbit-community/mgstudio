@@ -7,19 +7,40 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "moonbitlang/core/json",
+  "Milky2018/mgstudio/gltf/loader/extensions",
+  "Milky2018/mgstudio/gltf/loader/gltf_ext",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
 }
 
 // Values
 pub fn gltf_add_custom_vertex_attribute(String, String) -> Unit
 
+pub fn gltf_asset_label_from_asset(@gltf_ext.GltfAssetLabel, String) -> String
+
+pub fn gltf_asset_label_string(@gltf_ext.GltfAssetLabel) -> String
+
+pub fn gltf_asset_label_to_label(@gltf_ext.GltfAssetLabel) -> String
+
 pub fn gltf_clear_custom_vertex_attributes() -> Unit
 
 pub fn gltf_clear_extension_handlers() -> Unit
 
+pub fn gltf_convert_coordinates_quat(@math.Quat) -> @math.Quat
+
+pub fn gltf_convert_coordinates_vec3(@math.Vec3) -> @math.Vec3
+
+pub fn gltf_convert_coordinates_vec3_components((Float, Float, Float)) -> (Float, Float, Float)
+
 pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute]
 
-pub fn gltf_extension_handlers() -> GltfExtensionHandlers
+pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates
+
+pub fn gltf_default_material_asset_label() -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy
+
+pub fn gltf_extension_handlers() -> @extensions.GltfExtensionHandlers
 
 pub fn gltf_extension_notify_animations_collected(String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit
 
@@ -31,34 +52,49 @@ pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.Wor
 
 pub fn gltf_install_loader_registration(() -> Unit) -> Unit
 
+pub fn gltf_material_asset_label(Int, Bool) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_material_extras(String) -> @gltf_ext.GltfMaterialExtras
+
+pub fn gltf_material_name(String) -> @gltf_ext.GltfMaterialName
+
+pub fn gltf_mesh_asset_label(@gltf_ext.GltfMeshIndex) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_node_asset_label(@gltf_ext.GltfNodeIndex) -> @gltf_ext.GltfAssetLabel
+
 pub fn gltf_pbr_material_handler_enabled() -> Bool
 
 pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn gltf_register_extension_handler(GltfExtensionHandler) -> Unit
+pub fn gltf_plugin_with(@app.App[@ecs.World], GltfPlugin) -> @app.App[@ecs.World]
+
+pub fn gltf_primitive_asset_label(@gltf_ext.GltfPrimitiveIndex) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_register_extension_handler(@extensions.GltfExtensionHandler) -> Unit
 
 pub fn gltf_resolve_custom_vertex_attribute_name(String) -> String?
 
+pub fn gltf_scene_asset_label(@gltf_ext.GltfSceneIndex) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_set_default_convert_coordinates(GltfConvertCoordinates) -> Unit
+
+pub fn gltf_set_default_skinned_mesh_bounds_policy(GltfSkinnedMeshBoundsPolicy) -> Unit
+
 pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
+
+pub fn gltf_skin_asset_label(@gltf_ext.GltfSkinIndex) -> @gltf_ext.GltfAssetLabel
 
 // Errors
 
 // Types and methods
-pub(all) enum GltfAssetLabel {
-  Scene(Int)
-  Node(Int)
-  Mesh(Int)
-  Primitive(Int, Int)
-  MorphTarget(Int, Int)
-  Texture(Int)
-  Material(Int, Bool)
-  DefaultMaterial
-  Animation(Int)
-  Skin(Int)
-  InverseBindMatrices(Int)
+pub(all) struct GltfConvertCoordinates {
+  rotate_scene_entity : Bool
+  rotate_meshes : Bool
 }
-pub fn GltfAssetLabel::from_asset(Self, String) -> String
-pub fn GltfAssetLabel::to_label(Self) -> String
+pub fn GltfConvertCoordinates::default() -> Self
+pub fn GltfConvertCoordinates::mesh_conversion_transform(Self) -> @transform.Transform
+pub fn GltfConvertCoordinates::mesh_conversion_transform_inverse(Self) -> @transform.Transform
+pub fn GltfConvertCoordinates::scene_conversion_transform(Self) -> @transform.Transform
 
 pub struct GltfCustomVertexAttribute {
   gltf_name : String
@@ -68,98 +104,57 @@ pub fn GltfCustomVertexAttribute::gltf_name(Self) -> String
 pub fn GltfCustomVertexAttribute::mapped_name(Self) -> String
 pub fn GltfCustomVertexAttribute::new(String, String) -> Self
 
-pub struct GltfExtensionHandler {
-  on_animations_collected : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?
-  on_node_spawned : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
-  on_mesh_spawned : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?
-  on_scene_completed : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+pub struct GltfPlugin {
+  pbr_material_handler_enabled : Bool
+  convert_coordinates : GltfConvertCoordinates
+  custom_vertex_attributes : Array[GltfCustomVertexAttribute]
+  extension_handlers : Array[@extensions.GltfExtensionHandler]
+  skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
 }
-pub fn GltfExtensionHandler::new(on_animations_collected? : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?, on_node_spawned? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_mesh_spawned? : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?, on_scene_completed? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?) -> Self
+pub fn GltfPlugin::add_custom_vertex_attribute(Self, String, String) -> Self
+pub fn GltfPlugin::add_extension_handler(Self, @extensions.GltfExtensionHandler) -> Self
+pub fn GltfPlugin::default() -> Self
+pub fn GltfPlugin::with_convert_coordinates(Self, GltfConvertCoordinates) -> Self
+pub fn GltfPlugin::with_pbr_material_handler_enabled(Self, Bool) -> Self
+pub fn GltfPlugin::with_skinned_mesh_bounds_policy(Self, GltfSkinnedMeshBoundsPolicy) -> Self
 
-pub struct GltfExtensionHandlers {
-  handlers : Array[GltfExtensionHandler]
-}
-pub fn GltfExtensionHandlers::handlers(Self) -> Array[GltfExtensionHandler]
-pub fn GltfExtensionHandlers::new(Array[GltfExtensionHandler]) -> Self
-
-pub struct GltfExtras {
-  value : String
-}
-pub fn GltfExtras::as_str(Self) -> String
-pub fn GltfExtras::new(String) -> Self
-pub impl @ecs.Component for GltfExtras
-
-pub struct GltfMaterialExtras {
-  value : String
-}
-pub fn GltfMaterialExtras::as_str(Self) -> String
-pub fn GltfMaterialExtras::new(String) -> Self
-pub impl @ecs.Component for GltfMaterialExtras
-
-pub struct GltfMaterialName {
-  name : String
-}
-pub fn GltfMaterialName::as_str(Self) -> String
-pub fn GltfMaterialName::new(String) -> Self
-pub impl @ecs.Component for GltfMaterialName
-
-pub struct GltfMeshExtras {
-  value : String
-}
-pub fn GltfMeshExtras::as_str(Self) -> String
-pub fn GltfMeshExtras::new(String) -> Self
-pub impl @ecs.Component for GltfMeshExtras
-
-pub struct GltfMeshIndex {
-  mesh_index : Int
-}
-pub fn GltfMeshIndex::index(Self) -> Int
-pub fn GltfMeshIndex::new(Int) -> Self
-pub impl @ecs.Component for GltfMeshIndex
-
-pub struct GltfNodeIndex {
-  node_index : Int
-}
-pub fn GltfNodeIndex::index(Self) -> Int
-pub fn GltfNodeIndex::new(Int) -> Self
-pub impl @ecs.Component for GltfNodeIndex
-
-pub struct GltfPrimitiveIndex {
-  mesh_index : Int
-  primitive_index : Int
-}
-pub fn GltfPrimitiveIndex::mesh_index(Self) -> Int
-pub fn GltfPrimitiveIndex::new(Int, Int) -> Self
-pub fn GltfPrimitiveIndex::primitive_index(Self) -> Int
-pub impl @ecs.Component for GltfPrimitiveIndex
-
-pub struct GltfSceneExtras {
-  value : String
-}
-pub fn GltfSceneExtras::as_str(Self) -> String
-pub fn GltfSceneExtras::new(String) -> Self
-pub impl @ecs.Component for GltfSceneExtras
-
-pub struct GltfSceneIndex {
-  scene_index : Int
-}
-pub fn GltfSceneIndex::index(Self) -> Int
-pub fn GltfSceneIndex::new(Int) -> Self
-pub impl @ecs.Component for GltfSceneIndex
-
-pub struct GltfSkinIndex {
-  index : Int
-}
-pub fn GltfSkinIndex::index(Self) -> Int
-pub fn GltfSkinIndex::new(Int) -> Self
-pub impl @ecs.Component for GltfSkinIndex
-pub impl ToJson for GltfSkinIndex
-pub impl @json.FromJson for GltfSkinIndex
+pub(all) enum GltfSkinnedMeshBoundsPolicy {
+  BindPose
+  Dynamic
+  NoFrustumCulling
+} derive(Eq)
+pub fn GltfSkinnedMeshBoundsPolicy::default() -> Self
 
 // Type aliases
+pub using @gltf_ext {type GltfAssetLabel}
+
+pub using @extensions {type GltfExtensionHandler}
+
+pub using @extensions {type GltfExtensionHandlers}
+
+pub using @gltf_ext {type GltfExtras}
+
 pub type GltfLoaderRegistration = () -> Unit
 
 pub using @asset {type ImageLoaderSettings as GltfLoaderSettings}
+
+pub using @gltf_ext {type GltfMaterialExtras}
+
+pub using @gltf_ext {type GltfMaterialName}
+
+pub using @gltf_ext {type GltfMeshExtras}
+
+pub using @gltf_ext {type GltfMeshIndex}
+
+pub using @gltf_ext {type GltfNodeIndex}
+
+pub using @gltf_ext {type GltfPrimitiveIndex}
+
+pub using @gltf_ext {type GltfSceneExtras}
+
+pub using @gltf_ext {type GltfSceneIndex}
+
+pub using @gltf_ext {type GltfSkinIndex}
 
 // Traits
 

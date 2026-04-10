@@ -25,31 +25,31 @@ pub impl AssetLoadGuard for CountingLoadGuard with release(self) {
 ///|
 test "assets: insert/get/set/remove and events" {
   let assets : Assets[Int] = Assets::new()
-  inspect(assets.is_empty(), content="true")
+  debug_inspect(assets.is_empty(), content="true")
   let h = assets.add(10)
-  inspect(assets.get(h).unwrap(), content="10")
+  debug_inspect(assets.get(h).unwrap(), content="10")
   let ev1 = assets.drain_events()
-  inspect(ev1.length(), content="1")
+  debug_inspect(ev1.length(), content="1")
   match ev1[0] {
-    AssetEvent::Added(h1) => inspect(h1.id() == h.id(), content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Added(h1) => debug_inspect(h1.id() == h.id(), content="true")
+    _ => debug_inspect(false, content="false")
   }
-  inspect(assets.set(h, 11), content="true")
-  inspect(assets.get(h).unwrap(), content="11")
+  debug_inspect(assets.set(h, 11), content="true")
+  debug_inspect(assets.get(h).unwrap(), content="11")
   let ev2 = assets.drain_events()
-  inspect(ev2.length(), content="1")
+  debug_inspect(ev2.length(), content="1")
   match ev2[0] {
-    AssetEvent::Modified(h1) => inspect(h1.id() == h.id(), content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Modified(h1) => debug_inspect(h1.id() == h.id(), content="true")
+    _ => debug_inspect(false, content="false")
   }
   let removed = assets.remove(h).unwrap()
-  inspect(removed, content="11")
-  inspect(assets.contains(h), content="false")
+  debug_inspect(removed, content="11")
+  debug_inspect(assets.contains(h), content="false")
   let ev3 = assets.drain_events()
-  inspect(ev3.length(), content="1")
+  debug_inspect(ev3.length(), content="1")
   match ev3[0] {
-    AssetEvent::Removed(h1) => inspect(h1.id() == h.id(), content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Removed(h1) => debug_inspect(h1.id() == h.id(), content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -57,21 +57,21 @@ test "assets: insert/get/set/remove and events" {
 test "assets: insert with explicit handle id grows storage" {
   let assets : Assets[Int] = Assets::new()
   let h = Handle::new(10)
-  inspect(assets.insert(h, 42), content="true")
-  inspect(assets.get(h).unwrap(), content="42")
+  debug_inspect(assets.insert(h, 42), content="true")
+  debug_inspect(assets.get(h).unwrap(), content="42")
   let ev = assets.drain_events()
-  inspect(ev.length(), content="1")
+  debug_inspect(ev.length(), content="1")
   match ev[0] {
-    AssetEvent::Added(h1) => inspect(h1.id() == 10, content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Added(h1) => debug_inspect(h1.id() == 10, content="true")
+    _ => debug_inspect(false, content="false")
   }
-  inspect(assets.insert(h, 43), content="true")
-  inspect(assets.get(h).unwrap(), content="43")
+  debug_inspect(assets.insert(h, 43), content="true")
+  debug_inspect(assets.get(h).unwrap(), content="43")
   let ev2 = assets.drain_events()
-  inspect(ev2.length(), content="1")
+  debug_inspect(ev2.length(), content="1")
   match ev2[0] {
-    AssetEvent::Modified(h1) => inspect(h1.id() == 10, content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Modified(h1) => debug_inspect(h1.id() == 10, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -79,15 +79,15 @@ test "assets: insert with explicit handle id grows storage" {
 test "assets: reserve handle stays empty until a later insert" {
   let assets : Assets[Int] = Assets::new()
   let reserved = assets.reserve_handle()
-  inspect(assets.get(reserved) is None, content="true")
-  inspect(assets.insert(reserved, 7), content="true")
-  inspect(assets.get(reserved).unwrap(), content="7")
+  debug_inspect(assets.get(reserved) is None, content="true")
+  debug_inspect(assets.insert(reserved, 7), content="true")
+  debug_inspect(assets.get(reserved).unwrap(), content="7")
   let events = assets.drain_events()
-  inspect(events.length(), content="1")
+  debug_inspect(events.length(), content="1")
   match events[0] {
     AssetEvent::Added(handle) =>
-      inspect(handle.id() == reserved.id(), content="true")
-    _ => inspect(false, content="false")
+      debug_inspect(handle.id() == reserved.id(), content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -95,15 +95,15 @@ test "assets: reserve handle stays empty until a later insert" {
 test "asset plugin initializes world-owned asset resources" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
-  inspect(
+  debug_inspect(
     (try! world.get_resource(asset_server_resource_key())) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_resource(loaded_folder_assets_resource_key())) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_resource(
       assets_resource_key_of(Image::new(1, 1, Bytes::new(4))),
     ))
@@ -131,7 +131,7 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
     Some(assets) => assets
     None => abort("expected Assets<LoadedFolder> resource")
   }
-  inspect(loaded_folders.get(folder_handle) is Some(_), content="true")
+  debug_inspect(loaded_folders.get(folder_handle) is Some(_), content="true")
 }
 
 ///|
@@ -154,14 +154,14 @@ test "asset system forwards asset events to ECS messages" {
   let key : @ecs.MessageKey[AssetEvent[Int]] = @ecs.Message::message()
   let reader = world.message_reader(key, cursor_ref)
   let events = try! reader.read()
-  inspect(events.length(), content="2")
+  debug_inspect(events.length(), content="2")
   match events[0] {
-    AssetEvent::Added(handle) => inspect(handle.id() == 0, content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Added(handle) => debug_inspect(handle.id() == 0, content="true")
+    _ => debug_inspect(false, content="false")
   }
   match events[1] {
-    AssetEvent::Added(handle) => inspect(handle.id() == 1, content="true")
-    _ => inspect(false, content="false")
+    AssetEvent::Added(handle) => debug_inspect(handle.id() == 1, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -179,7 +179,7 @@ test "asset system forwards image load completion to ECS messages" {
     None => abort("expected AssetServer resource")
   }
   let image = asset_server.load_image("branding/bevy_logo_dark_big.png")
-  inspect(
+  debug_inspect(
     match (try! world.get_resource(image_assets_key)) {
       Some(images) => images.get(image) is None
       None => false
@@ -194,8 +194,8 @@ test "asset system forwards image load completion to ECS messages" {
     }
   }
 
-  inspect(host_asset_is_texture_loaded(image.id()), content="true")
-  inspect(
+  debug_inspect(host_asset_is_texture_loaded(image.id()), content="true")
+  debug_inspect(
     match (try! world.get_resource(image_assets_key)) {
       Some(images) =>
         match images.get(image) {
@@ -228,8 +228,8 @@ test "asset system forwards image load completion to ECS messages" {
       _ => ()
     }
   }
-  inspect(added_count.val, content="1")
-  inspect(found.val, content="true")
+  debug_inspect(added_count.val, content="1")
+  debug_inspect(found.val, content="true")
 }
 
 ///|
@@ -260,7 +260,7 @@ test "asset system preserves image loader settings in stored image assets" {
     }
   }
 
-  inspect(
+  debug_inspect(
     match (try! world.get_resource(image_assets_key)) {
       Some(images) =>
         match images.get(image) {
@@ -282,8 +282,8 @@ test "asset system preserves image loader settings in stored image assets" {
       asset_image_is_srgb(image),
     )
   })
-  inspect(metadata_ok.0, content="true")
-  inspect(metadata_ok.1, content="false")
+  debug_inspect(metadata_ok.0, content="true")
+  debug_inspect(metadata_ok.1, content="false")
 }
 
 ///|
@@ -306,7 +306,7 @@ test "asset system releases load_acquire guard after asset becomes ready" {
     })
   })
 
-  inspect(release_count.val, content="0")
+  debug_inspect(release_count.val, content="0")
 
   for _ in 0..<120 {
     asset_with_world(world, fn() { asset_system(world) })
@@ -315,8 +315,8 @@ test "asset system releases load_acquire guard after asset becomes ready" {
     }
   }
 
-  inspect(release_count.val, content="1")
-  inspect(
+  debug_inspect(release_count.val, content="1")
+  debug_inspect(
     match (try! world.get_resource(image_assets_key)) {
       Some(images) => images.contains(handle)
       None => false
@@ -336,7 +336,7 @@ test "asset server reuses the first handle for repeated image loads" {
       settings.is_srgb = false
     },
   )
-  inspect(first.id() == second.id(), content="true")
+  debug_inspect(first.id() == second.id(), content="true")
 }
 
 ///|
@@ -365,8 +365,8 @@ test "asset system skips MAIN_WORLD image asset sync when asset usage is render-
     }
   }
 
-  inspect(host_asset_is_texture_loaded(image.id()), content="true")
-  inspect(
+  debug_inspect(host_asset_is_texture_loaded(image.id()), content="true")
+  debug_inspect(
     match (try! world.get_resource(image_assets_key)) {
       Some(images) => images.get(image) is None
       None => false
@@ -400,9 +400,9 @@ test "asset server loads embedded image assets from in-memory source" {
     }
   }
 
-  inspect(host_asset_is_texture_loaded(handle.id()), content="true")
-  inspect(asset_texture_width(handle), content="128")
-  inspect(asset_texture_height(handle), content="96")
+  debug_inspect(host_asset_is_texture_loaded(handle.id()), content="true")
+  debug_inspect(asset_texture_width(handle), content="128")
+  debug_inspect(asset_texture_height(handle), content="96")
 }
 
 ///|
@@ -425,9 +425,9 @@ test "web asset reader fetches remote PNG bytes" {
       break
     }
   }
-  inspect(host_asset_is_texture_loaded(handle.id()), content="true")
-  inspect(asset_texture_width(handle) > 1, content="true")
-  inspect(asset_texture_height(handle) > 1, content="true")
+  debug_inspect(host_asset_is_texture_loaded(handle.id()), content="true")
+  debug_inspect(asset_texture_width(handle) > 1, content="true")
+  debug_inspect(asset_texture_height(handle) > 1, content="true")
 }
 
 ///|
@@ -497,9 +497,9 @@ test "Assets<Image>::get_mut exposes in-place mutation and emits a modified even
     }
   })
 
-  inspect(result.0.unwrap_or(-1), content="255")
-  inspect(result.1, content="2")
-  inspect(result.2, content="true")
+  debug_inspect(result.0.unwrap_or(-1), content="255")
+  debug_inspect(result.1, content="2")
+  debug_inspect(result.2, content="true")
 }
 
 ///|
@@ -510,12 +510,12 @@ test "Image::new_target_texture preserves Bevy-style target texture descriptor" 
     TextureFormat::Rgba8Unorm,
     Some(TextureFormat::Rgba8UnormSrgb),
   )
-  inspect(image.width, content="512")
-  inspect(image.height, content="512")
-  inspect(image.pixels.length(), content="0")
-  inspect(image.is_target_texture(), content="true")
-  inspect(image.format == TextureFormat::Rgba8Unorm, content="true")
-  inspect(
+  debug_inspect(image.width, content="512")
+  debug_inspect(image.height, content="512")
+  debug_inspect(image.pixels.length(), content="0")
+  debug_inspect(image.is_target_texture(), content="true")
+  debug_inspect(image.format == TextureFormat::Rgba8Unorm, content="true")
+  debug_inspect(
     image.view_format == Some(TextureFormat::Rgba8UnormSrgb),
     content="true",
   )
@@ -553,10 +553,10 @@ test "Assets<Image>::add creates a target texture image asset" {
     }
   })
 
-  inspect(result.0, content="true")
-  inspect(result.1, content="true")
-  inspect(result.2, content="true")
-  inspect(result.3, content="true")
+  debug_inspect(result.0, content="true")
+  debug_inspect(result.1, content="true")
+  debug_inspect(result.2, content="true")
+  debug_inspect(result.3, content="true")
 }
 
 ///|
@@ -661,10 +661,10 @@ test "asset server loads typed custom assets into Assets<T> and reuses handles" 
     asset_server.load("data/asset.custom")
   })
 
-  inspect(handle.id() == second.id(), content="true")
+  debug_inspect(handle.id() == second.id(), content="true")
   let key : @ecs.ResourceKey[Assets[TestCustomAsset]] = assets_resource_key()
   asset_with_world(world, fn() { asset_system(world) })
-  inspect(
+  debug_inspect(
     match (try! world.get_resource(key)) {
       Some(assets) =>
         match assets.get(handle) {
@@ -690,7 +690,7 @@ test "asset server add inserts a typed asset into Assets<T>" {
     asset_server.add(TestCustomAsset::{ value: 7 })
   })
   let key : @ecs.ResourceKey[Assets[TestCustomAsset]] = assets_resource_key()
-  inspect(
+  debug_inspect(
     match (try! world.get_resource(key)) {
       Some(assets) =>
         match assets.get(handle) {
@@ -708,11 +708,11 @@ test "gzip helper decompresses the Bevy sample image payload" {
   let decoded = gzip_decompress(
     try! @fs.read_file_to_bytes("assets/data/compressed_image.png.gz"),
   )
-  inspect(
+  debug_inspect(
     decoded.map(fn(bytes) { bytes.length() }).unwrap_or(-1),
     content="15860",
   )
-  inspect(
+  debug_inspect(
     decoded.map(fn(bytes) {
       bytes.length() >= 8 &&
       bytes[0].to_int() == 0x89 &&
@@ -736,7 +736,7 @@ test "asset server load_direct decodes decompressed image bytes" {
   let decoded = gzip_decompress(
     try! @fs.read_file_to_bytes("assets/data/compressed_image.png.gz"),
   )
-  inspect(
+  debug_inspect(
     decoded.map(fn(bytes) {
       let image : Image = asset_with_world(world, fn() {
         asset_server.load_image_direct("data/compressed_image.png", bytes)

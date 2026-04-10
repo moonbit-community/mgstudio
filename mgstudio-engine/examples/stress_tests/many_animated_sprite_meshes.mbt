@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/stress_tests/many_animated_sprite_meshes.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_MANY_ANIMATED_SPRITE_MESHES : String = "examples/stress_tests/many_animated_sprite_meshes/main.mbt"
+

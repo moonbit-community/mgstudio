@@ -12,12 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy_tasks/src/iter/adapters.rs
+// Bevy source: `bevy/crates/bevy_tasks/src/iter/adapters.rs`.
 
 ///|
-pub struct ParallelIteratorAdapter {}
+pub struct ParallelIteratorAdapter[T] {
+  iter : ParallelIterator[T]
+}
 
 ///|
-pub fn ParallelIteratorAdapter::new() -> ParallelIteratorAdapter {
-  ParallelIteratorAdapter::{  }
+pub fn[T] ParallelIteratorAdapter::new(
+  iter : ParallelIterator[T],
+) -> ParallelIteratorAdapter[T] {
+  ParallelIteratorAdapter::{ iter, }
+}
+
+///|
+pub fn[T] ParallelIteratorAdapter::next_batch(
+  self : ParallelIteratorAdapter[T],
+) -> Array[T]? {
+  self.iter.next_batch()
+}
+
+///|
+pub fn[T] parallel_chain(
+  left : ParallelIterator[T],
+  right : ParallelIterator[T],
+) -> ParallelIterator[T] {
+  let batches : Array[Array[T]] = []
+  while left.next_batch() is Some(batch) {
+    batches.push(batch)
+  }
+  while right.next_batch() is Some(batch) {
+    batches.push(batch)
+  }
+  ParallelIterator::new(batches)
 }

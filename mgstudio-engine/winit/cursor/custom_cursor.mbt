@@ -13,7 +13,21 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_winit/src/cursor/custom_cursor.rs`).
-fn _winit_custom_cursor_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_winit/src/cursor/custom_cursor.rs`.
+// Bridge aliases to the `window` custom-cursor data model.
+
+///|
+pub type WinitCustomCursor = @window.CustomCursor
+
+///|
+pub type WinitCustomCursorImage = @window.CustomCursorImage
+
+///|
+pub type WinitCustomCursorUrl = @window.CustomCursorUrl
+
+///|
+pub fn cursor_icon_from_custom(
+  cursor : WinitCustomCursor,
+) -> @window.CursorIcon {
+  @window.CursorIcon::from_custom(cursor)
 }

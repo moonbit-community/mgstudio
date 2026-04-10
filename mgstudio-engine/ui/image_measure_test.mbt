@@ -57,5 +57,8 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
   )
   ui_layout_system(world)
   let rect = try! world.get_by_key(child, ecs_key_ui_layout).unwrap().rect
-  inspect(rect.size().x == 200.0F && rect.size().y == 100.0F, content="true")
+  debug_inspect(
+    rect.size().x == 200.0F && rect.size().y == 100.0F,
+    content="true",
+  )
 }

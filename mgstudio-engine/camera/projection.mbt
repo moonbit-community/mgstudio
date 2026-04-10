@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera/src/projection.rs`).
+// Bevy source: `bevy/crates/bevy_camera/src/projection.rs`.
 
 ///|
 pub type PerspectiveProjection = @pbr.PerspectiveProjection3d
@@ -36,4 +36,21 @@ pub fn orthographic_projection_2d_with_scale(
 ///|
 pub fn perspective_projection_3d_default() -> PerspectiveProjection {
   @pbr.PerspectiveProjection3d::default()
+}
+
+///|
+pub fn perspective_projection_3d_update(
+  projection : PerspectiveProjection,
+  width : Float,
+  height : Float,
+) -> PerspectiveProjection {
+  projection.update(width, height)
+}
+
+///|
+pub fn perspective_projection_3d_with_aspect_ratio(
+  projection : PerspectiveProjection,
+  aspect_ratio : Float,
+) -> PerspectiveProjection {
+  projection.with_aspect_ratio(aspect_ratio)
 }

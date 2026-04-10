@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/3d_viewport_to_world.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_EXAMPLE_3D_VIEWPORT_TO_WORLD : String = "examples/3d/3d_viewport_to_world/main.mbt"
+

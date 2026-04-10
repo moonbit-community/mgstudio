@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/phase.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_phase_bridge_pending() -> Unit {
+// Bridge aliases for material phase-related component surface.
 
-}
+///|
+pub type MaterialMesh3dComponent = MeshMaterial3d
+
+///|
+pub type MaterialForwardDecalExt = ForwardDecalMaterialExt
+
+///|
+pub let ecs_key_material_mesh3d : @ecs.ComponentKey[MaterialMesh3dComponent] = ecs_key_mesh_material3d
+
+///|
+pub let ecs_key_material_forward_decal_ext : @ecs.ComponentKey[
+  MaterialForwardDecalExt,
+] = ecs_key_forward_decal_material_ext

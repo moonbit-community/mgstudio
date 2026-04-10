@@ -13,11 +13,16 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/plugin.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/plugin.rs`.
 
 ///|
 pub fn[W] plugin_from_system(system : SystemFn[W]) -> Plugin[W] {
   fn(app : App[W]) -> App[W] { app.add_system(system) }
+}
+
+///|
+pub fn[W] plugin_from_system_config(config : SystemConfig[W]) -> Plugin[W] {
+  fn(app : App[W]) -> App[W] { app.add_system_config(config) }
 }
 
 ///|

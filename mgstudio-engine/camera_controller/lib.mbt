@@ -13,7 +13,19 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_camera_controller/src/lib.rs`).
-fn _camera_controller_lib_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_camera_controller/src/lib.rs`.
+
+///|
+pub struct CameraControllerPlugin {}
+
+///|
+pub fn CameraControllerPlugin::default() -> CameraControllerPlugin {
+  CameraControllerPlugin::{  }
+}
+
+///|
+pub fn camera_controller_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app.add_plugins([free_camera_plugin, pan_camera_plugin])
 }

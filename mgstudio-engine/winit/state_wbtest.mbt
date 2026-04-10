@@ -35,7 +35,7 @@ test "winit: runner maps window present mode to render host mode" {
     @render.HostGpuPresentMode::Mailbox
   let none_fallback_ok = runner_surface_present_mode(None) ==
     @render.HostGpuPresentMode::Fifo
-  inspect(
+  debug_inspect(
     auto_vsync_ok &&
     auto_no_vsync_ok &&
     fifo_ok &&
@@ -67,7 +67,7 @@ test "winit: runner maps window composite alpha mode to render host mode" {
     @render.HostGpuCompositeAlphaMode::Inherit
   let none_fallback_ok = runner_surface_composite_alpha_mode(None) ==
     @render.HostGpuCompositeAlphaMode::Auto
-  inspect(
+  debug_inspect(
     auto_ok && opaque_ok && pre_ok && post_ok && inherit_ok && none_fallback_ok,
     content="true",
   )
@@ -94,7 +94,7 @@ test "winit: runner maps window desired maximum frame latency" {
     @render.HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
   let none_window_ok = runner_surface_desired_maximum_frame_latency(None) ==
     @render.HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
-  inspect(
+  debug_inspect(
     none_ok &&
     explicit_ok &&
     zero_fallback_ok &&

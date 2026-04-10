@@ -14,7 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/scene/types.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_scene_types_bridge_pending() -> Unit {
 
+///|
+pub struct RaytracingMesh3d {
+  mesh_id : Int
+}
+
+///|
+pub fn RaytracingMesh3d::new(mesh_id : Int) -> RaytracingMesh3d {
+  RaytracingMesh3d::{ mesh_id, }
+}
+
+///|
+pub fn RaytracingMesh3d::mesh_id(self : RaytracingMesh3d) -> Int {
+  self.mesh_id
 }

@@ -15,7 +15,7 @@
 ///|
 struct TestMarker {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 test "ecs removed components: remove emits entity in tick range" {
@@ -27,13 +27,13 @@ test "ecs removed components: remove emits entity in tick range" {
 
   try! world.set_by_key(entity, key, TestMarker::{ value: 1 })
   world.advance_sequence() |> ignore
-  inspect(try! world.remove_by_key(entity, key), content="true")
+  debug_inspect(try! world.remove_by_key(entity, key), content="true")
 
   let removed = world
     .removed_components(key, @core.SystemSequence::new(0, 1))
     .read()
-  inspect(removed.length(), content="1")
-  inspect(removed[0] == entity, content="true")
+  debug_inspect(removed.length(), content="1")
+  debug_inspect(removed[0] == entity, content="true")
 }
 
 ///|
@@ -51,8 +51,8 @@ test "ecs removed components: despawn emits removed entity for attached componen
   let removed = world
     .removed_components(key, @core.SystemSequence::new(0, 1))
     .read()
-  inspect(removed.length(), content="1")
-  inspect(removed[0] == entity, content="true")
+  debug_inspect(removed.length(), content="1")
+  debug_inspect(removed[0] == entity, content="true")
 }
 
 ///|
@@ -67,14 +67,14 @@ test "ecs removed components: len, is_empty and clear match unread messages" {
   try! world.set_by_key(entity0, key, TestMarker::{ value: 1 })
   try! world.set_by_key(entity1, key, TestMarker::{ value: 2 })
   world.advance_sequence() |> ignore
-  inspect(try! world.remove_by_key(entity0, key), content="true")
-  inspect(try! world.remove_by_key(entity1, key), content="true")
+  debug_inspect(try! world.remove_by_key(entity0, key), content="true")
+  debug_inspect(try! world.remove_by_key(entity1, key), content="true")
 
   let removed = world.removed_components(key, @core.SystemSequence::new(0, 1))
-  inspect(removed.len(), content="2")
-  inspect(removed.is_empty(), content="false")
+  debug_inspect(removed.len(), content="2")
+  debug_inspect(removed.is_empty(), content="false")
   removed.clear()
-  inspect(removed.len(), content="0")
-  inspect(removed.is_empty(), content="true")
-  inspect(removed.read().length(), content="0")
+  debug_inspect(removed.len(), content="0")
+  debug_inspect(removed.is_empty(), content="true")
+  debug_inspect(removed.read().length(), content="0")
 }

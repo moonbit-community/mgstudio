@@ -17,6 +17,30 @@
 // The current runtime does not expose Bevy's public text error enums.
 
 ///|
+pub const TEXT_ERROR_MODULE_TAG : String = "bevy_text::error"
+
+///|
+pub struct TextErrorBridge {
+  module_tag : String
+}
+
+///|
+pub fn TextErrorBridge::default() -> TextErrorBridge {
+  TextErrorBridge::{ module_tag: TEXT_ERROR_MODULE_TAG }
+}
+
+///|
 pub fn text_public_error_surface_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub fn text_error_bridge_enabled(bridge : TextErrorBridge) -> Bool {
+  bridge.module_tag == TEXT_ERROR_MODULE_TAG &&
+  text_public_error_surface_available()
+}
+
+///|
+pub fn text_error_bridge_module_tag(bridge : TextErrorBridge) -> String {
+  bridge.module_tag
 }

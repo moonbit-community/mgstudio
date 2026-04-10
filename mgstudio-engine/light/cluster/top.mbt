@@ -14,10 +14,18 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/mod.rs`.
-//
-// Pending bridge surface:
-// keep this cluster boundary explicit until the package-level bridge is
-// needed.
-fn _light_cluster_module_anchor() -> Unit {
-  ignore(0)
+// Bridge surface for clustered-lighting module topology.
+
+///|
+pub type ClusterPointLight = @light.PointLight
+
+///|
+pub type ClusterDirectionalLight = @light.DirectionalLight
+
+///|
+pub type ClusterSpotLight = @light.SpotLight
+
+///|
+pub fn cluster_light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

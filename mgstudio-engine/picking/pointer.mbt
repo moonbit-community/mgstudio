@@ -72,7 +72,7 @@ pub(all) enum PointerButton {
   Primary
   Secondary
   Middle
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub impl @app.Resource for PointerInputs with resource() {

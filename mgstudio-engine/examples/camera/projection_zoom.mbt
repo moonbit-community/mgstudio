@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub fn camera_projection_zoom_bevy_source() -> String {
-  "bevy/examples/camera/projection_zoom.rs"
-}
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_PROJECTION_ZOOM : String = "examples/camera/projection_zoom/main.mbt"
+

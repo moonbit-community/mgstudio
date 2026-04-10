@@ -51,7 +51,7 @@ pub struct SystemInfo {
   cpu : String
   core_count : String
   memory : String
-} derive(Show)
+} derive(Debug)
 
 ///|
 let system_info_resource_key : @ecs.ResourceKey[SystemInfo] = @ecs.register_resource(

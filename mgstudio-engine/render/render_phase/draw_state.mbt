@@ -17,3 +17,31 @@
 
 ///|
 pub type DrawState = @renderer.GpuPassState
+
+///|
+pub const DRAW_STATE_MODULE_TAG : String = "bevy_render::render_phase::draw_state"
+
+///|
+pub fn draw_state_module_tag() -> String {
+  DRAW_STATE_MODULE_TAG
+}
+
+///|
+pub fn draw_state_runtime_available(_state : DrawState) -> Bool {
+  true
+}
+
+///|
+pub fn draw_state_target_id(state : DrawState) -> Int {
+  state.target_id
+}
+
+///|
+pub fn draw_state_is_3d(state : DrawState) -> Bool {
+  state.is_3d
+}
+
+///|
+pub fn draw_state_viewport(state : DrawState) -> (UInt, UInt, UInt, UInt) {
+  (state.viewport_x, state.viewport_y, state.viewport_w, state.viewport_h)
+}

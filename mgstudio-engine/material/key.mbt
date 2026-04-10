@@ -14,7 +14,27 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/key.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _material_key_bridge_pending() -> Unit {
+// Bridge aliases for material pipeline key surface.
 
+///|
+pub type MaterialOpaqueRendererMethod = OpaqueRendererMethod
+
+///|
+pub type MaterialParallaxMethod = ParallaxMappingMethod
+
+///|
+pub const MATERIAL_KEY_MODULE_TAG : String = "bevy_material::key"
+
+///|
+pub fn material_opaque_renderer_method_identity(
+  value : MaterialOpaqueRendererMethod,
+) -> MaterialOpaqueRendererMethod {
+  value
+}
+
+///|
+pub fn material_parallax_method_identity(
+  value : MaterialParallaxMethod,
+) -> MaterialParallaxMethod {
+  value
 }

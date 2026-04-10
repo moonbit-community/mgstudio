@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/components/global_transform.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/components/global_transform.rs`.
 
 ///|
 pub fn transform_component_global_transform_point(
   value : @transform.GlobalTransform,
   point : @math.Vec3,
 ) -> @math.Vec3 {
-  value.to_transform_approx().transform_point(point)
+  value.transform_point(point)
 }
 
 ///|
@@ -43,4 +43,9 @@ pub fn transform_component_global_compute_transform(
   value : @transform.GlobalTransform,
 ) -> @transform.Transform {
   value.to_transform_approx()
+}
+
+///|
+pub fn transform_component_global_identity() -> @transform.GlobalTransform {
+  @transform.GlobalTransform::identity()
 }

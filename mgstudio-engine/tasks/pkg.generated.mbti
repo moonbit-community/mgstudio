@@ -1,0 +1,141 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/tasks"
+
+import {
+  "Milky2018/mgstudio/tasks/iter",
+  "moonbitlang/core/builtin",
+}
+
+// Values
+pub const EDGE_EXECUTOR_BACKEND : String = "edge_executor"
+
+pub const EXECUTOR_BACKEND : String = "single_threaded"
+
+pub const TASKS_BACKEND : String = "single_threaded"
+
+pub const TASKS_CRATE_ID : String = "bevy_tasks"
+
+pub fn available_parallelism() -> Int
+
+pub fn[T] block_on(T) -> T
+
+pub fn[T, R] par_chunk_map(Array[T], TaskPool, Int, (Int, Array[T]) -> R) -> Array[R]
+
+pub fn[T, R] par_chunk_map_mut(Array[T], TaskPool, Int, (Int, Array[T]) -> R) -> Array[R]
+
+pub fn[T, R] par_splat_map(Array[T], TaskPool, Int?, (Int, Array[T]) -> R) -> Array[R]
+
+pub fn[T, R] par_splat_map_mut(Array[T], TaskPool, Int?, (Int, Array[T]) -> R) -> Array[R]
+
+pub fn[T] poll_once(T?) -> T?
+
+pub fn[T] ready(T) -> T?
+
+pub fn single_threaded_task_pool_builder() -> TaskPoolBuilder
+
+pub fn tick_global_task_pools_on_main_thread() -> Unit
+
+// Errors
+
+// Types and methods
+pub struct AsyncComputeTaskPool {
+  pool : TaskPool
+}
+pub fn AsyncComputeTaskPool::get() -> Self
+pub fn AsyncComputeTaskPool::get_or_init(() -> TaskPool) -> Self
+pub fn AsyncComputeTaskPool::task_pool(Self) -> TaskPool
+pub fn AsyncComputeTaskPool::try_get() -> Self?
+
+pub struct ComputeTaskPool {
+  pool : TaskPool
+}
+pub fn ComputeTaskPool::get() -> Self
+pub fn ComputeTaskPool::get_or_init(() -> TaskPool) -> Self
+pub fn ComputeTaskPool::task_pool(Self) -> TaskPool
+pub fn ComputeTaskPool::try_get() -> Self?
+
+pub struct EdgeExecutor {
+}
+pub fn EdgeExecutor::new() -> Self
+pub fn EdgeExecutor::run_once(Self) -> Unit
+pub fn EdgeExecutor::tick(Self) -> Unit
+
+pub struct Executor {
+}
+pub fn Executor::new() -> Self
+pub fn Executor::run_once(Self) -> Unit
+pub fn Executor::tick(Self) -> Unit
+
+pub struct IoTaskPool {
+  pool : TaskPool
+}
+pub fn IoTaskPool::get() -> Self
+pub fn IoTaskPool::get_or_init(() -> TaskPool) -> Self
+pub fn IoTaskPool::task_pool(Self) -> TaskPool
+pub fn IoTaskPool::try_get() -> Self?
+
+#alias(SingleThreadedScope)
+pub struct Scope[T] {
+  results : Array[T]
+}
+pub fn[T] Scope::new() -> Self[T]
+pub fn[T] Scope::results(Self[T]) -> Array[T]
+pub fn[T] Scope::spawn(Self[T], () -> T) -> Unit
+pub fn[T] Scope::spawn_on_scope(Self[T], () -> T) -> Unit
+
+pub struct Task[T] {
+  value : T?
+  detached : Bool
+}
+pub fn[T] Task::cancel(Self[T]) -> T?
+pub fn[T] Task::detach(Self[T]) -> Self[T]
+pub fn[T] Task::is_finished(Self[T]) -> Bool
+pub fn[T] Task::poll(Self[T]) -> T?
+pub fn[T] Task::ready(T) -> Self[T]
+
+#alias(SingleThreadedTaskPool)
+pub struct TaskPool {
+  thread_num : Int
+}
+pub fn TaskPool::new() -> Self
+pub fn[T] TaskPool::scope(Self, (Scope[T]) -> Unit) -> Array[T]
+pub fn[T] TaskPool::scope_with_executor(Self, Bool, ThreadExecutor?, (Scope[T]) -> Unit) -> Array[T]
+pub fn TaskPool::thread_num(Self) -> Int
+
+#alias(SingleThreadedTaskPoolBuilder)
+pub struct TaskPoolBuilder {
+  num_threads : Int?
+  stack_size : Int?
+  thread_name : String?
+  on_thread_spawn : (() -> Unit)?
+  on_thread_destroy : (() -> Unit)?
+}
+pub fn TaskPoolBuilder::build(Self) -> TaskPool
+pub fn TaskPoolBuilder::new() -> Self
+pub fn TaskPoolBuilder::num_threads(Self, Int) -> Self
+pub fn TaskPoolBuilder::on_thread_destroy(Self, () -> Unit) -> Self
+pub fn TaskPoolBuilder::on_thread_spawn(Self, () -> Unit) -> Self
+pub fn TaskPoolBuilder::stack_size(Self, Int) -> Self
+pub fn TaskPoolBuilder::thread_name(Self, String) -> Self
+pub fn TaskPoolBuilder::with_thread_num(Self, Int) -> Self
+
+#alias(SingleThreadedThreadExecutor)
+pub struct ThreadExecutor {
+}
+pub fn ThreadExecutor::new() -> Self
+pub fn ThreadExecutor::tick(Self) -> Unit
+pub fn ThreadExecutor::ticker(Self) -> ThreadExecutorTicker
+
+pub struct ThreadExecutorTicker {
+}
+pub fn ThreadExecutorTicker::tick(Self) -> Unit
+
+// Type aliases
+pub using @iter {type ParallelIterator}
+
+pub using @builtin {type Array as ParallelSlice}
+
+pub using @builtin {type Array as ParallelSliceMut}
+
+// Traits
+

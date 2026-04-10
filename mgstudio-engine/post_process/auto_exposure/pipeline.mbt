@@ -26,7 +26,7 @@ pub const AUTO_EXPOSURE_HISTOGRAM_WORKGROUP_SIZE : Int = 16
 pub enum AutoExposurePass {
   Histogram
   Average
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct AutoExposurePipeline {

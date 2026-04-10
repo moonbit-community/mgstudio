@@ -44,7 +44,7 @@ test "render2d: viewport_to_world and world_to_viewport roundtrip (identity came
       approx_eq(world_center.x, 0.0F) && approx_eq(world_center.y, 0.0F)
     _ => false
   }
-  inspect(ok_center, content="true")
+  debug_inspect(ok_center, content="true")
 
   // Roundtrip an arbitrary point.
   let screen = @math.Vec2::new(12.5F, 87.25F)
@@ -64,7 +64,7 @@ test "render2d: viewport_to_world and world_to_viewport roundtrip (identity came
       }
     _ => false
   }
-  inspect(ok_roundtrip, content="true")
+  debug_inspect(ok_roundtrip, content="true")
 }
 
 ///|
@@ -85,7 +85,7 @@ test "render2d: viewport_to_world uses logical pixels when scale_factor != 1" {
       approx_eq(world_center.x, 0.0F) && approx_eq(world_center.y, 0.0F)
     _ => false
   }
-  inspect(ok_center, content="true")
+  debug_inspect(ok_center, content="true")
 }
 
 ///|
@@ -107,7 +107,7 @@ test "render2d: viewport rect clamps to target size" {
       approx_eq(world_pos.x, 0.0F) && approx_eq(world_pos.y, 0.0F)
     _ => false
   }
-  inspect(ok_center, content="true")
+  debug_inspect(ok_center, content="true")
 }
 
 ///|
@@ -130,7 +130,7 @@ test "render2d: Assets::add accepts mesh geometry and color authoring values" {
   } else {
     false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -161,5 +161,5 @@ test "render2d: viewport conversions honor transform-based zoom scale" {
   } else {
     false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

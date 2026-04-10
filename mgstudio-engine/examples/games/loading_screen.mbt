@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/games/loading_screen.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_LOADING_SCREEN : String = "examples/games/loading_screen/main.mbt"
+

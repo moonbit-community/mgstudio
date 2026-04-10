@@ -24,14 +24,14 @@ pub(all) enum Display {
   Flex
   Grid
   None
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned position type (subset).
 pub(all) enum PositionType {
   Relative
   Absolute
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum OverflowAxis {
@@ -39,7 +39,7 @@ pub(all) enum OverflowAxis {
   Hidden
   Scroll
   Visible
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct Overflow {
@@ -62,7 +62,7 @@ pub(all) enum OverflowClipBox {
   BorderBox
   PaddingBox
   ContentBox
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct OverflowClipMargin {
@@ -113,7 +113,7 @@ pub(all) enum FlexDirection {
   ColumnReverse
   Row
   RowReverse
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned flex wrap.
@@ -121,7 +121,7 @@ pub(all) enum FlexWrap {
   NoWrap
   Wrap
   WrapReverse
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify content.
@@ -136,7 +136,7 @@ pub(all) enum JustifyContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify items.
@@ -147,7 +147,7 @@ pub(all) enum JustifyItems {
   End
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify self.
@@ -158,7 +158,7 @@ pub(all) enum JustifySelf {
   End
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align items.
@@ -171,7 +171,7 @@ pub(all) enum AlignItems {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align self.
@@ -184,7 +184,7 @@ pub(all) enum AlignSelf {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align content.
@@ -199,7 +199,7 @@ pub(all) enum AlignContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum GridAutoFlow {
@@ -207,7 +207,7 @@ pub(all) enum GridAutoFlow {
   ColumnDense
   Row
   RowDense
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum GridTrack {
@@ -217,14 +217,14 @@ pub(all) enum GridTrack {
   Fr(Float)
   MinContent
   MaxContent
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum GridTrackRepetition {
   Count(Int)
   AutoFill
   AutoFit
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct RepeatedGridTrack {
@@ -661,7 +661,7 @@ pub fn BorderRect::default() -> BorderRect {
 pub(all) enum SliceScaleMode {
   Stretch
   Tile(Float)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn SliceScaleMode::default() -> SliceScaleMode {
@@ -825,7 +825,7 @@ pub(all) enum Interaction {
   None
   Hovered
   Pressed
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned button marker component.

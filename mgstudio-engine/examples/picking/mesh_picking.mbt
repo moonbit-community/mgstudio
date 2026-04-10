@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/picking/mesh_picking.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_MESH_PICKING : String = "examples/picking/mesh_picking/main.mbt"
+

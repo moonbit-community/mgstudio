@@ -39,7 +39,7 @@ pub(all) enum LineBreak {
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct TextLayout {

@@ -14,7 +14,24 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/atmosphere.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_atmosphere_bridge_pending() -> Unit {
+// Bridge aliases for atmosphere-related component surface.
 
-}
+///|
+pub type AtmosphereRenderMode = AtmosphereMode
+
+///|
+pub type AtmosphereRenderSettings = AtmosphereSettings
+
+///|
+pub type AtmosphereMedium = ScatteringMedium
+
+///|
+pub type AtmosphereComponent = Atmosphere
+
+///|
+pub type AtmosphereEnvMapLight = AtmosphereEnvironmentMapLight
+
+///|
+pub let ecs_key_atmosphere_env_map_light : @ecs.ComponentKey[
+  AtmosphereEnvMapLight,
+] = ecs_key_atmosphere_environment_map_light

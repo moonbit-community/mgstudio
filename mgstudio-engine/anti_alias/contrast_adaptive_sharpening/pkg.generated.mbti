@@ -1,11 +1,56 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub const CAS_NODE_MODULE_TAG : String = "bevy_anti_alias::contrast_adaptive_sharpening::node"
+
+pub const CAS_RUNTIME_SUPPORTED : Bool = false
+
+pub fn cas_node_bridge_enabled(CasNodeBridge) -> Bool
+
+pub fn cas_node_bridge_label(CasNodeBridge) -> String
+
+pub fn cas_node_enabled() -> Bool
+
+pub fn cas_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub struct CasNodeBridge {
+  node_label : String
+}
+pub fn CasNodeBridge::default() -> Self
+
+pub struct CasPlugin {
+}
+pub fn CasPlugin::default() -> Self
+
+pub struct CasUniform {
+  sharpness : Float
+} derive(Eq, @debug.Debug)
+pub fn CasUniform::default() -> Self
+pub impl @ecs.Component for CasUniform
+
+pub struct ContrastAdaptiveSharpening {
+  enabled : Bool
+  sharpening_strength : Float
+  denoise : Bool
+} derive(Eq, @debug.Debug)
+pub fn ContrastAdaptiveSharpening::default() -> Self
+pub impl @ecs.Component for ContrastAdaptiveSharpening
+
+pub struct DenoiseCas {
+  enabled : Bool
+} derive(Eq, @debug.Debug)
+pub fn DenoiseCas::default() -> Self
+pub impl @ecs.Component for DenoiseCas
 
 // Type aliases
 

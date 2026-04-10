@@ -23,7 +23,7 @@ pub(all) enum PointerEventKind {
   Down
   Up
   Click
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct PointerEvent {

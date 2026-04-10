@@ -6,7 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -55,7 +55,7 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
 
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
+pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
 
@@ -260,6 +260,18 @@ pub fn render_queue_system(@ecs.World) -> Unit
 pub fn run_pancamera_controller(@ecs.World) -> Unit
 
 pub fn sprite_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn sprite_plugin_boundary_id() -> String
+
+pub fn sprite_plugin_id() -> String
+
+pub fn sprite_plugin_with(@app.App[@ecs.World], SpritePlugin) -> @app.App[@ecs.World]
+
+pub fn sprite_stroke_text_emit_2d(GizmoConfig, Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
+
+pub fn sprite_stroke_text_emit_3d(GizmoConfig, @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
+
+pub fn sprite_stroke_text_measure(String, Float) -> @math.Vec2
 
 pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -853,6 +865,10 @@ pub fn SpriteImageMode::scale(scaling_mode? : SpriteScalingMode) -> Self
 pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
 pub fn SpriteImageMode::uses_slices(Self) -> Bool
 
+pub struct SpritePlugin {
+}
+pub fn SpritePlugin::default() -> Self
+
 pub(all) enum SpriteScalingMode {
   FillCenter
   FillStart
@@ -1025,7 +1041,7 @@ pub using @math {type Ellipse}
 
 pub using @math {type EllipseRing}
 
-pub using @core_pipeline {type Hdr}
+pub using @core_3d {type Hdr}
 
 pub using @math {type Line2d}
 

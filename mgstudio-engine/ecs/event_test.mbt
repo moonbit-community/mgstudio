@@ -15,12 +15,12 @@
 ///|
 struct RuntimeEvent {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct BrokenEvent {
   value : String
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 test "ecs event: read includes previous and current frame" {
@@ -30,22 +30,22 @@ test "ecs event: read includes previous and current frame" {
   )
 
   world.send_event(event_runtime, RuntimeEvent::{ value: 1 })
-  inspect(try! world.read_events(event_runtime), content="[{value: 1}]")
+  debug_inspect(try! world.read_events(event_runtime), content="[{value: 1}]")
 
   world.advance_event_frame()
-  inspect(try! world.read_events(event_runtime), content="[{value: 1}]")
+  debug_inspect(try! world.read_events(event_runtime), content="[{value: 1}]")
 
   world.send_event(event_runtime, RuntimeEvent::{ value: 2 })
-  inspect(
+  debug_inspect(
     try! world.read_events(event_runtime),
     content="[{value: 1}, {value: 2}]",
   )
 
   world.advance_event_frame()
-  inspect(try! world.read_events(event_runtime), content="[{value: 2}]")
+  debug_inspect(try! world.read_events(event_runtime), content="[{value: 2}]")
 
   world.advance_event_frame()
-  inspect(try! world.read_events(event_runtime), content="[]")
+  debug_inspect(try! world.read_events(event_runtime), content="[]")
 }
 
 ///|
@@ -60,7 +60,7 @@ test "ecs event: clear removes both previous and current queues" {
   world.send_event(event_runtime, RuntimeEvent::{ value: 2 })
   world.clear_events(event_runtime)
 
-  inspect(try! world.read_events(event_runtime), content="[]")
+  debug_inspect(try! world.read_events(event_runtime), content="[]")
 }
 
 ///|
@@ -79,6 +79,6 @@ test "ecs event: type mismatch diagnostics fail fast" {
   guard result is Err(EventTypeMismatch(key_id, _debug_name, index, _actual)) else {
     fail("expected event type mismatch diagnostics")
   }
-  inspect(key_id == event_runtime.id(), content="true")
-  inspect(index == 0, content="true")
+  debug_inspect(key_id == event_runtime.id(), content="true")
+  debug_inspect(index == 0, content="true")
 }

@@ -14,7 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_shader/src/lib.rs`.
-// Bridge entrypoint for the crate-level source shape.
+// Crate-root plugin surface.
+pub const SHADER_CRATE_ID : String = "bevy_shader"
+
+///|
+pub fn default_shader_loader() -> ShaderLoader {
+  ShaderLoader::default()
+}
+
+///|
+pub fn default_shader_settings() -> ShaderSettings {
+  ShaderSettings::default()
+}
+
+///|
 pub fn shader_lib_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   shader_plugin(app)
 }

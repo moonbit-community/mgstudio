@@ -74,16 +74,22 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
   world.for_each_component(@sprite.ecs_key_camera2d, fn(_entity, _camera) {
     camera_count.val = camera_count.val + 1
   })
-  inspect(camera_count.val, content="1")
+  debug_inspect(camera_count.val, content="1")
   let camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera2d], @ecs.All] = @ecs.query(
     world,
   )
-  inspect(camera_query.count(), content="1")
+  debug_inspect(camera_query.count(), content="1")
 
   run_ui_extract_pipeline(world)
 
-  inspect(@sprite.render2d_prepared_camera_count(world), content="Some(1)")
-  inspect(@sprite.render2d_queued_draw_item_count(world), content="Some(2)")
+  debug_inspect(
+    @sprite.render2d_prepared_camera_count(world),
+    content="Some(1)",
+  )
+  debug_inspect(
+    @sprite.render2d_queued_draw_item_count(world),
+    content="Some(2)",
+  )
 }
 
 ///|
@@ -97,15 +103,21 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
   setup(world)
 
   @ui.ui_update_context_system(world)
-  inspect(
+  debug_inspect(
     @ui.get_ui_context_resource(world).get().unwrap().camera_entity is Some(_),
     content="true",
   )
 
   run_ui_extract_pipeline(world)
 
-  inspect(@sprite.render2d_prepared_camera_count(world), content="Some(1)")
-  inspect(@sprite.render2d_queued_draw_item_count(world), content="Some(2)")
+  debug_inspect(
+    @sprite.render2d_prepared_camera_count(world),
+    content="Some(1)",
+  )
+  debug_inspect(
+    @sprite.render2d_queued_draw_item_count(world),
+    content="Some(2)",
+  )
 }
 
 ///|
@@ -124,14 +136,17 @@ test "examples ui button: scheduled update queues ui draw items" {
     .get_by_key(button_entities[0], @ui.ecs_key_ui_layout)
     .unwrap()
   let layout_size = layout.rect.size()
-  inspect(@sprite.render2d_diagnostic_prepared_camera_count(), content="1")
-  inspect(
+  debug_inspect(
+    @sprite.render2d_diagnostic_prepared_camera_count(),
+    content="1",
+  )
+  debug_inspect(
     @sprite.render2d_diagnostic_queued_draw_item_count() > 0,
     content="true",
   )
-  inspect(
+  debug_inspect(
     @ui.get_ui_context_resource(world).get().unwrap().camera_entity is Some(_),
     content="true",
   )
-  inspect(layout_size.x > 0.0F && layout_size.y > 0.0F, content="true")
+  debug_inspect(layout_size.x > 0.0F && layout_size.y > 0.0F, content="true")
 }

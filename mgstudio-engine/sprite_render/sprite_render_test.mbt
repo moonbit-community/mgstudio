@@ -15,9 +15,9 @@
 ///|
 test "sprite_render boundary re-exports wireframe config and alpha mode" {
   let config = @sprite_render.Wireframe2dConfig::default()
-  inspect(config.global, content="false")
-  inspect(config.default_color.r.to_double(), content="1")
-  inspect(
+  debug_inspect(config.global, content="false")
+  debug_inspect(config.default_color.r.to_double(), content="1")
+  debug_inspect(
     @sprite_render.AlphaMode2d::Blend.to_json().to_string(),
     content="String(\"Blend\")",
   )
@@ -25,11 +25,11 @@ test "sprite_render boundary re-exports wireframe config and alpha mode" {
 
 ///|
 test "sprite_render boundary re-exports render schedule labels" {
-  inspect(
+  debug_inspect(
     @sprite_render.render2d_set_extract == @sprite.render2d_set_extract,
     content="true",
   )
-  inspect(
+  debug_inspect(
     @sprite_render.render2d_set_render == @sprite.render2d_set_render,
     content="true",
   )

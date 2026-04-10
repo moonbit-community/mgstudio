@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/helper.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/helper.rs`.
 
 ///|
 pub struct TransformHelper {}
@@ -75,4 +75,22 @@ pub fn compute_global_transform(
     global = GlobalTransform::from_transform(parent_local).mul(global)
   }
   Some(global)
+}
+
+///|
+pub fn compute_parent_global_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> GlobalTransform? {
+  let entity_ref = try! world.entity(entity)
+  guard (
+      try entity_ref.get() catch {
+        _ => None
+      } noraise {
+        value => value
+      } : @hierarchy.Parent?)
+    is Some(parent) else {
+    return None
+  }
+  compute_global_transform(world, parent.entity())
 }

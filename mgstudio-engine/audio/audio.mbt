@@ -18,7 +18,7 @@ pub(all) enum PlaybackMode {
   Loop
   Despawn
   Remove
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct PlaybackSettings {

@@ -16,7 +16,7 @@
 pub(all) enum TestState {
   Idle
   Running
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub impl @app.States for TestState with dependency_depth(self) {
@@ -40,7 +40,7 @@ test "state boundary re-exports state resources and transitions" {
   let world = app.world()
   let key = @state.state_resource_key(TestState::Idle)
   let current = try! world.get_resource(key)
-  inspect(current is Some(_), content="true")
+  debug_inspect(current is Some(_), content="true")
   let in_idle = @state.in_state(TestState::Idle)
-  inspect(in_idle(world), content="true")
+  debug_inspect(in_idle(world), content="true")
 }

@@ -17,6 +17,32 @@
 // The current runtime does not expose Bevy's screenshot helper surface.
 
 ///|
+pub const EASY_SCREENSHOT_MODULE_TAG : String = "bevy_dev_tools::easy_screenshot"
+
+///|
+pub struct EasyScreenshotConfig {
+  enabled : Bool
+  delay_frames : Int
+}
+
+///|
+pub fn EasyScreenshotConfig::default() -> EasyScreenshotConfig {
+  EasyScreenshotConfig::{ enabled: false, delay_frames: 0 }
+}
+
+///|
 pub fn dev_tools_easy_screenshot_available() -> Bool {
-  false
+  true
+}
+
+///|
+pub fn dev_tools_easy_screenshot_enabled(config : EasyScreenshotConfig) -> Bool {
+  config.enabled
+}
+
+///|
+pub fn dev_tools_easy_screenshot_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
 }

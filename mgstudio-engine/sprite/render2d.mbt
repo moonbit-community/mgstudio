@@ -5415,7 +5415,7 @@ test "render2d: slice batch cull radius keeps batch bounds over sprite padding" 
     @math.Vec2::new(80.0F, 20.0F),
     @math.Vec2::new(1.0F, 1.0F),
   )
-  inspect(radius == 80.0F, content="true")
+  debug_inspect(radius == 80.0F, content="true")
 }
 
 ///|
@@ -6420,7 +6420,7 @@ test "render2d: mesh prepared material handle resolves from extracted entity ins
     Some(prepared_handle) => prepared_handle.id()
     None => -1
   }
-  inspect(prepared_id, content="77")
+  debug_inspect(prepared_id, content="77")
 }
 
 ///|
@@ -6437,7 +6437,7 @@ test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
     extracted.payload.wireframe_color.r == 0.25F &&
     extracted.payload.wireframe_color.g == 0.5F &&
     extracted.payload.wireframe_color.b == 0.75F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6510,7 +6510,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6577,7 +6577,7 @@ test "render2d: UI overlay draw items route by target camera" {
     layers,
   )
   let ok = items.length() == 1 && items[0].kind is UiRectExtra(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6624,7 +6624,7 @@ test "render2d: scene draw items exclude UI overlays" {
   let ok = scene_items.length() == 0 &&
     ui_items.length() == 1 &&
     ui_items[0].kind is UiRectExtra(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6634,7 +6634,7 @@ test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
     plan.apply_bloom_before_tonemapping &&
     !plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6648,7 +6648,7 @@ test "render2d: host window tonemapping without bloom still leaves UI after post
     !plan.apply_bloom_before_tonemapping &&
     plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6662,7 +6662,7 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
     !plan.apply_bloom_before_tonemapping &&
     plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6757,7 +6757,10 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   render_queue_system(world)
 
   let counts = render_state_ref(world).unwrap().queued_draw_item_counts
-  inspect(counts.to_json(), content="Array([Number(1), Number(1)])")
+  debug_inspect(
+    counts.to_json().to_string(),
+    content="Array([Number(1), Number(1)])",
+  )
 }
 
 ///|
@@ -6801,7 +6804,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   let ok = cameras.length() == 1 &&
     cameras[0].entity.id == camera.id &&
     cameras[0].entity.generation == camera.generation
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6870,7 +6873,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is Mesh(1)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6924,7 +6927,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6993,7 +6996,7 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is Mesh(1)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7005,14 +7008,14 @@ test "render2d: tiled sprite mode computes repeated slices" {
     .with_custom_size(Some(@math.Vec2::new(64.0F, 32.0F)))
   guard compute_sprite_slices(sprite, @math.Vec2::new(32.0F, 32.0F))
     is Some(slices) else {
-    inspect(false, content="true")
+    debug_inspect(false, content="true")
     return
   }
   let ok = slices.slices.length() == 4 &&
     slices.slices[0].draw_size.x == 16.0F &&
     slices.slices[0].draw_size.y == 32.0F &&
     slices.slices[3].offset.x == 24.0F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7040,7 +7043,7 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     sprites[0].payload.texture.id() == 1 &&
     sprites[0].payload.uv_min.x == 0.0F &&
     sprites[0].payload.uv_max.x == 0.25F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7114,7 +7117,7 @@ test "render2d: shape geometry builders validate" {
       ok = false
     }
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7170,11 +7173,11 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
   })
   app = app.run_once()
 
-  inspect(extracted_count.val, content="2")
-  inspect(first_uv_min_y.val, content="0")
-  inspect(first_uv_max_y.val, content="0.25")
-  inspect(second_uv_min_y.val, content="0.75")
-  inspect(second_uv_max_y.val, content="1")
+  debug_inspect(extracted_count.val, content="2")
+  debug_inspect(first_uv_min_y.val, content="0")
+  debug_inspect(first_uv_max_y.val, content="0.25")
+  debug_inspect(second_uv_min_y.val, content="0.75")
+  debug_inspect(second_uv_max_y.val, content="1")
 }
 
 ///|
@@ -7188,7 +7191,7 @@ test "render2d: camera viewport clamp matches bevy edge behavior" {
     clamped.physical_position.y == 99 &&
     clamped.physical_size.x == 1 &&
     clamped.physical_size.y == 1
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7202,7 +7205,7 @@ test "render2d: camera viewport scales with dpi resize factor" {
     scaled.physical_position.y == 30 &&
     scaled.physical_size.x == 60 &&
     scaled.physical_size.y == 45
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7210,7 +7213,7 @@ test "render2d: logical view extent derives from physical viewport and scale fac
   let ok = render2d_logical_view_extent_axis(2560, 2.0F) == 1280 &&
     render2d_logical_view_extent_axis(1440, 2.0F) == 720 &&
     render2d_logical_view_extent_axis(999, 1.5F) == 666
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|

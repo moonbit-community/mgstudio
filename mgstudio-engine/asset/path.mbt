@@ -17,7 +17,7 @@
 pub(all) enum AssetSourceId {
   Default
   Named(String)
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, Debug)
 
 ///|
 pub(all) suberror ParseAssetPathError {
@@ -32,7 +32,7 @@ pub struct AssetPath {
   source : AssetSourceId
   path : String
   label : String?
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, Debug)
 
 ///|
 pub type ParsedAssetPath = AssetPath

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_remote/src/http.rs`).
+// Bevy source: `bevy/crates/bevy_remote/src/http.rs`.
 
 ///|
 pub(all) enum RemoteHttpMethod {
@@ -21,7 +21,7 @@ pub(all) enum RemoteHttpMethod {
   Post
   Put
   Delete
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct RemoteHttpRequest {
@@ -37,6 +37,19 @@ pub fn RemoteHttpRequest::new(
   body? : String? = None,
 ) -> RemoteHttpRequest {
   RemoteHttpRequest::{ http_method, path, body }
+}
+
+///|
+pub fn RemoteHttpRequest::get(path : String) -> RemoteHttpRequest {
+  RemoteHttpRequest::new(Get, path)
+}
+
+///|
+pub fn RemoteHttpRequest::post(
+  path : String,
+  body : String,
+) -> RemoteHttpRequest {
+  RemoteHttpRequest::new(Post, path, body=Some(body))
 }
 
 ///|

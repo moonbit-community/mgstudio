@@ -17,3 +17,40 @@
 
 ///|
 pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = "bevy_pbr::material_bind_groups"
+
+///|
+pub struct MaterialBindGroupEntry {
+  material_id : Int
+  bind_group_id : Int
+}
+
+///|
+pub fn MaterialBindGroupEntry::new(
+  material_id : Int,
+  bind_group_id : Int,
+) -> MaterialBindGroupEntry {
+  MaterialBindGroupEntry::{ material_id, bind_group_id }
+}
+
+///|
+pub struct MaterialBindGroups {
+  entries : Array[MaterialBindGroupEntry]
+}
+
+///|
+pub fn MaterialBindGroups::default() -> MaterialBindGroups {
+  MaterialBindGroups::{ entries: [] }
+}
+
+///|
+pub fn MaterialBindGroups::push(
+  self : MaterialBindGroups,
+  entry : MaterialBindGroupEntry,
+) -> Unit {
+  self.entries.push(entry)
+}
+
+///|
+pub fn MaterialBindGroups::entry_count(self : MaterialBindGroups) -> Int {
+  self.entries.length()
+}

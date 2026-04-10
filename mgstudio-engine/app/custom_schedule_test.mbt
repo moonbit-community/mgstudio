@@ -54,7 +54,7 @@ test "app: custom schedules can be inserted into main schedule order" {
 
   app.run_once() |> ignore
 
-  inspect(
+  debug_inspect(
     log.join(","),
     content="Pre Startup,Custom Startup,Startup,First,Update,Single Threaded Update,Last",
   )
@@ -66,5 +66,5 @@ test "app: schedule surface keeps configured executor kind" {
     SingleThreaded,
   )
 
-  inspect(schedule.get_executor_kind(), content="SingleThreaded")
+  debug_inspect(schedule.get_executor_kind(), content="SingleThreaded")
 }

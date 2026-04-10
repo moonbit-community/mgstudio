@@ -30,7 +30,7 @@ pub(all) enum TimeUpdateStrategy {
   ManualInstant(@core.Instant)
   ManualDuration(@core.Duration)
   FixedTimesteps(Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn TimeUpdateStrategy::default() -> TimeUpdateStrategy {

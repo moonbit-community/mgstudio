@@ -13,7 +13,25 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/light_probe/environment_map.rs`.
+
+///|
 pub type LightProbe = @light.LightProbe
 
 ///|
 pub type EnvironmentMapLight = @light.EnvironmentMapLight
+
+///|
+pub fn pbr_light_probe_default() -> LightProbe {
+  LightProbe::default()
+}
+
+///|
+pub fn pbr_light_probe_new() -> LightProbe {
+  LightProbe::new()
+}
+
+///|
+pub fn pbr_environment_map_light_default() -> EnvironmentMapLight {
+  EnvironmentMapLight::default()
+}

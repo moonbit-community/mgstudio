@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_asset/src/render_asset.rs`.
 pub struct RenderAssetUsages {
   bits : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 const RENDER_ASSET_USAGE_MAIN_WORLD_BIT : Int = 1

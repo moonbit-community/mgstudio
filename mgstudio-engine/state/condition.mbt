@@ -14,7 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/condition.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_condition_bridge_pending() -> Unit {
+// Bridge helpers for schedule run-condition authoring.
 
+///|
+pub fn[S : @app.States] state_condition_in_state(
+  state : S,
+) -> (@ecs.World) -> Bool {
+  in_state(state)
+}
+
+///|
+pub fn[S : @app.States] state_condition_changed(
+  state : S,
+) -> (@ecs.World) -> Bool {
+  state_changed(state)
+}
+
+///|
+pub fn[S : @app.States] state_condition_exists(
+  state : S,
+) -> (@ecs.World) -> Bool {
+  state_exists(state)
 }

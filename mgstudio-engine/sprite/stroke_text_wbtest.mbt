@@ -15,8 +15,8 @@
 ///|
 test "sprite gizmo text measures multiline stroke layout" {
   let size = stroke_text_measure("A\nA", 21.0F)
-  inspect(size.x > 0.0F, content="true")
-  inspect(size.y > SIMPLEX_CAP_HEIGHT, content="true")
+  debug_inspect(size.x > 0.0F, content="true")
+  debug_inspect(size.y > SIMPLEX_CAP_HEIGHT, content="true")
 }
 
 ///|
@@ -30,7 +30,7 @@ test "sprite gizmo text emits line segments for supported glyphs" {
     @math.Vec2::new(0.0F, 0.0F),
     Color::white(),
   )
-  inspect(gizmo_state.val.lines.length() > 0, content="true")
+  debug_inspect(gizmo_state.val.lines.length() > 0, content="true")
   gizmos_reset()
 }
 
@@ -45,7 +45,7 @@ test "sprite gizmo text emits 3d line segments for supported glyphs" {
     @math.Vec2::new(0.0F, 0.0F),
     Color::white(),
   )
-  inspect(gizmo_state.val.lines_3d.length() > 0, content="true")
+  debug_inspect(gizmo_state.val.lines_3d.length() > 0, content="true")
   gizmos_reset()
 }
 
@@ -60,7 +60,7 @@ test "sprite gizmo text skips unsupported glyph geometry" {
     @math.Vec2::new(0.0F, 0.0F),
     Color::white(),
   )
-  inspect(gizmo_state.val.lines.length(), content="0")
+  debug_inspect(gizmo_state.val.lines.length(), content="0")
   gizmos_reset()
 }
 
@@ -84,6 +84,6 @@ test "sprite gizmo reset clears 2d and 3d text state" {
     Color::white(),
   )
   gizmos_reset()
-  inspect(gizmo_state.val.lines.length(), content="0")
-  inspect(gizmo_state.val.lines_3d.length(), content="0")
+  debug_inspect(gizmo_state.val.lines.length(), content="0")
+  debug_inspect(gizmo_state.val.lines_3d.length(), content="0")
 }

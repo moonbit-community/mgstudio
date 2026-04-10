@@ -54,7 +54,7 @@ const RNG_MULTIPLIER : Int = 48_271
 pub(all) enum SolariSceneMode {
   PicaPica
   ManyLights
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct SolariState {

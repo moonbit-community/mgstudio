@@ -51,14 +51,14 @@ pub(all) enum Selection {
   Camera
   DecalA
   DecalB
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum DragMode {
   Move
   Scale
   Roll
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct SelectionWidget {

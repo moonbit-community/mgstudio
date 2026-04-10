@@ -1,0 +1,53 @@
+Do not edit it. It is maintained by humans.
+
+- [x] 测试中的 inspect(b.get(e) is Some(v) && v == 2, content="true") 为什么不直接用 assert_true(b.get(e) is Some(2)) 呢？
+- [x] Query 的 for_each 和 view 现在有什么区别？
+- [x] 为什么要 transform 整值回写？
+- [ ] bevy 也有 resources、events 吗
+- [x] 为什么你会需要使用到 try? 语法呢？
+- [ ] 现在组件仍然有 changed 考虑吗？我们 mgstudio 不追求多线程，也需要考虑 changed 吗？
+- [x] as_ecs_world() 是什么？
+- [ ] 可以继续把 resource bridge 这层也一并从 bridge_get_*_resource_by_world 方案迁掉吗？
+- [ ] 3D 渲染又大量 parity stub
+- [ ] auto exposure 仍是 CPU 近似，未做 histogram pipeline
+- [ ] DistanceFog 仍是全局状态，不是 camera-owned ECS 语义
+- [ ] 虽然定义了 Component/ResourceData/EventData trait，但核心 API 约束仍大量直接写 ToJson + FromJson，未完全收口到新 trait
+- [ ] App 层 API 重载较重（add_*_system_paramN 大量重复），维护成本高
+- [ ] easing functions 文字说明仍然在画面中间，而不是像 bevy examples 那样在左上角（这个回归是 ecs 重构带来的）
+- [ ] 为什么会有如下目录：mgstudio-engine/assets/shaders/bevy 
+- [ ] 不要全局共享资源了，全部放到用户的资源目录
+- [x] runtime_native 是个啥
+- [x] rotate.run_if 为什么我们不支持？
+- [ ] window 依赖。window 模块后续补上 monitor-aware create API 
+- [ ] selected-monitor 参与的初始尺寸语义也做成 Bevy 同级对齐
+- [ ] 滥用 Ref
+- [ ] 到处都是 bevy 字样的痕迹
+- [ ] 我发现了特别多的 guard xxx else { return }，为什么要这么写呢？为什么不直接 panic？（省略 else 部分默认就是 panic）
+- [ ] 不要用 + 来连接字符串，使用插值
+- [ ] Entity::new 不应该公开
+- [x] Milky2018/sysinfo 接入
+- [ ] render3d.mbt 非常大
+- [x] 2d shapes 显示黑屏
+- [x] EntityRef/EntityMut 是什么？
+- [x] dylib 和 derive 这两个包是空的，请删除
+- [ ] 有特别多 `if try!`
+- [ ] gizmos 基本已经收尾
+- [ ] shader_advanced 还几乎没开始
+- [ ] gltf + animation 剩下的大头已经不是“补 example”，而是“补 runtime”
+- [ ] 注意 marker
+- [ ] compress 相关的库替换
+- [ ] pub(open) trait SystemParam 的定义
+- [ ] builder 设计模式
+- [ ] 仍用 run_once 的非可视/控制台例子：6 个。包括 examples/app/headless/main.mbt 和 5 个 ecs/* 示例。
+- [ ] examples/app/without_winit/main.mbt 里还有明确的 placeholder 注释。
+- [ ] 压力测试有测出问题吗
+- [x] 依然有 naga_oil
+- [x] rapier 更新
+- [ ] Changed 又出现了
+- [ ] ResMut 仍然很奇怪
+- [ ] 现在已经有了 naga_oil package，为什么还需要保留 custom shaders 呢？
+- [x] gilrs 命名问题
+- [ ] many_foxes 压测结果：bevy.render3d.prepare：约 56.7ms; mgstudio.transform.propagate：约 53.3ms; mgstudio.animation.animate_targets：约 42.3ms
+- [ ] 现在的 event 都是用 any 实现的，并不 typed
+- [ ] test 没有链接对应的 package
+- [ ] 底层存储是 sparseset 而非 archetype/table

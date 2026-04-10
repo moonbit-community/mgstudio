@@ -15,7 +15,7 @@
 ///|
 pub struct FloatOrd {
   value : Float
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn FloatOrd::new(value : Float) -> FloatOrd {

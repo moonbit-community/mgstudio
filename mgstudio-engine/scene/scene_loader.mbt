@@ -14,7 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/scene_loader.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _scene_scene_loader_bridge_pending() -> Unit {
+// Bridge helper for scene-loader plugin setup.
 
+///|
+pub const SCENE_LOADER_MODULE_TAG : String = "bevy_scene::scene_loader"
+
+///|
+pub struct SceneLoaderBridge {
+  module_tag : String
+}
+
+///|
+pub fn SceneLoaderBridge::default() -> SceneLoaderBridge {
+  SceneLoaderBridge::{ module_tag: SCENE_LOADER_MODULE_TAG }
+}
+
+///|
+pub fn scene_loader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  scene_plugin(app)
+}
+
+///|
+pub fn scene_loader_bridge_enabled(bridge : SceneLoaderBridge) -> Bool {
+  bridge.module_tag == SCENE_LOADER_MODULE_TAG
+}
+
+///|
+pub fn scene_loader_bridge_module_tag(bridge : SceneLoaderBridge) -> String {
+  bridge.module_tag
 }

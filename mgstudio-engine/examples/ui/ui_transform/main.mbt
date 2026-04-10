@@ -49,7 +49,7 @@ struct ControlButton {}
 ///|
 struct ButtonPressState {
   pressed : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let rotate_button_key : @ecs.ComponentKey[RotateButton] = @ecs.register_component(

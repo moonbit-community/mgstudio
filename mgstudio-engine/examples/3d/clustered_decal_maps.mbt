@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/3d/clustered_decal_maps.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_CLUSTERED_DECAL_MAPS : String = "examples/3d/clustered_decal_maps/main.mbt"
+

@@ -95,14 +95,14 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
     if ensure_backend() is Some(backend) {
       let mesh_id = backend.create_mesh_triangles_xy(vertices)
       if mesh_id <= 0 {
-        @debug.debug(
+        debug(
           "[renderer] create_mesh_triangles failed: parsed_values=\{vertices.length().to_string()}",
         )
       }
       return mesh_id
     }
   } else {
-    @debug.debug(
+    debug(
       "[renderer] create_mesh_triangles parse failed: csv_len=\{vertices_xy_csv.length().to_string()}",
     )
   }
@@ -115,14 +115,14 @@ pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
     if ensure_backend() is Some(backend) {
       let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
       if mesh_id <= 0 {
-        @debug.debug(
+        debug(
           "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=\{vertices.length().to_string()}",
         )
       }
       return mesh_id
     }
   } else {
-    @debug.debug(
+    debug(
       "[renderer] create_mesh_triangles_xyuvrgba parse failed: csv_len=\{vertices_xyuvrgba_csv.length().to_string()}",
     )
   }
@@ -140,7 +140,7 @@ pub fn create_mesh3d(
       primitive_topology~,
     )
   } else {
-    @debug.debug(
+    debug(
       "[renderer] create_mesh3d parse failed: csv_len=\{vertices_xyzuvrgba_csv.length().to_string()}, topology=\{primitive_topology.to_string()}",
     )
   }
@@ -157,7 +157,7 @@ pub fn create_mesh3d_xyznuvrgba(
       vertices_xyznuvrgba, primitive_topology,
     )
     if mesh_id <= 0 {
-      @debug.debug(
+      debug(
         "[renderer] create_mesh3d_xyznuvrgba failed: values=\{vertices_xyznuvrgba.length().to_string()}, topology=\{primitive_topology.to_string()}",
       )
     }

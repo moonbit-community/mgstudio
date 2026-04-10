@@ -13,178 +13,19 @@
 // limitations under the License.
 
 ///|
-pub type HalfSpace = @math.HalfSpace
+pub type HalfSpace = @pbr_render.HalfSpace
 
 ///|
-pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX
 
 ///|
-pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @pbr_render.VIEW_FRUSTUM_FAR_PLANE_IDX
 
 ///|
-fn view_frustum_vec4_add(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
-  @math.Vec4::new(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
-}
+pub type ViewFrustum = @pbr_render.ViewFrustum
 
 ///|
-fn view_frustum_vec4_sub(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
-  @math.Vec4::new(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)
-}
-
-///|
-pub struct ViewFrustum {
-  inner : @math.ViewFrustum
-} derive(Eq, ToJson, FromJson)
-
-///|
-pub fn ViewFrustum::from_clip_from_world(
-  clip_from_world : ProjectionMatrix3d,
-) -> ViewFrustum {
-  let row0 = clip_from_world.row(0)
-  let row1 = clip_from_world.row(1)
-  let row2 = clip_from_world.row(2)
-  let row3 = clip_from_world.row(3)
-  ViewFrustum::new([
-    HalfSpace::new(view_frustum_vec4_add(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row2)),
-    HalfSpace::new(row2),
-  ])
-}
-
-///|
-pub fn ViewFrustum::from_clip_from_world_custom_far(
-  clip_from_world : ProjectionMatrix3d,
-  view_translation : @math.Vec3,
-  view_backward : @math.Vec3,
-  far : Float,
-) -> ViewFrustum {
-  let row0 = clip_from_world.row(0)
-  let row1 = clip_from_world.row(1)
-  let row2 = clip_from_world.row(2)
-  let row3 = clip_from_world.row(3)
-  let far_center = view_translation.sub(view_backward.mul_scalar(far))
-  ViewFrustum::new([
-    HalfSpace::new(view_frustum_vec4_add(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row2)),
-    HalfSpace::new(
-      @math.Vec4::new(
-        view_backward.x,
-        view_backward.y,
-        view_backward.z,
-        -view_backward.dot(far_center),
-      ),
-    ),
-  ])
-}
-
-///|
-pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
-  ViewFrustum::{ inner: @math.ViewFrustum::new(half_spaces) }
-}
-
-///|
-pub fn ViewFrustum::corners(self : ViewFrustum) -> Array[@math.Vec3]? {
-  @math.ViewFrustum::corners(self.inner)
-}
-
-///|
-pub struct Frustum {
-  half_spaces : Array[HalfSpace]
-} derive(Eq, ToJson, FromJson)
-
-///|
-pub fn Frustum::new(view_frustum : ViewFrustum) -> Frustum {
-  Frustum::{ half_spaces: view_frustum.inner.half_spaces }
-}
-
-///|
-pub fn Frustum::view_frustum(self : Frustum) -> ViewFrustum {
-  ViewFrustum::new(self.half_spaces)
-}
-
-///|
-pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
-  self.view_frustum().corners()
-}
-
-///|
-fn render3d_compute_frustum(
-  clip_from_view : ProjectionMatrix3d,
-  camera_transform : @transform.Transform,
-  far : Float,
-) -> Frustum {
-  let clip_from_world = clip_from_view.mul(
-    @pbr_render.render3d_view_from_world_matrix(camera_transform),
-  )
-  Frustum::new(
-    ViewFrustum::from_clip_from_world_custom_far(
-      clip_from_world,
-      camera_transform.translation,
-      camera_transform.back(),
-      far,
-    ),
-  )
-}
-
-///|
-pub fn render3d_perspective_projection_compute_frustum(
-  projection : PerspectiveProjection3d,
-  camera_transform : @transform.Transform,
-) -> Frustum {
-  render3d_compute_frustum(
-    projection.get_clip_from_view(),
-    camera_transform,
-    projection.far,
-  )
-}
-
-///|
-pub fn render3d_orthographic_projection_compute_frustum(
-  projection : OrthographicProjection3d,
-  camera_transform : @transform.Transform,
-) -> Frustum {
-  render3d_compute_frustum(
-    projection.get_clip_from_view(),
-    camera_transform,
-    projection.far,
-  )
-}
-
-///|
-pub fn CustomProjection3d::compute_frustum(
-  self : CustomProjection3d,
-  camera_transform : @transform.Transform,
-) -> Frustum {
-  render3d_compute_frustum(
-    self.get_clip_from_view(),
-    camera_transform,
-    self.far(),
-  )
-}
-
-///|
-pub fn Projection::compute_frustum(
-  self : Projection,
-  camera_transform : @transform.Transform,
-) -> Frustum {
-  match self {
-    Perspective(projection) =>
-      render3d_perspective_projection_compute_frustum(
-        projection, camera_transform,
-      )
-    Orthographic(projection) =>
-      render3d_orthographic_projection_compute_frustum(
-        projection, camera_transform,
-      )
-    Custom(projection) => projection.compute_frustum(camera_transform)
-  }
-}
+pub type Frustum = @pbr_render.Frustum
 
 ///|
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {

@@ -18,3 +18,11 @@
 
 ///|
 pub type Rect = @math.Rect
+
+///|
+pub const MATH_RECT_MODULE_TAG : String = "bevy_math::rects::rect"
+
+///|
+pub fn rect_identity(value : Rect) -> Rect {
+  value
+}

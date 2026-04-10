@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/gltf/edit_material_on_gltf.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_EDIT_MATERIAL_ON_GLTF : String = "examples/gltf/edit_material_on_gltf/main.mbt"
+

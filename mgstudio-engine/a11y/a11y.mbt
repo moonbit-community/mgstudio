@@ -327,7 +327,7 @@ pub fn a11y_host_apply_update(update : @moon_accesskit.TreeUpdate) -> Unit {
 ///|
 pub(all) enum AccessibilitySystems {
   Update
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn accessibility_system_set_name(

@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ui/ui_material.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_UI_MATERIAL : String = "examples/ui/ui_material/main.mbt"
+

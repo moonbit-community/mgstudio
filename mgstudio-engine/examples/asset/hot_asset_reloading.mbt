@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/asset/hot_asset_reloading.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_HOT_ASSET_RELOADING : String = "examples/asset/hot_asset_reloading/main.mbt"
+

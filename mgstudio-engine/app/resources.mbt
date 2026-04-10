@@ -15,7 +15,7 @@
 ///|
 pub struct State[S] {
   value : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] State::new(state : S) -> State[S] {
@@ -30,7 +30,7 @@ pub fn[S] State::get(self : State[S]) -> S {
 ///|
 pub struct PreviousState[S] {
   value : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] PreviousState::get(self : PreviousState[S]) -> S {
@@ -42,14 +42,14 @@ pub(all) enum NextState[S] {
   Unchanged
   Pending(S)
   PendingIfNeq(S)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct StateTransitionEvent[S] {
   exited : S?
   entered : S?
   allow_same_state_transitions : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let state_type_debug_name_registry : Ref[@hashmap.HashMap[String, String]] = Ref::new(

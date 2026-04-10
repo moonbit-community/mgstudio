@@ -14,7 +14,36 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/scene_spawner.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _scene_scene_spawner_bridge_pending() -> Unit {
+// Bridge aliases for scene spawning runtime handles.
 
+///|
+pub type SceneSpawnerRoot = SceneRoot
+
+///|
+pub type SceneSpawnerInstance = SceneInstance
+
+///|
+pub type SceneSpawnerInstanceReady = SceneInstanceReady
+
+///|
+pub const SCENE_SPAWNER_MODULE_TAG : String = "bevy_scene::scene_spawner"
+
+///|
+pub struct SceneSpawnerBridge {
+  module_tag : String
+}
+
+///|
+pub fn SceneSpawnerBridge::default() -> SceneSpawnerBridge {
+  SceneSpawnerBridge::{ module_tag: SCENE_SPAWNER_MODULE_TAG }
+}
+
+///|
+pub fn scene_spawner_bridge_enabled(bridge : SceneSpawnerBridge) -> Bool {
+  bridge.module_tag == SCENE_SPAWNER_MODULE_TAG
+}
+
+///|
+pub fn scene_spawner_bridge_module_tag(bridge : SceneSpawnerBridge) -> String {
+  bridge.module_tag
 }

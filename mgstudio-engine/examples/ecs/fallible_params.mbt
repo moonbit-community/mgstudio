@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/fallible_params.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_FALLIBLE_PARAMS : String = "examples/ecs/fallible_params/main.mbt"
+

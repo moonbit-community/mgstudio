@@ -19,13 +19,13 @@
 pub struct Position {
   mut x : Float
   mut y : Float
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub struct Velocity {
   x : Float
   y : Float
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 let comp_position : @ecs.ComponentKey[Position] = @ecs.register_component(

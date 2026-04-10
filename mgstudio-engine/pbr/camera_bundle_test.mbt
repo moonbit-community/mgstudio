@@ -102,7 +102,7 @@ test "render3d: Camera3dBundle stores window render target" {
   let target : @sprite.RenderTarget? = try! world.get_by_key(
     entity, @sprite.ecs_key_render_target,
   )
-  inspect(
+  debug_inspect(
     target.map(fn(value) {
       value.to_json() ==
       @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
@@ -110,7 +110,7 @@ test "render3d: Camera3dBundle stores window render target" {
     content="Some(true)",
   )
   let frustum : Frustum? = try! world.get_by_key(entity, ecs_key_frustum)
-  inspect(
+  debug_inspect(
     frustum.map(fn(value) { value.half_spaces.length() == 6 }),
     content="Some(true)",
   )
@@ -141,7 +141,7 @@ test "render3d: Camera3dBundle stores custom projection payload" {
     Some(Projection::Orthographic(_)) => false
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -165,15 +165,15 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn to return an entity")
   }
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_camera3d)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_projection)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_color_grading)) is Some(_),
     content="true",
   )
@@ -196,8 +196,8 @@ test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
     Some(Enabled) => true
     _ => false
   }
-  inspect(tonemapping_ok, content="true")
-  inspect(deband_ok, content="true")
+  debug_inspect(tonemapping_ok, content="true")
+  debug_inspect(deband_ok, content="true")
 }
 
 ///|
@@ -209,39 +209,39 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
   try! (world.set_by_key(entity, ecs_key_camera3d, Camera3d::default())
   |> ignore)
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_projection)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_tonemapping)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_deband_dither)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_exposure)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_frustum)) is Some(_),
     content="true",
   )
@@ -260,9 +260,9 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
     Some(@sprite.RenderTarget::Screen) => true
     _ => false
   }
-  inspect(tonemapping_ok, content="true")
-  inspect(deband_ok, content="true")
-  inspect(target_ok, content="true")
+  debug_inspect(tonemapping_ok, content="true")
+  debug_inspect(deband_ok, content="true")
+  debug_inspect(target_ok, content="true")
 }
 
 ///|
@@ -281,19 +281,19 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
     abort("expected Commands::spawn_component to return an entity")
   }
 
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_camera3d)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, @sprite.ecs_key_camera)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_projection)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! app.world().get_by_key(entity, @transform.ecs_key_transform))
     is Some(_),
     content="true",

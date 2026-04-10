@@ -1,13 +1,189 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core_pipeline/core_2d"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub const CORE_2D_DEPTH_FORMAT : String = "depth32float"
+
+pub const CORE_2D_PLUGIN_ID : String = "bevy_core_pipeline::core_2d::Core2dPlugin"
+
+pub const MAIN_OPAQUE_PASS_2D_LABEL : String = "main_opaque_pass_2d"
+
+pub const MAIN_TRANSPARENT_PASS_2D_LABEL : String = "main_transparent_pass_2d"
+
+pub const RESET_VIEWPORT_PASS_2D_LABEL : String = "reset_viewport_pass_2d"
+
+pub fn core_2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn core_2d_plugin_with(@app.App[@ecs.World], Core2dPlugin) -> @app.App[@ecs.World]
+
+pub let core_2d_set_extract : String
+
+pub let core_2d_set_prepare : String
+
+pub let core_2d_set_queue : String
+
+pub let core_2d_set_render : String
+
+pub let ecs_key_alpha_mask2d_phase : @ecs.ResourceKey[AlphaMask2dPhase]
+
+pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
+
+pub let ecs_key_opaque2d_phase : @ecs.ResourceKey[Opaque2dPhase]
+
+pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
+
+pub let ecs_key_transparent2d_phase : @ecs.ResourceKey[Transparent2dPhase]
+
+pub fn main_opaque_pass_2d_should_draw_alpha_mask(MainOpaquePass2dState) -> Bool
+
+pub fn main_opaque_pass_2d_should_draw_opaque(MainOpaquePass2dState) -> Bool
+
+pub fn main_opaque_pass_2d_should_run(MainOpaquePass2dState) -> Bool
+
+pub fn main_transparent_pass_2d_requires_reset_viewport_pass(MainTransparentPass2dState) -> Bool
+
+pub fn main_transparent_pass_2d_should_run(MainTransparentPass2dState) -> Bool
 
 // Errors
 
 // Types and methods
+pub struct AlphaMask2d {
+  batch_set_key : BatchSetKey2d
+  bin_key : AlphaMask2dBinKey
+  representative_entity_id : Int
+  main_entity_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  extra_index : Int
+} derive(Eq, @debug.Debug)
+pub fn AlphaMask2d::cached_pipeline_id(Self) -> Int
+pub fn AlphaMask2d::draw_function_id(Self) -> Int
+pub fn AlphaMask2d::is_indexed(Self) -> Bool
+pub fn AlphaMask2d::new(BatchSetKey2d, AlphaMask2dBinKey, representative_entity_id~ : Int, main_entity_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int) -> Self
+
+pub struct AlphaMask2dBinKey {
+  pipeline_id : Int
+  draw_function_id : Int
+  asset_id : Int
+  material_bind_group_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn AlphaMask2dBinKey::new(pipeline_id~ : Int, draw_function_id~ : Int, asset_id~ : Int, material_bind_group_id? : Int?) -> Self
+
+pub struct AlphaMask2dPhase {
+  items : Array[AlphaMask2d]
+}
+pub fn AlphaMask2dPhase::clear(Self) -> Unit
+pub fn AlphaMask2dPhase::default() -> Self
+pub fn AlphaMask2dPhase::is_empty(Self) -> Bool
+pub fn AlphaMask2dPhase::len(Self) -> Int
+pub fn AlphaMask2dPhase::push(Self, AlphaMask2d) -> Unit
+pub impl @app.Resource for AlphaMask2dPhase
+
+pub struct BatchSetKey2d {
+  indexed : Bool
+} derive(Eq, @debug.Debug)
+pub fn BatchSetKey2d::indexed(Self) -> Bool
+pub fn BatchSetKey2d::new(indexed? : Bool) -> Self
+
+pub struct Core2dPlugin {
+}
+pub fn Core2dPlugin::default() -> Self
+pub impl @app.PluginReplacement for Core2dPlugin
+
+pub struct MainOpaquePass2dNode {
+  label : String
+}
+pub fn MainOpaquePass2dNode::default() -> Self
+pub fn MainOpaquePass2dNode::label(Self) -> String
+
+pub struct MainOpaquePass2dState {
+  has_opaque_phase : Bool
+  has_alpha_mask_phase : Bool
+}
+pub fn MainOpaquePass2dState::new(has_opaque_phase? : Bool, has_alpha_mask_phase? : Bool) -> Self
+
+pub struct MainTransparentPass2dNode {
+  label : String
+}
+pub fn MainTransparentPass2dNode::default() -> Self
+pub fn MainTransparentPass2dNode::label(Self) -> String
+
+pub struct MainTransparentPass2dState {
+  has_transparent_phase : Bool
+  has_custom_viewport : Bool
+  webgl_requires_viewport_reset : Bool
+}
+pub fn MainTransparentPass2dState::new(has_transparent_phase? : Bool, has_custom_viewport? : Bool, webgl_requires_viewport_reset? : Bool) -> Self
+
+pub struct Opaque2d {
+  batch_set_key : BatchSetKey2d
+  bin_key : Opaque2dBinKey
+  representative_entity_id : Int
+  main_entity_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  extra_index : Int
+} derive(Eq, @debug.Debug)
+pub fn Opaque2d::cached_pipeline_id(Self) -> Int
+pub fn Opaque2d::draw_function_id(Self) -> Int
+pub fn Opaque2d::is_indexed(Self) -> Bool
+pub fn Opaque2d::new(BatchSetKey2d, Opaque2dBinKey, representative_entity_id~ : Int, main_entity_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int) -> Self
+
+pub struct Opaque2dBinKey {
+  pipeline_id : Int
+  draw_function_id : Int
+  asset_id : Int
+  material_bind_group_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn Opaque2dBinKey::new(pipeline_id~ : Int, draw_function_id~ : Int, asset_id~ : Int, material_bind_group_id? : Int?) -> Self
+
+pub struct Opaque2dPhase {
+  items : Array[Opaque2d]
+}
+pub fn Opaque2dPhase::clear(Self) -> Unit
+pub fn Opaque2dPhase::default() -> Self
+pub fn Opaque2dPhase::is_empty(Self) -> Bool
+pub fn Opaque2dPhase::len(Self) -> Int
+pub fn Opaque2dPhase::push(Self, Opaque2d) -> Unit
+pub impl @app.Resource for Opaque2dPhase
+
+pub struct Transparent2d {
+  sort_key : Float
+  entity_id : Int
+  main_entity_id : Int
+  pipeline_id : Int
+  draw_function_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  extracted_index : Int
+  extra_index : Int
+  indexed : Bool
+} derive(Eq, @debug.Debug)
+pub fn Transparent2d::distance(Self) -> Float
+pub fn Transparent2d::is_indexed(Self) -> Bool
+pub fn Transparent2d::new(sort_key~ : Float, entity_id~ : Int, main_entity_id~ : Int, pipeline_id~ : Int, draw_function_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extracted_index? : Int, extra_index? : Int, indexed? : Bool) -> Self
+
+pub struct Transparent2dPhase {
+  items : Array[Transparent2d]
+}
+pub fn Transparent2dPhase::clear(Self) -> Unit
+pub fn Transparent2dPhase::default() -> Self
+pub fn Transparent2dPhase::is_empty(Self) -> Bool
+pub fn Transparent2dPhase::len(Self) -> Int
+pub fn Transparent2dPhase::push(Self, Transparent2d) -> Unit
+pub impl @app.Resource for Transparent2dPhase
 
 // Type aliases
+pub using @post_process {type DebandDither}
+
+pub using @post_process {type Tonemapping}
 
 // Traits
 

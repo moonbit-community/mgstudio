@@ -15,7 +15,7 @@
 ///|
 pub(all) struct WindowWrapper {
   window : HostWindow
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn WindowWrapper::new(window : HostWindow) -> WindowWrapper {
@@ -25,7 +25,7 @@ pub fn WindowWrapper::new(window : HostWindow) -> WindowWrapper {
 ///|
 pub(all) struct RawHandleWrapper {
   window : HostWindow
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn RawHandleWrapper::new(window : WindowWrapper) -> RawHandleWrapper {

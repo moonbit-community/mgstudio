@@ -27,7 +27,7 @@ pub type RawWinitWindowEventData = @windowing.RawWinitWindowEventData
 pub(all) struct RawWinitWindowEvent {
   window_id : Int
   event : RawWinitWindowEventData
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent] = @ecs.register_message(

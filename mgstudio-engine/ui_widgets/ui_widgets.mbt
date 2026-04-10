@@ -14,9 +14,12 @@
 
 ///|
 /// UI-widgets API boundary aligned with Bevy crate responsibilities.
-/// Keep the boundary file non-empty by anchoring the root runtime plugin.
-fn _ui_widgets_runtime_anchor(
+/// Keep the boundary file as an explicit package-entry bridge.
+pub const UI_WIDGETS_PLUGIN_ID : String = "bevy_ui_widgets::UiWidgetsPlugin"
+
+///|
+pub fn ui_widgets_plugin_entry(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  @ui.ui_plugin(app)
+  ui_widgets_plugin(app)
 }

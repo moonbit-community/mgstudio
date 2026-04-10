@@ -14,7 +14,34 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/font_styles.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_font_styles_bridge_pending() -> Unit {
 
+///|
+pub struct InheritableFont {
+  font : HandleOrPath[String]
+  font_size_px : Float
+}
+
+///|
+pub fn InheritableFont::default() -> InheritableFont {
+  InheritableFont::{ font: Path(FONT_REGULAR), font_size_px: 16.0 }
+}
+
+///|
+pub fn InheritableFont::from_handle(handle : String) -> InheritableFont {
+  InheritableFont::{ font: Handle(handle), font_size_px: 16.0 }
+}
+
+///|
+pub fn InheritableFont::from_path(path : String) -> InheritableFont {
+  InheritableFont::{ font: Path(path), font_size_px: 16.0 }
+}
+
+///|
+let inheritable_font_component_key : @ecs.ComponentKey[InheritableFont] = @ecs.register_component(
+  debug_name="bevy_feathers::InheritableFont",
+)
+
+///|
+pub impl @ecs.Component for InheritableFont with component() {
+  inheritable_font_component_key
 }

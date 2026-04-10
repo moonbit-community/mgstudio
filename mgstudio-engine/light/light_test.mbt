@@ -21,11 +21,11 @@ test "light boundary re-exports direct light component APIs" {
     .with_inner_angle(0.25)
     .with_outer_angle(0.5)
   let directional = @light.DirectionalLight::default().with_illuminance(1000.0)
-  inspect(point.intensity.to_double(), content="321")
-  inspect(point.range.to_double(), content="45")
-  inspect(spot.inner_angle.to_double(), content="0.25")
-  inspect(spot.outer_angle.to_double(), content="0.5")
-  inspect(directional.illuminance.to_double(), content="1000")
+  debug_inspect(point.intensity.to_double(), content="321")
+  debug_inspect(point.range.to_double(), content="45")
+  debug_inspect(spot.inner_angle.to_double(), content="0.25")
+  debug_inspect(spot.outer_angle.to_double(), content="0.5")
+  debug_inspect(directional.illuminance.to_double(), content="1000")
 }
 
 ///|
@@ -34,17 +34,17 @@ test "light boundary re-exports shadow maps and volumetric APIs" {
   let directional_shadow = @light.DirectionalLightShadowMap::new(1024)
   let medium = @light.ScatteringMedium::default().with_density_multiplier(1.5)
   let fog = @light.VolumetricFog::default().with_step_count(96)
-  inspect(point_shadow.size, content="2048")
-  inspect(directional_shadow.size, content="1024")
-  inspect(medium.density_multiplier.to_double(), content="1.5")
-  inspect(fog.step_count, content="96")
+  debug_inspect(point_shadow.size, content="2048")
+  debug_inspect(directional_shadow.size, content="1024")
+  debug_inspect(medium.density_multiplier.to_double(), content="1.5")
+  debug_inspect(fog.step_count, content="96")
 }
 
 ///|
 test "light gizmo config group defaults align with light kinds" {
   let config = @light.LightGizmoConfigGroup::default()
-  inspect(config.draw_all, content="false")
-  inspect(
+  debug_inspect(config.draw_all, content="false")
+  debug_inspect(
     if config.color is MatchLightColor {
       true
     } else {
@@ -52,9 +52,9 @@ test "light gizmo config group defaults align with light kinds" {
     },
     content="true",
   )
-  inspect(config.point_light_color.r.to_double(), content="1")
-  inspect(config.spot_light_color.g.to_double(), content="1")
-  inspect(config.directional_light_color.b.to_double(), content="1")
+  debug_inspect(config.point_light_color.r.to_double(), content="1")
+  debug_inspect(config.spot_light_color.g.to_double(), content="1")
+  debug_inspect(config.directional_light_color.b.to_double(), content="1")
 }
 
 ///|
@@ -62,7 +62,7 @@ test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::default().with_color(
     Some(@light.LightGizmoColor::ByLightType),
   )
-  inspect(
+  debug_inspect(
     if gizmo.color is Some(ByLightType) {
       true
     } else {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_app/src/plugin_group.rs`).
+// Bevy source: `bevy/crates/bevy_app/src/plugin_group.rs`.
 
 ///|
 pub fn[W] plugin_group_start() -> PluginGroupBuilder[W] {
@@ -25,4 +25,16 @@ pub fn[W] plugin_group_start_named(
   group_name : String,
 ) -> PluginGroupBuilder[W] {
   PluginGroupBuilder::start_named(group_name)
+}
+
+///|
+pub fn[W] plugin_group_from_plugins(
+  group_name : String,
+  plugins : Array[Plugin[W]],
+) -> PluginGroupBuilder[W] {
+  let mut builder = PluginGroupBuilder::start_named(group_name)
+  for plugin in plugins {
+    builder = builder.add(plugin)
+  }
+  builder
 }

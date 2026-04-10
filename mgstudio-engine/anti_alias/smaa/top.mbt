@@ -14,7 +14,52 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/smaa/mod.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _anti_alias_smaa_top_bridge_pending() -> Unit {
 
+///|
+pub const SMAA_RUNTIME_SUPPORTED : Bool = false
+
+///|
+pub struct SmaaPlugin {}
+
+///|
+pub fn SmaaPlugin::default() -> SmaaPlugin {
+  SmaaPlugin::{  }
+}
+
+///|
+pub(all) enum SmaaPreset {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, Debug)
+
+///|
+pub fn SmaaPreset::default() -> SmaaPreset {
+  High
+}
+
+///|
+pub struct Smaa {
+  preset : SmaaPreset
+} derive(Eq, Debug)
+
+///|
+pub fn Smaa::default() -> Smaa {
+  Smaa::{ preset: SmaaPreset::default() }
+}
+
+///|
+let ecs_key_smaa : @ecs.ComponentKey[Smaa] = @ecs.register_component(
+  debug_name="bevy_anti_alias::Smaa",
+)
+
+///|
+pub impl @ecs.Component for Smaa with component() {
+  ecs_key_smaa
+}
+
+///|
+pub fn smaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

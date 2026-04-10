@@ -13,7 +13,37 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/extended_material.rs`.
+
+///|
 pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
 
 ///|
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
+
+///|
+pub const EXTENDED_MATERIAL_MODULE_TAG : String = "bevy_pbr::extended_material"
+
+///|
+pub fn pbr_extended_material_metadata_default() -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::default()
+}
+
+///|
+pub fn pbr_extended_material_metadata_new(
+  extension_tag : Int,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::new(extension_tag)
+}
+
+///|
+pub fn pbr_forward_decal_material_ext_default() -> ForwardDecalMaterialExt {
+  ForwardDecalMaterialExt::default()
+}
+
+///|
+pub fn pbr_forward_decal_material_ext_new(
+  depth_fade_factor : Float,
+) -> ForwardDecalMaterialExt {
+  ForwardDecalMaterialExt::new(depth_fade_factor)
+}

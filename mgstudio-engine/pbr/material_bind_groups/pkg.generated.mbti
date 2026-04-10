@@ -7,6 +7,18 @@ pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = "bevy_pbr::material_bind_gr
 // Errors
 
 // Types and methods
+pub struct MaterialBindGroupEntry {
+  material_id : Int
+  bind_group_id : Int
+}
+pub fn MaterialBindGroupEntry::new(Int, Int) -> Self
+
+pub struct MaterialBindGroups {
+  entries : Array[MaterialBindGroupEntry]
+}
+pub fn MaterialBindGroups::default() -> Self
+pub fn MaterialBindGroups::entry_count(Self) -> Int
+pub fn MaterialBindGroups::push(Self, MaterialBindGroupEntry) -> Unit
 
 // Type aliases
 

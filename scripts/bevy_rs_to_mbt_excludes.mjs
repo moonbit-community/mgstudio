@@ -37,9 +37,36 @@ export const ALWAYS_EXCLUDED_SOURCE_PREFIXES = [
     prefix: "bevy/crates/bevy_reflect_derive/",
     reason: "non_goal_reflect",
   },
+  // Keep reflect permanently out of migration scope for mgstudio.
+  // This prevents `sync_bevy_rs_to_mbt_paths.sh` from recreating
+  // `mgstudio-engine/reflect/*` after manual cleanup.
+  {
+    prefix: "bevy/crates/bevy_reflect/macros/",
+    reason: "non_goal_reflect",
+  },
   {
     prefix: "bevy/crates/bevy_tasks/",
     reason: "non_goal_tasks",
+  },
+  {
+    prefix: "bevy/crates/bevy_platform/",
+    reason: "non_goal_platform",
+  },
+  {
+    prefix: "bevy/crates/bevy_derive/",
+    reason: "non_goal_macro",
+  },
+  {
+    prefix: "bevy/crates/bevy_macro_utils/",
+    reason: "non_goal_macro",
+  },
+  {
+    prefix: "bevy/crates/bevy_dylib/",
+    reason: "non_goal_macro",
+  },
+  {
+    prefix: "bevy/crates/bevy_encase_derive/",
+    reason: "non_goal_macro",
   },
 ]
 
@@ -58,6 +85,26 @@ export function excludeReasonForSource(
 
   for (const rule of ALWAYS_EXCLUDED_SOURCE_PREFIXES) {
     if (source.startsWith(rule.prefix)) return rule.reason
+  }
+
+  if (
+    source === "bevy/crates/bevy_asset/src/reflect.rs" ||
+    source === "bevy/crates/bevy_scene/src/reflect_utils.rs" ||
+    source === "bevy/crates/bevy_state/src/reflect.rs"
+  ) {
+    return "non_goal_reflect"
+  }
+
+  if (source.includes("/bevy_reflect/")) {
+    return "non_goal_reflect"
+  }
+
+  if (source.startsWith("bevy/crates/") && source.includes("/macros/")) {
+    return "non_goal_macro"
+  }
+
+  if (source.startsWith("bevy/crates/") && source.includes("_derive/")) {
+    return "non_goal_macro"
   }
 
   if (!includeNonGoal && source.startsWith("bevy/examples/") && exampleSub !== null) {

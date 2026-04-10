@@ -20,6 +20,19 @@
 pub const HAS_DEV_TOOLS_RUNTIME : Bool = true
 
 ///|
+pub const DEV_TOOLS_PLUGIN_ID : String = "bevy_dev_tools::DevToolsPlugin"
+
+///|
 pub fn dev_tools_default_fps_overlay_config() -> FpsOverlayConfig {
   FpsOverlayConfig::default()
+}
+
+///|
+pub fn dev_tools_runtime_available() -> Bool {
+  HAS_DEV_TOOLS_RUNTIME
+}
+
+///|
+pub fn dev_tools_plugin_id() -> String {
+  DEV_TOOLS_PLUGIN_ID
 }

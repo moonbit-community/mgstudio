@@ -71,7 +71,7 @@ pub(all) enum OrthographicScalingMode3d {
   AutoMax(Float, Float)
   FixedVertical(Float)
   FixedHorizontal(Float)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn orthographic_scaling_mode_sanitize(

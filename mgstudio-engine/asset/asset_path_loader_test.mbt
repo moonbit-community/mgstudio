@@ -15,16 +15,19 @@
 ///|
 test "asset path parse supports source and label" {
   let parsed_default = asset_parse_path("textures/ui.png#atlas0")
-  inspect(parsed_default.path, content="textures/ui.png")
-  inspect(parsed_default.label is Some("atlas0"), content="true")
-  inspect(parsed_default.source is AssetSourceId::Default, content="true")
+  debug_inspect(parsed_default.path, content="textures/ui.png")
+  debug_inspect(parsed_default.label is Some("atlas0"), content="true")
+  debug_inspect(parsed_default.source is AssetSourceId::Default, content="true")
 
   let parsed_named = asset_parse_path("remote://models/scene.gltf#Scene0")
-  inspect(parsed_named.path, content="models/scene.gltf")
-  inspect(parsed_named.label is Some("Scene0"), content="true")
-  inspect(parsed_named.source is AssetSourceId::Named("remote"), content="true")
+  debug_inspect(parsed_named.path, content="models/scene.gltf")
+  debug_inspect(parsed_named.label is Some("Scene0"), content="true")
+  debug_inspect(
+    parsed_named.source is AssetSourceId::Named("remote"),
+    content="true",
+  )
 
-  inspect(
+  debug_inspect(
     asset_strip_label("remote://models/scene.gltf#Scene0"),
     content="remote://models/scene.gltf",
   )
@@ -36,7 +39,7 @@ test "asset path try_parse follows Bevy syntax checks" {
   ignore(asset_try_parse_path("://file.test")) catch {
     err => missing_source_error = Some(err)
   }
-  inspect(
+  debug_inspect(
     missing_source_error is Some(ParseAssetPathError::MissingSource),
     content="true",
   )
@@ -45,7 +48,7 @@ test "asset path try_parse follows Bevy syntax checks" {
   ignore(asset_try_parse_path("source://file.test#")) catch {
     err => missing_label_error = Some(err)
   }
-  inspect(
+  debug_inspect(
     missing_label_error is Some(ParseAssetPathError::MissingLabel),
     content="true",
   )
@@ -54,7 +57,7 @@ test "asset path try_parse follows Bevy syntax checks" {
   ignore(asset_try_parse_path("bad#source://file.test")) catch {
     err => invalid_source_syntax_error = Some(err)
   }
-  inspect(
+  debug_inspect(
     invalid_source_syntax_error
     is Some(ParseAssetPathError::InvalidSourceSyntax),
     content="true",
@@ -64,7 +67,7 @@ test "asset path try_parse follows Bevy syntax checks" {
   ignore(asset_try_parse_path("source://file.test#bad://label")) catch {
     err => invalid_label_syntax_error = Some(err)
   }
-  inspect(
+  debug_inspect(
     invalid_label_syntax_error is Some(ParseAssetPathError::InvalidLabelSyntax),
     content="true",
   )
@@ -72,25 +75,25 @@ test "asset path try_parse follows Bevy syntax checks" {
 
 ///|
 test "asset loader registry supports extension override" {
-  inspect(
+  debug_inspect(
     asset_loader_kind_for_path("textures/a.png") is AssetLoaderKind::Texture,
     content="true",
   )
 
   asset_remove_loader_extension("customx")
-  inspect(
+  debug_inspect(
     asset_loader_kind_for_path("foo.customx") is AssetLoaderKind::Bytes,
     content="true",
   )
 
   asset_register_loader_extension("customx", AssetLoaderKind::Wgsl)
-  inspect(
+  debug_inspect(
     asset_loader_kind_for_path("foo.customx") is AssetLoaderKind::Wgsl,
     content="true",
   )
 
   asset_remove_loader_extension("customx")
-  inspect(
+  debug_inspect(
     asset_loader_kind_for_path("foo.customx") is AssetLoaderKind::Bytes,
     content="true",
   )

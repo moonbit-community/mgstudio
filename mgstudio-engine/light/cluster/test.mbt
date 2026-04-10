@@ -14,7 +14,36 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/test.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _light_cluster_test_bridge_pending() -> Unit {
+// Bridge helper for clustered-light module test wiring.
 
+///|
+pub const LIGHT_CLUSTER_TEST_MODULE_TAG : String = "bevy_light::cluster::test"
+
+///|
+pub struct LightClusterTestBridge {
+  module_tag : String
+}
+
+///|
+pub fn LightClusterTestBridge::default() -> LightClusterTestBridge {
+  LightClusterTestBridge::{ module_tag: LIGHT_CLUSTER_TEST_MODULE_TAG }
+}
+
+///|
+pub fn cluster_test_enabled() -> Bool {
+  true
+}
+
+///|
+pub fn light_cluster_test_bridge_enabled(
+  bridge : LightClusterTestBridge,
+) -> Bool {
+  bridge.module_tag == LIGHT_CLUSTER_TEST_MODULE_TAG && cluster_test_enabled()
+}
+
+///|
+pub fn light_cluster_test_bridge_module_tag(
+  bridge : LightClusterTestBridge,
+) -> String {
+  bridge.module_tag
 }

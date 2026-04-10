@@ -69,12 +69,12 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   ui_layout_system(world)
   let ra = try! world.get_by_key(a, ecs_key_ui_layout).unwrap().rect
   let rb = try! world.get_by_key(b, ecs_key_ui_layout).unwrap().rect
-  inspect(ra.min.x == 0.0F, content="true")
-  inspect(ra.min.y == 0.0F, content="true")
-  inspect(ra.max.x == 100.0F, content="true")
-  inspect(ra.max.y == 50.0F, content="true")
-  inspect(rb.min.x == 100.0F, content="true")
-  inspect(rb.min.y == 0.0F, content="true")
-  inspect(rb.max.x == 200.0F, content="true")
-  inspect(rb.max.y == 50.0F, content="true")
+  debug_inspect(ra.min.x == 0.0F, content="true")
+  debug_inspect(ra.min.y == 0.0F, content="true")
+  debug_inspect(ra.max.x == 100.0F, content="true")
+  debug_inspect(ra.max.y == 50.0F, content="true")
+  debug_inspect(rb.min.x == 100.0F, content="true")
+  debug_inspect(rb.min.y == 0.0F, content="true")
+  debug_inspect(rb.max.x == 200.0F, content="true")
+  debug_inspect(rb.max.y == 50.0F, content="true")
 }

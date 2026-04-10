@@ -14,7 +14,11 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/computed_states.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _state_computed_states_bridge_pending() -> Unit {
+// Bridge helpers for computed/derived state declarations.
 
+///|
+pub fn[S] computed_state_optional_source(
+  state : S,
+) -> @state_root.OptionalStateSource[S] {
+  @state_root.optional_state(state)
 }

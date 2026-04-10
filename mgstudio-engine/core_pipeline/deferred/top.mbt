@@ -14,6 +14,49 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/mod.rs`.
+pub const DEFERRED_PLUGIN_ID : String = "bevy_core_pipeline::deferred::DeferredPlugin"
+
+///|
+pub struct DeferredPlugin {}
+
+///|
+pub fn DeferredPlugin::default() -> DeferredPlugin {
+  DeferredPlugin::{  }
+}
+
+///|
+pub fn deferred_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  deferred_plugin_with(app, DeferredPlugin::default())
+}
+
+///|
+pub impl @app.PluginReplacement for DeferredPlugin with replacement_id(_self) {
+  DEFERRED_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for DeferredPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    deferred_plugin_with(app, self)
+  }
+}
+
+///|
+pub fn deferred_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : DeferredPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugin(copy_deferred_lighting_id_plugin)
+}
+
+///|
+pub const DEFERRED_PREPASS_EARLY_LABEL : String = "early deferred prepass"
+
+///|
+pub const DEFERRED_PREPASS_LATE_LABEL : String = "late deferred prepass"
+
+///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/mod.rs`.
 pub struct DeferredPrepass {} derive(ToJson, FromJson)
 
 ///|

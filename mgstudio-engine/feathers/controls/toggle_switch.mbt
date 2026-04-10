@@ -14,7 +14,37 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/toggle_switch.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_toggle_switch_bridge_pending() -> Unit {
 
+///|
+pub struct ToggleSwitchProps {
+  checked : Bool
+  disabled : Bool
+}
+
+///|
+pub fn ToggleSwitchProps::default() -> ToggleSwitchProps {
+  ToggleSwitchProps::{ checked: false, disabled: false }
+}
+
+///|
+pub struct ToggleSwitch {
+  props : ToggleSwitchProps
+}
+
+///|
+pub fn toggle_switch(props : ToggleSwitchProps) -> ToggleSwitch {
+  ToggleSwitch::{ props, }
+}
+
+///|
+pub struct ToggleSwitchPlugin {}
+
+///|
+pub fn ToggleSwitchPlugin::default() -> ToggleSwitchPlugin {
+  ToggleSwitchPlugin::{  }
+}
+
+///|
+pub fn toggle_switch_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

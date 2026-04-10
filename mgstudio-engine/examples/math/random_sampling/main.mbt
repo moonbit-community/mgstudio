@@ -18,7 +18,7 @@
 pub(all) enum Mode {
   Interior
   Boundary
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct SampledShape {

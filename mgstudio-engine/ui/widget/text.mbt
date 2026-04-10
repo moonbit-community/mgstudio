@@ -24,3 +24,26 @@ pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel] 
 ///|
 // Bridge surface to the root `ui` package implementation.
 pub let ui_set_text_content : @app.SystemSet = @ui.ui_set_text_content
+
+///|
+pub const UI_WIDGET_TEXT_MODULE_TAG : String = "bevy_ui::widget::text"
+
+///|
+pub struct UiWidgetTextBridge {
+  module_tag : String
+}
+
+///|
+pub fn UiWidgetTextBridge::default() -> UiWidgetTextBridge {
+  UiWidgetTextBridge::{ module_tag: UI_WIDGET_TEXT_MODULE_TAG }
+}
+
+///|
+pub fn ui_widget_text_bridge_enabled(bridge : UiWidgetTextBridge) -> Bool {
+  bridge.module_tag == UI_WIDGET_TEXT_MODULE_TAG
+}
+
+///|
+pub fn ui_widget_text_bridge_module_tag(bridge : UiWidgetTextBridge) -> String {
+  bridge.module_tag
+}

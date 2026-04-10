@@ -37,16 +37,16 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
     abort("missing overlay graph")
   }
 
-  inspect(state.bar_entities.length(), content="0")
-  inspect(
+  debug_inspect(state.bar_entities.length(), content="0")
+  debug_inspect(
     try! (app.world().get_by_key(root_entity, @ui.ecs_key_ui_root) is Some(_)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! (app.world().get_by_key(text_entity, @text.ecs_key_text) is Some(_)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! (app.world().get_by_key(graph_entity, @ui.ecs_key_node) is Some(_)),
     content="true",
   )
@@ -82,8 +82,8 @@ test "dev_tools: fps overlay hides text and graph when disabled" {
     .world()
     .get_by_key(graph_entity, @ui.ecs_key_node)
     .unwrap()
-  inspect(text_node.display, content="None")
-  inspect(graph_node.display, content="None")
+  debug_inspect(text_node.display, content="None")
+  debug_inspect(graph_node.display, content="None")
 }
 
 ///|
@@ -102,13 +102,13 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
   guard state.text_entity is Some(text_entity) else {
     abort("missing overlay text entity")
   }
-  inspect(
+  debug_inspect(
     app.world().get_by_key(text_entity, @text.ecs_key_text).unwrap().content.contains(
       "FPS: ",
     ),
     content="true",
   )
-  inspect(state.bar_entities.length() > 0, content="true")
+  debug_inspect(state.bar_entities.length() > 0, content="true")
   guard state.bar_entities.length() > 0 else {
     abort("missing frame time graph bars")
   }
@@ -118,7 +118,7 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
     .get_by_key(first_bar, @ui.ecs_key_node)
     .unwrap()
   match bar_node.height {
-    @ui.Val::Px(value) => inspect(value > 0.0F, content="true")
-    _ => inspect(false, content="true")
+    @ui.Val::Px(value) => debug_inspect(value > 0.0F, content="true")
+    _ => debug_inspect(false, content="true")
   }
 }

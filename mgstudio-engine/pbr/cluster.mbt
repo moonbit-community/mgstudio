@@ -13,4 +13,30 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/cluster.rs`.
+
+///|
 pub const CLUSTER_MODULE_TAG : String = @pbr_cluster.CLUSTER_MODULE_TAG
+
+///|
+pub fn pbr_cluster_module_tag() -> String {
+  CLUSTER_MODULE_TAG
+}
+
+///|
+pub fn pbr_cluster_runtime_available() -> Bool {
+  true
+}
+
+///|
+pub type ClusterConfig3d = @pbr_cluster.ClusterConfig3d
+
+///|
+pub fn pbr_cluster_config_default() -> ClusterConfig3d {
+  ClusterConfig3d::default()
+}
+
+///|
+pub fn pbr_cluster_tile_count(config : ClusterConfig3d) -> Int {
+  @pbr_cluster.pbr_cluster_tile_count(config)
+}

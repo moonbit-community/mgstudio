@@ -57,7 +57,7 @@ test "diagnostics: log diagnostics timer advances with real time" {
     )
     .run_once()
 
-  inspect(
+  debug_inspect(
     read_log_diagnostics_state_test_resource(app).timer.is_finished(),
     content="true",
   )
@@ -77,6 +77,6 @@ test "diagnostics: log diagnostics sorts output by path lexicographically" {
     .get_resource(DiagnosticsStore::resource())
     .unwrap()
   let sorted = log_diagnostics_sorted(store)
-  inspect(sorted[0].path().as_str(), content="a.path")
-  inspect(sorted[1].path().as_str(), content="z.path")
+  debug_inspect(sorted[0].path().as_str(), content="a.path")
+  debug_inspect(sorted[1].path().as_str(), content="z.path")
 }

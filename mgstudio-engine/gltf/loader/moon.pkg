@@ -1,7 +1,9 @@
 import {
   "Milky2018/mgstudio/app" @app,
   "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/gltf/loader/gltf_ext" @gltf_gltf_ext,
   "Milky2018/mgstudio/gltf" @root_gltf,
+  "Milky2018/mgstudio/gltf/loader/extensions" @gltf_loader_extensions,
 }
 
 supported_targets = "native"

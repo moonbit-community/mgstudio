@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/dev_tools/fps_overlay.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_FPS_OVERLAY : String = "examples/dev_tools/fps_overlay/main.mbt"
+

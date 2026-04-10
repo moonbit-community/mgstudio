@@ -25,8 +25,8 @@ test "pbr: WireframeConfig can be accessed through ResMut" {
 
   app.run_once() |> ignore
 
-  inspect(observed.val, content="Some(false)")
-  inspect(
+  debug_inspect(observed.val, content="Some(false)")
+  debug_inspect(
     (try! app.world().get_resource(WireframeConfig::resource())).map(fn(
       config,
     ) {

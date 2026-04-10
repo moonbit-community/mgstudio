@@ -14,7 +14,16 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_solari/src/lib.rs`.
-// Pending bridge surface; runtime split is pending.
-fn _solari_lib_bridge_pending() -> Unit {
 
+///|
+pub const SOLARI_PLUGIN_GROUP_ID : String = "bevy_solari::SolariPlugins"
+
+///|
+pub fn solari_plugins_group() -> @app.PluginGroup[@ecs.World] {
+  solari_plugins()
+}
+
+///|
+pub fn solari_required_features_mask() -> Int {
+  required_wgpu_features()
 }

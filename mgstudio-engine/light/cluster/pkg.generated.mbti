@@ -1,13 +1,39 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/light/cluster"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/light",
+}
+
 // Values
+pub const LIGHT_CLUSTER_TEST_MODULE_TAG : String = "bevy_light::cluster::test"
+
+pub fn cluster_assign_lights(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn cluster_light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn cluster_test_enabled() -> Bool
+
+pub fn light_cluster_test_bridge_enabled(LightClusterTestBridge) -> Bool
+
+pub fn light_cluster_test_bridge_module_tag(LightClusterTestBridge) -> String
 
 // Errors
 
 // Types and methods
+pub struct LightClusterTestBridge {
+  module_tag : String
+}
+pub fn LightClusterTestBridge::default() -> Self
 
 // Type aliases
+pub using @light {type DirectionalLight as ClusterDirectionalLight}
+
+pub using @light {type PointLight as ClusterPointLight}
+
+pub using @light {type SpotLight as ClusterSpotLight}
 
 // Traits
 

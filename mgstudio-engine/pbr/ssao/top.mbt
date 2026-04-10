@@ -13,7 +13,18 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/ssao/mod.rs`.
+
+///|
 pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbientOcclusionQualityLevel
 
 ///|
 pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
+
+///|
+pub const SSAO_MODULE_TAG : String = "bevy_pbr::ssao"
+
+///|
+pub fn pbr_ssao_default() -> ScreenSpaceAmbientOcclusion {
+  ScreenSpaceAmbientOcclusion::default()
+}

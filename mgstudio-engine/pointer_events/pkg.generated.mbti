@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pointer_events"
 import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -27,7 +28,7 @@ pub(all) enum PointerEventKind {
   Down
   Up
   Click
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 // Type aliases
 pub type PointerId = Int

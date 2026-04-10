@@ -329,7 +329,7 @@ pub(all) enum EulerRot {
   YZXEx
   XYZEx
   XZYEx
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Quaternion (x, y, z, w).

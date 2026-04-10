@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/system_stepping.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_SYSTEM_STEPPING : String = "examples/ecs/system_stepping/main.mbt"
+

@@ -1134,7 +1134,7 @@ pub(all) enum CubemapLayout3d {
   LineHorizontal
   Equirectangular
   Faces
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn CubemapLayout3d::default() -> CubemapLayout3d {

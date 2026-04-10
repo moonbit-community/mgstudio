@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/shader/compute_shader_game_of_life.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_COMPUTE_SHADER_GAME_OF_LIFE : String = "examples/shader/compute_shader_game_of_life/main.mbt"
+

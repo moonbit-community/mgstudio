@@ -14,7 +14,38 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/slider.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_controls_slider_bridge_pending() -> Unit {
 
+///|
+pub struct SliderProps {
+  value : Float
+  min : Float
+  max : Float
+}
+
+///|
+pub fn SliderProps::default() -> SliderProps {
+  SliderProps::{ value: 0.0, min: 0.0, max: 1.0 }
+}
+
+///|
+pub struct Slider {
+  props : SliderProps
+}
+
+///|
+pub fn slider(props : SliderProps) -> Slider {
+  Slider::{ props, }
+}
+
+///|
+pub struct SliderPlugin {}
+
+///|
+pub fn SliderPlugin::default() -> SliderPlugin {
+  SliderPlugin::{  }
+}
+
+///|
+pub fn slider_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

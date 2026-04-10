@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/audio/audio_control.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_AUDIO_CONTROL : String = "examples/audio/audio_control/main.mbt"
+

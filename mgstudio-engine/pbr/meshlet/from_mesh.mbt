@@ -16,6 +16,27 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/from_mesh.rs`.
 
 ///|
+pub(all) enum MeshToMeshletMeshConversionError {
+  RuntimeUnavailable
+  MissingPositions
+  UnsupportedTopology
+  TooManyVertices
+}
+
+///|
+pub fn meshlet_can_convert_from_mesh(
+  vertex_count : Int,
+  triangle_count : Int,
+) -> Bool {
+  meshlet_runtime_available() && vertex_count > 0 && triangle_count > 0
+}
+
+///|
 pub fn meshlet_from_mesh_runtime_available() -> Bool {
   meshlet_runtime_available()
+}
+
+///|
+pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversionError {
+  MeshToMeshletMeshConversionError::RuntimeUnavailable
 }

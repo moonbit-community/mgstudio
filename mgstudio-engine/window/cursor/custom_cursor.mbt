@@ -13,8 +13,12 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_window/src/cursor/custom_cursor.rs`).
-// Pending stub: no root-package semantic has been identified for this file yet.
-fn _window_custom_cursor_bevy_shape_anchor() -> Unit {
-  ignore(0)
+// Bevy source: `bevy/crates/bevy_window/src/cursor/custom_cursor.rs`.
+// Bridge aliases to `Milky2018/mgstudio/window` cursor runtime owners.
+
+///|
+pub fn cursor_icon_from_custom(
+  cursor : @window.CustomCursor,
+) -> @window.CursorIcon {
+  @window.CursorIcon::from_custom(cursor)
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source-shape anchor (`bevy_transform/src/commands.rs`).
+// Bevy source: `bevy/crates/bevy_transform/src/commands.rs`.
 
 ///|
 pub fn set_parent_in_place(
@@ -60,4 +60,21 @@ pub fn remove_parent_in_place(world : @ecs.World, child : @core.Entity) -> Unit 
   if (try! world.contains_by_key(child, @hierarchy.ecs_key_parent)) {
     try! (world.remove_by_key(child, @hierarchy.ecs_key_parent) |> ignore)
   }
+}
+
+///|
+pub fn reparent_preserving_global_transform(
+  world : @ecs.World,
+  child : @core.Entity,
+  parent : @core.Entity,
+) -> Unit {
+  set_parent_in_place(world, child, parent)
+}
+
+///|
+pub fn remove_parent_preserving_global_transform(
+  world : @ecs.World,
+  child : @core.Entity,
+) -> Unit {
+  remove_parent_in_place(world, child)
 }

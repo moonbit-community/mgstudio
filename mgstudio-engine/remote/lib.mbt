@@ -14,7 +14,6 @@
 
 ///|
 /// Remote-control boundary aligned with Bevy's `bevy_remote` crate.
-/// Transport and protocol backends are not implemented yet in mgstudio.
 
 ///|
 pub struct RemotePlugin {

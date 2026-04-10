@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/examples/ecs/send_and_receive_messages.rs
+///|
+pub const MGSTUDIO_MAIN_ENTRY_PATH_SEND_AND_RECEIVE_MESSAGES : String = "examples/ecs/send_and_receive_messages/main.mbt"
+

@@ -19,11 +19,11 @@ test "gizmos boundary re-exports configuration and plugin surface" {
     @gizmos.DefaultGizmoConfigGroup::default(),
   )
   let _ = @gizmos.gizmo_plugin(app)
-  inspect(
+  debug_inspect(
     app.contains_resource(@gizmos.GizmoConfigStore::resource()),
     content="true",
   )
-  inspect("ok", content="ok")
+  debug_inspect("ok", content="ok")
 }
 
 ///|
@@ -68,5 +68,5 @@ test "custom gizmo groups expose config through store and system param" {
   }
 
   ignore(app.update())
-  inspect(seen_width.val, content="7")
+  debug_inspect(seen_width.val, content="7")
 }

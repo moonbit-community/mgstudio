@@ -8,9 +8,15 @@ import {
 }
 
 // Values
+pub const SYSTEM_CURSOR_MODULE_TAG : String = "bevy_window::cursor::system_cursor"
+
+pub fn cursor_icon_from_custom(@window.CustomCursor) -> @window.CursorIcon
+
 pub let ecs_key_cursor_icon : @ecs.ComponentKey[@window.CursorIcon]
 
 pub let ecs_key_cursor_options : @ecs.ComponentKey[@window.CursorOptions]
+
+pub fn system_cursor_icon_identity(@core.CursorIcon) -> @core.CursorIcon
 
 // Errors
 
@@ -22,6 +28,12 @@ pub using @window {type CursorGrabMode}
 pub using @window {type CursorIcon}
 
 pub using @window {type CursorOptions}
+
+pub using @window {type CustomCursor}
+
+pub using @window {type CustomCursorImage}
+
+pub using @window {type CustomCursorUrl}
 
 pub using @core {type CursorIcon as SystemCursorIcon}
 

@@ -89,7 +89,7 @@ pub fn mesh3d_preprocess_disabled() -> Bool {
 
 ///|
 fn debug_runtime_error(context : String, err : Error) -> Unit {
-  @debug.debug("[renderer] \{context}: \{err.to_string()}")
+  debug("[renderer] \{context}: \{err.to_string()}")
 }
 
 ///|
@@ -107,5 +107,5 @@ fn ensure_backend() -> GpuBackend? {
 
 ///|
 pub fn debug_string(value~ : String) -> Unit {
-  @debug.debug(value)
+  debug(value)
 }

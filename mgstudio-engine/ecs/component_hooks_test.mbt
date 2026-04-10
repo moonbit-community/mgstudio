@@ -15,7 +15,7 @@
 ///|
 struct HookTestComponent {
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let hook_test_component_key : ComponentKey[HookTestComponent] = register_component(
@@ -28,7 +28,7 @@ pub impl Component for HookTestComponent with component() {
 }
 
 ///|
-struct DuplicateHookTestComponent {} derive(Eq, Show)
+struct DuplicateHookTestComponent {} derive(Eq, Debug)
 
 ///|
 let duplicate_hook_test_component_key : ComponentKey[DuplicateHookTestComponent] = register_component(
@@ -41,7 +41,7 @@ pub impl Component for DuplicateHookTestComponent with component() {
 }
 
 ///|
-struct LateRegistrationHookTestComponent {} derive(Eq, Show)
+struct LateRegistrationHookTestComponent {} derive(Eq, Debug)
 
 ///|
 let late_registration_hook_test_component_key : ComponentKey[
@@ -54,7 +54,7 @@ pub impl Component for LateRegistrationHookTestComponent with component() {
 }
 
 ///|
-struct HookCommandsTestComponent {} derive(Eq, Show)
+struct HookCommandsTestComponent {} derive(Eq, Debug)
 
 ///|
 let hook_commands_test_component_key : ComponentKey[HookCommandsTestComponent] = register_component(
@@ -171,11 +171,11 @@ test "ecs component hooks: first insert fires add then insert with readable payl
     value: 1,
   })
 
-  inspect(hook_event_log, content="[\"add:1\", \"insert:1\"]")
-  inspect(hook_entity_ids, content="[0, 0]")
-  inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_present_ref.val, content="true")
-  inspect(hook_callers_match_test_file_ref.val, content="true")
+  debug_inspect(hook_event_log, content="[\"add:1\", \"insert:1\"]")
+  debug_inspect(hook_entity_ids, content="[0, 0]")
+  debug_inspect(hook_component_id_matches_ref.val, content="true")
+  debug_inspect(hook_callers_present_ref.val, content="true")
+  debug_inspect(hook_callers_match_test_file_ref.val, content="true")
 }
 
 ///|
@@ -193,11 +193,11 @@ test "ecs component hooks: replace fires replace then insert around the new payl
     value: 2,
   })
 
-  inspect(hook_event_log, content="[\"replace:1\", \"insert:2\"]")
-  inspect(hook_entity_ids, content="[0, 0]")
-  inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_present_ref.val, content="true")
-  inspect(hook_callers_match_test_file_ref.val, content="true")
+  debug_inspect(hook_event_log, content="[\"replace:1\", \"insert:2\"]")
+  debug_inspect(hook_entity_ids, content="[0, 0]")
+  debug_inspect(hook_component_id_matches_ref.val, content="true")
+  debug_inspect(hook_callers_present_ref.val, content="true")
+  debug_inspect(hook_callers_match_test_file_ref.val, content="true")
 }
 
 ///|
@@ -211,16 +211,16 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
   })
   hook_test_reset()
 
-  inspect(
+  debug_inspect(
     try! world.remove_by_key(entity, hook_test_component_key),
     content="true",
   )
-  inspect(hook_event_log, content="[\"replace:7\", \"remove:7\"]")
-  inspect(hook_entity_ids, content="[0, 0]")
-  inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_present_ref.val, content="true")
-  inspect(hook_callers_match_test_file_ref.val, content="true")
-  inspect(
+  debug_inspect(hook_event_log, content="[\"replace:7\", \"remove:7\"]")
+  debug_inspect(hook_entity_ids, content="[0, 0]")
+  debug_inspect(hook_component_id_matches_ref.val, content="true")
+  debug_inspect(hook_callers_present_ref.val, content="true")
+  debug_inspect(hook_callers_match_test_file_ref.val, content="true")
+  debug_inspect(
     try! world.get_by_key(entity, hook_test_component_key),
     content="None",
   )
@@ -239,15 +239,15 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
 
   try! world.despawn(entity)
 
-  inspect(
+  debug_inspect(
     hook_event_log,
     content="[\"despawn:9\", \"replace:9\", \"remove:9\"]",
   )
-  inspect(hook_entity_ids, content="[0, 0, 0]")
-  inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_present_ref.val, content="true")
-  inspect(hook_callers_match_test_file_ref.val, content="true")
-  inspect(world.is_alive(entity), content="false")
+  debug_inspect(hook_entity_ids, content="[0, 0, 0]")
+  debug_inspect(hook_component_id_matches_ref.val, content="true")
+  debug_inspect(hook_callers_present_ref.val, content="true")
+  debug_inspect(hook_callers_match_test_file_ref.val, content="true")
+  debug_inspect(world.is_alive(entity), content="false")
 }
 
 ///|
@@ -260,15 +260,15 @@ test "ecs component hooks: component access mutation paths preserve caller prove
     value: 3,
   })
 
-  inspect(hook_event_log, content="[\"add:3\", \"insert:3\"]")
-  inspect(hook_callers_present_ref.val, content="true")
-  inspect(hook_callers_match_test_file_ref.val, content="true")
+  debug_inspect(hook_event_log, content="[\"add:3\", \"insert:3\"]")
+  debug_inspect(hook_callers_present_ref.val, content="true")
+  debug_inspect(hook_callers_match_test_file_ref.val, content="true")
 
   hook_test_reset()
   ignore(try! world.take(entity, hook_test_component_key))
-  inspect(hook_event_log, content="[\"replace:3\", \"remove:3\"]")
-  inspect(hook_callers_present_ref.val, content="true")
-  inspect(hook_callers_match_test_file_ref.val, content="true")
+  debug_inspect(hook_event_log, content="[\"replace:3\", \"remove:3\"]")
+  debug_inspect(hook_callers_present_ref.val, content="true")
+  debug_inspect(hook_callers_match_test_file_ref.val, content="true")
 }
 
 ///|
@@ -279,10 +279,10 @@ test "ecs component hooks: deferred hook commands flush after callback" {
   try! world.set_by_key(entity, hook_commands_test_component_key, HookCommandsTestComponent::{
 
   })
-  inspect(world.is_alive(entity), content="true")
+  debug_inspect(world.is_alive(entity), content="true")
 
   ignore(try! world.remove_by_key(entity, hook_commands_test_component_key))
-  inspect(world.is_alive(entity), content="false")
+  debug_inspect(world.is_alive(entity), content="false")
 }
 
 ///|
@@ -307,7 +307,7 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
   guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
     fail("expected duplicate on_add registration failure")
   }
-  inspect(
+  debug_inspect(
     component_id == duplicate_hook_test_component_key.id(),
     content="true",
   )
@@ -333,7 +333,7 @@ test "ecs component hooks: world-scoped registration rejects components already 
   guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
     fail("expected late component hook registration to be rejected")
   }
-  inspect(
+  debug_inspect(
     component_id == late_registration_hook_test_component_key.id(),
     content="true",
   )
@@ -344,5 +344,5 @@ test "ecs component hooks: world-scoped registration rejects components already 
   ] = try? World::register_component_hooks_for_key(
     world1, late_registration_hook_test_component_key,
   )
-  inspect(fresh_result is Ok(_), content="true")
+  debug_inspect(fresh_result is Ok(_), content="true")
 }

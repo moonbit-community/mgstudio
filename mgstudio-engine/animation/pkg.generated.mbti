@@ -8,11 +8,14 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "tonyfettes/any",
 }
 
 // Values
+pub const HAS_ANIMATION_RUNTIME : Bool = true
+
 pub fn advance_animations(@ecs.World) -> Unit
 
 pub fn advance_transitions(@ecs.World) -> Unit
@@ -21,19 +24,49 @@ pub fn animate_targets(@ecs.World) -> Unit
 
 pub fn animation_clip_add(AnimationClip) -> @asset.Handle[AnimationClip]
 
+pub fn animation_clip_add_animatable_curve(AnimationClip, AnimationTargetId, AnimatableCurve, sample_count? : Int) -> AnimationClip
+
+pub fn animation_clip_add_morph_weights_curve(AnimationClip, AnimationTargetId, Array[KeyframeWeights]) -> AnimationClip
+
+pub fn animation_clip_add_rotation_track(AnimationClip, AnimationTargetId, Array[KeyframeQuat]) -> AnimationClip
+
+pub fn animation_clip_add_scale_track(AnimationClip, AnimationTargetId, Array[KeyframeVec3]) -> AnimationClip
+
+pub fn animation_clip_add_translation_track(AnimationClip, AnimationTargetId, Array[KeyframeVec3]) -> AnimationClip
+
+pub fn animation_clip_callback_event(Float, Int) -> AnimationClipEvent
+
+pub fn animation_clip_event(Float, String, String) -> AnimationClipEvent
+
 pub fn animation_clip_get(@asset.Handle[AnimationClip]) -> AnimationClip?
+
+pub fn animation_clip_sample(AnimationClip, AnimationTargetId, Float) -> AnimationSample?
 
 pub fn animation_clip_set(@asset.Handle[AnimationClip], AnimationClip) -> Bool
 
+pub fn animation_graph() -> AnimationGraph
+
 pub fn animation_graph_add(AnimationGraph) -> @asset.Handle[AnimationGraph]
 
+pub fn animation_graph_from_clip_handle(@asset.Handle[AnimationClip]) -> (AnimationGraph, AnimationNodeIndex)
+
 pub fn animation_graph_get(@asset.Handle[AnimationGraph]) -> AnimationGraph?
+
+pub fn animation_graph_root_node(AnimationGraph) -> AnimationNodeIndex
 
 pub fn animation_graph_set(@asset.Handle[AnimationGraph], AnimationGraph) -> Bool
 
 pub fn animation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn animation_register_clip_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
+
 pub fn animation_register_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
+
+pub fn animation_rotation_keyframe(Float, @math.Quat) -> KeyframeQuat
+
+pub fn animation_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn animation_scale_keyframe(Float, @math.Vec3) -> KeyframeVec3
 
 pub let animation_set_advance_animations : String
 
@@ -46,6 +79,18 @@ pub let animation_set_expire_transitions : String
 pub let animation_set_thread : String
 
 pub let animation_set_trigger_events : String
+
+pub fn animation_target_id_for_name(String) -> AnimationTargetId
+
+pub fn animation_target_id_for_names(Array[String]) -> AnimationTargetId
+
+pub fn animation_transitions() -> AnimationTransitions
+
+pub fn animation_transitions_play(AnimationTransitions, AnimationPlayer, AnimationNodeIndex, Float) -> AnimationPlayerEntry
+
+pub fn animation_translation_keyframe(Float, @math.Vec3) -> KeyframeVec3
+
+pub fn animation_weights(Array[Float]) -> AnimationWeights
 
 pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy]
 
@@ -231,7 +276,7 @@ pub fn AnimationGraphNode::weight(Self) -> Float
 
 pub struct AnimationNodeIndex {
   index : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn AnimationNodeIndex::index(Self) -> Int
 pub fn AnimationNodeIndex::new(Int) -> Self
 pub impl ToJson for AnimationNodeIndex
@@ -317,7 +362,7 @@ pub struct AnimationTargetCurves {
 pub struct AnimationTargetId {
   high : Int
   low : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn AnimationTargetId::from_name(String) -> Self
 pub fn AnimationTargetId::from_names(Array[String]) -> Self
 pub fn AnimationTargetId::new(Int, Int) -> Self

@@ -15,7 +15,7 @@
 ///|
 struct OneShotCounterResource {
   mut value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let one_shot_counter_resource_key : @ecs.ResourceKey[OneShotCounterResource] = @ecs.register_resource(
@@ -38,7 +38,7 @@ test "app: world run_system_once supports system params" {
     counter.get_ref().val.value = counter.get_ref().val.value + 1
   })
 
-  inspect(
+  debug_inspect(
     try! world.get_resource(one_shot_counter_resource_key),
     content="Some({value: 1})",
   )
@@ -61,7 +61,7 @@ test "app: registered systems preserve local state across runs" {
   try! run_system(world, system_id)
   try! run_system(world, system_id)
 
-  inspect(
+  debug_inspect(
     try! world.get_resource(one_shot_counter_resource_key),
     content="Some({value: 3})",
   )
@@ -83,7 +83,7 @@ test "app: commands can register and run one-shot systems" {
 
   app = app.run_once()
 
-  inspect(
+  debug_inspect(
     try! app.world().get_resource(one_shot_counter_resource_key),
     content="Some({value: 1})",
   )

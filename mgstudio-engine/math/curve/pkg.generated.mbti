@@ -6,7 +6,37 @@ import {
 }
 
 // Values
+pub const MATH_CURVE_EASING_MODULE_TAG : String = "bevy_math::curve::easing"
+
+pub const MATH_CURVE_MODULE_TAG : String = "bevy_math::curve"
+
+pub fn[T] constant_curve(@math.Interval, T) -> @math.ConstantCurve[T]
+
+pub fn[T] curve_identity(@math.Curve[T]) -> @math.Curve[T]
+
+pub fn ease_function_identity(@math.EaseFunction) -> @math.EaseFunction
+
+pub fn[T] easing_curve_identity(@math.EasingCurve[T]) -> @math.EasingCurve[T]
+
+pub fn[T] even_core(@math.Interval, Array[T]) -> @math.EvenCore[T] raise @math.EvenCoreError
+
+pub fn[T] function_curve(@math.Interval, (Float) -> T) -> @math.FunctionCurve[T]
+
 pub fn interval(Float, Float) -> @math.Interval raise @math.InvalidIntervalError
+
+pub fn[T] iterable_curve(@math.Interval, (Float) -> Iter[T]) -> @math.IterableCurve[T]
+
+pub fn jump_at_identity(@math.JumpAt) -> @math.JumpAt
+
+pub fn[T] sample_auto_curve(@math.Interval, Array[T]) -> @math.SampleAutoCurve[T] raise @math.EvenCoreError
+
+pub fn[T] sample_curve(@math.Interval, Array[T], (T, T, Float) -> T) -> @math.SampleCurve[T] raise @math.EvenCoreError
+
+pub fn[T] sample_iter(@math.IterableCurve[T], Float) -> Iter[T]?
+
+pub fn[T] uneven_core(Array[(Float, T)]) -> @math.UnevenCore[T] raise @math.UnevenCoreError
+
+pub fn[T] uneven_sample_curve(Array[(Float, T)], (T, T, Float) -> T) -> @math.UnevenSampleCurve[T] raise @math.UnevenCoreError
 
 // Errors
 

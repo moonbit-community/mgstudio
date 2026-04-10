@@ -6,7 +6,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/gltf",
+  "Milky2018/mgstudio/gltf/loader/gltf_ext",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
@@ -16,7 +16,29 @@ import {
 }
 
 // Values
+pub const DYNAMIC_SCENE_BUILDER_MODULE_TAG : String = "bevy_scene::dynamic_scene_builder"
+
+pub const DYNAMIC_SCENE_SUPPORTED : Bool = false
+
+pub const SCENE_COMPONENTS_MODULE_TAG : String = "bevy_scene::components"
+
+pub const SCENE_DYNAMIC_SCENE_MODULE_TAG : String = "bevy_scene::dynamic_scene"
+
+pub const SCENE_FILTER_MODULE_TAG : String = "bevy_scene::scene_filter"
+
+pub const SCENE_LOADER_MODULE_TAG : String = "bevy_scene::scene_loader"
+
 pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
+
+pub const SCENE_SPAWNER_MODULE_TAG : String = "bevy_scene::scene_spawner"
+
+pub fn dynamic_scene_builder_bridge_supported(DynamicSceneBuilderBridge) -> Bool
+
+pub fn dynamic_scene_builder_supported() -> Bool
+
+pub fn dynamic_scene_module_tag() -> String
+
+pub fn dynamic_scene_supported() -> Bool
 
 pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 
@@ -24,9 +46,21 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
+pub fn scene_components_bridge_enabled(SceneComponentsBridge) -> Bool
+
+pub fn scene_components_bridge_module_tag(SceneComponentsBridge) -> String
+
+pub fn scene_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn scene_filter_bridge_supported(SceneFilterBridge) -> Bool
+
+pub fn scene_filter_supported() -> Bool
+
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
+
+pub fn scene_instance_to_json(SceneInstance) -> Json
 
 pub fn scene_load_gltf_animation(@asset.AssetServer, String) -> @asset.Handle[@animation.AnimationClip]
 
@@ -35,6 +69,16 @@ pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Hand
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
 pub fn[W] scene_load_pending_system(W) -> Unit
+
+pub fn scene_loader_bridge_enabled(SceneLoaderBridge) -> Bool
+
+pub fn scene_loader_bridge_module_tag(SceneLoaderBridge) -> String
+
+pub fn scene_loader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn scene_make_root(@asset.Handle[Scene]) -> SceneRoot
+
+pub fn scene_package_bevy_source() -> String
 
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -50,15 +94,26 @@ pub fn scene_reload_modified_roots_system(@ecs.World) -> Unit
 
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
 
+pub fn scene_root_to_json(SceneRoot) -> Json
+
 pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
 pub fn scene_spawn_roots_system(@ecs.World) -> Unit
 
 pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 
+pub fn scene_spawner_bridge_enabled(SceneSpawnerBridge) -> Bool
+
+pub fn scene_spawner_bridge_module_tag(SceneSpawnerBridge) -> String
+
 // Errors
 
 // Types and methods
+pub struct DynamicSceneBuilderBridge {
+  supported : Bool
+}
+pub fn DynamicSceneBuilderBridge::default() -> Self
+
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
   default_scene : @asset.Handle[Scene]?
@@ -82,12 +137,24 @@ pub fn GltfLodVisibilityPolicy::with_step(Self, Float) -> Self
 
 pub struct Scene {
   nodes3d : Array[SceneNode3d]
-  gltf_scene_extras : @gltf.GltfSceneExtras?
+  gltf_scene_extras : @gltf_ext.GltfSceneExtras?
   ready : Bool
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
-pub fn Scene::with_gltf_scene_extras(Self, @gltf.GltfSceneExtras?) -> Self
+pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
 
+pub struct SceneComponentsBridge {
+  module_tag : String
+}
+pub fn SceneComponentsBridge::default() -> Self
+
+pub struct SceneFilterBridge {
+  supported : Bool
+}
+pub fn SceneFilterBridge::default() -> Self
+
+#alias(SceneComponentInstance)
+#alias(SceneSpawnerInstance)
 pub struct SceneInstance {
   instance_id : Int
 }
@@ -96,6 +163,7 @@ pub impl @ecs.Component for SceneInstance
 pub impl ToJson for SceneInstance
 pub impl @json.FromJson for SceneInstance
 
+#alias(SceneSpawnerInstanceReady)
 pub struct SceneInstanceReady {
   instance_id : Int
   spawned_entities : Int
@@ -105,20 +173,26 @@ pub impl @ecs.Component for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
+pub struct SceneLoaderBridge {
+  module_tag : String
+}
+pub fn SceneLoaderBridge::default() -> Self
+
+#alias(SceneComponentNode3d)
 pub struct SceneNode3d {
   name : @ecs.Name?
   parent_node_index : Int?
   mesh : @pbr.Mesh3d?
   material : @material.MeshMaterial3d?
-  gltf_scene_index : @gltf.GltfSceneIndex?
-  gltf_node_index : @gltf.GltfNodeIndex?
-  gltf_mesh_index : @gltf.GltfMeshIndex?
-  gltf_primitive_index : @gltf.GltfPrimitiveIndex?
-  gltf_skin_index : @gltf.GltfSkinIndex?
-  gltf_material_name : @gltf.GltfMaterialName?
-  gltf_extras : @gltf.GltfExtras?
-  gltf_mesh_extras : @gltf.GltfMeshExtras?
-  gltf_material_extras : @gltf.GltfMaterialExtras?
+  gltf_scene_index : @gltf_ext.GltfSceneIndex?
+  gltf_node_index : @gltf_ext.GltfNodeIndex?
+  gltf_mesh_index : @gltf_ext.GltfMeshIndex?
+  gltf_primitive_index : @gltf_ext.GltfPrimitiveIndex?
+  gltf_skin_index : @gltf_ext.GltfSkinIndex?
+  gltf_material_name : @gltf_ext.GltfMaterialName?
+  gltf_extras : @gltf_ext.GltfExtras?
+  gltf_mesh_extras : @gltf_ext.GltfMeshExtras?
+  gltf_material_extras : @gltf_ext.GltfMaterialExtras?
   transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
@@ -126,14 +200,16 @@ pub struct SceneNode3d {
   skinned_inverse_bindposes : Array[@mesh.SkinningMat4]?
   default_morph_weights : Array[Float]?
 }
-pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf.GltfSceneIndex?, gltf_node_index? : @gltf.GltfNodeIndex?, gltf_mesh_index? : @gltf.GltfMeshIndex?, gltf_primitive_index? : @gltf.GltfPrimitiveIndex?, gltf_skin_index? : @gltf.GltfSkinIndex?, gltf_material_name? : @gltf.GltfMaterialName?, gltf_extras? : @gltf.GltfExtras?, gltf_mesh_extras? : @gltf.GltfMeshExtras?, gltf_material_extras? : @gltf.GltfMaterialExtras?, skinned_joint_node_indices? : Array[Int]?, skinned_inverse_bindposes? : Array[@mesh.SkinningMat4]?, default_morph_weights? : Array[Float]?) -> Self
-pub fn SceneNode3d::new_empty(@transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf.GltfSceneIndex?, gltf_node_index? : @gltf.GltfNodeIndex?, gltf_skin_index? : @gltf.GltfSkinIndex?, gltf_extras? : @gltf.GltfExtras?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf_ext.GltfSceneIndex?, gltf_node_index? : @gltf_ext.GltfNodeIndex?, gltf_mesh_index? : @gltf_ext.GltfMeshIndex?, gltf_primitive_index? : @gltf_ext.GltfPrimitiveIndex?, gltf_skin_index? : @gltf_ext.GltfSkinIndex?, gltf_material_name? : @gltf_ext.GltfMaterialName?, gltf_extras? : @gltf_ext.GltfExtras?, gltf_mesh_extras? : @gltf_ext.GltfMeshExtras?, gltf_material_extras? : @gltf_ext.GltfMaterialExtras?, skinned_joint_node_indices? : Array[Int]?, skinned_inverse_bindposes? : Array[@mesh.SkinningMat4]?, default_morph_weights? : Array[Float]?) -> Self
+pub fn SceneNode3d::new_empty(@transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf_ext.GltfSceneIndex?, gltf_node_index? : @gltf_ext.GltfNodeIndex?, gltf_skin_index? : @gltf_ext.GltfSkinIndex?, gltf_extras? : @gltf_ext.GltfExtras?) -> Self
 
 pub(all) struct ScenePlugin {
 }
 pub fn ScenePlugin::default() -> Self
 pub impl @app.PluginReplacement for ScenePlugin
 
+#alias(SceneComponentRoot)
+#alias(SceneSpawnerRoot)
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]
 }
@@ -141,6 +217,11 @@ pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
 pub impl @ecs.Component for SceneRoot
 pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
+
+pub struct SceneSpawnerBridge {
+  module_tag : String
+}
+pub fn SceneSpawnerBridge::default() -> Self
 
 // Type aliases
 

@@ -14,7 +14,42 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_feathers/src/cursor.rs`.
-// Pending bridge stub; no safe root symbol yet.
-fn _feathers_cursor_bridge_pending() -> Unit {
 
+///|
+pub(all) enum EntityCursor {
+  System(String)
+  Hidden
+} derive(Eq, Debug)
+
+///|
+pub struct DefaultCursor {
+  cursor : EntityCursor
+}
+
+///|
+pub struct OverrideCursor {
+  cursor : EntityCursor?
+}
+
+///|
+pub fn DefaultCursor::default() -> DefaultCursor {
+  DefaultCursor::{ cursor: System("default") }
+}
+
+///|
+pub fn OverrideCursor::default() -> OverrideCursor {
+  OverrideCursor::{ cursor: None }
+}
+
+///|
+pub struct CursorIconPlugin {}
+
+///|
+pub fn CursorIconPlugin::default() -> CursorIconPlugin {
+  CursorIconPlugin::{  }
+}
+
+///|
+pub fn cursor_icon_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
 }

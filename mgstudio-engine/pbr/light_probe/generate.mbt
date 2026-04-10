@@ -13,4 +13,33 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/light_probe/generate.rs`.
+
+///|
 pub type GeneratedEnvironmentMapLight = @light.GeneratedEnvironmentMapLight
+
+///|
+pub fn pbr_generated_environment_map_light_default() -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::default()
+}
+
+///|
+pub struct EnvironmentMapGenerationPlugin {}
+
+///|
+pub fn EnvironmentMapGenerationPlugin::default() -> EnvironmentMapGenerationPlugin {
+  EnvironmentMapGenerationPlugin::{  }
+}
+
+///|
+pub fn pbr_generated_environment_map_light_new() -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::new(None, 1.0F)
+}
+
+///|
+pub fn pbr_generated_environment_map_light_with_intensity(
+  light : GeneratedEnvironmentMapLight,
+  intensity : Float,
+) -> GeneratedEnvironmentMapLight {
+  light.with_intensity(intensity)
+}

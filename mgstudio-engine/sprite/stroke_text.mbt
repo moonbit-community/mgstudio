@@ -7,7 +7,33 @@
 
 ///|
 // Runtime implementation now lives in `text2d.mbt` in this package.
-// This file remains a Bevy shape anchor only.
-fn _stroke_text_bevy_shape_anchor() -> Unit {
-  ignore(0)
+pub fn sprite_stroke_text_measure(
+  text : String,
+  font_size : Float,
+) -> @math.Vec2 {
+  stroke_text_measure(text, font_size)
+}
+
+///|
+pub fn sprite_stroke_text_emit_2d(
+  config : GizmoConfig,
+  isometry : Isometry2d,
+  text : String,
+  font_size : Float,
+  anchor : @math.Vec2,
+  color : Color,
+) -> Unit {
+  stroke_text_emit_2d(config, isometry, text, font_size, anchor, color)
+}
+
+///|
+pub fn sprite_stroke_text_emit_3d(
+  config : GizmoConfig,
+  isometry : @math.Isometry3d,
+  text : String,
+  font_size : Float,
+  anchor : @math.Vec2,
+  color : Color,
+) -> Unit {
+  stroke_text_emit_3d(config, isometry, text, font_size, anchor, color)
 }

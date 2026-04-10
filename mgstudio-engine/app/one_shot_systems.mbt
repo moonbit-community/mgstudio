@@ -15,7 +15,7 @@
 ///|
 pub struct SystemId {
   index : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) suberror RegisteredSystemError {

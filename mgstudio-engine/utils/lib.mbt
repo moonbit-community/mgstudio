@@ -18,3 +18,11 @@
 
 ///|
 pub const HAS_UTILS_RUNTIME : Bool = true
+
+///|
+pub const UTILS_CRATE_ID : String = "bevy_utils"
+
+///|
+pub fn utils_runtime_available() -> Bool {
+  HAS_UTILS_RUNTIME
+}
