@@ -3001,8 +3001,6 @@ pub fn ui_build_a11y_tree_update(
     update.set_tree(@moon_accesskit.Tree::new(root))
     update
   }
-  let a11y_state_res = @a11y.get_a11y_state_resource(world)
-
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
   let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
@@ -3107,9 +3105,20 @@ pub fn ui_build_a11y_tree_update(
   // Root node.
   let tree_id = @moon_accesskit.TreeId::root()
   let root_id = @moon_accesskit.NodeId::root()
-  let mut focus_id = match a11y_state_res.get() {
-    Some(state) => @a11y.A11yState::focused_node(state)
-    None => root_id
+  let mut focus_id = root_id
+  let input_focus_value : @input_focus.InputFocus? = try
+    world.get_resource(@input_focus.InputFocus::resource())
+  catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+  let focus_entity : @core.Entity? = match input_focus_value {
+    Some(input_focus) => input_focus.get()
+    None => None
+  }
+  if focus_entity is Some(entity) {
+    focus_id = @a11y.node_id_for_entity(entity)
   }
   if focus_id != root_id {
     let mut exists = false
@@ -3284,7 +3293,41 @@ pub fn ui_build_a11y_tree_update(
 ///|
 pub fn ui_a11y_update_system(world : @ecs.World) -> Unit {
   let update = ui_build_a11y_tree_update(world)
-  @a11y.a11y_host_apply_update(update)
+  let root_id = @moon_accesskit.NodeId::root()
+  let synced : Map[UInt64, Bool] = {}
+  for nu in update.nodes() {
+    let node_id = nu.id()
+    if node_id == root_id {
+      continue
+    }
+    let entity = @core.Entity::from_bits(node_id.to_u64())
+    if !world.is_alive(entity) {
+      continue
+    }
+    let accessibility_node = @a11y.AccessibilityNode::new(nu.node())
+    synced.set(entity.to_bits(), true)
+    if (try! world.contains_by_key(entity, @a11y.ecs_key_accessibility_node)) {
+      ignore(
+        try! world.replace(
+          entity, @a11y.ecs_key_accessibility_node, accessibility_node,
+        ),
+      )
+    } else {
+      try! world.set_by_key(
+        entity, @a11y.ecs_key_accessibility_node, accessibility_node,
+      )
+    }
+  }
+  let stale_entities : Array[@core.Entity] = []
+  world.for_each_component(@a11y.ecs_key_accessibility_node, fn(entity, _node) {
+    if (try! world.contains_by_key(entity, ecs_key_ui_layout)) &&
+      !synced.contains(entity.to_bits()) {
+      stale_entities.push(entity)
+    }
+  })
+  for entity in stale_entities {
+    ignore(try! world.remove_by_key(entity, @a11y.ecs_key_accessibility_node))
+  }
 }
 
 ///|

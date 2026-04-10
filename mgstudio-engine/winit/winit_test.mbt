@@ -592,16 +592,11 @@ test "winit: plugin owns accessibility action propagation" {
 
   let world = app.world()
   let actions = read_action_requests(world)
-  let state = Ref::new(@a11y.get_a11y_state_resource(world).get().unwrap())
-  let drained = @a11y.A11yState::drain_actions(state)
 
   assert_true(world.contains_message(@a11y.ecs_msg_key_action_request))
   assert_eq(actions.length(), 1)
   assert_eq(actions[0].action(), @moon_accesskit.Action::Focus)
   assert_eq(actions[0].target_node(), target)
-  assert_eq(state.val.focused_node(), target)
-  assert_eq(drained.length(), 1)
-  assert_eq(drained[0].target_node(), target)
   assert_true(
     @a11y.get_accessibility_requested_resource(world).get().unwrap().get(),
   )
@@ -620,7 +615,7 @@ test "winit: plugin owns accessibility update commit" {
   app = app.run_once()
 
   let payload = "winit-a11y-commit"
-  @a11y.a11y_host_apply_update_payload(payload)
+  @windowing.queue_accessibility_update_payload(payload~)
   app = app.run_once()
 
   debug_inspect(@windowing.last_accessibility_update_payload(), content=payload)

@@ -35,6 +35,19 @@ fn set_frame(
 }
 
 ///|
+fn enqueue_a11y_action(
+  world : @ecs.World,
+  request : @moon_accesskit.ActionRequest,
+) -> Unit {
+  ignore(
+    world.send_message(
+      @a11y.ecs_msg_key_action_request,
+      @a11y.ActionRequest::new(request),
+    ),
+  )
+}
+
+///|
 test "picking: generates enter/leave and click events (single pointer)" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
@@ -486,22 +499,23 @@ test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
   ignore(tick)
-  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
+  world.insert_resource(
+    @input_focus.InputFocus::resource(),
+    @input_focus.InputFocus::default(),
+  )
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
-  let packed = entity.id * 65536 + entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
-    @moon_accesskit.NodeId::from_u64(packed.to_uint64()),
+    @a11y.node_id_for_entity(entity),
   )
-  let state_res = @a11y.get_a11y_state_resource(world)
-  let state = Ref::new(state_res.get().unwrap())
-  @a11y.A11yState::push_action(state, req)
-  state_res.insert(state.val)
+  enqueue_a11y_action(world, req)
   picking_apply_a11y_actions_system(world)
   let interaction = try! world.get_by_key(entity, @ui.ecs_key_interaction)
   debug_inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
+  let focus = try! world.get_resource(@input_focus.InputFocus::resource())
+  debug_inspect(focus.unwrap().get() == Some(entity), content="true")
 }
 
 ///|
@@ -509,7 +523,6 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
   ignore(tick)
-  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
   try! world.set_by_key(
@@ -550,8 +563,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     @hierarchy.ecs_key_children,
     @hierarchy.Children::new([child]),
   )
-  let packed = entity.id * 65536 + entity.generation + 1
-  let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
+  let node_id = @a11y.node_id_for_entity(entity)
   let req_down = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::ScrollDown,
     @moon_accesskit.TreeId::root(),
@@ -562,11 +574,8 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     @moon_accesskit.TreeId::root(),
     node_id,
   )
-  let state_res = @a11y.get_a11y_state_resource(world)
-  let state = Ref::new(state_res.get().unwrap())
-  @a11y.A11yState::push_action(state, req_down)
-  @a11y.A11yState::push_action(state, req_right)
-  state_res.insert(state.val)
+  enqueue_a11y_action(world, req_down)
+  enqueue_a11y_action(world, req_right)
   picking_apply_a11y_actions_system(world)
   let scroll = try! world.get_by_key(entity, @ui.ecs_key_scroll_position)
   debug_inspect(
@@ -582,22 +591,17 @@ test "picking: a11y set-value action updates Text content" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
   ignore(tick)
-  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Old"))
-  let packed = entity.id * 65536 + entity.generation + 1
-  let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
+  let node_id = @a11y.node_id_for_entity(entity)
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::SetValue,
     @moon_accesskit.TreeId::root(),
     node_id,
   )
   req.set_data(@moon_accesskit.ActionData::Value("Updated"))
-  let state_res = @a11y.get_a11y_state_resource(world)
-  let state = Ref::new(state_res.get().unwrap())
-  @a11y.A11yState::push_action(state, req)
-  state_res.insert(state.val)
+  enqueue_a11y_action(world, req)
   picking_apply_a11y_actions_system(world)
   debug_inspect(
     world.get_by_key(entity, @text.ecs_key_text).unwrap().content,
@@ -612,25 +616,21 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
   ignore(tick)
-  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
+  world.insert_resource(
+    @input_focus.InputFocus::resource(),
+    @input_focus.InputFocus::default(),
+  )
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let dead_entity = @core.Entity::new(999, 1)
-  let packed = dead_entity.id * 65536 + dead_entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
-    @moon_accesskit.NodeId::from_u64(packed.to_uint64()),
+    @a11y.node_id_for_entity(dead_entity),
   )
-  let state_res = @a11y.get_a11y_state_resource(world)
-  let state = Ref::new(state_res.get().unwrap())
-  @a11y.A11yState::push_action(state, req)
-  state_res.insert(state.val)
+  enqueue_a11y_action(world, req)
   picking_apply_a11y_actions_system(world)
-  let state_after = @a11y.get_a11y_state_resource(world).get().unwrap()
-  debug_inspect(
-    state_after.focused_node() == @moon_accesskit.NodeId::root(),
-    content="true",
-  )
+  let focus = try! world.get_resource(@input_focus.InputFocus::resource())
+  debug_inspect(focus.unwrap().get() is None, content="true")
   debug_inspect(world.is_alive(dead_entity), content="false")
   let events = drain_events(world)
   debug_inspect(events.length(), content="0")

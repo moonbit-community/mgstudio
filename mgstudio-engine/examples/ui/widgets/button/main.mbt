@@ -50,27 +50,22 @@ fn main {
 fn button_system(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
   ignore(tick)
-  let a11y_state_resource = @a11y.get_a11y_state_resource(world)
-  let mut a11y_state_ref : Ref[@a11y.A11yState]? = None
-  if a11y_state_resource.get() is Some(a11y_state) {
-    a11y_state_ref = Some(Ref::new(a11y_state))
+  let input_focus_ref = try
+    world.get_resource_ref_mut(@input_focus.InputFocus::resource())
+  catch {
+    _ => (None : Ref[@input_focus.InputFocus]?)
+  } noraise {
+    value => value
   }
   world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
     if !(try! world.contains_by_key(entity, @ui.ecs_key_button)) {
       return
     }
-    if a11y_state_ref is Some(a11y_state) {
+    if input_focus_ref is Some(input_focus) {
       match interaction {
         @ui.Interaction::Pressed | @ui.Interaction::Hovered =>
-          @a11y.A11yState::set_focused_node(
-            a11y_state,
-            @a11y.node_id_for_entity(entity),
-          )
-        @ui.Interaction::None =>
-          @a11y.A11yState::set_focused_node(
-            a11y_state,
-            @moon_accesskit.NodeId::root(),
-          )
+          input_focus.val.set(entity)
+        @ui.Interaction::None => input_focus.val.clear()
       }
     }
     let text = match interaction {
@@ -134,9 +129,6 @@ fn button_system(world : @ecs.World) -> Unit {
       }
     }
   })
-  if a11y_state_ref is Some(state) {
-    a11y_state_resource.insert(state.val)
-  }
 }
 
 ///|

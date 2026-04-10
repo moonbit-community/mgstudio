@@ -263,65 +263,9 @@ pub fn AccessibilityNode::clear_hidden(self : AccessibilityNode) -> Unit {
 }
 
 ///|
-/// Compatibility resource used by existing engine integrations while the rest of
-/// the engine migrates to message-driven `ActionRequest` consumption.
-pub struct A11yState {
-  mut pending_actions : Array[@moon_accesskit.ActionRequest]
-  mut focused_node : @moon_accesskit.NodeId
-}
-
-///|
-pub fn A11yState::default() -> A11yState {
-  { pending_actions: [], focused_node: @moon_accesskit.NodeId::root() }
-}
-
-///|
-pub fn A11yState::push_action(
-  self : Ref[A11yState],
-  action : @moon_accesskit.ActionRequest,
-) -> Unit {
-  self.val.pending_actions.push(action)
-}
-
-///|
-pub fn A11yState::drain_actions(
-  self : Ref[A11yState],
-) -> Array[@moon_accesskit.ActionRequest] {
-  let out = self.val.pending_actions
-  self.val.pending_actions = []
-  out
-}
-
-///|
-pub fn A11yState::focused_node(self : A11yState) -> @moon_accesskit.NodeId {
-  self.focused_node
-}
-
-///|
-pub fn A11yState::set_focused_node(
-  self : Ref[A11yState],
-  node : @moon_accesskit.NodeId,
-) -> Unit {
-  self.val.focused_node = node
-}
-
-///|
 /// Convert an entity into a stable `NodeId`.
 pub fn node_id_for_entity(entity : @core.Entity) -> @moon_accesskit.NodeId {
-  let packed = entity.id * 65536 + entity.generation + 1
-  @moon_accesskit.NodeId::from_u64(packed.to_uint64())
-}
-
-///|
-/// Queue a host update payload for the native accessibility backend.
-pub fn a11y_host_apply_update_payload(payload : String) -> Unit {
-  @windowing.queue_accessibility_update_payload(payload~)
-}
-
-///|
-/// Queue an AccessKit `TreeUpdate` for the native accessibility backend.
-pub fn a11y_host_apply_update(update : @moon_accesskit.TreeUpdate) -> Unit {
-  @windowing.queue_accessibility_update(update)
+  @moon_accesskit.NodeId::from_u64(entity.to_bits())
 }
 
 ///|

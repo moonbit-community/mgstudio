@@ -91,10 +91,15 @@ pub fn winit_plugin_with(
           @a11y.a11y_set,
         ),
       )
-      .add_pre_update_system_config(
+      .add_post_update_system_config(
         @app.system(winit_poll_accessibility_actions_system).in_set(
           @a11y.a11y_set,
         ),
+      )
+      .add_post_update_system_config(
+        @app.system(winit_update_accessibility_nodes_system)
+        .in_set(@a11y.a11y_set)
+        .run_if(winit_should_update_accessibility_nodes),
       )
       .add_last_system_config(
         @app.system(winit_commit_pending_accessibility_update_system).in_set(

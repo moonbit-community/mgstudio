@@ -50,7 +50,6 @@ pub fn accessibility_plugin_with(
   app
   .init_resource(AccessibilityRequested::default)
   .init_resource(ManageAccessibilityUpdates::default)
-  .init_resource(A11yState::default)
 }
 
 ///|

@@ -18,32 +18,70 @@
 
 ///|
 fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
-  let raw = node_id.to_u64()
-  if raw == 0UL {
-    return @core.Entity::new(0, 0)
+  @core.Entity::from_bits(node_id.to_u64())
+}
+
+///|
+priv struct PickingA11yActionReaderState {
+  mut cursor : Int
+}
+
+///|
+fn PickingA11yActionReaderState::default() -> PickingA11yActionReaderState {
+  { cursor: 0 }
+}
+
+///|
+let picking_a11y_action_reader_state_resource_key : @ecs.ResourceKey[
+  PickingA11yActionReaderState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_picking::PickingA11yActionReaderState",
+)
+
+///|
+fn ensure_picking_a11y_action_reader_state(world : @ecs.World) -> Unit {
+  let res = world.resource(picking_a11y_action_reader_state_resource_key)
+  if !res.is_present() {
+    res.insert(PickingA11yActionReaderState::default())
   }
-  let packed = raw.to_int() - 1
-  let id = packed / 65536
-  let gen = packed - id * 65536
-  @core.Entity::new(id, gen)
+}
+
+///|
+fn read_pending_a11y_actions(world : @ecs.World) -> Array[@a11y.ActionRequest] {
+  ensure_picking_a11y_action_reader_state(world)
+  let state_res = world.resource(picking_a11y_action_reader_state_resource_key)
+  guard state_res.get() is Some(state_value) else { return [] }
+  let state_ref = Ref::new(state_value)
+  let cursor = Ref::new(state_ref.val.cursor)
+  let reader = world.message_reader(@a11y.ecs_msg_key_action_request, cursor)
+  let actions = try! reader.read()
+  state_ref.val.cursor = cursor.val
+  state_res.insert(state_ref.val)
+  actions
+}
+
+///|
+fn picking_set_input_focus(world : @ecs.World, entity : @core.Entity) -> Unit {
+  let focus_ref = try
+    world.get_resource_ref_mut(@input_focus.InputFocus::resource())
+  catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+  guard focus_ref is Some(input_focus_ref) else { return }
+  input_focus_ref.val.set(entity)
 }
 
 ///|
 /// Apply host-driven accessibility actions to UI state and picking events.
 pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
-  let state_res = @a11y.get_a11y_state_resource(world)
-  guard state_res.get() is Some(state_value) else { return }
-  let state = Ref::new(state_value)
-  let actions = @a11y.A11yState::drain_actions(state)
+  let actions = read_pending_a11y_actions(world)
   if actions.length() == 0 {
-    state_res.insert(state.val)
     return
   }
   let events_res = @app.get_picking_events_resource(world)
-  guard events_res.get() is Some(events_value) else {
-    state_res.insert(state.val)
-    return
-  }
+  guard events_res.get() is Some(events_value) else { return }
   let events = Ref::new(events_value)
   let scroll_step = 24.0F
   fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
@@ -162,14 +200,15 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     }
   }
 
-  for req in actions {
+  for action_request in actions {
+    let req = action_request.accesskit_request()
     let entity = entity_from_node_id(req.target_node())
     if !world.is_alive(entity) {
       continue
     }
     match req.action() {
       @moon_accesskit.Action::Focus => {
-        @a11y.A11yState::set_focused_node(state, req.target_node())
+        picking_set_input_focus(world, entity)
         // Map focus-driven navigation (tab / VO) to the hovered state so UI can
         // reflect focus without requiring pointer position.
         if (try! world.contains_by_key(entity, @ui.ecs_key_interaction)) {
@@ -188,7 +227,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
         }
       }
       @moon_accesskit.Action::Click => {
-        @a11y.A11yState::set_focused_node(state, req.target_node())
+        picking_set_input_focus(world, entity)
         if (try! world.contains_by_key(entity, @ui.ecs_key_interaction)) {
           try! (world.replace(
             entity,
@@ -227,14 +266,13 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
             is Some(text_node) else {
             continue
           }
-          @a11y.A11yState::set_focused_node(state, req.target_node())
+          picking_set_input_focus(world, entity)
           text_node.content = value
           ignore(try! world.replace(entity, @text.ecs_key_text, text_node))
         }
       _ => ()
     }
   }
-  state_res.insert(state.val)
   events_res.insert(events.val)
 }
 

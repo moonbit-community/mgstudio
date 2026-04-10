@@ -17,7 +17,7 @@ pub let ecs_components : Array[String] = ["AccessibilityNode"]
 
 ///|
 pub let ecs_resources : Array[String] = [
-  "AccessibilityRequested", "ManageAccessibilityUpdates", "A11yState",
+  "AccessibilityRequested", "ManageAccessibilityUpdates",
 ]
 
 ///|
@@ -36,11 +36,8 @@ pub let ecs_res_key_accessibility_requested : @ecs.ResourceKey[
 ///|
 pub let ecs_res_key_manage_accessibility_updates : @ecs.ResourceKey[
   ManageAccessibilityUpdates,
-] = @ecs.register_resource(debug_name="mgstudio_a11y::ManageAccessibilityUpdates")
-
-///|
-pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState] = @ecs.register_resource(
-  debug_name="mgstudio.a11y::A11yState",
+] = @ecs.register_resource(
+  debug_name="mgstudio_a11y::ManageAccessibilityUpdates",
 )
 
 ///|
@@ -69,11 +66,6 @@ pub impl @app.Resource for ManageAccessibilityUpdates with resource() {
 }
 
 ///|
-pub impl @app.Resource for A11yState with resource() {
-  ecs_res_key_a11y_state
-}
-
-///|
 pub fn get_accessibility_requested_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[AccessibilityRequested] {
@@ -85,11 +77,4 @@ pub fn get_manage_accessibility_updates_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[ManageAccessibilityUpdates] {
   world.resource(ecs_res_key_manage_accessibility_updates)
-}
-
-///|
-pub fn get_a11y_state_resource(
-  world : @ecs.World,
-) -> @ecs.ResourceAccess[A11yState] {
-  world.resource(ecs_res_key_a11y_state)
 }
