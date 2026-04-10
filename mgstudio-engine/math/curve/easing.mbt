@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/easing.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub type JumpAt = @math.JumpAt

@@ -14,14 +14,9 @@ pub fn cluster_light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cluster_test_enabled() -> Bool
 
-pub fn light_cluster_test_bridge_enabled(LightClusterTestBridge) -> Bool
-
 // Errors
 
 // Types and methods
-pub struct LightClusterTestBridge {
-}
-pub fn LightClusterTestBridge::default() -> Self
 
 // Type aliases
 pub using @light {type DirectionalLight as ClusterDirectionalLight}

@@ -22,8 +22,6 @@ pub fn state_app_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App
 
 pub fn[S : @app.States] state_changed(S) -> (@ecs.World) -> Bool
 
-pub fn state_commands_bridge_enabled(StateCommandsBridge) -> Bool
-
 pub fn[S : @app.States] state_condition_changed(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] state_condition_exists(S) -> (@ecs.World) -> Bool
@@ -51,9 +49,6 @@ pub fn states_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App[@e
 // Errors
 
 // Types and methods
-pub struct StateCommandsBridge {
-}
-pub fn StateCommandsBridge::default() -> Self
 
 // Type aliases
 pub using @app {type DespawnOnEnter}

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/point_light.rs`.
-// Bridge aliases for point-light components and resources.
 
 ///|
 pub type PointLightComponent = PointLight

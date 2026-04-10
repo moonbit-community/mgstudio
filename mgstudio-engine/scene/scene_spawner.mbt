@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/scene_spawner.rs`.
-// Bridge aliases for scene spawning runtime handles.
 
 ///|
 pub type SceneSpawnerRoot = SceneRoot
@@ -24,19 +23,3 @@ pub type SceneSpawnerInstance = SceneInstance
 
 ///|
 pub type SceneSpawnerInstanceReady = SceneInstanceReady
-
-///|
-///|
-pub struct SceneSpawnerBridge {
-}
-
-///|
-pub fn SceneSpawnerBridge::default() -> SceneSpawnerBridge {
-  SceneSpawnerBridge::{  }
-}
-
-///|
-pub fn scene_spawner_bridge_enabled(_ : SceneSpawnerBridge) -> Bool {
-  true
-}
-

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/ambient_light.rs`.
-// Bridge aliases for ambient-light resources.
 
 ///|
 pub type AmbientLightResource = GlobalAmbientLight

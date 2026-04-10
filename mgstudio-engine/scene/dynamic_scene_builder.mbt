@@ -17,24 +17,6 @@
 // Dynamic scene builder is gated by reflection support.
 
 ///|
-///|
-pub struct DynamicSceneBuilderBridge {
-  supported : Bool
-}
-
-///|
-pub fn DynamicSceneBuilderBridge::default() -> DynamicSceneBuilderBridge {
-  DynamicSceneBuilderBridge::{ supported: DYNAMIC_SCENE_SUPPORTED }
-}
-
-///|
 pub fn dynamic_scene_builder_supported() -> Bool {
   DYNAMIC_SCENE_SUPPORTED
-}
-
-///|
-pub fn dynamic_scene_builder_bridge_supported(
-  bridge : DynamicSceneBuilderBridge,
-) -> Bool {
-  bridge.supported
 }

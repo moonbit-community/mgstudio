@@ -17,22 +17,6 @@
 // The current runtime resolves fonts through the shared text pipeline instead of a separate public loader API.
 
 ///|
-///|
-pub struct TextFontLoaderBridge {
-}
-
-///|
-pub fn TextFontLoaderBridge::default() -> TextFontLoaderBridge {
-  TextFontLoaderBridge::{  }
-}
-
-///|
 pub fn text_font_loader_available() -> Bool {
   true
 }
-
-///|
-pub fn text_font_loader_bridge_enabled(_ : TextFontLoaderBridge) -> Bool {
-  text_font_loader_available()
-}
-

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/rounded_box.rs`.
-// Bridge alias for rounded-box gizmo builder.
 
 ///|
 pub type GizmoRoundedRectBuilder = @sprite.RoundedRectBuilder

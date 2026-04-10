@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "PanCamera",
   "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
@@ -22,7 +21,6 @@ pub let ecs_components : Array[String] = [
 ]
 
 ///|
-/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = ["RenderState", "Wireframe2dConfig"]
 
 ///|

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/sample_curves.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub type SampleCurve[T] = @math.SampleCurve[T]

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/raycast3d.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 pub using @math {type AabbCast3d}
 
 ///|

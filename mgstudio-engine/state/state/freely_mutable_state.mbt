@@ -14,25 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/freely_mutable_state.rs`.
-// Bridge aliases for freely-mutable next-state resources.
 
 ///|
 pub type FreelyMutableNextState[S] = @state_root.NextState[S]
-
-///|
-///|
-pub struct FreelyMutableStateBridge {
-}
-
-///|
-pub fn FreelyMutableStateBridge::default() -> FreelyMutableStateBridge {
-  FreelyMutableStateBridge::{  }
-}
-
-///|
-pub fn freely_mutable_state_bridge_enabled(
-  _ : FreelyMutableStateBridge,
-) -> Bool {
-  true
-}
-

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/extensions/khr_materials_anisotropy.rs`.
-// Bridge surface for the shared PBR-backed anisotropy handler.
 pub fn gltf_register_khr_materials_anisotropy_handler(
   handler : GltfExtensionHandler,
 ) -> Unit {

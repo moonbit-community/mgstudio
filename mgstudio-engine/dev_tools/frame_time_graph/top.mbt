@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/frame_time_graph/mod.rs`.
-// Bridge surface to the root `dev_tools` package implementation.
 pub using @dev_tools {type FrameTimeGraphConfig}
 
 ///|

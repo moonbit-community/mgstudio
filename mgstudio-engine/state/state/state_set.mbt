@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/state_set.rs`.
-// Bridge helpers for state-set dependency metadata.
 ///|
 pub type StateSetTransitionSystems = @state_root.StateTransitionSystems
 

@@ -14,11 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/radio.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type FocusPolicy}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_focus_policy : @ecs.ComponentKey[@ui.FocusPolicy] = @ui.ecs_key_focus_policy
 
 ///|

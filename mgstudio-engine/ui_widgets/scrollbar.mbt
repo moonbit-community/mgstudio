@@ -14,11 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/scrollbar.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type ScrollPosition}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition] = @ui.ecs_key_scroll_position
 
 ///|

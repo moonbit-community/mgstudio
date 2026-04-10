@@ -14,11 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/checkbox.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type Label}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_label : @ecs.ComponentKey[@ui.Label] = @ui.ecs_key_label
 
 ///|

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/wireframe2d.rs`.
-// Bridge surface to the root `sprite_render` package implementation.
 pub using @sprite_render {type NoWireframe2d}
 
 ///|

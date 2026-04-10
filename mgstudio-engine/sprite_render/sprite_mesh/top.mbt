@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/sprite_mesh/mod.rs`.
-// Bridge surface to the root `sprite_render` package implementation.
 pub using @sprite_render {type SceneCullContext}
 
 ///|

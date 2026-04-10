@@ -47,8 +47,6 @@ pub fn gltf_skin_index(Int) -> GltfSkinIndex
 
 pub fn gltf_texture_asset_label(Int) -> GltfAssetLabel
 
-pub fn gltf_texture_asset_label_bridge(GltfTextureAssetLabelBridge) -> GltfAssetLabel
-
 // Errors
 
 // Types and methods
@@ -141,11 +139,6 @@ pub fn GltfSkinIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfSkinIndex
 pub impl ToJson for GltfSkinIndex
 pub impl @json.FromJson for GltfSkinIndex
-
-pub struct GltfTextureAssetLabelBridge {
-  texture_index : Int
-}
-pub fn GltfTextureAssetLabelBridge::new(Int) -> Self
 
 // Type aliases
 

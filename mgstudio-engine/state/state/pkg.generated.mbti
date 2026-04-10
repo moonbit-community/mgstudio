@@ -10,8 +10,6 @@ import {
 // Values
 pub fn[S] computed_state_optional_source(S) -> @app.OptionalStateSource[S]
 
-pub fn freely_mutable_state_bridge_enabled(FreelyMutableStateBridge) -> Bool
-
 pub fn[S : @app.States] in_state(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] insert_state_app(@app.App[@ecs.World], S) -> @app.App[@ecs.World]
@@ -41,9 +39,6 @@ pub fn[S] sub_state_optional_source(S) -> @app.OptionalStateSource[S]
 // Errors
 
 // Types and methods
-pub struct FreelyMutableStateBridge {
-}
-pub fn FreelyMutableStateBridge::default() -> Self
 
 // Type aliases
 pub using @app {type DespawnOnEnter}

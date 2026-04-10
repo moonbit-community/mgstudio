@@ -16,24 +16,6 @@
 // Bevy source: `bevy/crates/bevy_solari/src/pathtracer/extract.rs`.
 
 ///|
-///|
-pub struct SolariPathtracerExtractBridge {
-}
-
-///|
-pub fn SolariPathtracerExtractBridge::default() -> SolariPathtracerExtractBridge {
-  SolariPathtracerExtractBridge::{  }
-}
-
-///|
 pub fn extract_pathtracer(_world : @ecs.World) -> Unit {
   ()
 }
-
-///|
-pub fn solari_pathtracer_extract_bridge_enabled(
-  _ : SolariPathtracerExtractBridge,
-) -> Bool {
-  true
-}
-

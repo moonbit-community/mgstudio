@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/grid.rs`.
-// Bridge alias for 2D grid builder surface.
 
 ///|
 pub type GizmoGrid2dBuilder = @sprite.Grid2dBuilder

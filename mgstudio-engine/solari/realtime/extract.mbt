@@ -16,24 +16,6 @@
 // Bevy source: `bevy/crates/bevy_solari/src/realtime/extract.rs`.
 
 ///|
-///|
-pub struct SolariRealtimeExtractBridge {
-}
-
-///|
-pub fn SolariRealtimeExtractBridge::default() -> SolariRealtimeExtractBridge {
-  SolariRealtimeExtractBridge::{  }
-}
-
-///|
 pub fn extract_solari_lighting(_world : @ecs.World) -> Unit {
   ()
 }
-
-///|
-pub fn solari_realtime_extract_bridge_enabled(
-  _ : SolariRealtimeExtractBridge,
-) -> Bool {
-  true
-}
-

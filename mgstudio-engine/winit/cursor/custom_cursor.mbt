@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_winit/src/cursor/custom_cursor.rs`.
-// Bridge aliases to the `window` custom-cursor data model.
 
 ///|
 pub type WinitCustomCursor = @window.CustomCursor

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/cubic_splines/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub type CubicCurve[P] = @math.CubicCurve[P]

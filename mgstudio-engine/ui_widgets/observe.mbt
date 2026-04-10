@@ -14,19 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/observe.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type Interaction}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_interaction : @ecs.ComponentKey[@ui.Interaction] = @ui.ecs_key_interaction
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ui_widgets_set_interaction : @app.SystemSet = @ui.ui_set_interaction
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   @ui.ui_interaction_system(world)
 }

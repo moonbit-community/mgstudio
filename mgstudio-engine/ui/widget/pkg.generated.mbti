@@ -38,10 +38,6 @@ pub fn ui_propagate_target_cameras_system(@ecs.World) -> Unit
 
 pub let ui_set_text_content : String
 
-pub fn ui_widget_label_bridge_enabled(UiWidgetLabelBridge) -> Bool
-
-pub fn ui_widget_text_bridge_enabled(UiWidgetTextBridge) -> Bool
-
 pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ui_widgets_set_interaction : String
@@ -49,13 +45,6 @@ pub let ui_widgets_set_interaction : String
 // Errors
 
 // Types and methods
-pub struct UiWidgetLabelBridge {
-}
-pub fn UiWidgetLabelBridge::default() -> Self
-
-pub struct UiWidgetTextBridge {
-}
-pub fn UiWidgetTextBridge::default() -> Self
 
 // Type aliases
 pub using @ui {type AccessibilityLabel}

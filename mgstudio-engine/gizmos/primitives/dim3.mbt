@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/dim3.rs`.
-// Bridge aliases for 3D gizmo primitives.
 
 ///|
 pub type GizmoPrimitiveSphere3d = @math.Sphere

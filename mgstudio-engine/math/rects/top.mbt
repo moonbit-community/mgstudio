@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/rects/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub fn rect(min : @math.Vec2, max : @math.Vec2) -> @math.Rect {

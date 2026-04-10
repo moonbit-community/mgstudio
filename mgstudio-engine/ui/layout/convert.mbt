@@ -14,35 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/layout/convert.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type ComputedUiRenderTargetInfo}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
   @ui.ComputedUiRenderTargetInfo,
 ] = @ui.ecs_key_computed_ui_render_target_info
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   @ui.ui_update_context_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
   @ui.ui_propagate_target_cameras_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ui_set_prepare : @app.SystemSet = @ui.ui_set_prepare
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ui_set_context : @app.SystemSet = @ui.ui_set_context
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ui_set_propagate : @app.SystemSet = @ui.ui_set_propagate

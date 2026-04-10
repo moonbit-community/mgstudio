@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/text2d/mod.rs`.
-// Bridge surface to the current `Milky2018/mgstudio/text` runtime owner.
 pub let text_set_render_extract : @app.SystemSet = @text.text_set_render_extract
 
 ///|

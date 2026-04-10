@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/extensions/mod.rs`.
-// Root bridge to `gltf/loader/extensions`.
 pub using @gltf_loader_extensions {type GltfExtensionHandler}
 
 ///|

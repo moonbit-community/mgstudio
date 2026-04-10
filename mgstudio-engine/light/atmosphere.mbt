@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/atmosphere.rs`.
-// Bridge aliases for atmosphere-related component surface.
 
 ///|
 pub type AtmosphereRenderMode = AtmosphereMode

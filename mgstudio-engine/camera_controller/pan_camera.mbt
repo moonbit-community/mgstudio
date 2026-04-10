@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera_controller/src/pan_camera.rs`.
-// Bridge surface to `Milky2018/mgstudio/sprite` pan-camera runtime owner.
 
 ///|
 pub type PanCamera = @sprite.PanCamera

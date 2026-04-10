@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_winit/src/cursor/mod.rs`.
-// Bridge surface to `window/cursor` and local custom-cursor helpers.
 
 ///|
 pub type CursorIcon = @window.CursorIcon

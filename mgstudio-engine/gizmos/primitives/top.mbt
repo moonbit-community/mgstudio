@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/mod.rs`.
-// Ownership entrypoint for 2D/3D primitive bridge modules.
 
 ///|
 pub const GIZMOS_PRIMITIVES_MODULE_ID : String = "bevy_gizmos::primitives"

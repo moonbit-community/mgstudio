@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_window/src/cursor/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/window` runtime owner.
 
 ///|
 pub type CursorGrabMode = @window.CursorGrabMode

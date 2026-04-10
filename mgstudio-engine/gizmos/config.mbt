@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/config.rs`.
-// Bridge aliases for gizmo config resources.
 
 ///|
 pub type GizmoConfigValue = @sprite.GizmoConfig

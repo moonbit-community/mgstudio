@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/sub_states.rs`.
-// Bridge helpers for sub-state optional source wiring.
 
 ///|
 pub fn[S] sub_state_optional_source(

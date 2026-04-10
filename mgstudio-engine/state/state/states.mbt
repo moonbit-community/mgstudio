@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/states.rs`.
-// Bridge aliases for primary state traits and schedules.
 
 ///|
 pub type StatesState[S] = @state_root.State[S]

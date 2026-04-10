@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/lib.rs`.
-// Bridge surface to the root `ui` package implementation.
 
 ///|
 ///|

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/cross.rs`.
-// Bridge capability flag for cross gizmo shapes.
 
 ///|
 ///|

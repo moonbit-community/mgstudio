@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/opaque.rs`.
-// Bridge aliases and helpers for opaque renderer method resources.
 
 ///|
 pub type MaterialDefaultOpaqueMethod = DefaultOpaqueRendererMethod

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/capsule.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub fn capsule3d(radius : Float, length : Float) -> @math.Capsule3d {

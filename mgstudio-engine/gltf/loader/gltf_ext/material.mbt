@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/material.rs`.
-// Bridge surface for material metadata extracted from glTF.
 pub fn gltf_material_name(name : String) -> GltfMaterialName {
   GltfMaterialName::new(name)
 }

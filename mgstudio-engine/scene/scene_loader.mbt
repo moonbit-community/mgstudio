@@ -14,25 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/scene_loader.rs`.
-// Bridge helper for scene-loader plugin setup.
-
-///|
-///|
-pub struct SceneLoaderBridge {
-}
-
-///|
-pub fn SceneLoaderBridge::default() -> SceneLoaderBridge {
-  SceneLoaderBridge::{  }
-}
 
 ///|
 pub fn scene_loader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   scene_plugin(app)
 }
-
-///|
-pub fn scene_loader_bridge_enabled(_ : SceneLoaderBridge) -> Bool {
-  true
-}
-

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/phase.rs`.
-// Bridge aliases for material phase-related component surface.
 
 ///|
 pub type MaterialMesh3dComponent = MeshMaterial3d

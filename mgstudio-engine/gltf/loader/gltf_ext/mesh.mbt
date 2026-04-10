@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/mesh.rs`.
-// Bridge surface for mesh and skin metadata extracted from glTF.
 pub fn gltf_mesh_extras(value : String) -> GltfMeshExtras {
   GltfMeshExtras::new(value)
 }

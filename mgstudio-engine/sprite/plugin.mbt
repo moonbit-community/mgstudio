@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bridge surface is provided by `lib.mbt` in this package.
 pub struct SpritePlugin {}
 
 ///|

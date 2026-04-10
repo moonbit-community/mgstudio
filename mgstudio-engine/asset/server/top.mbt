@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/server/mod.rs`.
-// Bridge surface to the root `asset` package implementation.
 
 ///|
 pub type AssetLoaderKind = @asset.AssetLoaderKind

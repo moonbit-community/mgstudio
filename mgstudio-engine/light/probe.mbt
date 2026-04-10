@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/probe.rs`.
-// Bridge aliases for probe/environment-map components.
 
 ///|
 pub type LightProbeComponent = LightProbe

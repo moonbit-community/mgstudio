@@ -14,27 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/test.rs`.
-// Bridge helper for clustered-light module test wiring.
-
-///|
-///|
-pub struct LightClusterTestBridge {
-}
-
-///|
-pub fn LightClusterTestBridge::default() -> LightClusterTestBridge {
-  LightClusterTestBridge::{  }
-}
 
 ///|
 pub fn cluster_test_enabled() -> Bool {
   true
 }
-
-///|
-pub fn light_cluster_test_bridge_enabled(
-  _ : LightClusterTestBridge,
-) -> Bool {
-  cluster_test_enabled()
-}
-

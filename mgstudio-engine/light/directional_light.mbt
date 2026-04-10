@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/directional_light.rs`.
-// Bridge aliases for directional-light components.
 
 ///|
 pub type DirectionalLightComponent = DirectionalLight

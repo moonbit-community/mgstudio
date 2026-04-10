@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Ccd2d", "Damping2d", "Collider2d", "Friction2d", "Sleeping2d", "Velocity2d", "Dominance2d",
   "RigidBody2d", "LockedAxes2d", "ActiveHooks2d", "ContactSkin2d", "Restitution2d",
@@ -27,7 +26,6 @@ pub let ecs_components : Array[String] = [
 ]
 
 ///|
-/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "Physics2dConfig", "Physics2dEvents", "Physics2dContext", "Physics2dHooksConfig",
 ]

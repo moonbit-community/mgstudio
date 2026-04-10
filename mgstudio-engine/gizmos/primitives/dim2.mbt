@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/dim2.rs`.
-// Bridge aliases for 2D gizmo primitives.
 
 ///|
 pub type GizmoPrimitiveCircle2d = @math.Circle

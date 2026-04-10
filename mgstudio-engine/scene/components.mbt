@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/components.rs`.
-// Bridge aliases for scene-facing ECS component surface.
 
 ///|
 pub type SceneComponentNode3d = SceneNode3d
@@ -24,19 +23,3 @@ pub type SceneComponentRoot = SceneRoot
 
 ///|
 pub type SceneComponentInstance = SceneInstance
-
-///|
-///|
-pub struct SceneComponentsBridge {
-}
-
-///|
-pub fn SceneComponentsBridge::default() -> SceneComponentsBridge {
-  SceneComponentsBridge::{  }
-}
-
-///|
-pub fn scene_components_bridge_enabled(_ : SceneComponentsBridge) -> Bool {
-  true
-}
-

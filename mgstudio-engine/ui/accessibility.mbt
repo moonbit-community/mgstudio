@@ -16,7 +16,6 @@
 // Bevy source: `bevy/crates/bevy_ui/src/accessibility.rs`.
 
 ///|
-/// Optional accessibility label for UI nodes (used by the host a11y bridge).
 pub struct AccessibilityLabel {
   text : String
 } derive(ToJson, FromJson)

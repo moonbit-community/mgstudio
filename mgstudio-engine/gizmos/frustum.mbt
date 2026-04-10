@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/frustum.rs`.
-// Bridge alias for view-frustum gizmo input.
 
 ///|
 pub type GizmoViewFrustum = @math.ViewFrustum

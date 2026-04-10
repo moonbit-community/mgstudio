@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/extras.rs`.
-// Owner lives in `gltf/loader/gltf_ext`; root keeps a compatibility bridge.
 pub type GltfExtras = @gltf_gltf_ext.GltfExtras
 
 ///|

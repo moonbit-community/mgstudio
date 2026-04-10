@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/polyline3d.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub fn polyline3d(vertices : Array[@math.Vec3]) -> @math.Polyline3d {

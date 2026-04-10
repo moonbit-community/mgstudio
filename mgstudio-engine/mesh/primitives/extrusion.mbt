@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/extrusion.rs`.
-// Bridge surface for wireframe-style extrusion helpers on top of the current
 // `Milky2018/mgstudio/mesh` runtime owner.
 
 ///|

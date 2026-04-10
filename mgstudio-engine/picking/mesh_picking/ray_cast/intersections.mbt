@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/intersections.rs`.
-// Bridge surface to the current mesh-picking hit storage.
 pub fn mesh_picking_hit_entity(
   hits : @picking.PickingHits,
   pointer : Int,

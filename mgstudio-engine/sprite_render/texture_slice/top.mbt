@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/texture_slice/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/sprite` runtime owner.
 pub using @sprite {type BorderRect}
 
 ///|

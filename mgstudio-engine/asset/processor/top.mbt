@@ -16,7 +16,6 @@
 pub using @asset {type LoadTransformAndSave}
 
 ///|
-// Bridge surface to the root `asset` package implementation.
 pub fn set_default_asset_processor(
   app : @app.App[@ecs.World],
   name : String,

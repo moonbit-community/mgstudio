@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bridge surface is provided by `top.mbt` in this package.
 pub type TextureSliceBorderRect = @sprite.BorderRect
 
 ///|

@@ -23,23 +23,23 @@ pub fn utils_once_available() -> Bool {
 }
 
 ///|
-pub struct OnceCellBridge[T] {
+pub struct OnceCell[T] {
   mut value : T?
 }
 
 ///|
-pub fn[T] OnceCellBridge::new() -> OnceCellBridge[T] {
-  OnceCellBridge::{ value: None }
+pub fn[T] OnceCell::new() -> OnceCell[T] {
+  OnceCell::{ value: None }
 }
 
 ///|
-pub fn[T] OnceCellBridge::set(self : OnceCellBridge[T], value : T) -> Unit {
+pub fn[T] OnceCell::set(self : OnceCell[T], value : T) -> Unit {
   if self.value is None {
     self.value = Some(value)
   }
 }
 
 ///|
-pub fn[T] OnceCellBridge::get(self : OnceCellBridge[T]) -> T? {
+pub fn[T] OnceCell::get(self : OnceCell[T]) -> T? {
   self.value
 }

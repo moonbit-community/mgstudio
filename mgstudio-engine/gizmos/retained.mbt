@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/retained.rs`.
-// Bridge capability for retained gizmo mode.
 ///|
 pub const GIZMO_RETAINED_SUPPORTED : Bool = true
 

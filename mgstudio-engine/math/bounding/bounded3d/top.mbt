@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded3d/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 pub using @math {type Aabb3d}
 
 ///|

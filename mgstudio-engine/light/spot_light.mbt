@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/spot_light.rs`.
-// Bridge aliases for spot-light components.
 
 ///|
 pub type SpotLightComponent = SpotLight

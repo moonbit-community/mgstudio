@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/tilemap_chunk_material.rs`.
-// Bridge surface to the root `sprite_render` package implementation.
 pub using @sprite_render {type TileData}
 
 ///|

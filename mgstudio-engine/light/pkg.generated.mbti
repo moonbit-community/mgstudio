@@ -99,8 +99,6 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[Po
 
 pub fn light_module_anchor_enabled() -> Bool
 
-pub fn light_runtime_bridge_enabled(LightRuntimeBridge) -> Bool
-
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
 // Errors
@@ -328,10 +326,6 @@ pub fn LightProbe::default() -> Self
 pub fn LightProbe::new() -> Self
 pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for LightProbe
-
-pub struct LightRuntimeBridge {
-}
-pub fn LightRuntimeBridge::default() -> Self
 
 #alias(ParallaxCorrectionComponent)
 pub(all) enum ParallaxCorrection {

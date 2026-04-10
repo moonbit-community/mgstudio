@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/alpha.rs`.
-// Bridge aliases and helpers for alpha-mode surface.
 
 ///|
 pub type MaterialAlphaMode = AlphaMode

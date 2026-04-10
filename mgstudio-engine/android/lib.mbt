@@ -17,22 +17,6 @@
 // Runtime wrappers live in this file while the broader android boundary stays split across the package.
 
 ///|
-///|
-pub struct AndroidRuntimeBridge {
-}
-
-///|
-pub fn AndroidRuntimeBridge::default() -> AndroidRuntimeBridge {
-  AndroidRuntimeBridge::{  }
-}
-
-///|
 pub fn android_runtime_available() -> Bool {
   android_app_available()
 }
-
-///|
-pub fn android_runtime_bridge_available(_ : AndroidRuntimeBridge) -> Bool {
-  android_runtime_available()
-}
-

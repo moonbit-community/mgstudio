@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/descriptor.rs`.
-// Bridge aliases for material descriptor surface.
 
 ///|
 pub type MaterialDescriptor = StandardMaterial

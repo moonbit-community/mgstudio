@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/aabb.rs`.
-// Bridge aliases for axis-aligned bounding-box gizmo inputs.
 
 ///|
 pub type GizmoAabb2d = @math.Aabb2d

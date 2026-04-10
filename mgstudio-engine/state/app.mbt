@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/app.rs`.
-// Bridge helpers for app/plugin-facing state integration.
 
 ///|
 pub type StateAppPlugin = StatesPlugin

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_transform/src/components/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/transform` runtime owner.
 
 ///|
 pub type Affine2 = @transform.Affine2

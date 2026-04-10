@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/state` runtime owner.
 
 ///|
 pub type State[S] = @state_root.State[S]

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/torus.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` runtime owner.
 
 ///|
 pub fn torus(major_radius : Float, minor_radius : Float) -> @math.Torus {

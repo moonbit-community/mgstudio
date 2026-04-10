@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/labels.rs`.
-// Bridge constants for material pipeline labels.
 
 ///|
 pub const MATERIAL_PIPELINE_LABEL : String = "bevy_material::pipeline"

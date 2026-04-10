@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/stroke_text.rs`.
-// Bridge capability for stroke-text gizmo path.
 ///|
 pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
 

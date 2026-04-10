@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
-// Package-root bridge surface now lives in `lib.mbt`.
 pub const GIZMOS_PLUGIN_ID : String = "bevy_gizmos::GizmoPlugin"
 
 ///|

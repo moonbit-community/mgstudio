@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/scene.rs`.
-// Bridge surface for scene and node metadata extracted from glTF.
 pub fn gltf_scene_extras(value : String) -> GltfSceneExtras {
   GltfSceneExtras::new(value)
 }

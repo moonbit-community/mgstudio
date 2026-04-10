@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/arrows.rs`.
-// Bridge alias for arrow builder surface.
 
 ///|
 pub type GizmoArrowBuilder = @sprite.ArrowBuilder

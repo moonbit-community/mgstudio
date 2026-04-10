@@ -14,25 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/extract.rs`.
-// Bridge extraction gate for optional DLSS runtime path.
-
-///|
-///|
-pub struct DlssExtractBridge {
-}
-
-///|
-pub fn DlssExtractBridge::default() -> DlssExtractBridge {
-  DlssExtractBridge::{  }
-}
 
 ///|
 pub fn dlss_extract_enabled() -> Bool {
   DLSS_RUNTIME_SUPPORTED
 }
-
-///|
-pub fn dlss_extract_bridge_enabled(_ : DlssExtractBridge) -> Bool {
-  dlss_extract_enabled()
-}
-

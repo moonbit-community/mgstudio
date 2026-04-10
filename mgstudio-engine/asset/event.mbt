@@ -23,8 +23,8 @@ pub(all) enum AssetEvent[T] {
 
 ///|
 pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
-  for entry in asset_event_bridge_registry.val.iter() {
-    let (_type_name, bridge) = entry
-    bridge(world)
+  for entry in asset_event_dispatch_registry.val.iter() {
+    let (_type_name, dispatch) = entry
+    dispatch(world)
   }
 }

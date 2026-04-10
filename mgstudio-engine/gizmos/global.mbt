@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/global.rs`.
-// Bridge helpers for global gizmo-group initialization.
 ///|
 pub type GizmoGlobalDefaultGroup = @sprite.DefaultGizmoConfigGroup
 

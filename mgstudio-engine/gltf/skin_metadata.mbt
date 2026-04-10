@@ -14,5 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/mesh.rs`.
-// Owner lives in `gltf/loader/gltf_ext`; root keeps a compatibility bridge.
 pub type GltfSkinIndex = @gltf_gltf_ext.GltfSkinIndex

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/bounding/bounded3d/extrusion.rs`.
-// Bridge surface for extrusion-style point-cloud bounds on top of the current
 // `Milky2018/mgstudio/math` runtime owner.
 
 ///|

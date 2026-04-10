@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/key.rs`.
-// Bridge aliases for material pipeline key surface.
 
 ///|
 pub type MaterialOpaqueRendererMethod = OpaqueRendererMethod

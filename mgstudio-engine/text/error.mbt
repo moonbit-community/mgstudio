@@ -17,22 +17,6 @@
 // The current runtime does not expose Bevy's public text error enums.
 
 ///|
-///|
-pub struct TextErrorBridge {
-}
-
-///|
-pub fn TextErrorBridge::default() -> TextErrorBridge {
-  TextErrorBridge::{  }
-}
-
-///|
 pub fn text_public_error_surface_available() -> Bool {
   true
 }
-
-///|
-pub fn text_error_bridge_enabled(_ : TextErrorBridge) -> Bool {
-  text_public_error_surface_available()
-}
-

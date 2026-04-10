@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
-// Bridge capability for material specialization path.
 ///|
 pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
 

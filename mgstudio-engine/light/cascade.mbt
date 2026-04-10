@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cascade.rs`.
-// Bridge aliases for cascade shadow configuration.
 
 ///|
 pub type CascadeConfig = CascadeShadowConfig

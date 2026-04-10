@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/computed_states.rs`.
-// Bridge helpers for computed/derived state declarations.
 
 ///|
 pub fn[S] computed_state_optional_source(

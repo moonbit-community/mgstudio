@@ -48,12 +48,12 @@ pub fn utils_runtime_type_support_available() -> Bool
 // Errors
 
 // Types and methods
-pub struct OnceCellBridge[T] {
+pub struct OnceCell[T] {
   mut value : T?
 }
-pub fn[T] OnceCellBridge::get(Self[T]) -> T?
-pub fn[T] OnceCellBridge::new() -> Self[T]
-pub fn[T] OnceCellBridge::set(Self[T], T) -> Unit
+pub fn[T] OnceCell::get(Self[T]) -> T?
+pub fn[T] OnceCell::new() -> Self[T]
+pub fn[T] OnceCell::set(Self[T], T) -> Unit
 
 // Type aliases
 pub type BloomFilterHashes = Array[Int]

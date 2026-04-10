@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_mesh/src/primitives/mod.rs`.
-// Bridge surface to current `Milky2018/mgstudio/math` and
 // `Milky2018/mgstudio/mesh` runtime owners.
 
 ///|

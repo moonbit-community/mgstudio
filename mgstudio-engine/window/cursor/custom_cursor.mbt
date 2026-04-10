@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_window/src/cursor/custom_cursor.rs`.
-// Bridge aliases to `Milky2018/mgstudio/window` cursor runtime owners.
 
 ///|
 pub fn cursor_icon_from_custom(

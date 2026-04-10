@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/simplex_stroke_font.rs`.
-// Bridge capability for simplex stroke font path.
 ///|
 pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
 

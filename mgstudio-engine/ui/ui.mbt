@@ -2481,7 +2481,6 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   let abs_dy = if delta.y < 0.0F { 0.0F - delta.y } else { delta.y }
   let mut dx = delta.x
   let mut dy = delta.y
-  // Match the host accessibility wheel bridge: when both axes are scrollable,
   // pick the dominant axis to avoid accidental horizontal drift from touchpads.
   if scrolls_x && scrolls_y {
     if abs_dy >= abs_dx {
@@ -3283,7 +3282,6 @@ pub fn ui_build_a11y_tree_update(
 }
 
 ///|
-/// Extract UI accessibility nodes and send them to the host bridge.
 pub fn ui_a11y_update_system(world : @ecs.World) -> Unit {
   let update = ui_build_a11y_tree_update(world)
   @a11y.a11y_host_apply_update(update)

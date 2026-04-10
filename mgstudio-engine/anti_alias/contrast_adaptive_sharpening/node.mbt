@@ -14,25 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/contrast_adaptive_sharpening/node.rs`.
-// Bridge node gate for optional CAS runtime path.
-
-///|
-///|
-pub struct CasNodeBridge {
-}
-
-///|
-pub fn CasNodeBridge::default() -> CasNodeBridge {
-  CasNodeBridge::{  }
-}
 
 ///|
 pub fn cas_node_enabled() -> Bool {
   CAS_RUNTIME_SUPPORTED
 }
-
-///|
-pub fn cas_node_bridge_enabled(_ : CasNodeBridge) -> Bool {
-  cas_node_enabled()
-}
-

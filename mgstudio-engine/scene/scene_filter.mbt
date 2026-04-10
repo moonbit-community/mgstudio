@@ -17,22 +17,6 @@
 // Scene filter API is gated by dynamic-scene reflection support.
 
 ///|
-///|
-pub struct SceneFilterBridge {
-  supported : Bool
-}
-
-///|
-pub fn SceneFilterBridge::default() -> SceneFilterBridge {
-  SceneFilterBridge::{ supported: DYNAMIC_SCENE_SUPPORTED }
-}
-
-///|
 pub fn scene_filter_supported() -> Bool {
   DYNAMIC_SCENE_SUPPORTED
-}
-
-///|
-pub fn scene_filter_bridge_supported(bridge : SceneFilterBridge) -> Bool {
-  bridge.supported
 }

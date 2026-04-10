@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
-// Bridge surface for the package root lives here; runtime implementation
 // remains delegated to `sprite_render` and `pbr`.
 
 ///|

@@ -10,19 +10,13 @@ import {
 // Values
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
-pub fn dlss_extract_bridge_enabled(DlssExtractBridge) -> Bool
-
 pub fn dlss_extract_enabled() -> Bool
 
 pub fn dlss_init_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn dlss_node_bridge_enabled(DlssNodeBridge) -> Bool
-
 pub fn dlss_node_enabled() -> Bool
 
 pub fn dlss_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn dlss_prepare_bridge_enabled(DlssPrepareBridge) -> Bool
 
 pub fn dlss_prepare_enabled() -> Bool
 
@@ -35,17 +29,9 @@ pub struct Dlss {
 }
 pub fn Dlss::default() -> Self
 
-pub struct DlssExtractBridge {
-}
-pub fn DlssExtractBridge::default() -> Self
-
 pub struct DlssInitPlugin {
 }
 pub fn DlssInitPlugin::default() -> Self
-
-pub struct DlssNodeBridge {
-}
-pub fn DlssNodeBridge::default() -> Self
 
 pub(all) enum DlssPerfQualityMode {
   Auto
@@ -60,10 +46,6 @@ pub fn DlssPerfQualityMode::default() -> Self
 pub struct DlssPlugin {
 }
 pub fn DlssPlugin::default() -> Self
-
-pub struct DlssPrepareBridge {
-}
-pub fn DlssPrepareBridge::default() -> Self
 
 pub struct DlssProjectId {
   value : String

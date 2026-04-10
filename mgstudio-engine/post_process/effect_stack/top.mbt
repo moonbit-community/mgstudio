@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/effect_stack/mod.rs`.
-// Bridge surface to the stable root `Milky2018/mgstudio/post_process` API.
 
 ///|
 pub using @post_process {type ChromaticAberration}

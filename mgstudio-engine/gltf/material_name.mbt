@@ -14,5 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/material.rs`.
-// Owner lives in `gltf/loader/gltf_ext`; root keeps a compatibility bridge.
 pub type GltfMaterialName = @gltf_gltf_ext.GltfMaterialName

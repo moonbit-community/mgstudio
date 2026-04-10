@@ -19,8 +19,6 @@ pub fn pathtracing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn prepare_pathtracer_accumulation_texture(@ecs.World) -> Unit
 
-pub fn solari_pathtracer_extract_bridge_enabled(SolariPathtracerExtractBridge) -> Bool
-
 // Errors
 
 // Types and methods
@@ -42,10 +40,6 @@ pub fn PathtracerPipelines::default() -> Self
 pub struct PathtracingPlugin {
 }
 pub fn PathtracingPlugin::default() -> Self
-
-pub struct SolariPathtracerExtractBridge {
-}
-pub fn SolariPathtracerExtractBridge::default() -> Self
 
 // Type aliases
 

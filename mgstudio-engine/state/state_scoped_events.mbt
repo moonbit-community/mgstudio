@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state_scoped_events.rs`.
-// Bridge helpers for state transition event lookup and registration.
 
 ///|
 pub type StateScopedTransitionSystems = StateTransitionSystems

@@ -14,18 +14,15 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/popover.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type ComputedUiTargetCamera}
 
 ///|
 pub using @ui {type UiTargetCamera}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[
   @ui.ComputedUiTargetCamera,
 ] = @ui.ecs_key_computed_ui_target_camera
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_ui_target_camera : @ecs.ComponentKey[@ui.UiTargetCamera] = @ui.ecs_key_ui_target_camera

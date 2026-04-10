@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/log.rs`.
-// Bridge surface for processor error reporting.
 pub using @asset {type AssetProcessError}
 
 ///|

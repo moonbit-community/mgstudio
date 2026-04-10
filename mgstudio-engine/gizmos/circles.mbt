@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/circles.rs`.
-// Bridge aliases for circle/arc primitive inputs.
 
 ///|
 pub type GizmoCircle = @math.Circle

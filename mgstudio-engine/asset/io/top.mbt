@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/io/mod.rs`.
-// Bridge surface to the root `asset` package implementation.
 
 ///|
 pub type AssetPath = @asset.AssetPath

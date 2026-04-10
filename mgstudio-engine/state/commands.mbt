@@ -14,26 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/commands.rs`.
-// Bridge aliases for command-level state-scoped behaviors.
 
 ///|
 pub type StateCommandDespawnOnExit = DespawnOnExit
 
 ///|
 pub type StateCommandDespawnOnEnter = DespawnOnEnter
-
-///|
-///|
-pub struct StateCommandsBridge {
-}
-
-///|
-pub fn StateCommandsBridge::default() -> StateCommandsBridge {
-  StateCommandsBridge::{  }
-}
-
-///|
-pub fn state_commands_bridge_enabled(_ : StateCommandsBridge) -> Bool {
-  true
-}
-

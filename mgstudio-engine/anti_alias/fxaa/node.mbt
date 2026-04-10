@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/fxaa/node.rs`.
-// Bridge node-level FXAA activation helper.
 
 ///|
 pub fn fxaa_node_enabled(world : @ecs.World, entity : @core.Entity) -> Bool {

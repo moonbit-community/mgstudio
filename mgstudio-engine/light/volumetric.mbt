@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/volumetric.rs`.
-// Bridge aliases for volumetric-light and fog components.
 
 ///|
 pub type VolumetricLightComponent = VolumetricLight

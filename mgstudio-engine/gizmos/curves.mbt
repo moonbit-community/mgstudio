@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/curves.rs`.
-// Bridge aliases for curve gizmo inputs.
 
 ///|
 pub type GizmoCubicCurve2d = @math.CubicCurve[@math.Vec2]

@@ -14,8 +14,8 @@
 
 ///|
 fn reset_text_ecs_test_state() -> Unit {
-  text_ecs_bridge_entries.clear()
-  ui_text_ecs_bridge_entries.clear()
+  text_ecs_entries.clear()
+  ui_text_ecs_entries.clear()
   text_runtime_world_id_ref.val = None
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
@@ -96,7 +96,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
 }
 
 ///|
-test "ecs text bridge cleanup removes dead entity entries" {
+test "ecs text cleanup removes dead entity entries" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
   let entity = world.spawn()
@@ -108,7 +108,7 @@ test "ecs text bridge cleanup removes dead entity entries" {
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
-  text_ecs_bridge_entries.push(EcsTextBridgeEntry::{
+  text_ecs_entries.push(EcsTextEntry::{
     world_id: world.world_id(),
     entity,
     handle: TextHandle::new(42),
@@ -129,11 +129,11 @@ test "ecs text bridge cleanup removes dead entity entries" {
     world, world_id, sequence, index_by_entity_id,
   )
 
-  debug_inspect(text_ecs_bridge_entries.length(), content="0")
+  debug_inspect(text_ecs_entries.length(), content="0")
 }
 
 ///|
-test "text ecs bridge registers required components for Text2d" {
+test "text ecs registers required components for Text2d" {
   let world = @ecs.World::new()
   try! register_text_required_components(world)
   let entity = world.spawn()
@@ -194,8 +194,8 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   )
 
   text_sync_ecs_system(world)
-  debug_inspect(text_ecs_bridge_entries.length(), content="1")
-  debug_inspect(text_ecs_bridge_entries[0].view_visible, content="false")
+  debug_inspect(text_ecs_entries.length(), content="1")
+  debug_inspect(text_ecs_entries[0].view_visible, content="false")
   text_render_system(world)
   debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
 
@@ -205,7 +205,7 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
     @visibility.ViewVisibility::new(true),
   )
   text_sync_ecs_system(world)
-  debug_inspect(text_ecs_bridge_entries[0].view_visible, content="true")
+  debug_inspect(text_ecs_entries[0].view_visible, content="true")
   text_render_system(world)
   debug_inspect(text_diagnostic_render_visible_text_count(), content="1")
 }
@@ -315,7 +315,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     logical_viewport_size: None,
   }
   ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
-  let entry = ui_text_ecs_bridge_entries[0]
+  let entry = ui_text_ecs_entries[0]
   let runtime_transform = @transform.Transform::from_xyz(320.0F, -180.0F, 7.0F)
   let runtime_layers = @sprite.RenderLayers::layer(11)
   text_set_transform(entry.handle, runtime_transform)

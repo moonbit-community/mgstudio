@@ -14,25 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/node.rs`.
-// Bridge node gate for optional DLSS runtime path.
-
-///|
-///|
-pub struct DlssNodeBridge {
-}
-
-///|
-pub fn DlssNodeBridge::default() -> DlssNodeBridge {
-  DlssNodeBridge::{  }
-}
 
 ///|
 pub fn dlss_node_enabled() -> Bool {
   DLSS_RUNTIME_SUPPORTED
 }
-
-///|
-pub fn dlss_node_bridge_enabled(_ : DlssNodeBridge) -> Bool {
-  dlss_node_enabled()
-}
-

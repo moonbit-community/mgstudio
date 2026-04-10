@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/mod.rs`.
-// Bridge surface to the root `picking` package mesh ray-cast runtime.
 ///|
 pub using @picking {type PickingHits}
 

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/extensions/khr_materials_clearcoat.rs`.
-// Bridge surface for the shared PBR-backed clearcoat handler.
 pub fn gltf_register_khr_materials_clearcoat_handler(
   handler : GltfExtensionHandler,
 ) -> Unit {

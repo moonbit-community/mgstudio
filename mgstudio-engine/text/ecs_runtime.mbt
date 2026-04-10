@@ -203,7 +203,7 @@ pub impl @app.Resource for FontAtlasSet with resource() {
 }
 
 ///|
-priv struct EcsTextBridgeEntry {
+priv struct EcsTextEntry {
   world_id : Int
   entity : @core.Entity
   handle : TextHandle
@@ -213,14 +213,14 @@ priv struct EcsTextBridgeEntry {
 }
 
 ///|
-let text_ecs_bridge_entries : Array[EcsTextBridgeEntry] = []
+let text_ecs_entries : Array[EcsTextEntry] = []
 
 ///|
-let text_ecs_bridge_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
+let text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
 )
 
 ///|
-priv struct UiEcsTextBridgeEntry {
+priv struct UiEcsTextEntry {
   world_id : Int
   entity : @core.Entity
   handle : TextHandle
@@ -229,10 +229,10 @@ priv struct UiEcsTextBridgeEntry {
 }
 
 ///|
-let ui_text_ecs_bridge_entries : Array[UiEcsTextBridgeEntry] = []
+let ui_text_ecs_entries : Array[UiEcsTextEntry] = []
 
 ///|
-let ui_text_ecs_bridge_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
+let ui_text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
 )
 
 ///|
@@ -253,10 +253,10 @@ fn reset_text_runtime_state() -> Unit {
   text_state.val.next_span_id = 0
   text_state_clear_instances()
   text_debug_frame_state.val.draws.clear()
-  text_ecs_bridge_entries.clear()
-  text_ecs_bridge_index_by_world_id_ref.val.clear()
-  ui_text_ecs_bridge_entries.clear()
-  ui_text_ecs_bridge_index_by_world_id_ref.val.clear()
+  text_ecs_entries.clear()
+  text_ecs_index_by_world_id_ref.val.clear()
+  ui_text_ecs_entries.clear()
+  ui_text_ecs_index_by_world_id_ref.val.clear()
   font_atlas_set_state.val = FontAtlasSet::default()
   default_text_font_handle_ref.val = None
   cosmic_font_system_state.val = CosmicFontSystemState::{
@@ -664,9 +664,9 @@ fn text_bundle_rerender_eq(lhs : Text2dBundle, rhs : Text2dBundle) -> Bool {
 
 ///|
 fn text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
-  let count = text_ecs_bridge_entries.length()
+  let count = text_ecs_entries.length()
   for i in 0..<count {
-    let entry = text_ecs_bridge_entries[i]
+    let entry = text_ecs_entries[i]
     if entry.world_id == world_id && entry.entity == entity {
       return Some(i)
     }
@@ -676,19 +676,19 @@ fn text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
 
 ///|
 fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
-  if text_ecs_bridge_index_by_world_id_ref.val.get(world_id)
+  if text_ecs_index_by_world_id_ref.val.get(world_id)
     is Some(index_by_entity_id) {
     return index_by_entity_id
   }
   let index_by_entity_id : Map[Int, Int] = {}
-  let count = text_ecs_bridge_entries.length()
+  let count = text_ecs_entries.length()
   for i in 0..<count {
-    let entry = text_ecs_bridge_entries[i]
+    let entry = text_ecs_entries[i]
     if entry.world_id == world_id {
       index_by_entity_id.set(entry.entity.id, i)
     }
   }
-  text_ecs_bridge_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
+  text_ecs_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
   index_by_entity_id
 }
 
@@ -751,9 +751,9 @@ fn text_ecs_find_entry_index_from_index(
   match index_by_entity_id.get(entity.id) {
     Some(index) =>
       if index >= 0 &&
-        index < text_ecs_bridge_entries.length() &&
-        text_ecs_bridge_entries[index].world_id == world_id &&
-        text_ecs_bridge_entries[index].entity == entity {
+        index < text_ecs_entries.length() &&
+        text_ecs_entries[index].world_id == world_id &&
+        text_ecs_entries[index].entity == entity {
         Some(index)
       } else {
         text_ecs_find_entry_index(world_id, entity)
@@ -1025,7 +1025,7 @@ fn text_ecs_spawn_entry(
     handle
   })
   text_set_view_visible(handle, view_visible)
-  text_ecs_bridge_entries.push(EcsTextBridgeEntry::{
+  text_ecs_entries.push(EcsTextEntry::{
     world_id,
     entity,
     handle,
@@ -1035,7 +1035,7 @@ fn text_ecs_spawn_entry(
   })
   text_ecs_build_entry_index_by_entity_id(world_id).set(
     entity.id,
-    text_ecs_bridge_entries.length() - 1,
+    text_ecs_entries.length() - 1,
   )
 }
 
@@ -1044,15 +1044,15 @@ fn text_ecs_remove_entry_at_index(
   index : Int,
   index_by_entity_id : Map[Int, Int],
 ) -> Unit {
-  let last_index = text_ecs_bridge_entries.length() - 1
-  let removed_entry = text_ecs_bridge_entries[index]
+  let last_index = text_ecs_entries.length() - 1
+  let removed_entry = text_ecs_entries[index]
   ignore(text_despawn(removed_entry.handle))
   if index != last_index {
-    let moved_entry = text_ecs_bridge_entries[last_index]
-    text_ecs_bridge_entries[index] = moved_entry
+    let moved_entry = text_ecs_entries[last_index]
+    text_ecs_entries[index] = moved_entry
     index_by_entity_id.set(moved_entry.entity.id, index)
   }
-  ignore(text_ecs_bridge_entries.pop())
+  ignore(text_ecs_entries.pop())
   ignore(index_by_entity_id.remove(removed_entry.entity.id))
 }
 
@@ -1093,11 +1093,11 @@ fn text_ecs_cleanup_removed_entries(
 ///|
 fn text_ecs_respawn_entry(
   world : @ecs.World,
-  entry : EcsTextBridgeEntry,
+  entry : EcsTextEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
   view_visible : Bool,
-) -> EcsTextBridgeEntry {
+) -> EcsTextEntry {
   ignore(text_despawn(entry.handle))
   sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
@@ -1108,17 +1108,17 @@ fn text_ecs_respawn_entry(
     handle
   })
   text_set_view_visible(handle, view_visible)
-  EcsTextBridgeEntry::{ ..entry, handle, bundle, view_visible, span_bundles }
+  EcsTextEntry::{ ..entry, handle, bundle, view_visible, span_bundles }
 }
 
 ///|
 fn text_ecs_sync_existing_entry(
   world : @ecs.World,
-  entry : EcsTextBridgeEntry,
+  entry : EcsTextEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
   view_visible : Bool,
-) -> EcsTextBridgeEntry {
+) -> EcsTextEntry {
   sync_text_runtime_rem_size(world)
   let handle = entry.handle
   if text_get_transform(handle) is None {
@@ -1197,7 +1197,7 @@ fn text_ecs_sync_existing_entry(
     ) {
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
-  EcsTextBridgeEntry::{ ..entry, bundle, view_visible, span_bundles }
+  EcsTextEntry::{ ..entry, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1326,7 +1326,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       span_edges, dirty_entities, has_text_dirty_entities,
     )
   }
-  if !has_text_dirty_entities.val && text_ecs_bridge_entries.length() > 0 {
+  if !has_text_dirty_entities.val && text_ecs_entries.length() > 0 {
     text_diagnostic_sync_ecs_early_return_ref.val = true
     text_diagnostic_sync_ecs_cpu_ms_ref.val = (
         @time.host_time_now() - sync_start
@@ -1365,8 +1365,8 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
     }
     match existing_index {
       Some(index) => {
-        let entry = text_ecs_bridge_entries[index]
-        text_ecs_bridge_entries[index] = text_ecs_sync_existing_entry(
+        let entry = text_ecs_entries[index]
+        text_ecs_entries[index] = text_ecs_sync_existing_entry(
           world, entry, bundle, span_bundles, view_visible,
         )
       }
@@ -1374,7 +1374,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
         text_ecs_spawn_entry(
           world, world_id, entity, bundle, span_bundles, view_visible,
         )
-        index_by_entity_id.set(entity.id, text_ecs_bridge_entries.length() - 1)
+        index_by_entity_id.set(entity.id, text_ecs_entries.length() - 1)
       }
     }
   })
@@ -1399,9 +1399,9 @@ pub fn text_diagnostic_sync_ecs_early_return() -> Bool {
 
 ///|
 fn ui_text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
-  let count = ui_text_ecs_bridge_entries.length()
+  let count = ui_text_ecs_entries.length()
   for i in 0..<count {
-    let entry = ui_text_ecs_bridge_entries[i]
+    let entry = ui_text_ecs_entries[i]
     if entry.world_id == world_id && entry.entity == entity {
       return Some(i)
     }
@@ -1411,19 +1411,19 @@ fn ui_text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
 
 ///|
 fn ui_text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
-  if ui_text_ecs_bridge_index_by_world_id_ref.val.get(world_id)
+  if ui_text_ecs_index_by_world_id_ref.val.get(world_id)
     is Some(index_by_entity_id) {
     return index_by_entity_id
   }
   let index_by_entity_id : Map[Int, Int] = {}
-  let count = ui_text_ecs_bridge_entries.length()
+  let count = ui_text_ecs_entries.length()
   for i in 0..<count {
-    let entry = ui_text_ecs_bridge_entries[i]
+    let entry = ui_text_ecs_entries[i]
     if entry.world_id == world_id {
       index_by_entity_id.set(entry.entity.id, i)
     }
   }
-  ui_text_ecs_bridge_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
+  ui_text_ecs_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
   index_by_entity_id
 }
 
@@ -1436,9 +1436,9 @@ fn ui_text_ecs_find_entry_index_from_index(
   match index_by_entity_id.get(entity.id) {
     Some(index) =>
       if index >= 0 &&
-        index < ui_text_ecs_bridge_entries.length() &&
-        ui_text_ecs_bridge_entries[index].world_id == world_id &&
-        ui_text_ecs_bridge_entries[index].entity == entity {
+        index < ui_text_ecs_entries.length() &&
+        ui_text_ecs_entries[index].world_id == world_id &&
+        ui_text_ecs_entries[index].entity == entity {
         Some(index)
       } else {
         ui_text_ecs_find_entry_index(world_id, entity)
@@ -1539,7 +1539,7 @@ fn ui_text_ecs_spawn_entry(
     }
     handle
   })
-  ui_text_ecs_bridge_entries.push(UiEcsTextBridgeEntry::{
+  ui_text_ecs_entries.push(UiEcsTextEntry::{
     world_id,
     entity,
     handle,
@@ -1548,7 +1548,7 @@ fn ui_text_ecs_spawn_entry(
   })
   ui_text_ecs_build_entry_index_by_entity_id(world_id).set(
     entity.id,
-    ui_text_ecs_bridge_entries.length() - 1,
+    ui_text_ecs_entries.length() - 1,
   )
 }
 
@@ -1557,15 +1557,15 @@ fn ui_text_ecs_remove_entry_at_index(
   index : Int,
   index_by_entity_id : Map[Int, Int],
 ) -> Unit {
-  let last_index = ui_text_ecs_bridge_entries.length() - 1
-  let removed_entry = ui_text_ecs_bridge_entries[index]
+  let last_index = ui_text_ecs_entries.length() - 1
+  let removed_entry = ui_text_ecs_entries[index]
   ignore(text_despawn(removed_entry.handle))
   if index != last_index {
-    let moved_entry = ui_text_ecs_bridge_entries[last_index]
-    ui_text_ecs_bridge_entries[index] = moved_entry
+    let moved_entry = ui_text_ecs_entries[last_index]
+    ui_text_ecs_entries[index] = moved_entry
     index_by_entity_id.set(moved_entry.entity.id, index)
   }
-  ignore(ui_text_ecs_bridge_entries.pop())
+  ignore(ui_text_ecs_entries.pop())
   ignore(index_by_entity_id.remove(removed_entry.entity.id))
 }
 
@@ -1599,10 +1599,10 @@ fn ui_text_ecs_cleanup_removed_entries(
 ///|
 fn ui_text_ecs_respawn_entry(
   world : @ecs.World,
-  entry : UiEcsTextBridgeEntry,
+  entry : UiEcsTextEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
-) -> UiEcsTextBridgeEntry {
+) -> UiEcsTextEntry {
   ignore(text_despawn(entry.handle))
   sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
@@ -1612,16 +1612,16 @@ fn ui_text_ecs_respawn_entry(
     }
     handle
   })
-  UiEcsTextBridgeEntry::{ ..entry, handle, bundle, span_bundles }
+  UiEcsTextEntry::{ ..entry, handle, bundle, span_bundles }
 }
 
 ///|
 fn ui_text_ecs_sync_existing_entry(
   world : @ecs.World,
-  entry : UiEcsTextBridgeEntry,
+  entry : UiEcsTextEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
-) -> UiEcsTextBridgeEntry {
+) -> UiEcsTextEntry {
   sync_text_runtime_rem_size(world)
   let handle = entry.handle
   if text_get_transform(handle) is None {
@@ -1668,7 +1668,7 @@ fn ui_text_ecs_sync_existing_entry(
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
   ignore(needs_layout)
-  UiEcsTextBridgeEntry::{ ..entry, bundle, span_bundles }
+  UiEcsTextEntry::{ ..entry, bundle, span_bundles }
 }
 
 ///|
@@ -1677,7 +1677,7 @@ pub fn ui_text_ecs_handle(
   entity : @core.Entity,
 ) -> TextHandle? {
   match ui_text_ecs_find_entry_index(world.world_id(), entity) {
-    Some(index) => Some(ui_text_ecs_bridge_entries[index].handle)
+    Some(index) => Some(ui_text_ecs_entries[index].handle)
     None => None
   }
 }
@@ -1770,7 +1770,7 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
       span_edges, dirty_entities, has_text_dirty_entities,
     )
   }
-  if !has_text_dirty_entities.val && ui_text_ecs_bridge_entries.length() > 0 {
+  if !has_text_dirty_entities.val && ui_text_ecs_entries.length() > 0 {
     return
   }
   let query : @ecs.Query[@ecs.Comp[Text], @ecs.All] = @ecs.query(world)
@@ -1788,8 +1788,8 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
     )
     match existing_index {
       Some(index) => {
-        let entry = ui_text_ecs_bridge_entries[index]
-        ui_text_ecs_bridge_entries[index] = ui_text_ecs_sync_existing_entry(
+        let entry = ui_text_ecs_entries[index]
+        ui_text_ecs_entries[index] = ui_text_ecs_sync_existing_entry(
           world, entry, bundle, span_bundles,
         )
       }
@@ -1797,7 +1797,7 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
         ui_text_ecs_spawn_entry(world, world_id, entity, bundle, span_bundles)
         index_by_entity_id.set(
           entity.id,
-          ui_text_ecs_bridge_entries.length() - 1,
+          ui_text_ecs_entries.length() - 1,
         )
       }
     }

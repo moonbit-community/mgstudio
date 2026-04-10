@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/arcs.rs`.
-// Bridge alias for arc builder surface.
 
 ///|
 pub type GizmoArc2dBuilder = @sprite.Arc2dBuilder

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/fxaa/mod.rs`.
-// Bridge aliases for FXAA surface.
 
 ///|
 pub type Fxaa = @anti_alias.Fxaa

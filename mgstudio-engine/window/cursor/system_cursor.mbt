@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_window/src/cursor/system_cursor.rs`.
-// Bridge surface to current `Milky2018/mgstudio/window` runtime owner.
 
 ///|
 pub type SystemCursorIcon = @window.SystemCursorIcon

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_scene/src/serde.rs`.
-// Bridge helpers for scene handle JSON serde surface.
 
 ///|
 pub fn scene_root_to_json(root : SceneRoot) -> Json {

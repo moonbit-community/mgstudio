@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/mod.rs`.
-// Bridge surface to the root `picking` package implementation.
 pub using @picking {type PickingHits}
 
 ///|

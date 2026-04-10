@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "CustomPostProcess3d", "Mesh3d", "Skybox", "Camera3d",
   "Exposure", "Vignette", "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur",
@@ -30,7 +29,6 @@ pub let ecs_components : Array[String] = [
 ]
 
 ///|
-/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "WireframeConfig", "GlobalAmbientLight", "PointLightShadowMap", "DirectionalLightShadowMap",
   "DefaultOpaqueRendererMethod",

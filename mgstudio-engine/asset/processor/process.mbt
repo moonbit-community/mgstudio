@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/processor/process.rs`.
-// Bridge surface for processor registration and execution.
 pub using @asset {type ProcessedAsset}
 
 ///|

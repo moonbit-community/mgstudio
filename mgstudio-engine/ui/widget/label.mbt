@@ -14,25 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/label.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type Label}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_label : @ecs.ComponentKey[@ui.Label] = @ui.ecs_key_label
-
-///|
-///|
-pub struct UiWidgetLabelBridge {
-}
-
-///|
-pub fn UiWidgetLabelBridge::default() -> UiWidgetLabelBridge {
-  UiWidgetLabelBridge::{  }
-}
-
-///|
-pub fn ui_widget_label_bridge_enabled(_ : UiWidgetLabelBridge) -> Bool {
-  true
-}
-

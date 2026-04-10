@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state_scoped.rs`.
-// Bridge aliases and helpers for state-scoped entity workflows.
 
 ///|
 pub type StateScopedDespawnOnExit = DespawnOnExit

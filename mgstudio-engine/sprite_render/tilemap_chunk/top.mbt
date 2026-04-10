@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/mod.rs`.
-// Bridge surface to the root `sprite_render` package implementation.
 pub fn render2d_draw_tilemap_chunk(
   world : @ecs.World,
   chunk : @sprite_render.TilemapChunk,

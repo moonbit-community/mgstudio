@@ -14,7 +14,6 @@
 
 ///|
 /// UI-widgets API boundary aligned with Bevy crate responsibilities.
-/// Keep the boundary file as an explicit package-entry bridge.
 pub const UI_WIDGETS_PLUGIN_ID : String = "bevy_ui_widgets::UiWidgetsPlugin"
 
 ///|

@@ -15,25 +15,8 @@
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/lib.rs`.
 //
-// File-level bridge capability marker aligned to current mgstudio runtime ownership.
-
-///|
-///|
-pub struct LightRuntimeBridge {
-}
-
-///|
-pub fn LightRuntimeBridge::default() -> LightRuntimeBridge {
-  LightRuntimeBridge::{  }
-}
 
 ///|
 pub fn light_module_anchor_enabled() -> Bool {
   true
 }
-
-///|
-pub fn light_runtime_bridge_enabled(_ : LightRuntimeBridge) -> Bool {
-  light_module_anchor_enabled()
-}
-

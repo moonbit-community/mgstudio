@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/taa/mod.rs`.
-// Bridge aliases for temporal anti-aliasing surface.
 
 ///|
 pub type TemporalAntiAliasing = @anti_alias.TemporalAntiAliasing

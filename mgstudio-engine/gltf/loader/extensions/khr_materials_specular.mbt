@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/loader/extensions/khr_materials_specular.rs`.
-// Bridge surface for the shared PBR-backed specular handler.
 pub fn gltf_register_khr_materials_specular_handler(
   handler : GltfExtensionHandler,
 ) -> Unit {

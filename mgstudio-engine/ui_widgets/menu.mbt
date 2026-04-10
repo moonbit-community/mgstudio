@@ -14,11 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/menu.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type AccessibilityLabel}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel] = @ui.ecs_key_accessibility_label
 
 ///|

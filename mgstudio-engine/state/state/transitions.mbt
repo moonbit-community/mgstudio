@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/transitions.rs`.
-// Bridge aliases and helpers for state transition events.
 
 ///|
 pub type StateTransitionsEvent[S] = @state_root.StateTransitionEvent[S]

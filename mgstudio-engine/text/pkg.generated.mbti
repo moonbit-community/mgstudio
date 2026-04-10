@@ -114,15 +114,11 @@ pub fn text_diagnostic_update_cpu_ms() -> Float
 
 pub fn text_diagnostic_update_pending_layout_count() -> Int
 
-pub fn text_error_bridge_enabled(TextErrorBridge) -> Bool
-
 pub fn text_font_context() -> FontCx
 
 pub fn text_font_family_names(FontCx) -> Array[String]
 
 pub fn text_font_loader_available() -> Bool
-
-pub fn text_font_loader_bridge_enabled(TextFontLoaderBridge) -> Bool
 
 pub fn text_font_source_from_asset(@asset.Handle[@asset.Font]) -> FontSource
 
@@ -639,10 +635,6 @@ pub struct TextEntity {
   font_smoothing : FontSmoothing
 }
 
-pub struct TextErrorBridge {
-}
-pub fn TextErrorBridge::default() -> Self
-
 pub(all) struct TextFont {
   mut font : FontSource
   mut font_size : FontSize
@@ -663,10 +655,6 @@ pub fn TextFont::with_style(Self, FontStyle) -> Self
 pub fn TextFont::with_weight(Self, FontWeight) -> Self
 pub fn TextFont::with_width(Self, FontWidth) -> Self
 pub impl @ecs.Component for TextFont
-
-pub struct TextFontLoaderBridge {
-}
-pub fn TextFontLoaderBridge::default() -> Self
 
 pub struct TextHandle {
   id : Int

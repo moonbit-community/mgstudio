@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/auto_exposure/mod.rs`.
-// Bridge surface to the existing `@pbr` auto exposure runtime.
 
 ///|
 pub type AutoExposure = @pbr.AutoExposure

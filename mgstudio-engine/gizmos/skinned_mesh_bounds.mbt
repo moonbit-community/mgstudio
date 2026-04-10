@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/skinned_mesh_bounds.rs`.
-// Bridge capability for skinned-mesh-bound debug gizmos.
 ///|
 pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
 

@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/dof/mod.rs`.
-// Bridge surface to the existing `@pbr` depth-of-field runtime.
 
 ///|
 pub type DepthOfField = @pbr.DepthOfField

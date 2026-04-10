@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/layout/ui_surface.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type ContentSize}
 
 ///|
@@ -24,43 +23,35 @@ pub using @ui {type ScrollPosition}
 pub using @ui {type UiLayout}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize] = @ui.ecs_key_content_size
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition] = @ui.ecs_key_scroll_position
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout] = @ui.ecs_key_ui_layout
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_layout_system(world : @ecs.World) -> Unit {
   @ui.ui_layout_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   @ui.ui_image_content_size_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   @ui.ui_clip_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   @ui.ui_scroll_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
   @ui.ui_stack_system(world)
 }

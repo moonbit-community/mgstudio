@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/assign.rs`.
-// Bridge entrypoint for clustered-light assignment stage.
 
 ///|
 pub fn cluster_assign_lights(

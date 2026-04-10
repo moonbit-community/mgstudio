@@ -6,14 +6,9 @@ pub fn android_app_available() -> Bool
 
 pub fn android_runtime_available() -> Bool
 
-pub fn android_runtime_bridge_available(AndroidRuntimeBridge) -> Bool
-
 // Errors
 
 // Types and methods
-pub struct AndroidRuntimeBridge {
-}
-pub fn AndroidRuntimeBridge::default() -> Self
 
 // Type aliases
 

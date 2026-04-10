@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/condition.rs`.
-// Bridge helpers for schedule run-condition authoring.
 
 ///|
 pub fn[S : @app.States] state_condition_in_state(

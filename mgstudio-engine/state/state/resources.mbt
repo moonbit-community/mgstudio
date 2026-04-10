@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_state/src/state/resources.rs`.
-// Bridge aliases and key lookup helpers for state resources.
 
 ///|
 pub type StateResource[S] = @state_root.State[S]

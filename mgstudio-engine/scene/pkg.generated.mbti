@@ -20,8 +20,6 @@ pub const DYNAMIC_SCENE_SUPPORTED : Bool = false
 
 pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
 
-pub fn dynamic_scene_builder_bridge_supported(DynamicSceneBuilderBridge) -> Bool
-
 pub fn dynamic_scene_builder_supported() -> Bool
 
 pub fn dynamic_scene_supported() -> Bool
@@ -32,11 +30,7 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
-pub fn scene_components_bridge_enabled(SceneComponentsBridge) -> Bool
-
 pub fn scene_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn scene_filter_bridge_supported(SceneFilterBridge) -> Bool
 
 pub fn scene_filter_supported() -> Bool
 
@@ -53,8 +47,6 @@ pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Hand
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
 pub fn[W] scene_load_pending_system(W) -> Unit
-
-pub fn scene_loader_bridge_enabled(SceneLoaderBridge) -> Bool
 
 pub fn scene_loader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -84,16 +76,9 @@ pub fn scene_spawn_roots_system(@ecs.World) -> Unit
 
 pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 
-pub fn scene_spawner_bridge_enabled(SceneSpawnerBridge) -> Bool
-
 // Errors
 
 // Types and methods
-pub struct DynamicSceneBuilderBridge {
-  supported : Bool
-}
-pub fn DynamicSceneBuilderBridge::default() -> Self
-
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
   default_scene : @asset.Handle[Scene]?
@@ -123,15 +108,6 @@ pub struct Scene {
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
 
-pub struct SceneComponentsBridge {
-}
-pub fn SceneComponentsBridge::default() -> Self
-
-pub struct SceneFilterBridge {
-  supported : Bool
-}
-pub fn SceneFilterBridge::default() -> Self
-
 #alias(SceneComponentInstance)
 #alias(SceneSpawnerInstance)
 pub struct SceneInstance {
@@ -151,10 +127,6 @@ pub fn SceneInstanceReady::new(Int, Int) -> Self
 pub impl @ecs.Component for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
-
-pub struct SceneLoaderBridge {
-}
-pub fn SceneLoaderBridge::default() -> Self
 
 #alias(SceneComponentNode3d)
 pub struct SceneNode3d {
@@ -195,10 +167,6 @@ pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
 pub impl @ecs.Component for SceneRoot
 pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
-
-pub struct SceneSpawnerBridge {
-}
-pub fn SceneSpawnerBridge::default() -> Self
 
 // Type aliases
 

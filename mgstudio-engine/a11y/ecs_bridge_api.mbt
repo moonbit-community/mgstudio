@@ -13,17 +13,14 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
 pub let ecs_components : Array[String] = ["AccessibilityNode"]
 
 ///|
-/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "AccessibilityRequested", "ManageAccessibilityUpdates", "A11yState",
 ]
 
 ///|
-/// ECS message bridge types.
 pub let ecs_messages : Array[String] = ["ActionRequest"]
 
 ///|

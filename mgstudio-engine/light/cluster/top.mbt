@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/cluster/mod.rs`.
-// Bridge surface for clustered-lighting module topology.
 
 ///|
 pub type ClusterPointLight = @light.PointLight

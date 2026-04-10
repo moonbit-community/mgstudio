@@ -13,11 +13,9 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
 pub let ecs_components : Array[String] = []
 
 ///|
-/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "PickingHits", "PickingState", "PointerInputs",
 ]

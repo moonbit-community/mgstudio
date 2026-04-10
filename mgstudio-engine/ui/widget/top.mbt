@@ -14,25 +14,20 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/widget/mod.rs`.
-// Bridge surface to the root `ui_widgets` package implementation.
 pub using @ui_widgets {type Interaction}
 
 ///|
-// Bridge surface to the root `ui_widgets` package implementation.
 pub let ecs_key_interaction : @ecs.ComponentKey[@ui_widgets.Interaction] = @ui_widgets.ecs_key_interaction
 
 ///|
-// Bridge surface to the root `ui_widgets` package implementation.
 pub let ui_widgets_set_interaction : @app.SystemSet = @ui_widgets.ui_widgets_set_interaction
 
 ///|
-// Bridge surface to the root `ui_widgets` package implementation.
 pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   @ui_widgets.ui_interaction_system(world)
 }
 
 ///|
-// Bridge surface to the root `ui_widgets` package implementation.
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @ui_widgets.ui_widgets_plugin(app)
 }

@@ -14,11 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/experimental/mod.rs`.
-// Bridge surface to the root `ui` package implementation.
 pub using @ui {type GhostNode}
 
 ///|
-// Bridge surface to the root `ui` package implementation.
 pub let ecs_key_ghost_node : @ecs.ComponentKey[@ui.GhostNode] = @ui.ecs_key_ghost_node
 
 ///|

@@ -14,25 +14,8 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_anti_alias/src/dlss/prepare.rs`.
-// Bridge preparation gate for optional DLSS runtime path.
-
-///|
-///|
-pub struct DlssPrepareBridge {
-}
-
-///|
-pub fn DlssPrepareBridge::default() -> DlssPrepareBridge {
-  DlssPrepareBridge::{  }
-}
 
 ///|
 pub fn dlss_prepare_enabled() -> Bool {
   DLSS_RUNTIME_SUPPORTED
 }
-
-///|
-pub fn dlss_prepare_bridge_enabled(_ : DlssPrepareBridge) -> Bool {
-  dlss_prepare_enabled()
-}
-
