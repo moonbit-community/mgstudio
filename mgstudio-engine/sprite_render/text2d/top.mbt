@@ -27,7 +27,7 @@ pub let text_set_render_transparent_2d : @app.SystemSet = @text.text_set_render_
 
 ///|
 pub fn text_runtime_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @text.text_runtime_plugin(app)
+  @text.text_plugin(app)
 }
 
 ///|

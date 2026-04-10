@@ -24,31 +24,6 @@ pub fn color_gray(lightness : Float) -> Color {
 }
 
 ///|
-pub fn color_from_hsla(hsla : Hsla) -> Color {
-  hsla.to_color()
-}
-
-///|
-pub fn color_from_hsva(hsva : Hsva) -> Color {
-  hsva.to_color()
-}
-
-///|
-pub fn color_from_hwba(hwba : Hwba) -> Color {
-  hwba.to_color()
-}
-
-///|
-pub fn color_from_linear_rgba(color : LinearRgba) -> Color {
-  linear_rgba_to_color(color)
-}
-
-///|
-pub fn color_range(start : Color, end_ : Color) -> ColorRange {
-  ColorRange::new(start, end_)
-}
-
-///|
 pub fn color_gradient(
   colors : Array[Color],
 ) -> ColorGradient raise ColorGradientError {

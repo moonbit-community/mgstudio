@@ -20,13 +20,6 @@
 pub const POST_PROCESS_RUNTIME_ROOT : String = "Milky2018/mgstudio/post_process"
 
 ///|
-pub fn post_process_feature_names() -> Array[String] {
-  [
-    "auto_exposure", "bloom", "dof", "effect_stack", "motion_blur", "msaa_writeback",
-  ]
-}
-
-///|
 pub fn post_process_effect_count(
   bloom : Bloom?,
   vignette : Vignette?,
@@ -52,18 +45,4 @@ pub fn post_process_effect_count(
     None => ()
   }
   count
-}
-
-///|
-pub fn post_process_has_effects(
-  bloom : Bloom?,
-  vignette : Vignette?,
-  motion_blur : MotionBlur?,
-  chromatic_aberration : ChromaticAberration?,
-  msaa_writeback : MsaaWriteback?,
-) -> Bool {
-  post_process_effect_count(
-    bloom, vignette, motion_blur, chromatic_aberration, msaa_writeback,
-  ) >
-  0
 }

@@ -13,17 +13,9 @@
 // limitations under the License.
 
 ///|
-pub const TASKS_BACKEND : String = "single_threaded"
-
-///|
 pub using @iter {type ParallelIterator}
 
 ///|
 pub fn available_parallelism() -> Int {
   1
-}
-
-///|
-pub fn[T] block_on(value : T) -> T {
-  value
 }

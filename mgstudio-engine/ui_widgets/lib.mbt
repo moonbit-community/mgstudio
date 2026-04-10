@@ -20,8 +20,3 @@
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @ui.ui_plugin(app)
 }
-
-///|
-pub fn ui_widgets_runtime_available() -> Bool {
-  true
-}

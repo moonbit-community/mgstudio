@@ -102,13 +102,6 @@ pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]] {
 }
 
 ///|
-pub fn[T : Default] time_resource_key_of(
-  _context : T,
-) -> @ecs.ResourceKey[Time[T]] {
-  registered_time_resource_key()
-}
-
-///|
 pub impl[T : Default] @app.Resource for Time[T] with resource() {
   registered_time_resource_key()
 }
