@@ -29,7 +29,7 @@ pub fn TabIndex::value(self : TabIndex) -> Int {
 
 ///|
 let tab_index_component_key : @ecs.ComponentKey[TabIndex] = @ecs.register_component(
-  debug_name="bevy_input_focus::tab_navigation::TabIndex",
+  debug_name="mgstudio_input_focus::tab_navigation::TabIndex",
 )
 
 ///|
@@ -65,7 +65,7 @@ pub fn TabGroup::order(self : TabGroup) -> Int {
 
 ///|
 let tab_group_component_key : @ecs.ComponentKey[TabGroup] = @ecs.register_component(
-  debug_name="bevy_input_focus::tab_navigation::TabGroup",
+  debug_name="mgstudio_input_focus::tab_navigation::TabGroup",
 )
 
 ///|

@@ -83,7 +83,7 @@ pub struct DlssRayReconstructionSupported {} derive(Default, Eq, Debug)
 
 ///|
 let dlss_project_id_resource_key : @ecs.ResourceKey[DlssProjectId] = @ecs.register_resource(
-  debug_name="bevy_anti_alias::DlssProjectId",
+  debug_name="mgstudio_anti_alias::DlssProjectId",
 )
 
 ///|

@@ -14,57 +14,57 @@
 
 ///|
 pub let ecs_key_entity_iid : @ecs.ComponentKey[EntityIid] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.entity_iid",
+  debug_name="mgstudio_ecs_ldtk.entity_iid",
 )
 
 ///|
 pub let ecs_key_level_iid : @ecs.ComponentKey[LevelIid] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.level_iid",
+  debug_name="mgstudio_ecs_ldtk.level_iid",
 )
 
 ///|
 pub let ecs_key_level_set : @ecs.ComponentKey[LevelSet] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.level_set",
+  debug_name="mgstudio_ecs_ldtk.level_set",
 )
 
 ///|
 pub let ecs_key_int_grid_cell : @ecs.ComponentKey[IntGridCell] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.int_grid_cell",
+  debug_name="mgstudio_ecs_ldtk.int_grid_cell",
 )
 
 ///|
 pub let ecs_key_worldly : @ecs.ComponentKey[Worldly] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.worldly",
+  debug_name="mgstudio_ecs_ldtk.worldly",
 )
 
 ///|
 pub let ecs_key_grid_coords : @ecs.ComponentKey[GridCoords] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.grid_coords",
+  debug_name="mgstudio_ecs_ldtk.grid_coords",
 )
 
 ///|
 pub let ecs_key_tile_metadata : @ecs.ComponentKey[TileMetadata] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.tile_metadata",
+  debug_name="mgstudio_ecs_ldtk.tile_metadata",
 )
 
 ///|
 pub let ecs_key_tile_enum_tags : @ecs.ComponentKey[TileEnumTags] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.tile_enum_tags",
+  debug_name="mgstudio_ecs_ldtk.tile_enum_tags",
 )
 
 ///|
 pub let ecs_key_layer_metadata : @ecs.ComponentKey[LayerMetadata] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.layer_metadata",
+  debug_name="mgstudio_ecs_ldtk.layer_metadata",
 )
 
 ///|
 pub let ecs_key_respawn : @ecs.ComponentKey[Respawn] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.respawn",
+  debug_name="mgstudio_ecs_ldtk.respawn",
 )
 
 ///|
 pub let ecs_key_ldtk_project_handle : @ecs.ComponentKey[LdtkProjectHandle] = @ecs.register_component(
-  debug_name="bevy_ecs_ldtk.ldtk_project_handle",
+  debug_name="mgstudio_ecs_ldtk.ldtk_project_handle",
 )
 
 ///|

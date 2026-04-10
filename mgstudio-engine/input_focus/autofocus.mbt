@@ -20,7 +20,7 @@ pub struct AutoFocus {} derive(Default, Debug)
 
 ///|
 let auto_focus_component_key : @ecs.ComponentKey[AutoFocus] = @ecs.register_component(
-  debug_name="bevy_input_focus::AutoFocus",
+  debug_name="mgstudio_input_focus::AutoFocus",
 )
 
 ///|

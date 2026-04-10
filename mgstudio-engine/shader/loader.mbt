@@ -94,7 +94,7 @@ fn ShaderAssetPaths::remove(
 
 ///|
 let shader_asset_paths_resource_key : @ecs.ResourceKey[ShaderAssetPaths] = @ecs.register_resource(
-  debug_name="bevy_shader::ShaderAssetPaths",
+  debug_name="mgstudio_shader::ShaderAssetPaths",
 )
 
 ///|

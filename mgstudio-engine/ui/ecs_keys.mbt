@@ -306,3 +306,36 @@ pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack] = @ecs.register_resource(
 pub let ecs_key_ui_context : @ecs.ResourceKey[UiContext] = @ecs.register_resource(
   debug_name="ui.ui_context",
 )
+
+///|
+pub let ecs_components : Array[String] = [
+  "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiTargetCamera", "ComputedUiTargetCamera",
+  "ComputedUiRenderTargetInfo", "ZIndex", "Outline", "UiImage", "UiLayout", "BoxShadow",
+  "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "BorderRadius",
+  "ButtonColors", "GlobalZIndex", "ImageNodeSize", "CalculatedClip", "ScrollPosition",
+  "BackgroundColor", "AccessibilityLabel", "RelativeCursorPosition",
+]
+
+///|
+pub let ecs_resources : Array[String] = ["UiScale", "UiStack", "UiContext"]
+
+///|
+pub fn get_ui_scale_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[UiScale] {
+  world.resource(ecs_key_ui_scale)
+}
+
+///|
+pub fn get_ui_stack_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[UiStack] {
+  world.resource(ecs_key_ui_stack)
+}
+
+///|
+pub fn get_ui_context_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[UiContext] {
+  world.resource(ecs_key_ui_context)
+}

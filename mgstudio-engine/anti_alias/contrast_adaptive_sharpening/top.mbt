@@ -66,17 +66,17 @@ pub fn CasUniform::default() -> CasUniform {
 let ecs_key_contrast_adaptive_sharpening : @ecs.ComponentKey[
   ContrastAdaptiveSharpening,
 ] = @ecs.register_component(
-  debug_name="bevy_anti_alias::ContrastAdaptiveSharpening",
+  debug_name="mgstudio_anti_alias::ContrastAdaptiveSharpening",
 )
 
 ///|
 let ecs_key_denoise_cas : @ecs.ComponentKey[DenoiseCas] = @ecs.register_component(
-  debug_name="bevy_anti_alias::DenoiseCas",
+  debug_name="mgstudio_anti_alias::DenoiseCas",
 )
 
 ///|
 let ecs_key_cas_uniform : @ecs.ComponentKey[CasUniform] = @ecs.register_component(
-  debug_name="bevy_anti_alias::CasUniform",
+  debug_name="mgstudio_anti_alias::CasUniform",
 )
 
 ///|

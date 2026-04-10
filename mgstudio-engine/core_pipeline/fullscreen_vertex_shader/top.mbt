@@ -46,7 +46,7 @@ pub fn FullscreenShader::new(
 
 ///|
 pub let ecs_key_fullscreen_shader : @ecs.ResourceKey[FullscreenShader] = @ecs.register_resource(
-  debug_name="bevy_core_pipeline::fullscreen_vertex_shader::FullscreenShader",
+  debug_name="mgstudio_core_pipeline::fullscreen_vertex_shader::FullscreenShader",
 )
 
 ///|

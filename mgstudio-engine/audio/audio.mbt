@@ -224,7 +224,7 @@ fn[T] audio_resource_ensure_ref_mut(
 
 ///|
 let default_spatial_scale_resource_key : @ecs.ResourceKey[DefaultSpatialScale] = @ecs.register_resource(
-  debug_name="bevy_audio::DefaultSpatialScale",
+  debug_name="mgstudio_audio::DefaultSpatialScale",
 )
 
 ///|

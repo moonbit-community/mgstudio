@@ -55,7 +55,7 @@ pub fn SubCameraView3d::with_offset(
 
 ///|
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.register_component(
-  debug_name="bevy_core_pipeline::core_3d::SubCameraView",
+  debug_name="mgstudio_core_pipeline::core_3d::SubCameraView",
 )
 
 ///|

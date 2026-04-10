@@ -271,7 +271,7 @@ priv struct MessageRegistryState {
 
 ///|
 fn message_registry_resource_key() -> ResourceKey[MessageRegistryState] {
-  register_resource(debug_name="bevy_ecs::message::MessageRegistry")
+  register_resource(debug_name="mgstudio_ecs::message::MessageRegistry")
 }
 
 ///|
@@ -368,7 +368,7 @@ pub fn World::update_messages(self : World) -> Unit {
   for id in registry.ids {
     let key : ResourceKey[Messages[Unit]] = resource_key_from_id(
       id,
-      debug_name="bevy_ecs::message::Messages",
+      debug_name="mgstudio_ecs::message::Messages",
     )
     let access = self.resource(key)
     guard access.get() is Some(queue) else { continue }

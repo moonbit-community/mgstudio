@@ -55,7 +55,7 @@ pub struct SystemInfo {
 
 ///|
 let system_info_resource_key : @ecs.ResourceKey[SystemInfo] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::SystemInfo",
+  debug_name="mgstudio_diagnostic::SystemInfo",
 )
 
 ///|
@@ -70,7 +70,7 @@ priv struct SystemInformationDiagnosticsPluginMarker {}
 let system_information_diagnostics_plugin_marker_key : @ecs.ResourceKey[
   SystemInformationDiagnosticsPluginMarker,
 ] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::SystemInformationDiagnosticsPluginMarker",
+  debug_name="mgstudio_diagnostic::SystemInformationDiagnosticsPluginMarker",
 )
 
 ///|
@@ -88,7 +88,7 @@ priv struct SysinfoRefreshState {
 
 ///|
 let sysinfo_refresh_state_resource_key : @ecs.ResourceKey[SysinfoRefreshState] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::SysinfoRefreshState",
+  debug_name="mgstudio_diagnostic::SysinfoRefreshState",
 )
 
 ///|

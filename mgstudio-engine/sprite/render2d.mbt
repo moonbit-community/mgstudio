@@ -395,7 +395,7 @@ fn clear_color_default_value() -> Color {
 
 ///|
 let clear_color_resource_key : @ecs.ResourceKey[ClearColor] = @ecs.register_resource(
-  debug_name="bevy_render::ClearColor",
+  debug_name="mgstudio_render::ClearColor",
 )
 
 ///|

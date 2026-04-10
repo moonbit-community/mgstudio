@@ -479,17 +479,17 @@ pub fn WindowPlugin::default() -> WindowPlugin {
 
 ///|
 pub let ecs_key_window : @ecs.ComponentKey[Window] = @ecs.register_component(
-  debug_name="bevy_window::Window",
+  debug_name="mgstudio_window::Window",
 )
 
 ///|
 pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow] = @ecs.register_component(
-  debug_name="bevy_window::PrimaryWindow",
+  debug_name="mgstudio_window::PrimaryWindow",
 )
 
 ///|
 pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow] = @ecs.register_component(
-  debug_name="bevy_window::ClosingWindow",
+  debug_name="mgstudio_window::ClosingWindow",
 )
 
 ///|

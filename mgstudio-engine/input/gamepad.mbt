@@ -1287,7 +1287,7 @@ impl Default for RunningRumbleEffects with default() {
 
 ///|
 let running_rumble_effects_resource_key : @ecs.ResourceKey[RunningRumbleEffects] = @ecs.register_resource(
-  debug_name="bevy_input::RunningRumbleEffects",
+  debug_name="mgstudio_input::RunningRumbleEffects",
 )
 
 ///|

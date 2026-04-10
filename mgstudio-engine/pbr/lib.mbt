@@ -91,13 +91,13 @@ priv struct PbrPluginMarker {}
 
 ///|
 let ecs_key_pbr_plugin_marker : @ecs.ResourceKey[PbrPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_pbr::PbrPluginMarker",
+  debug_name="mgstudio_pbr::PbrPluginMarker",
 )
 
 ///|
 pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[
   PbrPluginRuntimeConfig,
-] = @ecs.register_resource(debug_name="bevy_pbr::PbrPluginRuntimeConfig")
+] = @ecs.register_resource(debug_name="mgstudio_pbr::PbrPluginRuntimeConfig")
 
 ///|
 fn init_wireframe_resources(world : @ecs.World) -> Unit {
@@ -118,7 +118,7 @@ pub struct FogPluginState {}
 
 ///|
 pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState] = @ecs.register_resource(
-  debug_name="bevy_pbr::FogPluginState",
+  debug_name="mgstudio_pbr::FogPluginState",
 )
 
 ///|

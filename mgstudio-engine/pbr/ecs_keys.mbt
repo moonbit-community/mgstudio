@@ -370,3 +370,60 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(
   debug_name="render3d.internal_assets",
 )
+
+///|
+pub let ecs_components : Array[String] = [
+  "Hdr", "Fxaa", "Msaa", "Bloom", "CustomPostProcess3d", "Mesh3d", "Skybox", "Camera3d",
+  "Exposure", "Vignette", "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur",
+  "PointLight", "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass",
+  "ForwardDecal", "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d",
+  "Lightmap", "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState",
+  "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
+  "NoIndirectDrawing", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
+  "Projection", "Frustum", "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight",
+  "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections",
+  "DirectionalLightTexture", "ForwardDecalMaterialExt", "ScreenSpaceTransmission",
+  "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
+  "OrderIndependentTransparencySettings",
+]
+
+///|
+pub let ecs_resources : Array[String] = [
+  "WireframeConfig", "GlobalAmbientLight", "PointLightShadowMap", "DirectionalLightShadowMap",
+  "DefaultOpaqueRendererMethod",
+]
+
+///|
+pub fn get_wireframe_config_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[WireframeConfig] {
+  world.resource(ecs_key_wireframe_config)
+}
+
+///|
+pub fn get_global_ambient_light_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[GlobalAmbientLight] {
+  @light.get_global_ambient_light_resource(world)
+}
+
+///|
+pub fn get_point_light_shadow_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PointLightShadowMap] {
+  @light.get_point_light_shadow_map_resource(world)
+}
+
+///|
+pub fn get_directional_light_shadow_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[DirectionalLightShadowMap] {
+  @light.get_directional_light_shadow_map_resource(world)
+}
+
+///|
+pub fn get_default_opaque_renderer_method_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod] {
+  @material.get_default_opaque_renderer_method_resource(world)
+}

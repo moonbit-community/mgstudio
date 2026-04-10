@@ -261,7 +261,7 @@ pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[
   StaticTransformOptimizations,
 ] {
   @ecs.register_resource(
-    debug_name="bevy_transform::StaticTransformOptimizations",
+    debug_name="mgstudio_transform::StaticTransformOptimizations",
   )
 }
 

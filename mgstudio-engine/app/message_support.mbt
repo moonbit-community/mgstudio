@@ -17,7 +17,7 @@ priv struct MessageUpdateMarker {}
 
 ///|
 fn message_update_marker_key() -> @ecs.ResourceKey[MessageUpdateMarker] {
-  @ecs.register_resource(debug_name="bevy_app::MessageUpdateMarker")
+  @ecs.register_resource(debug_name="mgstudio_app::MessageUpdateMarker")
 }
 
 ///|

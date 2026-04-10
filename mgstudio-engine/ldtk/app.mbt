@@ -53,12 +53,12 @@ pub fn LdtkIntCellMap::default() -> LdtkIntCellMap {
 
 ///|
 let ldtk_entity_map_key : @ecs.ResourceKey[LdtkEntityMap] = @ecs.register_resource(
-  debug_name="bevy_ecs_ldtk.LdtkEntityMap",
+  debug_name="mgstudio_ecs_ldtk.LdtkEntityMap",
 )
 
 ///|
 let ldtk_int_cell_map_key : @ecs.ResourceKey[LdtkIntCellMap] = @ecs.register_resource(
-  debug_name="bevy_ecs_ldtk.LdtkIntCellMap",
+  debug_name="mgstudio_ecs_ldtk.LdtkIntCellMap",
 )
 
 ///|

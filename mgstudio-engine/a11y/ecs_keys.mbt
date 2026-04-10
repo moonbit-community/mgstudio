@@ -25,18 +25,18 @@ pub let ecs_messages : Array[String] = ["ActionRequest"]
 
 ///|
 pub let ecs_key_accessibility_node : @ecs.ComponentKey[AccessibilityNode] = @ecs.register_component(
-  debug_name="bevy_a11y::AccessibilityNode",
+  debug_name="mgstudio_a11y::AccessibilityNode",
 )
 
 ///|
 pub let ecs_res_key_accessibility_requested : @ecs.ResourceKey[
   AccessibilityRequested,
-] = @ecs.register_resource(debug_name="bevy_a11y::AccessibilityRequested")
+] = @ecs.register_resource(debug_name="mgstudio_a11y::AccessibilityRequested")
 
 ///|
 pub let ecs_res_key_manage_accessibility_updates : @ecs.ResourceKey[
   ManageAccessibilityUpdates,
-] = @ecs.register_resource(debug_name="bevy_a11y::ManageAccessibilityUpdates")
+] = @ecs.register_resource(debug_name="mgstudio_a11y::ManageAccessibilityUpdates")
 
 ///|
 pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState] = @ecs.register_resource(
@@ -45,7 +45,7 @@ pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState] = @ecs.register_res
 
 ///|
 pub let ecs_msg_key_action_request : @ecs.MessageKey[ActionRequest] = @ecs.register_message(
-  debug_name="bevy_a11y::ActionRequest",
+  debug_name="mgstudio_a11y::ActionRequest",
 )
 
 ///|

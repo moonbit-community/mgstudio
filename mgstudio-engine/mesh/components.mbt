@@ -100,24 +100,24 @@ pub fn DynamicSkinnedMeshBounds::new() -> DynamicSkinnedMeshBounds {
 
 ///|
 pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh] = @ecs.register_component(
-  debug_name="bevy_render::mesh::skinning::SkinnedMesh",
+  debug_name="mgstudio_render::mesh::skinning::SkinnedMesh",
 )
 
 ///|
 pub let ecs_key_morph_target_mesh : @ecs.ComponentKey[MorphTargetMesh] = @ecs.register_component(
-  debug_name="bevy_render::mesh::morph::MorphTargetMesh",
+  debug_name="mgstudio_render::mesh::morph::MorphTargetMesh",
 )
 
 ///|
 pub let ecs_key_morph_weights : @ecs.ComponentKey[MorphWeights] = @ecs.register_component(
-  debug_name="bevy_render::mesh::morph::MorphWeights",
+  debug_name="mgstudio_render::mesh::morph::MorphWeights",
 )
 
 ///|
 pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[
   DynamicSkinnedMeshBounds,
 ] = @ecs.register_component(
-  debug_name="bevy_render::mesh::skinning::DynamicSkinnedMeshBounds",
+  debug_name="mgstudio_render::mesh::skinning::DynamicSkinnedMeshBounds",
 )
 
 ///|

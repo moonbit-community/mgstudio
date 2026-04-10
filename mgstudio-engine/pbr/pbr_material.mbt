@@ -55,7 +55,7 @@ pub fn StandardMaterialPluginState::from_plugin(
 ///|
 pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[
   StandardMaterialPluginState,
-] = @ecs.register_resource(debug_name="bevy_pbr::StandardMaterialPluginState")
+] = @ecs.register_resource(debug_name="mgstudio_pbr::StandardMaterialPluginState")
 
 ///|
 pub impl @app.PluginReplacement for StandardMaterialPlugin with replacement_id(

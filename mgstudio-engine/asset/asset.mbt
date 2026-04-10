@@ -169,7 +169,7 @@ fn asset_register_builtin_loaders() -> Unit {
 
 ///|
 pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer] {
-  @ecs.register_resource(debug_name="bevy_asset::AssetServer")
+  @ecs.register_resource(debug_name="mgstudio_asset::AssetServer")
 }
 
 ///|

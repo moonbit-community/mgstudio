@@ -99,7 +99,7 @@ fn[M] registered_mesh_material2d_component_key() -> @ecs.ComponentKey[
       }
     None => {
       let key : @ecs.ComponentKey[MeshMaterial2d[M]] = @ecs.register_component(
-        debug_name="bevy_sprite_render::\{type_name}",
+        debug_name="mgstudio_sprite_render::\{type_name}",
       )
       mesh_material2d_component_registry.val.set(type_name, @any.of(key))
       key
@@ -1022,4 +1022,29 @@ pub impl ToJson for Wireframe2dColor with to_json(self) {
 ///|
 pub impl @json.FromJson for Wireframe2dColor with from_json(json, _path) {
   decode_wireframe2d_color(json)
+}
+
+///|
+pub let ecs_components : Array[String] = [
+  "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "PanCamera",
+  "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
+  "Tonemapping", "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d",
+  "ClearColorConfig", "Wireframe2dColor", "TilemapChunk", "TilemapChunkTileData",
+]
+
+///|
+pub let ecs_resources : Array[String] = ["RenderState", "Wireframe2dConfig"]
+
+///|
+pub fn get_render_state_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[RenderState] {
+  world.resource(ecs_key_render_state)
+}
+
+///|
+pub fn get_wireframe2d_config_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[Wireframe2dConfig] {
+  world.resource(ecs_key_wireframe2d_config)
 }

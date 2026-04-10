@@ -350,7 +350,7 @@ pub impl @json.FromJson for GltfSkinIndex with from_json(json, path) {
 
 ///|
 let ecs_key_gltf_skin_index : @ecs.ComponentKey[GltfSkinIndex] = @ecs.register_component(
-  debug_name="bevy_gltf::GltfSkinIndex",
+  debug_name="mgstudio_gltf::GltfSkinIndex",
 )
 
 ///|

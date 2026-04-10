@@ -53,7 +53,7 @@ fn[T] registered_asset_event_message_key_with_type_name(
       }
     None => {
       let key : @ecs.MessageKey[AssetEvent[T]] = @ecs.register_message(
-        debug_name="bevy_asset::AssetEvent<\{type_name}>",
+        debug_name="mgstudio_asset::AssetEvent<\{type_name}>",
       )
       asset_event_message_registry.val.set(type_name, @any.of(key))
       key
@@ -105,7 +105,7 @@ fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
       }
     None => {
       let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_resource(
-        debug_name="bevy_asset::Assets<\{type_name}>",
+        debug_name="mgstudio_asset::Assets<\{type_name}>",
       )
       assets_resource_registry.val.set(type_name, @any.of(key))
       key

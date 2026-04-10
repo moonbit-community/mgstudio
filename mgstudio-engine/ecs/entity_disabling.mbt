@@ -50,12 +50,12 @@ pub fn DefaultQueryFilters::disabling_component_ids(
 
 ///|
 pub let ecs_key_disabled : ComponentKey[Disabled] = register_component(
-  debug_name="bevy_ecs::entity_disabling::Disabled",
+  debug_name="mgstudio_ecs::entity_disabling::Disabled",
 )
 
 ///|
 pub let ecs_key_default_query_filters : ResourceKey[DefaultQueryFilters] = register_resource(
-  debug_name="bevy_ecs::entity_disabling::DefaultQueryFilters",
+  debug_name="mgstudio_ecs::entity_disabling::DefaultQueryFilters",
 )
 
 ///|

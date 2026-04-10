@@ -146,27 +146,27 @@ pub fn ThemeFontColor::token(self : ThemeFontColor) -> ThemeToken {
 
 ///|
 let ui_theme_resource_key : @ecs.ResourceKey[UiTheme] = @ecs.register_resource(
-  debug_name="bevy_feathers::UiTheme",
+  debug_name="mgstudio_feathers::UiTheme",
 )
 
 ///|
 let theme_background_color_component_key : @ecs.ComponentKey[
   ThemeBackgroundColor,
-] = @ecs.register_component(debug_name="bevy_feathers::ThemeBackgroundColor")
+] = @ecs.register_component(debug_name="mgstudio_feathers::ThemeBackgroundColor")
 
 ///|
 let theme_border_color_component_key : @ecs.ComponentKey[ThemeBorderColor] = @ecs.register_component(
-  debug_name="bevy_feathers::ThemeBorderColor",
+  debug_name="mgstudio_feathers::ThemeBorderColor",
 )
 
 ///|
 let theme_font_color_component_key : @ecs.ComponentKey[ThemeFontColor] = @ecs.register_component(
-  debug_name="bevy_feathers::ThemeFontColor",
+  debug_name="mgstudio_feathers::ThemeFontColor",
 )
 
 ///|
 let themed_text_component_key : @ecs.ComponentKey[ThemedText] = @ecs.register_component(
-  debug_name="bevy_feathers::ThemedText",
+  debug_name="mgstudio_feathers::ThemedText",
 )
 
 ///|

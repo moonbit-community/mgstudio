@@ -28,7 +28,7 @@ pub struct MaterialsPluginState {}
 
 ///|
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState] = @ecs.register_resource(
-  debug_name="bevy_pbr::MaterialsPluginState",
+  debug_name="mgstudio_pbr::MaterialsPluginState",
 )
 
 ///|

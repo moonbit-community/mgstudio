@@ -56,12 +56,12 @@ let despawn_on_enter_registration_registry : Ref[@hashmap.HashMap[String, Bool]]
 
 ///|
 pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit] = @ecs.register_component(
-  debug_name="bevy_state::DespawnOnExit",
+  debug_name="mgstudio_state::DespawnOnExit",
 )
 
 ///|
 pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter] = @ecs.register_component(
-  debug_name="bevy_state::DespawnOnEnter",
+  debug_name="mgstudio_state::DespawnOnEnter",
 )
 
 ///|

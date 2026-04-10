@@ -33,7 +33,7 @@ pub fn DeferredPbrLightingState::disabled() -> DeferredPbrLightingState {
 ///|
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[
   DeferredPbrLightingState,
-] = @ecs.register_resource(debug_name="bevy_pbr::DeferredPbrLightingState")
+] = @ecs.register_resource(debug_name="mgstudio_pbr::DeferredPbrLightingState")
 
 ///|
 pub struct DeferredPbrLightingPlugin {}

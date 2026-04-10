@@ -27,7 +27,7 @@ pub fn AudioOutput::default() -> AudioOutput {
 
 ///|
 let audio_output_resource_key : @ecs.ResourceKey[AudioOutput] = @ecs.register_resource(
-  debug_name="bevy_audio::AudioOutput",
+  debug_name="mgstudio_audio::AudioOutput",
 )
 
 ///|
@@ -63,7 +63,7 @@ fn[Source] registered_audio_player_component_key() -> @ecs.ComponentKey[
       }
     None => {
       let key : @ecs.ComponentKey[AudioPlayer[Source]] = @ecs.register_component(
-        debug_name="bevy_audio::\{type_name}",
+        debug_name="mgstudio_audio::\{type_name}",
       )
       audio_player_component_registry.val.set(type_name, @any.of(key))
       key

@@ -123,12 +123,12 @@ pub fn InputDispatchPlugin::default() -> InputDispatchPlugin {
 
 ///|
 let input_focus_resource_key : @ecs.ResourceKey[InputFocus] = @ecs.register_resource(
-  debug_name="bevy_input_focus::InputFocus",
+  debug_name="mgstudio_input_focus::InputFocus",
 )
 
 ///|
 let input_focus_visible_resource_key : @ecs.ResourceKey[InputFocusVisible] = @ecs.register_resource(
-  debug_name="bevy_input_focus::InputFocusVisible",
+  debug_name="mgstudio_input_focus::InputFocusVisible",
 )
 
 ///|
@@ -231,7 +231,7 @@ pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[
       }
     None => {
       let key : @ecs.MessageKey[FocusedInput[M]] = @ecs.register_message(
-        debug_name="bevy_input_focus::FocusedInput<\{source_key.debug_name()}>",
+        debug_name="mgstudio_input_focus::FocusedInput<\{source_key.debug_name()}>",
       )
       focused_input_message_registry.val.set(source_id, @any.Any::of(key))
       key

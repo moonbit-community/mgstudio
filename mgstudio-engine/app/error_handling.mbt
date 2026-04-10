@@ -65,7 +65,7 @@ priv struct DefaultErrorHandlerResource {
 ///|
 let ecs_res_key_default_error_handler : @ecs.ResourceKey[
   DefaultErrorHandlerResource,
-] = @ecs.register_resource(debug_name="bevy_app::DefaultErrorHandler")
+] = @ecs.register_resource(debug_name="mgstudio_app::DefaultErrorHandler")
 
 ///|
 fn error_context_prefix(context : ErrorContext) -> String {

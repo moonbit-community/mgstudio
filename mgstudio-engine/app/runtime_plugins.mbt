@@ -53,7 +53,7 @@ fn app_exit_message_key() -> @ecs.MessageKey[AppExit] {
 
 ///|
 pub impl @ecs.Message for AppExit with message() {
-  @ecs.register_message(debug_name="bevy_app::AppExit")
+  @ecs.register_message(debug_name="mgstudio_app::AppExit")
 }
 
 ///|

@@ -744,16 +744,16 @@ fn[T] input_resource_get(key : @ecs.ResourceKey[T]) -> T? {
 ///|
 let accumulated_mouse_motion_resource_key : @ecs.ResourceKey[
   AccumulatedMouseMotion,
-] = @ecs.register_resource(debug_name="bevy_input::AccumulatedMouseMotion")
+] = @ecs.register_resource(debug_name="mgstudio_input::AccumulatedMouseMotion")
 
 ///|
 let accumulated_mouse_scroll_resource_key : @ecs.ResourceKey[
   AccumulatedMouseScroll,
-] = @ecs.register_resource(debug_name="bevy_input::AccumulatedMouseScroll")
+] = @ecs.register_resource(debug_name="mgstudio_input::AccumulatedMouseScroll")
 
 ///|
 let touches_resource_key : @ecs.ResourceKey[Touches] = @ecs.register_resource(
-  debug_name="bevy_input::Touches",
+  debug_name="mgstudio_input::Touches",
 )
 
 ///|

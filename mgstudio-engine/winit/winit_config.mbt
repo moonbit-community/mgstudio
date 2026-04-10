@@ -90,7 +90,7 @@ pub impl Default for WinitSettings with default() {
 
 ///|
 let ecs_key_winit_settings : @ecs.ResourceKey[WinitSettings] = @ecs.register_resource(
-  debug_name="bevy_winit::WinitSettings",
+  debug_name="mgstudio_winit::WinitSettings",
 )
 
 ///|

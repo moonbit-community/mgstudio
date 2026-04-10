@@ -29,7 +29,7 @@ priv struct FrameTimeDiagnosticsPluginMarker {}
 let frame_time_diagnostics_plugin_marker_key : @ecs.ResourceKey[
   FrameTimeDiagnosticsPluginMarker,
 ] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::FrameTimeDiagnosticsPluginMarker",
+  debug_name="mgstudio_diagnostic::FrameTimeDiagnosticsPluginMarker",
 )
 
 ///|

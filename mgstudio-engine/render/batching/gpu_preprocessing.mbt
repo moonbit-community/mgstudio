@@ -155,7 +155,7 @@ pub fn GpuPreprocessingPlugin::with_mode(
 ///|
 let gpu_preprocessing_support_resource_key : @ecs.ResourceKey[
   GpuPreprocessingSupport,
-] = @ecs.register_resource(debug_name="bevy_render::GpuPreprocessingSupport")
+] = @ecs.register_resource(debug_name="mgstudio_render::GpuPreprocessingSupport")
 
 ///|
 pub impl @app.Resource for GpuPreprocessingSupport with resource() {

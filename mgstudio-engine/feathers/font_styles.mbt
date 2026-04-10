@@ -38,7 +38,7 @@ pub fn InheritableFont::from_path(path : String) -> InheritableFont {
 
 ///|
 let inheritable_font_component_key : @ecs.ComponentKey[InheritableFont] = @ecs.register_component(
-  debug_name="bevy_feathers::InheritableFont",
+  debug_name="mgstudio_feathers::InheritableFont",
 )
 
 ///|

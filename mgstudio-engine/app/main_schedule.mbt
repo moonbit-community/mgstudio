@@ -85,21 +85,21 @@ pub fn FixedMainScheduleOrder::default() -> FixedMainScheduleOrder {
 
 ///|
 pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder] {
-  @ecs.register_resource(debug_name="bevy_app::MainScheduleOrder")
+  @ecs.register_resource(debug_name="mgstudio_app::MainScheduleOrder")
 }
 
 ///|
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[
   FixedMainScheduleOrder,
 ] {
-  @ecs.register_resource(debug_name="bevy_app::FixedMainScheduleOrder")
+  @ecs.register_resource(debug_name="mgstudio_app::FixedMainScheduleOrder")
 }
 
 ///|
 fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
   MainScheduleRuntimeState,
 ] {
-  @ecs.register_resource(debug_name="bevy_app::MainScheduleRuntimeState")
+  @ecs.register_resource(debug_name="mgstudio_app::MainScheduleRuntimeState")
 }
 
 ///|

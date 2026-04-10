@@ -329,7 +329,7 @@ fn SceneRuntimeState::default() -> SceneRuntimeState {
 
 ///|
 fn scene_runtime_state_resource_key() -> @ecs.ResourceKey[SceneRuntimeState] {
-  @ecs.register_resource(debug_name="bevy_scene::SceneRuntimeState")
+  @ecs.register_resource(debug_name="mgstudio_scene::SceneRuntimeState")
 }
 
 ///|
@@ -438,7 +438,7 @@ fn scene_runtime_mark_ready(
 fn scene_asset_registry_resource_key() -> @ecs.ResourceKey[
   SceneAssetRegistryState,
 ] {
-  @ecs.register_resource(debug_name="bevy_scene::SceneAssetRegistryState")
+  @ecs.register_resource(debug_name="mgstudio_scene::SceneAssetRegistryState")
 }
 
 ///|

@@ -46,7 +46,7 @@ pub fn Render3dPhaseState::new() -> Render3dPhaseState {
 
 ///|
 pub let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState] = @ecs.register_resource(
-  debug_name="bevy_pbr::Render3dPhaseState",
+  debug_name="mgstudio_pbr::Render3dPhaseState",
 )
 
 ///|

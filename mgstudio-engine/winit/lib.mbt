@@ -31,7 +31,7 @@ pub(all) struct RawWinitWindowEvent {
 
 ///|
 pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent] = @ecs.register_message(
-  debug_name="bevy_winit::RawWinitWindowEvent",
+  debug_name="mgstudio_winit::RawWinitWindowEvent",
 )
 
 ///|
@@ -49,7 +49,7 @@ priv struct WinitPluginMarker {}
 
 ///|
 let ecs_key_winit_plugin_marker : @ecs.ResourceKey[WinitPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_winit::WinitPluginMarker",
+  debug_name="mgstudio_winit::WinitPluginMarker",
 )
 
 ///|

@@ -47,13 +47,13 @@ priv struct MeshRenderPluginMarker {}
 
 ///|
 let ecs_key_mesh_render_plugin_marker : @ecs.ResourceKey[MeshRenderPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_pbr::MeshRenderPluginMarker",
+  debug_name="mgstudio_pbr::MeshRenderPluginMarker",
 )
 
 ///|
 pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
   MeshRenderPluginState,
-] = @ecs.register_resource(debug_name="bevy_pbr::MeshRenderPluginState")
+] = @ecs.register_resource(debug_name="mgstudio_pbr::MeshRenderPluginState")
 
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {

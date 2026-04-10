@@ -56,7 +56,7 @@ priv enum SteppingUpdate {
 
 ///|
 let stepping_resource_key : @ecs.ResourceKey[Stepping] = @ecs.register_resource(
-  debug_name="bevy_ecs::schedule::Stepping",
+  debug_name="mgstudio_ecs::schedule::Stepping",
 )
 
 ///|

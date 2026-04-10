@@ -335,7 +335,7 @@ pub fn DiagnosticsStore::default() -> DiagnosticsStore {
 
 ///|
 let diagnostics_store_resource_key : @ecs.ResourceKey[DiagnosticsStore] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::DiagnosticsStore",
+  debug_name="mgstudio_diagnostic::DiagnosticsStore",
 )
 
 ///|

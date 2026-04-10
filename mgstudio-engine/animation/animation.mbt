@@ -1800,7 +1800,7 @@ priv struct ThreadedAnimationGraphs {
 
 ///|
 let threaded_animation_graphs_key : @ecs.ResourceKey[ThreadedAnimationGraphs] = @ecs.register_resource(
-  debug_name="bevy_animation::ThreadedAnimationGraphs",
+  debug_name="mgstudio_animation::ThreadedAnimationGraphs",
 )
 
 ///|

@@ -52,7 +52,7 @@ priv struct WindowRuntime {
 
 ///|
 let ecs_key_window_runtime : @ecs.ComponentKey[WindowRuntime] = @ecs.register_component(
-  debug_name="bevy_window::WindowRuntime",
+  debug_name="mgstudio_window::WindowRuntime",
 )
 
 ///|
@@ -65,7 +65,7 @@ priv struct WindowPluginMarker {}
 
 ///|
 fn window_plugin_marker_key() -> @ecs.ResourceKey[WindowPluginMarker] {
-  @ecs.register_resource(debug_name="bevy_window::WindowPluginMarker")
+  @ecs.register_resource(debug_name="mgstudio_window::WindowPluginMarker")
 }
 
 ///|

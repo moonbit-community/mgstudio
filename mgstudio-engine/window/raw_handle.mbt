@@ -49,13 +49,13 @@ pub fn RawHandleWrapperHolder::new() -> RawHandleWrapperHolder {
 
 ///|
 pub let ecs_key_raw_handle_wrapper : @ecs.ComponentKey[RawHandleWrapper] = @ecs.register_component(
-  debug_name="bevy_window::RawHandleWrapper",
+  debug_name="mgstudio_window::RawHandleWrapper",
 )
 
 ///|
 pub let ecs_key_raw_handle_wrapper_holder : @ecs.ComponentKey[
   RawHandleWrapperHolder,
-] = @ecs.register_component(debug_name="bevy_window::RawHandleWrapperHolder")
+] = @ecs.register_component(debug_name="mgstudio_window::RawHandleWrapperHolder")
 
 ///|
 pub impl @ecs.Component for RawHandleWrapper with component() {

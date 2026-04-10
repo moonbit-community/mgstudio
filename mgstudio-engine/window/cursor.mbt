@@ -101,12 +101,12 @@ pub fn CursorOptions::default() -> CursorOptions {
 
 ///|
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @ecs.register_component(
-  debug_name="bevy_window::CursorOptions",
+  debug_name="mgstudio_window::CursorOptions",
 )
 
 ///|
 pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @ecs.register_component(
-  debug_name="bevy_window::CursorIcon",
+  debug_name="mgstudio_window::CursorIcon",
 )
 
 ///|

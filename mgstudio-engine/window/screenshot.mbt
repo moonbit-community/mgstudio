@@ -74,22 +74,22 @@ pub fn Screenshot::texture_view(
 
 ///|
 pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot] = @ecs.register_component(
-  debug_name="bevy_render::view::window::Screenshot",
+  debug_name="mgstudio_render::view::window::Screenshot",
 )
 
 ///|
 pub let ecs_key_capturing : @ecs.ComponentKey[Capturing] = @ecs.register_component(
-  debug_name="bevy_render::view::window::Capturing",
+  debug_name="mgstudio_render::view::window::Capturing",
 )
 
 ///|
 pub let ecs_key_captured : @ecs.ComponentKey[Captured] = @ecs.register_component(
-  debug_name="bevy_render::view::window::Captured",
+  debug_name="mgstudio_render::view::window::Captured",
 )
 
 ///|
 pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured] = @ecs.register_component(
-  debug_name="bevy_render::view::window::ScreenshotCaptured",
+  debug_name="mgstudio_render::view::window::ScreenshotCaptured",
 )
 
 ///|

@@ -51,7 +51,7 @@ pub fn Smaa::default() -> Smaa {
 
 ///|
 let ecs_key_smaa : @ecs.ComponentKey[Smaa] = @ecs.register_component(
-  debug_name="bevy_anti_alias::Smaa",
+  debug_name="mgstudio_anti_alias::Smaa",
 )
 
 ///|

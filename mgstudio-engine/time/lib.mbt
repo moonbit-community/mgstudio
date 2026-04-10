@@ -55,7 +55,7 @@ let time_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
 
 ///|
 let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @ecs.register_resource(
-  debug_name="bevy_time::TimeUpdateStrategy",
+  debug_name="mgstudio_time::TimeUpdateStrategy",
 )
 
 ///|
@@ -73,7 +73,7 @@ fn[T : Default] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] {
       }
     None => {
       let key : @ecs.ResourceKey[Time[T]] = @ecs.register_resource(
-        debug_name="bevy_time::\{type_name}",
+        debug_name="mgstudio_time::\{type_name}",
       )
       time_resource_registry.val.set(type_name, @any.of(key))
       key
