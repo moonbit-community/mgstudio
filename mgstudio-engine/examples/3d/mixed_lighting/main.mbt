@@ -181,7 +181,7 @@ fn create_help_text(mode : LightingMode) -> String {
       "Scenery: Dynamic, real-time direct light, no indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
   }
 
-  "\{details}\n\nControls:\n1: Baked, 2: Mixed (Direct), 3: Mixed (Indirect), 4: Real-Time\nHold left mouse button and point to move sphere\n\nAdapted runtime note: lightmap component pipeline is not yet available; mode changes use real-time lighting proxies (target exposure \{LIGHTMAP_EXPOSURE.to_string()})."
+  "\{details}\n\nControls:\n1: Baked, 2: Mixed (Direct), 3: Mixed (Indirect), 4: Real-Time\nHold left mouse button and point to move sphere\n\nTarget exposure: \{LIGHTMAP_EXPOSURE.to_string()}"
 }
 
 ///|

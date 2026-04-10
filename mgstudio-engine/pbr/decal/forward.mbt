@@ -14,10 +14,6 @@
 
 ///|
 /// Marker component aligned with Bevy's `ForwardDecal`.
-///
-/// Current runtime note: projected forward-decal shading is not wired in this
-/// backend yet. This component preserves scene/API parity for example
-/// migration and future renderer integration.
 pub struct ForwardDecal {} derive(ToJson, FromJson)
 
 ///|

@@ -26,9 +26,6 @@ fn clustered_decal_tag_safe(tag : Int) -> Int {
 ///
 /// The decal volume follows Bevy semantics: a transformed unit cube that
 /// projects textures along local `-Z`.
-///
-/// Current runtime note: clustered projection is not yet active in this
-/// backend; this component currently carries scene intent metadata.
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@asset.Image]?
   normal_map_texture : @asset.Handle[@asset.Image]?

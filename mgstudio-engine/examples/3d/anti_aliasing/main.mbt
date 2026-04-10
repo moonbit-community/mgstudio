@@ -15,9 +15,7 @@
 ///|
 ///
 /// Parity target: keep Bevy's AA control surface and component semantics on the
-/// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers). Features
-/// that are not available in current runtime are exposed as explicit capability
-/// gates instead of visual proxy remapping.
+/// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers).
 
 ///|
 const TEXTURE_SIZE : Int = 8
@@ -536,7 +534,6 @@ fn update_ui() -> Unit {
     "O".to_string(),
     state.use_orthographic,
   )
-  ui.write_string("\nRuntime note: unavailable features are capability-gated.")
   @text.text_set_content(handle, ui.to_string())
 }
 

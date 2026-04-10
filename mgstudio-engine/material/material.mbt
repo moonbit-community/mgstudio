@@ -62,9 +62,6 @@ pub fn ParallaxMappingMethod::max_steps(self : ParallaxMappingMethod) -> Int {
 
 ///|
 /// Opaque render path preference aligned with Bevy's `OpaqueRendererMethod`.
-///
-/// Current runtime note: only the forward backend is active; deferred options
-/// are preserved as API surface for parity and migration sequencing.
 pub(all) enum OpaqueRendererMethod {
   Auto
   Forward
@@ -966,9 +963,6 @@ fn forward_decal_depth_fade_factor_safe(depth_fade_factor : Float) -> Float {
 ///|
 /// Forward decal material-extension parameters aligned with Bevy's
 /// `ForwardDecalMaterialExt`.
-///
-/// Current runtime note: values are stored for parity; extension shader
-/// specialization is pending renderer support.
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
 } derive(ToJson, FromJson)

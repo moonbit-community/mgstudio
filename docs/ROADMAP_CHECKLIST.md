@@ -168,10 +168,10 @@ This file must not exceed 200 lines.
 - [ ] Issue `render/cubemap_sampling_pipeline_alignment`: migrate current stacked-2d cubemap compatibility path to true cube-texture sampling layout parity.
 - [ ] Issue `text/perf_many_glyphs`: landed text prepared-batch split into scene `Transparent2d` + UI `TransparentUi` flush paths; pending post-split profiling and remaining queue/prepare hotspots closure.
 - [ ] Issue `text/perf_text_pipeline`: optimize text pipeline bottlenecks in `text_pipeline`.
-- [ ] Issue `remote/transport_backend`: replace remote plugin stub with real transport backend.
-- [ ] Issue `remote/protocol_backend`: replace remote plugin stub with protocol/message runtime.
+- [x] Issue `remote/transport_backend`: removed placeholder `remote` package and removed dependent remote examples; runtime backend remains out of mainline until a real implementation lands.
+- [x] Issue `remote/protocol_backend`: removed placeholder protocol surface with package deletion to avoid no-op exported API.
 - [ ] Issue `native/dependency_zlib_link_propagation`: fix native test link path so transitive `mizchi/zlib` `-lz` is propagated (current macOS native link fails unresolved `_compress/_inflate/_deflate`).
-- [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
+- [x] Issue `solari/runtime_path`: removed placeholder `solari` package and removed dependent solari example entry; runtime path will return only with executable implementation.
 - [ ] Issue `stress_tests/3d_heavy_scenes`: latest rerun reaches `many_foxes ~6.38 FPS` no-trace (`/tmp/mgstudio_perf_many_foxes_after_revert_transform_ntrace/results.tsv`) and `~5.88 FPS` trace (`/tmp/mgstudio_perf_many_foxes_after_revert_transform_trace/traces/many_foxes.trace.json`); `render3d.extract` median dropped to `~1.12ms`, remaining top hotspots are `transform.propagate (~53ms)` + `animation.animate_targets (~42ms)` + `execute_3d_camera_queue_build` outliers.
 - [ ] Issue `stress_tests/text_pipeline`: `TransparentUi/Transparent2d` split landed in text/sprite_render/ui_render path; pending rerun profile/capture and remaining parity gaps (`queue_sprites/prepare_sprite_image_bind_groups`) closure.
 - [ ] Issue `stress_tests/visual_audit_20260401`: full capture set includes `/tmp/mgstudio_stress_visual_20260404_roundBD_worker` (`sanity_summary.tsv`; 19/19 pass), delay2 recheck `/tmp/mgstudio_stress_visual_20260404_roundBD_delay2_recheck`, and Bevy-scale-constant recheck `/tmp/mgstudio_stress_visual_20260404_roundBE_sprite_recheck`; `many_sprites/many_animated_sprites/many_sprite_meshes/many_animated_sprite_meshes/many_text2d` still render as sparse single-point output pending sprite queue/cull path deep parity.

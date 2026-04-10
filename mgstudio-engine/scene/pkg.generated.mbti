@@ -16,13 +16,7 @@ import {
 }
 
 // Values
-pub const DYNAMIC_SCENE_SUPPORTED : Bool = false
-
 pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
-
-pub fn dynamic_scene_builder_supported() -> Bool
-
-pub fn dynamic_scene_supported() -> Bool
 
 pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 
@@ -31,8 +25,6 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
 pub fn scene_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn scene_filter_supported() -> Bool
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 

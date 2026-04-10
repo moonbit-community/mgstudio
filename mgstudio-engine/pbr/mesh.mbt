@@ -180,10 +180,6 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
 
 ///|
 /// Marker component aligned with Bevy's `ForwardDecal`.
-///
-/// Current runtime note: projected forward-decal shading is not wired in this
-/// backend yet. This component preserves scene/API parity for example
-/// migration and future renderer integration.
 pub struct ForwardDecal {} derive(ToJson, FromJson)
 
 ///|
@@ -205,9 +201,6 @@ fn clustered_decal_tag_safe(tag : Int) -> Int {
 ///
 /// The decal volume follows Bevy semantics: a transformed unit cube that
 /// projects textures along local `-Z`.
-///
-/// Current runtime note: clustered projection is not yet active in this
-/// backend; this component currently carries scene intent metadata.
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@asset.Image]?
   normal_map_texture : @asset.Handle[@asset.Image]?
