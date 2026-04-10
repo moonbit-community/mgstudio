@@ -373,11 +373,7 @@ fn resolve_assets_dir_override(path : String?) -> String? {
   match path {
     Some(value) if value.trim().to_string() != "" => {
       let trimmed = value.trim().to_string()
-      if @path.Path::is_absolute(trimmed) {
-        Some(@path.Path::normalize(trimmed).to_string())
-      } else {
-        Some(path_join(default_runtime_assets_dir(), trimmed))
-      }
+      Some(@path.Path::normalize(trimmed).to_string())
     }
     _ => None
   }
