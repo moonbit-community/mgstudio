@@ -13,11 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_log/src/lib.rs`.
-// Crate-root plugin surface.
-pub const LOG_CRATE_ID : String = "bevy_log"
-
-///|
 pub fn default_log_plugin() -> LogPlugin {
   LogPlugin::default()
 }

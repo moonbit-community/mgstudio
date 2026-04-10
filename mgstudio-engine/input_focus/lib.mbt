@@ -13,11 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_input_focus/src/lib.rs`.
-// Crate-root plugin surface.
-pub const INPUT_FOCUS_CRATE_ID : String = "bevy_input_focus"
-
-///|
 pub fn input_focus_default_plugins(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

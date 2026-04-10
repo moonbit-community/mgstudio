@@ -13,12 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_app/src/lib.rs`.
-
-///|
-pub const APP_CRATE_ID : String = "bevy_app"
-
-///|
 pub fn app_new(world : @ecs.World) -> App[@ecs.World] {
   App::new(world)
 }

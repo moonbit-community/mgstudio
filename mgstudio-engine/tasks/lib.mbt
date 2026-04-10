@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source: `bevy/crates/bevy_tasks/src/lib.rs`.
-
-///|
-pub const TASKS_CRATE_ID : String = "bevy_tasks"
-
 ///|
 pub const TASKS_BACKEND : String = "single_threaded"
 

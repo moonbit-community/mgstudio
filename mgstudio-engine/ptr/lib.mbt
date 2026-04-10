@@ -13,11 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_ptr/src/lib.rs`.
-// Crate-root pointer surface.
-pub const PTR_CRATE_ID : String = "bevy_ptr"
-
-///|
 pub fn[T] bevy_ptr_default(value : T) -> Ptr[T] {
   ptr(value)
 }

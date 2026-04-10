@@ -13,11 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_shader/src/lib.rs`.
-// Crate-root plugin surface.
-pub const SHADER_CRATE_ID : String = "bevy_shader"
-
-///|
 pub fn default_shader_loader() -> ShaderLoader {
   ShaderLoader::default()
 }
