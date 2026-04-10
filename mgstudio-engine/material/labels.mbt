@@ -21,11 +21,3 @@ pub const MATERIAL_PIPELINE_LABEL : String = "bevy_material::pipeline"
 
 ///|
 pub const MATERIAL_BIND_GROUP_LABEL : String = "bevy_material::bind_group"
-
-///|
-pub const MATERIAL_LABELS_MODULE_TAG : String = "bevy_material::labels"
-
-///|
-pub fn material_labels_runtime_tag() -> String {
-  MATERIAL_LABELS_MODULE_TAG
-}

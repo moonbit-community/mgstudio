@@ -7,8 +7,6 @@ import {
 }
 
 // Values
-pub const GLTF_TEXTURE_EXT_MODULE_TAG : String = "bevy_gltf::loader::gltf_ext::texture"
-
 pub fn gltf_animation_asset_label(Int) -> GltfAssetLabel
 
 pub fn gltf_default_material_asset_label() -> GltfAssetLabel

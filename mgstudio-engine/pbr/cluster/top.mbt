@@ -16,8 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/cluster.rs`.
 
 ///|
-pub const CLUSTER_MODULE_TAG : String = "bevy_pbr::cluster"
-
 ///|
 pub struct ClusterConfig3d {
   dimensions_x : Int

@@ -23,8 +23,6 @@ pub type JumpAt = @math.JumpAt
 pub type EaseFunction = @math.EaseFunction
 
 ///|
-pub const MATH_CURVE_EASING_MODULE_TAG : String = "bevy_math::curve::easing"
-
 ///|
 pub fn jump_at_identity(value : JumpAt) -> JumpAt {
   value

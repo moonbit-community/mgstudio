@@ -7,8 +7,6 @@ import {
 }
 
 // Values
-pub const MATH_MESH_SAMPLING_MODULE_TAG : String = "bevy_math::sampling::mesh_sampling"
-
 pub fn capsule3d_boundary_distribution(@math.Capsule3d) -> @math.SamplingDistribution[@math.Vec3]
 
 pub fn capsule3d_interior_distribution(@math.Capsule3d) -> @math.SamplingDistribution[@math.Vec3]

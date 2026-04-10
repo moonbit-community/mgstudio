@@ -15,8 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/retained.rs`.
 // Bridge capability for retained gizmo mode.
-pub const GIZMO_RETAINED_MODULE_TAG : String = "bevy_gizmos::retained"
-
 ///|
 pub const GIZMO_RETAINED_SUPPORTED : Bool = true
 
@@ -25,7 +23,3 @@ pub fn gizmo_retained_supported() -> Bool {
   GIZMO_RETAINED_SUPPORTED
 }
 
-///|
-pub fn gizmo_retained_module_tag() -> String {
-  GIZMO_RETAINED_MODULE_TAG
-}

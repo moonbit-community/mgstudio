@@ -16,18 +16,13 @@
 // Bevy source: `bevy/crates/bevy_solari/src/pathtracer/extract.rs`.
 
 ///|
-pub const SOLARI_PATHTRACER_EXTRACT_MODULE_TAG : String = "bevy_solari::pathtracer::extract"
-
 ///|
 pub struct SolariPathtracerExtractBridge {
-  module_tag : String
 }
 
 ///|
 pub fn SolariPathtracerExtractBridge::default() -> SolariPathtracerExtractBridge {
-  SolariPathtracerExtractBridge::{
-    module_tag: SOLARI_PATHTRACER_EXTRACT_MODULE_TAG,
-  }
+  SolariPathtracerExtractBridge::{  }
 }
 
 ///|
@@ -37,14 +32,8 @@ pub fn extract_pathtracer(_world : @ecs.World) -> Unit {
 
 ///|
 pub fn solari_pathtracer_extract_bridge_enabled(
-  bridge : SolariPathtracerExtractBridge,
+  _ : SolariPathtracerExtractBridge,
 ) -> Bool {
-  bridge.module_tag == SOLARI_PATHTRACER_EXTRACT_MODULE_TAG
+  true
 }
 
-///|
-pub fn solari_pathtracer_extract_bridge_module_tag(
-  bridge : SolariPathtracerExtractBridge,
-) -> String {
-  bridge.module_tag
-}

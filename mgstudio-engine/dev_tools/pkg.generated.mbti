@@ -14,19 +14,11 @@ import {
 // Values
 pub const DEV_TOOLS_PLUGIN_ID : String = "bevy_dev_tools::DevToolsPlugin"
 
-pub const EASY_SCREENSHOT_MODULE_TAG : String = "bevy_dev_tools::easy_screenshot"
-
 pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
 
 pub const HAS_DEV_TOOLS_RUNTIME : Bool = true
 
 pub const INITIAL_DIAGNOSTICS_OVERLAY_PLANE_Z_INDEX : Int = 1_000_000
-
-pub const PICKING_DEBUG_MODULE_TAG : String = "bevy_dev_tools::picking_debug"
-
-pub const RENDER_DEBUG_MODULE_TAG : String = "bevy_dev_tools::render_debug"
-
-pub const STATES_DEBUG_MODULE_TAG : String = "bevy_dev_tools::states"
 
 pub fn dev_tools_default_fps_overlay_config() -> FpsOverlayConfig
 

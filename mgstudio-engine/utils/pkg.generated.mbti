@@ -7,21 +7,7 @@ import {
 }
 
 // Values
-pub const ATOMIC_ID_MODULE_TAG : String = "bevy_utils::atomic_id"
-
-pub const BLOOM_FILTER_MODULE_TAG : String = "bevy_utils::bloom_filter"
-
-pub const BUFFERED_CHANNEL_MODULE_TAG : String = "bevy_utils::buffered_channel"
-
-pub const DEFAULT_MODULE_TAG : String = "bevy_utils::default"
-
 pub const HAS_UTILS_RUNTIME : Bool = true
-
-pub const MAP_MODULE_TAG : String = "bevy_utils::map"
-
-pub const ONCE_MODULE_TAG : String = "bevy_utils::once"
-
-pub const PARALLEL_QUEUE_MODULE_TAG : String = "bevy_utils::parallel_queue"
 
 pub const UTILS_CRATE_ID : String = "bevy_utils"
 
@@ -32,8 +18,6 @@ pub fn bloom_filter_hashes_empty() -> Array[Int]
 pub fn[T] buffered_channel_new_buffer() -> Array[T]
 
 pub fn[T : Default] default() -> T
-
-pub fn default_module_tag() -> String
 
 pub fn[T : Default] default_of() -> T
 

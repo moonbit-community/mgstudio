@@ -20,8 +20,6 @@
 pub type GizmoViewFrustum = @math.ViewFrustum
 
 ///|
-pub const GIZMO_FRUSTUM_MODULE_TAG : String = "bevy_gizmos::frustum"
-
 ///|
 pub fn gizmo_view_frustum_identity(
   frustum : GizmoViewFrustum,

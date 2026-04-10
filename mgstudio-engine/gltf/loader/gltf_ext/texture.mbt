@@ -17,8 +17,6 @@
 // Bridge surface for texture asset labels extracted from glTF.
 
 ///|
-pub const GLTF_TEXTURE_EXT_MODULE_TAG : String = "bevy_gltf::loader::gltf_ext::texture"
-
 ///|
 pub struct GltfTextureAssetLabelBridge {
   texture_index : Int

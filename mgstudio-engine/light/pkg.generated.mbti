@@ -15,8 +15,6 @@ import {
 }
 
 // Values
-pub const LIGHT_MODULE_TAG : String = "bevy_light::lib"
-
 pub fn ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLight]
 
 pub fn directional_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
@@ -102,8 +100,6 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[Po
 pub fn light_module_anchor_enabled() -> Bool
 
 pub fn light_runtime_bridge_enabled(LightRuntimeBridge) -> Bool
-
-pub fn light_runtime_bridge_module_tag(LightRuntimeBridge) -> String
 
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
@@ -334,7 +330,6 @@ pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for LightProbe
 
 pub struct LightRuntimeBridge {
-  module_tag : String
 }
 pub fn LightRuntimeBridge::default() -> Self
 

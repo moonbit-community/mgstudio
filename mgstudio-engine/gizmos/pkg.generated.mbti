@@ -11,39 +11,11 @@ import {
 // Values
 pub const GIZMOS_PLUGIN_ID : String = "bevy_gizmos::GizmoPlugin"
 
-pub const GIZMO_AABB_MODULE_TAG : String = "bevy_gizmos::aabb"
-
-pub const GIZMO_ARCS_MODULE_TAG : String = "bevy_gizmos::arcs"
-
-pub const GIZMO_ARROWS_MODULE_TAG : String = "bevy_gizmos::arrows"
-
-pub const GIZMO_CIRCLES_MODULE_TAG : String = "bevy_gizmos::circles"
-
-pub const GIZMO_CROSS_MODULE_TAG : String = "bevy_gizmos::cross"
-
-pub const GIZMO_CURVES_MODULE_TAG : String = "bevy_gizmos::curves"
-
-pub const GIZMO_FRUSTUM_MODULE_TAG : String = "bevy_gizmos::frustum"
-
-pub const GIZMO_GLOBAL_MODULE_TAG : String = "bevy_gizmos::global"
-
-pub const GIZMO_GRID_MODULE_TAG : String = "bevy_gizmos::grid"
-
-pub const GIZMO_RETAINED_MODULE_TAG : String = "bevy_gizmos::retained"
-
 pub const GIZMO_RETAINED_SUPPORTED : Bool = true
-
-pub const GIZMO_ROUNDED_BOX_MODULE_TAG : String = "bevy_gizmos::rounded_box"
-
-pub const GIZMO_SKINNED_MESH_BOUNDS_MODULE_TAG : String = "bevy_gizmos::skinned_mesh_bounds"
 
 pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
 
-pub const GIZMO_STROKE_TEXT_MODULE_TAG : String = "bevy_gizmos::stroke_text"
-
 pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
-
-pub const SIMPLEX_STROKE_FONT_MODULE_TAG : String = "bevy_gizmos::simplex_stroke_font"
 
 pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
 
@@ -59,8 +31,6 @@ pub fn gizmo_arrow_builder_identity(@sprite.ArrowBuilder) -> @sprite.ArrowBuilde
 
 pub fn gizmo_circle_identity(@math.Circle) -> @math.Circle
 
-pub fn gizmo_cross_module_tag() -> String
-
 pub fn gizmo_cross_supported() -> Bool
 
 pub fn gizmo_curve2d_identity(@math.CubicCurve[@math.Vec2]) -> @math.CubicCurve[@math.Vec2]
@@ -69,23 +39,15 @@ pub fn gizmo_curve3d_identity(@math.CubicCurve[@math.Vec3]) -> @math.CubicCurve[
 
 pub fn gizmo_global_init(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn gizmo_global_module_tag() -> String
-
 pub fn gizmo_grid_builder_identity(@sprite.Grid2dBuilder) -> @sprite.Grid2dBuilder
 
 pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn gizmo_retained_module_tag() -> String
 
 pub fn gizmo_retained_supported() -> Bool
 
 pub fn gizmo_rounded_rect_builder_identity(@sprite.RoundedRectBuilder) -> @sprite.RoundedRectBuilder
 
-pub fn gizmo_skinned_mesh_bounds_module_tag() -> String
-
 pub fn gizmo_skinned_mesh_bounds_supported() -> Bool
-
-pub fn gizmo_stroke_text_module_tag() -> String
 
 pub fn gizmo_stroke_text_supported() -> Bool
 
@@ -96,8 +58,6 @@ pub fn gizmos_default_group() -> @sprite.DefaultGizmoConfigGroup
 pub fn gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
-
-pub fn simplex_stroke_font_module_tag() -> String
 
 pub fn simplex_stroke_font_supported() -> Bool
 

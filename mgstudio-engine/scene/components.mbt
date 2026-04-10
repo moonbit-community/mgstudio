@@ -26,26 +26,17 @@ pub type SceneComponentRoot = SceneRoot
 pub type SceneComponentInstance = SceneInstance
 
 ///|
-pub const SCENE_COMPONENTS_MODULE_TAG : String = "bevy_scene::components"
-
 ///|
 pub struct SceneComponentsBridge {
-  module_tag : String
 }
 
 ///|
 pub fn SceneComponentsBridge::default() -> SceneComponentsBridge {
-  SceneComponentsBridge::{ module_tag: SCENE_COMPONENTS_MODULE_TAG }
+  SceneComponentsBridge::{  }
 }
 
 ///|
-pub fn scene_components_bridge_enabled(bridge : SceneComponentsBridge) -> Bool {
-  bridge.module_tag == SCENE_COMPONENTS_MODULE_TAG
+pub fn scene_components_bridge_enabled(_ : SceneComponentsBridge) -> Bool {
+  true
 }
 
-///|
-pub fn scene_components_bridge_module_tag(
-  bridge : SceneComponentsBridge,
-) -> String {
-  bridge.module_tag
-}

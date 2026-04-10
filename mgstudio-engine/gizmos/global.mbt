@@ -15,8 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/global.rs`.
 // Bridge helpers for global gizmo-group initialization.
-pub const GIZMO_GLOBAL_MODULE_TAG : String = "bevy_gizmos::global"
-
 ///|
 pub type GizmoGlobalDefaultGroup = @sprite.DefaultGizmoConfigGroup
 
@@ -25,7 +23,3 @@ pub fn gizmo_global_init(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   init_gizmo_group(app, GizmoGlobalDefaultGroup::default())
 }
 
-///|
-pub fn gizmo_global_module_tag() -> String {
-  GIZMO_GLOBAL_MODULE_TAG
-}

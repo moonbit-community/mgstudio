@@ -8,17 +8,7 @@ import {
 }
 
 // Values
-pub const UI_WIDGETS_LIB_MODULE_TAG : String = "bevy_ui_widgets::lib"
-
 pub const UI_WIDGETS_PLUGIN_ID : String = "bevy_ui_widgets::UiWidgetsPlugin"
-
-pub const UI_WIDGET_CHECKBOX_MODULE_TAG : String = "bevy_ui_widgets::checkbox"
-
-pub const UI_WIDGET_MENU_MODULE_TAG : String = "bevy_ui_widgets::menu"
-
-pub const UI_WIDGET_RADIO_MODULE_TAG : String = "bevy_ui_widgets::radio"
-
-pub const UI_WIDGET_SCROLLBAR_MODULE_TAG : String = "bevy_ui_widgets::scrollbar"
 
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel]
 

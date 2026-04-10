@@ -22,8 +22,6 @@ pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
 
 ///|
-pub const EXTENDED_MATERIAL_MODULE_TAG : String = "bevy_pbr::extended_material"
-
 ///|
 pub fn pbr_extended_material_metadata_default() -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::default()

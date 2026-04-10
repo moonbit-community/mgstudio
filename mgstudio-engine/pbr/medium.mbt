@@ -19,8 +19,6 @@
 pub type ScatteringMedium = @light.ScatteringMedium
 
 ///|
-pub const MEDIUM_MODULE_TAG : String = "bevy_pbr::medium"
-
 ///|
 pub fn pbr_scattering_medium_default() -> ScatteringMedium {
   ScatteringMedium::default()

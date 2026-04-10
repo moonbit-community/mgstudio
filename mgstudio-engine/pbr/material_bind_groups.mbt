@@ -16,14 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/material_bind_groups.rs`.
 
 ///|
-pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = @pbr_material_bind_groups.MATERIAL_BIND_GROUPS_MODULE_TAG
-
-///|
-pub fn pbr_material_bind_groups_module_tag() -> String {
-  MATERIAL_BIND_GROUPS_MODULE_TAG
-}
-
-///|
 pub fn pbr_material_bind_groups_runtime_available() -> Bool {
   true
 }

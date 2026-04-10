@@ -22,14 +22,8 @@ pub fn cylinder(radius : Float, height : Float) -> @math.Cylinder {
 }
 
 ///|
-pub const MESH_CYLINDER_MODULE_TAG : String = "bevy_mesh::primitives::dim3::cylinder"
-
 ///|
 pub fn cylinder_unit() -> @math.Cylinder {
   cylinder(0.5, 1.0)
 }
 
-///|
-pub fn cylinder_module_tag() -> String {
-  MESH_CYLINDER_MODULE_TAG
-}

@@ -16,27 +16,13 @@ import {
 }
 
 // Values
-pub const DYNAMIC_SCENE_BUILDER_MODULE_TAG : String = "bevy_scene::dynamic_scene_builder"
-
 pub const DYNAMIC_SCENE_SUPPORTED : Bool = false
 
-pub const SCENE_COMPONENTS_MODULE_TAG : String = "bevy_scene::components"
-
-pub const SCENE_DYNAMIC_SCENE_MODULE_TAG : String = "bevy_scene::dynamic_scene"
-
-pub const SCENE_FILTER_MODULE_TAG : String = "bevy_scene::scene_filter"
-
-pub const SCENE_LOADER_MODULE_TAG : String = "bevy_scene::scene_loader"
-
 pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
-
-pub const SCENE_SPAWNER_MODULE_TAG : String = "bevy_scene::scene_spawner"
 
 pub fn dynamic_scene_builder_bridge_supported(DynamicSceneBuilderBridge) -> Bool
 
 pub fn dynamic_scene_builder_supported() -> Bool
-
-pub fn dynamic_scene_module_tag() -> String
 
 pub fn dynamic_scene_supported() -> Bool
 
@@ -47,8 +33,6 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
 pub fn scene_components_bridge_enabled(SceneComponentsBridge) -> Bool
-
-pub fn scene_components_bridge_module_tag(SceneComponentsBridge) -> String
 
 pub fn scene_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -71,8 +55,6 @@ pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 pub fn[W] scene_load_pending_system(W) -> Unit
 
 pub fn scene_loader_bridge_enabled(SceneLoaderBridge) -> Bool
-
-pub fn scene_loader_bridge_module_tag(SceneLoaderBridge) -> String
 
 pub fn scene_loader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -103,8 +85,6 @@ pub fn scene_spawn_roots_system(@ecs.World) -> Unit
 pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 
 pub fn scene_spawner_bridge_enabled(SceneSpawnerBridge) -> Bool
-
-pub fn scene_spawner_bridge_module_tag(SceneSpawnerBridge) -> String
 
 // Errors
 
@@ -144,7 +124,6 @@ pub fn Scene::new(Array[SceneNode3d]) -> Self
 pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
 
 pub struct SceneComponentsBridge {
-  module_tag : String
 }
 pub fn SceneComponentsBridge::default() -> Self
 
@@ -174,7 +153,6 @@ pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneLoaderBridge {
-  module_tag : String
 }
 pub fn SceneLoaderBridge::default() -> Self
 
@@ -219,7 +197,6 @@ pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
 
 pub struct SceneSpawnerBridge {
-  module_tag : String
 }
 pub fn SceneSpawnerBridge::default() -> Self
 

@@ -8,10 +8,6 @@ import {
 }
 
 // Values
-pub const UI_WIDGET_LABEL_MODULE_TAG : String = "bevy_ui::widget::label"
-
-pub const UI_WIDGET_TEXT_MODULE_TAG : String = "bevy_ui::widget::text"
-
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel]
 
 pub let ecs_key_button : @ecs.ComponentKey[@ui.Button]
@@ -44,11 +40,7 @@ pub let ui_set_text_content : String
 
 pub fn ui_widget_label_bridge_enabled(UiWidgetLabelBridge) -> Bool
 
-pub fn ui_widget_label_bridge_module_tag(UiWidgetLabelBridge) -> String
-
 pub fn ui_widget_text_bridge_enabled(UiWidgetTextBridge) -> Bool
-
-pub fn ui_widget_text_bridge_module_tag(UiWidgetTextBridge) -> String
 
 pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -58,12 +50,10 @@ pub let ui_widgets_set_interaction : String
 
 // Types and methods
 pub struct UiWidgetLabelBridge {
-  module_tag : String
 }
 pub fn UiWidgetLabelBridge::default() -> Self
 
 pub struct UiWidgetTextBridge {
-  module_tag : String
 }
 pub fn UiWidgetTextBridge::default() -> Self
 

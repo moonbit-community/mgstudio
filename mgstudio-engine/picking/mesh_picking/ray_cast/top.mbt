@@ -15,8 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/mod.rs`.
 // Bridge surface to the root `picking` package mesh ray-cast runtime.
-pub const PICKING_MESH_RAY_CAST_MODULE_TAG : String = "bevy_picking::mesh_picking::ray_cast"
-
 ///|
 pub using @picking {type PickingHits}
 
@@ -25,7 +23,3 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
   @picking.picking_mesh3d_hit_test_system(world)
 }
 
-///|
-pub fn picking_mesh_ray_cast_module_tag() -> String {
-  PICKING_MESH_RAY_CAST_MODULE_TAG
-}

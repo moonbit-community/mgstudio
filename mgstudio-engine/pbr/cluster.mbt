@@ -16,14 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/cluster.rs`.
 
 ///|
-pub const CLUSTER_MODULE_TAG : String = @pbr_cluster.CLUSTER_MODULE_TAG
-
-///|
-pub fn pbr_cluster_module_tag() -> String {
-  CLUSTER_MODULE_TAG
-}
-
-///|
 pub fn pbr_cluster_runtime_available() -> Bool {
   true
 }

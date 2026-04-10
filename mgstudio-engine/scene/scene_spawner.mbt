@@ -26,24 +26,17 @@ pub type SceneSpawnerInstance = SceneInstance
 pub type SceneSpawnerInstanceReady = SceneInstanceReady
 
 ///|
-pub const SCENE_SPAWNER_MODULE_TAG : String = "bevy_scene::scene_spawner"
-
 ///|
 pub struct SceneSpawnerBridge {
-  module_tag : String
 }
 
 ///|
 pub fn SceneSpawnerBridge::default() -> SceneSpawnerBridge {
-  SceneSpawnerBridge::{ module_tag: SCENE_SPAWNER_MODULE_TAG }
+  SceneSpawnerBridge::{  }
 }
 
 ///|
-pub fn scene_spawner_bridge_enabled(bridge : SceneSpawnerBridge) -> Bool {
-  bridge.module_tag == SCENE_SPAWNER_MODULE_TAG
+pub fn scene_spawner_bridge_enabled(_ : SceneSpawnerBridge) -> Bool {
+  true
 }
 
-///|
-pub fn scene_spawner_bridge_module_tag(bridge : SceneSpawnerBridge) -> String {
-  bridge.module_tag
-}

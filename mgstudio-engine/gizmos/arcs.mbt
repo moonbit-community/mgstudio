@@ -20,8 +20,6 @@
 pub type GizmoArc2dBuilder = @sprite.Arc2dBuilder
 
 ///|
-pub const GIZMO_ARCS_MODULE_TAG : String = "bevy_gizmos::arcs"
-
 ///|
 pub fn gizmo_arc2d_builder_identity(
   builder : GizmoArc2dBuilder,

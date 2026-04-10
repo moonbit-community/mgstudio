@@ -8,17 +8,9 @@ import {
 }
 
 // Values
-pub const DLSS_EXTRACT_MODULE_TAG : String = "bevy_anti_alias::dlss::extract"
-
-pub const DLSS_NODE_MODULE_TAG : String = "bevy_anti_alias::dlss::node"
-
-pub const DLSS_PREPARE_MODULE_TAG : String = "bevy_anti_alias::dlss::prepare"
-
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn dlss_extract_bridge_enabled(DlssExtractBridge) -> Bool
-
-pub fn dlss_extract_bridge_label(DlssExtractBridge) -> String
 
 pub fn dlss_extract_enabled() -> Bool
 
@@ -26,15 +18,11 @@ pub fn dlss_init_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn dlss_node_bridge_enabled(DlssNodeBridge) -> Bool
 
-pub fn dlss_node_bridge_label(DlssNodeBridge) -> String
-
 pub fn dlss_node_enabled() -> Bool
 
 pub fn dlss_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn dlss_prepare_bridge_enabled(DlssPrepareBridge) -> Bool
-
-pub fn dlss_prepare_bridge_label(DlssPrepareBridge) -> String
 
 pub fn dlss_prepare_enabled() -> Bool
 
@@ -48,7 +36,6 @@ pub struct Dlss {
 pub fn Dlss::default() -> Self
 
 pub struct DlssExtractBridge {
-  extract_label : String
 }
 pub fn DlssExtractBridge::default() -> Self
 
@@ -57,7 +44,6 @@ pub struct DlssInitPlugin {
 pub fn DlssInitPlugin::default() -> Self
 
 pub struct DlssNodeBridge {
-  node_label : String
 }
 pub fn DlssNodeBridge::default() -> Self
 
@@ -76,7 +62,6 @@ pub struct DlssPlugin {
 pub fn DlssPlugin::default() -> Self
 
 pub struct DlssPrepareBridge {
-  prepare_label : String
 }
 pub fn DlssPrepareBridge::default() -> Self
 

@@ -17,14 +17,8 @@
 // Bridge capability flag for cross gizmo shapes.
 
 ///|
-pub const GIZMO_CROSS_MODULE_TAG : String = "bevy_gizmos::cross"
-
 ///|
 pub fn gizmo_cross_supported() -> Bool {
   true
 }
 
-///|
-pub fn gizmo_cross_module_tag() -> String {
-  GIZMO_CROSS_MODULE_TAG
-}

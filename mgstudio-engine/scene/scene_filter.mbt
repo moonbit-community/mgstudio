@@ -17,8 +17,6 @@
 // Scene filter API is gated by dynamic-scene reflection support.
 
 ///|
-pub const SCENE_FILTER_MODULE_TAG : String = "bevy_scene::scene_filter"
-
 ///|
 pub struct SceneFilterBridge {
   supported : Bool

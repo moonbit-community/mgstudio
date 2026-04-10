@@ -6,10 +6,6 @@ import {
 }
 
 // Values
-pub const MATH_CURVE_EASING_MODULE_TAG : String = "bevy_math::curve::easing"
-
-pub const MATH_CURVE_MODULE_TAG : String = "bevy_math::curve"
-
 pub fn[T] constant_curve(@math.Interval, T) -> @math.ConstantCurve[T]
 
 pub fn[T] curve_identity(@math.Curve[T]) -> @math.Curve[T]

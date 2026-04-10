@@ -18,16 +18,13 @@
 // File-level bridge capability marker aligned to current mgstudio runtime ownership.
 
 ///|
-pub const LIGHT_MODULE_TAG : String = "bevy_light::lib"
-
 ///|
 pub struct LightRuntimeBridge {
-  module_tag : String
 }
 
 ///|
 pub fn LightRuntimeBridge::default() -> LightRuntimeBridge {
-  LightRuntimeBridge::{ module_tag: LIGHT_MODULE_TAG }
+  LightRuntimeBridge::{  }
 }
 
 ///|
@@ -36,11 +33,7 @@ pub fn light_module_anchor_enabled() -> Bool {
 }
 
 ///|
-pub fn light_runtime_bridge_enabled(bridge : LightRuntimeBridge) -> Bool {
-  bridge.module_tag == LIGHT_MODULE_TAG && light_module_anchor_enabled()
+pub fn light_runtime_bridge_enabled(_ : LightRuntimeBridge) -> Bool {
+  light_module_anchor_enabled()
 }
 
-///|
-pub fn light_runtime_bridge_module_tag(bridge : LightRuntimeBridge) -> String {
-  bridge.module_tag
-}

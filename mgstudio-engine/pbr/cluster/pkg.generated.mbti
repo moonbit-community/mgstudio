@@ -2,8 +2,6 @@
 package "Milky2018/mgstudio/pbr/cluster"
 
 // Values
-pub const CLUSTER_MODULE_TAG : String = "bevy_pbr::cluster"
-
 pub fn pbr_cluster_tile_count(ClusterConfig3d) -> Int
 
 // Errors

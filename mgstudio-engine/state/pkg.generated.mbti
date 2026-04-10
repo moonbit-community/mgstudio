@@ -8,10 +8,6 @@ import {
 }
 
 // Values
-pub const STATE_COMMANDS_MODULE_TAG : String = "bevy_state::commands"
-
-pub const STATE_MODULE_TAG : String = "bevy_state::lib"
-
 pub const STATE_RUNTIME_OWNER : String = "Milky2018/mgstudio/state"
 
 pub fn[S : @app.States] in_state(S) -> (@ecs.World) -> Bool
@@ -28,8 +24,6 @@ pub fn[S : @app.States] state_changed(S) -> (@ecs.World) -> Bool
 
 pub fn state_commands_bridge_enabled(StateCommandsBridge) -> Bool
 
-pub fn state_commands_bridge_module_tag(StateCommandsBridge) -> String
-
 pub fn[S : @app.States] state_condition_changed(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] state_condition_exists(S) -> (@ecs.World) -> Bool
@@ -37,8 +31,6 @@ pub fn[S : @app.States] state_condition_exists(S) -> (@ecs.World) -> Bool
 pub fn[S : @app.States] state_condition_in_state(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] state_exists(S) -> (@ecs.World) -> Bool
-
-pub fn state_module_tag() -> String
 
 pub fn[S : @app.States] state_resource_key(S) -> @ecs.ResourceKey[@app.State[S]]
 
@@ -60,7 +52,6 @@ pub fn states_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App[@e
 
 // Types and methods
 pub struct StateCommandsBridge {
-  module_tag : String
 }
 pub fn StateCommandsBridge::default() -> Self
 

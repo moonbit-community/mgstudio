@@ -22,8 +22,6 @@ pub type ScreenSpaceTransmissionQuality = @post_process.ScreenSpaceTransmissionQ
 pub type ScreenSpaceTransmission = @post_process.ScreenSpaceTransmission
 
 ///|
-pub const TRANSMISSION_MODULE_TAG : String = "bevy_pbr::transmission"
-
 ///|
 pub fn pbr_screen_space_transmission_default() -> ScreenSpaceTransmission {
   ScreenSpaceTransmission::default()

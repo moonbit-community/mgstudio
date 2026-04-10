@@ -18,10 +18,6 @@ import {
 // Values
 pub const HAS_TEXT_RUNTIME : Bool = true
 
-pub const TEXT_ERROR_MODULE_TAG : String = "bevy_text::error"
-
-pub const TEXT_FONT_LOADER_MODULE_TAG : String = "bevy_text::font_loader"
-
 pub const TEXT_PLUGIN_ID : String = "bevy_text::TextPlugin"
 
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
@@ -120,8 +116,6 @@ pub fn text_diagnostic_update_pending_layout_count() -> Int
 
 pub fn text_error_bridge_enabled(TextErrorBridge) -> Bool
 
-pub fn text_error_bridge_module_tag(TextErrorBridge) -> String
-
 pub fn text_font_context() -> FontCx
 
 pub fn text_font_family_names(FontCx) -> Array[String]
@@ -129,8 +123,6 @@ pub fn text_font_family_names(FontCx) -> Array[String]
 pub fn text_font_loader_available() -> Bool
 
 pub fn text_font_loader_bridge_enabled(TextFontLoaderBridge) -> Bool
-
-pub fn text_font_loader_bridge_module_tag(TextFontLoaderBridge) -> String
 
 pub fn text_font_source_from_asset(@asset.Handle[@asset.Font]) -> FontSource
 
@@ -648,7 +640,6 @@ pub struct TextEntity {
 }
 
 pub struct TextErrorBridge {
-  module_tag : String
 }
 pub fn TextErrorBridge::default() -> Self
 
@@ -674,7 +665,6 @@ pub fn TextFont::with_width(Self, FontWidth) -> Self
 pub impl @ecs.Component for TextFont
 
 pub struct TextFontLoaderBridge {
-  module_tag : String
 }
 pub fn TextFontLoaderBridge::default() -> Self
 

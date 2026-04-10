@@ -17,16 +17,13 @@
 // Bridge preparation gate for optional DLSS runtime path.
 
 ///|
-pub const DLSS_PREPARE_MODULE_TAG : String = "bevy_anti_alias::dlss::prepare"
-
 ///|
 pub struct DlssPrepareBridge {
-  prepare_label : String
 }
 
 ///|
 pub fn DlssPrepareBridge::default() -> DlssPrepareBridge {
-  DlssPrepareBridge::{ prepare_label: DLSS_PREPARE_MODULE_TAG }
+  DlssPrepareBridge::{  }
 }
 
 ///|
@@ -35,11 +32,7 @@ pub fn dlss_prepare_enabled() -> Bool {
 }
 
 ///|
-pub fn dlss_prepare_bridge_enabled(bridge : DlssPrepareBridge) -> Bool {
-  bridge.prepare_label == DLSS_PREPARE_MODULE_TAG && dlss_prepare_enabled()
+pub fn dlss_prepare_bridge_enabled(_ : DlssPrepareBridge) -> Bool {
+  dlss_prepare_enabled()
 }
 
-///|
-pub fn dlss_prepare_bridge_label(bridge : DlssPrepareBridge) -> String {
-  bridge.prepare_label
-}

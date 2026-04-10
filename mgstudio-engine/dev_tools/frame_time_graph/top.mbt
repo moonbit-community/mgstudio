@@ -18,8 +18,6 @@
 pub using @dev_tools {type FrameTimeGraphConfig}
 
 ///|
-pub const FRAME_TIME_GRAPH_MODULE_TAG : String = "bevy_dev_tools::frame_time_graph"
-
 ///|
 pub fn frame_time_graph_default_config() -> FrameTimeGraphConfig {
   FrameTimeGraphConfig::default()

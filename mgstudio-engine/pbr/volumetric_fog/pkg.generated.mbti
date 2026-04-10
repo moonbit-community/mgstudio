@@ -6,8 +6,6 @@ import {
 }
 
 // Values
-pub const VOLUMETRIC_FOG_MODULE_TAG : String = "bevy_pbr::volumetric_fog"
-
 pub fn fog_volume_default_settings() -> @light.FogVolume
 
 pub fn fog_volume_with_density(@light.FogVolume, Float) -> @light.FogVolume

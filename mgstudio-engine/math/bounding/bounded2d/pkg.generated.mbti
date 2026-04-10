@@ -6,11 +6,7 @@ import {
 }
 
 // Values
-pub const MATH_BOUNDED2D_MODULE_TAG : String = "bevy_math::bounding::bounded2d"
-
 pub fn[T : @math.Bounded2d] aabb_2d_of(T, @math.Isometry2d) -> @math.Aabb2d
-
-pub fn bounded2d_runtime_tag() -> String
 
 pub fn[T : @math.Bounded2d] bounding_circle_of(T, @math.Isometry2d) -> @math.BoundingCircle
 

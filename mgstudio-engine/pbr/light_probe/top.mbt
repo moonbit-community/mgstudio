@@ -19,8 +19,6 @@
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
 
 ///|
-pub const LIGHT_PROBE_MODULE_TAG : String = "bevy_pbr::light_probe"
-
 ///|
 pub fn max_view_light_probes() -> Int {
   MAX_VIEW_LIGHT_PROBES

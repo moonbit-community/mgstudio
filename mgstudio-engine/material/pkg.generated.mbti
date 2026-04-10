@@ -14,19 +14,9 @@ import {
 // Values
 pub const MATERIAL_BIND_GROUP_LABEL : String = "bevy_material::bind_group"
 
-pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_MODULE_TAG : String = "bevy_material::bind_group_layout_entries"
-
 pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
 
-pub const MATERIAL_DESCRIPTOR_MODULE_TAG : String = "bevy_material::descriptor"
-
-pub const MATERIAL_KEY_MODULE_TAG : String = "bevy_material::key"
-
-pub const MATERIAL_LABELS_MODULE_TAG : String = "bevy_material::labels"
-
 pub const MATERIAL_PIPELINE_LABEL : String = "bevy_material::pipeline"
-
-pub const MATERIAL_SPECIALIZATION_MODULE_TAG : String = "bevy_material::specialize"
 
 pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
 
@@ -48,15 +38,11 @@ pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceA
 
 pub fn material_alpha_is_blended(AlphaMode3d) -> Bool
 
-pub fn material_bind_group_layout_entries_module_tag() -> String
-
 pub fn material_bind_group_layout_entries_supported() -> Bool
 
 pub fn material_default_opaque_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
 pub fn material_descriptor_identity(StandardMaterial) -> StandardMaterial
-
-pub fn material_labels_runtime_tag() -> String
 
 pub fn material_mesh3d_identity(MeshMaterial3d) -> MeshMaterial3d
 
@@ -65,8 +51,6 @@ pub fn material_opaque_renderer_method_identity(OpaqueRendererMethod) -> OpaqueR
 pub fn material_package_bevy_source() -> String
 
 pub fn material_parallax_method_identity(ParallaxMappingMethod) -> ParallaxMappingMethod
-
-pub fn material_specialization_module_tag() -> String
 
 pub fn material_specialization_supported() -> Bool
 

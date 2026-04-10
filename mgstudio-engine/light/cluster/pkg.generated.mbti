@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const LIGHT_CLUSTER_TEST_MODULE_TAG : String = "bevy_light::cluster::test"
-
 pub fn cluster_assign_lights(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cluster_light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -18,13 +16,10 @@ pub fn cluster_test_enabled() -> Bool
 
 pub fn light_cluster_test_bridge_enabled(LightClusterTestBridge) -> Bool
 
-pub fn light_cluster_test_bridge_module_tag(LightClusterTestBridge) -> String
-
 // Errors
 
 // Types and methods
 pub struct LightClusterTestBridge {
-  module_tag : String
 }
 pub fn LightClusterTestBridge::default() -> Self
 

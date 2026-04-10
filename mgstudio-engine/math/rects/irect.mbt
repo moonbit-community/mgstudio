@@ -20,8 +20,6 @@
 pub type IRect = @math.IRect
 
 ///|
-pub const MATH_IRECT_MODULE_TAG : String = "bevy_math::rects::irect"
-
 ///|
 pub fn irect_identity(value : IRect) -> IRect {
   value

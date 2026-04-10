@@ -15,8 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/bind_group_layout_entries.rs`.
 // Bridge capability gate for material bind-group layout specialization.
-pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_MODULE_TAG : String = "bevy_material::bind_group_layout_entries"
-
 ///|
 pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
 
@@ -25,7 +23,3 @@ pub fn material_bind_group_layout_entries_supported() -> Bool {
   MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED
 }
 
-///|
-pub fn material_bind_group_layout_entries_module_tag() -> String {
-  MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_MODULE_TAG
-}

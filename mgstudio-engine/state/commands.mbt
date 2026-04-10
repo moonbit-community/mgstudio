@@ -23,24 +23,17 @@ pub type StateCommandDespawnOnExit = DespawnOnExit
 pub type StateCommandDespawnOnEnter = DespawnOnEnter
 
 ///|
-pub const STATE_COMMANDS_MODULE_TAG : String = "bevy_state::commands"
-
 ///|
 pub struct StateCommandsBridge {
-  module_tag : String
 }
 
 ///|
 pub fn StateCommandsBridge::default() -> StateCommandsBridge {
-  StateCommandsBridge::{ module_tag: STATE_COMMANDS_MODULE_TAG }
+  StateCommandsBridge::{  }
 }
 
 ///|
-pub fn state_commands_bridge_enabled(bridge : StateCommandsBridge) -> Bool {
-  bridge.module_tag == STATE_COMMANDS_MODULE_TAG
+pub fn state_commands_bridge_enabled(_ : StateCommandsBridge) -> Bool {
+  true
 }
 
-///|
-pub fn state_commands_bridge_module_tag(bridge : StateCommandsBridge) -> String {
-  bridge.module_tag
-}

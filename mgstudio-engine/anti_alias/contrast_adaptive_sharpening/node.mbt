@@ -17,16 +17,13 @@
 // Bridge node gate for optional CAS runtime path.
 
 ///|
-pub const CAS_NODE_MODULE_TAG : String = "bevy_anti_alias::contrast_adaptive_sharpening::node"
-
 ///|
 pub struct CasNodeBridge {
-  node_label : String
 }
 
 ///|
 pub fn CasNodeBridge::default() -> CasNodeBridge {
-  CasNodeBridge::{ node_label: CAS_NODE_MODULE_TAG }
+  CasNodeBridge::{  }
 }
 
 ///|
@@ -35,11 +32,7 @@ pub fn cas_node_enabled() -> Bool {
 }
 
 ///|
-pub fn cas_node_bridge_enabled(bridge : CasNodeBridge) -> Bool {
-  bridge.node_label == CAS_NODE_MODULE_TAG && cas_node_enabled()
+pub fn cas_node_bridge_enabled(_ : CasNodeBridge) -> Bool {
+  cas_node_enabled()
 }
 
-///|
-pub fn cas_node_bridge_label(bridge : CasNodeBridge) -> String {
-  bridge.node_label
-}

@@ -15,8 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/lib.rs`.
 // Runtime anchor for the current package-level math surface.
-pub const MATH_LIB_MODULE_TAG : String = "bevy_math::lib"
-
 ///|
 fn _math_lib_default_primitives() -> (Circle, Cuboid) {
   (Circle::default(), Cuboid::default())

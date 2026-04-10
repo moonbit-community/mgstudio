@@ -6,8 +6,6 @@ import {
 }
 
 // Values
-pub const SSR_MODULE_TAG : String = "bevy_pbr::ssr"
-
 pub fn pbr_ssr_default() -> @post_process.ScreenSpaceReflections
 
 // Errors

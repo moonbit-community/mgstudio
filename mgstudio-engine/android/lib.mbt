@@ -17,16 +17,13 @@
 // Runtime wrappers live in this file while the broader android boundary stays split across the package.
 
 ///|
-pub const ANDROID_MODULE_TAG : String = "bevy_android::lib"
-
 ///|
 pub struct AndroidRuntimeBridge {
-  module_tag : String
 }
 
 ///|
 pub fn AndroidRuntimeBridge::default() -> AndroidRuntimeBridge {
-  AndroidRuntimeBridge::{ module_tag: ANDROID_MODULE_TAG }
+  AndroidRuntimeBridge::{  }
 }
 
 ///|
@@ -35,13 +32,7 @@ pub fn android_runtime_available() -> Bool {
 }
 
 ///|
-pub fn android_runtime_bridge_available(bridge : AndroidRuntimeBridge) -> Bool {
-  bridge.module_tag == ANDROID_MODULE_TAG && android_runtime_available()
+pub fn android_runtime_bridge_available(_ : AndroidRuntimeBridge) -> Bool {
+  android_runtime_available()
 }
 
-///|
-pub fn android_runtime_bridge_module_tag(
-  bridge : AndroidRuntimeBridge,
-) -> String {
-  bridge.module_tag
-}

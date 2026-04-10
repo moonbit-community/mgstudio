@@ -23,8 +23,6 @@ pub type GizmoCircle = @math.Circle
 pub type GizmoArc2d = @math.Arc2d
 
 ///|
-pub const GIZMO_CIRCLES_MODULE_TAG : String = "bevy_gizmos::circles"
-
 ///|
 pub fn gizmo_circle_identity(circle : GizmoCircle) -> GizmoCircle {
   circle

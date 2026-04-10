@@ -13,8 +13,6 @@ pub const LIGHT_TILE_SAMPLES_PER_BLOCK : Int64 = 1024
 
 pub const SOLARI_LIGHTING_PLUGIN_ID : String = "bevy_solari::realtime::SolariLightingPlugin"
 
-pub const SOLARI_REALTIME_EXTRACT_MODULE_TAG : String = "bevy_solari::realtime::extract"
-
 pub const WORLD_CACHE_SIZE : Int64 = 1_048_576
 
 pub fn extract_solari_lighting(@ecs.World) -> Unit
@@ -28,8 +26,6 @@ pub fn solari_lighting(@ecs.World) -> Unit
 pub fn solari_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn solari_realtime_extract_bridge_enabled(SolariRealtimeExtractBridge) -> Bool
-
-pub fn solari_realtime_extract_bridge_module_tag(SolariRealtimeExtractBridge) -> String
 
 // Errors
 
@@ -56,7 +52,6 @@ pub struct SolariLightingResources {
 pub fn SolariLightingResources::default() -> Self
 
 pub struct SolariRealtimeExtractBridge {
-  module_tag : String
 }
 pub fn SolariRealtimeExtractBridge::default() -> Self
 

@@ -17,8 +17,6 @@
 // The current runtime does not expose Bevy's parallel-queue helpers.
 
 ///|
-pub const PARALLEL_QUEUE_MODULE_TAG : String = "bevy_utils::parallel_queue"
-
 ///|
 pub fn utils_parallel_queue_available() -> Bool {
   true

@@ -20,8 +20,6 @@
 pub type GizmoArrowBuilder = @sprite.ArrowBuilder
 
 ///|
-pub const GIZMO_ARROWS_MODULE_TAG : String = "bevy_gizmos::arrows"
-
 ///|
 pub fn gizmo_arrow_builder_identity(
   builder : GizmoArrowBuilder,

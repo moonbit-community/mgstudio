@@ -23,8 +23,6 @@ pub type MaterialOpaqueRendererMethod = OpaqueRendererMethod
 pub type MaterialParallaxMethod = ParallaxMappingMethod
 
 ///|
-pub const MATERIAL_KEY_MODULE_TAG : String = "bevy_material::key"
-
 ///|
 pub fn material_opaque_renderer_method_identity(
   value : MaterialOpaqueRendererMethod,

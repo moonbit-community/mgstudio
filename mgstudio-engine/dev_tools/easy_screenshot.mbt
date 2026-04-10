@@ -17,8 +17,6 @@
 // The current runtime does not expose Bevy's screenshot helper surface.
 
 ///|
-pub const EASY_SCREENSHOT_MODULE_TAG : String = "bevy_dev_tools::easy_screenshot"
-
 ///|
 pub struct EasyScreenshotConfig {
   enabled : Bool

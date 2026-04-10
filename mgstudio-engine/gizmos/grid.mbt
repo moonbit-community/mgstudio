@@ -20,8 +20,6 @@
 pub type GizmoGrid2dBuilder = @sprite.Grid2dBuilder
 
 ///|
-pub const GIZMO_GRID_MODULE_TAG : String = "bevy_gizmos::grid"
-
 ///|
 pub fn gizmo_grid_builder_identity(
   builder : GizmoGrid2dBuilder,

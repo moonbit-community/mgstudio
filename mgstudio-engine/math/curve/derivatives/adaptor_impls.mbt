@@ -19,11 +19,3 @@ pub using @math {type WithDerivative}
 
 ///|
 pub using @math {type WithTwoDerivatives}
-
-///|
-pub const MATH_CURVE_DERIVATIVES_MODULE_TAG : String = "bevy_math::curve::derivatives"
-
-///|
-pub fn with_derivative_runtime_tag() -> String {
-  MATH_CURVE_DERIVATIVES_MODULE_TAG
-}

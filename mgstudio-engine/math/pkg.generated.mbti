@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const MATH_LIB_MODULE_TAG : String = "bevy_math::lib"
-
 pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4

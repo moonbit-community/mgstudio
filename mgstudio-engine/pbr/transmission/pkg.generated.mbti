@@ -8,10 +8,6 @@ import {
 }
 
 // Values
-pub const TRANSMISSION_MODULE_TAG : String = "bevy_pbr::transmission"
-
-pub const TRANSMISSION_TEXTURE_MODULE_TAG : String = "bevy_pbr::transmission::texture"
-
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
 
 pub fn pbr_screen_space_transmission_default() -> @post_process.ScreenSpaceTransmission

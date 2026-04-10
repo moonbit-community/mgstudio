@@ -19,8 +19,6 @@
 pub type ParallaxMappingMethod = @material.ParallaxMappingMethod
 
 ///|
-pub const PARALLAX_MODULE_TAG : String = "bevy_pbr::parallax"
-
 ///|
 pub fn pbr_parallax_default_method() -> ParallaxMappingMethod {
   ParallaxMappingMethod::default()

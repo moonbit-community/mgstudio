@@ -8,8 +8,6 @@ import {
 // Values
 pub const GIZMOS_PRIMITIVES_MODULE_ID : String = "bevy_gizmos::primitives"
 
-pub const GIZMO_PRIMITIVES_DIM2_MODULE_TAG : String = "bevy_gizmos::primitives::dim2"
-
 pub const GIZMO_PRIMITIVE_HELPER_EPSILON : Float = 0.00001
 
 pub fn gizmo_primitive_capsule2d_identity(@math.Capsule2d) -> @math.Capsule2d

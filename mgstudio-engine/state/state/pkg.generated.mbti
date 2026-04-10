@@ -8,15 +8,9 @@ import {
 }
 
 // Values
-pub const FREELY_MUTABLE_STATE_MODULE_TAG : String = "bevy_state::state::freely_mutable_state"
-
-pub const STATE_SET_MODULE_TAG : String = "bevy_state::state::state_set"
-
 pub fn[S] computed_state_optional_source(S) -> @app.OptionalStateSource[S]
 
 pub fn freely_mutable_state_bridge_enabled(FreelyMutableStateBridge) -> Bool
-
-pub fn freely_mutable_state_bridge_module_tag(FreelyMutableStateBridge) -> String
 
 pub fn[S : @app.States] in_state(S) -> (@ecs.World) -> Bool
 
@@ -36,8 +30,6 @@ pub fn[S : @app.States] state_set_dependency_depth(S) -> Int
 
 pub fn[S : @app.States] state_set_depth(S) -> Int
 
-pub fn state_set_module_tag() -> String
-
 pub fn[S : @app.States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[@app.StateTransitionEvent[S]]
 
 pub fn[S : @app.States] state_transitions_event_key(S) -> @ecs.ResourceKey[@app.StateTransitionEvent[S]]
@@ -50,7 +42,6 @@ pub fn[S] sub_state_optional_source(S) -> @app.OptionalStateSource[S]
 
 // Types and methods
 pub struct FreelyMutableStateBridge {
-  module_tag : String
 }
 pub fn FreelyMutableStateBridge::default() -> Self
 

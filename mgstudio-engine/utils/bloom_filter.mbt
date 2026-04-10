@@ -17,8 +17,6 @@
 // The current runtime does not expose Bevy's bloom-filter helpers.
 
 ///|
-pub const BLOOM_FILTER_MODULE_TAG : String = "bevy_utils::bloom_filter"
-
 ///|
 pub fn utils_bloom_filter_available() -> Bool {
   true

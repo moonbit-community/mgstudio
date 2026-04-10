@@ -6,8 +6,6 @@ import {
 }
 
 // Values
-pub const SSAO_MODULE_TAG : String = "bevy_pbr::ssao"
-
 pub fn pbr_ssao_default() -> @post_process.ScreenSpaceAmbientOcclusion
 
 // Errors

@@ -22,8 +22,6 @@ pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbi
 pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
 
 ///|
-pub const SSAO_MODULE_TAG : String = "bevy_pbr::ssao"
-
 ///|
 pub fn pbr_ssao_default() -> ScreenSpaceAmbientOcclusion {
   ScreenSpaceAmbientOcclusion::default()

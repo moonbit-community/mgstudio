@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/pbr/material_bind_groups"
 
 // Values
-pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = "bevy_pbr::material_bind_groups"
 
 // Errors
 

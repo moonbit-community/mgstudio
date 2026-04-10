@@ -23,8 +23,6 @@ pub type GizmoAabb2d = @math.Aabb2d
 pub type GizmoAabb3d = @math.Aabb3d
 
 ///|
-pub const GIZMO_AABB_MODULE_TAG : String = "bevy_gizmos::aabb"
-
 ///|
 pub fn gizmo_aabb2d_identity(aabb : GizmoAabb2d) -> GizmoAabb2d {
   aabb

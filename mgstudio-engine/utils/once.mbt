@@ -17,8 +17,6 @@
 // The current runtime does not expose Bevy's once-cell helpers.
 
 ///|
-pub const ONCE_MODULE_TAG : String = "bevy_utils::once"
-
 ///|
 pub fn utils_once_available() -> Bool {
   true

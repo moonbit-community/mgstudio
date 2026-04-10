@@ -20,8 +20,6 @@
 pub const STATE_RUNTIME_OWNER : String = "Milky2018/mgstudio/state"
 
 ///|
-pub const STATE_MODULE_TAG : String = "bevy_state::lib"
-
 ///|
 pub fn state_runtime_owner() -> String {
   STATE_RUNTIME_OWNER
@@ -32,7 +30,3 @@ pub fn state_runtime_available() -> Bool {
   true
 }
 
-///|
-pub fn state_module_tag() -> String {
-  STATE_MODULE_TAG
-}

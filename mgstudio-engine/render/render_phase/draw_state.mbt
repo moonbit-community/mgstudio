@@ -19,13 +19,6 @@
 pub type DrawState = @renderer.GpuPassState
 
 ///|
-pub const DRAW_STATE_MODULE_TAG : String = "bevy_render::render_phase::draw_state"
-
-///|
-pub fn draw_state_module_tag() -> String {
-  DRAW_STATE_MODULE_TAG
-}
-
 ///|
 pub fn draw_state_runtime_available(_state : DrawState) -> Bool {
   true

@@ -19,8 +19,6 @@
 pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections
 
 ///|
-pub const SSR_MODULE_TAG : String = "bevy_pbr::ssr"
-
 ///|
 pub fn pbr_ssr_default() -> ScreenSpaceReflections {
   ScreenSpaceReflections::default()

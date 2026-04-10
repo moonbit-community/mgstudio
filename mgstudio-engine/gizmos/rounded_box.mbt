@@ -20,8 +20,6 @@
 pub type GizmoRoundedRectBuilder = @sprite.RoundedRectBuilder
 
 ///|
-pub const GIZMO_ROUNDED_BOX_MODULE_TAG : String = "bevy_gizmos::rounded_box"
-
 ///|
 pub fn gizmo_rounded_rect_builder_identity(
   builder : GizmoRoundedRectBuilder,

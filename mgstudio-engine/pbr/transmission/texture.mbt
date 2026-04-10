@@ -16,8 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/transmission/texture.rs`.
 
 ///|
-pub const TRANSMISSION_TEXTURE_MODULE_TAG : String = "bevy_pbr::transmission::texture"
-
 ///|
 pub fn transmission_texture_runtime_available() -> Bool {
   true

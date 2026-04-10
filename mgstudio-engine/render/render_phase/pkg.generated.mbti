@@ -7,11 +7,7 @@ import {
 }
 
 // Values
-pub const DRAW_STATE_MODULE_TAG : String = "bevy_render::render_phase::draw_state"
-
 pub fn draw_state_is_3d(@renderer.GpuPassState) -> Bool
-
-pub fn draw_state_module_tag() -> String
 
 pub fn draw_state_runtime_available(@renderer.GpuPassState) -> Bool
 

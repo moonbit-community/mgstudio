@@ -26,8 +26,6 @@ pub type GizmoPrimitiveRect2d = @math.Rectangle
 pub type GizmoPrimitiveCapsule2d = @math.Capsule2d
 
 ///|
-pub const GIZMO_PRIMITIVES_DIM2_MODULE_TAG : String = "bevy_gizmos::primitives::dim2"
-
 ///|
 pub fn gizmo_primitive_circle2d_identity(
   shape : GizmoPrimitiveCircle2d,

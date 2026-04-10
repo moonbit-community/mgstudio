@@ -17,16 +17,13 @@
 // Bridge extraction gate for optional DLSS runtime path.
 
 ///|
-pub const DLSS_EXTRACT_MODULE_TAG : String = "bevy_anti_alias::dlss::extract"
-
 ///|
 pub struct DlssExtractBridge {
-  extract_label : String
 }
 
 ///|
 pub fn DlssExtractBridge::default() -> DlssExtractBridge {
-  DlssExtractBridge::{ extract_label: DLSS_EXTRACT_MODULE_TAG }
+  DlssExtractBridge::{  }
 }
 
 ///|
@@ -35,11 +32,7 @@ pub fn dlss_extract_enabled() -> Bool {
 }
 
 ///|
-pub fn dlss_extract_bridge_enabled(bridge : DlssExtractBridge) -> Bool {
-  bridge.extract_label == DLSS_EXTRACT_MODULE_TAG && dlss_extract_enabled()
+pub fn dlss_extract_bridge_enabled(_ : DlssExtractBridge) -> Bool {
+  dlss_extract_enabled()
 }
 
-///|
-pub fn dlss_extract_bridge_label(bridge : DlssExtractBridge) -> String {
-  bridge.extract_label
-}

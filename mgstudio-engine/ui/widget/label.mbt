@@ -22,26 +22,17 @@ pub using @ui {type Label}
 pub let ecs_key_label : @ecs.ComponentKey[@ui.Label] = @ui.ecs_key_label
 
 ///|
-pub const UI_WIDGET_LABEL_MODULE_TAG : String = "bevy_ui::widget::label"
-
 ///|
 pub struct UiWidgetLabelBridge {
-  module_tag : String
 }
 
 ///|
 pub fn UiWidgetLabelBridge::default() -> UiWidgetLabelBridge {
-  UiWidgetLabelBridge::{ module_tag: UI_WIDGET_LABEL_MODULE_TAG }
+  UiWidgetLabelBridge::{  }
 }
 
 ///|
-pub fn ui_widget_label_bridge_enabled(bridge : UiWidgetLabelBridge) -> Bool {
-  bridge.module_tag == UI_WIDGET_LABEL_MODULE_TAG
+pub fn ui_widget_label_bridge_enabled(_ : UiWidgetLabelBridge) -> Bool {
+  true
 }
 
-///|
-pub fn ui_widget_label_bridge_module_tag(
-  bridge : UiWidgetLabelBridge,
-) -> String {
-  bridge.module_tag
-}

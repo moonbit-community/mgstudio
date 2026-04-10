@@ -17,8 +17,6 @@
 // Dynamic scene builder is gated by reflection support.
 
 ///|
-pub const DYNAMIC_SCENE_BUILDER_MODULE_TAG : String = "bevy_scene::dynamic_scene_builder"
-
 ///|
 pub struct DynamicSceneBuilderBridge {
   supported : Bool

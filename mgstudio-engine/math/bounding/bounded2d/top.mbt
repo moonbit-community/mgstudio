@@ -19,11 +19,3 @@ pub using @math {type Aabb2d}
 
 ///|
 pub using @math {type BoundingCircle}
-
-///|
-pub const MATH_BOUNDED2D_MODULE_TAG : String = "bevy_math::bounding::bounded2d"
-
-///|
-pub fn bounded2d_runtime_tag() -> String {
-  MATH_BOUNDED2D_MODULE_TAG
-}

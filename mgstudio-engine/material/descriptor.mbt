@@ -23,8 +23,6 @@ pub type MaterialDescriptor = StandardMaterial
 pub type MaterialMesh3d = MeshMaterial3d
 
 ///|
-pub const MATERIAL_DESCRIPTOR_MODULE_TAG : String = "bevy_material::descriptor"
-
 ///|
 pub fn material_descriptor_identity(
   value : MaterialDescriptor,

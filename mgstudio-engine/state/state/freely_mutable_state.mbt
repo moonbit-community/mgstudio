@@ -20,28 +20,19 @@
 pub type FreelyMutableNextState[S] = @state_root.NextState[S]
 
 ///|
-pub const FREELY_MUTABLE_STATE_MODULE_TAG : String = "bevy_state::state::freely_mutable_state"
-
 ///|
 pub struct FreelyMutableStateBridge {
-  module_tag : String
 }
 
 ///|
 pub fn FreelyMutableStateBridge::default() -> FreelyMutableStateBridge {
-  FreelyMutableStateBridge::{ module_tag: FREELY_MUTABLE_STATE_MODULE_TAG }
+  FreelyMutableStateBridge::{  }
 }
 
 ///|
 pub fn freely_mutable_state_bridge_enabled(
-  bridge : FreelyMutableStateBridge,
+  _ : FreelyMutableStateBridge,
 ) -> Bool {
-  bridge.module_tag == FREELY_MUTABLE_STATE_MODULE_TAG
+  true
 }
 
-///|
-pub fn freely_mutable_state_bridge_module_tag(
-  bridge : FreelyMutableStateBridge,
-) -> String {
-  bridge.module_tag
-}

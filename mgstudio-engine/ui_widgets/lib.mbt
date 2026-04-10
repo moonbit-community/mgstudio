@@ -17,8 +17,6 @@
 // Bridge surface to the root `ui` package implementation.
 
 ///|
-pub const UI_WIDGETS_LIB_MODULE_TAG : String = "bevy_ui_widgets::lib"
-
 ///|
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @ui.ui_plugin(app)

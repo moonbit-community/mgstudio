@@ -26,8 +26,6 @@ pub type EasingCurve[T] = @math.EasingCurve[T]
 pub type CurveChainError = @math.CurveChainError
 
 ///|
-pub const MATH_CURVE_MODULE_TAG : String = "bevy_math::curve"
-
 ///|
 pub fn[T] curve_identity(value : Curve[T]) -> Curve[T] {
   value

@@ -19,11 +19,3 @@ pub using @math {type Aabb3d}
 
 ///|
 pub using @math {type BoundingSphere}
-
-///|
-pub const MATH_BOUNDED3D_MODULE_TAG : String = "bevy_math::bounding::bounded3d"
-
-///|
-pub fn bounded3d_runtime_tag() -> String {
-  MATH_BOUNDED3D_MODULE_TAG
-}

@@ -9,8 +9,6 @@ import {
 // Values
 pub const PATHTRACING_PLUGIN_ID : String = "bevy_solari::pathtracer::PathtracingPlugin"
 
-pub const SOLARI_PATHTRACER_EXTRACT_MODULE_TAG : String = "bevy_solari::pathtracer::extract"
-
 pub fn extract_pathtracer(@ecs.World) -> Unit
 
 pub fn init_pathtracer_pipelines(@ecs.World) -> Unit
@@ -22,8 +20,6 @@ pub fn pathtracing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn prepare_pathtracer_accumulation_texture(@ecs.World) -> Unit
 
 pub fn solari_pathtracer_extract_bridge_enabled(SolariPathtracerExtractBridge) -> Bool
-
-pub fn solari_pathtracer_extract_bridge_module_tag(SolariPathtracerExtractBridge) -> String
 
 // Errors
 
@@ -48,7 +44,6 @@ pub struct PathtracingPlugin {
 pub fn PathtracingPlugin::default() -> Self
 
 pub struct SolariPathtracerExtractBridge {
-  module_tag : String
 }
 pub fn SolariPathtracerExtractBridge::default() -> Self
 

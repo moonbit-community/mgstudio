@@ -30,25 +30,13 @@ import {
 }
 
 // Values
-pub const CLUSTER_MODULE_TAG : String = "bevy_pbr::cluster"
-
 pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
-
-pub const EXTENDED_MATERIAL_MODULE_TAG : String = "bevy_pbr::extended_material"
 
 pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
 
 pub const MATERIALS_PLUGIN_ID : String = "bevy_pbr::MaterialsPlugin"
 
-pub const MATERIAL_BIND_GROUPS_MODULE_TAG : String = "bevy_pbr::material_bind_groups"
-
-pub const MEDIUM_MODULE_TAG : String = "bevy_pbr::medium"
-
 pub const MESH_RENDER_PLUGIN_ID : String = "bevy_pbr::MeshRenderPlugin"
-
-pub const PARALLAX_MODULE_TAG : String = "bevy_pbr::parallax"
-
-pub const PBR_FOG_MODULE_TAG : String = "bevy_pbr::fog"
 
 pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
 
@@ -268,8 +256,6 @@ pub fn mesh_render_plugin_with(@app.App[@ecs.World], MeshRenderPlugin) -> @app.A
 
 pub fn pbr_cluster_config_default() -> @cluster.ClusterConfig3d
 
-pub fn pbr_cluster_module_tag() -> String
-
 pub fn pbr_cluster_runtime_available() -> Bool
 
 pub fn pbr_cluster_tile_count(@cluster.ClusterConfig3d) -> Int
@@ -293,8 +279,6 @@ pub fn pbr_gltf_render_enabled() -> Bool
 pub fn pbr_gpu_instance_buffer_builder_enabled() -> Bool
 
 pub fn pbr_material_bind_groups_default() -> @material_bind_groups.MaterialBindGroups
-
-pub fn pbr_material_bind_groups_module_tag() -> String
 
 pub fn pbr_material_bind_groups_runtime_available() -> Bool
 

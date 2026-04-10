@@ -23,8 +23,6 @@ pub type UniformMeshSampler = @math.UniformMeshSampler
 pub type UniformMeshSamplerError = @math.UniformMeshSamplerError
 
 ///|
-pub const MATH_MESH_SAMPLING_MODULE_TAG : String = "bevy_math::sampling::mesh_sampling"
-
 ///|
 pub fn uniform_mesh_sampler_identity(
   sampler : UniformMeshSampler,
