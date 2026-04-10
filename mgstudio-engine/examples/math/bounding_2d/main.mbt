@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const OFFSET_X : Float = 125.0F
 
 ///|

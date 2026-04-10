@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 pub(all) enum AppState {
   Menu
   InGame(Bool, Bool)

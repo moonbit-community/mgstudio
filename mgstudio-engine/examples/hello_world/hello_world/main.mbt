@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn hello_world_system(_world : @ecs.World) -> Unit {
   println("hello world")
 }

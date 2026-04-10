@@ -104,8 +104,6 @@ fn ensure_backend() -> GpuBackend? {
 }
 
 ///|
-
-///|
 pub fn debug_string(value~ : String) -> Unit {
   debug(value)
 }

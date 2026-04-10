@@ -286,7 +286,9 @@ pub let ecs_key_window_moved : @ecs.MessageKey[WindowMoved] = @ecs.register_mess
 ///|
 pub let ecs_key_window_scale_factor_changed : @ecs.MessageKey[
   WindowScaleFactorChanged,
-] = @ecs.register_message(debug_name="mgstudio_window::WindowScaleFactorChanged")
+] = @ecs.register_message(
+  debug_name="mgstudio_window::WindowScaleFactorChanged",
+)
 
 ///|
 pub let ecs_key_window_backend_scale_factor_changed : @ecs.MessageKey[

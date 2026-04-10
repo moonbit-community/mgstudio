@@ -17,7 +17,6 @@
 // Runtime wrappers live in this file while the broader utils implementation stays split across the package.
 
 ///|
-///|
 pub fn[T : Default] default() -> T {
   Default::default()
 }

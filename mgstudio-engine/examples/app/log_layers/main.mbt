@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn custom_layer(record : @app.LogRecord) -> Unit {
   println("Got event!")
   println("  level=\{to_repr(record.level()).to_string()}")

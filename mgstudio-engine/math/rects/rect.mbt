@@ -19,7 +19,6 @@
 pub type Rect = @math.Rect
 
 ///|
-///|
 pub fn rect_identity(value : Rect) -> Rect {
   value
 }

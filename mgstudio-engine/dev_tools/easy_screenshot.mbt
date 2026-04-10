@@ -17,7 +17,6 @@
 // The current runtime does not expose Bevy's screenshot helper surface.
 
 ///|
-///|
 pub struct EasyScreenshotConfig {
   enabled : Bool
   delay_frames : Int

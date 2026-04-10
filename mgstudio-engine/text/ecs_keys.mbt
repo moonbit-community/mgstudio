@@ -216,8 +216,7 @@ priv struct EcsTextEntry {
 let text_ecs_entries : Array[EcsTextEntry] = []
 
 ///|
-let text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
-)
+let text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({})
 
 ///|
 priv struct UiEcsTextEntry {
@@ -1795,10 +1794,7 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
       }
       None => {
         ui_text_ecs_spawn_entry(world, world_id, entity, bundle, span_bundles)
-        index_by_entity_id.set(
-          entity.id,
-          ui_text_ecs_entries.length() - 1,
-        )
+        index_by_entity_id.set(entity.id, ui_text_ecs_entries.length() - 1)
       }
     }
   })

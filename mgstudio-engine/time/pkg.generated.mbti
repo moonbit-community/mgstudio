@@ -65,8 +65,6 @@ pub fn time_real_elapsed() -> @core.Duration
 
 pub fn time_real_elapsed_seconds() -> Float
 
-pub fn[T : Default] time_resource_key_of(T) -> @ecs.ResourceKey[Time[T]]
-
 pub fn time_run_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn time_virtual_delta() -> @core.Duration

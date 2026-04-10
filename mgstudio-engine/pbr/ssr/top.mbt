@@ -19,7 +19,6 @@
 pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections
 
 ///|
-///|
 pub fn pbr_ssr_default() -> ScreenSpaceReflections {
   ScreenSpaceReflections::default()
 }

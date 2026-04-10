@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::default()
   window.transparent = true

@@ -22,7 +22,6 @@ pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
 
 ///|
-///|
 pub fn pbr_extended_material_metadata_default() -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::default()
 }

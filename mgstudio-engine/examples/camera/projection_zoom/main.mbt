@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct CameraSettings {
   orthographic_viewport_height : Float
   orthographic_zoom_max : Float

@@ -17,7 +17,6 @@
 // The current runtime relies on MoonBit's built-in `Map` instead of a dedicated Bevy map wrapper.
 
 ///|
-///|
 pub fn utils_map_helpers_available() -> Bool {
   true
 }

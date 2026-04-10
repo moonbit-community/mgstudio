@@ -55,7 +55,9 @@ pub let ecs_key_raw_handle_wrapper : @ecs.ComponentKey[RawHandleWrapper] = @ecs.
 ///|
 pub let ecs_key_raw_handle_wrapper_holder : @ecs.ComponentKey[
   RawHandleWrapperHolder,
-] = @ecs.register_component(debug_name="mgstudio_window::RawHandleWrapperHolder")
+] = @ecs.register_component(
+  debug_name="mgstudio_window::RawHandleWrapperHolder",
+)
 
 ///|
 pub impl @ecs.Component for RawHandleWrapper with component() {

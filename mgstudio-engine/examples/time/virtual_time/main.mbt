@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
   if value < min_value {
     min_value

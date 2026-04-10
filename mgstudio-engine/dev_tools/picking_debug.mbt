@@ -17,7 +17,6 @@
 // The current runtime does not expose Bevy's picking-debug helper surface.
 
 ///|
-///|
 pub struct PickingDebugConfig {
   enabled : Bool
 }

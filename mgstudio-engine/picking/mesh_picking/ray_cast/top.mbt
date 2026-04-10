@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/mod.rs`.
+
 ///|
 pub using @picking {type PickingHits}
 
@@ -21,4 +22,3 @@ pub using @picking {type PickingHits}
 pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
   @picking.picking_mesh3d_hit_test_system(world)
 }
-

@@ -53,8 +53,6 @@ pub fn host_asset_loaded_folder_handles_get(
 }
 
 ///|
-
-///|
 pub fn AssetServer::load_folder(
   self : AssetServer,
   path : String,

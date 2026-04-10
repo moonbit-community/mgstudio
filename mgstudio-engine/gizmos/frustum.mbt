@@ -19,7 +19,6 @@
 pub type GizmoViewFrustum = @math.ViewFrustum
 
 ///|
-///|
 pub fn gizmo_view_frustum_identity(
   frustum : GizmoViewFrustum,
 ) -> GizmoViewFrustum {

@@ -1030,8 +1030,6 @@ pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
 ///| Mark a text handle as UI text and provide the size of the owning UI node in logical pixels.
 
 ///|
-
-///|
 /// This does not affect shaping, but it changes how glyphs are positioned when rendered.
 pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
   text_update_instance(handle, instance => {

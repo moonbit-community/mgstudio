@@ -6,13 +6,7 @@ import {
 }
 
 // Values
-pub const LOG_CRATE_ID : String = "bevy_log"
-
 pub fn[W] android_tracing_plugin(AndroidTracingPlugin) -> (@app.App[W]) -> @app.App[W]
-
-pub fn[W] bevy_log_lib_plugin(@app.LogPlugin) -> (@app.App[W]) -> @app.App[W]
-
-pub fn default_log_plugin() -> @app.LogPlugin
 
 pub fn info_once(String, String) -> Unit
 

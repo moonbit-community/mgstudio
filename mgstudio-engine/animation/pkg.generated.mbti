@@ -14,8 +14,6 @@ import {
 }
 
 // Values
-pub const HAS_ANIMATION_RUNTIME : Bool = true
-
 pub fn advance_animations(@ecs.World) -> Unit
 
 pub fn advance_transitions(@ecs.World) -> Unit
@@ -63,8 +61,6 @@ pub fn animation_register_clip_event_callback((@core.Entity, Float, Float) -> Un
 pub fn animation_register_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
 
 pub fn animation_rotation_keyframe(Float, @math.Quat) -> KeyframeQuat
-
-pub fn animation_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn animation_scale_keyframe(Float, @math.Vec3) -> KeyframeVec3
 

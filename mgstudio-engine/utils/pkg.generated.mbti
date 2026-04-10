@@ -7,10 +7,6 @@ import {
 }
 
 // Values
-pub const HAS_UTILS_RUNTIME : Bool = true
-
-pub const UTILS_CRATE_ID : String = "bevy_utils"
-
 pub fn atomic_id_next() -> Int
 
 pub fn bloom_filter_hashes_empty() -> Array[Int]
@@ -40,8 +36,6 @@ pub fn utils_map_helpers_available() -> Bool
 pub fn utils_once_available() -> Bool
 
 pub fn utils_parallel_queue_available() -> Bool
-
-pub fn utils_runtime_available() -> Bool
 
 pub fn utils_runtime_type_support_available() -> Bool
 

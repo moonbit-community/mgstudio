@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct MyComponent {
   key : @window.KeyCode
 } derive(Eq)

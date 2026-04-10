@@ -6,12 +6,6 @@ import {
 }
 
 // Values
-pub const PTR_CRATE_ID : String = "bevy_ptr"
-
-pub fn[T] bevy_ptr_default(T) -> @ref.Ref[T]
-
-pub fn[T] bevy_ptr_lib(T) -> @ref.Ref[T]
-
 pub fn[T] ptr(T) -> @ref.Ref[T]
 
 pub fn[T] read(@ref.Ref[T]) -> T

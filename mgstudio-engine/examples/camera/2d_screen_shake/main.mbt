@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const TRAUMA_DECAY_PER_SECOND : Float = 0.5F
 
 ///|

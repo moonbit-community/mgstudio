@@ -46,10 +46,6 @@ pub fn msaa_writeback_required(MsaaWriteback?, Int) -> Bool
 
 pub fn post_process_effect_count(Bloom?, Vignette?, MotionBlur?, ChromaticAberration?, MsaaWriteback?) -> Int
 
-pub fn post_process_feature_names() -> Array[String]
-
-pub fn post_process_has_effects(Bloom?, Vignette?, MotionBlur?, ChromaticAberration?, MsaaWriteback?) -> Bool
-
 pub fn screen_space_transmission_blur_taps(ScreenSpaceTransmissionQuality) -> Int
 
 // Errors

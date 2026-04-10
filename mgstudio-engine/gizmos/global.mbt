@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/global.rs`.
+
 ///|
 pub type GizmoGlobalDefaultGroup = @sprite.DefaultGizmoConfigGroup
 
@@ -21,4 +22,3 @@ pub type GizmoGlobalDefaultGroup = @sprite.DefaultGizmoConfigGroup
 pub fn gizmo_global_init(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   init_gizmo_group(app, GizmoGlobalDefaultGroup::default())
 }
-

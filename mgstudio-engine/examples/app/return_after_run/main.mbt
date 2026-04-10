@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn set_title(_world : @ecs.World) -> Unit {
   @window.window_set_title(
     title="Close the window to return to the main function",

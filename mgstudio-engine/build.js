@@ -9,14 +9,26 @@ function pkg(path) {
 
 const linkConfigs = [];
 
+function addLinkConfig(packageName, linkFlags) {
+  linkConfigs.push({
+    package: packageName,
+    link_flags: linkFlags,
+  });
+}
+
+if (platform === 'darwin' || platform === 'linux') {
+  const zlibLinkFlags = '-lz';
+  const zlibLinkedPackages = [pkg('asset'), pkg('ui'), pkg('shader'), pkg('audio')];
+  for (const packageName of zlibLinkedPackages) {
+    addLinkConfig(packageName, zlibLinkFlags);
+  }
+}
+
 if (platform === 'darwin') {
   const darwinWindowLinkFlags =
     '-framework AppKit -framework QuartzCore -framework Foundation -lobjc -Wl,-undefined,dynamic_lookup';
 
-  linkConfigs.push({
-    package: pkg('window/windowing_native'),
-    link_flags: darwinWindowLinkFlags,
-  });
+  addLinkConfig(pkg('window/windowing_native'), darwinWindowLinkFlags);
 }
 
 console.log(

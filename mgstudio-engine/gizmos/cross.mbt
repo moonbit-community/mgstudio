@@ -16,8 +16,6 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/cross.rs`.
 
 ///|
-///|
 pub fn gizmo_cross_supported() -> Bool {
   true
 }
-

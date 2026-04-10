@@ -22,7 +22,6 @@ pub type MaterialDescriptor = StandardMaterial
 pub type MaterialMesh3d = MeshMaterial3d
 
 ///|
-///|
 pub fn material_descriptor_identity(
   value : MaterialDescriptor,
 ) -> MaterialDescriptor {

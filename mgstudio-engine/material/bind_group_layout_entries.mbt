@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/bind_group_layout_entries.rs`.
+
 ///|
 pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
 
@@ -21,4 +22,3 @@ pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
 pub fn material_bind_group_layout_entries_supported() -> Bool {
   MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED
 }
-

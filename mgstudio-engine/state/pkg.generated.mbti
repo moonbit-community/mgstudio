@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const STATE_RUNTIME_OWNER : String = "Milky2018/mgstudio/state"
-
 pub fn[S : @app.States] in_state(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] insert_state_app(@app.App[@ecs.World], S) -> @app.App[@ecs.World]
@@ -31,10 +29,6 @@ pub fn[S : @app.States] state_condition_in_state(S) -> (@ecs.World) -> Bool
 pub fn[S : @app.States] state_exists(S) -> (@ecs.World) -> Bool
 
 pub fn[S : @app.States] state_resource_key(S) -> @ecs.ResourceKey[@app.State[S]]
-
-pub fn state_runtime_available() -> Bool
-
-pub fn state_runtime_owner() -> String
 
 pub fn[S] state_scoped_optional_source(S) -> @app.OptionalStateSource[S]
 

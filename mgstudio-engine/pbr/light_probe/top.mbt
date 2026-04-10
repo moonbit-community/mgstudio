@@ -19,7 +19,6 @@
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
 
 ///|
-///|
 pub fn max_view_light_probes() -> Int {
   MAX_VIEW_LIGHT_PROBES
 }

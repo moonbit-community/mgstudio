@@ -15,12 +15,12 @@
 ///|
 test "asset path parse supports source and label" {
   let parsed_default = asset_parse_path("textures/ui.png#atlas0")
-  debug_inspect(parsed_default.path, content="textures/ui.png")
+  debug_inspect(parsed_default.path == "textures/ui.png", content="true")
   debug_inspect(parsed_default.label is Some("atlas0"), content="true")
   debug_inspect(parsed_default.source is AssetSourceId::Default, content="true")
 
   let parsed_named = asset_parse_path("remote://models/scene.gltf#Scene0")
-  debug_inspect(parsed_named.path, content="models/scene.gltf")
+  debug_inspect(parsed_named.path == "models/scene.gltf", content="true")
   debug_inspect(parsed_named.label is Some("Scene0"), content="true")
   debug_inspect(
     parsed_named.source is AssetSourceId::Named("remote"),
@@ -28,8 +28,9 @@ test "asset path parse supports source and label" {
   )
 
   debug_inspect(
-    asset_strip_label("remote://models/scene.gltf#Scene0"),
-    content="remote://models/scene.gltf",
+    asset_strip_label("remote://models/scene.gltf#Scene0") ==
+    "remote://models/scene.gltf",
+    content="true",
   )
 }
 

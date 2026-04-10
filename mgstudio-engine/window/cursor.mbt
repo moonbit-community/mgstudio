@@ -77,7 +77,10 @@ pub struct CustomCursorUrl {
 }
 
 ///|
-pub fn CustomCursorUrl::new(url : String, hotspot : (Int, Int)) -> CustomCursorUrl {
+pub fn CustomCursorUrl::new(
+  url : String,
+  hotspot : (Int, Int),
+) -> CustomCursorUrl {
   CustomCursorUrl::{ url, hotspot }
 }
 

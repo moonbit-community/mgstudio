@@ -22,7 +22,6 @@ pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbi
 pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
 
 ///|
-///|
 pub fn pbr_ssao_default() -> ScreenSpaceAmbientOcclusion {
   ScreenSpaceAmbientOcclusion::default()
 }

@@ -19,7 +19,6 @@
 pub type ParallaxMappingMethod = @material.ParallaxMappingMethod
 
 ///|
-///|
 pub fn pbr_parallax_default_method() -> ParallaxMappingMethod {
   ParallaxMappingMethod::default()
 }

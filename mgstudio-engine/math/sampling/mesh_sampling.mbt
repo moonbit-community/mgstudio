@@ -22,7 +22,6 @@ pub type UniformMeshSampler = @math.UniformMeshSampler
 pub type UniformMeshSamplerError = @math.UniformMeshSamplerError
 
 ///|
-///|
 pub fn uniform_mesh_sampler_identity(
   sampler : UniformMeshSampler,
 ) -> UniformMeshSampler {

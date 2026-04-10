@@ -368,8 +368,6 @@ pub fn Anchor::default() -> Anchor {
 }
 
 ///|
-
-///|
 pub struct ClearColor {
   color : Color
 }
@@ -817,8 +815,6 @@ pub impl Show for PanCamera with output(self, logger) {
     "\nPanCamera Controls:\n  Move Up / Down    - \{PanCamera::key_to_string(self.key_up)} / \{PanCamera::key_to_string(self.key_down)}\n  Move Left / Right - \{PanCamera::key_to_string(self.key_left)} / \{PanCamera::key_to_string(self.key_right)}\n  Rotate CCW / CW   - \{PanCamera::key_to_string(self.key_rotate_ccw)} / \{PanCamera::key_to_string(self.key_rotate_cw)}\n  Zoom              - Mouse Scroll + \{PanCamera::key_to_string(self.key_zoom_in)} / \{PanCamera::key_to_string(self.key_zoom_out)}\n",
   )
 }
-
-///|
 
 ///|
 pub(all) enum RenderTarget {
@@ -3146,8 +3142,6 @@ priv struct PostProcessIntermediateTargetInfo {
   height : Int
   target : @asset.Handle[@asset.Image]
 }
-
-///|
 
 ///|
 struct RenderState {

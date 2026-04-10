@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/stroke_text.rs`.
+
 ///|
 pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
 
@@ -21,4 +22,3 @@ pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
 pub fn gizmo_stroke_text_supported() -> Bool {
   GIZMO_STROKE_TEXT_SUPPORTED
 }
-

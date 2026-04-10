@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn banner() -> Unit {
   println(
     "This example is meant to intuitively demonstrate how Time works in Bevy.",

@@ -17,7 +17,6 @@
 // The current runtime does not expose Bevy's buffered-channel helpers.
 
 ///|
-///|
 pub fn utils_buffered_channel_available() -> Bool {
   true
 }

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct CustomText {} derive(Eq, Debug)
 
 ///|

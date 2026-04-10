@@ -19,7 +19,6 @@
 pub type SystemCursorIcon = @window.SystemCursorIcon
 
 ///|
-///|
 pub fn system_cursor_icon_identity(icon : SystemCursorIcon) -> SystemCursorIcon {
   icon
 }

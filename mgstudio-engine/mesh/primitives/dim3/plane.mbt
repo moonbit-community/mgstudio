@@ -21,8 +21,6 @@ pub fn plane3d(normal : @math.Vec3, half_size : @math.Vec2) -> @math.Plane3d {
 }
 
 ///|
-///|
 pub fn plane3d_unit() -> @math.Plane3d {
   plane3d(@math.Vec3::new(0.0, 1.0, 0.0), @math.Vec2::new(0.5, 0.5))
 }
-

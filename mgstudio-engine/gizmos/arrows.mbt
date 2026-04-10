@@ -19,7 +19,6 @@
 pub type GizmoArrowBuilder = @sprite.ArrowBuilder
 
 ///|
-///|
 pub fn gizmo_arrow_builder_identity(
   builder : GizmoArrowBuilder,
 ) -> GizmoArrowBuilder {

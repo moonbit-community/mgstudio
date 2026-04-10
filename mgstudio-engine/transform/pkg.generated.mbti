@@ -12,8 +12,6 @@ import {
 }
 
 // Values
-pub const TRANSFORM_PLUGIN_ID : String = "bevy_transform::TransformPlugin"
-
 pub fn compute_global_transform(@ecs.World, @core.Entity) -> GlobalTransform?
 
 pub fn compute_parent_global_transform(@ecs.World, @core.Entity) -> GlobalTransform?
@@ -56,11 +54,7 @@ pub fn transform_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn transform_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn transform_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub fn[T : TransformPoint] transform_points(T, Array[@math.Vec3]) -> Array[@math.Vec3]
-
-pub fn transform_propagate_set() -> String
 
 pub let transform_set_mark_dirty_trees : String
 

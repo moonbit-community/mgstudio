@@ -16,10 +16,6 @@ import {
 }
 
 // Values
-pub const HAS_TEXT_RUNTIME : Bool = true
-
-pub const TEXT_PLUGIN_ID : String = "bevy_text::TextPlugin"
-
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
 
 pub let ecs_key_text : @ecs.ComponentKey[Text]
@@ -142,8 +138,6 @@ pub fn text_measure_glyph_advance(@asset.Handle[@asset.Font], Float, Int) -> Flo
 
 pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn text_plugin_id() -> String
-
 pub fn text_public_error_surface_available() -> Bool
 
 pub fn text_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
@@ -156,15 +150,11 @@ pub fn text_render_transparent_ui_queue_system(@ecs.World) -> Unit
 
 pub fn text_reset_runtime_state_for_tests() -> Unit
 
-pub fn text_runtime_available() -> Bool
-
 pub fn text_runtime_clear_layout_dirty() -> Unit
 
 pub fn text_runtime_layout_dirty() -> Bool
 
 pub fn text_runtime_mark_layout_dirty() -> Unit
-
-pub fn text_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn text_set_anchor(TextHandle, @sprite.Anchor) -> Unit
 

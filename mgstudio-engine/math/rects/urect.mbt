@@ -19,7 +19,6 @@
 pub type URect = @math.URect
 
 ///|
-///|
 pub fn urect_identity(value : URect) -> URect {
   value
 }

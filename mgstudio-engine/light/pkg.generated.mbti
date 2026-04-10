@@ -97,8 +97,6 @@ pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[Glob
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
-pub fn light_module_anchor_enabled() -> Bool
-
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
 // Errors

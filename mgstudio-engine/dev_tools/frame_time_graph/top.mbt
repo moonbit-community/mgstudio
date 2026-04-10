@@ -17,7 +17,6 @@
 pub using @dev_tools {type FrameTimeGraphConfig}
 
 ///|
-///|
 pub fn frame_time_graph_default_config() -> FrameTimeGraphConfig {
   FrameTimeGraphConfig::default()
 }

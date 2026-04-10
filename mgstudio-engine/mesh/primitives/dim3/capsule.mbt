@@ -21,8 +21,6 @@ pub fn capsule3d(radius : Float, length : Float) -> @math.Capsule3d {
 }
 
 ///|
-///|
 pub fn capsule3d_unit() -> @math.Capsule3d {
   capsule3d(0.5, 1.0)
 }
-

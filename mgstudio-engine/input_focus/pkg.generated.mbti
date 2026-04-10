@@ -12,8 +12,6 @@ import {
 }
 
 // Values
-pub const INPUT_FOCUS_CRATE_ID : String = "bevy_input_focus"
-
 pub fn advance_tab_focus(@ecs.World, Bool) -> Unit
 
 pub fn auto_generate_navigation_edges(@ref.Ref[DirectionalNavigationMap], Array[FocusableArea], AutoNavigationConfig) -> Unit
@@ -27,10 +25,6 @@ pub fn find_best_candidate(FocusableArea, @math.CompassOctant, Array[FocusableAr
 pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
 
 pub fn input_dispatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn input_focus_default_plugins(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn input_focus_lib_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn input_focus_system_set_name(InputFocusSystems) -> String
 

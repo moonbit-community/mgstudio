@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],

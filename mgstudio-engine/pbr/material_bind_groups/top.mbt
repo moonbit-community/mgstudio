@@ -16,7 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/material_bind_groups.rs`.
 
 ///|
-///|
 pub struct MaterialBindGroupEntry {
   material_id : Int
   bind_group_id : Int

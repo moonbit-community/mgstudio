@@ -106,7 +106,12 @@ pub fn CameraDriverSortedCamera::new(
   schedule_label~ : String,
   target_window_id? : Int? = None,
 ) -> CameraDriverSortedCamera {
-  CameraDriverSortedCamera::{ entity_id, order, schedule_label, target_window_id }
+  CameraDriverSortedCamera::{
+    entity_id,
+    order,
+    schedule_label,
+    target_window_id,
+  }
 }
 
 ///|
@@ -161,9 +166,7 @@ pub fn CameraDriverState::window_is_covered(
 }
 
 ///|
-pub let ecs_key_camera_driver_state : @ecs.ResourceKey[
-  CameraDriverState
-] = @ecs.register_resource(
+pub let ecs_key_camera_driver_state : @ecs.ResourceKey[CameraDriverState] = @ecs.register_resource(
   debug_name="core_pipeline.schedule.camera_driver_state",
 )
 
@@ -173,14 +176,17 @@ pub impl @app.Resource for CameraDriverState with resource() {
 }
 
 ///|
-pub fn camera_driver_prepare_state(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+pub fn camera_driver_prepare_state(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
   app.init_resource(fn() { CameraDriverState::default() })
 }
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/schedule.rs` (`camera_driver` entrypoint).
 pub fn camera_driver(world : @ecs.World) -> Unit {
-  if world.resource(ecs_key_camera_driver_state).get() is Some(camera_driver_state) {
+  if world.resource(ecs_key_camera_driver_state).get()
+    is Some(camera_driver_state) {
     camera_driver_state.clear()
   }
 }

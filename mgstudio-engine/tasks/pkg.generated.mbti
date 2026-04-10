@@ -11,13 +11,7 @@ pub const EDGE_EXECUTOR_BACKEND : String = "edge_executor"
 
 pub const EXECUTOR_BACKEND : String = "single_threaded"
 
-pub const TASKS_BACKEND : String = "single_threaded"
-
-pub const TASKS_CRATE_ID : String = "bevy_tasks"
-
 pub fn available_parallelism() -> Int
-
-pub fn[T] block_on(T) -> T
 
 pub fn[T, R] par_chunk_map(Array[T], TaskPool, Int, (Int, Array[T]) -> R) -> Array[R]
 

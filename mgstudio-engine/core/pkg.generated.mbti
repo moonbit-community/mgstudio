@@ -67,9 +67,11 @@ pub struct Entity {
   id : Int
   generation : Int
 } derive(Eq, ToJson, @json.FromJson)
+pub fn Entity::from_bits(UInt64) -> Self
 pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
+pub fn Entity::to_bits(Self) -> UInt64
 
 pub struct Instant {
   nanos_since_start : Int64

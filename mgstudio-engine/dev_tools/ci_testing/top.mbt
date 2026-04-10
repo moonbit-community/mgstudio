@@ -17,9 +17,7 @@
 // The current runtime does not expose Bevy's CI-testing module surface.
 
 ///|
-///|
-pub struct CiTestingPlugin {
-}
+pub struct CiTestingPlugin {}
 
 ///|
 pub fn CiTestingPlugin::default() -> CiTestingPlugin {
@@ -30,4 +28,3 @@ pub fn CiTestingPlugin::default() -> CiTestingPlugin {
 pub fn dev_tools_ci_testing_available() -> Bool {
   true
 }
-

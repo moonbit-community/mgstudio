@@ -11,12 +11,6 @@ import {
 // Values
 pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
 
-pub fn anti_alias_default() -> AntiAliasPlugin
-
-pub fn anti_alias_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn anti_alias_package_bevy_source() -> String
-
 pub fn anti_alias_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]

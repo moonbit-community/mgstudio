@@ -32,12 +32,6 @@ pub fn image_is_hdr_extension(String) -> Bool
 
 pub fn image_is_ktx2_extension(String) -> Bool
 
-pub fn image_new_rgba8(Int, Int, Bytes) -> Image
-
-pub fn image_new_target_texture(Int, Int, format? : TextureFormat) -> Image
-
-pub fn image_package_bevy_source() -> String
-
 pub fn image_sampler_is_nearest(ImageSampler) -> Bool
 
 pub fn image_to_target_texture(Image) -> Image

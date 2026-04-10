@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct CaptureState {
   mut target : @asset.Handle[@asset.Image]?
   mut frame : Int

@@ -51,8 +51,6 @@ pub let ecs_res_key_physics2d_hooks_config : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="physics2d.physics2d_hooks_config")
 
 ///|
-
-///|
 pub let ecs_key_ccd2d : @ecs.ComponentKey[Ccd2d] = @ecs.register_component(
   debug_name="physics2d.ccd2d",
 )

@@ -16,14 +16,6 @@ pub fn color_distance(Color, Color) -> Float
 
 pub fn color_distance_squared(Color, Color) -> Float
 
-pub fn color_from_hsla(Hsla) -> Color
-
-pub fn color_from_hsva(Hsva) -> Color
-
-pub fn color_from_hwba(Hwba) -> Color
-
-pub fn color_from_linear_rgba(Color) -> Color
-
 pub fn color_gradient(Array[Color]) -> ColorGradient raise ColorGradientError
 
 pub fn color_gray(Float) -> Color
@@ -33,8 +25,6 @@ pub fn color_lerp(Color, Color, Float) -> Color
 pub fn color_lerp_float(Float, Float, Float) -> Float
 
 pub fn color_lerp_hue(Float, Float, Float) -> Float
-
-pub fn color_range(Color, Color) -> ColorRange
 
 pub fn color_srgb(Float, Float, Float) -> Color
 

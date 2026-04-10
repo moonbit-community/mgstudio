@@ -12,15 +12,9 @@ import {
 }
 
 // Values
-pub const DEV_TOOLS_PLUGIN_ID : String = "bevy_dev_tools::DevToolsPlugin"
-
 pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
 
-pub const HAS_DEV_TOOLS_RUNTIME : Bool = true
-
 pub const INITIAL_DIAGNOSTICS_OVERLAY_PLANE_Z_INDEX : Int = 1_000_000
-
-pub fn dev_tools_default_fps_overlay_config() -> FpsOverlayConfig
 
 pub fn dev_tools_easy_screenshot_available() -> Bool
 
@@ -34,13 +28,9 @@ pub fn dev_tools_picking_debug_enabled(PickingDebugConfig) -> Bool
 
 pub fn dev_tools_picking_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn dev_tools_plugin_id() -> String
-
 pub fn dev_tools_render_debug_available() -> Bool
 
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay
-
-pub fn dev_tools_runtime_available() -> Bool
 
 pub fn dev_tools_states_debug_available() -> Bool
 

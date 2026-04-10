@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/skinned_mesh_bounds.rs`.
+
 ///|
 pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
 
@@ -21,4 +22,3 @@ pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
 pub fn gizmo_skinned_mesh_bounds_supported() -> Bool {
   GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED
 }
-

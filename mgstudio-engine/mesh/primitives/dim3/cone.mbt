@@ -21,8 +21,6 @@ pub fn cone(radius : Float, height : Float) -> @math.Cone {
 }
 
 ///|
-///|
 pub fn cone_unit() -> @math.Cone {
   cone(0.5, 1.0)
 }
-

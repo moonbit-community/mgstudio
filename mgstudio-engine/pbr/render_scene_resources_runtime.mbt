@@ -441,8 +441,6 @@ fn render3d_mesh_wireframe_color(
 }
 
 ///|
-
-///|
 priv struct Render3dEnvironmentMapState {
   diffuse_texture_id : Int
   specular_texture_id : Int

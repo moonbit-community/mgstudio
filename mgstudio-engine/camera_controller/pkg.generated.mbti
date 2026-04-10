@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub fn camera_controller_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub let ecs_key_free_camera : @ecs.ComponentKey[@pbr.FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[@pbr.FreeCameraState]
@@ -28,9 +26,6 @@ pub fn run_pan_camera_controller(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
-pub struct CameraControllerPlugin {
-}
-pub fn CameraControllerPlugin::default() -> Self
 
 // Type aliases
 pub using @pbr {type FreeCamera}

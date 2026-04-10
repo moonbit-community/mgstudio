@@ -24,8 +24,6 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
-pub fn scene_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
@@ -41,10 +39,6 @@ pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 pub fn[W] scene_load_pending_system(W) -> Unit
 
 pub fn scene_loader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn scene_make_root(@asset.Handle[Scene]) -> SceneRoot
-
-pub fn scene_package_bevy_source() -> String
 
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

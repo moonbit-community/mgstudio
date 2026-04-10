@@ -279,8 +279,6 @@ fn input_focus_visible_resource_ref_mut(
 }
 
 ///|
-
-///|
 pub fn advance_tab_focus(world : @ecs.World, reverse : Bool) -> Unit {
   let candidates = tab_navigation_collect_candidates(world)
   if candidates.is_empty() {

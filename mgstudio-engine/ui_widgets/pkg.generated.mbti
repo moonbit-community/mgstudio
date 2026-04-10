@@ -46,8 +46,6 @@ pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn ui_widgets_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn ui_widgets_runtime_available() -> Bool
-
 pub let ui_widgets_set_interaction : String
 
 // Errors

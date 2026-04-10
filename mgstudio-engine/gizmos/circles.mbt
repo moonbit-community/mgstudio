@@ -22,7 +22,6 @@ pub type GizmoCircle = @math.Circle
 pub type GizmoArc2d = @math.Arc2d
 
 ///|
-///|
 pub fn gizmo_circle_identity(circle : GizmoCircle) -> GizmoCircle {
   circle
 }

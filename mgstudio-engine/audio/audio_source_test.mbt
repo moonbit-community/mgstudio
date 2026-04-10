@@ -32,10 +32,10 @@ test "audio source AssetServer loader registers direct handle flow" {
     @app.system(fn(world : @ecs.World) {
       let asset_server = @asset.AssetServer::new()
       let first : @asset.Handle[AudioSource] = asset_server.load(
-        "textures/rpg/folder.txt",
+        "fonts/OFL.txt",
       )
       let second : @asset.Handle[AudioSource] = asset_server.load(
-        "textures/rpg/folder.txt",
+        "fonts/OFL.txt",
       )
       loaded_handle_ids.push(first.id())
       loaded_handle_ids.push(second.id())

@@ -21,8 +21,6 @@ pub fn torus(major_radius : Float, minor_radius : Float) -> @math.Torus {
 }
 
 ///|
-///|
 pub fn torus_unit() -> @math.Torus {
   torus(1.0, 0.3)
 }
-

@@ -22,7 +22,6 @@ pub using @post_process {type MotionBlur}
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process.ecs_key_motion_blur
 
 ///|
-///|
 pub fn motion_blur_runtime_available() -> Bool {
   true
 }

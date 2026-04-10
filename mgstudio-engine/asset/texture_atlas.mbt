@@ -94,8 +94,6 @@ pub fn TextureAtlasLayout::is_empty(self : TextureAtlasLayout) -> Bool {
 }
 
 ///|
-
-///|
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int

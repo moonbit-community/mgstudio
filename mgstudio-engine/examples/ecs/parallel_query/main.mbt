@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct Velocity {
   mut vector : @math.Vec2
 }

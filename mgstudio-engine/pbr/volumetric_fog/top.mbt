@@ -22,7 +22,6 @@ pub type VolumetricFog = @light.VolumetricFog
 pub type FogVolume = @light.FogVolume
 
 ///|
-///|
 pub fn pbr_volumetric_fog_default() -> VolumetricFog {
   VolumetricFog::default()
 }

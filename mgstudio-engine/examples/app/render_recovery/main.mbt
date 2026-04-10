@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn setup(_world : @ecs.World) -> Unit {
   println("Press O/V/D/L to trigger render runtime errors")
   println(

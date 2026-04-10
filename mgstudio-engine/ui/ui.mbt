@@ -606,8 +606,6 @@ pub fn UiImage::with_rect(self : UiImage, rect : @math.Rect?) -> UiImage {
 }
 
 ///|
-
-///|
 /// Controls how an image widget is altered to fit within layout constraints.
 ///
 /// This is Bevy-aligned (`NodeImageMode` / `ImageNode`), but currently only
@@ -960,37 +958,47 @@ fn ui_viewport_point_to_world(
   entity_ctx : UiResolvedCameraState,
   point : @math.Vec2,
 ) -> @math.Vec2 {
-  if entity_ctx.camera_entity is Some(camera_entity) &&
-    (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
-    is Some(camera) {
-    let projection = match
-      (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
-      Some(@sprite.Orthographic(orthographic)) => orthographic
-      _ => @sprite.OrthographicProjection::default_2d()
-    }
-    let target_size = match camera.physical_target_size() {
-      Some(size) => size
-      None => {
-        let fallback_scale = safe_scale_factor(@window.window_scale_factor())
-        @math.IVec2::new(
-          (int_to_float(@window.window_width()) * fallback_scale).to_int(),
-          (int_to_float(@window.window_height()) * fallback_scale).to_int(),
-        )
+  if entity_ctx.camera_entity is Some(camera_entity) {
+    let camera_opt : @sprite.Camera? = (try
+      world.get_by_key(camera_entity, @sprite.ecs_key_camera) catch {
+      _ => (None : @sprite.Camera?)
+    } noraise {
+      value => value
+    })
+    if camera_opt is Some(camera) {
+      let projection = match
+        (try world.get_by_key(camera_entity, @sprite.ecs_key_projection) catch {
+          _ => (None : @sprite.Projection?)
+        } noraise {
+          value => value
+        }) {
+        Some(@sprite.Orthographic(orthographic)) => orthographic
+        _ => @sprite.OrthographicProjection::default_2d()
       }
-    }
-    let scale_factor = safe_scale_factor(
-      camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
-    )
-    if @sprite.render2d_camera_viewport_to_world_2d(
-        point,
-        camera,
-        projection,
-        entity_ctx.camera_transform,
-        target_size,
-        scale_factor,
+      let target_size = match camera.physical_target_size() {
+        Some(size) => size
+        None => {
+          let fallback_scale = safe_scale_factor(@window.window_scale_factor())
+          @math.IVec2::new(
+            (int_to_float(@window.window_width()) * fallback_scale).to_int(),
+            (int_to_float(@window.window_height()) * fallback_scale).to_int(),
+          )
+        }
+      }
+      let scale_factor = safe_scale_factor(
+        camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
       )
-      is Some(world_point) {
-      return world_point
+      if @sprite.render2d_camera_viewport_to_world_2d(
+          point,
+          camera,
+          projection,
+          entity_ctx.camera_transform,
+          target_size,
+          scale_factor,
+        )
+        is Some(world_point) {
+        return world_point
+      }
     }
   }
   let cam_scale = safe_camera_scale(entity_ctx.camera_scale)

@@ -19,7 +19,6 @@
 pub type GizmoArc2dBuilder = @sprite.Arc2dBuilder
 
 ///|
-///|
 pub fn gizmo_arc2d_builder_identity(
   builder : GizmoArc2dBuilder,
 ) -> GizmoArc2dBuilder {

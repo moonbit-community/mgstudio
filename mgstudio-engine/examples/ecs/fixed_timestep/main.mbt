@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn frame_update(
   last_time : @app.Local[Float],
   time : @app.Res[@time.Time[Unit]],

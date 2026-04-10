@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const PLAYER_SPEED : Float = 100.0F
 
 ///|

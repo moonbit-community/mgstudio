@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const TORUS_SCENE_PATH : String = "models/torus/torus.gltf"
 
 ///|

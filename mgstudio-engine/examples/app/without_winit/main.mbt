@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn setup_system(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   try! world.set_by_key(

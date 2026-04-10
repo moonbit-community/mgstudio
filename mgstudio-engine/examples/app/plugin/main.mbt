@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct PrintMessagePluginConfig {
   wait_duration_seconds : Float
   message : String

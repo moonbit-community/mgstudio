@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/simplex_stroke_font.rs`.
+
 ///|
 pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
 
@@ -21,4 +22,3 @@ pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
 pub fn simplex_stroke_font_supported() -> Bool {
   SIMPLEX_STROKE_FONT_SUPPORTED
 }
-

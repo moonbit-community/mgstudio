@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
+
 ///|
 pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
 
@@ -21,4 +22,3 @@ pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
 pub fn material_specialization_supported() -> Bool {
   MATERIAL_SPECIALIZATION_SUPPORTED
 }
-

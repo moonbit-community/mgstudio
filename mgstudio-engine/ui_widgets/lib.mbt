@@ -16,7 +16,6 @@
 // Bevy source: `bevy/crates/bevy_ui_widgets/src/lib.rs`.
 
 ///|
-///|
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @ui.ui_plugin(app)
 }

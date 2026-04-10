@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct LogMessage {
   message : String
   level : @app.LogLevel

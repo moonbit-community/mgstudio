@@ -17,7 +17,6 @@
 // The current runtime does not expose Bevy's state-debug helper surface.
 
 ///|
-///|
 pub struct StatesDebugConfig {
   enabled : Bool
 }

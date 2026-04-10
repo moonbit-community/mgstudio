@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })

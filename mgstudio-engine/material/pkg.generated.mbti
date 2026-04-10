@@ -48,17 +48,11 @@ pub fn material_mesh3d_identity(MeshMaterial3d) -> MeshMaterial3d
 
 pub fn material_opaque_renderer_method_identity(OpaqueRendererMethod) -> OpaqueRendererMethod
 
-pub fn material_package_bevy_source() -> String
-
 pub fn material_parallax_method_identity(ParallaxMappingMethod) -> ParallaxMappingMethod
 
 pub fn material_specialization_supported() -> Bool
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
-
-pub fn standard_material_default() -> StandardMaterial
-
-pub fn standard_material_from_color(@color.Color) -> StandardMaterial
 
 pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMaterial?
 

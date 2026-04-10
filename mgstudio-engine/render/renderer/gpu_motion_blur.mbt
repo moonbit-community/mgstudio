@@ -240,5 +240,3 @@ pub fn draw_motion_blur(
 }
 
 ///|
-
-///|

@@ -261,8 +261,6 @@ pub fn run_pancamera_controller(@ecs.World) -> Unit
 
 pub fn sprite_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn sprite_plugin_boundary_id() -> String
-
 pub fn sprite_plugin_id() -> String
 
 pub fn sprite_plugin_with(@app.App[@ecs.World], SpritePlugin) -> @app.App[@ecs.World]

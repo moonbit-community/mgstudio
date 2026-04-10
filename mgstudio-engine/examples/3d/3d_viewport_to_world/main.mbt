@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct ViewportToWorld3dState {
   mut camera : @core.Entity?
   mut ground : @core.Entity?

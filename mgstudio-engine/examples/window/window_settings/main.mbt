@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct CursorIcons {
   icons : Array[@window.CursorIcon]
 }

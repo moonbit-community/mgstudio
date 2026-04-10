@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 let single_threaded_update : @app.ScheduleStage = @app.schedule_label(
   "SingleThreadedUpdate",
 )

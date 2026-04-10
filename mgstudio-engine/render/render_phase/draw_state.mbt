@@ -19,7 +19,6 @@
 pub type DrawState = @renderer.GpuPassState
 
 ///|
-///|
 pub fn draw_state_runtime_available(_state : DrawState) -> Bool {
   true
 }

@@ -48,10 +48,6 @@ pub const CHECKBOX_TEXT : String = "feathers.checkbox.text"
 
 pub const COLOR_PLANE_BG : String = "feathers.colorplane.bg"
 
-pub const FEATHERS_PLUGINS_ID : String = "bevy_feathers::FeathersPlugins"
-
-pub const FEATHERS_PLUGIN_ID : String = "bevy_feathers::FeathersPlugin"
-
 pub const FOCUS_RING : String = "feathers.focus"
 
 pub const FONT_BOLD : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Bold.ttf"
@@ -130,11 +126,7 @@ pub fn cursor_icon_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn feathers_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn feathers_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub fn feathers_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
-
-pub fn feathers_plugins_entry() -> () -> @app.PluginGroupBuilder[@ecs.World]
 
 // Errors
 

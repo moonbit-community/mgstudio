@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 enum SplineMode {
   Hermite
   Cardinal

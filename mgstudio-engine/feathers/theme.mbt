@@ -152,7 +152,9 @@ let ui_theme_resource_key : @ecs.ResourceKey[UiTheme] = @ecs.register_resource(
 ///|
 let theme_background_color_component_key : @ecs.ComponentKey[
   ThemeBackgroundColor,
-] = @ecs.register_component(debug_name="mgstudio_feathers::ThemeBackgroundColor")
+] = @ecs.register_component(
+  debug_name="mgstudio_feathers::ThemeBackgroundColor",
+)
 
 ///|
 let theme_border_color_component_key : @ecs.ComponentKey[ThemeBorderColor] = @ecs.register_component(

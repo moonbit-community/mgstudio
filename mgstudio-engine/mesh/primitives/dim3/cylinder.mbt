@@ -21,8 +21,6 @@ pub fn cylinder(radius : Float, height : Float) -> @math.Cylinder {
 }
 
 ///|
-///|
 pub fn cylinder_unit() -> @math.Cylinder {
   cylinder(0.5, 1.0)
 }
-

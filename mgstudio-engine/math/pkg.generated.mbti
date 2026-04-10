@@ -36,10 +36,6 @@ pub fn irect(IVec2, IVec2) -> IRect
 
 pub fn is_polygon_simple(Array[Vec2]) -> Bool
 
-pub fn math_lib_default_primitives() -> (Circle, Cuboid)
-
-pub fn math_lib_runtime_available() -> Bool
-
 pub fn pi() -> Float
 
 pub fn pi_half() -> Float

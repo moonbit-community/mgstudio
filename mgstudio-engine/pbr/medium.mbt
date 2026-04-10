@@ -19,7 +19,6 @@
 pub type ScatteringMedium = @light.ScatteringMedium
 
 ///|
-///|
 pub fn pbr_scattering_medium_default() -> ScatteringMedium {
   ScatteringMedium::default()
 }

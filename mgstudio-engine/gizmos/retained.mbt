@@ -14,6 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/retained.rs`.
+
 ///|
 pub const GIZMO_RETAINED_SUPPORTED : Bool = true
 
@@ -21,4 +22,3 @@ pub const GIZMO_RETAINED_SUPPORTED : Bool = true
 pub fn gizmo_retained_supported() -> Bool {
   GIZMO_RETAINED_SUPPORTED
 }
-

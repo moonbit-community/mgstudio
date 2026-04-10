@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct ResolutionText {} derive(Eq, Debug)
 
 ///|

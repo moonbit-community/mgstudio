@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn colorful_cube_mesh() -> @pbr.Mesh3d {
   let positions = [
     // Top (+y)

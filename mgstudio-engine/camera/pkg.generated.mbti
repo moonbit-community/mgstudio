@@ -17,8 +17,6 @@ import {
 }
 
 // Values
-pub const CAMERA_PLUGIN_ID : String = "bevy_camera::CameraPlugin"
-
 pub fn camera_2d_bundle_new(@sprite.Camera, @transform.Transform) -> @sprite.Camera2dBundle
 
 pub fn camera_2d_bundle_new_with_layers(@sprite.Camera, @transform.Transform, @sprite.RenderTarget, @sprite.RenderLayers) -> @sprite.Camera2dBundle
@@ -38,8 +36,6 @@ pub fn camera_clear_color_new(@color.Color) -> @sprite.ClearColor
 pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
 
 pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn camera_plugin_without_visibility(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let camera_update_systems : String
 

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct DisableOnClick {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|

@@ -13,12 +13,6 @@ import {
 }
 
 // Values
-pub fn audio_default_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn audio_package_bevy_source() -> String
-
-pub fn audio_playback_once() -> PlaybackSettings
-
 pub fn audio_playback_system(@ecs.World) -> Unit
 
 pub fn audio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

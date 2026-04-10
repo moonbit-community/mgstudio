@@ -17,7 +17,6 @@
 // Runtime wrappers live in this file while the broader dev-tools implementation stays split across the package.
 
 ///|
-///|
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay {
   DiagnosticsOverlay::render()
 }

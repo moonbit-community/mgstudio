@@ -25,7 +25,6 @@ pub type DistanceFog = @pbr_render.DistanceFog
 const FOG_FALLOFF_E : Float = 2.718281828459045F
 
 ///|
-///|
 pub fn pbr_fog_falloff_e() -> Float {
   FOG_FALLOFF_E
 }

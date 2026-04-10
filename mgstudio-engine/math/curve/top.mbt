@@ -25,7 +25,6 @@ pub type EasingCurve[T] = @math.EasingCurve[T]
 pub type CurveChainError = @math.CurveChainError
 
 ///|
-///|
 pub fn[T] curve_identity(value : Curve[T]) -> Curve[T] {
   value
 }

@@ -2347,8 +2347,6 @@ fn animation_player_find(
 }
 
 ///|
-
-///|
 struct AnimationPlayer {
   active_animations : Array[(AnimationNodeIndex, ActiveAnimation)]
 }
