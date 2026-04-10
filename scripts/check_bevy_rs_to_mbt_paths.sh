@@ -18,7 +18,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-INCLUDE_TARGET="${INCLUDE_TARGET:-0}"
 INCLUDE_NON_GOAL="${INCLUDE_NON_GOAL:-0}"
 INCLUDE_EXCLUDED="${INCLUDE_EXCLUDED:-0}"
 
@@ -27,10 +26,6 @@ ARGS=(
   --examples-strict
   --json
 )
-
-if [[ "$INCLUDE_TARGET" == "1" ]]; then
-  ARGS+=(--include-target)
-fi
 
 if [[ "$INCLUDE_NON_GOAL" == "1" ]]; then
   ARGS+=(--include-non-goal)

@@ -36,7 +36,6 @@ const jsonMode = args.has("--json")
 const strictExamples = args.has("--examples-strict")
 const includeNonGoal = args.has("--include-non-goal")
 const includeExcluded = args.has("--include-excluded")
-const includeTarget = args.has("--include-target")
 
 const HEADER = `// Copyright 2025 International Digital Economy Academy
 //
@@ -101,23 +100,6 @@ function buildExampleRecord(exampleSub, source) {
   }
 }
 
-function tryMapCrateSourceRecord(rsSub, source) {
-  const match = rsSub.match(/^crates\/bevy_([^/]+)\/src\/(.+)$/)
-  if (match === null) return null
-  const crate = match[1]
-  const srcSub = match[2]
-  const mbtSub = rsToMbtSubpath(srcSub)
-  const target = `mgstudio-engine/${crate}/${mbtSub}`
-  const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
-  return {
-    source,
-    target,
-    candidates: [target],
-    excluded: excludeReason !== null,
-    exclude_reason: excludeReason,
-  }
-}
-
 function bevyCrateRecords() {
   const cratesRoot = path.join(REPO_ROOT, "bevy", "crates")
   const crateNames = fs
@@ -159,60 +141,11 @@ function bevyExampleRecords() {
 }
 
 function bevyExtraRecords() {
-  const bevyRoot = path.join(REPO_ROOT, "bevy")
-  const rsFiles = walk(bevyRoot).filter((p) => p.endsWith(".rs"))
-  return rsFiles
-    .map((rs) => {
-      const rsSub = rel(rs).slice("bevy/".length)
-      if (
-        rsSub.startsWith("crates/") ||
-        rsSub.startsWith("examples/") ||
-        (!includeTarget && rsSub.startsWith("target/"))
-      ) {
-        return null
-      }
-      const mbtSub = rsToMbtSubpath(rsSub)
-      const source = rel(rs)
-      const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
-      return {
-        source,
-        target: `mgstudio-engine/bevy_workspace/${mbtSub}`,
-        candidates: [`mgstudio-engine/bevy_workspace/${mbtSub}`],
-        excluded: excludeReason !== null,
-        exclude_reason: excludeReason,
-      }
-    })
-    .filter((v) => v !== null)
+  return []
 }
 
 function bevyFullRecords() {
-  const bevyRoot = path.join(REPO_ROOT, "bevy")
-  const rsFiles = walk(bevyRoot).filter((p) => p.endsWith(".rs"))
-  return rsFiles
-    .map((rs) => {
-      const source = rel(rs)
-      const rsSub = source.slice("bevy/".length)
-      if (!includeTarget && rsSub.startsWith("target/")) return null
-
-      const crateRecord = tryMapCrateSourceRecord(rsSub, source)
-      if (crateRecord !== null) return crateRecord
-
-      if (rsSub.startsWith("examples/")) {
-        return buildExampleRecord(rsSub.slice("examples/".length), source)
-      }
-
-      const mbtSub = rsToMbtSubpath(rsSub)
-      const target = `mgstudio-engine/bevy_workspace/${mbtSub}`
-      const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
-      return {
-        source,
-        target,
-        candidates: [target],
-        excluded: excludeReason !== null,
-        exclude_reason: excludeReason,
-      }
-    })
-    .filter((v) => v !== null)
+  return [...bevyCrateRecords(), ...bevyExampleRecords()]
 }
 
 function ensureFile(target, source) {
@@ -294,7 +227,6 @@ const payload = {
   strict_examples: strictExamples,
   include_non_goal: includeNonGoal,
   include_excluded: includeExcluded,
-  include_target: includeTarget,
   excluded_by_reason: Object.fromEntries(
     Array.from(excludedByReason.entries()).sort((a, b) => a[0].localeCompare(b[0])),
   ),
