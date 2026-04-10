@@ -16,7 +16,7 @@
 pub(all) struct AccessibilityPlugin {}
 
 ///|
-pub const ACCESSIBILITY_PLUGIN_ID : String = "bevy_a11y::AccessibilityPlugin"
+pub const ACCESSIBILITY_PLUGIN_ID : String = "mgstudio_a11y::AccessibilityPlugin"
 
 ///|
 pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
@@ -50,6 +50,7 @@ pub fn accessibility_plugin_with(
   app
   .init_resource(AccessibilityRequested::default)
   .init_resource(ManageAccessibilityUpdates::default)
+  .allow_ambiguous_component(key=ecs_key_accessibility_node)
 }
 
 ///|

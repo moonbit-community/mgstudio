@@ -13,17 +13,11 @@ import {
 }
 
 // Values
-pub const APP_CRATE_ID : String = "bevy_app"
-
 pub const TASK_POOL_PLUGIN_ID : String = "bevy_app::TaskPoolPlugin"
 
 pub fn[T] any_with_component(@ecs.ComponentKey[T]) -> (@ecs.World) -> Bool
 
-pub fn app_default() -> App[@ecs.World]
-
 pub fn app_label(String) -> AppLabel
-
-pub fn app_new(@ecs.World) -> App[@ecs.World]
 
 pub fn app_rendering_enabled() -> Bool
 
@@ -31,15 +25,9 @@ pub fn app_rendering_resume() -> Unit
 
 pub fn app_rendering_stop() -> Unit
 
-pub fn app_run(App[@ecs.World]) -> Unit
-
-pub fn app_run_once(App[@ecs.World]) -> App[@ecs.World]
-
 pub fn app_runtime_reset() -> Unit
 
 pub fn app_stdin_read_line() -> String?
-
-pub fn app_update(App[@ecs.World]) -> App[@ecs.World]
 
 pub fn[T : ChainedSystemConfigs] chain(T) -> SystemConfig[@ecs.World]
 
@@ -460,6 +448,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
@@ -470,6 +459,7 @@ pub fn[T : Resource] App::insert_resource(Self[@ecs.World], T) -> Self[@ecs.Worl
 pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
 pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
+pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[T] App::remove_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
@@ -978,6 +968,7 @@ pub struct SubApp[W] {
   update_schedule : ScheduleStage?
   schedule : ScheduleRegistry[W]
   extract : ((W, W) -> (W, W))?
+  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool]
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_component_observer2(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit) -> Self[@ecs.World]
@@ -1001,8 +992,10 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
 pub fn SubApp::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApp::run_startup(Self[@ecs.World]) -> Self[@ecs.World]

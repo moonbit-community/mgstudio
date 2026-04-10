@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "a11y: accessibility plugin initializes bevy-aligned resources" {
+test "a11y: accessibility plugin initializes resources and ambiguous allowance" {
   let app = accessibility_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
 
@@ -25,4 +25,7 @@ test "a11y: accessibility plugin initializes bevy-aligned resources" {
   assert_true(!requested.get())
   assert_true(manage_updates.get())
   assert_true(!world.contains_message(ecs_msg_key_action_request))
+  assert_true(
+    app.is_ambiguous_component_allowed(key=ecs_key_accessibility_node),
+  )
 }

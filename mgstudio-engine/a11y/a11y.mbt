@@ -278,7 +278,7 @@ pub fn accessibility_system_set_name(
   stage_set : AccessibilitySystems,
 ) -> @app.SystemSet {
   match stage_set {
-    Update => @app.system_set("bevy_a11y::AccessibilitySystems::Update")
+    Update => @app.system_set("mgstudio_a11y::AccessibilitySystems::Update")
   }
 }
 
