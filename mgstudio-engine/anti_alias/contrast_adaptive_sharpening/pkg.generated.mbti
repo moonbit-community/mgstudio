@@ -8,11 +8,19 @@ import {
 }
 
 // Values
+pub const CAS_PLUGIN_ID : String = "bevy_anti_alias::contrast_adaptive_sharpening::CasPlugin"
+
 pub const CAS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn cas_node_enabled() -> Bool
 
 pub fn cas_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn cas_plugin_with(@app.App[@ecs.World], CasPlugin) -> @app.App[@ecs.World]
+
+pub fn cas_update_runtime_state(@ecs.World) -> Unit
+
+pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState]
 
 // Errors
 
@@ -20,6 +28,15 @@ pub fn cas_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub struct CasPlugin {
 }
 pub fn CasPlugin::default() -> Self
+pub impl @app.PluginReplacement for CasPlugin
+
+pub struct CasRuntimeState {
+  enabled_camera_count : Int
+  active_camera_count : Int
+  denoise_camera_count : Int
+} derive(Eq, @debug.Debug)
+pub fn CasRuntimeState::default() -> Self
+pub impl @app.Resource for CasRuntimeState
 
 pub struct CasUniform {
   sharpness : Float

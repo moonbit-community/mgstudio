@@ -17,6 +17,7 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
+  "tonyfettes/any",
 }
 
 // Values
@@ -84,6 +85,8 @@ pub fn cmp_float(Float, Float) -> Int
 
 pub fn cmp_int(Int, Int) -> Int
 
+pub fn custom_projection3d_from_callbacks(String, @any.Any, (@any.Any) -> ProjectionMatrix3d, (@any.Any, SubCameraView3d) -> ProjectionMatrix3d, (@any.Any, Float, Float) -> @any.Any, (@any.Any) -> Float, (@any.Any, Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
+
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
@@ -97,6 +100,8 @@ pub fn maxf(Float, Float) -> Float
 pub fn minf(Float, Float) -> Float
 
 pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
+
+pub fn projection_from_custom(CustomProjection3d) -> Projection
 
 pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
@@ -282,6 +287,8 @@ pub fn render3d_transform_local_normal(@transform.Transform, @math.Vec3) -> @mat
 
 pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
+pub fn[T] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> Frustum) -> Unit
+
 pub fn render3d_upload_mesh_handle_cached(@ref.Ref[Render3dPhaseState], @asset.Handle[@mesh.Mesh]) -> Int
 
 pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
@@ -297,6 +304,27 @@ pub fn render3d_world_transform_cache_ref() -> @ref.Ref[Render3dWorldTransformCa
 // Errors
 
 // Types and methods
+pub struct CustomProjection3d {
+  type_name : String
+  payload : @any.Any
+  get_clip_from_view_fn : (@any.Any) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (@any.Any, SubCameraView3d) -> ProjectionMatrix3d
+  update_fn : (@any.Any, Float, Float) -> @any.Any
+  far_fn : (@any.Any) -> Float
+  get_frustum_corners_fn : (@any.Any, Float, Float) -> Array[@math.Vec3]
+}
+pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
+pub fn CustomProjection3d::default() -> Self
+pub fn CustomProjection3d::far(Self) -> Float
+pub fn[T] CustomProjection3d::get(Self) -> T?
+pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
+pub fn CustomProjection3d::type_name(Self) -> String
+pub fn CustomProjection3d::update(Self, Float, Float) -> Self
+pub impl CameraProjection3d for CustomProjection3d
+
 pub struct DistanceFog {
   color : @color.Color
   directional_light_color : @color.Color
@@ -492,6 +520,7 @@ pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
+pub impl CameraProjection3d for OrthographicProjection3d
 
 pub(all) enum OrthographicScalingMode3d {
   WindowSize
@@ -524,12 +553,29 @@ pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
+pub impl CameraProjection3d for PerspectiveProjection3d
 
 pub(all) struct PreparedSkinBinding3d {
   entity_generation : Int
   key_hi : Int
   key_lo : Int
 }
+
+pub enum Projection {
+  Perspective(PerspectiveProjection3d)
+  Orthographic(OrthographicProjection3d)
+  Custom(CustomProjection3d)
+}
+pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
+pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
+pub fn Projection::default() -> Self
+pub fn Projection::far(Self) -> Float
+pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn Projection::is_perspective(Self) -> Bool
+pub fn Projection::update(Self, Float, Float) -> Self
+pub impl CameraProjection3d for Projection
 
 pub(all) struct ProjectionMatrix3d {
   x_axis : @math.Vec4
@@ -639,4 +685,12 @@ pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 pub using @math {type HalfSpace}
 
 // Traits
+pub(open) trait CameraProjection3d {
+  get_clip_from_view(Self) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  update(Self, Float, Float) -> Self
+  far(Self) -> Float
+  compute_frustum(Self, @transform.Transform) -> Frustum
+  get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+}
 

@@ -2,18 +2,41 @@
 package "Milky2018/mgstudio/anti_alias/taa"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const TEMPORAL_ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::taa::TemporalAntiAliasPlugin"
+
+pub let ecs_key_temporal_anti_alias_runtime_state : @ecs.ResourceKey[TemporalAntiAliasRuntimeState]
+
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter]
 
+pub fn temporal_anti_alias_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn temporal_anti_alias_plugin_with(@app.App[@ecs.World], TemporalAntiAliasPlugin) -> @app.App[@ecs.World]
+
+pub fn temporal_anti_alias_update_runtime_state(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
+pub struct TemporalAntiAliasPlugin {
+}
+pub fn TemporalAntiAliasPlugin::default() -> Self
+pub impl @app.PluginReplacement for TemporalAntiAliasPlugin
+
+pub struct TemporalAntiAliasRuntimeState {
+  enabled_camera_count : Int
+  reset_requested_count : Int
+} derive(Eq, @debug.Debug)
+pub fn TemporalAntiAliasRuntimeState::default() -> Self
+pub impl @app.Resource for TemporalAntiAliasRuntimeState
 
 // Type aliases
 pub using @post_process {type TemporalAntiAliasing}

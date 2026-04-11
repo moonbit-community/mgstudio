@@ -2,6 +2,11 @@
 package "Milky2018/mgstudio/anti_alias"
 
 import {
+  "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening",
+  "Milky2018/mgstudio/anti_alias/dlss",
+  "Milky2018/mgstudio/anti_alias/fxaa",
+  "Milky2018/mgstudio/anti_alias/smaa",
+  "Milky2018/mgstudio/anti_alias/taa",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
@@ -11,11 +16,27 @@ import {
 // Values
 pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
 
+pub const CAS_RUNTIME_SUPPORTED : Bool = false
+
+pub const DLSS_RUNTIME_SUPPORTED : Bool = false
+
+pub const SMAA_RUNTIME_SUPPORTED : Bool = false
+
 pub fn anti_alias_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn anti_alias_plugin_with(@app.App[@ecs.World], AntiAliasPlugin) -> @app.App[@ecs.World]
+
+pub let ecs_key_cas_uniform : @ecs.ComponentKey[@contrast_adaptive_sharpening.CasUniform]
+
+pub let ecs_key_contrast_adaptive_sharpening : @ecs.ComponentKey[@contrast_adaptive_sharpening.ContrastAdaptiveSharpening]
+
+pub let ecs_key_denoise_cas : @ecs.ComponentKey[@contrast_adaptive_sharpening.DenoiseCas]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
+
+pub let ecs_key_smaa : @ecs.ComponentKey[@smaa.Smaa]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
@@ -27,13 +48,40 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter
 pub struct AntiAliasPlugin {
 }
 pub fn AntiAliasPlugin::default() -> Self
+pub impl @app.PluginReplacement for AntiAliasPlugin
 
 // Type aliases
+pub using @contrast_adaptive_sharpening {type CasPlugin}
+
+pub using @contrast_adaptive_sharpening {type CasUniform}
+
+pub using @contrast_adaptive_sharpening {type ContrastAdaptiveSharpening}
+
+pub using @contrast_adaptive_sharpening {type DenoiseCas}
+
+pub using @dlss {type Dlss}
+
+pub using @dlss {type DlssPerfQualityMode}
+
+pub using @dlss {type DlssPlugin}
+
+pub using @dlss {type DlssProjectId}
+
 pub using @post_process {type Fxaa}
+
+pub using @fxaa {type FxaaPlugin}
 
 pub using @post_process {type FxaaSensitivity}
 
 pub using @core_3d {type Msaa}
+
+pub using @smaa {type Smaa}
+
+pub using @smaa {type SmaaPlugin}
+
+pub using @smaa {type SmaaPreset}
+
+pub using @taa {type TemporalAntiAliasPlugin}
 
 pub using @post_process {type TemporalAntiAliasing}
 

@@ -185,7 +185,11 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, ca
 
 pub fn mesh3d_gpu_culling_supported() -> Bool
 
+pub fn mesh3d_indexed_indirect_offset(Int) -> UInt64
+
 pub fn mesh3d_indirect_first_instance_supported() -> Bool
+
+pub fn mesh3d_non_indexed_indirect_offset(Int) -> UInt64
 
 pub fn mesh3d_preprocess_disabled() -> Bool
 
@@ -206,6 +210,10 @@ pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
 pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot
+
+pub fn renderer_mesh3d_draw_storage_stride_bytes() -> UInt64
+
+pub fn renderer_mesh3d_vertex_stride_bytes() -> UInt64
 
 pub fn request_device() -> Int
 
@@ -580,6 +588,8 @@ pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float,
 pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Float, Float, Float, Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d(Self, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Int, Float, Float, Int, Float, Float, Int, Int, Float, Float, Float, Float, Float, Int, String?, Int, Int, skinning_matrices? : Array[Float]?) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d_main_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Float, Int, String?, Int, Int, Bool) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -592,6 +602,8 @@ pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, 
 pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_frame_binding(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
+pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
+pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError

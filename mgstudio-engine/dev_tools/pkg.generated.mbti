@@ -28,6 +28,8 @@ pub fn dev_tools_picking_debug_enabled(PickingDebugConfig) -> Bool
 
 pub fn dev_tools_picking_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn dev_tools_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+
 pub fn dev_tools_render_debug_available() -> Bool
 
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay

@@ -46,6 +46,8 @@ pub fn animation_graph() -> AnimationGraph
 
 pub fn animation_graph_add(AnimationGraph) -> @asset.Handle[AnimationGraph]
 
+pub fn animation_graph_asset_loader() -> @asset.AssetLoader[AnimationGraph]
+
 pub fn animation_graph_from_clip_handle(@asset.Handle[AnimationClip]) -> (AnimationGraph, AnimationNodeIndex)
 
 pub fn animation_graph_get(@asset.Handle[AnimationGraph]) -> AnimationGraph?

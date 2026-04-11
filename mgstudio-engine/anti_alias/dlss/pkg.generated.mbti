@@ -8,17 +8,27 @@ import {
 }
 
 // Values
+pub const DLSS_INIT_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssInitPlugin"
+
+pub const DLSS_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssPlugin"
+
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn dlss_extract_enabled() -> Bool
 
 pub fn dlss_init_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn dlss_init_plugin_with(@app.App[@ecs.World], DlssInitPlugin) -> @app.App[@ecs.World]
+
 pub fn dlss_node_enabled() -> Bool
 
 pub fn dlss_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn dlss_plugin_with(@app.App[@ecs.World], DlssPlugin) -> @app.App[@ecs.World]
+
 pub fn dlss_prepare_enabled() -> Bool
+
+pub fn dlss_update_runtime_state(@ecs.World) -> Unit
 
 // Errors
 
@@ -28,10 +38,15 @@ pub struct Dlss {
   reset : Bool
 }
 pub fn Dlss::default() -> Self
+pub fn Dlss::new(perf_quality_mode? : DlssPerfQualityMode, reset? : Bool) -> Self
+pub fn Dlss::with_perf_quality_mode(Self, DlssPerfQualityMode) -> Self
+pub fn Dlss::with_reset(Self, Bool) -> Self
+pub impl @ecs.Component for Dlss
 
 pub struct DlssInitPlugin {
 }
 pub fn DlssInitPlugin::default() -> Self
+pub impl @app.PluginReplacement for DlssInitPlugin
 
 pub(all) enum DlssPerfQualityMode {
   Auto
@@ -46,6 +61,7 @@ pub fn DlssPerfQualityMode::default() -> Self
 pub struct DlssPlugin {
 }
 pub fn DlssPlugin::default() -> Self
+pub impl @app.PluginReplacement for DlssPlugin
 
 pub struct DlssProjectId {
   value : String
@@ -56,9 +72,19 @@ pub impl @app.Resource for DlssProjectId
 
 pub struct DlssRayReconstructionSupported {
 } derive(Default, Eq, @debug.Debug)
+pub impl @app.Resource for DlssRayReconstructionSupported
+
+pub struct DlssRuntimeState {
+  enabled_camera_count : Int
+  reset_requested_count : Int
+  runtime_supported : Bool
+} derive(Eq, @debug.Debug)
+pub fn DlssRuntimeState::default() -> Self
+pub impl @app.Resource for DlssRuntimeState
 
 pub struct DlssSuperResolutionSupported {
 } derive(Default, Eq, @debug.Debug)
+pub impl @app.Resource for DlssSuperResolutionSupported
 
 // Type aliases
 

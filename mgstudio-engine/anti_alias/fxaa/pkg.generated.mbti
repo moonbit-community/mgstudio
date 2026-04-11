@@ -6,18 +6,37 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const FXAA_PLUGIN_ID : String = "bevy_anti_alias::fxaa::FxaaPlugin"
+
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
+
+pub let ecs_key_fxaa_runtime_state : @ecs.ResourceKey[FxaaRuntimeState]
 
 pub fn fxaa_node_enabled(@ecs.World, @core.Entity) -> Bool
 
 pub fn fxaa_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn fxaa_plugin_with(@app.App[@ecs.World], FxaaPlugin) -> @app.App[@ecs.World]
+
+pub fn fxaa_update_runtime_state(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
+pub struct FxaaPlugin {
+}
+pub fn FxaaPlugin::default() -> Self
+pub impl @app.PluginReplacement for FxaaPlugin
+
+pub struct FxaaRuntimeState {
+  enabled_camera_count : Int
+} derive(Eq, @debug.Debug)
+pub fn FxaaRuntimeState::default() -> Self
+pub impl @app.Resource for FxaaRuntimeState
 
 // Type aliases
 pub using @post_process {type Fxaa}
