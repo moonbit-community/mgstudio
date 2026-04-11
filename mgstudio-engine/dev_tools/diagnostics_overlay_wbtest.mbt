@@ -64,15 +64,15 @@ test "dev_tools: diagnostics overlay uses Missing text for absent diagnostics" {
   let store = @diagnostic.DiagnosticsStore::default()
   debug_inspect(
     diagnostics_overlay_measurement_text(missing_item, store),
-    content="Missing",
+    content="\"Missing\"",
   )
 }
 
 ///|
 test "dev_tools: diagnostics overlay precision rounding is stable" {
-  debug_inspect(diagnostics_overlay_round_precision(12.3456F, 0), content="12")
+  debug_inspect(diagnostics_overlay_round_precision(12.3456F, 0), content="\"12\"")
   debug_inspect(
     diagnostics_overlay_round_precision(12.3456F, 2),
-    content="12.35",
+    content="\"12.35\"",
   )
 }

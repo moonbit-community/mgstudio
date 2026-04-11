@@ -77,6 +77,6 @@ test "diagnostics: log diagnostics sorts output by path lexicographically" {
     .get_resource(DiagnosticsStore::resource())
     .unwrap()
   let sorted = log_diagnostics_sorted(store)
-  debug_inspect(sorted[0].path().as_str(), content="a.path")
-  debug_inspect(sorted[1].path().as_str(), content="z.path")
+  debug_inspect(sorted[0].path().as_str(), content="\"a.path\"")
+  debug_inspect(sorted[1].path().as_str(), content="\"z.path\"")
 }
