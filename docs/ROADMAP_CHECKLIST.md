@@ -17,18 +17,18 @@ This file must not exceed 200 lines.
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | ✅ Mostly Done | 95% | Current mgstudio scope keeps meshlet path in stable Bevy-shaped owner layout with non-blocking runtime tail differences. | Keep in maintenance mode unless scope expands. |
 | `bevy_material` | `mgstudio-engine/material` | ✅ Mostly Done | 95% | Material package/runtime path is stable on current parity gates and native checks. | Track deferred/forward-decal tails as maintenance items. |
 | `bevy_camera` (3D projection path) | `mgstudio-engine/pbr` + `pbr/render` + `camera` | ✅ Mostly Done | 95% | Cross-package projection owner split is stable under current render parity gates. | Keep constructor/compat edges under regression watch only. |
-| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | ✅ Mostly Done | 95% | Sprite runtime/tests are green and stress gate is stable after pointer/runtime fixes. | Keep screenshot parity checks as maintenance guard. |
+| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | ✅ Mostly Done | 96% | `moon test sprite --target native` (60/60) is green on 2026-04-12 and stress gate remains stable after pointer/runtime fixes. | Keep screenshot parity checks as maintenance guard. |
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | ✅ Mostly Done | 96% | `moon test ui --target native` (42/42) and `moon check ui_render --target native` are green on 2026-04-12; pointer-space regressions remain closed in stress runs. | Keep traversal/picking tails in maintenance monitoring. |
 | `bevy_text` | `mgstudio-engine/text` | ✅ Mostly Done | 96% | `moon test text --target native` (10/10) is green on 2026-04-12 and stress parity gates remain stable. | Keep glyph/queue tails as maintenance-only profiling items. |
 | `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | ✅ Mostly Done | 96% | `moon test gltf --target native` (4/4) and `moon test scene --target native` (33/33) are green on 2026-04-12; `examples/gltf/load_gltf` check is up to date. | Continue screenshot maintenance audits only. |
 | `bevy_animation` | `mgstudio-engine/animation` | ✅ Mostly Done | 96% | `moon test animation --target native` (23/23) is green on 2026-04-12 and `examples/animation/animated_mesh` check is up to date. | Keep as done-core; verify via gltf/stress integration passes. |
 | `bevy_scene` (static/serialized scene path) | `mgstudio-engine/scene` | ✅ Mostly Done | 95% | Static `SceneRoot`/spawner/glTF runtime path is stable with current gltf/render integration. | Keep maintenance-level parity checks only. |
 | `bevy_scene` (`dynamic_scene*` family) | N/A (explicit non-goal: dynamic) | ⏸ Excluded | 0% | Dynamic-scene/reflect-heavy path is intentionally out of scope. | Keep excluded unless scope changes. |
-| `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | ✅ Mostly Done | 95% | Gizmos package/runtime is stable on native checks and parity gate runs. | Keep representative screenshot audits as maintenance guard. |
+| `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | ✅ Mostly Done | 96% | `moon test gizmos --target native` (2/2) is green on 2026-04-12 and parity gate runs remain stable. | Keep representative screenshot audits as maintenance guard. |
 | `bevy_picking` | `mgstudio-engine/picking` | ✅ Mostly Done | 96% | `moon test picking --target native` (11/11) is green on 2026-04-12 and pointer hit-test regressions remain closed in stress scenarios. | Keep traversal edge cases in regression suite only. |
 | `bevy_input` | `mgstudio-engine/input` + `window` | ✅ Mostly Done | 96% | `moon test input --target native` (23/23) and `moon test window --target native` (27/27) are green on 2026-04-12. | Keep focused regression checks only. |
 | `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | ✅ Mostly Done | 97% | Window package tests are green (`moon test window --target native`, 27/27) and example/path-audit parity remains stable on current excludes. | Keep platform-edge regressions under maintenance watch. |
-| `bevy_asset` | `mgstudio-engine/asset` | ✅ Mostly Done | 95% | Asset decode/layout path is stable on native checks after source-path and codec cleanup. | Keep Bevy-shaped layout audits as maintenance items. |
+| `bevy_asset` | `mgstudio-engine/asset` | ✅ Mostly Done | 96% | Asset decode/layout path is stable on native checks (`moon check asset --target native`) after source-path and codec cleanup. | Keep Bevy-shaped layout audits as maintenance items. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | ✅ Mostly Done | 95% | Diagnostics overlay, timeline trace plugin, stress diagnostics plugin, and stress trace collection script are in mainline and checked in package builds. | Keep maintenance-level parity checks only. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | ✅ Mostly Done | 95% | Anti-alias plugin/runtime replacement surfaces are stable in mainline and no longer no-op stubs. | Keep render-graph-depth parity as maintenance tail work. |
 | `bevy_light` | `mgstudio-engine/light` | ✅ Mostly Done | 95% | Light/cluster config/resources and assignment systems are stable in current render gate flows. | Keep clustered-depth parity as maintenance-level tail. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am6) |
+| Last updated | 2026-04-12 (am7) |
