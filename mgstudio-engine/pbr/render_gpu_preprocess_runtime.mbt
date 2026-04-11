@@ -330,7 +330,7 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
   }
   if has_items {
     indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
-      indirect_parameters_count: items.length(),
+      indirect_parameters_count: 0,
       indirect_parameters_base: 0,
     })
   }

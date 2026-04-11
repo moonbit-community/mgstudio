@@ -25,6 +25,17 @@ fn reset_text_ecs_test_state() -> Unit {
 }
 
 ///|
+fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
+  let this_run = world.advance_sequence()
+  let last_run = world.get_sequence_context().sequence().this_run
+  let sequence = @core.SystemSequence::new(last_run, this_run)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(sequence)
+  world.set_sequence_context(ctx)
+  sequence
+}
+
+///|
 test "text plugin inserts text runtime resources" {
   let app = text_plugin(@app.App::new(@ecs.World::new()))
   debug_inspect(app.contains_resource(RemSize::resource()), content="true")
@@ -91,7 +102,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
   debug_inspect(view_visible, content="true")
   debug_inspect(
     bundle.transform.to_json().to_string(),
-    content="Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+    content="\"Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
   )
 }
 
@@ -187,6 +198,7 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   .entity_mut(entity)
   .insert_component(@transform.Transform::identity())
   |> ignore)
+  ignore(next_system_sequence(world))
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
@@ -199,10 +211,16 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   text_render_system(world)
   debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
 
+  ignore(next_system_sequence(world))
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   )
   text_sync_ecs_system(world)
   debug_inspect(text_ecs_entries[0].view_visible, content="true")
@@ -328,12 +346,12 @@ test "ui text bridge preserves runtime-owned placement during sync" {
 
   debug_inspect(
     text_get_transform(synced.handle).unwrap().to_json().to_string(),
-    content="Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+    content="\"Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
   )
-  debug_inspect(instance.layers.to_json().to_string(), content="Number(2048)")
+  debug_inspect(instance.layers.to_json().to_string(), content="\"Number(2048)\"")
   debug_inspect(
     instance.anchor.to_json().to_string(),
-    content="Array([Number(0), Number(0)])",
+    content="\"Array([Number(0), Number(0)])\"",
   )
   debug_inspect(
     y_axis_eq(instance.y_axis, YAxisOrientation::BottomToTop),

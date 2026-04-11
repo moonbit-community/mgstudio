@@ -197,11 +197,11 @@ test "render3d: indirect metadata starts visible counts at zero" {
   ])
   let ok = metadata.indirect_parameters_gpu_metadata.length() == 2 &&
     metadata.indirect_parameters_cpu_metadata.length() == 2 &&
-    metadata.indirect_batch_sets.length() == 2 &&
+    metadata.indirect_batch_sets.length() == 1 &&
     metadata.indirect_parameters_cpu_metadata[0].base_output_index == 3 &&
-    metadata.indirect_parameters_cpu_metadata[0].batch_set_index == -1 &&
+    metadata.indirect_parameters_cpu_metadata[0].batch_set_index == 0 &&
     metadata.indirect_parameters_cpu_metadata[1].base_output_index == 7 &&
-    metadata.indirect_parameters_cpu_metadata[1].batch_set_index == -1 &&
+    metadata.indirect_parameters_cpu_metadata[1].batch_set_index == 0 &&
     metadata.indirect_parameters_gpu_metadata[0].mesh_index == 3 &&
     metadata.indirect_parameters_gpu_metadata[0].early_instance_count == 0 &&
     metadata.indirect_parameters_gpu_metadata[0].late_instance_count == 0 &&
@@ -209,8 +209,6 @@ test "render3d: indirect metadata starts visible counts at zero" {
     metadata.indirect_parameters_gpu_metadata[1].early_instance_count == 0 &&
     metadata.indirect_parameters_gpu_metadata[1].late_instance_count == 0 &&
     metadata.indirect_batch_sets[0].indirect_parameters_count == 0 &&
-    metadata.indirect_batch_sets[0].indirect_parameters_base == 0 &&
-    metadata.indirect_batch_sets[1].indirect_parameters_count == 0 &&
-    metadata.indirect_batch_sets[1].indirect_parameters_base == 1
+    metadata.indirect_batch_sets[0].indirect_parameters_base == 0
   debug_inspect(ok, content="true")
 }

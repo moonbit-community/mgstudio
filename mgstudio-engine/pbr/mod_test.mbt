@@ -49,7 +49,7 @@ fn read_mesh_render_plugin_state(world : @ecs.World) -> MeshRenderPluginState {
 ///|
 test "render3d: plugin replacement id aligns with bevy_pbr" {
   let plugin = PbrPlugin::default()
-  debug_inspect(plugin.replacement_id(), content=PBR_PLUGIN_ID)
+  debug_inspect(plugin.replacement_id(), content="\"bevy_pbr::PbrPlugin\"")
 }
 
 ///|
