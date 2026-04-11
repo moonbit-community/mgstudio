@@ -136,11 +136,11 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
   debug_inspect(seen_disabled, content="[1]")
   debug_inspect(
     try! world.get_by_key(enabled, mut_query_position_key),
-    content="Some({x: 11, y: 1})",
+    content="Some({ x: 11, y: 1 })",
   )
   debug_inspect(
     try! world.get_by_key(disabled, mut_query_position_key),
-    content="Some({x: 102, y: 2})",
+    content="Some({ x: 102, y: 2 })",
   )
 }
 
@@ -181,7 +181,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
 
   debug_inspect(state.count(world), content="1")
   if (try! state.get(world, e0)) is Some((position, velocity_mut)) {
-    debug_inspect(position.value(), content="{x: 2, y: 3}")
+    debug_inspect(position.value(), content="{ x: 2, y: 3 }")
     velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
       position.value().x
   } else {
@@ -189,8 +189,8 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   }
 
   let (single_position, single_velocity) = try! state.require_single(world)
-  debug_inspect(single_position.value(), content="{x: 2, y: 3}")
-  debug_inspect(single_velocity.get_ref().val, content="{dx: 12, dy: 20}")
+  debug_inspect(single_position.value(), content="{ x: 2, y: 3 }")
+  debug_inspect(single_velocity.get_ref().val, content="{ dx: 12, dy: 20 }")
 
   let query : Query[
     (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
@@ -220,11 +220,11 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   debug_inspect(seen, content="[0]")
   debug_inspect(
     try! world.get_by_key(e0, mut_query_velocity_key),
-    content="Some({dx: 12, dy: 23})",
+    content="Some({ dx: 12, dy: 23 })",
   )
   debug_inspect(
     try! world.get_by_key(e1, mut_query_velocity_key),
-    content="Some({dx: 30, dy: 40})",
+    content="Some({ dx: 30, dy: 40 })",
   )
 }
 
@@ -294,19 +294,19 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
 
   debug_inspect(
     try! world.get_by_key(e0, mut_query_velocity_key),
-    content="Some({dx: 11, dy: 1})",
+    content="Some({ dx: 11, dy: 1 })",
   )
   debug_inspect(
     try! world.get_by_key(e1, mut_query_velocity_key),
-    content="Some({dx: 22, dy: 2})",
+    content="Some({ dx: 22, dy: 2 })",
   )
   debug_inspect(
     try! world.get_by_key(e2, mut_query_velocity_key),
-    content="Some({dx: 30, dy: 0})",
+    content="Some({ dx: 30, dy: 0 })",
   )
   debug_inspect(
     try! world.get_by_key(e3, mut_query_velocity_key),
-    content="Some({dx: 44, dy: 4})",
+    content="Some({ dx: 44, dy: 4 })",
   )
 }
 
@@ -351,11 +351,11 @@ test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
 
   debug_inspect(
     try! world.get_by_key(entity, mut_query_velocity_key),
-    content="Some({dx: 3, dy: 9})",
+    content="Some({ dx: 3, dy: 9 })",
   )
   debug_inspect(
     try! world.get_by_key(entity, mut_query_acceleration_key),
-    content="Some({ax: 7, ay: 8})",
+    content="Some({ ax: 7, ay: 8 })",
   )
   debug_inspect(
     try! world.get_by_key(entity, mut_query_marker_key),

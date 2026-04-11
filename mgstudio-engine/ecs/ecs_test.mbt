@@ -112,7 +112,7 @@ test "ecs: spawn set get update and despawn cleanup" {
   try! world.set_by_key(entity, comp_counter, Counter::{ value: 3 })
   debug_inspect(
     try! world.get_by_key(entity, comp_counter),
-    content="Some({value: 3})",
+    content="Some({ value: 3 })",
   )
 
   debug_inspect(
@@ -123,7 +123,7 @@ test "ecs: spawn set get update and despawn cleanup" {
   )
   debug_inspect(
     try! world.get_by_key(entity, comp_counter),
-    content="Some({value: 12})",
+    content="Some({ value: 12 })",
   )
 
   try! world.despawn(entity)
@@ -188,7 +188,7 @@ test "ecs: typed component api uses component ownership" {
   |> ignore)
 
   let initial_counter : TypedCounter? = try! World::get(world, e0)
-  debug_inspect(initial_counter, content="Some({value: 10})")
+  debug_inspect(initial_counter, content="Some({ value: 10 })")
   debug_inspect(
     try! World::update(world, e0, fn(counter : TypedCounter) {
       TypedCounter::{ value: counter.value + 5 }
@@ -196,7 +196,7 @@ test "ecs: typed component api uses component ownership" {
     content="true",
   )
   let updated_counter : TypedCounter? = try! World::get(world, e0)
-  debug_inspect(updated_counter, content="Some({value: 15})")
+  debug_inspect(updated_counter, content="Some({ value: 15 })")
 
   let without_marker : Without[TypedMarker] = Without::new(marker_key)
   let filtered : Query[@ecs.Comp[TypedCounter], Without[TypedMarker]] = @ecs.query_filtered(
@@ -208,7 +208,7 @@ test "ecs: typed component api uses component ownership" {
       Some(counter) => Some(counter.value())
       None => None
     },
-    content="Some({value: 15})",
+    content="Some({ value: 15 })",
   )
   debug_inspect(
     match (try! filtered.get(e1)) {

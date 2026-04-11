@@ -30,19 +30,19 @@ test "ecs event: read includes previous and current frame" {
   )
 
   world.send_event(event_runtime, RuntimeEvent::{ value: 1 })
-  debug_inspect(try! world.read_events(event_runtime), content="[{value: 1}]")
+  debug_inspect(try! world.read_events(event_runtime), content="[{ value: 1 }]")
 
   world.advance_event_frame()
-  debug_inspect(try! world.read_events(event_runtime), content="[{value: 1}]")
+  debug_inspect(try! world.read_events(event_runtime), content="[{ value: 1 }]")
 
   world.send_event(event_runtime, RuntimeEvent::{ value: 2 })
   debug_inspect(
     try! world.read_events(event_runtime),
-    content="[{value: 1}, {value: 2}]",
+    content="[{ value: 1 }, { value: 2 }]",
   )
 
   world.advance_event_frame()
-  debug_inspect(try! world.read_events(event_runtime), content="[{value: 2}]")
+  debug_inspect(try! world.read_events(event_runtime), content="[{ value: 2 }]")
 
   world.advance_event_frame()
   debug_inspect(try! world.read_events(event_runtime), content="[]")

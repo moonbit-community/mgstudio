@@ -57,7 +57,7 @@ test "ecs entity disabling: default queries skip disabled entities" {
       Some(dummy) => Some(dummy.value())
       None => None
     },
-    content="Some({label: \"enabled\"})",
+    content="Some({ label: \"enabled\" })",
   )
   debug_inspect(
     match (try! dummy_query.get(disabled)) {

@@ -288,11 +288,11 @@ test "ecs query: query1 view and for_each" {
 
   debug_inspect(
     try! world.get_by_key(e1, comp_position),
-    content="Some({x: 11, y: 22})",
+    content="Some({ x: 11, y: 22 })",
   )
   debug_inspect(
     try! world.get_by_key(e2, comp_position),
-    content="Some({x: 14, y: 26})",
+    content="Some({ x: 14, y: 26 })",
   )
 }
 
@@ -314,7 +314,7 @@ test "ecs query: single returns only for exactly one match" {
   )
   debug_inspect(
     comp_option_value(try! all_position_query.single()),
-    content="Some({x: 5, y: 8})",
+    content="Some({ x: 5, y: 8 })",
   )
 
   try! world.set_by_key(e1, comp_position, Position::{ x: 13, y: 21 })
@@ -327,7 +327,7 @@ test "ecs query: single returns only for exactly one match" {
   )
   debug_inspect(
     comp_option_value(try! with_velocity_query.single()),
-    content="Some({x: 5, y: 8})",
+    content="Some({ x: 5, y: 8 })",
   )
 
   try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 2, dy: 3 })
@@ -390,19 +390,19 @@ test "ecs query: query2 view intersection and for_each" {
 
   debug_inspect(
     try! world.get_by_key(e_match, comp_position),
-    content="Some({x: 10, y: 16})",
+    content="Some({ x: 10, y: 16 })",
   )
   debug_inspect(
     try! world.get_by_key(e_match, comp_velocity),
-    content="Some({dx: 8, dy: 12})",
+    content="Some({ dx: 8, dy: 12 })",
   )
   debug_inspect(
     try! world.get_by_key(e_only_position, comp_position),
-    content="Some({x: 100, y: 200})",
+    content="Some({ x: 100, y: 200 })",
   )
   debug_inspect(
     try! world.get_by_key(e_only_velocity0, comp_velocity),
-    content="Some({dx: 1, dy: 2})",
+    content="Some({ dx: 1, dy: 2 })",
   )
 }
 
@@ -461,15 +461,15 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   })
   debug_inspect(
     try! world.get_by_key(e2, comp_position),
-    content="Some({x: 103, y: 103})",
+    content="Some({ x: 103, y: 103 })",
   )
   debug_inspect(
     try! world.get_by_key(e2, comp_velocity),
-    content="Some({dx: 16, dy: 17})",
+    content="Some({ dx: 16, dy: 17 })",
   )
   debug_inspect(
     try! world.get_by_key(e2, comp_accel),
-    content="Some({ax: 9, ay: 10})",
+    content="Some({ ax: 9, ay: 10 })",
   )
   debug_inspect(try! world.get_by_key(e1, comp_accel), content="None")
 }
@@ -500,7 +500,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   debug_inspect(comp_option_value(try! query.get(e0)), content="None")
   debug_inspect(
     comp_option_value(try! query.get(e1)),
-    content="Some({x: 2, y: 2})",
+    content="Some({ x: 2, y: 2 })",
   )
   debug_inspect(comp_option_value(try! query.get(e2)), content="None")
 
@@ -524,7 +524,7 @@ test "ecs query: component ref exposes live component values" {
   ctx1.set(@core.SystemSequence::new(0, 1))
   world.set_sequence_context(ctx1)
   let initial_position = (try! world.get_by_key(entity, comp_position)).unwrap()
-  debug_inspect(initial_position, content="{x: 1, y: 2}")
+  debug_inspect(initial_position, content="{ x: 1, y: 2 }")
 
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
@@ -538,7 +538,7 @@ test "ecs query: component ref exposes live component values" {
   ctx2.set(@core.SystemSequence::new(1, 2))
   world.set_sequence_context(ctx2)
   let changed_position = (try! world.get_by_key(entity, comp_position)).unwrap()
-  debug_inspect(changed_position, content="{x: 11, y: 22}")
+  debug_inspect(changed_position, content="{ x: 11, y: 22 }")
 }
 
 ///|
@@ -719,12 +719,12 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   guard none_result is Err(@ecs.Skipped(message0)) else {
     fail("expected skipped error when no entity matches")
   }
-  debug_inspect(message0, content="Expected exactly one matching entity")
+  debug_inspect(message0, content="\"Expected exactly one matching entity\"")
 
   try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
   debug_inspect(
     (try! (query_filtered(world, All::new()) : Query[Comp[Position], All]).require_single()).value(),
-    content="{x: 5, y: 8}",
+    content="{ x: 5, y: 8 }",
   )
   let single_entity = try! world
     .query_entities_filtered(With::new(comp_position))
@@ -740,14 +740,14 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   )
   debug_inspect(
     (try! filtered_query.require_single()).value(),
-    content="{x: 5, y: 8}",
+    content="{ x: 5, y: 8 }",
   )
 
   let many_result = try? position_query.require_single()
   guard many_result is Err(@ecs.Skipped(message1)) else {
     fail("expected skipped error when many entities match")
   }
-  debug_inspect(message1, content="Expected exactly one matching entity")
+  debug_inspect(message1, content="\"Expected exactly one matching entity\"")
 }
 
 ///|
@@ -842,19 +842,19 @@ test "ecs query: generic query supports named reusable data, filters and iterato
     fail("expected filtered entity to exist")
   }
   debug_inspect(first.entity.id, content="0")
-  debug_inspect(first.position, content="{x: 10, y: 20}")
-  debug_inspect(first.maybe_velocity, content="Some({dx: 1, dy: 2})")
+  debug_inspect(first.position, content="{ x: 10, y: 20 }")
+  debug_inspect(first.maybe_velocity, content="Some({ dx: 1, dy: 2 })")
   debug_inspect(first.has_disabled, content="false")
   debug_inspect(first.nested is Some(_), content="true")
   guard first.nested is Some(first_nested) else {
     fail("expected nested velocity data")
   }
-  debug_inspect(first_nested.velocity, content="{dx: 1, dy: 2}")
+  debug_inspect(first_nested.velocity, content="{ dx: 1, dy: 2 }")
 
   guard (try! named_query.get(e1)) is Some(second) else {
     fail("expected disabled tagged entity to remain visible")
   }
-  debug_inspect(second.position, content="{x: 30, y: 40}")
+  debug_inspect(second.position, content="{ x: 30, y: 40 }")
   debug_inspect(second.maybe_velocity, content="None")
   debug_inspect(second.has_disabled, content="true")
   debug_inspect(second.nested is Some(_), content="false")
@@ -891,8 +891,8 @@ test "ecs query: generic query supports named reusable data, filters and iterato
   guard (try! generic_query.get(e0)) is Some(generic_value) else {
     fail("expected generic fragment query item")
   }
-  debug_inspect(generic_value.pair.0.value(), content="{x: 10, y: 20}")
-  debug_inspect(generic_value.pair.1.value(), content="Some({dx: 1, dy: 2})")
+  debug_inspect(generic_value.pair.0.value(), content="{ x: 10, y: 20 }")
+  debug_inspect(generic_value.pair.1.value(), content="Some({ dx: 1, dy: 2 })")
 }
 
 ///|
@@ -964,14 +964,14 @@ test "ecs query: iter_combinations supports mut query data across distinct entit
 
   debug_inspect(
     try! world.get_by_key(e0, position_key),
-    content="Some({x: 5, y: 0})",
+    content="Some({ x: 5, y: 0 })",
   )
   debug_inspect(
     try! world.get_by_key(e1, position_key),
-    content="Some({x: 4, y: 0})",
+    content="Some({ x: 4, y: 0 })",
   )
   debug_inspect(
     try! world.get_by_key(e2, position_key),
-    content="Some({x: 3, y: 0})",
+    content="Some({ x: 3, y: 0 })",
   )
 }

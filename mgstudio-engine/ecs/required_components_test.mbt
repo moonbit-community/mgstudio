@@ -96,11 +96,11 @@ test "ecs: required components insert recursively on set_component" {
 
   debug_inspect(
     try! world.get_by_key(entity, required_b_key),
-    content="Some({value: 10})",
+    content="Some({ value: 10 })",
   )
   debug_inspect(
     try! world.get_by_key(entity, required_c_key),
-    content="Some({value: 20})",
+    content="Some({ value: 20 })",
   )
 }
 
@@ -124,7 +124,7 @@ test "ecs: direct required constructor overrides indirect constructor" {
 
   debug_inspect(
     try! world.get_by_key(entity, required_counter_key),
-    content="Some({value: 2})",
+    content="Some({ value: 2 })",
   )
 }
 
@@ -140,7 +140,7 @@ test "ecs: explicit component value beats required insertion" {
 
   debug_inspect(
     try! world.get_by_key(entity, required_b_key),
-    content="Some({value: 99})",
+    content="Some({ value: 99 })",
   )
 }
 
