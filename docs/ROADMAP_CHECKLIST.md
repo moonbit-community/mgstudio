@@ -27,7 +27,7 @@ This file must not exceed 200 lines.
 | `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | 🟡 In Progress | 84% | Core package tests are green (`moon test gizmos --target native`); runtime fidelity still needs broader visual audits. | Complete representative visual/runtime audits. |
 | `bevy_picking` | `mgstudio-engine/picking` | 🟡 In Progress | 82% | Package tests are green (`moon test picking --target native`); UI hit-test and traversal edge behavior still needs full visual closure. | Finish Bevy-aligned backend traversal semantics. |
 | `bevy_input` | `mgstudio-engine/input` + `window` | 🟡 In Progress | 90% | Major pointer mapping bugs fixed and package tests are green (`moon test input --target native`). | Add focused regression checks for pointer-space conversions. |
-| `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | 🟡 In Progress | 91% | Runtime mostly stable and package tests are green (`moon test window --target native`); platform edge cases remain possible. | Continue parity checks while fixing remaining visual diffs. |
+| `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | 🟡 In Progress | 93% | Runtime is mostly stable and package tests are green (`moon test window --target native`, `moon test winit --target native`); platform edge cases remain possible. | Continue parity checks while fixing remaining visual diffs. |
 | `bevy_asset` | `mgstudio-engine/asset` | 🟡 In Progress | 89% | `mizchi/image` path was removed from mainline asset decode flow, `moon test asset --target native` is green, and source-path based failures were cleaned up; full Bevy-shaped asset layout audits remain. | Keep asset layout aligned with Bevy and finish residual source-layout audits. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | ✅ Mostly Done | 95% | Diagnostics overlay, timeline trace plugin, stress diagnostics plugin, and stress trace collection script are in mainline and checked in package builds. | Keep maintenance-level parity checks only. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 🟡 In Progress | 78% | FXAA/SMAA/TAA/CAS/DLSS plugins now expose PluginReplacement IDs and runtime state resources/systems (no longer pure no-op plugin bodies); full render-graph parity still pending. | Implement full render-graph/pipeline parity for enabled features. |
@@ -42,7 +42,7 @@ This file must not exceed 200 lines.
 | `bevy_solari` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder runtime removed from mainline. | Reintroduce only with executable implementation. |
 | Stress tests parity gate | `examples/stress_tests/*` + scripts | 🟡 In Progress | 60% | FPS and visual consistency gaps remain in 3D/text-heavy cases. | Keep parity-first refactors, then validate with profiles/screenshots. |
 | Visual screenshot audit | `/tmp` captures + parity docs | 🟡 In Progress | 68% | Large batch exists, but not all cases are fully converged. | Continue full-run capture and per-case fix loop. |
-| Native test environment | workspace build/test toolchain | 🟡 In Progress | 78% | Key native package tests (`asset/ui/window/input/picking/scene/gltf/pbr/text/image/animation/physics2d/physics3d`) are green; full-suite serial run stability and remaining long-run hangs still need closure. | Make full `moon test --target native` runs repeatable end-to-end and remove remaining hang points. |
+| Native test environment | workspace build/test toolchain | 🟡 In Progress | 80% | Key native package tests (`asset/ui/ui_render/sprite/window/winit/input/picking/scene/gltf/pbr/text/image/animation/physics2d/physics3d`) are green; full-suite serial run stability and remaining long-run hangs still need closure. | Make full `moon test --target native` runs repeatable end-to-end and remove remaining hang points. |
 
 | Rollup | Value |
 |---|---:|
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 16 / 39 |
 | In-progress rows | 20 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (pm2) |
+| Last updated | 2026-04-12 (pm3) |

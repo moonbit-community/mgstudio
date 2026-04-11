@@ -114,7 +114,7 @@ fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
 ///|
 test "winit: plugin replacement id aligns with bevy_winit" {
   let plugin = WinitPlugin::default()
-  debug_inspect(plugin.replacement_id(), content=WINIT_PLUGIN_ID)
+  debug_inspect(plugin.replacement_id(), content="\"\{WINIT_PLUGIN_ID}\"")
 }
 
 ///|
@@ -618,5 +618,8 @@ test "winit: plugin owns accessibility update commit" {
   @windowing.queue_accessibility_update_payload(payload~)
   app = app.run_once()
 
-  debug_inspect(@windowing.last_accessibility_update_payload(), content=payload)
+  debug_inspect(
+    @windowing.last_accessibility_update_payload(),
+    content="\"\{payload}\"",
+  )
 }
