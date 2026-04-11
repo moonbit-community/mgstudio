@@ -53,7 +53,9 @@ pub fn mip_generation_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {
-  app.add_plugin(@experimental.experimental_mip_generation_plugin)
+  app
+  .init_resource(fn() { MipGenerationJobs::default() })
+  .add_plugin(@experimental.experimental_mip_generation_plugin)
 }
 
 ///|
@@ -86,6 +88,141 @@ pub struct MipGenerationPhaseId {
 ///|
 pub fn MipGenerationPhaseId::new(value~ : Int) -> MipGenerationPhaseId {
   MipGenerationPhaseId::{ value, }
+}
+
+///|
+pub fn MipGenerationPhaseId::value(self : MipGenerationPhaseId) -> Int {
+  self.value
+}
+
+///|
+pub struct MipGenerationPhase {
+  image_asset_ids : Array[Int]
+} derive(Eq, Debug)
+
+///|
+pub fn MipGenerationPhase::default() -> MipGenerationPhase {
+  MipGenerationPhase::{ image_asset_ids: [] }
+}
+
+///|
+pub fn MipGenerationPhase::len(self : MipGenerationPhase) -> Int {
+  self.image_asset_ids.length()
+}
+
+///|
+pub fn MipGenerationPhase::is_empty(self : MipGenerationPhase) -> Bool {
+  self.image_asset_ids.length() == 0
+}
+
+///|
+pub fn MipGenerationPhase::to_array(self : MipGenerationPhase) -> Array[Int] {
+  self.image_asset_ids.copy()
+}
+
+///|
+pub fn MipGenerationPhase::push(
+  self : MipGenerationPhase,
+  image_asset_id : Int,
+) -> MipGenerationPhase {
+  let next = self.image_asset_ids.copy()
+  next.push(image_asset_id)
+  MipGenerationPhase::{ image_asset_ids: next }
+}
+
+///|
+pub struct MipGenerationJobs {
+  phases : Map[Int, MipGenerationPhase]
+} derive(Eq, Debug)
+
+///|
+pub fn MipGenerationJobs::default() -> MipGenerationJobs {
+  MipGenerationJobs::{ phases: {} }
+}
+
+///|
+pub fn MipGenerationJobs::clear(_ : MipGenerationJobs) -> MipGenerationJobs {
+  MipGenerationJobs::default()
+}
+
+///|
+pub fn MipGenerationJobs::phase(
+  self : MipGenerationJobs,
+  phase : MipGenerationPhaseId,
+) -> MipGenerationPhase? {
+  self.phases.get(phase.value())
+}
+
+///|
+pub fn MipGenerationJobs::has_phase(
+  self : MipGenerationJobs,
+  phase : MipGenerationPhaseId,
+) -> Bool {
+  self.phases.contains(phase.value())
+}
+
+///|
+pub fn MipGenerationJobs::add(
+  self : MipGenerationJobs,
+  phase : MipGenerationPhaseId,
+  image_asset_id : Int,
+) -> MipGenerationJobs {
+  let key = phase.value()
+  let phases = self.phases.copy()
+  let next_phase = match phases.get(key) {
+    Some(existing) => existing.push(image_asset_id)
+    None => MipGenerationPhase::default().push(image_asset_id)
+  }
+  phases.set(key, next_phase)
+  MipGenerationJobs::{ phases }
+}
+
+///|
+pub fn MipGenerationJobs::remove_phase(
+  self : MipGenerationJobs,
+  phase : MipGenerationPhaseId,
+) -> (MipGenerationJobs, MipGenerationPhase?) {
+  let key = phase.value()
+  let removed = self.phases.get(key)
+  let next = self.phases.copy()
+  next.remove(key) |> ignore
+  (MipGenerationJobs::{ phases: next }, removed)
+}
+
+///|
+pub fn MipGenerationJobs::drain_phase(
+  self : MipGenerationJobs,
+  phase : MipGenerationPhaseId,
+) -> (MipGenerationJobs, Array[Int]) {
+  let (next_jobs, removed) = self.remove_phase(phase)
+  match removed {
+    Some(entries) => (next_jobs, entries.to_array())
+    None => (next_jobs, [])
+  }
+}
+
+///|
+pub fn MipGenerationJobs::phase_count(self : MipGenerationJobs) -> Int {
+  self.phases.length()
+}
+
+///|
+pub fn MipGenerationJobs::job_count(self : MipGenerationJobs) -> Int {
+  let mut total = 0
+  for _, phase in self.phases {
+    total = total + phase.len()
+  }
+  total
+}
+
+///|
+pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs] = @ecs.register_resource(
+  debug_name="core_pipeline.mip_generation.jobs",
+)
+
+///|
+pub impl @app.Resource for MipGenerationJobs with resource() {
+  ecs_key_mip_generation_jobs
 }
 
 ///|
