@@ -22,6 +22,18 @@ pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
 pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX
 
 ///|
+pub(open) trait CameraProjection3d {
+  get_clip_from_view(self : Self) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub(self : Self, sub_view : SubCameraView3d) -> ProjectionMatrix3d
+  update(self : Self, width : Float, height : Float) -> Self
+  far(self : Self) -> Float
+  compute_frustum(self : Self, camera_transform : @transform.Transform) -> Frustum
+  get_frustum_corners(self : Self, z_near : Float, z_far : Float) -> Array[
+    @math.Vec3,
+  ]
+}
+
+///|
 fn view_frustum_vec4_add(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
   @math.Vec4::new(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
 }
@@ -168,6 +180,37 @@ pub struct CustomProjection3d {
 }
 
 ///|
+pub fn[T : CameraProjection3d] CustomProjection3d::new(
+  projection : T,
+) -> CustomProjection3d {
+  let payload = @any.of(projection)
+  custom_projection3d_from_callbacks(
+    payload.type_name(),
+    payload,
+    fn(payload) {
+      let projection : T = try! payload.to()
+      projection.get_clip_from_view()
+    },
+    fn(payload, sub_view) {
+      let projection : T = try! payload.to()
+      projection.get_clip_from_view_for_sub(sub_view)
+    },
+    fn(payload, width, height) {
+      let projection : T = try! payload.to()
+      @any.of(projection.update(width, height))
+    },
+    fn(payload) {
+      let projection : T = try! payload.to()
+      projection.far()
+    },
+    fn(payload, z_near, z_far) {
+      let projection : T = try! payload.to()
+      projection.get_frustum_corners(z_near, z_far)
+    },
+  )
+}
+
+///|
 pub fn custom_projection3d_from_callbacks(
   type_name : String,
   payload : @any.Any,
@@ -299,6 +342,11 @@ pub fn Projection::default() -> Projection {
 }
 
 ///|
+pub fn[T : CameraProjection3d] Projection::custom(projection : T) -> Projection {
+  Custom(CustomProjection3d::new(projection))
+}
+
+///|
 pub fn projection_from_custom(projection : CustomProjection3d) -> Projection {
   Custom(projection)
 }
@@ -384,6 +432,200 @@ pub fn Projection::compute_frustum(
       )
     Custom(projection) => projection.compute_frustum(camera_transform)
   }
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view(self) {
+  (self.get_clip_from_view_fn)(self.payload)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  (self.get_clip_from_view_for_sub_fn)(self.payload, sub_view)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with update(
+  self,
+  width,
+  height,
+) {
+  self.update(width, height)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with far(self) {
+  self.far()
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  self.compute_frustum(camera_transform)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  self.get_frustum_corners(z_near, z_far)
+}
+
+///|
+pub impl CameraProjection3d for Projection with get_clip_from_view(self) {
+  self.get_clip_from_view()
+}
+
+///|
+pub impl CameraProjection3d for Projection with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  self.get_clip_from_view_for_sub(sub_view)
+}
+
+///|
+pub impl CameraProjection3d for Projection with update(self, width, height) {
+  self.update(width, height)
+}
+
+///|
+pub impl CameraProjection3d for Projection with far(self) {
+  self.far()
+}
+
+///|
+pub impl CameraProjection3d for Projection with compute_frustum(
+  self,
+  camera_transform,
+) {
+  self.compute_frustum(camera_transform)
+}
+
+///|
+pub impl CameraProjection3d for Projection with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  self.get_frustum_corners(z_near, z_far)
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view(
+  self,
+) {
+  render3d_perspective_projection_matrix(self)
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  render3d_perspective_projection_matrix_for_sub(self, sub_view)
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with update(
+  self,
+  width,
+  height,
+) {
+  self.aspect_ratio = render3d_projection_aspect_ratio(width, height)
+  self
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with far(self) {
+  self.far
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  render3d_perspective_projection_compute_frustum(self, camera_transform)
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  render3d_perspective_frustum_corners(self.aspect_ratio, self.fov, z_near, z_far)
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view(
+  self,
+) {
+  render3d_orthographic_projection_matrix(
+    self.area.min.x,
+    self.area.max.x,
+    self.area.min.y,
+    self.area.max.y,
+    self.far,
+    self.near,
+  )
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  render3d_orthographic_projection_matrix_for_sub(self, sub_view)
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with update(
+  self,
+  width,
+  height,
+) {
+  self.area = render3d_orthographic_area(self, width, height)
+  self
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with far(self) {
+  self.far
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  render3d_orthographic_projection_compute_frustum(self, camera_transform)
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  [
+    @math.Vec3::new(self.area.max.x, self.area.min.y, z_near),
+    @math.Vec3::new(self.area.max.x, self.area.max.y, z_near),
+    @math.Vec3::new(self.area.min.x, self.area.max.y, z_near),
+    @math.Vec3::new(self.area.min.x, self.area.min.y, z_near),
+    @math.Vec3::new(self.area.max.x, self.area.min.y, z_far),
+    @math.Vec3::new(self.area.max.x, self.area.max.y, z_far),
+    @math.Vec3::new(self.area.min.x, self.area.max.y, z_far),
+    @math.Vec3::new(self.area.min.x, self.area.min.y, z_far),
+  ]
 }
 
 ///|

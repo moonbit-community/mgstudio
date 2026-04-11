@@ -23,7 +23,9 @@ fn projection_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-fn[T : CameraProjection3d] generic_projection_far(projection : T) -> Float {
+fn[T : CameraProjection3d] generic_projection_far(
+  projection : T,
+) -> Float {
   projection.far()
 }
 
@@ -193,7 +195,9 @@ fn test_custom_projection_matrix(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with get_clip_from_view(self) {
+impl CameraProjection3d for TestCustomProjection3d with get_clip_from_view(
+  self,
+) {
   test_custom_projection_matrix(self.view_width, self.view_height, 0.0F)
 }
 
