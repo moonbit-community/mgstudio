@@ -577,6 +577,29 @@ fn threaded_animation_graph_new(node_count : Int) -> ThreadedAnimationGraph {
 }
 
 ///|
+fn threaded_animation_graph_clear(threaded : ThreadedAnimationGraph) -> Unit {
+  threaded.threaded_graph.clear()
+  threaded.sorted_edge_ranges.clear()
+  threaded.sorted_edges.clear()
+  threaded.computed_masks.clear()
+  threaded.effective_weights.clear()
+}
+
+///|
+fn threaded_animation_graph_init(
+  threaded : ThreadedAnimationGraph,
+  node_count : Int,
+) -> Unit {
+  let mut i = 0
+  while i < node_count {
+    threaded.sorted_edge_ranges.push((0, 0))
+    threaded.computed_masks.push(0U)
+    threaded.effective_weights.push(0.0F)
+    i = i + 1
+  }
+}
+
+///|
 fn animation_graph_sorted_children(
   children : Array[AnimationNodeIndex],
 ) -> Array[AnimationNodeIndex] {
@@ -658,9 +681,27 @@ fn threaded_animation_graph_build_from(
 fn animation_thread_graph_build(
   graph : AnimationGraph,
 ) -> ThreadedAnimationGraph {
-  let threaded = threaded_animation_graph_new(graph.nodes.length())
+  let threaded = threaded_animation_graph_new(0)
+  threaded_animation_graph_clear(threaded)
+  threaded_animation_graph_init(threaded, graph.nodes.length())
   threaded_animation_graph_build_from(threaded, graph, graph.root, 0U, 1.0F)
   threaded
+}
+
+///|
+fn thread_animation_graph_rebuild(
+  threaded_graphs : ThreadedAnimationGraphs,
+  graph_id : Int,
+  graph : AnimationGraph,
+) -> Unit {
+  let threaded = match threaded_graphs.graphs.get(graph_id) {
+    Some(existing) => existing
+    None => threaded_animation_graph_new(0)
+  }
+  threaded_animation_graph_clear(threaded)
+  threaded_animation_graph_init(threaded, graph.nodes.length())
+  threaded_animation_graph_build_from(threaded, graph, graph.root, 0U, 1.0F)
+  threaded_graphs.graphs.set(graph_id, threaded)
 }
 
 ///|
@@ -726,26 +767,17 @@ fn thread_animation_graphs(
     match event {
       @asset.AssetEvent::Added(handle) => {
         if graph_assets_value.get(handle) is Some(graph) {
-          threaded_graphs_ref.val.graphs.set(
-            handle.id(),
-            animation_thread_graph_build(graph),
-          )
+          thread_animation_graph_rebuild(threaded_graphs_ref.val, handle.id(), graph)
         }
       }
       @asset.AssetEvent::Modified(handle) => {
         if graph_assets_value.get(handle) is Some(graph) {
-          threaded_graphs_ref.val.graphs.set(
-            handle.id(),
-            animation_thread_graph_build(graph),
-          )
+          thread_animation_graph_rebuild(threaded_graphs_ref.val, handle.id(), graph)
         }
       }
       @asset.AssetEvent::LoadedWithDependencies(handle) => {
         if graph_assets_value.get(handle) is Some(graph) {
-          threaded_graphs_ref.val.graphs.set(
-            handle.id(),
-            animation_thread_graph_build(graph),
-          )
+          thread_animation_graph_rebuild(threaded_graphs_ref.val, handle.id(), graph)
         }
       }
       @asset.AssetEvent::Removed(handle) => {
