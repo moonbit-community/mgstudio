@@ -2143,17 +2143,3 @@ fn mesh3d_build_indirect_non_indexed_bind_group_get_or_create(
 }
 
 ///|
-fn mesh3d_indexed_indirect_offset(indirect_parameters_index : Int) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
-}
-
-///|
-fn mesh3d_non_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
-}
-
-///|
