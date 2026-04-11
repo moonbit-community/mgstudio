@@ -120,7 +120,9 @@ pub fn smaa_update_runtime_state(world : @ecs.World) -> Unit {
     enabled_camera_count,
     runtime_supported: SMAA_RUNTIME_SUPPORTED,
   }
-  let current : SmaaRuntimeState? = try! world.get_resource(ecs_key_smaa_runtime_state)
+  let current : SmaaRuntimeState? = try! world.get_resource(
+    ecs_key_smaa_runtime_state,
+  )
   match current {
     Some(state) =>
       if state != next {

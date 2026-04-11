@@ -314,7 +314,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   guard draw_bind_group is Some(active_draw_bg) else { return }
   // Bevy-aligned path: skin buffers are prepared before draw.
   let resolved_skin_bg = if skinning_key_hi >= 0 && skinning_key_lo >= 0 {
-    match mesh3d_skin_bind_group_for_key(self, skinning_key_hi, skinning_key_lo) {
+    match
+      mesh3d_skin_bind_group_for_key(self, skinning_key_hi, skinning_key_lo) {
       Some(bind_group) => Some(bind_group)
       None => ensure_mesh3d_skin_default_binding(self)
     }
@@ -347,7 +348,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-  debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val + 1
+  debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val +
+    1
   current_frame_mesh3d_executed_draw_calls_ref.val = current_frame_mesh3d_executed_draw_calls_ref.val +
     1
   if use_indirect &&

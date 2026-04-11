@@ -416,7 +416,10 @@ test "scene: SceneRoot propagates gltf extras metadata" {
     }
   })
 
-  debug_inspect(root_scene_extras.val, content="\"{\\\"scene\\\":\\\"root\\\"}\"")
+  debug_inspect(
+    root_scene_extras.val,
+    content="\"{\\\"scene\\\":\\\"root\\\"}\"",
+  )
   debug_inspect(child_name.val, content="\"NamedMesh.Top\"")
   debug_inspect(child_scene_index.val, content="2")
   debug_inspect(child_node_index.val, content="3")
@@ -425,7 +428,10 @@ test "scene: SceneRoot propagates gltf extras metadata" {
   debug_inspect(child_primitive_index.val, content="5")
   debug_inspect(primitive_extras.val, content="\"{\\\"primitive\\\":1}\"")
   debug_inspect(mesh_extras.val, content="\"{\\\"mesh\\\":true}\"")
-  debug_inspect(material_extras.val, content="\"{\\\"material\\\":\\\"value\\\"}\"")
+  debug_inspect(
+    material_extras.val,
+    content="\"{\\\"material\\\":\\\"value\\\"}\"",
+  )
 }
 
 ///|

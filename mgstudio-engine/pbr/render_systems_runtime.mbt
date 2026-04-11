@@ -85,10 +85,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     return
   }
   let meshes = render3d_execute_collect_meshes(
-    source_world,
-    phase_state_ref,
-    world_transform_cache_ref,
-    needs_mesh_previous_transform,
+    source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_queue_store_frame(world, frame_config, cameras, meshes)
   render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()

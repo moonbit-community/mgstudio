@@ -13,17 +13,15 @@
 // limitations under the License.
 
 ///|
-pub fn mesh3d_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+// Bevy source: `bevy/crates/bevy_render/src/renderer/mod.rs`.
+// Root renderer package helpers expose canonical backend layout constants.
+
+///|
+pub fn renderer_mesh3d_vertex_stride_bytes() -> UInt64 {
+  MESH3D_VERTEX_STRIDE_BYTES
 }
 
 ///|
-pub fn mesh3d_non_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+pub fn renderer_mesh3d_draw_storage_stride_bytes() -> UInt64 {
+  MESH3D_DRAW_STORAGE_STRIDE_BYTES
 }

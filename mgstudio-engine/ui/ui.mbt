@@ -959,12 +959,13 @@ fn ui_viewport_point_to_world(
   point : @math.Vec2,
 ) -> @math.Vec2 {
   if entity_ctx.camera_entity is Some(camera_entity) {
-    let camera_opt : @sprite.Camera? = (try
-      world.get_by_key(camera_entity, @sprite.ecs_key_camera) catch {
+    let camera_opt : @sprite.Camera? = try
+      world.get_by_key(camera_entity, @sprite.ecs_key_camera)
+    catch {
       _ => (None : @sprite.Camera?)
     } noraise {
       value => value
-    })
+    }
     if camera_opt is Some(camera) {
       let projection = match
         (try world.get_by_key(camera_entity, @sprite.ecs_key_projection) catch {

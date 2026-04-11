@@ -292,8 +292,7 @@ fn animation_graph_parse_mask_groups_ron(
       continue
     }
 
-    guard animation_graph_parse_mask_group_key(body, cursor)
-      is Some(parsed_key) else {
+    guard animation_graph_parse_mask_group_key(body, cursor) is Some(parsed_key) else {
       return None
     }
     let colon = animation_graph_find_char(body, 58, parsed_key.1)
@@ -324,7 +323,9 @@ fn animation_graph_parse_mask_group_key(
       is Some(parsed_string) else {
       return None
     }
-    return Some((AnimationTargetId::from_name(parsed_string.0), parsed_string.1))
+    return Some(
+      (AnimationTargetId::from_name(parsed_string.0), parsed_string.1),
+    )
   }
 
   if source.code_unit_at(i).to_int() == 40 {
@@ -340,10 +341,7 @@ fn animation_graph_parse_mask_group_key(
       return None
     }
     return Some(
-      (
-        AnimationTargetId::new(parsed_high.0, parsed_low.0),
-        close + 1,
-      ),
+      (AnimationTargetId::new(parsed_high.0, parsed_low.0), close + 1),
     )
   }
   None

@@ -18,6 +18,8 @@ export const NON_GOAL_EXAMPLE_PREFIXES = [
   "mobile/",
   "no_std/",
   "reflection/",
+  "remote/",
+  "3d/solari.rs",
 ]
 
 export const ALWAYS_EXCLUDED_SOURCE_PREFIXES = [
@@ -53,6 +55,10 @@ export const ALWAYS_EXCLUDED_SOURCE_PREFIXES = [
     reason: "non_goal_platform",
   },
   {
+    prefix: "bevy/crates/bevy_android/",
+    reason: "non_goal_platform",
+  },
+  {
     prefix: "bevy/crates/bevy_derive/",
     reason: "non_goal_macro",
   },
@@ -67,6 +73,14 @@ export const ALWAYS_EXCLUDED_SOURCE_PREFIXES = [
   {
     prefix: "bevy/crates/bevy_encase_derive/",
     reason: "non_goal_macro",
+  },
+  {
+    prefix: "bevy/crates/bevy_remote/",
+    reason: "scope_removed_remote",
+  },
+  {
+    prefix: "bevy/crates/bevy_solari/",
+    reason: "scope_removed_solari",
   },
 ]
 
@@ -93,6 +107,14 @@ export function excludeReasonForSource(
     source === "bevy/crates/bevy_state/src/reflect.rs"
   ) {
     return "non_goal_reflect"
+  }
+
+  if (
+    source === "bevy/crates/bevy_scene/src/dynamic_scene.rs" ||
+    source === "bevy/crates/bevy_scene/src/dynamic_scene_builder.rs" ||
+    source === "bevy/crates/bevy_scene/src/scene_filter.rs"
+  ) {
+    return "non_goal_dynamic_scene"
   }
 
   if (source.includes("/bevy_reflect/")) {

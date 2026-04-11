@@ -1702,7 +1702,7 @@ pub fn[T : @ecs.Component] App::allow_ambiguous_component(
   self : App[@ecs.World],
   key? : @ecs.ComponentKey[T] = T::component(),
 ) -> App[@ecs.World] {
-  self.sub_apps.main = self.sub_apps.main.allow_ambiguous_component(key=key)
+  self.sub_apps.main = self.sub_apps.main.allow_ambiguous_component(key~)
   self
 }
 
@@ -1711,7 +1711,7 @@ pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(
   self : App[@ecs.World],
   key? : @ecs.ComponentKey[T] = T::component(),
 ) -> Bool {
-  self.sub_apps.main.is_ambiguous_component_allowed(key=key)
+  self.sub_apps.main.is_ambiguous_component_allowed(key~)
 }
 
 ///|

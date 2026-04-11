@@ -88,9 +88,7 @@ pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState] = @core_
 ///|
 pub let ecs_key_any_prepass_plugin_loaded : @ecs.ResourceKey[
   AnyPrepassPluginLoaded,
-] = @ecs.register_resource(
-  debug_name="pbr.prepass.any_prepass_plugin_loaded",
-)
+] = @ecs.register_resource(debug_name="pbr.prepass.any_prepass_plugin_loaded")
 
 ///|
 pub let ecs_key_prepass_pipeline_state : @ecs.ResourceKey[PrepassPipelineState] = @ecs.register_resource(
@@ -144,10 +142,9 @@ pub fn prepass_plugin_with(
   let app = if app.contains_resource(ecs_key_any_prepass_plugin_loaded) {
     app
   } else {
-    app.insert_world_resource(
-      ecs_key_any_prepass_plugin_loaded,
-      AnyPrepassPluginLoaded::{},
-    )
+    app.insert_world_resource(ecs_key_any_prepass_plugin_loaded, AnyPrepassPluginLoaded::{
+
+    })
   }
   @core_prepass.prepass_plugin_with(app, plugin)
 }
@@ -160,7 +157,10 @@ pub fn prepass_any_color_attachment_enabled(
   has_deferred_lighting_pass_id~ : Bool,
 ) -> Bool {
   @core_prepass.prepass_any_color_attachment_enabled(
-    has_normal~, has_motion_vectors~, has_deferred~, has_deferred_lighting_pass_id~,
+    has_normal~,
+    has_motion_vectors~,
+    has_deferred~,
+    has_deferred_lighting_pass_id~,
   )
 }
 
@@ -202,7 +202,9 @@ pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
     world.component_count(ecs_key_normal_prepass) > 0 ||
     world.component_count(ecs_key_motion_vector_prepass) > 0 ||
     world.component_count(ecs_key_deferred_prepass) > 0
-  let view_state : PrepassViewState? = try! world.get_resource(ecs_key_prepass_view_state)
+  let view_state : PrepassViewState? = try! world.get_resource(
+    ecs_key_prepass_view_state,
+  )
   let view_bind_group_ready = match view_state {
     Some(state) => prepass_has_any_phase(state)
     None => false

@@ -13,17 +13,14 @@
 // limitations under the License.
 
 ///|
-pub fn mesh3d_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
-}
+// Bevy source: `bevy/crates/bevy_internal/src/lib.rs`.
+// Internal package entry keeps default/minimal plugin groups colocated.
 
 ///|
-pub fn mesh3d_non_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+pub fn internal_plugin_groups() -> (
+  Array[@app.Plugin[@ecs.World]],
+  Array[@app.Plugin[@ecs.World]],
+  Array[@app.Plugin[@ecs.World]],
+) {
+  (default_plugins(), default_plugins_nearest(), minimal_plugins())
 }

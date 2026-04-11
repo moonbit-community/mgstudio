@@ -765,24 +765,32 @@ fn thread_animation_graphs(
   let threaded_graphs_ref = threaded_graphs.get_ref()
   for event in (try! graph_events.read()) {
     match event {
-      @asset.AssetEvent::Added(handle) => {
+      @asset.AssetEvent::Added(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
-          thread_animation_graph_rebuild(threaded_graphs_ref.val, handle.id(), graph)
+          thread_animation_graph_rebuild(
+            threaded_graphs_ref.val,
+            handle.id(),
+            graph,
+          )
         }
-      }
-      @asset.AssetEvent::Modified(handle) => {
+      @asset.AssetEvent::Modified(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
-          thread_animation_graph_rebuild(threaded_graphs_ref.val, handle.id(), graph)
+          thread_animation_graph_rebuild(
+            threaded_graphs_ref.val,
+            handle.id(),
+            graph,
+          )
         }
-      }
-      @asset.AssetEvent::LoadedWithDependencies(handle) => {
+      @asset.AssetEvent::LoadedWithDependencies(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
-          thread_animation_graph_rebuild(threaded_graphs_ref.val, handle.id(), graph)
+          thread_animation_graph_rebuild(
+            threaded_graphs_ref.val,
+            handle.id(),
+            graph,
+          )
         }
-      }
-      @asset.AssetEvent::Removed(handle) => {
+      @asset.AssetEvent::Removed(handle) =>
         ignore(threaded_graphs_ref.val.graphs.remove(handle.id()))
-      }
     }
   }
 }

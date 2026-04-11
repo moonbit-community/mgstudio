@@ -91,9 +91,7 @@ pub fn build_mesh3d_indirect_parameters(
       camera_key_hi, camera_key_lo, phase_kind,
     ) catch {
       Fatal(message) =>
-        debug(
-          "[renderer] build_mesh3d_indirect_parameters: Fatal(\{message})",
-        )
+        debug("[renderer] build_mesh3d_indirect_parameters: Fatal(\{message})")
     }
   }
 }
@@ -119,9 +117,7 @@ pub fn downsample_mesh3d_depth_pyramid(
   if ensure_backend() is Some(backend) {
     backend.downsample_mesh3d_depth_pyramid(camera_key_hi, camera_key_lo) catch {
       Fatal(message) =>
-        debug(
-          "[renderer] downsample_mesh3d_depth_pyramid: Fatal(\{message})",
-        )
+        debug("[renderer] downsample_mesh3d_depth_pyramid: Fatal(\{message})")
     }
   }
 }

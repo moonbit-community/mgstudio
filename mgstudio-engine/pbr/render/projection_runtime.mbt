@@ -562,7 +562,12 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners
   z_near,
   z_far,
 ) {
-  render3d_perspective_frustum_corners(self.aspect_ratio, self.fov, z_near, z_far)
+  render3d_perspective_frustum_corners(
+    self.aspect_ratio,
+    self.fov,
+    z_near,
+    z_far,
+  )
 }
 
 ///|

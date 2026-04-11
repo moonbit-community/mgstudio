@@ -30,9 +30,9 @@ fn render3d_execute_queue_state_default() -> Render3dExecuteQueueState {
 }
 
 ///|
-let render3d_execute_queue_state_key : @ecs.ResourceKey[Render3dExecuteQueueState] = @ecs.register_resource(
-  debug_name="mgstudio.render3d.execute_queue_state",
-)
+let render3d_execute_queue_state_key : @ecs.ResourceKey[
+  Render3dExecuteQueueState,
+] = @ecs.register_resource(debug_name="mgstudio.render3d.execute_queue_state")
 
 ///|
 impl @app.Resource for Render3dExecuteQueueState with resource() {
@@ -54,7 +54,8 @@ fn render3d_execute_queue_state_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[Render3dExecuteQueueState] {
   ensure_render3d_execute_queue_state(world)
-  match (try! world.get_resource_ref_mut(Render3dExecuteQueueState::resource())) {
+  match
+    (try! world.get_resource_ref_mut(Render3dExecuteQueueState::resource())) {
     Some(state) => state
     None => abort("Missing Render3dExecuteQueueState resource in render world")
   }

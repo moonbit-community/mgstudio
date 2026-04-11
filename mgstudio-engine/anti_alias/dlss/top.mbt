@@ -227,19 +227,17 @@ pub fn dlss_plugin_with(
 ) -> @app.App[@ecs.World] {
   let app = if DLSS_RUNTIME_SUPPORTED &&
     !app.contains_resource(dlss_super_resolution_supported_resource_key) {
-    app.insert_world_resource(
-      dlss_super_resolution_supported_resource_key,
-      DlssSuperResolutionSupported::{},
-    )
+    app.insert_world_resource(dlss_super_resolution_supported_resource_key, DlssSuperResolutionSupported::{
+
+    })
   } else {
     app
   }
   let app = if DLSS_RUNTIME_SUPPORTED &&
     !app.contains_resource(dlss_ray_reconstruction_supported_resource_key) {
-    app.insert_world_resource(
-      dlss_ray_reconstruction_supported_resource_key,
-      DlssRayReconstructionSupported::{},
-    )
+    app.insert_world_resource(dlss_ray_reconstruction_supported_resource_key, DlssRayReconstructionSupported::{
+
+    })
   } else {
     app
   }
@@ -252,14 +250,11 @@ pub fn dlss_plugin_with(
 pub fn dlss_update_runtime_state(world : @ecs.World) -> Unit {
   let enabled_camera_count = world.component_count(ecs_key_dlss)
   let mut reset_requested_count = 0
-  world.for_each_component(
-    ecs_key_dlss,
-    fn(_entity, dlss : Dlss) {
-      if dlss.reset {
-        reset_requested_count = reset_requested_count + 1
-      }
-    },
-  )
+  world.for_each_component(ecs_key_dlss, fn(_entity, dlss : Dlss) {
+    if dlss.reset {
+      reset_requested_count = reset_requested_count + 1
+    }
+  })
   let next = DlssRuntimeState::{
     enabled_camera_count,
     reset_requested_count,

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   self : GpuBackend,
   camera_key_hi : Int,

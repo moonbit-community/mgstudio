@@ -80,8 +80,15 @@ function rsToMbtSubpath(sub) {
 
 function buildExampleRecord(exampleSub, source) {
   const mbtSub = rsToMbtSubpath(exampleSub)
-  const topTarget = `mgstudio-engine/examples/${mbtSub}`
-  const mainTarget = `mgstudio-engine/examples/${exampleSub.slice(0, -".rs".length)}/main.mbt`
+  const flatTarget = `mgstudio-engine/examples/${mbtSub}`
+  const exampleDir =
+    exampleSub === "mod.rs"
+      ? ""
+      : exampleSub.endsWith("/mod.rs")
+        ? exampleSub.slice(0, -"/mod.rs".length)
+        : exampleSub.slice(0, -".rs".length)
+  const mainTarget = exampleDir.length === 0 ? flatTarget : `mgstudio-engine/examples/${exampleDir}/main.mbt`
+  const topTarget = exampleDir.length === 0 ? flatTarget : `mgstudio-engine/examples/${exampleDir}/top.mbt`
   const excludeReason = excludeReasonForSource(source, {
     includeNonGoal,
     includeExcluded,
@@ -89,11 +96,37 @@ function buildExampleRecord(exampleSub, source) {
   })
   const candidates =
     strictExamples || exampleSub === "mod.rs" || exampleSub.endsWith("/mod.rs")
-      ? [topTarget]
-      : [mainTarget, topTarget]
+      ? [mainTarget, topTarget]
+      : [mainTarget, topTarget, flatTarget]
   return {
     source,
-    target: candidates[0],
+    target: mainTarget,
+    candidates,
+    excluded: excludeReason !== null,
+    exclude_reason: excludeReason,
+  }
+}
+
+function buildCrateRecord(crate, rsSub, source) {
+  const mbtSub = rsToMbtSubpath(rsSub)
+  const target = `mgstudio-engine/${crate}/${mbtSub}`
+  const candidates = [target]
+  if (rsSub === "lib.rs") {
+    const topCandidate = `mgstudio-engine/${crate}/top.mbt`
+    const crateRootCandidate = `mgstudio-engine/${crate}/${crate}.mbt`
+    if (!candidates.includes(topCandidate)) candidates.push(topCandidate)
+    if (!candidates.includes(crateRootCandidate)) candidates.push(crateRootCandidate)
+  }
+  if (rsSub === `${crate}.rs`) {
+    const libCandidate = `mgstudio-engine/${crate}/lib.mbt`
+    const topCandidate = `mgstudio-engine/${crate}/top.mbt`
+    if (!candidates.includes(libCandidate)) candidates.push(libCandidate)
+    if (!candidates.includes(topCandidate)) candidates.push(topCandidate)
+  }
+  const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
+  return {
+    source,
+    target,
     candidates,
     excluded: excludeReason !== null,
     exclude_reason: excludeReason,
@@ -115,16 +148,8 @@ function bevyCrateRecords() {
     const rsFiles = walk(srcRoot).filter((p) => p.endsWith(".rs"))
     for (const rs of rsFiles) {
       const rsSub = rel(rs).slice(`bevy/crates/bevy_${crate}/src/`.length)
-      const mbtSub = rsToMbtSubpath(rsSub)
       const source = rel(rs)
-      const excludeReason = excludeReasonForSource(source, { includeNonGoal, includeExcluded })
-      records.push({
-        source,
-        target: `mgstudio-engine/${crate}/${mbtSub}`,
-        candidates: [`mgstudio-engine/${crate}/${mbtSub}`],
-        excluded: excludeReason !== null,
-        exclude_reason: excludeReason,
-      })
+      records.push(buildCrateRecord(crate, rsSub, source))
     }
   }
   return records

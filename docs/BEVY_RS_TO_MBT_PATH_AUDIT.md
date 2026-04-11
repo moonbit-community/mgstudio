@@ -9,6 +9,8 @@
   - `bevy/crates/bevy_ecs/**`
   - `bevy/crates/bevy_reflect/**`
   - `bevy/crates/bevy_tasks/**`
+  - `bevy/crates/bevy_remote/**` (scope removed)
+  - `bevy/crates/bevy_solari/**` (scope removed)
   - `bevy/examples/{async_tasks,reflection,mobile,no_std,ecs/dynamic}.**`
 
 ## Canonical Commands
@@ -25,12 +27,12 @@
   - `INCLUDE_NON_GOAL=1 scripts/sync_bevy_rs_to_mbt_paths.sh`
   - `INCLUDE_NON_GOAL=1 INCLUDE_EXCLUDED=1 scripts/sync_bevy_rs_to_mbt_paths.sh`
 
-## Current Snapshot (2026-04-10)
+## Current Snapshot (2026-04-12)
 
 - Canonical run:
   - `total_rs=1423`
-  - `considered_rs=1058`
-  - `excluded_rs=365` (`non_goal_ecs=151`, `non_goal_reflect=143`, `non_goal_tasks=12`, `non_goal_platform=26`, `non_goal_macro=16`, `non_goal_example=17`)
+  - `considered_rs=1031`
+  - `excluded_rs=392` (`non_goal_ecs=151`, `non_goal_reflect=143`, `non_goal_tasks=12`, `non_goal_platform=27`, `non_goal_macro=16`, `non_goal_dynamic_scene=3`, `scope_removed_remote=6`, `scope_removed_solari=14`, `non_goal_example=20`)
   - `missing=0`
   - `collision_count=0`
   - `mod_rule_violation_count=0`
@@ -41,5 +43,5 @@
 
 ## Notes
 
-- `examples` are checked in strict same-path mode (`bevy/examples/**.rs -> mgstudio-engine/examples/**.mbt`).
+- `examples` are checked in strict package-path mode (`bevy/examples/**.rs -> mgstudio-engine/examples/**/main.mbt`).
 - The checker can also run in non-strict mode internally, but strict mode is the default for audit.

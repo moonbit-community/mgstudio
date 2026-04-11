@@ -32,7 +32,10 @@ test "ecs resource: insert/get/update" {
   debug_inspect(try! world.get_resource(res_config), content="None")
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  debug_inspect(try! world.get_resource(res_config), content="Some({ fps: 60 })")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 60 })",
+  )
 
   debug_inspect(
     try! world.update_resource(res_config, fn(config) {
@@ -40,7 +43,10 @@ test "ecs resource: insert/get/update" {
     }),
     content="true",
   )
-  debug_inspect(try! world.get_resource(res_config), content="Some({ fps: 90 })")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 90 })",
+  )
 }
 
 ///|
@@ -88,7 +94,10 @@ test "ecs resource: get_resource_ref observes live world storage" {
   let config_ref = try! world.get_resource_ref(res_config).unwrap()
   config_ref.val = RuntimeConfig::{ fps: 75 }
 
-  debug_inspect(try! world.get_resource(res_config), content="Some({ fps: 75 })")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 75 })",
+  )
 }
 
 ///|
@@ -102,5 +111,8 @@ test "ecs resource: get_resource_ref_mut observes live world storage" {
   let config_ref = try! world.get_resource_ref_mut(res_config).unwrap()
   config_ref.val = RuntimeConfig::{ fps: 90 }
 
-  debug_inspect(try! world.get_resource(res_config), content="Some({ fps: 90 })")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 90 })",
+  )
 }

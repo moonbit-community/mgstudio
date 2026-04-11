@@ -27,7 +27,7 @@ This file must not exceed 200 lines.
 | `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | ✅ Mostly Done | 95% | Gizmos package/runtime is stable on native checks and parity gate runs. | Keep representative screenshot audits as maintenance guard. |
 | `bevy_picking` | `mgstudio-engine/picking` | ✅ Mostly Done | 95% | Picking package checks are green and pointer hit-test regressions are closed in stress scenarios. | Keep traversal edge cases in regression suite only. |
 | `bevy_input` | `mgstudio-engine/input` + `window` | ✅ Mostly Done | 95% | Input/window pointer-space mapping and package tests are stable in parity gates. | Keep focused regression checks only. |
-| `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | ✅ Mostly Done | 95% | Window/winit runtime checks are green and stable on current native gate set. | Keep platform-edge regressions under maintenance watch. |
+| `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | ✅ Mostly Done | 96% | Added `custom_cursor_image` / `low_power` / `monitor_info` examples and `check_bevy_rs_to_mbt_paths.sh` is now 0-missing on current excludes. | Keep platform-edge regressions under maintenance watch. |
 | `bevy_asset` | `mgstudio-engine/asset` | ✅ Mostly Done | 95% | Asset decode/layout path is stable on native checks after source-path and codec cleanup. | Keep Bevy-shaped layout audits as maintenance items. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | ✅ Mostly Done | 95% | Diagnostics overlay, timeline trace plugin, stress diagnostics plugin, and stress trace collection script are in mainline and checked in package builds. | Keep maintenance-level parity checks only. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | ✅ Mostly Done | 95% | Anti-alias plugin/runtime replacement surfaces are stable in mainline and no longer no-op stubs. | Keep render-graph-depth parity as maintenance tail work. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (pm4) |
+| Last updated | 2026-04-12 (pm5) |

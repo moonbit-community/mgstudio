@@ -278,8 +278,14 @@ test "window: plugin spawns configured primary window entity and messages" {
   debug_inspect(stored_window.decorations, content="false")
   debug_inspect(stored_window.transparent, content="true")
   debug_inspect(stored_window.focused, content="false")
-  debug_inspect(stored_window.window_level.to_string(), content="\"AlwaysOnTop\"")
-  debug_inspect(stored_window.window_theme.to_string(), content="\"Some(Dark)\"")
+  debug_inspect(
+    stored_window.window_level.to_string(),
+    content="\"AlwaysOnTop\"",
+  )
+  debug_inspect(
+    stored_window.window_theme.to_string(),
+    content="\"Some(Dark)\"",
+  )
   debug_inspect(stored_window.visible, content="false")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
@@ -379,8 +385,14 @@ test "window: compatibility helpers read and write ECS primary window state" {
   debug_inspect(stored_window.enabled_buttons.minimize, content="false")
   debug_inspect(stored_window.enabled_buttons.maximize, content="false")
   debug_inspect(stored_window.enabled_buttons.close, content="false")
-  debug_inspect(stored_window.window_level.to_string(), content="\"AlwaysOnTop\"")
-  debug_inspect(stored_window.window_theme.to_string(), content="\"Some(Dark)\"")
+  debug_inspect(
+    stored_window.window_level.to_string(),
+    content="\"AlwaysOnTop\"",
+  )
+  debug_inspect(
+    stored_window.window_theme.to_string(),
+    content="\"Some(Dark)\"",
+  )
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor

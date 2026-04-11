@@ -155,24 +155,26 @@ pub fn cas_update_runtime_state(world : @ecs.World) -> Unit {
   let mut enabled_camera_count = 0
   let mut active_camera_count = 0
   let mut denoise_camera_count = 0
-  world.for_each_component(
-    ecs_key_contrast_adaptive_sharpening,
-    fn(_entity, cas : ContrastAdaptiveSharpening) {
-      enabled_camera_count = enabled_camera_count + 1
-      if cas.enabled && cas.sharpening_strength > 0.0 {
-        active_camera_count = active_camera_count + 1
-      }
-      if cas.denoise {
-        denoise_camera_count = denoise_camera_count + 1
-      }
-    },
-  )
+  world.for_each_component(ecs_key_contrast_adaptive_sharpening, fn(
+    _entity,
+    cas : ContrastAdaptiveSharpening,
+  ) {
+    enabled_camera_count = enabled_camera_count + 1
+    if cas.enabled && cas.sharpening_strength > 0.0 {
+      active_camera_count = active_camera_count + 1
+    }
+    if cas.denoise {
+      denoise_camera_count = denoise_camera_count + 1
+    }
+  })
   let next = CasRuntimeState::{
     enabled_camera_count,
     active_camera_count,
     denoise_camera_count,
   }
-  let current : CasRuntimeState? = try! world.get_resource(ecs_key_cas_runtime_state)
+  let current : CasRuntimeState? = try! world.get_resource(
+    ecs_key_cas_runtime_state,
+  )
   match current {
     Some(state) =>
       if state != next {

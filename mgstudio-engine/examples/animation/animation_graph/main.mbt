@@ -273,10 +273,7 @@ fn setup_assets(
   for node_index in clip_node_indices() {
     clip_nodes.push(@animation.AnimationNodeIndex::new(node_index))
   }
-  commands.insert_resource(ExampleAnimationGraph::{
-    clip_nodes,
-    graph_handle,
-  })
+  commands.insert_resource(ExampleAnimationGraph::{ clip_nodes, graph_handle })
 }
 
 ///|

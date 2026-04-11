@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let transmission_source_enabled = pass_state.transmission_source_texture_id >=
     0

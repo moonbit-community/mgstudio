@@ -360,7 +360,10 @@ test "scene gltf wb: parse animation channels and samplers" {
     ),
     content="true",
   )
-  debug_inspect(doc.animations[0].channels[3].target_path, content="\"weights\"")
+  debug_inspect(
+    doc.animations[0].channels[3].target_path,
+    content="\"weights\"",
+  )
 }
 
 ///|

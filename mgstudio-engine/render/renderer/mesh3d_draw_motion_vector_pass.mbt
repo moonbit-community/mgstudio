@@ -130,7 +130,8 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   }
   guard mesh_bind_group is Some(active_mesh_bg) else { return }
   let motion_view_bytes = mesh3d_motion_vector_view_uniform_bytes(ps)
-  let motion_view_needs_upload = match self.mesh3d_motion_vector_pass_view_uniform_bytes {
+  let motion_view_needs_upload = match
+    self.mesh3d_motion_vector_pass_view_uniform_bytes {
     Some(cached) => cached != motion_view_bytes
     None => true
   }
@@ -138,7 +139,9 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     self.queue.write_buffer(view_buf, 0UL, motion_view_bytes)
     self.mesh3d_motion_vector_pass_view_uniform_bytes = Some(motion_view_bytes)
   }
-  let motion_previous_view_bytes = mesh3d_motion_vector_previous_view_uniform_bytes(ps)
+  let motion_previous_view_bytes = mesh3d_motion_vector_previous_view_uniform_bytes(
+    ps,
+  )
   let motion_previous_view_needs_upload = match
     self.mesh3d_motion_vector_pass_previous_view_uniform_bytes {
     Some(cached) => cached != motion_previous_view_bytes
@@ -157,9 +160,9 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
       mesh_write_offset,
       mesh3d_motion_vector_mesh_bytes(
         x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
-        scale_z, previous_x, previous_y, previous_z, previous_rotation_x,
-        previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
-        previous_scale_y, previous_scale_z,
+        scale_z, previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
+        previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
+        previous_scale_z,
       ),
     )
   }

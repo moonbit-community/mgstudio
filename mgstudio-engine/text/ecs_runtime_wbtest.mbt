@@ -348,7 +348,10 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     text_get_transform(synced.handle).unwrap().to_json().to_string(),
     content="\"Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
   )
-  debug_inspect(instance.layers.to_json().to_string(), content="\"Number(2048)\"")
+  debug_inspect(
+    instance.layers.to_json().to_string(),
+    content="\"Number(2048)\"",
+  )
   debug_inspect(
     instance.anchor.to_json().to_string(),
     content="\"Array([Number(0), Number(0)])\"",

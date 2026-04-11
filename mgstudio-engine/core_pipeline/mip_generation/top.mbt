@@ -175,7 +175,7 @@ pub fn MipGenerationJobs::add(
     None => MipGenerationPhase::default().push(image_asset_id)
   }
   phases.set(key, next_phase)
-  MipGenerationJobs::{ phases }
+  MipGenerationJobs::{ phases, }
 }
 
 ///|
@@ -234,7 +234,10 @@ pub struct MipGenerationPipelines {
 
 ///|
 pub fn MipGenerationPipelines::default() -> MipGenerationPipelines {
-  MipGenerationPipelines::{ texture_format_pipeline_count: 0, bind_group_cache_count: 0 }
+  MipGenerationPipelines::{
+    texture_format_pipeline_count: 0,
+    bind_group_cache_count: 0,
+  }
 }
 
 ///|
@@ -284,16 +287,16 @@ pub fn MipGenerationPipelines::reset_bind_group_cache(
 }
 
 ///|
-pub fn MipGenerationPipelines::clear(_ : MipGenerationPipelines) -> MipGenerationPipelines {
+pub fn MipGenerationPipelines::clear(
+  _ : MipGenerationPipelines,
+) -> MipGenerationPipelines {
   MipGenerationPipelines::default()
 }
 
 ///|
 pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[
   MipGenerationPipelines,
-] = @ecs.register_resource(
-  debug_name="core_pipeline.mip_generation.pipelines",
-)
+] = @ecs.register_resource(debug_name="core_pipeline.mip_generation.pipelines")
 
 ///|
 pub impl @app.Resource for MipGenerationPipelines with resource() {

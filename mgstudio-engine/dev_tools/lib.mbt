@@ -13,17 +13,13 @@
 // limitations under the License.
 
 ///|
-pub fn mesh3d_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
-}
+// Bevy source: `bevy/crates/bevy_dev_tools/src/lib.rs`.
+// Canonical dev-tools plugin set for diagnostics/profiling workflows.
 
 ///|
-pub fn mesh3d_non_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+pub fn dev_tools_plugins() -> Array[@app.Plugin[@ecs.World]] {
+  [
+    diagnostics_overlay_plugin, fps_overlay_plugin, dev_tools_picking_debug_plugin,
+    dev_tools_easy_screenshot_plugin, dev_tools_states_debug_plugin,
+  ]
 }

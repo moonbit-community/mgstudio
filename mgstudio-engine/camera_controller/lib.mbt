@@ -13,17 +13,10 @@
 // limitations under the License.
 
 ///|
-pub fn mesh3d_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
-}
+// Bevy source: `bevy/crates/bevy_camera_controller/src/lib.rs`.
+// Canonical camera-controller plugin set for mgstudio examples/tools.
 
 ///|
-pub fn mesh3d_non_indexed_indirect_offset(
-  indirect_parameters_index : Int,
-) -> UInt64 {
-  indirect_parameters_index.to_uint64() *
-  MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+pub fn camera_controller_plugins() -> Array[@app.Plugin[@ecs.World]] {
+  [free_camera_plugin, pan_camera_plugin]
 }

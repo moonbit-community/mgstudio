@@ -72,7 +72,10 @@ pub struct ClusterZConfig {
 
 ///|
 pub fn ClusterZConfig::default() -> ClusterZConfig {
-  ClusterZConfig::{ first_slice_depth: 5.0, far_z_mode: ClusterFarZMode::default() }
+  ClusterZConfig::{
+    first_slice_depth: 5.0,
+    far_z_mode: ClusterFarZMode::default(),
+  }
 }
 
 ///|
@@ -205,7 +208,9 @@ pub impl @ecs.Component for VisibleClusterableObjects with component() {
 }
 
 ///|
-pub impl @app.PluginReplacement for ClusterLightPlugin with replacement_id(_self) {
+pub impl @app.PluginReplacement for ClusterLightPlugin with replacement_id(
+  _self,
+) {
   CLUSTER_LIGHT_PLUGIN_ID
 }
 
