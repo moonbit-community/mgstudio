@@ -3,8 +3,8 @@ This file must not exceed 200 lines.
 | Bevy Side | mgstudio Side | Status | Progress | Remaining Gaps / Notes | Next Action |
 |---|---|---|---:|---|---|
 | `bevy_app` | `mgstudio-engine/app` | ✅ Done | 95% | Core schedule/system-param path is stable; migration wrappers were removed. | Keep parity through incremental audits only. |
-| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 🟡 In Progress | 85% | `Changed<T>` and full change-detection boundary are still open. | Land `Changed<T>` and close change-detection scope doc. |
-| `bevy_transform` | `mgstudio-engine/transform` | 🟡 In Progress | 90% | Functional parity mostly landed; package entry now aligns to `lib.mbt`; stress hotspot remains in propagation cost. | Continue source-level parity + perf verification. |
+| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | ✅ Mostly Done | 95% | `Changed<T>` query filter + system param path are in mainline and `moon test ecs --target native` is green. | Keep maintenance-level parity checks and avoid reopening legacy surfaces. |
+| `bevy_transform` | `mgstudio-engine/transform` | ✅ Mostly Done | 95% | Transform propagation/runtime path is stable and `moon test transform --target native` is green. | Keep maintenance-level parity checks with stress-scene regression tracking. |
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 95% | Mainline behavior is aligned and hierarchy package tests are green (`moon test hierarchy --target native`). | Keep regression checks on large scene cases. |
 | `bevy_reflect` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Reflection is intentionally out of scope. | Do not implement unless scope changes. |
 | `bevy_tasks` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Async tasks parity is intentionally out of scope. | Keep excluded in mapping scripts. |
@@ -47,7 +47,7 @@ This file must not exceed 200 lines.
 | Rollup | Value |
 |---|---:|
 | Migration focus | Bevy-first source/structure parity (not heuristic tuning) |
-| Done / Mostly done rows | 14 / 39 |
-| In-progress rows | 22 / 39 |
+| Done / Mostly done rows | 16 / 39 |
+| In-progress rows | 20 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-11 |
+| Last updated | 2026-04-12 |
