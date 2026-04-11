@@ -33,3 +33,60 @@ pub fn render3d_system_labels() -> Array[String] {
     render3d_execute_system_label,
   ]
 }
+
+///|
+pub fn[T] render3d_update_frusta_system_by_projection_key(
+  world : @ecs.World,
+  projection_key : @ecs.ComponentKey[T],
+  compute_frustum : (T, @transform.Transform) -> Frustum,
+) -> Unit {
+  let sequence = world.get_sequence_context().sequence()
+  let processed : Map[UInt64, Bool] = {}
+  fn entity_key(entity : @core.Entity) -> UInt64 {
+    let hi = entity.id.reinterpret_as_uint().to_uint64()
+    let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+    (hi << 32) | lo
+  }
+  fn update_entity(
+    world : @ecs.World,
+    entity : @core.Entity,
+    projection_key : @ecs.ComponentKey[T],
+    compute_frustum : (T, @transform.Transform) -> Frustum,
+  ) -> Unit {
+    guard world.is_alive(entity) else { return }
+    guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(transform) else {
+      return
+    }
+    guard (try! world.get_by_key(entity, projection_key)) is Some(projection) else {
+      return
+    }
+    let next = compute_frustum(projection, transform)
+    if (try! world.get_by_key(entity, ecs_key_frustum)) is Some(current) {
+      if current != next {
+        try! (world.replace(entity, ecs_key_frustum, next) |> ignore)
+      }
+    } else {
+      try! world.set_by_key(entity, ecs_key_frustum, next)
+    }
+  }
+  for
+    entity in world
+    .changed_components(@transform.ecs_key_transform, sequence)
+    .read() {
+    let key = entity_key(entity)
+    if processed.contains(key) {
+      continue
+    }
+    processed.set(key, true)
+    update_entity(world, entity, projection_key, compute_frustum)
+  }
+  for entity in world.changed_components(projection_key, sequence).read() {
+    let key = entity_key(entity)
+    if processed.contains(key) {
+      continue
+    }
+    processed.set(key, true)
+    update_entity(world, entity, projection_key, compute_frustum)
+  }
+}
