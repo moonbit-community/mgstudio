@@ -734,7 +734,10 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     content="Some(true)",
   )
   debug_inspect(prepared.source.id() == handle.id(), content="true")
-  debug_inspect(prepared.bind_group.layout_key(), content="0:uniform;3:uniform")
+  debug_inspect(
+    prepared.bind_group.layout_key(),
+    content="\"0:uniform;3:uniform\"",
+  )
   debug_inspect(
     prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),
     content="true",

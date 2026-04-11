@@ -6753,7 +6753,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   let counts = render_state_ref(world).unwrap().queued_draw_item_counts
   debug_inspect(
     counts.to_json().to_string(),
-    content="Array([Number(1), Number(1)])",
+    content="\"Array([Number(1), Number(1)])\"",
   )
 }
 

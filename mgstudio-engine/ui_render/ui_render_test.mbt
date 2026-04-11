@@ -16,7 +16,7 @@
 test "ui_render boundary re-exports anti-alias and box shadow samples" {
   debug_inspect(
     @ui_render.UiAntiAlias::On.to_json().to_string(),
-    content="String(\"On\")",
+    content="\"String(\\\"On\\\")\"",
   )
   debug_inspect(@ui_render.BoxShadowSamples::default().samples, content="4")
 }

@@ -23,7 +23,7 @@ test "gizmos boundary re-exports configuration and plugin surface" {
     app.contains_resource(@gizmos.GizmoConfigStore::resource()),
     content="true",
   )
-  debug_inspect("ok", content="ok")
+  debug_inspect("ok", content="\"ok\"")
 }
 
 ///|
