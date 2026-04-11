@@ -3,6 +3,11 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/anti_alias/fxaa" @fxaa,
+  "Milky2018/mgstudio/anti_alias/smaa" @smaa,
+  "Milky2018/mgstudio/anti_alias/taa" @taa,
+  "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening" @cas,
+  "Milky2018/mgstudio/anti_alias/dlss" @dlss,
 }
 
 supported_targets = "native"

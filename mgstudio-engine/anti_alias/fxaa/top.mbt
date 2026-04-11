@@ -16,13 +16,21 @@
 // Bevy source: `bevy/crates/bevy_anti_alias/src/fxaa/mod.rs`.
 
 ///|
-pub type Fxaa = @anti_alias.Fxaa
+pub type Fxaa = @post_process.Fxaa
 
 ///|
-pub type FxaaSensitivity = @anti_alias.FxaaSensitivity
+pub type FxaaSensitivity = @post_process.FxaaSensitivity
 
 ///|
-pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @anti_alias.ecs_key_fxaa
+pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @post_process.ecs_key_fxaa
+
+///|
+pub struct FxaaPlugin {}
+
+///|
+pub fn FxaaPlugin::default() -> FxaaPlugin {
+  FxaaPlugin::{  }
+}
 
 ///|
 pub fn fxaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

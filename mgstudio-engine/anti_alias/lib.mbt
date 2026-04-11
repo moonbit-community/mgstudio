@@ -31,6 +31,11 @@ pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
 ///|
 pub fn anti_alias_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
+  |> @fxaa.fxaa_plugin
+  |> @smaa.smaa_plugin
+  |> @taa.temporal_anti_alias_plugin
+  |> @cas.cas_plugin
+  |> @dlss.dlss_plugin
 }
 
 ///|
@@ -49,6 +54,54 @@ pub type TemporalAntiAliasing = @post_process.TemporalAntiAliasing
 pub type TemporalJitter = @post_process.TemporalJitter
 
 ///|
+pub type Smaa = @smaa.Smaa
+
+///|
+pub type SmaaPreset = @smaa.SmaaPreset
+
+///|
+pub type ContrastAdaptiveSharpening = @cas.ContrastAdaptiveSharpening
+
+///|
+pub type DenoiseCas = @cas.DenoiseCas
+
+///|
+pub type CasUniform = @cas.CasUniform
+
+///|
+pub type DlssPerfQualityMode = @dlss.DlssPerfQualityMode
+
+///|
+pub type DlssProjectId = @dlss.DlssProjectId
+
+///|
+pub type Dlss = @dlss.Dlss
+
+///|
+pub const SMAA_RUNTIME_SUPPORTED : Bool = @smaa.SMAA_RUNTIME_SUPPORTED
+
+///|
+pub const CAS_RUNTIME_SUPPORTED : Bool = @cas.CAS_RUNTIME_SUPPORTED
+
+///|
+pub const DLSS_RUNTIME_SUPPORTED : Bool = @dlss.DLSS_RUNTIME_SUPPORTED
+
+///|
+pub type FxaaPlugin = @fxaa.FxaaPlugin
+
+///|
+pub type SmaaPlugin = @smaa.SmaaPlugin
+
+///|
+pub type TemporalAntiAliasPlugin = @taa.TemporalAntiAliasPlugin
+
+///|
+pub type CasPlugin = @cas.CasPlugin
+
+///|
+pub type DlssPlugin = @dlss.DlssPlugin
+
+///|
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
 
 ///|
@@ -59,3 +112,17 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 
 ///|
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
+
+///|
+pub let ecs_key_smaa : @ecs.ComponentKey[Smaa] = @smaa.Smaa::component()
+
+///|
+pub let ecs_key_contrast_adaptive_sharpening : @ecs.ComponentKey[
+  ContrastAdaptiveSharpening,
+] = @cas.ContrastAdaptiveSharpening::component()
+
+///|
+pub let ecs_key_denoise_cas : @ecs.ComponentKey[DenoiseCas] = @cas.DenoiseCas::component()
+
+///|
+pub let ecs_key_cas_uniform : @ecs.ComponentKey[CasUniform] = @cas.CasUniform::component()

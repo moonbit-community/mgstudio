@@ -4,7 +4,7 @@ This file must not exceed 200 lines.
 |---|---|---|---:|---|---|
 | `bevy_app` | `mgstudio-engine/app` | ✅ Done | 95% | Core schedule/system-param path is stable; migration wrappers were removed. | Keep parity through incremental audits only. |
 | `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 🟡 In Progress | 85% | `Changed<T>` and full change-detection boundary are still open. | Land `Changed<T>` and close change-detection scope doc. |
-| `bevy_transform` | `mgstudio-engine/transform` | 🟡 In Progress | 88% | Functional parity mostly landed; stress hotspot remains in propagation cost. | Continue source-level parity + perf verification. |
+| `bevy_transform` | `mgstudio-engine/transform` | 🟡 In Progress | 90% | Functional parity mostly landed; package entry now aligns to `lib.mbt`; stress hotspot remains in propagation cost. | Continue source-level parity + perf verification. |
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 95% | Mainline behavior is aligned and hierarchy package tests are green (`moon test hierarchy --target native`). | Keep regression checks on large scene cases. |
 | `bevy_reflect` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Reflection is intentionally out of scope. | Do not implement unless scope changes. |
 | `bevy_tasks` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Async tasks parity is intentionally out of scope. | Keep excluded in mapping scripts. |
@@ -29,7 +29,7 @@ This file must not exceed 200 lines.
 | `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | 🟡 In Progress | 88% | Runtime mostly stable; platform edge cases remain possible. | Continue parity checks while fixing remaining visual diffs. |
 | `bevy_asset` | `mgstudio-engine/asset` | 🟡 In Progress | 82% | Asset path/provenance parity improved; some tests blocked by native link/runtime setup. | Keep asset layout aligned with Bevy and fix test environment blockers. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | ✅ Mostly Done | 95% | Diagnostics overlay, timeline trace plugin, stress diagnostics plugin, and stress trace collection script are in mainline and checked in package builds. | Keep maintenance-level parity checks only. |
-| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 🟡 In Progress | 62% | SMAA/CAS/DLSS surfaces landed; full runtime graph parity still pending. | Implement runtime path parity for enabled features. |
+| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 🟡 In Progress | 68% | AntiAlias plugin now wires FXAA/SMAA/TAA/CAS/DLSS sub-plugins with Bevy-aligned plugin surface; full runtime graph parity still pending. | Implement runtime path parity for enabled features. |
 | `bevy_light` | `mgstudio-engine/light` | 🟡 In Progress | 82% | Most light data paths are present; behavior parity tied to pbr/render closure. | Continue with pbr/render aligned runtime work. |
 | `bevy_math` | `mgstudio-engine/math` | ✅ Done | 95% | Mainline math surface is stable and package tests/check are green (`moon test math --target native`, `moon check math --target native`). | Keep maintenance mode with targeted parity diffs only. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | ✅ Mostly Done | 89% | Mesh core surface is stable; advanced render integration still evolves. | Track only render-coupled deltas. |

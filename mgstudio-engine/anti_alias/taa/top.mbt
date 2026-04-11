@@ -16,13 +16,28 @@
 // Bevy source: `bevy/crates/bevy_anti_alias/src/taa/mod.rs`.
 
 ///|
-pub type TemporalAntiAliasing = @anti_alias.TemporalAntiAliasing
+pub type TemporalAntiAliasing = @post_process.TemporalAntiAliasing
 
 ///|
-pub type TemporalJitter = @anti_alias.TemporalJitter
+pub type TemporalJitter = @post_process.TemporalJitter
 
 ///|
-pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @anti_alias.ecs_key_temporal_anti_aliasing
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing
 
 ///|
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @anti_alias.ecs_key_temporal_jitter
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
+
+///|
+pub struct TemporalAntiAliasPlugin {}
+
+///|
+pub fn TemporalAntiAliasPlugin::default() -> TemporalAntiAliasPlugin {
+  TemporalAntiAliasPlugin::{  }
+}
+
+///|
+pub fn temporal_anti_alias_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
+}

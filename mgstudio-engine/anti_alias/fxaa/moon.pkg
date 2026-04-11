@@ -2,7 +2,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/anti_alias" @anti_alias,
+  "Milky2018/mgstudio/post_process",
 }
 
 supported_targets = "native"
