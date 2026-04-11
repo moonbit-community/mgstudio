@@ -398,8 +398,8 @@ test "renderer: mesh2d material loader appends custom fragment shader" {
 test "renderer: mesh3d draw slot pool grows per draw slot" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
-  let ok = ensure_mesh3d_draw_slot(backend, 0) is Some(_) &&
-    ensure_mesh3d_draw_slot(backend, 1) is Some(_) &&
+  let ok = backend.ensure_mesh3d_draw_slot(0) is Some(_) &&
+    backend.ensure_mesh3d_draw_slot(1) is Some(_) &&
     backend.mesh3d_bgl_view is Some(_) &&
     backend.mesh3d_view_buf is Some(_) &&
     backend.mesh3d_bgl_draw is Some(_) &&

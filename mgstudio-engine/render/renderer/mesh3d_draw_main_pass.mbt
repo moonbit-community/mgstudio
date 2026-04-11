@@ -116,7 +116,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       return
     }
     let required_size = next_used_int.to_uint64()
-    guard ensure_mesh3d_instance_draw_binding(self, required_size)
+    guard self.ensure_mesh3d_instance_draw_binding(required_size)
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
     }
@@ -130,7 +130,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     }
   } else {
     let mesh3d_draw_slot_index = self.mesh3d_draw_slot_used
-    guard ensure_mesh3d_draw_slot(self, mesh3d_draw_slot_index)
+    guard self.ensure_mesh3d_draw_slot(mesh3d_draw_slot_index)
       is Some(draw_slot) else {
       return
     }
