@@ -275,12 +275,78 @@ fn animation_graph_parse_mask_groups_ron(
 
   let close = animation_graph_find_matching(source, value_index, 123, 125)
   guard close > value_index else { return None }
-  let body = source[value_index + 1:close].to_string().trim()
+  let body = source[value_index + 1:close].to_string().trim().to_string()
   if body == "" {
-    Some([])
-  } else {
-    None
+    return Some([])
   }
+
+  let out : Array[(AnimationTargetId, AnimationMask)] = []
+  let mut cursor = 0
+  while true {
+    cursor = animation_graph_skip_whitespace(body, cursor)
+    if cursor >= body.length() {
+      break
+    }
+    if body.code_unit_at(cursor).to_int() == 44 {
+      cursor = cursor + 1
+      continue
+    }
+
+    guard animation_graph_parse_mask_group_key(body, cursor)
+      is Some(parsed_key) else {
+      return None
+    }
+    let colon = animation_graph_find_char(body, 58, parsed_key.1)
+    guard colon >= 0 else { return None }
+
+    guard animation_graph_parse_int_at(body, colon + 1) is Some(parsed_mask) else {
+      return None
+    }
+    guard parsed_mask.0 >= 0 else { return None }
+    out.push((parsed_key.0, parsed_mask.0.reinterpret_as_uint()))
+    cursor = parsed_mask.1
+  }
+  Some(out)
+}
+
+///|
+fn animation_graph_parse_mask_group_key(
+  source : String,
+  start : Int,
+) -> (AnimationTargetId, Int)? {
+  let i = animation_graph_skip_whitespace(source, start)
+  if i >= source.length() {
+    return None
+  }
+
+  if source.code_unit_at(i).to_int() == 34 {
+    guard animation_graph_parse_quoted_string_ron(source, i)
+      is Some(parsed_string) else {
+      return None
+    }
+    return Some((AnimationTargetId::from_name(parsed_string.0), parsed_string.1))
+  }
+
+  if source.code_unit_at(i).to_int() == 40 {
+    let close = animation_graph_find_matching(source, i, 40, 41)
+    guard close > i else { return None }
+    let pair = source[i + 1:close].to_string()
+    guard animation_graph_parse_int_at(pair, 0) is Some(parsed_high) else {
+      return None
+    }
+    let comma = animation_graph_find_char(pair, 44, parsed_high.1)
+    guard comma >= 0 else { return None }
+    guard animation_graph_parse_int_at(pair, comma + 1) is Some(parsed_low) else {
+      return None
+    }
+    return Some(
+      (
+        AnimationTargetId::new(parsed_high.0, parsed_low.0),
+        close + 1,
+      ),
+    )
+  }
+  None
 }
 
 ///|
