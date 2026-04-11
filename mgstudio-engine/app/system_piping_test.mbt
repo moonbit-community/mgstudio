@@ -126,7 +126,7 @@ test "app system piping: map and pipe_param can use additional system params" {
   debug_inspect(log, content="[\"map:hello\", \"pipe:hello\"]")
   debug_inspect(
     try! app.world().get_resource(system_piping_counter_key),
-    content="Some({value: 5})",
+    content="Some({ value: 5 })",
   )
 }
 

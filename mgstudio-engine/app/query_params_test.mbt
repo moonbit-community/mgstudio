@@ -159,11 +159,11 @@ test "app: Query1 system param exposes plain mutable query" {
   debug_inspect(counts, content="[2, 2]")
   debug_inspect(
     try! app.world().get_by_key(e0, query_position_key),
-    content="Some({x: 21, y: 2})",
+    content="Some({ x: 21, y: 2 })",
   )
   debug_inspect(
     try! app.world().get_by_key(e1, query_position_key),
-    content="Some({x: 23, y: 4})",
+    content="Some({ x: 23, y: 4 })",
   )
 }
 
@@ -206,11 +206,11 @@ test "app: filtered query system param builds filters from component owners" {
   debug_inspect(hit_counts, content="[1]")
   debug_inspect(
     try! app.world().get_by_key(e0, query_velocity_key),
-    content="Some({dx: 11, dy: 20})",
+    content="Some({ dx: 11, dy: 20 })",
   )
   debug_inspect(
     try! app.world().get_by_key(e1, query_velocity_key),
-    content="Some({dx: 30, dy: 40})",
+    content="Some({ dx: 30, dy: 40 })",
   )
 }
 
@@ -252,11 +252,11 @@ test "app: optional query system param preserves some and none branches" {
   debug_inspect(seen, content="[(0, true), (1, false)]")
   debug_inspect(
     try! app.world().get_by_key(e0, query_velocity_key),
-    content="Some({dx: 3, dy: 6})",
+    content="Some({ dx: 3, dy: 6 })",
   )
   debug_inspect(
     try! app.world().get_by_key(e1, query_velocity_key),
-    content="Some({dx: 7, dy: 14})",
+    content="Some({ dx: 7, dy: 14 })",
   )
 }
 
@@ -367,11 +367,11 @@ test "app: validated single query params expose strict single access" {
   debug_inspect(xs, content="[1]")
   debug_inspect(
     try! app.world().get_by_key(entity, query_position_key),
-    content="Some({x: 4, y: 2})",
+    content="Some({ x: 4, y: 2 })",
   )
   debug_inspect(
     try! app.world().get_by_key(other, query_position_key),
-    content="Some({x: 10, y: 20})",
+    content="Some({ x: 10, y: 20 })",
   )
 }
 
@@ -444,10 +444,10 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
   debug_inspect(counts, content="[2]")
   debug_inspect(
     try! app.world().get_by_key(e0, query_velocity_key),
-    content="Some({dx: 4, dy: 4})",
+    content="Some({ dx: 4, dy: 4 })",
   )
   debug_inspect(
     try! app.world().get_by_key(e1, query_velocity_key),
-    content="Some({dx: 12, dy: 8})",
+    content="Some({ dx: 12, dy: 8 })",
   )
 }

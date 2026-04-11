@@ -56,7 +56,7 @@ test "app: custom schedules can be inserted into main schedule order" {
 
   debug_inspect(
     log.join(","),
-    content="Pre Startup,Custom Startup,Startup,First,Update,Single Threaded Update,Last",
+    content="\"Pre Startup,Custom Startup,Startup,First,Update,Single Threaded Update,Last\"",
   )
 }
 

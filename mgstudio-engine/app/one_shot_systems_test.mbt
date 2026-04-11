@@ -40,7 +40,7 @@ test "app: world run_system_once supports system params" {
 
   debug_inspect(
     try! world.get_resource(one_shot_counter_resource_key),
-    content="Some({value: 1})",
+    content="Some({ value: 1 })",
   )
 }
 
@@ -63,7 +63,7 @@ test "app: registered systems preserve local state across runs" {
 
   debug_inspect(
     try! world.get_resource(one_shot_counter_resource_key),
-    content="Some({value: 3})",
+    content="Some({ value: 3 })",
   )
 }
 
@@ -85,6 +85,6 @@ test "app: commands can register and run one-shot systems" {
 
   debug_inspect(
     try! app.world().get_resource(one_shot_counter_resource_key),
-    content="Some({value: 1})",
+    content="Some({ value: 1 })",
   )
 }

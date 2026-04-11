@@ -77,7 +77,7 @@ test "app state: queued next state applies on next frame after PreUpdate" {
     )
 
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="A")
+  debug_inspect(log.join(","), content="\"A\"")
   debug_inspect(read_test_state(app.world()), content="Some(A)")
   debug_inspect(
     world_next_state(app.world(), TestState::A),
@@ -85,11 +85,11 @@ test "app state: queued next state applies on next frame after PreUpdate" {
   )
 
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="A,B")
+  debug_inspect(log.join(","), content="\"A,B\"")
   debug_inspect(read_test_state(app.world()), content="Some(B)")
   debug_inspect(
     world_previous_state(app.world(), TestState::A),
-    content="Some({value: A})",
+    content="Some({ value: A })",
   )
 }
 
@@ -122,11 +122,11 @@ test "app state: exit transition enter hooks run in bevy order" {
   app.run_once() |> ignore
   debug_inspect(
     log.join(","),
-    content="exit@StateTransition,transition@StateTransition,enter@StateTransition",
+    content="\"exit@StateTransition,transition@StateTransition,enter@StateTransition\"",
   )
   debug_inspect(
     last_transition(app.world(), TestState::A),
-    content="Some({exited: Some(A), entered: Some(B), allow_same_state_transitions: true})",
+    content="Some(\n  {\n    exited: Some(A),\n    entered: Some(B),\n    allow_same_state_transitions: true,\n  },\n)",
   )
 }
 
@@ -141,10 +141,10 @@ test "app state: startup enter hook runs in state transition stage" {
     })
 
   app.run_startup() |> ignore
-  debug_inspect(log.join(","), content="enter@StateTransition")
+  debug_inspect(log.join(","), content="\"enter@StateTransition\"")
   debug_inspect(
     last_transition(app.world(), TestState::A),
-    content="Some({exited: None, entered: Some(A), allow_same_state_transitions: true})",
+    content="Some({ exited: None, entered: Some(A), allow_same_state_transitions: true })",
   )
 }
 
@@ -163,7 +163,7 @@ test "app startup: pre startup startup and post startup run in order" {
     })
 
   app.run_startup() |> ignore
-  debug_inspect(log.join(","), content="PreStartup,Startup,PostStartup")
+  debug_inspect(log.join(","), content="\"PreStartup,Startup,PostStartup\"")
 }
 
 ///|
@@ -179,7 +179,7 @@ test "app update: spawn scene runs between update and post update" {
     })
 
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="Update,SpawnScene,PostUpdate")
+  debug_inspect(log.join(","), content="\"Update,SpawnScene,PostUpdate\"")
 }
 
 ///|
@@ -197,11 +197,11 @@ test "states plugin: inserts state transition into schedule order resources" {
   })
   debug_inspect(
     startup_labels.join(","),
-    content="StateTransition,PreStartup,Startup,PostStartup",
+    content="\"StateTransition,PreStartup,Startup,PostStartup\"",
   )
   debug_inspect(
     labels.join(","),
-    content="First,PreUpdate,StateTransition,RunFixedMainLoop,Update,SpawnScene,PostUpdate,Last",
+    content="\"First,PreUpdate,StateTransition,RunFixedMainLoop,Update,SpawnScene,PostUpdate,Last\"",
   )
 }
 
@@ -243,7 +243,7 @@ test "main schedule order resource drives startup and main stage execution order
   app.run_once() |> ignore
   debug_inspect(
     log.join(","),
-    content="PostStartup,Startup,PreStartup,SpawnScene,Update,PostUpdate",
+    content="\"PostStartup,Startup,PreStartup,SpawnScene,Update,PostUpdate\"",
   )
 }
 
@@ -264,15 +264,15 @@ test "app state: state_changed matches bevy resource change detection" {
     )
 
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="A")
+  debug_inspect(log.join(","), content="\"A\"")
 
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="A")
+  debug_inspect(log.join(","), content="\"A\"")
 
   app.insert_state(TestState::B) |> ignore
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="A,B")
+  debug_inspect(log.join(","), content="\"A,B\"")
 
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="A,B")
+  debug_inspect(log.join(","), content="\"A,B\"")
 }

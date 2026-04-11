@@ -227,11 +227,11 @@ test "app: Commands spawn defers component tuple insertion until after system" {
   }
   debug_inspect(
     try! app.world().get_by_key(entity, commands_position_key),
-    content="Some({x: 3, y: 4})",
+    content="Some({ x: 3, y: 4 })",
   )
   debug_inspect(
     try! app.world().get_by_key(entity, commands_velocity_key),
-    content="Some({dx: 5, dy: 6})",
+    content="Some({ dx: 5, dy: 6 })",
   )
   debug_inspect(
     try! app.world().get_by_key(entity, commands_marker_key),
@@ -276,7 +276,7 @@ test "app: Commands insert_resource defers resource writes until after the syste
   debug_inspect(observed, content="[7]")
   debug_inspect(
     try! app.world().get_resource(commands_counter_resource_key),
-    content="Some({value: 7})",
+    content="Some({ value: 7 })",
   )
 }
 
@@ -309,7 +309,7 @@ test "app: Commands spawn_component defers single component insertion until afte
   }
   debug_inspect(
     try! app.world().get_by_key(entity, commands_position_key),
-    content="Some({x: 8, y: 13})",
+    content="Some({ x: 8, y: 13 })",
   )
 }
 
@@ -342,11 +342,11 @@ test "app: Commands spawn supports eight-component tuples" {
   }
   debug_inspect(
     try! app.world().get_by_key(entity, commands_position_key),
-    content="Some({x: 1, y: 2})",
+    content="Some({ x: 1, y: 2 })",
   )
   debug_inspect(
     try! app.world().get_by_key(entity, commands_velocity_key),
-    content="Some({dx: 3, dy: 4})",
+    content="Some({ dx: 3, dy: 4 })",
   )
   debug_inspect(
     try! app.world().get_by_key(entity, commands_marker_key),
@@ -415,15 +415,15 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
   debug_inspect(spawned.val.length(), content="3")
   debug_inspect(
     try! app.world().get_by_key(spawned.val[0], commands_position_key),
-    content="Some({x: 21, y: 22})",
+    content="Some({ x: 21, y: 22 })",
   )
   debug_inspect(
     try! app.world().get_by_key(spawned.val[1], commands_position_key),
-    content="Some({x: 31, y: 32})",
+    content="Some({ x: 31, y: 32 })",
   )
   debug_inspect(
     try! app.world().get_by_key(spawned.val[2], commands_position_key),
-    content="Some({x: 41, y: 42})",
+    content="Some({ x: 41, y: 42 })",
   )
 }
 
@@ -460,7 +460,7 @@ test "app: Commands entity insert defers component insertion until flush" {
   }
   debug_inspect(
     try! app.world().get_by_key(entity, commands_velocity_key),
-    content="Some({dx: 9, dy: 10})",
+    content="Some({ dx: 9, dy: 10 })",
   )
   debug_inspect(
     try! app.world().get_by_key(entity, commands_tag_a_key),
@@ -490,7 +490,7 @@ test "app: Commands entity insert_component queues a single component" {
   }
   debug_inspect(
     try! app.world().get_by_key(entity, commands_velocity_key),
-    content="Some({dx: 15, dy: 16})",
+    content="Some({ dx: 15, dy: 16 })",
   )
 }
 
@@ -550,7 +550,7 @@ test "app: Commands entity remove and remove_component defer component removal u
   }
   debug_inspect(
     try! app.world().get_by_key(entity, commands_position_key),
-    content="Some({x: 21, y: 22})",
+    content="Some({ x: 21, y: 22 })",
   )
   debug_inspect(
     try! app.world().get_by_key(entity, commands_velocity_key),
@@ -616,7 +616,7 @@ test "app: failing built-in queued commands route through the default error hand
 
   debug_inspect(kinds.length(), content="1")
   debug_inspect(kinds[0] == ErrorContextKind::Command, content="true")
-  debug_inspect(sources[0], content="EntityCommands::insert_component")
+  debug_inspect(sources[0], content="\"EntityCommands::insert_component\"")
 }
 
 ///|

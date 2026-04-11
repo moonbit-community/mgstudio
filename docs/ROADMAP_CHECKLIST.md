@@ -2,7 +2,7 @@ This file must not exceed 200 lines.
 
 | Bevy Side | mgstudio Side | Status | Progress | Remaining Gaps / Notes | Next Action |
 |---|---|---|---:|---|---|
-| `bevy_app` | `mgstudio-engine/app` | ✅ Mostly Done | 95% | Core schedule/system-param path is stable; current gap is assertion snapshot formatting drift in `moon test app --target native` after Debug output normalization. | Normalize app wbtest expected snapshots to current Debug formatting. |
+| `bevy_app` | `mgstudio-engine/app` | ✅ Mostly Done | 96% | Core schedule/system-param path is stable and `moon test app --target native` (116/116) is green on 2026-04-12 after wbtest snapshot normalization for Debug output. | Keep maintenance-level parity checks with periodic wbtest snapshot audits. |
 | `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | ✅ Mostly Done | 96% | `Changed<T>` query filter + system param path are in mainline and `moon test ecs --target native` (71/71) is green on 2026-04-12. | Keep maintenance-level parity checks and avoid reopening legacy surfaces. |
 | `bevy_transform` | `mgstudio-engine/transform` | ✅ Mostly Done | 96% | Transform propagation/runtime path is stable and `moon test transform --target native` (26/26) is green on 2026-04-12. | Keep maintenance-level parity checks with stress-scene regression tracking. |
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 96% | Mainline behavior is aligned and hierarchy package tests are green (`moon test hierarchy --target native`, 6/6) on 2026-04-12. | Keep regression checks on large scene cases. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am9) |
+| Last updated | 2026-04-12 (am10) |

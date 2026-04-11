@@ -147,24 +147,24 @@ test "app computed state: follows source transitions" {
   app.run_startup() |> ignore
   debug_inspect(
     world_state(app.world(), DerivedState::Active),
-    content="Some({value: Active})",
+    content="Some({ value: Active })",
   )
   debug_inspect(
     last_transition(app.world(), DerivedState::Active),
-    content="Some({exited: None, entered: Some(Active), allow_same_state_transitions: true})",
+    content="Some(\n  {\n    exited: None,\n    entered: Some(Active),\n    allow_same_state_transitions: true,\n  },\n)",
   )
 
   app.run_once() |> ignore
   debug_inspect(
     world_state(app.world(), DerivedState::Active),
-    content="Some({value: Active})",
+    content="Some({ value: Active })",
   )
 
   app.run_once() |> ignore
   debug_inspect(world_state(app.world(), DerivedState::Active), content="None")
   debug_inspect(
     last_transition(app.world(), DerivedState::Active),
-    content="Some({exited: Some(Active), entered: None, allow_same_state_transitions: true})",
+    content="Some(\n  {\n    exited: Some(Active),\n    entered: None,\n    allow_same_state_transitions: true,\n  },\n)",
   )
 }
 
@@ -201,7 +201,7 @@ test "app computed state: supports two source states" {
   app.run_once() |> ignore
   debug_inspect(
     world_state(app.world(), MultiSourceDerivedState::Ready),
-    content="Some({value: Ready})",
+    content="Some({ value: Ready })",
   )
 }
 
@@ -233,7 +233,7 @@ test "app computed state: supports optional source states" {
   app.run_startup() |> ignore
   debug_inspect(
     world_state(app.world(), OptionalDerivedState::Missing),
-    content="Some({value: Missing})",
+    content="Some({ value: Missing })",
   )
 
   app.run_once() |> ignore
@@ -245,6 +245,6 @@ test "app computed state: supports optional source states" {
   app.run_once() |> ignore
   debug_inspect(
     world_state(app.world(), OptionalDerivedState::Missing),
-    content="Some({value: Present})",
+    content="Some({ value: Present })",
   )
 }

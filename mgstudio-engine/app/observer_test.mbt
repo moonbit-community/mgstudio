@@ -210,7 +210,7 @@ test "app observer: fallible component insert observers route errors through the
 
   debug_inspect(kinds.length(), content="1")
   debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
-  debug_inspect(sources[0], content="<component-observer>")
+  debug_inspect(sources[0], content="\"<component-observer>\"")
 }
 
 ///|
@@ -253,5 +253,5 @@ test "app observer: fallible trigger observers route errors through the default 
 
   debug_inspect(kinds.length(), content="1")
   debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
-  debug_inspect(sources[0], content="<observer>")
+  debug_inspect(sources[0], content="\"<observer>\"")
 }

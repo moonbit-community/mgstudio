@@ -66,7 +66,7 @@ test "app: repeated run_if composes and short-circuits" {
 
   app.run_once() |> ignore
 
-  debug_inspect(log.join(","), content="first")
+  debug_inspect(log.join(","), content="\"first\"")
 }
 
 ///|
@@ -164,7 +164,7 @@ test "app: plugin group try_set_plugin raises when id is missing" {
     MissingPlugin(id) => id
   }
 
-  debug_inspect(missing_plugin_id, content="missing")
+  debug_inspect(missing_plugin_id, content="\"missing\"")
 }
 
 ///|
@@ -231,7 +231,7 @@ test "app: chained tuple preserves per-system run_if evaluation" {
     |> chain(),
   )
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="second")
+  debug_inspect(log.join(","), content="\"second\"")
 }
 
 ///|
@@ -243,7 +243,7 @@ test "app: Last stage runs after PostUpdate" {
     .add_post_update_system(fn(_world : @ecs.World) { log.push("post") })
     .add_last_system(fn(_world : @ecs.World) { log.push("last") })
   app.run_once() |> ignore
-  debug_inspect(log.join(","), content="pre,update,post,last")
+  debug_inspect(log.join(","), content="\"pre,update,post,last\"")
 }
 
 ///|
@@ -269,7 +269,7 @@ test "app: update runs startup once and update every frame" {
 
   debug_inspect(
     log.join(","),
-    content="pre_startup,startup,post_startup,update,update",
+    content="\"pre_startup,startup,post_startup,update,update\"",
   )
 }
 

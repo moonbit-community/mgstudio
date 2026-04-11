@@ -251,7 +251,7 @@ test "app: Res can read inserted State resource" {
   app.run_startup() |> ignore
   app.run_once() |> ignore
 
-  debug_inspect(observed.val, content="A")
+  debug_inspect(observed.val, content="\"A\"")
 }
 
 ///|

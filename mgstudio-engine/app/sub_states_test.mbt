@@ -57,24 +57,24 @@ test "app sub state: source transition creates and removes sub state" {
   app.run_startup() |> ignore
   debug_inspect(
     world_state(app.world(), TestSubState::Setup),
-    content="Some({value: Setup})",
+    content="Some({ value: Setup })",
   )
   debug_inspect(
     last_transition(app.world(), TestSubState::Setup),
-    content="Some({exited: None, entered: Some(Setup), allow_same_state_transitions: false})",
+    content="Some(\n  {\n    exited: None,\n    entered: Some(Setup),\n    allow_same_state_transitions: false,\n  },\n)",
   )
 
   app.run_once() |> ignore
   debug_inspect(
     world_state(app.world(), TestSubState::Setup),
-    content="Some({value: Setup})",
+    content="Some({ value: Setup })",
   )
 
   app.run_once() |> ignore
   debug_inspect(world_state(app.world(), TestSubState::Setup), content="None")
   debug_inspect(
     last_transition(app.world(), TestSubState::Setup),
-    content="Some({exited: Some(Setup), entered: None, allow_same_state_transitions: false})",
+    content="Some(\n  {\n    exited: Some(Setup),\n    entered: None,\n    allow_same_state_transitions: false,\n  },\n)",
   )
 }
 
@@ -101,7 +101,7 @@ test "app sub state: queued next state mutates while parent still exists" {
   app.run_startup() |> ignore
   debug_inspect(
     world_state(app.world(), TestSubState::Setup),
-    content="Some({value: Setup})",
+    content="Some({ value: Setup })",
   )
 
   app.run_once() |> ignore
@@ -111,16 +111,16 @@ test "app sub state: queued next state mutates while parent still exists" {
   )
   debug_inspect(
     world_state(app.world(), TestSubState::Setup),
-    content="Some({value: Setup})",
+    content="Some({ value: Setup })",
   )
 
   app.run_once() |> ignore
   debug_inspect(
     world_state(app.world(), TestSubState::Setup),
-    content="Some({value: Battle})",
+    content="Some({ value: Battle })",
   )
   debug_inspect(
     last_transition(app.world(), TestSubState::Setup),
-    content="Some({exited: Some(Setup), entered: Some(Battle), allow_same_state_transitions: true})",
+    content="Some(\n  {\n    exited: Some(Setup),\n    entered: Some(Battle),\n    allow_same_state_transitions: true,\n  },\n)",
   )
 }

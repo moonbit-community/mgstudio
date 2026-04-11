@@ -71,7 +71,7 @@ test "app error handling: default handler captures fallible system body errors" 
 
   debug_inspect(kinds.length(), content="1")
   debug_inspect(kinds[0] == ErrorContextKind::System, content="true")
-  debug_inspect(sources[0], content="<anonymous system>")
+  debug_inspect(sources[0], content="\"<anonymous system>\"")
 }
 
 ///|

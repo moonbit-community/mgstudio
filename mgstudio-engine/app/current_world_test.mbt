@@ -35,6 +35,6 @@ test "app: current_world is only available during system execution" {
   app.run_once() |> ignore
 
   debug_inspect(observed_world_id.val == world_id, content="true")
-  debug_inspect(observed_stage.val, content="update")
+  debug_inspect(observed_stage.val, content="\"update\"")
   debug_inspect(current_world() is None, content="true")
 }
