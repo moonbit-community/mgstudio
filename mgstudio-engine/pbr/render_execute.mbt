@@ -32,31 +32,20 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
   }
   let source_world = @render.render_source_world(world)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
-  let frame_config = render3d_execute_frame_config(source_world)
-  let (cameras, needs_mesh_previous_transform) = render3d_execute_collect_cameras(
-    source_world,
-    world_transform_cache_ref,
-    frame_config.gpu_instance_buffer_builder_requested,
-    frame_config.gpu_culling_supported,
-    frame_config.prepass_enabled,
-  )
-  if cameras.length() == 0 {
+  guard render3d_queue_take_frame(world) is Some(queued_frame) else {
     phase_state_ref.val.prepared_camera_order.clear()
     phase_state_ref.val.last_camera3d_count = 0
     phase_state_ref.val.camera_order_needs_refresh = true
     finish_execute()
     return
   }
-  let meshes = render3d_execute_collect_meshes(
-    source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
-  )
+  let frame_config = queued_frame.frame_config
   render3d_execute_render_cameras(
     world,
     source_world,
     phase_state_ref,
-    cameras,
-    meshes,
+    queued_frame.cameras,
+    queued_frame.meshes,
     frame_config.point_light_shadow_map_size,
     frame_config.gpu_instance_buffer_builder_enabled,
     frame_config.gpu_culling_supported,

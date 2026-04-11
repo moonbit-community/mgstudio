@@ -157,6 +157,236 @@ pub fn render3d_orthographic_projection_compute_frustum(
 }
 
 ///|
+pub struct CustomProjection3d {
+  type_name : String
+  payload : @any.Any
+  get_clip_from_view_fn : (@any.Any) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (@any.Any, SubCameraView3d) -> ProjectionMatrix3d
+  update_fn : (@any.Any, Float, Float) -> @any.Any
+  far_fn : (@any.Any) -> Float
+  get_frustum_corners_fn : (@any.Any, Float, Float) -> Array[@math.Vec3]
+}
+
+///|
+pub fn custom_projection3d_from_callbacks(
+  type_name : String,
+  payload : @any.Any,
+  get_clip_from_view_fn : (@any.Any) -> ProjectionMatrix3d,
+  get_clip_from_view_for_sub_fn : (@any.Any, SubCameraView3d) -> ProjectionMatrix3d,
+  update_fn : (@any.Any, Float, Float) -> @any.Any,
+  far_fn : (@any.Any) -> Float,
+  get_frustum_corners_fn : (@any.Any, Float, Float) -> Array[@math.Vec3],
+) -> CustomProjection3d {
+  CustomProjection3d::{
+    type_name,
+    payload,
+    get_clip_from_view_fn,
+    get_clip_from_view_for_sub_fn,
+    update_fn,
+    far_fn,
+    get_frustum_corners_fn,
+  }
+}
+
+///|
+pub fn CustomProjection3d::default() -> CustomProjection3d {
+  let projection = PerspectiveProjection3d::default()
+  let payload = @any.of(projection)
+  custom_projection3d_from_callbacks(
+    payload.type_name(),
+    payload,
+    fn(payload) {
+      let projection : PerspectiveProjection3d = try! payload.to()
+      projection.get_clip_from_view()
+    },
+    fn(payload, sub_view) {
+      let projection : PerspectiveProjection3d = try! payload.to()
+      projection.get_clip_from_view_for_sub(sub_view)
+    },
+    fn(payload, width, height) {
+      let projection : PerspectiveProjection3d = try! payload.to()
+      @any.of(projection.update(width, height))
+    },
+    fn(payload) {
+      let projection : PerspectiveProjection3d = try! payload.to()
+      projection.far
+    },
+    fn(payload, z_near, z_far) {
+      let projection : PerspectiveProjection3d = try! payload.to()
+      projection.get_frustum_corners(z_near, z_far)
+    },
+  )
+}
+
+///|
+pub fn[T] CustomProjection3d::get(self : CustomProjection3d) -> T? {
+  self.payload.try_to()
+}
+
+///|
+pub fn CustomProjection3d::type_name(self : CustomProjection3d) -> String {
+  self.type_name
+}
+
+///|
+pub fn CustomProjection3d::get_clip_from_view(
+  self : CustomProjection3d,
+) -> ProjectionMatrix3d {
+  (self.get_clip_from_view_fn)(self.payload)
+}
+
+///|
+pub fn CustomProjection3d::get_clip_from_view_for_sub(
+  self : CustomProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  (self.get_clip_from_view_for_sub_fn)(self.payload, sub_view)
+}
+
+///|
+pub fn CustomProjection3d::update(
+  self : CustomProjection3d,
+  width : Float,
+  height : Float,
+) -> CustomProjection3d {
+  CustomProjection3d::{
+    type_name: self.type_name,
+    payload: (self.update_fn)(self.payload, width, height),
+    get_clip_from_view_fn: self.get_clip_from_view_fn,
+    get_clip_from_view_for_sub_fn: self.get_clip_from_view_for_sub_fn,
+    update_fn: self.update_fn,
+    far_fn: self.far_fn,
+    get_frustum_corners_fn: self.get_frustum_corners_fn,
+  }
+}
+
+///|
+pub fn CustomProjection3d::far(self : CustomProjection3d) -> Float {
+  (self.far_fn)(self.payload)
+}
+
+///|
+pub fn CustomProjection3d::get_frustum_corners(
+  self : CustomProjection3d,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  (self.get_frustum_corners_fn)(self.payload, z_near, z_far)
+}
+
+///|
+pub fn CustomProjection3d::compute_frustum(
+  self : CustomProjection3d,
+  camera_transform : @transform.Transform,
+) -> Frustum {
+  render3d_compute_frustum(
+    self.get_clip_from_view(),
+    camera_transform,
+    self.far(),
+  )
+}
+
+///|
+pub enum Projection {
+  Perspective(PerspectiveProjection3d)
+  Orthographic(OrthographicProjection3d)
+  Custom(CustomProjection3d)
+}
+
+///|
+pub fn Projection::default() -> Projection {
+  Perspective(PerspectiveProjection3d::default())
+}
+
+///|
+pub fn projection_from_custom(projection : CustomProjection3d) -> Projection {
+  Custom(projection)
+}
+
+///|
+pub fn Projection::is_perspective(self : Projection) -> Bool {
+  match self {
+    Perspective(_) => true
+    Orthographic(_) => false
+    Custom(projection) => projection.get_clip_from_view().w_axis_w() == 0.0F
+  }
+}
+
+///|
+pub fn Projection::get_clip_from_view(self : Projection) -> ProjectionMatrix3d {
+  match self {
+    Perspective(projection) => projection.get_clip_from_view()
+    Orthographic(projection) => projection.get_clip_from_view()
+    Custom(projection) => projection.get_clip_from_view()
+  }
+}
+
+///|
+pub fn Projection::get_clip_from_view_for_sub(
+  self : Projection,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  match self {
+    Perspective(projection) => projection.get_clip_from_view_for_sub(sub_view)
+    Orthographic(projection) => projection.get_clip_from_view_for_sub(sub_view)
+    Custom(projection) => projection.get_clip_from_view_for_sub(sub_view)
+  }
+}
+
+///|
+pub fn Projection::update(
+  self : Projection,
+  width : Float,
+  height : Float,
+) -> Projection {
+  match self {
+    Perspective(projection) => Perspective(projection.update(width, height))
+    Orthographic(projection) => Orthographic(projection.update(width, height))
+    Custom(projection) => Custom(projection.update(width, height))
+  }
+}
+
+///|
+pub fn Projection::far(self : Projection) -> Float {
+  match self {
+    Perspective(projection) => projection.far
+    Orthographic(projection) => projection.far
+    Custom(projection) => projection.far()
+  }
+}
+
+///|
+pub fn Projection::get_frustum_corners(
+  self : Projection,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  match self {
+    Perspective(projection) => projection.get_frustum_corners(z_near, z_far)
+    Orthographic(projection) => projection.get_frustum_corners(z_near, z_far)
+    Custom(projection) => projection.get_frustum_corners(z_near, z_far)
+  }
+}
+
+///|
+pub fn Projection::compute_frustum(
+  self : Projection,
+  camera_transform : @transform.Transform,
+) -> Frustum {
+  match self {
+    Perspective(projection) =>
+      render3d_perspective_projection_compute_frustum(
+        projection, camera_transform,
+      )
+    Orthographic(projection) =>
+      render3d_orthographic_projection_compute_frustum(
+        projection, camera_transform,
+      )
+    Custom(projection) => projection.compute_frustum(camera_transform)
+  }
+}
+
+///|
 pub(all) struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
