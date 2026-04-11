@@ -716,61 +716,41 @@ pub fn animation_graph_set(
 
 ///|
 fn thread_animation_graphs(
-  graph_handles : @ecs.Query[@ecs.Comp[AnimationGraphHandle], @ecs.All],
   graph_events : @ecs.MessageReader[@asset.AssetEvent[AnimationGraph]],
   graph_assets : @app.Res[@asset.Assets[AnimationGraph]],
   threaded_graphs : @app.ResMut[ThreadedAnimationGraphs],
 ) -> Unit {
-  let unique_handles : Map[Int, @asset.Handle[AnimationGraph]] = {}
-  try! graph_handles.view(fn(_entity, graph_handle_comp) {
-    let graph_handle = graph_handle_comp.value().graph()
-    let graph_id = graph_handle.id()
-    if graph_id >= 0 && !unique_handles.contains(graph_id) {
-      unique_handles.set(graph_id, graph_handle)
-    }
-  })
-
   let graph_assets_value = graph_assets.get()
   let threaded_graphs_ref = threaded_graphs.get_ref()
-  let changed_graph_ids : Map[Int, Bool] = {}
-
   for event in (try! graph_events.read()) {
     match event {
-      @asset.AssetEvent::Added(handle) =>
-        changed_graph_ids.set(handle.id(), true)
-      @asset.AssetEvent::Modified(handle) =>
-        changed_graph_ids.set(handle.id(), true)
-      @asset.AssetEvent::LoadedWithDependencies(handle) =>
-        changed_graph_ids.set(handle.id(), true)
+      @asset.AssetEvent::Added(handle) => {
+        if graph_assets_value.get(handle) is Some(graph) {
+          threaded_graphs_ref.val.graphs.set(
+            handle.id(),
+            animation_thread_graph_build(graph),
+          )
+        }
+      }
+      @asset.AssetEvent::Modified(handle) => {
+        if graph_assets_value.get(handle) is Some(graph) {
+          threaded_graphs_ref.val.graphs.set(
+            handle.id(),
+            animation_thread_graph_build(graph),
+          )
+        }
+      }
+      @asset.AssetEvent::LoadedWithDependencies(handle) => {
+        if graph_assets_value.get(handle) is Some(graph) {
+          threaded_graphs_ref.val.graphs.set(
+            handle.id(),
+            animation_thread_graph_build(graph),
+          )
+        }
+      }
       @asset.AssetEvent::Removed(handle) => {
-        changed_graph_ids.remove(handle.id())
         ignore(threaded_graphs_ref.val.graphs.remove(handle.id()))
       }
-    }
-  }
-
-  let stale_graph_ids : Array[Int] = []
-  for entry in threaded_graphs_ref.val.graphs.iter() {
-    let (graph_id, _threaded_graph) = entry
-    if !unique_handles.contains(graph_id) {
-      stale_graph_ids.push(graph_id)
-    }
-  }
-  for graph_id in stale_graph_ids {
-    ignore(threaded_graphs_ref.val.graphs.remove(graph_id))
-  }
-
-  for pair in unique_handles.iter() {
-    let (graph_id, graph_handle) = pair
-    if !changed_graph_ids.contains(graph_id) &&
-      threaded_graphs_ref.val.graphs.contains(graph_id) {
-      continue
-    }
-    if graph_assets_value.get(graph_handle) is Some(graph) {
-      threaded_graphs_ref.val.graphs.set(
-        graph_id,
-        animation_thread_graph_build(graph),
-      )
     }
   }
 }

@@ -1575,7 +1575,7 @@ pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     animation_graph_asset_loader(),
   )
   .add_post_update_system_config(
-    @app.system(@app.system_param4(thread_animation_graphs)).in_set(
+    @app.system(@app.system_param3(thread_animation_graphs)).in_set(
       animation_set_thread,
     ),
   )
