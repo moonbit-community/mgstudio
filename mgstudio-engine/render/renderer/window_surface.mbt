@@ -234,7 +234,7 @@ fn surface_preferred_format(
 }
 
 ///|
-fn sync_active_surface_legacy_state(backend : GpuBackend) -> Unit {
+fn sync_active_surface_state(backend : GpuBackend) -> Unit {
   guard surface_state_index_by_target_id(
       backend,
       backend.active_surface_target_id,
@@ -300,7 +300,7 @@ fn activate_surface_frame_for_target(
     backend.surfaces[index].frame = None
     backend.frame = Some(frame)
   }
-  sync_active_surface_legacy_state(backend)
+  sync_active_surface_state(backend)
   true
 }
 
@@ -361,7 +361,7 @@ pub fn GpuBackend::set_active_surface_target(
   }
   store_active_surface_frame(self)
   self.active_surface_target_id = target_id
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 }
 
 ///|
@@ -392,7 +392,7 @@ pub fn GpuBackend::create_surface_binding(
   if self.active_surface_target_id >= 0 {
     self.active_surface_target_id = target_id
   }
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 }
 
 ///|
@@ -474,7 +474,7 @@ pub fn GpuBackend::configure_surface_binding(
   if self.active_surface_target_id >= 0 {
     self.active_surface_target_id = state.target_id
   }
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
   debug(
     "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{configured_format.to_u32().to_string()}",
   )
@@ -566,7 +566,7 @@ pub fn GpuBackend::begin_frame_binding(
   let target_id = self.surfaces[index].target_id
   self.set_active_surface_target(target_id)
   self.surfaces[index].cleared_this_frame = false
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 
   self.mesh2d_instance_used = 0
   mesh2d_reset_pending_batch(self)
@@ -641,7 +641,7 @@ pub fn GpuBackend::end_frame_binding(
   self.surfaces[index].cleared_this_frame = false
   self.frame = None
   self.pass_state = None
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 }
 
 ///|

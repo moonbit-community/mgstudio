@@ -230,14 +230,6 @@ pub let render3d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
-/// Legacy alias kept for source compatibility.
-pub let render3d_set_execute : @app.SystemSet = render3d_set_render
-
-///|
-/// Legacy alias kept for source compatibility.
-pub let render3d_set_prepare_legacy : @app.SystemSet = render3d_set_prepare
-
-///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   pbr_plugin_with(app, PbrPlugin::default())
 }

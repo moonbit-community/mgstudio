@@ -143,7 +143,7 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
 }
 
 ///|
-test "render3d: legacy render3d_plugin alias maps to pbr plugin" {
+test "render3d: render3d_plugin alias maps to pbr plugin" {
   let app = render3d_plugin(@app.App::new(@ecs.World::new()))
   debug_inspect(
     app.contains_resource(ecs_key_pbr_plugin_runtime_config),
