@@ -82,7 +82,7 @@ fn animation_typed_event_find_dispatcher(
 ///|
 fn[T : AnimationEvent] animation_typed_event_type_key(event : T) -> String {
   event.animation_event_marker()
-  @any.of(Ref::new(event)).type_name()
+  @any.of(event).type_name()
 }
 
 ///|
@@ -96,8 +96,8 @@ fn[T : AnimationEvent + @ecs.TriggerEvent] animation_typed_event_register(
         type_key,
         fn(world, payload, entity, caller) {
           match payload.try_to() {
-            Some(event_ref) => {
-              let event_ref : Ref[T] = event_ref
+            Some(event_value) => {
+              let event_ref : Ref[T] = Ref::new(event_value)
               T::set_observer_entity(event_ref, entity)
               world.trigger(event_ref.val, caller~)
             }
@@ -121,7 +121,7 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
     label: "",
     payload: "",
     callback_id: None,
-    typed_event_payload: Some(@any.of(Ref::new(event))),
+    typed_event_payload: Some(@any.of(event)),
     typed_event_type_key: Some(type_key),
   }
 }

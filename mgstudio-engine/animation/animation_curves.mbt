@@ -19,28 +19,109 @@
 pub struct KeyframeVec3 {
   time : Float
   value : @math.Vec3
+  interpolation : GltfInterpolation
+  in_tangent : @math.Vec3?
+  out_tangent : @math.Vec3?
 }
 
 ///|
 pub fn KeyframeVec3::new(time : Float, value : @math.Vec3) -> KeyframeVec3 {
-  KeyframeVec3::{ time, value }
+  KeyframeVec3::{
+    time,
+    value,
+    interpolation: GltfInterpolation::Linear,
+    in_tangent: None,
+    out_tangent: None,
+  }
+}
+
+///|
+pub fn KeyframeVec3::new_stepped(
+  time : Float,
+  value : @math.Vec3,
+) -> KeyframeVec3 {
+  KeyframeVec3::{
+    time,
+    value,
+    interpolation: GltfInterpolation::Step,
+    in_tangent: None,
+    out_tangent: None,
+  }
+}
+
+///|
+pub fn KeyframeVec3::new_cubic(
+  time : Float,
+  value : @math.Vec3,
+  in_tangent : @math.Vec3,
+  out_tangent : @math.Vec3,
+) -> KeyframeVec3 {
+  KeyframeVec3::{
+    time,
+    value,
+    interpolation: GltfInterpolation::CubicSpline,
+    in_tangent: Some(in_tangent),
+    out_tangent: Some(out_tangent),
+  }
 }
 
 ///|
 pub struct KeyframeQuat {
   time : Float
   value : @math.Quat
+  interpolation : GltfInterpolation
+  in_tangent : @math.Vec4?
+  out_tangent : @math.Vec4?
 }
 
 ///|
 pub fn KeyframeQuat::new(time : Float, value : @math.Quat) -> KeyframeQuat {
-  KeyframeQuat::{ time, value }
+  KeyframeQuat::{
+    time,
+    value,
+    interpolation: GltfInterpolation::Linear,
+    in_tangent: None,
+    out_tangent: None,
+  }
+}
+
+///|
+pub fn KeyframeQuat::new_stepped(
+  time : Float,
+  value : @math.Quat,
+) -> KeyframeQuat {
+  KeyframeQuat::{
+    time,
+    value,
+    interpolation: GltfInterpolation::Step,
+    in_tangent: None,
+    out_tangent: None,
+  }
+}
+
+///|
+pub fn KeyframeQuat::new_cubic(
+  time : Float,
+  value : @math.Quat,
+  in_tangent : @math.Vec4,
+  out_tangent : @math.Vec4,
+) -> KeyframeQuat {
+  KeyframeQuat::{
+    time,
+    value,
+    interpolation: GltfInterpolation::CubicSpline,
+    in_tangent: Some(in_tangent),
+    out_tangent: Some(out_tangent),
+  }
 }
 
 ///|
 pub struct KeyframeWeights {
   time : Float
   value : Array[Float]
+  interpolation : GltfInterpolation
+  in_tangent : Array[Float]?
+  out_tangent : Array[Float]?
 }
 
 ///|
@@ -48,7 +129,43 @@ pub fn KeyframeWeights::new(
   time : Float,
   value : Array[Float],
 ) -> KeyframeWeights {
-  KeyframeWeights::{ time, value }
+  KeyframeWeights::{
+    time,
+    value,
+    interpolation: GltfInterpolation::Linear,
+    in_tangent: None,
+    out_tangent: None,
+  }
+}
+
+///|
+pub fn KeyframeWeights::new_stepped(
+  time : Float,
+  value : Array[Float],
+) -> KeyframeWeights {
+  KeyframeWeights::{
+    time,
+    value,
+    interpolation: GltfInterpolation::Step,
+    in_tangent: None,
+    out_tangent: None,
+  }
+}
+
+///|
+pub fn KeyframeWeights::new_cubic(
+  time : Float,
+  value : Array[Float],
+  in_tangent : Array[Float],
+  out_tangent : Array[Float],
+) -> KeyframeWeights {
+  KeyframeWeights::{
+    time,
+    value,
+    interpolation: GltfInterpolation::CubicSpline,
+    in_tangent: Some(in_tangent),
+    out_tangent: Some(out_tangent),
+  }
 }
 
 ///|
@@ -69,6 +186,9 @@ pub(all) enum AnimatableCurve {
   Scale(@math.Curve[@math.Vec3])
   TextColor(@math.Curve[@sprite.Color])
 }
+
+///|
+pub type VariableCurve = AnimatableCurve
 
 ///|
 pub struct AnimationTargetCurves {
@@ -129,6 +249,44 @@ pub fn AnimationClip::duration(self : AnimationClip) -> Float {
 }
 
 ///|
+pub fn AnimationClip::curves(
+  self : AnimationClip,
+) -> Array[(AnimationTargetId, AnimationTargetCurves)] {
+  let curves : Array[(AnimationTargetId, AnimationTargetCurves)] = []
+  for binding in self.targets {
+    curves.push((binding.target_id, binding.curves))
+  }
+  curves
+}
+
+///|
+pub fn AnimationClip::curves_mut(
+  self : AnimationClip,
+) -> Array[(AnimationTargetId, AnimationTargetCurves)] {
+  self.curves()
+}
+
+///|
+pub fn AnimationClip::curves_for_target(
+  self : AnimationClip,
+  target_id : AnimationTargetId,
+) -> AnimationTargetCurves? {
+  if animation_clip_find_target(self, target_id) is Some(index) {
+    Some(self.targets[index].curves)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn AnimationClip::curves_for_target_mut(
+  self : AnimationClip,
+  target_id : AnimationTargetId,
+) -> AnimationTargetCurves? {
+  self.curves_for_target(target_id)
+}
+
+///|
 pub fn AnimationClip::set_duration(
   self : AnimationClip,
   duration_seconds : Float,
@@ -141,6 +299,7 @@ pub fn AnimationClip::set_duration(
   self
 }
 
+///|
 fn animation_clip_find_target(
   clip : AnimationClip,
   target_id : AnimationTargetId,
@@ -364,6 +523,16 @@ pub fn AnimationClip::add_curve_to_target(
         animation_curve_sample_color_keyframes(text_color_curve, sample_count),
       )
   }
+}
+
+///|
+pub fn AnimationClip::add_variable_curve_to_target(
+  self : AnimationClip,
+  target_id : AnimationTargetId,
+  variable_curve : VariableCurve,
+  sample_count? : Int = 121,
+) -> AnimationClip {
+  self.add_curve_to_target(target_id, variable_curve, sample_count~)
 }
 
 ///|
@@ -663,11 +832,6 @@ pub fn AnimationSample::text_color(self : AnimationSample) -> @sprite.Color? {
 }
 
 ///|
-fn animation_float_lerp(a : Float, b : Float, t : Float) -> Float {
-  a + (b - a) * t
-}
-
-///|
 fn animation_saturate(value : Float) -> Float {
   if value < 0.0F {
     0.0F
@@ -679,83 +843,126 @@ fn animation_saturate(value : Float) -> Float {
 }
 
 ///|
-fn animation_vec3_lerp(a : @math.Vec3, b : @math.Vec3, t : Float) -> @math.Vec3 {
-  @math.Vec3::new(
-    animation_float_lerp(a.x, b.x, t),
-    animation_float_lerp(a.y, b.y, t),
-    animation_float_lerp(a.z, b.z, t),
-  )
-}
-
-///|
-fn animation_quat_normalized(
-  x : Float,
-  y : Float,
-  z : Float,
-  w : Float,
-) -> @math.Quat {
-  let len_sq = x * x + y * y + z * z + w * w
-  if len_sq <= 1.0e-12F {
-    return @math.Quat::identity()
+fn animation_step_or_linear_vec3(
+  left_keyframe : KeyframeVec3,
+  right_keyframe : KeyframeVec3,
+  t : Float,
+  span : Float,
+) -> @math.Vec3 {
+  match left_keyframe.interpolation {
+    GltfInterpolation::Step =>
+      if t >= 1.0F {
+        right_keyframe.value
+      } else {
+        left_keyframe.value
+      }
+    GltfInterpolation::CubicSpline =>
+      match (left_keyframe.out_tangent, right_keyframe.in_tangent) {
+        (Some(out_tangent), Some(in_tangent)) =>
+          animation_interpolate_with_cubic_bezier_vec3(
+            left_keyframe.value,
+            out_tangent,
+            in_tangent,
+            right_keyframe.value,
+            t,
+            span,
+          )
+        _ =>
+          animation_interpolate_vec3_unclamped(
+            left_keyframe.value,
+            right_keyframe.value,
+            t,
+          )
+      }
+    GltfInterpolation::Linear =>
+      animation_interpolate_vec3_unclamped(
+        left_keyframe.value,
+        right_keyframe.value,
+        t,
+      )
   }
-  @math.Quat::new(x, y, z, w).normalize()
 }
 
 ///|
-fn animation_quat_nlerp(
-  a : @math.Quat,
-  b : @math.Quat,
+fn animation_step_or_linear_quat(
+  left_keyframe : KeyframeQuat,
+  right_keyframe : KeyframeQuat,
   t : Float,
+  span : Float,
 ) -> @math.Quat {
-  let dot = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
-  let bx = if dot < 0.0F { -b.x } else { b.x }
-  let by = if dot < 0.0F { -b.y } else { b.y }
-  let bz = if dot < 0.0F { -b.z } else { b.z }
-  let bw = if dot < 0.0F { -b.w } else { b.w }
-  animation_quat_normalized(
-    animation_float_lerp(a.x, bx, t),
-    animation_float_lerp(a.y, by, t),
-    animation_float_lerp(a.z, bz, t),
-    animation_float_lerp(a.w, bw, t),
-  )
+  match left_keyframe.interpolation {
+    GltfInterpolation::Step =>
+      if t >= 1.0F {
+        right_keyframe.value
+      } else {
+        left_keyframe.value
+      }
+    GltfInterpolation::CubicSpline =>
+      match (left_keyframe.out_tangent, right_keyframe.in_tangent) {
+        (Some(out_tangent), Some(in_tangent)) =>
+          animation_interpolate_with_cubic_bezier_quat(
+            left_keyframe.value,
+            out_tangent,
+            in_tangent,
+            right_keyframe.value,
+            t,
+            span,
+          )
+        _ =>
+          animation_interpolate_quat_unclamped(
+            left_keyframe.value,
+            right_keyframe.value,
+            t,
+          )
+      }
+    GltfInterpolation::Linear =>
+      animation_interpolate_quat_unclamped(
+        left_keyframe.value,
+        right_keyframe.value,
+        t,
+      )
+  }
 }
 
 ///|
-fn animation_weights_lerp(
-  a : Array[Float],
-  b : Array[Float],
+fn animation_step_or_linear_weights(
+  left_keyframe : KeyframeWeights,
+  right_keyframe : KeyframeWeights,
   t : Float,
+  span : Float,
 ) -> Array[Float] {
-  let len = if a.length() > b.length() { a.length() } else { b.length() }
-  let out : Array[Float] = []
-  for i in 0..<len {
-    let av = match a.get(i) {
-      Some(value) => value
-      None => 0.0F
-    }
-    let bv = match b.get(i) {
-      Some(value) => value
-      None => 0.0F
-    }
-    out.push(animation_float_lerp(av, bv, t))
+  match left_keyframe.interpolation {
+    GltfInterpolation::Step =>
+      if t >= 1.0F {
+        right_keyframe.value
+      } else {
+        left_keyframe.value
+      }
+    GltfInterpolation::CubicSpline =>
+      match (left_keyframe.out_tangent, right_keyframe.in_tangent) {
+        (Some(out_tangent), Some(in_tangent)) =>
+          animation_interpolate_with_cubic_bezier_weights(
+            left_keyframe.value,
+            out_tangent,
+            in_tangent,
+            right_keyframe.value,
+            t,
+            span,
+          )
+        _ =>
+          animation_interpolate_weights_unclamped(
+            left_keyframe.value,
+            right_keyframe.value,
+            t,
+          )
+      }
+    GltfInterpolation::Linear =>
+      animation_interpolate_weights_unclamped(
+        left_keyframe.value,
+        right_keyframe.value,
+        t,
+      )
   }
-  out
-}
-
-///|
-fn animation_color_lerp(
-  a : @sprite.Color,
-  b : @sprite.Color,
-  t : Float,
-) -> @sprite.Color {
-  let alpha = animation_saturate(t)
-  let inv = 1.0F - alpha
-  @sprite.Color::new(
-    a.r * inv + b.r * alpha,
-    a.g * inv + b.g * alpha,
-    a.b * inv + b.b * alpha,
-    a.a * inv + b.a * alpha,
-  )
 }
 
 ///|
@@ -795,7 +1002,7 @@ fn animation_sample_vec3(
     return Some(right_keyframe.value)
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_vec3_lerp(left_keyframe.value, right_keyframe.value, t))
+  Some(animation_step_or_linear_vec3(left_keyframe, right_keyframe, t, span))
 }
 
 ///|
@@ -835,7 +1042,7 @@ fn animation_sample_quat(
     return Some(right_keyframe.value)
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_quat_nlerp(left_keyframe.value, right_keyframe.value, t))
+  Some(animation_step_or_linear_quat(left_keyframe, right_keyframe, t, span))
 }
 
 ///|
@@ -875,7 +1082,7 @@ fn animation_sample_weights(
     return Some(right_keyframe.value)
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_weights_lerp(left_keyframe.value, right_keyframe.value, t))
+  Some(animation_step_or_linear_weights(left_keyframe, right_keyframe, t, span))
 }
 
 ///|
@@ -915,7 +1122,13 @@ fn animation_sample_color(
     return Some(right_keyframe.value)
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_color_lerp(left_keyframe.value, right_keyframe.value, t))
+  Some(
+    animation_interpolate_color_unclamped(
+      left_keyframe.value,
+      right_keyframe.value,
+      t,
+    ),
+  )
 }
 
 ///|

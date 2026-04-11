@@ -133,10 +133,12 @@ fn observe_typed_animation_event(
 ///|
 test "animation target id: deterministic and path-sensitive" {
   let a = AnimationTargetId::from_names(["Root", "Arm", "Hand"])
+  let a_iter = AnimationTargetId::from_iter(["Root", "Arm", "Hand"])
   let b = AnimationTargetId::from_names(["Root", "Arm", "Hand"])
   let c = AnimationTargetId::from_names(["Root", "Hand", "Arm"])
   let d = AnimationTargetId::from_names(["Root", "ArmHand"])
 
+  debug_inspect(a == a_iter, content="true")
   debug_inspect(a == b, content="true")
   debug_inspect(a == c, content="false")
   debug_inspect(a == d, content="false")
@@ -184,6 +186,111 @@ test "animation clip: text color curves sample and extend duration" {
     },
     content="true",
   )
+}
+
+///|
+test "animation clip: step interpolation keeps previous keyframe before boundary" {
+  let target = AnimationTargetId::from_name("StepTarget")
+  let clip = AnimationClip::new().add_translation_curve(target, [
+    KeyframeVec3::new_stepped(0.0F, @math.Vec3::new(1.0F, 0.0F, 0.0F)),
+    KeyframeVec3::new_stepped(1.0F, @math.Vec3::new(3.0F, 0.0F, 0.0F)),
+  ])
+  let sample = clip.sample_target(target, 0.5F).unwrap()
+  let translation = sample.translation().unwrap()
+  debug_inspect(translation.x.to_double(), content="1")
+}
+
+///|
+test "animation clip: cubic spline interpolation uses tangents" {
+  let target = AnimationTargetId::from_name("CubicTarget")
+  let clip = AnimationClip::new().add_scale_curve(target, [
+    KeyframeVec3::new_cubic(
+      0.0F,
+      @math.Vec3::new(1.0F, 1.0F, 1.0F),
+      @math.Vec3::zero(),
+      @math.Vec3::zero(),
+    ),
+    KeyframeVec3::new_cubic(
+      1.0F,
+      @math.Vec3::new(3.0F, 3.0F, 3.0F),
+      @math.Vec3::zero(),
+      @math.Vec3::zero(),
+    ),
+  ])
+  let sample = clip.sample_target(target, 0.25F).unwrap()
+  let scale = sample.scale().unwrap()
+  debug_inspect(approx_eq_animation(scale.x, 1.3125F), content="true")
+}
+
+///|
+test "animation gltf curves: decode translation cubic spline keyframes" {
+  let target = AnimationTargetId::from_name("GltfTranslation")
+  let keyframes = gltf_translation_keyframes_from_samples(
+    [0.0F, 1.0F],
+    [
+      @math.Vec3::zero(),
+      @math.Vec3::new(1.0F, 1.0F, 1.0F),
+      @math.Vec3::zero(),
+      @math.Vec3::zero(),
+      @math.Vec3::new(3.0F, 3.0F, 3.0F),
+      @math.Vec3::zero(),
+    ],
+    gltf_interpolation_from_name(Some("CUBICSPLINE")),
+  ).unwrap()
+  let clip = AnimationClip::new().add_translation_curve(target, keyframes)
+  let translation = clip
+    .sample_target(target, 0.25F)
+    .unwrap()
+    .translation()
+    .unwrap()
+  debug_inspect(approx_eq_animation(translation.x, 1.3125F), content="true")
+}
+
+///|
+test "animation gltf curves: decode rotation step keyframes" {
+  let target = AnimationTargetId::from_name("GltfRotation")
+  let keyframes = gltf_rotation_keyframes_from_samples(
+    [0.0F, 1.0F],
+    [
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @math.Vec4::new(0.0F, 0.70710677F, 0.0F, 0.70710677F),
+    ],
+    gltf_interpolation_from_name(Some("STEP")),
+  ).unwrap()
+  let clip = AnimationClip::new().add_rotation_curve(target, keyframes)
+  let rotation_mid = clip
+    .sample_target(target, 0.5F)
+    .unwrap()
+    .rotation()
+    .unwrap()
+  let rotation_end = clip
+    .sample_target(target, 1.0F)
+    .unwrap()
+    .rotation()
+    .unwrap()
+  debug_inspect(
+    rotation_mid.w >= 0.99F && rotation_mid.w <= 1.01F,
+    content="true",
+  )
+  debug_inspect(
+    rotation_end.w >= 0.70F && rotation_end.w <= 0.71F,
+    content="true",
+  )
+}
+
+///|
+test "animation gltf curves: decode weights cubic spline keyframes" {
+  let target = AnimationTargetId::from_name("GltfWeights")
+  let keyframes = gltf_weight_keyframes_from_flat_samples(
+    [0.0F, 1.0F],
+    [0.0F, 0.0F, 0.1F, 0.9F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2F, 0.8F, 0.0F, 0.0F],
+    gltf_interpolation_from_name(Some("CUBICSPLINE")),
+  ).unwrap()
+  let clip = AnimationClip::new().add_weights_curve(target, keyframes)
+  let weights = clip.sample_target(target, 1.0F).unwrap().weights().unwrap()
+  debug_inspect(weights.length(), content="2")
+  debug_inspect(weights[0] >= 0.19F && weights[0] <= 0.21F, content="true")
+  debug_inspect(weights[1] >= 0.79F && weights[1] <= 0.81F, content="true")
 }
 
 ///|
@@ -240,6 +347,21 @@ test "active animation: repeat semantics" {
   let forever = ActiveAnimation::default().repeat_forever().update(3.1F, 1.0F)
   debug_inspect(forever.is_finished(), content="false")
   debug_inspect(forever.completions() >= 1, content="true")
+}
+
+///|
+test "active animation: replay and weight semantics match bevy" {
+  let weighted = ActiveAnimation::default().set_weight(-0.5F)
+  assert_true(approx_eq_animation(weighted.weight(), -0.5F))
+
+  let replayed = ActiveAnimation::default()
+    .pause()
+    .seek_to(0.7F)
+    .set_repeat(RepeatAnimation::Count(3))
+    .replay()
+  debug_inspect(replayed.is_paused(), content="true")
+  assert_true(approx_eq_animation(replayed.seek_time(), 0.0F))
+  debug_inspect(replayed.completions(), content="0")
 }
 
 ///|
@@ -685,6 +807,78 @@ test "animation runtime: trigger_events emits root and target messages" {
     },
     content="true",
   )
+}
+
+///|
+test "animation runtime: untargeted and targeted event systems are split" {
+  let root_stage_labels : Array[String] = []
+  let final_stage_labels : Array[String] = []
+  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+    @core.Duration::from_millis(250L),
+  )
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([animation_plugin])
+    .insert_resource(delta_time)
+    .add_post_update_system_config(
+      @app.system(
+        @app.system_param(fn(
+          reader : @core.MessageReader[AnimationTriggeredEvent],
+        ) {
+          for message in reader.read() {
+            root_stage_labels.push(message.label())
+          }
+        }),
+      )
+      .after(animation_set_trigger_untargeted_events)
+      .before(animation_set_trigger_events),
+    )
+    .add_post_update_system_config(
+      @app.system(
+        @app.system_param(fn(
+          reader : @core.MessageReader[AnimationTriggeredEvent],
+        ) {
+          for message in reader.read() {
+            final_stage_labels.push(message.label())
+          }
+        }),
+      ).after(animation_set_trigger_events),
+    )
+  let world = app.world()
+  let player_entity = world.spawn()
+  let target_entity = world.spawn()
+  let target_id = AnimationTargetId::from_name("Foot")
+  let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
+  let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
+  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
+  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+
+  let clip = AnimationClip::new()
+    .set_duration(1.0F)
+    .add_event(0.1F, "root", "player")
+    .add_event_to_target(target_id, 0.2F, "target", "bone")
+  let clip_handle = clip_assets.add(clip)
+  let (graph, node) = AnimationGraph::from_clip(clip_handle)
+  let graph_handle = graph_assets.add(graph)
+  let player = AnimationPlayer::default()
+  player.play(node).repeat() |> ignore
+
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
+    player_entity,
+    ecs_key_animation_graph_handle,
+    AnimationGraphHandle::new(graph_handle),
+  )
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
+    target_entity,
+    ecs_key_animated_by,
+    AnimatedBy::new(player_entity),
+  )
+
+  app = app.run_once()
+
+  debug_inspect(root_stage_labels, content="[\"root\"]")
+  debug_inspect(final_stage_labels, content="[\"root\", \"target\"]")
 }
 
 ///|

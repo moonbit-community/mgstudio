@@ -175,7 +175,7 @@ priv struct GltfImageDef {
 priv struct GltfAnimationSamplerDef {
   input : Int?
   output : Int?
-  is_cubic_spline : Bool
+  interpolation : @animation.GltfInterpolation
 }
 
 ///|
@@ -952,11 +952,10 @@ fn gltf_sampler_wrap_is_repeat(wrap_mode : Int) -> Bool {
 }
 
 ///|
-fn gltf_parse_animation_interpolation(obj : Map[String, Json]) -> Bool {
-  match json_get_string(obj, "interpolation") {
-    Some("CUBICSPLINE") => true
-    _ => false
-  }
+fn gltf_parse_animation_interpolation(
+  obj : Map[String, Json],
+) -> @animation.GltfInterpolation {
+  @animation.gltf_interpolation_from_name(json_get_string(obj, "interpolation"))
 }
 
 ///|
@@ -1437,13 +1436,13 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               animation_samplers.push({
                 input: json_get_int(sampler_obj, "input"),
                 output: json_get_int(sampler_obj, "output"),
-                is_cubic_spline: gltf_parse_animation_interpolation(sampler_obj),
+                interpolation: gltf_parse_animation_interpolation(sampler_obj),
               })
             } else {
               animation_samplers.push({
                 input: None,
                 output: None,
-                is_cubic_spline: false,
+                interpolation: @animation.gltf_interpolation_from_name(None),
               })
             }
           }
@@ -2042,33 +2041,6 @@ fn gltf_read_accessor_timestamps(
 }
 
 ///|
-fn gltf_read_accessor_quat(
-  doc : ParsedGltfDocument,
-  buffer_bytes : Array[Bytes],
-  accessor_index : Int,
-) -> Array[@math.Quat]? {
-  guard gltf_read_accessor_f32_components(doc, buffer_bytes, accessor_index)
-    is Some(decoded) else {
-    return None
-  }
-  guard decoded.0 == 4 else { return None }
-  guard decoded.1.length() % 4 == 0 else { return None }
-  let out : Array[@math.Quat] = []
-  let quat_count = decoded.1.length() / 4
-  for i in 0..<quat_count {
-    out.push(
-      @math.Quat::new(
-        decoded.1[i * 4],
-        decoded.1[i * 4 + 1],
-        decoded.1[i * 4 + 2],
-        decoded.1[i * 4 + 3],
-      ).normalize(),
-    )
-  }
-  Some(out)
-}
-
-///|
 fn gltf_node_path_name(node : GltfNodeDef, node_index : Int) -> String {
   if node.name == "" {
     "GltfNode\{node_index.to_string()}"
@@ -2173,86 +2145,6 @@ fn gltf_collect_animation_root_indices(doc : ParsedGltfDocument) -> Array[Int] {
     }
   }
   roots
-}
-
-///|
-fn gltf_animation_select_vec3_samples(
-  samples : Array[@math.Vec3],
-  keyframe_count : Int,
-  is_cubic_spline : Bool,
-) -> Array[@math.Vec3]? {
-  if keyframe_count <= 0 {
-    return None
-  }
-  if samples.length() == keyframe_count {
-    return Some(samples)
-  }
-  if is_cubic_spline && samples.length() == keyframe_count * 3 {
-    let values : Array[@math.Vec3] = []
-    for i in 0..<keyframe_count {
-      values.push(samples[i * 3 + 1])
-    }
-    return Some(values)
-  }
-  None
-}
-
-///|
-fn gltf_animation_select_quat_samples(
-  samples : Array[@math.Quat],
-  keyframe_count : Int,
-  is_cubic_spline : Bool,
-) -> Array[@math.Quat]? {
-  if keyframe_count <= 0 {
-    return None
-  }
-  if samples.length() == keyframe_count {
-    return Some(samples)
-  }
-  if is_cubic_spline && samples.length() == keyframe_count * 3 {
-    let values : Array[@math.Quat] = []
-    for i in 0..<keyframe_count {
-      values.push(samples[i * 3 + 1])
-    }
-    return Some(values)
-  }
-  None
-}
-
-///|
-fn gltf_animation_decode_weight_samples(
-  flat_samples : Array[Float],
-  keyframe_count : Int,
-  is_cubic_spline : Bool,
-) -> Array[Array[Float]]? {
-  guard keyframe_count > 0 else { return None }
-
-  let mut values_per_frame = 0
-  let mut use_cubic_mid_value = false
-
-  if flat_samples.length() % keyframe_count == 0 {
-    values_per_frame = flat_samples.length() / keyframe_count
-  }
-  if is_cubic_spline && flat_samples.length() % (keyframe_count * 3) == 0 {
-    values_per_frame = flat_samples.length() / (keyframe_count * 3)
-    use_cubic_mid_value = true
-  }
-
-  guard values_per_frame > 0 else { return None }
-  let values : Array[Array[Float]] = []
-  for frame in 0..<keyframe_count {
-    let frame_values : Array[Float] = []
-    let base = if use_cubic_mid_value {
-      frame * values_per_frame * 3 + values_per_frame
-    } else {
-      frame * values_per_frame
-    }
-    for i in 0..<values_per_frame {
-      frame_values.push(flat_samples[base + i])
-    }
-    values.push(frame_values)
-  }
-  Some(values)
 }
 
 ///|
@@ -2676,61 +2568,46 @@ fn scene_build_animation_clip_from_gltf(
     match channel.target_path {
       "translation" => {
         guard gltf_read_accessor_vec3(doc, buffer_bytes, output_accessor)
-          is Some(raw_samples) else {
+          is Some(samples) else {
           continue
         }
-        guard gltf_animation_select_vec3_samples(
-            raw_samples,
-            timestamps.length(),
-            sampler.is_cubic_spline,
+        guard @animation.gltf_translation_keyframes_from_samples(
+            timestamps,
+            samples,
+            sampler.interpolation,
           )
-          is Some(values) else {
+          is Some(keyframes) else {
           continue
-        }
-        guard values.length() == timestamps.length() else { continue }
-        let keyframes : Array[@animation.KeyframeVec3] = []
-        for i in 0..<timestamps.length() {
-          keyframes.push(@animation.KeyframeVec3::new(timestamps[i], values[i]))
         }
         clip.add_translation_curve(target_id, keyframes) |> ignore
       }
       "rotation" => {
-        guard gltf_read_accessor_quat(doc, buffer_bytes, output_accessor)
-          is Some(raw_samples) else {
+        guard gltf_read_accessor_vec4(doc, buffer_bytes, output_accessor)
+          is Some(samples) else {
           continue
         }
-        guard gltf_animation_select_quat_samples(
-            raw_samples,
-            timestamps.length(),
-            sampler.is_cubic_spline,
+        guard @animation.gltf_rotation_keyframes_from_samples(
+            timestamps,
+            samples,
+            sampler.interpolation,
           )
-          is Some(values) else {
+          is Some(keyframes) else {
           continue
-        }
-        guard values.length() == timestamps.length() else { continue }
-        let keyframes : Array[@animation.KeyframeQuat] = []
-        for i in 0..<timestamps.length() {
-          keyframes.push(@animation.KeyframeQuat::new(timestamps[i], values[i]))
         }
         clip.add_rotation_curve(target_id, keyframes) |> ignore
       }
       "scale" => {
         guard gltf_read_accessor_vec3(doc, buffer_bytes, output_accessor)
-          is Some(raw_samples) else {
+          is Some(samples) else {
           continue
         }
-        guard gltf_animation_select_vec3_samples(
-            raw_samples,
-            timestamps.length(),
-            sampler.is_cubic_spline,
+        guard @animation.gltf_translation_keyframes_from_samples(
+            timestamps,
+            samples,
+            sampler.interpolation,
           )
-          is Some(values) else {
+          is Some(keyframes) else {
           continue
-        }
-        guard values.length() == timestamps.length() else { continue }
-        let keyframes : Array[@animation.KeyframeVec3] = []
-        for i in 0..<timestamps.length() {
-          keyframes.push(@animation.KeyframeVec3::new(timestamps[i], values[i]))
         }
         clip.add_scale_curve(target_id, keyframes) |> ignore
       }
@@ -2742,20 +2619,13 @@ fn scene_build_animation_clip_from_gltf(
           continue
         }
         guard decoded.0 == 1 else { continue }
-        guard gltf_animation_decode_weight_samples(
+        guard @animation.gltf_weight_keyframes_from_flat_samples(
+            timestamps,
             decoded.1,
-            timestamps.length(),
-            sampler.is_cubic_spline,
+            sampler.interpolation,
           )
-          is Some(values) else {
+          is Some(keyframes) else {
           continue
-        }
-        guard values.length() == timestamps.length() else { continue }
-        let keyframes : Array[@animation.KeyframeWeights] = []
-        for i in 0..<timestamps.length() {
-          keyframes.push(
-            @animation.KeyframeWeights::new(timestamps[i], values[i]),
-          )
         }
         clip.add_weights_curve(target_id, keyframes) |> ignore
       }

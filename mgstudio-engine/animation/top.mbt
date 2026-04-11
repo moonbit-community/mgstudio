@@ -236,7 +236,7 @@ pub fn ActiveAnimation::set_weight(
   self : ActiveAnimation,
   weight : Float,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, weight: if weight < 0.0F { 0.0F } else { weight } }
+  ActiveAnimation::{ ..self, weight }
 }
 
 ///|
@@ -334,23 +334,7 @@ pub fn ActiveAnimation::replay(self : ActiveAnimation) -> ActiveAnimation {
     last_seek_time: None,
     completions: 0,
     just_completed: false,
-    paused: false,
   }
-}
-
-///|
-fn active_animation_wrap_time(seek_time : Float, duration : Float) -> Float {
-  if duration <= 0.0F {
-    return 0.0F
-  }
-  let mut out = seek_time
-  while out >= duration {
-    out = out - duration
-  }
-  while out < 0.0F {
-    out = out + duration
-  }
-  out
 }
 
 ///|
@@ -364,7 +348,7 @@ pub fn ActiveAnimation::update(
     just_completed: false,
     last_seek_time: Some(self.seek_time),
   }
-  if out.paused || out.is_finished() {
+  if out.is_finished() {
     return out
   }
   if clip_duration_seconds <= 0.0F {
@@ -382,40 +366,50 @@ pub fn ActiveAnimation::update(
     out.just_completed = true
     out.completions = out.completions + 1
     if out.is_finished() {
-      out.seek_time = if out.speed >= 0.0F {
-        clip_duration_seconds
-      } else {
-        0.0F
-      }
       return out
     }
   }
 
-  out.seek_time = active_animation_wrap_time(
-    out.seek_time,
-    clip_duration_seconds,
-  )
+  if out.seek_time >= clip_duration_seconds {
+    out.seek_time = out.seek_time % clip_duration_seconds
+  }
+  // Assumes delta_seconds >= -clip_duration_seconds, matching Bevy behavior.
+  if out.seek_time < 0.0F {
+    out.seek_time = out.seek_time + clip_duration_seconds
+  }
   out
 }
 
 ///|
-fn animation_player_find(
-  player : AnimationPlayer,
-  node : AnimationNodeIndex,
-) -> Int? {
-  let mut i = 0
-  while i < player.active_animations.length() {
-    if player.active_animations[i].0 == node {
-      return Some(i)
-    }
-    i = i + 1
+fn animation_player_node_key(node : AnimationNodeIndex) -> Int {
+  node.index()
+}
+
+///|
+fn animation_player_sorted_node_keys(player : AnimationPlayer) -> Array[Int] {
+  let keys : Array[Int] = []
+  for entry in player.active_animations.iter() {
+    let (node_key, _active) = entry
+    keys.push(node_key)
   }
-  None
+  keys.sort()
+  keys
+}
+
+///|
+fn animation_player_sorted_nodes(
+  player : AnimationPlayer,
+) -> Array[AnimationNodeIndex] {
+  let nodes : Array[AnimationNodeIndex] = []
+  for node_key in animation_player_sorted_node_keys(player) {
+    nodes.push(AnimationNodeIndex::new(node_key))
+  }
+  nodes
 }
 
 ///|
 struct AnimationPlayer {
-  active_animations : Array[(AnimationNodeIndex, ActiveAnimation)]
+  active_animations : Map[Int, ActiveAnimation]
 }
 
 ///|
@@ -447,7 +441,7 @@ fn animation_player_entry_active_or_abort(
 
 ///|
 pub impl ToJson for AnimationPlayer with to_json(self) {
-  self.active_animations.to_json()
+  self.playing_animations().to_json()
 }
 
 ///|
@@ -456,19 +450,28 @@ pub impl @json.FromJson for AnimationPlayer with from_json(json, path) {
     json,
     path~,
   )
-  AnimationPlayer::{ active_animations, }
+  let active_animations_map : Map[Int, ActiveAnimation] = {}
+  for pair in active_animations {
+    active_animations_map.set(animation_player_node_key(pair.0), pair.1)
+  }
+  AnimationPlayer::{ active_animations: active_animations_map }
 }
 
 ///|
 pub fn AnimationPlayer::default() -> AnimationPlayer {
-  AnimationPlayer::{ active_animations: [] }
+  AnimationPlayer::{ active_animations: {} }
 }
 
 ///|
 pub fn AnimationPlayer::playing_animations(
   self : AnimationPlayer,
 ) -> Array[(AnimationNodeIndex, ActiveAnimation)] {
-  self.active_animations
+  let out : Array[(AnimationNodeIndex, ActiveAnimation)] = []
+  for node in animation_player_sorted_nodes(self) {
+    guard self.animation(node) is Some(active) else { continue }
+    out.push((node, active))
+  }
+  out
 }
 
 ///|
@@ -476,8 +479,8 @@ pub fn AnimationPlayer::playing_animations_mut(
   self : AnimationPlayer,
 ) -> Array[AnimationPlayerEntry] {
   let out : Array[AnimationPlayerEntry] = []
-  for pair in self.active_animations {
-    out.push(animation_player_entry_new(self, pair.0))
+  for node in animation_player_sorted_nodes(self) {
+    out.push(animation_player_entry_new(self, node))
   }
   out
 }
@@ -487,11 +490,7 @@ pub fn AnimationPlayer::animation(
   self : AnimationPlayer,
   node : AnimationNodeIndex,
 ) -> ActiveAnimation? {
-  if animation_player_find(self, node) is Some(index) {
-    Some(self.active_animations[index].1)
-  } else {
-    None
-  }
+  self.active_animations.get(animation_player_node_key(node))
 }
 
 ///|
@@ -550,17 +549,13 @@ pub fn AnimationPlayer::set_animation(
   node : AnimationNodeIndex,
   active : ActiveAnimation,
 ) -> AnimationPlayer {
-  if animation_player_find(self, node) is Some(index) {
-    self.active_animations[index] = (node, active)
-  } else {
-    self.active_animations.push((node, active))
-  }
+  self.active_animations.set(animation_player_node_key(node), active)
   self
 }
 
 ///|
 pub fn AnimationPlayer::all_paused(self : AnimationPlayer) -> Bool {
-  for pair in self.active_animations {
+  for pair in self.playing_animations() {
     if !pair.1.is_paused() {
       return false
     }
@@ -570,27 +565,27 @@ pub fn AnimationPlayer::all_paused(self : AnimationPlayer) -> Bool {
 
 ///|
 pub fn AnimationPlayer::pause_all(self : AnimationPlayer) -> AnimationPlayer {
-  for i in 0..<self.active_animations.length() {
-    let pair = self.active_animations[i]
-    self.set_animation(pair.0, pair.1.pause()) |> ignore
+  for node in animation_player_sorted_nodes(self) {
+    guard self.animation(node) is Some(active) else { continue }
+    self.set_animation(node, active.pause()) |> ignore
   }
   self
 }
 
 ///|
 pub fn AnimationPlayer::resume_all(self : AnimationPlayer) -> AnimationPlayer {
-  for i in 0..<self.active_animations.length() {
-    let pair = self.active_animations[i]
-    self.set_animation(pair.0, pair.1.unpause()) |> ignore
+  for node in animation_player_sorted_nodes(self) {
+    guard self.animation(node) is Some(active) else { continue }
+    self.set_animation(node, active.unpause()) |> ignore
   }
   self
 }
 
 ///|
 pub fn AnimationPlayer::rewind_all(self : AnimationPlayer) -> AnimationPlayer {
-  for i in 0..<self.active_animations.length() {
-    let pair = self.active_animations[i]
-    self.set_animation(pair.0, pair.1.rewind()) |> ignore
+  for node in animation_player_sorted_nodes(self) {
+    guard self.animation(node) is Some(active) else { continue }
+    self.set_animation(node, active.rewind()) |> ignore
   }
   self
 }
@@ -600,10 +595,9 @@ pub fn AnimationPlayer::adjust_speeds(
   self : AnimationPlayer,
   factor : Float,
 ) -> AnimationPlayer {
-  for i in 0..<self.active_animations.length() {
-    let pair = self.active_animations[i]
-    let active = pair.1
-    self.set_animation(pair.0, active.set_speed(active.speed() * factor))
+  for node in animation_player_sorted_nodes(self) {
+    guard self.animation(node) is Some(active) else { continue }
+    self.set_animation(node, active.set_speed(active.speed() * factor))
     |> ignore
   }
   self
@@ -614,10 +608,9 @@ pub fn AnimationPlayer::seek_all_by(
   self : AnimationPlayer,
   amount : Float,
 ) -> AnimationPlayer {
-  for i in 0..<self.active_animations.length() {
-    let pair = self.active_animations[i]
-    let active = pair.1
-    self.set_animation(pair.0, active.seek_to(active.seek_time() + amount))
+  for node in animation_player_sorted_nodes(self) {
+    guard self.animation(node) is Some(active) else { continue }
+    self.set_animation(node, active.seek_to(active.seek_time() + amount))
     |> ignore
   }
   self
@@ -632,7 +625,7 @@ pub fn AnimationPlayer::start(
     return existing.replay()
   }
   let active = ActiveAnimation::default()
-  self.active_animations.push((node, active))
+  self.active_animations.set(animation_player_node_key(node), active)
   animation_player_entry_new(self, node)
 }
 
@@ -645,7 +638,7 @@ pub fn AnimationPlayer::play(
     return existing
   }
   let active = ActiveAnimation::default()
-  self.active_animations.push((node, active))
+  self.active_animations.set(animation_player_node_key(node), active)
   animation_player_entry_new(self, node)
 }
 
@@ -654,11 +647,7 @@ pub fn AnimationPlayer::stop(
   self : AnimationPlayer,
   node : AnimationNodeIndex,
 ) -> AnimationPlayer {
-  if animation_player_find(self, node) is Some(index) {
-    let last = self.active_animations.length() - 1
-    self.active_animations[index] = self.active_animations[last]
-    self.active_animations.pop() |> ignore
-  }
+  ignore(self.active_animations.remove(animation_player_node_key(node)))
   self
 }
 
@@ -670,7 +659,7 @@ pub fn AnimationPlayer::stop_all(self : AnimationPlayer) -> AnimationPlayer {
 
 ///|
 pub fn AnimationPlayer::all_finished(self : AnimationPlayer) -> Bool {
-  for pair in self.active_animations {
+  for pair in self.playing_animations() {
     if !pair.1.is_finished() {
       return false
     }
@@ -853,9 +842,9 @@ fn animation_player_tick(
   graph : AnimationGraph,
   delta_seconds : Float,
 ) -> AnimationPlayer {
-  let mut i = 0
-  while i < player.active_animations.length() {
-    let (node, active) = player.active_animations[i]
+  for pair in player.playing_animations() {
+    let node = pair.0
+    let active = pair.1
     let mut next_active = active
     if active.is_paused() {
       ()
@@ -866,8 +855,7 @@ fn animation_player_tick(
         }
       }
     }
-    player.active_animations[i] = (node, next_active)
-    i = i + 1
+    player.set_animation(node, next_active) |> ignore
   }
   player
 }
@@ -1099,6 +1087,7 @@ fn animation_apply_prepared_player_to_target(
   (transform_out, weights_out, text_color_out)
 }
 
+///|
 pub let animation_set_thread : @app.SystemSet = @app.system_set(
   "mgstudio.animation.thread",
 )
@@ -1116,6 +1105,11 @@ pub let animation_set_advance_animations : @app.SystemSet = @app.system_set(
 ///|
 pub let animation_set_animate_targets : @app.SystemSet = @app.system_set(
   "mgstudio.animation.animate_targets",
+)
+
+///|
+pub let animation_set_trigger_untargeted_events : @app.SystemSet = @app.system_set(
+  "mgstudio.animation.trigger_untargeted_events",
 )
 
 ///|
@@ -1330,14 +1324,17 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn trigger_events(world : @ecs.World) -> Unit {
-  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    @app.current_system_sequence().this_run,
-  )
-  let players_with_target_events : Map[Int, (AnimationPlayer, AnimationGraph)] = {}
+fn animation_collect_players_with_target_events(
+  world : @ecs.World,
+) -> (Map[Int, (AnimationPlayer, AnimationGraph, ThreadedAnimationGraph)], Bool) {
+  let players_with_target_events : Map[
+    Int,
+    (AnimationPlayer, AnimationGraph, ThreadedAnimationGraph),
+  ] = {}
   let mut has_any_target_events = false
-
-  // Root (untargeted) events fire on the player entity.
+  let threaded_graphs = try! world.get_resource_ref(
+    threaded_animation_graphs_key,
+  )
   let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
     world,
   )
@@ -1350,7 +1347,53 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
+    let graph_id = graph_handle.graph().id()
+    let threaded_graph = match threaded_graphs {
+      Some(threaded_graphs) =>
+        match threaded_graphs.val.graphs.get(graph_id) {
+          Some(cached_threaded) => cached_threaded
+          None => animation_thread_graph_build(graph)
+        }
+      None => animation_thread_graph_build(graph)
+    }
     let mut player_has_target_events = false
+    for pair in player.playing_animations() {
+      let node_index = pair.0
+      guard graph.get(node_index) is Some(node) else { continue }
+      guard node.node_type is Clip(clip_handle) else { continue }
+      guard animation_clip_get(clip_handle) is Some(clip) else { continue }
+      if clip.events_targets.length() > 0 {
+        player_has_target_events = true
+      }
+    }
+    if player_has_target_events {
+      players_with_target_events.set(
+        player_entity.id,
+        (player, graph, threaded_graph),
+      )
+      has_any_target_events = true
+    }
+  })
+  (players_with_target_events, has_any_target_events)
+}
+
+///|
+pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
+  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
+    @app.current_system_sequence().this_run,
+  )
+  let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! player_query.view(fn(player_entity, player) {
+    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
+      is Some(graph_handle) else {
+      return
+    }
+    let player = player.value()
+    guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
+      return
+    }
     for pair in player.playing_animations() {
       let node_index = pair.0
       let active = pair.1
@@ -1360,9 +1403,6 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
       guard graph.get(node_index) is Some(node) else { continue }
       guard node.node_type is Clip(clip_handle) else { continue }
       guard animation_clip_get(clip_handle) is Some(clip) else { continue }
-      if !player_has_target_events && clip.events_targets.length() > 0 {
-        player_has_target_events = true
-      }
       let triggered = animation_clip_collect_triggered_events(
         clip.events_root,
         active,
@@ -1380,13 +1420,17 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
         triggered,
       )
     }
-    if player_has_target_events {
-      players_with_target_events.set(player_entity.id, (player, graph))
-      has_any_target_events = true
-    }
   })
+}
 
-  // Targeted events fire on the animated target entity.
+///|
+pub fn trigger_events(world : @ecs.World) -> Unit {
+  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
+    @app.current_system_sequence().this_run,
+  )
+  let (players_with_target_events, has_any_target_events) = animation_collect_players_with_target_events(
+    world,
+  )
   if !has_any_target_events {
     return
   }
@@ -1400,7 +1444,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
     }
     let player_entity = animated_by.player()
     guard players_with_target_events.get(player_entity.id)
-      is Some((player, graph)) else {
+      is Some((player, graph, threaded_graph)) else {
       return
     }
     let target_id = target_id.value()
@@ -1413,10 +1457,23 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
       }
       guard graph.get(node_index) is Some(node) else { continue }
       guard node.node_type is Clip(clip_handle) else { continue }
-      if (target_mask & graph.computed_mask(node_index)) != 0U {
+      let node_i = node_index.index()
+      let computed_mask = if node_i >= 0 &&
+        node_i < threaded_graph.computed_masks.length() {
+        threaded_graph.computed_masks[node_i]
+      } else {
+        graph.computed_mask(node_index)
+      }
+      if (target_mask & computed_mask) != 0U {
         continue
       }
-      let combined_weight = active.weight() * graph.effective_weight(node_index)
+      let effective_weight = if node_i >= 0 &&
+        node_i < threaded_graph.effective_weights.length() {
+        threaded_graph.effective_weights[node_i]
+      } else {
+        graph.effective_weight(node_index)
+      }
+      let combined_weight = active.weight() * effective_weight
       if combined_weight <= 0.0F {
         continue
       }
@@ -1468,6 +1525,11 @@ pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(animate_targets).in_set(animation_set_animate_targets),
   )
   .add_post_update_system_config(
+    @app.system(trigger_untargeted_animation_events).in_set(
+      animation_set_trigger_untargeted_events,
+    ),
+  )
+  .add_post_update_system_config(
     @app.system(trigger_events).in_set(animation_set_trigger_events),
   )
   .add_post_update_system_config(
@@ -1483,6 +1545,9 @@ pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     animation_set_animate_targets,
   ])
   .configure_set(@app.PostUpdate, animation_set_animate_targets, before=[
+    animation_set_trigger_untargeted_events,
+  ])
+  .configure_set(@app.PostUpdate, animation_set_trigger_untargeted_events, before=[
     animation_set_trigger_events,
   ])
   .configure_set(@app.PostUpdate, animation_set_animate_targets, before=[

@@ -54,6 +54,22 @@ pub fn animation_graph_root_node(AnimationGraph) -> AnimationNodeIndex
 
 pub fn animation_graph_set(@asset.Handle[AnimationGraph], AnimationGraph) -> Bool
 
+pub fn animation_interpolate_color_unclamped(@color.Color, @color.Color, Float) -> @color.Color
+
+pub fn animation_interpolate_float_unclamped(Float, Float, Float) -> Float
+
+pub fn animation_interpolate_quat_unclamped(@math.Quat, @math.Quat, Float) -> @math.Quat
+
+pub fn animation_interpolate_vec3_unclamped(@math.Vec3, @math.Vec3, Float) -> @math.Vec3
+
+pub fn animation_interpolate_weights_unclamped(Array[Float], Array[Float], Float) -> Array[Float]
+
+pub fn animation_interpolate_with_cubic_bezier_quat(@math.Quat, @math.Vec4, @math.Vec4, @math.Quat, Float, Float) -> @math.Quat
+
+pub fn animation_interpolate_with_cubic_bezier_vec3(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3, Float, Float) -> @math.Vec3
+
+pub fn animation_interpolate_with_cubic_bezier_weights(Array[Float], Array[Float], Array[Float], Array[Float], Float, Float) -> Array[Float]
+
 pub fn animation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn animation_register_clip_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
@@ -75,6 +91,12 @@ pub let animation_set_expire_transitions : String
 pub let animation_set_thread : String
 
 pub let animation_set_trigger_events : String
+
+pub let animation_set_trigger_untargeted_events : String
+
+pub fn animation_step_bool_unclamped(Bool, Bool, Float) -> Bool
+
+pub fn animation_target_id_for_iter(Array[String]) -> AnimationTargetId
 
 pub fn animation_target_id_for_name(String) -> AnimationTargetId
 
@@ -102,7 +124,21 @@ pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights]
 
 pub fn expire_transitions(@ecs.World) -> Unit
 
+pub fn gltf_interpolation_from_name(String?) -> GltfInterpolation
+
+pub fn gltf_interpolation_is_cubic_spline(GltfInterpolation) -> Bool
+
+pub fn gltf_interpolation_is_step(GltfInterpolation) -> Bool
+
+pub fn gltf_rotation_keyframes_from_samples(Array[Float], Array[@math.Vec4], GltfInterpolation) -> Array[KeyframeQuat]?
+
+pub fn gltf_translation_keyframes_from_samples(Array[Float], Array[@math.Vec3], GltfInterpolation) -> Array[KeyframeVec3]?
+
+pub fn gltf_weight_keyframes_from_flat_samples(Array[Float], Array[Float], GltfInterpolation) -> Array[KeyframeWeights]?
+
 pub fn trigger_events(@ecs.World) -> Unit
+
+pub fn trigger_untargeted_animation_events(@ecs.World) -> Unit
 
 // Errors
 
@@ -145,6 +181,7 @@ pub fn ActiveAnimation::weight(Self) -> Float
 pub impl ToJson for ActiveAnimation
 pub impl @json.FromJson for ActiveAnimation
 
+#alias(VariableCurve)
 pub(all) enum AnimatableCurve {
   Translation(@math.Curve[@math.Vec3])
   Rotation(@math.Curve[@math.Quat])
@@ -179,7 +216,12 @@ pub fn AnimationClip::add_text_color_curve(Self, AnimationTargetId, Array[Keyfra
 pub fn AnimationClip::add_translation_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
 pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event(Self, Float, T) -> Self
 pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event_to_target(Self, AnimationTargetId, Float, T) -> Self
+pub fn AnimationClip::add_variable_curve_to_target(Self, AnimationTargetId, AnimatableCurve, sample_count? : Int) -> Self
 pub fn AnimationClip::add_weights_curve(Self, AnimationTargetId, Array[KeyframeWeights]) -> Self
+pub fn AnimationClip::curves(Self) -> Array[(AnimationTargetId, AnimationTargetCurves)]
+pub fn AnimationClip::curves_for_target(Self, AnimationTargetId) -> AnimationTargetCurves?
+pub fn AnimationClip::curves_for_target_mut(Self, AnimationTargetId) -> AnimationTargetCurves?
+pub fn AnimationClip::curves_mut(Self) -> Array[(AnimationTargetId, AnimationTargetCurves)]
 pub fn AnimationClip::duration(Self) -> Float
 pub fn AnimationClip::events(Self) -> Array[AnimationClipEvent]
 pub fn AnimationClip::events_for_target(Self, AnimationTargetId) -> Array[AnimationClipEvent]?
@@ -359,6 +401,7 @@ pub struct AnimationTargetId {
   high : Int
   low : Int
 } derive(Eq, @debug.Debug)
+pub fn AnimationTargetId::from_iter(Array[String]) -> Self
 pub fn AnimationTargetId::from_name(String) -> Self
 pub fn AnimationTargetId::from_names(Array[String]) -> Self
 pub fn AnimationTargetId::new(Int, Int) -> Self
@@ -420,6 +463,19 @@ pub impl @ecs.Component for AnimationWeights
 pub impl ToJson for AnimationWeights
 pub impl @json.FromJson for AnimationWeights
 
+pub struct BlendInput[T] {
+  weight : Float
+  value : T
+  additive : Bool
+}
+pub fn[T] BlendInput::new(Float, T, additive? : Bool) -> Self[T]
+
+pub enum GltfInterpolation {
+  Linear
+  Step
+  CubicSpline
+}
+
 pub struct KeyframeColor {
   time : Float
   value : @color.Color
@@ -429,20 +485,35 @@ pub fn KeyframeColor::new(Float, @color.Color) -> Self
 pub struct KeyframeQuat {
   time : Float
   value : @math.Quat
+  interpolation : GltfInterpolation
+  in_tangent : @math.Vec4?
+  out_tangent : @math.Vec4?
 }
 pub fn KeyframeQuat::new(Float, @math.Quat) -> Self
+pub fn KeyframeQuat::new_cubic(Float, @math.Quat, @math.Vec4, @math.Vec4) -> Self
+pub fn KeyframeQuat::new_stepped(Float, @math.Quat) -> Self
 
 pub struct KeyframeVec3 {
   time : Float
   value : @math.Vec3
+  interpolation : GltfInterpolation
+  in_tangent : @math.Vec3?
+  out_tangent : @math.Vec3?
 }
 pub fn KeyframeVec3::new(Float, @math.Vec3) -> Self
+pub fn KeyframeVec3::new_cubic(Float, @math.Vec3, @math.Vec3, @math.Vec3) -> Self
+pub fn KeyframeVec3::new_stepped(Float, @math.Vec3) -> Self
 
 pub struct KeyframeWeights {
   time : Float
   value : Array[Float]
+  interpolation : GltfInterpolation
+  in_tangent : Array[Float]?
+  out_tangent : Array[Float]?
 }
 pub fn KeyframeWeights::new(Float, Array[Float]) -> Self
+pub fn KeyframeWeights::new_cubic(Float, Array[Float], Array[Float], Array[Float]) -> Self
+pub fn KeyframeWeights::new_stepped(Float, Array[Float]) -> Self
 
 pub(all) enum RepeatAnimation {
   Never

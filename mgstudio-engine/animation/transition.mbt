@@ -91,15 +91,15 @@ fn animation_transitions_remove_for_animation(
   transitions : AnimationTransitions,
   node : AnimationNodeIndex,
 ) -> Unit {
-  let mut i = 0
-  while i < transitions.transitions.length() {
-    if transitions.transitions[i].animation == node {
-      let last = transitions.transitions.length() - 1
-      transitions.transitions[i] = transitions.transitions[last]
-      transitions.transitions.pop() |> ignore
-    } else {
-      i = i + 1
+  let kept : Array[AnimationTransition] = []
+  for transition in transitions.transitions {
+    if transition.animation != node {
+      kept.push(transition)
     }
+  }
+  transitions.transitions.clear()
+  for transition in kept {
+    transitions.transitions.push(transition)
   }
 }
 
@@ -188,17 +188,17 @@ fn animation_transitions_expire(
   player : AnimationPlayer,
 ) -> (AnimationTransitions, AnimationPlayer) {
   let mut next_player = player
-  let mut i = 0
-  while i < transitions.transitions.length() {
-    let transition = transitions.transitions[i]
+  let kept : Array[AnimationTransition] = []
+  for transition in transitions.transitions {
     if transition.current_weight <= 0.0F {
       next_player = next_player.stop(transition.animation)
-      let last = transitions.transitions.length() - 1
-      transitions.transitions[i] = transitions.transitions[last]
-      transitions.transitions.pop() |> ignore
     } else {
-      i = i + 1
+      kept.push(transition)
     }
+  }
+  transitions.transitions.clear()
+  for transition in kept {
+    transitions.transitions.push(transition)
   }
   (transitions, next_player)
 }

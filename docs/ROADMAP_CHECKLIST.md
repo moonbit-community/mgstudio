@@ -1,4 +1,4 @@
-This file must not exceed 200 lines.
+This file must not exceed 200 lines. Exceeded done items should be archived to ARCHIVED_CHECKLIST.md.
 
 - [ ] Package `ecs` (pending full change-detection boundary closure).
 - [ ] Package `ldtk` (system-chain/message parity landed; pending full bevy_ecs_ldtk module/API/example closure).
@@ -152,6 +152,15 @@ This file must not exceed 200 lines.
 - [x] Issue `gltf/loader_bridge_gltf_ext_owner_wave_20260410`: switched `gltf/loader/top.mbt` metadata type exports (`GltfExtras/MaterialName/Mesh|Node|Scene|Skin indices`) to source through `gltf/loader/gltf_ext` instead of direct root aliases.
 - [x] Issue `gltf/loader_gltf_ext_helper_surface_wave_20260410`: expanded `gltf/loader/top.mbt` with Bevy-shaped glTF-ext helper forwards (`extras/indices/material|mesh|scene|skin|texture labels`) delegating to `gltf/loader/gltf_ext/*`.
 - [x] Issue `gltf/gltf_ext_metadata_owner_convergence_wave_20260410`: moved `GltfAssetLabel/GltfExtras/GltfMaterialName/Scene|Node|Mesh|Primitive|Skin metadata` type ownership into `gltf/loader/gltf_ext`, removed `gltf_ext -> root_gltf` dependency, and converted root files to compatibility aliases.
+- [x] Issue `animation/gltf_interpolation_curve_decode_parity_wave_20260411`: `scene/gltf_loader` now parses LINEAR/STEP/CUBICSPLINE into explicit interpolation mode and delegates translation/rotation/weights keyframe decoding to `animation/gltf_curves`, with runtime sampling using step/cubic semantics instead of linear-only fallback.
+- [x] Issue `animation/clip_variable_curve_surface_wave_20260411`: added Bevy-shaped `VariableCurve` alias and `AnimationClip` curve surface helpers (`curves/curves_mut/curves_for_target/curves_for_target_mut/add_variable_curve_to_target`) on top of runtime clip data.
+- [x] Issue `animation/player_active_map_storage_wave_20260411`: migrated `AnimationPlayer` active storage from linear array to node-index map (`Map[Int, ActiveAnimation]`) with deterministic iteration helpers, Bevy-like keyed access semantics, and updated tick/serde paths.
+- [x] Issue `animation/untargeted_event_system_split_wave_20260411`: split root-event dispatch into `trigger_untargeted_animation_events` and kept targeted dispatch in `trigger_events`, then wired schedule order `animate_targets -> trigger_untargeted -> trigger_events -> expire_transitions`.
+- [x] Issue `animation/active_animation_semantics_align_wave_20260411`: aligned `ActiveAnimation` core behavior to Bevy semantics (`set_weight` no clamp, `replay` no implicit unpause, `update` completion/wrap path parity).
+- [x] Issue `animation/typed_event_any_payload_ref_cleanup_wave_20260411`: migrated typed animation event payload from `Any<Ref<T>>` to `Any<T>` and kept `Ref` only in dispatch handoff for `TriggerEvent::set_observer_entity`.
+- [x] Issue `animation/target_id_from_iter_surface_wave_20260411`: added Bevy-shaped `AnimationTargetId::from_iter` (plus helper alias) and test coverage for `from_iter == from_names`.
+- [x] Issue `animation/transitions_retain_order_semantics_wave_20260411`: replaced swap-remove style transition filtering/expiry with retain-style stable order semantics to match Bevy transition behavior.
+- [x] Issue `animation/targeted_event_threaded_mask_weight_wave_20260411`: switched targeted event filtering/weight path to threaded graph `computed_masks/effective_weights` (same source as `animate_targets`) to remove graph/runtime divergence.
 - [x] Issue `render/extract_sync_surface_shape_wave_20260410`: upgraded `render/extract_component`, `render/extract_resource`, `render/extract_param`, `render/sync_component`, and `render/sync_world` from thin plugin forwarders to Bevy-named extract/sync data-shape APIs while keeping current runtime path stable.
 - [x] Issue `pbr/deferred_subpackage_topology`: landed `pbr/deferred` subpackage with `top.mbt` bridge while keeping root `pbr/deferred.mbt` implementation stable.
 - [x] Issue `pbr/lightmap_subpackage_topology`: landed `pbr/lightmap` subpackage with `Lightmap` owner + local `@ecs.Component` impl; root now aliases key/type.

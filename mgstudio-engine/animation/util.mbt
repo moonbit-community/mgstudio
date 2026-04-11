@@ -115,6 +115,13 @@ pub fn AnimationTargetId::from_names(
 }
 
 ///|
+pub fn AnimationTargetId::from_iter(
+  names : Array[String],
+) -> AnimationTargetId {
+  AnimationTargetId::from_names(names)
+}
+
+///|
 pub fn AnimationTargetId::from_name(name : String) -> AnimationTargetId {
   AnimationTargetId::from_names([name])
 }
@@ -136,4 +143,11 @@ pub fn animation_target_id_for_names(
   names : Array[String],
 ) -> AnimationTargetId {
   AnimationTargetId::from_names(names)
+}
+
+///|
+pub fn animation_target_id_for_iter(
+  names : Array[String],
+) -> AnimationTargetId {
+  AnimationTargetId::from_iter(names)
 }

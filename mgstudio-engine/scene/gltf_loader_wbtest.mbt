@@ -334,19 +334,35 @@ test "scene gltf wb: custom lod visibility policy and disable switch" {
 
 ///|
 test "scene gltf wb: parse animation channels and samplers" {
-  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"children\":[1]},{}],\"meshes\":[],\"buffers\":[{\"byteLength\":104}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32},{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"},{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"},{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}],\"animations\":[{\"samplers\":[{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"},{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"},{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"},{\"input\":0,\"output\":4}],\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}},{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}},{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}},{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}]}]}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"children\":[1]},{}],\"meshes\":[],\"buffers\":[{\"byteLength\":152}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32},{\"buffer\":0,\"byteOffset\":64,\"byteLength\":72},{\"buffer\":0,\"byteOffset\":136,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"},{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"},{\"bufferView\":3,\"componentType\":5126,\"count\":6,\"type\":\"VEC3\"},{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}],\"animations\":[{\"samplers\":[{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"},{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"},{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"},{\"input\":0,\"output\":4}],\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}},{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}},{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}},{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}]}]}"
   let doc = gltf_parse_document(source).unwrap()
   debug_inspect(doc.animations.length(), content="1")
   debug_inspect(doc.animations[0].samplers.length(), content="4")
   debug_inspect(doc.animations[0].channels.length(), content="4")
-  debug_inspect(doc.animations[0].samplers[1].is_cubic_spline, content="false")
-  debug_inspect(doc.animations[0].samplers[2].is_cubic_spline, content="true")
+  debug_inspect(
+    @animation.gltf_interpolation_is_cubic_spline(
+      doc.animations[0].samplers[1].interpolation,
+    ),
+    content="false",
+  )
+  debug_inspect(
+    @animation.gltf_interpolation_is_step(
+      doc.animations[0].samplers[1].interpolation,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    @animation.gltf_interpolation_is_cubic_spline(
+      doc.animations[0].samplers[2].interpolation,
+    ),
+    content="true",
+  )
   debug_inspect(doc.animations[0].channels[3].target_path, content="weights")
 }
 
 ///|
 test "scene gltf wb: build animation clip tracks and fallback node paths" {
-  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"children\":[1]},{}],\"meshes\":[],\"buffers\":[{\"byteLength\":104}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32},{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"},{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"},{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}],\"animations\":[{\"samplers\":[{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"},{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"},{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"},{\"input\":0,\"output\":4}],\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}},{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}},{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}},{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}]}]}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"children\":[1]},{}],\"meshes\":[],\"buffers\":[{\"byteLength\":152}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24},{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32},{\"buffer\":0,\"byteOffset\":64,\"byteLength\":72},{\"buffer\":0,\"byteOffset\":136,\"byteLength\":16}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"},{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"},{\"bufferView\":3,\"componentType\":5126,\"count\":6,\"type\":\"VEC3\"},{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}],\"animations\":[{\"samplers\":[{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"},{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"},{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"},{\"input\":0,\"output\":4}],\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}},{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}},{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}},{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}]}]}"
   let doc = gltf_parse_document(source).unwrap()
   let raw : Array[Byte] = []
   // input timestamps
@@ -368,13 +384,25 @@ test "scene gltf wb: build animation clip tracks and fallback node paths" {
   push_f32_le(raw, 0.70710677F)
   push_f32_le(raw, 0.0F)
   push_f32_le(raw, 0.70710677F)
-  // scale values
+  // scale values (CUBICSPLINE: in, value, out per keyframe)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
   push_f32_le(raw, 1.0F)
   push_f32_le(raw, 1.0F)
   push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
   push_f32_le(raw, 2.0F)
   push_f32_le(raw, 2.0F)
   push_f32_le(raw, 2.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
   // weights values
   push_f32_le(raw, 0.1F)
   push_f32_le(raw, 0.9F)
@@ -404,6 +432,15 @@ test "scene gltf wb: build animation clip tracks and fallback node paths" {
 
   let rotation = sample1.rotation().unwrap()
   debug_inspect(rotation.w >= 0.70F && rotation.w <= 0.71F, content="true")
+  let step_rotation_mid = clip
+    .sample_target(target1, 0.5F)
+    .unwrap()
+    .rotation()
+    .unwrap()
+  debug_inspect(
+    step_rotation_mid.w >= 0.99F && step_rotation_mid.w <= 1.01F,
+    content="true",
+  )
 
   let weights = sample1.weights().unwrap()
   debug_inspect(weights.length(), content="2")
