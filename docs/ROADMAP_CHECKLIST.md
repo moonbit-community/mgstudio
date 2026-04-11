@@ -2,10 +2,10 @@ This file must not exceed 200 lines.
 
 | Bevy Side | mgstudio Side | Status | Progress | Remaining Gaps / Notes | Next Action |
 |---|---|---|---:|---|---|
-| `bevy_app` | `mgstudio-engine/app` | ✅ Mostly Done | 96% | Core schedule/system-param path is stable and `moon test app --target native` (116/116) is green on 2026-04-12 after wbtest snapshot normalization for Debug output. | Keep maintenance-level parity checks with periodic wbtest snapshot audits. |
-| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | ✅ Mostly Done | 96% | `Changed<T>` query filter + system param path are in mainline and `moon test ecs --target native` (71/71) is green on 2026-04-12. | Keep maintenance-level parity checks and avoid reopening legacy surfaces. |
-| `bevy_transform` | `mgstudio-engine/transform` | ✅ Mostly Done | 96% | Transform propagation/runtime path is stable and `moon test transform --target native` (26/26) is green on 2026-04-12. | Keep maintenance-level parity checks with stress-scene regression tracking. |
-| `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 96% | Mainline behavior is aligned and hierarchy package tests are green (`moon test hierarchy --target native`, 6/6) on 2026-04-12. | Keep regression checks on large scene cases. |
+| `bevy_app` | `mgstudio-engine/app` | ✅ Mostly Done | 97% | Core schedule/system-param path stays stable and `moon test app --target native` (116/116) remains green on the latest 2026-04-12 run after wbtest snapshot normalization. | Keep maintenance-level parity checks with periodic wbtest snapshot audits. |
+| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | ✅ Mostly Done | 97% | `Changed<T>` query filter + system param path are in mainline and `moon test ecs --target native` (71/71) remains green on the latest 2026-04-12 run. | Keep maintenance-level parity checks and avoid reopening legacy surfaces. |
+| `bevy_transform` | `mgstudio-engine/transform` | ✅ Mostly Done | 97% | Transform propagation/runtime path is stable and `moon test transform --target native` (26/26) remains green on the latest 2026-04-12 run. | Keep maintenance-level parity checks with stress-scene regression tracking. |
+| `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 97% | Mainline behavior is aligned and hierarchy package tests remain green (`moon test hierarchy --target native`, 6/6) on the latest 2026-04-12 run. | Keep regression checks on large scene cases. |
 | `bevy_reflect` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Reflection is intentionally out of scope. | Do not implement unless scope changes. |
 | `bevy_tasks` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Async tasks parity is intentionally out of scope. | Keep excluded in mapping scripts. |
 | `bevy_render` (topology) | `mgstudio-engine/render` | ✅ Mostly Done | 96% | File topology is highly converged; owner split (`mesh3d_draw_storage_binding`, `mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_preprocess_indirect_offsets`) is stable and `moon check render --target native` is green on 2026-04-12. | Keep maintenance-level owner convergence only. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am11) |
+| Last updated | 2026-04-12 (am12) |
