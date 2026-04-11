@@ -8,10 +8,10 @@ This file must not exceed 200 lines.
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 95% | Mainline behavior is aligned and hierarchy package tests are green (`moon test hierarchy --target native`). | Keep regression checks on large scene cases. |
 | `bevy_reflect` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Reflection is intentionally out of scope. | Do not implement unless scope changes. |
 | `bevy_tasks` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Async tasks parity is intentionally out of scope. | Keep excluded in mapping scripts. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | ✅ Mostly Done | 95% | File topology is now highly converged; draw and preprocess offset owners are split out (`mesh3d_draw_storage_binding`, `mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_preprocess_indirect_offsets`) and checks stay green. | Keep maintenance-level owner convergence only. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | ✅ Mostly Done | 96% | File topology is highly converged; owner split (`mesh3d_draw_storage_binding`, `mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_preprocess_indirect_offsets`) is stable and `moon check render --target native` is green on 2026-04-12. | Keep maintenance-level owner convergence only. |
 | `bevy_render::renderer` internals | `mgstudio-engine/render/renderer` | ✅ Mostly Done | 97% | Motion-vector/main-pass/storage-binding owners are now split (`mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_draw_storage_binding`) and render/full checks remain green (`moon check render`, `moon check --target native`). | Keep converging remaining draw-entry orchestration ownership by Bevy responsibilities. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | ✅ Mostly Done | 95% | Package checks are green (`moon check core_pipeline --target native`) and `mip_generation` now includes Bevy-shaped jobs + pipelines resources with plugin init and runtime bookkeeping surface. | Keep maintenance-level runtime-depth parity closure. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | ✅ Mostly Done | 95% | GPU preprocess import chain is closed, preprocess fatal spam is removed, `many_lights` stress FPS recovers, and `moon test pbr --target native` is green. | Keep module-level parity through targeted tail audits only. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | ✅ Mostly Done | 96% | GPU preprocess import chain is closed, preprocess fatal spam is removed, and `moon test pbr --target native` (54/54) is green on 2026-04-12. | Keep module-level parity through targeted tail audits only. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | ✅ Mostly Done | 95% | Projection/frustum owners and preprocess metadata path are aligned; stress gate no longer regresses on queue preprocess path. | Keep owner-boundary convergence maintenance-only. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | ✅ Mostly Done | 95% | Prepass pipeline state and owner split are stable on native checks and stress gates. | Track only residual rendering-tail regressions. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | ✅ Mostly Done | 95% | Current mgstudio scope keeps meshlet path in stable Bevy-shaped owner layout with non-blocking runtime tail differences. | Keep in maintenance mode unless scope expands. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am4) |
+| Last updated | 2026-04-12 (am5) |
