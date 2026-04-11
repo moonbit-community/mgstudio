@@ -76,10 +76,36 @@ pub fn Dlss::default() -> Dlss {
 }
 
 ///|
+pub fn Dlss::new(
+  perf_quality_mode? : DlssPerfQualityMode = DlssPerfQualityMode::default(),
+  reset? : Bool = false,
+) -> Dlss {
+  Dlss::{ perf_quality_mode, reset }
+}
+
+///|
+pub fn Dlss::with_perf_quality_mode(
+  self : Dlss,
+  perf_quality_mode : DlssPerfQualityMode,
+) -> Dlss {
+  Dlss::{ ..self, perf_quality_mode, }
+}
+
+///|
+pub fn Dlss::with_reset(self : Dlss, reset : Bool) -> Dlss {
+  Dlss::{ ..self, reset, }
+}
+
+///|
 pub struct DlssSuperResolutionSupported {} derive(Default, Eq, Debug)
 
 ///|
 pub struct DlssRayReconstructionSupported {} derive(Default, Eq, Debug)
+
+///|
+let ecs_key_dlss : @ecs.ComponentKey[Dlss] = @ecs.register_component(
+  debug_name="mgstudio_anti_alias::Dlss",
+)
 
 ///|
 let dlss_project_id_resource_key : @ecs.ResourceKey[DlssProjectId] = @ecs.register_resource(
@@ -87,8 +113,37 @@ let dlss_project_id_resource_key : @ecs.ResourceKey[DlssProjectId] = @ecs.regist
 )
 
 ///|
+let dlss_super_resolution_supported_resource_key : @ecs.ResourceKey[
+  DlssSuperResolutionSupported,
+] = @ecs.register_resource(
+  debug_name="mgstudio_anti_alias::DlssSuperResolutionSupported",
+)
+
+///|
+let dlss_ray_reconstruction_supported_resource_key : @ecs.ResourceKey[
+  DlssRayReconstructionSupported,
+] = @ecs.register_resource(
+  debug_name="mgstudio_anti_alias::DlssRayReconstructionSupported",
+)
+
+///|
+pub impl @ecs.Component for Dlss with component() {
+  ecs_key_dlss
+}
+
+///|
 pub impl @app.Resource for DlssProjectId with resource() {
   dlss_project_id_resource_key
+}
+
+///|
+pub impl @app.Resource for DlssSuperResolutionSupported with resource() {
+  dlss_super_resolution_supported_resource_key
+}
+
+///|
+pub impl @app.Resource for DlssRayReconstructionSupported with resource() {
+  dlss_ray_reconstruction_supported_resource_key
 }
 
 ///|
@@ -98,5 +153,22 @@ pub fn dlss_init_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn dlss_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  let app = if DLSS_RUNTIME_SUPPORTED &&
+    !app.contains_resource(dlss_super_resolution_supported_resource_key) {
+    app.insert_world_resource(
+      dlss_super_resolution_supported_resource_key,
+      DlssSuperResolutionSupported::{},
+    )
+  } else {
+    app
+  }
+  if DLSS_RUNTIME_SUPPORTED &&
+    !app.contains_resource(dlss_ray_reconstruction_supported_resource_key) {
+    app.insert_world_resource(
+      dlss_ray_reconstruction_supported_resource_key,
+      DlssRayReconstructionSupported::{},
+    )
+  } else {
+    app
+  }
 }
