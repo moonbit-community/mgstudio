@@ -13,22 +13,22 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_pbr/src/prepass/prepass_bindings.rs`.
+// Bevy source alignment: `bevy_pbr/src/prepass/mod.rs` + `prepass.wgsl` data-facing toggles.
 
 ///|
-pub fn render3d_prepass_bindings_for_entity(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> PrepassBindings3d {
-  let entity_ref = try! world.entity(entity)
-  let has_depth : DepthPrepass? = try! entity_ref.get()
-  let has_normal : NormalPrepass? = try! entity_ref.get()
-  let has_motion_vector : MotionVectorPrepass? = try! entity_ref.get()
-  let has_deferred : DeferredPrepass? = try! entity_ref.get()
+pub struct PrepassBindings3d {
+  depth : Bool
+  normal : Bool
+  motion_vector : Bool
+  deferred : Bool
+}
+
+///|
+pub fn PrepassBindings3d::default() -> PrepassBindings3d {
   PrepassBindings3d::{
-    depth: has_depth is Some(_),
-    normal: has_normal is Some(_),
-    motion_vector: has_motion_vector is Some(_),
-    deferred: has_deferred is Some(_),
+    depth: false,
+    normal: false,
+    motion_vector: false,
+    deferred: false,
   }
 }
