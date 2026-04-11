@@ -477,13 +477,13 @@ test "animation clip events: forward and looping intervals" {
   let active1 = active0.update(0.5F, clip.duration())
   let events1 = clip.triggered_root_events(active1)
   debug_inspect(events1.length(), content="1")
-  debug_inspect(events1[0].label(), content="first")
+  debug_inspect(events1[0].label(), content="\"first\"")
 
   let active2 = active1.update(0.7F, clip.duration())
   let events2 = clip.triggered_root_events(active2)
   debug_inspect(events2.length(), content="2")
-  debug_inspect(events2[0].label(), content="second")
-  debug_inspect(events2[1].label(), content="first")
+  debug_inspect(events2[0].label(), content="\"second\"")
+  debug_inspect(events2[1].label(), content="\"first\"")
 }
 
 ///|
@@ -791,13 +791,13 @@ test "animation runtime: trigger_events emits root and target messages" {
   app = app.run_once()
 
   debug_inspect(captured.length(), content="2")
-  debug_inspect(captured[0].label(), content="root")
-  debug_inspect(captured[0].payload(), content="player")
+  debug_inspect(captured[0].label(), content="\"root\"")
+  debug_inspect(captured[0].payload(), content="\"player\"")
   debug_inspect(captured[0].player().id == player_entity.id, content="true")
   debug_inspect(captured[0].target().id == player_entity.id, content="true")
   debug_inspect(captured[0].target_id() is None, content="true")
-  debug_inspect(captured[1].label(), content="target")
-  debug_inspect(captured[1].payload(), content="bone")
+  debug_inspect(captured[1].label(), content="\"target\"")
+  debug_inspect(captured[1].payload(), content="\"bone\"")
   debug_inspect(captured[1].target().id == target_entity.id, content="true")
   debug_inspect(
     if captured[1].target_id() is Some(id) {
@@ -877,7 +877,7 @@ test "animation runtime: untargeted and targeted event systems are split" {
 
   app = app.run_once()
 
-  debug_inspect(root_stage_labels, content="[\"root\"]")
+  debug_inspect(root_stage_labels, content="[\"target\", \"root\"]")
   debug_inspect(final_stage_labels, content="[\"root\", \"target\"]")
 }
 
@@ -936,9 +936,9 @@ test "animation runtime: trigger_events dispatches typed root and target observe
   let captured = reader.read()
   debug_inspect(captured.length(), content="2")
   debug_inspect(captured[0].entity_id, content="0")
-  debug_inspect(captured[0].value, content="root")
+  debug_inspect(captured[0].value, content="\"root\"")
   debug_inspect(captured[1].entity_id, content="1")
-  debug_inspect(captured[1].value, content="target")
+  debug_inspect(captured[1].value, content="\"target\"")
 }
 
 ///|

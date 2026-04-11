@@ -21,7 +21,7 @@ This file must not exceed 200 lines.
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 🟡 In Progress | 85% | `ui` + `ui_render` package tests are green (`moon test ui --target native`, `moon test ui_render --target native`); pointer picking traversal parity still has edge-case gaps. | Finish transform-aware picking and traversal parity. |
 | `bevy_text` | `mgstudio-engine/text` | 🟡 In Progress | 80% | ECS bridge tests are green again (`moon test text --target native`) with sequence-context-aligned visibility sync coverage; text stress bottlenecks are still open. | Continue queue/prepare parity and glyph-path profiling. |
 | `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 🟡 In Progress | 84% | Loader/event/runtime largely landed; visual parity still needs broader audits. | Continue full example-by-example visual verification. |
-| `bevy_animation` | `mgstudio-engine/animation` | ✅ Mostly Done | 95% | Major API/runtime/event parity landed; package entry/file shape is now aligned to `lib.mbt`; remaining risk is cross-package behavior under stress scenes. | Keep as done-core; verify via gltf/stress integration passes. |
+| `bevy_animation` | `mgstudio-engine/animation` | ✅ Mostly Done | 95% | Animation asset-event message wiring is now explicit in plugin setup and `moon test animation --target native` is green; remaining risk is cross-package behavior under stress scenes. | Keep as done-core; verify via gltf/stress integration passes. |
 | `bevy_scene` (static/serialized scene path) | `mgstudio-engine/scene` | 🟡 In Progress | 86% | Static `SceneRoot`/spawner/glTF-driven runtime path is in mainline; remaining parity depends on gltf/render closure. | Close remaining scene-runtime parity with gltf/render work. |
 | `bevy_scene` (`dynamic_scene*` family) | N/A (explicit non-goal: dynamic) | ⏸ Excluded | 0% | Dynamic-scene/reflect-heavy path is intentionally out of scope. | Keep excluded unless scope changes. |
 | `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | 🟡 In Progress | 84% | Core package tests are green (`moon test gizmos --target native`); runtime fidelity still needs broader visual audits. | Complete representative visual/runtime audits. |
@@ -37,12 +37,12 @@ This file must not exceed 200 lines.
 | `bevy_color` | `mgstudio-engine/color` | ✅ Done | 95% | Core color authoring/runtime surface is stable and package tests/check are green (`moon test color --target native`, `moon check color --target native`). | Maintain with render/pbr changes. |
 | `bevy_image` | `mgstudio-engine/image` | 🟡 In Progress | 79% | Runtime is usable and `moon test image --target native` is green after asset decode-path cleanup; deeper parity on advanced formats/pipeline coupling remains. | Continue advanced format/pipeline parity audits. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | ✅ Done | 95% | API surface and plugin/resource/message path are aligned and package tests pass (`moon test a11y --target native`). | Keep maintenance-level parity checks only. |
-| `bevy_rapier` examples parity | `mgstudio-engine/physics2d` + `physics3d` + examples | 🟡 In Progress | 76% | API coverage is broad; screenshot-level visual parity is still incomplete. | Continue example-by-example visual correction. |
+| `bevy_rapier` examples parity | `mgstudio-engine/physics2d` + `physics3d` + examples | 🟡 In Progress | 82% | Physics package tests are green (`moon test physics2d --target native`, `moon test physics3d --target native`); screenshot-level visual parity is still incomplete. | Continue example-by-example visual correction. |
 | `bevy_remote` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder backend removed; no fake runtime left. | Reintroduce only with real transport/protocol backend. |
 | `bevy_solari` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder runtime removed from mainline. | Reintroduce only with executable implementation. |
 | Stress tests parity gate | `examples/stress_tests/*` + scripts | 🟡 In Progress | 60% | FPS and visual consistency gaps remain in 3D/text-heavy cases. | Keep parity-first refactors, then validate with profiles/screenshots. |
 | Visual screenshot audit | `/tmp` captures + parity docs | 🟡 In Progress | 68% | Large batch exists, but not all cases are fully converged. | Continue full-run capture and per-case fix loop. |
-| Native test environment | workspace build/test toolchain | 🟡 In Progress | 72% | Key native package tests (`asset/ui/window/input/picking/scene/gltf/pbr/text/image`) are green; full-suite serial run stability and remaining long-run hangs still need closure. | Make full `moon test --target native` runs repeatable end-to-end and remove remaining hang points. |
+| Native test environment | workspace build/test toolchain | 🟡 In Progress | 78% | Key native package tests (`asset/ui/window/input/picking/scene/gltf/pbr/text/image/animation/physics2d/physics3d`) are green; full-suite serial run stability and remaining long-run hangs still need closure. | Make full `moon test --target native` runs repeatable end-to-end and remove remaining hang points. |
 
 | Rollup | Value |
 |---|---:|
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 16 / 39 |
 | In-progress rows | 20 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (pm) |
+| Last updated | 2026-04-12 (pm2) |

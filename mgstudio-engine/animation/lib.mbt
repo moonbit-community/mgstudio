@@ -1561,6 +1561,12 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
 
 ///|
 pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let animation_clip_event_key : @ecs.MessageKey[
+    @asset.AssetEvent[AnimationClip],
+  ] = @ecs.Message::message()
+  let animation_graph_event_key : @ecs.MessageKey[
+    @asset.AssetEvent[AnimationGraph],
+  ] = @ecs.Message::message()
   @asset.init_asset_loader(
     app
     .init_resource(fn() {
@@ -1571,7 +1577,9 @@ pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       let assets : @asset.Assets[AnimationGraph] = @asset.Assets::new()
       assets
     })
-    .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } }),
+    .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } })
+    .add_message(animation_clip_event_key)
+    .add_message(animation_graph_event_key),
     animation_graph_asset_loader(),
   )
   .add_post_update_system_config(
