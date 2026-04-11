@@ -10,10 +10,10 @@ This file must not exceed 200 lines.
 | `bevy_tasks` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Async tasks parity is intentionally out of scope. | Keep excluded in mapping scripts. |
 | `bevy_render` (topology) | `mgstudio-engine/render` | ✅ Mostly Done | 95% | File topology is now highly converged; draw and preprocess offset owners are split out (`mesh3d_draw_storage_binding`, `mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_preprocess_indirect_offsets`) and checks stay green. | Keep maintenance-level owner convergence only. |
 | `bevy_render::renderer` internals | `mgstudio-engine/render/renderer` | ✅ Mostly Done | 97% | Motion-vector/main-pass/storage-binding owners are now split (`mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_draw_storage_binding`) and render/full checks remain green (`moon check render`, `moon check --target native`). | Keep converging remaining draw-entry orchestration ownership by Bevy responsibilities. |
-| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 🟡 In Progress | 93% | Most node/plugin shapes landed; package tests/check are green (`moon test core_pipeline --target native`, `moon check core_pipeline --target native`) and `mip_generation` now exposes Bevy-shaped `MipGenerationJobs/MipGenerationPhase` resource APIs. | Finish remaining runtime-depth parity items. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 🟡 In Progress | 81% | Forward decal/clustered decal/OIT/occlusion runtime not fully closed; render/prepass file-owner convergence is ongoing. | Complete pending pbr runtime tracks before tuning. |
+| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | ✅ Mostly Done | 95% | Package checks are green (`moon check core_pipeline --target native`) and `mip_generation` now includes Bevy-shaped jobs + pipelines resources with plugin init and runtime bookkeeping surface. | Keep maintenance-level runtime-depth parity closure. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 🟡 In Progress | 82% | Forward decal/clustered decal/OIT/occlusion runtime not fully closed; render/prepass file-owner convergence is ongoing. | Complete pending pbr runtime tracks before tuning. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 🟡 In Progress | 82% | Projection/frustum logic is mirrored, and frusta-update owner logic is now in `pbr/render/systems`; parent compatibility owner duplication remains. | Continue collapsing projection owner duplication under MoonBit constraints. |
-| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 🟡 In Progress | 84% | File-owner shape now split into `prepass`/`prepass_bindings`/`prepass_utils`; core prepass plugin/view-state/node predicates are re-exposed and Bevy-shaped pipeline/plugin markers (`PrepassPipelinePlugin`, `AnyPrepassPluginLoaded`, pipeline state resource) are now present. | Finish remaining prepass runtime behavior parity. |
+| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 🟡 In Progress | 87% | File-owner shape is split and prepass pipeline state is now updated by runtime system (`prepass_update_pipeline_state`) instead of static marker-only resource. | Finish remaining prepass runtime behavior parity. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 🟡 In Progress | 40% | Owner surfaces exist but runtime is still limited. | Decide final runtime scope and implement or defer formally. |
 | `bevy_material` | `mgstudio-engine/material` | 🟡 In Progress | 76% | Deferred renderer method and forward-decal specialization need closure. | Complete deferred/forward-decal behavior parity. |
 | `bevy_camera` (3D projection path) | `mgstudio-engine/pbr` + `pbr/render` + `camera` | 🟡 In Progress | 86% | Cross-package owner split is partially mirrored; compatibility layer still needed. | Continue owner convergence without breaking constructors/components. |
@@ -30,7 +30,7 @@ This file must not exceed 200 lines.
 | `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | 🟡 In Progress | 88% | Runtime mostly stable; platform edge cases remain possible. | Continue parity checks while fixing remaining visual diffs. |
 | `bevy_asset` | `mgstudio-engine/asset` | 🟡 In Progress | 82% | Asset path/provenance parity improved; some tests blocked by native link/runtime setup. | Keep asset layout aligned with Bevy and fix test environment blockers. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | ✅ Mostly Done | 95% | Diagnostics overlay, timeline trace plugin, stress diagnostics plugin, and stress trace collection script are in mainline and checked in package builds. | Keep maintenance-level parity checks only. |
-| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 🟡 In Progress | 72% | AntiAlias plugin now wires FXAA/SMAA/TAA/CAS/DLSS sub-plugins with Bevy-aligned plugin surface, and DLSS path now has Bevy-shaped ECS component/resource scaffolding; full runtime graph parity still pending. | Implement runtime path parity for enabled features. |
+| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 🟡 In Progress | 78% | FXAA/SMAA/TAA/CAS/DLSS plugins now expose PluginReplacement IDs and runtime state resources/systems (no longer pure no-op plugin bodies); full render-graph parity still pending. | Implement full render-graph/pipeline parity for enabled features. |
 | `bevy_light` | `mgstudio-engine/light` | 🟡 In Progress | 82% | Most light data paths are present; behavior parity tied to pbr/render closure. | Continue with pbr/render aligned runtime work. |
 | `bevy_math` | `mgstudio-engine/math` | ✅ Done | 95% | Mainline math surface is stable and package tests/check are green (`moon test math --target native`, `moon check math --target native`). | Keep maintenance mode with targeted parity diffs only. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | ✅ Mostly Done | 89% | Mesh core surface is stable; advanced render integration still evolves. | Track only render-coupled deltas. |
@@ -47,7 +47,7 @@ This file must not exceed 200 lines.
 | Rollup | Value |
 |---|---:|
 | Migration focus | Bevy-first source/structure parity (not heuristic tuning) |
-| Done / Mostly done rows | 13 / 39 |
-| In-progress rows | 23 / 39 |
+| Done / Mostly done rows | 14 / 39 |
+| In-progress rows | 22 / 39 |
 | Excluded by scope rows | 2 / 39 |
 | Last updated | 2026-04-11 |

@@ -29,13 +29,33 @@ pub fn AntiAliasPlugin::default() -> AntiAliasPlugin {
 pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
 
 ///|
+pub impl @app.PluginReplacement for AntiAliasPlugin with replacement_id(_self) {
+  ANTI_ALIAS_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for AntiAliasPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    anti_alias_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn anti_alias_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  anti_alias_plugin_with(app, AntiAliasPlugin::default())
+}
+
+///|
+pub fn anti_alias_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : AntiAliasPlugin,
+) -> @app.App[@ecs.World] {
   app
-  |> @fxaa.fxaa_plugin
-  |> @smaa.smaa_plugin
-  |> @taa.temporal_anti_alias_plugin
-  |> @cas.cas_plugin
-  |> @dlss.dlss_plugin
+  .add_plugin(@fxaa.fxaa_plugin)
+  .add_plugin(@smaa.smaa_plugin)
+  .add_plugin(@taa.temporal_anti_alias_plugin)
+  .add_plugin(@cas.cas_plugin)
+  .add_plugin(@dlss.dlss_plugin)
 }
 
 ///|

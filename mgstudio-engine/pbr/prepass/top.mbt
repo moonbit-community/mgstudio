@@ -119,7 +119,7 @@ pub fn prepass_pipeline_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : PrepassPipelinePlugin,
 ) -> @app.App[@ecs.World] {
-  if app.contains_resource(ecs_key_prepass_pipeline_state) {
+  let app = if app.contains_resource(ecs_key_prepass_pipeline_state) {
     app
   } else {
     app.insert_world_resource(
@@ -127,6 +127,7 @@ pub fn prepass_pipeline_plugin_with(
       PrepassPipelineState::default(),
     )
   }
+  app.add_system(prepass_update_pipeline_state)
 }
 
 ///|
@@ -193,4 +194,29 @@ pub fn prepass_should_copy_depth_to_prepass_depth(
 ///|
 pub fn prepass_has_any_color_attachment(state : PrepassViewState) -> Bool {
   @core_prepass.prepass_has_any_color_attachment(state)
+}
+
+///|
+pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
+  let has_prepass_components = world.component_count(ecs_key_depth_prepass) > 0 ||
+    world.component_count(ecs_key_normal_prepass) > 0 ||
+    world.component_count(ecs_key_motion_vector_prepass) > 0 ||
+    world.component_count(ecs_key_deferred_prepass) > 0
+  let view_state : PrepassViewState? = try! world.get_resource(ecs_key_prepass_view_state)
+  let view_bind_group_ready = match view_state {
+    Some(state) => prepass_has_any_phase(state)
+    None => false
+  }
+  let pipeline_ready = has_prepass_components || view_bind_group_ready
+  let next = PrepassPipelineState::{ pipeline_ready, view_bind_group_ready }
+  let current : PrepassPipelineState? = try! world.get_resource(
+    ecs_key_prepass_pipeline_state,
+  )
+  match current {
+    Some(state) =>
+      if state != next {
+        world.insert_resource(ecs_key_prepass_pipeline_state, next)
+      }
+    None => world.insert_resource(ecs_key_prepass_pipeline_state, next)
+  }
 }

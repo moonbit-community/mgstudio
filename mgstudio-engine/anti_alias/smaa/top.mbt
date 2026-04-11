@@ -19,6 +19,9 @@
 pub const SMAA_RUNTIME_SUPPORTED : Bool = false
 
 ///|
+pub const SMAA_PLUGIN_ID : String = "bevy_anti_alias::smaa::SmaaPlugin"
+
+///|
 pub struct SmaaPlugin {}
 
 ///|
@@ -50,8 +53,27 @@ pub fn Smaa::default() -> Smaa {
 }
 
 ///|
+pub struct SmaaRuntimeState {
+  enabled_camera_count : Int
+  runtime_supported : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn SmaaRuntimeState::default() -> SmaaRuntimeState {
+  SmaaRuntimeState::{
+    enabled_camera_count: 0,
+    runtime_supported: SMAA_RUNTIME_SUPPORTED,
+  }
+}
+
+///|
 let ecs_key_smaa : @ecs.ComponentKey[Smaa] = @ecs.register_component(
   debug_name="mgstudio_anti_alias::Smaa",
+)
+
+///|
+let ecs_key_smaa_runtime_state : @ecs.ResourceKey[SmaaRuntimeState] = @ecs.register_resource(
+  debug_name="anti_alias.smaa.runtime_state",
 )
 
 ///|
@@ -60,6 +82,50 @@ pub impl @ecs.Component for Smaa with component() {
 }
 
 ///|
+pub impl @app.Resource for SmaaRuntimeState with resource() {
+  ecs_key_smaa_runtime_state
+}
+
+///|
+pub impl @app.PluginReplacement for SmaaPlugin with replacement_id(_self) {
+  SMAA_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for SmaaPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    smaa_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn smaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  smaa_plugin_with(app, SmaaPlugin::default())
+}
+
+///|
+pub fn smaa_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : SmaaPlugin,
+) -> @app.App[@ecs.World] {
   app
+  .init_resource(fn() { SmaaRuntimeState::default() })
+  .add_system(smaa_update_runtime_state)
+}
+
+///|
+pub fn smaa_update_runtime_state(world : @ecs.World) -> Unit {
+  let enabled_camera_count = world.component_count(ecs_key_smaa)
+  let next = SmaaRuntimeState::{
+    enabled_camera_count,
+    runtime_supported: SMAA_RUNTIME_SUPPORTED,
+  }
+  let current : SmaaRuntimeState? = try! world.get_resource(ecs_key_smaa_runtime_state)
+  match current {
+    Some(state) =>
+      if state != next {
+        world.insert_resource(ecs_key_smaa_runtime_state, next)
+      }
+    None => world.insert_resource(ecs_key_smaa_runtime_state, next)
+  }
 }

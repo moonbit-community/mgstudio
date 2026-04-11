@@ -19,6 +19,9 @@
 pub const CAS_RUNTIME_SUPPORTED : Bool = false
 
 ///|
+pub const CAS_PLUGIN_ID : String = "bevy_anti_alias::contrast_adaptive_sharpening::CasPlugin"
+
+///|
 pub struct CasPlugin {}
 
 ///|
@@ -95,6 +98,86 @@ pub impl @ecs.Component for CasUniform with component() {
 }
 
 ///|
+pub struct CasRuntimeState {
+  enabled_camera_count : Int
+  active_camera_count : Int
+  denoise_camera_count : Int
+} derive(Eq, Debug)
+
+///|
+pub fn CasRuntimeState::default() -> CasRuntimeState {
+  CasRuntimeState::{
+    enabled_camera_count: 0,
+    active_camera_count: 0,
+    denoise_camera_count: 0,
+  }
+}
+
+///|
+pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState] = @ecs.register_resource(
+  debug_name="anti_alias.cas.runtime_state",
+)
+
+///|
+pub impl @app.Resource for CasRuntimeState with resource() {
+  ecs_key_cas_runtime_state
+}
+
+///|
+pub impl @app.PluginReplacement for CasPlugin with replacement_id(_self) {
+  CAS_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for CasPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    cas_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn cas_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  cas_plugin_with(app, CasPlugin::default())
+}
+
+///|
+pub fn cas_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : CasPlugin,
+) -> @app.App[@ecs.World] {
   app
+  .init_resource(fn() { CasRuntimeState::default() })
+  .add_system(cas_update_runtime_state)
+}
+
+///|
+pub fn cas_update_runtime_state(world : @ecs.World) -> Unit {
+  let mut enabled_camera_count = 0
+  let mut active_camera_count = 0
+  let mut denoise_camera_count = 0
+  world.for_each_component(
+    ecs_key_contrast_adaptive_sharpening,
+    fn(_entity, cas : ContrastAdaptiveSharpening) {
+      enabled_camera_count = enabled_camera_count + 1
+      if cas.enabled && cas.sharpening_strength > 0.0 {
+        active_camera_count = active_camera_count + 1
+      }
+      if cas.denoise {
+        denoise_camera_count = denoise_camera_count + 1
+      }
+    },
+  )
+  let next = CasRuntimeState::{
+    enabled_camera_count,
+    active_camera_count,
+    denoise_camera_count,
+  }
+  let current : CasRuntimeState? = try! world.get_resource(ecs_key_cas_runtime_state)
+  match current {
+    Some(state) =>
+      if state != next {
+        world.insert_resource(ecs_key_cas_runtime_state, next)
+      }
+    None => world.insert_resource(ecs_key_cas_runtime_state, next)
+  }
 }

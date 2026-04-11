@@ -55,6 +55,7 @@ pub fn mip_generation_plugin_with(
 ) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() { MipGenerationJobs::default() })
+  .init_resource(fn() { MipGenerationPipelines::default() })
   .add_plugin(@experimental.experimental_mip_generation_plugin)
 }
 
@@ -223,6 +224,80 @@ pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs] = @ecs
 ///|
 pub impl @app.Resource for MipGenerationJobs with resource() {
   ecs_key_mip_generation_jobs
+}
+
+///|
+pub struct MipGenerationPipelines {
+  texture_format_pipeline_count : Int
+  bind_group_cache_count : Int
+} derive(Eq, Debug)
+
+///|
+pub fn MipGenerationPipelines::default() -> MipGenerationPipelines {
+  MipGenerationPipelines::{ texture_format_pipeline_count: 0, bind_group_cache_count: 0 }
+}
+
+///|
+pub fn MipGenerationPipelines::new(
+  texture_format_pipeline_count? : Int = 0,
+  bind_group_cache_count? : Int = 0,
+) -> MipGenerationPipelines {
+  MipGenerationPipelines::{
+    texture_format_pipeline_count: if texture_format_pipeline_count < 0 {
+      0
+    } else {
+      texture_format_pipeline_count
+    },
+    bind_group_cache_count: if bind_group_cache_count < 0 {
+      0
+    } else {
+      bind_group_cache_count
+    },
+  }
+}
+
+///|
+pub fn MipGenerationPipelines::register_texture_format_pipeline(
+  self : MipGenerationPipelines,
+) -> MipGenerationPipelines {
+  MipGenerationPipelines::{
+    ..self,
+    texture_format_pipeline_count: self.texture_format_pipeline_count + 1,
+  }
+}
+
+///|
+pub fn MipGenerationPipelines::cache_bind_group(
+  self : MipGenerationPipelines,
+) -> MipGenerationPipelines {
+  MipGenerationPipelines::{
+    ..self,
+    bind_group_cache_count: self.bind_group_cache_count + 1,
+  }
+}
+
+///|
+pub fn MipGenerationPipelines::reset_bind_group_cache(
+  self : MipGenerationPipelines,
+) -> MipGenerationPipelines {
+  MipGenerationPipelines::{ ..self, bind_group_cache_count: 0 }
+}
+
+///|
+pub fn MipGenerationPipelines::clear(_ : MipGenerationPipelines) -> MipGenerationPipelines {
+  MipGenerationPipelines::default()
+}
+
+///|
+pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[
+  MipGenerationPipelines,
+] = @ecs.register_resource(
+  debug_name="core_pipeline.mip_generation.pipelines",
+)
+
+///|
+pub impl @app.Resource for MipGenerationPipelines with resource() {
+  ecs_key_mip_generation_pipelines
 }
 
 ///|

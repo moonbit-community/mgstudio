@@ -19,6 +19,12 @@
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
 ///|
+pub const DLSS_INIT_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssInitPlugin"
+
+///|
+pub const DLSS_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssPlugin"
+
+///|
 pub(all) enum DlssPerfQualityMode {
   Auto
   Dlaa
@@ -97,6 +103,22 @@ pub fn Dlss::with_reset(self : Dlss, reset : Bool) -> Dlss {
 }
 
 ///|
+pub struct DlssRuntimeState {
+  enabled_camera_count : Int
+  reset_requested_count : Int
+  runtime_supported : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn DlssRuntimeState::default() -> DlssRuntimeState {
+  DlssRuntimeState::{
+    enabled_camera_count: 0,
+    reset_requested_count: 0,
+    runtime_supported: DLSS_RUNTIME_SUPPORTED,
+  }
+}
+
+///|
 pub struct DlssSuperResolutionSupported {} derive(Default, Eq, Debug)
 
 ///|
@@ -127,6 +149,11 @@ let dlss_ray_reconstruction_supported_resource_key : @ecs.ResourceKey[
 )
 
 ///|
+let dlss_runtime_state_resource_key : @ecs.ResourceKey[DlssRuntimeState] = @ecs.register_resource(
+  debug_name="anti_alias.dlss.runtime_state",
+)
+
+///|
 pub impl @ecs.Component for Dlss with component() {
   ecs_key_dlss
 }
@@ -147,12 +174,57 @@ pub impl @app.Resource for DlssRayReconstructionSupported with resource() {
 }
 
 ///|
+pub impl @app.Resource for DlssRuntimeState with resource() {
+  dlss_runtime_state_resource_key
+}
+
+///|
+pub impl @app.PluginReplacement for DlssInitPlugin with replacement_id(_self) {
+  DLSS_INIT_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for DlssInitPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    dlss_init_plugin_with(app, self)
+  }
+}
+
+///|
+pub impl @app.PluginReplacement for DlssPlugin with replacement_id(_self) {
+  DLSS_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for DlssPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    dlss_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn dlss_init_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  dlss_init_plugin_with(app, DlssInitPlugin::default())
+}
+
+///|
+pub fn dlss_init_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : DlssInitPlugin,
+) -> @app.App[@ecs.World] {
   app
 }
 
 ///|
 pub fn dlss_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  dlss_plugin_with(app, DlssPlugin::default())
+}
+
+///|
+pub fn dlss_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : DlssPlugin,
+) -> @app.App[@ecs.World] {
   let app = if DLSS_RUNTIME_SUPPORTED &&
     !app.contains_resource(dlss_super_resolution_supported_resource_key) {
     app.insert_world_resource(
@@ -162,7 +234,7 @@ pub fn dlss_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   } else {
     app
   }
-  if DLSS_RUNTIME_SUPPORTED &&
+  let app = if DLSS_RUNTIME_SUPPORTED &&
     !app.contains_resource(dlss_ray_reconstruction_supported_resource_key) {
     app.insert_world_resource(
       dlss_ray_reconstruction_supported_resource_key,
@@ -170,5 +242,37 @@ pub fn dlss_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     )
   } else {
     app
+  }
+  app
+  .init_resource(fn() { DlssRuntimeState::default() })
+  .add_system(dlss_update_runtime_state)
+}
+
+///|
+pub fn dlss_update_runtime_state(world : @ecs.World) -> Unit {
+  let enabled_camera_count = world.component_count(ecs_key_dlss)
+  let mut reset_requested_count = 0
+  world.for_each_component(
+    ecs_key_dlss,
+    fn(_entity, dlss : Dlss) {
+      if dlss.reset {
+        reset_requested_count = reset_requested_count + 1
+      }
+    },
+  )
+  let next = DlssRuntimeState::{
+    enabled_camera_count,
+    reset_requested_count,
+    runtime_supported: DLSS_RUNTIME_SUPPORTED,
+  }
+  let current : DlssRuntimeState? = try! world.get_resource(
+    dlss_runtime_state_resource_key,
+  )
+  match current {
+    Some(state) =>
+      if state != next {
+        world.insert_resource(dlss_runtime_state_resource_key, next)
+      }
+    None => world.insert_resource(dlss_runtime_state_resource_key, next)
   }
 }

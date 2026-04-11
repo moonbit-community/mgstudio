@@ -28,6 +28,9 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
 
 ///|
+pub const TEMPORAL_ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::taa::TemporalAntiAliasPlugin"
+
+///|
 pub struct TemporalAntiAliasPlugin {}
 
 ///|
@@ -36,8 +39,85 @@ pub fn TemporalAntiAliasPlugin::default() -> TemporalAntiAliasPlugin {
 }
 
 ///|
+pub struct TemporalAntiAliasRuntimeState {
+  enabled_camera_count : Int
+  reset_requested_count : Int
+} derive(Eq, Debug)
+
+///|
+pub fn TemporalAntiAliasRuntimeState::default() -> TemporalAntiAliasRuntimeState {
+  TemporalAntiAliasRuntimeState::{ enabled_camera_count: 0, reset_requested_count: 0 }
+}
+
+///|
+pub let ecs_key_temporal_anti_alias_runtime_state : @ecs.ResourceKey[
+  TemporalAntiAliasRuntimeState,
+] = @ecs.register_resource(
+  debug_name="anti_alias.taa.runtime_state",
+)
+
+///|
+pub impl @app.Resource for TemporalAntiAliasRuntimeState with resource() {
+  ecs_key_temporal_anti_alias_runtime_state
+}
+
+///|
+pub impl @app.PluginReplacement for TemporalAntiAliasPlugin with replacement_id(
+  _self,
+) {
+  TEMPORAL_ANTI_ALIAS_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for TemporalAntiAliasPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    temporal_anti_alias_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn temporal_anti_alias_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
+  temporal_anti_alias_plugin_with(app, TemporalAntiAliasPlugin::default())
+}
+
+///|
+pub fn temporal_anti_alias_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : TemporalAntiAliasPlugin,
+) -> @app.App[@ecs.World] {
   app
+  .init_resource(fn() { TemporalAntiAliasRuntimeState::default() })
+  .add_system(temporal_anti_alias_update_runtime_state)
+}
+
+///|
+pub fn temporal_anti_alias_update_runtime_state(world : @ecs.World) -> Unit {
+  let enabled_camera_count = world.component_count(ecs_key_temporal_anti_aliasing)
+  let mut reset_requested_count = 0
+  world.for_each_component(
+    ecs_key_temporal_anti_aliasing,
+    fn(_entity, taa : TemporalAntiAliasing) {
+      if taa.reset {
+        reset_requested_count = reset_requested_count + 1
+      }
+    },
+  )
+  let next = TemporalAntiAliasRuntimeState::{
+    enabled_camera_count,
+    reset_requested_count,
+  }
+  let current : TemporalAntiAliasRuntimeState? = try! world.get_resource(
+    ecs_key_temporal_anti_alias_runtime_state,
+  )
+  match current {
+    Some(state) =>
+      if state != next {
+        world.insert_resource(ecs_key_temporal_anti_alias_runtime_state, next)
+      }
+    None => world.insert_resource(ecs_key_temporal_anti_alias_runtime_state, next)
+  }
 }
