@@ -842,17 +842,6 @@ fn is_bmp_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
-fn decoded_texture_image_from_mizchi(
-  decoded : @img_decode.ImageData,
-) -> DecodedTextureImage {
-  DecodedTextureImage::{
-    width: clamp_dim(decoded.width),
-    height: clamp_dim(decoded.height),
-    pixels: decoded.data,
-  }
-}
-
-///|
 fn decoded_texture_image_from_gm_image(
   decoded : &@gm_image.Image,
 ) -> DecodedTextureImage {
@@ -884,43 +873,24 @@ fn decode_texture_image_from_gm_png(bytes : Bytes) -> DecodedTextureImage? {
 }
 
 ///|
-fn decode_texture_image_from_mizchi_png(bytes : Bytes) -> DecodedTextureImage? {
-  Some(decoded_texture_image_from_mizchi(@img_decode.decode_png(bytes))) catch {
+fn decode_texture_image_from_gm_jpeg(bytes : Bytes) -> DecodedTextureImage? {
+  let reader = @gm_io.Buffer::from_bytes(bytes)
+  match @gm_jpeg.decode(reader) {
+    (decoded, None) => Some(decoded_texture_image_from_gm_image(decoded))
     _ => None
   }
 }
 
 ///|
-const PNG_GM_DECODER_MAX_SAFE_PIXELS : Int = 1024 * 1024
-
-///|
 fn decode_texture_image(bytes : Bytes) -> DecodedTextureImage? {
   if is_png_bytes(bytes) {
-    let prefer_mizchi = match png_dimensions(bytes) {
-      Some((width, height)) => width * height >= PNG_GM_DECODER_MAX_SAFE_PIXELS
-      None => false
-    }
-    if prefer_mizchi {
-      return decode_texture_image_from_mizchi_png(bytes)
-    }
-    if decode_texture_image_from_gm_png(bytes) is Some(decoded) {
-      return Some(decoded)
-    }
-    return decode_texture_image_from_mizchi_png(bytes)
+    return decode_texture_image_from_gm_png(bytes)
   }
   if is_jpeg_bytes(bytes) {
-    return Some(
-      decoded_texture_image_from_mizchi(@img_decode.decode_jpeg(bytes)),
-    ) catch {
-      _ => None
-    }
+    return decode_texture_image_from_gm_jpeg(bytes)
   }
   if is_bmp_bytes(bytes) {
-    return Some(
-      decoded_texture_image_from_mizchi(@img_decode.decode_bmp(bytes)),
-    ) catch {
-      _ => None
-    }
+    return None
   }
   None
 }

@@ -257,7 +257,7 @@ test "window: plugin spawns configured primary window entity and messages" {
     Some(window) => window
     None => abort("missing window component")
   }
-  debug_inspect(stored_window.title, content="Configured Window")
+  debug_inspect(stored_window.title, content="\"Configured Window\"")
   debug_inspect(stored_window.physical_width(), content="800")
   debug_inspect(stored_window.physical_height(), content="600")
   debug_inspect(stored_window.scale_factor(), content="2")
@@ -278,8 +278,8 @@ test "window: plugin spawns configured primary window entity and messages" {
   debug_inspect(stored_window.decorations, content="false")
   debug_inspect(stored_window.transparent, content="true")
   debug_inspect(stored_window.focused, content="false")
-  debug_inspect(stored_window.window_level.to_string(), content="AlwaysOnTop")
-  debug_inspect(stored_window.window_theme.to_string(), content="Some(Dark)")
+  debug_inspect(stored_window.window_level.to_string(), content="\"AlwaysOnTop\"")
+  debug_inspect(stored_window.window_theme.to_string(), content="\"Some(Dark)\"")
   debug_inspect(stored_window.visible, content="false")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
@@ -356,7 +356,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
     Some(window) => window
     None => abort("missing updated window")
   }
-  debug_inspect(stored_window.title, content="Updated")
+  debug_inspect(stored_window.title, content="\"Updated\"")
   debug_inspect(stored_window.physical_width(), content="640")
   debug_inspect(stored_window.physical_height(), content="360")
   debug_inspect(stored_window.present_mode, content="AutoNoVsync")
@@ -379,8 +379,8 @@ test "window: compatibility helpers read and write ECS primary window state" {
   debug_inspect(stored_window.enabled_buttons.minimize, content="false")
   debug_inspect(stored_window.enabled_buttons.maximize, content="false")
   debug_inspect(stored_window.enabled_buttons.close, content="false")
-  debug_inspect(stored_window.window_level.to_string(), content="AlwaysOnTop")
-  debug_inspect(stored_window.window_theme.to_string(), content="Some(Dark)")
+  debug_inspect(stored_window.window_level.to_string(), content="\"AlwaysOnTop\"")
+  debug_inspect(stored_window.window_theme.to_string(), content="\"Some(Dark)\"")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
@@ -527,7 +527,7 @@ test "window: singleton helpers no-op when no primary window exists" {
     None => abort("missing secondary window")
   }
 
-  debug_inspect(stored_window.title, content="Secondary")
+  debug_inspect(stored_window.title, content="\"Secondary\"")
   debug_inspect(stored_window.physical_width(), content="640")
   debug_inspect(stored_window.physical_height(), content="360")
   debug_inspect(
@@ -658,7 +658,7 @@ test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
   debug_inspect(key_index.get(KeyCode::KeyA), content="Some(1)")
   debug_inspect(key_index.get(KeyCode::Space), content="Some(2)")
   debug_inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
-  debug_inspect(to_repr(KeyCode::KeyA).to_string(), content="KeyA")
+  debug_inspect(to_repr(KeyCode::KeyA).to_string(), content="\"KeyA\"")
 }
 
 ///|

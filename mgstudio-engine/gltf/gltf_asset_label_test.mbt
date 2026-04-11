@@ -41,28 +41,31 @@ test "gltf asset label path encoding" {
   let replaced_label_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
     "remote://models/Foo/Foo.gltf#Animation9",
   )
-  debug_inspect(scene_path, content="models/Foo/Foo.gltf#Scene3")
-  debug_inspect(node_path, content="models/Foo/Foo.gltf#Node8")
-  debug_inspect(primitive_path, content="models/Foo/Foo.gltf#Mesh5/Primitive2")
+  debug_inspect(scene_path, content="\"models/Foo/Foo.gltf#Scene3\"")
+  debug_inspect(node_path, content="\"models/Foo/Foo.gltf#Node8\"")
+  debug_inspect(
+    primitive_path,
+    content="\"models/Foo/Foo.gltf#Mesh5/Primitive2\"",
+  )
   debug_inspect(
     morph_target_path,
-    content="models/Foo/Foo.gltf#Mesh5/Primitive2/MorphTargets",
+    content="\"models/Foo/Foo.gltf#Mesh5/Primitive2/MorphTargets\"",
   )
   debug_inspect(
     inverted_material_path,
-    content="models/Foo/Foo.gltf#Material4 (inverted)",
+    content="\"models/Foo/Foo.gltf#Material4 (inverted)\"",
   )
   debug_inspect(
     default_material_path,
-    content="models/Foo/Foo.gltf#DefaultMaterial",
+    content="\"models/Foo/Foo.gltf#DefaultMaterial\"",
   )
   debug_inspect(
     inverse_bind_matrices_path,
-    content="models/Foo/Foo.gltf#Skin1/InverseBindMatrices",
+    content="\"models/Foo/Foo.gltf#Skin1/InverseBindMatrices\"",
   )
-  debug_inspect(animation_path, content="models/Foo/Foo.gltf#Animation2")
+  debug_inspect(animation_path, content="\"models/Foo/Foo.gltf#Animation2\"")
   debug_inspect(
     replaced_label_path,
-    content="remote://models/Foo/Foo.gltf#Scene1",
+    content="\"remote://models/Foo/Foo.gltf#Scene1\"",
   )
 }

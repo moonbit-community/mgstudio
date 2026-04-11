@@ -39,6 +39,9 @@ fn enqueue_a11y_action(
   world : @ecs.World,
   request : @moon_accesskit.ActionRequest,
 ) -> Unit {
+  if !world.contains_message(@a11y.ecs_msg_key_action_request) {
+    world.init_message(@a11y.ecs_msg_key_action_request)
+  }
   ignore(
     world.send_message(
       @a11y.ecs_msg_key_action_request,
@@ -605,7 +608,7 @@ test "picking: a11y set-value action updates Text content" {
   picking_apply_a11y_actions_system(world)
   debug_inspect(
     world.get_by_key(entity, @text.ecs_key_text).unwrap().content,
-    content="Updated",
+    content="\"Updated\"",
   )
   let events = drain_events(world)
   debug_inspect(events.length(), content="0")

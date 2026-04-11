@@ -220,23 +220,26 @@ test "scene gltf wb: parse scene mesh primitive and material extras" {
   let doc = gltf_parse_document(source).unwrap()
   debug_inspect(
     doc.scenes[0].extras.unwrap_or(""),
-    content="{\"scene\":\"root\"}",
+    content="\"{\\\"scene\\\":\\\"root\\\"}\"",
   )
-  debug_inspect(doc.meshes[0].name, content="NamedMesh")
-  debug_inspect(doc.meshes[0].extras.unwrap_or(""), content="{\"mesh\":true}")
+  debug_inspect(doc.meshes[0].name, content="\"NamedMesh\"")
+  debug_inspect(
+    doc.meshes[0].extras.unwrap_or(""),
+    content="\"{\\\"mesh\\\":true}\"",
+  )
   debug_inspect(
     doc.meshes[0].primitives[0].extras.unwrap_or(""),
-    content="{\"primitive\":1}",
+    content="\"{\\\"primitive\\\":1}\"",
   )
   debug_inspect(
     doc.materials[0].extras.unwrap_or(""),
-    content="{\"material\":\"value\"}",
+    content="\"{\\\"material\\\":\\\"value\\\"}\"",
   )
 }
 
 ///|
 test "scene gltf wb: parse KHR_materials_clearcoat" {
-  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_clearcoat\":{\"clearcoatFactor\":0.7,\"clearcoatRoughnessFactor\":0.2,\"clearcoatTexture\":{\"index\":3},\"clearcoatRoughnessTexture\":{\"index\":4},\"clearcoatNormalTexture\":{\"index\":5}}}}}]}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_clearcoat\":{\"clearcoatFactor\":0.7,\"clearcoatRoughnessFactor\":0.2,\"clearcoatTexture\":{\"index\":3},\"clearcoatRoughnessTexture\":{\"index\":4},\"clearcoatNormalTexture\":{\"index\":5}}}}]}"
   let doc = gltf_parse_document(source).unwrap()
   debug_inspect(doc.materials.length(), content="1")
   debug_inspect(
@@ -254,7 +257,7 @@ test "scene gltf wb: parse KHR_materials_clearcoat" {
 
 ///|
 test "scene gltf wb: parse KHR_materials_anisotropy" {
-  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_anisotropy\":{\"anisotropyStrength\":0.6,\"anisotropyRotation\":1.25,\"anisotropyTexture\":{\"index\":7}}}}}]}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_anisotropy\":{\"anisotropyStrength\":0.6,\"anisotropyRotation\":1.25,\"anisotropyTexture\":{\"index\":7}}}}]}"
   let doc = gltf_parse_document(source).unwrap()
   debug_inspect(doc.materials.length(), content="1")
   debug_inspect(
@@ -357,7 +360,7 @@ test "scene gltf wb: parse animation channels and samplers" {
     ),
     content="true",
   )
-  debug_inspect(doc.animations[0].channels[3].target_path, content="weights")
+  debug_inspect(doc.animations[0].channels[3].target_path, content="\"weights\"")
 }
 
 ///|
@@ -451,16 +454,16 @@ test "scene gltf wb: build animation clip tracks and fallback node paths" {
 ///|
 test "scene gltf wb: split labeled gltf path with extended labels" {
   let scene_label = scene_split_gltf_asset_path("models/Foo/Foo.gltf#Scene2")
-  debug_inspect(scene_label.0, content="models/Foo/Foo.gltf")
-  debug_inspect(label_option_text(scene_label.1), content="Some(Scene2)")
+  debug_inspect(scene_label.0, content="\"models/Foo/Foo.gltf\"")
+  debug_inspect(label_option_text(scene_label.1), content="\"Some(Scene2)\"")
 
   let primitive_label = scene_split_gltf_asset_path(
     "models/Foo/Foo.gltf#Mesh3/Primitive1",
   )
-  debug_inspect(primitive_label.0, content="models/Foo/Foo.gltf")
+  debug_inspect(primitive_label.0, content="\"models/Foo/Foo.gltf\"")
   debug_inspect(
     label_option_text(primitive_label.1),
-    content="Some(Mesh3/Primitive1)",
+    content="\"Some(Mesh3/Primitive1)\"",
   )
 
   let inverse_bind_label = scene_split_gltf_asset_path(
@@ -468,14 +471,14 @@ test "scene gltf wb: split labeled gltf path with extended labels" {
   )
   debug_inspect(
     label_option_text(inverse_bind_label.1),
-    content="Some(Skin4/InverseBindMatrices)",
+    content="\"Some(Skin4/InverseBindMatrices)\"",
   )
 
   let unknown_label = scene_split_gltf_asset_path(
     "models/Foo/Foo.gltf#NotALabel",
   )
-  debug_inspect(unknown_label.0, content="models/Foo/Foo.gltf")
-  debug_inspect(label_option_text(unknown_label.1), content="None")
+  debug_inspect(unknown_label.0, content="\"models/Foo/Foo.gltf\"")
+  debug_inspect(label_option_text(unknown_label.1), content="\"None\"")
 }
 
 ///|

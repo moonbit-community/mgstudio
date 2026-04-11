@@ -183,8 +183,8 @@ test "input: InputSystems set gates pre-update polling systems" {
     .run_once()
 
   debug_inspect(input_probe_before_ran_ref.val, content="true")
-  debug_inspect(input_probe_before_stage_ref.val, content="pre_update")
-  debug_inspect(input_probe_after_stage_ref.val, content="pre_update")
+  debug_inspect(input_probe_before_stage_ref.val, content="\"pre_update\"")
+  debug_inspect(input_probe_after_stage_ref.val, content="\"pre_update\"")
   debug_inspect(input_probe_after_raw_event_count_ref.val > 0, content="true")
   debug_inspect(mapped_gamepad_entity(0) is Some(_), content="true")
   app |> ignore
@@ -202,7 +202,7 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
     .add_system(input_probe_update_system)
     .run_once()
 
-  debug_inspect(input_probe_update_stage_ref.val, content="update")
+  debug_inspect(input_probe_update_stage_ref.val, content="\"update\"")
   debug_inspect(input_probe_update_previous_snapshot_count_ref.val, content="1")
   debug_inspect(current_gamepads_ref.val.length(), content="0")
   debug_inspect(previous_gamepads_ref.val.length(), content="0")
