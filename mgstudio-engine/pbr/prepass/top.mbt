@@ -19,6 +19,9 @@
 pub const PREPASS_PLUGIN_ID : String = @core_prepass.PREPASS_PLUGIN_ID
 
 ///|
+pub const PREPASS_PIPELINE_PLUGIN_ID : String = "bevy_pbr::prepass::PrepassPipelinePlugin"
+
+///|
 pub const EARLY_PREPASS_LABEL : String = @core_prepass.EARLY_PREPASS_LABEL
 
 ///|
@@ -28,10 +31,32 @@ pub const LATE_PREPASS_LABEL : String = @core_prepass.LATE_PREPASS_LABEL
 pub type PrepassPlugin = @core_prepass.PrepassPlugin
 
 ///|
+pub struct PrepassPipelinePlugin {}
+
+///|
+pub fn PrepassPipelinePlugin::default() -> PrepassPipelinePlugin {
+  PrepassPipelinePlugin::{  }
+}
+
+///|
 pub type PrepassNode = @core_prepass.PrepassNode
 
 ///|
 pub type PrepassViewState = @core_prepass.PrepassViewState
+
+///|
+pub struct AnyPrepassPluginLoaded {} derive(Default, Eq, Debug)
+
+///|
+pub struct PrepassPipelineState {
+  pipeline_ready : Bool
+  view_bind_group_ready : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn PrepassPipelineState::default() -> PrepassPipelineState {
+  PrepassPipelineState::{ pipeline_ready: false, view_bind_group_ready: false }
+}
 
 ///|
 pub type DepthPrepass = @core_pipeline.DepthPrepass
@@ -61,8 +86,52 @@ pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pi
 pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState] = @core_prepass.ecs_key_prepass_view_state
 
 ///|
+pub let ecs_key_any_prepass_plugin_loaded : @ecs.ResourceKey[
+  AnyPrepassPluginLoaded,
+] = @ecs.register_resource(
+  debug_name="pbr.prepass.any_prepass_plugin_loaded",
+)
+
+///|
+pub let ecs_key_prepass_pipeline_state : @ecs.ResourceKey[PrepassPipelineState] = @ecs.register_resource(
+  debug_name="pbr.prepass.pipeline_state",
+)
+
+///|
+pub impl @app.Resource for AnyPrepassPluginLoaded with resource() {
+  ecs_key_any_prepass_plugin_loaded
+}
+
+///|
+pub impl @app.Resource for PrepassPipelineState with resource() {
+  ecs_key_prepass_pipeline_state
+}
+
+///|
+pub fn prepass_pipeline_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  prepass_pipeline_plugin_with(app, PrepassPipelinePlugin::default())
+}
+
+///|
+pub fn prepass_pipeline_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : PrepassPipelinePlugin,
+) -> @app.App[@ecs.World] {
+  if app.contains_resource(ecs_key_prepass_pipeline_state) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_key_prepass_pipeline_state,
+      PrepassPipelineState::default(),
+    )
+  }
+}
+
+///|
 pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @core_prepass.prepass_plugin(app)
+  prepass_plugin_with(app, PrepassPlugin::default())
 }
 
 ///|
@@ -70,6 +139,15 @@ pub fn prepass_plugin_with(
   app : @app.App[@ecs.World],
   plugin : PrepassPlugin,
 ) -> @app.App[@ecs.World] {
+  let app = prepass_pipeline_plugin(app)
+  let app = if app.contains_resource(ecs_key_any_prepass_plugin_loaded) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_key_any_prepass_plugin_loaded,
+      AnyPrepassPluginLoaded::{},
+    )
+  }
   @core_prepass.prepass_plugin_with(app, plugin)
 }
 
