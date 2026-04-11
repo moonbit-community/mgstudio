@@ -39,8 +39,8 @@ pub fn ui_pointer_pos_for_entity(
   entity : @core.Entity,
   pointer_window_pos : @math.Vec2,
 ) -> @math.Vec2? {
-  let legacy_ctx = get_ui_context_resource(world).get()
-  let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+  let fallback_ctx = get_ui_context_resource(world).get()
+  let entity_ctx = ui_entity_resolved_camera_state(world, entity, fallback_ctx)
   ui_pointer_pos_in_viewport(
     pointer_window_pos,
     entity_ctx.viewport_origin,
@@ -58,8 +58,8 @@ pub fn ui_entity_contains_pointer(
     is Some(pointer) else {
     return false
   }
-  let legacy_ctx = get_ui_context_resource(world).get()
-  let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+  let fallback_ctx = get_ui_context_resource(world).get()
+  let entity_ctx = ui_entity_resolved_camera_state(world, entity, fallback_ctx)
   guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
     return false
   }

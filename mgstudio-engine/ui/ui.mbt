@@ -1335,7 +1335,7 @@ fn ui_compute_render_target_info(
 }
 
 ///|
-fn ui_resolved_camera_state_from_legacy(
+fn ui_resolved_camera_state_from_fallback_ctx(
   ctx : UiContext,
 ) -> UiResolvedCameraState {
   UiResolvedCameraState::{
@@ -1376,7 +1376,7 @@ fn ui_resolved_camera_state_from_computed(
 fn ui_root_resolved_camera_state(
   world : @ecs.World,
   root : @core.Entity,
-  legacy_ctx : UiContext?,
+  fallback_ctx : UiContext?,
 ) -> UiResolvedCameraState {
   match (try! world.get_by_key(root, ecs_key_computed_ui_render_target_info)) {
     Some(render_target_info) =>
@@ -1389,8 +1389,8 @@ fn ui_root_resolved_camera_state(
         render_target_info,
       )
     None =>
-      match legacy_ctx {
-        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+      match fallback_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_fallback_ctx(ctx)
         None => ui_resolved_camera_state_default()
       }
   }
@@ -1400,7 +1400,7 @@ fn ui_root_resolved_camera_state(
 fn ui_entity_resolved_camera_state(
   world : @ecs.World,
   entity : @core.Entity,
-  legacy_ctx : UiContext?,
+  fallback_ctx : UiContext?,
 ) -> UiResolvedCameraState {
   match
     (try! world.get_by_key(entity, ecs_key_computed_ui_render_target_info)) {
@@ -1415,8 +1415,8 @@ fn ui_entity_resolved_camera_state(
         render_target_info,
       )
     None =>
-      match legacy_ctx {
-        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+      match fallback_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_fallback_ctx(ctx)
         None => ui_resolved_camera_state_default()
       }
   }
@@ -1539,7 +1539,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   } else {
     ui_scale.value
   }
-  let legacy_inv_px_scale = ui_scale_value / sf
+  let fallback_inv_px_scale = ui_scale_value / sf
   let transparent_id = @asset.asset_transparent_texture().id()
   fn texture_size(handle : @asset.Handle[@asset.Image]) -> @math.Vec2 {
     let w = @asset.asset_texture_width(handle)
@@ -1572,7 +1572,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
     let inv_px_scale = match
       (try! world.get_by_key(entity, ecs_key_computed_ui_render_target_info)) {
       Some(render_target_info) => 1.0F / render_target_info.scale_factor()
-      None => legacy_inv_px_scale
+      None => fallback_inv_px_scale
     }
     let next = ContentSize::new(
       @math.Vec2::new(size_px.x * inv_px_scale, size_px.y * inv_px_scale),
@@ -1660,7 +1660,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
 ///|
 pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
-  let legacy_ctx = res.get()
+  let fallback_ctx = res.get()
   let roots = ui_collect_root_entities(world)
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match (try! world.get_by_key(entity, ecs_key_content_size)) {
@@ -2107,7 +2107,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   }
 
   fn layout_root(root : @core.Entity) -> Unit {
-    let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
+    let root_ctx = ui_root_resolved_camera_state(world, root, fallback_ctx)
     root_viewport_size.val = root_ctx.viewport_size
     let explicit_root = try! world.contains_by_key(root, ecs_key_ui_root)
     let root_rect = @math.Rect::new(
@@ -2606,7 +2606,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 /// Compute `CalculatedClip` and attach `@sprite.ScissorRect` for clipped UI.
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
-  let legacy_ctx = res.get()
+  let fallback_ctx = res.get()
   let roots = ui_collect_root_entities(world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
@@ -2805,7 +2805,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   }
 
   for root in roots {
-    let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
+    let root_ctx = ui_root_resolved_camera_state(world, root, fallback_ctx)
     let viewport_rect = @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
@@ -2999,7 +2999,7 @@ pub fn ui_build_a11y_tree_update(
   world : @ecs.World,
 ) -> @moon_accesskit.TreeUpdate {
   let res = get_ui_context_resource(world)
-  let legacy_ctx = res.get()
+  let fallback_ctx = res.get()
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else {
     let root = @moon_accesskit.NodeId::root()
@@ -3156,7 +3156,7 @@ pub fn ui_build_a11y_tree_update(
     guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
       continue
     }
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(world, entity, fallback_ctx)
     let size = layout.rect.size()
     let x0 = (entity_ctx.viewport_origin.x + layout.rect.min.x).to_double()
     let y0 = (entity_ctx.viewport_origin.y + layout.rect.min.y).to_double()
@@ -3239,7 +3239,7 @@ pub fn ui_build_a11y_tree_update(
       }
     }
     let rect = layout.rect
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(world, entity, fallback_ctx)
     let x0 = (entity_ctx.viewport_origin.x + rect.min.x).to_double()
     let y0 = (entity_ctx.viewport_origin.y + rect.min.y).to_double()
     let size = rect.size()
@@ -3347,7 +3347,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   guard stack_res.get() is Some(stack0) else { return }
   let pointer_window = @input.mouse_position()
   let pointer_ctx = ctx0.pointer_pos
-  let legacy_ctx = Some(ctx0)
+  let fallback_ctx = Some(ctx0)
   let down = ctx0.pointer_down
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
     a.id == b.id && a.generation == b.generation
@@ -3478,7 +3478,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       let idx = stack0.uinodes.length() - 1 - i
       let entity = stack0.uinodes[idx]
       let entity_ctx = ui_entity_resolved_camera_state(
-        world, entity, legacy_ctx,
+        world, entity, fallback_ctx,
       )
       let pointer = match pointer_window {
         Some(pointer_window_pos) =>

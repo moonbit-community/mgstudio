@@ -21,7 +21,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let res = @ui.get_ui_context_resource(source_world)
   guard res.get() is Some(ctx0) else { return }
-  let legacy_ctx = Some(ctx0)
+  let fallback_ctx = Some(ctx0)
   let texture_atlas_layouts_key : @ecs.ResourceKey[
     @asset.Assets[@asset.TextureAtlasLayout],
   ] = @asset.assets_resource_key()
@@ -59,7 +59,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   } else {
     ui_scale.value
   }
-  let legacy_px_per_ui = safe_scale_factor(@window.window_scale_factor()) /
+  let fallback_px_per_ui = safe_scale_factor(@window.window_scale_factor()) /
     ui_scale_value
   let uv_min = @math.Vec2::new(0.0F, 0.0F)
   let uv_max = @math.Vec2::new(1.0F, 1.0F)
@@ -84,7 +84,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       continue
     }
     let entity_ctx = ui_entity_resolved_camera_state(
-      source_world, entity, legacy_ctx,
+      source_world, entity, fallback_ctx,
     )
     let viewport_size = entity_ctx.viewport_size
     let shadow_samples = match entity_ctx.camera_entity {
@@ -392,7 +392,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
           // computing slice/tiling parameters to match Bevy.
           let px_per_ui = match entity_ctx.render_target_info {
             Some(render_target_info) => render_target_info.scale_factor()
-            None => legacy_px_per_ui
+            None => fallback_px_per_ui
           }
           let target_size = @math.Vec2::new(
             size.x * px_per_ui,

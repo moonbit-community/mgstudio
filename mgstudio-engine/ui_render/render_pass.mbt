@@ -43,7 +43,7 @@ fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
 }
 
 ///|
-fn ui_resolved_camera_state_from_legacy(
+fn ui_resolved_camera_state_from_fallback_ctx(
   ctx : @ui.UiContext,
 ) -> UiResolvedCameraState {
   UiResolvedCameraState::{
@@ -69,7 +69,7 @@ fn ui_resolved_camera_state_from_computed(
 fn ui_entity_resolved_camera_state(
   world : @ecs.World,
   entity : @core.Entity,
-  legacy_ctx : @ui.UiContext?,
+  fallback_ctx : @ui.UiContext?,
 ) -> UiResolvedCameraState {
   match
     (try! world.get_by_key(entity, @ui.ecs_key_computed_ui_render_target_info)) {
@@ -83,8 +83,8 @@ fn ui_entity_resolved_camera_state(
         render_target_info,
       )
     None =>
-      match legacy_ctx {
-        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+      match fallback_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_fallback_ctx(ctx)
         None => ui_resolved_camera_state_default()
       }
   }
