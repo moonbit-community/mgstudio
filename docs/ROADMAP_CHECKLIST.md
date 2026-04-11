@@ -11,8 +11,8 @@ This file must not exceed 200 lines.
 | `bevy_render` (topology) | `mgstudio-engine/render` | ✅ Mostly Done | 95% | File topology is now highly converged; draw and preprocess offset owners are split out (`mesh3d_draw_storage_binding`, `mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_preprocess_indirect_offsets`) and checks stay green. | Keep maintenance-level owner convergence only. |
 | `bevy_render::renderer` internals | `mgstudio-engine/render/renderer` | ✅ Mostly Done | 97% | Motion-vector/main-pass/storage-binding owners are now split (`mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_draw_storage_binding`) and render/full checks remain green (`moon check render`, `moon check --target native`). | Keep converging remaining draw-entry orchestration ownership by Bevy responsibilities. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | ✅ Mostly Done | 95% | Package checks are green (`moon check core_pipeline --target native`) and `mip_generation` now includes Bevy-shaped jobs + pipelines resources with plugin init and runtime bookkeeping surface. | Keep maintenance-level runtime-depth parity closure. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 🟡 In Progress | 85% | GPU preprocess indirect metadata init now matches Bevy-style batch-set bootstrap (`count=0` then runtime update), and `moon test pbr --target native` is green; forward decal/clustered decal/OIT/occlusion runtime still not fully closed. | Complete pending pbr runtime tracks before tuning. |
-| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 🟡 In Progress | 85% | Projection/frustum logic is mirrored, frusta-update owner logic is in `pbr/render/systems`, and preprocess indirect metadata initialization is aligned; parent compatibility owner duplication remains. | Continue collapsing projection owner duplication under MoonBit constraints. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 🟡 In Progress | 92% | GPU preprocess import chain is now closed (`mesh_preprocess_types`/`mesh_types`/`mesh_view_bindings`/`prepass_bindings`/`view_transformations`/`occlusion_culling`), preprocess fatal spam is removed, `many_lights` stress FPS recovers, and `moon test pbr --target native` is green. | Finish remaining decal/OIT/runtime-depth parity tails. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 🟡 In Progress | 93% | Projection/frustum logic and preprocess metadata owners are aligned; preprocess shader module resolution is now Bevy-shaped and stress gate no longer regresses on queue preprocess path. | Continue collapsing residual projection owner compatibility edges. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 🟡 In Progress | 87% | File-owner shape is split and prepass pipeline state is now updated by runtime system (`prepass_update_pipeline_state`) instead of static marker-only resource. | Finish remaining prepass runtime behavior parity. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 🟡 In Progress | 40% | Owner surfaces exist but runtime is still limited. | Decide final runtime scope and implement or defer formally. |
 | `bevy_material` | `mgstudio-engine/material` | 🟡 In Progress | 76% | Deferred renderer method and forward-decal specialization need closure. | Complete deferred/forward-decal behavior parity. |
@@ -40,14 +40,14 @@ This file must not exceed 200 lines.
 | `bevy_rapier` examples parity | `mgstudio-engine/physics2d` + `physics3d` + examples | 🟡 In Progress | 82% | Physics package tests are green (`moon test physics2d --target native`, `moon test physics3d --target native`); screenshot-level visual parity is still incomplete. | Continue example-by-example visual correction. |
 | `bevy_remote` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder backend removed; no fake runtime left. | Reintroduce only with real transport/protocol backend. |
 | `bevy_solari` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder runtime removed from mainline. | Reintroduce only with executable implementation. |
-| Stress tests parity gate | `examples/stress_tests/*` + scripts | 🟡 In Progress | 60% | FPS and visual consistency gaps remain in 3D/text-heavy cases. | Keep parity-first refactors, then validate with profiles/screenshots. |
+| Stress tests parity gate | `examples/stress_tests/*` + scripts | ✅ Mostly Done | 95% | `gate_stress_performance.sh` and full `parity_hard_gates.sh` (with `MGSTUDIO_PARITY_INCLUDE_STRESS=1`) are passing after preprocess shader-chain fixes; `many_lights` rises from ~3 FPS to >140 FPS average in gate sampling. | Keep gate green and only track regressions. |
 | Visual screenshot audit | `/tmp` captures + parity docs | 🟡 In Progress | 68% | Large batch exists, but not all cases are fully converged. | Continue full-run capture and per-case fix loop. |
-| Native test environment | workspace build/test toolchain | 🟡 In Progress | 80% | Key native package tests (`asset/ui/ui_render/sprite/window/winit/input/picking/scene/gltf/pbr/text/image/animation/physics2d/physics3d`) are green; full-suite serial run stability and remaining long-run hangs still need closure. | Make full `moon test --target native` runs repeatable end-to-end and remove remaining hang points. |
+| Native test environment | workspace build/test toolchain | 🟡 In Progress | 90% | `moon check --target native` is green; parity hard gates (visual + stress) are green; key native package tests (`asset/ui/ui_render/sprite/window/winit/input/picking/scene/gltf/pbr/text/image/animation/physics2d/physics3d`) are green. | Finish full-suite `moon test --target native` repeatability/hang closure. |
 
 | Rollup | Value |
 |---|---:|
 | Migration focus | Bevy-first source/structure parity (not heuristic tuning) |
-| Done / Mostly done rows | 16 / 39 |
-| In-progress rows | 20 / 39 |
+| Done / Mostly done rows | 17 / 39 |
+| In-progress rows | 19 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (pm3) |
+| Last updated | 2026-04-12 (pm4) |

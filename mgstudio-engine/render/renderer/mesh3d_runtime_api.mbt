@@ -90,7 +90,10 @@ pub fn build_mesh3d_indirect_parameters(
     backend.build_mesh3d_indirect_parameters(
       camera_key_hi, camera_key_lo, phase_kind,
     ) catch {
-      err => debug_runtime_error("build_mesh3d_indirect_parameters", err)
+      Fatal(message) =>
+        debug(
+          "[renderer] build_mesh3d_indirect_parameters: Fatal(\{message})",
+        )
     }
   }
 }
@@ -103,7 +106,7 @@ pub fn preprocess_mesh3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.preprocess_mesh3d(camera_key_hi, camera_key_lo, phase_kind) catch {
-      err => debug_runtime_error("preprocess_mesh3d", err)
+      Fatal(message) => debug("[renderer] preprocess_mesh3d: Fatal(\{message})")
     }
   }
 }
@@ -115,7 +118,10 @@ pub fn downsample_mesh3d_depth_pyramid(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.downsample_mesh3d_depth_pyramid(camera_key_hi, camera_key_lo) catch {
-      err => debug_runtime_error("downsample_mesh3d_depth_pyramid", err)
+      Fatal(message) =>
+        debug(
+          "[renderer] downsample_mesh3d_depth_pyramid: Fatal(\{message})",
+        )
     }
   }
 }
