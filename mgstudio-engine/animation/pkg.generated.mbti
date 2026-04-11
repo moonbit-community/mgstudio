@@ -122,6 +122,8 @@ pub let ecs_key_animation_transitions : @ecs.ComponentKey[AnimationTransitions]
 
 pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights]
 
+pub fn expire_completed_transitions(@ecs.World) -> Unit
+
 pub fn expire_transitions(@ecs.World) -> Unit
 
 pub fn gltf_interpolation_from_name(String?) -> GltfInterpolation

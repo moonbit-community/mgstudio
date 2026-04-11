@@ -231,7 +231,7 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn expire_transitions(world : @ecs.World) -> Unit {
+pub fn expire_completed_transitions(world : @ecs.World) -> Unit {
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
   let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
     world,
@@ -252,6 +252,11 @@ pub fn expire_transitions(world : @ecs.World) -> Unit {
     try! world.set_by_key(update.0, ecs_key_animation_transitions, update.1)
     try! world.set_by_key(update.0, ecs_key_animation_player, update.2)
   }
+}
+
+///|
+pub fn expire_transitions(world : @ecs.World) -> Unit {
+  expire_completed_transitions(world)
 }
 
 ///|

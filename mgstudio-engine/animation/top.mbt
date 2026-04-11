@@ -236,7 +236,7 @@ pub fn ActiveAnimation::set_weight(
   self : ActiveAnimation,
   weight : Float,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, weight }
+  ActiveAnimation::{ ..self, weight, }
 }
 
 ///|
@@ -934,113 +934,138 @@ fn animation_prepare_player_target_samples(
 }
 
 ///|
-fn animation_apply_prepared_player_to_target(
-  target_id : AnimationTargetId,
-  target_mask : AnimationMask,
-  prepared_samples : Array[AnimationPreparedTargetSample],
-  clip_cache : Map[Int, AnimationClip],
+priv struct AnimationEvaluationState {
+  mut has_translation : Bool
+  mut has_rotation : Bool
+  mut has_scale : Bool
+  mut has_weights : Bool
+  mut has_text_color : Bool
+  mut translation_weight : Float
+  mut rotation_weight : Float
+  mut scale_weight : Float
+  mut weights_weight : Float
+  mut text_color_weight : Float
+  mut translation_acc : @math.Vec3
+  mut scale_acc : @math.Vec3
+  mut rotation_acc_x : Float
+  mut rotation_acc_y : Float
+  mut rotation_acc_z : Float
+  mut rotation_acc_w : Float
+  weights_acc : Array[Float]
+  mut text_color_acc_r : Float
+  mut text_color_acc_g : Float
+  mut text_color_acc_b : Float
+  mut text_color_acc_a : Float
+}
+
+///|
+fn animation_evaluation_state_new() -> AnimationEvaluationState {
+  AnimationEvaluationState::{
+    has_translation: false,
+    has_rotation: false,
+    has_scale: false,
+    has_weights: false,
+    has_text_color: false,
+    translation_weight: 0.0F,
+    rotation_weight: 0.0F,
+    scale_weight: 0.0F,
+    weights_weight: 0.0F,
+    text_color_weight: 0.0F,
+    translation_acc: @math.Vec3::zero(),
+    scale_acc: @math.Vec3::zero(),
+    rotation_acc_x: 0.0F,
+    rotation_acc_y: 0.0F,
+    rotation_acc_z: 0.0F,
+    rotation_acc_w: 0.0F,
+    weights_acc: [],
+    text_color_acc_r: 0.0F,
+    text_color_acc_g: 0.0F,
+    text_color_acc_b: 0.0F,
+    text_color_acc_a: 0.0F,
+  }
+}
+
+///|
+fn animation_evaluation_state_apply_sample(
+  state : AnimationEvaluationState,
+  clip_sample : AnimationSample,
+  combined_weight : Float,
+) -> Unit {
+  if clip_sample.translation is Some(translation) {
+    state.has_translation = true
+    state.translation_weight = state.translation_weight + combined_weight
+    state.translation_acc = state.translation_acc.add(
+      translation.mul_scalar(combined_weight),
+    )
+  }
+
+  if clip_sample.rotation is Some(rotation) {
+    state.has_rotation = true
+    state.rotation_weight = state.rotation_weight + combined_weight
+    state.rotation_acc_x = state.rotation_acc_x + rotation.x * combined_weight
+    state.rotation_acc_y = state.rotation_acc_y + rotation.y * combined_weight
+    state.rotation_acc_z = state.rotation_acc_z + rotation.z * combined_weight
+    state.rotation_acc_w = state.rotation_acc_w + rotation.w * combined_weight
+  }
+
+  if clip_sample.scale is Some(scale) {
+    state.has_scale = true
+    state.scale_weight = state.scale_weight + combined_weight
+    state.scale_acc = state.scale_acc.add(scale.mul_scalar(combined_weight))
+  }
+
+  if clip_sample.weights is Some(weights) {
+    state.has_weights = true
+    state.weights_weight = state.weights_weight + combined_weight
+    animation_weights_accumulate(state.weights_acc, weights, combined_weight)
+  }
+
+  if clip_sample.text_color is Some(text_color) {
+    state.has_text_color = true
+    state.text_color_weight = state.text_color_weight + combined_weight
+    state.text_color_acc_r = state.text_color_acc_r +
+      text_color.r * combined_weight
+    state.text_color_acc_g = state.text_color_acc_g +
+      text_color.g * combined_weight
+    state.text_color_acc_b = state.text_color_acc_b +
+      text_color.b * combined_weight
+    state.text_color_acc_a = state.text_color_acc_a +
+      text_color.a * combined_weight
+  }
+}
+
+///|
+fn animation_evaluation_state_commit(
+  state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
   base_weights : AnimationWeights?,
   base_text_color : @text.TextColor?,
 ) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
-  let mut has_translation = false
-  let mut has_rotation = false
-  let mut has_scale = false
-  let mut has_weights = false
-  let mut has_text_color = false
-
-  let mut translation_weight = 0.0F
-  let mut rotation_weight = 0.0F
-  let mut scale_weight = 0.0F
-  let mut weights_weight = 0.0F
-  let mut text_color_weight = 0.0F
-
-  let mut translation_acc = @math.Vec3::zero()
-  let mut scale_acc = @math.Vec3::zero()
-
-  let mut rotation_acc_x = 0.0F
-  let mut rotation_acc_y = 0.0F
-  let mut rotation_acc_z = 0.0F
-  let mut rotation_acc_w = 0.0F
-
-  let weights_acc : Array[Float] = []
-  let mut text_color_acc_r = 0.0F
-  let mut text_color_acc_g = 0.0F
-  let mut text_color_acc_b = 0.0F
-  let mut text_color_acc_a = 0.0F
-
-  for sample in prepared_samples {
-    if (target_mask & sample.computed_mask) != 0U {
-      continue
-    }
-    guard clip_cache.get(sample.clip_id) is Some(clip) else { continue }
-    guard clip.sample_target(target_id, sample.seek_time) is Some(clip_sample) else {
-      continue
-    }
-    let combined_weight = sample.combined_weight
-
-    if clip_sample.translation is Some(translation) {
-      has_translation = true
-      translation_weight = translation_weight + combined_weight
-      translation_acc = translation_acc.add(
-        translation.mul_scalar(combined_weight),
-      )
-    }
-
-    if clip_sample.rotation is Some(rotation) {
-      has_rotation = true
-      rotation_weight = rotation_weight + combined_weight
-      rotation_acc_x = rotation_acc_x + rotation.x * combined_weight
-      rotation_acc_y = rotation_acc_y + rotation.y * combined_weight
-      rotation_acc_z = rotation_acc_z + rotation.z * combined_weight
-      rotation_acc_w = rotation_acc_w + rotation.w * combined_weight
-    }
-
-    if clip_sample.scale is Some(scale) {
-      has_scale = true
-      scale_weight = scale_weight + combined_weight
-      scale_acc = scale_acc.add(scale.mul_scalar(combined_weight))
-    }
-
-    if clip_sample.weights is Some(weights) {
-      has_weights = true
-      weights_weight = weights_weight + combined_weight
-      animation_weights_accumulate(weights_acc, weights, combined_weight)
-    }
-
-    if clip_sample.text_color is Some(text_color) {
-      has_text_color = true
-      text_color_weight = text_color_weight + combined_weight
-      text_color_acc_r = text_color_acc_r + text_color.r * combined_weight
-      text_color_acc_g = text_color_acc_g + text_color.g * combined_weight
-      text_color_acc_b = text_color_acc_b + text_color.b * combined_weight
-      text_color_acc_a = text_color_acc_a + text_color.a * combined_weight
-    }
-  }
-
-  let transform_out = if has_translation || has_rotation || has_scale {
+  let transform_out = if state.has_translation ||
+    state.has_rotation ||
+    state.has_scale {
     let base = match base_transform {
       Some(transform) => transform
       None => @transform.Transform::identity()
     }
-    let translation = if has_translation {
-      let base_weight = animation_saturate(1.0F - translation_weight)
-      base.translation.mul_scalar(base_weight).add(translation_acc)
+    let translation = if state.has_translation {
+      let base_weight = animation_saturate(1.0F - state.translation_weight)
+      base.translation.mul_scalar(base_weight).add(state.translation_acc)
     } else {
       base.translation
     }
-    let scale = if has_scale {
-      let base_weight = animation_saturate(1.0F - scale_weight)
-      base.scale.mul_scalar(base_weight).add(scale_acc)
+    let scale = if state.has_scale {
+      let base_weight = animation_saturate(1.0F - state.scale_weight)
+      base.scale.mul_scalar(base_weight).add(state.scale_acc)
     } else {
       base.scale
     }
-    let rotation = if has_rotation {
-      let base_weight = animation_saturate(1.0F - rotation_weight)
-      let x = base.rotation.x * base_weight + rotation_acc_x
-      let y = base.rotation.y * base_weight + rotation_acc_y
-      let z = base.rotation.z * base_weight + rotation_acc_z
-      let w = base.rotation.w * base_weight + rotation_acc_w
+    let rotation = if state.has_rotation {
+      let base_weight = animation_saturate(1.0F - state.rotation_weight)
+      let x = base.rotation.x * base_weight + state.rotation_acc_x
+      let y = base.rotation.y * base_weight + state.rotation_acc_y
+      let z = base.rotation.z * base_weight + state.rotation_acc_z
+      let w = base.rotation.w * base_weight + state.rotation_acc_w
       animation_quat_normalized(x, y, z, w)
     } else {
       base.rotation
@@ -1050,33 +1075,37 @@ fn animation_apply_prepared_player_to_target(
     None
   }
 
-  let weights_out = if has_weights {
+  let weights_out = if state.has_weights {
     let base_values = match base_weights {
       Some(weights) => weights.values
       None => []
     }
     Some(
       AnimationWeights::new(
-        animation_weights_blend(base_values, weights_acc, weights_weight),
+        animation_weights_blend(
+          base_values,
+          state.weights_acc,
+          state.weights_weight,
+        ),
       ),
     )
   } else {
     None
   }
 
-  let text_color_out = if has_text_color {
+  let text_color_out = if state.has_text_color {
     let base = match base_text_color {
       Some(color) => color.color
       None => @sprite.Color::white()
     }
-    let base_weight = animation_saturate(1.0F - text_color_weight)
+    let base_weight = animation_saturate(1.0F - state.text_color_weight)
     Some(
       @text.TextColor::new(
         @sprite.Color::new(
-          base.r * base_weight + text_color_acc_r,
-          base.g * base_weight + text_color_acc_g,
-          base.b * base_weight + text_color_acc_b,
-          base.a * base_weight + text_color_acc_a,
+          base.r * base_weight + state.text_color_acc_r,
+          base.g * base_weight + state.text_color_acc_g,
+          base.b * base_weight + state.text_color_acc_b,
+          base.a * base_weight + state.text_color_acc_a,
         ),
       ),
     )
@@ -1085,6 +1114,38 @@ fn animation_apply_prepared_player_to_target(
   }
 
   (transform_out, weights_out, text_color_out)
+}
+
+///|
+fn animation_apply_prepared_player_to_target(
+  target_id : AnimationTargetId,
+  target_mask : AnimationMask,
+  prepared_samples : Array[AnimationPreparedTargetSample],
+  clip_cache : Map[Int, AnimationClip],
+  base_transform : @transform.Transform?,
+  base_weights : AnimationWeights?,
+  base_text_color : @text.TextColor?,
+) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
+  let evaluation_state = animation_evaluation_state_new()
+
+  for sample in prepared_samples {
+    if (target_mask & sample.computed_mask) != 0U {
+      continue
+    }
+    guard clip_cache.get(sample.clip_id) is Some(clip) else { continue }
+    guard clip.sample_target(target_id, sample.seek_time) is Some(clip_sample) else {
+      continue
+    }
+    animation_evaluation_state_apply_sample(
+      evaluation_state,
+      clip_sample,
+      sample.combined_weight,
+    )
+  }
+
+  animation_evaluation_state_commit(
+    evaluation_state, base_transform, base_weights, base_text_color,
+  )
 }
 
 ///|
@@ -1533,7 +1594,9 @@ pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(trigger_events).in_set(animation_set_trigger_events),
   )
   .add_post_update_system_config(
-    @app.system(expire_transitions).in_set(animation_set_expire_transitions),
+    @app.system(expire_completed_transitions).in_set(
+      animation_set_expire_transitions,
+    ),
   )
   .configure_set(@app.PostUpdate, animation_set_thread, before=[
     animation_set_advance_transitions,
