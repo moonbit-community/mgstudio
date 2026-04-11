@@ -20,6 +20,7 @@ This file must not exceed 200 lines. Exceeded done items should be archived to A
 - [x] Issue `render/renderer_pass_types_split`: `GpuPassState`/`GpuFrameState`/`GpuSurfaceState` moved from `renderer/draw_state.mbt` into `renderer/pass_types.mbt`.
 - [x] Issue `render/renderer_pass_begin_split`: draw-state begin-pass implementation moved from `renderer/draw_state.mbt` to `renderer/pass_begin.mbt`; `draw_state.mbt` now only module anchor.
 - [x] Issue `render/renderer_pass_reopen_split`: saved-pass reopen path moved from `renderer/pass_begin.mbt` into `renderer/pass_reopen.mbt`.
+- [x] Issue `render/renderer_backend_runtime_api_split`: host backend bridge wrappers moved from `renderer/top.mbt` into dedicated `renderer/backend_runtime_api.mbt`, keeping top-level file as package anchor/docs only.
 - [x] Issue `pbr/render_execute_camera_loop_split`: extracted per-camera execute loop from `render_execute.mbt` into `render_execute_camera.mbt` without behavior change.
 - [x] Issue `pbr/render_execute_render_cameras_split`: extracted camera-phase orchestration (`lighting` collect + prepared-order fallback + per-camera dispatch + motion-blur history sync) from `render_execute.mbt` into `render_execute_render_cameras.mbt`.
 - [x] Issue `pbr/render_execute_config_split`: moved runtime-config/decal-mode/deferred-mode/draw-flags helpers from `render_execute.mbt` into `render_execute_config.mbt`.
