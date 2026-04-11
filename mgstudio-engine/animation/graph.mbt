@@ -218,6 +218,18 @@ fn animation_graph_find_target_mask_group(
 }
 
 ///|
+fn animation_graph_rebuild_target_mask_index(graph : AnimationGraph) -> Unit {
+  graph.target_mask_index_by_key.clear()
+  let mut i = 0
+  while i < graph.mask_groups.length() {
+    let target_id = graph.mask_groups[i].0
+    let target_key = animation_target_id_lookup_key(target_id)
+    graph.target_mask_index_by_key.set(target_key, i)
+    i = i + 1
+  }
+}
+
+///|
 pub fn AnimationGraph::add_target_to_mask_group(
   self : AnimationGraph,
   target_id : AnimationTargetId,
