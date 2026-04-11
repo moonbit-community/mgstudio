@@ -20,8 +20,8 @@ This file must not exceed 200 lines.
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | ✅ Mostly Done | 95% | Sprite runtime/tests are green and stress gate is stable after pointer/runtime fixes. | Keep screenshot parity checks as maintenance guard. |
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | ✅ Mostly Done | 95% | `ui` + `ui_render` checks are green and pointer-space regressions are closed on mainline stress cases. | Keep traversal/picking tails in maintenance monitoring. |
 | `bevy_text` | `mgstudio-engine/text` | ✅ Mostly Done | 95% | Text package tests and stress cases are stable in parity gates. | Keep glyph/queue tails as maintenance-only profiling items. |
-| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | ✅ Mostly Done | 95% | Loader/event/runtime flow is stable in current parity checks and integrated scene runs. | Continue screenshot maintenance audits only. |
-| `bevy_animation` | `mgstudio-engine/animation` | ✅ Mostly Done | 95% | Animation asset-event message wiring is now explicit in plugin setup and `moon test animation --target native` is green; remaining risk is cross-package behavior under stress scenes. | Keep as done-core; verify via gltf/stress integration passes. |
+| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | ✅ Mostly Done | 96% | `moon test gltf --target native` (4/4) and `moon test scene --target native` (33/33) are green on 2026-04-12; `examples/gltf/load_gltf` check is up to date. | Continue screenshot maintenance audits only. |
+| `bevy_animation` | `mgstudio-engine/animation` | ✅ Mostly Done | 96% | `moon test animation --target native` (23/23) is green on 2026-04-12 and `examples/animation/animated_mesh` check is up to date. | Keep as done-core; verify via gltf/stress integration passes. |
 | `bevy_scene` (static/serialized scene path) | `mgstudio-engine/scene` | ✅ Mostly Done | 95% | Static `SceneRoot`/spawner/glTF runtime path is stable with current gltf/render integration. | Keep maintenance-level parity checks only. |
 | `bevy_scene` (`dynamic_scene*` family) | N/A (explicit non-goal: dynamic) | ⏸ Excluded | 0% | Dynamic-scene/reflect-heavy path is intentionally out of scope. | Keep excluded unless scope changes. |
 | `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | ✅ Mostly Done | 95% | Gizmos package/runtime is stable on native checks and parity gate runs. | Keep representative screenshot audits as maintenance guard. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am3) |
+| Last updated | 2026-04-12 (am4) |
