@@ -40,9 +40,9 @@ This file must not exceed 200 lines.
 | `bevy_rapier` examples parity | `mgstudio-engine/physics2d` + `physics3d` + examples | ✅ Mostly Done | 95% | Physics package tests are green and current stress/native gates are stable with the migrated rapier surfaces. | Keep screenshot-level parity drift checks in maintenance runs. |
 | `bevy_remote` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder backend removed; no fake runtime left. | Reintroduce only with real transport/protocol backend. |
 | `bevy_solari` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder runtime removed from mainline. | Reintroduce only with executable implementation. |
-| Stress tests parity gate | `examples/stress_tests/*` + scripts | ✅ Mostly Done | 96% | Latest full hard gate (`MGSTUDIO_PARITY_INCLUDE_STRESS=1`, 2026-04-12) is green and stress report lands at `/tmp/mgstudio_stress_gate_20260412_025318/results.tsv`. | Keep gate green and only track regressions. |
-| Visual screenshot audit | `/tmp` captures + parity docs | ✅ Mostly Done | 95% | 3D screenshot gate and parity hard gates are green on current baseline set. | Keep full-run capture as maintenance regression guard. |
-| Native test environment | workspace build/test toolchain | ✅ Mostly Done | 95% | `moon check --target native`, parity hard gates (visual + stress), and key native package tests are green on current baseline. | Keep full-suite repeatability/hang closure as maintenance follow-up. |
+| Stress tests parity gate | `examples/stress_tests/*` + scripts | ✅ Mostly Done | 97% | Latest full hard gate (`MGSTUDIO_PARITY_INCLUDE_STRESS=1`, 2026-04-12) is green and stress report lands at `/tmp/mgstudio_stress_gate_20260412_032143/results.tsv`. | Keep gate green and only track regressions. |
+| Visual screenshot audit | `/tmp` captures + parity docs | ✅ Mostly Done | 96% | Latest 3D screenshot gate artifacts are green at `.private/parity/artifacts/3d_examples_gate/20260412_032054` and included in the full hard gate pass. | Keep full-run capture as maintenance regression guard. |
+| Native test environment | workspace build/test toolchain | ✅ Mostly Done | 96% | `moon check --target native` and full parity hard gates (visual + stress) are green on the latest 2026-04-12 run. | Keep full-suite repeatability/hang closure as maintenance follow-up. |
 
 | Rollup | Value |
 |---|---:|
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (pm6) |
+| Last updated | 2026-04-12 (am3) |
