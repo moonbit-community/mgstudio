@@ -46,3 +46,17 @@ pub fn meshlet_visibility_buffer_raster(
     state.last_draw_count = if draw_count < 0 { 0 } else { draw_count }
   }
 }
+
+///|
+pub fn MeshletVisibilityBufferRasterState::last_draw_count(
+  self : MeshletVisibilityBufferRasterState,
+) -> Int {
+  self.last_draw_count
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterState::enabled(
+  self : MeshletVisibilityBufferRasterState,
+) -> Bool {
+  self.enabled
+}

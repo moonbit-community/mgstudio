@@ -39,3 +39,13 @@ pub fn meshlet_persistent_buffer_supported_scalar_types() -> Array[String] {
 pub fn meshlet_persistent_buffer_impls_runtime_available() -> Bool {
   meshlet_runtime_available()
 }
+
+///|
+pub fn meshlet_persistent_buffer_supports_type(type_name : String) -> Bool {
+  for supported in meshlet_persistent_buffer_supported_scalar_types() {
+    if supported == type_name {
+      return true
+    }
+  }
+  false
+}

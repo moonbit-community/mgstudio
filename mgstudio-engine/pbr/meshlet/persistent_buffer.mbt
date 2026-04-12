@@ -34,6 +34,11 @@ pub fn[T] PersistentGpuBuffer::len(self : PersistentGpuBuffer[T]) -> Int {
 }
 
 ///|
+pub fn[T] PersistentGpuBuffer::is_empty(self : PersistentGpuBuffer[T]) -> Bool {
+  self.elements.length() == 0
+}
+
+///|
 pub fn[T] PersistentGpuBuffer::clear(self : PersistentGpuBuffer[T]) -> Unit {
   self.elements.clear()
 }
@@ -44,6 +49,16 @@ pub fn[T] PersistentGpuBuffer::push(
   value : T,
 ) -> Unit {
   self.elements.push(value)
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::extend(
+  self : PersistentGpuBuffer[T],
+  values : Array[T],
+) -> Unit {
+  for value in values {
+    self.elements.push(value)
+  }
 }
 
 ///|

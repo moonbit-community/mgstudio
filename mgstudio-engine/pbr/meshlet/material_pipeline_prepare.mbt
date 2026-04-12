@@ -26,6 +26,21 @@ pub fn MeshletViewMaterialsMainOpaquePass::default() -> MeshletViewMaterialsMain
 }
 
 ///|
+pub fn MeshletViewMaterialsMainOpaquePass::push(
+  self : MeshletViewMaterialsMainOpaquePass,
+  material_bin : (Int, Int, Int),
+) -> Unit {
+  self.entries.push(material_bin)
+}
+
+///|
+pub fn MeshletViewMaterialsMainOpaquePass::len(
+  self : MeshletViewMaterialsMainOpaquePass,
+) -> Int {
+  self.entries.length()
+}
+
+///|
 pub struct MeshletViewMaterialsPrepass {
   entries : Array[(Int, Int, Int)]
 }
@@ -36,6 +51,21 @@ pub fn MeshletViewMaterialsPrepass::default() -> MeshletViewMaterialsPrepass {
 }
 
 ///|
+pub fn MeshletViewMaterialsPrepass::push(
+  self : MeshletViewMaterialsPrepass,
+  material_bin : (Int, Int, Int),
+) -> Unit {
+  self.entries.push(material_bin)
+}
+
+///|
+pub fn MeshletViewMaterialsPrepass::len(
+  self : MeshletViewMaterialsPrepass,
+) -> Int {
+  self.entries.length()
+}
+
+///|
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
   entries : Array[(Int, Int, Int)]
 }
@@ -43,6 +73,21 @@ pub struct MeshletViewMaterialsDeferredGBufferPrepass {
 ///|
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> MeshletViewMaterialsDeferredGBufferPrepass {
   MeshletViewMaterialsDeferredGBufferPrepass::{ entries: [] }
+}
+
+///|
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(
+  self : MeshletViewMaterialsDeferredGBufferPrepass,
+  material_bin : (Int, Int, Int),
+) -> Unit {
+  self.entries.push(material_bin)
+}
+
+///|
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(
+  self : MeshletViewMaterialsDeferredGBufferPrepass,
+) -> Int {
+  self.entries.length()
 }
 
 ///|

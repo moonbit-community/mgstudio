@@ -19,23 +19,26 @@
 pub const HAS_MESHLET_RUNTIME : Bool = false
 
 ///|
+pub const MESHLET_PLUGIN_ID : String = "bevy_pbr::MeshletPlugin"
+
+///|
 pub fn meshlet_runtime_available() -> Bool {
   HAS_MESHLET_RUNTIME
 }
 
 ///|
 pub(all) enum MeshletRuntimeStatus {
+  Enabled
   Disabled
   RuntimeUnavailable
 }
 
 ///|
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
-  if meshlet_runtime_available() {
-    MeshletRuntimeStatus::Disabled
-  } else {
-    MeshletRuntimeStatus::RuntimeUnavailable
+  if !meshlet_runtime_available() {
+    return MeshletRuntimeStatus::RuntimeUnavailable
   }
+  MeshletRuntimeStatus::Disabled
 }
 
 ///|
@@ -54,6 +57,20 @@ pub fn meshlet_plugin() -> MeshletPlugin {
 }
 
 ///|
+pub struct MeshletPluginState {
+  runtime_status : MeshletRuntimeStatus
+  adapter_supports_mesh_shader : Bool
+}
+
+///|
+pub fn MeshletPluginState::default() -> MeshletPluginState {
+  MeshletPluginState::{
+    runtime_status: meshlet_runtime_status(),
+    adapter_supports_mesh_shader: false,
+  }
+}
+
+///|
 pub struct MeshletMesh3d {
   meshlet_mesh_id : Int
 }
@@ -61,4 +78,9 @@ pub struct MeshletMesh3d {
 ///|
 pub fn MeshletMesh3d::new(meshlet_mesh_id : Int) -> MeshletMesh3d {
   MeshletMesh3d::{ meshlet_mesh_id, }
+}
+
+///|
+pub fn MeshletMesh3d::id(self : MeshletMesh3d) -> Int {
+  self.meshlet_mesh_id
 }

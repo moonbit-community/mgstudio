@@ -24,6 +24,38 @@ pub(all) enum MeshToMeshletMeshConversionError {
 }
 
 ///|
+pub struct MeshToMeshletMeshConversionConfig {
+  max_vertices : Int
+  max_triangles : Int
+}
+
+///|
+pub fn MeshToMeshletMeshConversionConfig::default() -> MeshToMeshletMeshConversionConfig {
+  MeshToMeshletMeshConversionConfig::{
+    max_vertices: 65_535,
+    max_triangles: 65_535,
+  }
+}
+
+///|
+pub fn meshlet_validate_conversion_config(
+  config : MeshToMeshletMeshConversionConfig,
+) -> MeshToMeshletMeshConversionConfig {
+  MeshToMeshletMeshConversionConfig::{
+    max_vertices: if config.max_vertices <= 0 {
+      1
+    } else {
+      config.max_vertices
+    },
+    max_triangles: if config.max_triangles <= 0 {
+      1
+    } else {
+      config.max_triangles
+    },
+  }
+}
+
+///|
 pub fn meshlet_can_convert_from_mesh(
   vertex_count : Int,
   triangle_count : Int,
@@ -39,4 +71,26 @@ pub fn meshlet_from_mesh_runtime_available() -> Bool {
 ///|
 pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversionError {
   MeshToMeshletMeshConversionError::RuntimeUnavailable
+}
+
+///|
+pub fn meshlet_conversion_error_for_counts(
+  vertex_count : Int,
+  triangle_count : Int,
+  config : MeshToMeshletMeshConversionConfig,
+) -> MeshToMeshletMeshConversionError? {
+  let safe = meshlet_validate_conversion_config(config)
+  if !meshlet_runtime_available() {
+    return Some(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+  }
+  if vertex_count <= 0 {
+    return Some(MeshToMeshletMeshConversionError::MissingPositions)
+  }
+  if triangle_count <= 0 {
+    return Some(MeshToMeshletMeshConversionError::UnsupportedTopology)
+  }
+  if vertex_count > safe.max_vertices || triangle_count > safe.max_triangles {
+    return Some(MeshToMeshletMeshConversionError::TooManyVertices)
+  }
+  None
 }

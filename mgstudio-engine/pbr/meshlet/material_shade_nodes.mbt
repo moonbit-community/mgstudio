@@ -42,3 +42,14 @@ pub fn meshlet_material_shade_node_count() -> Int {
 pub fn meshlet_material_shade_nodes_runtime_available() -> Bool {
   meshlet_runtime_available()
 }
+
+///|
+pub fn meshlet_material_shade_node_index(node : String) -> Int? {
+  let nodes = meshlet_material_shade_nodes()
+  for index in 0..<nodes.length() {
+    if nodes[index] == node {
+      return Some(index)
+    }
+  }
+  None
+}
