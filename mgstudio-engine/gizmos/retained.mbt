@@ -16,9 +16,27 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/retained.rs`.
 
 ///|
-pub const GIZMO_RETAINED_SUPPORTED : Bool = true
+pub struct GizmoAssetHandle {
+  id : Int
+} derive(Eq, Debug)
 
 ///|
-pub fn gizmo_retained_supported() -> Bool {
-  GIZMO_RETAINED_SUPPORTED
+pub fn GizmoAssetHandle::new(id~ : Int) -> GizmoAssetHandle {
+  GizmoAssetHandle::{ id, }
+}
+
+///|
+pub struct RetainedGizmo {
+  handle : GizmoAssetHandle
+  line_config : GizmoLineConfig
+  depth_bias : Float
+}
+
+///|
+pub fn RetainedGizmo::default() -> RetainedGizmo {
+  RetainedGizmo::{
+    handle: GizmoAssetHandle::new(id=0),
+    line_config: GizmoLineConfig::default(),
+    depth_bias: 0.0F,
+  }
 }

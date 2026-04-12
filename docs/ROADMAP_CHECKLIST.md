@@ -84,6 +84,8 @@ This file must not exceed 200 lines.
 - [x] `dev_tools/dead-wrapper-prune`: remove unreferenced `*_available` stubs in `ci_testing`, `easy_screenshot`, `picking_debug`, `render_debug`, `states`.
 - [x] `text/error+font_loader-shape`: replace boolean availability stubs with concrete `TextError` / `FontLoader` / `FontLoaderError` owner types.
 - [x] `math/curve-dead-wrapper-prune`: remove unreferenced `curve_identity` and `easing_curve_identity`.
+- [x] `gizmos/cross+stroke_text-shape`: replace `*_supported` placeholders with concrete cross/text helper APIs in owner files.
+- [x] `gizmos/simplex+skinned+retained-shape`: replace bool stubs with concrete constants/types for simplex font, skinned-bounds config, retained gizmo data.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.

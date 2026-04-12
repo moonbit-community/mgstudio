@@ -16,9 +16,33 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/stroke_text.rs`.
 
 ///|
-pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
+pub fn gizmo_stroke_text_measure(
+  text : String,
+  font_size : Float,
+) -> @math.Vec2 {
+  @sprite.sprite_stroke_text_measure(text, font_size)
+}
 
 ///|
-pub fn gizmo_stroke_text_supported() -> Bool {
-  GIZMO_STROKE_TEXT_SUPPORTED
+pub fn[Config] gizmo_text_3d(
+  gizmos : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  text : String,
+  font_size : Float,
+  anchor : @math.Vec2,
+  color : @sprite.Color,
+) -> Unit {
+  gizmos.text_3d(isometry, text, font_size, anchor, color)
+}
+
+///|
+pub fn[Config] gizmo_text_2d(
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
+  text : String,
+  font_size : Float,
+  anchor : @math.Vec2,
+  color : @sprite.Color,
+) -> Unit {
+  gizmos.text_2d(isometry, text, font_size, anchor, color)
 }

@@ -16,9 +16,34 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/skinned_mesh_bounds.rs`.
 
 ///|
-pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
+pub struct SkinnedMeshBoundsGizmoPlugin {}
 
 ///|
-pub fn gizmo_skinned_mesh_bounds_supported() -> Bool {
-  GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED
+pub fn SkinnedMeshBoundsGizmoPlugin::default() -> SkinnedMeshBoundsGizmoPlugin {
+  SkinnedMeshBoundsGizmoPlugin::{  }
+}
+
+///|
+pub struct SkinnedMeshBoundsGizmoConfigGroup {
+  draw_all : Bool
+  default_color : @sprite.Color
+}
+
+///|
+pub fn SkinnedMeshBoundsGizmoConfigGroup::default(
+) -> SkinnedMeshBoundsGizmoConfigGroup {
+  SkinnedMeshBoundsGizmoConfigGroup::{
+    draw_all: false,
+    default_color: @sprite.Color::white(),
+  }
+}
+
+///|
+pub struct ShowSkinnedMeshBoundsGizmo {
+  color : @sprite.Color?
+}
+
+///|
+pub fn ShowSkinnedMeshBoundsGizmo::default() -> ShowSkinnedMeshBoundsGizmo {
+  ShowSkinnedMeshBoundsGizmo::{ color: None }
 }

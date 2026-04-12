@@ -3,31 +3,35 @@ package "Milky2018/mgstudio/gizmos"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
+  "moonbitlang/core/debug",
 }
 
 // Values
-pub const GIZMO_RETAINED_SUPPORTED : Bool = true
+pub const SIMPLEX_CAP_HEIGHT : Float = 21.0
 
-pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true
+pub const SIMPLEX_DESCENDER_DEPTH : Float = 7.0
 
-pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
+pub const SIMPLEX_HEIGHT : Float = 28.0
 
-pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
+pub const SIMPLEX_LINE_HEIGHT : Float = 1.3
 
-pub fn gizmo_cross_supported() -> Bool
+pub fn[Config] gizmo_cross(@sprite.Gizmos[Config], @math.Isometry3d, Float, @color.Color) -> Unit
+
+pub fn[Config] gizmo_cross_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, Float, @color.Color) -> Unit
 
 pub fn gizmo_global_init(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn gizmo_retained_supported() -> Bool
+pub fn gizmo_stroke_text_measure(String, Float) -> @math.Vec2
 
-pub fn gizmo_skinned_mesh_bounds_supported() -> Bool
+pub fn[Config] gizmo_text_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
 
-pub fn gizmo_stroke_text_supported() -> Bool
+pub fn[Config] gizmo_text_3d(@sprite.Gizmos[Config], @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
 
 pub fn gizmos_default_group() -> @sprite.DefaultGizmoConfigGroup
 
@@ -35,11 +39,41 @@ pub fn gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
 
-pub fn simplex_stroke_font_supported() -> Bool
+pub fn simplex_stroke_font_cap_height() -> Float
+
+pub fn simplex_stroke_font_height() -> Float
+
+pub fn simplex_stroke_font_line_height() -> Float
 
 // Errors
 
 // Types and methods
+pub struct GizmoAssetHandle {
+  id : Int
+} derive(Eq, @debug.Debug)
+pub fn GizmoAssetHandle::new(id~ : Int) -> Self
+
+pub struct RetainedGizmo {
+  handle : GizmoAssetHandle
+  line_config : @sprite.GizmoLineConfig
+  depth_bias : Float
+}
+pub fn RetainedGizmo::default() -> Self
+
+pub struct ShowSkinnedMeshBoundsGizmo {
+  color : @color.Color?
+}
+pub fn ShowSkinnedMeshBoundsGizmo::default() -> Self
+
+pub struct SkinnedMeshBoundsGizmoConfigGroup {
+  draw_all : Bool
+  default_color : @color.Color
+}
+pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> Self
+
+pub struct SkinnedMeshBoundsGizmoPlugin {
+}
+pub fn SkinnedMeshBoundsGizmoPlugin::default() -> Self
 
 // Type aliases
 pub using @sprite {type Arc2dBuilder}

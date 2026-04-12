@@ -16,9 +16,28 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/simplex_stroke_font.rs`.
 
 ///|
-pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
+pub const SIMPLEX_LINE_HEIGHT : Float = 1.3F
 
 ///|
-pub fn simplex_stroke_font_supported() -> Bool {
-  SIMPLEX_STROKE_FONT_SUPPORTED
+pub const SIMPLEX_CAP_HEIGHT : Float = 21.0F
+
+///|
+pub const SIMPLEX_DESCENDER_DEPTH : Float = 7.0F
+
+///|
+pub const SIMPLEX_HEIGHT : Float = 28.0F
+
+///|
+pub fn simplex_stroke_font_line_height() -> Float {
+  SIMPLEX_LINE_HEIGHT
+}
+
+///|
+pub fn simplex_stroke_font_cap_height() -> Float {
+  SIMPLEX_CAP_HEIGHT
+}
+
+///|
+pub fn simplex_stroke_font_height() -> Float {
+  SIMPLEX_HEIGHT
 }
