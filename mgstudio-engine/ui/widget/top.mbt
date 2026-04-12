@@ -18,16 +18,3 @@ pub using @ui {type Interaction}
 
 ///|
 pub let ecs_key_interaction : @ecs.ComponentKey[@ui.Interaction] = @ui.ecs_key_interaction
-
-///|
-pub let ui_widgets_set_interaction : @app.SystemSet = @ui.ui_set_interaction
-
-///|
-pub fn ui_interaction_system(world : @ecs.World) -> Unit {
-  @ui.ui_interaction_system(world)
-}
-
-///|
-pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @ui.ui_plugin(app)
-}
