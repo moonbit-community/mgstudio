@@ -3156,7 +3156,9 @@ pub fn ui_build_a11y_tree_update(
     guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
       continue
     }
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, fallback_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(
+      world, entity, fallback_ctx,
+    )
     let size = layout.rect.size()
     let x0 = (entity_ctx.viewport_origin.x + layout.rect.min.x).to_double()
     let y0 = (entity_ctx.viewport_origin.y + layout.rect.min.y).to_double()
@@ -3239,7 +3241,9 @@ pub fn ui_build_a11y_tree_update(
       }
     }
     let rect = layout.rect
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, fallback_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(
+      world, entity, fallback_ctx,
+    )
     let x0 = (entity_ctx.viewport_origin.x + rect.min.x).to_double()
     let y0 = (entity_ctx.viewport_origin.y + rect.min.y).to_double()
     let size = rect.size()

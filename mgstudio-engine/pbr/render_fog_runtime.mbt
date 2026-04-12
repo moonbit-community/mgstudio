@@ -132,14 +132,8 @@ fn render3d_camera_distance_fog(
 }
 
 ///|
-fn render3d_pow_e(value : Float) -> Float {
-  @math.pow(FOG_FALLOFF_E, value)
-}
-
-///|
 fn render3d_fog_channel_factor(density : Float, distance : Float) -> Float {
-  let safe_density = if density < 0.0F { 0.0F } else { density }
-  1.0F - render3d_pow_e(-(safe_density * distance))
+  @pbr_render.render3d_fog_channel_factor(density, distance)
 }
 
 ///|
@@ -147,51 +141,17 @@ fn render3d_fog_falloff_factor(
   falloff : FogFalloff3d,
   distance : Float,
 ) -> Float {
-  let safe_distance = if distance < 0.0F { 0.0F } else { distance }
   match falloff {
-    Linear(start, end_) => {
-      let safe_start = if start < 0.0F { 0.0F } else { start }
-      let safe_end = if end_ < safe_start { safe_start } else { end_ }
-      if safe_end <= safe_start {
-        if safe_distance >= safe_end {
-          1.0F
-        } else {
-          0.0F
-        }
-      } else if safe_distance <= safe_start {
-        0.0F
-      } else if safe_distance >= safe_end {
-        1.0F
-      } else {
-        (safe_distance - safe_start) / (safe_end - safe_start)
-      }
-    }
-    Exponential(density) => {
-      let safe_density = if density < 0.0F { 0.0F } else { density }
-      1.0F - render3d_pow_e(-safe_density * safe_distance)
-    }
-    ExponentialSquared(density) => {
-      let safe_density = if density < 0.0F { 0.0F } else { density }
-      let d = safe_density * safe_distance
-      1.0F - render3d_pow_e(-(d * d))
-    }
-    Atmospheric(extinction, inscattering) => {
-      let extinction_max = @pbr_render.maxf(
-        @pbr_render.maxf(extinction.x, extinction.y),
-        extinction.z,
+    Linear(start, end_) =>
+      @pbr_render.render3d_fog_linear_factor(start, end_, distance)
+    Exponential(density) =>
+      @pbr_render.render3d_fog_exponential_factor(density, distance)
+    ExponentialSquared(density) =>
+      @pbr_render.render3d_fog_exponential_squared_factor(density, distance)
+    Atmospheric(extinction, inscattering) =>
+      @pbr_render.render3d_fog_atmospheric_presence(
+        extinction, inscattering, distance,
       )
-      let inscattering_max = @pbr_render.maxf(
-        @pbr_render.maxf(inscattering.x, inscattering.y),
-        inscattering.z,
-      )
-      let extinction_factor = render3d_fog_channel_factor(
-        extinction_max, safe_distance,
-      )
-      let inscattering_factor = render3d_fog_channel_factor(
-        inscattering_max, safe_distance,
-      )
-      @pbr_render.clamp01((extinction_factor + inscattering_factor) * 0.5F)
-    }
   }
 }
 
@@ -212,27 +172,14 @@ fn render3d_distance_fog_directional_mix(
   mesh_position : @math.Vec3,
   lighting : Render3dLightingState,
 ) -> Float {
-  let directional_alpha = @pbr_render.clamp01(fog.directional_light_color.a)
-  if directional_alpha <= 0.0F {
-    return 0.0F
-  }
-  if fog.directional_light_exponent <= 0.0F {
-    return 0.0F
-  }
-  if lighting.directional_illuminance <= 0.0F {
-    return 0.0F
-  }
-  let view_direction = mesh_position.sub(camera_position).normalize_or_zero()
-  let light_direction = lighting.directional_dir.neg().normalize_or_zero()
-  let alignment = @pbr_render.clamp01(
-    light_direction.dot(view_direction) * 0.5F + 0.5F,
-  )
-  let phase = @math.pow(alignment, fog.directional_light_exponent)
-  let illuminance_mix = @pbr_render.clamp01(
-    lighting.directional_illuminance / 50_000.0F,
-  )
-  @pbr_render.clamp01(
-    phase * directional_alpha * illuminance_mix * fog_presence,
+  @pbr_render.render3d_fog_directional_mix(
+    fog.directional_light_color.a,
+    fog.directional_light_exponent,
+    lighting.directional_dir,
+    lighting.directional_illuminance,
+    fog_presence,
+    camera_position,
+    mesh_position,
   )
 }
 

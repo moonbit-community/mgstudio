@@ -93,10 +93,7 @@ pub fn inset_circle(shape : Circle, distance : Float) -> Circle {
 }
 
 ///|
-pub fn inset_triangle2d(
-  shape : Triangle2d,
-  distance : Float,
-) -> Triangle2d {
+pub fn inset_triangle2d(shape : Triangle2d, distance : Float) -> Triangle2d {
   shape.inset(distance)
 }
 
@@ -106,18 +103,12 @@ pub fn inset_rhombus(shape : Rhombus, distance : Float) -> Rhombus {
 }
 
 ///|
-pub fn inset_capsule2d(
-  shape : Capsule2d,
-  distance : Float,
-) -> Capsule2d {
+pub fn inset_capsule2d(shape : Capsule2d, distance : Float) -> Capsule2d {
   shape.inset(distance)
 }
 
 ///|
-pub fn inset_rectangle(
-  shape : Rectangle,
-  distance : Float,
-) -> Rectangle {
+pub fn inset_rectangle(shape : Rectangle, distance : Float) -> Rectangle {
   shape.inset(distance)
 }
 

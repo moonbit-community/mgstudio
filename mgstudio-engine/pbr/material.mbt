@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
+
+///|
 pub const MATERIALS_PLUGIN_ID : String = "bevy_pbr::MaterialsPlugin"
 
 ///|
@@ -25,6 +28,16 @@ pub fn MaterialsPlugin::default() -> MaterialsPlugin {
 
 ///|
 pub struct MaterialsPluginState {}
+
+///|
+pub fn MaterialsPluginState::default() -> MaterialsPluginState {
+  MaterialsPluginState::{  }
+}
+
+///|
+pub fn MaterialsPluginState::new() -> MaterialsPluginState {
+  MaterialsPluginState::default()
+}
 
 ///|
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState] = @ecs.register_resource(
@@ -64,4 +77,24 @@ pub fn materials_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     })
     .add_startup_system(init_materials_resources)
   }
+}
+
+///|
+pub fn pbr_material_bind_group_index() -> Int {
+  MATERIAL_BIND_GROUP_INDEX
+}
+
+///|
+pub fn pbr_materials_plugin_state_default() -> MaterialsPluginState {
+  MaterialsPluginState::default()
+}
+
+///|
+pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState {
+  MaterialsPluginState::new()
+}
+
+///|
+pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
+  MaterialsPlugin::default()
 }

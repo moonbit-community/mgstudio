@@ -31,6 +31,167 @@ pub type StandardMaterial = @material.StandardMaterial
 pub const STANDARD_MATERIAL_PLUGIN_ID : String = "bevy_pbr::MaterialPlugin<StandardMaterial>"
 
 ///|
+pub const STANDARD_MATERIAL_KEY_CULL_FRONT : UInt64 = 0x000001UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_CULL_BACK : UInt64 = 0x000002UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_NORMAL_MAP : UInt64 = 0x000004UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_RELIEF_MAPPING : UInt64 = 0x000008UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION : UInt64 = 0x000010UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION : UInt64 = 0x000020UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT : UInt64 = 0x000040UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP : UInt64 = 0x000080UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE : UInt64 = 0x000200UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_EMISSIVE_TEXTURE : UInt64 = 0x000400UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_TEXTURE : UInt64 = 0x000800UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE : UInt64 = 0x001000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK : UInt64 = 0xffffffff00000000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT : Int = 32
+
+///|
+pub struct StandardMaterialKey {
+  bits : UInt64
+} derive(Eq, Debug)
+
+///|
+pub fn StandardMaterialKey::empty() -> StandardMaterialKey {
+  StandardMaterialKey::{ bits: 0UL }
+}
+
+///|
+pub fn StandardMaterialKey::from_bits(bits : UInt64) -> StandardMaterialKey {
+  StandardMaterialKey::{ bits, }
+}
+
+///|
+pub fn StandardMaterialKey::bits(self : StandardMaterialKey) -> UInt64 {
+  self.bits
+}
+
+///|
+pub fn StandardMaterialKey::contains(
+  self : StandardMaterialKey,
+  flag : UInt64,
+) -> Bool {
+  (self.bits & flag) != 0UL
+}
+
+///|
+pub fn StandardMaterialKey::with_flag(
+  self : StandardMaterialKey,
+  flag : UInt64,
+) -> StandardMaterialKey {
+  StandardMaterialKey::{ bits: self.bits | flag }
+}
+
+///|
+pub fn StandardMaterialKey::without_flag(
+  self : StandardMaterialKey,
+  flag : UInt64,
+) -> StandardMaterialKey {
+  StandardMaterialKey::{ bits: self.bits & (0xffffffffffffffffUL ^ flag) }
+}
+
+///|
+pub fn StandardMaterialKey::with_depth_bias(
+  self : StandardMaterialKey,
+  depth_bias : UInt,
+) -> StandardMaterialKey {
+  let bias_bits = (
+      depth_bias.to_uint64() << STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT
+    ) &
+    STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK
+  StandardMaterialKey::{
+    bits: (
+      self.bits & (0xffffffffffffffffUL ^ STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK)
+    ) |
+    bias_bits,
+  }
+}
+
+///|
+pub fn StandardMaterialKey::depth_bias(self : StandardMaterialKey) -> UInt {
+  let value = (self.bits & STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK) >>
+    STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT
+  value.to_uint()
+}
+
+///|
+pub fn standard_material_key_from_material(
+  material : StandardMaterial,
+) -> StandardMaterialKey {
+  let mut bits : UInt64 = 0UL
+  match material.cull_mode {
+    Some(Face3d::Front) => bits = bits | STANDARD_MATERIAL_KEY_CULL_FRONT
+    Some(Face3d::Back) => bits = bits | STANDARD_MATERIAL_KEY_CULL_BACK
+    None => ()
+  }
+  if material.normal_map_texture is Some(_) {
+    bits = bits | STANDARD_MATERIAL_KEY_NORMAL_MAP
+  }
+  match material.parallax_mapping_method {
+    @material.ParallaxMappingMethod::Relief(_) =>
+      bits = bits | STANDARD_MATERIAL_KEY_RELIEF_MAPPING
+    _ => ()
+  }
+  if material.diffuse_transmission > 0.0F {
+    bits = bits | STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION
+  }
+  if material.specular_transmission > 0.0F {
+    bits = bits | STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION
+  }
+  if material.clearcoat > 0.0F {
+    bits = bits | STANDARD_MATERIAL_KEY_CLEARCOAT
+  }
+  if material.clearcoat_normal_texture is Some(_) {
+    bits = bits | STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP
+  }
+  if material.anisotropy_strength != 0.0F {
+    bits = bits | STANDARD_MATERIAL_KEY_ANISOTROPY
+  }
+  if material.base_color_texture is Some(_) {
+    bits = bits | STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE
+  }
+  if material.emissive_texture is Some(_) {
+    bits = bits | STANDARD_MATERIAL_KEY_EMISSIVE_TEXTURE
+  }
+  if material.metallic_roughness_texture is Some(_) {
+    bits = bits | STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_TEXTURE
+  }
+  if material.occlusion_texture is Some(_) {
+    bits = bits | STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE
+  }
+  StandardMaterialKey::{ bits, }
+}
+
+///|
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
 }
@@ -38,6 +199,15 @@ pub(all) struct StandardMaterialPlugin {
 ///|
 pub fn StandardMaterialPlugin::default() -> StandardMaterialPlugin {
   StandardMaterialPlugin::{ prepass_enabled: true }
+}
+
+///|
+pub fn StandardMaterialPlugin::with_prepass_enabled(
+  self : StandardMaterialPlugin,
+  prepass_enabled : Bool,
+) -> StandardMaterialPlugin {
+  self |> ignore
+  StandardMaterialPlugin::{ prepass_enabled, }
 }
 
 ///|
@@ -99,4 +269,79 @@ pub fn standard_material_prepass_enabled(world : @ecs.World) -> Bool {
     Some(state) => state.prepass_enabled
     None => true
   }
+}
+
+///|
+pub fn pbr_standard_material_add(
+  material : StandardMaterial,
+) -> @asset.Handle[StandardMaterial] {
+  @material.standard_material_add(material)
+}
+
+///|
+pub fn pbr_standard_material_get(
+  handle : @asset.Handle[StandardMaterial],
+) -> StandardMaterial? {
+  @material.standard_material_get(handle)
+}
+
+///|
+pub fn pbr_standard_material_set(
+  handle : @asset.Handle[StandardMaterial],
+  material : StandardMaterial,
+) -> Bool {
+  @material.standard_material_set(handle, material)
+}
+
+///|
+pub fn pbr_mesh_material3d_new(
+  material : @asset.Handle[StandardMaterial],
+) -> @material.MeshMaterial3d {
+  @material.MeshMaterial3d::new(material)
+}
+
+///|
+pub fn pbr_mesh_material3d_with_extended_metadata(
+  mesh_material : @material.MeshMaterial3d,
+  extended_material : @material.ExtendedMaterialMetadata3d?,
+) -> @material.MeshMaterial3d {
+  mesh_material.with_extended_material(extended_material)
+}
+
+///|
+pub fn pbr_mesh_material3d_with_extension_tag(
+  mesh_material : @material.MeshMaterial3d,
+  extension_tag : Int,
+) -> @material.MeshMaterial3d {
+  mesh_material.with_extension_tag(extension_tag)
+}
+
+///|
+pub fn pbr_mesh_material3d_with_extension_shader_path(
+  mesh_material : @material.MeshMaterial3d,
+  shader_path : String?,
+) -> @material.MeshMaterial3d {
+  mesh_material.with_extension_shader_path(shader_path)
+}
+
+///|
+pub fn pbr_material_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt {
+  @material.ForwardDecalMaterialExt::default()
+}
+
+///|
+pub fn pbr_material_forward_decal_material_ext_new(
+  depth_fade_factor : Float,
+) -> @material.ForwardDecalMaterialExt {
+  @material.ForwardDecalMaterialExt::new(depth_fade_factor)
+}
+
+///|
+pub fn pbr_default_opaque_renderer_method_forward() -> DefaultOpaqueRendererMethod {
+  DefaultOpaqueRendererMethod::forward()
+}
+
+///|
+pub fn pbr_default_opaque_renderer_method_deferred() -> DefaultOpaqueRendererMethod {
+  DefaultOpaqueRendererMethod::deferred()
 }

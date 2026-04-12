@@ -73,3 +73,142 @@ pub fn ContactShadows::with_length(
 ) -> ContactShadows {
   ContactShadows::new(self.linear_steps, self.thickness, length)
 }
+
+///|
+pub struct ContactShadowsUniform {
+  linear_steps : UInt
+  thickness : Float
+  length : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn ContactShadowsUniform::default() -> ContactShadowsUniform {
+  ContactShadowsUniform::{ linear_steps: 0U, thickness: 0.0F, length: 0.0F }
+}
+
+///|
+pub fn ContactShadowsUniform::from_settings(
+  settings : ContactShadows,
+) -> ContactShadowsUniform {
+  ContactShadowsUniform::{
+    linear_steps: if settings.linear_steps <= 0 {
+      0U
+    } else {
+      settings.linear_steps.reinterpret_as_uint()
+    },
+    thickness: if settings.thickness < 0.0F {
+      0.0F
+    } else {
+      settings.thickness
+    },
+    length: if settings.length < 0.0F {
+      0.0F
+    } else {
+      settings.length
+    },
+  }
+}
+
+///|
+pub fn ContactShadowsUniform::disabled() -> ContactShadowsUniform {
+  ContactShadowsUniform::default()
+}
+
+///|
+pub fn ContactShadowsUniform::linear_steps(
+  self : ContactShadowsUniform,
+) -> UInt {
+  self.linear_steps
+}
+
+///|
+pub fn ContactShadowsUniform::thickness(self : ContactShadowsUniform) -> Float {
+  self.thickness
+}
+
+///|
+pub fn ContactShadowsUniform::length(self : ContactShadowsUniform) -> Float {
+  self.length
+}
+
+///|
+pub struct ViewContactShadowsUniformOffset {
+  offset : UInt
+} derive(ToJson, FromJson)
+
+///|
+pub fn ViewContactShadowsUniformOffset::new(
+  offset : UInt,
+) -> ViewContactShadowsUniformOffset {
+  ViewContactShadowsUniformOffset::{ offset, }
+}
+
+///|
+pub fn ViewContactShadowsUniformOffset::offset(
+  self : ViewContactShadowsUniformOffset,
+) -> UInt {
+  self.offset
+}
+
+///|
+pub struct ContactShadowsBuffer {
+  uniforms : Array[ContactShadowsUniform]
+}
+
+///|
+pub fn ContactShadowsBuffer::default() -> ContactShadowsBuffer {
+  ContactShadowsBuffer::{ uniforms: [] }
+}
+
+///|
+pub fn ContactShadowsBuffer::clear(self : ContactShadowsBuffer) -> Unit {
+  self.uniforms.clear()
+}
+
+///|
+pub fn ContactShadowsBuffer::push(
+  self : ContactShadowsBuffer,
+  uniform : ContactShadowsUniform,
+) -> UInt {
+  let offset = self.uniforms.length().reinterpret_as_uint()
+  self.uniforms.push(uniform)
+  offset
+}
+
+///|
+pub fn ContactShadowsBuffer::len(self : ContactShadowsBuffer) -> Int {
+  self.uniforms.length()
+}
+
+///|
+pub fn ContactShadowsBuffer::uniform_at(
+  self : ContactShadowsBuffer,
+  offset : UInt,
+) -> ContactShadowsUniform? {
+  let index = offset.reinterpret_as_int()
+  if index < 0 || index >= self.uniforms.length() {
+    None
+  } else {
+    Some(self.uniforms[index])
+  }
+}
+
+///|
+pub fn render3d_prepare_contact_shadows_settings(
+  world : @ecs.World,
+  view_entities : Array[@core.Entity],
+  buffer : ContactShadowsBuffer,
+) -> Array[(@core.Entity, ViewContactShadowsUniformOffset)] {
+  buffer.clear()
+  let offsets = []
+  for entity in view_entities {
+    let maybe_settings = try! world.get_by_key(entity, ecs_key_contact_shadows)
+    let uniform = match maybe_settings {
+      Some(settings) => ContactShadowsUniform::from_settings(settings)
+      None => ContactShadowsUniform::disabled()
+    }
+    let offset = buffer.push(uniform)
+    offsets.push((entity, ViewContactShadowsUniformOffset::new(offset)))
+  }
+  offsets
+}

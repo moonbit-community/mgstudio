@@ -70,7 +70,10 @@ test "dev_tools: diagnostics overlay uses Missing text for absent diagnostics" {
 
 ///|
 test "dev_tools: diagnostics overlay precision rounding is stable" {
-  debug_inspect(diagnostics_overlay_round_precision(12.3456F, 0), content="\"12\"")
+  debug_inspect(
+    diagnostics_overlay_round_precision(12.3456F, 0),
+    content="\"12\"",
+  )
   debug_inspect(
     diagnostics_overlay_round_precision(12.3456F, 2),
     content="\"12.35\"",

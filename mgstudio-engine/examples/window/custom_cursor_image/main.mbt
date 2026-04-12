@@ -25,9 +25,7 @@ pub struct AnimationConfig {
 }
 
 ///|
-let animation_config_component_key : @ecs.ComponentKey[
-  AnimationConfig,
-] = @ecs.register_component(
+let animation_config_component_key : @ecs.ComponentKey[AnimationConfig] = @ecs.register_component(
   debug_name="examples.window.custom_cursor_image.AnimationConfig",
 )
 
@@ -84,10 +82,10 @@ fn cursor_image_with(
   @window.CustomCursorImage::new(
     image.handle,
     image.hotspot,
-    texture_atlas=texture_atlas,
-    flip_x=flip_x,
-    flip_y=flip_y,
-    rect=rect,
+    texture_atlas~,
+    flip_x~,
+    flip_y~,
+    rect~,
   )
 }
 
@@ -148,7 +146,9 @@ fn execute_animation(
   try! query.for_each(fn(_entity, data) {
     let (config, cursor_icon) = data
     let config_ref = config.get_ref()
-    config_ref.val.frame_timer = config_ref.val.frame_timer.tick(time.get().delta())
+    config_ref.val.frame_timer = config_ref.val.frame_timer.tick(
+      time.get().delta(),
+    )
     guard config_ref.val.frame_timer.just_finished() else { return }
     let next_cursor_icon = match cursor_icon.get_ref().val {
       @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) =>
@@ -164,7 +164,9 @@ fn execute_animation(
               image,
               texture_atlas=Some(atlas.with_index(next_index)),
             )
-            @window.CursorIcon::from_custom(@window.CustomCursor::Image(next_image))
+            @window.CursorIcon::from_custom(
+              @window.CustomCursor::Image(next_image),
+            )
           }
           None => cursor_icon.get_ref().val
         }
@@ -195,7 +197,9 @@ fn toggle_texture_atlas(
           Some(atlas) => {
             state_ref.val.cached_texture_atlas = Some(atlas)
             let next_image = cursor_image_with(image, texture_atlas=None)
-            @window.CursorIcon::from_custom(@window.CustomCursor::Image(next_image))
+            @window.CursorIcon::from_custom(
+              @window.CustomCursor::Image(next_image),
+            )
           }
           None =>
             match state_ref.val.cached_texture_atlas {
@@ -261,27 +265,29 @@ fn toggle_flip_y(
 fn rect_from_index(index : Int) -> @math.URect? {
   let rect_size = 32
   match index {
-    0 => Some(
-      @math.URect::new(@math.UVec2::zero(), @math.UVec2::splat(rect_size)),
-    )
-    1 => Some(
-      @math.URect::new(
-        @math.UVec2::new(rect_size, 0),
-        @math.UVec2::new(rect_size * 2, rect_size),
-      ),
-    )
-    2 => Some(
-      @math.URect::new(
-        @math.UVec2::new(0, rect_size),
-        @math.UVec2::new(rect_size, rect_size * 2),
-      ),
-    )
-    3 => Some(
-      @math.URect::new(
-        @math.UVec2::new(rect_size, rect_size),
-        @math.UVec2::splat(rect_size * 2),
-      ),
-    )
+    0 =>
+      Some(@math.URect::new(@math.UVec2::zero(), @math.UVec2::splat(rect_size)))
+    1 =>
+      Some(
+        @math.URect::new(
+          @math.UVec2::new(rect_size, 0),
+          @math.UVec2::new(rect_size * 2, rect_size),
+        ),
+      )
+    2 =>
+      Some(
+        @math.URect::new(
+          @math.UVec2::new(0, rect_size),
+          @math.UVec2::new(rect_size, rect_size * 2),
+        ),
+      )
+    3 =>
+      Some(
+        @math.URect::new(
+          @math.UVec2::new(rect_size, rect_size),
+          @math.UVec2::splat(rect_size * 2),
+        ),
+      )
     _ => None
   }
 }
@@ -314,7 +320,10 @@ fn cycle_rect(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup_cursor_image_state)))
+  .add_systems(
+    @app.Startup,
+    @app.system(@app.system_param(setup_cursor_image_state)),
+  )
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup_cursor_icon)))
   .add_systems(@app.Update, @app.system(@app.system_param2(execute_animation)))
   .add_systems(
