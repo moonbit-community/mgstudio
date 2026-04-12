@@ -53,7 +53,10 @@ pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(
   segment : CubicSegment[P],
   t : Float,
 ) -> WithDerivative[P] {
-  WithDerivative::{ value: segment.position(t), derivative: segment.velocity(t) }
+  WithDerivative::{
+    value: segment.position(t),
+    derivative: segment.velocity(t),
+  }
 }
 
 ///|
