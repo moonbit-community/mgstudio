@@ -46,5 +46,5 @@ pub fn ToggleSwitchPlugin::default() -> ToggleSwitchPlugin {
 
 ///|
 pub fn toggle_switch_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

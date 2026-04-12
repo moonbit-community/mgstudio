@@ -397,10 +397,7 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
       .with_max_hits(1)
       .with_only_entities(Some([cube_entity]))
     if @picking_mesh_ray_cast.mesh_ray_cast_first(
-        world,
-        ray_origin,
-        ray_direction,
-        settings,
+        world, ray_origin, ray_direction, settings,
       )
       is Some((_entity, hit)) {
       pointer_position = Some(

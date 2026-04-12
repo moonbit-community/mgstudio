@@ -47,7 +47,11 @@ pub fn BindGroupLayoutEntryBuilder::count(
 ) -> BindGroupLayoutEntryBuilder {
   BindGroupLayoutEntryBuilder::{
     ..self,
-    count: if count == 0U { None } else { Some(count) },
+    count: if count == 0U {
+      None
+    } else {
+      Some(count)
+    },
   }
 }
 

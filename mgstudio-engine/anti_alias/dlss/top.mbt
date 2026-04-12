@@ -229,10 +229,9 @@ pub fn dlss_init_plugin_with(
       "DlssProjectId must be inserted before DlssInitPlugin, matching bevy_anti_alias::dlss",
     )
   }
-  app.insert_world_resource(
-    dlss_init_plugin_marker_resource_key,
-    DlssInitPluginMarker::{  },
-  )
+  app.insert_world_resource(dlss_init_plugin_marker_resource_key, DlssInitPluginMarker::{
+
+  })
 }
 
 ///|

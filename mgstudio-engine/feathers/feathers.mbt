@@ -14,13 +14,20 @@
 
 ///|
 /// Feathers boundary aligned with Bevy's `bevy_feathers` crate.
-/// Runtime mapping currently routes through `Milky2018/mgstudio/ui_widgets`.
 
 ///|
 pub struct FeathersPlugin {}
 
 ///|
 pub struct FeathersPlugins {}
+
+///|
+pub(all) struct FeathersPluginMarker {}
+
+///|
+let feathers_plugin_marker_key : @ecs.ResourceKey[FeathersPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio.feathers.plugin_marker",
+)
 
 ///|
 pub fn FeathersPlugin::default() -> FeathersPlugin {
@@ -34,7 +41,19 @@ pub fn FeathersPlugins::default() -> FeathersPlugins {
 
 ///|
 pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @ui_widgets.ui_widgets_plugin(app)
+  if app.contains_resource(feathers_plugin_marker_key) {
+    app
+  } else {
+    app
+    .world()
+    .insert_resource(feathers_plugin_marker_key, FeathersPluginMarker::{  })
+    app
+    .init_resource(fn() { UiTheme::default() })
+    .add_plugin(@ui_widgets.ui_widgets_plugin)
+    .add_plugin(alpha_pattern_plugin)
+    .add_plugin(@controls.controls_plugin)
+    .add_plugin(cursor_icon_plugin)
+  }
 }
 
 ///|

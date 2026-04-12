@@ -47,5 +47,5 @@ pub fn SliderPlugin::default() -> SliderPlugin {
 
 ///|
 pub fn slider_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

@@ -61,5 +61,5 @@ pub fn ColorPlanePlugin::default() -> ColorPlanePlugin {
 
 ///|
 pub fn color_plane_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

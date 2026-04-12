@@ -122,7 +122,10 @@ fn easy_screenshot_flush_capture_system(
   let path = easy_screenshot_default_path(state_ref.val.next_capture_index)
   let screenshot_entity = world.spawn()
   ignore(
-    world.add_entity_component_observer(screenshot_entity, @window.save_to_disk(path)),
+    world.add_entity_component_observer(
+      screenshot_entity,
+      @window.save_to_disk(path),
+    ),
   )
   try! world.set_by_key(
     screenshot_entity,
@@ -156,7 +159,7 @@ pub fn dev_tools_easy_screenshot_plugin(
       EasyScreenshotState::default(),
     )
   }
-  next.add_system_param3(easy_screenshot_schedule_capture_system).add_system_param2(
-    easy_screenshot_flush_capture_system,
-  )
+  next
+  .add_system_param3(easy_screenshot_schedule_capture_system)
+  .add_system_param2(easy_screenshot_flush_capture_system)
 }

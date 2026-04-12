@@ -19,11 +19,38 @@
 pub struct ControlsPlugin {}
 
 ///|
+pub(all) struct ControlsRuntimePluginMarker {}
+
+///|
+let controls_runtime_plugin_marker_key : @ecs.ResourceKey[
+  ControlsRuntimePluginMarker,
+] = @ecs.register_resource(
+  debug_name="mgstudio.feathers.controls.runtime_plugin_marker",
+)
+
+///|
 pub fn ControlsPlugin::default() -> ControlsPlugin {
   ControlsPlugin::{  }
 }
 
 ///|
+fn ensure_controls_runtime(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  if app.contains_resource(controls_runtime_plugin_marker_key) {
+    app
+  } else {
+    app
+    .world()
+    .insert_resource(controls_runtime_plugin_marker_key, ControlsRuntimePluginMarker::{
+
+    })
+    @ui_widgets.ui_widgets_plugin(app)
+  }
+}
+
+///|
 pub fn controls_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app).add_plugins([
+    button_plugin, checkbox_plugin, color_plane_plugin, color_slider_plugin, color_swatch_plugin,
+    radio_plugin, slider_plugin, toggle_switch_plugin,
+  ])
 }

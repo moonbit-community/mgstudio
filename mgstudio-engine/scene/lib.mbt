@@ -830,7 +830,9 @@ fn scene_register_component_hooks() -> Bool {
 
 ///|
 fn init {
-  @gltf_loader.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
+  @gltf_loader.gltf_install_loader_registration(
+    scene_register_gltf_asset_loaders,
+  )
   @asset.asset_register_reload_hook(scene_reload_asset_path)
   scene_register_component_hooks() |> ignore
 }

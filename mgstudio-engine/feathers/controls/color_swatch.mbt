@@ -48,5 +48,5 @@ pub fn ColorSwatchPlugin::default() -> ColorSwatchPlugin {
 
 ///|
 pub fn color_swatch_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

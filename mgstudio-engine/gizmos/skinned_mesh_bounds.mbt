@@ -30,8 +30,7 @@ pub struct SkinnedMeshBoundsGizmoConfigGroup {
 }
 
 ///|
-pub fn SkinnedMeshBoundsGizmoConfigGroup::default(
-) -> SkinnedMeshBoundsGizmoConfigGroup {
+pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> SkinnedMeshBoundsGizmoConfigGroup {
   SkinnedMeshBoundsGizmoConfigGroup::{
     draw_all: false,
     default_color: @sprite.Color::white(),

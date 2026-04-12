@@ -78,6 +78,7 @@ This file must not exceed 200 lines.
 - [x] `math/dead-wrapper-prune`: remove unreferenced identity forwarders in `math/curve/easing` and `math/sampling/mesh_sampling`.
 - [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
 - [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.
+- [x] `feathers/no-op-plugin-prune`: replace `feathers` controls/cursor/alpha_pattern `app -> app` stubs with real install path (`controls` chain + resource init + plugin markers).
 - [x] `examples/camera-shell-prune`: remove top-level stub files (`2d_on_ui.mbt`, `2d_screen_shake.mbt`, `2d_top_down_camera.mbt`) and keep only owner `*/main.mbt` entries.
 - [x] `ui_widgets/empty-file-prune`: delete unused empty `ui_widgets/ui_widgets.mbt`.
 - [x] `asset/io-dead-wrapper-prune`: remove unreferenced `asset_io_{android,wasm,web}_supported` stubs and keep source-name owner APIs.

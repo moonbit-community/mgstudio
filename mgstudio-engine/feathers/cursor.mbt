@@ -27,6 +27,11 @@ pub struct DefaultCursor {
 }
 
 ///|
+let default_cursor_resource_key : @ecs.ResourceKey[DefaultCursor] = @ecs.register_resource(
+  debug_name="mgstudio.feathers.default_cursor",
+)
+
+///|
 pub struct OverrideCursor {
   cursor : EntityCursor?
 }
@@ -34,6 +39,11 @@ pub struct OverrideCursor {
 ///|
 pub fn DefaultCursor::default() -> DefaultCursor {
   DefaultCursor::{ cursor: System("default") }
+}
+
+///|
+pub impl @app.Resource for DefaultCursor with resource() {
+  default_cursor_resource_key
 }
 
 ///|
@@ -45,11 +55,26 @@ pub fn OverrideCursor::default() -> OverrideCursor {
 pub struct CursorIconPlugin {}
 
 ///|
+pub(all) struct CursorIconPluginMarker {}
+
+///|
+let cursor_icon_plugin_marker_key : @ecs.ResourceKey[CursorIconPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio.feathers.cursor_icon.plugin_marker",
+)
+
+///|
 pub fn CursorIconPlugin::default() -> CursorIconPlugin {
   CursorIconPlugin::{  }
 }
 
 ///|
 pub fn cursor_icon_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  if app.contains_resource(cursor_icon_plugin_marker_key) {
+    app
+  } else {
+    app
+    .world()
+    .insert_resource(cursor_icon_plugin_marker_key, CursorIconPluginMarker::{  })
+    app.init_resource(fn() { DefaultCursor::default() })
+  }
 }

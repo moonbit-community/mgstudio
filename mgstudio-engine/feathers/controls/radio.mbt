@@ -47,5 +47,5 @@ pub fn RadioPlugin::default() -> RadioPlugin {
 
 ///|
 pub fn radio_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

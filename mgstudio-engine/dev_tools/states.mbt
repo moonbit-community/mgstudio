@@ -16,10 +16,7 @@
 // Bevy source: `bevy/crates/bevy_dev_tools/src/states.rs`.
 
 ///|
-pub fn[S : @app.States] log_transitions(
-  world : @ecs.World,
-  state : S,
-) -> Unit {
+pub fn[S : @app.States] log_transitions(world : @ecs.World, state : S) -> Unit {
   guard @app.last_transition(world, state) is Some(transition) else { return }
   let skip_text = if transition.exited == transition.entered &&
     !transition.allow_same_state_transitions {

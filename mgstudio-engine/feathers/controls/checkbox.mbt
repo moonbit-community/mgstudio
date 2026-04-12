@@ -47,5 +47,5 @@ pub fn CheckboxPlugin::default() -> CheckboxPlugin {
 
 ///|
 pub fn checkbox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

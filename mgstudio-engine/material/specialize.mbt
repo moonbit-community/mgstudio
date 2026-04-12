@@ -34,10 +34,7 @@ pub type BaseSpecializeFn = (
 ) -> @render_resource.RenderPipelineId raise
 
 ///|
-pub type UserSpecializeFn = (
-  MaterialPipelineKey,
-  MaterialMeshVertexLayout,
-) -> Unit raise
+pub type UserSpecializeFn = (MaterialPipelineKey, MaterialMeshVertexLayout) -> Unit raise
 
 ///|
 pub fn missing_vertex_attribute_error(

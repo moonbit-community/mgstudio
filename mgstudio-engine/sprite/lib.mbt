@@ -31,8 +31,7 @@ pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     return app
   }
   ensure_render2d_required_components(app.world())
-  app.insert_world_resource(
-    ecs_res_key_sprite_plugin_marker,
-    SpritePluginMarker::{  },
-  )
+  app.insert_world_resource(ecs_res_key_sprite_plugin_marker, SpritePluginMarker::{
+
+  })
 }

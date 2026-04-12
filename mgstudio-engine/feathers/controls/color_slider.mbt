@@ -72,5 +72,5 @@ pub fn ColorSliderPlugin::default() -> ColorSliderPlugin {
 
 ///|
 pub fn color_slider_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

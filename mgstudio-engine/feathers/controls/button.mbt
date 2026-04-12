@@ -53,5 +53,5 @@ pub fn ButtonPlugin::default() -> ButtonPlugin {
 
 ///|
 pub fn button_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  ensure_controls_runtime(app)
 }

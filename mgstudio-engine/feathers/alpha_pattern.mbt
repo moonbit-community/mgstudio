@@ -29,6 +29,11 @@ pub struct AlphaPatternResource {
 }
 
 ///|
+let alpha_pattern_resource_key : @ecs.ResourceKey[AlphaPatternResource] = @ecs.register_resource(
+  debug_name="mgstudio.feathers.alpha_pattern.resource",
+)
+
+///|
 pub struct AlphaPattern {} derive(Default, Debug)
 
 ///|
@@ -37,7 +42,20 @@ pub fn AlphaPatternResource::default() -> AlphaPatternResource {
 }
 
 ///|
+pub impl @app.Resource for AlphaPatternResource with resource() {
+  alpha_pattern_resource_key
+}
+
+///|
 pub struct AlphaPatternPlugin {}
+
+///|
+pub(all) struct AlphaPatternPluginMarker {}
+
+///|
+let alpha_pattern_plugin_marker_key : @ecs.ResourceKey[AlphaPatternPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio.feathers.alpha_pattern.plugin_marker",
+)
 
 ///|
 pub fn AlphaPatternPlugin::default() -> AlphaPatternPlugin {
@@ -46,5 +64,14 @@ pub fn AlphaPatternPlugin::default() -> AlphaPatternPlugin {
 
 ///|
 pub fn alpha_pattern_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  if app.contains_resource(alpha_pattern_plugin_marker_key) {
+    app
+  } else {
+    app
+    .world()
+    .insert_resource(alpha_pattern_plugin_marker_key, AlphaPatternPluginMarker::{
+
+    })
+    app.init_resource(fn() { AlphaPatternResource::default() })
+  }
 }
