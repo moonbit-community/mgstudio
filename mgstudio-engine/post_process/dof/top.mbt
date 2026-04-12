@@ -16,17 +16,8 @@
 // Bevy source: `bevy/crates/bevy_post_process/src/dof/mod.rs`.
 
 ///|
-pub type DepthOfField = @pbr.DepthOfField
-
-///|
-pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
-
-///|
-pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
-
-///|
 pub struct DepthOfFieldUniform {
-  mode : DepthOfFieldMode
+  mode : @pbr.DepthOfFieldMode
   focal_distance : Float
   sensor_height : Float
   aperture_f_stops : Float
@@ -37,7 +28,7 @@ pub struct DepthOfFieldUniform {
 
 ///|
 pub fn DepthOfFieldUniform::from_settings(
-  settings : DepthOfField,
+  settings : @pbr.DepthOfField,
 ) -> DepthOfFieldUniform {
   let denominator = settings.sensor_height * settings.aperture_f_stops
   let coc_scale_factor = if denominator <= 0.0F {
@@ -58,7 +49,7 @@ pub fn DepthOfFieldUniform::from_settings(
 
 ///|
 pub fn depth_of_field_from_physical_camera(
-  camera : PhysicalCameraParameters,
-) -> DepthOfField {
-  DepthOfField::from_physical_camera(camera)
+  camera : @pbr.PhysicalCameraParameters,
+) -> @pbr.DepthOfField {
+  @pbr.DepthOfField::from_physical_camera(camera)
 }
