@@ -73,6 +73,7 @@ This file must not exceed 200 lines.
 - [x] `ui/widget-dead-wrapper-prune`: remove unreferenced interaction/plugin forwarding wrappers from `ui/widget/top`.
 - [x] `material/dead-wrapper-prune`: remove unreferenced identity wrappers in `material/key` and `material/descriptor`.
 - [x] `math/rects-dead-wrapper-prune`: remove unreferenced identity wrappers in `math/rects/{rect,irect,urect}`.
+- [x] `window/cursor-dead-wrapper-prune`: remove unreferenced `system_cursor_icon_identity` forwarding helper.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.
