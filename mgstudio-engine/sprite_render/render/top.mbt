@@ -26,9 +26,6 @@ pub using @sprite_render {type UiBorderRect}
 pub using @sprite_render {type UiCornerRadii}
 
 ///|
-pub let render2d_set_execute : @app.SystemSet = @sprite_render.render2d_set_execute
-
-///|
 pub let render2d_set_extract : @app.SystemSet = @sprite_render.render2d_set_extract
 
 ///|

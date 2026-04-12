@@ -16,27 +16,27 @@
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/intersections.rs`.
 
 ///|
-pub type MeshRayCastSettings = @pbr.MeshRayCastSettings
+pub type MeshRayCastIntersectionSettings = @pbr.MeshRayCastSettings
 
 ///|
-pub type MeshRayCastHit = @pbr.MeshRayCastHit
+pub type MeshRayCastIntersectionHit = @pbr.MeshRayCastHit
 
 ///|
-pub fn mesh_ray_cast(
+pub fn mesh_ray_cast_intersections(
   world : @ecs.World,
   origin : @math.Vec3,
   direction : @math.Vec3,
-  settings : MeshRayCastSettings,
-) -> Array[(@core.Entity, MeshRayCastHit)] {
+  settings : MeshRayCastIntersectionSettings,
+) -> Array[(@core.Entity, MeshRayCastIntersectionHit)] {
   @pbr.mesh_ray_cast(world, origin, direction, settings)
 }
 
 ///|
-pub fn mesh_ray_cast_first(
+pub fn mesh_ray_cast_intersections_first(
   world : @ecs.World,
   origin : @math.Vec3,
   direction : @math.Vec3,
-  settings : MeshRayCastSettings,
-) -> (@core.Entity, MeshRayCastHit)? {
+  settings : MeshRayCastIntersectionSettings,
+) -> (@core.Entity, MeshRayCastIntersectionHit)? {
   @pbr.mesh_ray_cast_first(world, origin, direction, settings)
 }

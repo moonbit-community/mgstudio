@@ -1,0 +1,5 @@
+import {
+  "Milky2018/mgstudio/window",
+}
+
+supported_targets = "native"

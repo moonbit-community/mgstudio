@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/winit/cursor"
+
+// Values
+pub fn cursor_icon_from_custom(@Milky2018/mgstudio/window/cursor.CustomCursor) -> @Milky2018/mgstudio/window/cursor.CursorIcon
+
+pub fn winit_cursor_icon_from_custom(@Milky2018/mgstudio/window/cursor.CustomCursor) -> @Milky2018/mgstudio/window/cursor.CursorIcon
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @Milky2018/mgstudio/window/cursor {type CursorIcon}
+
+pub using @Milky2018/mgstudio/window/cursor {type CursorOptions as WinitCursorOptions}
+
+pub using @Milky2018/mgstudio/window/cursor {type CustomCursor as WinitCustomCursor}
+
+pub using @Milky2018/mgstudio/window/cursor {type CustomCursorImage as WinitCustomCursorImage}
+
+pub using @Milky2018/mgstudio/window/cursor {type CustomCursorUrl as WinitCustomCursorUrl}
+
+// Traits
+
