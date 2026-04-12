@@ -71,6 +71,7 @@ This file must not exceed 200 lines.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.
 - [x] `ui/widget-dead-wrapper-prune`: remove unreferenced interaction/plugin forwarding wrappers from `ui/widget/top`.
+- [x] `material/dead-wrapper-prune`: remove unreferenced identity wrappers in `material/key` and `material/descriptor`.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.

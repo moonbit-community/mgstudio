@@ -20,17 +20,3 @@ pub type MaterialOpaqueRendererMethod = OpaqueRendererMethod
 
 ///|
 pub type MaterialParallaxMethod = ParallaxMappingMethod
-
-///|
-pub fn material_opaque_renderer_method_identity(
-  value : MaterialOpaqueRendererMethod,
-) -> MaterialOpaqueRendererMethod {
-  value
-}
-
-///|
-pub fn material_parallax_method_identity(
-  value : MaterialParallaxMethod,
-) -> MaterialParallaxMethod {
-  value
-}
