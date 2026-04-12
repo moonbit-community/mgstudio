@@ -75,6 +75,7 @@ This file must not exceed 200 lines.
 - [x] `math/rects-dead-wrapper-prune`: remove unreferenced identity wrappers in `math/rects/{rect,irect,urect}`.
 - [x] `window/cursor-dead-wrapper-prune`: remove unreferenced `system_cursor_icon_identity` forwarding helper.
 - [x] `window/cursor-system_cursor-owner`: replace `system_cursor` alias shell with Bevy-shaped `SystemCursorIcon` enum + native conversion mapping.
+- [x] `window/cursor-root-ownerization`: replace `window/cursor.mbt` root aliases with package-owned cursor enums/structs/keys and native conversion helpers.
 - [x] `gizmos/dead-wrapper-prune`: remove unreferenced `*_identity` forwarders in `aabb/arcs/arrows/circles/curves/frustum/grid/primitives/dim2/rounded_box`.
 - [x] `math/dead-wrapper-prune`: remove unreferenced identity forwarders in `math/curve/easing` and `math/sampling/mesh_sampling`.
 - [x] `math/rects-ownerization`: replace `math/rects/{rect,irect,urect,top}` alias forwarding with owner structs/methods/constructors inside `math/rects` package.
