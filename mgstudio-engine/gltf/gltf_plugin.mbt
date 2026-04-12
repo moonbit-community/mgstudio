@@ -13,75 +13,42 @@
 // limitations under the License.
 
 ///|
-priv struct GltfPluginRuntimeState {
-  mut registration : GltfLoaderRegistration?
-  mut registered : Bool
-  mut default_convert_coordinates : GltfConvertCoordinates
-  mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
-}
-
-///|
-let gltf_plugin_runtime_state_ref : Ref[GltfPluginRuntimeState] = Ref::new({
-  registration: None,
-  registered: false,
-  default_convert_coordinates: GltfConvertCoordinates::default(),
-  default_skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::Dynamic,
-})
-
-///|
 pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
-  @gltf_loader_extensions.gltf_set_pbr_material_handler_enabled(enabled)
+  @gltf_loader.gltf_set_pbr_material_handler_enabled(enabled)
 }
 
 ///|
 pub fn gltf_pbr_material_handler_enabled() -> Bool {
-  @gltf_loader_extensions.gltf_pbr_material_handler_enabled()
+  @gltf_loader.gltf_pbr_material_handler_enabled()
 }
 
 ///|
 pub fn gltf_set_default_convert_coordinates(
   convert_coordinates : GltfConvertCoordinates,
 ) -> Unit {
-  gltf_plugin_runtime_state_ref.val.default_convert_coordinates = convert_coordinates
+  @gltf_loader.gltf_set_default_convert_coordinates(convert_coordinates)
 }
 
 ///|
 pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
-  gltf_plugin_runtime_state_ref.val.default_convert_coordinates
+  @gltf_loader.gltf_default_convert_coordinates()
 }
 
 ///|
 pub fn gltf_set_default_skinned_mesh_bounds_policy(
   policy : GltfSkinnedMeshBoundsPolicy,
 ) -> Unit {
-  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy = policy
+  @gltf_loader.gltf_set_default_skinned_mesh_bounds_policy(policy)
 }
 
 ///|
 pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy {
-  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy
+  @gltf_loader.gltf_default_skinned_mesh_bounds_policy()
 }
 
 ///|
 pub fn gltf_install_loader_registration(
   register : GltfLoaderRegistration,
 ) -> Unit {
-  gltf_plugin_runtime_state_ref.val.registration = Some(register)
-  gltf_plugin_runtime_state_ref.val.registered = false
-}
-
-///|
-fn gltf_register_asset_loaders_once() -> Unit {
-  if gltf_plugin_runtime_state_ref.val.registered {
-    return
-  }
-  let register = match gltf_plugin_runtime_state_ref.val.registration {
-    Some(value) => value
-    None =>
-      abort(
-        "gltf plugin loader registration is not installed; add scene loader wiring before running gltf_plugin",
-      )
-  }
-  register()
-  gltf_plugin_runtime_state_ref.val.registered = true
+  @gltf_loader.gltf_install_loader_registration(register)
 }

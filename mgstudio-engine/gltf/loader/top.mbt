@@ -17,25 +17,16 @@
 pub using @gltf_gltf_ext {type GltfAssetLabel}
 
 ///|
-pub using @root_gltf {type GltfCustomVertexAttribute}
-
-///|
 pub using @gltf_loader_extensions {type GltfExtensionHandler}
 
 ///|
 pub using @gltf_loader_extensions {type GltfExtensionHandlers}
 
 ///|
-pub using @root_gltf {type GltfLoaderRegistration}
+pub type GltfLoaderRegistration = () -> Unit
 
 ///|
-pub using @root_gltf {type GltfLoaderSettings}
-
-///|
-pub using @root_gltf {type GltfPlugin}
-
-///|
-pub using @root_gltf {type GltfSkinnedMeshBoundsPolicy}
+pub type GltfLoaderSettings = @asset.ImageLoaderSettings
 
 ///|
 pub using @gltf_gltf_ext {type GltfExtras}
@@ -68,28 +59,242 @@ pub using @gltf_gltf_ext {type GltfSceneIndex}
 pub using @gltf_gltf_ext {type GltfSkinIndex}
 
 ///|
+pub struct GltfCustomVertexAttribute {
+  gltf_name : String
+  mapped_name : String
+}
+
+///|
+pub fn GltfCustomVertexAttribute::new(
+  gltf_name : String,
+  mapped_name : String,
+) -> GltfCustomVertexAttribute {
+  { gltf_name, mapped_name }
+}
+
+///|
+pub fn GltfCustomVertexAttribute::gltf_name(
+  self : GltfCustomVertexAttribute,
+) -> String {
+  self.gltf_name
+}
+
+///|
+pub fn GltfCustomVertexAttribute::mapped_name(
+  self : GltfCustomVertexAttribute,
+) -> String {
+  self.mapped_name
+}
+
+///|
+pub(all) struct GltfConvertCoordinates {
+  rotate_scene_entity : Bool
+  rotate_meshes : Bool
+}
+
+///|
+pub fn gltf_convert_coordinates_vec3(value : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(-value.x, value.y, -value.z)
+}
+
+///|
+pub fn gltf_convert_coordinates_quat(value : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-value.x, value.y, -value.z, value.w)
+}
+
+///|
+pub fn gltf_convert_coordinates_vec3_components(
+  value : (Float, Float, Float),
+) -> (Float, Float, Float) {
+  (-value.0, value.1, -value.2)
+}
+
+///|
+pub fn GltfConvertCoordinates::default() -> GltfConvertCoordinates {
+  { rotate_scene_entity: false, rotate_meshes: false }
+}
+
+///|
+fn gltf_coordinate_conversion_transform() -> @transform.Transform {
+  @transform.Transform::from_rotation(@math.Quat::from_rotation_y(@math.pi()))
+}
+
+///|
+pub fn GltfConvertCoordinates::scene_conversion_transform(
+  self : GltfConvertCoordinates,
+) -> @transform.Transform {
+  if self.rotate_scene_entity {
+    gltf_coordinate_conversion_transform()
+  } else {
+    @transform.Transform::identity()
+  }
+}
+
+///|
+pub fn GltfConvertCoordinates::mesh_conversion_transform(
+  self : GltfConvertCoordinates,
+) -> @transform.Transform {
+  if self.rotate_meshes {
+    gltf_coordinate_conversion_transform()
+  } else {
+    @transform.Transform::identity()
+  }
+}
+
+///|
+pub fn GltfConvertCoordinates::mesh_conversion_transform_inverse(
+  self : GltfConvertCoordinates,
+) -> @transform.Transform {
+  self.mesh_conversion_transform()
+}
+
+///|
+pub(all) enum GltfSkinnedMeshBoundsPolicy {
+  BindPose
+  Dynamic
+  NoFrustumCulling
+} derive(Eq)
+
+///|
+pub fn GltfSkinnedMeshBoundsPolicy::default() -> GltfSkinnedMeshBoundsPolicy {
+  Dynamic
+}
+
+///|
+pub struct GltfPlugin {
+  pbr_material_handler_enabled : Bool
+  convert_coordinates : GltfConvertCoordinates
+  custom_vertex_attributes : Array[GltfCustomVertexAttribute]
+  extension_handlers : Array[GltfExtensionHandler]
+  skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
+}
+
+///|
+pub fn GltfPlugin::default() -> GltfPlugin {
+  {
+    pbr_material_handler_enabled: true,
+    convert_coordinates: GltfConvertCoordinates::default(),
+    custom_vertex_attributes: [],
+    extension_handlers: [],
+    skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::default(),
+  }
+}
+
+///|
+pub fn GltfPlugin::with_pbr_material_handler_enabled(
+  self : GltfPlugin,
+  enabled : Bool,
+) -> GltfPlugin {
+  { ..self, pbr_material_handler_enabled: enabled }
+}
+
+///|
+pub fn GltfPlugin::add_custom_vertex_attribute(
+  self : GltfPlugin,
+  gltf_name : String,
+  mapped_name : String,
+) -> GltfPlugin {
+  {
+    ..self,
+    custom_vertex_attributes: [
+      ..self.custom_vertex_attributes,
+      GltfCustomVertexAttribute::new(gltf_name, mapped_name),
+    ],
+  }
+}
+
+///|
+pub fn GltfPlugin::with_convert_coordinates(
+  self : GltfPlugin,
+  convert_coordinates : GltfConvertCoordinates,
+) -> GltfPlugin {
+  { ..self, convert_coordinates, }
+}
+
+///|
+pub fn GltfPlugin::add_extension_handler(
+  self : GltfPlugin,
+  handler : GltfExtensionHandler,
+) -> GltfPlugin {
+  { ..self, extension_handlers: [..self.extension_handlers, handler] }
+}
+
+///|
+pub fn GltfPlugin::with_skinned_mesh_bounds_policy(
+  self : GltfPlugin,
+  policy : GltfSkinnedMeshBoundsPolicy,
+) -> GltfPlugin {
+  { ..self, skinned_mesh_bounds_policy: policy }
+}
+
+///|
+priv struct GltfPluginRuntimeState {
+  mut registration : GltfLoaderRegistration?
+  mut registered : Bool
+  mut default_convert_coordinates : GltfConvertCoordinates
+  mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
+}
+
+///|
+let gltf_plugin_runtime_state_ref : Ref[GltfPluginRuntimeState] = Ref::new({
+  registration: None,
+  registered: false,
+  default_convert_coordinates: GltfConvertCoordinates::default(),
+  default_skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::Dynamic,
+})
+
+///|
+let gltf_custom_vertex_attributes_registry : Array[GltfCustomVertexAttribute] = []
+
+///|
+fn gltf_attribute_name_matches(
+  registered_name : String,
+  attribute_name : String,
+) -> Bool {
+  if registered_name == attribute_name {
+    return true
+  }
+  if attribute_name.length() > 0 && attribute_name.code_unit_at(0) == 95 {
+    return registered_name ==
+      attribute_name[1:attribute_name.length()].to_string()
+  }
+  false
+}
+
+///|
 pub fn gltf_add_custom_vertex_attribute(
   name : String,
   mapped_name : String,
 ) -> Unit {
-  @root_gltf.gltf_add_custom_vertex_attribute(name, mapped_name)
+  for i in 0..<gltf_custom_vertex_attributes_registry.length() {
+    if gltf_custom_vertex_attributes_registry[i].gltf_name() == name {
+      gltf_custom_vertex_attributes_registry[i] = GltfCustomVertexAttribute::new(
+        name, mapped_name,
+      )
+      return
+    }
+  }
+  gltf_custom_vertex_attributes_registry.push(
+    GltfCustomVertexAttribute::new(name, mapped_name),
+  )
 }
 
 ///|
 pub fn gltf_clear_custom_vertex_attributes() -> Unit {
-  @root_gltf.gltf_clear_custom_vertex_attributes()
+  gltf_custom_vertex_attributes_registry.clear()
 }
 
 ///|
 pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute] {
-  @root_gltf.gltf_custom_vertex_attributes()
+  gltf_custom_vertex_attributes_registry
 }
 
 ///|
 pub fn gltf_install_loader_registration(
   registration : GltfLoaderRegistration,
 ) -> Unit {
-  @root_gltf.gltf_install_loader_registration(registration)
+  gltf_plugin_runtime_state_ref.val.registration = Some(registration)
+  gltf_plugin_runtime_state_ref.val.registered = false
 }
 
 ///|
@@ -102,12 +307,27 @@ pub fn gltf_plugin_with(
   app : @app.App[@ecs.World],
   plugin : GltfPlugin,
 ) -> @app.App[@ecs.World] {
-  @root_gltf.gltf_plugin_with(app, plugin)
+  gltf_set_pbr_material_handler_enabled(plugin.pbr_material_handler_enabled)
+  gltf_set_default_convert_coordinates(plugin.convert_coordinates)
+  gltf_set_default_skinned_mesh_bounds_policy(plugin.skinned_mesh_bounds_policy)
+  gltf_clear_custom_vertex_attributes()
+  for custom_attribute in plugin.custom_vertex_attributes {
+    gltf_add_custom_vertex_attribute(
+      custom_attribute.gltf_name(),
+      custom_attribute.mapped_name(),
+    )
+  }
+  @gltf_loader_extensions.gltf_clear_extension_handlers()
+  for handler in plugin.extension_handlers {
+    gltf_register_extension_handler(handler)
+  }
+  gltf_register_asset_loaders_once()
+  app
 }
 
 ///|
 pub fn gltf_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @root_gltf.gltf_plugin(app)
+  gltf_plugin_with(app, GltfPlugin::default())
 }
 
 ///|
@@ -117,7 +337,12 @@ pub fn gltf_register_extension_handler(handler : GltfExtensionHandler) -> Unit {
 
 ///|
 pub fn gltf_resolve_custom_vertex_attribute_name(name : String) -> String? {
-  @root_gltf.gltf_resolve_custom_vertex_attribute_name(name)
+  for attribute in gltf_custom_vertex_attributes_registry {
+    if gltf_attribute_name_matches(attribute.gltf_name(), name) {
+      return Some(attribute.mapped_name())
+    }
+  }
+  None
 }
 
 ///|
@@ -127,26 +352,42 @@ pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
 
 ///|
 pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy {
-  @root_gltf.gltf_default_skinned_mesh_bounds_policy()
+  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy
 }
 
 ///|
 pub fn gltf_set_default_skinned_mesh_bounds_policy(
   policy : GltfSkinnedMeshBoundsPolicy,
 ) -> Unit {
-  @root_gltf.gltf_set_default_skinned_mesh_bounds_policy(policy)
+  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy = policy
 }
 
 ///|
-pub fn gltf_default_convert_coordinates() -> @root_gltf.GltfConvertCoordinates {
-  @root_gltf.gltf_default_convert_coordinates()
+pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
+  gltf_plugin_runtime_state_ref.val.default_convert_coordinates
 }
 
 ///|
 pub fn gltf_set_default_convert_coordinates(
-  convert_coordinates : @root_gltf.GltfConvertCoordinates,
+  convert_coordinates : GltfConvertCoordinates,
 ) -> Unit {
-  @root_gltf.gltf_set_default_convert_coordinates(convert_coordinates)
+  gltf_plugin_runtime_state_ref.val.default_convert_coordinates = convert_coordinates
+}
+
+///|
+fn gltf_register_asset_loaders_once() -> Unit {
+  if gltf_plugin_runtime_state_ref.val.registered {
+    return
+  }
+  let register = match gltf_plugin_runtime_state_ref.val.registration {
+    Some(value) => value
+    None =>
+      abort(
+        "gltf plugin loader registration is not installed; add scene loader wiring before running gltf_plugin",
+      )
+  }
+  register()
+  gltf_plugin_runtime_state_ref.val.registered = true
 }
 
 ///|
