@@ -15,17 +15,17 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/convert_coordinates.rs`.
 pub fn gltf_convert_coordinates_vec3(value : @math.Vec3) -> @math.Vec3 {
-  @gltf_loader.gltf_convert_coordinates_vec3(value)
+  @math.Vec3::new(-value.x, value.y, -value.z)
 }
 
 ///|
 pub fn gltf_convert_coordinates_quat(value : @math.Quat) -> @math.Quat {
-  @gltf_loader.gltf_convert_coordinates_quat(value)
+  @math.Quat::new(-value.x, value.y, -value.z, value.w)
 }
 
 ///|
 pub fn gltf_convert_coordinates_vec3_components(
   value : (Float, Float, Float),
 ) -> (Float, Float, Float) {
-  @gltf_loader.gltf_convert_coordinates_vec3_components(value)
+  (-value.0, value.1, -value.2)
 }

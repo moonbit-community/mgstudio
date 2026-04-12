@@ -15,24 +15,24 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/assets.rs`.
 pub fn gltf_scene_asset_label(scene : GltfSceneIndex) -> GltfAssetLabel {
-  @gltf_loader.gltf_scene_asset_label(scene.index())
+  @gltf_gltf_ext.gltf_scene_asset_label(scene.index())
 }
 
 ///|
 pub fn gltf_node_asset_label(node : GltfNodeIndex) -> GltfAssetLabel {
-  @gltf_loader.gltf_node_asset_label(node.index())
+  @gltf_gltf_ext.gltf_node_asset_label(node.index())
 }
 
 ///|
 pub fn gltf_mesh_asset_label(mesh : GltfMeshIndex) -> GltfAssetLabel {
-  @gltf_loader.gltf_mesh_asset_label(mesh.index())
+  @gltf_gltf_ext.gltf_mesh_asset_label(mesh.index())
 }
 
 ///|
 pub fn gltf_primitive_asset_label(
   primitive : GltfPrimitiveIndex,
 ) -> GltfAssetLabel {
-  @gltf_loader.gltf_primitive_asset_label(
+  @gltf_gltf_ext.gltf_primitive_asset_label(
     primitive.mesh_index(),
     primitive.primitive_index(),
   )
@@ -40,5 +40,5 @@ pub fn gltf_primitive_asset_label(
 
 ///|
 pub fn gltf_skin_asset_label(skin : GltfSkinIndex) -> GltfAssetLabel {
-  @gltf_loader.gltf_skin_asset_label(skin.index())
+  @gltf_gltf_ext.gltf_skin_asset_label(skin.index())
 }

@@ -32,17 +32,7 @@ pub let ecs_key_ui_target_camera : @ecs.ComponentKey[@ui.UiTargetCamera]
 
 pub fn ui_interaction_system(@ecs.World) -> Unit
 
-pub fn ui_widget_checkbox_label_identity(@ui.Label) -> @ui.Label
-
-pub fn ui_widget_menu_accessibility_label_identity(@ui.AccessibilityLabel) -> @ui.AccessibilityLabel
-
-pub fn ui_widget_radio_focus_policy_identity(@ui.FocusPolicy) -> @ui.FocusPolicy
-
-pub fn ui_widget_scroll_position_identity(@ui.ScrollPosition) -> @ui.ScrollPosition
-
 pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn ui_widgets_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ui_widgets_set_interaction : String
 

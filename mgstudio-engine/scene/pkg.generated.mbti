@@ -37,8 +37,6 @@ pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
 
-pub fn scene_instance_to_json(SceneInstance) -> Json
-
 pub fn scene_load_gltf_animation(@asset.AssetServer, String) -> @asset.Handle[@animation.AnimationClip]
 
 pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Handle[@mesh.Mesh]
@@ -46,8 +44,6 @@ pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Hand
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
 pub fn[W] scene_load_pending_system(W) -> Unit
-
-pub fn scene_loader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -61,21 +57,9 @@ pub fn scene_reload_modified_roots_system(@ecs.World) -> Unit
 
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
 
-pub fn scene_root_to_json(SceneRoot) -> Json
-
 pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
 pub fn scene_spawn_roots_system(@ecs.World) -> Unit
-
-pub fn scene_spawner_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn scene_spawner_plugin_with(@app.App[@ecs.World], ScenePlugin) -> @app.App[@ecs.World]
-
-pub fn scene_spawner_run_load_pending_system(@ecs.World) -> Unit
-
-pub fn scene_spawner_run_reload_modified_roots_system(@ecs.World) -> Unit
-
-pub fn scene_spawner_run_spawn_roots_system(@ecs.World) -> Unit
 
 // Errors
 
