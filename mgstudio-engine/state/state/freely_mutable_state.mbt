@@ -16,4 +16,45 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/freely_mutable_state.rs`.
 
 ///|
-pub type FreelyMutableNextState[S] = @app.NextState[S]
+pub(open) trait FreelyMutableState: States {}
+
+///|
+pub fn[S] next_state_set(_self : NextState[S], state : S) -> NextState[S] {
+  Pending(state)
+}
+
+///|
+pub fn[S : Eq] next_state_set_if_neq(
+  current : NextState[S],
+  state : S,
+) -> NextState[S] {
+  match current {
+    Pending(existing) =>
+      if existing == state {
+        current
+      } else {
+        PendingIfNeq(state)
+      }
+    PendingIfNeq(existing) =>
+      if existing == state {
+        current
+      } else {
+        PendingIfNeq(state)
+      }
+    Unchanged => PendingIfNeq(state)
+  }
+}
+
+///|
+pub fn[S] next_state_reset(_self : NextState[S]) -> NextState[S] {
+  Unchanged
+}
+
+///|
+pub fn[S] take_next_state(next_state : NextState[S]) -> (S, Bool)? {
+  match next_state {
+    Pending(state) => Some((state, true))
+    PendingIfNeq(state) => Some((state, false))
+    Unchanged => None
+  }
+}

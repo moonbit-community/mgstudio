@@ -16,22 +16,13 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/states.rs`.
 
 ///|
-pub type StatesState[S] = @app.State[S]
+pub(open) trait States: Eq + Debug {
+  debug_name(Self) -> String
+  dependency_depth(Self) -> Int = _
+}
 
 ///|
-pub type StatesNextState[S] = @app.NextState[S]
-
-///|
-pub type StatesOnEnter[S] = @app.OnEnter[S]
-
-///|
-pub type StatesOnExit[S] = @app.OnExit[S]
-
-///|
-pub type StatesOnTransition[S] = @app.OnTransition[S]
-
-///|
-pub type StatesOnReenter[S] = @app.OnReenter[S]
-
-///|
-pub type StatesOnReexit[S] = @app.OnReexit[S]
+impl States with dependency_depth(self) {
+  ignore(self)
+  0
+}

@@ -103,6 +103,7 @@ This file must not exceed 200 lines.
 - [x] `scene/scene_loader+serde`: move glTF ready-check loader wiring and scene serde impl ownership out of aggregating files.
 - [x] `scene/ecs_keys`: remove unused wrapper exports (`scene_spawn_roots_system_ecs`, `scene_plugin_ecs`) and switch tests to owner systems.
 - [x] `state/state`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/state/state`) instead of dead wrappers.
+- [x] `state/state-foundation-ownerization`: replace alias forwarding in `state/state/{states,state_set,freely_mutable_state}` with local owner trait + helper implementations.
 - [x] `window/cursor`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/window/cursor`) with root compatibility exports.
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
 - [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
