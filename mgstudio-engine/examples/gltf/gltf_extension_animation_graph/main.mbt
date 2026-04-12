@@ -109,9 +109,9 @@ fn attach_extension_animation_graph(
 ///|
 fn setup_environment(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  @gltf.gltf_clear_extension_handlers()
+  @gltf_loader_extensions.gltf_clear_extension_handlers()
   extension_animation_clips.clear()
-  @gltf.gltf_register_extension_handler(
+  @gltf_loader_extensions.gltf_register_extension_handler(
     @gltf.GltfExtensionHandler::new(
       on_animations_collected=Some(collect_extension_animations),
       on_scene_completed=Some(attach_extension_animation_graph),

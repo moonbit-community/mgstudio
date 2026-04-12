@@ -16,7 +16,7 @@
 test "scene ecs: SceneRoot spawns children and marks ready" {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf_loader.gltf_plugin, @time.time_plugin,
   ]
   let instance_id = Ref::new(0)
   let spawned_entities = Ref::new(0)
@@ -152,7 +152,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
 test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf_loader.gltf_plugin, @time.time_plugin,
   ]
   let old_instance_id = Ref::new(0)
   let new_instance_id = Ref::new(0)

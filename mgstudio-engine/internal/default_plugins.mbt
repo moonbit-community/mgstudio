@@ -261,7 +261,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_GLTF,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @gltf.gltf_plugin(app)
+      @gltf_loader.gltf_plugin(app)
     }),
   )
   .add_named(

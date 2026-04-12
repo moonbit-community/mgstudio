@@ -1090,7 +1090,7 @@ fn scene_spawn_instance_when_ready(
       )
     }
     if node.gltf_node_index is Some(node_index) {
-      @gltf.gltf_extension_notify_node_spawned(
+      @gltf_loader_extensions.gltf_extension_notify_node_spawned(
         gltf_scene_asset_path,
         node_index.index(),
         child,
@@ -1099,7 +1099,7 @@ fn scene_spawn_instance_when_ready(
     }
     if node.gltf_mesh_index is Some(mesh_index) &&
       node.gltf_primitive_index is Some(primitive_index) {
-      @gltf.gltf_extension_notify_mesh_spawned(
+      @gltf_loader_extensions.gltf_extension_notify_mesh_spawned(
         gltf_scene_asset_path,
         mesh_index.index(),
         primitive_index.primitive_index(),
@@ -1208,7 +1208,7 @@ fn scene_spawn_instance_when_ready(
   } else {
     0
   }
-  @gltf.gltf_extension_notify_scene_completed(
+  @gltf_loader_extensions.gltf_extension_notify_scene_completed(
     gltf_scene_asset_path, spawned_scene_index, root_entity, world,
   )
 }

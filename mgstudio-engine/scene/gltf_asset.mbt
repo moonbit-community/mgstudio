@@ -94,7 +94,7 @@ fn scene_load_gltf_root_asset(
       named_animations.push((animation.name, handle))
     }
   }
-  @gltf.gltf_extension_notify_animations_collected(
+  @gltf_loader_extensions.gltf_extension_notify_animations_collected(
     @asset.asset_format_path(root_path),
     animations,
     named_animations,

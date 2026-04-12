@@ -16,7 +16,7 @@
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf_loader.gltf_plugin, @time.time_plugin,
   ]
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
@@ -81,7 +81,7 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf_loader.gltf_plugin, @time.time_plugin,
   ]
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(plugins)
