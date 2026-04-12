@@ -16,15 +16,6 @@
 // Bevy source: `bevy/crates/bevy_dev_tools/src/frame_time_graph.rs`.
 
 ///|
-pub type FrameTimeGraphConfig = @dev_tools.FrameTimeGraphConfig
-
-///|
-pub type FpsOverlayConfig = @dev_tools.FpsOverlayConfig
-
-///|
-pub type FpsOverlayPlugin = @dev_tools.FpsOverlayPlugin
-
-///|
 pub let fps_overlay_set_customize : @app.SystemSet = @dev_tools.fps_overlay_set_customize
 
 ///|
@@ -40,7 +31,17 @@ pub fn frame_time_graph_plugin(
 ///|
 pub fn frame_time_graph_plugin_with(
   app : @app.App[@ecs.World],
-  plugin : FpsOverlayPlugin,
+  plugin : @dev_tools.FpsOverlayPlugin,
 ) -> @app.App[@ecs.World] {
   @dev_tools.fps_overlay_plugin_with(app, plugin)
+}
+
+///|
+pub fn frame_time_graph_default_config() -> @dev_tools.FrameTimeGraphConfig {
+  @dev_tools.FrameTimeGraphConfig::default()
+}
+
+///|
+pub fn fps_overlay_default_config() -> @dev_tools.FpsOverlayConfig {
+  @dev_tools.FpsOverlayConfig::default()
 }

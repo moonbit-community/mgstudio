@@ -16,10 +16,7 @@
 // Bevy source: `bevy/crates/bevy_render/src/diagnostic/internal.rs`.
 
 ///|
-pub type RenderDiagnosticsSnapshot = @renderer.RenderDiagnosticsSnapshot
-
-///|
-pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
+pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot {
   @renderer.render_diagnostics_snapshot()
 }
 

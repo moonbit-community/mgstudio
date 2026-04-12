@@ -1518,7 +1518,7 @@ pub fn host_debug_string(value~ : String) -> Unit {
 }
 
 ///|
-pub fn render_diagnostics_snapshot() -> @render_diagnostic.RenderDiagnosticsSnapshot {
+pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot {
   @render_diagnostic.render_diagnostics_snapshot()
 }
 
