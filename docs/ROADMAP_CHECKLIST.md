@@ -58,8 +58,8 @@ This file must not exceed 200 lines.
 - [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
 - [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
 - [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
-- [x] `gltf/scene/state/window`: remove pure compatibility alias shells and merge required exports into owner modules.
-- [x] `shell-packages`: drop dead wrapper-only subpackages (`ui/widget`, `window/cursor`, `state/state`, `picking/mesh_picking/ray_cast`, `gltf/loader`, `dev_tools/frame_time_graph`).
+- [ ] `gltf/scene/state/window`: replace path-alignment wrapper files with owner-file real implementations (stopgap wrappers are currently back in tree).
+- [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
 - [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
@@ -73,3 +73,4 @@ This file must not exceed 200 lines.
 - [ ] `asset/image`: close runtime decode/link gaps and restore stable native testability.
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence.
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
+- [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.
