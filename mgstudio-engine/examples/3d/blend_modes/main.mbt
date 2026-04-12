@@ -402,7 +402,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     let world_position = target_transform.translation.add(
       @math.Vec3::new(0.0F, LABEL_HEIGHT_OFFSET, 0.0F),
     )
-    guard @pbr.render3d_camera_world_to_viewport(
+    guard @camera.camera_world_to_viewport(
         world_position, camera, projection, camera_transform, target_size, scale_factor,
       )
       is Some(screen_position) else {

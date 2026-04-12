@@ -561,7 +561,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
     @window.window_height(),
   )
   let scale_factor = @window.window_scale_factor()
-  guard @pbr.render3d_camera_viewport_to_world_ray(
+  guard @camera.camera_viewport_to_world_ray(
       screen_pos, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((ray_origin, ray_dir)) else {

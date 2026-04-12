@@ -533,7 +533,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
       @window.window_height(),
     )
     let scale_factor = @window.window_scale_factor()
-    if @pbr.render3d_camera_viewport_to_world_ray(
+    if @camera.camera_viewport_to_world_ray(
         cursor,
         raycast_state.val.camera,
         raycast_state.val.camera_projection,

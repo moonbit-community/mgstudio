@@ -384,7 +384,7 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
 
   let mut pointer_position : @math.Vec2? = None
   if @input.primary_pointer_position() is Some(cursor) &&
-    @pbr.render3d_camera_viewport_to_world_ray(
+    @camera.camera_viewport_to_world_ray(
       cursor,
       camera.value(),
       projection.value(),
