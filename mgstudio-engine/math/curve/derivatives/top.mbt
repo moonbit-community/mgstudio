@@ -15,3 +15,48 @@
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/mod.rs`.
 // Runtime-bearing exports live in `adaptor_impls.mbt`.
+
+///|
+pub fn[T] with_derivative_value(entry : WithDerivative[T]) -> T {
+  entry.value
+}
+
+///|
+pub fn[T] with_derivative_derivative(entry : WithDerivative[T]) -> T {
+  entry.derivative
+}
+
+///|
+pub fn[T] with_two_derivatives_value(entry : WithTwoDerivatives[T]) -> T {
+  entry.value
+}
+
+///|
+pub fn[T] with_two_derivatives_first(entry : WithTwoDerivatives[T]) -> T {
+  entry.derivative
+}
+
+///|
+pub fn[T] with_two_derivatives_second(entry : WithTwoDerivatives[T]) -> T {
+  entry.second_derivative
+}
+
+///|
+pub fn[T, S] with_derivative_map(
+  entry : WithDerivative[T],
+  f : (T) -> S,
+) -> WithDerivative[S] {
+  with_derivative(f(entry.value), f(entry.derivative))
+}
+
+///|
+pub fn[T, S] with_two_derivatives_map(
+  entry : WithTwoDerivatives[T],
+  f : (T) -> S,
+) -> WithTwoDerivatives[S] {
+  with_two_derivatives(
+    f(entry.value),
+    f(entry.derivative),
+    f(entry.second_derivative),
+  )
+}
