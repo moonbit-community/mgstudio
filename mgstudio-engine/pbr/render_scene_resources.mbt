@@ -30,21 +30,10 @@ priv struct TransmissionSourceTargetsEntry {
 }
 
 ///|
-priv struct PointLightShadowTargetsEntry {
-  entity : @core.Entity
-  size : Int
-  target_id : Int
-}
-
-///|
 let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
 
 ///|
 let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
-)
-
-///|
-let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
 )
 
 ///|
@@ -128,42 +117,6 @@ fn render3d_transmission_source_target_get_or_create(
   }
   transmission_source_targets.val = next
   source_target_id
-}
-
-///|
-fn render3d_point_light_shadow_target_get_or_create(
-  entity : @core.Entity,
-  size : Int,
-) -> Int {
-  let safe_size = if size <= 0 { 1 } else { size }
-  for item in point_light_shadow_targets.val {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation &&
-      item.size == safe_size {
-      return item.target_id
-    }
-  }
-  let target_id = @render.host_gpu_create_point_light_shadow_target(
-    size=safe_size,
-  )
-  let next : Array[PointLightShadowTargetsEntry] = []
-  let mut replaced = false
-  for item in point_light_shadow_targets.val {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation {
-      if !replaced {
-        next.push({ entity, size: safe_size, target_id })
-        replaced = true
-      }
-    } else {
-      next.push(item)
-    }
-  }
-  if !replaced {
-    next.push({ entity, size: safe_size, target_id })
-  }
-  point_light_shadow_targets.val = next
-  target_id
 }
 
 ///|

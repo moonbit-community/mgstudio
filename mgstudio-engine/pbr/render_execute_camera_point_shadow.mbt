@@ -165,3 +165,50 @@ fn render3d_execute_camera_point_shadow_pass(
   }
   (point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias)
 }
+
+///|
+priv struct PointLightShadowTargetsEntry {
+  entity : @core.Entity
+  size : Int
+  target_id : Int
+}
+
+///|
+let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
+)
+
+///|
+fn render3d_point_light_shadow_target_get_or_create(
+  entity : @core.Entity,
+  size : Int,
+) -> Int {
+  let safe_size = if size <= 0 { 1 } else { size }
+  for item in point_light_shadow_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.size == safe_size {
+      return item.target_id
+    }
+  }
+  let target_id = @render.host_gpu_create_point_light_shadow_target(
+    size=safe_size,
+  )
+  let next : Array[PointLightShadowTargetsEntry] = []
+  let mut replaced = false
+  for item in point_light_shadow_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, size: safe_size, target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, size: safe_size, target_id })
+  }
+  point_light_shadow_targets.val = next
+  target_id
+}
