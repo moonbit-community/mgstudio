@@ -1,6 +1,8 @@
 import {
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/transform" @transform,
+  "Milky2018/mgstudio/math",
 }
 
 supported_targets = "native"

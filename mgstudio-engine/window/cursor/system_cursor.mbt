@@ -54,7 +54,9 @@ pub(all) enum SystemCursorIcon {
 } derive(Eq, Debug)
 
 ///|
-pub fn SystemCursorIcon::to_native(self : SystemCursorIcon) -> @window_core.CursorIcon {
+pub fn SystemCursorIcon::to_native(
+  self : SystemCursorIcon,
+) -> @window_core.CursorIcon {
   match self {
     Default => @window_core.CursorIcon::Default
     ContextMenu => @window_core.CursorIcon::ContextMenu
@@ -94,7 +96,9 @@ pub fn SystemCursorIcon::to_native(self : SystemCursorIcon) -> @window_core.Curs
 }
 
 ///|
-pub fn SystemCursorIcon::from_native(icon : @window_core.CursorIcon) -> SystemCursorIcon {
+pub fn SystemCursorIcon::from_native(
+  icon : @window_core.CursorIcon,
+) -> SystemCursorIcon {
   match icon {
     @window_core.CursorIcon::Default => Default
     @window_core.CursorIcon::ContextMenu => ContextMenu

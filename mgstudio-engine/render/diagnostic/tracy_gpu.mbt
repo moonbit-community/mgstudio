@@ -62,8 +62,16 @@ pub fn tracy_gpu_context_enabled() -> Bool {
     Some(raw) => {
       let normalized = raw.trim().to_string()
       match normalized {
-        "1" | "true" | "TRUE" | "True" | "yes" | "YES" | "Yes" | "on" |
-        "ON" | "On" => true
+        "1"
+        | "true"
+        | "TRUE"
+        | "True"
+        | "yes"
+        | "YES"
+        | "Yes"
+        | "on"
+        | "ON"
+        | "On" => true
         _ => false
       }
     }

@@ -16,4 +16,44 @@
 // Bevy source: `bevy/crates/bevy_math/src/rects/rect.rs`.
 
 ///|
-pub type Rect = @math.Rect
+pub struct Rect {
+  min : @math.Vec2
+  max : @math.Vec2
+}
+
+///|
+pub fn Rect::new(min : @math.Vec2, max : @math.Vec2) -> Rect {
+  Rect::{ min, max }
+}
+
+///|
+pub fn Rect::size(self : Rect) -> @math.Vec2 {
+  @math.Vec2::new(self.max.x - self.min.x, self.max.y - self.min.y)
+}
+
+///|
+pub fn Rect::center(self : Rect) -> @math.Vec2 {
+  @math.Vec2::new(
+    (self.min.x + self.max.x) / 2.0F,
+    (self.min.y + self.max.y) / 2.0F,
+  )
+}
+
+///|
+pub fn Rect::contains(self : Rect, value : @math.Vec2) -> Bool {
+  value.x >= self.min.x &&
+  value.y >= self.min.y &&
+  value.x <= self.max.x &&
+  value.y <= self.max.y
+}
+
+///|
+pub impl ToJson for Rect with to_json(self) {
+  (self.min, self.max).to_json()
+}
+
+///|
+pub impl @json.FromJson for Rect with from_json(json, path) {
+  let (min, max) : (@math.Vec2, @math.Vec2) = @json.from_json(json, path~)
+  Rect::new(min, max)
+}

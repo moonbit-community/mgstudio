@@ -16,17 +16,16 @@
 // Bevy source: `bevy/crates/bevy_transform/src/components/mod.rs`.
 
 ///|
-pub type Affine2 = @transform.Affine2
+pub fn affine2_identity() -> Affine2 {
+  Affine2::identity()
+}
 
 ///|
-pub type TransformTreeChanged = @transform.TransformTreeChanged
+pub fn transform_identity() -> Transform {
+  Transform::identity()
+}
 
 ///|
-pub type StaticTransformOptimizations = @transform.StaticTransformOptimizations
-
-///|
-pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[
-  StaticTransformOptimizations,
-] {
-  @transform.static_transform_optimizations_resource_key()
+pub fn global_transform_identity() -> GlobalTransform {
+  GlobalTransform::identity()
 }
