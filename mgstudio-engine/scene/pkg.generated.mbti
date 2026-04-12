@@ -51,8 +51,6 @@ pub fn scene_loader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn scene_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub fn scene_plugin_with(@app.App[@ecs.World], ScenePlugin) -> @app.App[@ecs.World]
 
 pub fn scene_register_gltf_asset_loaders() -> Unit
@@ -68,8 +66,6 @@ pub fn scene_root_to_json(SceneRoot) -> Json
 pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
 pub fn scene_spawn_roots_system(@ecs.World) -> Unit
-
-pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 
 pub fn scene_spawner_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

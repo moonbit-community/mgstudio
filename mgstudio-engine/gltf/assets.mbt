@@ -15,27 +15,30 @@
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/assets.rs`.
 pub fn gltf_scene_asset_label(scene : GltfSceneIndex) -> GltfAssetLabel {
-  GltfAssetLabel::Scene(scene.index())
+  @gltf_loader.gltf_scene_asset_label(scene.index())
 }
 
 ///|
 pub fn gltf_node_asset_label(node : GltfNodeIndex) -> GltfAssetLabel {
-  GltfAssetLabel::Node(node.index())
+  @gltf_loader.gltf_node_asset_label(node.index())
 }
 
 ///|
 pub fn gltf_mesh_asset_label(mesh : GltfMeshIndex) -> GltfAssetLabel {
-  GltfAssetLabel::Mesh(mesh.index())
+  @gltf_loader.gltf_mesh_asset_label(mesh.index())
 }
 
 ///|
 pub fn gltf_primitive_asset_label(
   primitive : GltfPrimitiveIndex,
 ) -> GltfAssetLabel {
-  GltfAssetLabel::Primitive(primitive.mesh_index(), primitive.primitive_index())
+  @gltf_loader.gltf_primitive_asset_label(
+    primitive.mesh_index(),
+    primitive.primitive_index(),
+  )
 }
 
 ///|
 pub fn gltf_skin_asset_label(skin : GltfSkinIndex) -> GltfAssetLabel {
-  GltfAssetLabel::Skin(skin.index())
+  @gltf_loader.gltf_skin_asset_label(skin.index())
 }

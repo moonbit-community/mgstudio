@@ -68,7 +68,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
       @scene.SceneRoot::new(scene_handle),
     )
 
-    @scene.scene_spawn_roots_system_ecs(world)
+    @scene.scene_spawn_roots_system(world)
 
     let instance = (try! world.get_by_key(root, @scene.ecs_key_scene_instance)).unwrap()
     let ready = (try! world.get_by_key(
@@ -112,7 +112,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
       ))
       is Some(_)
 
-    @scene.scene_spawn_roots_system_ecs(world)
+    @scene.scene_spawn_roots_system(world)
     let instance_second = (try! world.get_by_key(
       root, @scene.ecs_key_scene_instance,
     )).unwrap()
@@ -219,7 +219,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       @scene.SceneRoot::new(first_handle),
     )
 
-    @scene.scene_spawn_roots_system_ecs(world)
+    @scene.scene_spawn_roots_system(world)
     let first_instance = (try! world.get_by_key(
       root, @scene.ecs_key_scene_instance,
     )).unwrap()
@@ -241,7 +241,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       @scene.ecs_key_scene_root,
       @scene.SceneRoot::new(second_handle),
     )
-    @scene.scene_spawn_roots_system_ecs(world)
+    @scene.scene_spawn_roots_system(world)
 
     let second_instance = (try! world.get_by_key(
       root, @scene.ecs_key_scene_instance,

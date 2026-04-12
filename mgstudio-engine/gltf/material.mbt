@@ -18,20 +18,20 @@ pub fn gltf_material_asset_label(
   material_index : Int,
   is_scale_inverted : Bool,
 ) -> GltfAssetLabel {
-  GltfAssetLabel::Material(material_index, is_scale_inverted)
+  @gltf_loader.gltf_material_asset_label(material_index, is_scale_inverted)
 }
 
 ///|
 pub fn gltf_default_material_asset_label() -> GltfAssetLabel {
-  GltfAssetLabel::DefaultMaterial
+  @gltf_loader.gltf_default_material_asset_label()
 }
 
 ///|
 pub fn gltf_material_name(name : String) -> GltfMaterialName {
-  GltfMaterialName::new(name)
+  @gltf_loader.gltf_material_name(name)
 }
 
 ///|
 pub fn gltf_material_extras(value : String) -> GltfMaterialExtras {
-  GltfMaterialExtras::new(value)
+  @gltf_loader.gltf_material_extras(value)
 }

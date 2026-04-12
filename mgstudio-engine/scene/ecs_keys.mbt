@@ -41,13 +41,3 @@ pub impl @ecs.Component for SceneInstance with component() {
 pub impl @ecs.Component for SceneInstanceReady with component() {
   ecs_key_scene_instance_ready
 }
-
-///|
-pub fn scene_spawn_roots_system_ecs(world : @ecs.World) -> Unit {
-  scene_spawn_roots_system(world)
-}
-
-///|
-pub fn scene_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_runtime_plugin_base(app)
-}
