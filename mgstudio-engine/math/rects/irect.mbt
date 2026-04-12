@@ -17,8 +17,3 @@
 
 ///|
 pub type IRect = @math.IRect
-
-///|
-pub fn irect_identity(value : IRect) -> IRect {
-  value
-}
