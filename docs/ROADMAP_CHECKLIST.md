@@ -63,6 +63,7 @@ This file must not exceed 200 lines.
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
 - [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
 - [ ] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` style hard stub gating by landing real runtime path or explicit scope exclusion.
+- [ ] `render/wgpu_mbt`: expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for runtime capability checks.
 - [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.
