@@ -33,11 +33,6 @@ pub fn MeshletVisibilityBufferRasterState::default() -> MeshletVisibilityBufferR
 }
 
 ///|
-pub fn meshlet_visibility_buffer_raster_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}
-
-///|
 pub fn meshlet_visibility_buffer_raster(
   state : MeshletVisibilityBufferRasterState,
   draw_count : Int,

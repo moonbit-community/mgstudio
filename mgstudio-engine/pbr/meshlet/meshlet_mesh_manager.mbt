@@ -204,8 +204,3 @@ pub fn MeshletMeshManager::committed_mesh_writes(
 ) -> Int {
   self.committed_mesh_writes
 }
-
-///|
-pub fn meshlet_mesh_manager_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}

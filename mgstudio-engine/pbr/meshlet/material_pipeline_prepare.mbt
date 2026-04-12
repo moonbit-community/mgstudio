@@ -100,8 +100,3 @@ pub fn meshlet_material_prepare_entry_count(
   prepass.entries.length() +
   deferred_prepass.entries.length()
 }
-
-///|
-pub fn meshlet_material_pipeline_prepare_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}

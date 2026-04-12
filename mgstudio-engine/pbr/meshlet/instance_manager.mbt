@@ -155,8 +155,3 @@ pub fn queue_material_meshlet_meshes_with_material_assets(
 pub fn queue_material_meshlet_meshes(instance_manager : InstanceManager) -> Int {
   instance_manager.present_material_count()
 }
-
-///|
-pub fn meshlet_instance_manager_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}

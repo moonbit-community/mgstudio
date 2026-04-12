@@ -67,8 +67,3 @@ pub fn[T] PersistentGpuBuffer::snapshot(
 ) -> Array[T] {
   self.elements
 }
-
-///|
-pub fn meshlet_persistent_buffer_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}

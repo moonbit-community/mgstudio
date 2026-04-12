@@ -184,8 +184,3 @@ pub fn meshlet_render_pipeline_count(pipelines : MeshletPipelines) -> Int {
 pub fn meshlet_compute_pipeline_count(pipelines : MeshletPipelines) -> Int {
   meshlet_pipeline_count(pipelines) - meshlet_render_pipeline_count(pipelines)
 }
-
-///|
-pub fn meshlet_pipelines_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}

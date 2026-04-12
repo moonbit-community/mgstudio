@@ -64,11 +64,6 @@ pub fn meshlet_can_convert_from_mesh(
 }
 
 ///|
-pub fn meshlet_from_mesh_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}
-
-///|
 pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversionError {
   MeshToMeshletMeshConversionError::RuntimeUnavailable
 }

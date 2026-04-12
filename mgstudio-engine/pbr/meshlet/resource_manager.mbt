@@ -256,8 +256,3 @@ pub fn prepare_meshlet_view_bind_groups(
     meshlet_resource_non_negative(bind_group_count),
   )
 }
-
-///|
-pub fn meshlet_resource_manager_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}

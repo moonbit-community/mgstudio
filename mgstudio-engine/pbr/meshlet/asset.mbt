@@ -323,8 +323,3 @@ pub fn meshlet_mesh_save_or_load_error_debug_message(
 pub fn meshlet_mesh_asset_version_matches(version : Int) -> Bool {
   version == MESHLET_MESH_ASSET_VERSION
 }
-
-///|
-pub fn meshlet_asset_runtime_available() -> Bool {
-  meshlet_runtime_available()
-}
