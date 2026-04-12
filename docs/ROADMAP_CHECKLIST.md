@@ -16,7 +16,7 @@ This file must not exceed 200 lines.
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | ✅ Mostly Done | 98% | Prepass pipeline state and owner split are stable, and `moon check pbr/prepass --target native` remains green on the latest 2026-04-12 run. | Track only residual rendering-tail regressions. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | ✅ Mostly Done | 98% | Current mgstudio scope keeps meshlet path in stable Bevy-shaped owner layout, and `moon check pbr/meshlet --target native` remains green on the latest 2026-04-12 run. | Keep in maintenance mode unless scope expands. |
 | `bevy_material` | `mgstudio-engine/material` | ✅ Mostly Done | 98% | Material package/runtime path is stable and `moon check material --target native` remains green on the latest 2026-04-12 run. | Track deferred/forward-decal tails as maintenance items. |
-| `bevy_camera` (3D projection path) | `mgstudio-engine/pbr` + `pbr/render` + `camera` | ✅ Mostly Done | 98% | `moon check camera --target native` remains green on the latest 2026-04-12 run, but projection owner still primarily sits in `pbr/projection.mbt` instead of `camera/projection.mbt`. | Move projection owner toward camera-side file alignment while keeping package dependency acyclic. |
+| `bevy_camera` (3D projection path) | `mgstudio-engine/pbr` + `pbr/render` + `camera` | ✅ Mostly Done | 99% | Projection-facing public surface has been consolidated in `camera/projection.mbt`, `camera/camera.mbt` no longer owns projection aliases, and `moon check camera --target native` remains green on the latest 2026-04-12 run. | Continue reducing remaining pbr-side compatibility wrappers while keeping package dependency acyclic. |
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | ✅ Mostly Done | 98% | `moon test sprite --target native` (60/60) remains green on the latest 2026-04-12 run and stress gate stays stable after pointer/runtime fixes. | Keep screenshot parity checks as maintenance guard. |
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | ✅ Mostly Done | 98% | `moon test ui --target native` (42/42) and `moon check ui_render --target native` remain green on the latest 2026-04-12 run, and fallback camera-context naming was cleaned in the UI render path. | Keep traversal/picking tails in maintenance monitoring. |
 | `bevy_text` | `mgstudio-engine/text` | ✅ Mostly Done | 98% | `moon test text --target native` (10/10) remains green on the latest 2026-04-12 run and stress parity gates stay stable. | Keep glyph/queue tails as maintenance-only profiling items. |
@@ -50,4 +50,4 @@ This file must not exceed 200 lines.
 | Done / Mostly done rows | 37 / 39 |
 | In-progress rows | 0 / 39 |
 | Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am21) |
+| Last updated | 2026-04-12 (am22) |

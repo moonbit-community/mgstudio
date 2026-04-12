@@ -16,7 +16,25 @@
 // Bevy source: `bevy/crates/bevy_camera/src/projection.rs`.
 
 ///|
-pub type PerspectiveProjection = @pbr.PerspectiveProjection3d
+pub type PerspectiveProjection3d = @pbr.PerspectiveProjection3d
+
+///|
+pub type OrthographicProjection3d = @pbr.OrthographicProjection3d
+
+///|
+pub type OrthographicScalingMode3d = @pbr.OrthographicScalingMode3d
+
+///|
+pub type SubCameraView3d = @pbr.SubCameraView3d
+
+///|
+pub type ProjectionMatrix3d = @pbr.ProjectionMatrix3d
+
+///|
+pub type Projection = @pbr.Projection
+
+///|
+pub type PerspectiveProjection = PerspectiveProjection3d
 
 ///|
 pub type OrthographicProjection2d = @sprite.OrthographicProjection
@@ -35,7 +53,7 @@ pub fn orthographic_projection_2d_with_scale(
 
 ///|
 pub fn perspective_projection_3d_default() -> PerspectiveProjection {
-  @pbr.PerspectiveProjection3d::default()
+  PerspectiveProjection3d::default()
 }
 
 ///|
@@ -53,4 +71,24 @@ pub fn perspective_projection_3d_with_aspect_ratio(
   aspect_ratio : Float,
 ) -> PerspectiveProjection {
   projection.with_aspect_ratio(aspect_ratio)
+}
+
+///|
+pub fn perspective_projection_3d_compute_frustum(
+  projection : PerspectiveProjection3d,
+  camera_transform : @transform.Transform,
+) -> @pbr.Frustum {
+  @pbr.render3d_perspective_projection_compute_frustum(
+    projection, camera_transform,
+  )
+}
+
+///|
+pub fn orthographic_projection_3d_compute_frustum(
+  projection : OrthographicProjection3d,
+  camera_transform : @transform.Transform,
+) -> @pbr.Frustum {
+  @pbr.render3d_orthographic_projection_compute_frustum(
+    projection, camera_transform,
+  )
 }

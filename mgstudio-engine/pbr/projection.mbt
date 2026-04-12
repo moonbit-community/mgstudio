@@ -13,7 +13,8 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_camera/src/projection.rs`.
+// Compatibility projection surface for `Milky2018/mgstudio/pbr`.
+// Camera-facing owner lives in `Milky2018/mgstudio/camera/projection`.
 pub type PerspectiveProjection3d = @pbr_render.PerspectiveProjection3d
 
 ///|

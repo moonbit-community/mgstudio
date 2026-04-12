@@ -35,24 +35,6 @@ pub type CameraDeferredConfig3d = @pbr.CameraDeferredConfig3d
 pub type CameraDeferredMode3d = @pbr.CameraDeferredMode3d
 
 ///|
-pub type PerspectiveProjection3d = @pbr.PerspectiveProjection3d
-
-///|
-pub type OrthographicProjection3d = @pbr.OrthographicProjection3d
-
-///|
-pub type OrthographicScalingMode3d = @pbr.OrthographicScalingMode3d
-
-///|
-pub type Projection = @pbr.Projection
-
-///|
-pub type ProjectionMatrix3d = @pbr.ProjectionMatrix3d
-
-///|
-pub type SubCameraView3d = @pbr.SubCameraView3d
-
-///|
 pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
 
 ///|
