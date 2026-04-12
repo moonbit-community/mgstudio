@@ -74,6 +74,30 @@ pub fn[P : @math.SplinePoint] CubicSegment::acceleration(
 }
 
 ///|
+pub fn[P : @math.SplinePoint] CubicSegment::iter_positions(
+  self : CubicSegment[P],
+  subdivisions : Int,
+) -> Array[P] {
+  self.inner.iter_positions(subdivisions)
+}
+
+///|
+pub fn[P : @math.SplinePoint] CubicSegment::iter_velocities(
+  self : CubicSegment[P],
+  subdivisions : Int,
+) -> Array[P] {
+  self.inner.iter_velocities(subdivisions)
+}
+
+///|
+pub fn[P : @math.SplinePoint] CubicSegment::iter_accelerations(
+  self : CubicSegment[P],
+  subdivisions : Int,
+) -> Array[P] {
+  self.inner.iter_accelerations(subdivisions)
+}
+
+///|
 pub struct CubicCurve[P] {
   inner : @math.CubicCurve[P]
 }
@@ -141,6 +165,30 @@ pub fn[P : @math.SplinePoint] CubicCurve::acceleration(
   t : Float,
 ) -> P {
   self.inner.acceleration(t)
+}
+
+///|
+pub fn[P : @math.SplinePoint] CubicCurve::iter_positions(
+  self : CubicCurve[P],
+  subdivisions : Int,
+) -> Array[P] {
+  self.inner.iter_positions(subdivisions)
+}
+
+///|
+pub fn[P : @math.SplinePoint] CubicCurve::iter_velocities(
+  self : CubicCurve[P],
+  subdivisions : Int,
+) -> Array[P] {
+  self.inner.iter_velocities(subdivisions)
+}
+
+///|
+pub fn[P : @math.SplinePoint] CubicCurve::iter_accelerations(
+  self : CubicCurve[P],
+  subdivisions : Int,
+) -> Array[P] {
+  self.inner.iter_accelerations(subdivisions)
 }
 
 ///|
