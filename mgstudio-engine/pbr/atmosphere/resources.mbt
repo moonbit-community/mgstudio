@@ -22,6 +22,72 @@ pub type AtmosphereMode = @light.AtmosphereMode
 pub type AtmosphereSettings = @light.AtmosphereSettings
 
 ///|
+pub struct GpuAtmosphereSettings {
+  transmittance_lut_size : @math.UVec2
+  multiscattering_lut_size : @math.UVec2
+  sky_view_lut_size : @math.UVec2
+  aerial_view_lut_size : (@math.UVec2, Int)
+  transmittance_lut_samples : Int
+  multiscattering_lut_dirs : Int
+  multiscattering_lut_samples : Int
+  sky_view_lut_samples : Int
+  aerial_view_lut_samples : Int
+  aerial_view_lut_max_distance : Float
+  scene_units_to_m : Float
+  sky_max_samples : Int
+  rendering_method : AtmosphereMode
+}
+
+///|
+pub fn GpuAtmosphereSettings::default() -> GpuAtmosphereSettings {
+  GpuAtmosphereSettings::{
+    transmittance_lut_size: @math.UVec2::new(256, 128),
+    multiscattering_lut_size: @math.UVec2::new(32, 32),
+    sky_view_lut_size: @math.UVec2::new(400, 200),
+    aerial_view_lut_size: (@math.UVec2::new(32, 32), 32),
+    transmittance_lut_samples: 40,
+    multiscattering_lut_dirs: 64,
+    multiscattering_lut_samples: 20,
+    sky_view_lut_samples: 16,
+    aerial_view_lut_samples: 10,
+    aerial_view_lut_max_distance: 32_000.0F,
+    scene_units_to_m: 1.0F,
+    sky_max_samples: 16,
+    rendering_method: AtmosphereMode::LookupTexture,
+  }
+}
+
+///|
+pub fn pbr_gpu_atmosphere_settings(
+  _settings : AtmosphereSettings,
+) -> GpuAtmosphereSettings {
+  GpuAtmosphereSettings::default()
+}
+
+///|
+pub fn pbr_gpu_atmosphere_settings_with_runtime(
+  scene_units_to_m : Float,
+  sky_max_samples : Int,
+  rendering_method : AtmosphereMode,
+) -> GpuAtmosphereSettings {
+  let defaults = GpuAtmosphereSettings::default()
+  GpuAtmosphereSettings::{
+    ..defaults,
+    scene_units_to_m: if scene_units_to_m <= 0.0F {
+      defaults.scene_units_to_m
+    } else {
+      scene_units_to_m
+    },
+    sky_max_samples: if sky_max_samples <= 0 {
+      defaults.sky_max_samples
+    } else {
+      sky_max_samples
+    },
+    rendering_method,
+  }
+}
+
+///|
 pub fn pbr_atmosphere_settings_default() -> AtmosphereSettings {
   AtmosphereSettings::default()
 }

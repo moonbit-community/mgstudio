@@ -41,3 +41,31 @@ pub fn render3d_prepared_camera_count() -> Int? {
 pub fn render3d_queued_visible_mesh_count() -> Int? {
   @pbr_render.render3d_queued_visible_mesh_count()
 }
+
+///|
+pub struct Render3dDiagnosticsSnapshot {
+  prepared_camera_count : Int
+  queued_visible_mesh_count : Int
+  queue_cpu_ms : Float
+  execute_cpu_ms : Float
+}
+
+///|
+pub fn Render3dDiagnosticsSnapshot::default() -> Render3dDiagnosticsSnapshot {
+  Render3dDiagnosticsSnapshot::{
+    prepared_camera_count: 0,
+    queued_visible_mesh_count: 0,
+    queue_cpu_ms: 0.0F,
+    execute_cpu_ms: 0.0F,
+  }
+}
+
+///|
+pub fn render3d_diagnostics_snapshot() -> Render3dDiagnosticsSnapshot {
+  Render3dDiagnosticsSnapshot::{
+    prepared_camera_count: render3d_diagnostic_prepared_camera_count(),
+    queued_visible_mesh_count: render3d_diagnostic_queued_visible_mesh_count(),
+    queue_cpu_ms: render3d_diagnostic_queue_cpu_ms(),
+    execute_cpu_ms: render3d_diagnostic_execute_cpu_ms(),
+  }
+}

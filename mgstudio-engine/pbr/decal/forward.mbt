@@ -17,6 +17,61 @@
 pub struct ForwardDecal {} derive(ToJson, FromJson)
 
 ///|
+pub const FORWARD_DECAL_PLUGIN_ID : String = "bevy_pbr::ForwardDecalPlugin"
+
+///|
+pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
+
+///|
+pub struct ForwardDecalPlugin {}
+
+///|
+pub fn ForwardDecalPlugin::default() -> ForwardDecalPlugin {
+  ForwardDecalPlugin::{  }
+}
+
+///|
+pub struct ForwardDecalMaterialExtUniform {
+  inv_depth_fade_factor : Float
+}
+
+///|
+pub fn ForwardDecalMaterialExtUniform::default() -> ForwardDecalMaterialExtUniform {
+  ForwardDecalMaterialExtUniform::{ inv_depth_fade_factor: 1.0F / 8.0F }
+}
+
+///|
+pub fn pbr_forward_decal_material_ext_uniform(
+  depth_fade_factor : Float,
+) -> ForwardDecalMaterialExtUniform {
+  let safe = if depth_fade_factor < 0.001F { 0.001F } else { depth_fade_factor }
+  ForwardDecalMaterialExtUniform::{ inv_depth_fade_factor: 1.0F / safe }
+}
+
+///|
+pub struct ForwardDecalPipelineKey {
+  alpha_blend : Bool
+  depth_compare_always : Bool
+}
+
+///|
+pub fn ForwardDecalPipelineKey::default() -> ForwardDecalPipelineKey {
+  ForwardDecalPipelineKey::{ alpha_blend: true, depth_compare_always: true }
+}
+
+///|
+pub fn pbr_forward_decal_shader_defs(
+  _key : ForwardDecalPipelineKey,
+) -> Array[String] {
+  ["FORWARD_DECAL"]
+}
+
+///|
+pub fn pbr_forward_decal_specialized_label(base : String) -> String {
+  "forward_decal_\{base}"
+}
+
+///|
 pub fn ForwardDecal::default() -> ForwardDecal {
   ForwardDecal::{  }
 }

@@ -31,11 +31,56 @@ pub fn atmosphere_runtime_available() -> Bool {
 ///|
 pub struct AtmospherePlugin {
   enabled : Bool
+  supports_compute : Bool
+  supports_storage_binding : Bool
 }
 
 ///|
 pub fn AtmospherePlugin::default() -> AtmospherePlugin {
-  AtmospherePlugin::{ enabled: atmosphere_runtime_available() }
+  AtmospherePlugin::{
+    enabled: atmosphere_runtime_available(),
+    supports_compute: true,
+    supports_storage_binding: true,
+  }
+}
+
+///|
+pub struct AtmospherePluginState {
+  plugin : AtmospherePlugin
+  extracted_camera_count : Int
+  lut_ready : Bool
+}
+
+///|
+pub fn AtmospherePluginState::default() -> AtmospherePluginState {
+  AtmospherePluginState::{
+    plugin: AtmospherePlugin::default(),
+    extracted_camera_count: 0,
+    lut_ready: false,
+  }
+}
+
+///|
+pub fn atmosphere_plugin_state_with_extracted_camera_count(
+  state : AtmospherePluginState,
+  extracted_camera_count : Int,
+) -> AtmospherePluginState {
+  AtmospherePluginState::{
+    ..state,
+    extracted_camera_count: if extracted_camera_count < 0 {
+      0
+    } else {
+      extracted_camera_count
+    },
+  }
+}
+
+///|
+pub fn atmosphere_plugin_state_with_lut_ready(
+  state : AtmospherePluginState,
+  lut_ready : Bool,
+) -> AtmospherePluginState {
+  AtmospherePluginState::{ ..state, lut_ready, }
 }
 
 ///|

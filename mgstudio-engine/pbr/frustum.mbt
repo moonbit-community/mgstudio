@@ -28,6 +28,25 @@ pub type ViewFrustum = @pbr_render.ViewFrustum
 pub type Frustum = @pbr_render.Frustum
 
 ///|
+pub const VIEW_FRUSTUM_PLANE_COUNT : Int = 6
+
+///|
+pub fn render3d_frustum_plane_count() -> Int {
+  VIEW_FRUSTUM_PLANE_COUNT
+}
+
+///|
+pub fn render3d_frustum_plane_index_clamp(index : Int) -> Int {
+  if index < 0 {
+    0
+  } else if index >= VIEW_FRUSTUM_PLANE_COUNT {
+    VIEW_FRUSTUM_PLANE_COUNT - 1
+  } else {
+    index
+  }
+}
+
+///|
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   @pbr_render.render3d_update_frusta_system_by_projection_key(
     world,

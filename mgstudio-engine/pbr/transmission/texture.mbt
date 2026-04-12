@@ -21,6 +21,68 @@ pub fn transmission_texture_runtime_available() -> Bool {
 }
 
 ///|
+pub struct ViewTransmissionTexture {
+  texture_id : Int
+  width : Int
+  height : Int
+  sampler_linear : Bool
+}
+
+///|
+pub fn ViewTransmissionTexture::default() -> ViewTransmissionTexture {
+  ViewTransmissionTexture::{
+    texture_id: -1,
+    width: 0,
+    height: 0,
+    sampler_linear: true,
+  }
+}
+
+///|
+pub fn ViewTransmissionTexture::is_ready(
+  self : ViewTransmissionTexture,
+) -> Bool {
+  self.texture_id >= 0 && self.width > 0 && self.height > 0
+}
+
+///|
+pub fn pbr_prepare_view_transmission_texture(
+  texture_id : Int,
+  width : Int,
+  height : Int,
+) -> ViewTransmissionTexture {
+  ViewTransmissionTexture::{
+    texture_id,
+    width: if width < 0 {
+      0
+    } else {
+      width
+    },
+    height: if height < 0 {
+      0
+    } else {
+      height
+    },
+    sampler_linear: true,
+  }
+}
+
+///|
+pub fn pbr_should_prepare_transmission_texture(
+  transmission_steps : Int,
+  transmissive_item_count : Int,
+  opaque_phase_ready : Bool,
+  alpha_mask_phase_ready : Bool,
+  transparent_phase_ready : Bool,
+) -> Bool {
+  transmission_steps > 0 &&
+  transmissive_item_count > 0 &&
+  opaque_phase_ready &&
+  alpha_mask_phase_ready &&
+  transparent_phase_ready
+}
+
+///|
 pub struct TransmissionTextureState {
   source_texture_id : Int
   blur_texture_id : Int

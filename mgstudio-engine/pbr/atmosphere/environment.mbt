@@ -19,6 +19,68 @@
 pub type AtmosphereEnvironmentMapLight = @light.AtmosphereEnvironmentMapLight
 
 ///|
+pub type GeneratedEnvironmentMapLight = @light.GeneratedEnvironmentMapLight
+
+///|
+pub struct AtmosphereEnvironmentMap {
+  environment_map : @asset.Handle[@asset.Image]?
+  size : @math.UVec2
+}
+
+///|
+pub fn AtmosphereEnvironmentMap::default() -> AtmosphereEnvironmentMap {
+  AtmosphereEnvironmentMap::{
+    environment_map: None,
+    size: @math.UVec2::new(512, 512),
+  }
+}
+
+///|
+fn atmosphere_next_power_of_two(value : Int) -> Int {
+  if value <= 1 {
+    1
+  } else {
+    let mut out = 1
+    while out < value {
+      out = out * 2
+    }
+    out
+  }
+}
+
+///|
+pub fn pbr_validate_atmosphere_environment_map_size(
+  size : @math.UVec2,
+) -> @math.UVec2 {
+  @math.UVec2::new(
+    atmosphere_next_power_of_two(if size.x <= 0 { 1 } else { size.x }),
+    atmosphere_next_power_of_two(if size.y <= 0 { 1 } else { size.y }),
+  )
+}
+
+///|
+pub fn pbr_atmosphere_environment_map(
+  environment_map : @asset.Handle[@asset.Image]?,
+  size : @math.UVec2,
+) -> AtmosphereEnvironmentMap {
+  AtmosphereEnvironmentMap::{
+    environment_map,
+    size: pbr_validate_atmosphere_environment_map_size(size),
+  }
+}
+
+///|
+pub fn pbr_generated_environment_map_light_from_atmosphere(
+  environment_map : @asset.Handle[@asset.Image]?,
+  intensity : Float,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::new(environment_map, intensity).with_affects_lightmapped_mesh_diffuse(
+    affects_lightmapped_mesh_diffuse,
+  )
+}
+
+///|
 pub fn pbr_atmosphere_environment_map_light_default() -> AtmosphereEnvironmentMapLight {
   AtmosphereEnvironmentMapLight::default()
 }

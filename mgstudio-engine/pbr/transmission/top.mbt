@@ -22,6 +22,56 @@ pub type ScreenSpaceTransmissionQuality = @post_process.ScreenSpaceTransmissionQ
 pub type ScreenSpaceTransmission = @post_process.ScreenSpaceTransmission
 
 ///|
+pub const SCREEN_SPACE_TRANSMISSION_PLUGIN_ID : String = "bevy_pbr::ScreenSpaceTransmissionPlugin"
+
+///|
+pub struct ScreenSpaceTransmissionPlugin {}
+
+///|
+pub fn ScreenSpaceTransmissionPlugin::default() -> ScreenSpaceTransmissionPlugin {
+  ScreenSpaceTransmissionPlugin::{  }
+}
+
+///|
+pub struct ScreenSpaceTransmissionPluginState {
+  enabled : Bool
+  extracted_view_count : Int
+}
+
+///|
+pub fn ScreenSpaceTransmissionPluginState::default() -> ScreenSpaceTransmissionPluginState {
+  ScreenSpaceTransmissionPluginState::{ enabled: true, extracted_view_count: 0 }
+}
+
+///|
+pub fn screen_space_transmission_pipeline_key(
+  quality : ScreenSpaceTransmissionQuality,
+) -> Int {
+  match quality {
+    Low => 0
+    Medium => 1
+    High => 2
+    Ultra => 3
+  }
+}
+
+///|
+pub fn pbr_screen_space_transmission_with_steps(
+  transmission : ScreenSpaceTransmission,
+  steps : Int,
+) -> ScreenSpaceTransmission {
+  transmission.with_steps(steps)
+}
+
+///|
+pub fn pbr_screen_space_transmission_with_quality(
+  transmission : ScreenSpaceTransmission,
+  quality : ScreenSpaceTransmissionQuality,
+) -> ScreenSpaceTransmission {
+  transmission.with_quality(quality)
+}
+
+///|
 pub fn pbr_screen_space_transmission_default() -> ScreenSpaceTransmission {
   ScreenSpaceTransmission::default()
 }
