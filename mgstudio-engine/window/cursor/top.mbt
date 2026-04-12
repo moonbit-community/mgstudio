@@ -48,7 +48,7 @@ pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
 
 ///|
 pub impl Default for CursorIcon with default() {
-  System(@window_core.CursorIcon::Default)
+  System(SystemCursorIcon::Default)
 }
 
 ///|

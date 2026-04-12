@@ -13,7 +13,7 @@ import {
 // Values
 pub fn cursor_icon_from_custom(CustomCursor) -> CursorIcon
 
-pub fn cursor_icon_from_system(@core.CursorIcon) -> CursorIcon
+pub fn cursor_icon_from_system(SystemCursorIcon) -> CursorIcon
 
 pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
 
@@ -29,11 +29,11 @@ pub(all) enum CursorGrabMode {
 } derive(Eq, @debug.Debug)
 
 pub(all) enum CursorIcon {
-  System(@core.CursorIcon)
+  System(SystemCursorIcon)
   Custom(CustomCursor)
 }
-pub fn CursorIcon::as_system(Self) -> @core.CursorIcon?
-pub fn CursorIcon::from(@core.CursorIcon) -> Self
+pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
+pub fn CursorIcon::from(SystemCursorIcon) -> Self
 pub fn CursorIcon::from_custom(CustomCursor) -> Self
 pub impl @ecs.Component for CursorIcon
 pub impl Default for CursorIcon
@@ -67,8 +67,46 @@ pub struct CustomCursorUrl {
 }
 pub fn CustomCursorUrl::new(String, (Int, Int)) -> Self
 
+pub(all) enum SystemCursorIcon {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
+  EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ColResize
+  RowResize
+  AllScroll
+  ZoomIn
+  ZoomOut
+} derive(Eq, @debug.Debug)
+pub fn SystemCursorIcon::from_native(@core.CursorIcon) -> Self
+pub fn SystemCursorIcon::to_native(Self) -> @core.CursorIcon
+
 // Type aliases
-pub using @core {type CursorIcon as SystemCursorIcon}
 
 // Traits
 

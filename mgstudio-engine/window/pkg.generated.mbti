@@ -21,7 +21,7 @@ pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.Query
 
 pub fn cursor_icon_from_custom(@cursor.CustomCursor) -> @cursor.CursorIcon
 
-pub fn cursor_icon_from_system(@Milky2018/window/core.CursorIcon) -> @cursor.CursorIcon
+pub fn cursor_icon_from_system(@cursor.SystemCursorIcon) -> @cursor.CursorIcon
 
 pub let ecs_key_app_lifecycle : @ecs.MessageKey[AppLifecycle]
 
@@ -791,7 +791,7 @@ pub using @events {type PinchGesture}
 
 pub using @events {type RotationGesture}
 
-pub using @Milky2018/window/core {type CursorIcon as SystemCursorIcon}
+pub using @cursor {type SystemCursorIcon}
 
 pub using @events {type TouchInput}
 

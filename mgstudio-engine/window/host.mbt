@@ -222,7 +222,7 @@ fn cursor_grab_mode_to_native(
 ///|
 fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
   match icon {
-    System(system_icon) => system_icon
+    System(system_icon) => system_icon.to_native()
     Custom(_) => @window_core.CursorIcon::Default
   }
 }
