@@ -20,6 +20,6 @@
 pub fn dev_tools_plugins() -> Array[@app.Plugin[@ecs.World]] {
   [
     diagnostics_overlay_plugin, fps_overlay_plugin, dev_tools_picking_debug_plugin,
-    dev_tools_easy_screenshot_plugin, dev_tools_states_debug_plugin,
+    dev_tools_easy_screenshot_plugin,
   ]
 }

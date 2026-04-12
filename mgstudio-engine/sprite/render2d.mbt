@@ -8505,7 +8505,7 @@ fn configure_render2d_render_sub_app_ecs(
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_render2d_required_components(app.world())
+  ensure_render2d_required_components(app.world())
   let next = color_material_plugin(ColorMaterialPlugin::default())(
       init_gizmo_group(
         app.init_resource(fn() { ClearColor::default() }),
@@ -8525,7 +8525,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_render2d_required_components(app.world())
+  ensure_render2d_required_components(app.world())
   let next = color_material_plugin(ColorMaterialPlugin::default())(
       init_gizmo_group(
         app.init_resource(fn() { ClearColor::default() }),

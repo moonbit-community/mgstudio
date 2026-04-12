@@ -14,28 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/text2d/mod.rs`.
-pub let text_set_render_extract : @app.SystemSet = @sprite_render.render2d_set_extract
+pub let text_set_render_extract : @app.SystemSet = @text.text_set_render_extract
 
 ///|
-pub let text_set_render_prepare : @app.SystemSet = @sprite_render.render2d_set_prepare
+pub let text_set_render_prepare : @app.SystemSet = @text.text_set_render_prepare
 
 ///|
-pub let text_set_render_queue : @app.SystemSet = @sprite_render.render2d_set_queue
+pub let text_set_render_queue : @app.SystemSet = @text.text_set_render_queue
 
 ///|
-pub let text_set_render_transparent_2d : @app.SystemSet = @sprite_render.render2d_set_transparent_2d
+pub let text_set_render_transparent_2d : @app.SystemSet = @text.text_set_render_transparent_2d
 
 ///|
 pub fn text_runtime_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  @text.text_plugin(app)
 }
 
 ///|
-pub fn text_render_system(_world : @ecs.World) -> Unit {
-  ()
+pub fn text_render_system(world : @ecs.World) -> Unit {
+  @text.text_render_system(world)
 }
 
 ///|
-pub fn text_render_transparent_2d_queue_system(_world : @ecs.World) -> Unit {
-  ()
+pub fn text_render_transparent_2d_queue_system(world : @ecs.World) -> Unit {
+  @text.text_render_transparent_2d_queue_system(world)
 }

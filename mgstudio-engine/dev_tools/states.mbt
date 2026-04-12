@@ -14,26 +14,21 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/states.rs`.
-// The current runtime does not expose Bevy's state-debug helper surface.
 
 ///|
-pub struct StatesDebugConfig {
-  enabled : Bool
-}
-
-///|
-pub fn StatesDebugConfig::default() -> StatesDebugConfig {
-  StatesDebugConfig::{ enabled: false }
-}
-
-///|
-pub fn dev_tools_states_debug_enabled(config : StatesDebugConfig) -> Bool {
-  config.enabled
-}
-
-///|
-pub fn dev_tools_states_debug_plugin(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  app
+pub fn[S : @app.States] log_transitions(
+  world : @ecs.World,
+  state : S,
+) -> Unit {
+  guard @app.last_transition(world, state) is Some(transition) else { return }
+  let skip_text = if transition.exited == transition.entered &&
+    !transition.allow_same_state_transitions {
+    " (disallowing same-state transitions)"
+  } else {
+    ""
+  }
+  let state_name = @app.States::debug_name(state)
+  println(
+    "\{state_name} transition: \{to_repr(transition.exited).to_string()} => \{to_repr(transition.entered).to_string()}\{skip_text}",
+  )
 }

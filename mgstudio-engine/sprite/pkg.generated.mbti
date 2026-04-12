@@ -91,6 +91,8 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
 
 pub let ecs_resources : Array[String]
 
+pub fn ensure_render2d_required_components(@ecs.World) -> Unit
+
 pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]

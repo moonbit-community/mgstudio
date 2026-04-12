@@ -280,6 +280,15 @@ pub fn register_render2d_required_components(
 }
 
 ///|
+pub fn ensure_render2d_required_components(world : @ecs.World) -> Unit {
+  register_render2d_required_components(world) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(_) => ()
+    _ => abort("failed to register render2d required components")
+  }
+}
+
+///|
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
   debug_name="render2d.render_state",
 )

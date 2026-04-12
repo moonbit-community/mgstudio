@@ -125,6 +125,9 @@ pub struct DlssSuperResolutionSupported {} derive(Default, Eq, Debug)
 pub struct DlssRayReconstructionSupported {} derive(Default, Eq, Debug)
 
 ///|
+priv struct DlssInitPluginMarker {}
+
+///|
 let ecs_key_dlss : @ecs.ComponentKey[Dlss] = @ecs.register_component(
   debug_name="mgstudio_anti_alias::Dlss",
 )
@@ -152,6 +155,11 @@ let dlss_ray_reconstruction_supported_resource_key : @ecs.ResourceKey[
 let dlss_runtime_state_resource_key : @ecs.ResourceKey[DlssRuntimeState] = @ecs.register_resource(
   debug_name="anti_alias.dlss.runtime_state",
 )
+
+///|
+let dlss_init_plugin_marker_resource_key : @ecs.ResourceKey[
+  DlssInitPluginMarker,
+] = @ecs.register_resource(debug_name="anti_alias.dlss.init_plugin_marker")
 
 ///|
 pub impl @ecs.Component for Dlss with component() {
@@ -210,9 +218,21 @@ pub fn dlss_init_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 pub fn dlss_init_plugin_with(
   app : @app.App[@ecs.World],
-  _plugin : DlssInitPlugin,
+  plugin : DlssInitPlugin,
 ) -> @app.App[@ecs.World] {
-  app
+  ignore(plugin)
+  if app.contains_resource(dlss_init_plugin_marker_resource_key) {
+    return app
+  }
+  if !app.contains_resource(dlss_project_id_resource_key) {
+    abort(
+      "DlssProjectId must be inserted before DlssInitPlugin, matching bevy_anti_alias::dlss",
+    )
+  }
+  app.insert_world_resource(
+    dlss_init_plugin_marker_resource_key,
+    DlssInitPluginMarker::{  },
+  )
 }
 
 ///|

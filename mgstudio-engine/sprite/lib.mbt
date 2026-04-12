@@ -18,8 +18,21 @@
 pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
 
 ///|
-/// Keep an explicit sprite plugin boundary so default plugins can mirror
-/// Bevy's `SpritePlugin` + `SpriteRenderPlugin` layering.
+priv struct SpritePluginMarker {}
+
+///|
+let ecs_res_key_sprite_plugin_marker : @ecs.ResourceKey[SpritePluginMarker] = @ecs.register_resource(
+  debug_name="bevy_sprite::SpritePluginMarker",
+)
+
+///|
 pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  if app.contains_resource(ecs_res_key_sprite_plugin_marker) {
+    return app
+  }
+  ensure_render2d_required_components(app.world())
+  app.insert_world_resource(
+    ecs_res_key_sprite_plugin_marker,
+    SpritePluginMarker::{  },
+  )
 }
