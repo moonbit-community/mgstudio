@@ -14,7 +14,28 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/once.rs`.
-// The current runtime does not expose Bevy's once-cell helpers.
+
+///|
+pub struct OnceFlag {
+  mut should_fire : Bool
+}
+
+///|
+pub fn OnceFlag::new() -> OnceFlag {
+  OnceFlag::{ should_fire: true }
+}
+
+///|
+pub fn OnceFlag::default() -> OnceFlag {
+  OnceFlag::new()
+}
+
+///|
+pub fn OnceFlag::set(self : OnceFlag) -> Bool {
+  let should_fire = self.should_fire
+  self.should_fire = false
+  should_fire
+}
 
 ///|
 pub struct OnceCell[T] {
@@ -34,6 +55,26 @@ pub fn[T] OnceCell::set(self : OnceCell[T], value : T) -> Unit {
 }
 
 ///|
+pub fn[T] OnceCell::set_once(self : OnceCell[T], value : T) -> Bool {
+  if self.value is None {
+    self.value = Some(value)
+    true
+  } else {
+    false
+  }
+}
+
+///|
 pub fn[T] OnceCell::get(self : OnceCell[T]) -> T? {
   self.value
+}
+
+///|
+pub fn[T] OnceCell::get_or_init(self : OnceCell[T], init : () -> T) -> T {
+  guard self.value is Some(value) else {
+    let value = init()
+    self.value = Some(value)
+    return value
+  }
+  value
 }

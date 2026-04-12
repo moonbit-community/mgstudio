@@ -14,15 +14,111 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_dev_tools/src/ci_testing/config.rs`.
-// The current runtime does not expose Bevy's CI-testing configuration surface.
+
+///|
+pub struct CiTestingSetup {
+  fixed_frame_time : @core.Duration?
+}
+
+///|
+pub fn CiTestingSetup::default() -> CiTestingSetup {
+  CiTestingSetup::{ fixed_frame_time: None }
+}
+
+///|
+pub fn CiTestingSetup::with_fixed_frame_time(
+  self : CiTestingSetup,
+  fixed_frame_time : @core.Duration,
+) -> CiTestingSetup {
+  self |> ignore
+  CiTestingSetup::{ fixed_frame_time: Some(fixed_frame_time) }
+}
+
+///|
+pub(all) enum CiTestingEvent {
+  Screenshot
+  ScreenshotAndExit
+  NamedScreenshot(String)
+  AppExit
+  MoveCamera(@math.Vec3, @math.Quat)
+  Custom(String)
+}
+
+///|
+pub struct CiTestingEventOnFrame {
+  frame : Int
+  event : CiTestingEvent
+}
+
+///|
+pub fn CiTestingEventOnFrame::new(
+  frame : Int,
+  event : CiTestingEvent,
+) -> CiTestingEventOnFrame {
+  CiTestingEventOnFrame::{ frame, event }
+}
 
 ///|
 pub struct CiTestingConfig {
-  enabled : Bool
-  capture_frames : Int
+  setup : CiTestingSetup
+  mut events : Array[CiTestingEventOnFrame]
 }
 
 ///|
 pub fn CiTestingConfig::default() -> CiTestingConfig {
-  CiTestingConfig::{ enabled: false, capture_frames: 1 }
+  CiTestingConfig::{ setup: CiTestingSetup::default(), events: [] }
+}
+
+///|
+pub fn CiTestingConfig::with_setup(
+  self : CiTestingConfig,
+  setup : CiTestingSetup,
+) -> CiTestingConfig {
+  CiTestingConfig::{ ..self, setup, }
+}
+
+///|
+pub fn CiTestingConfig::with_event(
+  self : CiTestingConfig,
+  frame : Int,
+  event : CiTestingEvent,
+) -> CiTestingConfig {
+  let events = self.events
+  events.push(CiTestingEventOnFrame::new(frame, event))
+  CiTestingConfig::{ ..self, events, }
+}
+
+///|
+pub struct CiTestingCustomEvent {
+  value : String
+}
+
+///|
+pub fn CiTestingCustomEvent::new(value : String) -> CiTestingCustomEvent {
+  CiTestingCustomEvent::{ value, }
+}
+
+///|
+pub fn CiTestingCustomEvent::value(self : CiTestingCustomEvent) -> String {
+  self.value
+}
+
+///|
+let ci_testing_config_resource_key : @ecs.ResourceKey[CiTestingConfig] = @ecs.register_resource(
+  debug_name="mgstudio_dev_tools::CiTestingConfig",
+)
+
+///|
+let ci_testing_custom_event_message_key : @ecs.MessageKey[CiTestingCustomEvent] = @ecs.register_message(
+  debug_name="mgstudio_dev_tools::CiTestingCustomEvent",
+)
+
+///|
+pub impl @app.Resource for CiTestingConfig with resource() {
+  ci_testing_config_resource_key
+}
+
+///|
+pub impl @ecs.Message for CiTestingCustomEvent with message() {
+  ci_testing_custom_event_message_key
 }

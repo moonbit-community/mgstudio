@@ -45,7 +45,11 @@ pub struct BufferedSender[T] {
 ///|
 pub fn[T] BufferedChannel::new(chunk_size? : Int = 1024) -> BufferedChannel[T] {
   BufferedChannel::{
-    chunk_size: if chunk_size <= 0 { 1 } else { chunk_size },
+    chunk_size: if chunk_size <= 0 {
+      1
+    } else {
+      chunk_size
+    },
     queued_chunks: [],
     pooled_chunks: [],
   }
@@ -62,12 +66,17 @@ pub fn[T] BufferedChannel::chunk_size(self : BufferedChannel[T]) -> Int {
 }
 
 ///|
-pub fn[T] BufferedChannel::set_chunk_size(self : BufferedChannel[T], chunk_size : Int) -> Unit {
+pub fn[T] BufferedChannel::set_chunk_size(
+  self : BufferedChannel[T],
+  chunk_size : Int,
+) -> Unit {
   self.chunk_size = if chunk_size <= 0 { 1 } else { chunk_size }
 }
 
 ///|
-fn[T] buffered_channel_take_chunk_buffer(channel : BufferedChannel[T]) -> Array[T] {
+fn[T] buffered_channel_take_chunk_buffer(
+  channel : BufferedChannel[T],
+) -> Array[T] {
   match channel.pooled_chunks.pop() {
     Some(buffer) => buffer
     None => []
@@ -80,7 +89,10 @@ pub fn[T] BufferedChannel::unbounded(
 ) -> (BufferedReceiver[T], BufferedSender[T]) {
   (
     BufferedReceiver::{ channel: self },
-    BufferedSender::{ channel: self, buffer: buffered_channel_take_chunk_buffer(self) },
+    BufferedSender::{
+      channel: self,
+      buffer: buffered_channel_take_chunk_buffer(self),
+    },
   )
 }
 
@@ -106,7 +118,10 @@ pub fn[T] BufferedSender::send(self : BufferedSender[T], msg : T) -> Unit {
 }
 
 ///|
-pub fn[T] BufferedSender::send_many(self : BufferedSender[T], items : Array[T]) -> Unit {
+pub fn[T] BufferedSender::send_many(
+  self : BufferedSender[T],
+  items : Array[T],
+) -> Unit {
   for item in items {
     self.send(item)
   }

@@ -45,7 +45,10 @@ pub fn[T] ParallelQueue::push(self : ParallelQueue[T], value : T) -> Unit {
 }
 
 ///|
-pub fn[T] ParallelQueue::extend(self : ParallelQueue[T], items : Array[T]) -> Unit {
+pub fn[T] ParallelQueue::extend(
+  self : ParallelQueue[T],
+  items : Array[T],
+) -> Unit {
   for item in items {
     self.values.push(item)
   }

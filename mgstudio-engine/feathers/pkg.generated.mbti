@@ -142,19 +142,27 @@ pub struct AlphaPatternPlugin {
 }
 pub fn AlphaPatternPlugin::default() -> Self
 
+pub(all) struct AlphaPatternPluginMarker {
+}
+
 pub struct AlphaPatternResource {
   material_id : Int
 }
 pub fn AlphaPatternResource::default() -> Self
+pub impl @app.Resource for AlphaPatternResource
 
 pub struct CursorIconPlugin {
 }
 pub fn CursorIconPlugin::default() -> Self
 
+pub(all) struct CursorIconPluginMarker {
+}
+
 pub struct DefaultCursor {
   cursor : EntityCursor
 }
 pub fn DefaultCursor::default() -> Self
+pub impl @app.Resource for DefaultCursor
 
 pub(all) enum EntityCursor {
   System(String)
@@ -164,6 +172,9 @@ pub(all) enum EntityCursor {
 pub struct FeathersPlugin {
 }
 pub fn FeathersPlugin::default() -> Self
+
+pub(all) struct FeathersPluginMarker {
+}
 
 pub struct FeathersPlugins {
 }

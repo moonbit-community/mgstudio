@@ -38,7 +38,11 @@ pub fn BloomFilter::new(
   let segments = if segment_count <= 0 { 1 } else { segment_count }
   BloomFilter::{
     bits: Array::make(segments, 0U),
-    hash_count: if hash_count <= 0 { 1 } else { hash_count },
+    hash_count: if hash_count <= 0 {
+      1
+    } else {
+      hash_count
+    },
   }
 }
 

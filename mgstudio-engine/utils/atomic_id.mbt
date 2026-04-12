@@ -14,14 +14,22 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/atomic_id.rs`.
-// The current runtime does not expose Bevy's atomic-id allocator helpers.
 
 ///|
-let atomic_id_counter : Ref[Int] = Ref::new(0)
+let atomic_id_counter : Ref[UInt] = Ref::new(1U)
 
 ///|
 pub fn atomic_id_next() -> Int {
-  let next = atomic_id_counter.val + 1
-  atomic_id_counter.val = next
-  next
+  let next = atomic_id_counter.val
+  let advanced = next + 1U
+  if advanced == 0U {
+    abort("The system ran out of unique atomic ids.")
+  }
+  atomic_id_counter.val = advanced
+  next.reinterpret_as_int()
+}
+
+///|
+pub fn atomic_id_next_non_zero_u32() -> UInt {
+  atomic_id_next().reinterpret_as_uint()
 }

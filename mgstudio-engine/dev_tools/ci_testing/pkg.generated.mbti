@@ -1,8 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/dev_tools/ci_testing"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+}
+
 // Values
 pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.systems"
+
+pub fn ci_testing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ci_testing_send_events_system(@ecs.World) -> Unit
 
 pub fn dev_tools_ci_testing_stage() -> String
 
@@ -10,14 +21,52 @@ pub fn dev_tools_ci_testing_stage() -> String
 
 // Types and methods
 pub struct CiTestingConfig {
-  enabled : Bool
-  capture_frames : Int
+  setup : CiTestingSetup
+  mut events : Array[CiTestingEventOnFrame]
 }
 pub fn CiTestingConfig::default() -> Self
+pub fn CiTestingConfig::with_event(Self, Int, CiTestingEvent) -> Self
+pub fn CiTestingConfig::with_setup(Self, CiTestingSetup) -> Self
+pub impl @app.Resource for CiTestingConfig
+
+pub struct CiTestingCustomEvent {
+  value : String
+}
+pub fn CiTestingCustomEvent::new(String) -> Self
+pub fn CiTestingCustomEvent::value(Self) -> String
+pub impl @ecs.Message for CiTestingCustomEvent
+
+pub(all) enum CiTestingEvent {
+  Screenshot
+  ScreenshotAndExit
+  NamedScreenshot(String)
+  AppExit
+  MoveCamera(@math.Vec3, @math.Quat)
+  Custom(String)
+}
+
+pub struct CiTestingEventOnFrame {
+  frame : Int
+  event : CiTestingEvent
+}
+pub fn CiTestingEventOnFrame::new(Int, CiTestingEvent) -> Self
 
 pub struct CiTestingPlugin {
 }
 pub fn CiTestingPlugin::default() -> Self
+
+pub(all) struct CiTestingRuntimeState {
+  mut current_frame : Int
+  mut pending_screenshot_exit_entities : Array[@core.Entity]
+}
+pub fn CiTestingRuntimeState::default() -> Self
+pub impl @app.Resource for CiTestingRuntimeState
+
+pub struct CiTestingSetup {
+  fixed_frame_time : @core.Duration?
+}
+pub fn CiTestingSetup::default() -> Self
+pub fn CiTestingSetup::with_fixed_frame_time(Self, @core.Duration) -> Self
 
 // Type aliases
 

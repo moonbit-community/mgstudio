@@ -79,11 +79,13 @@ This file must not exceed 200 lines.
 - [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
 - [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.
 - [x] `utils/runtime-ownerization`: replace placeholder `bloom_filter` / `buffered_channel` / `parallel_queue` stubs with concrete MoonBit runtime implementations.
+- [x] `utils/once+atomic_id-ownerization`: replace bevy-utils placeholder wording with concrete `OnceFlag/OnceCell` and monotonic atomic-id runtime behavior.
 - [x] `feathers/no-op-plugin-prune`: replace `feathers` controls/cursor/alpha_pattern `app -> app` stubs with real install path (`controls` chain + resource init + plugin markers).
 - [x] `examples/camera-shell-prune`: remove top-level stub files (`2d_on_ui.mbt`, `2d_screen_shake.mbt`, `2d_top_down_camera.mbt`) and keep only owner `*/main.mbt` entries.
 - [x] `ui_widgets/empty-file-prune`: delete unused empty `ui_widgets/ui_widgets.mbt`.
 - [x] `asset/io-dead-wrapper-prune`: remove unreferenced `asset_io_{android,wasm,web}_supported` stubs and keep source-name owner APIs.
 - [x] `dev_tools/dead-wrapper-prune`: remove unreferenced `*_available` stubs in `ci_testing`, `easy_screenshot`, `picking_debug`, `render_debug`, `states`.
+- [x] `dev_tools/ci_testing-runtime`: replace `dev_tools/ci_testing` shell package with Bevy-shaped config/events/runtime plugin (screenshot/app-exit/custom-event/camera-move flow).
 - [x] `text/error+font_loader-shape`: replace boolean availability stubs with concrete `TextError` / `FontLoader` / `FontLoaderError` owner types.
 - [x] `math/curve-dead-wrapper-prune`: remove unreferenced `curve_identity` and `easing_curve_identity`.
 - [x] `gizmos/cross+stroke_text-shape`: replace `*_supported` placeholders with concrete cross/text helper APIs in owner files.
