@@ -16,21 +16,197 @@
 // Bevy source: `bevy/crates/bevy_math/src/curve/interval.rs`.
 
 ///|
-pub type Interval = @math.Interval
+pub(all) suberror InvalidIntervalError {
+  Invalid
+}
 
 ///|
-pub type InvalidIntervalError = @math.InvalidIntervalError
+pub(all) suberror SpacedPointsError {
+  Unbounded
+}
 
 ///|
-pub type LinearMapError = @math.LinearMapError
+pub(all) suberror LinearMapError {
+  SourceUnbounded
+  TargetUnbounded
+}
 
 ///|
-pub type SpacedPointsError = @math.SpacedPointsError
+pub(all) struct Interval {
+  start_ : Float
+  end_ : Float
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub fn Interval::new(
+  start_ : Float,
+  end_ : Float,
+) -> Interval raise InvalidIntervalError {
+  if start_ >= end_ || interval_is_nan(start_) || interval_is_nan(end_) {
+    raise Invalid
+  } else {
+    Interval::{ start_, end_ }
+  }
+}
+
+///|
+pub fn Interval::unit() -> Interval {
+  Interval::{ start_: 0.0F, end_: 1.0F }
+}
+
+///|
+pub fn Interval::everywhere() -> Interval {
+  Interval::{ start_: interval_neg_infinity(), end_: interval_infinity() }
+}
+
+///|
+pub fn Interval::start(self : Interval) -> Float {
+  self.start_
+}
+
+///|
+pub fn Interval::end_(self : Interval) -> Float {
+  self.end_
+}
+
+///|
+pub fn Interval::length(self : Interval) -> Float {
+  self.end_ - self.start_
+}
+
+///|
+pub fn Interval::is_bounded(self : Interval) -> Bool {
+  interval_is_finite(self.start_) && interval_is_finite(self.end_)
+}
+
+///|
+pub fn Interval::has_finite_start(self : Interval) -> Bool {
+  interval_is_finite(self.start_)
+}
+
+///|
+pub fn Interval::has_finite_end(self : Interval) -> Bool {
+  interval_is_finite(self.end_)
+}
+
+///|
+pub fn Interval::contains(self : Interval, item : Float) -> Bool {
+  item >= self.start_ && item <= self.end_
+}
+
+///|
+pub fn Interval::contains_interval(self : Interval, other : Interval) -> Bool {
+  self.start_ <= other.start_ && self.end_ >= other.end_
+}
+
+///|
+pub fn Interval::clamp(self : Interval, value : Float) -> Float {
+  if value < self.start_ {
+    self.start_
+  } else if value > self.end_ {
+    self.end_
+  } else {
+    value
+  }
+}
+
+///|
+pub fn Interval::intersect(
+  self : Interval,
+  other : Interval,
+) -> Interval raise InvalidIntervalError {
+  let lower = interval_maxf(self.start_, other.start_)
+  let upper = interval_minf(self.end_, other.end_)
+  Interval::new(lower, upper)
+}
+
+///|
+pub fn Interval::spaced_points(
+  self : Interval,
+  points : Int,
+) -> Array[Float] raise SpacedPointsError {
+  if !self.is_bounded() {
+    raise Unbounded
+  }
+  if points <= 0 {
+    return []
+  }
+  if points == 1 {
+    return [self.start_]
+  }
+  let values : Array[Float] = []
+  let step = self.length() / interval_float_from_int(points - 1)
+  for index in 0..<points {
+    values.push(self.start_ + interval_float_from_int(index) * step)
+  }
+  values
+}
+
+///|
+pub fn Interval::linear_map_value_to(
+  self : Interval,
+  other : Interval,
+  value : Float,
+) -> Float raise LinearMapError {
+  if !self.is_bounded() {
+    raise SourceUnbounded
+  }
+  if !other.is_bounded() {
+    raise TargetUnbounded
+  }
+  let scale = other.length() / self.length()
+  (value - self.start_) * scale + other.start_
+}
 
 ///|
 pub fn interval(
   start : Float,
   end_ : Float,
 ) -> Interval raise InvalidIntervalError {
-  @math.interval(start, end_)
+  Interval::new(start, end_)
+}
+
+///|
+fn interval_minf(a : Float, b : Float) -> Float {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn interval_maxf(a : Float, b : Float) -> Float {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn interval_float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn interval_is_nan(value : Float) -> Bool {
+  value != value
+}
+
+///|
+fn interval_is_finite(value : Float) -> Bool {
+  !interval_is_nan(value) &&
+  value != interval_infinity() &&
+  value != interval_neg_infinity()
+}
+
+///|
+fn interval_infinity() -> Float {
+  1.0F / 0.0F
+}
+
+///|
+fn interval_neg_infinity() -> Float {
+  -1.0F / 0.0F
 }

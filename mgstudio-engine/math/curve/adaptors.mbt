@@ -17,15 +17,12 @@
 
 ///|
 pub struct ConstantCurve[T] {
-  domain_ : @math.Interval
+  domain_ : Interval
   value : T
 }
 
 ///|
-pub fn[T] ConstantCurve::new(
-  domain : @math.Interval,
-  value : T,
-) -> ConstantCurve[T] {
+pub fn[T] ConstantCurve::new(domain : Interval, value : T) -> ConstantCurve[T] {
   ConstantCurve::{ domain_: domain, value }
 }
 
@@ -55,24 +52,24 @@ pub fn[T] ConstantCurve::sample(self : ConstantCurve[T], t : Float) -> T? {
 }
 
 ///|
-pub fn[T] ConstantCurve::to_curve(self : ConstantCurve[T]) -> @math.Curve[T] {
-  @math.Curve::new(self.domain_, fn(_t) { self.value })
+pub fn[T] ConstantCurve::to_curve(self : ConstantCurve[T]) -> Curve[T] {
+  Curve::new(self.domain_, fn(_t) { self.value })
 }
 
 ///|
-pub fn[T] ConstantCurve::domain(self : ConstantCurve[T]) -> @math.Interval {
+pub fn[T] ConstantCurve::domain(self : ConstantCurve[T]) -> Interval {
   self.domain_
 }
 
 ///|
 pub struct FunctionCurve[T] {
-  domain_ : @math.Interval
+  domain_ : Interval
   f : (Float) -> T
 }
 
 ///|
 pub fn[T] FunctionCurve::new(
-  domain : @math.Interval,
+  domain : Interval,
   f : (Float) -> T,
 ) -> FunctionCurve[T] {
   FunctionCurve::{ domain_: domain, f }
@@ -104,26 +101,23 @@ pub fn[T] FunctionCurve::sample(self : FunctionCurve[T], t : Float) -> T? {
 }
 
 ///|
-pub fn[T] FunctionCurve::to_curve(self : FunctionCurve[T]) -> @math.Curve[T] {
-  @math.Curve::new(self.domain_, self.f)
+pub fn[T] FunctionCurve::to_curve(self : FunctionCurve[T]) -> Curve[T] {
+  Curve::new(self.domain_, self.f)
 }
 
 ///|
-pub fn[T] FunctionCurve::domain(self : FunctionCurve[T]) -> @math.Interval {
+pub fn[T] FunctionCurve::domain(self : FunctionCurve[T]) -> Interval {
   self.domain_
 }
 
 ///|
-pub fn[T] constant_curve(
-  domain : @math.Interval,
-  value : T,
-) -> ConstantCurve[T] {
+pub fn[T] constant_curve(domain : Interval, value : T) -> ConstantCurve[T] {
   ConstantCurve::new(domain, value)
 }
 
 ///|
 pub fn[T] function_curve(
-  domain : @math.Interval,
+  domain : Interval,
   f : (Float) -> T,
 ) -> FunctionCurve[T] {
   FunctionCurve::new(domain, f)

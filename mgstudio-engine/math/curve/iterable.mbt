@@ -17,13 +17,13 @@
 
 ///|
 pub struct IterableCurve[T] {
-  domain_ : @math.Interval
+  domain_ : Interval
   sample_iter_unchecked_fn : (Float) -> Iter[T]
 }
 
 ///|
 pub fn[T] IterableCurve::new(
-  domain : @math.Interval,
+  domain : Interval,
   sample_iter_unchecked : (Float) -> Iter[T],
 ) -> IterableCurve[T] {
   IterableCurve::{
@@ -33,7 +33,7 @@ pub fn[T] IterableCurve::new(
 }
 
 ///|
-pub fn[T] IterableCurve::domain(self : IterableCurve[T]) -> @math.Interval {
+pub fn[T] IterableCurve::domain(self : IterableCurve[T]) -> Interval {
   self.domain_
 }
 
@@ -67,7 +67,7 @@ pub fn[T] IterableCurve::sample_iter(
 
 ///|
 pub fn[T] iterable_curve(
-  domain : @math.Interval,
+  domain : Interval,
   sample_iter_unchecked : (Float) -> Iter[T],
 ) -> IterableCurve[T] {
   IterableCurve::new(domain, sample_iter_unchecked)

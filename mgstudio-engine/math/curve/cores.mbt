@@ -51,13 +51,13 @@ pub(all) suberror UnevenCoreError {
 
 ///|
 pub struct EvenCore[T] {
-  domain_ : @math.Interval
+  domain_ : Interval
   samples : Array[T]
 }
 
 ///|
 pub fn[T] EvenCore::new(
-  domain : @math.Interval,
+  domain : Interval,
   samples : Array[T],
 ) -> EvenCore[T] raise EvenCoreError {
   if samples.length() < 2 {
@@ -70,7 +70,7 @@ pub fn[T] EvenCore::new(
 }
 
 ///|
-pub fn[T] EvenCore::domain(self : EvenCore[T]) -> @math.Interval {
+pub fn[T] EvenCore::domain(self : EvenCore[T]) -> Interval {
   self.domain_
 }
 
@@ -101,7 +101,7 @@ pub fn[T] EvenCore::sample_interp(
 
 ///|
 pub fn even_interp(
-  domain : @math.Interval,
+  domain : Interval,
   sample_count : Int,
   t : Float,
 ) -> InterpolationDatum[Int] {
@@ -149,8 +149,8 @@ pub fn[T] UnevenCore::new(
 }
 
 ///|
-pub fn[T] UnevenCore::domain(self : UnevenCore[T]) -> @math.Interval {
-  @math.Interval::new(
+pub fn[T] UnevenCore::domain(self : UnevenCore[T]) -> Interval {
+  Interval::new(
     self.sample_points[0].0,
     self.sample_points[self.sample_points.length() - 1].0,
   ) catch {
@@ -213,7 +213,7 @@ pub fn[T] UnevenCore::sample_interp(
 
 ///|
 pub fn[T] even_core(
-  domain : @math.Interval,
+  domain : Interval,
   samples : Array[T],
 ) -> EvenCore[T] raise EvenCoreError {
   EvenCore::new(domain, samples)

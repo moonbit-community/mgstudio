@@ -23,7 +23,7 @@ pub struct SampleCurve[T] {
 
 ///|
 pub fn[T] SampleCurve::new(
-  domain : @math.Interval,
+  domain : Interval,
   samples : Array[T],
   interpolation : (T, T, Float) -> T,
 ) -> SampleCurve[T] raise EvenCoreError {
@@ -32,7 +32,7 @@ pub fn[T] SampleCurve::new(
 }
 
 ///|
-pub fn[T] SampleCurve::domain(self : SampleCurve[T]) -> @math.Interval {
+pub fn[T] SampleCurve::domain(self : SampleCurve[T]) -> Interval {
   self.core.domain()
 }
 
@@ -56,8 +56,8 @@ pub fn[T] SampleCurve::sample(self : SampleCurve[T], t : Float) -> T? {
 }
 
 ///|
-pub fn[T] SampleCurve::to_curve(self : SampleCurve[T]) -> @math.Curve[T] {
-  @math.Curve::new(self.domain(), fn(t) { self.sample_unchecked(t) })
+pub fn[T] SampleCurve::to_curve(self : SampleCurve[T]) -> Curve[T] {
+  Curve::new(self.domain(), fn(t) { self.sample_unchecked(t) })
 }
 
 ///|
@@ -67,7 +67,7 @@ pub struct SampleAutoCurve[T] {
 
 ///|
 pub fn[T] SampleAutoCurve::new(
-  domain : @math.Interval,
+  domain : Interval,
   samples : Array[T],
 ) -> SampleAutoCurve[T] raise EvenCoreError {
   let core = EvenCore::new(domain, samples)
@@ -75,7 +75,7 @@ pub fn[T] SampleAutoCurve::new(
 }
 
 ///|
-pub fn[T] SampleAutoCurve::domain(self : SampleAutoCurve[T]) -> @math.Interval {
+pub fn[T] SampleAutoCurve::domain(self : SampleAutoCurve[T]) -> Interval {
   self.core.domain()
 }
 
@@ -110,8 +110,8 @@ pub fn[T : @math.StableInterpolate] SampleAutoCurve::sample(
 ///|
 pub fn[T : @math.StableInterpolate] SampleAutoCurve::to_curve(
   self : SampleAutoCurve[T],
-) -> @math.Curve[T] {
-  @math.Curve::new(self.domain(), fn(t) { self.sample_unchecked(t) })
+) -> Curve[T] {
+  Curve::new(self.domain(), fn(t) { self.sample_unchecked(t) })
 }
 
 ///|
@@ -130,9 +130,7 @@ pub fn[T] UnevenSampleCurve::new(
 }
 
 ///|
-pub fn[T] UnevenSampleCurve::domain(
-  self : UnevenSampleCurve[T],
-) -> @math.Interval {
+pub fn[T] UnevenSampleCurve::domain(self : UnevenSampleCurve[T]) -> Interval {
   self.core.domain()
 }
 
@@ -165,15 +163,13 @@ pub fn[T] UnevenSampleCurve::sample(
 }
 
 ///|
-pub fn[T] UnevenSampleCurve::to_curve(
-  self : UnevenSampleCurve[T],
-) -> @math.Curve[T] {
-  @math.Curve::new(self.domain(), fn(t) { self.sample_unchecked(t) })
+pub fn[T] UnevenSampleCurve::to_curve(self : UnevenSampleCurve[T]) -> Curve[T] {
+  Curve::new(self.domain(), fn(t) { self.sample_unchecked(t) })
 }
 
 ///|
 pub fn[T] sample_curve(
-  domain : @math.Interval,
+  domain : Interval,
   samples : Array[T],
   interpolation : (T, T, Float) -> T,
 ) -> SampleCurve[T] raise EvenCoreError {
@@ -182,7 +178,7 @@ pub fn[T] sample_curve(
 
 ///|
 pub fn[T] sample_auto_curve(
-  domain : @math.Interval,
+  domain : Interval,
   samples : Array[T],
 ) -> SampleAutoCurve[T] raise EvenCoreError {
   SampleAutoCurve::new(domain, samples)
