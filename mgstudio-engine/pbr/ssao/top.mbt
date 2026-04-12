@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/ssao/mod.rs`.
 
 ///|
-pub const SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_ID : String = "bevy_pbr::ScreenSpaceAmbientOcclusionPlugin"
+pub const SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_ID : String = "mgstudio.pbr.ScreenSpaceAmbientOcclusionPlugin"
 
 ///|
 pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbientOcclusionQualityLevel

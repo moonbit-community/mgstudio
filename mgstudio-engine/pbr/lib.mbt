@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ///|
-pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
+pub const PBR_PLUGIN_ID : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
-pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
+pub const FOG_PLUGIN_ID : String = "mgstudio.pbr.FogPlugin"
 
 ///|
 pub(all) struct PbrPlugin {

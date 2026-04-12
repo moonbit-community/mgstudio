@@ -19,7 +19,7 @@
 pub const HAS_MESHLET_RUNTIME : Bool = false
 
 ///|
-pub const MESHLET_PLUGIN_ID : String = "bevy_pbr::MeshletPlugin"
+pub const MESHLET_PLUGIN_ID : String = "mgstudio.pbr.MeshletPlugin"
 
 ///|
 pub fn meshlet_runtime_available() -> Bool {

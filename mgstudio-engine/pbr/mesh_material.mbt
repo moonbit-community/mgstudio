@@ -16,7 +16,7 @@
 pub type MeshMaterial3d = @material.MeshMaterial3d
 
 ///|
-pub const MESH_RENDER_PLUGIN_ID : String = "bevy_pbr::MeshRenderPlugin"
+pub const MESH_RENDER_PLUGIN_ID : String = "mgstudio.pbr.MeshRenderPlugin"
 
 ///|
 pub(all) struct MeshRenderPlugin {

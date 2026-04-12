@@ -16,7 +16,7 @@
 pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
 ///|
-pub const MATERIALS_PLUGIN_ID : String = "bevy_pbr::MaterialsPlugin"
+pub const MATERIALS_PLUGIN_ID : String = "mgstudio.pbr.MaterialsPlugin"
 
 ///|
 pub struct MaterialsPlugin {}

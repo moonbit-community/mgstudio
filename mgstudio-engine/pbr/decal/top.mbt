@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/decal/mod.rs`.
 
 ///|
-pub const CLUSTERED_DECAL_PLUGIN_ID : String = "bevy_pbr::ClusteredDecalPlugin"
+pub const CLUSTERED_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ClusteredDecalPlugin"
 
 ///|
 pub struct DecalPluginState {

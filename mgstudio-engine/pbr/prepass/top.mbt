@@ -19,7 +19,7 @@
 pub const PREPASS_PLUGIN_ID : String = @core_prepass.PREPASS_PLUGIN_ID
 
 ///|
-pub const PREPASS_PIPELINE_PLUGIN_ID : String = "bevy_pbr::prepass::PrepassPipelinePlugin"
+pub const PREPASS_PIPELINE_PLUGIN_ID : String = "mgstudio.pbr.prepass.PrepassPipelinePlugin"
 
 ///|
 pub const EARLY_PREPASS_LABEL : String = @core_prepass.EARLY_PREPASS_LABEL

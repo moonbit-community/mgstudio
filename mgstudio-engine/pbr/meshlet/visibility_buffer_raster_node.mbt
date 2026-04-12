@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/visibility_buffer_raster_node.rs`.
 
 ///|
-pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "bevy_pbr::meshlet::visibility_buffer_raster"
+pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "mgstudio.pbr.meshlet.visibility_buffer_raster"
 
 ///|
 pub struct MeshletVisibilityBufferRasterState {

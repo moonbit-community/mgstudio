@@ -22,7 +22,7 @@ pub type ScreenSpaceTransmissionQuality = @post_process.ScreenSpaceTransmissionQ
 pub type ScreenSpaceTransmission = @post_process.ScreenSpaceTransmission
 
 ///|
-pub const SCREEN_SPACE_TRANSMISSION_PLUGIN_ID : String = "bevy_pbr::ScreenSpaceTransmissionPlugin"
+pub const SCREEN_SPACE_TRANSMISSION_PLUGIN_ID : String = "mgstudio.pbr.ScreenSpaceTransmissionPlugin"
 
 ///|
 pub struct ScreenSpaceTransmissionPlugin {}

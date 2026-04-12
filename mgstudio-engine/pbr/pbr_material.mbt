@@ -28,7 +28,7 @@ pub type DefaultOpaqueRendererMethod = @material.DefaultOpaqueRendererMethod
 pub type StandardMaterial = @material.StandardMaterial
 
 ///|
-pub const STANDARD_MATERIAL_PLUGIN_ID : String = "bevy_pbr::MaterialPlugin<StandardMaterial>"
+pub const STANDARD_MATERIAL_PLUGIN_ID : String = "mgstudio.pbr.MaterialPlugin<StandardMaterial>"
 
 ///|
 pub const STANDARD_MATERIAL_KEY_CULL_FRONT : UInt64 = 0x000001UL

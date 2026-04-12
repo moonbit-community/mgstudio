@@ -17,7 +17,7 @@
 pub struct ForwardDecal {} derive(ToJson, FromJson)
 
 ///|
-pub const FORWARD_DECAL_PLUGIN_ID : String = "bevy_pbr::ForwardDecalPlugin"
+pub const FORWARD_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ForwardDecalPlugin"
 
 ///|
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt

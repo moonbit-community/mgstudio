@@ -15,7 +15,7 @@
 // Bevy-aligned `pbr/render` entrypoint container.
 
 ///|
-pub const PBR_RENDER_PLUGIN_ID : String = "bevy_pbr::render"
+pub const PBR_RENDER_PLUGIN_ID : String = "mgstudio.pbr.render"
 
 ///|
 pub struct Render3dPluginState {

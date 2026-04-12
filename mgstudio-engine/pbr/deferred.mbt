@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
+pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
 
 ///|
 pub struct DeferredPbrLightingState {
