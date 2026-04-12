@@ -16,9 +16,6 @@
 pub const PBR_PLUGIN_ID : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
-pub const FOG_PLUGIN_ID : String = "mgstudio.pbr.FogPlugin"
-
-///|
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool

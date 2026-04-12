@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/decal/mod.rs`.
 
 ///|
-pub const CLUSTERED_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ClusteredDecalPlugin"
-
-///|
 pub struct DecalPluginState {
   forward_enabled : Bool
   clustered_enabled : Bool

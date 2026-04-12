@@ -19,9 +19,6 @@
 pub const HAS_MESHLET_RUNTIME : Bool = false
 
 ///|
-pub const MESHLET_PLUGIN_ID : String = "mgstudio.pbr.MeshletPlugin"
-
-///|
 pub fn meshlet_runtime_available() -> Bool {
   HAS_MESHLET_RUNTIME
 }

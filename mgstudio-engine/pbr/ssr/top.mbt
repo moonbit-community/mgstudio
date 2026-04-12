@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/ssr/mod.rs`.
 
 ///|
-pub const SCREEN_SPACE_REFLECTIONS_PLUGIN_ID : String = "mgstudio.pbr.ScreenSpaceReflectionsPlugin"
-
-///|
 pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections
 
 ///|

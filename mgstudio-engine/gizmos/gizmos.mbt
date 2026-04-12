@@ -14,7 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
-pub const GIZMOS_PLUGIN_ID : String = "bevy_gizmos::GizmoPlugin"
 
 ///|
 pub fn gizmos_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

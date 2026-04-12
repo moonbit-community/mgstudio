@@ -17,7 +17,6 @@
 ///
 /// The runtime implementation is split across `lib`, `pointer`, `input`,
 /// `hover`, `backend`, `events`, and `window` following the Bevy file shape.
-pub const PICKING_PLUGIN_ID : String = "bevy_picking::PickingPlugin"
 
 ///|
 pub fn picking_plugin_entry(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

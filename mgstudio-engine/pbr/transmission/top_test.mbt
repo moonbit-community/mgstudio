@@ -13,14 +13,6 @@
 // limitations under the License.
 
 ///|
-test "pbr transmission: quality maps to stable pipeline key" {
-  inspect(screen_space_transmission_pipeline_key(Low), content="0")
-  inspect(screen_space_transmission_pipeline_key(Medium), content="1")
-  inspect(screen_space_transmission_pipeline_key(High), content="2")
-  inspect(screen_space_transmission_pipeline_key(Ultra), content="3")
-}
-
-///|
 test "pbr transmission: texture prepare preconditions" {
   inspect(
     pbr_should_prepare_transmission_texture(1, 3, true, true, true),

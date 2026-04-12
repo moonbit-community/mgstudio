@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_app/src/task_pool_plugin.rs`.
 
 ///|
-pub const TASK_POOL_PLUGIN_ID : String = "bevy_app::TaskPoolPlugin"
-
-///|
 pub(all) struct TaskPoolThreadAssignmentPolicy {
   min_threads : Int
   max_threads : Int

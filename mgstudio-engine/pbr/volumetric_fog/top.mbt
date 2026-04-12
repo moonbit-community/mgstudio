@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/volumetric_fog/mod.rs`.
 
 ///|
-pub const VOLUMETRIC_FOG_PLUGIN_ID : String = "mgstudio.pbr.VolumetricFogPlugin"
-
-///|
 pub type VolumetricFog = @light.VolumetricFog
 
 ///|

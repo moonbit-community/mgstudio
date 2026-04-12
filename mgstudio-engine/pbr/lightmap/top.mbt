@@ -19,9 +19,6 @@
 pub const LIGHTMAPS_PER_SLAB : Int = 4
 
 ///|
-pub const LIGHTMAP_PLUGIN_ID : String = "mgstudio_pbr::LightmapPlugin"
-
-///|
 pub struct LightmapPlugin {}
 
 ///|
