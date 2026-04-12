@@ -16,11 +16,8 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/mod.rs`.
 
 ///|
-pub const HAS_MESHLET_RUNTIME : Bool = false
-
-///|
 pub fn meshlet_runtime_available() -> Bool {
-  HAS_MESHLET_RUNTIME
+  @renderer.meshlet_required_features_supported()
 }
 
 ///|

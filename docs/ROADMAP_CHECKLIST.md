@@ -84,6 +84,7 @@ This file must not exceed 200 lines.
 - [x] `examples/camera-shell-prune`: remove top-level stub files (`2d_on_ui.mbt`, `2d_screen_shake.mbt`, `2d_top_down_camera.mbt`) and keep only owner `*/main.mbt` entries.
 - [x] `ui_widgets/empty-file-prune`: delete unused empty `ui_widgets/ui_widgets.mbt`.
 - [x] `asset/io-dead-wrapper-prune`: remove unreferenced `asset_io_{android,wasm,web}_supported` stubs and keep source-name owner APIs.
+- [x] `asset/io-platform-exclude-prune`: delete unused `asset/io/{android,wasm,web}.mbt` shell files and exclude corresponding Bevy platform sources from parity scope.
 - [x] `dev_tools/dead-wrapper-prune`: remove unreferenced `*_available` stubs in `ci_testing`, `easy_screenshot`, `picking_debug`, `render_debug`, `states`.
 - [x] `dev_tools/ci_testing-runtime`: replace `dev_tools/ci_testing` shell package with Bevy-shaped config/events/runtime plugin (screenshot/app-exit/custom-event/camera-move flow).
 - [x] `text/error+font_loader-shape`: replace boolean availability stubs with concrete `TextError` / `FontLoader` / `FontLoaderError` owner types.
@@ -105,8 +106,8 @@ This file must not exceed 200 lines.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
 - [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
 - [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
-- [ ] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` style hard stub gating by landing real runtime path or explicit scope exclusion.
-- [ ] `render/wgpu_mbt`: expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for runtime capability checks.
+- [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe.
+- [ ] `render/wgpu_mbt`: expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for full meshlet capability parity.
 - [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.

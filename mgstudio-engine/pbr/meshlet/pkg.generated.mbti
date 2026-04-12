@@ -6,8 +6,6 @@ import {
 }
 
 // Values
-pub const HAS_MESHLET_RUNTIME : Bool = false
-
 pub const MESHLET_DEFERRED_GBUFFER_PREPASS_NODE : String = "mgstudio.pbr.meshlet.deferred_gbuffer_prepass"
 
 pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "mgstudio.pbr.meshlet.main_opaque_pass"

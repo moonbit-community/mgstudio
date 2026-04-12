@@ -68,6 +68,33 @@ pub fn mesh3d_gpu_culling_supported() -> Bool {
 }
 
 ///|
+pub fn meshlet_required_features_supported() -> Bool {
+  if ensure_backend() is Some(backend) {
+    let backend_type = backend.device.info_backend_type_u32()
+    if backend_type != @wgpu.BACKEND_TYPE_VULKAN &&
+      backend_type != @wgpu.BACKEND_TYPE_METAL {
+      return false
+    }
+    if !backend.device.supported_features_contains_u32(
+        @wgpu.FEATURE_NAME_DEPTH_CLIP_CONTROL,
+      ) {
+      return false
+    }
+    if !backend.device.has_feature_native_shader_int64() {
+      return false
+    }
+    if !backend.device.has_feature_native_subgroup() {
+      return false
+    }
+    if !backend.device.has_feature_native_subgroup_barrier() {
+      return false
+    }
+    return true
+  }
+  false
+}
+
+///|
 pub fn upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,

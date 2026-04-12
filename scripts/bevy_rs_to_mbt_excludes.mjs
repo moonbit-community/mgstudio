@@ -110,6 +110,14 @@ export function excludeReasonForSource(
   }
 
   if (
+    source === "bevy/crates/bevy_asset/src/io/android.rs" ||
+    source === "bevy/crates/bevy_asset/src/io/wasm.rs" ||
+    source === "bevy/crates/bevy_asset/src/io/web.rs"
+  ) {
+    return "non_goal_platform"
+  }
+
+  if (
     source === "bevy/crates/bevy_scene/src/dynamic_scene.rs" ||
     source === "bevy/crates/bevy_scene/src/dynamic_scene_builder.rs" ||
     source === "bevy/crates/bevy_scene/src/scene_filter.rs"

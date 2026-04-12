@@ -8,6 +8,10 @@ import {
 }
 
 // Values
+pub const TRACY_GPU_ENV_BACKEND : String = "MGSTUDIO_TRACY_GPU_BACKEND"
+
+pub const TRACY_GPU_ENV_ENABLED : String = "MGSTUDIO_TRACY_GPU"
+
 pub fn erased_render_asset_diagnostic_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn erased_render_asset_diagnostic_plugin_with(@app.App[@ecs.World], ErasedRenderAssetDiagnosticPlugin) -> @app.App[@ecs.World]
@@ -31,6 +35,8 @@ pub fn render_diagnostics_module_snapshot() -> @renderer.RenderDiagnosticsSnapsh
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
 pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
+
+pub fn tracy_gpu_context_backend() -> String
 
 pub fn tracy_gpu_context_enabled() -> Bool
 

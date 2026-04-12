@@ -193,6 +193,8 @@ pub fn mesh3d_non_indexed_indirect_offset(Int) -> UInt64
 
 pub fn mesh3d_preprocess_disabled() -> Bool
 
+pub fn meshlet_required_features_supported() -> Bool
+
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
 pub fn pipeline_layout_descriptor_4_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
