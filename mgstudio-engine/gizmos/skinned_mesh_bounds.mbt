@@ -16,6 +16,13 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/skinned_mesh_bounds.rs`.
 
 ///|
+let ecs_key_show_skinned_mesh_bounds_gizmo : @ecs.ComponentKey[
+  ShowSkinnedMeshBoundsGizmo,
+] = @ecs.register_component(
+  debug_name="mgstudio_gizmos::ShowSkinnedMeshBoundsGizmo",
+)
+
+///|
 pub struct SkinnedMeshBoundsGizmoPlugin {}
 
 ///|
@@ -38,6 +45,18 @@ pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> SkinnedMeshBoundsGizmoCon
 }
 
 ///|
+pub impl Default for SkinnedMeshBoundsGizmoConfigGroup with default() {
+  SkinnedMeshBoundsGizmoConfigGroup::default()
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_config_group_marker(
+  _self,
+) {
+
+}
+
+///|
 pub struct ShowSkinnedMeshBoundsGizmo {
   color : @sprite.Color?
 }
@@ -45,4 +64,17 @@ pub struct ShowSkinnedMeshBoundsGizmo {
 ///|
 pub fn ShowSkinnedMeshBoundsGizmo::default() -> ShowSkinnedMeshBoundsGizmo {
   ShowSkinnedMeshBoundsGizmo::{ color: None }
+}
+
+///|
+pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo with component() {
+  ecs_key_show_skinned_mesh_bounds_gizmo
+}
+
+///|
+pub fn skinned_mesh_bounds_gizmo_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  ignore(SkinnedMeshBoundsGizmoPlugin::default())
+  init_gizmo_group(app, SkinnedMeshBoundsGizmoConfigGroup::default())
 }

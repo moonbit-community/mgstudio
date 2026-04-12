@@ -14,7 +14,25 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
-// remains delegated to `sprite`.
+// Package-level plugin boundary aligned with Bevy gizmos crate.
+
+pub const GIZMO_PLUGIN_ID : String = "mgstudio_gizmos::GizmoPlugin"
+
+///|
+priv struct GizmoPluginMarker {}
+
+///|
+let ecs_res_key_gizmo_plugin_marker : @ecs.ResourceKey[GizmoPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoPluginMarker",
+)
+
+///|
+pub struct GizmoPlugin {}
+
+///|
+pub fn GizmoPlugin::default() -> GizmoPlugin {
+  GizmoPlugin::{  }
+}
 
 ///|
 pub type Isometry2d = @sprite.Isometry2d
@@ -65,8 +83,39 @@ pub type Grid2dBuilder = @sprite.Grid2dBuilder
 
 ///|
 pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(
-    @sprite_render.sprite_render_plugin(app),
-    DefaultGizmoConfigGroup::default(),
-  )
+  gizmo_plugin_with(app, GizmoPlugin::default())
+}
+
+///|
+pub impl @app.PluginReplacement for GizmoPlugin with replacement_id(_self) {
+  GIZMO_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for GizmoPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    gizmo_plugin_with(app, self)
+  }
+}
+
+///|
+pub fn gizmo_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  let mut next = app
+  if next.contains_resource(ecs_res_key_gizmo_plugin_marker) {
+    return next
+  }
+  next = next.insert_world_resource(ecs_res_key_gizmo_plugin_marker, GizmoPluginMarker::{
+
+  })
+  next = @sprite_render.sprite_render_plugin(next)
+  next = @gizmos_render.gizmo_render_plugin(next)
+  next = global_gizmos_plugin(next)
+  next = aabb_gizmo_plugin(next)
+  next = frustum_gizmo_plugin(next)
+  next = skinned_mesh_bounds_gizmo_plugin(next)
+  next
 }

@@ -21,6 +21,14 @@ pub fn gizmos_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
 }
 
 ///|
+pub fn gizmos_render_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoRenderPlugin,
+) -> @app.App[@ecs.World] {
+  gizmo_render_plugin_with(app, plugin)
+}
+
+///|
 pub fn gizmos_render_system_set_2d() -> @app.SystemSet {
   gizmo_render_system_set(QueueLineGizmos2d)
 }

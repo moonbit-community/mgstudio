@@ -21,6 +21,14 @@ pub fn gizmos_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+pub fn gizmos_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoPlugin,
+) -> @app.App[@ecs.World] {
+  gizmo_plugin_with(app, plugin)
+}
+
+///|
 pub fn gizmos_default_group() -> DefaultGizmoConfigGroup {
   DefaultGizmoConfigGroup::default()
 }

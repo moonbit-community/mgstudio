@@ -14,7 +14,27 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
-// remains delegated to `sprite_render` and `pbr`.
+// Package-level render-queue boundary for gizmos.
+
+pub const GIZMO_RENDER_PLUGIN_ID : String = "mgstudio_gizmos_render::GizmoRenderPlugin"
+
+///|
+priv struct GizmoRenderPluginMarker {}
+
+///|
+let ecs_res_key_gizmo_render_plugin_marker : @ecs.ResourceKey[
+  GizmoRenderPluginMarker,
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos_render::GizmoRenderPluginMarker",
+)
+
+///|
+pub struct GizmoRenderPlugin {}
+
+///|
+pub fn GizmoRenderPlugin::default() -> GizmoRenderPlugin {
+  GizmoRenderPlugin::{  }
+}
 
 ///|
 pub(all) enum GizmoRenderSystems {
@@ -24,7 +44,34 @@ pub(all) enum GizmoRenderSystems {
 
 ///|
 pub fn gizmo_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite_render.sprite_render_plugin(app)
+  gizmo_render_plugin_with(app, GizmoRenderPlugin::default())
+}
+
+///|
+pub impl @app.PluginReplacement for GizmoRenderPlugin with replacement_id(_self) {
+  GIZMO_RENDER_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for GizmoRenderPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    gizmo_render_plugin_with(app, self)
+  }
+}
+
+///|
+pub fn gizmo_render_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoRenderPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  if app.contains_resource(ecs_res_key_gizmo_render_plugin_marker) {
+    return app
+  }
+  @sprite_render.sprite_render_plugin(app).insert_world_resource(
+    ecs_res_key_gizmo_render_plugin_marker,
+    GizmoRenderPluginMarker::{  },
+  )
 }
 
 ///|

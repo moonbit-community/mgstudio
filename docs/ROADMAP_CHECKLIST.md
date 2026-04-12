@@ -109,6 +109,8 @@ This file must not exceed 200 lines.
 - [x] `gizmos/simplex+skinned+retained-shape`: replace bool stubs with concrete constants/types for simplex font, skinned-bounds config, retained gizmo data.
 - [x] `gizmos/aabb+frustum-ownerization`: replace alias-only `gizmos/{aabb,frustum}` with Bevy-shaped config/component/system/plugin runtime implementations.
 - [x] `gizmos/arcs+arrows+circles+curves+grid+rounded_box+config-ownerization`: replace alias-only gizmo utility files with behavior APIs (draw/config helpers) over owner runtime.
+- [x] `gizmos/plugin-entry-ownerization`: replace delegated `gizmos/lib` and `gizmos_render/lib` shells with real plugin structs (`PluginReplacement` + marker gating + explicit subplugin composition).
+- [x] `gizmos/skinned-mesh-bounds-entry-ownerization`: make `skinned_mesh_bounds` behavior-bearing (`GizmoConfigGroup` + `Component` + plugin install path) instead of struct-only placeholder.
 - [x] `math/primitives/top-ownerization`: keep Bevy-shaped type aggregation while adding behavior-bearing primitive helper surface in `math/primitives/top`.
 - [x] `module-tag-cleanup`: remove leftover `*_MODULE_ID`/`*_module_id` marker-only APIs from `math/curve/derivatives`, `ui/layout`, `gizmos/primitives`, and `camera/visibility`.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
