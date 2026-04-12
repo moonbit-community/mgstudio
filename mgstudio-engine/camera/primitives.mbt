@@ -16,13 +16,50 @@
 // Bevy source: `bevy/crates/bevy_camera/src/primitives.rs`.
 
 ///|
-pub type Aabb = @math.Aabb3d
+pub struct Aabb {
+  inner : @math.Aabb3d
+}
 
 ///|
 pub type Sphere = @math.BoundingSphere
 
 ///|
 pub type Frustum = @pbr.Frustum
+
+///|
+pub let ecs_key_aabb : @ecs.ComponentKey[Aabb] = @ecs.register_component(
+  debug_name="mgstudio_camera::Aabb",
+)
+
+///|
+pub impl @ecs.Component for Aabb with component() {
+  ecs_key_aabb
+}
+
+///|
+pub fn Aabb::from_math(inner : @math.Aabb3d) -> Aabb {
+  Aabb::{ inner, }
+}
+
+///|
+pub fn Aabb::to_math(self : Aabb) -> @math.Aabb3d {
+  self.inner
+}
+
+///|
+pub fn Aabb::from_min_max(min : @math.Vec3, max : @math.Vec3) -> Aabb {
+  Aabb::from_math(@math.Aabb3d::from_min_max(min, max))
+}
+
+///|
+pub fn Aabb::center(self : Aabb) -> @math.Vec3 {
+  self.inner.center()
+}
+
+///|
+pub fn Aabb::half_size(self : Aabb) -> @math.Vec3 {
+  self.inner.half_size()
+}
 
 ///|
 pub(open) trait MeshAabb {
