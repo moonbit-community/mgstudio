@@ -65,10 +65,6 @@ pub fn triangle3d_sample_boundary(@math.Triangle3d, @random.Rand) -> @math.Vec3
 
 pub fn triangle3d_sample_interior(@math.Triangle3d, @random.Rand) -> @math.Vec3
 
-pub fn uniform_mesh_sampler_error_identity(@math.UniformMeshSamplerError) -> @math.UniformMeshSamplerError
-
-pub fn uniform_mesh_sampler_identity(@math.UniformMeshSampler) -> @math.UniformMeshSampler
-
 // Errors
 
 // Types and methods

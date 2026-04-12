@@ -16,21 +16,4 @@
 // Bevy source: `bevy/crates/bevy_transform/src/components/transform.rs`.
 
 ///|
-pub fn transform_component_transform_point(
-  value : @transform.Transform,
-  point : @math.Vec3,
-) -> @math.Vec3 {
-  value.transform_point(point)
-}
-
-///|
-pub fn transform_component_compute_global_transform(
-  value : @transform.Transform,
-) -> @transform.GlobalTransform {
-  @transform.GlobalTransform::from_transform(value)
-}
-
-///|
-pub fn transform_component_identity() -> @transform.Transform {
-  @transform.Transform::identity()
-}
+pub type Transform = @transform.Transform

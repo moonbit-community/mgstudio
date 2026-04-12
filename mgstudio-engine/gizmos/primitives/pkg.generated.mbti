@@ -10,15 +10,9 @@ pub const GIZMOS_PRIMITIVES_MODULE_ID : String = "bevy_gizmos::primitives"
 
 pub const GIZMO_PRIMITIVE_HELPER_EPSILON : Float = 0.00001
 
-pub fn gizmo_primitive_capsule2d_identity(@math.Capsule2d) -> @math.Capsule2d
-
-pub fn gizmo_primitive_circle2d_identity(@math.Circle) -> @math.Circle
-
 pub fn gizmo_primitive_helper_epsilon() -> Float
 
 pub fn gizmo_primitive_near_zero(Float) -> Bool
-
-pub fn gizmo_primitive_rect2d_identity(@math.Rectangle) -> @math.Rectangle
 
 pub fn gizmos_primitives_helper_epsilon() -> Float
 

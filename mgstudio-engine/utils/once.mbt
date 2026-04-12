@@ -17,11 +17,6 @@
 // The current runtime does not expose Bevy's once-cell helpers.
 
 ///|
-pub fn utils_once_available() -> Bool {
-  true
-}
-
-///|
 pub struct OnceCell[T] {
   mut value : T?
 }

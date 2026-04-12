@@ -18,8 +18,3 @@
 
 ///|
 pub type TypeId = @any.TypeId
-
-///|
-pub fn utils_runtime_type_support_available() -> Bool {
-  true
-}

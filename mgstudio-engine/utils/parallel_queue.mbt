@@ -17,11 +17,6 @@
 // The current runtime does not expose Bevy's parallel-queue helpers.
 
 ///|
-pub fn utils_parallel_queue_available() -> Bool {
-  true
-}
-
-///|
 pub type ParallelQueueValues[T] = Array[T]
 
 ///|

@@ -17,10 +17,3 @@
 
 ///|
 pub type GizmoGrid2dBuilder = @sprite.Grid2dBuilder
-
-///|
-pub fn gizmo_grid_builder_identity(
-  builder : GizmoGrid2dBuilder,
-) -> GizmoGrid2dBuilder {
-  builder
-}

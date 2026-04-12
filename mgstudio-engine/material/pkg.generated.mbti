@@ -40,14 +40,6 @@ pub fn material_bind_group_layout_entries_supported() -> Bool
 
 pub fn material_default_opaque_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
-pub fn material_descriptor_identity(StandardMaterial) -> StandardMaterial
-
-pub fn material_mesh3d_identity(MeshMaterial3d) -> MeshMaterial3d
-
-pub fn material_opaque_renderer_method_identity(OpaqueRendererMethod) -> OpaqueRendererMethod
-
-pub fn material_parallax_method_identity(ParallaxMappingMethod) -> ParallaxMappingMethod
-
 pub fn material_specialization_supported() -> Bool
 
 pub fn shader_label(String) -> String

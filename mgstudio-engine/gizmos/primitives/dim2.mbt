@@ -23,24 +23,3 @@ pub type GizmoPrimitiveRect2d = @math.Rectangle
 
 ///|
 pub type GizmoPrimitiveCapsule2d = @math.Capsule2d
-
-///|
-pub fn gizmo_primitive_circle2d_identity(
-  shape : GizmoPrimitiveCircle2d,
-) -> GizmoPrimitiveCircle2d {
-  shape
-}
-
-///|
-pub fn gizmo_primitive_rect2d_identity(
-  shape : GizmoPrimitiveRect2d,
-) -> GizmoPrimitiveRect2d {
-  shape
-}
-
-///|
-pub fn gizmo_primitive_capsule2d_identity(
-  shape : GizmoPrimitiveCapsule2d,
-) -> GizmoPrimitiveCapsule2d {
-  shape
-}

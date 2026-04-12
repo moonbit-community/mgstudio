@@ -74,6 +74,10 @@ This file must not exceed 200 lines.
 - [x] `material/dead-wrapper-prune`: remove unreferenced identity wrappers in `material/key` and `material/descriptor`.
 - [x] `math/rects-dead-wrapper-prune`: remove unreferenced identity wrappers in `math/rects/{rect,irect,urect}`.
 - [x] `window/cursor-dead-wrapper-prune`: remove unreferenced `system_cursor_icon_identity` forwarding helper.
+- [x] `gizmos/dead-wrapper-prune`: remove unreferenced `*_identity` forwarders in `aabb/arcs/arrows/circles/curves/frustum/grid/primitives/dim2/rounded_box`.
+- [x] `math/dead-wrapper-prune`: remove unreferenced identity forwarders in `math/curve/easing` and `math/sampling/mesh_sampling`.
+- [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
+- [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.

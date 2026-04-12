@@ -17,11 +17,6 @@
 // The current runtime does not expose Bevy's atomic-id allocator helpers.
 
 ///|
-pub fn utils_atomic_id_available() -> Bool {
-  true
-}
-
-///|
 let atomic_id_counter : Ref[Int] = Ref::new(0)
 
 ///|

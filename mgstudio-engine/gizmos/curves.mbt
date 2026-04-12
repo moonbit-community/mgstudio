@@ -20,13 +20,3 @@ pub type GizmoCubicCurve2d = @math.CubicCurve[@math.Vec2]
 
 ///|
 pub type GizmoCubicCurve3d = @math.CubicCurve[@math.Vec3]
-
-///|
-pub fn gizmo_curve2d_identity(curve : GizmoCubicCurve2d) -> GizmoCubicCurve2d {
-  curve
-}
-
-///|
-pub fn gizmo_curve3d_identity(curve : GizmoCubicCurve3d) -> GizmoCubicCurve3d {
-  curve
-}

@@ -20,13 +20,3 @@ pub type JumpAt = @math.JumpAt
 
 ///|
 pub type EaseFunction = @math.EaseFunction
-
-///|
-pub fn jump_at_identity(value : JumpAt) -> JumpAt {
-  value
-}
-
-///|
-pub fn ease_function_identity(value : EaseFunction) -> EaseFunction {
-  value
-}

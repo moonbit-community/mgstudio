@@ -16,36 +16,4 @@
 // Bevy source: `bevy/crates/bevy_transform/src/components/global_transform.rs`.
 
 ///|
-pub fn transform_component_global_transform_point(
-  value : @transform.GlobalTransform,
-  point : @math.Vec3,
-) -> @math.Vec3 {
-  value.transform_point(point)
-}
-
-///|
-pub fn transform_component_global_inverse(
-  value : @transform.GlobalTransform,
-) -> @transform.GlobalTransform {
-  value.inverse()
-}
-
-///|
-pub fn transform_component_global_reparented_to(
-  value : @transform.GlobalTransform,
-  parent : @transform.GlobalTransform,
-) -> @transform.GlobalTransform {
-  value.reparented_to(parent)
-}
-
-///|
-pub fn transform_component_global_compute_transform(
-  value : @transform.GlobalTransform,
-) -> @transform.Transform {
-  value.to_transform_approx()
-}
-
-///|
-pub fn transform_component_global_identity() -> @transform.GlobalTransform {
-  @transform.GlobalTransform::identity()
-}
+pub type GlobalTransform = @transform.GlobalTransform

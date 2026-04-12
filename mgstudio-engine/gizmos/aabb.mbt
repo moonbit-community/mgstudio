@@ -20,13 +20,3 @@ pub type GizmoAabb2d = @math.Aabb2d
 
 ///|
 pub type GizmoAabb3d = @math.Aabb3d
-
-///|
-pub fn gizmo_aabb2d_identity(aabb : GizmoAabb2d) -> GizmoAabb2d {
-  aabb
-}
-
-///|
-pub fn gizmo_aabb3d_identity(aabb : GizmoAabb3d) -> GizmoAabb3d {
-  aabb
-}

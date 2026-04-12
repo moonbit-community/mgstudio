@@ -19,9 +19,6 @@
 pub type Affine2 = @transform.Affine2
 
 ///|
-pub type GlobalTransform = @transform.GlobalTransform
-
-///|
 pub type TransformTreeChanged = @transform.TransformTreeChanged
 
 ///|

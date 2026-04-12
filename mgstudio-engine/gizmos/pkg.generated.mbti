@@ -17,39 +17,17 @@ pub const GIZMO_STROKE_TEXT_SUPPORTED : Bool = true
 
 pub const SIMPLEX_STROKE_FONT_SUPPORTED : Bool = true
 
-pub fn gizmo_aabb2d_identity(@math.Aabb2d) -> @math.Aabb2d
-
-pub fn gizmo_aabb3d_identity(@math.Aabb3d) -> @math.Aabb3d
-
-pub fn gizmo_arc2d_builder_identity(@sprite.Arc2dBuilder) -> @sprite.Arc2dBuilder
-
-pub fn gizmo_arc2d_identity(@math.Arc2d) -> @math.Arc2d
-
-pub fn gizmo_arrow_builder_identity(@sprite.ArrowBuilder) -> @sprite.ArrowBuilder
-
-pub fn gizmo_circle_identity(@math.Circle) -> @math.Circle
-
 pub fn gizmo_cross_supported() -> Bool
 
-pub fn gizmo_curve2d_identity(@math.CubicCurve[@math.Vec2]) -> @math.CubicCurve[@math.Vec2]
-
-pub fn gizmo_curve3d_identity(@math.CubicCurve[@math.Vec3]) -> @math.CubicCurve[@math.Vec3]
-
 pub fn gizmo_global_init(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn gizmo_grid_builder_identity(@sprite.Grid2dBuilder) -> @sprite.Grid2dBuilder
 
 pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gizmo_retained_supported() -> Bool
 
-pub fn gizmo_rounded_rect_builder_identity(@sprite.RoundedRectBuilder) -> @sprite.RoundedRectBuilder
-
 pub fn gizmo_skinned_mesh_bounds_supported() -> Bool
 
 pub fn gizmo_stroke_text_supported() -> Bool
-
-pub fn gizmo_view_frustum_identity(@math.ViewFrustum) -> @math.ViewFrustum
 
 pub fn gizmos_default_group() -> @sprite.DefaultGizmoConfigGroup
 

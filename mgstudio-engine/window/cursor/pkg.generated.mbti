@@ -19,8 +19,6 @@ pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
 
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
 
-pub fn system_cursor_icon_identity(@core.CursorIcon) -> @core.CursorIcon
-
 // Errors
 
 // Types and methods

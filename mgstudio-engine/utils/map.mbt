@@ -17,11 +17,20 @@
 // The current runtime relies on MoonBit's built-in `Map` instead of a dedicated Bevy map wrapper.
 
 ///|
-pub fn utils_map_helpers_available() -> Bool {
-  true
+pub type HashMap[K, V] = Map[K, V]
+
+///|
+pub fn[K, V] map_new() -> HashMap[K, V] {
+  Map::new()
 }
 
 ///|
-pub fn[K, V] map_entries_identity(entries : Array[(K, V)]) -> Array[(K, V)] {
-  entries
+pub fn[K : Hash + Eq, V] map_from_entries(
+  entries : Array[(K, V)],
+) -> HashMap[K, V] {
+  let map : HashMap[K, V] = Map::new()
+  for entry in entries {
+    map[entry.0] = entry.1
+  }
+  map
 }

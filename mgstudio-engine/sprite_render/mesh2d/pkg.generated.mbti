@@ -26,12 +26,6 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
 pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn sprite_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn sprite_render_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 // Errors
 
 // Types and methods

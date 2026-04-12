@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/ui/widget"
 
 import {
-  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/ui",
 }
@@ -32,15 +31,9 @@ pub let ecs_key_ui_image : @ecs.ComponentKey[@ui.UiImage]
 
 pub let ecs_key_ui_target_camera : @ecs.ComponentKey[@ui.UiTargetCamera]
 
-pub fn ui_interaction_system(@ecs.World) -> Unit
-
 pub fn ui_propagate_target_cameras_system(@ecs.World) -> Unit
 
 pub let ui_set_text_content : String
-
-pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub let ui_widgets_set_interaction : String
 
 // Errors
 

@@ -10,8 +10,6 @@ pub fn[T] constant_curve(@math.Interval, T) -> @math.ConstantCurve[T]
 
 pub fn[T] curve_identity(@math.Curve[T]) -> @math.Curve[T]
 
-pub fn ease_function_identity(@math.EaseFunction) -> @math.EaseFunction
-
 pub fn[T] easing_curve_identity(@math.EasingCurve[T]) -> @math.EasingCurve[T]
 
 pub fn[T] even_core(@math.Interval, Array[T]) -> @math.EvenCore[T] raise @math.EvenCoreError
@@ -21,8 +19,6 @@ pub fn[T] function_curve(@math.Interval, (Float) -> T) -> @math.FunctionCurve[T]
 pub fn interval(Float, Float) -> @math.Interval raise @math.InvalidIntervalError
 
 pub fn[T] iterable_curve(@math.Interval, (Float) -> Iter[T]) -> @math.IterableCurve[T]
-
-pub fn jump_at_identity(@math.JumpAt) -> @math.JumpAt
 
 pub fn[T] sample_auto_curve(@math.Interval, Array[T]) -> @math.SampleAutoCurve[T] raise @math.EvenCoreError
 

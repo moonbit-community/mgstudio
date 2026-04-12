@@ -17,27 +17,15 @@ pub fn[T : Default] default() -> T
 
 pub fn[T : Default] default_of() -> T
 
-pub fn[K, V] map_entries_identity(Array[(K, V)]) -> Array[(K, V)]
+pub fn[K : Hash + Eq, V] map_from_entries(Array[(K, V)]) -> Map[K, V]
+
+pub fn[K, V] map_new() -> Map[K, V]
 
 pub fn[T] parallel_queue_values_empty() -> Array[T]
 
 pub fn type_id(@any.Any) -> @any.TypeId
 
 pub fn type_name(@any.Any) -> String
-
-pub fn utils_atomic_id_available() -> Bool
-
-pub fn utils_bloom_filter_available() -> Bool
-
-pub fn utils_buffered_channel_available() -> Bool
-
-pub fn utils_map_helpers_available() -> Bool
-
-pub fn utils_once_available() -> Bool
-
-pub fn utils_parallel_queue_available() -> Bool
-
-pub fn utils_runtime_type_support_available() -> Bool
 
 // Errors
 
@@ -53,6 +41,8 @@ pub fn[T] OnceCell::set(Self[T], T) -> Unit
 pub type BloomFilterHashes = Array[Int]
 
 pub using @builtin {type Array as BufferedChannelBuffer}
+
+pub using @builtin {type Map as HashMap}
 
 pub using @builtin {type Array as ParallelQueueValues}
 

@@ -17,10 +17,3 @@
 
 ///|
 pub type GizmoRoundedRectBuilder = @sprite.RoundedRectBuilder
-
-///|
-pub fn gizmo_rounded_rect_builder_identity(
-  builder : GizmoRoundedRectBuilder,
-) -> GizmoRoundedRectBuilder {
-  builder
-}
