@@ -18,15 +18,15 @@
 ///|
 pub fn sphere_boundary_distribution(
   shape : @math.Sphere,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.boundary_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_boundary(rng) })
 }
 
 ///|
 pub fn sphere_interior_distribution(
   shape : @math.Sphere,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.interior_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_interior(rng) })
 }
 
 ///|
@@ -48,15 +48,15 @@ pub fn sphere_sample_interior(
 ///|
 pub fn cylinder_boundary_distribution(
   shape : @math.Cylinder,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.boundary_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_boundary(rng) })
 }
 
 ///|
 pub fn cylinder_interior_distribution(
   shape : @math.Cylinder,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.interior_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_interior(rng) })
 }
 
 ///|
@@ -78,15 +78,15 @@ pub fn cylinder_sample_interior(
 ///|
 pub fn capsule3d_boundary_distribution(
   shape : @math.Capsule3d,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.boundary_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_boundary(rng) })
 }
 
 ///|
 pub fn capsule3d_interior_distribution(
   shape : @math.Capsule3d,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.interior_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_interior(rng) })
 }
 
 ///|
@@ -108,15 +108,15 @@ pub fn capsule3d_sample_interior(
 ///|
 pub fn triangle3d_boundary_distribution(
   shape : @math.Triangle3d,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.boundary_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_boundary(rng) })
 }
 
 ///|
 pub fn triangle3d_interior_distribution(
   shape : @math.Triangle3d,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.interior_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_interior(rng) })
 }
 
 ///|
@@ -138,15 +138,15 @@ pub fn triangle3d_sample_interior(
 ///|
 pub fn tetrahedron_boundary_distribution(
   shape : @math.Tetrahedron,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.boundary_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_boundary(rng) })
 }
 
 ///|
 pub fn tetrahedron_interior_distribution(
   shape : @math.Tetrahedron,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.interior_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_interior(rng) })
 }
 
 ///|
@@ -168,15 +168,15 @@ pub fn tetrahedron_sample_interior(
 ///|
 pub fn cuboid_boundary_distribution(
   shape : @math.Cuboid,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.boundary_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_boundary(rng) })
 }
 
 ///|
 pub fn cuboid_interior_distribution(
   shape : @math.Cuboid,
-) -> @math.SamplingDistribution[@math.Vec3] {
-  shape.interior_dist()
+) -> SamplingDistribution[@math.Vec3] {
+  SamplingDistribution::new(fn(rng) { shape.sample_interior(rng) })
 }
 
 ///|

@@ -16,7 +16,55 @@
 // Bevy source: `bevy/crates/bevy_math/src/sampling/mesh_sampling.rs`.
 
 ///|
-pub type UniformMeshSampler = @math.UniformMeshSampler
+pub(all) suberror UniformMeshSamplerError {
+  Empty
+  ZeroSurfaceArea
+}
 
 ///|
-pub type UniformMeshSamplerError = @math.UniformMeshSamplerError
+pub struct UniformMeshSampler {
+  triangles : Array[@math.Triangle3d]
+  cumulative_areas : Array[Float]
+  total_area : Float
+}
+
+///|
+pub fn UniformMeshSampler::try_new(
+  triangles : Array[@math.Triangle3d],
+) -> UniformMeshSampler raise UniformMeshSamplerError {
+  if triangles.is_empty() {
+    raise Empty
+  }
+  let cumulative_areas : Array[Float] = []
+  let mut total_area = 0.0F
+  for triangle in triangles {
+    total_area = total_area + triangle.area()
+    cumulative_areas.push(total_area)
+  }
+  if total_area <= 0.0F {
+    raise ZeroSurfaceArea
+  }
+  UniformMeshSampler::{ triangles, cumulative_areas, total_area }
+}
+
+///|
+pub fn UniformMeshSampler::sample(
+  self : UniformMeshSampler,
+  rng : @random.Rand,
+) -> @math.Vec3 {
+  let target = rng.float() * self.total_area
+  let mut index = 0
+  while index + 1 < self.cumulative_areas.length() &&
+        target > self.cumulative_areas[index] {
+    index = index + 1
+  }
+  self.triangles[index].sample_interior(rng)
+}
+
+///|
+pub fn UniformMeshSampler::sample_iter(
+  self : UniformMeshSampler,
+  rng : @random.Rand,
+) -> Iter[@math.Vec3] {
+  Iter::new(fn() { Some(self.sample(rng)) })
+}

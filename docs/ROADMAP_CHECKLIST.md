@@ -78,6 +78,7 @@ This file must not exceed 200 lines.
 - [x] `gizmos/dead-wrapper-prune`: remove unreferenced `*_identity` forwarders in `aabb/arcs/arrows/circles/curves/frustum/grid/primitives/dim2/rounded_box`.
 - [x] `math/dead-wrapper-prune`: remove unreferenced identity forwarders in `math/curve/easing` and `math/sampling/mesh_sampling`.
 - [x] `math/rects-ownerization`: replace `math/rects/{rect,irect,urect,top}` alias forwarding with owner structs/methods/constructors inside `math/rects` package.
+- [x] `math/sampling-ownerization`: replace `math/sampling/{top,mesh_sampling,standard,shape_sampling}` alias forwarding with owner sampling types/traits/runtime logic.
 - [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
 - [x] `transform/components-ownerization`: replace `transform/components/{transform,global_transform,top}` alias forwarding with owner `Transform/Affine2/GlobalTransform` runtime definitions.
 - [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.
