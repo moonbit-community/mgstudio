@@ -14,7 +14,30 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/adaptor_impls.rs`.
-pub using @math {type WithDerivative}
 
 ///|
-pub using @math {type WithTwoDerivatives}
+pub struct WithDerivative[T] {
+  value : T
+  derivative : T
+}
+
+///|
+pub fn[T] with_derivative(value : T, derivative : T) -> WithDerivative[T] {
+  WithDerivative::{ value, derivative }
+}
+
+///|
+pub struct WithTwoDerivatives[T] {
+  value : T
+  derivative : T
+  second_derivative : T
+}
+
+///|
+pub fn[T] with_two_derivatives(
+  value : T,
+  derivative : T,
+  second_derivative : T,
+) -> WithTwoDerivatives[T] {
+  WithTwoDerivatives::{ value, derivative, second_derivative }
+}
