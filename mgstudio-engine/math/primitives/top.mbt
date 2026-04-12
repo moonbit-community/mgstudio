@@ -140,3 +140,29 @@ pub type ConicalFrustum = @math.ConicalFrustum
 
 ///|
 pub type Torus = @math.Torus
+
+///|
+pub fn primitive_half_space(normal_d : @math.Vec4) -> @math.HalfSpace {
+  half_space(normal_d)
+}
+
+///|
+pub fn primitive_view_frustum(
+  half_spaces : Array[@math.HalfSpace],
+) -> @math.ViewFrustum {
+  view_frustum(half_spaces)
+}
+
+///|
+pub fn primitive_view_frustum_corners(
+  frustum : @math.ViewFrustum,
+) -> Array[@math.Vec3]? {
+  view_frustum_corners(frustum)
+}
+
+///|
+pub fn primitive_polygon_winding_order(
+  points : Array[@math.Vec2],
+) -> @math.WindingOrder {
+  polygon_winding_order(points)
+}
