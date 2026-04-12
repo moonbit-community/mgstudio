@@ -23,6 +23,7 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   render3d_refresh_prepared_camera_order_if_needed(
     source_world, phase_state_ref,
   )
+  render3d_extract_morphs(source_world, phase_state_ref)
   @pbr_render.render3d_extract_skin_bindings(
     source_world, phase_state_ref, world_transform_cache_ref,
   )
@@ -35,6 +36,7 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
+  render3d_prepare_morphs(source_world, phase_state_ref)
   @pbr_render.render3d_prepare_skin_bindings_upload(
     source_world, phase_state_ref, world_transform_cache_ref,
   )

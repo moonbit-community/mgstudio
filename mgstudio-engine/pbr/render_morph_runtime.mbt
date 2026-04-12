@@ -13,6 +13,102 @@
 // limitations under the License.
 
 ///|
+const RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS : Int = 64
+
+///|
+fn render3d_morph_entity_key(entity : @core.Entity) -> UInt64 {
+  let hi = entity.id.reinterpret_as_uint().to_uint64()
+  let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+  (hi << 32) | lo
+}
+
+///|
+fn render3d_morph_is_visible(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  if (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+    is Some(view_visibility) {
+    view_visibility.is_visible()
+  } else {
+    true
+  }
+}
+
+///|
+fn render3d_resolved_morph_weights(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Array[Float] {
+  let animation_weights : @animation.AnimationWeights? = try! source_world
+    .entity(entity)
+    .get()
+  let morph_weights_component : @mesh.MorphWeights? = try! source_world
+    .entity(entity)
+    .get()
+  match animation_weights {
+    Some(weights) => {
+      let values = weights.values()
+      try! source_world.set_by_key(
+        entity,
+        @mesh.MorphWeights::component(),
+        @mesh.MorphWeights::new(values),
+      )
+      values
+    }
+    None =>
+      match morph_weights_component {
+        Some(weights) => weights.values()
+        None => []
+      }
+  }
+}
+
+///|
+fn render3d_push_morph_weights_to_uniform_buffer(
+  uniform_weights : Array[Float],
+  weights : Array[Float],
+) -> UInt {
+  let start = uniform_weights.length()
+  let normalized = @pbr_render.render3d_normalize_morph_weights(weights)
+  let limit = if normalized.length() < RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS {
+    normalized.length()
+  } else {
+    RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
+  }
+  for index in 0..<limit {
+    uniform_weights.push(normalized[index])
+  }
+  let target_len = start + RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
+  while uniform_weights.length() < target_len {
+    uniform_weights.push(0.0F)
+  }
+  start.reinterpret_as_uint() * 4U
+}
+
+///|
+fn render3d_read_morph_weights_from_uniform_buffer(
+  uniform_weights : Array[Float],
+  byte_offset : UInt,
+) -> Array[Float] {
+  let start = (byte_offset / 4U).reinterpret_as_int()
+  let end = start + RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
+  let clamped_end = if end < uniform_weights.length() {
+    end
+  } else {
+    uniform_weights.length()
+  }
+  let values : Array[Float] = []
+  if start >= clamped_end {
+    return values
+  }
+  for index in start..<clamped_end {
+    values.push(uniform_weights[index])
+  }
+  values
+}
+
+///|
 fn render3d_clone_mesh3d_geometry(
   geometry : @mesh.Mesh3dGeometry,
 ) -> @mesh.Mesh3dGeometry {
@@ -151,21 +247,59 @@ fn render3d_apply_morph_targets(
 }
 
 ///|
-pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
+pub fn render3d_extract_morphs(
+  source_world : @ecs.World,
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+) -> Unit {
+  phase_state_ref.val.morph_indices_prev = phase_state_ref.val.morph_indices_current
+  phase_state_ref.val.morph_weights_prev = phase_state_ref.val.morph_weights_current
+  phase_state_ref.val.morph_indices_current = {}
+  phase_state_ref.val.morph_weights_current = []
+  if source_world.component_count(@mesh.MorphTargetMesh::component()) == 0 {
+    return
+  }
   let mesh_query : @ecs.Query[
     (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
     @ecs.All,
-  ] = @ecs.query(world)
+  ] = @ecs.query(source_world)
+  try! mesh_query.view(fn(_entity, data) {
+    let (entity, _mesh_component, _morph_target_mesh_component) = data
+    if !render3d_morph_is_visible(source_world, entity) {
+      return
+    }
+    let active_morph_weights = render3d_resolved_morph_weights(
+      source_world, entity,
+    )
+    let uniform_offset = render3d_push_morph_weights_to_uniform_buffer(
+      phase_state_ref.val.morph_weights_current,
+      active_morph_weights,
+    )
+    phase_state_ref.val.morph_indices_current.set(
+      render3d_morph_entity_key(entity),
+      uniform_offset,
+    )
+  })
+}
+
+///|
+pub fn render3d_prepare_morphs(
+  source_world : @ecs.World,
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+) -> Unit {
+  let mesh_query : @ecs.Query[
+    (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    @ecs.All,
+  ] = @ecs.query(source_world)
   let mesh_assets_ref = mesh_assets_mut_or_abort()
 
   try! mesh_query.view(fn(_entity, data) {
     let (entity, mesh_component, morph_target_mesh_component) = data
-    let animation_weights : @animation.AnimationWeights? = try! world
-      .entity(entity)
-      .get()
-    let morph_weights_component : @mesh.MorphWeights? = try! world
-      .entity(entity)
-      .get()
+    let entity_key = render3d_morph_entity_key(entity)
+    let morph_weights_offset = match
+      phase_state_ref.val.morph_indices_current.get(entity_key) {
+      Some(offset) => offset
+      None => return
+    }
     let source_mesh_handle = morph_target_mesh_component.value().source_mesh()
     let instance_mesh_handle = mesh_component.value().mesh()
     let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
@@ -177,22 +311,10 @@ pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
       None => return
     }
 
-    let active_morph_weights = match animation_weights {
-      Some(weights) => {
-        let values = weights.values()
-        try! world.set_by_key(
-          entity,
-          @mesh.MorphWeights::component(),
-          @mesh.MorphWeights::new(values),
-        )
-        values
-      }
-      None =>
-        match morph_weights_component {
-          Some(weights) => weights.values()
-          None => []
-        }
-    }
+    let active_morph_weights = render3d_read_morph_weights_from_uniform_buffer(
+      phase_state_ref.val.morph_weights_current,
+      morph_weights_offset,
+    )
 
     let mut positions = source_geometry.positions
     if source_geometry.morph_target_positions() is Some(morph_targets) &&
@@ -209,4 +331,11 @@ pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
     }
     ignore(mesh_assets_ref.val.set(instance_mesh_handle, updated_mesh))
   })
+}
+
+///|
+pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
+  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  render3d_extract_morphs(world, phase_state_ref)
+  render3d_prepare_morphs(world, phase_state_ref)
 }

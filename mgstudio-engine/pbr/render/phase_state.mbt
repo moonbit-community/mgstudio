@@ -19,6 +19,10 @@ pub(all) struct Render3dPhaseState {
   mut last_camera3d_count : Int
   mesh_upload_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+  mut morph_indices_current : Map[UInt64, UInt]
+  mut morph_indices_prev : Map[UInt64, UInt]
+  mut morph_weights_current : Array[Float]
+  mut morph_weights_prev : Array[Float]
   prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
@@ -35,6 +39,10 @@ pub fn Render3dPhaseState::new() -> Render3dPhaseState {
     last_camera3d_count: 0,
     mesh_upload_cache: {},
     mesh_preprocess_static_cache: {},
+    morph_indices_current: {},
+    morph_indices_prev: {},
+    morph_weights_current: [],
+    morph_weights_prev: [],
     prepared_skin_bindings: {},
     skin_joint_to_skins: {},
     skin_joints_by_skin: {},

@@ -219,6 +219,7 @@ pub fn system_set(name : String) -> SystemSet {
 pub(all) enum AppLabel {
   MainApp
   RenderApp
+  RenderExtractApp
   Custom(String)
 } derive(Eq, Debug)
 
@@ -232,6 +233,7 @@ fn app_label_storage_key(label : AppLabel) -> String {
   match label {
     MainApp => "__main__"
     RenderApp => "__render__"
+    RenderExtractApp => "__render_extract__"
     Custom(name) => "__custom__:\{name}"
   }
 }

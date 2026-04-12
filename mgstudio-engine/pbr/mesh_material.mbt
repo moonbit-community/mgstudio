@@ -208,7 +208,6 @@ pub fn mesh_render_plugin_with(
 
       })
       .add_startup_system(init_mesh_render_resources)
-      .add_pre_update_system(render3d_sync_and_apply_deformed_meshes)
     next = configure_mesh_render_sets(next)
     next = @render.with_render_app(next, configure_mesh_render_sub_app)
   }

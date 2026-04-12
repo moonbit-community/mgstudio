@@ -1,6 +1,6 @@
 # Render Parity Issue Tracker
 
-Last updated: 2026-04-07
+Last updated: 2026-04-12
 
 ## Status Legend
 
@@ -21,7 +21,7 @@ Last updated: 2026-04-07
 | RENDER-006 | bevy_pbr/render/mesh.rs + mesh_bindings.rs | Mesh bind-group prep still partially deferred to draw/execute paths. | TODO | Move remaining bind-group creation to prepare-bind-groups stage. |
 | RENDER-007 | bevy_pbr/render/mesh_view_bindings.rs | View bind-group preparation order and ownership are not fully equivalent. | TODO | Align per-view bind-group resources and stage ordering with Bevy render schedule. |
 | RENDER-008 | bevy_pbr/render/gpu_preprocess.rs + mesh.rs | GPU preprocess pipeline stages and flush ordering differ from Bevy. | TODO | Align `PrepareResourcesFlush/PrepareResources/PrepareMeshes` responsibilities and buffer lifecycle. |
-| RENDER-009 | bevy_pbr/render/morph.rs | Morph extraction/preparation lifecycle is not yet split and tracked like Bevy. | TODO | Add `extract_morphs/prepare_morphs` parity path and previous-frame indices behavior. |
+| RENDER-009 | bevy_pbr/render/morph.rs | Morph extraction/preparation lifecycle is not yet split and tracked like Bevy. | DONE | 2026-04-12: split to `render3d_extract_morphs` + `render3d_prepare_morphs`; `Render3dPhaseState` now keeps current/prev morph indices and uniform-like weight buffers; render systems call extract in render-extract set and apply in render-prepare set. |
 | RENDER-010 | bevy_pbr/render/mesh.rs | Queue/execute still carries non-queue responsibilities (build-time material readiness retries). | TODO | Move toward Bevy `collect_meshes_for_gpu_building` model and queue-only hot path. |
 | RENDER-011 | bevy_pbr/render/mesh.rs + occlusion_culling.wgsl | Occlusion/depth-pyramid preprocess integration is not fully staged like Bevy. | TODO | Match preprocess dispatch and indirect-parameter build boundaries. |
 | RENDER-012 | bevy_render schedule + bevy_pbr/render/mod.rs | Render schedule set topology differs from Bevy (`Extract/Prepare*/Queue/Render/Cleanup`). | IN_PROGRESS | 2026-04-07: added `prepare_resources_flush / prepare_resources / prepare_meshes / prepare_bind_groups` set families and ordered them in `pbr/mesh_render_plugin.mbt`; next step is to move concrete mesh/bindgroup work into each dedicated set. |
