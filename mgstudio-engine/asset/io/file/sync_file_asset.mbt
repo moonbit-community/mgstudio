@@ -16,8 +16,27 @@
 // Bevy source: `bevy/crates/bevy_asset/src/io/file/sync_file_asset.rs`.
 
 ///|
+fn sync_file_asset_ensure_parent_dir(path : String) -> Unit {
+  let path_value : @path.Path = path
+  let parent = path_value.dirname().to_string()
+  if parent == "" || parent == "." || parent == path {
+    return
+  }
+  if @fs.path_exists(parent) {
+    return
+  }
+  sync_file_asset_ensure_parent_dir(parent)
+  @fs.create_dir(parent) catch {
+    _ => ()
+  }
+}
+
+///|
 pub fn sync_file_asset_bytes(path : String, bytes : Bytes) -> Unit {
-  @asset.host_asset_save_bytes(path~, bytes~)
+  sync_file_asset_ensure_parent_dir(path)
+  @fs.write_bytes_to_file(path, bytes) catch {
+    _ => ()
+  }
 }
 
 ///|
