@@ -33,13 +33,13 @@ pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
 ///|
 pub fn screenshot_take_capture_result(
   capture_id : Int,
-) -> @render_view_window.ScreenshotCaptureResult? {
+) -> @renderer.ScreenshotCaptureResult? {
   @render_view_window.screenshot_take_capture_result(capture_id)
 }
 
 ///|
 pub fn screenshot_capture_texture_sync(
   texture_id~ : Int,
-) -> @render_view_window.ScreenshotCaptureResult? {
+) -> @renderer.ScreenshotCaptureResult? {
   @render_view_window.screenshot_capture_texture_sync(texture_id~)
 }

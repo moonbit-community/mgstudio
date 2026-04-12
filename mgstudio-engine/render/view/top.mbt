@@ -16,29 +16,16 @@
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
 
 ///|
-pub type Msaa = @core_pipeline.Msaa
-
-///|
-pub type Visibility = @visibility.Visibility
-
-///|
-pub type InheritedVisibility = @visibility.InheritedVisibility
-
-///|
-pub type ViewVisibility = @visibility.ViewVisibility
-
-///|
-pub type NoFrustumCulling = @visibility.NoFrustumCulling
-
-///|
-pub type VisibilityRange = @visibility.VisibilityRange
-
-///|
-pub fn view_visibility_range_always_visible() -> VisibilityRange {
+pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::always_visible()
 }
 
 ///|
-pub fn view_visibility_range_invisible() -> VisibilityRange {
+pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::invisible()
+}
+
+///|
+pub fn view_msaa_default() -> @core_pipeline.Msaa {
+  @core_pipeline.Msaa::default()
 }

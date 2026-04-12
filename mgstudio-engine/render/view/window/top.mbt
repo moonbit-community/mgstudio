@@ -38,14 +38,14 @@ pub fn window_screenshot_capture_texture_request(texture_id~ : Int) -> Int {
 ///|
 pub fn window_screenshot_take_capture_result(
   capture_id : Int,
-) -> ScreenshotCaptureResult? {
+) -> @renderer.ScreenshotCaptureResult? {
   screenshot_take_capture_result(capture_id)
 }
 
 ///|
 pub fn window_screenshot_capture_texture_sync(
   texture_id~ : Int,
-) -> ScreenshotCaptureResult? {
+) -> @renderer.ScreenshotCaptureResult? {
   screenshot_capture_texture_sync(texture_id~)
 }
 

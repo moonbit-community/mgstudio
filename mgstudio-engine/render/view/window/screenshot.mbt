@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_render/src/view/window/screenshot.rs`.
 
 ///|
-pub type ScreenshotCaptureResult = @renderer.ScreenshotCaptureResult
-
-///|
 pub fn screenshot_capture_surface_request() -> Int {
   @renderer.screenshot_capture_surface_request()
 }
@@ -36,13 +33,13 @@ pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
 ///|
 pub fn screenshot_take_capture_result(
   capture_id : Int,
-) -> ScreenshotCaptureResult? {
+) -> @renderer.ScreenshotCaptureResult? {
   @renderer.screenshot_take_capture_result(capture_id)
 }
 
 ///|
 pub fn screenshot_capture_texture_sync(
   texture_id~ : Int,
-) -> ScreenshotCaptureResult? {
+) -> @renderer.ScreenshotCaptureResult? {
   @renderer.screenshot_capture_texture_sync(texture_id~)
 }

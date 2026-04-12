@@ -88,6 +88,7 @@ This file must not exceed 200 lines.
 - [x] `camera/winit/utils-shell-prune`: remove alias-only shells in `camera/visibility/*`, `winit/cursor/*`, and `utils/{debug_info,utils}` by switching to behavior-bearing helper surfaces.
 - [x] `state+render-shell-prune`: remove alias-only exports in `state/state/{resources,transitions}` and `render/error_handler` with direct runtime helper APIs.
 - [x] `camera+dof-shell-prune`: remove alias-only exports in `camera/clear_color` and `post_process/dof/top`, keep direct behavior helpers over owner runtime types.
+- [x] `render/view-shell-prune`: remove alias-only exports in `render/view/top` and `render/view/window/screenshot` and align capture result typing in `render/gpu_readback`.
 - [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
 - [x] `transform/components-ownerization`: replace `transform/components/{transform,global_transform,top}` alias forwarding with owner `Transform/Affine2/GlobalTransform` runtime definitions.
 - [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.
