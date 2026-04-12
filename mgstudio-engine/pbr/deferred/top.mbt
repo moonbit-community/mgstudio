@@ -16,6 +16,9 @@
 pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = @pbr.DEFERRED_PBR_LIGHTING_PLUGIN_ID
 
 ///|
+pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
+
+///|
 pub type DeferredPbrLightingState = @pbr.DeferredPbrLightingState
 
 ///|
@@ -25,6 +28,48 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[
 
 ///|
 pub type DeferredPbrLightingPlugin = @pbr.DeferredPbrLightingPlugin
+
+///|
+pub struct PbrDeferredLightingDepthId {
+  mut depth_id : Int
+}
+
+///|
+pub fn PbrDeferredLightingDepthId::default() -> PbrDeferredLightingDepthId {
+  PbrDeferredLightingDepthId::{
+    depth_id: DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID,
+  }
+}
+
+///|
+pub fn PbrDeferredLightingDepthId::new(
+  value : Int,
+) -> PbrDeferredLightingDepthId {
+  PbrDeferredLightingDepthId::{
+    depth_id: if value < 0 {
+      0
+    } else if value > 255 {
+      255
+    } else {
+      value
+    },
+  }
+}
+
+///|
+pub fn PbrDeferredLightingDepthId::set(
+  self : PbrDeferredLightingDepthId,
+  value : Int,
+) -> Unit {
+  self.depth_id = if value < 0 { 0 } else if value > 255 { 255 } else { value }
+}
+
+///|
+pub fn PbrDeferredLightingDepthId::get(
+  self : PbrDeferredLightingDepthId,
+) -> Int {
+  self.depth_id
+}
 
 ///|
 pub fn deferred_pbr_lighting_plugin(
