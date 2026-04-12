@@ -118,6 +118,7 @@ This file must not exceed 200 lines.
 - [x] `app/hotpatch-ownerization`: replace `app/hotpatch` runtime forwarding shell with package-owned hotpatch plugin/message/resource surface.
 - [x] `app/terminal-ctrlc-ownerization`: replace `app/terminal_ctrl_c_handler` helper shell with Bevy-shaped plugin + graceful-exit/exit-on-flag flow.
 - [x] `asset/io/file-sync-ownerization`: replace `sync_file_asset` host-forwarding shell with local file write path (parent-dir ensure + bytes flush).
+- [x] `gilrs/system-ownerization`: replace `gilrs_event_{startup,event}` pure forwarding with package-owned runtime polling state and counters.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.

@@ -16,6 +16,17 @@
 // Bevy source: `bevy/crates/bevy_app/src/propagate.rs`.
 
 ///|
+pub struct FixedSchedulePropagationConfig {
+  run_fixed_update : Bool
+  run_fixed_main : Bool
+}
+
+///|
+pub fn FixedSchedulePropagationConfig::default() -> FixedSchedulePropagationConfig {
+  FixedSchedulePropagationConfig::{ run_fixed_update: true, run_fixed_main: true }
+}
+
+///|
 pub fn run_fixed_update_schedule(world : @ecs.World) -> Unit {
   run_current_fixed_update_schedule(world)
 }
@@ -23,4 +34,22 @@ pub fn run_fixed_update_schedule(world : @ecs.World) -> Unit {
 ///|
 pub fn run_fixed_main_stage(world : @ecs.World) -> Unit {
   run_current_fixed_main_schedule(world)
+}
+
+///|
+pub fn run_fixed_schedules_with_config(
+  world : @ecs.World,
+  config : FixedSchedulePropagationConfig,
+) -> Unit {
+  if config.run_fixed_update {
+    run_fixed_update_schedule(world)
+  }
+  if config.run_fixed_main {
+    run_fixed_main_stage(world)
+  }
+}
+
+///|
+pub fn run_all_fixed_schedules(world : @ecs.World) -> Unit {
+  run_fixed_schedules_with_config(world, FixedSchedulePropagationConfig::default())
 }
