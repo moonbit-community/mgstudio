@@ -30,16 +30,21 @@ pub fn AssetServerInfo::default() -> AssetServerInfo {
 }
 
 ///|
-pub fn asset_server_info_loader_kind(path : String) -> @asset.AssetLoaderKind {
+pub fn AssetServerInfo::loader_kind(
+  _self : AssetServerInfo,
+  path : String,
+) -> @asset.AssetLoaderKind {
   @asset.asset_loader_kind_for_path(path)
 }
 
 ///|
-pub fn asset_server_info_supported_compressed_image_formats() -> Int {
-  @asset.asset_supported_compressed_image_formats()
+pub fn AssetServerInfo::supported_compressed_image_formats(
+  self : AssetServerInfo,
+) -> Int {
+  self.supported_compressed_image_formats
 }
 
 ///|
-pub fn asset_server_info_default_sampler_nearest() -> Bool {
-  false
+pub fn AssetServerInfo::default_sampler_nearest(self : AssetServerInfo) -> Bool {
+  self.default_sampler_nearest
 }

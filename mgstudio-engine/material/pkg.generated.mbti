@@ -6,17 +6,22 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
-pub const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES_SUPPORTED : Bool = true
-
-pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
-
 pub fn[S : IntoStandardMaterialAsset] add(@asset.Assets[StandardMaterial], S) -> @asset.Handle[StandardMaterial]
+
+pub fn bind_group_layout_entries_sequential(UInt, Array[BindGroupLayoutEntryBuilder]) -> BindGroupLayoutEntries
+
+pub fn bind_group_layout_entries_single(UInt, BindGroupLayoutEntryBuilder) -> Array[@render_resource.BindGroupLayoutEntry]
+
+pub fn bind_group_layout_entries_with_indices(UInt, Array[(Int, BindGroupLayoutEntryBuilder)]) -> BindGroupLayoutEntries
+
+pub fn bind_group_layout_entry_builder(@render_resource.BindingType) -> BindGroupLayoutEntryBuilder
 
 pub fn draw_function_label(String) -> String
 
@@ -36,11 +41,13 @@ pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceA
 
 pub fn material_alpha_is_blended(AlphaMode3d) -> Bool
 
-pub fn material_bind_group_layout_entries_supported() -> Bool
-
 pub fn material_default_opaque_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
-pub fn material_specialization_supported() -> Bool
+pub fn material_specialize_base((@ecs.World, String, Int) -> UInt64 raise, @ecs.World, String, Int) -> UInt64 raise
+
+pub fn material_specialize_user((String, Int) -> Unit raise, String, Int) -> Unit raise
+
+pub fn missing_vertex_attribute_error(String) -> SpecializedMeshPipelineError
 
 pub fn shader_label(String) -> String
 
@@ -51,6 +58,9 @@ pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMateria
 pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) -> Bool
 
 // Errors
+pub suberror SpecializedMeshPipelineError {
+  MissingVertexAttribute(String)
+}
 
 // Types and methods
 #alias(AlphaMode)
@@ -64,6 +74,20 @@ pub(all) enum AlphaMode3d {
   Multiply
   AlphaToCoverage
 }
+
+pub struct BindGroupLayoutEntries {
+  entries : Array[@render_resource.BindGroupLayoutEntry]
+}
+pub fn BindGroupLayoutEntries::entries(Self) -> Array[@render_resource.BindGroupLayoutEntry]
+
+pub struct BindGroupLayoutEntryBuilder {
+  kind : @render_resource.BindingType
+  visibility : UInt?
+  count : UInt?
+}
+pub fn BindGroupLayoutEntryBuilder::build(Self, Int, UInt) -> @render_resource.BindGroupLayoutEntry
+pub fn BindGroupLayoutEntryBuilder::count(Self, UInt) -> Self
+pub fn BindGroupLayoutEntryBuilder::visibility(Self, UInt) -> Self
 
 #alias(MaterialDefaultOpaqueMethod)
 pub struct DefaultOpaqueRendererMethod {
@@ -230,13 +254,23 @@ pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 
 // Type aliases
+pub type BaseSpecializeFn = (@ecs.World, String, Int) -> UInt64 raise
+
 pub type DrawFunctionLabel = String
 
 pub type InternedDrawFunctionLabel = String
 
 pub type InternedShaderLabel = String
 
+pub using @render_resource {type BindGroupLayoutEntry as MaterialBindGroupLayoutEntry}
+
+pub type MaterialMeshVertexLayout = Int
+
+pub type MaterialPipelineKey = String
+
 pub type ShaderLabel = String
+
+pub type UserSpecializeFn = (String, Int) -> Unit raise
 
 // Traits
 pub(open) trait IntoStandardMaterialAsset {

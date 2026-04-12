@@ -16,9 +16,51 @@
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
 
 ///|
-pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
+pub type MaterialPipelineKey = String
 
 ///|
-pub fn material_specialization_supported() -> Bool {
-  MATERIAL_SPECIALIZATION_SUPPORTED
+pub type MaterialMeshVertexLayout = Int
+
+///|
+pub suberror SpecializedMeshPipelineError {
+  MissingVertexAttribute(String)
+}
+
+///|
+pub type BaseSpecializeFn = (
+  @ecs.World,
+  MaterialPipelineKey,
+  MaterialMeshVertexLayout,
+) -> @render_resource.RenderPipelineId raise
+
+///|
+pub type UserSpecializeFn = (
+  MaterialPipelineKey,
+  MaterialMeshVertexLayout,
+) -> Unit raise
+
+///|
+pub fn missing_vertex_attribute_error(
+  attribute : String,
+) -> SpecializedMeshPipelineError {
+  MissingVertexAttribute(attribute)
+}
+
+///|
+pub fn material_specialize_base(
+  specialize : BaseSpecializeFn,
+  world : @ecs.World,
+  key : MaterialPipelineKey,
+  layout : MaterialMeshVertexLayout,
+) -> @render_resource.RenderPipelineId raise {
+  specialize(world, key, layout)
+}
+
+///|
+pub fn material_specialize_user(
+  specialize : UserSpecializeFn,
+  key : MaterialPipelineKey,
+  layout : MaterialMeshVertexLayout,
+) -> Unit raise {
+  specialize(key, layout)
 }
