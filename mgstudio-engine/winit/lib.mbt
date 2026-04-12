@@ -110,7 +110,7 @@ pub fn winit_plugin_with(
         @app.Last,
         (
           @app.system(winit_changed_windows_system),
-          @app.system(winit_changed_cursor_options_system),
+          @app.system(@winit_cursor.winit_changed_cursor_options_system),
           @app.system(winit_despawn_windows_system),
           @app.system(winit_check_keyboard_focus_lost_system),
         )

@@ -235,11 +235,6 @@ pub fn winit_changed_windows_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn winit_changed_cursor_options_system(world : @ecs.World) -> Unit {
-  @window.window_backend_apply_changed_cursor_options_system(world)
-}
-
-///|
 pub fn winit_despawn_windows_system(world : @ecs.World) -> Unit {
   @window.window_despawn_closing_windows_system(world)
 }

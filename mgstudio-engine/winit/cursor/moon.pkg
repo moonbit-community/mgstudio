@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/window",
 }
 

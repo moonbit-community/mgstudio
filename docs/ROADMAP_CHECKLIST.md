@@ -64,6 +64,7 @@ This file must not exceed 200 lines.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.
 - [x] `path-subpackages`: promote `ui/widget` `winit/cursor` `dev_tools/frame_time_graph` `picking/mesh_picking/ray_cast` `sprite_render/*` path dirs to compiled packages.
+- [x] `winit/cursor`: move cursor-options apply system ownership into subpackage and wire plugin call path through it.
 - [x] `scene/components+scene_spawner`: move `SceneRoot/SceneInstance*` and plugin/spawner systems out of `scene/lib.mbt` into Bevy-shaped owner files.
 - [x] `scene/scene_loader+serde`: move glTF ready-check loader wiring and scene serde impl ownership out of aggregating files.
 - [x] `scene/ecs_keys`: remove unused wrapper exports (`scene_spawn_roots_system_ecs`, `scene_plugin_ecs`) and switch tests to owner systems.

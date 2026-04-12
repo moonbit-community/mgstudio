@@ -1,8 +1,14 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/winit/cursor"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 pub fn cursor_icon_from_custom(@Milky2018/mgstudio/window/cursor.CustomCursor) -> @Milky2018/mgstudio/window/cursor.CursorIcon
+
+pub fn winit_changed_cursor_options_system(@ecs.World) -> Unit
 
 pub fn winit_cursor_icon_from_custom(@Milky2018/mgstudio/window/cursor.CustomCursor) -> @Milky2018/mgstudio/window/cursor.CursorIcon
 
