@@ -13,9 +13,7 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr render morph: normalization keeps non-zero count" {
+  let normalized = render3d_normalize_morph_weights([1.0F, -1.0F, 3.0F])
+  inspect(render3d_morph_non_zero_weight_count(normalized), content="2")
 }

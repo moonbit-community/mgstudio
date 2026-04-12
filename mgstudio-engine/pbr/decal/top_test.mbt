@@ -13,9 +13,8 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr decal: plugin state defaults to both paths enabled" {
+  let state = DecalPluginState::default()
+  inspect(state.forward_enabled(), content="true")
+  inspect(state.clustered_enabled(), content="true")
 }

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr prepass: any_enabled reflects individual flags" {
+  let bindings = render3d_prepass_bindings(true, false, false, false)
+  inspect(bindings.any_enabled(), content="true")
+  inspect(
+    render3d_prepass_any_enabled(PrepassBindings3d::default()),
+    content="false",
+  )
 }

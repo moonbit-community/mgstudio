@@ -13,9 +13,17 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr light probe generate: downsampling config requires high limits" {
+  inspect(
+    pbr_downsampling_config(11, true).combine_bind_group_enabled(),
+    content="false",
+  )
+  inspect(
+    pbr_downsampling_config(12, false).combine_bind_group_enabled(),
+    content="false",
+  )
+  inspect(
+    pbr_downsampling_config(12, true).combine_bind_group_enabled(),
+    content="true",
+  )
 }

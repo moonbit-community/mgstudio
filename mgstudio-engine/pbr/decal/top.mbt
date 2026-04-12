@@ -16,6 +16,30 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/decal/mod.rs`.
 
 ///|
+pub const CLUSTERED_DECAL_PLUGIN_ID : String = "bevy_pbr::ClusteredDecalPlugin"
+
+///|
+pub struct DecalPluginState {
+  forward_enabled : Bool
+  clustered_enabled : Bool
+}
+
+///|
+pub fn DecalPluginState::default() -> DecalPluginState {
+  DecalPluginState::{ forward_enabled: true, clustered_enabled: true }
+}
+
+///|
+pub fn DecalPluginState::forward_enabled(self : DecalPluginState) -> Bool {
+  self.forward_enabled
+}
+
+///|
+pub fn DecalPluginState::clustered_enabled(self : DecalPluginState) -> Bool {
+  self.clustered_enabled
+}
+
+///|
 pub fn forward_decal() -> ForwardDecal {
   ForwardDecal::default()
 }

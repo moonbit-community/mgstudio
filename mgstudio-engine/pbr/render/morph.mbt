@@ -15,6 +15,23 @@
 // Bevy-aligned render module anchor.
 
 ///|
+pub struct Render3dMorphState {
+  weights : Array[Float]
+  normalized : Bool
+}
+
+///|
+pub fn Render3dMorphState::default() -> Render3dMorphState {
+  Render3dMorphState::{ weights: [], normalized: true }
+}
+
+///|
+pub fn render3d_morph_state(weights : Array[Float]) -> Render3dMorphState {
+  let normalized_weights = render3d_normalize_morph_weights(weights)
+  Render3dMorphState::{ normalized: true, weights: normalized_weights }
+}
+
+///|
 pub fn render3d_morph_weights_all_zero(weights : Array[Float]) -> Bool {
   for weight in weights {
     if weight != 0.0F {
@@ -40,4 +57,20 @@ pub fn render3d_normalize_morph_weights(weights : Array[Float]) -> Array[Float] 
     normalized[index] = normalized[index] / sum
   }
   normalized
+}
+
+///|
+pub fn render3d_morph_non_zero_weight_count(weights : Array[Float]) -> Int {
+  let mut count = 0
+  for weight in weights {
+    if weight != 0.0F {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn Render3dMorphState::weights(self : Render3dMorphState) -> Array[Float] {
+  self.weights
 }

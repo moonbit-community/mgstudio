@@ -19,6 +19,9 @@
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
 
 ///|
+pub const STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS : Int = 16
+
+///|
 pub fn max_view_light_probes() -> Int {
   MAX_VIEW_LIGHT_PROBES
 }
@@ -29,6 +32,129 @@ pub struct LightProbePlugin {}
 ///|
 pub fn LightProbePlugin::default() -> LightProbePlugin {
   LightProbePlugin::{  }
+}
+
+///|
+pub struct LightProbePluginState {
+  binding_arrays_supported : Bool
+  extracted_probe_count : Int
+}
+
+///|
+pub fn LightProbePluginState::default() -> LightProbePluginState {
+  LightProbePluginState::{
+    binding_arrays_supported: true,
+    extracted_probe_count: 0,
+  }
+}
+
+///|
+pub fn light_probe_plugin_state_with_extracted_probe_count(
+  state : LightProbePluginState,
+  extracted_probe_count : Int,
+) -> LightProbePluginState {
+  LightProbePluginState::{
+    ..state,
+    extracted_probe_count: if extracted_probe_count < 0 {
+      0
+    } else {
+      extracted_probe_count
+    },
+  }
+}
+
+///|
+pub struct RenderLightProbe {
+  light_from_world_transposed : Array[@math.Vec4]
+  falloff : @math.Vec3
+  parallax_correction_bounds : @math.Vec3
+  texture_index : Int
+  intensity : Float
+  flags : Int
+}
+
+///|
+pub fn RenderLightProbe::default() -> RenderLightProbe {
+  RenderLightProbe::{
+    light_from_world_transposed: [
+      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    ],
+    falloff: @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    parallax_correction_bounds: @math.Vec3::new(1.0F, 1.0F, 1.0F),
+    texture_index: -1,
+    intensity: 1.0F,
+    flags: 0,
+  }
+}
+
+///|
+pub const RENDER_LIGHT_PROBE_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : Int = 1
+
+///|
+pub const RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION : Int = 2
+
+///|
+pub fn render_light_probe_flags_insert(flags : Int, flag : Int) -> Int {
+  flags | flag
+}
+
+///|
+pub fn render_light_probe_flags_contains(flags : Int, flag : Int) -> Bool {
+  (flags & flag) != 0
+}
+
+///|
+pub struct RenderViewLightProbes {
+  binding_index_to_textures : Array[@asset.Handle[@asset.Image]?]
+  render_light_probes : Array[RenderLightProbe]
+  view_texture_index : Int
+}
+
+///|
+pub fn RenderViewLightProbes::default() -> RenderViewLightProbes {
+  RenderViewLightProbes::{
+    binding_index_to_textures: [],
+    render_light_probes: [],
+    view_texture_index: -1,
+  }
+}
+
+///|
+pub fn RenderViewLightProbes::push_texture(
+  self : RenderViewLightProbes,
+  texture : @asset.Handle[@asset.Image]?,
+) -> Int {
+  if self.binding_index_to_textures.length() >= MAX_VIEW_LIGHT_PROBES {
+    return MAX_VIEW_LIGHT_PROBES - 1
+  }
+  let index = self.binding_index_to_textures.length()
+  self.binding_index_to_textures.push(texture)
+  index
+}
+
+///|
+pub fn RenderViewLightProbes::push_probe(
+  self : RenderViewLightProbes,
+  probe : RenderLightProbe,
+) -> Unit {
+  if self.render_light_probes.length() >= MAX_VIEW_LIGHT_PROBES {
+    return
+  }
+  self.render_light_probes.push(probe)
+}
+
+///|
+pub fn RenderViewLightProbes::texture_count(
+  self : RenderViewLightProbes,
+) -> Int {
+  self.binding_index_to_textures.length()
+}
+
+///|
+pub fn RenderViewLightProbes::probe_count(self : RenderViewLightProbes) -> Int {
+  self.render_light_probes.length()
 }
 
 ///|

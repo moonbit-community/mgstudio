@@ -13,9 +13,13 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr light probe: view probe container enforces max probe count" {
+  let probes = RenderViewLightProbes::default()
+  for i in 0..<16 {
+    ignore(probes.push_texture(None))
+    probes.push_probe(RenderLightProbe::default())
+    i |> ignore
+  }
+  inspect(probes.texture_count(), content="8")
+  inspect(probes.probe_count(), content="8")
 }

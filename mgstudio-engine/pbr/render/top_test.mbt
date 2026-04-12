@@ -13,9 +13,8 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr render top: plugin state snapshot is non-negative" {
+  let state = render3d_plugin_state_from_diagnostics()
+  inspect(state.queue_cpu_ms() >= 0.0F, content="true")
+  inspect(state.execute_cpu_ms() >= 0.0F, content="true")
 }

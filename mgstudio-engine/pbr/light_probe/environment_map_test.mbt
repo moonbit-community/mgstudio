@@ -13,9 +13,12 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr light probe env map: array mode pads entries" {
+  let entries = pbr_environment_map_bind_group_entries(
+    [EnvironmentMapIds::default()],
+    true,
+    4,
+  )
+  let counts = pbr_environment_map_bind_group_entries_counts(entries)
+  inspect(counts, content="(4, 4)")
 }

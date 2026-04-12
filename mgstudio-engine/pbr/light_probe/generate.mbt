@@ -19,6 +19,73 @@
 pub type GeneratedEnvironmentMapLight = @light.GeneratedEnvironmentMapLight
 
 ///|
+pub struct GeneratorBindGroupLayouts {
+  downsampling_first : String
+  downsampling_second : String
+  radiance : String
+  irradiance : String
+  copy : String
+}
+
+///|
+pub fn GeneratorBindGroupLayouts::default() -> GeneratorBindGroupLayouts {
+  GeneratorBindGroupLayouts::{
+    downsampling_first: "downsampling_first_bind_group_layout",
+    downsampling_second: "downsampling_second_bind_group_layout",
+    radiance: "radiance_bind_group_layout",
+    irradiance: "irradiance_bind_group_layout",
+    copy: "copy_bind_group_layout",
+  }
+}
+
+///|
+pub struct GeneratorSamplers {
+  linear : String
+}
+
+///|
+pub fn GeneratorSamplers::default() -> GeneratorSamplers {
+  GeneratorSamplers::{ linear: "generator_linear_sampler" }
+}
+
+///|
+pub struct GeneratorPipelines {
+  downsample_first : Int
+  downsample_second : Int
+  copy : Int
+  radiance : Int
+  irradiance : Int
+}
+
+///|
+pub fn GeneratorPipelines::default() -> GeneratorPipelines {
+  GeneratorPipelines::{
+    downsample_first: -1,
+    downsample_second: -1,
+    copy: -1,
+    radiance: -1,
+    irradiance: -1,
+  }
+}
+
+///|
+pub struct DownsamplingConfig {
+  combine_bind_group : Bool
+}
+
+///|
+pub fn DownsamplingConfig::default() -> DownsamplingConfig {
+  DownsamplingConfig::{ combine_bind_group: false }
+}
+
+///|
+pub fn DownsamplingConfig::combine_bind_group_enabled(
+  self : DownsamplingConfig,
+) -> Bool {
+  self.combine_bind_group
+}
+
+///|
 pub fn pbr_generated_environment_map_light_default() -> GeneratedEnvironmentMapLight {
   GeneratedEnvironmentMapLight::default()
 }
@@ -29,6 +96,17 @@ pub struct EnvironmentMapGenerationPlugin {}
 ///|
 pub fn EnvironmentMapGenerationPlugin::default() -> EnvironmentMapGenerationPlugin {
   EnvironmentMapGenerationPlugin::{  }
+}
+
+///|
+pub fn pbr_downsampling_config(
+  max_storage_textures_per_shader_stage : Int,
+  supports_read_write_storage_texture : Bool,
+) -> DownsamplingConfig {
+  DownsamplingConfig::{
+    combine_bind_group: max_storage_textures_per_shader_stage >= 12 &&
+    supports_read_write_storage_texture,
+  }
 }
 
 ///|

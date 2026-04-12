@@ -16,6 +16,23 @@
 // Mesh upload cache runtime ownership moved to `pbr/render/mesh.mbt`.
 
 ///|
+pub struct Render3dMeshUploadCacheState {
+  clear_count : Int
+}
+
+///|
+pub fn Render3dMeshUploadCacheState::default() -> Render3dMeshUploadCacheState {
+  Render3dMeshUploadCacheState::{ clear_count: 0 }
+}
+
+///|
+pub fn render3d_mesh_upload_cache_state_after_clear(
+  state : Render3dMeshUploadCacheState,
+) -> Render3dMeshUploadCacheState {
+  Render3dMeshUploadCacheState::{ clear_count: state.clear_count + 1 }
+}
+
+///|
 pub fn render3d_upload_mesh_handle_cached(
   phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
   mesh_handle : @asset.Handle[@mesh.Mesh],

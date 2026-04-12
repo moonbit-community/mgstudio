@@ -13,9 +13,8 @@
 // limitations under the License.
 
 ///|
-// Bevy source alignment: `bevy_pbr/src/prepass/prepass_utils.wgsl` companion-side toggles.
-
-///|
-pub fn render3d_prepass_any_enabled(bindings : PrepassBindings3d) -> Bool {
-  bindings.any_enabled()
+test "pbr render gpu preprocess: state exposes sanitized dispatch count" {
+  let state = render3d_gpu_preprocess_state(true, false)
+  let updated = render3d_gpu_preprocess_state_with_dispatch_count(state, -2)
+  inspect(updated.dispatch_count(), content="0")
 }

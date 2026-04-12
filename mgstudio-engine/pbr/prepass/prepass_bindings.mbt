@@ -32,3 +32,13 @@ pub fn render3d_prepass_bindings_for_entity(
     deferred: has_deferred is Some(_),
   }
 }
+
+///|
+pub fn render3d_prepass_bindings(
+  depth : Bool,
+  normal : Bool,
+  motion_vector : Bool,
+  deferred : Bool,
+) -> PrepassBindings3d {
+  PrepassBindings3d::{ depth, normal, motion_vector, deferred }
+}

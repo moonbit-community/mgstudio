@@ -15,6 +15,20 @@
 // Bevy-aligned `pbr/render` entrypoint container.
 
 ///|
+pub const PBR_RENDER_PLUGIN_ID : String = "bevy_pbr::render"
+
+///|
+pub struct Render3dPluginState {
+  queue_cpu_ms : Float
+  execute_cpu_ms : Float
+}
+
+///|
+pub fn Render3dPluginState::default() -> Render3dPluginState {
+  Render3dPluginState::{ queue_cpu_ms: 0.0F, execute_cpu_ms: 0.0F }
+}
+
+///|
 pub fn render3d_queue_diagnostics_snapshot() -> (Int, Int, Float, Float) {
   (
     render3d_diagnostic_prepared_camera_count(),
@@ -38,4 +52,20 @@ pub fn render3d_build_mesh_view_bindings(
   camera_transform : @transform.Transform,
 ) -> MeshViewBindings3d {
   render3d_mesh_view_bindings(target_info, camera_transform)
+}
+
+///|
+pub fn render3d_plugin_state_from_diagnostics() -> Render3dPluginState {
+  let (_, _, queue_cpu_ms, execute_cpu_ms) = render3d_queue_diagnostics_snapshot()
+  Render3dPluginState::{ queue_cpu_ms, execute_cpu_ms }
+}
+
+///|
+pub fn Render3dPluginState::queue_cpu_ms(self : Render3dPluginState) -> Float {
+  self.queue_cpu_ms
+}
+
+///|
+pub fn Render3dPluginState::execute_cpu_ms(self : Render3dPluginState) -> Float {
+  self.execute_cpu_ms
 }
