@@ -16,13 +16,48 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/config.rs`.
 
 ///|
-pub type GizmoConfigValue = @sprite.GizmoConfig
+pub fn default_gizmo_config() -> @sprite.GizmoConfig {
+  @sprite.GizmoConfig::default()
+}
 
 ///|
-pub type GizmoLineConfigValue = @sprite.GizmoLineConfig
+pub fn default_gizmo_line_config() -> @sprite.GizmoLineConfig {
+  @sprite.GizmoLineConfig::default()
+}
 
 ///|
-pub type GizmoConfigStoreValue = @sprite.GizmoConfigStore
+pub fn default_gizmo_config_group() -> @sprite.DefaultGizmoConfigGroup {
+  @sprite.DefaultGizmoConfigGroup::default()
+}
 
 ///|
-pub type DefaultGizmoConfigValue = @sprite.DefaultGizmoConfigGroup
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_config(
+  store : @sprite.GizmoConfigStore,
+  group : G,
+) -> (@sprite.GizmoConfig, G) {
+  store.config(group)
+}
+
+///|
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_get_config(
+  store : @sprite.GizmoConfigStore,
+  group : G,
+) -> (@sprite.GizmoConfig, G)? {
+  store.get_config(group)
+}
+
+///|
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_config_mut(
+  store : @sprite.GizmoConfigStore,
+  group : G,
+) -> (Ref[@sprite.GizmoConfig], Ref[G]) {
+  store.config_mut(group)
+}
+
+///|
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_get_config_mut(
+  store : @sprite.GizmoConfigStore,
+  group : G,
+) -> (Ref[@sprite.GizmoConfig], Ref[G])? {
+  store.get_config_mut(group)
+}

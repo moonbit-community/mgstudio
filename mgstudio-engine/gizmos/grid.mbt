@@ -16,4 +16,23 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/grid.rs`.
 
 ///|
-pub type GizmoGrid2dBuilder = @sprite.Grid2dBuilder
+pub fn[Config] gizmo_grid_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  cell_count : @math.IVec2,
+  spacing : @math.Vec2,
+  color : @sprite.Color,
+) -> @sprite.Grid2dBuilder {
+  gizmos.grid_2d(isometry, cell_count, spacing, color)
+}
+
+///|
+pub fn[Config] gizmo_grid_3d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @math.Isometry3d,
+  cell_count : @math.IVec2,
+  spacing : @math.Vec2,
+  color : @sprite.Color,
+) -> Unit {
+  gizmos.grid_3d(isometry, cell_count, spacing, color)
+}

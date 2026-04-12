@@ -26,3 +26,49 @@ pub type AutoExposureCompensationCurveError = @pbr.AutoExposureCompensationCurve
 
 ///|
 pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
+
+///|
+pub fn auto_exposure_default() -> @pbr.AutoExposure {
+  @pbr.AutoExposure::default()
+}
+
+///|
+pub fn auto_exposure_new(
+  min_luminance : Float,
+  max_luminance : Float,
+) -> @pbr.AutoExposure {
+  @pbr.AutoExposure::new(min_luminance, max_luminance)
+}
+
+///|
+pub fn auto_exposure_with_range(
+  auto_exposure : @pbr.AutoExposure,
+  min_luminance : Float,
+  max_luminance : Float,
+) -> @pbr.AutoExposure {
+  auto_exposure.with_range(min_luminance, max_luminance)
+}
+
+///|
+pub fn auto_exposure_compensation_curve_default() -> @pbr.AutoExposureCompensationCurve {
+  @pbr.AutoExposureCompensationCurve::default()
+}
+
+///|
+pub fn[T : @pbr.AutoExposureCompensationCurveSource] auto_exposure_compensation_curve_from_curve(
+  source : T,
+) -> @pbr.AutoExposureCompensationCurve raise @pbr.AutoExposureCompensationCurveError {
+  @pbr.AutoExposureCompensationCurve::from_curve(source)
+}
+
+///|
+pub fn physical_camera_parameters_default() -> @pbr.PhysicalCameraParameters {
+  @pbr.PhysicalCameraParameters::default()
+}
+
+///|
+pub fn physical_camera_parameters_ev100(
+  camera : @pbr.PhysicalCameraParameters,
+) -> Float {
+  camera.ev100()
+}

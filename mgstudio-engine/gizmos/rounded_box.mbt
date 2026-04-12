@@ -16,4 +16,11 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/rounded_box.rs`.
 
 ///|
-pub type GizmoRoundedRectBuilder = @sprite.RoundedRectBuilder
+pub fn[Config] gizmo_rounded_rect_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  size : @math.Vec2,
+  color : @sprite.Color,
+) -> @sprite.RoundedRectBuilder {
+  gizmos.rounded_rect_2d(isometry, size, color)
+}

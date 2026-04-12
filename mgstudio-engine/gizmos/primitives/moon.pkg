@@ -1,5 +1,7 @@
 import {
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
 }
 
 supported_targets = "native"

@@ -16,7 +16,65 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/circles.rs`.
 
 ///|
-pub type GizmoCircle = @math.Circle
+pub fn[Config] gizmo_circle_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  radius : Float,
+  color : @sprite.Color,
+) -> @sprite.Ellipse2dBuilder {
+  gizmos.circle_2d(isometry, radius, color)
+}
 
 ///|
-pub type GizmoArc2d = @math.Arc2d
+pub fn[Config] gizmo_circle_3d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : @sprite.Color,
+) -> Unit {
+  gizmos.circle_3d(isometry, radius, color)
+}
+
+///|
+pub fn[Config] gizmo_ellipse_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  half_size : @math.Vec2,
+  color : @sprite.Color,
+) -> @sprite.Ellipse2dBuilder {
+  gizmos.ellipse_2d(isometry, half_size, color)
+}
+
+///|
+pub fn[Config] gizmo_sphere_3d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : @sprite.Color,
+) -> Unit {
+  gizmos.sphere_3d(isometry, radius, color)
+}
+
+///|
+pub fn[Config] gizmo_draw_circle_shape_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  circle : @math.Circle,
+  color : @sprite.Color,
+) -> @sprite.Ellipse2dBuilder {
+  gizmos.circle_2d(isometry, circle.radius, color)
+}
+
+///|
+pub fn[Config] gizmo_draw_arc_shape_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  arc : @math.Arc2d,
+  color : @sprite.Color,
+) -> @sprite.Arc2dBuilder {
+  let start = @sprite.Isometry2d::new(
+    isometry.translation,
+    isometry.rotation - arc.half_angle,
+  )
+  gizmos.arc_2d(start, arc.half_angle * 2.0F, arc.radius, color)
+}

@@ -16,4 +16,39 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/arrows.rs`.
 
 ///|
-pub type GizmoArrowBuilder = @sprite.ArrowBuilder
+pub fn[Config] gizmo_arrow_2d(
+  gizmos : @sprite.Gizmos[Config],
+  start : @math.Vec2,
+  end : @math.Vec2,
+  color : @sprite.Color,
+) -> @sprite.ArrowBuilder {
+  gizmos.arrow_2d(start, end, color)
+}
+
+///|
+pub fn[Config] gizmo_arrow_3d(
+  gizmos : @sprite.Gizmos[Config],
+  start : @math.Vec3,
+  end : @math.Vec3,
+  color : @sprite.Color,
+) -> Unit {
+  gizmos.arrow_3d(start, end, color)
+}
+
+///|
+pub fn[Config] gizmo_axes_2d(
+  gizmos : @sprite.Gizmos[Config],
+  isometry : @sprite.Isometry2d,
+  base_length : Float,
+) -> Unit {
+  gizmos.axes_2d(isometry, base_length)
+}
+
+///|
+pub fn[Config] gizmo_axes_3d(
+  gizmos : @sprite.Gizmos[Config],
+  transform : @transform.Transform,
+  base_length : Float,
+) -> Unit {
+  gizmos.axes_3d(transform, base_length)
+}
