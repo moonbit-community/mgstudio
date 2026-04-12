@@ -16,6 +16,6 @@
 test "camera_controller boundary re-exports free camera components" {
   let camera = @camera_controller.FreeCamera::default()
   let state = @camera_controller.FreeCameraState::default()
-  debug_inspect(camera.walk_speed.to_string(), content="5")
+  debug_inspect(camera.walk_speed.to_string(), content="\"5\"")
   debug_inspect(state.enabled, content="true")
 }

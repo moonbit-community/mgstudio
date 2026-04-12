@@ -112,6 +112,7 @@ This file must not exceed 200 lines.
 - [x] `gizmos/plugin-entry-ownerization`: replace delegated `gizmos/lib` and `gizmos_render/lib` shells with real plugin structs (`PluginReplacement` + marker gating + explicit subplugin composition).
 - [x] `gizmos/skinned-mesh-bounds-entry-ownerization`: make `skinned_mesh_bounds` behavior-bearing (`GizmoConfigGroup` + `Component` + plugin install path) instead of struct-only placeholder.
 - [x] `math/primitives/top-ownerization`: keep Bevy-shaped type aggregation while adding behavior-bearing primitive helper surface in `math/primitives/top`.
+- [x] `camera_controller/ownerization`: move `free_camera` + `pan_camera` from pure forwarding into package-owned runtime components/systems/plugins.
 - [x] `module-tag-cleanup`: remove leftover `*_MODULE_ID`/`*_module_id` marker-only APIs from `math/curve/derivatives`, `ui/layout`, `gizmos/primitives`, and `camera/visibility`.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
