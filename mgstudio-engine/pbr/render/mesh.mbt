@@ -49,6 +49,30 @@ pub fn render3d_upload_mesh_handle_cached(
 }
 
 ///|
+pub struct Render3dMeshUploadCacheState {
+  clear_count : Int
+}
+
+///|
+pub fn Render3dMeshUploadCacheState::default() -> Render3dMeshUploadCacheState {
+  Render3dMeshUploadCacheState::{ clear_count: 0 }
+}
+
+///|
+pub fn render3d_mesh_upload_cache_state_after_clear(
+  state : Render3dMeshUploadCacheState,
+) -> Render3dMeshUploadCacheState {
+  Render3dMeshUploadCacheState::{ clear_count: state.clear_count + 1 }
+}
+
+///|
+pub fn render3d_clear_mesh_upload_cache(
+  phase_state_ref : Ref[Render3dPhaseState],
+) -> Unit {
+  phase_state_ref.val.mesh_upload_cache.clear()
+}
+
+///|
 pub(all) struct MeshGpuDrawPayload3d {
   mesh_id : Int
   preprocess_camera_key_hi : Int
