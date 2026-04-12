@@ -16,19 +16,28 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/cluster.rs`.
 
 ///|
-pub fn pbr_cluster_runtime_available() -> Bool {
-  true
+pub struct ClusterConfig3d {
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
 }
 
 ///|
-pub type ClusterConfig3d = @pbr_cluster.ClusterConfig3d
+pub fn ClusterConfig3d::default() -> ClusterConfig3d {
+  ClusterConfig3d::{ dimensions_x: 16, dimensions_y: 9, dimensions_z: 24 }
+}
 
 ///|
-pub fn pbr_cluster_config_default() -> ClusterConfig3d {
-  ClusterConfig3d::default()
+pub fn ClusterConfig3d::with_dimensions(
+  _self : ClusterConfig3d,
+  dimensions_x : Int,
+  dimensions_y : Int,
+  dimensions_z : Int,
+) -> ClusterConfig3d {
+  ClusterConfig3d::{ dimensions_x, dimensions_y, dimensions_z }
 }
 
 ///|
 pub fn pbr_cluster_tile_count(config : ClusterConfig3d) -> Int {
-  @pbr_cluster.pbr_cluster_tile_count(config)
+  config.dimensions_x * config.dimensions_y * config.dimensions_z
 }

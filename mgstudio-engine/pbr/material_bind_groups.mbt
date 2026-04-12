@@ -16,17 +16,38 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/material_bind_groups.rs`.
 
 ///|
-pub fn pbr_material_bind_groups_runtime_available() -> Bool {
-  true
+pub struct MaterialBindGroupEntry {
+  material_id : Int
+  bind_group_id : Int
 }
 
 ///|
-pub type MaterialBindGroupEntry = @pbr_material_bind_groups.MaterialBindGroupEntry
+pub fn MaterialBindGroupEntry::new(
+  material_id : Int,
+  bind_group_id : Int,
+) -> MaterialBindGroupEntry {
+  MaterialBindGroupEntry::{ material_id, bind_group_id }
+}
 
 ///|
-pub type MaterialBindGroups = @pbr_material_bind_groups.MaterialBindGroups
+pub struct MaterialBindGroups {
+  entries : Array[MaterialBindGroupEntry]
+}
 
 ///|
-pub fn pbr_material_bind_groups_default() -> MaterialBindGroups {
-  MaterialBindGroups::default()
+pub fn MaterialBindGroups::default() -> MaterialBindGroups {
+  MaterialBindGroups::{ entries: [] }
+}
+
+///|
+pub fn MaterialBindGroups::push(
+  self : MaterialBindGroups,
+  entry : MaterialBindGroupEntry,
+) -> Unit {
+  self.entries.push(entry)
+}
+
+///|
+pub fn MaterialBindGroups::entry_count(self : MaterialBindGroups) -> Int {
+  self.entries.length()
 }
