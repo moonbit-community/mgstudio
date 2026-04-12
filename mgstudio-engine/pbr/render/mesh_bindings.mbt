@@ -83,47 +83,63 @@ fn mesh_binding_layout_slots(
   morphed : Bool,
   motion_vectors : Bool,
 ) -> Array[(MeshBindingSlot3d, Int)] {
-  let slots : Array[(MeshBindingSlot3d, Int)] = [(
-    MeshBindingSlot3d::Model,
-    mesh_binding_slot_index(MeshBindingSlot3d::Model),
-  )]
+  let slots : Array[(MeshBindingSlot3d, Int)] = [
+    (
+      MeshBindingSlot3d::Model,
+      mesh_binding_slot_index(MeshBindingSlot3d::Model),
+    ),
+  ]
   if skinned {
-    slots.push((
-      MeshBindingSlot3d::SkinCurrent,
-      mesh_binding_slot_index(MeshBindingSlot3d::SkinCurrent),
-    ))
+    slots.push(
+      (
+        MeshBindingSlot3d::SkinCurrent,
+        mesh_binding_slot_index(MeshBindingSlot3d::SkinCurrent),
+      ),
+    )
     if motion_vectors {
-      slots.push((
-        MeshBindingSlot3d::SkinPrevious,
-        mesh_binding_slot_index(MeshBindingSlot3d::SkinPrevious),
-      ))
+      slots.push(
+        (
+          MeshBindingSlot3d::SkinPrevious,
+          mesh_binding_slot_index(MeshBindingSlot3d::SkinPrevious),
+        ),
+      )
     }
   }
   if morphed {
-    slots.push((
-      MeshBindingSlot3d::MorphWeightsCurrent,
-      mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsCurrent),
-    ))
-    slots.push((
-      MeshBindingSlot3d::MorphTargets,
-      mesh_binding_slot_index(MeshBindingSlot3d::MorphTargets),
-    ))
+    slots.push(
+      (
+        MeshBindingSlot3d::MorphWeightsCurrent,
+        mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsCurrent),
+      ),
+    )
+    slots.push(
+      (
+        MeshBindingSlot3d::MorphTargets,
+        mesh_binding_slot_index(MeshBindingSlot3d::MorphTargets),
+      ),
+    )
     if motion_vectors {
-      slots.push((
-        MeshBindingSlot3d::MorphWeightsPrevious,
-        mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsPrevious),
-      ))
+      slots.push(
+        (
+          MeshBindingSlot3d::MorphWeightsPrevious,
+          mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsPrevious),
+        ),
+      )
     }
   }
   if lightmapped {
-    slots.push((
-      MeshBindingSlot3d::LightmapTexture,
-      mesh_binding_slot_index(MeshBindingSlot3d::LightmapTexture),
-    ))
-    slots.push((
-      MeshBindingSlot3d::LightmapSampler,
-      mesh_binding_slot_index(MeshBindingSlot3d::LightmapSampler),
-    ))
+    slots.push(
+      (
+        MeshBindingSlot3d::LightmapTexture,
+        mesh_binding_slot_index(MeshBindingSlot3d::LightmapTexture),
+      ),
+    )
+    slots.push(
+      (
+        MeshBindingSlot3d::LightmapSampler,
+        mesh_binding_slot_index(MeshBindingSlot3d::LightmapSampler),
+      ),
+    )
   }
   slots
 }
@@ -159,8 +175,12 @@ fn mesh_binding_layout(
   motion_vectors : Bool,
 ) -> MeshBindingLayout3d {
   MeshBindingLayout3d::{
-    name: mesh_binding_layout_name(lightmapped, skinned, morphed, motion_vectors),
-    bindings: mesh_binding_layout_slots(lightmapped, skinned, morphed, motion_vectors),
+    name: mesh_binding_layout_name(
+      lightmapped, skinned, morphed, motion_vectors,
+    ),
+    bindings: mesh_binding_layout_slots(
+      lightmapped, skinned, morphed, motion_vectors,
+    ),
   }
 }
 

@@ -149,12 +149,10 @@ pub fn render3d_begin_pass_3d(
   clear_enabled~ : Int,
 ) -> Unit {
   let clip_from_world = render3d_pass_projection_clip_from_world(
-    pass_projection,
-    camera_transform,
+    pass_projection, camera_transform,
   )
   let unjittered_clip_from_world = render3d_pass_projection_unjittered_clip_from_world(
-    pass_projection,
-    camera_transform,
+    pass_projection, camera_transform,
   )
   let resolved_previous_clip_from_world = match previous_clip_from_world {
     Some(value) => value

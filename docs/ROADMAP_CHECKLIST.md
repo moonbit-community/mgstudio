@@ -1,53 +1,66 @@
 This file must not exceed 200 lines.
 
-| Bevy Side | mgstudio Side | Status | Progress | Remaining Gaps / Notes | Next Action |
-|---|---|---|---:|---|---|
-| `bevy_app` | `mgstudio-engine/app` | ✅ Mostly Done | 98% | Core schedule/system-param path stays stable and `moon test app --target native` (116/116) remains green on the latest 2026-04-12 run after wbtest snapshot normalization. | Keep maintenance-level parity checks with periodic wbtest snapshot audits. |
-| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | ✅ Mostly Done | 98% | `Changed<T>` query filter + system param path are in mainline and `moon test ecs --target native` (71/71) remains green on the latest 2026-04-12 run. | Keep maintenance-level parity checks and avoid reopening legacy surfaces. |
-| `bevy_transform` | `mgstudio-engine/transform` | ✅ Mostly Done | 98% | Transform propagation/runtime path is stable and `moon test transform --target native` (26/26) remains green on the latest 2026-04-12 run. | Keep maintenance-level parity checks with stress-scene regression tracking. |
-| `bevy_hierarchy` | `mgstudio-engine/hierarchy` | ✅ Done | 98% | Mainline behavior is aligned and hierarchy package tests remain green (`moon test hierarchy --target native`, 6/6) on the latest 2026-04-12 run. | Keep regression checks on large scene cases. |
-| `bevy_reflect` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Reflection is intentionally out of scope. | Do not implement unless scope changes. |
-| `bevy_tasks` | N/A (explicit non-goal) | ⏸ Excluded | 0% | Async tasks parity is intentionally out of scope. | Keep excluded in mapping scripts. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | ✅ Mostly Done | 98% | File topology is highly converged; owner split (`mesh3d_draw_storage_binding`, `mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_preprocess_indirect_offsets`) remains stable and `moon check render --target native` stays green on the latest 2026-04-12 run. | Keep maintenance-level owner convergence only. |
-| `bevy_render::renderer` internals | `mgstudio-engine/render/renderer` | ✅ Mostly Done | 98% | Motion-vector/main-pass/storage-binding owners are now split (`mesh3d_draw_motion_vector_pass`, `mesh3d_draw_main_pass`, `mesh3d_draw_storage_binding`), legacy surface-state naming was removed, and render/full checks remain green (`moon check render`, `moon check --target native`) on the latest 2026-04-12 run. | Keep converging remaining draw-entry orchestration ownership by Bevy responsibilities. |
-| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | ✅ Mostly Done | 98% | Package checks remain green (`moon check core_pipeline --target native`) and `mip_generation` includes Bevy-shaped jobs + pipelines resources with plugin init/runtime bookkeeping. | Keep maintenance-level runtime-depth parity closure. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | ✅ Mostly Done | 99% | `ssao/ssr/volumetric_fog/light_probe/atmosphere/transmission/decal/material/pbr_material/extended_material/medium/parallax/fog/cluster/material_bind_groups/contact_shadows` are now owner-shaped surfaces (not alias-only), and `moon test pbr --target native` is green (68/68) on the latest 2026-04-12 run. | Keep module-level parity through targeted tail audits only. |
-| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | ✅ Mostly Done | 98% | Projection/frustum/preprocess owners are aligned; projection runtime helpers (`render3d_camera_pass_projection` / `render3d_projection_runtime_update`) are folded into `pbr/projection.mbt` (root `render_view_bindings_runtime.mbt` removed), render stage entry systems (`render3d_extract_system` / `render3d_prepare_system` / `render3d_queue_system` / `render3d_execute_system`) are folded into `pbr/render_execute.mbt` (root `render_systems_runtime.mbt` removed), camera-order runtime (`render3d_refresh_prepared_camera_order_if_needed` / `render3d_prepared_camera_phase_items`) is folded into `pbr/render_execute_render_cameras.mbt` (root `render_camera_order_runtime.mbt` removed), fog runtime (`render3d_camera_distance_fog` / `render3d_apply_distance_fog`) is folded into `pbr/fog.mbt` (root `render_fog_runtime.mbt` removed), morph runtime (`render3d_extract_morphs` / `render3d_prepare_morphs`) is folded into `pbr/mesh.mbt` (root `render_morph_runtime.mbt` removed), postprocess runtime helpers are folded into `pbr/render_execute_camera_postprocess.mbt` (root `render_postprocess_runtime.mbt` removed), wireframe cache/helpers are moved from `render_scene_resources.mbt` into `render_execute_camera_main_pass.mbt`, motion-blur history/cache helpers are moved from `render_scene_resources.mbt` into `render_execute_collect.mbt`, point-light shadow target caching is moved from `render_scene_resources.mbt` into `render_execute_camera_point_shadow.mbt`, and remaining heavy runtime carriers are renamed to non-legacy paths (`render_gpu_preprocess.mbt`, `render_scene_resources.mbt`) as prep for final owner-level split; mesh draw payload and mesh upload-cache ownership are converged into `pbr/render/mesh.mbt` (root `render_mesh_upload_cache_runtime.mbt` removed), `render3d_begin_pass_3d` is moved into `pbr/render/view.mbt`, and `mesh_bindings` exposes Bevy-shaped mesh layout/binding slot metadata (`MeshLayouts3d` + slot indices + buffer size constants); `moon test pbr --target native` is green (70/70) on the latest 2026-04-12 run. | Keep owner-boundary convergence maintenance-only. |
-| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | ✅ Mostly Done | 98% | Prepass pipeline state and owner split are stable, and `moon check pbr/prepass --target native` remains green on the latest 2026-04-12 run. | Track only residual rendering-tail regressions. |
-| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | ✅ Mostly Done | 98% | Current mgstudio scope keeps meshlet path in stable Bevy-shaped owner layout, and `moon check pbr/meshlet --target native` remains green on the latest 2026-04-12 run. | Keep in maintenance mode unless scope expands. |
-| `bevy_material` | `mgstudio-engine/material` | ✅ Mostly Done | 98% | Material package/runtime path is stable and `moon check material --target native` remains green on the latest 2026-04-12 run. | Track deferred/forward-decal tails as maintenance items. |
-| `bevy_camera` (3D projection path) | `mgstudio-engine/pbr` + `pbr/render` + `camera` | ✅ Mostly Done | 99% | Projection-facing public surface has been consolidated in `camera/projection.mbt`, `camera/camera.mbt` no longer owns projection aliases, and `moon check camera --target native` remains green on the latest 2026-04-12 run. | Continue reducing remaining pbr-side compatibility wrappers while keeping package dependency acyclic. |
-| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | ✅ Mostly Done | 98% | `moon test sprite --target native` (60/60) remains green on the latest 2026-04-12 run and stress gate stays stable after pointer/runtime fixes. | Keep screenshot parity checks as maintenance guard. |
-| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | ✅ Mostly Done | 98% | `moon test ui --target native` (42/42) and `moon check ui_render --target native` remain green on the latest 2026-04-12 run, and fallback camera-context naming was cleaned in the UI render path. | Keep traversal/picking tails in maintenance monitoring. |
-| `bevy_text` | `mgstudio-engine/text` | ✅ Mostly Done | 98% | `moon test text --target native` (10/10) remains green on the latest 2026-04-12 run and stress parity gates stay stable. | Keep glyph/queue tails as maintenance-only profiling items. |
-| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | ✅ Mostly Done | 98% | `moon test gltf --target native` (4/4), `moon test scene --target native` (33/33), and `moon check examples/gltf/load_gltf --target native` remain green on the latest 2026-04-12 run. | Continue screenshot maintenance audits only. |
-| `bevy_animation` | `mgstudio-engine/animation` | ✅ Mostly Done | 98% | `moon test animation --target native` (23/23) and `moon check examples/animation/animated_mesh --target native` remain green on the latest 2026-04-12 run. | Keep as done-core; verify via gltf/stress integration passes. |
-| `bevy_scene` (static/serialized scene path) | `mgstudio-engine/scene` | ✅ Mostly Done | 98% | Static `SceneRoot`/spawner/glTF runtime path is stable with current integration and `moon test scene --target native` (33/33) remains green on the latest 2026-04-12 run. | Keep maintenance-level parity checks only. |
-| `bevy_scene` (`dynamic_scene*` family) | N/A (explicit non-goal: dynamic) | ⏸ Excluded | 0% | Dynamic-scene/reflect-heavy path is intentionally out of scope. | Keep excluded unless scope changes. |
-| `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | ✅ Mostly Done | 98% | `moon test gizmos --target native` (2/2) remains green on the latest 2026-04-12 run and parity gate runs stay stable. | Keep representative screenshot audits as maintenance guard. |
-| `bevy_picking` | `mgstudio-engine/picking` | ✅ Mostly Done | 98% | `moon test picking --target native` (11/11) remains green on the latest 2026-04-12 run and pointer hit-test path remains stable after UI camera-context cleanup. | Keep traversal edge cases in regression suite only. |
-| `bevy_input` | `mgstudio-engine/input` + `window` | ✅ Mostly Done | 98% | `moon test input --target native` (23/23) and `moon test window --target native` (27/27) remain green on the latest 2026-04-12 run. | Keep focused regression checks only. |
-| `bevy_window`/`bevy_winit` | `mgstudio-engine/window` + `winit` | ✅ Mostly Done | 98% | Window package tests are green (`moon test window --target native`, 27/27) and example/path-audit parity remains stable on current excludes. | Keep platform-edge regressions under maintenance watch. |
-| `bevy_asset` | `mgstudio-engine/asset` | ✅ Mostly Done | 98% | Asset decode/layout path remains stable on native checks (`moon check asset --target native`) after source-path and codec cleanup, verified on the latest 2026-04-12 run. | Keep Bevy-shaped layout audits as maintenance items. |
-| `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | ✅ Mostly Done | 98% | Diagnostics overlay, timeline trace plugin, stress diagnostics plugin, and stress trace collection script are in mainline; `moon test diagnostic --target native` (20/20), `moon test dev_tools --target native` (6/6), and `moon check log --target native` remain green on the latest 2026-04-12 run. | Keep maintenance-level parity checks only. |
-| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | ✅ Mostly Done | 98% | Anti-alias plugin/runtime replacement surfaces are stable and `moon check anti_alias --target native` remains green on the latest 2026-04-12 run. | Keep render-graph-depth parity as maintenance tail work. |
-| `bevy_light` | `mgstudio-engine/light` | ✅ Mostly Done | 98% | Light/cluster config/resources and assignment systems are stable in render gate flows and `moon check light --target native` remains green on the latest 2026-04-12 run. | Keep clustered-depth parity as maintenance-level tail. |
-| `bevy_math` | `mgstudio-engine/math` | ✅ Done | 99% | Inset primitive owner has been moved to `math/primitives/inset.mbt` (with `math/inset.mbt` removed), and package tests/check are green (`moon test math --target native`, 32/32) on the latest 2026-04-12 run. | Keep maintenance mode with targeted parity diffs only. |
-| `bevy_mesh` | `mgstudio-engine/mesh` | ✅ Mostly Done | 98% | Mesh core surface and render-coupled paths are stable and `moon check mesh --target native` remains green on the latest 2026-04-12 run. | Keep render-coupled deltas in maintenance-only tracking. |
-| `bevy_color` | `mgstudio-engine/color` | ✅ Done | 98% | Core color authoring/runtime surface is stable and package tests/check are green (`moon test color --target native`, 5/5) on the latest 2026-04-12 run. | Maintain with render/pbr changes. |
-| `bevy_image` | `mgstudio-engine/image` | ✅ Mostly Done | 98% | Image runtime/tests are stable after decode-path cleanup and `moon check image --target native` remains green on the latest 2026-04-12 run. | Keep advanced-format tails as maintenance audits. |
-| `bevy_a11y` | `mgstudio-engine/a11y` | ✅ Done | 98% | API surface and plugin/resource/message path are aligned and package tests pass (`moon test a11y --target native`, 1/1) on the latest 2026-04-12 run. | Keep maintenance-level parity checks only. |
-| `bevy_rapier` examples parity | `mgstudio-engine/physics2d` + `physics3d` + examples | ✅ Mostly Done | 98% | Physics package tests are green (`moon test physics2d --target native`, 17/17; `moon test physics3d --target native`, 7/7) and current stress/native gates remain stable on the latest 2026-04-12 run. | Keep screenshot-level parity drift checks in maintenance runs. |
-| `bevy_remote` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder backend removed; no fake runtime left. | Reintroduce only with real transport/protocol backend. |
-| `bevy_solari` | Removed from mainline | ✅ Done (scope choice) | 100% | Placeholder runtime removed from mainline. | Reintroduce only with executable implementation. |
-| Stress tests parity gate | `examples/stress_tests/*` + scripts | ✅ Mostly Done | 98% | Latest full hard gate (`MGSTUDIO_PARITY_INCLUDE_STRESS=1`, 2026-04-12) is green and stress report lands at `/tmp/mgstudio_stress_gate_20260412_035918/results.tsv`. | Keep gate green and only track regressions. |
-| Visual screenshot audit | `/tmp` captures + parity docs | ✅ Mostly Done | 97% | Latest 3D screenshot gate artifacts are green at `.private/parity/artifacts/3d_examples_gate/20260412_035829` and included in the full hard gate pass. | Keep full-run capture as maintenance regression guard. |
-| Native test environment | workspace build/test toolchain | ✅ Mostly Done | 97% | `moon check --target native` and full parity hard gates (visual + stress) are green on the latest 2026-04-12 run. | Keep full-suite repeatability/hang closure as maintenance follow-up. |
+| Bevy Side | mgstudio Side | Structure | Runtime | Overall | Status | Main Gaps |
+|---|---|---:|---:|---:|---|---|
+| `bevy_app` | `mgstudio-engine/app` | 96% | 85% | 85% | 🟡 In Progress | System scheduling and ergonomics still diverge in several APIs. |
+| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 88% | 80% | 80% | 🟡 In Progress | By-design architecture differences from Bevy remain and need documented boundaries. |
+| `bevy_transform` | `mgstudio-engine/transform` | 95% | 86% | 86% | 🟡 In Progress | Stress-scene throughput and integration ordering still need parity validation. |
+| `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
+| `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
+| `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
+| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
+| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 66% | 66% | 🟡 In Progress | PBR module shape is close, but runtime parity is still significantly incomplete. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 60% | 60% | 🟡 In Progress | `RENDER-003..012` are still open and block true behavior parity. |
+| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
+| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
+| `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
+| `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 76% | 76% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
+| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 78% | 78% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
+| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 72% | 72% | 🟡 In Progress | Pointer-hit and layout/render consistency still require continuous parity checks. |
+| `bevy_text` | `mgstudio-engine/text` | 90% | 66% | 66% | 🟡 In Progress | Text shaping/BiDi dependency gaps still block full behavior equivalence. |
+| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 93% | 70% | 70% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
+| `bevy_animation` | `mgstudio-engine/animation` | 93% | 68% | 68% | 🟡 In Progress | Typed event and runtime coupling still need deeper source-level alignment. |
+| `bevy_scene` (static scene path) | `mgstudio-engine/scene` | 92% | 72% | 72% | 🟡 In Progress | Spawn/runtime integration has remaining parity-tail differences. |
+| `bevy_scene` (`dynamic_scene*`) | N/A (explicit non-goal: dynamic) | 0% | 0% | 0% | ⏸ Excluded | Dynamic-scene path remains explicitly out of scope. |
+| `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | 90% | 74% | 74% | 🟡 In Progress | Gizmo rendering/runtime polish and behavior tails are still pending. |
+| `bevy_picking` | `mgstudio-engine/picking` | 90% | 70% | 70% | 🟡 In Progress | Camera-space and UI interaction edge cases still need strict parity validation. |
+| `bevy_input` | `mgstudio-engine/input` | 94% | 82% | 82% | 🟡 In Progress | Remaining platform/event-order corner cases still need alignment checks. |
+| `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 80% | 80% | 🟡 In Progress | Monitor-aware sizing and platform-semantics tails are still open. |
+| `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
+| `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
+| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
+| `bevy_light` | `mgstudio-engine/light` | 92% | 72% | 72% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
+| `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
+| `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
+| `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
+| `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
+| `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 88% | 88% | 🟡 In Progress | Final semantic parity audit against Bevy accessibility behavior is pending. |
+| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 64% | 64% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
+| Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
+| Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
+| Workspace-wide native validation | `moon check/test` integration | 90% | 58% | 58% | 🟡 In Progress | Full native test reliability is still blocked by remaining environment/runtime gaps. |
 
 | Rollup | Value |
 |---|---:|
-| Migration focus | Bevy-first source/structure parity (not heuristic tuning) |
-| Done / Mostly done rows | 37 / 39 |
-| In-progress rows | 0 / 39 |
-| Excluded by scope rows | 2 / 39 |
-| Last updated | 2026-04-12 (am26) |
+| Bevy→mgstudio path parity (considered scope) | 100% (`1031/1031`, `missing=0`, 2026-04-12) |
+| Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
+| Current weighted migration completion (included scope) | 73% |
+| Last updated | 2026-04-12 |
+
+- [ ] `render/pbr`: close `RENDER-003` by introducing Bevy-shaped global skin uniform allocator and previous-frame buffers.
+- [ ] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove flow matching Bevy boundaries.
+- [ ] `render/pbr`: close `RENDER-005` by adding dedicated motion-vector flag stage after skin/morph extraction.
+- [ ] `render/pbr`: close `RENDER-006` by moving remaining bind-group creation fully into prepare-bind-groups stage.
+- [ ] `render/pbr`: close `RENDER-007` by aligning per-view bind-group ownership and preparation ordering.
+- [ ] `render/pbr`: close `RENDER-008` by matching GPU preprocess flush/prepare lifecycle to Bevy stage split.
+- [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
+- [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
+- [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
+- [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
+- [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
+- [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.
+- [ ] `asset/image`: close runtime decode/link gaps and restore stable native testability.
+- [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence.
+- [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.

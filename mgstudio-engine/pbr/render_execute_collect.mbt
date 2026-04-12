@@ -124,7 +124,7 @@ fn render3d_execute_collect_cameras(
   gpu_instance_buffer_builder_requested : Bool,
   gpu_culling_supported : Bool,
   prepass_enabled : Bool,
-) -> (Array[ExtractedCamera3d], Bool) {
+) -> Array[ExtractedCamera3d] {
   let trace_collect_cameras_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_cameras",
@@ -134,7 +134,6 @@ fn render3d_execute_collect_cameras(
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
-  let mut needs_mesh_previous_transform = false
   source_world.for_each_component(ecs_key_camera3d, fn(entity, camera3d) {
     let camera = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
@@ -213,9 +212,6 @@ fn render3d_execute_collect_cameras(
         is Some(_) ||
         gpu_occlusion_culling_enabled
       )
-    if motion_vector_prepass_enabled {
-      needs_mesh_previous_transform = true
-    }
     let temporal_anti_aliasing = try! source_world.get_by_key(
       entity, ecs_key_temporal_anti_aliasing,
     )
@@ -342,5 +338,17 @@ fn render3d_execute_collect_cameras(
     "execute_3d_collect_cameras",
     trace_collect_cameras_start_us,
   )
-  (cameras, needs_mesh_previous_transform)
+  cameras
+}
+
+///|
+fn render3d_set_mesh_motion_vector_flags(
+  cameras : Array[ExtractedCamera3d],
+) -> Bool {
+  for camera in cameras {
+    if camera.payload.motion_vector_prepass_enabled {
+      return true
+    }
+  }
+  false
 }

@@ -85,6 +85,12 @@ fn render3d_queue_take_frame(world : @ecs.World) -> Render3dQueuedFrame? {
 }
 
 ///|
+fn render3d_queue_has_frame(world : @ecs.World) -> Bool {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  state_ref.val.queued_frame is Some(_)
+}
+
+///|
 fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
   state_ref.val.queued_frame = None

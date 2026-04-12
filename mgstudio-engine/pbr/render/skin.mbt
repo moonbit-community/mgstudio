@@ -73,15 +73,52 @@ fn render3d_has_prepared_skin_binding(
 }
 
 ///|
+fn render3d_phase_release_skin_binding_slot(
+  phase_state_ref : Ref[Render3dPhaseState],
+  slot : Int,
+) -> Unit {
+  if slot < 0 {
+    return
+  }
+  for existing in phase_state_ref.val.skin_binding_free_slots {
+    if existing == slot {
+      return
+    }
+  }
+  phase_state_ref.val.skin_binding_free_slots.push(slot)
+}
+
+///|
+fn render3d_phase_allocate_skin_binding_slot(
+  phase_state_ref : Ref[Render3dPhaseState],
+) -> Int {
+  match phase_state_ref.val.skin_binding_free_slots.pop() {
+    Some(slot) => slot
+    None => {
+      let slot = phase_state_ref.val.next_skin_binding_slot
+      phase_state_ref.val.next_skin_binding_slot = slot + 1
+      slot
+    }
+  }
+}
+
+///|
 fn render3d_phase_remove_skin(
   phase_state_ref : Ref[Render3dPhaseState],
   entity : @core.Entity,
 ) -> Unit {
+  let mut removed_skin_binding_slot : Int? = None
   match phase_state_ref.val.prepared_skin_bindings.get(entity.id) {
     Some(binding) =>
       if binding.entity_generation == entity.generation {
         phase_state_ref.val.prepared_skin_bindings.remove(entity.id) |> ignore
+        removed_skin_binding_slot = Some(binding.key_hi)
       }
+    None => ()
+  }
+  match removed_skin_binding_slot {
+    Some(slot) =>
+      render3d_phase_release_skin_binding_slot(phase_state_ref, slot)
     None => ()
   }
   let skin_key = render3d_skin_entity_key(entity)
@@ -152,10 +189,23 @@ fn render3d_phase_mark_skin_prepared(
   phase_state_ref : Ref[Render3dPhaseState],
   entity : @core.Entity,
 ) -> Unit {
+  match phase_state_ref.val.prepared_skin_bindings.get(entity.id) {
+    Some(binding) =>
+      if binding.entity_generation == entity.generation {
+        return
+      } else {
+        render3d_phase_release_skin_binding_slot(
+          phase_state_ref,
+          binding.key_hi,
+        )
+      }
+    None => ()
+  }
+  let slot = render3d_phase_allocate_skin_binding_slot(phase_state_ref)
   phase_state_ref.val.prepared_skin_bindings.set(entity.id, PreparedSkinBinding3d::{
     entity_generation: entity.generation,
-    key_hi: entity.id,
-    key_lo: entity.generation,
+    key_hi: slot,
+    key_lo: 0,
   })
 }
 
@@ -204,6 +254,8 @@ pub fn render3d_extract_skin_bindings(
   phase_state_ref.val.skin_upload_queue.clear()
   if source_world.component_count(@mesh.SkinnedMesh::component()) == 0 {
     phase_state_ref.val.prepared_skin_bindings.clear()
+    phase_state_ref.val.next_skin_binding_slot = 0
+    phase_state_ref.val.skin_binding_free_slots.clear()
     phase_state_ref.val.skin_joint_to_skins.clear()
     phase_state_ref.val.skin_joints_by_skin.clear()
     phase_state_ref.val.skin_joint_count_by_skin.clear()

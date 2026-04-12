@@ -116,6 +116,25 @@ fn render3d_prepare_system_in_render_app(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_prepare_resources_flush_system_in_render_app(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_resources_flush_system(world)
+}
+
+///|
+fn render3d_prepare_meshes_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_prepare_meshes_system(world)
+}
+
+///|
+fn render3d_prepare_bind_groups_system_in_render_app(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_bind_groups_system(world)
+}
+
+///|
 fn render3d_queue_system_in_render_app(world : @ecs.World) -> Unit {
   render3d_queue_system(world)
 }
@@ -141,6 +160,24 @@ fn configure_mesh_render_sub_app(
     @app.PostUpdate,
     @app.system(render3d_prepare_system_in_render_app).in_set(
       render3d_set_prepare_resources,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_prepare_resources_flush_system_in_render_app).in_set(
+      render3d_set_prepare_resources_flush,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_prepare_meshes_system_in_render_app).in_set(
+      render3d_set_prepare_meshes,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_prepare_bind_groups_system_in_render_app).in_set(
+      render3d_set_prepare_bind_groups,
     ),
   )
   .add_systems(
