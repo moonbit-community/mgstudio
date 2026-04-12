@@ -52,12 +52,6 @@ priv struct PointLightShadowTargetsEntry {
 }
 
 ///|
-priv struct WireframeMeshCacheEntry {
-  source_mesh_handle_id : Int
-  wireframe_mesh_id : Int
-}
-
-///|
 let motion_blur_history : Ref[MotionBlurHistoryDenseCache] = Ref::new({
   frame_stamp: 0,
   transforms: [],
@@ -79,9 +73,6 @@ let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = R
 ///|
 let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
 )
-
-///|
-let wireframe_mesh_cache : Ref[Array[WireframeMeshCacheEntry]] = Ref::new([])
 
 ///|
 fn motion_blur_history_ensure_slot(entity_id : Int) -> Unit {
@@ -332,112 +323,6 @@ fn render3d_blit_texture_to_target(
     uv_max_y=1.0F,
   )
   @render.host_gpu_end_pass()
-}
-
-///|
-fn render3d_wireframe_mesh_cache_get(source_mesh_handle_id : Int) -> Int? {
-  for item in wireframe_mesh_cache.val {
-    if item.source_mesh_handle_id == source_mesh_handle_id {
-      return Some(item.wireframe_mesh_id)
-    }
-  }
-  None
-}
-
-///|
-fn render3d_wireframe_mesh_cache_set(
-  source_mesh_handle_id : Int,
-  wireframe_mesh_id : Int,
-) -> Unit {
-  let next : Array[WireframeMeshCacheEntry] = []
-  let mut replaced = false
-  for item in wireframe_mesh_cache.val {
-    if item.source_mesh_handle_id == source_mesh_handle_id {
-      if !replaced {
-        next.push({ source_mesh_handle_id, wireframe_mesh_id })
-        replaced = true
-      }
-    } else {
-      next.push(item)
-    }
-  }
-  if !replaced {
-    next.push({ source_mesh_handle_id, wireframe_mesh_id })
-  }
-  wireframe_mesh_cache.val = next
-}
-
-///|
-fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
-  let source_mesh_handle_id = mesh_handle.id()
-  if render3d_wireframe_mesh_cache_get(source_mesh_handle_id) is Some(mesh_id) {
-    return Some(mesh_id)
-  }
-  let source_mesh = match @sprite.render_mesh_asset_get(mesh_handle) {
-    Some(mesh_asset) => mesh_asset
-    None => return None
-  }
-  match source_mesh.geometry {
-    @mesh.MeshGeometry::Geometry3d(geometry3d) =>
-      match geometry3d.primitive_topology() {
-        @mesh.Mesh3dPrimitiveTopology::TriangleList =>
-          match geometry3d.to_wireframe_line_list() {
-            Some(wireframe_geometry) => {
-              let wireframe_handle = @sprite.render_mesh_asset_add(
-                @mesh.Mesh::from_3d_geometry(wireframe_geometry),
-              )
-              let wireframe_mesh_id = @sprite_render.render2d_upload_mesh_handle(
-                wireframe_handle,
-              )
-              render3d_wireframe_mesh_cache_set(
-                source_mesh_handle_id, wireframe_mesh_id,
-              )
-              Some(wireframe_mesh_id)
-            }
-            None => return None
-          }
-        @mesh.Mesh3dPrimitiveTopology::LineList => {
-          let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
-          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
-          Some(mesh_id)
-        }
-        @mesh.Mesh3dPrimitiveTopology::LineStrip => {
-          let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
-          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
-          Some(mesh_id)
-        }
-      }
-    _ => return None
-  }
-}
-
-///|
-fn render3d_mesh_should_draw_wireframe(
-  mesh : ExtractedMesh3d,
-  wireframe_config : WireframeConfig?,
-) -> Bool {
-  guard wireframe_config is Some(config) else { return false }
-  if mesh.payload.has_no_wireframe {
-    false
-  } else if mesh.payload.has_wireframe {
-    true
-  } else {
-    config.global
-  }
-}
-
-///|
-fn render3d_mesh_wireframe_color(
-  mesh : ExtractedMesh3d,
-  wireframe_config : WireframeConfig?,
-) -> @sprite.Color {
-  if mesh.payload.wireframe_color is Some(color_component) {
-    color_component.color
-  } else if wireframe_config is Some(config) {
-    config.default_color
-  } else {
-    @sprite.Color::white()
-  }
 }
 
 ///|
