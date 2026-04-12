@@ -83,6 +83,7 @@ This file must not exceed 200 lines.
 - [x] `math/curve-derivatives-ownerization`: replace `math/curve/derivatives/adaptor_impls` alias re-export with owner derivative carrier structs/constructors.
 - [x] `math/curve-cores-ownerization`: replace `math/curve/{cores,sample_curves}` alias forwarding with owner core interpolation/sample-curve implementations.
 - [x] `math/curve-top+interval+easing-ownerization`: replace `math/curve/{top,interval,easing}` direct `@math` alias shells with owner types/runtime and local curve-domain wiring.
+- [x] `math/cubic_splines-curve_impls-ownerization`: replace `math/cubic_splines/curve_impls` derivative wrappers with owner derivative payload/runtime sampling logic.
 - [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
 - [x] `transform/components-ownerization`: replace `transform/components/{transform,global_transform,top}` alias forwarding with owner `Transform/Affine2/GlobalTransform` runtime definitions.
 - [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.

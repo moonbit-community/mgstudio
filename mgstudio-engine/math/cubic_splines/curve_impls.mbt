@@ -14,39 +14,56 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/cubic_splines/curve_impls.rs`.
-pub using @math {type WithDerivative}
 
 ///|
-pub using @math {type WithTwoDerivatives}
+pub struct WithDerivative[P] {
+  value : P
+  derivative : P
+}
+
+///|
+pub struct WithTwoDerivatives[P] {
+  value : P
+  derivative : P
+  second_derivative : P
+}
 
 ///|
 pub fn[P : @math.SplinePoint] cubic_curve_sample_with_derivative(
-  curve : @math.CubicCurve[P],
+  curve : CubicCurve[P],
   t : Float,
-) -> @math.WithDerivative[P] {
-  curve.sample_with_derivative(t)
+) -> WithDerivative[P] {
+  WithDerivative::{ value: curve.position(t), derivative: curve.velocity(t) }
 }
 
 ///|
 pub fn[P : @math.SplinePoint] cubic_curve_sample_with_two_derivatives(
-  curve : @math.CubicCurve[P],
+  curve : CubicCurve[P],
   t : Float,
-) -> @math.WithTwoDerivatives[P] {
-  curve.sample_with_two_derivatives(t)
+) -> WithTwoDerivatives[P] {
+  WithTwoDerivatives::{
+    value: curve.position(t),
+    derivative: curve.velocity(t),
+    second_derivative: curve.acceleration(t),
+  }
 }
 
 ///|
 pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(
-  segment : @math.CubicSegment[P],
+  segment : CubicSegment[P],
   t : Float,
-) -> @math.WithDerivative[P] {
-  segment.sample_with_derivative(t)
+) -> WithDerivative[P] {
+  WithDerivative::{ value: segment.position(t), derivative: segment.velocity(t) }
 }
 
 ///|
 pub fn[P : @math.SplinePoint] cubic_segment_sample_with_two_derivatives(
-  segment : @math.CubicSegment[P],
+  segment : CubicSegment[P],
   t : Float,
-) -> @math.WithTwoDerivatives[P] {
-  segment.sample_with_two_derivatives(t)
+) -> WithTwoDerivatives[P] {
+  WithTwoDerivatives::{
+    value: segment.position(t),
+    derivative: segment.velocity(t),
+    second_derivative: segment.acceleration(t),
+  }
 }
