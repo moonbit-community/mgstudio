@@ -24,11 +24,6 @@ pub fn atmosphere_plugin_id() -> String {
 }
 
 ///|
-pub fn atmosphere_runtime_available() -> Bool {
-  true
-}
-
-///|
 pub struct AtmospherePlugin {
   enabled : Bool
   supports_compute : Bool
@@ -38,7 +33,7 @@ pub struct AtmospherePlugin {
 ///|
 pub fn AtmospherePlugin::default() -> AtmospherePlugin {
   AtmospherePlugin::{
-    enabled: atmosphere_runtime_available(),
+    enabled: true,
     supports_compute: true,
     supports_storage_binding: true,
   }
