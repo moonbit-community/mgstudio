@@ -16,14 +16,61 @@
 // Bevy source: `bevy/crates/bevy_math/src/curve/iterable.rs`.
 
 ///|
-pub type IterableCurve[T] = @math.IterableCurve[T]
+pub struct IterableCurve[T] {
+  domain_ : @math.Interval
+  sample_iter_unchecked_fn : (Float) -> Iter[T]
+}
+
+///|
+pub fn[T] IterableCurve::new(
+  domain : @math.Interval,
+  sample_iter_unchecked : (Float) -> Iter[T],
+) -> IterableCurve[T] {
+  IterableCurve::{
+    domain_: domain,
+    sample_iter_unchecked_fn: sample_iter_unchecked,
+  }
+}
+
+///|
+pub fn[T] IterableCurve::domain(self : IterableCurve[T]) -> @math.Interval {
+  self.domain_
+}
+
+///|
+pub fn[T] IterableCurve::sample_iter_unchecked(
+  self : IterableCurve[T],
+  t : Float,
+) -> Iter[T] {
+  (self.sample_iter_unchecked_fn)(t)
+}
+
+///|
+pub fn[T] IterableCurve::sample_iter_clamped(
+  self : IterableCurve[T],
+  t : Float,
+) -> Iter[T] {
+  self.sample_iter_unchecked(self.domain_.clamp(t))
+}
+
+///|
+pub fn[T] IterableCurve::sample_iter(
+  self : IterableCurve[T],
+  t : Float,
+) -> Iter[T]? {
+  if self.domain_.contains(t) {
+    Some(self.sample_iter_unchecked(t))
+  } else {
+    None
+  }
+}
 
 ///|
 pub fn[T] iterable_curve(
   domain : @math.Interval,
   sample_iter_unchecked : (Float) -> Iter[T],
 ) -> IterableCurve[T] {
-  @math.IterableCurve::new(domain, sample_iter_unchecked)
+  IterableCurve::new(domain, sample_iter_unchecked)
 }
 
 ///|
