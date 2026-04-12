@@ -175,7 +175,7 @@ fn pbr_plugin_sync_gltf_material_handler_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  @gltf.gltf_set_pbr_material_handler_enabled(
+  @gltf_loader.gltf_set_pbr_material_handler_enabled(
     runtime_config.gltf_render_enabled,
   )
   app

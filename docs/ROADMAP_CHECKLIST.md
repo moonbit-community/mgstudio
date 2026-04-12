@@ -64,6 +64,7 @@ This file must not exceed 200 lines.
 - [x] `camera`: switch camera mesh ray-cast API surface to `picking/mesh_picking/ray_cast` owner types/functions instead of `pbr` wrappers.
 - [x] `examples`: switch in-tree mesh ray-cast usage (`3d/mesh_ray_cast`, `ui/render_ui_to_texture`) from `@pbr` shim calls to `picking/mesh_picking/ray_cast` owner path.
 - [x] `examples/camera-projection-queries`: switch remaining example camera ray/view helpers from `@pbr.render3d_camera_*` to `@camera.camera_*` owner surface.
+- [x] `gltf-owner-callsites`: switch in-repo consumers (`pbr/scene/gltf examples`) from `@gltf` forwarding helpers to direct `@gltf_loader` owner APIs.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.

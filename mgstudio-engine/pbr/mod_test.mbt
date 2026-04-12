@@ -92,7 +92,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   debug_inspect(pbr_deferred_lighting_enabled(), content="false")
   debug_inspect(pbr_gpu_instance_buffer_builder_enabled(), content="false")
   debug_inspect(pbr_gltf_render_enabled(), content="false")
-  debug_inspect(@gltf.gltf_pbr_material_handler_enabled(), content="false")
+  debug_inspect(@gltf_loader.gltf_pbr_material_handler_enabled(), content="false")
   debug_inspect(
     read_mesh_render_plugin_state(_app.world()).use_gpu_instance_buffer_builder,
     content="false",
@@ -107,7 +107,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   )
 
   let _reset = pbr_plugin(@app.App::new(@ecs.World::new()))
-  debug_inspect(@gltf.gltf_pbr_material_handler_enabled(), content="true")
+  debug_inspect(@gltf_loader.gltf_pbr_material_handler_enabled(), content="true")
 }
 
 ///|

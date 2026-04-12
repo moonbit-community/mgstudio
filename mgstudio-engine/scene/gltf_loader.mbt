@@ -2365,7 +2365,7 @@ fn scene_build_material_component(
   guard material_index >= 0 && material_index < doc.materials.length() else {
     return None
   }
-  if !@gltf.gltf_pbr_material_handler_enabled() {
+  if !@gltf_loader.gltf_pbr_material_handler_enabled() {
     return None
   }
 
@@ -2719,7 +2719,7 @@ fn scene_build_mesh_primitive_from_gltf(
     if gltf_read_accessor_vec3(doc, buffer_bytes, accessor_index)
       is Some(values) {
       let mapped_name = match
-        @gltf.gltf_resolve_custom_vertex_attribute_name(attribute_name) {
+        @gltf_loader.gltf_resolve_custom_vertex_attribute_name(attribute_name) {
         Some(name) => name
         None => attribute_name
       }
