@@ -23,8 +23,3 @@ pub struct CiTestingPlugin {}
 pub fn CiTestingPlugin::default() -> CiTestingPlugin {
   CiTestingPlugin::{  }
 }
-
-///|
-pub fn dev_tools_ci_testing_available() -> Bool {
-  true
-}

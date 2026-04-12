@@ -26,8 +26,3 @@ pub struct CiTestingConfig {
 pub fn CiTestingConfig::default() -> CiTestingConfig {
   CiTestingConfig::{ enabled: false, capture_frames: 1 }
 }
-
-///|
-pub fn dev_tools_ci_testing_config_available() -> Bool {
-  true
-}

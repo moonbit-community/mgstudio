@@ -20,11 +20,6 @@
 pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.systems"
 
 ///|
-pub fn dev_tools_ci_testing_systems_available() -> Bool {
-  true
-}
-
-///|
 pub fn dev_tools_ci_testing_stage() -> String {
   CI_TESTING_SYSTEMS_STAGE
 }

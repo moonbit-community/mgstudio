@@ -27,11 +27,6 @@ pub fn PickingDebugConfig::default() -> PickingDebugConfig {
 }
 
 ///|
-pub fn dev_tools_picking_debug_available() -> Bool {
-  true
-}
-
-///|
 pub fn dev_tools_picking_debug_enabled(config : PickingDebugConfig) -> Bool {
   config.enabled
 }

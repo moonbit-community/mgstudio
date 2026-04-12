@@ -22,8 +22,3 @@ pub const WEB_ASSET_SOURCE_NAME : String = "web"
 pub fn asset_io_web_source_name() -> String {
   WEB_ASSET_SOURCE_NAME
 }
-
-///|
-pub fn asset_io_web_supported() -> Bool {
-  false
-}

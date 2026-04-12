@@ -14,9 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/error.rs`.
-// The current runtime does not expose Bevy's public text error enums.
 
 ///|
-pub fn text_public_error_surface_available() -> Bool {
-  true
+pub enum TextError {
+  NoSuchFont
+  NoSuchFontFamily(String)
+  FailedToAddGlyph(UInt)
+  FailedToGetGlyphImage(UInt)
+  MissingAtlasLayout
+  MissingAtlasTexture
+  InconsistentAtlasState
+  DegenerateScaleFactor
+} derive(Eq, Debug)
+
+///|
+pub fn text_error_from_code(
+  code : Int,
+  message? : String = "",
+  glyph? : UInt = 0U,
+) -> TextError {
+  match code {
+    0 => NoSuchFont
+    1 => NoSuchFontFamily(message)
+    2 => FailedToAddGlyph(glyph)
+    3 => FailedToGetGlyphImage(glyph)
+    4 => MissingAtlasLayout
+    5 => MissingAtlasTexture
+    6 => InconsistentAtlasState
+    _ => DegenerateScaleFactor
+  }
 }

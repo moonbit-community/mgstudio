@@ -27,11 +27,6 @@ pub fn StatesDebugConfig::default() -> StatesDebugConfig {
 }
 
 ///|
-pub fn dev_tools_states_debug_available() -> Bool {
-  true
-}
-
-///|
 pub fn dev_tools_states_debug_enabled(config : StatesDebugConfig) -> Bool {
   config.enabled
 }

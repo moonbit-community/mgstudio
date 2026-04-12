@@ -28,11 +28,6 @@ pub fn EasyScreenshotConfig::default() -> EasyScreenshotConfig {
 }
 
 ///|
-pub fn dev_tools_easy_screenshot_available() -> Bool {
-  true
-}
-
-///|
 pub fn dev_tools_easy_screenshot_enabled(config : EasyScreenshotConfig) -> Bool {
   config.enabled
 }

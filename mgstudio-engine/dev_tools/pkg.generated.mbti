@@ -16,13 +16,9 @@ pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
 
 pub const INITIAL_DIAGNOSTICS_OVERLAY_PLANE_Z_INDEX : Int = 1_000_000
 
-pub fn dev_tools_easy_screenshot_available() -> Bool
-
 pub fn dev_tools_easy_screenshot_enabled(EasyScreenshotConfig) -> Bool
 
 pub fn dev_tools_easy_screenshot_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn dev_tools_picking_debug_available() -> Bool
 
 pub fn dev_tools_picking_debug_enabled(PickingDebugConfig) -> Bool
 
@@ -30,11 +26,7 @@ pub fn dev_tools_picking_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.Wor
 
 pub fn dev_tools_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
-pub fn dev_tools_render_debug_available() -> Bool
-
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay
-
-pub fn dev_tools_states_debug_available() -> Bool
 
 pub fn dev_tools_states_debug_enabled(StatesDebugConfig) -> Bool
 

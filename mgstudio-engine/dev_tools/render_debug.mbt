@@ -20,8 +20,3 @@
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay {
   DiagnosticsOverlay::render()
 }
-
-///|
-pub fn dev_tools_render_debug_available() -> Bool {
-  true
-}

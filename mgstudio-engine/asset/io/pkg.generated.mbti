@@ -18,19 +18,13 @@ pub fn asset_format_path(@asset.AssetPath) -> String
 
 pub fn asset_io_android_source_name() -> String
 
-pub fn asset_io_android_supported() -> Bool
-
 pub fn asset_io_gated_source_name() -> String
 
 pub fn asset_io_is_gated() -> Bool
 
 pub fn asset_io_wasm_source_name() -> String
 
-pub fn asset_io_wasm_supported() -> Bool
-
 pub fn asset_io_web_source_name() -> String
-
-pub fn asset_io_web_supported() -> Bool
 
 pub fn asset_parse_path(String) -> @asset.AssetPath
 

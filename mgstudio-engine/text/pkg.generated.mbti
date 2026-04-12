@@ -50,6 +50,12 @@ pub let ecs_key_text_underline_color : @ecs.ComponentKey[UnderlineColor]
 
 pub let ecs_key_text_y_axis : @ecs.ComponentKey[YAxisOrientation]
 
+pub fn font_loader_error_content() -> FontLoaderError
+
+pub fn font_loader_error_io(String) -> FontLoaderError
+
+pub fn font_loader_extensions() -> Array[String]
+
 pub fn font_measure_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
 
 pub fn font_rasterize_cache_key(@moon_cosmic.FontSystem, @moon_cosmic.CacheKey, FontSmoothing) -> GlyphRaster?
@@ -110,11 +116,11 @@ pub fn text_diagnostic_update_cpu_ms() -> Float
 
 pub fn text_diagnostic_update_pending_layout_count() -> Int
 
+pub fn text_error_from_code(Int, message? : String, glyph? : UInt) -> TextError
+
 pub fn text_font_context() -> FontCx
 
 pub fn text_font_family_names(FontCx) -> Array[String]
-
-pub fn text_font_loader_available() -> Bool
 
 pub fn text_font_source_from_asset(@asset.Handle[@asset.Font]) -> FontSource
 
@@ -137,8 +143,6 @@ pub fn text_layout_size(TextHandle) -> @math.Vec2?
 pub fn text_measure_glyph_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
 
 pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn text_public_error_surface_available() -> Bool
 
 pub fn text_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
@@ -341,6 +345,15 @@ pub fn FontFeaturesBuilder::default() -> Self
 pub fn FontFeaturesBuilder::disable(Self, FontFeatureTag) -> Self
 pub fn FontFeaturesBuilder::enable(Self, FontFeatureTag) -> Self
 pub fn FontFeaturesBuilder::set(Self, FontFeatureTag, UInt) -> Self
+
+pub struct FontLoader {
+}
+pub fn FontLoader::default() -> Self
+
+pub enum FontLoaderError {
+  Content
+  Io(String)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum FontSize {
   Px(Float)
@@ -624,6 +637,17 @@ pub struct TextEntity {
   depth : Int
   font_smoothing : FontSmoothing
 }
+
+pub enum TextError {
+  NoSuchFont
+  NoSuchFontFamily(String)
+  FailedToAddGlyph(UInt)
+  FailedToGetGlyphImage(UInt)
+  MissingAtlasLayout
+  MissingAtlasTexture
+  InconsistentAtlasState
+  DegenerateScaleFactor
+} derive(Eq, @debug.Debug)
 
 pub(all) struct TextFont {
   mut font : FontSource

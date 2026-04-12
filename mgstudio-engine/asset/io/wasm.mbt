@@ -22,8 +22,3 @@ pub const WASM_ASSET_SOURCE_NAME : String = "wasm"
 pub fn asset_io_wasm_source_name() -> String {
   WASM_ASSET_SOURCE_NAME
 }
-
-///|
-pub fn asset_io_wasm_supported() -> Bool {
-  false
-}

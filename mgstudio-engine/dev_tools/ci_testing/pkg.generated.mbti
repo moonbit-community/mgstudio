@@ -4,13 +4,7 @@ package "Milky2018/mgstudio/dev_tools/ci_testing"
 // Values
 pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.systems"
 
-pub fn dev_tools_ci_testing_available() -> Bool
-
-pub fn dev_tools_ci_testing_config_available() -> Bool
-
 pub fn dev_tools_ci_testing_stage() -> String
-
-pub fn dev_tools_ci_testing_systems_available() -> Bool
 
 // Errors
 

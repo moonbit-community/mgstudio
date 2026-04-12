@@ -14,9 +14,32 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_text/src/font_loader.rs`.
-// The current runtime resolves fonts through the shared text pipeline instead of a separate public loader API.
 
 ///|
-pub fn text_font_loader_available() -> Bool {
-  true
+pub struct FontLoader {}
+
+///|
+pub fn FontLoader::default() -> FontLoader {
+  FontLoader::{  }
+}
+
+///|
+pub enum FontLoaderError {
+  Content
+  Io(String)
+} derive(Eq, Debug)
+
+///|
+pub fn font_loader_error_content() -> FontLoaderError {
+  Content
+}
+
+///|
+pub fn font_loader_error_io(message : String) -> FontLoaderError {
+  Io(message)
+}
+
+///|
+pub fn font_loader_extensions() -> Array[String] {
+  ["ttf", "otf"]
 }
