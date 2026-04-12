@@ -16,11 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/transmission/texture.rs`.
 
 ///|
-pub fn transmission_texture_runtime_available() -> Bool {
-  true
-}
-
-///|
 pub struct ViewTransmissionTexture {
   texture_id : Int
   width : Int

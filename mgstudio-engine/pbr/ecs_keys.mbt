@@ -216,7 +216,7 @@ pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[
 ///|
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
   ScreenSpaceTransmission,
-] = @post_process.ecs_key_screen_space_transmission
+] = @transmission.ecs_key_screen_space_transmission
 
 ///|
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[

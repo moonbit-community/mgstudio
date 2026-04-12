@@ -16,10 +16,86 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/transmission/mod.rs`.
 
 ///|
-pub type ScreenSpaceTransmissionQuality = @post_process.ScreenSpaceTransmissionQuality
+pub(all) enum ScreenSpaceTransmissionQuality {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub type ScreenSpaceTransmission = @post_process.ScreenSpaceTransmission
+pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
+  ScreenSpaceTransmissionQuality::High
+}
+
+///|
+pub struct ScreenSpaceTransmission {
+  quality : ScreenSpaceTransmissionQuality
+  steps : Int
+} derive(ToJson, FromJson)
+
+///|
+pub fn ScreenSpaceTransmission::default() -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::{
+    quality: ScreenSpaceTransmissionQuality::default(),
+    steps: 2,
+  }
+}
+
+///|
+pub fn ScreenSpaceTransmission::new(
+  quality : ScreenSpaceTransmissionQuality,
+  steps : Int,
+) -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::{
+    quality,
+    steps: if steps < 0 {
+      0
+    } else if steps > 4 {
+      4
+    } else {
+      steps
+    },
+  }
+}
+
+///|
+pub fn ScreenSpaceTransmission::with_quality(
+  self : ScreenSpaceTransmission,
+  quality : ScreenSpaceTransmissionQuality,
+) -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::{ ..self, quality, }
+}
+
+///|
+pub fn ScreenSpaceTransmission::with_steps(
+  self : ScreenSpaceTransmission,
+  steps : Int,
+) -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::new(self.quality, steps)
+}
+
+///|
+pub fn screen_space_transmission_blur_taps(
+  quality : ScreenSpaceTransmissionQuality,
+) -> Int {
+  match quality {
+    Low => 4
+    Medium => 8
+    High => 16
+    Ultra => 32
+  }
+}
+
+///|
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
+  ScreenSpaceTransmission,
+] = @ecs.register_component(debug_name="render3d.screen_space_transmission")
+
+///|
+pub impl @ecs.Component for ScreenSpaceTransmission with component() {
+  ecs_key_screen_space_transmission
+}
 
 ///|
 pub const SCREEN_SPACE_TRANSMISSION_PLUGIN_ID : String = "mgstudio.pbr.ScreenSpaceTransmissionPlugin"

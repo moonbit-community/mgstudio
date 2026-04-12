@@ -794,17 +794,17 @@ pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
 ///|
 /// Camera screen-space transmission quality aligned with Bevy's
 /// `ScreenSpaceTransmissionQuality`.
-pub type ScreenSpaceTransmissionQuality = @post_process.ScreenSpaceTransmissionQuality
+pub type ScreenSpaceTransmissionQuality = @transmission.ScreenSpaceTransmissionQuality
 
 ///|
 fn screen_space_transmission_blur_taps(
   quality : ScreenSpaceTransmissionQuality,
 ) -> Int {
-  @post_process.screen_space_transmission_blur_taps(quality)
+  @transmission.screen_space_transmission_blur_taps(quality)
 }
 
 ///|
-pub type ScreenSpaceTransmission = @post_process.ScreenSpaceTransmission
+pub type ScreenSpaceTransmission = @transmission.ScreenSpaceTransmission
 
 ///|
 pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections

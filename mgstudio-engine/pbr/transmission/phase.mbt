@@ -143,10 +143,3 @@ pub fn transmissive3d_render_step_ranges(
   let steps = if transmission.steps <= 0 { 1 } else { transmission.steps }
   transmissive3d_split_range(items.length(), steps)
 }
-
-///|
-pub fn screen_space_transmission_blur_taps(
-  quality : ScreenSpaceTransmissionQuality,
-) -> Int {
-  @post_process.screen_space_transmission_blur_taps(quality)
-}

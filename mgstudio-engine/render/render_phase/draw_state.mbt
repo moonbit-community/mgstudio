@@ -19,11 +19,6 @@
 pub type DrawState = @renderer.GpuPassState
 
 ///|
-pub fn draw_state_runtime_available(_state : DrawState) -> Bool {
-  true
-}
-
-///|
 pub fn draw_state_target_id(state : DrawState) -> Int {
   state.target_id
 }

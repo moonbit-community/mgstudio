@@ -14,8 +14,3 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/motion_blur/mod.rs`.
-
-///|
-pub fn motion_blur_runtime_available() -> Bool {
-  true
-}

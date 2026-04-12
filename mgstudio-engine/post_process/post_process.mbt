@@ -718,78 +718,19 @@ pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(
 ///|
 /// Camera screen-space transmission quality aligned with Bevy's
 /// `ScreenSpaceTransmissionQuality`.
-pub(all) enum ScreenSpaceTransmissionQuality {
-  Low
-  Medium
-  High
-  Ultra
-} derive(Eq, Debug, ToJson, FromJson)
-
-///|
-pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
-  ScreenSpaceTransmissionQuality::High
-}
-
-///|
-/// Camera screen-space transmission settings aligned with Bevy's
-/// `ScreenSpaceTransmission`.
-pub struct ScreenSpaceTransmission {
-  quality : ScreenSpaceTransmissionQuality
-  steps : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn ScreenSpaceTransmission::default() -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{
-    quality: ScreenSpaceTransmissionQuality::default(),
-    steps: 2,
-  }
-}
-
-///|
-pub fn ScreenSpaceTransmission::new(
-  quality : ScreenSpaceTransmissionQuality,
-  steps : Int,
-) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{
-    quality,
-    steps: if steps < 0 {
-      0
-    } else if steps > 4 {
-      4
-    } else {
-      steps
-    },
-  }
-}
-
-///|
-pub fn ScreenSpaceTransmission::with_quality(
-  self : ScreenSpaceTransmission,
-  quality : ScreenSpaceTransmissionQuality,
-) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{ ..self, quality, }
-}
-
-///|
-pub fn ScreenSpaceTransmission::with_steps(
-  self : ScreenSpaceTransmission,
-  steps : Int,
-) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::new(self.quality, steps)
-}
+pub type ScreenSpaceTransmissionQuality = @pbr_transmission.ScreenSpaceTransmissionQuality
 
 ///|
 pub fn screen_space_transmission_blur_taps(
   quality : ScreenSpaceTransmissionQuality,
 ) -> Int {
-  match quality {
-    Low => 4
-    Medium => 8
-    High => 16
-    Ultra => 32
-  }
+  @pbr_transmission.screen_space_transmission_blur_taps(quality)
 }
+
+///|
+/// Camera screen-space transmission settings aligned with Bevy's
+/// `ScreenSpaceTransmission`.
+pub type ScreenSpaceTransmission = @pbr_transmission.ScreenSpaceTransmission
 
 ///|
 fn minf(a : Float, b : Float) -> Float {
@@ -1060,7 +1001,7 @@ pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
 ///|
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
   ScreenSpaceTransmission,
-] = @ecs.register_component(debug_name="render3d.screen_space_transmission")
+] = @pbr_transmission.ecs_key_screen_space_transmission
 
 ///|
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
@@ -1112,11 +1053,6 @@ pub impl @ecs.Component for TemporalAntiAliasing with component() {
 ///|
 pub impl @ecs.Component for ScreenSpaceReflections with component() {
   ecs_key_screen_space_reflections
-}
-
-///|
-pub impl @ecs.Component for ScreenSpaceTransmission with component() {
-  ecs_key_screen_space_transmission
 }
 
 ///|

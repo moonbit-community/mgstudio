@@ -14,8 +14,3 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/effect_stack/mod.rs`.
-
-///|
-pub fn effect_stack_runtime_available() -> Bool {
-  true
-}
