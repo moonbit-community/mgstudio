@@ -6,11 +6,44 @@ import {
 }
 
 // Values
+pub const SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_ID : String = "mgstudio.pbr.ScreenSpaceAmbientOcclusionPlugin"
+
 pub fn pbr_ssao_default() -> @post_process.ScreenSpaceAmbientOcclusion
+
+pub fn ssao_pipeline_key(@post_process.ScreenSpaceAmbientOcclusionQualityLevel, Bool) -> SsaoPipelineKey
+
+pub fn ssao_quality_sample_counts(@post_process.ScreenSpaceAmbientOcclusionQualityLevel) -> (Int, Int)
 
 // Errors
 
 // Types and methods
+pub struct ScreenSpaceAmbientOcclusionPlugin {
+}
+pub fn ScreenSpaceAmbientOcclusionPlugin::default() -> Self
+
+pub struct ScreenSpaceAmbientOcclusionPluginState {
+  supported : Bool
+  pipelines : SsaoPipelines
+}
+pub fn ScreenSpaceAmbientOcclusionPluginState::default() -> Self
+
+pub struct SsaoPipelineId {
+  id : Int
+}
+pub fn SsaoPipelineId::default() -> Self
+pub fn SsaoPipelineId::is_ready(Self) -> Bool
+
+pub struct SsaoPipelineKey {
+  quality_level : @post_process.ScreenSpaceAmbientOcclusionQualityLevel
+  temporal_jitter : Bool
+}
+pub fn SsaoPipelineKey::default() -> Self
+
+pub struct SsaoPipelines {
+  preprocess_depth_pipeline : SsaoPipelineId
+  spatial_denoise_pipeline : SsaoPipelineId
+}
+pub fn SsaoPipelines::default() -> Self
 
 // Type aliases
 pub using @post_process {type ScreenSpaceAmbientOcclusion}

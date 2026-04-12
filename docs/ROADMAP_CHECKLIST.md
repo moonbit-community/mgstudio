@@ -58,6 +58,8 @@ This file must not exceed 200 lines.
 - [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
 - [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
 - [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
+- [x] `gltf/scene/state/window`: remove pure compatibility alias shells and merge required exports into owner modules.
+- [x] `shell-packages`: drop dead wrapper-only subpackages (`ui/widget`, `window/cursor`, `state/state`, `picking/mesh_picking/ray_cast`, `gltf/loader`, `dev_tools/frame_time_graph`).
 - [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.

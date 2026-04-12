@@ -54,7 +54,7 @@ fn render3d_execute_render_cameras(
     "execute_3d_render_cameras",
     trace_render_cameras_start_us,
   )
-  camera_motion_blur_history_sync(next_camera_motion_blur_history)
+  camera_motion_blur_history_sync(world, next_camera_motion_blur_history)
 }
 
 ///|

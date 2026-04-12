@@ -8426,10 +8426,6 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
-/// Legacy alias kept for source compatibility.
-pub let render2d_set_execute : @app.SystemSet = render2d_set_render
-
-///|
 fn configure_render2d_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {

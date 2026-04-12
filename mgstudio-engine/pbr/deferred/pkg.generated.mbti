@@ -8,7 +8,9 @@ import {
 }
 
 // Values
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
+pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
+
+pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
 
 pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
@@ -19,6 +21,13 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@pbr.DeferredPbrL
 // Errors
 
 // Types and methods
+pub struct PbrDeferredLightingDepthId {
+  mut depth_id : Int
+}
+pub fn PbrDeferredLightingDepthId::default() -> Self
+pub fn PbrDeferredLightingDepthId::get(Self) -> Int
+pub fn PbrDeferredLightingDepthId::new(Int) -> Self
+pub fn PbrDeferredLightingDepthId::set(Self, Int) -> Unit
 
 // Type aliases
 pub using @pbr {type DeferredPbrLightingPlugin}

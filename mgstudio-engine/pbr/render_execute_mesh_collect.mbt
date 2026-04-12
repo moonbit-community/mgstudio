@@ -14,6 +14,7 @@
 
 ///|
 fn render3d_execute_collect_meshes(
+  world : @ecs.World,
   source_world : @ecs.World,
   phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
@@ -21,7 +22,7 @@ fn render3d_execute_collect_meshes(
 ) -> Array[ExtractedMesh3d] {
   let meshes : Array[ExtractedMesh3d] = []
   let motion_blur_frame_stamp = if needs_mesh_previous_transform {
-    motion_blur_history_begin_frame()
+    motion_blur_history_begin_frame(world)
   } else {
     0
   }
@@ -136,7 +137,8 @@ fn render3d_execute_collect_meshes(
       world_transform_cache_ref,
     )
     let previous_transform = if needs_mesh_previous_transform {
-      match motion_blur_history_get(entity, previous_motion_blur_frame_stamp) {
+      match
+        motion_blur_history_get(world, entity, previous_motion_blur_frame_stamp) {
         Some(v) => v
         None => transform
       }
@@ -258,7 +260,7 @@ fn render3d_execute_collect_meshes(
     })
   })
   if needs_mesh_previous_transform {
-    motion_blur_history_sync(meshes, motion_blur_frame_stamp)
+    motion_blur_history_sync(world, meshes, motion_blur_frame_stamp)
   }
   render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()
   @app.timeline_trace_end_span(

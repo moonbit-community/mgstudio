@@ -94,8 +94,6 @@ pub struct Scene {
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
 
-#alias(SceneComponentInstance)
-#alias(SceneSpawnerInstance)
 pub struct SceneInstance {
   instance_id : Int
 }
@@ -104,7 +102,6 @@ pub impl @ecs.Component for SceneInstance
 pub impl ToJson for SceneInstance
 pub impl @json.FromJson for SceneInstance
 
-#alias(SceneSpawnerInstanceReady)
 pub struct SceneInstanceReady {
   instance_id : Int
   spawned_entities : Int
@@ -114,7 +111,6 @@ pub impl @ecs.Component for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
-#alias(SceneComponentNode3d)
 pub struct SceneNode3d {
   name : @ecs.Name?
   parent_node_index : Int?
@@ -144,8 +140,6 @@ pub(all) struct ScenePlugin {
 pub fn ScenePlugin::default() -> Self
 pub impl @app.PluginReplacement for ScenePlugin
 
-#alias(SceneComponentRoot)
-#alias(SceneSpawnerRoot)
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]
 }

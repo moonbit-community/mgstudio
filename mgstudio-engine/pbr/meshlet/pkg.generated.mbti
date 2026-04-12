@@ -1,24 +1,40 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/pbr/meshlet"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 pub const HAS_MESHLET_RUNTIME : Bool = false
 
-pub const MESHLET_DEFERRED_GBUFFER_PREPASS_NODE : String = "bevy_pbr::meshlet::deferred_gbuffer_prepass"
+pub const MESHLET_DEFERRED_GBUFFER_PREPASS_NODE : String = "mgstudio.pbr.meshlet.deferred_gbuffer_prepass"
 
-pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "bevy_pbr::meshlet::main_opaque_pass"
+pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "mgstudio.pbr.meshlet.main_opaque_pass"
 
-pub const MESHLET_PREPASS_NODE : String = "bevy_pbr::meshlet::prepass"
+pub const MESHLET_MESH_ASSET_MAGIC : Int = 1717551717
 
-pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "bevy_pbr::meshlet::visibility_buffer_raster"
+pub const MESHLET_MESH_ASSET_VERSION : Int = 3
+
+pub const MESHLET_PLUGIN_ID : String = "mgstudio.pbr.MeshletPlugin"
+
+pub const MESHLET_PREPASS_NODE : String = "mgstudio.pbr.meshlet.prepass"
+
+pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "mgstudio.pbr.meshlet.visibility_buffer_raster"
 
 pub fn extract_meshlet_mesh_entities(Int) -> InstanceManager
 
 pub fn init_meshlet_pipelines(Int, Int, Int) -> MeshletPipelines
 
+pub fn init_meshlet_pipelines_with_core(Int, Int, Int, Int) -> MeshletPipelines
+
 pub fn meshlet_asset_runtime_available() -> Bool
 
 pub fn meshlet_can_convert_from_mesh(Int, Int) -> Bool
+
+pub fn meshlet_compute_pipeline_count(MeshletPipelines) -> Int
+
+pub fn meshlet_conversion_error_for_counts(Int, Int, MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionError?
 
 pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversionError
 
@@ -32,13 +48,23 @@ pub fn meshlet_material_prepare_entry_count(MeshletViewMaterialsMainOpaquePass, 
 
 pub fn meshlet_material_shade_node_count() -> Int
 
+pub fn meshlet_material_shade_node_index(String) -> Int?
+
 pub fn meshlet_material_shade_nodes() -> Array[String]
 
 pub fn meshlet_material_shade_nodes_runtime_available() -> Bool
 
+pub fn meshlet_mesh_asset_magic() -> Int
+
+pub fn meshlet_mesh_asset_version() -> Int
+
+pub fn meshlet_mesh_asset_version_matches(Int) -> Bool
+
 pub fn meshlet_mesh_loader() -> MeshletMeshLoader
 
 pub fn meshlet_mesh_manager_runtime_available() -> Bool
+
+pub fn meshlet_mesh_save_or_load_error_debug_message(MeshletMeshSaveOrLoadError) -> String
 
 pub fn meshlet_mesh_saver() -> MeshletMeshSaver
 
@@ -52,6 +78,8 @@ pub fn meshlet_persistent_buffer_supports_float() -> Bool
 
 pub fn meshlet_persistent_buffer_supports_int() -> Bool
 
+pub fn meshlet_persistent_buffer_supports_type(String) -> Bool
+
 pub fn meshlet_persistent_buffer_supports_uint() -> Bool
 
 pub fn meshlet_pipeline_count(MeshletPipelines) -> Int
@@ -60,21 +88,29 @@ pub fn meshlet_pipelines_runtime_available() -> Bool
 
 pub fn meshlet_plugin() -> MeshletPlugin
 
+pub fn meshlet_render_pipeline_count(MeshletPipelines) -> Int
+
 pub fn meshlet_resource_manager_runtime_available() -> Bool
 
 pub fn meshlet_runtime_available() -> Bool
 
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus
 
+pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionConfig
+
 pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int) -> Unit
 
 pub fn meshlet_visibility_buffer_raster_runtime_available() -> Bool
+
+pub fn perform_pending_meshlet_mesh_writes(MeshletMeshManager) -> Int
 
 pub fn prepare_meshlet_per_frame_resources(ResourceManager, Int) -> Unit
 
 pub fn prepare_meshlet_view_bind_groups(Int, Int) -> MeshletViewBindGroups
 
 pub fn queue_material_meshlet_meshes(InstanceManager) -> Int
+
+pub fn queue_material_meshlet_meshes_with_material_assets(InstanceManager, Array[Int]) -> Int
 
 // Errors
 
@@ -83,15 +119,35 @@ pub struct BvhNode {
   left_child : Int
   right_child : Int
   parent : Int
+  child_count : Int
 }
 pub fn BvhNode::leaf(Int) -> Self
+pub fn BvhNode::with_children(Self, Int, Int) -> Self
 
 pub struct InstanceManager {
-  mut instance_count : Int
+  mut scene_instance_count : Int
+  mut max_bvh_depth : Int
+  mut next_material_id : Int
+  material_id_lookup : Map[Int, Int]
+  material_ids_present_in_scene : Map[Int, Bool]
 }
+pub fn InstanceManager::add_instance(Self, Int) -> Unit
 pub fn InstanceManager::default() -> Self
+pub fn InstanceManager::get_material_id(Self, Int) -> Int
 pub fn InstanceManager::instance_count(Self) -> Int
+pub fn InstanceManager::mark_material_present_in_scene(Self, Int) -> Unit
+pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
+pub fn InstanceManager::max_bvh_depth(Self) -> Int
+pub fn InstanceManager::present_material_count(Self) -> Int
+pub fn InstanceManager::reset(Self) -> Unit
 pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
+pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
+
+pub struct MeshToMeshletMeshConversionConfig {
+  max_vertices : Int
+  max_triangles : Int
+}
+pub fn MeshToMeshletMeshConversionConfig::default() -> Self
 
 pub(all) enum MeshToMeshletMeshConversionError {
   RuntimeUnavailable
@@ -101,27 +157,39 @@ pub(all) enum MeshToMeshletMeshConversionError {
 }
 
 pub struct Meshlet {
-  vertex_offset : Int
-  vertex_count : Int
-  triangle_offset : Int
+  start_vertex_position_bit : Int
+  start_vertex_attribute_id : Int
+  start_index_id : Int
+  vertex_count_minus_one : Int
   triangle_count : Int
+  bits_per_vertex_position_channel_x : Int
+  bits_per_vertex_position_channel_y : Int
+  bits_per_vertex_position_channel_z : Int
+  vertex_position_quantization_factor : Int
 }
-pub fn Meshlet::new(Int, Int, Int, Int) -> Self
+pub fn Meshlet::new(Int, Int, Int, Int, Int) -> Self
+pub fn Meshlet::vertex_count(Self) -> Int
+pub fn Meshlet::with_quantization(Self, Int, Int, Int, Int) -> Self
 
 pub struct MeshletAabb {
-  min_x : Float
-  min_y : Float
-  min_z : Float
-  max_x : Float
-  max_y : Float
-  max_z : Float
+  center_x : Float
+  center_y : Float
+  center_z : Float
+  half_extent_x : Float
+  half_extent_y : Float
+  half_extent_z : Float
 }
 pub fn MeshletAabb::default() -> Self
 
 pub struct MeshletAabbErrorOffset {
-  x : Float
-  y : Float
-  z : Float
+  center_x : Float
+  center_y : Float
+  center_z : Float
+  error : Float
+  half_extent_x : Float
+  half_extent_y : Float
+  half_extent_z : Float
+  child_offset : Int
 }
 pub fn MeshletAabbErrorOffset::default() -> Self
 
@@ -133,51 +201,104 @@ pub struct MeshletBoundingSphere {
 }
 pub fn MeshletBoundingSphere::default() -> Self
 
+pub struct MeshletBufferSliceRange {
+  start : Int
+  end_ : Int
+} derive(Eq, @debug.Debug)
+
 pub struct MeshletCullData {
-  center_x : Float
-  center_y : Float
-  center_z : Float
-  radius : Float
+  aabb : MeshletAabbErrorOffset
+  lod_group_sphere : MeshletBoundingSphere
 }
 pub fn MeshletCullData::default() -> Self
 
 pub struct MeshletMesh {
   meshlet_count : Int
   bvh_node_count : Int
+  vertex_position_word_count : Int
+  vertex_normal_word_count : Int
+  vertex_uv_count : Int
+  index_count : Int
+  bvh_depth : Int
 }
+pub fn MeshletMesh::is_empty(Self) -> Bool
 pub fn MeshletMesh::new(Int, Int) -> Self
+pub fn MeshletMesh::vertex_count_estimate(Self) -> Int
+pub fn MeshletMesh::with_bvh_depth(Self, Int) -> Self
+pub fn MeshletMesh::with_vertex_buffers(Self, Int, Int, Int, Int) -> Self
 
 pub struct MeshletMesh3d {
   meshlet_mesh_id : Int
 }
+pub fn MeshletMesh3d::id(Self) -> Int
 pub fn MeshletMesh3d::new(Int) -> Self
 
 pub struct MeshletMeshLoader {
 }
 
 pub struct MeshletMeshManager {
+  mut next_offset : Int
   mut pending_mesh_writes : Int
   mut committed_mesh_writes : Int
+  pending_upload_asset_ids : Array[Int]
+  meshlet_mesh_slices : Map[Int, MeshletMeshSlices]
 }
+pub fn MeshletMeshManager::buffered_asset_count(Self) -> Int
 pub fn MeshletMeshManager::committed_mesh_writes(Self) -> Int
 pub fn MeshletMeshManager::default() -> Self
 pub fn MeshletMeshManager::pending_mesh_writes(Self) -> Int
+pub fn MeshletMeshManager::pending_upload_count(Self) -> Int
 pub fn MeshletMeshManager::perform_pending_mesh_writes(Self) -> Int
 pub fn MeshletMeshManager::queue_mesh_write(Self) -> Unit
+pub fn MeshletMeshManager::queue_upload_if_needed(Self, Int, MeshletMesh) -> (Int, MeshletAabb, Int)
+pub fn MeshletMeshManager::remove(Self, Int) -> Bool
 
 pub(all) enum MeshletMeshSaveOrLoadError {
-  RuntimeUnavailable
-  InvalidFormat
+  WrongFileType
+  WrongVersion(Int)
+  CompressionOrDecompression(String)
   IoError(String)
 }
 
 pub struct MeshletMeshSaver {
 }
 
+pub struct MeshletMeshSlices {
+  vertex_positions : MeshletBufferSliceRange
+  vertex_normals : MeshletBufferSliceRange
+  vertex_uvs : MeshletBufferSliceRange
+  indices : MeshletBufferSliceRange
+  bvh_nodes : MeshletBufferSliceRange
+  meshlets : MeshletBufferSliceRange
+  meshlet_cull_data : MeshletBufferSliceRange
+  aabb : MeshletAabb
+  bvh_depth : Int
+}
+
 pub struct MeshletPipelines {
-  main_opaque_pipeline_id : Int
-  prepass_pipeline_id : Int
-  deferred_prepass_pipeline_id : Int
+  clear_visibility_buffer : Int
+  clear_visibility_buffer_shadow_view : Int
+  first_instance_cull : Int
+  second_instance_cull : Int
+  first_bvh_cull : Int
+  second_bvh_cull : Int
+  first_meshlet_cull : Int
+  second_meshlet_cull : Int
+  downsample_depth_first : Int
+  downsample_depth_second : Int
+  downsample_depth_first_shadow_view : Int
+  downsample_depth_second_shadow_view : Int
+  visibility_buffer_software_raster : Int
+  visibility_buffer_software_raster_shadow_view : Int
+  visibility_buffer_hardware_raster : Int
+  visibility_buffer_hardware_raster_shadow_view : Int
+  visibility_buffer_hardware_raster_shadow_view_unclipped : Int
+  resolve_depth : Int
+  resolve_depth_shadow_view : Int
+  resolve_material_depth : Int
+  remap_1d_to_2d_dispatch : Int?
+  fill_counts : Int
+  meshlet_mesh_material_shader_id : Int
 }
 pub fn MeshletPipelines::default() -> Self
 
@@ -186,7 +307,14 @@ pub struct MeshletPlugin {
 }
 pub fn MeshletPlugin::default() -> Self
 
+pub struct MeshletPluginState {
+  runtime_status : MeshletRuntimeStatus
+  adapter_supports_mesh_shader : Bool
+}
+pub fn MeshletPluginState::default() -> Self
+
 pub(all) enum MeshletRuntimeStatus {
+  Enabled
   Disabled
   RuntimeUnavailable
 }
@@ -201,16 +329,22 @@ pub struct MeshletViewMaterialsDeferredGBufferPrepass {
   entries : Array[(Int, Int, Int)]
 }
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> Self
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(Self) -> Int
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(Self, (Int, Int, Int)) -> Unit
 
 pub struct MeshletViewMaterialsMainOpaquePass {
   entries : Array[(Int, Int, Int)]
 }
 pub fn MeshletViewMaterialsMainOpaquePass::default() -> Self
+pub fn MeshletViewMaterialsMainOpaquePass::len(Self) -> Int
+pub fn MeshletViewMaterialsMainOpaquePass::push(Self, (Int, Int, Int)) -> Unit
 
 pub struct MeshletViewMaterialsPrepass {
   entries : Array[(Int, Int, Int)]
 }
 pub fn MeshletViewMaterialsPrepass::default() -> Self
+pub fn MeshletViewMaterialsPrepass::len(Self) -> Int
+pub fn MeshletViewMaterialsPrepass::push(Self, (Int, Int, Int)) -> Unit
 
 pub struct MeshletViewResources {
   view_entity : Int
@@ -223,11 +357,15 @@ pub struct MeshletVisibilityBufferRasterState {
   mut last_draw_count : Int
 }
 pub fn MeshletVisibilityBufferRasterState::default() -> Self
+pub fn MeshletVisibilityBufferRasterState::enabled(Self) -> Bool
+pub fn MeshletVisibilityBufferRasterState::last_draw_count(Self) -> Int
 
 pub struct PersistentGpuBuffer[T] {
   elements : Array[T]
 }
 pub fn[T] PersistentGpuBuffer::clear(Self[T]) -> Unit
+pub fn[T] PersistentGpuBuffer::extend(Self[T], Array[T]) -> Unit
+pub fn[T] PersistentGpuBuffer::is_empty(Self[T]) -> Bool
 pub fn[T] PersistentGpuBuffer::len(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::new() -> Self[T]
 pub fn[T] PersistentGpuBuffer::push(Self[T], T) -> Unit
@@ -235,11 +373,42 @@ pub fn[T] PersistentGpuBuffer::snapshot(Self[T]) -> Array[T]
 
 pub struct ResourceManager {
   mut frame_index : Int
+  mut cluster_buffer_slots : Int
+  mut cull_queue_rightmost_slot : Int
   mut meshlet_buffer_count : Int
+  previous_depth_pyramids : Map[Int, Int]
+  clear_visibility_buffer_bind_group_layout_id : Int
+  clear_visibility_buffer_shadow_view_bind_group_layout_id : Int
+  first_instance_cull_bind_group_layout_id : Int
+  second_instance_cull_bind_group_layout_id : Int
+  first_bvh_cull_bind_group_layout_id : Int
+  second_bvh_cull_bind_group_layout_id : Int
+  first_meshlet_cull_bind_group_layout_id : Int
+  second_meshlet_cull_bind_group_layout_id : Int
+  visibility_buffer_raster_bind_group_layout_id : Int
+  visibility_buffer_raster_shadow_view_bind_group_layout_id : Int
+  downsample_depth_bind_group_layout_id : Int
+  downsample_depth_shadow_view_bind_group_layout_id : Int
+  resolve_depth_bind_group_layout_id : Int
+  resolve_depth_shadow_view_bind_group_layout_id : Int
+  resolve_material_depth_bind_group_layout_id : Int
+  material_shade_bind_group_layout_id : Int
+  fill_counts_bind_group_layout_id : Int
+  remap_1d_to_2d_dispatch_bind_group_layout_id : Int?
 }
 pub fn ResourceManager::advance_frame(Self) -> Unit
+pub fn ResourceManager::bind_group_layout_count(Self) -> Int
+pub fn ResourceManager::clear_stale_previous_depth_pyramids(Self, Array[Int]) -> Unit
+pub fn ResourceManager::cluster_buffer_slots(Self) -> Int
+pub fn ResourceManager::cull_queue_rightmost_slot(Self) -> Int
 pub fn ResourceManager::default() -> Self
+pub fn ResourceManager::frame_index(Self) -> Int
+pub fn ResourceManager::meshlet_buffer_count(Self) -> Int
+pub fn ResourceManager::new(Int) -> Self
+pub fn ResourceManager::previous_depth_pyramid(Self, Int) -> Int?
+pub fn ResourceManager::set_cluster_buffer_slots(Self, Int) -> Unit
 pub fn ResourceManager::set_meshlet_buffer_count(Self, Int) -> Unit
+pub fn ResourceManager::set_previous_depth_pyramid(Self, Int, Int) -> Unit
 
 // Type aliases
 

@@ -75,8 +75,6 @@ pub fn render2d_scene_cull_context_values(@sprite.SceneCullContext) -> (Float, F
 
 pub fn render2d_scene_item_visible(@sprite.SceneCullContext, Float, Float, Float) -> Bool
 
-pub let render2d_set_execute : String
-
 pub let render2d_set_extract : String
 
 pub let render2d_set_prepare : String

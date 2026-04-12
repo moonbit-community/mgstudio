@@ -14,7 +14,7 @@ pub const EARLY_PREPASS_LABEL : String = "early prepass"
 
 pub const LATE_PREPASS_LABEL : String = "late prepass"
 
-pub const PREPASS_PIPELINE_PLUGIN_ID : String = "bevy_pbr::prepass::PrepassPipelinePlugin"
+pub const PREPASS_PIPELINE_PLUGIN_ID : String = "mgstudio.pbr.prepass.PrepassPipelinePlugin"
 
 pub const PREPASS_PLUGIN_ID : String = "bevy_core_pipeline::prepass::PrepassPlugin"
 
@@ -58,6 +58,8 @@ pub fn prepass_update_pipeline_state(@ecs.World) -> Unit
 
 pub fn render3d_prepass_any_enabled(PrepassBindings3d) -> Bool
 
+pub fn render3d_prepass_bindings(Bool, Bool, Bool, Bool) -> PrepassBindings3d
+
 pub fn render3d_prepass_bindings_for_entity(@ecs.World, @core.Entity) -> PrepassBindings3d
 
 // Errors
@@ -73,7 +75,12 @@ pub struct PrepassBindings3d {
   motion_vector : Bool
   deferred : Bool
 }
+pub fn PrepassBindings3d::any_enabled(Self) -> Bool
 pub fn PrepassBindings3d::default() -> Self
+pub fn PrepassBindings3d::with_deferred(Self, Bool) -> Self
+pub fn PrepassBindings3d::with_depth(Self, Bool) -> Self
+pub fn PrepassBindings3d::with_motion_vector(Self, Bool) -> Self
+pub fn PrepassBindings3d::with_normal(Self, Bool) -> Self
 
 pub struct PrepassPipelinePlugin {
 }
@@ -85,6 +92,12 @@ pub struct PrepassPipelineState {
 } derive(Eq, @debug.Debug)
 pub fn PrepassPipelineState::default() -> Self
 pub impl @app.Resource for PrepassPipelineState
+
+pub struct PrepassPluginState {
+  enabled : Bool
+  view_count : Int
+}
+pub fn PrepassPluginState::default() -> Self
 
 // Type aliases
 pub using @deferred {type DeferredPrepass}

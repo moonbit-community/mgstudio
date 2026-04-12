@@ -269,7 +269,6 @@ pub fn Capsule2d::new(Float, Float) -> Self
 pub fn Capsule2d::to_ring(Self, Float) -> Capsule2dRing
 pub fn Capsule2d::with_segments(Self, Int) -> Self
 pub impl Bounded2d for Capsule2d
-pub impl Inset for Capsule2d
 pub impl Primitive2d for Capsule2d
 
 pub struct Capsule2dRing {
@@ -304,7 +303,6 @@ pub fn Circle::new(Float) -> Self
 pub fn Circle::to_ring(Self, Float) -> Ring2d
 pub fn Circle::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for Circle
-pub impl Inset for Circle
 pub impl Measured2d for Circle
 pub impl Primitive2d for Circle
 
@@ -353,7 +351,6 @@ pub fn CircularSegment::with_uv_mask_angle(Self, Float) -> Self
 pub fn CircularSegment::with_uv_mode(Self, CircularMeshUvMode) -> Self
 pub fn CircularSegment::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for CircularSegment
-pub impl Inset for CircularSegment
 pub impl Measured2d for CircularSegment
 pub impl Primitive2d for CircularSegment
 
@@ -941,7 +938,6 @@ pub fn Rectangle::from_size(Vec2) -> Self
 pub fn Rectangle::new(Float, Float) -> Self
 pub fn Rectangle::to_ring(Self, Float) -> RectangleRing
 pub impl Bounded2d for Rectangle
-pub impl Inset for Rectangle
 pub impl Measured2d for Rectangle
 pub impl Primitive2d for Rectangle
 
@@ -960,7 +956,6 @@ pub fn RegularPolygon::default() -> Self
 pub fn RegularPolygon::new(Float, Int) -> Self
 pub fn RegularPolygon::to_ring(Self, Float) -> RegularPolygonRing
 pub impl Bounded2d for RegularPolygon
-pub impl Inset for RegularPolygon
 pub impl Measured2d for RegularPolygon
 pub impl Primitive2d for RegularPolygon
 
@@ -978,7 +973,6 @@ pub fn Rhombus::default() -> Self
 pub fn Rhombus::new(Float, Float) -> Self
 pub fn Rhombus::to_ring(Self, Float) -> RhombusRing
 pub impl Bounded2d for Rhombus
-pub impl Inset for Rhombus
 pub impl Measured2d for Rhombus
 pub impl Primitive2d for Rhombus
 
@@ -1121,7 +1115,6 @@ pub fn Triangle2d::default() -> Self
 pub fn Triangle2d::new(Vec2, Vec2, Vec2) -> Self
 pub fn Triangle2d::to_ring(Self, Float) -> Triangle2dRing
 pub impl Bounded2d for Triangle2d
-pub impl Inset for Triangle2d
 pub impl Measured2d for Triangle2d
 pub impl Primitive2d for Triangle2d
 
@@ -1308,10 +1301,6 @@ pub impl Ease for Float
 
 pub(open) trait FromRng {
   from_rng(@random.Rand) -> Self
-}
-
-pub(open) trait Inset {
-  inset(Self, Float) -> Self
 }
 
 pub(open) trait Measured2d {

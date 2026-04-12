@@ -67,10 +67,6 @@ pub using @app {type State}
 
 pub using @app {type StatesPlugin as StateAppPlugin}
 
-pub using @app {type DespawnOnEnter as StateCommandDespawnOnEnter}
-
-pub using @app {type DespawnOnExit as StateCommandDespawnOnExit}
-
 pub using @app {type DespawnOnEnter as StateScopedDespawnOnEnter}
 
 pub using @app {type DespawnOnExit as StateScopedDespawnOnExit}

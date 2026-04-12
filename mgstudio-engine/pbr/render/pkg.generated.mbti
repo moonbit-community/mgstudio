@@ -21,9 +21,23 @@ import {
 }
 
 // Values
+pub const PBR_RENDER_PLUGIN_ID : String = "mgstudio.pbr.render"
+
 pub const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
 
+pub const RENDER3D_JOINT_BUFFER_SIZE_BYTES : Int = 16384
+
+pub const RENDER3D_JOINT_MATRIX_SIZE_BYTES : Int = 64
+
+pub const RENDER3D_MAX_MORPH_WEIGHTS : Int = 64
+
 pub const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
+
+pub const RENDER3D_MAX_SKIN_JOINTS : Int = 256
+
+pub const RENDER3D_MORPH_BUFFER_SIZE_BYTES : Int = 256
+
+pub const RENDER3D_MORPH_WEIGHT_SIZE_BYTES : Int = 4
 
 pub const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
 
@@ -97,6 +111,8 @@ pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
 
 pub fn maxf(Float, Float) -> Float
 
+pub fn mesh_binding_slot_index(MeshBindingSlot3d) -> Int
+
 pub fn minf(Float, Float) -> Float
 
 pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
@@ -120,6 +136,8 @@ pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
 
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
+
+pub fn render3d_clear_mesh_upload_cache(@ref.Ref[Render3dPhaseState]) -> Unit
 
 pub fn render3d_collect_lighting(@ecs.World) -> Render3dLightingState
 
@@ -175,6 +193,20 @@ pub let render3d_extract_system_label : String
 
 pub fn render3d_float_clamp(Float, Float, Float) -> Float
 
+pub fn render3d_fog_atmospheric_presence(@math.Vec3, @math.Vec3, Float) -> Float
+
+pub fn render3d_fog_channel_factor(Float, Float) -> Float
+
+pub fn render3d_fog_directional_mix(Float, Float, @math.Vec3, Float, Float, @math.Vec3, @math.Vec3) -> Float
+
+pub fn render3d_fog_exponential_factor(Float, Float) -> Float
+
+pub fn render3d_fog_exponential_squared_factor(Float, Float) -> Float
+
+pub fn render3d_fog_linear_factor(Float, Float, Float) -> Float
+
+pub fn render3d_fog_pow_e(Float) -> Float
+
 pub fn render3d_gpu_culling_supported() -> Bool
 
 pub fn render3d_gpu_preprocess_builder_enabled(Bool) -> Bool
@@ -185,15 +217,27 @@ pub fn render3d_gpu_preprocess_enabled() -> Bool
 
 pub fn render3d_gpu_preprocess_forced_disabled() -> Bool
 
+pub fn render3d_gpu_preprocess_state(Bool, Bool) -> Render3dGpuPreprocessState
+
+pub fn render3d_gpu_preprocess_state_with_dispatch_count(Render3dGpuPreprocessState, Int) -> Render3dGpuPreprocessState
+
 pub fn render3d_inverse_transform_direction(@transform.Transform, @math.Vec3) -> @math.Vec3?
 
 pub fn render3d_inverse_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3?
 
 pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
+pub fn render3d_mesh_layouts() -> MeshLayouts3d
+
+pub fn render3d_mesh_upload_cache_state_after_clear(Render3dMeshUploadCacheState) -> Render3dMeshUploadCacheState
+
 pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
 
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
+
+pub fn render3d_morph_non_zero_weight_count(Array[Float]) -> Int
+
+pub fn render3d_morph_state(Array[Float]) -> Render3dMorphState
 
 pub fn render3d_morph_weights_all_zero(Array[Float]) -> Bool
 
@@ -234,6 +278,8 @@ pub let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState]
 pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
 
 pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
+
+pub fn render3d_plugin_state_from_diagnostics() -> Render3dPluginState
 
 pub fn render3d_point_light_shadow_map_size(@ecs.World) -> Int
 
@@ -325,39 +371,6 @@ pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
 pub impl CameraProjection3d for CustomProjection3d
 
-pub struct DistanceFog {
-  color : @color.Color
-  directional_light_color : @color.Color
-  directional_light_exponent : Float
-  falloff : FogFalloff3d
-} derive(ToJson, @json.FromJson)
-pub fn DistanceFog::default() -> Self
-pub fn DistanceFog::new(@color.Color, FogFalloff3d) -> Self
-pub fn DistanceFog::with_color(Self, @color.Color) -> Self
-pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
-pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
-pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
-
-pub(all) enum FogFalloff3d {
-  Linear(Float, Float)
-  Exponential(Float)
-  ExponentialSquared(Float)
-  Atmospheric(@math.Vec3, @math.Vec3)
-} derive(ToJson, @json.FromJson)
-pub fn FogFalloff3d::atmospheric(@math.Vec3, @math.Vec3) -> Self
-pub fn FogFalloff3d::exponential(Float) -> Self
-pub fn FogFalloff3d::exponential_squared(Float) -> Self
-pub fn FogFalloff3d::from_visibility(Float) -> Self
-pub fn FogFalloff3d::from_visibility_color(Float, @color.Color) -> Self
-pub fn FogFalloff3d::from_visibility_colors(Float, @color.Color, @color.Color) -> Self
-pub fn FogFalloff3d::from_visibility_contrast(Float, Float) -> Self
-pub fn FogFalloff3d::from_visibility_contrast_color(Float, Float, @color.Color) -> Self
-pub fn FogFalloff3d::from_visibility_contrast_colors(Float, Float, @color.Color, @color.Color) -> Self
-pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
-pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
-pub fn FogFalloff3d::linear(Float, Float) -> Self
-pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
-
 pub struct Frustum {
   half_spaces : Array[@math.HalfSpace]
 } derive(Eq, ToJson, @json.FromJson)
@@ -421,6 +434,22 @@ pub(all) enum GpuPreprocessWorkItemBuffers3d {
   Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
 }
 
+pub struct MeshBindingLayout3d {
+  name : String
+  bindings : Array[(MeshBindingSlot3d, Int)]
+}
+
+pub enum MeshBindingSlot3d {
+  Model
+  SkinCurrent
+  MorphWeightsCurrent
+  MorphTargets
+  LightmapTexture
+  LightmapSampler
+  SkinPrevious
+  MorphWeightsPrevious
+} derive(Eq, ToJson, @json.FromJson)
+
 pub(all) struct MeshGpuDrawPayload3d {
   mesh_id : Int
   preprocess_camera_key_hi : Int
@@ -473,6 +502,17 @@ pub(all) struct MeshGpuDrawPayload3d {
   shader_path : String?
   skinning_key_hi : Int
   skinning_key_lo : Int
+}
+
+pub struct MeshLayouts3d {
+  model_only : MeshBindingLayout3d
+  lightmapped : MeshBindingLayout3d
+  skinned : MeshBindingLayout3d
+  skinned_motion : MeshBindingLayout3d
+  morphed : MeshBindingLayout3d
+  morphed_motion : MeshBindingLayout3d
+  morphed_skinned : MeshBindingLayout3d
+  morphed_skinned_motion : MeshBindingLayout3d
 }
 
 pub(all) struct MeshPreprocessStatic3d {
@@ -595,6 +635,17 @@ pub(all) struct ProjectionRuntime3d {
   last_view_height : Float
 }
 
+pub struct Render3dGpuPreprocessState {
+  enabled : Bool
+  use_gpu_instance_buffer_builder : Bool
+  indirect_enabled : Bool
+  last_dispatch_count : Int
+}
+pub fn Render3dGpuPreprocessState::default() -> Self
+pub fn Render3dGpuPreprocessState::dispatch_count(Self) -> Int
+pub fn Render3dGpuPreprocessState::enabled(Self) -> Bool
+pub fn Render3dGpuPreprocessState::indirect_enabled(Self) -> Bool
+
 pub(all) struct Render3dLightingState {
   ambient_color : @color.Color
   ambient_brightness : Float
@@ -618,6 +669,18 @@ pub(all) struct Render3dLightingState {
   spot_outer_angle : Float
 }
 
+pub struct Render3dMeshUploadCacheState {
+  clear_count : Int
+}
+pub fn Render3dMeshUploadCacheState::default() -> Self
+
+pub struct Render3dMorphState {
+  weights : Array[Float]
+  normalized : Bool
+}
+pub fn Render3dMorphState::default() -> Self
+pub fn Render3dMorphState::weights(Self) -> Array[Float]
+
 pub(all) struct Render3dPassProjection {
   clip_from_view : ProjectionMatrix3d
   unjittered_clip_from_view : ProjectionMatrix3d
@@ -631,7 +694,13 @@ pub(all) struct Render3dPhaseState {
   mut last_camera3d_count : Int
   mesh_upload_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+  mut morph_indices_current : Map[UInt64, UInt]
+  mut morph_indices_prev : Map[UInt64, UInt]
+  mut morph_weights_current : Array[Float]
+  mut morph_weights_prev : Array[Float]
   prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
+  mut next_skin_binding_slot : Int
+  skin_binding_free_slots : Array[Int]
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
   skin_joint_count_by_skin : Map[UInt64, Int]
@@ -640,6 +709,14 @@ pub(all) struct Render3dPhaseState {
 }
 pub fn Render3dPhaseState::new() -> Self
 pub impl @app.Resource for Render3dPhaseState
+
+pub struct Render3dPluginState {
+  queue_cpu_ms : Float
+  execute_cpu_ms : Float
+}
+pub fn Render3dPluginState::default() -> Self
+pub fn Render3dPluginState::execute_cpu_ms(Self) -> Float
+pub fn Render3dPluginState::queue_cpu_ms(Self) -> Float
 
 pub struct Render3dWorldTransformCache {
   mut frame_stamp : Int

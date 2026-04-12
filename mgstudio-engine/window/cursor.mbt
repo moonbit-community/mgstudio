@@ -20,6 +20,9 @@ pub(all) enum CursorGrabMode {
 } derive(Eq, Debug)
 
 ///|
+pub type SystemCursorIcon = @window_core.CursorIcon
+
+///|
 pub(all) enum CursorIcon {
   System(SystemCursorIcon)
   Custom(CustomCursor)

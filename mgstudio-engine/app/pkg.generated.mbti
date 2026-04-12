@@ -493,6 +493,7 @@ pub impl @ecs.Message for AppExit
 pub(all) enum AppLabel {
   MainApp
   RenderApp
+  RenderExtractApp
   Custom(String)
 } derive(Eq, @debug.Debug)
 

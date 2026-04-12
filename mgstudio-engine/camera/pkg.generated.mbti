@@ -59,6 +59,10 @@ pub fn orthographic_projection_2d_default() -> @sprite.OrthographicProjection
 
 pub fn orthographic_projection_2d_with_scale(Float) -> @sprite.OrthographicProjection
 
+pub fn orthographic_projection_3d_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
+
+pub fn perspective_projection_3d_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
+
 pub fn perspective_projection_3d_default() -> @render.PerspectiveProjection3d
 
 pub fn perspective_projection_3d_update(@render.PerspectiveProjection3d, Float, Float) -> @render.PerspectiveProjection3d

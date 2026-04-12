@@ -125,9 +125,6 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub let render2d_set_execute : @app.SystemSet = render2d_set_render
-
-///|
 pub fn render2d_push_sprite_uv_scissor_batch(
   world : @ecs.World,
   sprites : Array[OverlaySpriteUvScissor],

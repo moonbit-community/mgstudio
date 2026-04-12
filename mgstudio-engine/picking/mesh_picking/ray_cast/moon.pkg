@@ -1,7 +1,0 @@
-import {
-  "Milky2018/mgstudio/core" @core,
-  "Milky2018/mgstudio/ecs" @ecs,
-  "Milky2018/mgstudio/picking" @picking,
-}
-
-supported_targets = "native"

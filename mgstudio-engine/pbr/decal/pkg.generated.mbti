@@ -3,12 +3,21 @@ package "Milky2018/mgstudio/pbr/decal"
 
 import {
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/material",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
+
+pub const CLUSTERED_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ClusteredDecalPlugin"
+
+pub const FORWARD_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ForwardDecalPlugin"
+
 pub fn clustered_decal() -> ClusteredDecal
 
 pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> ClusteredDecal
@@ -19,7 +28,15 @@ pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
 
+pub let ecs_key_render_clustered_decals : @ecs.ResourceKey[RenderClusteredDecals]
+
 pub fn forward_decal() -> ForwardDecal
+
+pub fn pbr_forward_decal_material_ext_uniform(Float) -> ForwardDecalMaterialExtUniform
+
+pub fn pbr_forward_decal_shader_defs(ForwardDecalPipelineKey) -> Array[String]
+
+pub fn pbr_forward_decal_specialized_label(String) -> String
 
 // Errors
 
@@ -31,8 +48,12 @@ pub struct ClusteredDecal {
   emissive_texture : @asset.Handle[@image.Image]?
   tag : Int
 } derive(ToJson, @json.FromJson)
+pub fn ClusteredDecal::base_color_texture_id(Self) -> Int?
 pub fn ClusteredDecal::default() -> Self
+pub fn ClusteredDecal::emissive_texture_id(Self) -> Int?
+pub fn ClusteredDecal::metallic_roughness_texture_id(Self) -> Int?
 pub fn ClusteredDecal::new() -> Self
+pub fn ClusteredDecal::normal_map_texture_id(Self) -> Int?
 pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
@@ -40,12 +61,57 @@ pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
 pub impl @ecs.Component for ClusteredDecal
 
+pub struct DecalPluginState {
+  forward_enabled : Bool
+  clustered_enabled : Bool
+}
+pub fn DecalPluginState::clustered_enabled(Self) -> Bool
+pub fn DecalPluginState::default() -> Self
+pub fn DecalPluginState::forward_enabled(Self) -> Bool
+
 pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)
 pub fn ForwardDecal::default() -> Self
 pub impl @ecs.Component for ForwardDecal
 
+pub struct ForwardDecalMaterialExtUniform {
+  inv_depth_fade_factor : Float
+}
+pub fn ForwardDecalMaterialExtUniform::default() -> Self
+
+pub struct ForwardDecalPipelineKey {
+  alpha_blend : Bool
+  depth_compare_always : Bool
+}
+pub fn ForwardDecalPipelineKey::default() -> Self
+
+pub struct ForwardDecalPlugin {
+}
+pub fn ForwardDecalPlugin::default() -> Self
+
+pub struct RenderClusteredDecal {
+  base_color_texture_index : Int
+  normal_map_texture_index : Int
+  metallic_roughness_texture_index : Int
+  emissive_texture_index : Int
+  tag : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn RenderClusteredDecal::new(Int, Int, Int, Int, Int) -> Self
+
+pub struct RenderClusteredDecals {
+  binding_index_to_textures : Array[Int]
+  texture_to_binding_index : Map[Int, Int]
+  decals : Array[RenderClusteredDecal]
+  entity_to_decal_index : Map[Int, Int]
+}
+pub fn RenderClusteredDecals::clear(Self) -> Unit
+pub fn RenderClusteredDecals::default() -> Self
+pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
+pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
+pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, ClusteredDecal) -> Int
+
 // Type aliases
+pub using @material {type ForwardDecalMaterialExt}
 
 // Traits
 

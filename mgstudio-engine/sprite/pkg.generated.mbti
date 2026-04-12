@@ -219,8 +219,6 @@ pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
 
 pub fn render2d_scene_item_visible(SceneCullContext, Float, Float, Float) -> Bool
 
-pub let render2d_set_execute : String
-
 pub let render2d_set_extract : String
 
 pub let render2d_set_extract_materials : String

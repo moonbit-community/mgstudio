@@ -14,8 +14,6 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_gltf/src/label.rs`.
-// Owner lives in `gltf/loader/gltf_ext`; root keeps compatibility aliases.
-pub type GltfAssetLabel = @gltf_gltf_ext.GltfAssetLabel
 
 ///|
 pub fn gltf_asset_label_to_label(label : GltfAssetLabel) -> String {

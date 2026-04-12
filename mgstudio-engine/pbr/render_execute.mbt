@@ -107,6 +107,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
   let frame_config = render3d_execute_frame_config(source_world)
   let cameras = render3d_execute_collect_cameras(
+    world,
     source_world,
     world_transform_cache_ref,
     frame_config.gpu_instance_buffer_builder_requested,
@@ -125,7 +126,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     return
   }
   let meshes = render3d_execute_collect_meshes(
-    source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
+    world, source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_queue_store_frame(world, frame_config, cameras, meshes)
   render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()

@@ -13,6 +13,21 @@
 // limitations under the License.
 
 ///|
+priv struct MotionBlurHistoryDenseCache {
+  mut frame_stamp : Int
+  transforms : Array[@transform.Transform?]
+  generations : Array[Int]
+  stamps : Array[Int]
+}
+
+///|
+priv struct CameraMotionBlurHistoryEntry {
+  entity : @core.Entity
+  transform : @transform.Transform
+  clip_from_world : ProjectionMatrix3d
+}
+
+///|
 priv struct Render3dQueuedFrame {
   frame_config : Render3dExecuteFrameConfig
   cameras : Array[ExtractedCamera3d]
@@ -22,11 +37,22 @@ priv struct Render3dQueuedFrame {
 ///|
 priv struct Render3dExecuteQueueState {
   mut queued_frame : Render3dQueuedFrame?
+  motion_blur_history : MotionBlurHistoryDenseCache
+  mut camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry]
 }
 
 ///|
 fn render3d_execute_queue_state_default() -> Render3dExecuteQueueState {
-  Render3dExecuteQueueState::{ queued_frame: None }
+  Render3dExecuteQueueState::{
+    queued_frame: None,
+    motion_blur_history: {
+      frame_stamp: 0,
+      transforms: [],
+      generations: [],
+      stamps: [],
+    },
+    camera_motion_blur_history: [],
+  }
 }
 
 ///|
@@ -94,4 +120,98 @@ fn render3d_queue_has_frame(world : @ecs.World) -> Bool {
 fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
   state_ref.val.queued_frame = None
+}
+
+///|
+fn render3d_motion_blur_history_ensure_slot(
+  state_ref : Ref[Render3dExecuteQueueState],
+  entity_id : Int,
+) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  while state_ref.val.motion_blur_history.transforms.length() <= entity_id {
+    state_ref.val.motion_blur_history.transforms.push(None)
+    state_ref.val.motion_blur_history.generations.push(0)
+    state_ref.val.motion_blur_history.stamps.push(0)
+  }
+}
+
+///|
+fn motion_blur_history_begin_frame(world : @ecs.World) -> Int {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  state_ref.val.motion_blur_history.frame_stamp = state_ref.val.motion_blur_history.frame_stamp +
+    1
+  if state_ref.val.motion_blur_history.frame_stamp <= 0 {
+    state_ref.val.motion_blur_history.frame_stamp = 1
+    for i in 0..<state_ref.val.motion_blur_history.stamps.length() {
+      state_ref.val.motion_blur_history.stamps[i] = 0
+    }
+  }
+  state_ref.val.motion_blur_history.frame_stamp
+}
+
+///|
+fn motion_blur_history_get(
+  world : @ecs.World,
+  entity : @core.Entity,
+  previous_frame_stamp : Int,
+) -> @transform.Transform? {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  let history = state_ref.val.motion_blur_history
+  if entity.id < 0 || entity.id >= history.transforms.length() {
+    return None
+  }
+  if history.stamps[entity.id] != previous_frame_stamp {
+    return None
+  }
+  if history.generations[entity.id] != entity.generation {
+    return None
+  }
+  history.transforms[entity.id]
+}
+
+///|
+fn motion_blur_history_sync(
+  world : @ecs.World,
+  meshes : Array[ExtractedMesh3d],
+  frame_stamp : Int,
+) -> Unit {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  for mesh in meshes {
+    let entity = mesh.entity.main_entity
+    if entity.id < 0 {
+      continue
+    }
+    render3d_motion_blur_history_ensure_slot(state_ref, entity.id)
+    state_ref.val.motion_blur_history.transforms[entity.id] = Some(
+      mesh.payload.transform,
+    )
+    state_ref.val.motion_blur_history.generations[entity.id] = entity.generation
+    state_ref.val.motion_blur_history.stamps[entity.id] = frame_stamp
+  }
+}
+
+///|
+fn camera_motion_blur_history_get(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> CameraMotionBlurHistoryEntry? {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  for item in state_ref.val.camera_motion_blur_history {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item)
+    }
+  }
+  None
+}
+
+///|
+fn camera_motion_blur_history_sync(
+  world : @ecs.World,
+  history : Array[CameraMotionBlurHistoryEntry],
+) -> Unit {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  state_ref.val.camera_motion_blur_history = history
 }

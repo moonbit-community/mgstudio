@@ -18,8 +18,6 @@ pub fn gltf_add_custom_vertex_attribute(String, String) -> Unit
 
 pub fn gltf_asset_label_from_asset(@gltf_ext.GltfAssetLabel, String) -> String
 
-pub fn gltf_asset_label_string(@gltf_ext.GltfAssetLabel) -> String
-
 pub fn gltf_asset_label_to_label(@gltf_ext.GltfAssetLabel) -> String
 
 pub fn gltf_clear_custom_vertex_attributes() -> Unit

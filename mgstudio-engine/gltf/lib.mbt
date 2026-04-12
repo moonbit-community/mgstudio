@@ -17,6 +17,42 @@
 pub type GltfLoaderRegistration = () -> Unit
 
 ///|
+pub type GltfLoaderSettings = @asset.ImageLoaderSettings
+
+///|
+pub type GltfAssetLabel = @gltf_gltf_ext.GltfAssetLabel
+
+///|
+pub type GltfSceneIndex = @gltf_gltf_ext.GltfSceneIndex
+
+///|
+pub type GltfNodeIndex = @gltf_gltf_ext.GltfNodeIndex
+
+///|
+pub type GltfMeshIndex = @gltf_gltf_ext.GltfMeshIndex
+
+///|
+pub type GltfPrimitiveIndex = @gltf_gltf_ext.GltfPrimitiveIndex
+
+///|
+pub type GltfMaterialName = @gltf_gltf_ext.GltfMaterialName
+
+///|
+pub type GltfSkinIndex = @gltf_gltf_ext.GltfSkinIndex
+
+///|
+pub type GltfExtras = @gltf_gltf_ext.GltfExtras
+
+///|
+pub type GltfSceneExtras = @gltf_gltf_ext.GltfSceneExtras
+
+///|
+pub type GltfMeshExtras = @gltf_gltf_ext.GltfMeshExtras
+
+///|
+pub type GltfMaterialExtras = @gltf_gltf_ext.GltfMaterialExtras
+
+///|
 pub(all) enum GltfSkinnedMeshBoundsPolicy {
   BindPose
   Dynamic
