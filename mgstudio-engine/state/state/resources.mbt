@@ -16,14 +16,15 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/resources.rs`.
 
 ///|
-pub type StateResource[S] = @app.State[S]
-
-///|
-pub type NextStateResource[S] = @app.NextState[S]
-
-///|
 pub fn[S : @app.States] state_resource_component_key(
   state : S,
-) -> @ecs.ResourceKey[StateResource[S]] {
+) -> @ecs.ResourceKey[@app.State[S]] {
   @app.state_resource_key(state)
+}
+
+///|
+pub fn[S : @app.States] next_state_resource_component_key(
+  state : S,
+) -> @ecs.ResourceKey[@app.NextState[S]] {
+  @app.next_state_resource_key(state)
 }

@@ -16,16 +16,7 @@
 // Bevy source: `bevy/crates/bevy_render/src/error_handler.rs`.
 
 ///|
-pub type RenderRuntimeError = @app.RenderRuntimeError
-
-///|
-pub type RenderErrorPolicy = @app.RenderErrorPolicy
-
-///|
-pub type RenderErrorHandler = @app.RenderErrorHandler
-
-///|
-pub fn render_runtime_error() -> RenderRuntimeError? {
+pub fn render_runtime_error() -> @app.RenderRuntimeError? {
   @app.render_runtime_error()
 }
 
@@ -45,7 +36,7 @@ pub fn app_rendering_resume() -> Unit {
 }
 
 ///|
-pub fn set_render_error_handler(handler : RenderErrorHandler) -> Unit {
+pub fn set_render_error_handler(handler : @app.RenderErrorHandler) -> Unit {
   @app.set_render_error_handler(handler)
 }
 
@@ -55,6 +46,11 @@ pub fn reset_render_error_handler() -> Unit {
 }
 
 ///|
-pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
+pub fn report_render_runtime_error(error : @app.RenderRuntimeError) -> Unit {
   @app.report_render_runtime_error(error)
+}
+
+///|
+pub fn render_error_policy_recover() -> @app.RenderErrorPolicy {
+  @app.RenderErrorPolicy::Recover
 }
