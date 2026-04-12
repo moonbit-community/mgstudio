@@ -16,13 +16,6 @@
 // Bevy source: `bevy/crates/bevy_post_process/src/effect_stack/mod.rs`.
 
 ///|
-pub using @post_process {type ChromaticAberration}
-
-///|
-pub using @post_process {type Vignette}
-
-///|
-pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process.ecs_key_chromatic_aberration
-
-///|
-pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process.ecs_key_vignette
+pub fn effect_stack_runtime_available() -> Bool {
+  true
+}

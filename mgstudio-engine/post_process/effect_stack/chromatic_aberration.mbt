@@ -17,6 +17,56 @@
 // Host-side helpers derived from the stable root `ChromaticAberration` runtime.
 
 ///|
+pub struct ChromaticAberration {
+  intensity : Float
+  max_samples : Int
+} derive(ToJson, FromJson)
+
+///|
+pub fn ChromaticAberration::default() -> ChromaticAberration {
+  ChromaticAberration::{ intensity: 0.02F, max_samples: 8 }
+}
+
+///|
+pub fn ChromaticAberration::new(
+  intensity : Float,
+  max_samples : Int,
+) -> ChromaticAberration {
+  let safe_intensity = if intensity < 0.0F { 0.0F } else { intensity }
+  let safe_max_samples = if max_samples <= 0 { 1 } else { max_samples }
+  ChromaticAberration::{
+    intensity: safe_intensity,
+    max_samples: safe_max_samples,
+  }
+}
+
+///|
+pub fn ChromaticAberration::with_intensity(
+  self : ChromaticAberration,
+  intensity : Float,
+) -> ChromaticAberration {
+  ChromaticAberration::new(intensity, self.max_samples)
+}
+
+///|
+pub fn ChromaticAberration::with_max_samples(
+  self : ChromaticAberration,
+  max_samples : Int,
+) -> ChromaticAberration {
+  ChromaticAberration::new(self.intensity, max_samples)
+}
+
+///|
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @ecs.register_component(
+  debug_name="render3d.chromatic_aberration",
+)
+
+///|
+pub impl @ecs.Component for ChromaticAberration with component() {
+  ecs_key_chromatic_aberration
+}
+
+///|
 pub struct ChromaticAberrationUniform {
   intensity : Float
   inverse_max_samples : Float
