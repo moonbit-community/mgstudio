@@ -16,7 +16,7 @@ This file tracks Bevy-first render source mapping and must be kept in sync with 
 - [x] `bevy/crates/bevy_render/src/extract_param.rs` -> `mgstudio-engine/render/extract_param.mbt` (`Rewrite`)
 - [x] `bevy/crates/bevy_render/src/extract_resource.rs` -> `mgstudio-engine/render/extract_resource.mbt` (`Rewrite`)
 - [x] `bevy/crates/bevy_render/src/globals.rs` -> `mgstudio-engine/render/globals.mbt` (`Rewrite`)
-- [x] `bevy/crates/bevy_render/src/gpu_component_array_buffer.rs` -> `mgstudio-engine/render/gpu_component_array_buffer.mbt` (`Rewrite`)
+- [x] `bevy/crates/bevy_render/src/gpu_component_array_buffer.rs` -> `mgstudio-engine/render/gpu_component_array_buffer.mbt` (`Rewrite`; now owns `GpuComponentArrayBufferState` + entity-index map and `prepare_gpu_component_array_buffers` scan path with render package tests)
 - [x] `bevy/crates/bevy_render/src/gpu_readback.rs` -> `mgstudio-engine/render/gpu_readback.mbt` (`Rewrite`)
 - [x] `bevy/crates/bevy_render/src/pipelined_rendering.rs` -> `mgstudio-engine/render/pipelined_rendering.mbt` (`Rewrite`; added `RenderExtractApp` label path and `RenderAppChannels` owner resource surface in the plugin entrypoint)
 - [x] `bevy/crates/bevy_render/src/render_asset.rs` -> `mgstudio-engine/render/render_asset.mbt` (`Rewrite`)
