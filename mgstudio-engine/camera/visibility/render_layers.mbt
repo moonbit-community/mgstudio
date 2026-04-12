@@ -16,35 +16,37 @@
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/render_layers.rs`.
 
 ///|
-pub type RenderLayers = @sprite.RenderLayers
-
-///|
 pub type Layer = Int
 
 ///|
-pub let default_layers : RenderLayers = @sprite.RenderLayers::default()
+pub let default_layers : @sprite.RenderLayers = @sprite.RenderLayers::default()
 
 ///|
-pub fn render_layers_default() -> RenderLayers {
+pub fn render_layers_default() -> @sprite.RenderLayers {
   @sprite.RenderLayers::default()
 }
 
 ///|
-pub fn render_layers_none() -> RenderLayers {
+pub fn render_layers_none() -> @sprite.RenderLayers {
   @sprite.RenderLayers::none()
 }
 
 ///|
-pub fn render_layers_layer(index : Layer) -> RenderLayers {
+pub fn render_layers_layer(index : Layer) -> @sprite.RenderLayers {
   @sprite.RenderLayers::layer(index)
 }
 
 ///|
-pub fn render_layers_from_indices(indices : Array[Layer]) -> RenderLayers {
+pub fn render_layers_from_indices(
+  indices : Array[Layer],
+) -> @sprite.RenderLayers {
   @sprite.RenderLayers::from_layers(indices)
 }
 
 ///|
-pub fn render_layers_matches(a : RenderLayers, b : RenderLayers) -> Bool {
+pub fn render_layers_matches(
+  a : @sprite.RenderLayers,
+  b : @sprite.RenderLayers,
+) -> Bool {
   a.matches(b)
 }

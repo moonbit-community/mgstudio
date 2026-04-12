@@ -16,30 +16,40 @@
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs`.
 
 ///|
-pub type Visibility = @root_visibility.Visibility
-
-///|
-pub type InheritedVisibility = @root_visibility.InheritedVisibility
-
-///|
-pub type ViewVisibility = @root_visibility.ViewVisibility
-
-///|
-pub type NoFrustumCulling = @root_visibility.NoFrustumCulling
-
-///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @root_visibility.visibility_plugin(app)
 }
 
 ///|
 pub fn visibility_component_keys() -> (
-  @ecs.ComponentKey[Visibility],
-  @ecs.ComponentKey[InheritedVisibility],
-  @ecs.ComponentKey[ViewVisibility],
+  @ecs.ComponentKey[@root_visibility.Visibility],
+  @ecs.ComponentKey[@root_visibility.InheritedVisibility],
+  @ecs.ComponentKey[@root_visibility.ViewVisibility],
 ) {
   (
     @root_visibility.ecs_key_visibility, @root_visibility.ecs_key_inherited_visibility,
     @root_visibility.ecs_key_view_visibility,
   )
+}
+
+///|
+pub fn default_visibility() -> @root_visibility.Visibility {
+  @root_visibility.Visibility::Inherited
+}
+
+///|
+pub fn inherited_visibility(
+  visible : Bool,
+) -> @root_visibility.InheritedVisibility {
+  @root_visibility.InheritedVisibility::new(visible)
+}
+
+///|
+pub fn view_visibility(visible : Bool) -> @root_visibility.ViewVisibility {
+  @root_visibility.ViewVisibility::new(visible)
+}
+
+///|
+pub fn no_frustum_culling() -> @root_visibility.NoFrustumCulling {
+  @root_visibility.NoFrustumCulling::default()
 }

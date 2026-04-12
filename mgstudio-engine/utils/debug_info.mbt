@@ -17,14 +17,16 @@
 // Runtime wrappers live in this file while the broader utils implementation stays split across the package.
 
 ///|
-pub type TypeInfo = @any.TypeInfo
-
-///|
-pub fn type_id(value : @any.Any) -> TypeId {
+pub fn type_id(value : @any.Any) -> @any.TypeId {
   value.type_id()
 }
 
 ///|
 pub fn type_name(value : @any.Any) -> String {
   value.type_name()
+}
+
+///|
+pub fn type_info(value : @any.Any) -> (@any.TypeId, String) {
+  (value.type_id(), value.type_name())
 }

@@ -16,17 +16,20 @@
 // Bevy source: `bevy/crates/bevy_winit/src/cursor/custom_cursor.rs`.
 
 ///|
-pub type WinitCustomCursor = @window.CustomCursor
-
-///|
-pub type WinitCustomCursorImage = @window.CustomCursorImage
-
-///|
-pub type WinitCustomCursorUrl = @window.CustomCursorUrl
-
-///|
 pub fn cursor_icon_from_custom(
-  cursor : WinitCustomCursor,
+  cursor : @window.CustomCursor,
 ) -> @window.CursorIcon {
   @window.CursorIcon::from_custom(cursor)
+}
+
+///|
+pub fn custom_cursor_image(
+  data : @window.CustomCursorImage,
+) -> @window.CustomCursor {
+  @window.CustomCursor::Image(data)
+}
+
+///|
+pub fn custom_cursor_url(url : @window.CustomCursorUrl) -> @window.CustomCursor {
+  @window.CustomCursor::Url(url)
 }

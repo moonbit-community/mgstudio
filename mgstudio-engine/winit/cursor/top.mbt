@@ -16,17 +16,18 @@
 // Bevy source: `bevy/crates/bevy_winit/src/cursor/mod.rs`.
 
 ///|
-pub type CursorIcon = @window.CursorIcon
-
-///|
-pub type WinitCursorOptions = @window.CursorOptions
-
-///|
-pub fn winit_cursor_icon_from_custom(cursor : WinitCustomCursor) -> CursorIcon {
+pub fn winit_cursor_icon_from_custom(
+  cursor : @window.CustomCursor,
+) -> @window.CursorIcon {
   cursor_icon_from_custom(cursor)
 }
 
 ///|
 pub fn winit_changed_cursor_options_system(world : @ecs.World) -> Unit {
   @window.window_backend_apply_changed_cursor_options_system(world)
+}
+
+///|
+pub fn winit_cursor_options_default() -> @window.CursorOptions {
+  @window.CursorOptions::default()
 }
