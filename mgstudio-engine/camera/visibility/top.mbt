@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs`.
 
 ///|
-pub const CAMERA_VISIBILITY_MODULE_ID : String = "bevy_camera::visibility"
-
-///|
 pub type Visibility = @root_visibility.Visibility
 
 ///|

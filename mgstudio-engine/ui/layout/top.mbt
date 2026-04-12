@@ -15,7 +15,6 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui/src/layout/mod.rs`.
 // and `ui_surface.mbt`.
-pub const UI_LAYOUT_MODULE_ID : String = "bevy_ui::layout"
 
 ///|
 pub fn ui_layout_system_sets() -> Array[@app.SystemSet] {

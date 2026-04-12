@@ -16,14 +16,6 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/primitives/mod.rs`.
 
 ///|
-pub const GIZMOS_PRIMITIVES_MODULE_ID : String = "bevy_gizmos::primitives"
-
-///|
 pub fn gizmos_primitives_helper_epsilon() -> Float {
   gizmo_primitive_helper_epsilon()
-}
-
-///|
-pub fn gizmos_primitives_module_id() -> String {
-  GIZMOS_PRIMITIVES_MODULE_ID
 }

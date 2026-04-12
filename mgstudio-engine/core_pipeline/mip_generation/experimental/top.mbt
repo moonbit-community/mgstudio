@@ -17,9 +17,6 @@
 // Experimental mip-generation module surface.
 
 ///|
-pub const EXPERIMENTAL_MIP_GENERATION_MODULE_ID : String = "bevy_core_pipeline::mip_generation::experimental"
-
-///|
 pub struct ExperimentalMipGeneration {}
 
 ///|
@@ -50,7 +47,7 @@ pub fn experimental_mip_generation_plugin_with(
 pub impl @app.PluginReplacement for ExperimentalMipGeneration with replacement_id(
   _self,
 ) {
-  EXPERIMENTAL_MIP_GENERATION_MODULE_ID
+  "mgstudio.core_pipeline.mip_generation.experimental"
 }
 
 ///|

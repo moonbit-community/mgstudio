@@ -14,15 +14,4 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_math/src/curve/derivatives/mod.rs`.
-// Runtime-bearing exports live in `adaptor_impls.mbt` to avoid duplicate aliases.
-pub const CURVE_DERIVATIVES_MODULE_ID : String = "bevy_math::curve::derivatives"
-
-///|
-pub fn curve_derivatives_bevy_source() -> String {
-  "bevy/crates/bevy_math/src/curve/derivatives/mod.rs"
-}
-
-///|
-pub fn curve_derivatives_module_id() -> String {
-  CURVE_DERIVATIVES_MODULE_ID
-}
+// Runtime-bearing exports live in `adaptor_impls.mbt`.
