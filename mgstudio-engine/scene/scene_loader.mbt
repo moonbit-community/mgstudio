@@ -57,8 +57,3 @@ fn scene_init_gltf_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @asset.AssetLoader::new(["gltf", "glb"], scene_load_gltf_root_asset),
   )
 }
-
-///|
-pub fn scene_loader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_plugin(app)
-}

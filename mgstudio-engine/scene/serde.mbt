@@ -56,13 +56,3 @@ pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
     }
   }
 }
-
-///|
-pub fn scene_root_to_json(root : SceneRoot) -> Json {
-  root.to_json()
-}
-
-///|
-pub fn scene_instance_to_json(instance : SceneInstance) -> Json {
-  instance.to_json()
-}

@@ -155,33 +155,3 @@ pub fn scene_plugin_with(
     }),
   )
 }
-
-///|
-pub fn scene_spawner_run_load_pending_system(world : @ecs.World) -> Unit {
-  scene_load_pending_system(world)
-}
-
-///|
-pub fn scene_spawner_run_spawn_roots_system(world : @ecs.World) -> Unit {
-  scene_spawn_roots_system(world)
-}
-
-///|
-pub fn scene_spawner_run_reload_modified_roots_system(
-  world : @ecs.World,
-) -> Unit {
-  scene_reload_modified_roots_system(world)
-}
-
-///|
-pub fn scene_spawner_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_plugin(app)
-}
-
-///|
-pub fn scene_spawner_plugin_with(
-  app : @app.App[@ecs.World],
-  plugin : ScenePlugin,
-) -> @app.App[@ecs.World] {
-  scene_plugin_with(app, plugin)
-}

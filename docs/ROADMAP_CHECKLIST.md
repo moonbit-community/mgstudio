@@ -66,6 +66,7 @@ This file must not exceed 200 lines.
 - [x] `examples/camera-projection-queries`: switch remaining example camera ray/view helpers from `@pbr.render3d_camera_*` to `@camera.camera_*` owner surface.
 - [x] `gltf-owner-callsites`: switch in-repo consumers (`pbr/scene/gltf examples`) from `@gltf` forwarding helpers to direct `@gltf_loader` owner APIs.
 - [x] `gltf-extensions-callsites`: switch scene runtime and extension examples from `@gltf.gltf_extension_*` forwarding helpers to `@gltf_loader_extensions` owner APIs.
+- [x] `scene/dead-wrapper-prune`: remove unreferenced compatibility wrappers (`scene_spawner_run_*`, `scene_spawner_plugin*`, `scene_loader_plugin`, `scene_*_to_json`) to keep scene surface behavior-only.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.
