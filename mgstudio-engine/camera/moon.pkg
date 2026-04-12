@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/color" @color,
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/picking/mesh_picking/ray_cast" @picking_mesh_ray_cast,
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
