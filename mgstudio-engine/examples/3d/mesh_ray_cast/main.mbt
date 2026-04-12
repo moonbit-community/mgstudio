@@ -15,8 +15,8 @@
 ///|
 ///
 /// Parity notes:
-/// - Uses `@pbr.MeshRayCastSettings` + `@pbr.mesh_ray_cast_first`
-///   shim APIs for Bevy-like ray hit queries.
+/// - Uses `@picking_mesh_ray_cast.MeshRayCastSettings` +
+///   `@picking_mesh_ray_cast.mesh_ray_cast_first` for Bevy-like ray hit queries.
 /// - 3D `Gizmos` still use mesh-primitive fallback visualization in this
 ///   runtime (line segments + hit markers).
 
@@ -424,7 +424,7 @@ fn bounce_ray(
   ray_direction : @math.Vec3,
   pool : BeamPool,
   base_color : @sprite.Color,
-  ray_cast_settings : @pbr.MeshRayCastSettings,
+  ray_cast_settings : @picking_mesh_ray_cast.MeshRayCastSettings,
 ) -> Unit {
   let mut current_origin = ray_origin
   let mut current_direction = ray_direction.normalize_or_zero()
@@ -432,7 +432,7 @@ fn bounce_ray(
   let mut used = 0
 
   for i in 0..<MAX_BOUNCES {
-    guard @pbr.mesh_ray_cast_first(
+    guard @picking_mesh_ray_cast.mesh_ray_cast_first(
         world, current_origin, current_direction, ray_cast_settings,
       )
       is Some((_entity, hit)) else {
@@ -494,7 +494,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn bouncing_raycast(world : @ecs.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
-  let ray_cast_settings = @pbr.MeshRayCastSettings::default()
+  let ray_cast_settings = @picking_mesh_ray_cast.MeshRayCastSettings::default()
     .with_max_hits(1)
     .with_only_entities(Some(raycast_state.val.collider_entities))
 

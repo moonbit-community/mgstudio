@@ -393,10 +393,15 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
       @window.window_scale_factor(),
     )
     is Some((ray_origin, ray_direction)) {
-    let settings = @pbr.MeshRayCastSettings::default()
+    let settings = @picking_mesh_ray_cast.MeshRayCastSettings::default()
       .with_max_hits(1)
       .with_only_entities(Some([cube_entity]))
-    if @pbr.mesh_ray_cast_first(world, ray_origin, ray_direction, settings)
+    if @picking_mesh_ray_cast.mesh_ray_cast_first(
+        world,
+        ray_origin,
+        ray_direction,
+        settings,
+      )
       is Some((_entity, hit)) {
       pointer_position = Some(
         cuboid_pointer_position(hit.point, hit.normal, cube_transform.value()),

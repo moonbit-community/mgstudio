@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/picking/mesh_picking/ray_cast" @picking_mesh_ray_cast,
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
