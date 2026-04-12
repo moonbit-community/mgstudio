@@ -60,6 +60,7 @@ This file must not exceed 200 lines.
 - [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
 - [ ] `gltf/scene`: replace path-alignment wrapper files with owner-file real implementations (stopgap wrappers are currently back in tree).
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
+- [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.
 - [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.

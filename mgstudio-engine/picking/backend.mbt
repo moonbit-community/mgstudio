@@ -253,7 +253,7 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
         let target_size = picking_camera_target_size(
           camera, window_width, window_height,
         )
-        if @pbr.mesh_ray_cast_from_camera_first(
+        if @picking_mesh_ray_cast.mesh_ray_cast_from_camera_first(
             world,
             cursor,
             camera,
@@ -261,7 +261,9 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
             camera_transform,
             target_size,
             scale_factor,
-            @pbr.MeshRayCastSettings::default().with_include_invisible(false),
+            @picking_mesh_ray_cast.MeshRayCastSettings::default().with_include_invisible(
+              false,
+            ),
           )
           is Some((entity, _hit)) {
           hit_top = Some(entity)

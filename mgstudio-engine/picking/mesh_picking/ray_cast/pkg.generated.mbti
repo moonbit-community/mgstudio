@@ -11,30 +11,44 @@ import {
 }
 
 // Values
-pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, @pbr.MeshRayCastSettings) -> Array[(@core.Entity, @pbr.MeshRayCastHit)]
+pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
 
-pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, @pbr.MeshRayCastSettings) -> (@core.Entity, @pbr.MeshRayCastHit)?
+pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
 
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> Array[(@core.Entity, @pbr.MeshRayCastHit)]
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
 
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> (@core.Entity, @pbr.MeshRayCastHit)?
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
 
-pub fn mesh_ray_cast_intersections(@ecs.World, @math.Vec3, @math.Vec3, @pbr.MeshRayCastSettings) -> Array[(@core.Entity, @pbr.MeshRayCastHit)]
+pub fn mesh_ray_cast_intersections(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
 
-pub fn mesh_ray_cast_intersections_first(@ecs.World, @math.Vec3, @math.Vec3, @pbr.MeshRayCastSettings) -> (@core.Entity, @pbr.MeshRayCastHit)?
+pub fn mesh_ray_cast_intersections_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
 
 // Errors
 
 // Types and methods
+#alias(MeshRayCastHit)
+pub struct MeshRayCastIntersectionHit {
+  point : @math.Vec3
+  normal : @math.Vec3
+  distance : Float
+}
+
+#alias(MeshRayCastSettings)
+pub struct MeshRayCastIntersectionSettings {
+  max_distance : Float
+  ray_epsilon : Float
+  max_hits : Int
+  include_invisible : Bool
+  only_entities : Array[@core.Entity]?
+}
+pub fn MeshRayCastIntersectionSettings::default() -> Self
+pub fn MeshRayCastIntersectionSettings::with_include_invisible(Self, Bool) -> Self
+pub fn MeshRayCastIntersectionSettings::with_max_distance(Self, Float) -> Self
+pub fn MeshRayCastIntersectionSettings::with_max_hits(Self, Int) -> Self
+pub fn MeshRayCastIntersectionSettings::with_only_entities(Self, Array[@core.Entity]?) -> Self
+pub fn MeshRayCastIntersectionSettings::with_ray_epsilon(Self, Float) -> Self
 
 // Type aliases
-pub using @pbr {type MeshRayCastHit}
-
-pub using @pbr {type MeshRayCastHit as MeshRayCastIntersectionHit}
-
-pub using @pbr {type MeshRayCastSettings as MeshRayCastIntersectionSettings}
-
-pub using @pbr {type MeshRayCastSettings}
 
 // Traits
 

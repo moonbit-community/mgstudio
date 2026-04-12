@@ -17,6 +17,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/picking/mesh_picking/ray_cast" @picking_mesh_ray_cast,
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }

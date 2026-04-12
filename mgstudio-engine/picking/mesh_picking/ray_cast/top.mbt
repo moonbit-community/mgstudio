@@ -16,10 +16,10 @@
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/ray_cast/mod.rs`.
 
 ///|
-pub type MeshRayCastHit = @pbr.MeshRayCastHit
+pub type MeshRayCastHit = MeshRayCastIntersectionHit
 
 ///|
-pub type MeshRayCastSettings = @pbr.MeshRayCastSettings
+pub type MeshRayCastSettings = MeshRayCastIntersectionSettings
 
 ///|
 pub fn mesh_ray_cast(
@@ -28,7 +28,7 @@ pub fn mesh_ray_cast(
   direction : @math.Vec3,
   settings : MeshRayCastSettings,
 ) -> Array[(@core.Entity, MeshRayCastHit)] {
-  @pbr.mesh_ray_cast(world, origin, direction, settings)
+  mesh_ray_cast_intersections(world, origin, direction, settings)
 }
 
 ///|
@@ -38,7 +38,7 @@ pub fn mesh_ray_cast_first(
   direction : @math.Vec3,
   settings : MeshRayCastSettings,
 ) -> (@core.Entity, MeshRayCastHit)? {
-  @pbr.mesh_ray_cast_first(world, origin, direction, settings)
+  mesh_ray_cast_intersections_first(world, origin, direction, settings)
 }
 
 ///|
@@ -52,16 +52,14 @@ pub fn mesh_ray_cast_from_camera(
   scale_factor : Float,
   settings : MeshRayCastSettings,
 ) -> Array[(@core.Entity, MeshRayCastHit)] {
-  @pbr.mesh_ray_cast_from_camera(
-    world,
-    screen,
-    camera,
-    projection,
-    camera_transform,
-    target_size,
-    scale_factor,
-    settings,
-  )
+  if @pbr.render3d_camera_viewport_to_world_ray(
+      screen, camera, projection, camera_transform, target_size, scale_factor,
+    )
+    is Some((origin, direction)) {
+    mesh_ray_cast_intersections(world, origin, direction, settings)
+  } else {
+    []
+  }
 }
 
 ///|
@@ -75,7 +73,7 @@ pub fn mesh_ray_cast_from_camera_first(
   scale_factor : Float,
   settings : MeshRayCastSettings,
 ) -> (@core.Entity, MeshRayCastHit)? {
-  @pbr.mesh_ray_cast_from_camera_first(
+  let hits = mesh_ray_cast_from_camera(
     world,
     screen,
     camera,
@@ -83,6 +81,11 @@ pub fn mesh_ray_cast_from_camera_first(
     camera_transform,
     target_size,
     scale_factor,
-    settings,
+    settings.with_max_hits(1),
   )
+  if hits.length() > 0 {
+    Some(hits[0])
+  } else {
+    None
+  }
 }
