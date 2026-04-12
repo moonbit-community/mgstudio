@@ -134,9 +134,7 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn quality_label(
-  quality : @post_process.ScreenSpaceTransmissionQuality,
-) -> String {
+fn quality_label(quality : @pbr.ScreenSpaceTransmissionQuality) -> String {
   match quality {
     Low => "Low"
     Medium => "Medium"
@@ -148,36 +146,36 @@ fn quality_label(
 ///|
 fn camera_screen_space_transmission(
   world : @ecs.World,
-) -> @post_process.ScreenSpaceTransmission {
+) -> @pbr.ScreenSpaceTransmission {
   if transmission_state.val.camera is Some(camera_entity) {
     match
       (try! world.get_by_key(
-        camera_entity, @post_process.ecs_key_screen_space_transmission,
+        camera_entity, @pbr.ecs_key_screen_space_transmission,
       )) {
       Some(value) => value
-      None => @post_process.ScreenSpaceTransmission::default()
+      None => @pbr.ScreenSpaceTransmission::default()
     }
   } else {
-    @post_process.ScreenSpaceTransmission::default()
+    @pbr.ScreenSpaceTransmission::default()
   }
 }
 
 ///|
 fn camera_set_screen_space_transmission(
   world : @ecs.World,
-  value : @post_process.ScreenSpaceTransmission,
+  value : @pbr.ScreenSpaceTransmission,
 ) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     if (try! world.contains_by_key(
-        camera_entity, @post_process.ecs_key_screen_space_transmission,
+        camera_entity, @pbr.ecs_key_screen_space_transmission,
       )) {
       try! (world.replace(
-        camera_entity, @post_process.ecs_key_screen_space_transmission, value,
+        camera_entity, @pbr.ecs_key_screen_space_transmission, value,
       )
       |> ignore)
     } else {
       try! world.set_by_key(
-        camera_entity, @post_process.ecs_key_screen_space_transmission, value,
+        camera_entity, @pbr.ecs_key_screen_space_transmission, value,
       )
     }
   }
@@ -714,7 +712,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
       ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     )
     .with_screen_space_transmission(
-      Some(@post_process.ScreenSpaceTransmission::default()),
+      Some(@pbr.ScreenSpaceTransmission::default()),
     )
     .spawn(world)
   try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
@@ -968,28 +966,28 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyJ) {
     transmission_settings = transmission_settings.with_quality(
-      @post_process.ScreenSpaceTransmissionQuality::Low,
+      @pbr.ScreenSpaceTransmissionQuality::Low,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyK) {
     transmission_settings = transmission_settings.with_quality(
-      @post_process.ScreenSpaceTransmissionQuality::Medium,
+      @pbr.ScreenSpaceTransmissionQuality::Medium,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
     transmission_settings = transmission_settings.with_quality(
-      @post_process.ScreenSpaceTransmissionQuality::High,
+      @pbr.ScreenSpaceTransmissionQuality::High,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::Semicolon) {
     transmission_settings = transmission_settings.with_quality(
-      @post_process.ScreenSpaceTransmissionQuality::Ultra,
+      @pbr.ScreenSpaceTransmissionQuality::Ultra,
     )
     transmission_settings_changed = true
   }
