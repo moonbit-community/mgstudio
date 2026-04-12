@@ -2,7 +2,6 @@ import {
   "moonbitlang/core/json",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/pbr/transmission" @pbr_transmission,
   "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,
   "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
 }

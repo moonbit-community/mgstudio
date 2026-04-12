@@ -62,6 +62,7 @@ This file must not exceed 200 lines.
 - [x] `shell-packages`: drop dead wrapper-only subpackages (`ui/widget`, `window/cursor`, `state/state`, `picking/mesh_picking/ray_cast`, `gltf/loader`, `dev_tools/frame_time_graph`).
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
 - [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
+- [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
 - [ ] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` style hard stub gating by landing real runtime path or explicit scope exclusion.
 - [ ] `render/wgpu_mbt`: expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for runtime capability checks.
 - [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.

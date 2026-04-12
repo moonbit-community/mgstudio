@@ -716,23 +716,6 @@ pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(
 }
 
 ///|
-/// Camera screen-space transmission quality aligned with Bevy's
-/// `ScreenSpaceTransmissionQuality`.
-pub type ScreenSpaceTransmissionQuality = @pbr_transmission.ScreenSpaceTransmissionQuality
-
-///|
-pub fn screen_space_transmission_blur_taps(
-  quality : ScreenSpaceTransmissionQuality,
-) -> Int {
-  @pbr_transmission.screen_space_transmission_blur_taps(quality)
-}
-
-///|
-/// Camera screen-space transmission settings aligned with Bevy's
-/// `ScreenSpaceTransmission`.
-pub type ScreenSpaceTransmission = @pbr_transmission.ScreenSpaceTransmission
-
-///|
 fn minf(a : Float, b : Float) -> Float {
   if a < b {
     a
@@ -997,11 +980,6 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
   ScreenSpaceReflections,
 ] = @ecs.register_component(debug_name="render3d.screen_space_reflections")
-
-///|
-pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
-  ScreenSpaceTransmission,
-] = @pbr_transmission.ecs_key_screen_space_transmission
 
 ///|
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
