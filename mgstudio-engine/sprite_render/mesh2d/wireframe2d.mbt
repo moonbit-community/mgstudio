@@ -40,8 +40,3 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[
   @sprite_render.Wireframe2dConfig,
 ] = @sprite_render.ecs_key_wireframe2d_config
-
-///|
-pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite_render.wireframe2d_plugin(app)
-}

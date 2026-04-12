@@ -15,15 +15,3 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/mod.rs`.
 pub using @sprite_render {type AlphaMode2d}
-
-///|
-pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite_render.sprite_render_plugin(app)
-}
-
-///|
-pub fn sprite_render_plugin_ecs(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  @sprite_render.sprite_render_plugin_ecs(app)
-}
