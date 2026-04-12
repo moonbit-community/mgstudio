@@ -18,8 +18,3 @@ pub using @ui {type Label}
 
 ///|
 pub let ecs_key_label : @ecs.ComponentKey[@ui.Label] = @ui.ecs_key_label
-
-///|
-pub fn ui_widget_checkbox_label_identity(value : Label) -> Label {
-  value
-}

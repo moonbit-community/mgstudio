@@ -18,10 +18,3 @@ pub using @ui {type ScrollPosition}
 
 ///|
 pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition] = @ui.ecs_key_scroll_position
-
-///|
-pub fn ui_widget_scroll_position_identity(
-  value : ScrollPosition,
-) -> ScrollPosition {
-  value
-}

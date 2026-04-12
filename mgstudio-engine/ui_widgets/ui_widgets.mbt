@@ -14,10 +14,3 @@
 
 ///|
 /// UI-widgets API boundary aligned with Bevy crate responsibilities.
-
-///|
-pub fn ui_widgets_plugin_entry(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  ui_widgets_plugin(app)
-}

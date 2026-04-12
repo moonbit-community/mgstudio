@@ -18,10 +18,3 @@ pub using @ui {type FocusPolicy}
 
 ///|
 pub let ecs_key_focus_policy : @ecs.ComponentKey[@ui.FocusPolicy] = @ui.ecs_key_focus_policy
-
-///|
-pub fn ui_widget_radio_focus_policy_identity(
-  value : FocusPolicy,
-) -> FocusPolicy {
-  value
-}

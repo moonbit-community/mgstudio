@@ -18,10 +18,3 @@ pub using @ui {type AccessibilityLabel}
 
 ///|
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel] = @ui.ecs_key_accessibility_label
-
-///|
-pub fn ui_widget_menu_accessibility_label_identity(
-  value : AccessibilityLabel,
-) -> AccessibilityLabel {
-  value
-}
