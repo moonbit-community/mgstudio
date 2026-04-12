@@ -8,7 +8,7 @@ Do not edit it. It is maintained by humans.
 - [ ] 现在组件仍然有 changed 考虑吗？我们 mgstudio 不追求多线程，也需要考虑 changed 吗？
 - [x] as_ecs_world() 是什么？
 - [ ] 可以继续把 resource bridge 这层也一并从 bridge_get_*_resource_by_world 方案迁掉吗？
-- [ ] 3D 渲染又大量 parity stub
+- [ ] 3D 渲染大量 parity stub
 - [ ] auto exposure 仍是 CPU 近似，未做 histogram pipeline
 - [ ] DistanceFog 仍是全局状态，不是 camera-owned ECS 语义
 - [ ] 虽然定义了 Component/ResourceData/EventData trait，但核心 API 约束仍大量直接写 ToJson + FromJson，未完全收口到新 trait
@@ -51,3 +51,4 @@ Do not edit it. It is maintained by humans.
 - [ ] 现在的 event 都是用 any 实现的，并不 typed
 - [ ] test 没有链接对应的 package
 - [ ] 底层存储是 sparseset 而非 archetype/table
+- [ ] PLUGIN_ID 是什么？有什么用？
