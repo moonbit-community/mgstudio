@@ -26,17 +26,6 @@ pub fn SceneRoot::new(scene : @asset.Handle[Scene]) -> SceneRoot {
 }
 
 ///|
-pub impl ToJson for SceneRoot with to_json(self) {
-  self.scene.id().to_json()
-}
-
-///|
-pub impl @json.FromJson for SceneRoot with from_json(json, path) {
-  let scene_id : Int = @json.from_json(json, path~)
-  SceneRoot::new(@asset.Handle::new(scene_id))
-}
-
-///|
 pub struct SceneInstance {
   instance_id : Int
 }
@@ -44,17 +33,6 @@ pub struct SceneInstance {
 ///|
 pub fn SceneInstance::new(instance_id : Int) -> SceneInstance {
   SceneInstance::{ instance_id, }
-}
-
-///|
-pub impl ToJson for SceneInstance with to_json(self) {
-  self.instance_id.to_json()
-}
-
-///|
-pub impl @json.FromJson for SceneInstance with from_json(json, path) {
-  let instance_id : Int = @json.from_json(json, path~)
-  SceneInstance::new(instance_id)
 }
 
 ///|
@@ -69,26 +47,6 @@ pub fn SceneInstanceReady::new(
   spawned_entities : Int,
 ) -> SceneInstanceReady {
   SceneInstanceReady::{ instance_id, spawned_entities }
-}
-
-///|
-pub impl ToJson for SceneInstanceReady with to_json(self) {
-  (self.instance_id, self.spawned_entities).to_json()
-}
-
-///|
-pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
-  let pair : (Int, Int)? = Some(@json.from_json(json, path~)) catch {
-    _ => None
-  }
-  match pair {
-    Some((instance_id, spawned_entities)) =>
-      SceneInstanceReady::new(instance_id, spawned_entities)
-    None => {
-      let spawned_entities : Int = @json.from_json(json, path~)
-      SceneInstanceReady::new(0, spawned_entities)
-    }
-  }
 }
 
 ///|

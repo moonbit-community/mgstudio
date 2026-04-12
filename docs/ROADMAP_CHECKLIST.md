@@ -64,6 +64,7 @@ This file must not exceed 200 lines.
 - [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
 - [x] `path-subpackages`: promote `ui/widget` `winit/cursor` `dev_tools/frame_time_graph` `picking/mesh_picking/ray_cast` `sprite_render/*` path dirs to compiled packages.
 - [x] `scene/components+scene_spawner`: move `SceneRoot/SceneInstance*` and plugin/spawner systems out of `scene/lib.mbt` into Bevy-shaped owner files.
+- [x] `scene/scene_loader+serde`: move glTF ready-check loader wiring and scene serde impl ownership out of aggregating files.
 - [x] `state/state`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/state/state`) instead of dead wrappers.
 - [x] `window/cursor`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/window/cursor`) with root compatibility exports.
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
