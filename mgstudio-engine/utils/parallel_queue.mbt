@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_utils/src/parallel_queue.rs`.
-// The current runtime does not expose Bevy's parallel-queue helpers.
+// MoonBit adaptation of Bevy's parallel queue utility.
 
 ///|
 pub type ParallelQueueValues[T] = Array[T]
@@ -22,4 +22,64 @@ pub type ParallelQueueValues[T] = Array[T]
 ///|
 pub fn[T] parallel_queue_values_empty() -> ParallelQueueValues[T] {
   []
+}
+
+///|
+pub struct ParallelQueue[T] {
+  mut values : Array[T]
+}
+
+///|
+pub fn[T] ParallelQueue::new() -> ParallelQueue[T] {
+  ParallelQueue::{ values: [] }
+}
+
+///|
+pub fn[T] ParallelQueue::default() -> ParallelQueue[T] {
+  ParallelQueue::new()
+}
+
+///|
+pub fn[T] ParallelQueue::push(self : ParallelQueue[T], value : T) -> Unit {
+  self.values.push(value)
+}
+
+///|
+pub fn[T] ParallelQueue::extend(self : ParallelQueue[T], items : Array[T]) -> Unit {
+  for item in items {
+    self.values.push(item)
+  }
+}
+
+///|
+pub fn[T] ParallelQueue::len(self : ParallelQueue[T]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[T] ParallelQueue::is_empty(self : ParallelQueue[T]) -> Bool {
+  self.values.is_empty()
+}
+
+///|
+pub fn[T] ParallelQueue::clear(self : ParallelQueue[T]) -> Unit {
+  self.values.clear()
+}
+
+///|
+pub fn[T] ParallelQueue::drain(self : ParallelQueue[T]) -> Array[T] {
+  let drained = self.values
+  self.values = []
+  drained
+}
+
+///|
+pub fn[T] ParallelQueue::drain_into(
+  self : ParallelQueue[T],
+  out : Array[T],
+) -> Unit {
+  for item in self.values {
+    out.push(item)
+  }
+  self.values.clear()
 }
