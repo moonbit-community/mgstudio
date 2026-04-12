@@ -16,19 +16,18 @@
 // Bevy source: `bevy/crates/bevy_render/src/render_phase/draw_state.rs`.
 
 ///|
-pub type DrawState = @renderer.GpuPassState
-
-///|
-pub fn draw_state_target_id(state : DrawState) -> Int {
+pub fn draw_state_target_id(state : @renderer.GpuPassState) -> Int {
   state.target_id
 }
 
 ///|
-pub fn draw_state_is_3d(state : DrawState) -> Bool {
+pub fn draw_state_is_3d(state : @renderer.GpuPassState) -> Bool {
   state.is_3d
 }
 
 ///|
-pub fn draw_state_viewport(state : DrawState) -> (UInt, UInt, UInt, UInt) {
+pub fn draw_state_viewport(
+  state : @renderer.GpuPassState,
+) -> (UInt, UInt, UInt, UInt) {
   (state.viewport_x, state.viewport_y, state.viewport_w, state.viewport_h)
 }
