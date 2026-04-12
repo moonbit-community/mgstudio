@@ -19,8 +19,6 @@ pub fn atmosphere_plugin_state_with_extracted_camera_count(AtmospherePluginState
 
 pub fn atmosphere_plugin_state_with_lut_ready(AtmospherePluginState, Bool) -> AtmospherePluginState
 
-pub fn atmosphere_runtime_available() -> Bool
-
 pub fn pbr_atmosphere_default() -> @light.Atmosphere
 
 pub fn pbr_atmosphere_earthlike(@light.ScatteringMedium) -> @light.Atmosphere

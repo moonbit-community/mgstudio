@@ -14,8 +14,6 @@ pub const EARLY_PREPASS_LABEL : String = "early prepass"
 
 pub const LATE_PREPASS_LABEL : String = "late prepass"
 
-pub const PREPASS_PIPELINE_PLUGIN_ID : String = "mgstudio.pbr.prepass.PrepassPipelinePlugin"
-
 pub const PREPASS_PLUGIN_ID : String = "bevy_core_pipeline::prepass::PrepassPlugin"
 
 pub fn early_prepass_should_run(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool

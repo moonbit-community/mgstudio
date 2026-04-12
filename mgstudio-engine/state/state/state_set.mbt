@@ -16,9 +16,9 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/state_set.rs`.
 
 ///|
-pub type StateSetTransitionSystems = @state_root.StateTransitionSystems
+pub type StateSetTransitionSystems = @app.StateTransitionSystems
 
 ///|
 pub fn[S : @app.States] state_set_depth(state : S) -> Int {
-  @state_root.state_set_dependency_depth(state)
+  @app.state_set_dependency_depth(state)
 }

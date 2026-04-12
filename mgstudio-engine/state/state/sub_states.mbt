@@ -16,8 +16,6 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/sub_states.rs`.
 
 ///|
-pub fn[S] sub_state_optional_source(
-  state : S,
-) -> @state_root.OptionalStateSource[S] {
-  @state_root.optional_state(state)
+pub fn[S] sub_state_optional_source(state : S) -> @app.OptionalStateSource[S] {
+  @app.optional_state(state)
 }

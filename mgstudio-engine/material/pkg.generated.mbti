@@ -18,6 +18,8 @@ pub const MATERIAL_SPECIALIZATION_SUPPORTED : Bool = true
 
 pub fn[S : IntoStandardMaterialAsset] add(@asset.Assets[StandardMaterial], S) -> @asset.Handle[StandardMaterial]
 
+pub fn draw_function_label(String) -> String
+
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
 
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
@@ -47,6 +49,8 @@ pub fn material_opaque_renderer_method_identity(OpaqueRendererMethod) -> OpaqueR
 pub fn material_parallax_method_identity(ParallaxMappingMethod) -> ParallaxMappingMethod
 
 pub fn material_specialization_supported() -> Bool
+
+pub fn shader_label(String) -> String
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
@@ -81,6 +85,12 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+
+pub struct DrawFunctionId {
+  id : UInt
+} derive(Eq)
+pub fn DrawFunctionId::id(Self) -> UInt
+pub fn DrawFunctionId::new(UInt) -> Self
 
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
@@ -228,6 +238,13 @@ pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 
 // Type aliases
+pub type DrawFunctionLabel = String
+
+pub type InternedDrawFunctionLabel = String
+
+pub type InternedShaderLabel = String
+
+pub type ShaderLabel = String
 
 // Traits
 pub(open) trait IntoStandardMaterialAsset {

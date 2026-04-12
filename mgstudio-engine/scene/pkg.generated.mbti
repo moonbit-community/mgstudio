@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf/loader/gltf_ext",
   "Milky2018/mgstudio/material",
@@ -23,6 +24,14 @@ pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
+
+pub fn scene_components_has_scene_instance(@ecs.World, @core.Entity) -> Bool
+
+pub fn scene_components_has_scene_instance_ready(@ecs.World, @core.Entity) -> Bool
+
+pub fn scene_components_has_scene_root(@ecs.World, @core.Entity) -> Bool
+
+pub fn scene_components_scene_root_count(@ecs.World) -> Int
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
@@ -61,6 +70,16 @@ pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 pub fn scene_spawn_roots_system(@ecs.World) -> Unit
 
 pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
+
+pub fn scene_spawner_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn scene_spawner_plugin_with(@app.App[@ecs.World], ScenePlugin) -> @app.App[@ecs.World]
+
+pub fn scene_spawner_run_load_pending_system(@ecs.World) -> Unit
+
+pub fn scene_spawner_run_reload_modified_roots_system(@ecs.World) -> Unit
+
+pub fn scene_spawner_run_spawn_roots_system(@ecs.World) -> Unit
 
 // Errors
 

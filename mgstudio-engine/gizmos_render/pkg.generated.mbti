@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub const GIZMOS_RENDER_PLUGIN_ID : String = "bevy_gizmos_render::GizmoRenderPlugin"
-
 pub fn extract_line_gizmos(@ecs.World) -> Unit
 
 pub fn gizmo_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

@@ -58,8 +58,12 @@ This file must not exceed 200 lines.
 - [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
 - [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
 - [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
-- [ ] `gltf/scene/state/window`: replace path-alignment wrapper files with owner-file real implementations (stopgap wrappers are currently back in tree).
+- [ ] `gltf/scene`: replace path-alignment wrapper files with owner-file real implementations (stopgap wrappers are currently back in tree).
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
+- [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
+- [x] `scene/components+scene_spawner`: move `SceneRoot/SceneInstance*` and plugin/spawner systems out of `scene/lib.mbt` into Bevy-shaped owner files.
+- [x] `state/state`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/state/state`) instead of dead wrappers.
+- [x] `window/cursor`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/window/cursor`) with root compatibility exports.
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
 - [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.

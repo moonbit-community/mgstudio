@@ -10,8 +10,6 @@ import {
 }
 
 // Values
-pub const VOLUMETRIC_FOG_PLUGIN_ID : String = "mgstudio.pbr.VolumetricFogPlugin"
-
 pub fn fog_volume_default_settings() -> @light.FogVolume
 
 pub fn fog_volume_with_density(@light.FogVolume, Float) -> @light.FogVolume

@@ -16,11 +16,11 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/transitions.rs`.
 
 ///|
-pub type StateTransitionsEvent[S] = @state_root.StateTransitionEvent[S]
+pub type StateTransitionsEvent[S] = @app.StateTransitionEvent[S]
 
 ///|
 pub fn[S : @app.States] state_transitions_event_key(
   state : S,
 ) -> @ecs.ResourceKey[StateTransitionsEvent[S]] {
-  @state_root.state_transition_event_resource_key(state)
+  @app.state_transition_event_resource_key(state)
 }

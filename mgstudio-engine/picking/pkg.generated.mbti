@@ -12,8 +12,6 @@ import {
 }
 
 // Values
-pub const PICKING_PLUGIN_ID : String = "bevy_picking::PickingPlugin"
-
 pub let ecs_components : Array[String]
 
 pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits]

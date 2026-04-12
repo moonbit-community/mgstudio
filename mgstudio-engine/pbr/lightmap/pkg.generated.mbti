@@ -14,8 +14,6 @@ import {
 // Values
 pub const LIGHTMAPS_PER_SLAB : Int = 4
 
-pub const LIGHTMAP_PLUGIN_ID : String = "mgstudio_pbr::LightmapPlugin"
-
 pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
 
 pub let ecs_key_render_lightmaps : @ecs.ResourceKey[RenderLightmaps]

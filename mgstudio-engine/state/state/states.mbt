@@ -16,22 +16,22 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/states.rs`.
 
 ///|
-pub type StatesState[S] = @state_root.State[S]
+pub type StatesState[S] = @app.State[S]
 
 ///|
-pub type StatesNextState[S] = @state_root.NextState[S]
+pub type StatesNextState[S] = @app.NextState[S]
 
 ///|
-pub type StatesOnEnter[S] = @state_root.OnEnter[S]
+pub type StatesOnEnter[S] = @app.OnEnter[S]
 
 ///|
-pub type StatesOnExit[S] = @state_root.OnExit[S]
+pub type StatesOnExit[S] = @app.OnExit[S]
 
 ///|
-pub type StatesOnTransition[S] = @state_root.OnTransition[S]
+pub type StatesOnTransition[S] = @app.OnTransition[S]
 
 ///|
-pub type StatesOnReenter[S] = @state_root.OnReenter[S]
+pub type StatesOnReenter[S] = @app.OnReenter[S]
 
 ///|
-pub type StatesOnReexit[S] = @state_root.OnReexit[S]
+pub type StatesOnReexit[S] = @app.OnReexit[S]

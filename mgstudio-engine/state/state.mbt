@@ -14,50 +14,50 @@
 
 ///|
 /// State API boundary aligned with Bevy-style state responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/app`.
+/// Runtime implementation is owned by `Milky2018/mgstudio/state/state`.
 
 ///|
-pub type State[S] = @app.State[S]
+pub type State[S] = @state_state.State[S]
 
 ///|
-pub type NextState[S] = @app.NextState[S]
+pub type NextState[S] = @state_state.NextState[S]
 
 ///|
-pub type StateTransitionEvent[S] = @app.StateTransitionEvent[S]
+pub type StateTransitionEvent[S] = @state_state.StateTransitionEvent[S]
 
 ///|
-pub type StateTransitionSystems = @app.StateTransitionSystems
+pub type StateTransitionSystems = @state_state.StateTransitionSystems
 
 ///|
-pub type OnEnter[S] = @app.OnEnter[S]
+pub type OnEnter[S] = @state_state.OnEnter[S]
 
 ///|
-pub type OnExit[S] = @app.OnExit[S]
+pub type OnExit[S] = @state_state.OnExit[S]
 
 ///|
-pub type OnTransition[S] = @app.OnTransition[S]
+pub type OnTransition[S] = @state_state.OnTransition[S]
 
 ///|
-pub type OnReenter[S] = @app.OnReenter[S]
+pub type OnReenter[S] = @state_state.OnReenter[S]
 
 ///|
-pub type OnReexit[S] = @app.OnReexit[S]
+pub type OnReexit[S] = @state_state.OnReexit[S]
 
 ///|
-pub type DespawnOnExit = @app.DespawnOnExit
+pub type DespawnOnExit = @state_state.DespawnOnExit
 
 ///|
-pub type DespawnOnEnter = @app.DespawnOnEnter
+pub type DespawnOnEnter = @state_state.DespawnOnEnter
 
 ///|
-pub type OptionalStateSource[S] = @app.OptionalStateSource[S]
+pub type OptionalStateSource[S] = @state_state.OptionalStateSource[S]
 
 ///|
-pub type StatesPlugin = @app.StatesPlugin
+pub type StatesPlugin = @state_state.StatesPlugin
 
 ///|
 pub fn states_plugin(plugin : StatesPlugin) -> @app.Plugin[@ecs.World] {
-  @app.states_plugin(plugin)
+  @state_state.states_plugin(plugin)
 }
 
 ///|
@@ -65,44 +65,44 @@ pub fn[S : @app.States] insert_state_app(
   app : @app.App[@ecs.World],
   state : S,
 ) -> @app.App[@ecs.World] {
-  @app.insert_state_app(app, state)
+  @state_state.insert_state_app(app, state)
 }
 
 ///|
 pub fn[S : @app.States] in_state(state : S) -> (@ecs.World) -> Bool {
-  @app.in_state(state)
+  @state_state.in_state(state)
 }
 
 ///|
 pub fn[S] optional_state(state : S) -> @app.OptionalStateSource[S] {
-  @app.optional_state(state)
+  @state_state.optional_state(state)
 }
 
 ///|
 pub fn[S : @app.States] state_changed(state : S) -> (@ecs.World) -> Bool {
-  @app.state_changed(state)
+  @state_state.state_changed(state)
 }
 
 ///|
 pub fn[S : @app.States] state_exists(state : S) -> (@ecs.World) -> Bool {
-  @app.state_exists(state)
+  @state_state.state_exists(state)
 }
 
 ///|
 pub fn[S : @app.States] state_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[State[S]] {
-  @app.state_resource_key(state)
+  @state_state.state_resource_key(state)
 }
 
 ///|
 pub fn[S : @app.States] state_transition_event_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
-  @app.state_transition_event_resource_key(state)
+  @state_state.state_transition_event_resource_key(state)
 }
 
 ///|
 pub fn[S : @app.States] state_set_dependency_depth(state : S) -> Int {
-  @app.state_set_dependency_depth(state)
+  @state_state.state_set_dependency_depth(state)
 }

@@ -14,10 +14,6 @@ import {
 // Values
 pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
-pub const CLUSTERED_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ClusteredDecalPlugin"
-
-pub const FORWARD_DECAL_PLUGIN_ID : String = "mgstudio.pbr.ForwardDecalPlugin"
-
 pub fn clustered_decal() -> ClusteredDecal
 
 pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> ClusteredDecal

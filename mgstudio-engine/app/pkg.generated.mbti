@@ -13,8 +13,6 @@ import {
 }
 
 // Values
-pub const TASK_POOL_PLUGIN_ID : String = "bevy_app::TaskPoolPlugin"
-
 pub fn[T] any_with_component(@ecs.ComponentKey[T]) -> (@ecs.World) -> Bool
 
 pub fn app_label(String) -> AppLabel

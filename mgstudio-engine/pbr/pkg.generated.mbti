@@ -18,7 +18,10 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr/lightmap",
   "Milky2018/mgstudio/pbr/render",
+  "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/effect_stack",
+  "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -31,8 +34,6 @@ import {
 pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3
 
 pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
-
-pub const FOG_PLUGIN_ID : String = "mgstudio.pbr.FogPlugin"
 
 pub const MATERIALS_PLUGIN_ID : String = "mgstudio.pbr.MaterialsPlugin"
 
@@ -104,7 +105,7 @@ pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
-pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@post_process.ChromaticAberration]
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
 
@@ -172,7 +173,7 @@ pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
 
 pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginState]
 
-pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
+pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@prepass.MotionVectorPrepass]
 
@@ -212,7 +213,7 @@ pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[@post_process
 
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[@post_process.ScreenSpaceReflections]
 
-pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@post_process.ScreenSpaceTransmission]
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@transmission.ScreenSpaceTransmission]
 
 pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
 
@@ -234,7 +235,7 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
 
-pub let ecs_key_vignette : @ecs.ComponentKey[@post_process.Vignette]
+pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
 
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[@light.VolumetricLight]
 
@@ -578,15 +579,15 @@ pub struct Camera3dBundle {
   camera : @sprite.Camera
   projection : Projection
   sub_camera_view : @render.SubCameraView3d?
-  screen_space_transmission : @post_process.ScreenSpaceTransmission?
+  screen_space_transmission : @transmission.ScreenSpaceTransmission?
   screen_space_reflections : @post_process.ScreenSpaceReflections?
   bloom : @post_process.Bloom?
   tonemapping : @post_process.Tonemapping?
   deband_dither : @post_process.DebandDither?
-  chromatic_aberration : @post_process.ChromaticAberration?
+  chromatic_aberration : @effect_stack.ChromaticAberration?
   custom_post_process3d : @post_process.CustomPostProcess3d?
-  vignette : @post_process.Vignette?
-  motion_blur : @post_process.MotionBlur?
+  vignette : @effect_stack.Vignette?
+  motion_blur : @motion_blur.MotionBlur?
   exposure : Exposure?
   color_grading : @post_process.ColorGrading?
   camera3d : Camera3d
@@ -603,7 +604,7 @@ pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?
 pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
 pub fn Camera3dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
 pub fn Camera3dBundle::with_camera3d(Self, Camera3d) -> Self
-pub fn Camera3dBundle::with_chromatic_aberration(Self, @post_process.ChromaticAberration?) -> Self
+pub fn Camera3dBundle::with_chromatic_aberration(Self, @effect_stack.ChromaticAberration?) -> Self
 pub fn Camera3dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
 pub fn Camera3dBundle::with_custom_post_process3d(Self, @post_process.CustomPostProcess3d?) -> Self
 pub fn Camera3dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
@@ -612,13 +613,13 @@ pub fn Camera3dBundle::with_deferred_config(Self, CameraDeferredConfig3d) -> Sel
 pub fn Camera3dBundle::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3dBundle::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
-pub fn Camera3dBundle::with_motion_blur(Self, @post_process.MotionBlur?) -> Self
+pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
-pub fn Camera3dBundle::with_screen_space_transmission(Self, @post_process.ScreenSpaceTransmission?) -> Self
+pub fn Camera3dBundle::with_screen_space_transmission(Self, @transmission.ScreenSpaceTransmission?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, @render.SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_target(Self, @sprite.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
-pub fn Camera3dBundle::with_vignette(Self, @post_process.Vignette?) -> Self
+pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @app.CommandSpawnComponents for Camera3dBundle
 
@@ -1324,7 +1325,7 @@ pub using @light {type CascadeShadowConfig}
 
 pub using @light {type CascadeShadowConfigBuilder}
 
-pub using @post_process {type ChromaticAberration}
+pub using @effect_stack {type ChromaticAberration}
 
 pub using @post_process {type ColorGrading}
 
@@ -1394,7 +1395,7 @@ pub using @mesh {type Mesh3dGeometry}
 
 pub using @material {type MeshMaterial3d}
 
-pub using @post_process {type MotionBlur}
+pub using @motion_blur {type MotionBlur}
 
 pub using @prepass {type MotionVectorPrepass}
 
@@ -1430,9 +1431,9 @@ pub using @post_process {type ScreenSpaceAmbientOcclusionQualityLevel}
 
 pub using @post_process {type ScreenSpaceReflections}
 
-pub using @post_process {type ScreenSpaceTransmission}
+pub using @transmission {type ScreenSpaceTransmission}
 
-pub using @post_process {type ScreenSpaceTransmissionQuality}
+pub using @transmission {type ScreenSpaceTransmissionQuality}
 
 pub using @light {type ShowLightGizmo}
 
@@ -1452,7 +1453,7 @@ pub using @post_process {type Tonemapping}
 
 pub using @render {type ViewFrustum}
 
-pub using @post_process {type Vignette}
+pub using @effect_stack {type Vignette}
 
 pub using @light {type VolumetricFog}
 

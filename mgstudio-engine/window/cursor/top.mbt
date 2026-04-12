@@ -16,25 +16,69 @@
 // Bevy source: `bevy/crates/bevy_window/src/cursor/mod.rs`.
 
 ///|
-pub type CursorGrabMode = @window.CursorGrabMode
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+} derive(Eq, Debug)
 
 ///|
-pub type CursorIcon = @window.CursorIcon
+pub(all) enum CursorIcon {
+  System(SystemCursorIcon)
+  Custom(CustomCursor)
+}
 
 ///|
-pub type CursorOptions = @window.CursorOptions
+pub fn CursorIcon::from(icon : SystemCursorIcon) -> CursorIcon {
+  System(icon)
+}
 
 ///|
-pub type CustomCursor = @window.CustomCursor
+pub fn CursorIcon::from_custom(cursor : CustomCursor) -> CursorIcon {
+  Custom(cursor)
+}
 
 ///|
-pub type CustomCursorImage = @window.CustomCursorImage
+pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
+  match self {
+    System(icon) => Some(icon)
+    _ => None
+  }
+}
 
 ///|
-pub type CustomCursorUrl = @window.CustomCursorUrl
+pub impl Default for CursorIcon with default() {
+  System(@window_core.CursorIcon::Default)
+}
 
 ///|
-pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @window.ecs_key_cursor_options
+pub(all) struct CursorOptions {
+  mut visible : Bool
+  mut grab_mode : CursorGrabMode
+  hit_test : Bool
+} derive(Eq, Debug)
 
 ///|
-pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @window.ecs_key_cursor_icon
+pub fn CursorOptions::default() -> CursorOptions {
+  CursorOptions::{ visible: true, grab_mode: GrabNone, hit_test: true }
+}
+
+///|
+pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @ecs.register_component(
+  debug_name="mgstudio_window::CursorOptions",
+)
+
+///|
+pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @ecs.register_component(
+  debug_name="mgstudio_window::CursorIcon",
+)
+
+///|
+pub impl @ecs.Component for CursorOptions with component() {
+  ecs_key_cursor_options
+}
+
+///|
+pub impl @ecs.Component for CursorIcon with component() {
+  ecs_key_cursor_icon
+}

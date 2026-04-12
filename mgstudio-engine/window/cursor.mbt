@@ -13,114 +13,38 @@
 // limitations under the License.
 
 ///|
-pub(all) enum CursorGrabMode {
-  GrabNone
-  GrabConfined
-  GrabLocked
-} derive(Eq, Debug)
+pub type CursorGrabMode = @window_cursor.CursorGrabMode
 
 ///|
-pub type SystemCursorIcon = @window_core.CursorIcon
+pub type SystemCursorIcon = @window_cursor.SystemCursorIcon
 
 ///|
-pub(all) enum CursorIcon {
-  System(SystemCursorIcon)
-  Custom(CustomCursor)
+pub type CursorIcon = @window_cursor.CursorIcon
+
+///|
+pub type CustomCursor = @window_cursor.CustomCursor
+
+///|
+pub type CustomCursorImage = @window_cursor.CustomCursorImage
+
+///|
+pub type CustomCursorUrl = @window_cursor.CustomCursorUrl
+
+///|
+pub type CursorOptions = @window_cursor.CursorOptions
+
+///|
+pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @window_cursor.ecs_key_cursor_options
+
+///|
+pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @window_cursor.ecs_key_cursor_icon
+
+///|
+pub fn cursor_icon_from_custom(cursor : CustomCursor) -> CursorIcon {
+  @window_cursor.cursor_icon_from_custom(cursor)
 }
 
 ///|
-pub fn CursorIcon::from(icon : SystemCursorIcon) -> CursorIcon {
-  System(icon)
-}
-
-///|
-pub fn CursorIcon::from_custom(cursor : CustomCursor) -> CursorIcon {
-  Custom(cursor)
-}
-
-///|
-pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
-  match self {
-    System(icon) => Some(icon)
-    _ => None
-  }
-}
-
-///|
-pub impl Default for CursorIcon with default() {
-  System(@window_core.CursorIcon::Default)
-}
-
-///|
-pub struct CustomCursorImage {
-  handle : @asset.Handle[@asset.Image]
-  texture_atlas : @asset.TextureAtlas?
-  flip_x : Bool
-  flip_y : Bool
-  rect : @math.URect?
-  hotspot : (Int, Int)
-}
-
-///|
-pub fn CustomCursorImage::new(
-  handle : @asset.Handle[@asset.Image],
-  hotspot : (Int, Int),
-  texture_atlas? : @asset.TextureAtlas? = None,
-  flip_x? : Bool = false,
-  flip_y? : Bool = false,
-  rect? : @math.URect? = None,
-) -> CustomCursorImage {
-  CustomCursorImage::{ handle, texture_atlas, flip_x, flip_y, rect, hotspot }
-}
-
-///|
-pub struct CustomCursorUrl {
-  url : String
-  hotspot : (Int, Int)
-}
-
-///|
-pub fn CustomCursorUrl::new(
-  url : String,
-  hotspot : (Int, Int),
-) -> CustomCursorUrl {
-  CustomCursorUrl::{ url, hotspot }
-}
-
-///|
-pub(all) enum CustomCursor {
-  Image(CustomCursorImage)
-  Url(CustomCursorUrl)
-}
-
-///|
-pub(all) struct CursorOptions {
-  mut visible : Bool
-  mut grab_mode : CursorGrabMode
-  hit_test : Bool
-} derive(Eq, Debug)
-
-///|
-pub fn CursorOptions::default() -> CursorOptions {
-  CursorOptions::{ visible: true, grab_mode: GrabNone, hit_test: true }
-}
-
-///|
-pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @ecs.register_component(
-  debug_name="mgstudio_window::CursorOptions",
-)
-
-///|
-pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @ecs.register_component(
-  debug_name="mgstudio_window::CursorIcon",
-)
-
-///|
-pub impl @ecs.Component for CursorOptions with component() {
-  ecs_key_cursor_options
-}
-
-///|
-pub impl @ecs.Component for CursorIcon with component() {
-  ecs_key_cursor_icon
+pub fn cursor_icon_from_system(icon : SystemCursorIcon) -> CursorIcon {
+  @window_cursor.cursor_icon_from_system(icon)
 }

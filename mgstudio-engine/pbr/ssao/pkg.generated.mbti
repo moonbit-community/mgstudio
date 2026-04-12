@@ -6,8 +6,6 @@ import {
 }
 
 // Values
-pub const SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_ID : String = "mgstudio.pbr.ScreenSpaceAmbientOcclusionPlugin"
-
 pub fn pbr_ssao_default() -> @post_process.ScreenSpaceAmbientOcclusion
 
 pub fn ssao_pipeline_key(@post_process.ScreenSpaceAmbientOcclusionQualityLevel, Bool) -> SsaoPipelineKey

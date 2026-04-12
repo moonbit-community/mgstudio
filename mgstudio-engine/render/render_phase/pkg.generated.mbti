@@ -9,8 +9,6 @@ import {
 // Values
 pub fn draw_state_is_3d(@renderer.GpuPassState) -> Bool
 
-pub fn draw_state_runtime_available(@renderer.GpuPassState) -> Bool
-
 pub fn draw_state_target_id(@renderer.GpuPassState) -> Int
 
 pub fn draw_state_viewport(@renderer.GpuPassState) -> (UInt, UInt, UInt, UInt)

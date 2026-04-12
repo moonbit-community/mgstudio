@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub const GIZMOS_PLUGIN_ID : String = "bevy_gizmos::GizmoPlugin"
-
 pub const GIZMO_RETAINED_SUPPORTED : Bool = true
 
 pub const GIZMO_SKINNED_MESH_BOUNDS_SUPPORTED : Bool = true

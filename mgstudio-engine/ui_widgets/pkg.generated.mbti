@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const UI_WIDGETS_PLUGIN_ID : String = "bevy_ui_widgets::UiWidgetsPlugin"
-
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel]
 
 pub let ecs_key_button : @ecs.ComponentKey[@ui.Button]

@@ -1,7 +1,6 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/state/state" @state_state,
 }
 
 supported_targets = "native"

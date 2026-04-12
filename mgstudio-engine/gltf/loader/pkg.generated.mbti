@@ -1,0 +1,124 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/gltf/loader"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gltf",
+  "Milky2018/mgstudio/gltf/loader/extensions",
+  "Milky2018/mgstudio/gltf/loader/gltf_ext",
+}
+
+// Values
+pub fn gltf_add_custom_vertex_attribute(String, String) -> Unit
+
+pub fn gltf_animation_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_clear_custom_vertex_attributes() -> Unit
+
+pub fn gltf_custom_vertex_attributes() -> Array[@gltf.GltfCustomVertexAttribute]
+
+pub fn gltf_default_convert_coordinates() -> @gltf.GltfConvertCoordinates
+
+pub fn gltf_default_material_asset_label() -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_default_skinned_mesh_bounds_policy() -> @gltf.GltfSkinnedMeshBoundsPolicy
+
+pub fn gltf_extras(String) -> @gltf_ext.GltfExtras
+
+pub fn gltf_install_loader_registration(() -> Unit) -> Unit
+
+pub fn gltf_inverse_bind_matrices_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_material_asset_label(Int, Bool) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_material_extras(String) -> @gltf_ext.GltfMaterialExtras
+
+pub fn gltf_material_name(String) -> @gltf_ext.GltfMaterialName
+
+pub fn gltf_mesh_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_mesh_extras(String) -> @gltf_ext.GltfMeshExtras
+
+pub fn gltf_mesh_index(Int) -> @gltf_ext.GltfMeshIndex
+
+pub fn gltf_node_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_node_index(Int) -> @gltf_ext.GltfNodeIndex
+
+pub fn gltf_pbr_material_handler_enabled() -> Bool
+
+pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gltf_plugin_with(@app.App[@ecs.World], @gltf.GltfPlugin) -> @app.App[@ecs.World]
+
+pub fn gltf_primitive_asset_label(Int, Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_primitive_index(Int, Int) -> @gltf_ext.GltfPrimitiveIndex
+
+pub fn gltf_register_extension_handler(@extensions.GltfExtensionHandler) -> Unit
+
+pub fn gltf_resolve_custom_vertex_attribute_name(String) -> String?
+
+pub fn gltf_scene_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_scene_extras(String) -> @gltf_ext.GltfSceneExtras
+
+pub fn gltf_scene_index(Int) -> @gltf_ext.GltfSceneIndex
+
+pub fn gltf_set_default_convert_coordinates(@gltf.GltfConvertCoordinates) -> Unit
+
+pub fn gltf_set_default_skinned_mesh_bounds_policy(@gltf.GltfSkinnedMeshBoundsPolicy) -> Unit
+
+pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
+
+pub fn gltf_skin_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_skin_index(Int) -> @gltf_ext.GltfSkinIndex
+
+pub fn gltf_texture_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @gltf_ext {type GltfAssetLabel}
+
+pub using @gltf {type GltfCustomVertexAttribute}
+
+pub using @extensions {type GltfExtensionHandler}
+
+pub using @extensions {type GltfExtensionHandlers}
+
+pub using @gltf_ext {type GltfExtras}
+
+pub type GltfLoaderRegistration = () -> Unit
+
+pub using @asset {type ImageLoaderSettings as GltfLoaderSettings}
+
+pub using @gltf_ext {type GltfMaterialExtras}
+
+pub using @gltf_ext {type GltfMaterialName}
+
+pub using @gltf_ext {type GltfMeshExtras}
+
+pub using @gltf_ext {type GltfMeshIndex}
+
+pub using @gltf_ext {type GltfNodeIndex}
+
+pub using @gltf {type GltfPlugin}
+
+pub using @gltf_ext {type GltfPrimitiveIndex}
+
+pub using @gltf_ext {type GltfSceneExtras}
+
+pub using @gltf_ext {type GltfSceneIndex}
+
+pub using @gltf_ext {type GltfSkinIndex}
+
+pub using @gltf {type GltfSkinnedMeshBoundsPolicy}
+
+// Traits
+

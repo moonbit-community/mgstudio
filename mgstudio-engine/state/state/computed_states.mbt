@@ -18,6 +18,6 @@
 ///|
 pub fn[S] computed_state_optional_source(
   state : S,
-) -> @state_root.OptionalStateSource[S] {
-  @state_root.optional_state(state)
+) -> @app.OptionalStateSource[S] {
+  @app.optional_state(state)
 }

@@ -16,4 +16,4 @@
 // Bevy source: `bevy/crates/bevy_state/src/state/freely_mutable_state.rs`.
 
 ///|
-pub type FreelyMutableNextState[S] = @state_root.NextState[S]
+pub type FreelyMutableNextState[S] = @app.NextState[S]
