@@ -266,12 +266,23 @@ pub fn dlss_plugin_with(
 }
 
 ///|
+fn dlss_camera_component_present(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+}
+
+///|
 pub fn dlss_update_runtime_state(world : @ecs.World) -> Unit {
-  let enabled_camera_count = world.component_count(ecs_key_dlss)
+  let mut enabled_camera_count = 0
   let mut reset_requested_count = 0
-  world.for_each_component(ecs_key_dlss, fn(_entity, dlss : Dlss) {
-    if dlss.reset {
-      reset_requested_count = reset_requested_count + 1
+  world.for_each_component(ecs_key_dlss, fn(entity, dlss : Dlss) {
+    if dlss_camera_component_present(world, entity) {
+      enabled_camera_count = enabled_camera_count + 1
+      if dlss.reset {
+        reset_requested_count = reset_requested_count + 1
+      }
     }
   })
   let next = DlssRuntimeState::{

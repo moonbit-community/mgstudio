@@ -65,7 +65,9 @@ fn SceneGltfPendingRequestsState::default() -> SceneGltfPendingRequestsState {
 ///|
 let ecs_key_scene_gltf_pending_requests_state : @ecs.ResourceKey[
   SceneGltfPendingRequestsState,
-] = @ecs.register_resource(debug_name="mgstudio.scene.SceneGltfPendingRequestsState")
+] = @ecs.register_resource(
+  debug_name="mgstudio.scene.SceneGltfPendingRequestsState",
+)
 
 ///|
 impl @app.Resource for SceneGltfPendingRequestsState with resource() {
@@ -76,7 +78,8 @@ impl @app.Resource for SceneGltfPendingRequestsState with resource() {
 fn scene_gltf_pending_requests_state_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[SceneGltfPendingRequestsState] {
-  match (try! world.get_resource_ref_mut(ecs_key_scene_gltf_pending_requests_state)) {
+  match
+    (try! world.get_resource_ref_mut(ecs_key_scene_gltf_pending_requests_state)) {
     Some(state_ref) => state_ref
     None =>
       abort(

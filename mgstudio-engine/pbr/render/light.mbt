@@ -60,6 +60,7 @@ const POINT_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 4
 ///|
 const POINT_LIGHT_FLAG_NONE : UInt = 0U
 
+///|
 const DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED : UInt = 1U << 0
 
 ///|
@@ -163,10 +164,11 @@ fn render3d_directional_light_decal_index(
   entity : @core.Entity,
 ) -> Int {
   match (try! world.get_resource(@pbr_decal.ecs_key_render_clustered_decals)) {
-    Some(decals) => match decals.get_decal_index(entity) {
-      Some(index) => index
-      None => -1
-    }
+    Some(decals) =>
+      match decals.get_decal_index(entity) {
+        Some(index) => index
+        None => -1
+      }
     None => -1
   }
 }
@@ -341,14 +343,23 @@ fn render3d_extract_point_light(
     // Bevy parity: point-light authoring uses lumens, extracted runtime stores
     // luminous intensity (lumens/steradian).
     intensity: light.intensity / (4.0F * @math.pi()),
-    range: if light.range > 0.0F { light.range } else { 1.0F },
-    radius: if light.radius > 0.0F { light.radius } else { 0.0F },
+    range: if light.range > 0.0F {
+      light.range
+    } else {
+      1.0F
+    },
+    radius: if light.radius > 0.0F {
+      light.radius
+    } else {
+      0.0F
+    },
     transform,
     shadow_maps_enabled: light.shadow_maps_enabled,
     contact_shadows_enabled: light.contact_shadows_enabled,
     shadow_depth_bias: light.shadow_depth_bias,
-    shadow_normal_bias: light.shadow_normal_bias * point_light_texel_size *
-      render3d_sqrt2(),
+    shadow_normal_bias: light.shadow_normal_bias *
+    point_light_texel_size *
+    render3d_sqrt2(),
     shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
       light.shadow_map_near_z
     } else {
@@ -371,17 +382,14 @@ fn render3d_extract_spot_light(
 ) -> ExtractedPointLight3d {
   let transform = render3d_extract_light_transform(world, entity)
   let inner = light.inner_angle
-  let outer = if light.outer_angle < inner {
-    inner
-  } else {
-    light.outer_angle
-  }
+  let outer = if light.outer_angle < inner { inner } else { light.outer_angle }
   let safe_shadow_map_size = if directional_light_shadow_map_size <= 0 {
     1
   } else {
     directional_light_shadow_map_size
   }
-  let texel_size = 2.0F * render3d_tan(outer) /
+  let texel_size = 2.0F *
+    render3d_tan(outer) /
     Float::from_double(safe_shadow_map_size.to_double())
   ExtractedPointLight3d::{
     entity,
@@ -389,8 +397,16 @@ fn render3d_extract_spot_light(
     // Bevy parity: spot-light authoring uses lumens, extracted runtime stores
     // luminous intensity (lumens/steradian).
     intensity: light.intensity / (4.0F * @math.pi()),
-    range: if light.range > 0.0F { light.range } else { 1.0F },
-    radius: if light.radius > 0.0F { light.radius } else { 0.0F },
+    range: if light.range > 0.0F {
+      light.range
+    } else {
+      1.0F
+    },
+    radius: if light.radius > 0.0F {
+      light.radius
+    } else {
+      0.0F
+    },
     transform,
     shadow_maps_enabled: light.shadow_maps_enabled,
     contact_shadows_enabled: light.contact_shadows_enabled,
@@ -416,7 +432,8 @@ fn render3d_extract_directional_light(
   volumetric : Bool,
 ) -> ExtractedDirectionalLight3d {
   let transform = render3d_extract_light_transform(world, entity)
-  let sun_disk = match (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
+  let sun_disk = match
+    (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
     Some(v) => v
     None => @light.SunDisk::default()
   }
@@ -466,16 +483,13 @@ pub fn render3d_collect_extracted_point_lights(
       if !render3d_light_is_view_visible(world, entity) {
         continue
       }
-      let volumetric = (try!
-        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      let volumetric = (try! world.get_by_key(
+          entity, @light.ecs_key_volumetric_light,
+        ))
         is Some(_)
       extracted.push(
         render3d_extract_point_light(
-          world,
-          entity,
-          light,
-          volumetric,
-          point_light_texel_size,
+          world, entity, light, volumetric, point_light_texel_size,
         ),
       )
     }
@@ -484,16 +498,13 @@ pub fn render3d_collect_extracted_point_lights(
       if !render3d_light_is_view_visible(world, entity) {
         return
       }
-      let volumetric = (try!
-        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      let volumetric = (try! world.get_by_key(
+          entity, @light.ecs_key_volumetric_light,
+        ))
         is Some(_)
       extracted.push(
         render3d_extract_point_light(
-          world,
-          entity,
-          light,
-          volumetric,
-          point_light_texel_size,
+          world, entity, light, volumetric, point_light_texel_size,
         ),
       )
     })
@@ -539,16 +550,13 @@ pub fn render3d_collect_extracted_spot_lights(
       if !render3d_light_is_view_visible(world, entity) {
         continue
       }
-      let volumetric = (try!
-        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      let volumetric = (try! world.get_by_key(
+          entity, @light.ecs_key_volumetric_light,
+        ))
         is Some(_)
       extracted.push(
         render3d_extract_spot_light(
-          world,
-          entity,
-          light,
-          volumetric,
-          directional_light_shadow_map_size,
+          world, entity, light, volumetric, directional_light_shadow_map_size,
         ),
       )
     }
@@ -557,16 +565,13 @@ pub fn render3d_collect_extracted_spot_lights(
       if !render3d_light_is_view_visible(world, entity) {
         return
       }
-      let volumetric = (try!
-        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      let volumetric = (try! world.get_by_key(
+          entity, @light.ecs_key_volumetric_light,
+        ))
         is Some(_)
       extracted.push(
         render3d_extract_spot_light(
-          world,
-          entity,
-          light,
-          volumetric,
-          directional_light_shadow_map_size,
+          world, entity, light, volumetric, directional_light_shadow_map_size,
         ),
       )
     })
@@ -639,12 +644,7 @@ pub fn render3d_collect_extracted_clusterable_point_lights(
     combined.push((1, spot))
   }
   combined.sort_by(fn(left, right) {
-    render3d_clusterable_light_sort_by_key(
-      left.0,
-      left.1,
-      right.0,
-      right.1,
-    )
+    render3d_clusterable_light_sort_by_key(left.0, left.1, right.0, right.1)
   })
   combined.map(fn(item) {
     ExtractedClusterablePointLight3d::{
@@ -663,8 +663,9 @@ pub fn render3d_collect_extracted_directional_lights(
     if !render3d_light_is_view_visible(world, entity) {
       return
     }
-    let volumetric = (try!
-      world.get_by_key(entity, @light.ecs_key_volumetric_light))
+    let volumetric = (try! world.get_by_key(
+        entity, @light.ecs_key_volumetric_light,
+      ))
       is Some(_)
     extracted.push(
       render3d_extract_directional_light(world, entity, light, volumetric),
@@ -733,8 +734,14 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
 
 ///|
 fn render3d_cluster_screen_size(world : @ecs.World) -> (Int, Int) {
-  let width = @window.window_physical_width_for(world, @window.WindowRef::Primary)
-  let height = @window.window_physical_height_for(world, @window.WindowRef::Primary)
+  let width = @window.window_physical_width_for(
+    world,
+    @window.WindowRef::Primary,
+  )
+  let height = @window.window_physical_height_for(
+    world,
+    @window.WindowRef::Primary,
+  )
   if width > 0 && height > 0 {
     (width, height)
   } else {
@@ -764,22 +771,29 @@ fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
 }
 
 ///|
-fn render3d_cluster_runtime(world : @ecs.World) -> (Int, Int, Int, Float, Float)? {
+fn render3d_cluster_runtime(
+  world : @ecs.World,
+) -> (Int, Int, Int, Float, Float)? {
   let runtime_ref : Ref[(Int, Int, Int, Float, Float)?] = Ref::new(None)
-  world.for_each_component(@light_cluster.Clusters::component(), fn(entity, clusters) {
+  world.for_each_component(@light_cluster.Clusters::component(), fn(
+    entity,
+    clusters,
+  ) {
     if runtime_ref.val is Some(_) {
       return
     }
     if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
       return
     }
-    runtime_ref.val = Some((
-      clusters.dimensions_x,
-      clusters.dimensions_y,
-      clusters.dimensions_z,
-      clusters.near,
-      clusters.far,
-    ))
+    runtime_ref.val = Some(
+      (
+        clusters.dimensions_x,
+        clusters.dimensions_y,
+        clusters.dimensions_z,
+        clusters.near,
+        clusters.far,
+      ),
+    )
   })
   runtime_ref.val
 }
@@ -791,21 +805,23 @@ fn render3d_visible_clusterable_objects(
   let camera_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
     None,
   )
-  let any_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(None)
-  world.for_each_component(@light_cluster.VisibleClusterableObjects::component(), fn(
-    entity,
-    visible,
-  ) {
-    if any_visible_ref.val is None {
-      any_visible_ref.val = Some(visible)
-    }
-    if camera_visible_ref.val is Some(_) {
-      return
-    }
-    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
-      camera_visible_ref.val = Some(visible)
-    }
-  })
+  let any_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
+    None,
+  )
+  world.for_each_component(
+    @light_cluster.VisibleClusterableObjects::component(),
+    fn(entity, visible) {
+      if any_visible_ref.val is None {
+        any_visible_ref.val = Some(visible)
+      }
+      if camera_visible_ref.val is Some(_) {
+        return
+      }
+      if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+        camera_visible_ref.val = Some(visible)
+      }
+    },
+  )
   match camera_visible_ref.val {
     Some(visible) => Some(visible)
     None => any_visible_ref.val
@@ -846,7 +862,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
         runtime_dimensions_z,
         runtime_near,
         runtime_far,
-      ),
+      )
     ) {
     cluster_dimensions_x = runtime_dimensions_x
     cluster_dimensions_y = runtime_dimensions_y
@@ -855,20 +871,16 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     cluster_far = runtime_far
   } else {
     let cluster_config = render3d_cluster_config(world)
-    let (
-      config_dimensions_x,
-      config_dimensions_y,
-      config_dimensions_z,
-    ) = @light_cluster.cluster_config_dimensions_for_screen_size(
-      cluster_config,
-      cluster_screen_width,
-      cluster_screen_height,
+    let (config_dimensions_x, config_dimensions_y, config_dimensions_z) = @light_cluster.cluster_config_dimensions_for_screen_size(
+      cluster_config, cluster_screen_width, cluster_screen_height,
     )
     cluster_dimensions_x = config_dimensions_x
     cluster_dimensions_y = config_dimensions_y
     cluster_dimensions_z = config_dimensions_z
   }
-  let n_clusters = cluster_dimensions_x * cluster_dimensions_y * cluster_dimensions_z
+  let n_clusters = cluster_dimensions_x *
+    cluster_dimensions_y *
+    cluster_dimensions_z
   let cluster_factors_zw = if n_clusters <= 0 {
     @math.Vec2::new(0.0F, 0.0F)
   } else {
@@ -929,10 +941,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     directional_lights: gpu_directional_lights,
     ambient_color: render3d_scale_color(ambient.color, ambient.brightness),
     cluster_dimensions: (
-      cluster_dimensions_x,
-      cluster_dimensions_y,
-      cluster_dimensions_z,
-      n_clusters,
+      cluster_dimensions_x, cluster_dimensions_y, cluster_dimensions_z, n_clusters,
     ),
     cluster_factors: @math.Vec4::new(
       0.0F,
@@ -942,9 +951,8 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     ),
     n_directional_lights: max_count,
     spot_light_shadowmap_offset: directional_shadow_texture_base_index -
-      point_light_count,
-    ambient_light_affects_lightmapped_meshes: if ambient
-      .affects_lightmapped_meshes {
+    point_light_count,
+    ambient_light_affects_lightmapped_meshes: if ambient.affects_lightmapped_meshes {
       1
     } else {
       0

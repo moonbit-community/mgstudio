@@ -375,9 +375,7 @@ pub fn gltf_add_custom_vertex_attribute(
   mapped_name : String,
 ) -> Unit {
   gltf_upsert_custom_vertex_attribute(
-    gltf_custom_vertex_attributes_bootstrap,
-    name,
-    mapped_name,
+    gltf_custom_vertex_attributes_bootstrap, name, mapped_name,
   )
   if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
     gltf_upsert_custom_vertex_attribute(

@@ -75,8 +75,8 @@ test "render3d: internal assets are stored per world resource" {
 test "render3d: init inserts default directional shadow map resource" {
   let world = render3d_test_world_with_asset_server()
   init_mesh_render_resources(world)
-  let directional_shadow_map = (try!
-    world.get_resource(@light.ecs_key_directional_light_shadow_map))
-    .unwrap()
+  let directional_shadow_map = (try! world.get_resource(
+    @light.ecs_key_directional_light_shadow_map,
+  )).unwrap()
   debug_inspect(directional_shadow_map.size, content="2048")
 }

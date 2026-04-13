@@ -64,9 +64,7 @@ pub fn LightProbePluginState::default() -> LightProbePluginState {
 }
 
 ///|
-pub fn light_probe_plugin(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
+pub fn light_probe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   light_probe_plugin_with(app, LightProbePlugin::default())
 }
 
@@ -192,9 +190,7 @@ pub fn RenderViewLightProbes::probe_count(self : RenderViewLightProbes) -> Int {
 ///|
 pub let ecs_key_light_probe_plugin_state : @ecs.ResourceKey[
   LightProbePluginState,
-] = @ecs.register_resource(
-  debug_name="mgstudio.pbr.light_probe.plugin_state",
-)
+] = @ecs.register_resource(debug_name="mgstudio.pbr.light_probe.plugin_state")
 
 ///|
 pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[

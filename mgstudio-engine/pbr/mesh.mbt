@@ -385,6 +385,7 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput]
 }
 
+///|
 fn render3d_ray_local_aabb_hit(
   origin : @math.Vec3,
   direction : @math.Vec3,

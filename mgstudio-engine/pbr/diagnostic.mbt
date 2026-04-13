@@ -116,13 +116,11 @@ pub fn render3d_material_allocator_snapshot_for_key(
 ) -> MaterialAllocatorDiagnosticsSnapshot? {
   match allocators.get(material_name) {
     Some(allocator) =>
-      Some(
-        MaterialAllocatorDiagnosticsSnapshot::{
-          slabs: allocator.slab_count(),
-          slabs_size: allocator.slabs_size(),
-          allocations: allocator.allocations(),
-        },
-      )
+      Some(MaterialAllocatorDiagnosticsSnapshot::{
+        slabs: allocator.slab_count(),
+        slabs_size: allocator.slabs_size(),
+        allocations: allocator.allocations(),
+      })
     None => None
   }
 }

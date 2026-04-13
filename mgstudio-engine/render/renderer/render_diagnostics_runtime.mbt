@@ -362,12 +362,14 @@ pub fn render_diagnostics_record_mesh2d_drop_missing_mesh() -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_bad_stride() -> Unit {
-  debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val + 1
+  debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val +
+    1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pipeline() -> Unit {
-  debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val + 1
+  debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
+    1
 }
 
 ///|

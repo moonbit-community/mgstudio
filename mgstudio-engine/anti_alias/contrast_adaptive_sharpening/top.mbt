@@ -151,20 +151,30 @@ pub fn cas_plugin_with(
 }
 
 ///|
+fn cas_camera_component_present(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+}
+
+///|
 pub fn cas_update_runtime_state(world : @ecs.World) -> Unit {
   let mut enabled_camera_count = 0
   let mut active_camera_count = 0
   let mut denoise_camera_count = 0
   world.for_each_component(ecs_key_contrast_adaptive_sharpening, fn(
-    _entity,
+    entity,
     cas : ContrastAdaptiveSharpening,
   ) {
-    enabled_camera_count = enabled_camera_count + 1
-    if cas.enabled && cas.sharpening_strength > 0.0 {
-      active_camera_count = active_camera_count + 1
-    }
-    if cas.denoise {
-      denoise_camera_count = denoise_camera_count + 1
+    if cas_camera_component_present(world, entity) {
+      enabled_camera_count = enabled_camera_count + 1
+      if cas.enabled && cas.sharpening_strength > 0.0 {
+        active_camera_count = active_camera_count + 1
+      }
+      if cas.denoise {
+        denoise_camera_count = denoise_camera_count + 1
+      }
     }
   })
   let next = CasRuntimeState::{

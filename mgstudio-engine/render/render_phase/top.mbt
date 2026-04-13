@@ -57,10 +57,7 @@ pub fn render_pass_trace_begin_span(name : String) -> Unit {
     name,
   )
   if ts_us >= 0L {
-    state.active_span = Some(RenderPassTraceActiveSpan::{
-      name,
-      ts_us,
-    })
+    state.active_span = Some(RenderPassTraceActiveSpan::{ name, ts_us })
   }
 }
 

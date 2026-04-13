@@ -59,8 +59,7 @@ fn render3d_execute_camera_postprocess(
     velocity_target_id >= 0 {
     if bloom_enabled || tonemap_postprocess_enabled {
       let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
-        world,
-        camera_entity, view_width, view_height,
+        world, camera_entity, view_width, view_height,
       )
       let (
         post_motion_blur_viewport_x,
@@ -236,8 +235,7 @@ fn render3d_execute_camera_postprocess(
         (if fxaa_postprocess_enabled { 1 } else { 0 })
       if postprocess_stage_count > 0 {
         let stage_ping_target_id = render3d_transmission_source_target_get_or_create(
-          world,
-          camera_entity, view_width, view_height,
+          world, camera_entity, view_width, view_height,
         )
         let mut current_source_texture_id = postprocess_source_texture_id
         let mut stage_index = 0

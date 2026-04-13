@@ -141,8 +141,7 @@ fn render3d_execute_camera(
       auto_exposure_enabled
     ) {
     let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
-      world,
-      camera_entity, view_width, view_height,
+      world, camera_entity, view_width, view_height,
     )
     scene_target_id = scene_id
   }

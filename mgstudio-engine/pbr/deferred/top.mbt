@@ -122,7 +122,9 @@ fn insert_deferred_lighting_pass_id_component(world : @ecs.World) -> Unit {
   )
   let iter = query.iter(world)
   while (iter.fetch_next() catch { _ => None }) is Some((entity, _)) {
-    if !(try! world.contains_by_key(entity, ecs_key_pbr_deferred_lighting_depth_id)) {
+    if !(try! world.contains_by_key(
+        entity, ecs_key_pbr_deferred_lighting_depth_id,
+      )) {
       try! world.set_by_key(
         entity,
         ecs_key_pbr_deferred_lighting_depth_id,
@@ -136,7 +138,8 @@ fn insert_deferred_lighting_pass_id_component(world : @ecs.World) -> Unit {
 pub fn deferred_pbr_lighting_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.insert_world_resource(
+  app
+  .insert_world_resource(
     ecs_key_deferred_pbr_lighting_state,
     DeferredPbrLightingState::enabled(),
   )

@@ -27,7 +27,10 @@ test "pbr light probe: view probe container enforces max probe count" {
 ///|
 test "pbr light probe: plugin initializes plugin state and uniform resources" {
   let app = light_probe_plugin(@app.App::new(@ecs.World::new()))
-  inspect(app.contains_resource(ecs_key_light_probe_plugin_state), content="true")
+  inspect(
+    app.contains_resource(ecs_key_light_probe_plugin_state),
+    content="true",
+  )
   inspect(app.contains_resource(ecs_key_light_probes_uniform), content="true")
 }
 
@@ -44,12 +47,12 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
   inspect(state is Some(_), content="true")
 
   let entity = world.spawn()
-  try! world.set_by_key(
+  try! (world.set_by_key(
     entity,
     ecs_key_render_view_light_probes,
     RenderViewLightProbes::default(),
   )
-  |> ignore
+  |> ignore)
   let probes = try! world.get_by_key(entity, ecs_key_render_view_light_probes)
   inspect(probes is Some(_), content="true")
 }

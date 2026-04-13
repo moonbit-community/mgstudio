@@ -36,12 +36,16 @@ pub fn PrepassPipelinePlugin::default() -> PrepassPipelinePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for PrepassPipelinePlugin with plugin_name(_self) {
+pub impl @app.PluginReplacement for PrepassPipelinePlugin with plugin_name(
+  _self,
+) {
   PREPASS_PIPELINE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for PrepassPipelinePlugin with world_plugin(self) {
+pub impl @app.PluginReplacement for PrepassPipelinePlugin with world_plugin(
+  self,
+) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     prepass_pipeline_plugin_with(app, self)
   }

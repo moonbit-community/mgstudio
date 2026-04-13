@@ -94,11 +94,13 @@ pub struct ViewFogUniformOffset {
 ///|
 pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[
   ViewFogUniformOffset,
-] = @ecs.register_component(debug_name="mgstudio.pbr.render.view_fog_uniform_offset")
+] = @ecs.register_component(
+  debug_name="mgstudio.pbr.render.view_fog_uniform_offset",
+)
 
 ///|
 pub fn ViewFogUniformOffset::new(offset : UInt) -> ViewFogUniformOffset {
-  ViewFogUniformOffset::{ offset }
+  ViewFogUniformOffset::{ offset, }
 }
 
 ///|
@@ -180,9 +182,7 @@ pub fn Render3dFogFalloff::linear(
 }
 
 ///|
-pub fn Render3dFogFalloff::exponential(
-  density : Float,
-) -> Render3dFogFalloff {
+pub fn Render3dFogFalloff::exponential(density : Float) -> Render3dFogFalloff {
   Render3dFogFalloff::Exponential(density)
 }
 
@@ -308,7 +308,8 @@ pub fn render3d_apply_view_fog_uniform_offsets(
   for item in offsets {
     let (entity, offset) = item
     if (try! world.contains_by_key(entity, ecs_key_view_fog_uniform_offset)) {
-      try! (world.replace(entity, ecs_key_view_fog_uniform_offset, offset) |> ignore)
+      try! (world.replace(entity, ecs_key_view_fog_uniform_offset, offset)
+      |> ignore)
     } else {
       try! world.set_by_key(entity, ecs_key_view_fog_uniform_offset, offset)
     }

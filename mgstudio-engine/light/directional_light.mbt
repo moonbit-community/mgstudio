@@ -71,9 +71,7 @@ pub fn directional_light_validated_shadow_map_size(size : Int) -> Int {
 }
 
 ///|
-pub fn validate_directional_light_shadow_map_size(
-  world : @ecs.World,
-) -> Unit {
+pub fn validate_directional_light_shadow_map_size(world : @ecs.World) -> Unit {
   match (try! world.get_resource(ecs_key_directional_light_shadow_map)) {
     Some(resource) =>
       if !directional_light_is_power_of_two(resource.size) {

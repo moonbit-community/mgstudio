@@ -601,7 +601,9 @@ fn SceneModifiedEventsCursorState::default() -> SceneModifiedEventsCursorState {
 fn scene_modified_events_cursor_state_resource_key() -> @ecs.ResourceKey[
   SceneModifiedEventsCursorState,
 ] {
-  @ecs.register_resource(debug_name="mgstudio_scene::SceneModifiedEventsCursorState")
+  @ecs.register_resource(
+    debug_name="mgstudio_scene::SceneModifiedEventsCursorState",
+  )
 }
 
 ///|
@@ -611,9 +613,8 @@ impl @app.Resource for SceneModifiedEventsCursorState with resource() {
 
 ///|
 fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
-  match (
-    try! world.get_resource(scene_modified_events_cursor_state_resource_key())
-  ) {
+  match
+    (try! world.get_resource(scene_modified_events_cursor_state_resource_key())) {
     Some(state) => state.modified_event_cursor
     None =>
       abort(

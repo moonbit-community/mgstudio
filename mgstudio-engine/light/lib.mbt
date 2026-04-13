@@ -1570,7 +1570,7 @@ pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(
   self : GlobalAmbientLight,
   affects_lightmapped_meshes : Bool,
 ) -> GlobalAmbientLight {
-  GlobalAmbientLight::{ ..self, affects_lightmapped_meshes }
+  GlobalAmbientLight::{ ..self, affects_lightmapped_meshes, }
 }
 
 ///|

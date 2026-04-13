@@ -103,7 +103,10 @@ test "global ambient light supports affects_lightmapped_meshes toggle" {
 ///|
 test "sun disk defaults and off profile align with bevy intent" {
   let earth = @light.SunDisk::default()
-  debug_inspect(approx_eq(earth.angular_size, 0.00930842F, 1.0e-6F), content="true")
+  debug_inspect(
+    approx_eq(earth.angular_size, 0.00930842F, 1.0e-6F),
+    content="true",
+  )
   debug_inspect(approx_eq(earth.intensity, 1.0F, 1.0e-6F), content="true")
   let off = @light.SunDisk::off()
   debug_inspect(approx_eq(off.angular_size, 0.0F, 1.0e-6F), content="true")
@@ -112,6 +115,12 @@ test "sun disk defaults and off profile align with bevy intent" {
 
 ///|
 test "directional shadow map validation produces next power-of-two size" {
-  debug_inspect(@light.directional_light_validated_shadow_map_size(1500), content="2048")
-  debug_inspect(@light.directional_light_validated_shadow_map_size(2048), content="2048")
+  debug_inspect(
+    @light.directional_light_validated_shadow_map_size(1500),
+    content="2048",
+  )
+  debug_inspect(
+    @light.directional_light_validated_shadow_map_size(2048),
+    content="2048",
+  )
 }

@@ -23,10 +23,6 @@ import {
 supported_targets = "native"
 
 options(
-  link: {
-    "native": {
-      "cc-link-flags": "-lz -lcurl",
-    },
-  },
+  link: { "native": { "cc-link-flags": "-lz -lcurl" } },
   "native-stub": [ "gzip_stub.c", "web_asset_stub.c" ],
 )

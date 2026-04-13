@@ -29,7 +29,10 @@ fn picking_test_ui_context() -> @ui.UiContext {
 ///|
 test "picking wb: window conversion keeps Y-axis orientation (top-left to +Y)" {
   let ctx = picking_test_ui_context()
-  let world_pos = picking_window_to_sprite_world(@math.Vec2::new(0.0F, 0.0F), ctx)
+  let world_pos = picking_window_to_sprite_world(
+    @math.Vec2::new(0.0F, 0.0F),
+    ctx,
+  )
   inspect(world_pos.unwrap().x.to_double(), content="-50")
   inspect(world_pos.unwrap().y.to_double(), content="50")
 }
@@ -57,7 +60,10 @@ test "picking wb: window conversion maps viewport center to camera translation" 
     None,
     false,
   )
-  let world_pos = picking_window_to_sprite_world(@math.Vec2::new(100.0F, 60.0F), ctx)
+  let world_pos = picking_window_to_sprite_world(
+    @math.Vec2::new(100.0F, 60.0F),
+    ctx,
+  )
   inspect(world_pos.unwrap().x.to_double(), content="12")
   inspect(world_pos.unwrap().y.to_double(), content="-7")
 }
@@ -74,7 +80,10 @@ test "picking wb: window conversion respects viewport origin offset" {
     None,
     false,
   )
-  let world_pos = picking_window_to_sprite_world(@math.Vec2::new(20.0F, 10.0F), ctx)
+  let world_pos = picking_window_to_sprite_world(
+    @math.Vec2::new(20.0F, 10.0F),
+    ctx,
+  )
   inspect(world_pos.unwrap().x.to_double(), content="-50")
   inspect(world_pos.unwrap().y.to_double(), content="50")
 }
@@ -91,7 +100,10 @@ test "picking wb: window conversion applies camera rotation and scale" {
     None,
     false,
   )
-  let world_pos = picking_window_to_sprite_world(@math.Vec2::new(60.0F, 50.0F), ctx)
+  let world_pos = picking_window_to_sprite_world(
+    @math.Vec2::new(60.0F, 50.0F),
+    ctx,
+  )
   inspect(world_pos.unwrap().x.to_double(), content="-20")
   inspect(@math.abs(world_pos.unwrap().y).to_double() < 0.001, content="true")
 }

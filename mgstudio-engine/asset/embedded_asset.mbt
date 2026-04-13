@@ -21,7 +21,7 @@ pub fn[P : IntoAssetPath] embedded_asset(
 ) -> @app.App[@ecs.World] {
   let virtual_path = asset_format_path(asset_path.into_asset_path())
   let mut resolved_source_path = source_path
-  let bytes = @fs.read_file_to_bytes(source_path) catch {
+  let bytes = try @fs.read_file_to_bytes(source_path) catch {
     _ => {
       let source_is_absolute = source_path.length() > 0 &&
         source_path.code_unit_at(0) == 47
@@ -31,7 +31,7 @@ pub fn[P : IntoAssetPath] embedded_asset(
         )
       }
       let fallback = "mgstudio-engine/\{source_path}"
-      @fs.read_file_to_bytes(fallback) catch {
+      try @fs.read_file_to_bytes(fallback) catch {
         _ =>
           abort(
             "embedded_asset: failed to read source path `\{source_path}` (and fallback `\{fallback}`) for `\{virtual_path}`",

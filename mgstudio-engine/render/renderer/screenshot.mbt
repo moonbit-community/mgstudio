@@ -266,7 +266,9 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
 priv struct ScreenshotRuntimeState {
   mut next_screenshot_capture_id : Int
   mut pending_screenshot_captures : Array[PendingScreenshotCapture]
-  mut pending_surface_screenshot_captures : Array[PendingSurfaceScreenshotCapture]
+  mut pending_surface_screenshot_captures : Array[
+    PendingSurfaceScreenshotCapture,
+  ]
   mut active_surface_screenshot_capture_ids : Array[Int]
   mut active_surface_screenshot_capture_target_id : Int
   mut inflight_screenshot_captures : Array[InflightScreenshotCapture]
@@ -511,7 +513,8 @@ fn screenshot_encode_active_surface_captures(
   if !backend.surface_capture_active {
     return
   }
-  if state.active_surface_screenshot_capture_target_id != backend.active_surface_target_id {
+  if state.active_surface_screenshot_capture_target_id !=
+    backend.active_surface_target_id {
     return
   }
   guard backend.surface_format is Some(surface_format) else { return }
@@ -555,7 +558,8 @@ fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit {
   if !backend.surface_capture_active {
     return
   }
-  if state.active_surface_screenshot_capture_target_id != backend.active_surface_target_id {
+  if state.active_surface_screenshot_capture_target_id !=
+    backend.active_surface_target_id {
     return
   }
   backend.surface_capture_active = false

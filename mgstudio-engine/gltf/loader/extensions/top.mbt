@@ -114,7 +114,9 @@ pub fn gltf_extension_runtime_plugin(
 }
 
 ///|
-fn gltf_extension_runtime_state_ref_if_present() -> Ref[GltfExtensionRuntimeState]? {
+fn gltf_extension_runtime_state_ref_if_present() -> Ref[
+  GltfExtensionRuntimeState,
+]? {
   guard @app.current_world() is Some(world) else { return None }
   try world.get_resource_ref_mut(ecs_key_gltf_extension_runtime_state) catch {
     _ => None

@@ -36,9 +36,7 @@ fn render3d_execute_camera_point_shadow_pass(
     return (-1, 0.0F, 0.0F)
   }
   let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
-    world,
-    point_entity,
-    point_light_shadow_map_size,
+    world, point_entity, point_light_shadow_map_size,
   )
   let point_shadow_texture_id = shadow_target_id
   let point_shadow_enabled = 1.0F
@@ -186,7 +184,9 @@ priv struct Render3dPointLightShadowTargets {
 ///|
 let render3d_point_light_shadow_targets_key : @ecs.ResourceKey[
   Render3dPointLightShadowTargets,
-] = @ecs.register_resource(debug_name="mgstudio.render3d.point_light_shadow_targets")
+] = @ecs.register_resource(
+  debug_name="mgstudio.render3d.point_light_shadow_targets",
+)
 
 ///|
 impl @app.Resource for Render3dPointLightShadowTargets with resource() {
@@ -199,10 +199,9 @@ fn render3d_point_light_shadow_targets_ref_or_init(
 ) -> Ref[Render3dPointLightShadowTargets] {
   if (try! world.get_resource(Render3dPointLightShadowTargets::resource()))
     is None {
-    world.insert_resource(
-      Render3dPointLightShadowTargets::resource(),
-      { entries: [] },
-    )
+    world.insert_resource(Render3dPointLightShadowTargets::resource(), {
+      entries: [],
+    })
   }
   match
     (try! world.get_resource_ref_mut(
@@ -219,7 +218,9 @@ fn render3d_point_light_shadow_target_get_or_create(
   entity : @core.Entity,
   size : Int,
 ) -> Int {
-  let shadow_targets_ref = render3d_point_light_shadow_targets_ref_or_init(world)
+  let shadow_targets_ref = render3d_point_light_shadow_targets_ref_or_init(
+    world,
+  )
   let shadow_targets = shadow_targets_ref.val.entries
   let safe_size = if size <= 0 { 1 } else { size }
   for item in shadow_targets {

@@ -17,7 +17,7 @@ test "pbr fog: bridge prepares view fog uniforms from Camera3d" {
   let world = @ecs.World::new()
   let with_fog = world.spawn()
   let without_fog = world.spawn()
-  try! world.set_by_key(
+  try! (world.set_by_key(
     with_fog,
     ecs_key_camera3d,
     Camera3d::default().with_distance_fog(
@@ -29,7 +29,7 @@ test "pbr fog: bridge prepares view fog uniforms from Camera3d" {
       ),
     ),
   )
-  |> ignore
+  |> ignore)
 
   let fog_meta = @pbr_render.FogMeta::default()
   let offsets = render3d_prepare_camera_fog_uniforms(

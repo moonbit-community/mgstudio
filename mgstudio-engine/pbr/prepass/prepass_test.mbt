@@ -31,7 +31,10 @@ test "pbr prepass: pipeline plugin initializes pipeline state resource" {
 ///|
 test "pbr prepass: plugin initializes marker and core prepass view state" {
   let app = prepass_plugin(@app.App::new(@ecs.World::new()))
-  inspect(app.contains_resource(ecs_key_any_prepass_plugin_loaded), content="true")
+  inspect(
+    app.contains_resource(ecs_key_any_prepass_plugin_loaded),
+    content="true",
+  )
   inspect(app.contains_resource(ecs_key_prepass_pipeline_state), content="true")
   inspect(app.contains_resource(ecs_key_prepass_view_state), content="true")
 }
@@ -39,17 +42,14 @@ test "pbr prepass: plugin initializes marker and core prepass view state" {
 ///|
 test "pbr prepass: update pipeline state becomes ready when prepass components exist" {
   let world = @ecs.World::new()
-  world.insert_resource(
-    ecs_key_prepass_view_state,
-    PrepassViewState::default(),
-  )
+  world.insert_resource(ecs_key_prepass_view_state, PrepassViewState::default())
   world.insert_resource(
     ecs_key_prepass_pipeline_state,
     PrepassPipelineState::default(),
   )
   let entity = world.spawn()
-  try! world.set_by_key(entity, ecs_key_depth_prepass, DepthPrepass::default())
-  |> ignore
+  try! (world.set_by_key(entity, ecs_key_depth_prepass, DepthPrepass::default())
+  |> ignore)
 
   prepass_update_pipeline_state(world)
   let state = (try! world.get_resource(ecs_key_prepass_pipeline_state)).unwrap()

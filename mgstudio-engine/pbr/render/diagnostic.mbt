@@ -52,7 +52,8 @@ fn render3d_diagnostics_state_ref_or_init(
       render3d_diagnostics_state_default(),
     )
   }
-  match (try! world.get_resource_ref_mut(Render3dDiagnosticsState::resource())) {
+  match
+    (try! world.get_resource_ref_mut(Render3dDiagnosticsState::resource())) {
     Some(state) => state
     None => abort("Missing Render3dDiagnosticsState resource")
   }
@@ -71,9 +72,7 @@ pub fn render3d_set_diagnostic_queued_visible_mesh_count(
   world : @ecs.World,
   count : Int,
 ) -> Unit {
-  render3d_diagnostics_state_ref_or_init(
-    world,
-  ).val.queued_visible_mesh_count = count
+  render3d_diagnostics_state_ref_or_init(world).val.queued_visible_mesh_count = count
 }
 
 ///|

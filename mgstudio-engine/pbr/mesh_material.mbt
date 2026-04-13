@@ -101,7 +101,9 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn validate_directional_light_shadow_map_size_system(world : @ecs.World) -> Unit {
+fn validate_directional_light_shadow_map_size_system(
+  world : @ecs.World,
+) -> Unit {
   @light.validate_directional_light_shadow_map_size(world)
 }
 
@@ -109,7 +111,9 @@ fn validate_directional_light_shadow_map_size_system(world : @ecs.World) -> Unit
 fn configure_mesh_render_sets(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_post_update_system(validate_directional_light_shadow_map_size_system).add_post_update_system_config(
+  app
+  .add_post_update_system(validate_directional_light_shadow_map_size_system)
+  .add_post_update_system_config(
     @app.system(render3d_update_frusta_system).in_set(
       render3d_set_update_frusta,
     ),

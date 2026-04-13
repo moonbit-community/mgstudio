@@ -114,8 +114,21 @@ pub fn smaa_plugin_with(
 }
 
 ///|
+fn smaa_camera_component_present(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+}
+
+///|
 pub fn smaa_update_runtime_state(world : @ecs.World) -> Unit {
-  let enabled_camera_count = world.component_count(ecs_key_smaa)
+  let mut enabled_camera_count = 0
+  world.for_each_component(ecs_key_smaa, fn(entity, _smaa : Smaa) {
+    if smaa_camera_component_present(world, entity) {
+      enabled_camera_count = enabled_camera_count + 1
+    }
+  })
   let next = SmaaRuntimeState::{
     enabled_camera_count,
     runtime_supported: SMAA_RUNTIME_SUPPORTED,

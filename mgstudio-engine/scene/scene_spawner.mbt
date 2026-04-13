@@ -20,9 +20,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   let modified_scene_ids : Array[Int] = []
   let message_key : @ecs.MessageKey[@asset.AssetEvent[Scene]] = @ecs.Message::message()
   let cursor_ref = scene_modified_events_cursor_ref_or_abort(world)
-  let reader = world.message_reader(
-    message_key, cursor_ref,
-  )
+  let reader = world.message_reader(message_key, cursor_ref)
   for event in (try! reader.read()) {
     match event {
       Modified(handle) => modified_scene_ids.push(handle.id())

@@ -308,8 +308,8 @@ test "scene gltf wb: default visibility ranges for lod levels" {
 ///|
 test "scene gltf wb: custom lod visibility policy and disable switch" {
   let custom_policy = GltfLodVisibilityPolicy::default()
-  .with_first_lod_range(1.0F, 2.0F, 11.0F, 12.0F)
-  .with_step(2.0F)
+    .with_first_lod_range(1.0F, 2.0F, 11.0F, 12.0F)
+    .with_step(2.0F)
   let lod0 = gltf_lod_visibility_range_with_policy(custom_policy, 0).unwrap()
   debug_inspect(lod0.start_margin_min.to_double(), content="1")
   debug_inspect(lod0.start_margin_max.to_double(), content="2")
@@ -323,10 +323,8 @@ test "scene gltf wb: custom lod visibility policy and disable switch" {
   debug_inspect(lod2.end_margin_max.to_double(), content="16")
 
   let disabled_policy = custom_policy.with_enabled(false)
-  let disabled_is_none = match gltf_lod_visibility_range_with_policy(
-    disabled_policy,
-    0,
-  ) {
+  let disabled_is_none = match
+    gltf_lod_visibility_range_with_policy(disabled_policy, 0) {
     None => true
     Some(_) => false
   }

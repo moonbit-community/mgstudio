@@ -113,11 +113,12 @@ fn cluster_config_requested_dimensions_for_screen_size(
   match config {
     None => (0, 0, 0)
     Single => (1, 1, 1)
-    XYZ(x, y, z, _, _) => (
-      cluster_config_positive(x, 1),
-      cluster_config_positive(y, 1),
-      cluster_config_positive(z, 1),
-    )
+    XYZ(x, y, z, _, _) =>
+      (
+        cluster_config_positive(x, 1),
+        cluster_config_positive(y, 1),
+        cluster_config_positive(z, 1),
+      )
     // Bevy `FixedZ { total, z_slices, .. }` shape:
     // derive XY from total-per-layer and screen aspect ratio.
     FixedZ(total, z_slices, _, _) => {
@@ -187,12 +188,9 @@ pub fn cluster_config_dimensions_for_screen_size(
   screen_width : Int,
   screen_height : Int,
 ) -> (Int, Int, Int) {
-  let (requested_x, requested_y, requested_z) =
-    cluster_config_requested_dimensions_for_screen_size(
-      config,
-      screen_width,
-      screen_height,
-    )
+  let (requested_x, requested_y, requested_z) = cluster_config_requested_dimensions_for_screen_size(
+    config, screen_width, screen_height,
+  )
   if requested_x <= 0 || requested_y <= 0 || requested_z <= 0 {
     return (0, 0, 0)
   }
@@ -202,25 +200,21 @@ pub fn cluster_config_dimensions_for_screen_size(
   // Align with Bevy's `Clusters::update` behavior:
   // tile size is rounded up, then realized dimensions are rounded down.
   let tile_size_x = cluster_config_positive(
-    @math_core.ceil(
-      safe_width.to_double() / requested_x.to_double(),
-    ).to_int(),
+    @math_core.ceil(safe_width.to_double() / requested_x.to_double()).to_int(),
     1,
   )
   let tile_size_y = cluster_config_positive(
-    @math_core.ceil(
-      safe_height.to_double() / requested_y.to_double(),
-    ).to_int(),
+    @math_core.ceil(safe_height.to_double() / requested_y.to_double()).to_int(),
     1,
   )
   let dimensions_x = cluster_config_positive(
     (Float::from_double(safe_width.to_double()) /
-      Float::from_double(tile_size_x.to_double())).to_int(),
+    Float::from_double(tile_size_x.to_double())).to_int(),
     1,
   )
   let dimensions_y = cluster_config_positive(
     (Float::from_double(safe_height.to_double()) /
-      Float::from_double(tile_size_y.to_double())).to_int(),
+    Float::from_double(tile_size_y.to_double())).to_int(),
     1,
   )
   (dimensions_x, dimensions_y, requested_z)
@@ -254,7 +248,10 @@ pub struct ObjectsInCluster {
 
 ///|
 pub fn ObjectsInCluster::default() -> ObjectsInCluster {
-  ObjectsInCluster::{ clusterables: [], counts: ClusterableObjectCounts::default() }
+  ObjectsInCluster::{
+    clusterables: [],
+    counts: ClusterableObjectCounts::default(),
+  }
 }
 
 ///|
@@ -380,8 +377,16 @@ pub fn Clusters::new(
     clusterable_objects.push(ObjectsInCluster::default())
   }
   Clusters::{
-    tile_size_x: if tile_size_x <= 0 { 0 } else { tile_size_x },
-    tile_size_y: if tile_size_y <= 0 { 0 } else { tile_size_y },
+    tile_size_x: if tile_size_x <= 0 {
+      0
+    } else {
+      tile_size_x
+    },
+    tile_size_y: if tile_size_y <= 0 {
+      0
+    } else {
+      tile_size_y
+    },
     dimensions_x: safe_dimensions_x,
     dimensions_y: safe_dimensions_y,
     dimensions_z: safe_dimensions_z,

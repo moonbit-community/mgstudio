@@ -26,7 +26,10 @@ test "pbr diagnostic: allocator snapshot and paths align" {
   let bindless = MaterialBindGroupBindlessAllocator::with_slab_capacity(4)
   ignore(bindless.allocate(1001))
   ignore(bindless.allocate(1002))
-  allocators.insert("StandardMaterial", MaterialBindGroupAllocator::Bindless(bindless))
+  allocators.insert(
+    "StandardMaterial",
+    MaterialBindGroupAllocator::Bindless(bindless),
+  )
 
   inspect(
     render3d_material_allocator_slabs_path("StandardMaterial"),
@@ -41,10 +44,8 @@ test "pbr diagnostic: allocator snapshot and paths align" {
     content="material_allocator_allocations/StandardMaterial",
   )
 
-  let snapshot = match render3d_material_allocator_snapshot_for_key(
-    allocators,
-    "StandardMaterial",
-  ) {
+  let snapshot = match
+    render3d_material_allocator_snapshot_for_key(allocators, "StandardMaterial") {
     Some(value) => value
     None => abort("missing allocator snapshot")
   }

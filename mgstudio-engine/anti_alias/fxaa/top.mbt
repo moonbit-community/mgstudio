@@ -83,8 +83,21 @@ pub fn fxaa_plugin_with(
 }
 
 ///|
+fn fxaa_camera_component_present(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+}
+
+///|
 pub fn fxaa_update_runtime_state(world : @ecs.World) -> Unit {
-  let enabled_camera_count = world.component_count(ecs_key_fxaa)
+  let mut enabled_camera_count = 0
+  world.for_each_component(ecs_key_fxaa, fn(entity, _fxaa : Fxaa) {
+    if fxaa_camera_component_present(world, entity) {
+      enabled_camera_count = enabled_camera_count + 1
+    }
+  })
   let current_state : FxaaRuntimeState? = try! world.get_resource(
     ecs_key_fxaa_runtime_state,
   )

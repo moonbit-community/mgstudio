@@ -27,20 +27,31 @@ test "image wb: container format detection by extension" {
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("basis") == ImageContainerFormat::Basis,
+    image_container_format_from_extension("basis") ==
+    ImageContainerFormat::Basis,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("foo") == ImageContainerFormat::Unknown("foo"),
+    image_container_format_from_extension("foo") ==
+    ImageContainerFormat::Unknown("foo"),
     content="true",
   )
 }
 
 ///|
 test "image wb: hdr and gpu-compressed classification" {
-  debug_inspect(image_container_is_hdr(ImageContainerFormat::Hdr), content="true")
-  debug_inspect(image_container_is_hdr(ImageContainerFormat::Exr), content="true")
-  debug_inspect(!image_container_is_hdr(ImageContainerFormat::Png), content="true")
+  debug_inspect(
+    image_container_is_hdr(ImageContainerFormat::Hdr),
+    content="true",
+  )
+  debug_inspect(
+    image_container_is_hdr(ImageContainerFormat::Exr),
+    content="true",
+  )
+  debug_inspect(
+    !image_container_is_hdr(ImageContainerFormat::Png),
+    content="true",
+  )
 
   debug_inspect(
     image_container_is_gpu_compressed(ImageContainerFormat::Dds),
@@ -64,10 +75,7 @@ test "image wb: hdr and gpu-compressed classification" {
 test "image wb: basis/dds/ktx2/hdr/exr helpers" {
   debug_inspect(image_is_basis_extension("basis"), content="true")
   debug_inspect(!image_is_basis_extension("ktx2"), content="true")
-  debug_inspect(
-    basis_requires_transcode(BasisContainer::Basis),
-    content="true",
-  )
+  debug_inspect(basis_requires_transcode(BasisContainer::Basis), content="true")
   debug_inspect(
     !basis_requires_transcode(BasisContainer::Ktx2Basis),
     content="true",
@@ -81,8 +89,14 @@ test "image wb: basis/dds/ktx2/hdr/exr helpers" {
 
 ///|
 test "image wb: default texture format helpers" {
-  debug_inspect(dds_default_texture_format() == TextureFormat::Rgba8Unorm, content="true")
-  debug_inspect(ktx2_default_texture_format() == TextureFormat::Rgba8Unorm, content="true")
+  debug_inspect(
+    dds_default_texture_format() == TextureFormat::Rgba8Unorm,
+    content="true",
+  )
+  debug_inspect(
+    ktx2_default_texture_format() == TextureFormat::Rgba8Unorm,
+    content="true",
+  )
   debug_inspect(
     hdr_default_texture_format() == TextureFormat::Rgba16Float,
     content="true",
