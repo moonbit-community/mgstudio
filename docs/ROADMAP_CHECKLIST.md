@@ -62,6 +62,8 @@ This file must not exceed 200 lines.
 - [x] `pbr/material-ownerization`: add `ExtractedMaterialInstances3d` world resource and populate it from `render3d_prepare_meshes_system`.
 - [x] `pbr/render/mesh_view_bindings-depth`: add Bevy-shaped `MeshPipelineViewLayoutKey` + layout label + layout-entry generation.
 - [x] `pbr/render/gpu_preprocess-depth`: add Bevy-shaped preprocess/bind-indirect pipeline key models and pipeline prepare-id flow.
+- [x] `pbr/render/fog-prepare-shape`: align `pbr/render/fog` with Bevy `GpuFog`/mode constants/meta buffer/view offset/prepare encoding shape.
+- [x] `pbr/fog-render-bridge`: add camera-owned `DistanceFog -> pbr/render Render3dViewFogData` bridge and world prepare helper.
 - [x] `render/pbr`: replace point-light shadow sentinel entity path with `Option<Entity>` ownership flow.
 - [x] `render/pbr`: move point-shadow target cache and scene postprocess target caches from global `Ref` to render-world resources.
 - [x] `render/pbr`: move wireframe mesh cache from global `Ref` to render-world resource ownership.

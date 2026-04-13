@@ -490,6 +490,55 @@ fn render3d_camera_distance_fog(
 }
 
 ///|
+fn render3d_view_fog_falloff(
+  falloff : FogFalloff3d,
+) -> @pbr_render.Render3dFogFalloff {
+  match falloff {
+    FogFalloff3d::Linear(start, end_) =>
+      @pbr_render.Render3dFogFalloff::linear(start, end_)
+    FogFalloff3d::Exponential(density) =>
+      @pbr_render.Render3dFogFalloff::exponential(density)
+    FogFalloff3d::ExponentialSquared(density) =>
+      @pbr_render.Render3dFogFalloff::exponential_squared(density)
+    FogFalloff3d::Atmospheric(extinction, inscattering) =>
+      @pbr_render.Render3dFogFalloff::atmospheric(extinction, inscattering)
+  }
+}
+
+///|
+pub fn render3d_view_fog_data(
+  fog : DistanceFog,
+) -> @pbr_render.Render3dViewFogData {
+  @pbr_render.Render3dViewFogData::new(
+    fog.color,
+    fog.directional_light_color,
+    fog.directional_light_exponent,
+    render3d_view_fog_falloff(fog.falloff),
+  )
+}
+
+///|
+pub fn render3d_prepare_camera_fog_uniforms(
+  world : @ecs.World,
+  view_entities : Array[@core.Entity],
+  fog_meta : @pbr_render.FogMeta,
+) -> Array[(@core.Entity, @pbr_render.ViewFogUniformOffset)] {
+  let view_fogs : Array[(@core.Entity, @pbr_render.Render3dViewFogData?)] = []
+  for entity in view_entities {
+    let view_fog = match (try! world.get_by_key(entity, ecs_key_camera3d)) {
+      Some(camera3d) =>
+        match camera3d.distance_fog {
+          Some(fog) => Some(render3d_view_fog_data(fog))
+          None => None
+        }
+      None => None
+    }
+    view_fogs.push((entity, view_fog))
+  }
+  @pbr_render.render3d_prepare_fog_uniforms(view_fogs, fog_meta)
+}
+
+///|
 fn render3d_fog_channel_factor(density : Float, distance : Float) -> Float {
   @pbr_render.render3d_fog_channel_factor(density, distance)
 }
