@@ -326,10 +326,14 @@ pub fn gltf_loader_runtime_plugin(
   if app.contains_resource(ecs_res_key_gltf_loader_runtime_state) {
     app
   } else {
-    app.insert_world_resource(
+    let next = app.insert_world_resource(
       ecs_res_key_gltf_loader_runtime_state,
       GltfLoaderRuntimeState::from_bootstrap(),
     )
+    gltf_custom_vertex_attributes_bootstrap.clear()
+    gltf_default_convert_coordinates_bootstrap_ref.val = GltfConvertCoordinates::default()
+    gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = GltfSkinnedMeshBoundsPolicy::default()
+    next
   }
 }
 

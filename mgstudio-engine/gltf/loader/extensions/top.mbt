@@ -106,10 +106,13 @@ pub fn gltf_extension_runtime_plugin(
   if app.contains_resource(ecs_key_gltf_extension_runtime_state) {
     app
   } else {
-    app.insert_world_resource(
+    let next = app.insert_world_resource(
       ecs_key_gltf_extension_runtime_state,
       GltfExtensionRuntimeState::from_bootstrap(),
     )
+    gltf_extension_handlers_registry_bootstrap.clear()
+    gltf_pbr_material_handler_enabled_bootstrap_ref.val = true
+    next
   }
 }
 

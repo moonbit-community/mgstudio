@@ -112,10 +112,13 @@ pub fn animation_event_runtime_plugin(
   if app.contains_resource(ecs_key_animation_event_runtime_state) {
     app
   } else {
-    app.insert_world_resource(
+    let next = app.insert_world_resource(
       ecs_key_animation_event_runtime_state,
       AnimationEventRuntimeState::from_bootstrap(),
     )
+    animation_typed_event_dispatchers_bootstrap.clear()
+    animation_event_callbacks_bootstrap.clear()
+    next
   }
 }
 
@@ -184,19 +187,20 @@ fn[T : AnimationEvent + @ecs.TriggerEvent] animation_typed_event_register(
       None => abort("animation clip typed event payload type mismatch")
     }
   }
-  if animation_typed_event_find_dispatcher_from(
-      animation_typed_event_dispatchers_bootstrap, type_key,
-    )
-    is None {
-    animation_typed_event_dispatchers_bootstrap.push((type_key, dispatch))
-  }
-  if animation_event_runtime_state_ref_if_present() is Some(state_ref) &&
-    animation_typed_event_find_dispatcher_from(
-      state_ref.val.typed_event_dispatchers,
+  if animation_event_runtime_state_ref_if_present() is Some(state_ref) {
+    if animation_typed_event_find_dispatcher_from(
+        state_ref.val.typed_event_dispatchers,
+        type_key,
+      )
+      is None {
+      state_ref.val.typed_event_dispatchers.push((type_key, dispatch))
+    }
+  } else if animation_typed_event_find_dispatcher_from(
+      animation_typed_event_dispatchers_bootstrap,
       type_key,
     )
     is None {
-    state_ref.val.typed_event_dispatchers.push((type_key, dispatch))
+    animation_typed_event_dispatchers_bootstrap.push((type_key, dispatch))
   }
   type_key
 }
@@ -311,13 +315,13 @@ let animation_event_callbacks_bootstrap : Array[AnimationEventCallback] = []
 pub fn animation_register_event_callback(
   callback : AnimationEventCallback,
 ) -> Int {
-  animation_event_callbacks_bootstrap.push(callback)
-  let callback_id = animation_event_callbacks_bootstrap.length() - 1
-  if animation_event_runtime_state_ref_if_present() is Some(state_ref) &&
-    callback_id >= state_ref.val.event_callbacks.length() {
+  if animation_event_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.event_callbacks.push(callback)
+    state_ref.val.event_callbacks.length() - 1
+  } else {
+    animation_event_callbacks_bootstrap.push(callback)
+    animation_event_callbacks_bootstrap.length() - 1
   }
-  callback_id
 }
 
 ///|

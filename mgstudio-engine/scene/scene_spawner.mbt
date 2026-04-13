@@ -147,6 +147,7 @@ pub fn scene_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ScenePlugin,
 ) -> @app.App[@ecs.World] {
+  @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
   scene_runtime_plugin_base(
     scene_init_gltf_assets(app)
     .init_resource(fn() {

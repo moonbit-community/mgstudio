@@ -33,7 +33,7 @@ This file must not exceed 200 lines.
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 91% | 74% | 74% | 🟡 In Progress | Camera-only runtime semantics and node gating are aligned for FXAA/SMAA/TAA/CAS/DLSS; `FxaaSensitivity::get_str` API shape is aligned; render-stage depth still pending. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
-| `bevy_image` | `mgstudio-engine/image` | 94% | 92% | 92% | 🟡 In Progress | `ImageLoader` type + extensions/supported-format tables + expanded magic-byte guess path + Bevy-shaped loader error surfaces moved closer; BMP decode/runtime dimensions are wired, TGA (including RLE) and PNM (binary + ascii + PAM/P7) decode run through container-aware host path, farbfeld/QOI/ICO(PNG+DIB32 payload) decode + dimensions are supported, and GIF/WEBP/TIFF dimension parsing is wired for non-decoded fallbacks; remaining codec parity is still open. |
+| `bevy_image` | `mgstudio-engine/image` | 96% | 95% | 95% | ✅ Mostly Done | `ImageLoader` shape, extension routing, supported-format table, magic-byte guessing, and host decode/dimension coverage now include BMP, TGA(RLE), PNM(P1..P7, 8/16-bit), farbfeld, QOI, ICO(PNG+DIB32), GIF/WEBP/TIFF/JPEG/TGA dimensions; remaining work is broader long-tail codec behavior depth. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -46,7 +46,7 @@ This file must not exceed 200 lines.
 |---|---:|
 | Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
-| Current weighted migration completion (included scope) | 93% |
+| Current weighted migration completion (included scope) | 94% |
 | Last updated | 2026-04-14 |
 
 - [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
@@ -194,7 +194,7 @@ This file must not exceed 200 lines.
 - [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event runtime resourceized + gltf extension runtime state resourceized + gltf loader runtime config/vertex-attribute state resourceized + scene gltf pending queues resourceized + gltf loader registration/registered state resourceized with bootstrap fallback + runtime setters now world-first (bootstrap only when no active world) to reduce cross-app global leakage), then close remaining runtime differences.
 - [x] `ui/sprite/picking`: close camera/pointer drift baseline (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests + `moon test picking` green).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
-- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback + capability-gated web asset fetch (`web_asset_http_runtime_supported`) + native `moon test asset` pass + extended image loader settings/format-selection/array-layout + supported-format/magic-byte-guess wb coverage + `.meta` `format/texture_format/array_layout/load_meshes` parse and asset-side pending-image application + loader texture-extension routing derived from `image_loader_supported_file_extensions` + BMP decode/dimensions + container-aware TGA (uncompressed+RLE) and PNM (binary+ascii+PAM/P7) decode + farbfeld/QOI decode/dimensions + ICO(PNG+DIB32 payload) decode + GIF/WEBP/TIFF dimension parsing in host I/O with wb tests; remaining parity-tail work is broader codec/path behavior depth).
+- [x] `asset/image`: close mainline runtime decode/dimension gaps (done: embedded source-path fallback + capability-gated web fetch + native `moon test asset` green + settings/format-selection/array-layout + extension routing from loader tables + BMP/TGA(RLE)/PNM(P1..P7, 8/16-bit)/farbfeld/QOI/ICO(PNG+DIB32) decode + GIF/WEBP/TIFF/JPEG/TGA/PNM dimensions with wb coverage); remaining codec long-tail is tracked under module-level parity depth.
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.
