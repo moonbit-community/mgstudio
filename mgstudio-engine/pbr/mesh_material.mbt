@@ -67,6 +67,12 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   if !point_light_shadow_map.is_present() {
     point_light_shadow_map.insert(PointLightShadowMap::default())
   }
+  let directional_light_shadow_map = get_directional_light_shadow_map_resource(
+    ecs_world,
+  )
+  if !directional_light_shadow_map.is_present() {
+    directional_light_shadow_map.insert(DirectionalLightShadowMap::default())
+  }
   if (try! world.get_resource(ecs_key_internal_assets)) is None {
     world.insert_resource(
       ecs_key_internal_assets,
@@ -95,10 +101,15 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn validate_directional_light_shadow_map_size_system(world : @ecs.World) -> Unit {
+  @light.validate_directional_light_shadow_map_size(world)
+}
+
+///|
 fn configure_mesh_render_sets(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_post_update_system_config(
+  app.add_post_update_system(validate_directional_light_shadow_map_size_system).add_post_update_system_config(
     @app.system(render3d_update_frusta_system).in_set(
       render3d_set_update_frusta,
     ),
