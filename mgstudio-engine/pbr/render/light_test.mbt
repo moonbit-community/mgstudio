@@ -518,6 +518,23 @@ test "pbr render light: gpu lights computes spot shadow map offset" {
 }
 
 ///|
+test "pbr render light: gpu directional array is padded to max while count stays logical" {
+  let world = @ecs.World::new()
+  let directional = world.spawn()
+  try! world.set_by_key(
+    directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="1")
+  inspect(gpu.directional_lights.length(), content=MAX_DIRECTIONAL_LIGHTS.to_string())
+  inspect(gpu.directional_lights[1].num_cascades, content="0")
+  inspect(gpu.directional_lights[1].decal_index, content="-1")
+}
+
+///|
 test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   let world = @ecs.World::new()
   world.insert_resource(

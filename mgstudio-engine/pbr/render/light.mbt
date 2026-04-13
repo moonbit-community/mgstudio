@@ -654,6 +654,25 @@ fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
 }
 
 ///|
+fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
+  GpuDirectionalLight3d::{
+    cascades: [],
+    color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    dir_to_light: @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    flags: 0U,
+    soft_shadow_size: 0.0F,
+    shadow_depth_bias: 0.0F,
+    shadow_normal_bias: 0.0F,
+    num_cascades: 0,
+    cascades_overlap_proportion: 0.0F,
+    depth_texture_base_index: 0,
+    decal_index: -1,
+    sun_disk_angular_size: 0.0F,
+    sun_disk_intensity: 0.0F,
+  }
+}
+
+///|
 pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
   let clusterable_point_lights = render3d_collect_extracted_clusterable_point_lights(
@@ -715,6 +734,9 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     directional_shadow_texture_base_index = directional_shadow_texture_base_index +
       cascades.length()
   }
+  while gpu_directional_lights.length() < MAX_DIRECTIONAL_LIGHTS {
+    gpu_directional_lights.push(render3d_gpu_directional_light_default())
+  }
   GpuLights3d::{
     directional_lights: gpu_directional_lights,
     ambient_color: ambient.color,
@@ -726,7 +748,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       n_clusters,
     ),
     cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
-    n_directional_lights: gpu_directional_lights.length(),
+    n_directional_lights: max_count,
     spot_light_shadowmap_offset: directional_shadow_texture_base_index -
       point_light_count,
     ambient_light_affects_lightmapped_meshes: if ambient
