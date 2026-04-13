@@ -1,6 +1,6 @@
 # Render Parity Issue Tracker
 
-Last updated: 2026-04-12
+Last updated: 2026-04-13
 
 ## Status Legend
 
@@ -18,7 +18,7 @@ Last updated: 2026-04-12
 | RENDER-003 | bevy_pbr/render/skin.rs | Skin uniforms use per-skin slot cache, not Bevy-style global allocator + current/prev double buffers. | IN_PROGRESS | 2026-04-12: switched skin binding keys from entity-id binding to global slot allocator with reuse/free-list in `pbr/render/skin.mbt`; remaining work is Bevy-like current/previous skin uniform double-buffer path. |
 | RENDER-004 | bevy_pbr/render/mesh.rs | Mesh extract path is not changed/removed incremental at Bevy granularity. | TODO | Align with `extract_meshes_for_gpu_building` query + removed-components reextract logic. |
 | RENDER-005 | bevy_pbr/render/mesh.rs | Missing dedicated `set_mesh_motion_vector_flags` stage after skin/morph extraction. | IN_PROGRESS | 2026-04-12: extracted motion-vector requirement detection into `render3d_set_mesh_motion_vector_flags` in PrepareMeshes; remaining work is to converge from current global-flag behavior to Bevy-like per-mesh flag/writeback flow. |
-| RENDER-006 | bevy_pbr/render/mesh.rs + mesh_bindings.rs | Mesh bind-group prep still partially deferred to draw/execute paths. | IN_PROGRESS | 2026-04-12: added dedicated `render3d_prepare_bind_groups_system` in `PrepareBindGroups`; remaining work is to move actual per-mesh/per-view bind-group allocation out of execute-time paths into this stage. |
+| RENDER-006 | bevy_pbr/render/mesh.rs + mesh_bindings.rs | Mesh bind-group prep still partially deferred to draw/execute paths. | IN_PROGRESS | 2026-04-13: `motion_vector_mesh_bind_group` creation moved out of draw path (`mesh3d_draw_motion_vector_pass`) into preprocess payload upload (`upload_mesh3d_preprocess_camera_payload`); remaining work is to move per-view/per-material main-pass bind-group allocation into `PrepareBindGroups` stage. |
 | RENDER-007 | bevy_pbr/render/mesh_view_bindings.rs | View bind-group preparation order and ownership are not fully equivalent. | TODO | Align per-view bind-group resources and stage ordering with Bevy render schedule. |
 | RENDER-008 | bevy_pbr/render/gpu_preprocess.rs + mesh.rs | GPU preprocess pipeline stages and flush ordering differ from Bevy. | TODO | Align `PrepareResourcesFlush/PrepareResources/PrepareMeshes` responsibilities and buffer lifecycle. |
 | RENDER-009 | bevy_pbr/render/morph.rs | Morph extraction/preparation lifecycle is not yet split and tracked like Bevy. | DONE | 2026-04-12: split to `render3d_extract_morphs` + `render3d_prepare_morphs`; `Render3dPhaseState` now keeps current/prev morph indices and uniform-like weight buffers; render systems call extract in render-extract set and apply in render-prepare set. |

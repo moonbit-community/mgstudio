@@ -47,7 +47,7 @@ This file must not exceed 200 lines.
 | Bevy→mgstudio path parity (considered scope) | 100% (`1031/1031`, `missing=0`, 2026-04-12) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
 | Current weighted migration completion (included scope) | 73% |
-| Last updated | 2026-04-12 |
+| Last updated | 2026-04-13 |
 
 - [ ] `render/pbr`: close `RENDER-003` by introducing Bevy-shaped global skin uniform allocator and previous-frame buffers.
 - [ ] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove flow matching Bevy boundaries.
@@ -136,7 +136,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
 - [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
 - [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe.
-- [ ] `render/wgpu_mbt`: expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for full meshlet capability parity.
+- [ ] `render/wgpu_mbt` (deferred, upstream): expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for full meshlet capability parity (tracked at `moonbit-community/wgpu-mbt#11`).
 - [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.

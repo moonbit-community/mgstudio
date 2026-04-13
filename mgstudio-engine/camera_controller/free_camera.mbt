@@ -16,7 +16,7 @@
 const FREE_CAMERA_RADIANS_PER_DOT : Float = 0.005555555555555556F
 
 ///|
-pub struct FreeCamera {
+pub(all) struct FreeCamera {
   sensitivity : Float
   key_forward : @window.KeyCode
   key_back : @window.KeyCode
@@ -54,7 +54,7 @@ pub fn FreeCamera::default() -> FreeCamera {
 }
 
 ///|
-pub struct FreeCameraState {
+pub(all) struct FreeCameraState {
   enabled : Bool
   initialized : Bool
   pitch : Float

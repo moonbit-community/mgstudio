@@ -78,12 +78,9 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   let mut mesh_write_offset = 0UL
   let mut mesh_index = 0U
   let mut writes_motion_vector_mesh = true
-  if preprocess_state_index is Some(state_index) &&
-    (use_indirect || draw_storage_index >= 0) &&
-    mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
-      self, state_index,
-    )
-    is Some(preprocess_mesh_bg) {
+  if (use_indirect || draw_storage_index >= 0) &&
+    preprocess_state is Some(preprocess_state) &&
+    preprocess_state.motion_vector_mesh_bind_group is Some(preprocess_mesh_bg) {
     mesh_bind_group = Some(preprocess_mesh_bg)
     mesh_index = if use_indirect {
       0U

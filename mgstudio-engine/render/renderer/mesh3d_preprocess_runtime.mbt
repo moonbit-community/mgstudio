@@ -688,6 +688,10 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   |> ignore
   mesh3d_build_indirect_non_indexed_bind_group_get_or_create(self, state_index)
   |> ignore
+  mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
+    self, state_index,
+  )
+  |> ignore
 }
 
 ///|
