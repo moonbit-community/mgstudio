@@ -99,6 +99,7 @@ fn scene_runtime_plugin_base(
   app
   .init_resource(fn() { SceneRuntimeState::default() })
   .init_resource(fn() { SceneModifiedEventsCursorState::default() })
+  .init_resource(fn() { SceneGltfPendingRequestsState::default() })
   .add_pre_update_system(scene_load_pending_system)
   .add_pre_update_system(scene_reload_modified_roots_system)
   .add_pre_update_system(scene_spawn_roots_system)

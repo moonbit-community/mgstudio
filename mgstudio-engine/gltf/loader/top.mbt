@@ -231,20 +231,76 @@ pub fn GltfPlugin::with_skinned_mesh_bounds_policy(
 priv struct GltfPluginRuntimeState {
   mut registration : GltfLoaderRegistration?
   mut registered : Bool
+}
+
+///|
+pub struct GltfLoaderRuntimeState {
   mut default_convert_coordinates : GltfConvertCoordinates
   mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
+  custom_vertex_attributes : Array[GltfCustomVertexAttribute]
+}
+
+///|
+fn GltfLoaderRuntimeState::from_bootstrap() -> GltfLoaderRuntimeState {
+  let custom_vertex_attributes : Array[GltfCustomVertexAttribute] = []
+  for attribute in gltf_custom_vertex_attributes_bootstrap {
+    custom_vertex_attributes.push(attribute)
+  }
+  GltfLoaderRuntimeState::{
+    default_convert_coordinates: gltf_default_convert_coordinates_bootstrap_ref.val,
+    default_skinned_mesh_bounds_policy: gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val,
+    custom_vertex_attributes,
+  }
 }
 
 ///|
 let gltf_plugin_runtime_state_ref : Ref[GltfPluginRuntimeState] = Ref::new({
   registration: None,
   registered: false,
-  default_convert_coordinates: GltfConvertCoordinates::default(),
-  default_skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::Dynamic,
 })
 
 ///|
-let gltf_custom_vertex_attributes_registry : Array[GltfCustomVertexAttribute] = []
+let gltf_custom_vertex_attributes_bootstrap : Array[GltfCustomVertexAttribute] = []
+
+///|
+let gltf_default_convert_coordinates_bootstrap_ref : Ref[GltfConvertCoordinates] = Ref::new(
+  GltfConvertCoordinates::default(),
+)
+
+///|
+let gltf_default_skinned_mesh_bounds_policy_bootstrap_ref : Ref[
+  GltfSkinnedMeshBoundsPolicy,
+] = Ref::new(GltfSkinnedMeshBoundsPolicy::default())
+
+///|
+pub let ecs_res_key_gltf_loader_runtime_state : @ecs.ResourceKey[
+  GltfLoaderRuntimeState,
+] = @ecs.register_resource(debug_name="gltf.loader.runtime_state")
+
+///|
+pub impl @app.Resource for GltfLoaderRuntimeState with resource() {
+  ecs_res_key_gltf_loader_runtime_state
+}
+
+///|
+pub fn gltf_loader_runtime_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  if app.contains_resource(ecs_res_key_gltf_loader_runtime_state) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_res_key_gltf_loader_runtime_state,
+      GltfLoaderRuntimeState::from_bootstrap(),
+    )
+  }
+}
+
+///|
+fn gltf_loader_runtime_state_ref_if_present() -> Ref[GltfLoaderRuntimeState]? {
+  guard @app.current_world() is Some(world) else { return None }
+  try! world.get_resource_ref_mut(ecs_res_key_gltf_loader_runtime_state)
+}
 
 ///|
 fn gltf_attribute_name_matches(
@@ -262,31 +318,54 @@ fn gltf_attribute_name_matches(
 }
 
 ///|
+fn gltf_upsert_custom_vertex_attribute(
+  registry : Array[GltfCustomVertexAttribute],
+  name : String,
+  mapped_name : String,
+) -> Unit {
+  for i in 0..<registry.length() {
+    if registry[i].gltf_name() == name {
+      registry[i] = GltfCustomVertexAttribute::new(name, mapped_name)
+      return
+    }
+  }
+  registry.push(GltfCustomVertexAttribute::new(name, mapped_name))
+}
+
+///|
 pub fn gltf_add_custom_vertex_attribute(
   name : String,
   mapped_name : String,
 ) -> Unit {
-  for i in 0..<gltf_custom_vertex_attributes_registry.length() {
-    if gltf_custom_vertex_attributes_registry[i].gltf_name() == name {
-      gltf_custom_vertex_attributes_registry[i] = GltfCustomVertexAttribute::new(
-        name, mapped_name,
-      )
-      return
-    }
-  }
-  gltf_custom_vertex_attributes_registry.push(
-    GltfCustomVertexAttribute::new(name, mapped_name),
+  gltf_upsert_custom_vertex_attribute(
+    gltf_custom_vertex_attributes_bootstrap,
+    name,
+    mapped_name,
   )
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    gltf_upsert_custom_vertex_attribute(
+      state_ref.val.custom_vertex_attributes,
+      name,
+      mapped_name,
+    )
+  }
 }
 
 ///|
 pub fn gltf_clear_custom_vertex_attributes() -> Unit {
-  gltf_custom_vertex_attributes_registry.clear()
+  gltf_custom_vertex_attributes_bootstrap.clear()
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.custom_vertex_attributes.clear()
+  }
 }
 
 ///|
 pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute] {
-  gltf_custom_vertex_attributes_registry
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.custom_vertex_attributes
+  } else {
+    gltf_custom_vertex_attributes_bootstrap
+  }
 }
 
 ///|
@@ -307,7 +386,6 @@ pub fn gltf_plugin_with(
   app : @app.App[@ecs.World],
   plugin : GltfPlugin,
 ) -> @app.App[@ecs.World] {
-  let app = @gltf_loader_extensions.gltf_extension_runtime_plugin(app)
   gltf_set_pbr_material_handler_enabled(plugin.pbr_material_handler_enabled)
   gltf_set_default_convert_coordinates(plugin.convert_coordinates)
   gltf_set_default_skinned_mesh_bounds_policy(plugin.skinned_mesh_bounds_policy)
@@ -322,6 +400,8 @@ pub fn gltf_plugin_with(
   for handler in plugin.extension_handlers {
     gltf_register_extension_handler(handler)
   }
+  let app = @gltf_loader_extensions.gltf_extension_runtime_plugin(app)
+  let app = gltf_loader_runtime_plugin(app)
   gltf_register_asset_loaders_once()
   app
 }
@@ -338,7 +418,7 @@ pub fn gltf_register_extension_handler(handler : GltfExtensionHandler) -> Unit {
 
 ///|
 pub fn gltf_resolve_custom_vertex_attribute_name(name : String) -> String? {
-  for attribute in gltf_custom_vertex_attributes_registry {
+  for attribute in gltf_custom_vertex_attributes() {
     if gltf_attribute_name_matches(attribute.gltf_name(), name) {
       return Some(attribute.mapped_name())
     }
@@ -353,26 +433,40 @@ pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
 
 ///|
 pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy {
-  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.default_skinned_mesh_bounds_policy
+  } else {
+    gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val
+  }
 }
 
 ///|
 pub fn gltf_set_default_skinned_mesh_bounds_policy(
   policy : GltfSkinnedMeshBoundsPolicy,
 ) -> Unit {
-  gltf_plugin_runtime_state_ref.val.default_skinned_mesh_bounds_policy = policy
+  gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = policy
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.default_skinned_mesh_bounds_policy = policy
+  }
 }
 
 ///|
 pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
-  gltf_plugin_runtime_state_ref.val.default_convert_coordinates
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.default_convert_coordinates
+  } else {
+    gltf_default_convert_coordinates_bootstrap_ref.val
+  }
 }
 
 ///|
 pub fn gltf_set_default_convert_coordinates(
   convert_coordinates : GltfConvertCoordinates,
 ) -> Unit {
-  gltf_plugin_runtime_state_ref.val.default_convert_coordinates = convert_coordinates
+  gltf_default_convert_coordinates_bootstrap_ref.val = convert_coordinates
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.default_convert_coordinates = convert_coordinates
+  }
 }
 
 ///|

@@ -683,13 +683,13 @@ pub fn scene_register_gltf_scene(
 ) -> @asset.Handle[Scene] {
   let world = scene_current_world_or_abort()
   if scene_registry_get(asset_path) is Some(handle) {
-    scene_pending_remove_scene_handle(handle)
+    scene_pending_remove_scene_handle(world, handle)
     scene_assets_from_world_mut_or_abort(world).val.set(handle, scene) |> ignore
     return handle
   }
   let handle = scene_assets_from_world_mut_or_abort(world).val.add(scene)
   scene_registry_mut_or_abort().val.scene_registry.push((asset_path, handle))
-  scene_pending_remove_scene_handle(handle)
+  scene_pending_remove_scene_handle(world, handle)
   handle
 }
 
@@ -706,7 +706,7 @@ pub fn scene_load_gltf_scene(
     scene_pending(),
   )
   scene_registry_mut_or_abort().val.scene_registry.push((asset_path, handle))
-  scene_queue_gltf_request(asset_server, handle, asset_path)
+  scene_queue_gltf_request(world, asset_server, handle, asset_path)
   handle
 }
 
@@ -715,6 +715,7 @@ pub fn scene_load_gltf_animation(
   asset_server : @asset.AssetServer,
   asset_path : String,
 ) -> @asset.Handle[@animation.AnimationClip] {
+  let world = scene_current_world_or_abort()
   if scene_animation_registry_get(asset_path) is Some(handle) {
     return handle
   }
@@ -722,7 +723,7 @@ pub fn scene_load_gltf_animation(
   scene_registry_mut_or_abort().val.animation_registry.push(
     (asset_path, handle),
   )
-  scene_queue_gltf_animation_request(asset_server, handle, asset_path)
+  scene_queue_gltf_animation_request(world, asset_server, handle, asset_path)
   handle
 }
 
@@ -737,7 +738,7 @@ pub fn scene_load_gltf_mesh_primitive(
   }
   let handle = scene_mesh_assets_from_world_mut_or_abort(world).val.reserve_handle()
   scene_registry_mut_or_abort().val.mesh_registry.push((asset_path, handle))
-  scene_queue_gltf_mesh_request(asset_server, handle, asset_path)
+  scene_queue_gltf_mesh_request(world, asset_server, handle, asset_path)
   handle
 }
 
@@ -760,8 +761,8 @@ pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
 }
 
 ///|
-pub fn[W] scene_load_pending_system(_world : W) -> Unit {
-  scene_process_pending_requests(@asset.AssetServer::new())
+pub fn scene_load_pending_system(world : @ecs.World) -> Unit {
+  scene_process_pending_requests(world, @asset.AssetServer::new())
 }
 
 ///|
@@ -896,13 +897,13 @@ fn scene_reload_asset_path(
   }
 
   for entry in scenes_to_reload {
-    scene_queue_gltf_request(asset_server, entry.0, entry.1)
+    scene_queue_gltf_request(world, asset_server, entry.0, entry.1)
   }
   for entry in animations_to_reload {
-    scene_queue_gltf_animation_request(asset_server, entry.0, entry.1)
+    scene_queue_gltf_animation_request(world, asset_server, entry.0, entry.1)
   }
   for entry in meshes_to_reload {
-    scene_queue_gltf_mesh_request(asset_server, entry.0, entry.1)
+    scene_queue_gltf_mesh_request(world, asset_server, entry.0, entry.1)
   }
 }
 
