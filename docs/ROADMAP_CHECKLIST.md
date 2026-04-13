@@ -95,6 +95,8 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-fog-world-path`: wire fog prepare output into render-world (`FogMeta` resource + per-view `ViewFogUniformOffset` component) during prepare-bind-groups.
 - [x] `pbr/render-light-extraction-formulas`: align light extraction with Bevy formulas for point/spot lumens->intensity, shadow-normal-bias scaling, and directional `dir_to_light=back()`.
 - [x] `pbr/render-light-view-visibility`: align extraction with Bevy visibility semantics by skipping lights marked `ViewVisibility(false)`.
+- [x] `pbr/light-affects-lightmap-flags`: add missing spot/directional `affects_lightmapped_mesh_diffuse` authoring fields and propagate them through render extraction.
+- [x] `pbr/render-spot-flag-direction`: align `SPOT_LIGHT_Y_NEGATIVE` flag logic with Bevy by deriving from spotlight direction sign, not outer-angle value.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.

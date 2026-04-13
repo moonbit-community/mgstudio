@@ -156,3 +156,32 @@ test "pbr render light: extracted lights skip ViewVisibility(false)" {
     content="0",
   )
 }
+
+///|
+test "pbr render light: spot/directional propagate affects_lightmapped_mesh_diffuse" {
+  let world = @ecs.World::new()
+
+  let spot_entity = world.spawn()
+  try! world.set_by_key(
+    spot_entity,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_affects_lightmapped_mesh_diffuse(false),
+  )
+  |> ignore
+  let spots = render3d_collect_extracted_spot_lights(world)
+  inspect(spots.length(), content="1")
+  inspect(spots[0].affects_lightmapped_mesh_diffuse, content="false")
+
+  let directional_entity = world.spawn()
+  try! world.set_by_key(
+    directional_entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_affects_lightmapped_mesh_diffuse(
+      false,
+    ),
+  )
+  |> ignore
+  let directionals = render3d_collect_extracted_directional_lights(world)
+  inspect(directionals.length(), content="1")
+  inspect(directionals[0].affects_lightmapped_mesh_diffuse, content="false")
+}

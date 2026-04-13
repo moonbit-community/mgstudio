@@ -854,6 +854,7 @@ pub struct DirectionalLight {
   illuminance : Float
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
   soft_shadow_size : Float?
   cascade_shadow_config : CascadeShadowConfig?
   shadow_depth_bias : Float
@@ -867,6 +868,7 @@ pub fn DirectionalLight::default() -> DirectionalLight {
     illuminance: 10000.0F,
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
+    affects_lightmapped_mesh_diffuse: true,
     soft_shadow_size: None,
     cascade_shadow_config: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
@@ -885,6 +887,7 @@ pub fn DirectionalLight::new(
     illuminance,
     shadow_maps_enabled,
     contact_shadows_enabled: false,
+    affects_lightmapped_mesh_diffuse: true,
     soft_shadow_size: None,
     cascade_shadow_config: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
@@ -909,6 +912,14 @@ pub fn DirectionalLight::with_contact_shadows_enabled(
   contact_shadows_enabled : Bool,
 ) -> DirectionalLight {
   DirectionalLight::{ ..self, contact_shadows_enabled, }
+}
+
+///|
+pub fn DirectionalLight::with_affects_lightmapped_mesh_diffuse(
+  self : DirectionalLight,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> DirectionalLight {
+  DirectionalLight::{ ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -975,6 +986,7 @@ pub struct SpotLight {
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
   soft_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
   shadow_depth_bias : Float
   shadow_normal_bias : Float
   shadow_map_near_z : Float
@@ -992,6 +1004,7 @@ pub fn SpotLight::default() -> SpotLight {
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
     soft_shadows_enabled: false,
+    affects_lightmapped_mesh_diffuse: true,
     shadow_depth_bias: SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
     shadow_map_near_z: SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
@@ -1017,6 +1030,7 @@ pub fn SpotLight::new(
     shadow_maps_enabled,
     contact_shadows_enabled: false,
     soft_shadows_enabled: false,
+    affects_lightmapped_mesh_diffuse: true,
     shadow_depth_bias: SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
     shadow_map_near_z: SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
@@ -1087,6 +1101,14 @@ pub fn SpotLight::with_soft_shadows_enabled(
   soft_shadows_enabled : Bool,
 ) -> SpotLight {
   SpotLight::{ ..self, soft_shadows_enabled, }
+}
+
+///|
+pub fn SpotLight::with_affects_lightmapped_mesh_diffuse(
+  self : SpotLight,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> SpotLight {
+  SpotLight::{ ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|

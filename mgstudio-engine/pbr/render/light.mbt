@@ -190,8 +190,11 @@ fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
   if extracted.shadow_maps_enabled {
     flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
   }
-  if extracted.spot_light_angles is Some((_, outer)) && outer < 0.0F {
-    flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
+  if extracted.spot_light_angles is Some(_) {
+    let light_direction = render3d_transform_forward(extracted.transform)
+    if light_direction.y < 0.0F {
+      flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
+    }
   }
   if extracted.volumetric {
     flags = flags | POINT_LIGHT_FLAG_VOLUMETRIC
@@ -314,7 +317,7 @@ fn render3d_extract_spot_light(
     spot_light_angles: Some((inner, outer)),
     volumetric,
     soft_shadows_enabled: light.soft_shadows_enabled,
-    affects_lightmapped_mesh_diffuse: false,
+    affects_lightmapped_mesh_diffuse: light.affects_lightmapped_mesh_diffuse,
   }
 }
 
@@ -340,7 +343,7 @@ fn render3d_extract_directional_light(
     shadow_depth_bias: light.shadow_depth_bias,
     shadow_normal_bias: light.shadow_normal_bias * render3d_sqrt2(),
     volumetric,
-    affects_lightmapped_mesh_diffuse: true,
+    affects_lightmapped_mesh_diffuse: light.affects_lightmapped_mesh_diffuse,
     soft_shadow_size: light.soft_shadow_size,
     cascade_count: if cascade_count > MAX_CASCADES_PER_LIGHT {
       MAX_CASCADES_PER_LIGHT
