@@ -114,7 +114,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-spot-shadowmap-offset`: add Bevy-shaped `spot_light_shadowmap_offset` field on GPU lights and compute it from directional cascade count and point-light count.
 - [x] `pbr/render-clusterable-point-light-ordering`: add Bevy-shaped point+spot combined ordering path (`point first`, then shadow/volumetric/entity key) and source `spot_light_shadowmap_offset` point-count from this combined stream.
 - [x] `pbr/render-gpu-lights-cluster-shape`: add Bevy-shaped `GpuLights` cluster payload fields (`cluster_dimensions`, `cluster_factors`) with deterministic defaults in current single-view path.
-- [x] `pbr/render-cluster-factor-formula`: align `cluster_factors.zw` computation with Bevy `calculate_cluster_factors` and derive cluster dimensions from `ClusterConfig` + screen-size rounding via `light/cluster`.
+- [x] `pbr/render-cluster-factor-formula`: align `cluster_factors.zw` computation with Bevy `calculate_cluster_factors`, derive dimensions from `ClusterConfig` + screen-size rounding via `light/cluster`, and zero-out cluster payload for `ClusterConfig::None`.
 - [x] `pbr/render-directional-decal-index`: source directional GPU `decal_index` from `RenderClusteredDecals` resource mapping (fallback `-1`) instead of hardcoded sentinel.
 - [x] `pbr/render-directional-fixed-array-shape`: align `GpuLights` directional payload shape with Bevy by padding to `MAX_DIRECTIONAL_LIGHTS` and using `n_directional_lights` as logical count.
 - [x] `pbr/render-gpu-ambient-premultiply`: align `GpuLights.ambient_color` with Bevy by writing pre-multiplied ambient color (`color * brightness`) instead of split GPU fields.
