@@ -92,40 +92,26 @@ const RENDER_PASS_PHASE_3D_MOTION_VECTOR : Int = 3
 const RENDER_PASS_PHASE_3D_POINT_SHADOW : Int = 4
 
 ///|
-let debug_frame_counter_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_invalid_id_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh3d_invalid_id_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_mesh2d_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
-
-///|
-priv struct RenderPassTimingRuntimeState {
+priv struct RenderDiagnosticsRuntimeState {
+  mut debug_frame_counter : Int
+  mut debug_mesh2d_draw_calls : Int
+  mut debug_mesh3d_draw_calls : Int
+  mut debug_mesh2d_invalid_id_calls : Int
+  mut debug_mesh3d_invalid_id_calls : Int
+  mut debug_mesh2d_executed_draw_calls : Int
+  mut debug_mesh3d_executed_draw_calls : Int
+  mut current_frame_mesh2d_draw_calls : Int
+  mut current_frame_mesh2d_executed_draw_calls : Int
+  mut current_frame_mesh3d_draw_calls : Int
+  mut current_frame_mesh3d_executed_draw_calls : Int
+  mut debug_mesh2d_drop_no_frame : Int
+  mut debug_mesh2d_drop_no_pass : Int
+  mut debug_mesh2d_drop_no_pass_state : Int
+  mut debug_mesh2d_drop_missing_mesh : Int
+  mut debug_mesh2d_drop_bad_stride : Int
+  mut debug_mesh2d_drop_no_pipeline : Int
+  mut debug_mesh2d_drop_no_uniform_buf : Int
+  mut last_frame_render_diagnostics_snapshot : RenderDiagnosticsSnapshot
   mut pass_total_count : Int
   mut pass_2d_count : Int
   mut pass_3d_main_count : Int
@@ -141,8 +127,27 @@ priv struct RenderPassTimingRuntimeState {
 }
 
 ///|
-fn render_pass_timing_runtime_state_default() -> RenderPassTimingRuntimeState {
-  RenderPassTimingRuntimeState::{
+fn render_diagnostics_runtime_state_default() -> RenderDiagnosticsRuntimeState {
+  RenderDiagnosticsRuntimeState::{
+    debug_frame_counter: 0,
+    debug_mesh2d_draw_calls: 0,
+    debug_mesh3d_draw_calls: 0,
+    debug_mesh2d_invalid_id_calls: 0,
+    debug_mesh3d_invalid_id_calls: 0,
+    debug_mesh2d_executed_draw_calls: 0,
+    debug_mesh3d_executed_draw_calls: 0,
+    current_frame_mesh2d_draw_calls: 0,
+    current_frame_mesh2d_executed_draw_calls: 0,
+    current_frame_mesh3d_draw_calls: 0,
+    current_frame_mesh3d_executed_draw_calls: 0,
+    debug_mesh2d_drop_no_frame: 0,
+    debug_mesh2d_drop_no_pass: 0,
+    debug_mesh2d_drop_no_pass_state: 0,
+    debug_mesh2d_drop_missing_mesh: 0,
+    debug_mesh2d_drop_bad_stride: 0,
+    debug_mesh2d_drop_no_pipeline: 0,
+    debug_mesh2d_drop_no_uniform_buf: 0,
+    last_frame_render_diagnostics_snapshot: RenderDiagnosticsSnapshot::default(),
     pass_total_count: 0,
     pass_2d_count: 0,
     pass_3d_main_count: 0,
@@ -159,45 +164,13 @@ fn render_pass_timing_runtime_state_default() -> RenderPassTimingRuntimeState {
 }
 
 ///|
-let render_pass_timing_runtime_state_ref : Ref[RenderPassTimingRuntimeState] = Ref::new(
-  render_pass_timing_runtime_state_default(),
+let render_diagnostics_runtime_state_ref : Ref[RenderDiagnosticsRuntimeState] = Ref::new(
+  render_diagnostics_runtime_state_default(),
 )
-
-///|
-let last_frame_render_diagnostics_snapshot_ref : Ref[RenderDiagnosticsSnapshot] = Ref::new(
-  RenderDiagnosticsSnapshot::default(),
-)
-
-///|
-let debug_mesh2d_drop_no_frame_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_no_pass_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_no_pass_state_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_missing_mesh_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_bad_stride_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_no_pipeline_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_no_uniform_buf_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_no_uniform_bg_ref : Ref[Int] = Ref::new(0)
-
-///|
-let debug_mesh2d_drop_no_texture_ref : Ref[Int] = Ref::new(0)
 
 ///|
 fn render_pass_timing_reset_counters() -> Unit {
-  let state = render_pass_timing_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state_ref.val
   state.pass_total_count = 0
   state.pass_2d_count = 0
   state.pass_3d_main_count = 0
@@ -221,7 +194,7 @@ fn render_pass_timing_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
 
 ///|
 fn render_pass_timing_end_active_pass() -> Unit {
-  let state = render_pass_timing_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state_ref.val
   if state.active_pass_start_time is Some(start_time) {
     let elapsed_ms = (@time.host_time_now() - start_time) * 1000.0F
     state.pass_total_count = state.pass_total_count + 1
@@ -255,42 +228,41 @@ fn render_pass_timing_end_active_pass() -> Unit {
 
 ///|
 fn render_pass_timing_begin_active_pass(phase : Int) -> Unit {
-  let state = render_pass_timing_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state_ref.val
   state.active_pass_phase = phase
   state.active_pass_start_time = Some(@time.host_time_now())
 }
 
 ///|
 fn render_diagnostics_reset_debug_counters_if_needed() -> Unit {
-  debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
-  if debug_frame_counter_ref.val % 60 == 0 {
-    debug_mesh2d_draw_calls_ref.val = 0
-    debug_mesh3d_draw_calls_ref.val = 0
-    debug_mesh2d_invalid_id_calls_ref.val = 0
-    debug_mesh3d_invalid_id_calls_ref.val = 0
-    debug_mesh2d_executed_draw_calls_ref.val = 0
-    debug_mesh3d_executed_draw_calls_ref.val = 0
-    debug_mesh2d_drop_no_frame_ref.val = 0
-    debug_mesh2d_drop_no_pass_ref.val = 0
-    debug_mesh2d_drop_no_pass_state_ref.val = 0
-    debug_mesh2d_drop_missing_mesh_ref.val = 0
-    debug_mesh2d_drop_bad_stride_ref.val = 0
-    debug_mesh2d_drop_no_pipeline_ref.val = 0
-    debug_mesh2d_drop_no_uniform_buf_ref.val = 0
-    debug_mesh2d_drop_no_uniform_bg_ref.val = 0
-    debug_mesh2d_drop_no_texture_ref.val = 0
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_frame_counter = state.debug_frame_counter + 1
+  if state.debug_frame_counter % 60 == 0 {
+    state.debug_mesh2d_draw_calls = 0
+    state.debug_mesh3d_draw_calls = 0
+    state.debug_mesh2d_invalid_id_calls = 0
+    state.debug_mesh3d_invalid_id_calls = 0
+    state.debug_mesh2d_executed_draw_calls = 0
+    state.debug_mesh3d_executed_draw_calls = 0
+    state.debug_mesh2d_drop_no_frame = 0
+    state.debug_mesh2d_drop_no_pass = 0
+    state.debug_mesh2d_drop_no_pass_state = 0
+    state.debug_mesh2d_drop_missing_mesh = 0
+    state.debug_mesh2d_drop_bad_stride = 0
+    state.debug_mesh2d_drop_no_pipeline = 0
+    state.debug_mesh2d_drop_no_uniform_buf = 0
   }
 }
 
 ///|
 pub fn render_diagnostics_begin_frame() -> Unit {
-  let state = render_pass_timing_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state_ref.val
   state.active_pass_phase = RENDER_PASS_PHASE_NONE
   state.active_pass_start_time = None
-  current_frame_mesh2d_draw_calls_ref.val = 0
-  current_frame_mesh2d_executed_draw_calls_ref.val = 0
-  current_frame_mesh3d_draw_calls_ref.val = 0
-  current_frame_mesh3d_executed_draw_calls_ref.val = 0
+  state.current_frame_mesh2d_draw_calls = 0
+  state.current_frame_mesh2d_executed_draw_calls = 0
+  state.current_frame_mesh3d_draw_calls = 0
+  state.current_frame_mesh3d_executed_draw_calls = 0
   render_pass_timing_reset_counters()
 }
 
@@ -302,118 +274,123 @@ pub fn render_diagnostics_end_frame() -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh2d_draw(mesh_id : Int) -> Unit {
-  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
-  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_draw_calls = state.debug_mesh2d_draw_calls + 1
+  state.current_frame_mesh2d_draw_calls = state.current_frame_mesh2d_draw_calls +
     1
   if mesh_id <= 0 {
-    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
-      1
+    state.debug_mesh2d_invalid_id_calls = state.debug_mesh2d_invalid_id_calls + 1
   }
 }
 
 ///|
 pub fn render_diagnostics_record_mesh3d_draw(mesh_id : Int) -> Unit {
-  debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
-  current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh3d_draw_calls = state.debug_mesh3d_draw_calls + 1
+  state.current_frame_mesh3d_draw_calls = state.current_frame_mesh3d_draw_calls +
     1
   if mesh_id <= 0 {
-    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val +
-      1
+    state.debug_mesh3d_invalid_id_calls = state.debug_mesh3d_invalid_id_calls + 1
   }
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_executed_draw() -> Unit {
-  debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_executed_draw_calls = state.debug_mesh2d_executed_draw_calls +
     1
-  current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
+  state.current_frame_mesh2d_executed_draw_calls = state.current_frame_mesh2d_executed_draw_calls +
     1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh3d_executed_draw() -> Unit {
-  debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val +
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh3d_executed_draw_calls = state.debug_mesh3d_executed_draw_calls +
     1
-  current_frame_mesh3d_executed_draw_calls_ref.val = current_frame_mesh3d_executed_draw_calls_ref.val +
+  state.current_frame_mesh3d_executed_draw_calls = state.current_frame_mesh3d_executed_draw_calls +
     1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_frame() -> Unit {
-  debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_no_frame = state.debug_mesh2d_drop_no_frame + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pass() -> Unit {
-  debug_mesh2d_drop_no_pass_ref.val = debug_mesh2d_drop_no_pass_ref.val + 1
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_no_pass = state.debug_mesh2d_drop_no_pass + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pass_state() -> Unit {
-  debug_mesh2d_drop_no_pass_state_ref.val = debug_mesh2d_drop_no_pass_state_ref.val +
-    1
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_no_pass_state = state.debug_mesh2d_drop_no_pass_state + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_missing_mesh() -> Unit {
-  debug_mesh2d_drop_missing_mesh_ref.val = debug_mesh2d_drop_missing_mesh_ref.val +
-    1
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_missing_mesh = state.debug_mesh2d_drop_missing_mesh + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_bad_stride() -> Unit {
-  debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val +
-    1
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_bad_stride = state.debug_mesh2d_drop_bad_stride + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pipeline() -> Unit {
-  debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
-    1
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_no_pipeline = state.debug_mesh2d_drop_no_pipeline + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_uniform_buf() -> Unit {
-  debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
+  let state = render_diagnostics_runtime_state_ref.val
+  state.debug_mesh2d_drop_no_uniform_buf = state.debug_mesh2d_drop_no_uniform_buf +
     1
 }
 
 ///|
 pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
-  last_frame_render_diagnostics_snapshot_ref.val
+  render_diagnostics_runtime_state_ref.val.last_frame_render_diagnostics_snapshot
 }
 
 ///|
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
   render_pass_timing_end_active_pass()
-  let timing_state = render_pass_timing_runtime_state_ref.val
-  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
-    mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
-    mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
-    mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
-    mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
-    pass_total_count: timing_state.pass_total_count,
-    pass_2d_count: timing_state.pass_2d_count,
-    pass_3d_main_count: timing_state.pass_3d_main_count,
-    pass_3d_motion_vector_count: timing_state.pass_3d_motion_vector_count,
-    pass_3d_point_shadow_count: timing_state.pass_3d_point_shadow_count,
-    pass_total_cpu_ms: timing_state.pass_total_cpu_ms,
-    pass_2d_cpu_ms: timing_state.pass_2d_cpu_ms,
-    pass_3d_main_cpu_ms: timing_state.pass_3d_main_cpu_ms,
-    pass_3d_motion_vector_cpu_ms: timing_state.pass_3d_motion_vector_cpu_ms,
-    pass_3d_point_shadow_cpu_ms: timing_state.pass_3d_point_shadow_cpu_ms,
+  let state = render_diagnostics_runtime_state_ref.val
+  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: state.current_frame_mesh2d_draw_calls,
+    mesh2d_executed_draw_calls: state.current_frame_mesh2d_executed_draw_calls,
+    mesh3d_draw_calls: state.current_frame_mesh3d_draw_calls,
+    mesh3d_executed_draw_calls: state.current_frame_mesh3d_executed_draw_calls,
+    pass_total_count: state.pass_total_count,
+    pass_2d_count: state.pass_2d_count,
+    pass_3d_main_count: state.pass_3d_main_count,
+    pass_3d_motion_vector_count: state.pass_3d_motion_vector_count,
+    pass_3d_point_shadow_count: state.pass_3d_point_shadow_count,
+    pass_total_cpu_ms: state.pass_total_cpu_ms,
+    pass_2d_cpu_ms: state.pass_2d_cpu_ms,
+    pass_3d_main_cpu_ms: state.pass_3d_main_cpu_ms,
+    pass_3d_motion_vector_cpu_ms: state.pass_3d_motion_vector_cpu_ms,
+    pass_3d_point_shadow_cpu_ms: state.pass_3d_point_shadow_cpu_ms,
   }
 }
 
 ///|
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
-  let state = render_pass_timing_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state_ref.val
   state.active_pass_phase = RENDER_PASS_PHASE_NONE
   state.active_pass_start_time = None
-  current_frame_mesh2d_draw_calls_ref.val = 0
-  current_frame_mesh2d_executed_draw_calls_ref.val = 0
-  current_frame_mesh3d_draw_calls_ref.val = 0
-  current_frame_mesh3d_executed_draw_calls_ref.val = 0
+  state.current_frame_mesh2d_draw_calls = 0
+  state.current_frame_mesh2d_executed_draw_calls = 0
+  state.current_frame_mesh3d_draw_calls = 0
+  state.current_frame_mesh3d_executed_draw_calls = 0
   render_pass_timing_reset_counters()
-  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::default()
+  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::default()
 }
