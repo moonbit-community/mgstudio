@@ -307,6 +307,7 @@ pub fn gltf_plugin_with(
   app : @app.App[@ecs.World],
   plugin : GltfPlugin,
 ) -> @app.App[@ecs.World] {
+  let app = @gltf_loader_extensions.gltf_extension_runtime_plugin(app)
   gltf_set_pbr_material_handler_enabled(plugin.pbr_material_handler_enabled)
   gltf_set_default_convert_coordinates(plugin.convert_coordinates)
   gltf_set_default_skinned_mesh_bounds_policy(plugin.skinned_mesh_bounds_policy)
