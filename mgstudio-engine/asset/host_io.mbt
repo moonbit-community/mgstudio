@@ -1287,7 +1287,80 @@ fn decode_texture_image_from_ico(bytes : Bytes) -> DecodedTextureImage? {
     is Some(decoded) {
     return Some(decoded)
   }
+  if decode_texture_image_from_ico_dib_bgra32(payload) is Some(decoded) {
+    return Some(decoded)
+  }
   None
+}
+
+///|
+fn decode_texture_image_from_ico_dib_bgra32(
+  payload : Bytes,
+) -> DecodedTextureImage? {
+  if payload.length() < 40 {
+    return None
+  }
+  let header_size = blob_u32_at(payload, 0)
+  if header_size < 40 {
+    return None
+  }
+  let width_raw = blob_u32_at(payload, 4)
+  let height_doubled = blob_u32_at(payload, 8)
+  if width_raw <= 0 || height_doubled <= 1 {
+    return None
+  }
+  let width = clamp_dim(width_raw)
+  let height = clamp_dim(height_doubled / 2)
+  if height <= 0 {
+    return None
+  }
+  let planes = blob_u16_at(payload, 12)
+  let bit_count = blob_u16_at(payload, 14)
+  let compression = blob_u32_at(payload, 16)
+  if planes != 1 || bit_count != 32 || compression != 0 {
+    return None
+  }
+  let data_offset = header_size
+  if data_offset < 0 {
+    return None
+  }
+  let row_stride = width * 4
+  let pixel_data_len = row_stride * height
+  if data_offset + pixel_data_len > payload.length() {
+    return None
+  }
+  let mut has_alpha = false
+  for y in 0..<height {
+    let row = data_offset + y * row_stride
+    for x in 0..<width {
+      if blob_u8_at(payload, row + x * 4 + 3) != 0 {
+        has_alpha = true
+        break
+      }
+    }
+    if has_alpha {
+      break
+    }
+  }
+  let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  let mut out = 0
+  for y in 0..<height {
+    let source_y = height - 1 - y
+    let row = data_offset + source_y * row_stride
+    for x in 0..<width {
+      let src = row + x * 4
+      let b = blob_u8_at(payload, src)
+      let g = blob_u8_at(payload, src + 1)
+      let r = blob_u8_at(payload, src + 2)
+      let a = if has_alpha { blob_u8_at(payload, src + 3) } else { 255 }
+      pixels[out] = r.to_byte()
+      pixels[out + 1] = g.to_byte()
+      pixels[out + 2] = b.to_byte()
+      pixels[out + 3] = a.to_byte()
+      out = out + 4
+    }
+  }
+  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
 }
 
 ///|
