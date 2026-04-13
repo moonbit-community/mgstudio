@@ -1561,6 +1561,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
 
 ///|
 pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let app = animation_event_runtime_plugin(app)
   let animation_clip_event_key : @ecs.MessageKey[
     @asset.AssetEvent[AnimationClip],
   ] = @ecs.Message::message()
