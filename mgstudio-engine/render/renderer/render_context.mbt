@@ -69,7 +69,19 @@ pub const SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = 2
 const DEFAULT_ASSETS_DIR : String = "./assets"
 
 ///|
-let backend_ref : Ref[GpuBackend?] = Ref::new(None)
+priv struct RenderContextRuntimeState {
+  mut backend : GpuBackend?
+}
+
+///|
+fn render_context_runtime_state_default() -> RenderContextRuntimeState {
+  RenderContextRuntimeState::{ backend: None }
+}
+
+///|
+let render_context_runtime_state_ref : Ref[RenderContextRuntimeState] = Ref::new(
+  render_context_runtime_state_default(),
+)
 
 ///|
 fn env_or_default(key : String, default_value : String) -> String {
@@ -94,13 +106,24 @@ fn debug_runtime_error(context : String, err : Error) -> Unit {
 
 ///|
 fn ensure_backend() -> GpuBackend? {
-  if backend_ref.val is Some(backend) {
+  let state = render_context_runtime_state_ref.val
+  if state.backend is Some(backend) {
     return Some(backend)
   }
   let assets_base = env_or_default("MGSTUDIO_ASSETS_DIR", DEFAULT_ASSETS_DIR)
   let backend = GpuBackend::new(assets_base~) catch { _ => return None }
-  backend_ref.val = Some(backend)
+  state.backend = Some(backend)
   Some(backend)
+}
+
+///|
+pub fn render_context_backend_for_test() -> GpuBackend? {
+  render_context_runtime_state_ref.val.backend
+}
+
+///|
+pub fn render_context_set_backend_for_test(backend : GpuBackend?) -> Unit {
+  render_context_runtime_state_ref.val.backend = backend
 }
 
 ///|

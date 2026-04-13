@@ -917,8 +917,8 @@ test "renderer: mesh3d light scalar helpers align with Bevy-style scalar contrac
 ///|
 test "renderer: mesh3d normal map fallback texture is flat normal blue" {
   let backend = GpuBackend::new()
-  let previous_backend = backend_ref.val
-  backend_ref.val = Some(backend)
+  let previous_backend = render_context_backend_for_test()
+  render_context_set_backend_for_test(Some(backend))
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
   debug_inspect(
     fallback_texture.format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
@@ -937,7 +937,7 @@ test "renderer: mesh3d normal map fallback texture is flat normal blue" {
     }),
     content="Some([128, 128, 255, 255])",
   )
-  backend_ref.val = previous_backend
+  render_context_set_backend_for_test(previous_backend)
 }
 
 ///|
@@ -1958,8 +1958,8 @@ test "renderer: screenshot capture swizzles bgra8 into rgba8" {
 ///|
 test "renderer: screenshot capture reads rgba8 texture bytes" {
   let backend = GpuBackend::new()
-  let previous_backend = backend_ref.val
-  backend_ref.val = Some(backend)
+  let previous_backend = render_context_backend_for_test()
+  render_context_set_backend_for_test(Some(backend))
   let texture_id = backend.create_texture_rgba8(
     1,
     1,
@@ -1986,7 +1986,7 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
     }),
     content="Some([9, 8, 7, 255])",
   )
-  backend_ref.val = previous_backend
+  render_context_set_backend_for_test(previous_backend)
 }
 
 ///|
