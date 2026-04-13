@@ -158,6 +158,7 @@ pub fn GpuBackend::new(
     mesh2d_instance_buf: None,
     mesh2d_instance_bg: None,
     mesh2d_instance_capacity: 0UL,
+    mesh2d_gizmo_line_mesh_id: 0,
     mesh2d_instance_used: 0,
     mesh2d_batch_active: false,
     mesh2d_batch_mesh_id: -1,

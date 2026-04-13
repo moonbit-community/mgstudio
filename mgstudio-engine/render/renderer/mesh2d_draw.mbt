@@ -40,9 +40,6 @@ const MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE : Int = 128
 const MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE_U64 : UInt64 = 128UL
 
 ///|
-let gizmo_line_mesh_id_ref : Ref[Int] = Ref::new(0)
-
-///|
 fn host_material2d_u32le_pack(xs : Array[UInt]) -> Bytes {
   let len = xs.length()
   Bytes::makei(len * 4, i => {
@@ -1990,12 +1987,12 @@ pub fn draw_gizmo_line(
   let color_a = (start_a + end_a) * 0.5F
   if ensure_backend() is Some(backend) {
     try {
-      let mesh_id = if gizmo_line_mesh_id_ref.val > 0 {
-        gizmo_line_mesh_id_ref.val
+      let mesh_id = if backend.mesh2d_gizmo_line_mesh_id > 0 {
+        backend.mesh2d_gizmo_line_mesh_id
       } else {
         let created = backend.create_mesh_rectangle(1.0F, 1.0F)
         if created > 0 {
-          gizmo_line_mesh_id_ref.val = created
+          backend.mesh2d_gizmo_line_mesh_id = created
         }
         created
       }

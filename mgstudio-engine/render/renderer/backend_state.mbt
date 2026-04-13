@@ -112,6 +112,7 @@ pub struct GpuBackend {
   mut mesh2d_instance_buf : @wgpu.Buffer?
   mut mesh2d_instance_bg : @wgpu.BindGroup?
   mut mesh2d_instance_capacity : UInt64
+  mut mesh2d_gizmo_line_mesh_id : Int
   mut mesh2d_instance_used : Int
   mut mesh2d_batch_active : Bool
   mut mesh2d_batch_mesh_id : Int
