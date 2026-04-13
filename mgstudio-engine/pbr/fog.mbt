@@ -24,7 +24,7 @@ pub enum FogFalloff3d {
 } derive(ToJson, FromJson)
 
 ///|
-const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05F
+pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05F
 
 ///|
 const FOG_FALLOFF_E : Float = 2.718281828459045F
@@ -170,6 +170,14 @@ fn fog_falloff_atmospheric_from_colors(
 ///|
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float {
   FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD
+}
+
+///|
+pub fn FogFalloff3d::koschmieder(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> Float {
+  fog_falloff_koschmieder(visibility, contrast_threshold)
 }
 
 ///|

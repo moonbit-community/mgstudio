@@ -158,6 +158,17 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   ignore(@pbr_render.render3d_mesh_layouts())
   match render3d_queue_take_frame(world) {
     Some(frame) => {
+      let view_entities : Array[@core.Entity] = []
+      for camera in frame.cameras {
+        view_entities.push(camera.entity.main_entity)
+      }
+      let fog_meta_ref = @pbr_render.render3d_fog_meta_ref_or_init(world)
+      let fog_offsets = render3d_prepare_camera_fog_uniforms(
+        source_world,
+        view_entities,
+        fog_meta_ref.val,
+      )
+      @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
       let camera_count = if frame.cameras.length() <
         frame.prepared_camera_queues.length() {
         frame.cameras.length()

@@ -92,6 +92,11 @@ pub struct ViewFogUniformOffset {
 } derive(ToJson, FromJson)
 
 ///|
+pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[
+  ViewFogUniformOffset,
+] = @ecs.register_component(debug_name="mgstudio.pbr.render.view_fog_uniform_offset")
+
+///|
 pub fn ViewFogUniformOffset::new(offset : UInt) -> ViewFogUniformOffset {
   ViewFogUniformOffset::{ offset }
 }
@@ -102,8 +107,23 @@ pub fn ViewFogUniformOffset::offset(self : ViewFogUniformOffset) -> UInt {
 }
 
 ///|
+pub impl @ecs.Component for ViewFogUniformOffset with component() {
+  ecs_key_view_fog_uniform_offset
+}
+
+///|
 pub struct FogMeta {
   fogs : Array[GpuFog3d]
+}
+
+///|
+let fog_meta_resource_key : @ecs.ResourceKey[FogMeta] = @ecs.register_resource(
+  debug_name="mgstudio.pbr.render.FogMeta",
+)
+
+///|
+pub impl @app.Resource for FogMeta with resource() {
+  fog_meta_resource_key
 }
 
 ///|
@@ -267,6 +287,32 @@ pub fn render3d_prepare_fog_uniforms(
     offsets.push((entity, ViewFogUniformOffset::new(offset)))
   }
   offsets
+}
+
+///|
+pub fn render3d_fog_meta_ref_or_init(world : @ecs.World) -> Ref[FogMeta] {
+  if (try! world.get_resource(FogMeta::resource())) is None {
+    world.insert_resource(FogMeta::resource(), FogMeta::default())
+  }
+  match (try! world.get_resource_ref_mut(FogMeta::resource())) {
+    Some(value) => value
+    None => abort("missing FogMeta resource")
+  }
+}
+
+///|
+pub fn render3d_apply_view_fog_uniform_offsets(
+  world : @ecs.World,
+  offsets : Array[(@core.Entity, ViewFogUniformOffset)],
+) -> Unit {
+  for item in offsets {
+    let (entity, offset) = item
+    if (try! world.contains_by_key(entity, ecs_key_view_fog_uniform_offset)) {
+      try! (world.replace(entity, ecs_key_view_fog_uniform_offset, offset) |> ignore)
+    } else {
+      try! world.set_by_key(entity, ecs_key_view_fog_uniform_offset, offset)
+    }
+  }
 }
 
 ///|
