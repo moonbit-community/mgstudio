@@ -27,9 +27,13 @@ test "pbr meshlet: required feature mask includes texture atomics" {
 }
 
 ///|
-test "pbr meshlet: plugin clamps cluster buffer slots" {
-  let plugin = MeshletPlugin::new(MESHLET_MAX_CLUSTER_BUFFER_SLOTS + 100)
-  inspect(plugin.cluster_buffer_slots(), content="33554432")
+test "panic pbr meshlet: plugin rejects oversized cluster buffer slots" {
+  ignore(MeshletPlugin::new(MESHLET_MAX_CLUSTER_BUFFER_SLOTS + 100))
+}
+
+///|
+test "panic pbr meshlet: plugin rejects non-positive cluster buffer slots" {
+  ignore(MeshletPlugin::new(0))
 }
 
 ///|

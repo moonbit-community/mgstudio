@@ -55,20 +55,22 @@ pub struct MeshletPlugin {
 }
 
 ///|
-fn meshlet_cluster_buffer_slots_sanitize(value : Int) -> Int {
+fn meshlet_cluster_buffer_slots_validate(value : Int) -> Int {
   if value <= 0 {
-    1
-  } else if value > MESHLET_MAX_CLUSTER_BUFFER_SLOTS {
-    MESHLET_MAX_CLUSTER_BUFFER_SLOTS
-  } else {
-    value
+    abort("MeshletPlugin::cluster_buffer_slots must be greater than zero")
   }
+  if value > MESHLET_MAX_CLUSTER_BUFFER_SLOTS {
+    abort(
+      "MeshletPlugin::cluster_buffer_slots must not be greater than 2^25",
+    )
+  }
+  value
 }
 
 ///|
 pub fn MeshletPlugin::new(cluster_buffer_slots : Int) -> MeshletPlugin {
   MeshletPlugin::{
-    cluster_buffer_slots: meshlet_cluster_buffer_slots_sanitize(
+    cluster_buffer_slots: meshlet_cluster_buffer_slots_validate(
       cluster_buffer_slots,
     ),
     status: meshlet_runtime_status(),

@@ -189,7 +189,7 @@ This file must not exceed 200 lines.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
 - [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
 - [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
-- [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe.
+- [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe with Bevy-shaped required-feature mask + cluster-slot bound validation.
 - [ ] `render/wgpu_mbt` (deferred, upstream): bridge Bevy meshlet-required texture atomic feature request path (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`) in native C surface (`supports_rust_features` + `missing_rust_features` gating已接入，tracked at `moonbit-community/wgpu-mbt#11`).
 - [x] `animation/gltf/scene`: ownerization convergence continued (done: scene LOD registration moved to plugin install path, animation/gltf runtime bootstrap data now clears after runtime resource initialization, and runtime-time callback/dispatcher registration is resource-first to reduce cross-app leakage).
 - [x] `ui/sprite/picking`: close camera/pointer drift baseline (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests + `moon test picking` green).
