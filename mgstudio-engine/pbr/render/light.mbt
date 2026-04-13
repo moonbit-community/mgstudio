@@ -716,6 +716,27 @@ fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
 }
 
 ///|
+fn render3d_cluster_runtime(world : @ecs.World) -> (Int, Int, Int, Float, Float)? {
+  let runtime_ref : Ref[(Int, Int, Int, Float, Float)?] = Ref::new(None)
+  world.for_each_component(@light_cluster.Clusters::component(), fn(entity, clusters) {
+    if runtime_ref.val is Some(_) {
+      return
+    }
+    if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+      return
+    }
+    runtime_ref.val = Some((
+      clusters.dimensions_x,
+      clusters.dimensions_y,
+      clusters.dimensions_z,
+      clusters.near,
+      clusters.far,
+    ))
+  })
+  runtime_ref.val
+}
+
+///|
 pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
   let clusterable_point_lights = render3d_collect_extracted_clusterable_point_lights(
@@ -736,20 +757,48 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let (cluster_screen_width, cluster_screen_height) = render3d_cluster_screen_size(
     world,
   )
-  let cluster_config = render3d_cluster_config(world)
-  let (cluster_dimensions_x, cluster_dimensions_y, cluster_dimensions_z) =
-    @light_cluster.cluster_config_dimensions_for_screen_size(
+  let mut cluster_dimensions_x = 16
+  let mut cluster_dimensions_y = 9
+  let mut cluster_dimensions_z = 24
+  let mut cluster_near = 0.1F
+  let mut cluster_far = 1000.0F
+  if render3d_cluster_runtime(world)
+    is Some(
+      (
+        runtime_dimensions_x,
+        runtime_dimensions_y,
+        runtime_dimensions_z,
+        runtime_near,
+        runtime_far,
+      ),
+    ) {
+    cluster_dimensions_x = runtime_dimensions_x
+    cluster_dimensions_y = runtime_dimensions_y
+    cluster_dimensions_z = runtime_dimensions_z
+    cluster_near = runtime_near
+    cluster_far = runtime_far
+  } else {
+    let cluster_config = render3d_cluster_config(world)
+    let (
+      config_dimensions_x,
+      config_dimensions_y,
+      config_dimensions_z,
+    ) = @light_cluster.cluster_config_dimensions_for_screen_size(
       cluster_config,
       cluster_screen_width,
       cluster_screen_height,
     )
+    cluster_dimensions_x = config_dimensions_x
+    cluster_dimensions_y = config_dimensions_y
+    cluster_dimensions_z = config_dimensions_z
+  }
   let n_clusters = cluster_dimensions_x * cluster_dimensions_y * cluster_dimensions_z
   let cluster_factors_zw = if n_clusters <= 0 {
     @math.Vec2::new(0.0F, 0.0F)
   } else {
     @light_cluster.calculate_cluster_factors(
-      0.1F,
-      1000.0F,
+      cluster_near,
+      cluster_far,
       Float::from_double(cluster_dimensions_z.to_double()),
       false,
     )

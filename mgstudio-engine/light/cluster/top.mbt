@@ -283,6 +283,36 @@ pub fn Clusters::default() -> Clusters {
 }
 
 ///|
+pub fn Clusters::new(
+  tile_size_x : Int,
+  tile_size_y : Int,
+  dimensions_x : Int,
+  dimensions_y : Int,
+  dimensions_z : Int,
+  near : Float,
+  far : Float,
+) -> Clusters {
+  let safe_dimensions_x = if dimensions_x <= 0 { 0 } else { dimensions_x }
+  let safe_dimensions_y = if dimensions_y <= 0 { 0 } else { dimensions_y }
+  let safe_dimensions_z = if dimensions_z <= 0 { 0 } else { dimensions_z }
+  let cluster_count = safe_dimensions_x * safe_dimensions_y * safe_dimensions_z
+  let clusterable_objects : Array[ObjectsInCluster] = []
+  for _ in 0..<cluster_count {
+    clusterable_objects.push(ObjectsInCluster::default())
+  }
+  Clusters::{
+    tile_size_x: if tile_size_x <= 0 { 0 } else { tile_size_x },
+    tile_size_y: if tile_size_y <= 0 { 0 } else { tile_size_y },
+    dimensions_x: safe_dimensions_x,
+    dimensions_y: safe_dimensions_y,
+    dimensions_z: safe_dimensions_z,
+    near,
+    far,
+    clusterable_objects,
+  }
+}
+
+///|
 pub struct VisibleClusterableObjects {
   point_and_spot_lights : Int
   reflection_probes : Int

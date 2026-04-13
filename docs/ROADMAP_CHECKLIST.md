@@ -31,7 +31,7 @@ This file must not exceed 200 lines.
 | `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
-| `bevy_light` | `mgstudio-engine/light` | 93% | 80% | 80% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
+| `bevy_light` | `mgstudio-engine/light` | 93% | 82% | 82% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
 | `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -116,6 +116,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-gpu-lights-cluster-shape`: add Bevy-shaped `GpuLights` cluster payload fields (`cluster_dimensions`, `cluster_factors`) with deterministic defaults in current single-view path.
 - [x] `pbr/render-cluster-factor-formula`: align `cluster_factors.zw` computation with Bevy `calculate_cluster_factors`, derive dimensions from `ClusterConfig` + screen-size rounding via `light/cluster`, and zero-out cluster payload for `ClusterConfig::None`.
 - [x] `light/cluster-camera-owned-runtime`: make `cluster_assign_lights_system` write `Clusters/VisibleClusterableObjects` per camera entity with Bevy-shaped `ClusterConfig` dimensions/far-z semantics.
+- [x] `pbr/render-cluster-runtime-source`: make `render3d_collect_gpu_lights` prefer camera-owned `light/cluster.Clusters` runtime data (`dimensions/near/far`) before config fallback.
 - [x] `pbr/render-directional-decal-index`: source directional GPU `decal_index` from `RenderClusteredDecals` resource mapping (fallback `-1`) instead of hardcoded sentinel.
 - [x] `pbr/render-directional-fixed-array-shape`: align `GpuLights` directional payload shape with Bevy by padding to `MAX_DIRECTIONAL_LIGHTS` and using `n_directional_lights` as logical count.
 - [x] `pbr/render-gpu-ambient-premultiply`: align `GpuLights.ambient_color` with Bevy by writing pre-multiplied ambient color (`color * brightness`) instead of split GPU fields.
@@ -145,7 +146,6 @@ This file must not exceed 200 lines.
 - [x] `state+render-shell-prune`: remove alias-only exports in `state/state/{resources,transitions}` and `render/error_handler` with direct runtime helper APIs.
 - [x] `camera+dof-shell-prune`: remove alias-only exports in `camera/clear_color` and `post_process/dof/top`, keep direct behavior helpers over owner runtime types.
 - [x] `render/view-shell-prune`: remove alias-only exports in `render/view/top` and `render/view/window/screenshot` and align capture result typing in `render/gpu_readback`.
-- [x] `dev_tools+render_diagnostic-shell-prune`: remove alias-only exports in `dev_tools/frame_time_graph/top` and `render/diagnostic/internal`, with `render/lib` typing synchronized to renderer owner type.
 - [x] `render_phase/draw_state-shell-prune`: remove alias-only `DrawState` export in `render/render_phase/draw_state` and use renderer owner state type directly in behavior APIs.
 - [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
 - [x] `transform/components-ownerization`: replace `transform/components/{transform,global_transform,top}` alias forwarding with owner `Transform/Affine2/GlobalTransform` runtime definitions.

@@ -650,6 +650,39 @@ test "pbr render light: cluster config none yields zero cluster payload" {
 }
 
 ///|
+test "pbr render light: cluster payload prefers runtime clusters component" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, @sprite.ecs_key_camera, @sprite.Camera::default())
+  |> ignore
+  try! world.set_by_key(
+    entity,
+    @light_cluster.Clusters::component(),
+    @light_cluster.Clusters::new(64, 64, 12, 6, 8, 1.0F, 81.0F),
+  )
+  |> ignore
+  let expected_factors_zw = @light_cluster.calculate_cluster_factors(
+    1.0F,
+    81.0F,
+    8.0F,
+    false,
+  )
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.cluster_dimensions.0, content="12")
+  inspect(gpu_lights.cluster_dimensions.1, content="6")
+  inspect(gpu_lights.cluster_dimensions.2, content="8")
+  inspect(gpu_lights.cluster_dimensions.3, content="576")
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: volumetric flags require shadow maps for point and directional lights" {
   let world = @ecs.World::new()
 
