@@ -248,7 +248,7 @@ pub fn ClusterableObjectCounts::default() -> ClusterableObjectCounts {
 
 ///|
 pub struct ObjectsInCluster {
-  counts : ClusterableObjectCounts
+  mut counts : ClusterableObjectCounts
 } derive(Eq, Debug)
 
 ///|
@@ -257,14 +257,59 @@ pub fn ObjectsInCluster::default() -> ObjectsInCluster {
 }
 
 ///|
+pub fn ObjectsInCluster::clear(self : ObjectsInCluster) -> Unit {
+  self.counts = ClusterableObjectCounts::default()
+}
+
+///|
+pub fn ObjectsInCluster::add_point_light(self : ObjectsInCluster) -> Unit {
+  self.counts = ClusterableObjectCounts::{
+    ..self.counts,
+    point_lights: self.counts.point_lights + 1,
+  }
+}
+
+///|
+pub fn ObjectsInCluster::add_spot_light(self : ObjectsInCluster) -> Unit {
+  self.counts = ClusterableObjectCounts::{
+    ..self.counts,
+    spot_lights: self.counts.spot_lights + 1,
+  }
+}
+
+///|
+pub fn ObjectsInCluster::add_reflection_probe(self : ObjectsInCluster) -> Unit {
+  self.counts = ClusterableObjectCounts::{
+    ..self.counts,
+    reflection_probes: self.counts.reflection_probes + 1,
+  }
+}
+
+///|
+pub fn ObjectsInCluster::add_irradiance_volume(self : ObjectsInCluster) -> Unit {
+  self.counts = ClusterableObjectCounts::{
+    ..self.counts,
+    irradiance_volumes: self.counts.irradiance_volumes + 1,
+  }
+}
+
+///|
+pub fn ObjectsInCluster::add_decal(self : ObjectsInCluster) -> Unit {
+  self.counts = ClusterableObjectCounts::{
+    ..self.counts,
+    decals: self.counts.decals + 1,
+  }
+}
+
+///|
 pub struct Clusters {
-  tile_size_x : Int
-  tile_size_y : Int
-  dimensions_x : Int
-  dimensions_y : Int
-  dimensions_z : Int
-  near : Float
-  far : Float
+  mut tile_size_x : Int
+  mut tile_size_y : Int
+  mut dimensions_x : Int
+  mut dimensions_y : Int
+  mut dimensions_z : Int
+  mut near : Float
+  mut far : Float
   clusterable_objects : Array[ObjectsInCluster]
 } derive(Eq, Debug)
 
@@ -313,11 +358,72 @@ pub fn Clusters::new(
 }
 
 ///|
+pub fn Clusters::clear(self : Clusters) -> Unit {
+  self.tile_size_x = 1
+  self.tile_size_y = 1
+  self.dimensions_x = 0
+  self.dimensions_y = 0
+  self.dimensions_z = 0
+  self.near = 0.0F
+  self.far = 0.0F
+  self.clusterable_objects.clear()
+}
+
+///|
+pub fn Clusters::update(
+  self : Clusters,
+  screen_width : Int,
+  screen_height : Int,
+  requested_dimensions_x : Int,
+  requested_dimensions_y : Int,
+  requested_dimensions_z : Int,
+) -> Unit {
+  let safe_screen_width = if screen_width <= 0 { 1 } else { screen_width }
+  let safe_screen_height = if screen_height <= 0 { 1 } else { screen_height }
+  let safe_requested_x = if requested_dimensions_x <= 0 {
+    1
+  } else {
+    requested_dimensions_x
+  }
+  let safe_requested_y = if requested_dimensions_y <= 0 {
+    1
+  } else {
+    requested_dimensions_y
+  }
+  let safe_requested_z = if requested_dimensions_z <= 0 {
+    1
+  } else {
+    requested_dimensions_z
+  }
+  let tile_size_x = @math_core.ceil(
+    safe_screen_width.to_double() / safe_requested_x.to_double(),
+  ).to_int()
+  let tile_size_y = @math_core.ceil(
+    safe_screen_height.to_double() / safe_requested_y.to_double(),
+  ).to_int()
+  let safe_tile_size_x = if tile_size_x <= 0 { 1 } else { tile_size_x }
+  let safe_tile_size_y = if tile_size_y <= 0 { 1 } else { tile_size_y }
+  let dimensions_x = @math_core.ceil(
+    safe_screen_width.to_double() / safe_tile_size_x.to_double(),
+  ).to_int()
+  let dimensions_y = @math_core.ceil(
+    safe_screen_height.to_double() / safe_tile_size_y.to_double(),
+  ).to_int()
+  let safe_dimensions_x = if dimensions_x <= 0 { 1 } else { dimensions_x }
+  let safe_dimensions_y = if dimensions_y <= 0 { 1 } else { dimensions_y }
+  self.tile_size_x = safe_tile_size_x
+  self.tile_size_y = safe_tile_size_y
+  self.dimensions_x = safe_dimensions_x
+  self.dimensions_y = safe_dimensions_y
+  self.dimensions_z = safe_requested_z
+}
+
+///|
 pub struct VisibleClusterableObjects {
-  point_and_spot_lights : Int
-  reflection_probes : Int
-  irradiance_volumes : Int
-  decals : Int
+  mut point_and_spot_lights : Int
+  mut reflection_probes : Int
+  mut irradiance_volumes : Int
+  mut decals : Int
 } derive(Eq, Debug)
 
 ///|
@@ -327,6 +433,39 @@ pub fn VisibleClusterableObjects::default() -> VisibleClusterableObjects {
     reflection_probes: 0,
     irradiance_volumes: 0,
     decals: 0,
+  }
+}
+
+///|
+pub fn VisibleClusterableObjects::new() -> VisibleClusterableObjects {
+  VisibleClusterableObjects::default()
+}
+
+///|
+pub fn VisibleClusterableObjects::clear(
+  self : VisibleClusterableObjects,
+) -> Unit {
+  self.point_and_spot_lights = 0
+  self.reflection_probes = 0
+  self.irradiance_volumes = 0
+  self.decals = 0
+}
+
+///|
+pub fn VisibleClusterableObjects::add(
+  self : VisibleClusterableObjects,
+  object_type : ClusterableObjectType,
+) -> Unit {
+  match object_type {
+    ClusterableObjectType::PointLight(_, _) =>
+      self.point_and_spot_lights = self.point_and_spot_lights + 1
+    ClusterableObjectType::SpotLight(_, _, _) =>
+      self.point_and_spot_lights = self.point_and_spot_lights + 1
+    ClusterableObjectType::ReflectionProbe =>
+      self.reflection_probes = self.reflection_probes + 1
+    ClusterableObjectType::IrradianceVolume =>
+      self.irradiance_volumes = self.irradiance_volumes + 1
+    ClusterableObjectType::Decal => self.decals = self.decals + 1
   }
 }
 
