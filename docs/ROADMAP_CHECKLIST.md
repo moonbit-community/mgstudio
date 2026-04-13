@@ -37,7 +37,7 @@ This file must not exceed 200 lines.
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
-| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 64% | 64% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
+| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 67% | 67% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
 | Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
 | Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
 | Workspace-wide native validation | `moon check/test` integration | 90% | 58% | 58% | 🟡 In Progress | Full native test reliability is still blocked by remaining environment/runtime gaps. |
@@ -195,6 +195,6 @@ This file must not exceed 200 lines.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix remaining camera/pointer drift (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests added).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
 - [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback to `mgstudio-engine/...` + native `moon test asset` pass on current toolchain, with remaining linker-warning cleanup pending).
-- [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence.
+- [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.
