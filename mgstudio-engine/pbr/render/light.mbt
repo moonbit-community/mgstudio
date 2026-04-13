@@ -155,6 +155,8 @@ pub struct ExtractedDirectionalLight3d {
   soft_shadow_size : Float?
   cascade_count : Int
   cascade_overlap_proportion : Float
+  sun_disk_angular_size : Float
+  sun_disk_intensity : Float
 }
 
 ///|
@@ -175,6 +177,8 @@ pub struct GpuDirectionalLight3d {
   shadow_normal_bias : Float
   num_cascades : Int
   cascades_overlap_proportion : Float
+  sun_disk_angular_size : Float
+  sun_disk_intensity : Float
 }
 
 ///|
@@ -331,6 +335,10 @@ fn render3d_extract_directional_light(
   volumetric : Bool,
 ) -> ExtractedDirectionalLight3d {
   let transform = render3d_extract_light_transform(world, entity)
+  let sun_disk = match (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
+    Some(v) => v
+    None => @light.SunDisk::default()
+  }
   let cascade_count = match light.cascade_shadow_config {
     Some(config) => config.bounds.length()
     None => 0
@@ -359,6 +367,8 @@ fn render3d_extract_directional_light(
       cascade_count
     },
     cascade_overlap_proportion,
+    sun_disk_angular_size: sun_disk.angular_size,
+    sun_disk_intensity: sun_disk.intensity,
   }
 }
 
@@ -489,6 +499,8 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       shadow_normal_bias: item.shadow_normal_bias,
       num_cascades: cascades.length(),
       cascades_overlap_proportion: item.cascade_overlap_proportion,
+      sun_disk_angular_size: item.sun_disk_angular_size,
+      sun_disk_intensity: item.sun_disk_intensity,
     })
   }
   GpuLights3d::{

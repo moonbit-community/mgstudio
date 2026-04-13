@@ -11,8 +11,8 @@ This file must not exceed 200 lines.
 | `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
 | `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 77% | 77% | 🟡 In Progress | Remaining parity gaps concentrate in light/fog/meshlet/deferred depth behavior. |
-| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 80% | 80% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 78% | 78% | 🟡 In Progress | Remaining parity gaps concentrate in light/fog/meshlet/deferred depth behavior. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 81% | 81% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
@@ -31,7 +31,7 @@ This file must not exceed 200 lines.
 | `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
-| `bevy_light` | `mgstudio-engine/light` | 92% | 72% | 72% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
+| `bevy_light` | `mgstudio-engine/light` | 93% | 74% | 74% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
 | `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -46,7 +46,7 @@ This file must not exceed 200 lines.
 |---|---:|
 | Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
-| Current weighted migration completion (included scope) | 75% |
+| Current weighted migration completion (included scope) | 76% |
 | Last updated | 2026-04-13 |
 
 - [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
@@ -101,6 +101,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-directional-zero-shadow-cascades`: align directional GPU payload with Bevy behavior by keeping cascade count/array empty when directional shadows are disabled.
 - [x] `light/authoring-shadow-toggle-api`: add missing `with_shadow_maps_enabled` authoring helpers for directional/spot lights to match Bevy-side usage ergonomics.
 - [x] `pbr/render-ambient-lightmap-flag`: add Bevy-shaped ambient lightmap influence field (`affects_lightmapped_meshes`) and propagate it into `GpuLights3d`.
+- [x] `pbr/render-sun-disk-propagation`: add `SunDisk` component in `light` and propagate directional sun-disk angular-size/intensity through extract and GPU light payload.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.

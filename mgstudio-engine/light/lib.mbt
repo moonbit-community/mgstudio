@@ -984,6 +984,57 @@ pub fn DirectionalLight::with_shadow_normal_bias(
 }
 
 ///|
+const SUN_DISK_EARTH_ANGULAR_SIZE : Float = 0.00930842F
+
+///|
+const SUN_DISK_EARTH_INTENSITY : Float = 1.0F
+
+///|
+pub struct SunDisk {
+  angular_size : Float
+  intensity : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn SunDisk::default() -> SunDisk {
+  SunDisk::earth()
+}
+
+///|
+pub fn SunDisk::earth() -> SunDisk {
+  SunDisk::{
+    angular_size: SUN_DISK_EARTH_ANGULAR_SIZE,
+    intensity: SUN_DISK_EARTH_INTENSITY,
+  }
+}
+
+///|
+pub fn SunDisk::off() -> SunDisk {
+  SunDisk::{ angular_size: 0.0F, intensity: 0.0F }
+}
+
+///|
+pub fn SunDisk::new(angular_size : Float, intensity : Float) -> SunDisk {
+  SunDisk::{
+    angular_size: light_sanitize_non_negative(angular_size),
+    intensity: light_sanitize_non_negative(intensity),
+  }
+}
+
+///|
+pub fn SunDisk::with_angular_size(
+  self : SunDisk,
+  angular_size : Float,
+) -> SunDisk {
+  SunDisk::{ ..self, angular_size: light_sanitize_non_negative(angular_size) }
+}
+
+///|
+pub fn SunDisk::with_intensity(self : SunDisk, intensity : Float) -> SunDisk {
+  SunDisk::{ ..self, intensity: light_sanitize_non_negative(intensity) }
+}
+
+///|
 pub struct SpotLight {
   color : @sprite.Color
   intensity : Float
@@ -1548,6 +1599,11 @@ pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @ecs.r
 )
 
 ///|
+pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk] = @ecs.register_component(
+  debug_name="render3d.sun_disk",
+)
+
+///|
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @ecs.register_component(
   debug_name="render3d.volumetric_light",
 )
@@ -1619,6 +1675,11 @@ pub impl @ecs.Component for SpotLightTexture with component() {
 ///|
 pub impl @ecs.Component for DirectionalLight with component() {
   ecs_key_directional_light
+}
+
+///|
+pub impl @ecs.Component for SunDisk with component() {
+  ecs_key_sun_disk
 }
 
 ///|

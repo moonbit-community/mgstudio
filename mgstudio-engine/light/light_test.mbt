@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+fn approx_eq(a : Float, b : Float, eps : Float) -> Bool {
+  let delta = a - b
+  if delta < 0.0F {
+    -delta <= eps
+  } else {
+    delta <= eps
+  }
+}
+
+///|
 test "light boundary re-exports direct light component APIs" {
   let point = @light.PointLight::default()
     .with_intensity(321.0)
@@ -88,4 +98,14 @@ test "global ambient light supports affects_lightmapped_meshes toggle" {
     false,
   )
   debug_inspect(ambient.affects_lightmapped_meshes, content="false")
+}
+
+///|
+test "sun disk defaults and off profile align with bevy intent" {
+  let earth = @light.SunDisk::default()
+  debug_inspect(approx_eq(earth.angular_size, 0.00930842F, 1.0e-6F), content="true")
+  debug_inspect(approx_eq(earth.intensity, 1.0F, 1.0e-6F), content="true")
+  let off = @light.SunDisk::off()
+  debug_inspect(approx_eq(off.angular_size, 0.0F, 1.0e-6F), content="true")
+  debug_inspect(approx_eq(off.intensity, 0.0F, 1.0e-6F), content="true")
 }

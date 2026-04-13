@@ -245,3 +245,62 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.ambient_light_affects_lightmapped_meshes, content="0")
 }
+
+///|
+test "pbr render light: directional sun disk defaults and component override propagate" {
+  let world = @ecs.World::new()
+  let entity_default = world.spawn()
+  try! world.set_by_key(
+    entity_default,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+
+  let default_gpu = render3d_collect_gpu_lights(world)
+  inspect(default_gpu.n_directional_lights, content="1")
+  inspect(
+    approx_eq(default_gpu.directional_lights[0].sun_disk_angular_size, 0.00930842F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(default_gpu.directional_lights[0].sun_disk_intensity, 1.0F, 1.0e-6F),
+    content="true",
+  )
+
+  let entity_override = world.spawn()
+  try! world.set_by_key(
+    entity_override,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+  try! world.set_by_key(
+    entity_override,
+    @light.ecs_key_sun_disk,
+    @light.SunDisk::off(),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="2")
+  inspect(
+    approx_eq(extracted[1].sun_disk_angular_size, 0.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(extracted[1].sun_disk_intensity, 0.0F, 1.0e-6F),
+    content="true",
+  )
+
+  let override_gpu = render3d_collect_gpu_lights(world)
+  inspect(override_gpu.n_directional_lights, content="2")
+  inspect(
+    approx_eq(override_gpu.directional_lights[1].sun_disk_angular_size, 0.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(override_gpu.directional_lights[1].sun_disk_intensity, 0.0F, 1.0e-6F),
+    content="true",
+  )
+}
