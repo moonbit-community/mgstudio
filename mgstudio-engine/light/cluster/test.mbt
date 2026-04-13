@@ -84,3 +84,111 @@ test "light cluster: cluster config helper semantics match bevy shape" {
   )
   inspect(cluster_config_dynamic_resizing(xyz), content="true")
 }
+
+///|
+test "light cluster: assign system populates camera cluster payload with default config" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! world.set_by_key(
+    camera_entity,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore
+  cluster_assign_lights_system(world)
+  let clusters = try! world.get_by_key(camera_entity, Clusters::component())
+  let visible = try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )
+  guard clusters is Some(clusters_value) else {
+    inspect("missing", content="clusters")
+    return
+  }
+  guard visible is Some(visible_value) else {
+    inspect("missing", content="visible")
+    return
+  }
+  inspect(clusters_value.dimensions_x, content="16")
+  inspect(clusters_value.dimensions_y, content="9")
+  inspect(clusters_value.dimensions_z, content="24")
+  inspect(clusters_value.clusterable_objects.length(), content="3456")
+  inspect(clusters_value.near, content="5")
+  inspect(clusters_value.far, content="0")
+  inspect(visible_value.point_and_spot_lights, content="0")
+}
+
+///|
+test "light cluster: assign system uses max light range for default far z mode" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! world.set_by_key(
+    camera_entity,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore
+  let point = world.spawn()
+  try! world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_range(40.0F),
+  )
+  |> ignore
+  let spot = world.spawn()
+  try! world.set_by_key(
+    spot,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::new(
+      @sprite.Color::white(),
+      1_000_000.0F,
+      55.0F,
+      0.6F,
+      0.8F,
+      false,
+    ),
+  )
+  |> ignore
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component()))
+    .unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  inspect(clusters.far, content="55")
+  inspect(visible.point_and_spot_lights, content="2")
+}
+
+///|
+test "light cluster: assign system honors constant far z mode from config" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! world.set_by_key(
+    camera_entity,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore
+  try! world.set_by_key(
+    camera_entity,
+    ClusterConfig::component(),
+    ClusterConfig::FixedZ(
+      4096,
+      24,
+      ClusterZConfig::{
+        first_slice_depth: 6.0F,
+        far_z_mode: ClusterFarZMode::Constant(123.0F),
+      },
+      true,
+    ),
+  )
+  |> ignore
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component()))
+    .unwrap()
+  inspect(clusters.near, content="6")
+  inspect(clusters.far, content="123")
+}

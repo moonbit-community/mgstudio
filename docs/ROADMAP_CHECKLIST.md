@@ -31,7 +31,7 @@ This file must not exceed 200 lines.
 | `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
-| `bevy_light` | `mgstudio-engine/light` | 93% | 78% | 78% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
+| `bevy_light` | `mgstudio-engine/light` | 93% | 80% | 80% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
 | `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -115,6 +115,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-clusterable-point-light-ordering`: add Bevy-shaped point+spot combined ordering path (`point first`, then shadow/volumetric/entity key) and source `spot_light_shadowmap_offset` point-count from this combined stream.
 - [x] `pbr/render-gpu-lights-cluster-shape`: add Bevy-shaped `GpuLights` cluster payload fields (`cluster_dimensions`, `cluster_factors`) with deterministic defaults in current single-view path.
 - [x] `pbr/render-cluster-factor-formula`: align `cluster_factors.zw` computation with Bevy `calculate_cluster_factors`, derive dimensions from `ClusterConfig` + screen-size rounding via `light/cluster`, and zero-out cluster payload for `ClusterConfig::None`.
+- [x] `light/cluster-camera-owned-runtime`: make `cluster_assign_lights_system` write `Clusters/VisibleClusterableObjects` per camera entity with Bevy-shaped `ClusterConfig` dimensions/far-z semantics.
 - [x] `pbr/render-directional-decal-index`: source directional GPU `decal_index` from `RenderClusteredDecals` resource mapping (fallback `-1`) instead of hardcoded sentinel.
 - [x] `pbr/render-directional-fixed-array-shape`: align `GpuLights` directional payload shape with Bevy by padding to `MAX_DIRECTIONAL_LIGHTS` and using `n_directional_lights` as logical count.
 - [x] `pbr/render-gpu-ambient-premultiply`: align `GpuLights.ambient_color` with Bevy by writing pre-multiplied ambient color (`color * brightness`) instead of split GPU fields.
@@ -180,7 +181,6 @@ This file must not exceed 200 lines.
 - [x] `winit/cursor`: move cursor-options apply system ownership into subpackage and wire plugin call path through it.
 - [x] `scene/components+scene_spawner`: move `SceneRoot/SceneInstance*` and plugin/spawner systems out of `scene/lib.mbt` into Bevy-shaped owner files.
 - [x] `scene/scene_loader+serde`: move glTF ready-check loader wiring and scene serde impl ownership out of aggregating files.
-- [x] `scene/ecs_keys`: remove unused wrapper exports (`scene_spawn_roots_system_ecs`, `scene_plugin_ecs`) and switch tests to owner systems.
 - [x] `state/state`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/state/state`) instead of dead wrappers.
 - [x] `state/state-foundation-ownerization`: replace alias forwarding in `state/state/{states,state_set,freely_mutable_state}` with local owner trait + helper implementations.
 - [x] `window/cursor`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/window/cursor`) with root compatibility exports.

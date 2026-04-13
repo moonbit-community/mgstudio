@@ -4,6 +4,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
 }
 
 supported_targets = "native"
