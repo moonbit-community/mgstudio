@@ -19,6 +19,47 @@
 pub const MESHLET_MAX_CLUSTER_BUFFER_SLOTS : Int = 33_554_432
 
 ///|
+const MESHLET_PLUGIN_NAME : String = "mgstudio.pbr.meshlet.MeshletPlugin"
+
+///|
+priv struct MeshletPluginMarker {}
+
+///|
+let ecs_key_meshlet_plugin_marker : @ecs.ResourceKey[
+  MeshletPluginMarker,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletPluginMarker")
+
+///|
+pub let ecs_key_meshlet_plugin_state : @ecs.ResourceKey[
+  MeshletPluginState,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletPluginState")
+
+///|
+pub let ecs_key_meshlet_instance_manager : @ecs.ResourceKey[
+  InstanceManager,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::InstanceManager")
+
+///|
+pub let ecs_key_meshlet_resource_manager : @ecs.ResourceKey[
+  ResourceManager,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::ResourceManager")
+
+///|
+pub let ecs_key_meshlet_pipelines : @ecs.ResourceKey[
+  MeshletPipelines,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletPipelines")
+
+///|
+pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[
+  MeshletMeshManager,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletMeshManager")
+
+///|
+pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d] = @ecs.register_component(
+  debug_name="render3d.meshlet_mesh3d",
+)
+
+///|
 pub fn meshlet_required_wgpu_features() -> UInt64 {
   @renderer.meshlet_required_rust_features_u64()
 }
@@ -98,6 +139,11 @@ pub fn MeshletPlugin::cluster_buffer_slots(self : MeshletPlugin) -> Int {
 }
 
 ///|
+pub fn MeshletPlugin::status(self : MeshletPlugin) -> MeshletRuntimeStatus {
+  self.status
+}
+
+///|
 pub fn MeshletPlugin::default() -> MeshletPlugin {
   MeshletPlugin::new(1_048_576)
 }
@@ -105,6 +151,144 @@ pub fn MeshletPlugin::default() -> MeshletPlugin {
 ///|
 pub fn meshlet_plugin() -> MeshletPlugin {
   MeshletPlugin::default()
+}
+
+///|
+fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
+  match (try! world.get_resource(ecs_key_meshlet_mesh_manager)) {
+    Some(manager) => {
+      ignore(perform_pending_meshlet_mesh_writes(manager))
+    }
+    None => ()
+  }
+}
+
+///|
+fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let instance_count = source_world.component_count(ecs_key_meshlet_mesh3d)
+  world.insert_resource(
+    ecs_key_meshlet_instance_manager,
+    extract_meshlet_mesh_entities(instance_count),
+  )
+}
+
+///|
+fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
+  let instance_count = match
+    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) => instance_manager.instance_count()
+    None => 0
+  }
+  match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+    Some(manager) => prepare_meshlet_per_frame_resources(manager, instance_count)
+    None => ()
+  }
+}
+
+///|
+fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
+  let instance_count = match
+    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) => instance_manager.instance_count()
+    None => 0
+  }
+  match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+    Some(_manager) => ignore(prepare_meshlet_view_bind_groups(0, instance_count))
+    None => ()
+  }
+}
+
+///|
+fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
+  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) => {
+      ignore(queue_material_meshlet_meshes(instance_manager))
+    }
+    None => ()
+  }
+}
+
+///|
+fn meshlet_ensure_render_sub_app_resources(
+  world : @ecs.World,
+  plugin : MeshletPlugin,
+) -> Unit {
+  let plugin_state = MeshletPluginState::from_plugin(plugin)
+  world.insert_resource(ecs_key_meshlet_plugin_state, plugin_state)
+  if plugin_state.runtime_status is RuntimeUnavailable {
+    return
+  }
+  if (try! world.get_resource(ecs_key_meshlet_instance_manager)) is None {
+    world.insert_resource(
+      ecs_key_meshlet_instance_manager,
+      InstanceManager::default(),
+    )
+  }
+  if (try! world.get_resource(ecs_key_meshlet_resource_manager)) is None {
+    world.insert_resource(
+      ecs_key_meshlet_resource_manager,
+      ResourceManager::new(plugin.cluster_buffer_slots()),
+    )
+  }
+  if (try! world.get_resource(ecs_key_meshlet_pipelines)) is None {
+    world.insert_resource(ecs_key_meshlet_pipelines, init_meshlet_pipelines(-1, -1, -1))
+  }
+  if (try! world.get_resource(ecs_key_meshlet_mesh_manager)) is None {
+    world.insert_resource(
+      ecs_key_meshlet_mesh_manager,
+      MeshletMeshManager::default(),
+    )
+  }
+}
+
+///|
+fn meshlet_configure_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+  plugin : MeshletPlugin,
+) -> @app.SubApp[@ecs.World] {
+  meshlet_ensure_render_sub_app_resources(sub_app.world(), plugin)
+  sub_app.add_systems(
+    @app.PostUpdate,
+    (
+      @app.system(meshlet_prepare_assets_system),
+      @app.system(meshlet_extract_entities_system),
+      @app.system(meshlet_prepare_resources_system),
+      @app.system(meshlet_prepare_view_bind_groups_system),
+      @app.system(meshlet_queue_material_meshes_system),
+    ) |> @app.chain(),
+  )
+}
+
+///|
+pub fn meshlet_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : MeshletPlugin,
+) -> @app.App[@ecs.World] {
+  let plugin_state = MeshletPluginState::from_plugin(plugin)
+  let mut next = app.insert_world_resource(ecs_key_meshlet_plugin_state, plugin_state)
+  if !next.contains_resource(ecs_key_meshlet_plugin_marker) {
+    next = next.insert_world_resource(
+      ecs_key_meshlet_plugin_marker,
+      MeshletPluginMarker::{  },
+    )
+    next = @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
+      meshlet_configure_render_sub_app(sub_app, plugin)
+    })
+  }
+  next
+}
+
+///|
+pub impl @app.PluginReplacement for MeshletPlugin with plugin_name(_self) {
+  MESHLET_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for MeshletPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    meshlet_plugin_with(app, self)
+  }
 }
 
 ///|
@@ -116,10 +300,17 @@ pub struct MeshletPluginState {
 
 ///|
 pub fn MeshletPluginState::default() -> MeshletPluginState {
+  MeshletPluginState::from_plugin(MeshletPlugin::default())
+}
+
+///|
+pub fn MeshletPluginState::from_plugin(
+  plugin : MeshletPlugin,
+) -> MeshletPluginState {
   MeshletPluginState::{
     runtime_status: meshlet_runtime_status_from_availability(
       meshlet_runtime_available(),
-      false,
+      plugin.status() is Enabled,
     ),
     missing_required_features: meshlet_missing_wgpu_features(),
     adapter_supports_mesh_shader: @renderer.meshlet_adapter_supports_mesh_shader(),
@@ -139,4 +330,9 @@ pub fn MeshletMesh3d::new(meshlet_mesh_id : Int) -> MeshletMesh3d {
 ///|
 pub fn MeshletMesh3d::id(self : MeshletMesh3d) -> Int {
   self.meshlet_mesh_id
+}
+
+///|
+pub impl @ecs.Component for MeshletMesh3d with component() {
+  ecs_key_meshlet_mesh3d
 }

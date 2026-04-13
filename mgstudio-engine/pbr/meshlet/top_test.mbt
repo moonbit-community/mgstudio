@@ -68,7 +68,7 @@ test "pbr meshlet: plugin state includes missing feature mask" {
   let runtime_available = meshlet_runtime_available()
   let state = MeshletPluginState::default()
   if runtime_available {
-    inspect(state.runtime_status is Disabled, content="true")
+    inspect(state.runtime_status is Enabled, content="true")
   } else {
     inspect(state.runtime_status is RuntimeUnavailable, content="true")
   }
@@ -81,4 +81,33 @@ test "pbr meshlet: plugin state includes missing feature mask" {
     @renderer.meshlet_adapter_supports_mesh_shader(),
     content="true",
   )
+}
+
+///|
+test "pbr meshlet: plugin installs state into app and render sub-app" {
+  let app = @app.App::new(@ecs.World::new())
+  .add_plugin(@render.render_plugin)
+  .add_plugin_typed(MeshletPlugin::default())
+  inspect(
+    (try! app.world().get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
+    content="true",
+  )
+  let render_world = app.sub_app(@app.RenderApp).world()
+  inspect(
+    (try! render_world.get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
+    content="true",
+  )
+  if meshlet_runtime_available() {
+    inspect(
+      (try! render_world.get_resource(ecs_key_meshlet_resource_manager)) is
+      Some(_),
+      content="true",
+    )
+  } else {
+    inspect(
+      (try! render_world.get_resource(ecs_key_meshlet_resource_manager)) is
+      None,
+      content="true",
+    )
+  }
 }
