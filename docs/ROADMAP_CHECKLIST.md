@@ -12,7 +12,7 @@ This file must not exceed 200 lines.
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 73% | 73% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
-| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 92% | 92% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
+| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 93% | 93% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 77% | 77% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
@@ -72,6 +72,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/free_camera`: move controller system-state from global `Ref` to world-owned resource.
 - [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`), remove direct state mutation from `window_surface`, and merge pass-timing + draw/drop/debug/frame/snapshot refs into one owner runtime state.
 - [x] `pbr/prepass`: replace queue-state camera/mesh motion-blur history caches with ECS-owned previous-frame components (`PreviousViewData`, `PreviousGlobalTransform`), move write-back into `PreUpdate` sync system, sync previous mesh transform for all Mesh3d entities with active-camera gating, align camera collection/order to `camera.is_active`, and use projection `Changed` signals instead of force-updating runtime projection every frame.
+- [x] `pbr/prepass`: add wb coverage for `PreUpdate` previous-data sync (camera previous-view + mesh previous-global + active-camera gating) and keep `moon test pbr` green.
 - [x] `render/renderer`: collapse `window_surface` scattered binding globals (`surfaces/frames/id seeds`) into a single owner runtime state (`WindowSurfaceRuntimeState`), keeping behavior-local ownership.
 - [x] `render/renderer`: move `mesh2d` gizmo-line mesh-id cache from global `Ref` to `GpuBackend` owner field (`mesh2d_gizmo_line_mesh_id`).
 - [x] `render/renderer`: collapse screenshot capture/parity globals into one owner runtime state (`ScreenshotRuntimeState`) and remove multi-Ref scattered mutation.
@@ -80,7 +81,6 @@ This file must not exceed 200 lines.
 - [x] `render/render_phase`: collapse render-pass trace active-span global into owner runtime state (`RenderPassTraceRuntimeState`).
 - [x] `render/renderer`: wrap backend singleton in `RenderContextRuntimeState` and migrate renderer whitebox tests to explicit test-set/get hooks.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
-- [x] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers (`scripts/check_bevy_rs_to_mbt_paths.sh` => `missing=0`, `scaffold_files=0`).
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.
 - [x] `camera`: switch camera mesh ray-cast API surface to `picking/mesh_picking/ray_cast` owner types/functions instead of `pbr` wrappers.
 - [x] `examples`: switch in-tree mesh ray-cast usage (`3d/mesh_ray_cast`, `ui/render_ui_to_texture`) from `@pbr` shim calls to `picking/mesh_picking/ray_cast` owner path.
