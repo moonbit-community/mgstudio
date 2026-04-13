@@ -3280,6 +3280,35 @@ fn run_systems(
   }
   let stepping_ref = stepping_resource_ref(world)
   stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
+  fn system_trace_name(
+    cfg : SystemConfig[@ecs.World],
+    stage : ScheduleStage?,
+    fallback_index : Int,
+  ) -> String {
+    match cfg.name {
+      Some(name) => name
+      None =>
+        match cfg.set {
+          Some(set) => "\{set}#\{fallback_index.to_string()}"
+          None =>
+            match stage {
+              Some(stage_name) =>
+                "\{to_repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
+              None => "__system#\{fallback_index.to_string()}"
+            }
+        }
+    }
+  }
+  fn should_trace_system(
+    cfg : SystemConfig[@ecs.World],
+    stage : ScheduleStage?,
+    system_count : Int,
+  ) -> Bool {
+    match stage {
+      Some(Main) => !(system_count == 1 && cfg.name is None && cfg.set is None)
+      _ => true
+    }
+  }
   for execution_i in 0..<execution_order.length() {
     let system_i = execution_order[execution_i]
     let cfg = systems[system_i]
@@ -3315,15 +3344,10 @@ fn run_systems(
       continue
     }
 
-    let system_trace_start_us = if timeline_enabled {
-      let trace_name = match cfg.name {
-        Some(name) => name
-        None =>
-          match cfg.set {
-            Some(set) => "\{set}#\{execution_i.to_string()}"
-            None => "__system#\{execution_i.to_string()}"
-          }
-      }
+    let trace_name = system_trace_name(cfg, stage, execution_i)
+    let system_trace_start_us = if
+      timeline_enabled &&
+      should_trace_system(cfg, stage, systems.length()) {
       timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
     } else {
       -1L
@@ -3350,15 +3374,7 @@ fn run_systems(
     current_world_ref.val = prev_world
     match outcome {
       Success => {
-        if timeline_enabled {
-          let trace_name = match systems[system_i].name {
-            Some(name) => name
-            None =>
-              match systems[system_i].set {
-                Some(set) => "\{set}#\{execution_i.to_string()}"
-                None => "__system#\{execution_i.to_string()}"
-              }
-          }
+        if timeline_enabled && system_trace_start_us >= 0L {
           timeline_trace_end_span(
             TimelineTraceCategory::System,
             trace_name,
@@ -3372,15 +3388,7 @@ fn run_systems(
       }
       Skipped(_) => continue
       Invalid(message) => {
-        if timeline_enabled {
-          let trace_name = match systems[system_i].name {
-            Some(name) => name
-            None =>
-              match systems[system_i].set {
-                Some(set) => "\{set}#\{execution_i.to_string()}"
-                None => "__system#\{execution_i.to_string()}"
-              }
-          }
+        if timeline_enabled && system_trace_start_us >= 0L {
           timeline_trace_end_span(
             TimelineTraceCategory::System,
             trace_name,
@@ -3399,15 +3407,7 @@ fn run_systems(
         continue
       }
       Error(err) => {
-        if timeline_enabled {
-          let trace_name = match systems[system_i].name {
-            Some(name) => name
-            None =>
-              match systems[system_i].set {
-                Some(set) => "\{set}#\{execution_i.to_string()}"
-                None => "__system#\{execution_i.to_string()}"
-              }
-          }
+        if timeline_enabled && system_trace_start_us >= 0L {
           timeline_trace_end_span(
             TimelineTraceCategory::System,
             trace_name,
