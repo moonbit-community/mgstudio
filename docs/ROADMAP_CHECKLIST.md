@@ -93,6 +93,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/diagnostic-material-allocator-shape`: add Bevy-shaped material allocator diagnostic paths and slab/size/allocation snapshot helpers.
 - [x] `pbr/fog-koschmieder-api`: expose Bevy-shaped `FogFalloff::koschmieder` helper and contrast-threshold constant on fog surface.
 - [x] `pbr/render-fog-world-path`: wire fog prepare output into render-world (`FogMeta` resource + per-view `ViewFogUniformOffset` component) during prepare-bind-groups.
+- [x] `pbr/render-light-extraction-formulas`: align light extraction with Bevy formulas for point/spot lumens->intensity, shadow-normal-bias scaling, and directional `dir_to_light=back()`.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.

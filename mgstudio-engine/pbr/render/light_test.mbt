@@ -1,0 +1,121 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+fn approx_eq(a : Float, b : Float, eps : Float) -> Bool {
+  let delta = a - b
+  if delta < 0.0F {
+    -delta <= eps
+  } else {
+    delta <= eps
+  }
+}
+
+///|
+test "pbr render light: point extraction follows bevy intensity and normal-bias scaling" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @light.ecs_key_point_light_shadow_map,
+    @light.PointLightShadowMap::new(2048),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_intensity(4.0F * @math.pi())
+      .with_shadow_normal_bias(1.0F),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_point_lights(world)
+  inspect(extracted.length(), content="1")
+  let point = extracted[0]
+  inspect(approx_eq(point.intensity, 1.0F, 1.0e-5F), content="true")
+  let expected_shadow_normal_bias = 1.0F * (2.0F / 2048.0F) * @math.sqrt(
+    2.0F,
+  )
+  inspect(
+    approx_eq(point.shadow_normal_bias, expected_shadow_normal_bias, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
+test "pbr render light: spot extraction follows bevy intensity and normal-bias scaling" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(1024),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_intensity(4.0F * @math.pi())
+      .with_inner_angle(0.2F)
+      .with_outer_angle(0.5F)
+      .with_shadow_normal_bias(1.0F),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_spot_lights(world)
+  inspect(extracted.length(), content="1")
+  let spot = extracted[0]
+  inspect(approx_eq(spot.intensity, 1.0F, 1.0e-5F), content="true")
+  let expected_shadow_normal_bias = 1.0F * (2.0F * @math.sin(0.5F) /
+    @math.cos(0.5F) / 1024.0F) * @math.sqrt(2.0F)
+  inspect(
+    approx_eq(spot.shadow_normal_bias, expected_shadow_normal_bias, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
+test "pbr render light: directional dir_to_light uses transform back vector" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_normal_bias(2.0F),
+  )
+  |> ignore
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
+  |> ignore
+
+  let extracted_directional = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted_directional.length(), content="1")
+  inspect(
+    approx_eq(
+      extracted_directional[0].shadow_normal_bias,
+      2.0F * @math.sqrt(2.0F),
+      1.0e-5F,
+    ),
+    content="true",
+  )
+  let lighting = render3d_collect_lighting(world)
+  inspect(approx_eq(lighting.directional_dir.x, 0.0F, 1.0e-5F), content="true")
+  inspect(approx_eq(lighting.directional_dir.y, 0.0F, 1.0e-5F), content="true")
+  inspect(approx_eq(lighting.directional_dir.z, 1.0F, 1.0e-5F), content="true")
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.n_directional_lights, content="1")
+  inspect(
+    approx_eq(gpu_lights.directional_lights[0].dir_to_light.z, 1.0F, 1.0e-5F),
+    content="true",
+  )
+}

@@ -70,6 +70,47 @@ const DIRECTIONAL_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : UInt = 1U << 2
 const DIRECTIONAL_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 3
 
 ///|
+fn render3d_sqrt2() -> Float {
+  @math.sqrt(2.0F)
+}
+
+///|
+fn render3d_tan(value : Float) -> Float {
+  let sinv = @math.sin(value)
+  let cosv = @math.cos(value)
+  if cosv >= 0.0F && cosv < 1.0e-6F {
+    sinv / 1.0e-6F
+  } else if cosv < 0.0F && cosv > -1.0e-6F {
+    sinv / -1.0e-6F
+  } else {
+    sinv / cosv
+  }
+}
+
+///|
+fn render3d_transform_back(transform : @transform.Transform) -> @math.Vec3 {
+  quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, 1.0F)).normalize_or_zero()
+}
+
+///|
+fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
+  let shadow_map_size = match
+    (try! world.get_resource(@light.ecs_key_point_light_shadow_map)) {
+    Some(v) => if v.size <= 0 { 1 } else { v.size }
+    None => @light.PointLightShadowMap::default().size
+  }
+  2.0F / Float::from_double(shadow_map_size.to_double())
+}
+
+///|
+fn render3d_directional_light_shadow_map_size(world : @ecs.World) -> Int {
+  match (try! world.get_resource(@light.ecs_key_directional_light_shadow_map)) {
+    Some(v) => if v.size <= 0 { 1 } else { v.size }
+    None => @light.DirectionalLightShadowMap::default().size
+  }
+}
+
+///|
 pub struct ExtractedPointLight3d {
   entity : @core.Entity
   color : @sprite.Color
@@ -190,19 +231,23 @@ fn render3d_extract_point_light(
   entity : @core.Entity,
   light : @light.PointLight,
   volumetric : Bool,
+  point_light_texel_size : Float,
 ) -> ExtractedPointLight3d {
   let transform = render3d_extract_light_transform(world, entity)
   ExtractedPointLight3d::{
     entity,
     color: light.color,
-    intensity: light.intensity,
+    // Bevy parity: point-light authoring uses lumens, extracted runtime stores
+    // luminous intensity (lumens/steradian).
+    intensity: light.intensity / (4.0F * @math.pi()),
     range: if light.range > 0.0F { light.range } else { 1.0F },
     radius: if light.radius > 0.0F { light.radius } else { 0.0F },
     transform,
     shadow_maps_enabled: light.shadow_maps_enabled,
     contact_shadows_enabled: light.contact_shadows_enabled,
     shadow_depth_bias: light.shadow_depth_bias,
-    shadow_normal_bias: light.shadow_normal_bias,
+    shadow_normal_bias: light.shadow_normal_bias * point_light_texel_size *
+      render3d_sqrt2(),
     shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
       light.shadow_map_near_z
     } else {
@@ -221,6 +266,7 @@ fn render3d_extract_spot_light(
   entity : @core.Entity,
   light : @light.SpotLight,
   volumetric : Bool,
+  directional_light_shadow_map_size : Int,
 ) -> ExtractedPointLight3d {
   let transform = render3d_extract_light_transform(world, entity)
   let inner = light.inner_angle
@@ -229,17 +275,26 @@ fn render3d_extract_spot_light(
   } else {
     light.outer_angle
   }
+  let safe_shadow_map_size = if directional_light_shadow_map_size <= 0 {
+    1
+  } else {
+    directional_light_shadow_map_size
+  }
+  let texel_size = 2.0F * render3d_tan(outer) /
+    Float::from_double(safe_shadow_map_size.to_double())
   ExtractedPointLight3d::{
     entity,
     color: light.color,
-    intensity: light.intensity,
+    // Bevy parity: spot-light authoring uses lumens, extracted runtime stores
+    // luminous intensity (lumens/steradian).
+    intensity: light.intensity / (4.0F * @math.pi()),
     range: if light.range > 0.0F { light.range } else { 1.0F },
     radius: if light.radius > 0.0F { light.radius } else { 0.0F },
     transform,
     shadow_maps_enabled: light.shadow_maps_enabled,
     contact_shadows_enabled: light.contact_shadows_enabled,
     shadow_depth_bias: light.shadow_depth_bias,
-    shadow_normal_bias: light.shadow_normal_bias,
+    shadow_normal_bias: light.shadow_normal_bias * texel_size * render3d_sqrt2(),
     shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
       light.shadow_map_near_z
     } else {
@@ -272,7 +327,7 @@ fn render3d_extract_directional_light(
     shadow_maps_enabled: light.shadow_maps_enabled,
     contact_shadows_enabled: light.contact_shadows_enabled,
     shadow_depth_bias: light.shadow_depth_bias,
-    shadow_normal_bias: light.shadow_normal_bias,
+    shadow_normal_bias: light.shadow_normal_bias * render3d_sqrt2(),
     volumetric,
     affects_lightmapped_mesh_diffuse: true,
     soft_shadow_size: light.soft_shadow_size,
@@ -290,12 +345,21 @@ fn render3d_extract_directional_light(
 pub fn render3d_collect_extracted_point_lights(
   world : @ecs.World,
 ) -> Array[ExtractedPointLight3d] {
+  let point_light_texel_size = render3d_point_light_shadow_texel_size(world)
   let extracted : Array[ExtractedPointLight3d] = []
   world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
     let volumetric = (try!
       world.get_by_key(entity, @light.ecs_key_volumetric_light))
       is Some(_)
-    extracted.push(render3d_extract_point_light(world, entity, light, volumetric))
+    extracted.push(
+      render3d_extract_point_light(
+        world,
+        entity,
+        light,
+        volumetric,
+        point_light_texel_size,
+      ),
+    )
   })
   extracted
 }
@@ -304,12 +368,23 @@ pub fn render3d_collect_extracted_point_lights(
 pub fn render3d_collect_extracted_spot_lights(
   world : @ecs.World,
 ) -> Array[ExtractedPointLight3d] {
+  let directional_light_shadow_map_size = render3d_directional_light_shadow_map_size(
+    world,
+  )
   let extracted : Array[ExtractedPointLight3d] = []
   world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
     let volumetric = (try!
       world.get_by_key(entity, @light.ecs_key_volumetric_light))
       is Some(_)
-    extracted.push(render3d_extract_spot_light(world, entity, light, volumetric))
+    extracted.push(
+      render3d_extract_spot_light(
+        world,
+        entity,
+        light,
+        volumetric,
+        directional_light_shadow_map_size,
+      ),
+    )
   })
   extracted
 }
@@ -373,7 +448,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     gpu_directional_lights.push(GpuDirectionalLight3d::{
       cascades,
       color: item.color,
-      dir_to_light: render3d_transform_forward(item.transform),
+      dir_to_light: render3d_transform_back(item.transform),
       flags: render3d_directional_light_flags(item),
       soft_shadow_size: item.soft_shadow_size.unwrap_or(0.0F),
       shadow_depth_bias: item.shadow_depth_bias,
@@ -419,7 +494,6 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
 ///|
 pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   let mut lighting = render3d_default_lighting_state()
-  let point_luminous_power_to_intensity = 4.0F * @math.pi()
   if (try! world.get_resource(@light.ecs_key_global_ambient_light))
     is Some(ambient) {
     lighting = Render3dLightingState::{
@@ -433,7 +507,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     let directional = directional_lights[0]
     lighting = Render3dLightingState::{
       ..lighting,
-      directional_dir: render3d_transform_forward(directional.transform),
+      directional_dir: render3d_transform_back(directional.transform),
       directional_color: directional.color,
       directional_illuminance: directional.illuminance,
     }
@@ -446,11 +520,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       point_entity: Some(point.entity),
       point_pos: point.transform.translation,
       point_color: point.color,
-      point_intensity: if point_luminous_power_to_intensity <= 0.0F {
-        point.intensity
-      } else {
-        point.intensity / point_luminous_power_to_intensity
-      },
+      point_intensity: point.intensity,
       point_range: point.range,
       point_shadow_maps_enabled: point.shadow_maps_enabled,
       point_shadow_depth_bias: point.shadow_depth_bias,
@@ -471,11 +541,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_pos: spot.transform.translation,
           spot_dir: render3d_transform_forward(spot.transform),
           spot_color: spot.color,
-          spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
-            spot.intensity
-          } else {
-            spot.intensity / point_luminous_power_to_intensity
-          },
+          spot_intensity: spot.intensity,
           spot_range: spot.range,
           spot_inner_angle: inner,
           spot_outer_angle: outer,
@@ -486,11 +552,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_pos: spot.transform.translation,
           spot_dir: render3d_transform_forward(spot.transform),
           spot_color: spot.color,
-          spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
-            spot.intensity
-          } else {
-            spot.intensity / point_luminous_power_to_intensity
-          },
+          spot_intensity: spot.intensity,
           spot_range: spot.range,
         }
     }
