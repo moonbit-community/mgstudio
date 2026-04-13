@@ -68,6 +68,15 @@ pub fn mesh3d_gpu_culling_supported() -> Bool {
 }
 
 ///|
+pub fn meshlet_required_rust_features_u64() -> UInt64 {
+  @wgpu.FEATURES_TEXTURE_INT64_ATOMIC |
+  @wgpu.FEATURES_TEXTURE_ATOMIC |
+  @wgpu.FEATURES_SHADER_INT64 |
+  @wgpu.FEATURES_SUBGROUP |
+  @wgpu.FEATURES_DEPTH_CLIP_CONTROL
+}
+
+///|
 pub fn meshlet_required_features_supported() -> Bool {
   if ensure_backend() is Some(backend) {
     let backend_type = backend.device.info_backend_type_u32()
@@ -75,10 +84,8 @@ pub fn meshlet_required_features_supported() -> Bool {
       backend_type != @wgpu.BACKEND_TYPE_METAL {
       return false
     }
-    if !backend.device.supports_known_rust_features_u64(
-        @wgpu.FEATURES_DEPTH_CLIP_CONTROL |
-        @wgpu.FEATURES_SHADER_INT64 |
-        @wgpu.FEATURES_SUBGROUP,
+    if !backend.device.supports_rust_features_u64(
+        meshlet_required_rust_features_u64(),
       ) {
       return false
     }

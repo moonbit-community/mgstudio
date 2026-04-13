@@ -16,6 +16,14 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/mod.rs`.
 
 ///|
+pub const MESHLET_MAX_CLUSTER_BUFFER_SLOTS : Int = 33_554_432
+
+///|
+pub fn meshlet_required_wgpu_features() -> UInt64 {
+  @renderer.meshlet_required_rust_features_u64()
+}
+
+///|
 pub fn meshlet_runtime_available() -> Bool {
   @renderer.meshlet_required_features_supported()
 }
@@ -37,12 +45,44 @@ pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
 
 ///|
 pub struct MeshletPlugin {
+  cluster_buffer_slots : Int
   status : MeshletRuntimeStatus
 }
 
 ///|
+fn meshlet_cluster_buffer_slots_sanitize(value : Int) -> Int {
+  if value <= 0 {
+    1
+  } else if value > MESHLET_MAX_CLUSTER_BUFFER_SLOTS {
+    MESHLET_MAX_CLUSTER_BUFFER_SLOTS
+  } else {
+    value
+  }
+}
+
+///|
+pub fn MeshletPlugin::new(cluster_buffer_slots : Int) -> MeshletPlugin {
+  MeshletPlugin::{
+    cluster_buffer_slots: meshlet_cluster_buffer_slots_sanitize(
+      cluster_buffer_slots,
+    ),
+    status: meshlet_runtime_status(),
+  }
+}
+
+///|
+pub fn MeshletPlugin::required_wgpu_features() -> UInt64 {
+  meshlet_required_wgpu_features()
+}
+
+///|
+pub fn MeshletPlugin::cluster_buffer_slots(self : MeshletPlugin) -> Int {
+  self.cluster_buffer_slots
+}
+
+///|
 pub fn MeshletPlugin::default() -> MeshletPlugin {
-  MeshletPlugin::{ status: meshlet_runtime_status() }
+  MeshletPlugin::new(1_048_576)
 }
 
 ///|
