@@ -1494,11 +1494,16 @@ pub fn IrradianceVolume::with_intensity(
 pub struct GlobalAmbientLight {
   color : @sprite.Color
   brightness : Float
+  affects_lightmapped_meshes : Bool
 } derive(ToJson, FromJson)
 
 ///|
 pub fn GlobalAmbientLight::default() -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color: @sprite.Color::white(), brightness: 80.0F }
+  GlobalAmbientLight::{
+    color: @sprite.Color::white(),
+    brightness: 80.0F,
+    affects_lightmapped_meshes: true,
+  }
 }
 
 ///|
@@ -1506,7 +1511,15 @@ pub fn GlobalAmbientLight::new(
   color : @sprite.Color,
   brightness : Float,
 ) -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color, brightness }
+  GlobalAmbientLight::{ color, brightness, affects_lightmapped_meshes: true }
+}
+
+///|
+pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(
+  self : GlobalAmbientLight,
+  affects_lightmapped_meshes : Bool,
+) -> GlobalAmbientLight {
+  GlobalAmbientLight::{ ..self, affects_lightmapped_meshes }
 }
 
 ///|

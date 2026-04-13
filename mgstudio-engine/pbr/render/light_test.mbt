@@ -234,3 +234,14 @@ test "pbr render light: directional without shadows keeps zero cascades" {
   inspect(gpu_lights.directional_lights[0].num_cascades, content="0")
   inspect(gpu_lights.directional_lights[0].cascades.length(), content="0")
 }
+
+///|
+test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @light.ecs_key_global_ambient_light,
+    @light.GlobalAmbientLight::default().with_affects_lightmapped_meshes(false),
+  )
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.ambient_light_affects_lightmapped_meshes, content="0")
+}

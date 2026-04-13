@@ -81,3 +81,11 @@ test "directional and spot support explicit shadow map toggles" {
   debug_inspect(directional.shadow_maps_enabled, content="true")
   debug_inspect(spot.shadow_maps_enabled, content="true")
 }
+
+///|
+test "global ambient light supports affects_lightmapped_meshes toggle" {
+  let ambient = @light.GlobalAmbientLight::default().with_affects_lightmapped_meshes(
+    false,
+  )
+  debug_inspect(ambient.affects_lightmapped_meshes, content="false")
+}

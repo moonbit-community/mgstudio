@@ -183,6 +183,7 @@ pub struct GpuLights3d {
   ambient_color : @sprite.Color
   ambient_brightness : Float
   n_directional_lights : Int
+  ambient_light_affects_lightmapped_meshes : Int
 }
 
 ///|
@@ -495,6 +496,12 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     ambient_color: ambient.color,
     ambient_brightness: ambient.brightness,
     n_directional_lights: gpu_directional_lights.length(),
+    ambient_light_affects_lightmapped_meshes: if ambient
+      .affects_lightmapped_meshes {
+      1
+    } else {
+      0
+    },
   }
 }
 
