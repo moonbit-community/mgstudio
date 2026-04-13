@@ -115,7 +115,7 @@ pub fn select_monitor(
     Current => {
       if current_monitor is None {
         @window.host_debug_string(
-          value="bevy_winit: cannot select current monitor on window creation",
+          value="mgstudio_winit: cannot select current monitor on window creation",
         )
       }
       current_monitor

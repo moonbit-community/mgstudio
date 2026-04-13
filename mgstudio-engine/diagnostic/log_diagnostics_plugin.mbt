@@ -235,7 +235,7 @@ fn log_diagnostics_system(
     }
     let message = log_diagnostic_message(diagnostic)
     if message != "" {
-      @app.log_record(@app.Info, message~, target="bevy_diagnostic")
+      @app.log_record(@app.Info, message~, target="mgstudio_diagnostic")
     }
   }
 }
@@ -260,7 +260,7 @@ fn log_diagnostics_debug_system(
     @app.log_record(
       @app.Debug,
       message=to_repr(diagnostic).to_string(),
-      target="bevy_diagnostic",
+      target="mgstudio_diagnostic",
     )
   }
 }

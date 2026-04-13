@@ -17,7 +17,7 @@
 // Bevy-aligned animation target id utilities and hashing.
 
 ///|
-const ANIMATION_TARGET_NAMESPACE : String = "bevy_animation_target"
+const ANIMATION_TARGET_NAMESPACE : String = "mgstudio_animation_target"
 
 ///|
 const HASH_A_OFFSET : UInt = 0x811C9DC5U

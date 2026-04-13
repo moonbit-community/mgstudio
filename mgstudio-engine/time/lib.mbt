@@ -43,7 +43,7 @@ fn current_time_world_abort_missing() -> @ecs.World {
     Some(world) => world
     None =>
       abort(
-        "bevy_time helper functions require an active app world; use direct world resource access outside scheduled systems",
+        "mgstudio_time helper functions require an active app world; use direct world resource access outside scheduled systems",
       )
   }
 }

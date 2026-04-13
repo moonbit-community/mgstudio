@@ -23,17 +23,17 @@ const LDTK_PLUGIN_NAME : String = "mgstudio.ecs_ldtk.LdtkPlugin"
 
 ///|
 let process_ldtk_api_schedule : @app.ScheduleStage = @app.schedule_label(
-  "bevy_ecs_ldtk::ProcessLdtkApi",
+  "mgstudio.ecs_ldtk.ProcessLdtkApi",
 )
 
 ///|
 let process_api_set_pre_clean : @app.SystemSet = @app.system_set(
-  "bevy_ecs_ldtk::ProcessApiSet::PreClean",
+  "mgstudio.ecs_ldtk.ProcessApiSet.PreClean",
 )
 
 ///|
 let process_api_set_clean : @app.SystemSet = @app.system_set(
-  "bevy_ecs_ldtk::ProcessApiSet::Clean",
+  "mgstudio.ecs_ldtk.ProcessApiSet.Clean",
 )
 
 ///|

@@ -323,12 +323,12 @@ pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
               )
             None =>
               host_debug_string(
-                value="bevy_winit: could not find valid fullscreen video mode",
+                value="mgstudio_winit: could not find valid fullscreen video mode",
               )
           }
         None =>
           host_debug_string(
-            value="bevy_winit: could not find monitor for fullscreen selection",
+            value="mgstudio_winit: could not find monitor for fullscreen selection",
           )
       }
   }
@@ -509,7 +509,7 @@ pub fn host_window_set_position_from(
         }
         None =>
           host_debug_string(
-            value="bevy_winit: could not resolve monitor for centered window position",
+            value="mgstudio_winit: could not resolve monitor for centered window position",
           )
       }
     At(x, y) => host_window_set_position(window, x~, y~)

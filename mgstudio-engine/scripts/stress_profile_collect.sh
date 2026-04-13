@@ -110,9 +110,9 @@ for case_name in "${CASES[@]}"; do
     ) >"${log}" 2>&1 || true
   fi
 
-  fps_line="$(rg "\\[INFO\\] \\[bevy_diagnostic\\] fps:" "${log}" | tail -n 1 || true)"
-  frame_line="$(rg "\\[INFO\\] \\[bevy_diagnostic\\] frame_time:" "${log}" | tail -n 1 || true)"
-  count_line="$(rg "\\[INFO\\] \\[bevy_diagnostic\\] frame_count:" "${log}" | tail -n 1 || true)"
+  fps_line="$(rg "\\[INFO\\] \\[(mgstudio_diagnostic|bevy_diagnostic)\\] fps:" "${log}" | tail -n 1 || true)"
+  frame_line="$(rg "\\[INFO\\] \\[(mgstudio_diagnostic|bevy_diagnostic)\\] frame_time:" "${log}" | tail -n 1 || true)"
+  count_line="$(rg "\\[INFO\\] \\[(mgstudio_diagnostic|bevy_diagnostic)\\] frame_count:" "${log}" | tail -n 1 || true)"
 
   fps_avg="$(echo "${fps_line}" | rg -o "avg [0-9.]+" | awk '{print $2}' || true)"
   frame_time_avg="$(echo "${frame_line}" | rg -o "avg [0-9.]+" | awk '{print $2}' || true)"

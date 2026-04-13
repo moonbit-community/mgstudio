@@ -96,7 +96,7 @@ pub fn input_focus_system_set_name(
   stage_set : InputFocusSystems,
 ) -> @app.SystemSet {
   match stage_set {
-    Dispatch => @app.system_set("bevy_input_focus::InputFocusSystems::Dispatch")
+    Dispatch => @app.system_set("mgstudio.input_focus.InputFocusSystems.Dispatch")
   }
 }
 
@@ -142,7 +142,7 @@ fn current_input_focus_world_abort_missing() -> @ecs.World {
     Some(world) => world
     None =>
       abort(
-        "bevy_input_focus helper functions require an active app world; use direct world resource access outside scheduled systems",
+        "mgstudio_input_focus helper functions require an active app world; use direct world resource access outside scheduled systems",
       )
   }
 }

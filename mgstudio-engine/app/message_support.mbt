@@ -22,7 +22,7 @@ fn message_update_marker_key() -> @ecs.ResourceKey[MessageUpdateMarker] {
 
 ///|
 pub let message_update_system_set : SystemSet = system_set(
-  "bevy_ecs::message::MessageUpdateSystems",
+  "mgstudio.ecs.message.MessageUpdateSystems",
 )
 
 ///|

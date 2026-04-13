@@ -33,7 +33,7 @@ pub fn[C] ValidateParentHasComponentPlugin::in_schedule(
 
 ///|
 pub let validate_parent_has_component_system_set : SystemSet = system_set(
-  "bevy_app.validate_parent_has_component",
+  "mgstudio.app.validate_parent_has_component",
 )
 
 ///|

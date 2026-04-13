@@ -42,7 +42,7 @@ pub struct ErasedRenderAssetDiagnosticState {
 
 ///|
 fn erased_render_asset_diagnostic_state_debug_name() -> String {
-  "bevy_render::ErasedRenderAssetDiagnosticState"
+  "mgstudio.render.diagnostic.ErasedRenderAssetDiagnosticState"
 }
 
 ///|

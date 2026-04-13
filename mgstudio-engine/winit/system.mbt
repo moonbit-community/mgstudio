@@ -216,11 +216,11 @@ fn winit_apply_window_mode_change(
               )
             None =>
               @window.host_debug_string(
-                value="bevy_winit: could not find valid fullscreen video mode",
+                value="mgstudio_winit: could not find valid fullscreen video mode",
               )
           }
         None =>
-          abort("bevy_winit: could not find monitor for fullscreen selection")
+          abort("mgstudio_winit: could not find monitor for fullscreen selection")
       }
   }
 }

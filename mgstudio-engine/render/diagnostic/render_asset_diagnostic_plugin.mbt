@@ -42,7 +42,7 @@ pub struct RenderAssetDiagnosticState {
 
 ///|
 fn render_asset_diagnostic_state_debug_name() -> String {
-  "bevy_render::RenderAssetDiagnosticState"
+  "mgstudio.render.diagnostic.RenderAssetDiagnosticState"
 }
 
 ///|

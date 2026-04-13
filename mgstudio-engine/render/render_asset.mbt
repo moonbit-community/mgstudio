@@ -54,7 +54,7 @@ pub struct RenderAssets[A] {
 
 ///|
 fn render_assets_debug_name() -> String {
-  "bevy_render::RenderAssets"
+  "mgstudio.render.RenderAssets"
 }
 
 ///|
@@ -135,7 +135,7 @@ pub struct PrepareNextFrameAssets[A] {
 
 ///|
 fn prepare_next_frame_assets_debug_name() -> String {
-  "bevy_render::PrepareNextFrameAssets"
+  "mgstudio.render.PrepareNextFrameAssets"
 }
 
 ///|

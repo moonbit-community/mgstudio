@@ -20,8 +20,8 @@ pub fn log_once(
   level : @app.LogLevel,
   callsite : String,
   message : String,
-  target? : String = "bevy_log::once",
-  name? : String = "bevy_log_once",
+  target? : String = "mgstudio.log.once",
+  name? : String = "mgstudio_log_once",
 ) -> Unit {
   @app.log_once(level, callsite~, message~, target~, name~)
 }

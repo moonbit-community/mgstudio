@@ -24,7 +24,7 @@ pub struct RenderDiagnosticsModuleState {
 
 ///|
 fn render_diagnostics_module_state_debug_name() -> String {
-  "bevy_render::RenderDiagnosticsModuleState"
+  "mgstudio.render.diagnostic.RenderDiagnosticsModuleState"
 }
 
 ///|

@@ -22,7 +22,7 @@ priv struct SpritePluginMarker {}
 
 ///|
 let ecs_res_key_sprite_plugin_marker : @ecs.ResourceKey[SpritePluginMarker] = @ecs.register_resource(
-  debug_name="bevy_sprite::SpritePluginMarker",
+  debug_name="mgstudio.sprite.SpritePluginMarker",
 )
 
 ///|

@@ -756,7 +756,7 @@ fn window_sync_requested_window_state(
   if window.name != runtime_ref.val.last_applied_name {
     restore_name = true
     host_debug_string(
-      value="bevy_winit: modifying window name after initialization is unsupported",
+      value="mgstudio_winit: modifying window name after initialization is unsupported",
     )
   }
   if !window_resolution_matches_runtime(window.resolution, runtime_ref.val) {
@@ -779,13 +779,13 @@ fn window_sync_requested_window_state(
   if window.skip_taskbar != runtime_ref.val.last_applied_skip_taskbar {
     restore_skip_taskbar = true
     host_debug_string(
-      value="bevy_winit: modifying skip_taskbar after window creation is unsupported",
+      value="mgstudio_winit: modifying skip_taskbar after window creation is unsupported",
     )
   }
   if window.clip_children != runtime_ref.val.last_applied_clip_children {
     restore_clip_children = true
     host_debug_string(
-      value="bevy_winit: modifying clip_children after window creation is unsupported",
+      value="mgstudio_winit: modifying clip_children after window creation is unsupported",
     )
   }
   if window.resizable != runtime_ref.val.last_applied_resizable {
@@ -808,13 +808,13 @@ fn window_sync_requested_window_state(
   if window.transparent != runtime_ref.val.last_applied_transparent {
     restore_transparent = true
     host_debug_string(
-      value="bevy_winit: transparency changes after window creation are unsupported",
+      value="mgstudio_winit: transparency changes after window creation are unsupported",
     )
   }
   if window.canvas != runtime_ref.val.last_applied_canvas {
     restore_canvas = true
     host_debug_string(
-      value="bevy_winit: modifying window canvas after initialization is unsupported",
+      value="mgstudio_winit: modifying window canvas after initialization is unsupported",
     )
   }
   if window.focused != runtime_ref.val.last_applied_focused {

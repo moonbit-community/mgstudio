@@ -39,7 +39,7 @@ pub struct ErasedRenderAssets[A] {
 
 ///|
 fn erased_render_assets_debug_name() -> String {
-  "bevy_render::ErasedRenderAssets"
+  "mgstudio.render.ErasedRenderAssets"
 }
 
 ///|
@@ -134,7 +134,7 @@ pub struct ErasedPrepareNextFrameAssets[A] {
 
 ///|
 fn erased_prepare_next_frame_assets_debug_name() -> String {
-  "bevy_render::ErasedPrepareNextFrameAssets"
+  "mgstudio.render.ErasedPrepareNextFrameAssets"
 }
 
 ///|

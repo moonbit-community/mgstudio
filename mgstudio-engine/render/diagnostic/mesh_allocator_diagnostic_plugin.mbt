@@ -42,7 +42,7 @@ pub struct MeshAllocatorDiagnosticState {
 
 ///|
 fn mesh_allocator_diagnostic_state_debug_name() -> String {
-  "bevy_render::MeshAllocatorDiagnosticState"
+  "mgstudio.render.diagnostic.MeshAllocatorDiagnosticState"
 }
 
 ///|

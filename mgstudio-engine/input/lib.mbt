@@ -725,7 +725,7 @@ pub fn AccumulatedMouseScroll::new_with_unit(
 
 ///|
 pub let input_systems_set : @app.SystemSet = @app.system_set(
-  "bevy_input::InputSystems",
+  "mgstudio.input.InputSystems",
 )
 
 ///|
