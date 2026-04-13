@@ -141,6 +141,9 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr_re
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
 
 ///|
+pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk] = @light.ecs_key_sun_disk
+
+///|
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @light.ecs_key_volumetric_light
 
 ///|
@@ -379,7 +382,7 @@ pub let ecs_components : Array[String] = [
   "ForwardDecal", "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d",
   "Lightmap", "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState",
   "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
-  "NoIndirectDrawing", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
+  "NoIndirectDrawing", "SunDisk", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
   "Projection", "Frustum", "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight",
   "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections",
   "DirectionalLightTexture", "ForwardDecalMaterialExt", "ScreenSpaceTransmission",

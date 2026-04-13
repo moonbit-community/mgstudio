@@ -294,6 +294,9 @@ pub type CascadeShadowConfigBuilder = @light.CascadeShadowConfigBuilder
 pub type DirectionalLight = @light.DirectionalLight
 
 ///|
+pub type SunDisk = @light.SunDisk
+
+///|
 pub type SpotLight = @light.SpotLight
 
 ///|

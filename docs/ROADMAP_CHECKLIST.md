@@ -107,6 +107,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-directional-default-cascades`: align directional extraction with Bevy by using default `CascadeShadowConfig` when no explicit cascade config component is present.
 - [x] `pbr/light-shadowmap-resource-init+validate`: initialize directional shadow-map resource in mesh-render startup and run Bevy-shaped non-power-of-two correction system on post-update.
 - [x] `pbr/render-volumetric-flag-gating`: align point/directional light flags with Bevy by requiring `shadow_maps_enabled` before setting the `VOLUMETRIC` GPU flag.
+- [x] `pbr/light-sun-disk-public-surface`: export `SunDisk` through pbr-facing aliases and ECS key list so authoring surface matches Bevy light API shape.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.
