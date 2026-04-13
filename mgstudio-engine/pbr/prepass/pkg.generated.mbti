@@ -81,6 +81,7 @@ pub fn PrepassBindings3d::with_normal(Self, Bool) -> Self
 pub struct PrepassPipelinePlugin {
 }
 pub fn PrepassPipelinePlugin::default() -> Self
+pub impl @app.PluginReplacement for PrepassPipelinePlugin
 
 pub struct PrepassPipelineState {
   pipeline_ready : Bool

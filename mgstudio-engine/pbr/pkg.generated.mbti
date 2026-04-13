@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/core_3d",
-  "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/core_pipeline/prepass",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
@@ -32,6 +31,10 @@ import {
 
 // Values
 pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3
+
+pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
+
+pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05
 
 pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
@@ -107,9 +110,9 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.DefaultOpaqueRendererMethod]
 
-pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[DeferredPbrLightingState]
+pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@Milky2018/mgstudio/pbr/deferred.DeferredPbrLightingState]
 
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepass]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
 
@@ -185,6 +188,8 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[Orde
 
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[@light.ParallaxCorrection]
 
+pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/deferred.PbrDeferredLightingDepthId]
+
 pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[PbrPluginRuntimeConfig]
 
 pub let ecs_key_point_light : @ecs.ComponentKey[@light.PointLight]
@@ -216,6 +221,8 @@ pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
 pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[StandardMaterialPluginState]
 
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
+
+pub let ecs_key_sun_disk : @ecs.ComponentKey[@light.SunDisk]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
@@ -435,6 +442,14 @@ pub fn render3d_frustum_plane_count() -> Int
 
 pub fn render3d_frustum_plane_index_clamp(Int) -> Int
 
+pub fn render3d_material_allocator_allocations_path(String) -> String
+
+pub fn render3d_material_allocator_slabs_path(String) -> String
+
+pub fn render3d_material_allocator_slabs_size_path(String) -> String
+
+pub fn render3d_material_allocator_snapshot_for_key(MaterialBindGroupAllocators, String) -> MaterialAllocatorDiagnosticsSnapshot?
+
 pub fn render3d_material_instance_for_entity(@ecs.World, @core.Entity) -> ExtractedMaterialInstance3d?
 
 pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
@@ -444,6 +459,8 @@ pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjec
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render3d_prepare_bind_groups_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_camera_fog_uniforms(@ecs.World, Array[@core.Entity], @render.FogMeta) -> Array[(@core.Entity, @render.ViewFogUniformOffset)]
 
 pub fn render3d_prepare_contact_shadows_settings(@ecs.World, Array[@core.Entity], ContactShadowsBuffer) -> Array[(@core.Entity, ViewContactShadowsUniformOffset)]
 
@@ -482,6 +499,8 @@ pub let render3d_set_update_frusta : String
 pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit
 
 pub fn render3d_update_frusta_system(@ecs.World) -> Unit
+
+pub fn render3d_view_fog_data(DistanceFog) -> @render.Render3dViewFogData
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
@@ -745,17 +764,6 @@ pub(all) enum DecalRenderMode3d {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DecalRenderMode3d::default() -> Self
 
-pub struct DeferredPbrLightingPlugin {
-}
-pub fn DeferredPbrLightingPlugin::default() -> Self
-pub impl @app.PluginReplacement for DeferredPbrLightingPlugin
-
-pub struct DeferredPbrLightingState {
-  enabled : Bool
-}
-pub fn DeferredPbrLightingState::disabled() -> Self
-pub fn DeferredPbrLightingState::enabled() -> Self
-
 pub(all) struct DepthOfField {
   mut mode : DepthOfFieldMode
   mut focal_distance : Float
@@ -846,6 +854,7 @@ pub fn FogFalloff3d::from_visibility_contrast_color(Float, Float, @color.Color) 
 pub fn FogFalloff3d::from_visibility_contrast_colors(Float, Float, @color.Color, @color.Color) -> Self
 pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
 pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
+pub fn FogFalloff3d::koschmieder(Float, Float) -> Float
 pub fn FogFalloff3d::linear(Float, Float) -> Self
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
 
@@ -910,12 +919,22 @@ pub fn GpuScatteringMedium::sampler(Self) -> ScatteringMediumSampler
 pub fn GpuScatteringMedium::scattering_lut(Self) -> Array[@math.Vec4]
 pub fn GpuScatteringMedium::scattering_lut_len(Self) -> Int
 
+pub struct MaterialAllocatorDiagnosticsSnapshot {
+  slabs : Int
+  slabs_size : Int
+  allocations : UInt
+}
+pub fn MaterialAllocatorDiagnosticsSnapshot::default() -> Self
+
 pub(all) enum MaterialBindGroupAllocator {
   Bindless(MaterialBindGroupBindlessAllocator)
   NonBindless(MaterialBindGroupNonBindlessAllocator)
 }
+pub fn MaterialBindGroupAllocator::allocations(Self) -> UInt
 pub fn MaterialBindGroupAllocator::default_bindless() -> Self
 pub fn MaterialBindGroupAllocator::default_non_bindless() -> Self
+pub fn MaterialBindGroupAllocator::slab_count(Self) -> Int
+pub fn MaterialBindGroupAllocator::slabs_size(Self) -> Int
 
 pub struct MaterialBindGroupAllocators {
   allocators : Map[String, MaterialBindGroupAllocator]
@@ -931,9 +950,12 @@ pub struct MaterialBindGroupBindlessAllocator {
   free_slots : Array[Int]
 }
 pub fn MaterialBindGroupBindlessAllocator::allocate(Self, Int) -> MaterialBindingId?
+pub fn MaterialBindGroupBindlessAllocator::allocations(Self) -> UInt
 pub fn MaterialBindGroupBindlessAllocator::default() -> Self
 pub fn MaterialBindGroupBindlessAllocator::free(Self, MaterialBindingId) -> Unit
 pub fn MaterialBindGroupBindlessAllocator::len(Self) -> Int
+pub fn MaterialBindGroupBindlessAllocator::slab_count(Self) -> Int
+pub fn MaterialBindGroupBindlessAllocator::slabs_size(Self) -> Int
 pub fn MaterialBindGroupBindlessAllocator::with_slab_capacity(Int) -> Self
 
 pub struct MaterialBindGroupEntry {
@@ -955,10 +977,13 @@ pub struct MaterialBindGroupNonBindlessAllocator {
   free_indices : Array[Int]
 }
 pub fn MaterialBindGroupNonBindlessAllocator::allocate(Self, Int) -> MaterialBindingId
+pub fn MaterialBindGroupNonBindlessAllocator::allocations(Self) -> UInt
 pub fn MaterialBindGroupNonBindlessAllocator::default() -> Self
 pub fn MaterialBindGroupNonBindlessAllocator::free(Self, MaterialBindingId) -> Unit
 pub fn MaterialBindGroupNonBindlessAllocator::get(Self, MaterialBindGroupIndex) -> MaterialNonBindlessAllocatedBindGroup?
 pub fn MaterialBindGroupNonBindlessAllocator::len(Self) -> Int
+pub fn MaterialBindGroupNonBindlessAllocator::slab_count(Self) -> Int
+pub fn MaterialBindGroupNonBindlessAllocator::slabs_size(Self) -> Int
 
 pub struct MaterialBindGroupSlot {
   value : Int
@@ -1357,7 +1382,11 @@ pub using @post_process {type DebandDither}
 
 pub using @material {type DefaultOpaqueRendererMethod}
 
-pub using @deferred {type DeferredPrepass}
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingPlugin}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingState}
+
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepass}
 
 pub using @prepass {type DepthPrepass}
 
@@ -1427,6 +1456,8 @@ pub using @light {type ParallaxCorrection}
 
 pub using @material {type ParallaxMappingMethod}
 
+pub using @Milky2018/mgstudio/pbr/deferred {type PbrDeferredLightingDepthId}
+
 pub using @render {type PerspectiveProjection3d}
 
 pub using @light {type PointLight}
@@ -1458,6 +1489,8 @@ pub using @light {type SpotLightTexture}
 pub using @material {type StandardMaterial}
 
 pub using @render {type SubCameraView3d}
+
+pub using @light {type SunDisk}
 
 pub using @post_process {type TemporalAntiAliasing}
 

@@ -21,6 +21,20 @@ import {
 }
 
 // Values
+pub const MAX_CASCADES_PER_LIGHT : Int = 4
+
+pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
+
+pub const RENDER3D_GPU_FOG_MODE_ATMOSPHERIC : UInt = 4
+
+pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL : UInt = 2
+
+pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL_SQUARED : UInt = 3
+
+pub const RENDER3D_GPU_FOG_MODE_LINEAR : UInt = 1
+
+pub const RENDER3D_GPU_FOG_MODE_OFF : UInt = 0
+
 pub const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
 
 pub const RENDER3D_JOINT_BUFFER_SIZE_BYTES : Int = 16384
@@ -107,6 +121,8 @@ pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
 
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
+pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset]
+
 pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
 
 pub fn maxf(Float, Float) -> Float
@@ -133,6 +149,8 @@ pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
 pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?) -> @material.StandardMaterial
 
+pub fn render3d_apply_view_fog_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewFogUniformOffset)]) -> Unit
+
 pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
 pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, Int, forward_decal? : Bool, shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int) -> MeshGpuDrawPayload3d
@@ -148,6 +166,16 @@ pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float)
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
 
 pub fn render3d_clear_mesh_upload_cache(@ref.Ref[Render3dPhaseState]) -> Unit
+
+pub fn render3d_collect_extracted_clusterable_point_lights(@ecs.World) -> Array[ExtractedClusterablePointLight3d]
+
+pub fn render3d_collect_extracted_directional_lights(@ecs.World) -> Array[ExtractedDirectionalLight3d]
+
+pub fn render3d_collect_extracted_point_lights(@ecs.World) -> Array[ExtractedPointLight3d]
+
+pub fn render3d_collect_extracted_spot_lights(@ecs.World) -> Array[ExtractedPointLight3d]
+
+pub fn render3d_collect_gpu_lights(@ecs.World) -> GpuLights3d
 
 pub fn render3d_collect_lighting(@ecs.World) -> Render3dLightingState
 
@@ -170,6 +198,8 @@ pub fn render3d_diagnostic_prepared_camera_count(@ecs.World) -> Int
 pub fn render3d_diagnostic_queue_cpu_ms(@ecs.World) -> Float
 
 pub fn render3d_diagnostic_queued_visible_mesh_count(@ecs.World) -> Int
+
+pub fn render3d_directional_light_flags(ExtractedDirectionalLight3d) -> UInt
 
 pub fn render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d) -> Unit
 
@@ -207,9 +237,13 @@ pub fn render3d_fog_exponential_squared_factor(Float, Float) -> Float
 
 pub fn render3d_fog_linear_factor(Float, Float, Float) -> Float
 
+pub fn render3d_fog_meta_ref_or_init(@ecs.World) -> @ref.Ref[FogMeta]
+
 pub fn render3d_fog_pow_e(Float) -> Float
 
 pub fn render3d_gpu_culling_supported() -> Bool
+
+pub fn render3d_gpu_fog_from_view_fog(Render3dViewFogData) -> GpuFog3d
 
 pub fn render3d_gpu_preprocess_builder_enabled(Bool) -> Bool
 
@@ -285,6 +319,8 @@ pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseSt
 
 pub fn render3d_plugin_state_from_diagnostics(@ecs.World) -> Render3dPluginState
 
+pub fn render3d_point_light_flags(ExtractedPointLight3d) -> UInt
+
 pub fn render3d_point_light_shadow_map_size(@ecs.World) -> Int
 
 pub fn render3d_point_shadow_face_transform(@math.Vec3, Int) -> @transform.Transform
@@ -292,6 +328,8 @@ pub fn render3d_point_shadow_face_transform(@math.Vec3, Int) -> @transform.Trans
 pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjection
 
 pub fn render3d_prepare_build_indirect_parameters_pipeline(BuildIndirectParametersPipeline) -> BuildIndirectParametersPipeline
+
+pub fn render3d_prepare_fog_uniforms(Array[(@core.Entity, Render3dViewFogData?)], FogMeta) -> Array[(@core.Entity, ViewFogUniformOffset)]
 
 pub fn render3d_prepare_preprocess_phase_pipelines(PreprocessPhasePipelines) -> PreprocessPhasePipelines
 
@@ -409,6 +447,60 @@ pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
 pub impl CameraProjection3d for CustomProjection3d
 
+pub struct ExtractedClusterablePointLight3d {
+  clusterable_type_order : Int
+  light : ExtractedPointLight3d
+}
+pub fn ExtractedClusterablePointLight3d::is_point_light(Self) -> Bool
+pub fn ExtractedClusterablePointLight3d::is_spot_light(Self) -> Bool
+pub fn ExtractedClusterablePointLight3d::light(Self) -> ExtractedPointLight3d
+
+pub struct ExtractedDirectionalLight3d {
+  entity : @core.Entity
+  color : @color.Color
+  illuminance : Float
+  transform : @transform.Transform
+  shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  volumetric : Bool
+  affects_lightmapped_mesh_diffuse : Bool
+  soft_shadow_size : Float?
+  cascade_count : Int
+  cascade_overlap_proportion : Float
+  sun_disk_angular_size : Float
+  sun_disk_intensity : Float
+}
+
+pub struct ExtractedPointLight3d {
+  entity : @core.Entity
+  color : @color.Color
+  intensity : Float
+  range : Float
+  radius : Float
+  transform : @transform.Transform
+  shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  shadow_map_near_z : Float
+  spot_light_angles : (Float, Float)?
+  volumetric : Bool
+  soft_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
+}
+
+pub struct FogMeta {
+  fogs : Array[GpuFog3d]
+}
+pub fn FogMeta::clear(Self) -> Unit
+pub fn FogMeta::default() -> Self
+pub fn FogMeta::fog_at(Self, UInt) -> GpuFog3d?
+pub fn FogMeta::len(Self) -> Int
+pub fn FogMeta::push(Self, GpuFog3d) -> UInt
+pub impl @app.Resource for FogMeta
+
 pub struct Frustum {
   half_spaces : Array[@math.HalfSpace]
 } derive(Eq, ToJson, @json.FromJson)
@@ -416,6 +508,55 @@ pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::new(ViewFrustum) -> Self
 pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
+
+pub struct GpuDirectionalCascade3d {
+  far_bound : Float
+  texel_size : Float
+  clip_from_world : ProjectionMatrix3d
+}
+
+pub struct GpuDirectionalLight3d {
+  cascades : Array[GpuDirectionalCascade3d]
+  color : @color.Color
+  dir_to_light : @math.Vec3
+  flags : UInt
+  soft_shadow_size : Float
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  num_cascades : Int
+  cascades_overlap_proportion : Float
+  depth_texture_base_index : Int
+  decal_index : Int
+  sun_disk_angular_size : Float
+  sun_disk_intensity : Float
+}
+
+pub struct GpuFog3d {
+  base_color : @math.Vec4
+  directional_light_color : @math.Vec4
+  be : @math.Vec3
+  directional_light_exponent : Float
+  bi : @math.Vec3
+  mode : UInt
+} derive(ToJson, @json.FromJson)
+pub fn GpuFog3d::base_color(Self) -> @math.Vec4
+pub fn GpuFog3d::be(Self) -> @math.Vec3
+pub fn GpuFog3d::bi(Self) -> @math.Vec3
+pub fn GpuFog3d::default() -> Self
+pub fn GpuFog3d::directional_light_color(Self) -> @math.Vec4
+pub fn GpuFog3d::directional_light_exponent(Self) -> Float
+pub fn GpuFog3d::mode(Self) -> UInt
+pub fn GpuFog3d::off() -> Self
+
+pub struct GpuLights3d {
+  directional_lights : Array[GpuDirectionalLight3d]
+  ambient_color : @color.Color
+  cluster_dimensions : (Int, Int, Int, Int)
+  cluster_factors : @math.Vec4
+  n_directional_lights : Int
+  spot_light_shadowmap_offset : Int
+  ambient_light_affects_lightmapped_meshes : Int
+}
 
 pub struct GpuMeshPreprocessPlugin {
   use_gpu_instance_buffer_builder : Bool
@@ -741,6 +882,17 @@ pub struct Render3dDiagnosticsState {
   mut execute_cpu_ms : Float
 }
 
+pub enum Render3dFogFalloff {
+  Linear(Float, Float)
+  Exponential(Float)
+  ExponentialSquared(Float)
+  Atmospheric(@math.Vec3, @math.Vec3)
+} derive(ToJson, @json.FromJson)
+pub fn Render3dFogFalloff::atmospheric(@math.Vec3, @math.Vec3) -> Self
+pub fn Render3dFogFalloff::exponential(Float) -> Self
+pub fn Render3dFogFalloff::exponential_squared(Float) -> Self
+pub fn Render3dFogFalloff::linear(Float, Float) -> Self
+
 pub struct Render3dGpuPreprocessState {
   enabled : Bool
   use_gpu_instance_buffer_builder : Bool
@@ -825,6 +977,14 @@ pub fn Render3dPluginState::default() -> Self
 pub fn Render3dPluginState::execute_cpu_ms(Self) -> Float
 pub fn Render3dPluginState::queue_cpu_ms(Self) -> Float
 
+pub struct Render3dViewFogData {
+  color : @color.Color
+  directional_light_color : @color.Color
+  directional_light_exponent : Float
+  falloff : Render3dFogFalloff
+} derive(ToJson, @json.FromJson)
+pub fn Render3dViewFogData::new(@color.Color, @color.Color, Float, Render3dFogFalloff) -> Self
+
 pub struct Render3dWorldTransformCache {
   mut frame_stamp : Int
   transforms : Array[@transform.Transform?]
@@ -863,6 +1023,13 @@ pub struct SubCameraView3d {
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for SubCameraView3d
+
+pub struct ViewFogUniformOffset {
+  offset : UInt
+} derive(ToJson, @json.FromJson)
+pub fn ViewFogUniformOffset::new(UInt) -> Self
+pub fn ViewFogUniformOffset::offset(Self) -> UInt
+pub impl @ecs.Component for ViewFogUniformOffset
 
 pub struct ViewFrustum {
   inner : @math.ViewFrustum

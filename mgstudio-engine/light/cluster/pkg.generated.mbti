@@ -3,21 +3,31 @@ package "Milky2018/mgstudio/light/cluster"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
 }
 
 // Values
+pub fn calculate_cluster_factors(Float, Float, Float, Bool) -> @math.Vec2
+
 pub fn cluster_assign_lights(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cluster_assign_lights_system(@ecs.World) -> Unit
 
+pub fn cluster_config_dimensions_for_screen_size(ClusterConfig, Int, Int) -> (Int, Int, Int)
+
+pub fn cluster_config_dynamic_resizing(ClusterConfig) -> Bool
+
+pub fn cluster_config_far_z_mode(ClusterConfig) -> ClusterFarZMode
+
+pub fn cluster_config_first_slice_depth(ClusterConfig) -> Float
+
 pub fn cluster_light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cluster_light_plugin_with(@app.App[@ecs.World], ClusterLightPlugin) -> @app.App[@ecs.World]
-
-pub fn cluster_test_enabled() -> Bool
 
 // Errors
 
@@ -67,16 +77,19 @@ pub(all) enum ClusterableObjectType {
 pub fn ClusterableObjectType::ordering(Self) -> (Int, Bool, Bool)
 
 pub struct Clusters {
-  tile_size_x : Int
-  tile_size_y : Int
-  dimensions_x : Int
-  dimensions_y : Int
-  dimensions_z : Int
-  near : Float
-  far : Float
+  mut tile_size_x : Int
+  mut tile_size_y : Int
+  mut dimensions_x : Int
+  mut dimensions_y : Int
+  mut dimensions_z : Int
+  mut near : Float
+  mut far : Float
   clusterable_objects : Array[ObjectsInCluster]
 } derive(Eq, @debug.Debug)
+pub fn Clusters::clear(Self) -> Unit
 pub fn Clusters::default() -> Self
+pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
+pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
 pub impl @ecs.Component for Clusters
 
 pub struct GlobalClusterSettings {
@@ -89,17 +102,38 @@ pub fn GlobalClusterSettings::default() -> Self
 pub impl @app.Resource for GlobalClusterSettings
 
 pub struct ObjectsInCluster {
-  counts : ClusterableObjectCounts
+  clusterables : Array[@core.Entity]
+  mut counts : ClusterableObjectCounts
 } derive(Eq, @debug.Debug)
+pub fn ObjectsInCluster::add_decal(Self, @core.Entity) -> Unit
+pub fn ObjectsInCluster::add_irradiance_volume(Self, @core.Entity) -> Unit
+pub fn ObjectsInCluster::add_point_light(Self, @core.Entity) -> Unit
+pub fn ObjectsInCluster::add_reflection_probe(Self, @core.Entity) -> Unit
+pub fn ObjectsInCluster::add_spot_light(Self, @core.Entity) -> Unit
+pub fn ObjectsInCluster::clear(Self) -> Unit
+pub fn ObjectsInCluster::clusterables(Self) -> Array[@core.Entity]
 pub fn ObjectsInCluster::default() -> Self
+pub fn ObjectsInCluster::iter(Self) -> Array[@core.Entity]
 
 pub struct VisibleClusterableObjects {
-  point_and_spot_lights : Int
-  reflection_probes : Int
-  irradiance_volumes : Int
-  decals : Int
+  point_and_spot_lights : Array[@core.Entity]
+  reflection_probes : Array[@core.Entity]
+  irradiance_volumes : Array[@core.Entity]
+  decals : Array[@core.Entity]
 } derive(Eq, @debug.Debug)
+pub fn VisibleClusterableObjects::add(Self, @core.Entity, ClusterableObjectType) -> Unit
+pub fn VisibleClusterableObjects::clear(Self) -> Unit
+pub fn VisibleClusterableObjects::decal_count(Self) -> Int
+pub fn VisibleClusterableObjects::decal_entities(Self) -> Array[@core.Entity]
 pub fn VisibleClusterableObjects::default() -> Self
+pub fn VisibleClusterableObjects::from_lists(Array[@core.Entity], Array[@core.Entity], Array[@core.Entity], Array[@core.Entity]) -> Self
+pub fn VisibleClusterableObjects::irradiance_volume_count(Self) -> Int
+pub fn VisibleClusterableObjects::irradiance_volume_entities(Self) -> Array[@core.Entity]
+pub fn VisibleClusterableObjects::new() -> Self
+pub fn VisibleClusterableObjects::point_and_spot_entities(Self) -> Array[@core.Entity]
+pub fn VisibleClusterableObjects::point_and_spot_light_count(Self) -> Int
+pub fn VisibleClusterableObjects::reflection_probe_count(Self) -> Int
+pub fn VisibleClusterableObjects::reflection_probe_entities(Self) -> Array[@core.Entity]
 pub impl @ecs.Component for VisibleClusterableObjects
 
 // Type aliases

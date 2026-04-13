@@ -12,6 +12,8 @@ import {
 }
 
 // Values
+pub let ecs_res_key_gltf_loader_runtime_state : @ecs.ResourceKey[GltfLoaderRuntimeState]
+
 pub fn gltf_add_custom_vertex_attribute(String, String) -> Unit
 
 pub fn gltf_animation_asset_label(Int) -> @gltf_ext.GltfAssetLabel
@@ -37,6 +39,8 @@ pub fn gltf_extras(String) -> @gltf_ext.GltfExtras
 pub fn gltf_install_loader_registration(() -> Unit) -> Unit
 
 pub fn gltf_inverse_bind_matrices_asset_label(Int) -> @gltf_ext.GltfAssetLabel
+
+pub fn gltf_loader_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gltf_material_asset_label(Int, Bool) -> @gltf_ext.GltfAssetLabel
 
@@ -105,6 +109,13 @@ pub struct GltfCustomVertexAttribute {
 pub fn GltfCustomVertexAttribute::gltf_name(Self) -> String
 pub fn GltfCustomVertexAttribute::mapped_name(Self) -> String
 pub fn GltfCustomVertexAttribute::new(String, String) -> Self
+
+pub struct GltfLoaderRuntimeState {
+  mut default_convert_coordinates : GltfConvertCoordinates
+  mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
+  custom_vertex_attributes : Array[GltfCustomVertexAttribute]
+}
+pub impl @app.Resource for GltfLoaderRuntimeState
 
 pub struct GltfPlugin {
   pbr_material_handler_enabled : Bool

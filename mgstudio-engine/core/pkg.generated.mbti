@@ -66,7 +66,7 @@ pub fn Entities::spawn(Self) -> Entity
 pub struct Entity {
   id : Int
   generation : Int
-} derive(Eq, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Entity::from_bits(UInt64) -> Self
 pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self

@@ -849,7 +849,7 @@ fn is_pnm_bytes(bytes : Bytes) -> Bool {
   bytes.length() >= 2 &&
   blob_u8_at(bytes, 0) == 0x50 &&
   blob_u8_at(bytes, 1) >= 0x31 &&
-  blob_u8_at(bytes, 1) <= 0x36
+  blob_u8_at(bytes, 1) <= 0x37
 }
 
 ///|
@@ -1537,6 +1537,82 @@ fn pnm_read_uint_token(bytes : Bytes, start : Int) -> (Int, Int)? {
 }
 
 ///|
+fn pnm_read_token(bytes : Bytes, start : Int) -> (String, Int)? {
+  let mut index = pnm_skip_ws_and_comments(bytes, start)
+  if index >= bytes.length() {
+    return None
+  }
+  let chars : Array[Char] = []
+  while index < bytes.length() {
+    let code = blob_u8_at(bytes, index)
+    if pnm_is_whitespace(code) || code == 35 {
+      break
+    }
+    chars.push(Int::unsafe_to_char(code))
+    index = index + 1
+  }
+  if chars.length() == 0 {
+    None
+  } else {
+    Some((String::from_array(chars), index))
+  }
+}
+
+///|
+fn pnm_read_p7_header(
+  bytes : Bytes,
+  start : Int,
+) -> (Int, Int, Int, Int, Int)? {
+  let mut index = start
+  let mut width_raw = -1
+  let mut height_raw = -1
+  let mut depth = -1
+  let mut max_value = -1
+  let mut found_end = false
+  while index < bytes.length() {
+    guard pnm_read_token(bytes, index) is Some((key, next_index)) else {
+      break
+    }
+    index = next_index
+    if key == "ENDHDR" {
+      found_end = true
+      break
+    }
+    if key == "TUPLTYPE" {
+      guard pnm_read_token(bytes, index) is Some((_tuple_type, tuple_next)) else {
+        return None
+      }
+      index = tuple_next
+      continue
+    }
+    guard pnm_read_token(bytes, index) is Some((raw_value, value_next)) else {
+      return None
+    }
+    let parsed = @string.parse_int(raw_value[:], base=10) catch {
+      _ => return None
+    }
+    index = value_next
+    match key {
+      "WIDTH" => width_raw = parsed
+      "HEIGHT" => height_raw = parsed
+      "DEPTH" => depth = parsed
+      "MAXVAL" => max_value = parsed
+      _ => ()
+    }
+  }
+  if !found_end || width_raw <= 0 || height_raw <= 0 || depth <= 0 || max_value <= 0 {
+    return None
+  }
+  if index < bytes.length() && blob_u8_at(bytes, index) == 13 {
+    index = index + 1
+  }
+  if index < bytes.length() && blob_u8_at(bytes, index) == 10 {
+    index = index + 1
+  }
+  Some((width_raw, height_raw, depth, max_value, index))
+}
+
+///|
 fn pnm_scale_channel(value : Int, max_value : Int) -> Int {
   if max_value <= 0 {
     0
@@ -1556,6 +1632,59 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
   }
   let magic = blob_u8_at(bytes, index0 + 1)
   let index1 = index0 + 2
+  if magic == 0x37 {
+    guard pnm_read_p7_header(bytes, index1)
+      is Some((width_raw, height_raw, depth, max_value, data_start)) else {
+      return None
+    }
+    if max_value <= 0 || max_value > 255 {
+      return None
+    }
+    if width_raw <= 0 || height_raw <= 0 {
+      return None
+    }
+    let width = clamp_dim(width_raw)
+    let height = clamp_dim(height_raw)
+    let pixel_count = width * height
+    let data_len = pixel_count * depth
+    if data_start + data_len > bytes.length() {
+      return None
+    }
+    let pixels = Array::make(rgba8_len(width, height), b'\x00')
+    for i in 0..<pixel_count {
+      let src = data_start + i * depth
+      let dst = i * 4
+      let channel0 = pnm_scale_channel(blob_u8_at(bytes, src), max_value).to_byte()
+      if depth == 1 {
+        pixels[dst] = channel0
+        pixels[dst + 1] = channel0
+        pixels[dst + 2] = channel0
+        pixels[dst + 3] = (255).to_byte()
+        continue
+      }
+      if depth == 2 {
+        let alpha = pnm_scale_channel(blob_u8_at(bytes, src + 1), max_value).to_byte()
+        pixels[dst] = channel0
+        pixels[dst + 1] = channel0
+        pixels[dst + 2] = channel0
+        pixels[dst + 3] = alpha
+        continue
+      }
+      pixels[dst] = channel0
+      pixels[dst + 1] = pnm_scale_channel(blob_u8_at(bytes, src + 1), max_value).to_byte()
+      pixels[dst + 2] = pnm_scale_channel(blob_u8_at(bytes, src + 2), max_value).to_byte()
+      pixels[dst + 3] = if depth >= 4 {
+        pnm_scale_channel(blob_u8_at(bytes, src + 3), max_value).to_byte()
+      } else {
+        (255).to_byte()
+      }
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
   guard pnm_read_uint_token(bytes, index1) is Some((width_raw, index2)) else {
     return None
   }
@@ -1783,6 +1912,40 @@ fn png_dimensions(bytes : Bytes) -> (Int, Int)? {
   Some(
     (clamp_dim(blob_u32_be_at(bytes, 16)), clamp_dim(blob_u32_be_at(bytes, 20))),
   )
+}
+
+///|
+fn pnm_dimensions(bytes : Bytes) -> (Int, Int)? {
+  guard is_pnm_bytes(bytes) else { return None }
+  let index0 = pnm_skip_ws_and_comments(bytes, 0)
+  if index0 + 1 >= bytes.length() || blob_u8_at(bytes, index0) != 0x50 {
+    return None
+  }
+  let magic = blob_u8_at(bytes, index0 + 1)
+  let index1 = index0 + 2
+  if magic == 0x37 {
+    guard pnm_read_p7_header(bytes, index1)
+      is Some((width_raw, height_raw, _depth, _max_value, _data_start)) else {
+      return None
+    }
+    if width_raw <= 0 || height_raw <= 0 {
+      None
+    } else {
+      Some((clamp_dim(width_raw), clamp_dim(height_raw)))
+    }
+  } else {
+    guard pnm_read_uint_token(bytes, index1) is Some((width_raw, index2)) else {
+      return None
+    }
+    guard pnm_read_uint_token(bytes, index2) is Some((height_raw, _index3)) else {
+      return None
+    }
+    if width_raw <= 0 || height_raw <= 0 {
+      None
+    } else {
+      Some((clamp_dim(width_raw), clamp_dim(height_raw)))
+    }
+  }
 }
 
 ///|
@@ -2446,6 +2609,9 @@ fn save_asset_file_bytes(path : String, bytes : Bytes) -> Unit {
 ///|
 fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
   if png_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if pnm_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
   if gif_dimensions(bytes) is Some(dims) {

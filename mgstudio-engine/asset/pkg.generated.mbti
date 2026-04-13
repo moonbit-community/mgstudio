@@ -258,6 +258,8 @@ pub fn[T, Settings, P : IntoAssetPath] save_using_saver(AssetServer, AssetSaver[
 
 pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
 
+pub fn web_asset_http_runtime_supported() -> Bool
+
 pub fn web_asset_plugin(WebAssetPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
@@ -458,6 +460,8 @@ pub impl[T] ToJson for Handle[T]
 pub impl[T] @json.FromJson for Handle[T]
 
 pub(all) struct ImageLoaderSettings {
+  mut format : @image.ImageFormatSetting
+  mut texture_format : @image.TextureFormat?
   mut sampler : @image.ImageSampler
   mut is_srgb : Bool
   mut array_layout : @image.ImageArrayLayout?
@@ -595,7 +599,11 @@ pub using @image {type ImageArrayLayout}
 
 pub using @image {type ImageCompareFunction}
 
+pub using @image {type ImageContainerFormat}
+
 pub using @image {type ImageFilterMode}
+
+pub using @image {type ImageFormatSetting}
 
 pub using @image {type ImageKind}
 

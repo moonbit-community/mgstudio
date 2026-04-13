@@ -12,7 +12,11 @@ pub fn dds_default_texture_format() -> TextureFormat
 
 pub fn exr_default_texture_format() -> TextureFormat
 
+pub fn file_texture_error_message(FileTextureError) -> String
+
 pub fn hdr_default_texture_format() -> TextureFormat
+
+pub fn image_array_layout_layers(Int, ImageArrayLayout) -> Int?
 
 pub fn image_can_use_compressed_saver(TextureFormat) -> Bool
 
@@ -21,6 +25,10 @@ pub fn image_container_format_from_extension(String) -> ImageContainerFormat
 pub fn image_container_is_gpu_compressed(ImageContainerFormat) -> Bool
 
 pub fn image_container_is_hdr(ImageContainerFormat) -> Bool
+
+pub fn image_extension_from_path(String) -> String?
+
+pub fn image_guess_container_from_bytes(Bytes) -> ImageContainerFormat?
 
 pub fn image_is_basis_extension(String) -> Bool
 
@@ -31,6 +39,16 @@ pub fn image_is_exr_extension(String) -> Bool
 pub fn image_is_hdr_extension(String) -> Bool
 
 pub fn image_is_ktx2_extension(String) -> Bool
+
+pub fn image_loader_container_from_input(String, Bytes?, ImageFormatSetting) -> ImageContainerFormat?
+
+pub fn image_loader_container_from_path(String, ImageFormatSetting) -> ImageContainerFormat?
+
+pub fn image_loader_error_message(ImageLoaderError) -> String
+
+pub fn image_loader_supported_file_extensions() -> Array[String]
+
+pub fn image_loader_supported_formats() -> Array[ImageContainerFormat]
 
 pub fn image_sampler_is_nearest(ImageSampler) -> Bool
 
@@ -47,6 +65,11 @@ pub fn set_texture_sampler_with_id(Int, ImageSampler, default_nearest? : Bool) -
 pub fn texture_format_raw(TextureFormat) -> Int
 
 // Errors
+pub(all) suberror ImageLoaderError {
+  Io(String)
+  FileTexture(FileTextureError)
+  ArrayLayout(String)
+}
 
 // Types and methods
 pub(all) enum BasisContainer {
@@ -83,6 +106,11 @@ pub struct DynamicTextureAtlasBuilder {
 pub fn DynamicTextureAtlasBuilder::new(Int, Int) -> Self
 pub fn DynamicTextureAtlasBuilder::reset(Self) -> Unit
 pub fn DynamicTextureAtlasBuilder::try_allocate(Self, Int, Int) -> (Int, Int)?
+
+pub(all) struct FileTextureError {
+  error : String
+  path : String
+} derive(Eq, @debug.Debug)
 
 pub(all) struct Image {
   width : Int
@@ -122,13 +150,22 @@ pub(all) enum ImageCompareFunction {
 } derive(Eq, @debug.Debug)
 
 pub(all) enum ImageContainerFormat {
-  Png
-  Jpeg
-  Hdr
-  Exr
-  Dds
-  Ktx2
   Basis
+  Bmp
+  Dds
+  Exr
+  Farbfeld
+  Gif
+  Hdr
+  Ico
+  Jpeg
+  Ktx2
+  Png
+  Pnm
+  Qoi
+  Tga
+  Tiff
+  Webp
   Unknown(String)
 } derive(Eq)
 
@@ -138,10 +175,35 @@ pub(all) enum ImageFilterMode {
 } derive(Eq, @debug.Debug)
 pub fn ImageFilterMode::default() -> Self
 
+pub(all) enum ImageFormatSetting {
+  FromExtension
+  Format(ImageContainerFormat)
+  Guess
+} derive(Eq)
+pub fn ImageFormatSetting::default() -> Self
+
 pub(all) enum ImageKind {
   Data
   TargetTexture
 } derive(Eq, @debug.Debug)
+
+pub struct ImageLoader {
+  supported_compressed_formats : Int
+} derive(Eq, @debug.Debug)
+pub fn ImageLoader::default() -> Self
+pub fn ImageLoader::extensions(Self) -> Array[String]
+pub fn ImageLoader::new(Int) -> Self
+pub fn ImageLoader::supported_compressed_formats(Self) -> Int
+pub fn ImageLoader::supported_formats(Self) -> Array[ImageContainerFormat]
+
+pub(all) struct ImageLoaderSettings {
+  format : ImageFormatSetting
+  texture_format : TextureFormat?
+  is_srgb : Bool
+  sampler : ImageSampler
+  array_layout : ImageArrayLayout?
+}
+pub fn ImageLoaderSettings::default() -> Self
 
 pub(all) enum ImageSampler {
   Default

@@ -3,12 +3,15 @@ package "Milky2018/mgstudio/gltf/loader/extensions"
 
 import {
   "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
 }
 
 // Values
+pub let ecs_key_gltf_extension_runtime_state : @ecs.ResourceKey[GltfExtensionRuntimeState]
+
 pub fn gltf_clear_extension_handlers() -> Unit
 
 pub fn gltf_extension_handlers() -> GltfExtensionHandlers
@@ -20,6 +23,8 @@ pub fn gltf_extension_notify_mesh_spawned(String, Int, Int, @core.Entity, @ecs.W
 pub fn gltf_extension_notify_node_spawned(String, Int, @core.Entity, @ecs.World) -> Unit
 
 pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gltf_khr_materials_anisotropy_handler_enabled() -> Bool
 
@@ -61,6 +66,12 @@ pub struct GltfExtensionHandlers {
 }
 pub fn GltfExtensionHandlers::handlers(Self) -> Array[GltfExtensionHandler]
 pub fn GltfExtensionHandlers::new(Array[GltfExtensionHandler]) -> Self
+
+pub struct GltfExtensionRuntimeState {
+  handlers : Array[GltfExtensionHandler]
+  mut pbr_material_handler_enabled : Bool
+}
+pub impl @app.Resource for GltfExtensionRuntimeState
 
 // Type aliases
 

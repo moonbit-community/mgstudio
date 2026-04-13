@@ -42,6 +42,8 @@ pub fn animation_clip_sample(AnimationClip, AnimationTargetId, Float) -> Animati
 
 pub fn animation_clip_set(@asset.Handle[AnimationClip], AnimationClip) -> Bool
 
+pub fn animation_event_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn animation_graph() -> AnimationGraph
 
 pub fn animation_graph_add(AnimationGraph) -> @asset.Handle[AnimationGraph]
@@ -113,6 +115,8 @@ pub fn animation_translation_keyframe(Float, @math.Vec3) -> KeyframeVec3
 pub fn animation_weights(Array[Float]) -> AnimationWeights
 
 pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy]
+
+pub let ecs_key_animation_event_runtime_state : @ecs.ResourceKey[AnimationEventRuntimeState]
 
 pub let ecs_key_animation_graph_handle : @ecs.ComponentKey[AnimationGraphHandle]
 
@@ -251,6 +255,12 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(Flo
 pub fn AnimationClipEvent::payload(Self) -> String
 pub fn AnimationClipEvent::time(Self) -> Float
 pub fn AnimationClipEvent::typed_event_payload(Self) -> @any.Any?
+
+pub struct AnimationEventRuntimeState {
+  typed_event_dispatchers : Array[(String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit)]
+  event_callbacks : Array[(@core.Entity, Float, Float) -> Unit]
+}
+pub impl @app.Resource for AnimationEventRuntimeState
 
 pub(all) enum AnimationEventTarget {
   Root
@@ -531,6 +541,8 @@ pub impl @json.FromJson for RepeatAnimation
 pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
 
 pub type AnimationMask = UInt
+
+pub type AnimationTypedEventDispatcher = (String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit)
 
 // Traits
 pub(open) trait AnimationEvent {

@@ -79,6 +79,7 @@ pub impl @app.PluginReplacement for AccessibilityPlugin
 pub struct AccessibilityRequested {
   requested : @ref.Ref[Bool]
 }
+pub fn AccessibilityRequested::clone(Self) -> Self
 pub fn AccessibilityRequested::default() -> Self
 pub fn AccessibilityRequested::get(Self) -> Bool
 pub fn AccessibilityRequested::handle(Self) -> @ref.Ref[Bool]

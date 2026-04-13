@@ -76,6 +76,10 @@ test "image wb: container format detection by extension" {
     image_container_format_from_extension("gif") == ImageContainerFormat::Gif,
     content="true",
   )
+  debug_inspect(
+    image_container_format_from_extension("pam") == ImageContainerFormat::Pnm,
+    content="true",
+  )
 }
 
 ///|
@@ -293,6 +297,7 @@ test "image wb: supported image formats and file extensions" {
   debug_inspect(image_wb_has_extension(extensions, "ktx2"), content="true")
   debug_inspect(image_wb_has_extension(extensions, "jpeg"), content="true")
   debug_inspect(image_wb_has_extension(extensions, "webp"), content="true")
+  debug_inspect(image_wb_has_extension(extensions, "pam"), content="true")
 }
 
 ///|
@@ -358,6 +363,11 @@ test "image wb: format guess from magic bytes" {
   )
   debug_inspect(
     image_guess_container_from_bytes(image_wb_bytes([0x50, 0x36])) ==
+    Some(ImageContainerFormat::Pnm),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0x50, 0x37])) ==
     Some(ImageContainerFormat::Pnm),
     content="true",
   )

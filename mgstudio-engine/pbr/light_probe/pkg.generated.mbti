@@ -2,7 +2,9 @@
 package "Milky2018/mgstudio/pbr/light_probe"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
@@ -19,7 +21,19 @@ pub const RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION : Int = 2
 
 pub const STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS : Int = 16
 
+pub let ecs_key_light_probe_plugin_state : @ecs.ResourceKey[LightProbePluginState]
+
+pub let ecs_key_light_probes_uniform : @ecs.ResourceKey[LightProbesUniform]
+
+pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[RenderViewLightProbes]
+
+pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[ViewLightProbesUniformOffset]
+
+pub fn light_probe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn light_probe_plugin_state_with_extracted_probe_count(LightProbePluginState, Int) -> LightProbePluginState
+
+pub fn light_probe_plugin_with(@app.App[@ecs.World], LightProbePlugin) -> @app.App[@ecs.World]
 
 pub fn max_view_light_probes() -> Int
 
@@ -108,12 +122,14 @@ pub fn GeneratorSamplers::default() -> Self
 pub struct LightProbePlugin {
 }
 pub fn LightProbePlugin::default() -> Self
+pub impl @app.PluginReplacement for LightProbePlugin
 
 pub struct LightProbePluginState {
   binding_arrays_supported : Bool
   extracted_probe_count : Int
 }
 pub fn LightProbePluginState::default() -> Self
+pub impl @app.Resource for LightProbePluginState
 
 pub struct LightProbesUniform {
   reflection_probe_count : Int
@@ -121,6 +137,7 @@ pub struct LightProbesUniform {
   view_cubemap_index : Int
 }
 pub fn LightProbesUniform::default() -> Self
+pub impl @app.Resource for LightProbesUniform
 
 pub struct RenderLightProbe {
   light_from_world_transposed : Array[@math.Vec4]
@@ -170,11 +187,13 @@ pub fn RenderViewLightProbes::probe_count(Self) -> Int
 pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::push_texture(Self, @asset.Handle[@image.Image]?) -> Int
 pub fn RenderViewLightProbes::texture_count(Self) -> Int
+pub impl @ecs.Component for RenderViewLightProbes
 
 pub struct ViewLightProbesUniformOffset {
   offset : UInt
 }
 pub fn ViewLightProbesUniformOffset::default() -> Self
+pub impl @ecs.Component for ViewLightProbesUniformOffset
 
 // Type aliases
 pub using @light {type EnvironmentMapLight}

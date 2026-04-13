@@ -41,7 +41,7 @@ pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Hand
 
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
-pub fn[W] scene_load_pending_system(W) -> Unit
+pub fn scene_load_pending_system(@ecs.World) -> Unit
 
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -133,8 +133,10 @@ pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transf
 pub fn SceneNode3d::new_empty(@transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf_ext.GltfSceneIndex?, gltf_node_index? : @gltf_ext.GltfNodeIndex?, gltf_skin_index? : @gltf_ext.GltfSkinIndex?, gltf_extras? : @gltf_ext.GltfExtras?) -> Self
 
 pub(all) struct ScenePlugin {
+  lod_visibility_policy : GltfLodVisibilityPolicy
 }
 pub fn ScenePlugin::default() -> Self
+pub fn ScenePlugin::with_gltf_lod_visibility_policy(Self, GltfLodVisibilityPolicy) -> Self
 pub impl @app.PluginReplacement for ScenePlugin
 
 pub struct SceneRoot {

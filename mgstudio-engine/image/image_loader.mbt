@@ -118,6 +118,7 @@ pub fn image_container_format_from_extension(
     "ppm" => ImageContainerFormat::Pnm
     "pgm" => ImageContainerFormat::Pnm
     "pbm" => ImageContainerFormat::Pnm
+    "pam" => ImageContainerFormat::Pnm
     "qoi" => ImageContainerFormat::Qoi
     "tga" => ImageContainerFormat::Tga
     "tif" => ImageContainerFormat::Tiff
@@ -216,7 +217,7 @@ fn image_container_format_extensions(
     ImageContainerFormat::Jpeg => ["jpg", "jpeg"]
     ImageContainerFormat::Ktx2 => ["ktx2"]
     ImageContainerFormat::Png => ["png"]
-    ImageContainerFormat::Pnm => ["pnm", "ppm", "pgm", "pbm"]
+    ImageContainerFormat::Pnm => ["pnm", "ppm", "pgm", "pbm", "pam"]
     ImageContainerFormat::Qoi => ["qoi"]
     ImageContainerFormat::Tga => ["tga"]
     ImageContainerFormat::Tiff => ["tif", "tiff"]
@@ -337,7 +338,7 @@ pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? 
   if bytes.length() >= 2 &&
     image_blob_u8_at(bytes, 0) == 0x50 &&
     image_blob_u8_at(bytes, 1) >= 0x31 &&
-    image_blob_u8_at(bytes, 1) <= 0x36 {
+    image_blob_u8_at(bytes, 1) <= 0x37 {
     return Some(ImageContainerFormat::Pnm)
   }
   if bytes.length() >= 12 &&

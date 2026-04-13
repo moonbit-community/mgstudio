@@ -176,6 +176,7 @@ pub(all) enum FxaaSensitivity {
   Extreme
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FxaaSensitivity::default() -> Self
+pub fn FxaaSensitivity::get_str(Self) -> String
 
 pub struct MsaaWriteback {
   enabled : Bool

@@ -17,6 +17,8 @@ import {
 // Values
 pub fn ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLight]
 
+pub fn directional_light_validated_shadow_map_size(Int) -> Int
+
 pub fn directional_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
 
 pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
@@ -87,6 +89,10 @@ pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture]
 
 pub let ecs_key_spot_light_texture_component : @ecs.ComponentKey[SpotLightTexture]
 
+pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk]
+
+pub let ecs_key_sun_disk_component : @ecs.ComponentKey[SunDisk]
+
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight]
 
 pub let ecs_key_volumetric_light_component : @ecs.ComponentKey[VolumetricLight]
@@ -98,6 +104,8 @@ pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[Glob
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
+
+pub fn validate_directional_light_shadow_map_size(@ecs.World) -> Unit
 
 // Errors
 
@@ -187,6 +195,7 @@ pub struct DirectionalLight {
   illuminance : Float
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
   soft_shadow_size : Float?
   cascade_shadow_config : CascadeShadowConfig?
   shadow_depth_bias : Float
@@ -194,11 +203,13 @@ pub struct DirectionalLight {
 } derive(ToJson, @json.FromJson)
 pub fn DirectionalLight::default() -> Self
 pub fn DirectionalLight::new(@color.Color, Float, Bool) -> Self
+pub fn DirectionalLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
 pub fn DirectionalLight::with_cascade_shadow_config(Self, CascadeShadowConfig?) -> Self
 pub fn DirectionalLight::with_cascade_shadow_config_builder(Self, CascadeShadowConfigBuilder) -> Self
 pub fn DirectionalLight::with_contact_shadows_enabled(Self, Bool) -> Self
 pub fn DirectionalLight::with_illuminance(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_depth_bias(Self, Float) -> Self
+pub fn DirectionalLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_soft_shadow_size(Self, Float?) -> Self
 pub impl @ecs.Component for DirectionalLight
@@ -282,9 +293,11 @@ pub impl @ecs.Component for GeneratedEnvironmentMapLight
 pub struct GlobalAmbientLight {
   color : @color.Color
   brightness : Float
+  affects_lightmapped_meshes : Bool
 } derive(ToJson, @json.FromJson)
 pub fn GlobalAmbientLight::default() -> Self
 pub fn GlobalAmbientLight::new(@color.Color, Float) -> Self
+pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(Self, Bool) -> Self
 
 #alias(IrradianceVolumeComponent)
 pub struct IrradianceVolume {
@@ -408,12 +421,14 @@ pub struct SpotLight {
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
   soft_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
   shadow_depth_bias : Float
   shadow_normal_bias : Float
   shadow_map_near_z : Float
 } derive(ToJson, @json.FromJson)
 pub fn SpotLight::default() -> Self
 pub fn SpotLight::new(@color.Color, Float, Float, Float, Float, Bool) -> Self
+pub fn SpotLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
 pub fn SpotLight::with_contact_shadows_enabled(Self, Bool) -> Self
 pub fn SpotLight::with_inner_angle(Self, Float) -> Self
 pub fn SpotLight::with_intensity(Self, Float) -> Self
@@ -421,6 +436,7 @@ pub fn SpotLight::with_outer_angle(Self, Float) -> Self
 pub fn SpotLight::with_radius(Self, Float) -> Self
 pub fn SpotLight::with_shadow_depth_bias(Self, Float) -> Self
 pub fn SpotLight::with_shadow_map_near_z(Self, Float) -> Self
+pub fn SpotLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn SpotLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn SpotLight::with_soft_shadows_enabled(Self, Bool) -> Self
 pub impl @ecs.Component for SpotLight
@@ -433,6 +449,19 @@ pub fn SpotLightTexture::default() -> Self
 pub fn SpotLightTexture::new(@asset.Handle[@image.Image]?) -> Self
 pub fn SpotLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for SpotLightTexture
+
+#alias(SunDiskComponent)
+pub struct SunDisk {
+  angular_size : Float
+  intensity : Float
+} derive(ToJson, @json.FromJson)
+pub fn SunDisk::default() -> Self
+pub fn SunDisk::earth() -> Self
+pub fn SunDisk::new(Float, Float) -> Self
+pub fn SunDisk::off() -> Self
+pub fn SunDisk::with_angular_size(Self, Float) -> Self
+pub fn SunDisk::with_intensity(Self, Float) -> Self
+pub impl @ecs.Component for SunDisk
 
 #alias(VolumetricFogComponent)
 pub struct VolumetricFog {

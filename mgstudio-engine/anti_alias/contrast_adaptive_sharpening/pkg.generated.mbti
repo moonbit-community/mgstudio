@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
 }
@@ -11,6 +12,8 @@ import {
 pub const CAS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn cas_node_enabled() -> Bool
+
+pub fn cas_node_enabled_for_entity(@ecs.World, @core.Entity) -> Bool
 
 pub fn cas_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

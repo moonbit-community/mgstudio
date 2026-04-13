@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/anti_alias/dlss"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
 }
@@ -12,17 +13,23 @@ pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn dlss_extract_enabled() -> Bool
 
+pub fn dlss_extract_enabled_for_entity(@ecs.World, @core.Entity) -> Bool
+
 pub fn dlss_init_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn dlss_init_plugin_with(@app.App[@ecs.World], DlssInitPlugin) -> @app.App[@ecs.World]
 
 pub fn dlss_node_enabled() -> Bool
 
+pub fn dlss_node_enabled_for_entity(@ecs.World, @core.Entity) -> Bool
+
 pub fn dlss_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn dlss_plugin_with(@app.App[@ecs.World], DlssPlugin) -> @app.App[@ecs.World]
 
 pub fn dlss_prepare_enabled() -> Bool
+
+pub fn dlss_prepare_enabled_for_entity(@ecs.World, @core.Entity) -> Bool
 
 pub fn dlss_update_runtime_state(@ecs.World) -> Unit
 

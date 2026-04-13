@@ -287,6 +287,36 @@ test "asset host io: pnm decode supports ascii P3 payload" {
 }
 
 ///|
+fn test_pnm_p7_rgba_1x1_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  for code in @utf8.encode(
+    "P7\nWIDTH 1\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n"[:],
+  ) {
+    out.push(code)
+  }
+  out.push((10).to_byte())
+  out.push((20).to_byte())
+  out.push((30).to_byte())
+  out.push((128).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: pnm decode supports pam P7 payload and dimensions" {
+  let bytes = test_pnm_p7_rgba_1x1_bytes()
+  debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Pnm),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(1, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="10")
+  debug_inspect(decoded.pixels[1].to_uint(), content="20")
+  debug_inspect(decoded.pixels[2].to_uint(), content="30")
+  debug_inspect(decoded.pixels[3].to_uint(), content="128")
+}
+
+///|
 fn test_farbfeld_1x2_bytes() -> Bytes {
   let out : Array[Byte] = []
   for code in @utf8.encode("farbfeld"[:]) {
