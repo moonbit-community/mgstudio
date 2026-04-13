@@ -169,6 +169,33 @@ pub struct ExtractedPointLight3d {
 }
 
 ///|
+pub struct ExtractedClusterablePointLight3d {
+  clusterable_type_order : Int
+  light : ExtractedPointLight3d
+}
+
+///|
+pub fn ExtractedClusterablePointLight3d::is_point_light(
+  self : ExtractedClusterablePointLight3d,
+) -> Bool {
+  self.clusterable_type_order == 0
+}
+
+///|
+pub fn ExtractedClusterablePointLight3d::is_spot_light(
+  self : ExtractedClusterablePointLight3d,
+) -> Bool {
+  self.clusterable_type_order == 1
+}
+
+///|
+pub fn ExtractedClusterablePointLight3d::light(
+  self : ExtractedClusterablePointLight3d,
+) -> ExtractedPointLight3d {
+  self.light
+}
+
+///|
 pub struct ExtractedDirectionalLight3d {
   entity : @core.Entity
   color : @sprite.Color
@@ -498,6 +525,65 @@ pub fn render3d_collect_extracted_spot_lights(
 }
 
 ///|
+fn render3d_clusterable_light_sort_by_key(
+  left_order : Int,
+  left : ExtractedPointLight3d,
+  right_order : Int,
+  right : ExtractedPointLight3d,
+) -> Int {
+  let type_cmp = cmp_int(left_order, right_order)
+  if type_cmp != 0 {
+    return type_cmp
+  }
+  let shadow_cmp = cmp_int(
+    render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
+    render3d_bool_inverted_sort_key(right.shadow_maps_enabled),
+  )
+  if shadow_cmp != 0 {
+    return shadow_cmp
+  }
+  let volumetric_cmp = cmp_int(
+    render3d_bool_inverted_sort_key(left.volumetric),
+    render3d_bool_inverted_sort_key(right.volumetric),
+  )
+  if volumetric_cmp != 0 {
+    return volumetric_cmp
+  }
+  let id_cmp = cmp_int(left.entity.id, right.entity.id)
+  if id_cmp != 0 {
+    return id_cmp
+  }
+  cmp_int(left.entity.generation, right.entity.generation)
+}
+
+///|
+pub fn render3d_collect_extracted_clusterable_point_lights(
+  world : @ecs.World,
+) -> Array[ExtractedClusterablePointLight3d] {
+  let combined : Array[(Int, ExtractedPointLight3d)] = []
+  for point in render3d_collect_extracted_point_lights(world) {
+    combined.push((0, point))
+  }
+  for spot in render3d_collect_extracted_spot_lights(world) {
+    combined.push((1, spot))
+  }
+  combined.sort_by(fn(left, right) {
+    render3d_clusterable_light_sort_by_key(
+      left.0,
+      left.1,
+      right.0,
+      right.1,
+    )
+  })
+  combined.map(fn(item) {
+    ExtractedClusterablePointLight3d::{
+      clusterable_type_order: item.0,
+      light: item.1,
+    }
+  })
+}
+
+///|
 pub fn render3d_collect_extracted_directional_lights(
   world : @ecs.World,
 ) -> Array[ExtractedDirectionalLight3d] {
@@ -554,7 +640,15 @@ fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
 ///|
 pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
-  let point_light_count = render3d_collect_extracted_point_lights(world).length()
+  let clusterable_point_lights = render3d_collect_extracted_clusterable_point_lights(
+    world,
+  )
+  let mut point_light_count = 0
+  for item in clusterable_point_lights {
+    if item.is_point_light() {
+      point_light_count += 1
+    }
+  }
   let ambient = if (try! world.get_resource(@light.ecs_key_global_ambient_light))
     is Some(v) {
     v

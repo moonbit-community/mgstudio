@@ -423,6 +423,44 @@ test "pbr render light: spot extraction order keeps shadow and volumetric first"
 }
 
 ///|
+test "pbr render light: clusterable point-light ordering keeps points before spots" {
+  let world = @ecs.World::new()
+
+  let spot = world.spawn()
+  try! world.set_by_key(
+    spot,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  let point = world.spawn()
+  try! world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default(),
+  )
+  |> ignore
+
+  let point_shadow = world.spawn()
+  try! world.set_by_key(
+    point_shadow,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  let ordered = render3d_collect_extracted_clusterable_point_lights(world)
+  inspect(ordered.length(), content="3")
+  inspect(ordered[0].is_point_light(), content="true")
+  inspect(ordered[1].is_point_light(), content="true")
+  inspect(ordered[2].is_spot_light(), content="true")
+  inspect(ordered[0].light().entity.id, content="2")
+  inspect(ordered[1].light().entity.id, content="1")
+  inspect(ordered[2].light().entity.id, content="0")
+}
+
+///|
 test "pbr render light: gpu lights computes spot shadow map offset" {
   let world = @ecs.World::new()
 
