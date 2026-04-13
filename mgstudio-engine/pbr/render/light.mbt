@@ -111,6 +111,17 @@ fn render3d_directional_light_shadow_map_size(world : @ecs.World) -> Int {
 }
 
 ///|
+fn render3d_light_is_view_visible(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+    Some(v) => v.is_visible()
+    None => true
+  }
+}
+
+///|
 pub struct ExtractedPointLight3d {
   entity : @core.Entity
   color : @sprite.Color
@@ -348,6 +359,9 @@ pub fn render3d_collect_extracted_point_lights(
   let point_light_texel_size = render3d_point_light_shadow_texel_size(world)
   let extracted : Array[ExtractedPointLight3d] = []
   world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
+    if !render3d_light_is_view_visible(world, entity) {
+      return
+    }
     let volumetric = (try!
       world.get_by_key(entity, @light.ecs_key_volumetric_light))
       is Some(_)
@@ -373,6 +387,9 @@ pub fn render3d_collect_extracted_spot_lights(
   )
   let extracted : Array[ExtractedPointLight3d] = []
   world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
+    if !render3d_light_is_view_visible(world, entity) {
+      return
+    }
     let volumetric = (try!
       world.get_by_key(entity, @light.ecs_key_volumetric_light))
       is Some(_)
@@ -395,6 +412,9 @@ pub fn render3d_collect_extracted_directional_lights(
 ) -> Array[ExtractedDirectionalLight3d] {
   let extracted : Array[ExtractedDirectionalLight3d] = []
   world.for_each_component(@light.ecs_key_directional_light, fn(entity, light) {
+    if !render3d_light_is_view_visible(world, entity) {
+      return
+    }
     let volumetric = (try!
       world.get_by_key(entity, @light.ecs_key_volumetric_light))
       is Some(_)

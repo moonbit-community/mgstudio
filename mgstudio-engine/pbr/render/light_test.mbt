@@ -119,3 +119,40 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
     content="true",
   )
 }
+
+///|
+test "pbr render light: extracted lights skip ViewVisibility(false)" {
+  let world = @ecs.World::new()
+  let hidden_point = world.spawn()
+  try! world.set_by_key(
+    hidden_point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default(),
+  )
+  |> ignore
+  try! world.set_by_key(
+    hidden_point,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  |> ignore
+  let hidden_directional = world.spawn()
+  try! world.set_by_key(
+    hidden_directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+  try! world.set_by_key(
+    hidden_directional,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  |> ignore
+
+  inspect(render3d_collect_extracted_point_lights(world).length(), content="0")
+  inspect(
+    render3d_collect_extracted_directional_lights(world).length(),
+    content="0",
+  )
+}
