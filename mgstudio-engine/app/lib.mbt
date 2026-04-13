@@ -1666,9 +1666,19 @@ pub type RunnerBuilder[W] = (App[W]) -> RunnerFn
 pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 
 ///|
+pub(all) enum PluginsState {
+  Adding
+  Ready
+  Finished
+  Cleaned
+} derive(Eq, Debug)
+
+///|
 pub struct App[W] {
   mut sub_apps : SubApps[W]
   mut plugin_names : Array[String]
+  mut plugin_registry : Array[PluginGroupEntry[W]]
+  mut plugins_state : PluginsState
   runner_builder : RunnerBuilder[W]?
 }
 
@@ -1681,6 +1691,8 @@ pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
   App::{
     sub_apps: SubApps::new(main_sub_app),
     plugin_names: [],
+    plugin_registry: [],
+    plugins_state: Adding,
     runner_builder: None,
   }
 }
@@ -1704,12 +1716,10 @@ fn[W] App::add_plugin_entry(
     abort("Duplicate unique plugin: \{entry.id}")
   }
   self.plugin_names.push(entry.id)
-  let mut app = (entry.plugin)(self)
-  if !(entry.ready)(app) {
-    abort("Plugin not ready after build: \{entry.id}")
-  }
-  app = (entry.finish)(app)
-  (entry.cleanup)(app)
+  let app = (entry.plugin)(self)
+  app.plugin_registry.push(entry)
+  app.plugins_state = Adding
+  app
 }
 
 ///|
@@ -1722,6 +1732,63 @@ fn[W] App::add_plugin_entries(
     app = app.add_plugin_entry(entry)
   }
   app
+}
+
+///|
+fn[W] App::plugins_all_ready(self : App[W]) -> Bool {
+  for entry in self.plugin_registry {
+    if !(entry.ready)(self) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn[W] App::plugins_state(self : App[W]) -> PluginsState {
+  if self.plugins_state == Adding && self.plugins_all_ready() {
+    self.plugins_state = Ready
+  }
+  self.plugins_state
+}
+
+///|
+pub fn[W] App::finish_plugins(self : App[W]) -> App[W] {
+  if self.plugins_state == Adding {
+    if !self.plugins_all_ready() {
+      return self
+    }
+    self.plugins_state = Ready
+  }
+  if self.plugins_state != Ready {
+    return self
+  }
+  let entries = self.plugin_registry
+  let mut app = self
+  for entry in entries {
+    app = (entry.finish)(app)
+  }
+  app.plugins_state = Finished
+  app
+}
+
+///|
+pub fn[W] App::cleanup_plugins(self : App[W]) -> App[W] {
+  if self.plugins_state != Finished {
+    return self
+  }
+  let entries = self.plugin_registry
+  let mut app = self
+  for entry in entries {
+    app = (entry.cleanup)(app)
+  }
+  app.plugins_state = Cleaned
+  app
+}
+
+///|
+fn[W] App::finalize_plugins(self : App[W]) -> App[W] {
+  self.finish_plugins().cleanup_plugins()
 }
 
 ///|
@@ -3472,12 +3539,14 @@ fn run_schedule_stage(
 
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
+  let self = self.finalize_plugins()
   self.sub_apps = self.sub_apps.run_startup()
   self
 }
 
 ///|
 pub fn App::update(self : App[@ecs.World]) -> App[@ecs.World] {
+  let self = self.finalize_plugins()
   self.sub_apps = self.sub_apps.update()
   self
 }

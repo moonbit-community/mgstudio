@@ -25,11 +25,22 @@ struct PluginGroupTestPlugin2 {}
 struct MissingPluginTest {}
 
 ///|
+struct PluginLifecycleTestPlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
+let plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
+}
+
+///|
+fn plugin_lifecycle_test_reset_log() -> Unit {
+  plugin_lifecycle_log_ref.val = []
 }
 
 ///|
@@ -102,6 +113,41 @@ pub impl PluginReplacement for MissingPluginTest with plugin_name(_self) {
 ///|
 pub impl PluginReplacement for MissingPluginTest with world_plugin(_self) {
   missing_plugin_test
+}
+
+///|
+fn plugin_lifecycle_test_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
+  plugin_lifecycle_log_ref.val.push(1)
+  app
+}
+
+///|
+pub impl PluginReplacement for PluginLifecycleTestPlugin with plugin_name(_self) {
+  "mgstudio.app.plugin_lifecycle_test"
+}
+
+///|
+pub impl PluginReplacement for PluginLifecycleTestPlugin with world_plugin(
+  _self,
+) {
+  plugin_lifecycle_test_plugin
+}
+
+///|
+pub impl PluginReplacement for PluginLifecycleTestPlugin with ready(_self, _app) {
+  true
+}
+
+///|
+pub impl PluginReplacement for PluginLifecycleTestPlugin with finish(_self, app) {
+  plugin_lifecycle_log_ref.val.push(2)
+  app
+}
+
+///|
+pub impl PluginReplacement for PluginLifecycleTestPlugin with cleanup(_self, app) {
+  plugin_lifecycle_log_ref.val.push(3)
+  app
 }
 
 ///|
@@ -247,6 +293,19 @@ test "app: plugin group try_set_plugin raises when id is missing" {
     missing_plugin_id,
     content="\"mgstudio.app.missing_plugin_test\"",
   )
+}
+
+///|
+test "app: plugin lifecycle finish/cleanup run on first update, not add_plugin" {
+  plugin_lifecycle_test_reset_log()
+  let mut app = App::new(@ecs.World::new()).add_plugin_typed(
+    PluginLifecycleTestPlugin::{  },
+  )
+  debug_inspect(app.plugins_state() == Ready, content="true")
+  debug_inspect(plugin_lifecycle_log_ref.val, content="[1]")
+  app = app.run_once()
+  debug_inspect(app.plugins_state() == Cleaned, content="true")
+  debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2, 3]")
 }
 
 ///|

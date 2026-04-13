@@ -1,7 +1,7 @@
 This file must not exceed 200 lines.
 | Bevy Side | mgstudio Side | Structure | Runtime | Overall | Status | Main Gaps |
 |---|---|---:|---:|---:|---|---|
-| `bevy_app` | `mgstudio-engine/app` | 96% | 87% | 87% | 🟡 In Progress | System scheduling and ergonomics still diverge in several APIs. |
+| `bevy_app` | `mgstudio-engine/app` | 96% | 89% | 89% | 🟡 In Progress | System scheduling and ergonomics still diverge in several APIs. |
 | `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 88% | 80% | 80% | 🟡 In Progress | By-design architecture differences from Bevy remain and need documented boundaries. |
 | `bevy_transform` | `mgstudio-engine/transform` | 95% | 86% | 86% | 🟡 In Progress | Stress-scene throughput and integration ordering still need parity validation. |
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
