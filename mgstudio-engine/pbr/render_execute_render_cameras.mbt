@@ -63,10 +63,14 @@ fn render3d_execute_render_cameras(
 fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
   let entries : Array[Render3dCameraOrderEntry] = []
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
-    let order = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
-      Some(camera) => camera.order
-      None => @sprite.Camera::default().order
+    let camera = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
+      Some(value) => value
+      None => @sprite.Camera::default()
     }
+    if !camera.is_active {
+      return
+    }
+    let order = camera.order
     entries.push(Render3dCameraOrderEntry::{ entity, order })
   })
   entries.sort_by(fn(a, b) {
@@ -85,6 +89,21 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
     sorted.push(entry.entity)
   }
   sorted
+}
+
+///|
+fn render3d_active_camera3d_count(world : @ecs.World) -> Int {
+  let mut count = 0
+  world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
+    let camera = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
+      Some(value) => value
+      None => @sprite.Camera::default()
+    }
+    if camera.is_active {
+      count = count + 1
+    }
+  })
+  count
 }
 
 ///|
@@ -111,7 +130,7 @@ fn render3d_refresh_prepared_camera_order_if_needed(
   source_world : @ecs.World,
   phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
 ) -> Unit {
-  let camera3d_count = source_world.component_count(ecs_key_camera3d)
+  let camera3d_count = render3d_active_camera3d_count(source_world)
   let must_refresh = phase_state_ref.val.camera_order_needs_refresh ||
     phase_state_ref.val.prepared_camera_order.length() != camera3d_count ||
     phase_state_ref.val.last_camera3d_count != camera3d_count ||

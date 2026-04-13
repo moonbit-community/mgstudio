@@ -35,6 +35,9 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => @sprite.Camera::default()
     }
+    if !camera.is_active {
+      return
+    }
     let projection_component = try! source_world.get_by_key(
       entity, ecs_key_projection,
     )
