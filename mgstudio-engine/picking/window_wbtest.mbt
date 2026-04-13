@@ -61,3 +61,37 @@ test "picking wb: window conversion maps viewport center to camera translation" 
   inspect(world_pos.unwrap().x.to_double(), content="12")
   inspect(world_pos.unwrap().y.to_double(), content="-7")
 }
+
+///|
+test "picking wb: window conversion respects viewport origin offset" {
+  let ctx = @ui.UiContext::new(
+    @asset.Handle::new(-1),
+    @math.Vec2::new(20.0F, 10.0F),
+    @math.Vec2::new(100.0F, 100.0F),
+    None,
+    @transform.Transform::identity(),
+    1.0F,
+    None,
+    false,
+  )
+  let world_pos = picking_window_to_sprite_world(@math.Vec2::new(20.0F, 10.0F), ctx)
+  inspect(world_pos.unwrap().x.to_double(), content="-50")
+  inspect(world_pos.unwrap().y.to_double(), content="50")
+}
+
+///|
+test "picking wb: window conversion applies camera rotation and scale" {
+  let ctx = @ui.UiContext::new(
+    @asset.Handle::new(-1),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(100.0F, 100.0F),
+    None,
+    @transform.Transform::from_rotation(@math.Quat::from_rotation_z(@math.pi())),
+    2.0F,
+    None,
+    false,
+  )
+  let world_pos = picking_window_to_sprite_world(@math.Vec2::new(60.0F, 50.0F), ctx)
+  inspect(world_pos.unwrap().x.to_double(), content="-20")
+  inspect(@math.abs(world_pos.unwrap().y).to_double() < 0.001, content="true")
+}
