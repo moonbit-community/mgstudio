@@ -698,10 +698,13 @@ fn render3d_cluster_screen_size(world : @ecs.World) -> (Int, Int) {
 fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
   let config_ref : Ref[@light_cluster.ClusterConfig?] = Ref::new(None)
   world.for_each_component(@light_cluster.ClusterConfig::component(), fn(
-    _entity,
+    entity,
     config,
   ) {
     if config_ref.val is Some(_) {
+      return
+    }
+    if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
       return
     }
     config_ref.val = Some(config)

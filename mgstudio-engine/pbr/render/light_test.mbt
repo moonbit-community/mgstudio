@@ -585,6 +585,8 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
 test "pbr render light: gpu lights cluster dimensions follow cluster config component" {
   let world = @ecs.World::new()
   let entity = world.spawn()
+  try! world.set_by_key(entity, @sprite.ecs_key_camera, @sprite.Camera::default())
+  |> ignore
   try! world.set_by_key(
     entity,
     @light_cluster.ClusterConfig::component(),
@@ -602,6 +604,28 @@ test "pbr render light: gpu lights cluster dimensions follow cluster config comp
   inspect(gpu_lights.cluster_dimensions.1, content="4")
   inspect(gpu_lights.cluster_dimensions.2, content="12")
   inspect(gpu_lights.cluster_dimensions.3, content="384")
+}
+
+///|
+test "pbr render light: cluster config is sourced from camera entities" {
+  let world = @ecs.World::new()
+  let non_camera_entity = world.spawn()
+  try! world.set_by_key(
+    non_camera_entity,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::XYZ(
+      2,
+      2,
+      2,
+      @light_cluster.ClusterZConfig::default(),
+      false,
+    ),
+  )
+  |> ignore
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.cluster_dimensions.0, content="16")
+  inspect(gpu_lights.cluster_dimensions.1, content="9")
+  inspect(gpu_lights.cluster_dimensions.2, content="24")
 }
 
 ///|
