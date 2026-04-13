@@ -457,23 +457,47 @@ pub fn render3d_collect_extracted_point_lights(
 ) -> Array[ExtractedPointLight3d] {
   let point_light_texel_size = render3d_point_light_shadow_texel_size(world)
   let extracted : Array[ExtractedPointLight3d] = []
-  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
-    if !render3d_light_is_view_visible(world, entity) {
-      return
+  if render3d_visible_clusterable_objects(world) is Some(visible_objects) {
+    for entity in visible_objects.point_and_spot_entities() {
+      guard (try! world.get_by_key(entity, @light.ecs_key_point_light))
+        is Some(light) else {
+        continue
+      }
+      if !render3d_light_is_view_visible(world, entity) {
+        continue
+      }
+      let volumetric = (try!
+        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+        is Some(_)
+      extracted.push(
+        render3d_extract_point_light(
+          world,
+          entity,
+          light,
+          volumetric,
+          point_light_texel_size,
+        ),
+      )
     }
-    let volumetric = (try!
-      world.get_by_key(entity, @light.ecs_key_volumetric_light))
-      is Some(_)
-    extracted.push(
-      render3d_extract_point_light(
-        world,
-        entity,
-        light,
-        volumetric,
-        point_light_texel_size,
-      ),
-    )
-  })
+  } else {
+    world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
+      if !render3d_light_is_view_visible(world, entity) {
+        return
+      }
+      let volumetric = (try!
+        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+        is Some(_)
+      extracted.push(
+        render3d_extract_point_light(
+          world,
+          entity,
+          light,
+          volumetric,
+          point_light_texel_size,
+        ),
+      )
+    })
+  }
   extracted.sort_by(fn(left, right) {
     let shadow_cmp = cmp_int(
       render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
@@ -506,23 +530,47 @@ pub fn render3d_collect_extracted_spot_lights(
     world,
   )
   let extracted : Array[ExtractedPointLight3d] = []
-  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
-    if !render3d_light_is_view_visible(world, entity) {
-      return
+  if render3d_visible_clusterable_objects(world) is Some(visible_objects) {
+    for entity in visible_objects.point_and_spot_entities() {
+      guard (try! world.get_by_key(entity, @light.ecs_key_spot_light))
+        is Some(light) else {
+        continue
+      }
+      if !render3d_light_is_view_visible(world, entity) {
+        continue
+      }
+      let volumetric = (try!
+        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+        is Some(_)
+      extracted.push(
+        render3d_extract_spot_light(
+          world,
+          entity,
+          light,
+          volumetric,
+          directional_light_shadow_map_size,
+        ),
+      )
     }
-    let volumetric = (try!
-      world.get_by_key(entity, @light.ecs_key_volumetric_light))
-      is Some(_)
-    extracted.push(
-      render3d_extract_spot_light(
-        world,
-        entity,
-        light,
-        volumetric,
-        directional_light_shadow_map_size,
-      ),
-    )
-  })
+  } else {
+    world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
+      if !render3d_light_is_view_visible(world, entity) {
+        return
+      }
+      let volumetric = (try!
+        world.get_by_key(entity, @light.ecs_key_volumetric_light))
+        is Some(_)
+      extracted.push(
+        render3d_extract_spot_light(
+          world,
+          entity,
+          light,
+          volumetric,
+          directional_light_shadow_map_size,
+        ),
+      )
+    })
+  }
   extracted.sort_by(fn(left, right) {
     let shadow_cmp = cmp_int(
       render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
@@ -734,6 +782,34 @@ fn render3d_cluster_runtime(world : @ecs.World) -> (Int, Int, Int, Float, Float)
     ))
   })
   runtime_ref.val
+}
+
+///|
+fn render3d_visible_clusterable_objects(
+  world : @ecs.World,
+) -> @light_cluster.VisibleClusterableObjects? {
+  let camera_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
+    None,
+  )
+  let any_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(None)
+  world.for_each_component(@light_cluster.VisibleClusterableObjects::component(), fn(
+    entity,
+    visible,
+  ) {
+    if any_visible_ref.val is None {
+      any_visible_ref.val = Some(visible)
+    }
+    if camera_visible_ref.val is Some(_) {
+      return
+    }
+    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+      camera_visible_ref.val = Some(visible)
+    }
+  })
+  match camera_visible_ref.val {
+    Some(visible) => Some(visible)
+    None => any_visible_ref.val
+  }
 }
 
 ///|

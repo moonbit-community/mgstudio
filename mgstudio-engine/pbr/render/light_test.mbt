@@ -166,6 +166,86 @@ test "pbr render light: extracted lights skip ViewVisibility(false)" {
 }
 
 ///|
+test "pbr render light: point extraction prefers visible clusterable entity list when present" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @light.ecs_key_point_light_shadow_map,
+    @light.PointLightShadowMap::new(2048),
+  )
+  let point_visible = world.spawn()
+  try! world.set_by_key(
+    point_visible,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_intensity(10.0F),
+  )
+  |> ignore
+  let point_hidden = world.spawn()
+  try! world.set_by_key(
+    point_hidden,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_intensity(20.0F),
+  )
+  |> ignore
+
+  let list_owner = world.spawn()
+  try! world.set_by_key(
+    list_owner,
+    @light_cluster.VisibleClusterableObjects::component(),
+    @light_cluster.VisibleClusterableObjects::from_lists(
+      [point_visible],
+      [],
+      [],
+      [],
+    ),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_point_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(extracted[0].entity == point_visible, content="true")
+}
+
+///|
+test "pbr render light: spot extraction prefers visible clusterable entity list when present" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(1024),
+  )
+  let spot_visible = world.spawn()
+  try! world.set_by_key(
+    spot_visible,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_intensity(10.0F),
+  )
+  |> ignore
+  let spot_hidden = world.spawn()
+  try! world.set_by_key(
+    spot_hidden,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_intensity(20.0F),
+  )
+  |> ignore
+
+  let list_owner = world.spawn()
+  try! world.set_by_key(
+    list_owner,
+    @light_cluster.VisibleClusterableObjects::component(),
+    @light_cluster.VisibleClusterableObjects::from_lists(
+      [spot_visible],
+      [],
+      [],
+      [],
+    ),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_spot_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(extracted[0].entity == spot_visible, content="true")
+}
+
+///|
 test "pbr render light: spot/directional propagate affects_lightmapped_mesh_diffuse" {
   let world = @ecs.World::new()
 

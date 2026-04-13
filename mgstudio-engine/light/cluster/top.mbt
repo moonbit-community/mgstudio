@@ -471,6 +471,49 @@ pub fn VisibleClusterableObjects::new() -> VisibleClusterableObjects {
 }
 
 ///|
+pub fn VisibleClusterableObjects::from_lists(
+  point_and_spot_lights : Array[@core.Entity],
+  reflection_probes : Array[@core.Entity],
+  irradiance_volumes : Array[@core.Entity],
+  decals : Array[@core.Entity],
+) -> VisibleClusterableObjects {
+  VisibleClusterableObjects::{
+    point_and_spot_lights: point_and_spot_lights.copy(),
+    reflection_probes: reflection_probes.copy(),
+    irradiance_volumes: irradiance_volumes.copy(),
+    decals: decals.copy(),
+  }
+}
+
+///|
+pub fn VisibleClusterableObjects::point_and_spot_entities(
+  self : VisibleClusterableObjects,
+) -> Array[@core.Entity] {
+  self.point_and_spot_lights.copy()
+}
+
+///|
+pub fn VisibleClusterableObjects::reflection_probe_entities(
+  self : VisibleClusterableObjects,
+) -> Array[@core.Entity] {
+  self.reflection_probes.copy()
+}
+
+///|
+pub fn VisibleClusterableObjects::irradiance_volume_entities(
+  self : VisibleClusterableObjects,
+) -> Array[@core.Entity] {
+  self.irradiance_volumes.copy()
+}
+
+///|
+pub fn VisibleClusterableObjects::decal_entities(
+  self : VisibleClusterableObjects,
+) -> Array[@core.Entity] {
+  self.decals.copy()
+}
+
+///|
 pub fn VisibleClusterableObjects::clear(
   self : VisibleClusterableObjects,
 ) -> Unit {
