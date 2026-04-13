@@ -48,9 +48,25 @@ fn render3d_sync_previous_view_data_pre_update(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_has_active_camera(world : @ecs.World) -> Bool {
+  let mut active = false
+  world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
+    let camera = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
+      Some(value) => value
+      None => @sprite.Camera::default()
+    }
+    if camera.is_active {
+      active = true
+    }
+  })
+  active
+}
+
+///|
 fn render3d_sync_previous_global_transforms_pre_update(
   world : @ecs.World,
 ) -> Unit {
+  guard render3d_has_active_camera(world) else { return }
   world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
     let world_transform = match
       render3d_entity_world_transform_from_main_world(world, entity) {
