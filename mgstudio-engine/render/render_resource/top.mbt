@@ -46,72 +46,143 @@ pub type ComputePipelineId = UInt64
 pub type BufferAddress = UInt64
 
 ///|
-let buffer_id_seed : Ref[UInt64] = Ref::new(0)
+priv struct RenderResourceIdState {
+  mut buffer_id_seed : UInt64
+  mut texture_id_seed : UInt64
+  mut texture_view_id_seed : UInt64
+  mut sampler_id_seed : UInt64
+  mut bind_group_id_seed : UInt64
+  mut bind_group_layout_id_seed : UInt64
+  mut render_pipeline_id_seed : UInt64
+  mut compute_pipeline_id_seed : UInt64
+}
 
 ///|
-let texture_id_seed : Ref[UInt64] = Ref::new(0)
+fn render_resource_id_state_default() -> RenderResourceIdState {
+  RenderResourceIdState::{
+    buffer_id_seed: 0,
+    texture_id_seed: 0,
+    texture_view_id_seed: 0,
+    sampler_id_seed: 0,
+    bind_group_id_seed: 0,
+    bind_group_layout_id_seed: 0,
+    render_pipeline_id_seed: 0,
+    compute_pipeline_id_seed: 0,
+  }
+}
 
 ///|
-let texture_view_id_seed : Ref[UInt64] = Ref::new(0)
+let render_resource_id_state_ref : Ref[RenderResourceIdState] = Ref::new(
+  render_resource_id_state_default(),
+)
 
 ///|
-let sampler_id_seed : Ref[UInt64] = Ref::new(0)
+const RENDER_RESOURCE_ID_KIND_BUFFER : Int = 0
 
 ///|
-let bind_group_id_seed : Ref[UInt64] = Ref::new(0)
+const RENDER_RESOURCE_ID_KIND_TEXTURE : Int = 1
 
 ///|
-let bind_group_layout_id_seed : Ref[UInt64] = Ref::new(0)
+const RENDER_RESOURCE_ID_KIND_TEXTURE_VIEW : Int = 2
 
 ///|
-let render_pipeline_id_seed : Ref[UInt64] = Ref::new(0)
+const RENDER_RESOURCE_ID_KIND_SAMPLER : Int = 3
 
 ///|
-let compute_pipeline_id_seed : Ref[UInt64] = Ref::new(0)
+const RENDER_RESOURCE_ID_KIND_BIND_GROUP : Int = 4
 
 ///|
-fn next_id(seed : Ref[UInt64]) -> UInt64 {
-  let id = seed.val
-  seed.val = id + 1
-  id
+const RENDER_RESOURCE_ID_KIND_BIND_GROUP_LAYOUT : Int = 5
+
+///|
+const RENDER_RESOURCE_ID_KIND_RENDER_PIPELINE : Int = 6
+
+///|
+const RENDER_RESOURCE_ID_KIND_COMPUTE_PIPELINE : Int = 7
+
+///|
+fn next_id(kind : Int) -> UInt64 {
+  let state = render_resource_id_state_ref.val
+  match kind {
+    RENDER_RESOURCE_ID_KIND_BUFFER => {
+      let id = state.buffer_id_seed
+      state.buffer_id_seed = id + 1
+      id
+    }
+    RENDER_RESOURCE_ID_KIND_TEXTURE => {
+      let id = state.texture_id_seed
+      state.texture_id_seed = id + 1
+      id
+    }
+    RENDER_RESOURCE_ID_KIND_TEXTURE_VIEW => {
+      let id = state.texture_view_id_seed
+      state.texture_view_id_seed = id + 1
+      id
+    }
+    RENDER_RESOURCE_ID_KIND_SAMPLER => {
+      let id = state.sampler_id_seed
+      state.sampler_id_seed = id + 1
+      id
+    }
+    RENDER_RESOURCE_ID_KIND_BIND_GROUP => {
+      let id = state.bind_group_id_seed
+      state.bind_group_id_seed = id + 1
+      id
+    }
+    RENDER_RESOURCE_ID_KIND_BIND_GROUP_LAYOUT => {
+      let id = state.bind_group_layout_id_seed
+      state.bind_group_layout_id_seed = id + 1
+      id
+    }
+    RENDER_RESOURCE_ID_KIND_RENDER_PIPELINE => {
+      let id = state.render_pipeline_id_seed
+      state.render_pipeline_id_seed = id + 1
+      id
+    }
+    _ => {
+      let id = state.compute_pipeline_id_seed
+      state.compute_pipeline_id_seed = id + 1
+      id
+    }
+  }
 }
 
 ///|
 fn next_buffer_id() -> BufferId {
-  next_id(buffer_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_BUFFER)
 }
 
 ///|
 fn next_texture_id() -> TextureId {
-  next_id(texture_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_TEXTURE)
 }
 
 ///|
 fn next_texture_view_id() -> TextureViewId {
-  next_id(texture_view_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_TEXTURE_VIEW)
 }
 
 ///|
 fn next_sampler_id() -> SamplerId {
-  next_id(sampler_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_SAMPLER)
 }
 
 ///|
 fn next_bind_group_id() -> BindGroupId {
-  next_id(bind_group_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_BIND_GROUP)
 }
 
 ///|
 fn next_bind_group_layout_id() -> BindGroupLayoutId {
-  next_id(bind_group_layout_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_BIND_GROUP_LAYOUT)
 }
 
 ///|
 fn next_render_pipeline_id() -> RenderPipelineId {
-  next_id(render_pipeline_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_RENDER_PIPELINE)
 }
 
 ///|
 fn next_compute_pipeline_id() -> ComputePipelineId {
-  next_id(compute_pipeline_id_seed)
+  next_id(RENDER_RESOURCE_ID_KIND_COMPUTE_PIPELINE)
 }
