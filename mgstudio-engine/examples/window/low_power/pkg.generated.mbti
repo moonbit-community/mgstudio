@@ -1,11 +1,23 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/window/low_power"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub(all) enum ExampleMode {
+  Game
+  Application
+  ApplicationWithRequestRedraw
+} derive(Eq, @debug.Debug)
+pub impl @app.Resource for ExampleMode
 
 // Type aliases
 

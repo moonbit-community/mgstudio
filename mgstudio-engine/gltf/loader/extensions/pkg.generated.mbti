@@ -1,0 +1,68 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/gltf/loader/extensions"
+
+import {
+  "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn gltf_clear_extension_handlers() -> Unit
+
+pub fn gltf_extension_handlers() -> GltfExtensionHandlers
+
+pub fn gltf_extension_notify_animations_collected(String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit
+
+pub fn gltf_extension_notify_mesh_spawned(String, Int, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_node_spawned(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_khr_materials_anisotropy_handler_enabled() -> Bool
+
+pub fn gltf_khr_materials_clearcoat_handler_enabled() -> Bool
+
+pub fn gltf_khr_materials_specular_handler_enabled() -> Bool
+
+pub fn gltf_pbr_material_handler_enabled() -> Bool
+
+pub fn gltf_register_extension_handler(GltfExtensionHandler) -> Unit
+
+pub fn gltf_register_khr_materials_anisotropy_handler(GltfExtensionHandler) -> Unit
+
+pub fn gltf_register_khr_materials_clearcoat_handler(GltfExtensionHandler) -> Unit
+
+pub fn gltf_register_khr_materials_specular_handler(GltfExtensionHandler) -> Unit
+
+pub fn gltf_set_khr_materials_anisotropy_handler_enabled(Bool) -> Unit
+
+pub fn gltf_set_khr_materials_clearcoat_handler_enabled(Bool) -> Unit
+
+pub fn gltf_set_khr_materials_specular_handler_enabled(Bool) -> Unit
+
+pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct GltfExtensionHandler {
+  on_animations_collected : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?
+  on_node_spawned : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_mesh_spawned : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_scene_completed : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+}
+pub fn GltfExtensionHandler::new(on_animations_collected? : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?, on_node_spawned? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_mesh_spawned? : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?, on_scene_completed? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?) -> Self
+
+pub struct GltfExtensionHandlers {
+  handlers : Array[GltfExtensionHandler]
+}
+pub fn GltfExtensionHandlers::handlers(Self) -> Array[GltfExtensionHandler]
+pub fn GltfExtensionHandlers::new(Array[GltfExtensionHandler]) -> Self
+
+// Type aliases
+
+// Traits
+

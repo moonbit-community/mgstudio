@@ -39,6 +39,20 @@ pub fn Entity::is_placeholder(self : Entity) -> Bool {
 }
 
 ///|
+pub fn Entity::to_bits(self : Entity) -> UInt64 {
+  let hi = self.id.reinterpret_as_uint().to_uint64()
+  let lo = self.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+  (hi << 32) | lo
+}
+
+///|
+pub fn Entity::from_bits(bits : UInt64) -> Entity {
+  let hi = (bits >> 32).to_uint()
+  let lo = (bits & 0xFFFF_FFFFUL).to_uint()
+  Entity::new(hi.reinterpret_as_int(), lo.reinterpret_as_int())
+}
+
+///|
 pub(all) suberror EntityError {
   InvalidId(Int)
   NotSpawned(Entity)

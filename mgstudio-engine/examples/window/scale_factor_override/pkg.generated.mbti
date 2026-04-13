@@ -1,12 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/window/scale_factor_override"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
-type CustomText derive(Eq, Show)
+type CustomText derive(Eq, @debug.Debug)
 
 // Type aliases
 

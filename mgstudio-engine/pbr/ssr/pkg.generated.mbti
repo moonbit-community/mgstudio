@@ -1,0 +1,59 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/ssr"
+
+import {
+  "Milky2018/mgstudio/post_process",
+}
+
+// Values
+pub fn pbr_ssr_default() -> @post_process.ScreenSpaceReflections
+
+pub fn pbr_ssr_uniform_with_bisection_steps(ScreenSpaceReflectionsUniform, Int) -> ScreenSpaceReflectionsUniform
+
+pub fn pbr_ssr_uniform_with_linear_steps(ScreenSpaceReflectionsUniform, Int) -> ScreenSpaceReflectionsUniform
+
+// Errors
+
+// Types and methods
+pub struct ScreenSpaceReflectionsPipelineId {
+  id : Int
+}
+pub fn ScreenSpaceReflectionsPipelineId::default() -> Self
+
+pub struct ScreenSpaceReflectionsPipelineKey {
+  is_hdr : Bool
+  has_environment_maps : Bool
+  has_atmosphere : Bool
+}
+pub fn ScreenSpaceReflectionsPipelineKey::default() -> Self
+
+pub struct ScreenSpaceReflectionsPlugin {
+}
+pub fn ScreenSpaceReflectionsPlugin::default() -> Self
+
+pub struct ScreenSpaceReflectionsPluginState {
+  enabled : Bool
+  pipeline_id : ScreenSpaceReflectionsPipelineId
+}
+pub fn ScreenSpaceReflectionsPluginState::default() -> Self
+
+pub struct ScreenSpaceReflectionsUniform {
+  min_perceptual_roughness_start : Float
+  min_perceptual_roughness_end : Float
+  max_perceptual_roughness_start : Float
+  max_perceptual_roughness_end : Float
+  edge_fadeout_start : Float
+  edge_fadeout_end : Float
+  thickness : Float
+  linear_steps : Int
+  linear_march_exponent : Float
+  bisection_steps : Int
+  use_secant : Bool
+}
+pub fn ScreenSpaceReflectionsUniform::default() -> Self
+
+// Type aliases
+pub using @post_process {type ScreenSpaceReflections}
+
+// Traits
+

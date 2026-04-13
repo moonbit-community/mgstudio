@@ -1,0 +1,139 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/volumetric_fog"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+}
+
+// Values
+pub fn fog_volume_default_settings() -> @light.FogVolume
+
+pub fn fog_volume_with_density(@light.FogVolume, Float) -> @light.FogVolume
+
+pub fn pbr_fog_volume_default() -> @light.FogVolume
+
+pub fn pbr_volumetric_fog_default() -> @light.VolumetricFog
+
+pub fn view_volumetric_fog_pipelines(Int, Int) -> ViewVolumetricFogPipelines
+
+pub fn volumetric_fog_bind_group_layout_index(VolumetricFogBindGroupLayoutKey) -> Int
+
+pub fn volumetric_fog_default_settings() -> @light.VolumetricFog
+
+pub fn volumetric_fog_pipeline_key(Bool, Int, Bool) -> VolumetricFogPipelineKey
+
+pub fn volumetric_fog_plugin_state_with_assets(VolumetricFogPluginState, FogAssets) -> VolumetricFogPluginState
+
+pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int) -> VolumetricFogPluginState
+
+pub fn volumetric_fog_select_pipeline(ViewVolumetricFogPipelines, VolumetricFogPipelineKey) -> Int
+
+pub fn volumetric_fog_with_step_count(@light.VolumetricFog, Int) -> @light.VolumetricFog
+
+// Errors
+
+// Types and methods
+pub struct FogAssets {
+  plane_mesh : @asset.Handle[@mesh.Mesh]?
+  cube_mesh : @asset.Handle[@mesh.Mesh]?
+}
+pub fn FogAssets::default() -> Self
+
+pub struct ViewFogVolume {
+  density_texture : @asset.Handle[@image.Image]?
+  uniform_buffer_offset : Int
+  exterior : Bool
+}
+pub fn ViewFogVolume::default() -> Self
+pub fn ViewFogVolume::has_density_texture(Self) -> Bool
+
+pub struct ViewVolumetricFog {
+  volumes : Array[ViewFogVolume]
+}
+pub fn ViewVolumetricFog::count(Self) -> Int
+pub fn ViewVolumetricFog::default() -> Self
+pub fn ViewVolumetricFog::push(Self, ViewFogVolume) -> Unit
+
+pub struct ViewVolumetricFogPipelines {
+  textureless : Int
+  textured : Int
+}
+pub fn ViewVolumetricFogPipelines::default() -> Self
+
+pub struct VolumetricFogBindGroupLayoutKey {
+  multisampled : Bool
+  density_texture : Bool
+}
+pub fn VolumetricFogBindGroupLayoutKey::default() -> Self
+
+pub struct VolumetricFogPipeline {
+  shader_label : String
+  bind_group_layout_count : Int
+}
+pub fn VolumetricFogPipeline::default() -> Self
+
+pub struct VolumetricFogPipelineKey {
+  msaa_samples : Int
+  flags : VolumetricFogPipelineKeyFlags
+}
+pub fn VolumetricFogPipelineKey::default() -> Self
+
+pub struct VolumetricFogPipelineKeyFlags {
+  hdr : Bool
+  density_texture : Bool
+}
+pub fn VolumetricFogPipelineKeyFlags::default() -> Self
+
+pub struct VolumetricFogPlugin {
+}
+pub fn VolumetricFogPlugin::default() -> Self
+
+pub struct VolumetricFogPluginState {
+  fog_assets : FogAssets
+  extracted_view_count : Int
+  extracted_volume_count : Int
+}
+pub fn VolumetricFogPluginState::default() -> Self
+
+pub struct VolumetricFogUniform {
+  clip_from_local_row_major : Array[Float]
+  uvw_from_world_row_major : Array[Float]
+  far_planes : Array[@math.Vec4]
+  fog_color : @math.Vec3
+  light_tint : @math.Vec3
+  ambient_color : @math.Vec3
+  ambient_intensity : Float
+  step_count : Int
+  bounding_radius : Float
+  absorption : Float
+  scattering : Float
+  density : Float
+  density_texture_offset : @math.Vec3
+  scattering_asymmetry : Float
+  light_intensity : Float
+  jitter_strength : Float
+}
+pub fn VolumetricFogUniform::default() -> Self
+pub fn VolumetricFogUniform::with_density(Self, Float) -> Self
+pub fn VolumetricFogUniform::with_jitter_strength(Self, Float) -> Self
+pub fn VolumetricFogUniform::with_step_count(Self, Int) -> Self
+
+pub struct VolumetricFogUniformBuffer {
+  mut uniforms : Array[VolumetricFogUniform]
+}
+pub fn VolumetricFogUniformBuffer::clear(Self) -> Unit
+pub fn VolumetricFogUniformBuffer::count(Self) -> Int
+pub fn VolumetricFogUniformBuffer::default() -> Self
+pub fn VolumetricFogUniformBuffer::push(Self, VolumetricFogUniform) -> Int
+
+// Type aliases
+pub using @light {type FogVolume}
+
+pub using @light {type VolumetricFog}
+
+// Traits
+

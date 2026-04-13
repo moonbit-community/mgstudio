@@ -68,7 +68,7 @@ pub impl Default for WinitMonitors with default() {
 
 ///|
 let ecs_key_winit_monitors : @ecs.ResourceKey[WinitMonitors] = @ecs.register_resource(
-  debug_name="bevy_winit::WinitMonitors",
+  debug_name="mgstudio_winit::WinitMonitors",
 )
 
 ///|

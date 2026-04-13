@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const COLOR_EPSILON : Float = 0.0001F
 
 ///|

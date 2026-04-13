@@ -1,0 +1,103 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/post_process/auto_exposure"
+
+import {
+  "Milky2018/mgstudio/pbr",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const AUTO_EXPOSURE_COMPENSATION_CURVE_LUT_SIZE : Int = 256
+
+pub const AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT : Int = 64
+
+pub const AUTO_EXPOSURE_HISTOGRAM_WORKGROUP_SIZE : Int = 16
+
+pub fn auto_exposure_adapt_ev100(Float, Float, @pbr.AutoExposure, Float) -> Float
+
+pub fn auto_exposure_buffers_from_samples(@pbr.AutoExposure, AutoExposurePipeline, @pbr.AutoExposureCompensationCurve?, Array[Float], Array[Float]?, Float, Float) -> AutoExposureBuffers
+
+pub fn auto_exposure_compensation_curve_default() -> @pbr.AutoExposureCompensationCurve
+
+pub fn[T : @pbr.AutoExposureCompensationCurveSource] auto_exposure_compensation_curve_from_curve(T) -> @pbr.AutoExposureCompensationCurve raise @pbr.AutoExposureCompensationCurveError
+
+pub fn auto_exposure_curve_extents(@pbr.AutoExposureCompensationCurve) -> (Float, Float, Float, Float)
+
+pub fn auto_exposure_curve_sample(@pbr.AutoExposureCompensationCurve, Float) -> Float
+
+pub fn auto_exposure_default() -> @pbr.AutoExposure
+
+pub fn auto_exposure_filter(@pbr.AutoExposure) -> (Float, Float)
+
+pub fn auto_exposure_histogram_workgroups(AutoExposurePipeline, Int, Int) -> (Int, Int)
+
+pub fn auto_exposure_new(Float, Float) -> @pbr.AutoExposure
+
+pub fn auto_exposure_pipeline_passes() -> Array[AutoExposurePass]
+
+pub fn auto_exposure_range(@pbr.AutoExposure) -> (Float, Float)
+
+pub fn auto_exposure_uniform(@pbr.AutoExposure, @pbr.AutoExposureCompensationCurve?, AutoExposurePipeline, Int, Int) -> AutoExposureUniform
+
+pub fn auto_exposure_uses_compensation_curve(@pbr.AutoExposure) -> Bool
+
+pub fn auto_exposure_uses_mask(@pbr.AutoExposure) -> Bool
+
+pub fn auto_exposure_with_range(@pbr.AutoExposure, Float, Float) -> @pbr.AutoExposure
+
+pub fn physical_camera_parameters_default() -> @pbr.PhysicalCameraParameters
+
+pub fn physical_camera_parameters_ev100(@pbr.PhysicalCameraParameters) -> Float
+
+// Errors
+
+// Types and methods
+pub struct AutoExposureBuffers {
+  histogram : Array[Int]
+  average_ev100 : Float
+  target_ev100 : Float
+  current_ev100 : Float
+} derive(ToJson, @json.FromJson)
+pub fn AutoExposureBuffers::new(AutoExposurePipeline) -> Self
+
+pub enum AutoExposurePass {
+  Histogram
+  Average
+} derive(Eq, @debug.Debug)
+
+pub struct AutoExposurePipeline {
+  histogram_bin_count : Int
+  histogram_workgroup_size : Int
+} derive(ToJson, @json.FromJson)
+pub fn AutoExposurePipeline::default() -> Self
+pub fn AutoExposurePipeline::new(Int, Int) -> Self
+
+pub struct AutoExposureUniform {
+  min_ev100 : Float
+  max_ev100 : Float
+  low_percent : Float
+  high_percent : Float
+  speed_brighten : Float
+  speed_darken : Float
+  exponential_transition_distance : Float
+  viewport_width : Int
+  viewport_height : Int
+  histogram_bin_count : Int
+  curve_min_log_lum : Float
+  curve_max_log_lum : Float
+  curve_min_compensation : Float
+  curve_max_compensation : Float
+} derive(ToJson, @json.FromJson)
+
+// Type aliases
+pub using @pbr {type AutoExposure}
+
+pub using @pbr {type AutoExposureCompensationCurve}
+
+pub using @pbr {type AutoExposureCompensationCurveError}
+
+pub using @pbr {type PhysicalCameraParameters}
+
+// Traits
+

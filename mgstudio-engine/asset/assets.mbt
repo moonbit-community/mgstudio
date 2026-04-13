@@ -26,7 +26,7 @@ let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::ne
 )
 
 ///|
-type AssetEventBridge = (@ecs.World) -> Unit
+type AssetEventDispatch = (@ecs.World) -> Unit
 
 ///|
 let asset_event_message_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
@@ -34,8 +34,8 @@ let asset_event_message_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref
 )
 
 ///|
-let asset_event_bridge_registry : Ref[
-  @hashmap.HashMap[String, AssetEventBridge],
+let asset_event_dispatch_registry : Ref[
+  @hashmap.HashMap[String, AssetEventDispatch],
 ] = Ref::new(@hashmap.HashMap::new())
 
 ///|
@@ -53,7 +53,7 @@ fn[T] registered_asset_event_message_key_with_type_name(
       }
     None => {
       let key : @ecs.MessageKey[AssetEvent[T]] = @ecs.register_message(
-        debug_name="bevy_asset::AssetEvent<\{type_name}>",
+        debug_name="mgstudio_asset::AssetEvent<\{type_name}>",
       )
       asset_event_message_registry.val.set(type_name, @any.of(key))
       key
@@ -62,18 +62,18 @@ fn[T] registered_asset_event_message_key_with_type_name(
 }
 
 ///|
-fn[T] register_asset_event_bridge(
+fn[T] register_asset_event_dispatch(
   type_name : String,
   key : @ecs.ResourceKey[Assets[T]],
 ) -> Unit {
-  if asset_event_bridge_registry.val.contains(type_name) {
+  if asset_event_dispatch_registry.val.contains(type_name) {
     return
   }
 
   let message_key : @ecs.MessageKey[AssetEvent[T]] = registered_asset_event_message_key_with_type_name(
     type_name,
   )
-  let bridge : AssetEventBridge = fn(world) {
+  let dispatch : AssetEventDispatch = fn(world) {
     if !world.contains_message(message_key) {
       world.init_message(message_key)
     }
@@ -87,7 +87,7 @@ fn[T] register_asset_event_bridge(
       None => ()
     }
   }
-  asset_event_bridge_registry.val.set(type_name, bridge)
+  asset_event_dispatch_registry.val.set(type_name, dispatch)
 }
 
 ///|
@@ -105,13 +105,13 @@ fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
       }
     None => {
       let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_resource(
-        debug_name="bevy_asset::Assets<\{type_name}>",
+        debug_name="mgstudio_asset::Assets<\{type_name}>",
       )
       assets_resource_registry.val.set(type_name, @any.of(key))
       key
     }
   }
-  register_asset_event_bridge(type_name, key)
+  register_asset_event_dispatch(type_name, key)
   key
 }
 
@@ -319,12 +319,4 @@ pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
 ///|
 pub fn[T] Assets::push_event(self : Assets[T], event : AssetEvent[T]) -> Unit {
   self.events.push(event)
-}
-
-///|
-pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
-  for entry in asset_event_bridge_registry.val.iter() {
-    let (_type_name, bridge) = entry
-    bridge(world)
-  }
 }

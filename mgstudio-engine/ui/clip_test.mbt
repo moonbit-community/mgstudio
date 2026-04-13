@@ -96,7 +96,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     scissor.min.y == 33.0F &&
     scissor.max.x == 97.0F &&
     scissor.max.y == 107.0F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -161,5 +161,5 @@ test "ui: overflow Visible disables clipping per-axis" {
   // X should not be clipped by container; Y should be.
   let ok_x = scissor.min.x == 0.0F && scissor.max.x == 800.0F
   let ok_y = scissor.min.y == 20.0F && scissor.max.y == 120.0F
-  inspect(ok_x && ok_y, content="true")
+  debug_inspect(ok_x && ok_y, content="true")
 }

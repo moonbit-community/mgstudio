@@ -1,0 +1,165 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/math/primitives"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
+pub fn arc2d_length(@math.Arc2d) -> Float
+
+pub fn[T : @math.Measured2d] area_2d_of(T) -> Float
+
+pub fn[T : @math.Measured3d] area_3d_of(T) -> Float
+
+pub fn circle_diameter(@math.Circle) -> Float
+
+pub fn cuboid_size(@math.Cuboid) -> @math.Vec3
+
+pub fn half_space(@math.Vec4) -> @math.HalfSpace
+
+pub fn half_space_d(@math.HalfSpace) -> Float
+
+pub fn half_space_intersection_point(@math.HalfSpace, @math.HalfSpace, @math.HalfSpace) -> @math.Vec3?
+
+pub fn half_space_normal(@math.HalfSpace) -> @math.Vec3
+
+pub fn half_space_normal_d(@math.HalfSpace) -> @math.Vec4
+
+pub fn inset_capsule2d(@math.Capsule2d, Float) -> @math.Capsule2d
+
+pub fn inset_circle(@math.Circle, Float) -> @math.Circle
+
+pub fn inset_circular_segment(@math.CircularSegment, Float) -> @math.CircularSegment
+
+pub fn inset_rectangle(@math.Rectangle, Float) -> @math.Rectangle
+
+pub fn inset_regular_polygon(@math.RegularPolygon, Float) -> @math.RegularPolygon
+
+pub fn inset_rhombus(@math.Rhombus, Float) -> @math.Rhombus
+
+pub fn inset_triangle2d(@math.Triangle2d, Float) -> @math.Triangle2d
+
+pub fn is_polygon_simple(Array[@math.Vec2]) -> Bool
+
+pub fn[T : @math.Measured2d] perimeter_2d_of(T) -> Float
+
+pub fn polygon_signed_area(Array[@math.Vec2]) -> Float
+
+pub fn polygon_winding_order(Array[@math.Vec2]) -> @math.WindingOrder
+
+pub fn primitive_half_space(@math.Vec4) -> @math.HalfSpace
+
+pub fn primitive_polygon_winding_order(Array[@math.Vec2]) -> @math.WindingOrder
+
+pub fn primitive_view_frustum(Array[@math.HalfSpace]) -> @math.ViewFrustum
+
+pub fn primitive_view_frustum_corners(@math.ViewFrustum) -> Array[@math.Vec3]?
+
+pub fn sphere_diameter(@math.Sphere) -> Float
+
+pub fn view_frustum(Array[@math.HalfSpace]) -> @math.ViewFrustum
+
+pub fn view_frustum_corners(@math.ViewFrustum) -> Array[@math.Vec3]?
+
+pub fn[T : @math.Measured3d] volume_3d_of(T) -> Float
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @math {type Annulus}
+
+pub using @math {type Arc2d}
+
+pub using @math {type Capsule2d}
+
+pub using @math {type Capsule2dRing}
+
+pub using @math {type Capsule3d}
+
+pub using @math {type Circle}
+
+pub using @math {type CircularSector}
+
+pub using @math {type CircularSectorRing}
+
+pub using @math {type CircularSegment}
+
+pub using @math {type CircularSegmentRing}
+
+pub using @math {type Cone}
+
+pub using @math {type ConicalFrustum}
+
+pub using @math {type ConvexPolygon}
+
+pub using @math {type Cuboid}
+
+pub using @math {type Cylinder}
+
+pub using @math {type Ellipse}
+
+pub using @math {type EllipseRing}
+
+pub using @math {type HalfSpace}
+
+pub using @math {type InfinitePlane3d}
+
+pub using @math {type Line2d}
+
+pub using @math {type Line3d}
+
+pub using @math {type Plane2d}
+
+pub using @math {type Plane3d}
+
+pub using @math {type Polygon}
+
+pub using @math {type Polyline2d}
+
+pub using @math {type Polyline3d}
+
+pub using @math {type Rectangle}
+
+pub using @math {type RectangleRing}
+
+pub using @math {type RegularPolygon}
+
+pub using @math {type RegularPolygonRing}
+
+pub using @math {type Rhombus}
+
+pub using @math {type RhombusRing}
+
+pub using @math {type Ring}
+
+pub using @math {type Ring2d}
+
+pub using @math {type Segment2d}
+
+pub using @math {type Segment3d}
+
+pub using @math {type Sphere}
+
+pub using @math {type Tetrahedron}
+
+pub using @math {type Torus}
+
+pub using @math {type Triangle2d}
+
+pub using @math {type Triangle2dRing}
+
+pub using @math {type Triangle3d}
+
+pub using @math {type ViewFrustum}
+
+pub using @math {type WindingOrder}
+
+// Traits
+

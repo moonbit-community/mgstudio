@@ -27,7 +27,7 @@ test "render3d: HalfSpace::intersection_point matches Bevy plane intersection" {
   let xy_at_z_3 = HalfSpace::new(@math.Vec4::new(0.0F, 0.0F, -1.0F, 3.0F))
   let xz_at_y_2 = HalfSpace::new(@math.Vec4::new(0.0F, 1.0F, 0.0F, -2.0F))
   let yz_at_x_1 = HalfSpace::new(@math.Vec4::new(1.0F, 0.0F, 0.0F, -1.0F))
-  inspect(
+  debug_inspect(
     HalfSpace::intersection_point(xy_at_z_3, xz_at_y_2, yz_at_x_1).map(fn(
       point,
     ) {
@@ -39,7 +39,7 @@ test "render3d: HalfSpace::intersection_point matches Bevy plane intersection" {
   )
 
   let xz_at_y_3 = HalfSpace::new(@math.Vec4::new(0.0F, 1.0F, 0.0F, -3.0F))
-  inspect(
+  debug_inspect(
     HalfSpace::intersection_point(xy_at_z_3, xz_at_y_2, xz_at_y_3) is None,
     content="true",
   )
@@ -55,7 +55,7 @@ test "render3d: ViewFrustum::corners matches Bevy cuboid ordering" {
     HalfSpace::new(@math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F)),
     HalfSpace::new(@math.Vec4::new(0.0F, -1.0F, 0.0F, 6.0F)),
   ])
-  inspect(
+  debug_inspect(
     cuboid_frustum
     .corners()
     .map(fn(corners) {

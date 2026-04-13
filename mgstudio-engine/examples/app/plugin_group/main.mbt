@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn print_hello_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_systems(@app.Update, @app.system(print_hello_system))
 }

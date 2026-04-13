@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct MyComponent {
   key : @window.KeyCode
 } derive(Eq)
@@ -100,7 +98,7 @@ fn my_component_or_abort(
 fn my_component_index_text(index : MyComponentIndex) -> String {
   let entries : Array[String] = []
   index.entities.each(fn(key, entity) {
-    entries.push("\{key.to_string()}:\{entity.id.to_string()}")
+    entries.push("\{to_repr(key).to_string()}:\{entity.id.to_string()}")
   })
   let joined_entries = entries.join(", ")
   "{\{joined_entries}}"
@@ -136,7 +134,7 @@ fn setup(world : @ecs.World) -> Unit {
     .on_add(fn(world, context) {
       let component = my_component_or_abort(world, context.entity)
       @app.log_info(
-        "\{context.component_id.to_string()} added to entity \{context.entity.id.to_string()} with value \{component.key.to_string()}\{caller_suffix(context.caller)}",
+        "\{context.component_id.to_string()} added to entity \{context.entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller)}",
       )
       update_my_component_index(world, fn(index) {
         index.entities.set(component.key, context.entity)
@@ -159,7 +157,7 @@ fn setup(world : @ecs.World) -> Unit {
     .on_remove(fn(world, context) {
       let component = my_component_or_abort(world, context.entity)
       @app.log_info(
-        "\{context.component_id.to_string()} removed from entity \{context.entity.id.to_string()} with value \{component.key.to_string()}\{caller_suffix(context.caller)}",
+        "\{context.component_id.to_string()} removed from entity \{context.entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller)}",
       )
       world.commands().entity(context.entity).despawn()
     }),

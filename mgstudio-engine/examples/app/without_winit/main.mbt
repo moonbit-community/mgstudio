@@ -13,10 +13,7 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn setup_system(world : @ecs.World) -> Unit {
-  // Minimal placeholder entity for the ECS-json world path.
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,

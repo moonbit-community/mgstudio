@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/math/bounding"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub fn[T : @math.Bounded2d] aabb_2d_of(T, @math.Isometry2d) -> @math.Aabb2d
+
+pub fn[T : @math.Bounded3d] aabb_3d_of(T, @math.Isometry3d) -> @math.Aabb3d
+
+pub fn aabb_cast2d_from_ray(@math.Aabb2d, @math.Ray2d, Float) -> @math.AabbCast2d
+
+pub fn aabb_cast3d_from_ray(@math.Aabb3d, @math.Ray3d, Float) -> @math.AabbCast3d
+
+pub fn bounding_circle_cast_from_ray(@math.BoundingCircle, @math.Ray2d, Float) -> @math.BoundingCircleCast
+
+pub fn[T : @math.Bounded2d] bounding_circle_of(T, @math.Isometry2d) -> @math.BoundingCircle
+
+pub fn bounding_sphere_cast_from_ray(@math.BoundingSphere, @math.Ray3d, Float) -> @math.BoundingSphereCast
+
+pub fn[T : @math.Bounded3d] bounding_sphere_of(T, @math.Isometry3d) -> @math.BoundingSphere
+
+pub fn ray2d(@math.Vec2, @math.Dir2) -> @math.Ray2d
+
+pub fn ray3d(@math.Vec3, @math.Dir3) -> @math.Ray3d
+
+pub fn ray_cast2d_from_ray(@math.Ray2d, Float) -> @math.RayCast2d
+
+pub fn ray_cast3d_from_ray(@math.Ray3d, Float) -> @math.RayCast3d
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @math {type AabbCast2d}
+
+pub using @math {type AabbCast3d}
+
+pub using @math {type BoundingCircleCast}
+
+pub using @math {type BoundingSphereCast}
+
+pub using @math {type Ray2d}
+
+pub using @math {type Ray3d}
+
+pub using @math {type RayCast2d}
+
+pub using @math {type RayCast3d}
+
+// Traits
+

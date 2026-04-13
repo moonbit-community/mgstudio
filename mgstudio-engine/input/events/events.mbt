@@ -86,20 +86,20 @@ pub(all) enum KeyCode {
   BracketLeft
   BracketRight
   Quote
-} derive(Eq, Hash, Show, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum MouseButton {
   Left
   Right
   Middle
-} derive(Eq, Hash, Show, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum ButtonState {
   Pressed
   Released
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn ButtonState::is_pressed(self : ButtonState) -> Bool {
@@ -204,57 +204,57 @@ pub(all) struct TouchInput {
 
 ///|
 pub let ecs_key_keyboard_input : @ecs.MessageKey[KeyboardInput] = @ecs.register_message(
-  debug_name="bevy_input::keyboard::KeyboardInput",
+  debug_name="mgstudio_input::keyboard::KeyboardInput",
 )
 
 ///|
 pub let ecs_key_keyboard_character : @ecs.MessageKey[KeyboardCharacter] = @ecs.register_message(
-  debug_name="bevy_input::keyboard::KeyboardCharacter",
+  debug_name="mgstudio_input::keyboard::KeyboardCharacter",
 )
 
 ///|
 pub let ecs_key_keyboard_focus_lost : @ecs.MessageKey[KeyboardFocusLost] = @ecs.register_message(
-  debug_name="bevy_input::keyboard::KeyboardFocusLost",
+  debug_name="mgstudio_input::keyboard::KeyboardFocusLost",
 )
 
 ///|
 pub let ecs_key_mouse_button_input : @ecs.MessageKey[MouseButtonInput] = @ecs.register_message(
-  debug_name="bevy_input::mouse::MouseButtonInput",
+  debug_name="mgstudio_input::mouse::MouseButtonInput",
 )
 
 ///|
 pub let ecs_key_mouse_motion : @ecs.MessageKey[MouseMotion] = @ecs.register_message(
-  debug_name="bevy_input::mouse::MouseMotion",
+  debug_name="mgstudio_input::mouse::MouseMotion",
 )
 
 ///|
 pub let ecs_key_mouse_wheel : @ecs.MessageKey[MouseWheel] = @ecs.register_message(
-  debug_name="bevy_input::mouse::MouseWheel",
+  debug_name="mgstudio_input::mouse::MouseWheel",
 )
 
 ///|
 pub let ecs_key_pinch_gesture : @ecs.MessageKey[PinchGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::PinchGesture",
+  debug_name="mgstudio_input::gestures::PinchGesture",
 )
 
 ///|
 pub let ecs_key_rotation_gesture : @ecs.MessageKey[RotationGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::RotationGesture",
+  debug_name="mgstudio_input::gestures::RotationGesture",
 )
 
 ///|
 pub let ecs_key_double_tap_gesture : @ecs.MessageKey[DoubleTapGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::DoubleTapGesture",
+  debug_name="mgstudio_input::gestures::DoubleTapGesture",
 )
 
 ///|
 pub let ecs_key_pan_gesture : @ecs.MessageKey[PanGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::PanGesture",
+  debug_name="mgstudio_input::gestures::PanGesture",
 )
 
 ///|
 pub let ecs_key_touch_input : @ecs.MessageKey[TouchInput] = @ecs.register_message(
-  debug_name="bevy_input::touch::TouchInput",
+  debug_name="mgstudio_input::touch::TouchInput",
 )
 
 ///|

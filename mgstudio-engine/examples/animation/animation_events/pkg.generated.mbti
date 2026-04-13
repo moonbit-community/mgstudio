@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/ref",
 }
 
@@ -20,7 +21,7 @@ pub(all) enum MessagePalette {
   None
   Hello
   Bye
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type MessageText
 pub impl @ecs.Component for MessageText

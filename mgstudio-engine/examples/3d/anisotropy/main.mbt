@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const PI : Float = 3.141592653589793F
 
 ///|

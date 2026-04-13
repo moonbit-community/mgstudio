@@ -52,7 +52,7 @@ pub(all) enum ReflectionMode {
   EnvironmentMap
   ReflectionProbe
   GeneratedEnvironmentMap
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct ReflectionProbesState {

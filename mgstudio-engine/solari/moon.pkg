@@ -1,7 +1,0 @@
-import {
-  "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/pbr",
-}
-
-supported_targets = "native"

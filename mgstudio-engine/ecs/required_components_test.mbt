@@ -13,22 +13,22 @@
 // limitations under the License.
 
 ///|
-struct RequiredA {} derive(Eq, Show, ToJson, FromJson)
+struct RequiredA {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct RequiredB {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct RequiredC {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct RequiredCounter {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub impl Default for RequiredB with default() {
@@ -94,13 +94,13 @@ test "ecs: required components insert recursively on set_component" {
   try! world.register_required_components(required_b_key, required_c_key)
   try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, required_b_key),
-    content="Some({value: 10})",
+    content="Some({ value: 10 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, required_c_key),
-    content="Some({value: 20})",
+    content="Some({ value: 20 })",
   )
 }
 
@@ -122,9 +122,9 @@ test "ecs: direct required constructor overrides indirect constructor" {
   )
   try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, required_counter_key),
-    content="Some({value: 2})",
+    content="Some({ value: 2 })",
   )
 }
 
@@ -138,9 +138,9 @@ test "ecs: explicit component value beats required insertion" {
   |> ignore)
   try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, required_b_key),
-    content="Some({value: 99})",
+    content="Some({ value: 99 })",
   )
 }
 
@@ -160,7 +160,7 @@ test "ecs: required component auto insertion is visible to Added filter" {
     world,
     Added::new(required_b_key),
   )
-  inspect(query.count(), content="1")
+  debug_inspect(query.count(), content="1")
 }
 
 ///|
@@ -171,9 +171,9 @@ test "ecs: get_required_components returns recursive ids" {
   try! world.register_required_components(required_b_key, required_c_key)
 
   let required = world.get_required_components(required_a_key).unwrap()
-  inspect(required.len(), content="2")
-  inspect(required.contains(required_b_key.id()), content="true")
-  inspect(required.contains(required_c_key.id()), content="true")
+  debug_inspect(required.len(), content="2")
+  debug_inspect(required.contains(required_b_key.id()), content="true")
+  debug_inspect(required.contains(required_c_key.id()), content="true")
 }
 
 ///|
@@ -193,7 +193,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   guard duplicate_pair is Some((a0, b0)) else {
     fail("expected duplicate registration error")
   }
-  inspect(
+  debug_inspect(
     a0 == required_a_key.id() && b0 == required_b_key.id(),
     content="true",
   )
@@ -213,7 +213,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   guard cycle_pair is Some((a1, b1)) else {
     fail("expected cyclic requirement error")
   }
-  inspect(
+  debug_inspect(
     a1 == required_b_key.id() && b1 == required_a_key.id(),
     content="true",
   )
@@ -233,5 +233,5 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   guard archetype_component_id is Some(component_id) else {
     fail("expected archetype exists error")
   }
-  inspect(component_id == required_a_key.id(), content="true")
+  debug_inspect(component_id == required_a_key.id(), content="true")
 }

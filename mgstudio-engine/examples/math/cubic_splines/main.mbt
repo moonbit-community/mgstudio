@@ -13,13 +13,11 @@
 // limitations under the License.
 
 ///|
-
-///|
 enum SplineMode {
   Hermite
   Cardinal
   B
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl Default for SplineMode with default() {
@@ -30,7 +28,7 @@ impl Default for SplineMode with default() {
 enum CyclingMode {
   NotCyclic
   Cyclic
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl Default for CyclingMode with default() {

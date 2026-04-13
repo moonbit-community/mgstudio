@@ -13,12 +13,10 @@
 // limitations under the License.
 
 ///|
-
-///|
 pub(all) enum AppState {
   Menu
   InGame
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct MenuData {

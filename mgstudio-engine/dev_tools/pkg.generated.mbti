@@ -8,12 +8,27 @@ import {
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/text",
+  "moonbitlang/core/debug",
 }
 
 // Values
 pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
 
 pub const INITIAL_DIAGNOSTICS_OVERLAY_PLANE_Z_INDEX : Int = 1_000_000
+
+pub fn dev_tools_easy_screenshot_enabled(EasyScreenshotConfig) -> Bool
+
+pub fn dev_tools_easy_screenshot_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn dev_tools_picking_debug_enabled(DebugPickingMode) -> Bool
+
+pub fn dev_tools_picking_debug_is_noisy(DebugPickingMode) -> Bool
+
+pub fn dev_tools_picking_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn dev_tools_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+
+pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay
 
 pub fn diagnostics_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -27,9 +42,19 @@ pub let fps_overlay_set_customize : String
 
 pub let fps_overlay_set_update_text : String
 
+pub fn[S : @app.States] log_transitions(@ecs.World, S) -> Unit
+
 // Errors
 
 // Types and methods
+pub enum DebugPickingMode {
+  Normal
+  Noisy
+  Disabled
+} derive(Eq, @debug.Debug)
+pub fn DebugPickingMode::default() -> Self
+pub impl @app.Resource for DebugPickingMode
+
 pub struct DiagnosticsOverlay {
   title : String
   diagnostic_overlay_items : Array[DiagnosticsOverlayItem]
@@ -59,8 +84,21 @@ pub(all) enum DiagnosticsOverlayStatistic {
   Value
   Average
   Smoothed
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn DiagnosticsOverlayStatistic::default() -> Self
+
+pub struct EasyScreenshotConfig {
+  enabled : Bool
+  delay_frames : Int
+}
+pub fn EasyScreenshotConfig::default() -> Self
+pub impl @app.Resource for EasyScreenshotConfig
+
+pub(all) struct EasyScreenshotState {
+  mut next_capture_index : Int
+  mut pending_capture_frames : Int
+}
+pub impl @app.Resource for EasyScreenshotState
 
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont

@@ -94,7 +94,7 @@ fn AudioSourceAssets::register_path(
 
 ///|
 let audio_source_assets_resource_key : @ecs.ResourceKey[AudioSourceAssets] = @ecs.register_resource(
-  debug_name="bevy_audio::AudioSourceAssets",
+  debug_name="mgstudio_audio::AudioSourceAssets",
 )
 
 ///|

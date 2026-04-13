@@ -15,11 +15,11 @@
 ///|
 test "diagnostics: collected system info contains host metadata" {
   let info = collect_system_info()
-  inspect(info.os != "", content="true")
-  inspect(info.kernel != "", content="true")
-  inspect(info.cpu != "", content="true")
-  inspect(info.core_count != "", content="true")
-  inspect(info.memory.has_suffix("GiB"), content="true")
+  debug_inspect(info.os != "", content="true")
+  debug_inspect(info.kernel != "", content="true")
+  debug_inspect(info.cpu != "", content="true")
+  debug_inspect(info.core_count != "", content="true")
+  debug_inspect(info.memory.has_suffix("GiB"), content="true")
 }
 
 ///|
@@ -43,7 +43,7 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
     .unwrap()
   apply_sysinfo_refresh_data(Diagnostics::{ store_ref, }, data)
 
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(system_information_diagnostic_system_cpu_usage)
     .unwrap()
@@ -51,7 +51,7 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
     is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(system_information_diagnostic_system_mem_usage)
     .unwrap()
@@ -59,7 +59,7 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
     is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(system_information_diagnostic_process_cpu_usage)
     .unwrap()
@@ -67,7 +67,7 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
     is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(system_information_diagnostic_process_mem_usage)
     .unwrap()

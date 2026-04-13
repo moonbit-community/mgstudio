@@ -1,0 +1,191 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/light_probe"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub const IRRADIANCE_VOLUMES_ARE_USABLE : Bool = true
+
+pub const MAX_VIEW_LIGHT_PROBES : Int = 8
+
+pub const RENDER_LIGHT_PROBE_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : Int = 1
+
+pub const RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION : Int = 2
+
+pub const STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS : Int = 16
+
+pub fn light_probe_plugin_state_with_extracted_probe_count(LightProbePluginState, Int) -> LightProbePluginState
+
+pub fn max_view_light_probes() -> Int
+
+pub fn pbr_downsampling_config(Int, Bool) -> DownsamplingConfig
+
+pub fn pbr_environment_map_bind_group_entries(Array[EnvironmentMapIds], Bool, Int) -> RenderViewEnvironmentMapBindGroupEntries
+
+pub fn pbr_environment_map_bind_group_entries_counts(RenderViewEnvironmentMapBindGroupEntries) -> (Int, Int)
+
+pub fn pbr_environment_map_bind_group_layout_count(Bool, Int) -> Int
+
+pub fn pbr_environment_map_light_default() -> @light.EnvironmentMapLight
+
+pub fn pbr_generated_environment_map_light_default() -> @light.GeneratedEnvironmentMapLight
+
+pub fn pbr_generated_environment_map_light_new() -> @light.GeneratedEnvironmentMapLight
+
+pub fn pbr_generated_environment_map_light_with_intensity(@light.GeneratedEnvironmentMapLight, Float) -> @light.GeneratedEnvironmentMapLight
+
+pub fn pbr_irradiance_volume_bind_group_entries(Array[RenderViewIrradianceVolumeInfo], Bool, Int) -> RenderViewIrradianceVolumeBindGroupEntries
+
+pub fn pbr_irradiance_volume_bind_group_layout_counts(Bool, Int) -> (Int, Int)
+
+pub fn pbr_irradiance_volume_default() -> @light.IrradianceVolume
+
+pub fn pbr_light_probe_default() -> @light.LightProbe
+
+pub fn pbr_light_probe_new() -> @light.LightProbe
+
+pub fn pbr_parallax_correction_default() -> @light.ParallaxCorrection
+
+pub fn render_light_probe_flags_contains(Int, Int) -> Bool
+
+pub fn render_light_probe_flags_insert(Int, Int) -> Int
+
+// Errors
+
+// Types and methods
+pub struct DownsamplingConfig {
+  combine_bind_group : Bool
+}
+pub fn DownsamplingConfig::combine_bind_group_enabled(Self) -> Bool
+pub fn DownsamplingConfig::default() -> Self
+
+pub struct EnvironmentMapGenerationPlugin {
+}
+pub fn EnvironmentMapGenerationPlugin::default() -> Self
+
+pub struct EnvironmentMapIds {
+  diffuse : @asset.Handle[@image.Image]?
+  specular : @asset.Handle[@image.Image]?
+}
+pub fn EnvironmentMapIds::default() -> Self
+
+pub struct EnvironmentMapViewLightProbeInfo {
+  cubemap_index : Int
+  smallest_specular_mip_level : Int
+  intensity : Float
+  affects_lightmapped_mesh_diffuse : Bool
+}
+pub fn EnvironmentMapViewLightProbeInfo::default() -> Self
+
+pub struct GeneratorBindGroupLayouts {
+  downsampling_first : String
+  downsampling_second : String
+  radiance : String
+  irradiance : String
+  copy : String
+}
+pub fn GeneratorBindGroupLayouts::default() -> Self
+
+pub struct GeneratorPipelines {
+  downsample_first : Int
+  downsample_second : Int
+  copy : Int
+  radiance : Int
+  irradiance : Int
+}
+pub fn GeneratorPipelines::default() -> Self
+
+pub struct GeneratorSamplers {
+  linear : String
+}
+pub fn GeneratorSamplers::default() -> Self
+
+pub struct LightProbePlugin {
+}
+pub fn LightProbePlugin::default() -> Self
+
+pub struct LightProbePluginState {
+  binding_arrays_supported : Bool
+  extracted_probe_count : Int
+}
+pub fn LightProbePluginState::default() -> Self
+
+pub struct LightProbesUniform {
+  reflection_probe_count : Int
+  irradiance_volume_count : Int
+  view_cubemap_index : Int
+}
+pub fn LightProbesUniform::default() -> Self
+
+pub struct RenderLightProbe {
+  light_from_world_transposed : Array[@math.Vec4]
+  falloff : @math.Vec3
+  parallax_correction_bounds : @math.Vec3
+  texture_index : Int
+  intensity : Float
+  flags : Int
+}
+pub fn RenderLightProbe::default() -> Self
+
+pub(all) enum RenderViewEnvironmentMapBindGroupEntries {
+  Single(RenderViewEnvironmentMapBindGroupEntriesSingle)
+  Multiple(RenderViewEnvironmentMapBindGroupEntriesMultiple)
+}
+
+pub struct RenderViewEnvironmentMapBindGroupEntriesMultiple {
+  diffuse_textures : Array[@asset.Handle[@image.Image]?]
+  specular_textures : Array[@asset.Handle[@image.Image]?]
+}
+
+pub struct RenderViewEnvironmentMapBindGroupEntriesSingle {
+  diffuse_texture : @asset.Handle[@image.Image]?
+  specular_texture : @asset.Handle[@image.Image]?
+}
+
+pub(all) enum RenderViewIrradianceVolumeBindGroupEntries {
+  Single(@asset.Handle[@image.Image]?)
+  Multiple(Array[@asset.Handle[@image.Image]?])
+}
+
+pub struct RenderViewIrradianceVolumeInfo {
+  texture : @asset.Handle[@image.Image]?
+  intensity : Float
+}
+pub fn RenderViewIrradianceVolumeInfo::default() -> Self
+pub fn RenderViewIrradianceVolumeInfo::with_intensity(Self, Float) -> Self
+pub fn RenderViewIrradianceVolumeInfo::with_texture(Self, @asset.Handle[@image.Image]?) -> Self
+
+pub struct RenderViewLightProbes {
+  binding_index_to_textures : Array[@asset.Handle[@image.Image]?]
+  render_light_probes : Array[RenderLightProbe]
+  view_texture_index : Int
+}
+pub fn RenderViewLightProbes::default() -> Self
+pub fn RenderViewLightProbes::probe_count(Self) -> Int
+pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
+pub fn RenderViewLightProbes::push_texture(Self, @asset.Handle[@image.Image]?) -> Int
+pub fn RenderViewLightProbes::texture_count(Self) -> Int
+
+pub struct ViewLightProbesUniformOffset {
+  offset : UInt
+}
+pub fn ViewLightProbesUniformOffset::default() -> Self
+
+// Type aliases
+pub using @light {type EnvironmentMapLight}
+
+pub using @light {type GeneratedEnvironmentMapLight}
+
+pub using @light {type IrradianceVolume}
+
+pub using @light {type LightProbe}
+
+pub using @light {type ParallaxCorrection}
+
+// Traits
+

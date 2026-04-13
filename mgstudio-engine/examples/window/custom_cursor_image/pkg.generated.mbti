@@ -1,11 +1,32 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/window/custom_cursor_image"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/time",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub struct AnimationConfig {
+  first_sprite_index : Int
+  last_sprite_index : Int
+  increment : Int
+  fps : Int
+  mut frame_timer : @time.Timer
+}
+pub impl @ecs.Component for AnimationConfig
+
+pub struct CursorImageExampleState {
+  mut cached_texture_atlas : @asset.TextureAtlas?
+  mut rect_index : Int
+}
+pub impl @app.Resource for CursorImageExampleState
 
 // Type aliases
 

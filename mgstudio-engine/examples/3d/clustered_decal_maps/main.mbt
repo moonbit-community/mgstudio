@@ -17,7 +17,6 @@
 /// Baseline parity:
 /// - This example now attaches `ClusteredDecal` components directly with Bevy-
 ///   aligned map channels.
-/// - Clustered projected-decal rendering is not yet active in this backend.
 /// - This port keeps the same runtime behavior model (continuous spawn,
 ///   animated in/out lifetime, emissive toggle) using textured translucent
 ///   proxy meshes.

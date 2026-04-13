@@ -1,0 +1,23 @@
+import {
+  "tonyfettes/any",
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render" @render_gpu,
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
+  "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/window",
+}
+
+supported_targets = "native"

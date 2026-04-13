@@ -32,7 +32,7 @@ pub(all) suberror LinearMapError {
 pub(all) struct Interval {
   start_ : Float
   end_ : Float
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn Interval::new(

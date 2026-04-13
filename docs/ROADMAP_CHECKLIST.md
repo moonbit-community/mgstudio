@@ -1,39 +1,146 @@
 This file must not exceed 200 lines.
 
-- [ ] Package `ecs` (pending full change-detection boundary closure).
-- [ ] Package `ldtk` (system-chain/message parity landed; pending full bevy_ecs_ldtk module/API/example closure).
-- [ ] Package `material` (pending deferred-method runtime activation and forward-decal extension shader specialization).
-- [ ] Package `pbr` (pending bevy-like directory topology via subpackage split + decal/occlusion/OIT/transmitted-shadow backend closures).
-- [ ] Package `remote` (current plugin is still stubbed backend).
-- [ ] Package `render` (pending Bevy file-topology + stage-ownership parity closure).
-- [ ] Package `render/renderer` (pending Bevy renderer module-boundary/source-shape parity closure).
-- [ ] Package `solari` (current runtime boundary is still stubbed).
-- [ ] Package `text` (pending glyph/layout stress bottleneck closure).
-- [x] Issue `render/bevy_file_mapping_matrix_lock`: matrix now includes `render3d_morph` and latest `phase_state/math/material_flags/targets/systems` splits.
-- [ ] Issue `render/bevy_stage_boundary_parity`: `Extract/Prepare/Queue/Execute` entrypoints已独立，`execute_impl` 已迁至 `render3d_execute`，camera queue-build/motion-vector/main-pass/point-shadow/postprocess 已独立；pending按 Bevy 文件边界继续细化 execute orchestration 层。
-- [x] Issue `pbr/bevy_render_file_decomposition`: `bundles/phase_state/math/material_flags/runtime_config/targets/systems/execute/execute_collect/execute_mesh_collect/execute_camera_queue_build/execute_camera_motion_vector/execute_camera_main_pass/execute_camera_point_shadow/execute_camera_postprocess/morph/skin/light/fog/gpu_preprocess/mesh_bindings/mesh_view_bindings/postprocess/world_transform_cache/scene_resources` split landed.
-- [ ] Issue `pbr/morph_gpu_uniform_runtime_parity`: current morph path still deforms CPU-side mesh each frame, pending Bevy-like render-side morph index/uniform double-buffer pipeline.
-- [ ] Issue `roadmap/parity_first_acceptance_policy`: use source-structure + runtime-behavior parity as acceptance gate; keep stress/FPS data as secondary verification artifacts.
-- [ ] Issue `material/deferred_renderer_method_runtime`: activate non-forward runtime path for `OpaqueRendererMethod::Deferred` beyond API-only storage.
-- [ ] Issue `material/forward_decal_material_ext_shader_specialization`: wire `ForwardDecalMaterialExt` values into renderer shader specialization path.
-- [ ] Issue `pbr/forward_decal_runtime`: implement projected forward decal shading path (replace current marker-only runtime note).
-- [ ] Issue `pbr/clustered_decal_runtime`: implement clustered decal projection/material application path (replace current metadata-only path).
-- [ ] Issue `pbr/occlusion_culling_runtime`: wire `OcclusionCulling` marker into actual renderer occlusion-culling path.
-- [ ] Issue `pbr/order_independent_transparency_runtime`: close weighted OIT runtime path behind `OrderIndependentTransparencySettings`.
-- [ ] Issue `pbr/directory_topology_subpackage_parity`: current Moon package compiles only `pbr/*.mbt` (flat), so Bevy-style `pbr/render/*` requires explicit subpackage migration (`pbr/render`, `pbr/deferred`, `pbr/decal`, ...), not raw file moves.
-- [ ] Issue `physics/examples_bevy_rapier_visual_parity`: run screenshot-by-screenshot visual audit against `bevy_rapier v0.32.0` and fix behavior/render mismatches.
-- [ ] Issue `examples_3d/atmosphere_visual_parity`: remove legacy fallback path in `atmosphere` and align with Bevy atmosphere/volumetric-fog/water material flow.
-- [ ] Issue `render/atmosphere_sky_render_runtime`: implement true atmosphere sky rendering path (not only distance-fog remap), current gap keeps `examples/3d/atmosphere` sky black and blocks visual parity.
-- [ ] Issue `examples_3d/auto_exposure_visual_parity`: align `auto_exposure` scene luminance adaptation output with Bevy reference screenshot flow.
-- [ ] Issue `render/cubemap_sampling_pipeline_alignment`: migrate current stacked-2d cubemap compatibility path to true cube-texture sampling layout parity.
-- [ ] Issue `text/perf_many_glyphs`: roundAD dirty-only span sync rerun moves `many_glyphs` to `~4.13 FPS` (`/tmp/mgstudio_stress_profile_20260404_roundAD_text_dirty_only/results.tsv`) but `execute_2d/pass_2d` still dominates in trace (`/tmp/mgstudio_stress_profile_20260404_roundAB_many_glyphs_trace/traces/many_glyphs.trace.json`), pending Bevy `TransparentUi/Transparent2d` phase split + prepare-only batching.
-- [ ] Issue `text/perf_text_pipeline`: optimize text pipeline bottlenecks in `text_pipeline`.
-- [ ] Issue `remote/transport_backend`: replace remote plugin stub with real transport backend.
-- [ ] Issue `remote/protocol_backend`: replace remote plugin stub with protocol/message runtime.
-- [ ] Issue `native/dependency_zlib_link_propagation`: fix native test link path so transitive `mizchi/zlib` `-lz` is propagated (current macOS native link fails unresolved `_compress/_inflate/_deflate`).
-- [ ] Issue `solari/runtime_path`: replace solari runtime stub with executable runtime path.
-- [ ] Issue `stress_tests/3d_heavy_scenes`: latest rerun reaches `many_foxes ~6.38 FPS` no-trace (`/tmp/mgstudio_perf_many_foxes_after_revert_transform_ntrace/results.tsv`) and `~5.88 FPS` trace (`/tmp/mgstudio_perf_many_foxes_after_revert_transform_trace/traces/many_foxes.trace.json`); `render3d.extract` median dropped to `~1.12ms`, remaining top hotspots are `transform.propagate (~53ms)` + `animation.animate_targets (~42ms)` + `execute_3d_camera_queue_build` outliers.
-- [ ] Issue `stress_tests/text_pipeline`: roundAD no-trace rerun reaches `many_glyphs ~4.13 FPS`, `text_pipeline ~9.12 FPS`, `many_text2d ~22.98 FPS` (`/tmp/mgstudio_stress_profile_20260404_roundAD_text_dirty_only/results.tsv`), remaining blocker is Bevy-style `TransparentUi/Transparent2d` phase split + queue/prepare-only batching parity (`bevy_sprite_render::queue_sprites/prepare_sprite_image_bind_groups`).
-- [ ] Issue `stress_tests/visual_audit_20260401`: full capture set includes `/tmp/mgstudio_stress_visual_20260404_roundBD_worker` (`sanity_summary.tsv`; 19/19 pass), delay2 recheck `/tmp/mgstudio_stress_visual_20260404_roundBD_delay2_recheck`, and Bevy-scale-constant recheck `/tmp/mgstudio_stress_visual_20260404_roundBE_sprite_recheck`; `many_sprites/many_animated_sprites/many_sprite_meshes/many_animated_sprite_meshes/many_text2d` still render as sparse single-point output pending sprite queue/cull path deep parity.
-- [ ] Issue `ui/picking_hit_test_transform_aware_alignment`: fixed `Interaction` skip regression and reverted accidental input-layer Y flip regression in `mouse_position` (avoid mirrored hover); remaining work is full Bevy `ui_focus_system/picking_backend` traversal-state + `Pickable`-blocking parity.
-- [ ] Issue `ldtk/bevy_ecs_ldtk_source_layout_parity`: plugin schedule topology + clear-color + int-grid-image asset path aligned; pending `tile_makers` parity and module-file layout closure.
+| Bevy Side | mgstudio Side | Structure | Runtime | Overall | Status | Main Gaps |
+|---|---|---:|---:|---:|---|---|
+| `bevy_app` | `mgstudio-engine/app` | 96% | 85% | 85% | 🟡 In Progress | System scheduling and ergonomics still diverge in several APIs. |
+| `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 88% | 80% | 80% | 🟡 In Progress | By-design architecture differences from Bevy remain and need documented boundaries. |
+| `bevy_transform` | `mgstudio-engine/transform` | 95% | 86% | 86% | 🟡 In Progress | Stress-scene throughput and integration ordering still need parity validation. |
+| `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
+| `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
+| `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
+| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
+| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 66% | 66% | 🟡 In Progress | PBR module shape is close, but runtime parity is still significantly incomplete. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 60% | 60% | 🟡 In Progress | `RENDER-003..012` are still open and block true behavior parity. |
+| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
+| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
+| `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
+| `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 76% | 76% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
+| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 78% | 78% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
+| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 72% | 72% | 🟡 In Progress | Pointer-hit and layout/render consistency still require continuous parity checks. |
+| `bevy_text` | `mgstudio-engine/text` | 90% | 66% | 66% | 🟡 In Progress | Text shaping/BiDi dependency gaps still block full behavior equivalence. |
+| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 93% | 70% | 70% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
+| `bevy_animation` | `mgstudio-engine/animation` | 93% | 68% | 68% | 🟡 In Progress | Typed event and runtime coupling still need deeper source-level alignment. |
+| `bevy_scene` (static scene path) | `mgstudio-engine/scene` | 92% | 72% | 72% | 🟡 In Progress | Spawn/runtime integration has remaining parity-tail differences. |
+| `bevy_scene` (`dynamic_scene*`) | N/A (explicit non-goal: dynamic) | 0% | 0% | 0% | ⏸ Excluded | Dynamic-scene path remains explicitly out of scope. |
+| `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | 90% | 74% | 74% | 🟡 In Progress | Gizmo rendering/runtime polish and behavior tails are still pending. |
+| `bevy_picking` | `mgstudio-engine/picking` | 90% | 70% | 70% | 🟡 In Progress | Camera-space and UI interaction edge cases still need strict parity validation. |
+| `bevy_input` | `mgstudio-engine/input` | 94% | 82% | 82% | 🟡 In Progress | Remaining platform/event-order corner cases still need alignment checks. |
+| `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 80% | 80% | 🟡 In Progress | Monitor-aware sizing and platform-semantics tails are still open. |
+| `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
+| `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
+| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
+| `bevy_light` | `mgstudio-engine/light` | 92% | 72% | 72% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
+| `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
+| `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
+| `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
+| `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
+| `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 88% | 88% | 🟡 In Progress | Final semantic parity audit against Bevy accessibility behavior is pending. |
+| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 64% | 64% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
+| Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
+| Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
+| Workspace-wide native validation | `moon check/test` integration | 90% | 58% | 58% | 🟡 In Progress | Full native test reliability is still blocked by remaining environment/runtime gaps. |
+
+| Rollup | Value |
+|---|---:|
+| Bevy→mgstudio path parity (considered scope) | 100% (`1031/1031`, `missing=0`, 2026-04-12) |
+| Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
+| Current weighted migration completion (included scope) | 73% |
+| Last updated | 2026-04-13 |
+
+- [ ] `render/pbr`: close `RENDER-003` by introducing Bevy-shaped global skin uniform allocator and previous-frame buffers.
+- [ ] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove flow matching Bevy boundaries.
+- [ ] `render/pbr`: close `RENDER-005` by adding dedicated motion-vector flag stage after skin/morph extraction.
+- [ ] `render/pbr`: close `RENDER-006` by moving remaining bind-group creation fully into prepare-bind-groups stage.
+- [ ] `render/pbr`: close `RENDER-007` by aligning per-view bind-group ownership and preparation ordering.
+- [ ] `render/pbr`: close `RENDER-008` by matching GPU preprocess flush/prepare lifecycle to Bevy stage split.
+- [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
+- [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
+- [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
+- [ ] `gltf/scene`: replace path-alignment wrapper files with owner-file real implementations (stopgap wrappers are currently back in tree).
+- [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
+- [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.
+- [x] `camera`: switch camera mesh ray-cast API surface to `picking/mesh_picking/ray_cast` owner types/functions instead of `pbr` wrappers.
+- [x] `examples`: switch in-tree mesh ray-cast usage (`3d/mesh_ray_cast`, `ui/render_ui_to_texture`) from `@pbr` shim calls to `picking/mesh_picking/ray_cast` owner path.
+- [x] `examples/camera-projection-queries`: switch remaining example camera ray/view helpers from `@pbr.render3d_camera_*` to `@camera.camera_*` owner surface.
+- [x] `gltf-owner-callsites`: switch in-repo consumers (`pbr/scene/gltf examples`) from `@gltf` forwarding helpers to direct `@gltf_loader` owner APIs.
+- [x] `gltf-extensions-callsites`: switch scene runtime and extension examples from `@gltf.gltf_extension_*` forwarding helpers to `@gltf_loader_extensions` owner APIs.
+- [x] `scene/dead-wrapper-prune`: remove unreferenced compatibility wrappers (`scene_spawner_run_*`, `scene_spawner_plugin*`, `scene_loader_plugin`, `scene_*_to_json`) to keep scene surface behavior-only.
+- [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
+- [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
+- [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.
+- [x] `ui/widget-dead-wrapper-prune`: remove unreferenced interaction/plugin forwarding wrappers from `ui/widget/top`.
+- [x] `material/dead-wrapper-prune`: remove unreferenced identity wrappers in `material/key` and `material/descriptor`.
+- [x] `math/rects-dead-wrapper-prune`: remove unreferenced identity wrappers in `math/rects/{rect,irect,urect}`.
+- [x] `window/cursor-dead-wrapper-prune`: remove unreferenced `system_cursor_icon_identity` forwarding helper.
+- [x] `window/cursor-system_cursor-owner`: replace `system_cursor` alias shell with Bevy-shaped `SystemCursorIcon` enum + native conversion mapping.
+- [x] `window/cursor-root-ownerization`: replace `window/cursor.mbt` root aliases with package-owned cursor enums/structs/keys and native conversion helpers.
+- [x] `gizmos/dead-wrapper-prune`: remove unreferenced `*_identity` forwarders in `aabb/arcs/arrows/circles/curves/frustum/grid/primitives/dim2/rounded_box`.
+- [x] `math/dead-wrapper-prune`: remove unreferenced identity forwarders in `math/curve/easing` and `math/sampling/mesh_sampling`.
+- [x] `math/rects-ownerization`: replace `math/rects/{rect,irect,urect,top}` alias forwarding with owner structs/methods/constructors inside `math/rects` package.
+- [x] `math/sampling-ownerization`: replace `math/sampling/{top,mesh_sampling,standard,shape_sampling}` alias forwarding with owner sampling types/traits/runtime logic.
+- [x] `math/curve-adaptors-ownerization`: replace `math/curve/{adaptors,iterable}` alias forwarding with owner runtime curve adaptor/iterable implementations.
+- [x] `math/curve-derivatives-ownerization`: replace `math/curve/derivatives/adaptor_impls` alias re-export with owner derivative carrier structs/constructors.
+- [x] `math/curve-cores-ownerization`: replace `math/curve/{cores,sample_curves}` alias forwarding with owner core interpolation/sample-curve implementations.
+- [x] `math/curve-top+interval+easing-ownerization`: replace `math/curve/{top,interval,easing}` direct `@math` alias shells with owner types/runtime and local curve-domain wiring.
+- [x] `math/cubic_splines-curve_impls-ownerization`: replace `math/cubic_splines/curve_impls` derivative wrappers with owner derivative payload/runtime sampling logic.
+- [x] `math/cubic_splines-top-ownerization`: replace `math/cubic_splines/top` direct type aliases with owner wrapper structs and explicit spline conversion/runtime APIs.
+- [x] `camera/winit/utils-shell-prune`: remove alias-only shells in `camera/visibility/*`, `winit/cursor/*`, and `utils/{debug_info,utils}` by switching to behavior-bearing helper surfaces.
+- [x] `state+render-shell-prune`: remove alias-only exports in `state/state/{resources,transitions}` and `render/error_handler` with direct runtime helper APIs.
+- [x] `camera+dof-shell-prune`: remove alias-only exports in `camera/clear_color` and `post_process/dof/top`, keep direct behavior helpers over owner runtime types.
+- [x] `render/view-shell-prune`: remove alias-only exports in `render/view/top` and `render/view/window/screenshot` and align capture result typing in `render/gpu_readback`.
+- [x] `dev_tools+render_diagnostic-shell-prune`: remove alias-only exports in `dev_tools/frame_time_graph/top` and `render/diagnostic/internal`, with `render/lib` typing synchronized to renderer owner type.
+- [x] `render_phase/draw_state-shell-prune`: remove alias-only `DrawState` export in `render/render_phase/draw_state` and use renderer owner state type directly in behavior APIs.
+- [x] `transform/components-shape`: replace dead forwarding fns in `transform/components/{transform,global_transform}` with Bevy-path type ownership aliases.
+- [x] `transform/components-ownerization`: replace `transform/components/{transform,global_transform,top}` alias forwarding with owner `Transform/Affine2/GlobalTransform` runtime definitions.
+- [x] `utils/dead-wrapper-prune`: remove unused `utils_*_available` placeholders and replace map identity shim with concrete `map_new/map_from_entries`.
+- [x] `utils/runtime-ownerization`: replace placeholder `bloom_filter` / `buffered_channel` / `parallel_queue` stubs with concrete MoonBit runtime implementations.
+- [x] `utils/once+atomic_id-ownerization`: replace bevy-utils placeholder wording with concrete `OnceFlag/OnceCell` and monotonic atomic-id runtime behavior.
+- [x] `feathers/no-op-plugin-prune`: replace `feathers` controls/cursor/alpha_pattern `app -> app` stubs with real install path (`controls` chain + resource init + plugin markers).
+- [x] `examples/camera-shell-prune`: remove top-level stub files (`2d_on_ui.mbt`, `2d_screen_shake.mbt`, `2d_top_down_camera.mbt`) and keep only owner `*/main.mbt` entries.
+- [x] `ui_widgets/empty-file-prune`: delete unused empty `ui_widgets/ui_widgets.mbt`.
+- [x] `asset/io-dead-wrapper-prune`: remove unreferenced `asset_io_{android,wasm,web}_supported` stubs and keep source-name owner APIs.
+- [x] `asset/io-platform-exclude-prune`: delete unused `asset/io/{android,wasm,web}.mbt` shell files and exclude corresponding Bevy platform sources from parity scope.
+- [x] `dev_tools/dead-wrapper-prune`: remove unreferenced `*_available` stubs in `ci_testing`, `easy_screenshot`, `picking_debug`, `render_debug`, `states`.
+- [x] `dev_tools/ci_testing-runtime`: replace `dev_tools/ci_testing` shell package with Bevy-shaped config/events/runtime plugin (screenshot/app-exit/custom-event/camera-move flow).
+- [x] `text/error+font_loader-shape`: replace boolean availability stubs with concrete `TextError` / `FontLoader` / `FontLoaderError` owner types.
+- [x] `math/curve-dead-wrapper-prune`: remove unreferenced `curve_identity` and `easing_curve_identity`.
+- [x] `gizmos/cross+stroke_text-shape`: replace `*_supported` placeholders with concrete cross/text helper APIs in owner files.
+- [x] `gizmos/simplex+skinned+retained-shape`: replace bool stubs with concrete constants/types for simplex font, skinned-bounds config, retained gizmo data.
+- [x] `gizmos/aabb+frustum-ownerization`: replace alias-only `gizmos/{aabb,frustum}` with Bevy-shaped config/component/system/plugin runtime implementations.
+- [x] `gizmos/arcs+arrows+circles+curves+grid+rounded_box+config-ownerization`: replace alias-only gizmo utility files with behavior APIs (draw/config helpers) over owner runtime.
+- [x] `gizmos/plugin-entry-ownerization`: replace delegated `gizmos/lib` and `gizmos_render/lib` shells with real plugin structs (`PluginReplacement` + marker gating + explicit subplugin composition).
+- [x] `gizmos/skinned-mesh-bounds-entry-ownerization`: make `skinned_mesh_bounds` behavior-bearing (`GizmoConfigGroup` + `Component` + plugin install path) instead of struct-only placeholder.
+- [x] `math/primitives/top-ownerization`: keep Bevy-shaped type aggregation while adding behavior-bearing primitive helper surface in `math/primitives/top`.
+- [x] `camera_controller/ownerization`: move `free_camera` + `pan_camera` from pure forwarding into package-owned runtime components/systems/plugins.
+- [x] `module-tag-cleanup`: remove leftover `*_MODULE_ID`/`*_module_id` marker-only APIs from `math/curve/derivatives`, `ui/layout`, `gizmos/primitives`, and `camera/visibility`.
+- [x] `app/hotpatch-ownerization`: replace `app/hotpatch` runtime forwarding shell with package-owned hotpatch plugin/message/resource surface.
+- [x] `app/terminal-ctrlc-ownerization`: replace `app/terminal_ctrl_c_handler` helper shell with Bevy-shaped plugin + graceful-exit/exit-on-flag flow.
+- [x] `asset/io/file-sync-ownerization`: replace `sync_file_asset` host-forwarding shell with local file write path (parent-dir ensure + bytes flush).
+- [x] `gilrs/system-ownerization`: replace `gilrs_event_{startup,event}` pure forwarding with package-owned runtime polling state and counters.
+- [x] `gltf/loader`: promote `Milky2018/mgstudio/gltf/loader` to compiled subpackage (`moon.pkg`) so Bevy-path files are no longer dead.
+- [x] `gltf/loader`: move plugin/config/vertex-attribute/convert-coordinates ownership from root `gltf/*` into `gltf/loader/top.mbt`; root now compatibility forwarders.
+- [x] `gltf/assets+material`: route asset-label/material helper ownership through `gltf/loader` to remove duplicate root implementations.
+- [x] `path-subpackages`: promote `ui/widget` `winit/cursor` `dev_tools/frame_time_graph` `picking/mesh_picking/ray_cast` `sprite_render/*` path dirs to compiled packages.
+- [x] `winit/cursor`: move cursor-options apply system ownership into subpackage and wire plugin call path through it.
+- [x] `scene/components+scene_spawner`: move `SceneRoot/SceneInstance*` and plugin/spawner systems out of `scene/lib.mbt` into Bevy-shaped owner files.
+- [x] `scene/scene_loader+serde`: move glTF ready-check loader wiring and scene serde impl ownership out of aggregating files.
+- [x] `scene/ecs_keys`: remove unused wrapper exports (`scene_spawn_roots_system_ecs`, `scene_plugin_ecs`) and switch tests to owner systems.
+- [x] `state/state`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/state/state`) instead of dead wrappers.
+- [x] `state/state-foundation-ownerization`: replace alias forwarding in `state/state/{states,state_set,freely_mutable_state}` with local owner trait + helper implementations.
+- [x] `window/cursor`: promote Bevy path files to compiled owner subpackage (`Milky2018/mgstudio/window/cursor`) with root compatibility exports.
+- [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
+- [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
+- [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
+- [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
+- [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
+- [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe.
+- [ ] `render/wgpu_mbt` (deferred, upstream): expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for full meshlet capability parity (tracked at `moonbit-community/wgpu-mbt#11`).
+- [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
+- [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
+- [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.
+- [ ] `asset/image`: close runtime decode/link gaps and restore stable native testability.
+- [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence.
+- [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
+- [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.

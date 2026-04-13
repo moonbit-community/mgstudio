@@ -14,8 +14,8 @@
 
 ///|
 fn reset_text_ecs_test_state() -> Unit {
-  text_ecs_bridge_entries.clear()
-  ui_text_ecs_bridge_entries.clear()
+  text_ecs_entries.clear()
+  ui_text_ecs_entries.clear()
   text_runtime_world_id_ref.val = None
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
@@ -25,11 +25,22 @@ fn reset_text_ecs_test_state() -> Unit {
 }
 
 ///|
+fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
+  let this_run = world.advance_sequence()
+  let last_run = world.get_sequence_context().sequence().this_run
+  let sequence = @core.SystemSequence::new(last_run, this_run)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(sequence)
+  world.set_sequence_context(ctx)
+  sequence
+}
+
+///|
 test "text plugin inserts text runtime resources" {
   let app = text_plugin(@app.App::new(@ecs.World::new()))
-  inspect(app.contains_resource(RemSize::resource()), content="true")
-  inspect(app.contains_resource(FontCx::resource()), content="true")
-  inspect(app.contains_resource(FontAtlasSet::resource()), content="true")
+  debug_inspect(app.contains_resource(RemSize::resource()), content="true")
+  debug_inspect(app.contains_resource(FontCx::resource()), content="true")
+  debug_inspect(app.contains_resource(FontAtlasSet::resource()), content="true")
 }
 
 ///|
@@ -87,16 +98,16 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     local_transform,
   )
 
-  inspect(text_bundle_rerender_eq(bundle, expected), content="true")
-  inspect(view_visible, content="true")
-  inspect(
-    bundle.transform.to_json(),
-    content="Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+  debug_inspect(text_bundle_rerender_eq(bundle, expected), content="true")
+  debug_inspect(view_visible, content="true")
+  debug_inspect(
+    bundle.transform.to_json().to_string(),
+    content="\"Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
   )
 }
 
 ///|
-test "ecs text bridge cleanup removes dead entity entries" {
+test "ecs text cleanup removes dead entity entries" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
   let entity = world.spawn()
@@ -108,7 +119,7 @@ test "ecs text bridge cleanup removes dead entity entries" {
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
-  text_ecs_bridge_entries.push(EcsTextBridgeEntry::{
+  text_ecs_entries.push(EcsTextEntry::{
     world_id: world.world_id(),
     entity,
     handle: TextHandle::new(42),
@@ -129,46 +140,46 @@ test "ecs text bridge cleanup removes dead entity entries" {
     world, world_id, sequence, index_by_entity_id,
   )
 
-  inspect(text_ecs_bridge_entries.length(), content="0")
+  debug_inspect(text_ecs_entries.length(), content="0")
 }
 
 ///|
-test "text ecs bridge registers required components for Text2d" {
+test "text ecs registers required components for Text2d" {
   let world = @ecs.World::new()
   try! register_text_required_components(world)
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Text2d::new("Auto transform"))
   |> ignore)
 
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : @transform.Transform?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : TextLayout?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : TextFont?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : TextColor?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : LineHeight?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : TextBounds?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : @sprite.Anchor?) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.entity(entity).get() : @visibility.Visibility?) is Some(_),
     content="true",
   )
@@ -187,6 +198,7 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   .entity_mut(entity)
   .insert_component(@transform.Transform::identity())
   |> ignore)
+  ignore(next_system_sequence(world))
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
@@ -194,20 +206,26 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   )
 
   text_sync_ecs_system(world)
-  inspect(text_ecs_bridge_entries.length(), content="1")
-  inspect(text_ecs_bridge_entries[0].view_visible, content="false")
+  debug_inspect(text_ecs_entries.length(), content="1")
+  debug_inspect(text_ecs_entries[0].view_visible, content="false")
   text_render_system(world)
-  inspect(text_diagnostic_render_visible_text_count(), content="0")
+  debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
 
+  ignore(next_system_sequence(world))
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),
   )
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
+  )
   text_sync_ecs_system(world)
-  inspect(text_ecs_bridge_entries[0].view_visible, content="true")
+  debug_inspect(text_ecs_entries[0].view_visible, content="true")
   text_render_system(world)
-  inspect(text_diagnostic_render_visible_text_count(), content="1")
+  debug_inspect(text_diagnostic_render_visible_text_count(), content="1")
 }
 
 ///|
@@ -261,8 +279,8 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
     text_ecs_collect_span_edges(world),
   )
 
-  inspect(span_bundles.length(), content="2")
-  inspect(
+  debug_inspect(span_bundles.length(), content="2")
+  debug_inspect(
     text_span_bundle_eq(
       span_bundles[0],
       TextSpanBundle::new(TextSpan::new("::"), root_font)
@@ -273,7 +291,7 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     text_span_bundle_eq(
       span_bundles[1],
       TextSpanBundle::new(TextSpan::new("Anchor(Vec2(-0.5, 0.5)) "), root_font)
@@ -315,7 +333,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     logical_viewport_size: None,
   }
   ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
-  let entry = ui_text_ecs_bridge_entries[0]
+  let entry = ui_text_ecs_entries[0]
   let runtime_transform = @transform.Transform::from_xyz(320.0F, -180.0F, 7.0F)
   let runtime_layers = @sprite.RenderLayers::layer(11)
   text_set_transform(entry.handle, runtime_transform)
@@ -326,13 +344,19 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   let synced = ui_text_ecs_sync_existing_entry(world, entry, bundle, [])
   let instance = text_state.val.texts[0]
 
-  inspect(
-    text_get_transform(synced.handle).unwrap().to_json(),
-    content="Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+  debug_inspect(
+    text_get_transform(synced.handle).unwrap().to_json().to_string(),
+    content="\"Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
   )
-  inspect(instance.layers.to_json(), content="Number(2048)")
-  inspect(instance.anchor.to_json(), content="Array([Number(0), Number(0)])")
-  inspect(
+  debug_inspect(
+    instance.layers.to_json().to_string(),
+    content="\"Number(2048)\"",
+  )
+  debug_inspect(
+    instance.anchor.to_json().to_string(),
+    content="\"Array([Number(0), Number(0)])\"",
+  )
+  debug_inspect(
     y_axis_eq(instance.y_axis, YAxisOrientation::BottomToTop),
     content="true",
   )

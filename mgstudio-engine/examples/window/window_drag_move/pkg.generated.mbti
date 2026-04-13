@@ -1,18 +1,22 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/window/window_drag_move"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
-type ExampleText derive(Eq, Show)
+type ExampleText derive(Eq, @debug.Debug)
 
 pub(all) enum LeftClickAction {
   Nothing
   Move
   Resize
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type ResizeDir
 

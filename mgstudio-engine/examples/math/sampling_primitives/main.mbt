@@ -95,13 +95,13 @@ fn tetrahedron_shape() -> @math.Tetrahedron {
 pub(all) enum SamplingMode {
   Interior
   Boundary
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum SpawningMode {
   Manual
   Automatic
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Shape {
@@ -111,7 +111,7 @@ pub(all) enum Shape {
   Cylinder
   Tetrahedron
   Triangle
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct SpawnQueue {

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 let system_iteration_count : @diagnostic.DiagnosticPath = @diagnostic.DiagnosticPath::const_new(
   "system_iteration_count",
 )

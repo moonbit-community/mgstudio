@@ -92,8 +92,6 @@ pub fn Physics2dContext::query_filter_exclude_entity(
 }
 
 ///|
-
-///|
 fn rect_to_aabb(rect : @math.Rect) -> @rapier_core.Aabb {
   @rapier_core.Aabb::new(
     mg_vec2_to_rapier(rect.min),

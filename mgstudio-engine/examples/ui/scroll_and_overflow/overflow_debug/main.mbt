@@ -35,12 +35,12 @@ pub(all) enum MotionKind {
   Move
   Scale
   Rotate
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct AnimationMotion {
   kind : MotionKind
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct Container {}
@@ -307,7 +307,7 @@ fn spawn_demo_cell(
 pub(all) enum ContentKind {
   Image
   Text
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn content_title(content : ContentKind) -> String {

@@ -29,7 +29,7 @@ pub fn GlobalVolume::default() -> GlobalVolume {
 
 ///|
 let global_volume_resource_key : @ecs.ResourceKey[GlobalVolume] = @ecs.register_resource(
-  debug_name="bevy_audio::GlobalVolume",
+  debug_name="mgstudio_audio::GlobalVolume",
 )
 
 ///|

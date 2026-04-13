@@ -1,0 +1,112 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/window/cursor"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "Milky2018/window/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn cursor_icon_from_custom(CustomCursor) -> CursorIcon
+
+pub fn cursor_icon_from_system(SystemCursorIcon) -> CursorIcon
+
+pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
+
+pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
+
+// Errors
+
+// Types and methods
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CursorIcon {
+  System(SystemCursorIcon)
+  Custom(CustomCursor)
+}
+pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
+pub fn CursorIcon::from(SystemCursorIcon) -> Self
+pub fn CursorIcon::from_custom(CustomCursor) -> Self
+pub impl @ecs.Component for CursorIcon
+pub impl Default for CursorIcon
+
+pub(all) struct CursorOptions {
+  mut visible : Bool
+  mut grab_mode : CursorGrabMode
+  hit_test : Bool
+} derive(Eq, @debug.Debug)
+pub fn CursorOptions::default() -> Self
+pub impl @ecs.Component for CursorOptions
+
+pub(all) enum CustomCursor {
+  Image(CustomCursorImage)
+  Url(CustomCursorUrl)
+}
+
+pub struct CustomCursorImage {
+  handle : @asset.Handle[@image.Image]
+  texture_atlas : @asset.TextureAtlas?
+  flip_x : Bool
+  flip_y : Bool
+  rect : @math.URect?
+  hotspot : (Int, Int)
+}
+pub fn CustomCursorImage::new(@asset.Handle[@image.Image], (Int, Int), texture_atlas? : @asset.TextureAtlas?, flip_x? : Bool, flip_y? : Bool, rect? : @math.URect?) -> Self
+
+pub struct CustomCursorUrl {
+  url : String
+  hotspot : (Int, Int)
+}
+pub fn CustomCursorUrl::new(String, (Int, Int)) -> Self
+
+pub(all) enum SystemCursorIcon {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
+  EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ColResize
+  RowResize
+  AllScroll
+  ZoomIn
+  ZoomOut
+} derive(Eq, @debug.Debug)
+pub fn SystemCursorIcon::from_native(@core.CursorIcon) -> Self
+pub fn SystemCursorIcon::to_native(Self) -> @core.CursorIcon
+
+// Type aliases
+
+// Traits
+

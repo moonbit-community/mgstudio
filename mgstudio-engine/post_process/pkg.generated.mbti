@@ -2,16 +2,20 @@
 package "Milky2018/mgstudio/post_process"
 
 import {
-  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/post_process/effect_stack",
+  "Milky2018/mgstudio/post_process/motion_blur",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const POST_PROCESS_RUNTIME_ROOT : String = "Milky2018/mgstudio/post_process"
+
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
 
-pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration]
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading]
 
@@ -21,13 +25,13 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa]
 
-pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
+pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
+
+pub let ecs_key_msaa_writeback : @ecs.ComponentKey[MsaaWriteback]
 
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[ScreenSpaceAmbientOcclusion]
 
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[ScreenSpaceReflections]
-
-pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[ScreenSpaceTransmission]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 
@@ -35,9 +39,11 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter]
 
 pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping]
 
-pub let ecs_key_vignette : @ecs.ComponentKey[Vignette]
+pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
 
-pub fn screen_space_transmission_blur_taps(ScreenSpaceTransmissionQuality) -> Int
+pub fn msaa_writeback_required(MsaaWriteback?, Int) -> Bool
+
+pub fn post_process_effect_count(Bloom?, @effect_stack.Vignette?, @motion_blur.MotionBlur?, @effect_stack.ChromaticAberration?, MsaaWriteback?) -> Int
 
 // Errors
 
@@ -74,7 +80,7 @@ pub impl @ecs.Component for Bloom
 pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn BloomCompositeMode::default() -> Self
 
 pub struct BloomPrefilter {
@@ -85,16 +91,6 @@ pub fn BloomPrefilter::default() -> Self
 pub fn BloomPrefilter::new(Float, Float) -> Self
 pub fn BloomPrefilter::with_threshold(Self, Float) -> Self
 pub fn BloomPrefilter::with_threshold_softness(Self, Float) -> Self
-
-pub struct ChromaticAberration {
-  intensity : Float
-  max_samples : Int
-} derive(ToJson, @json.FromJson)
-pub fn ChromaticAberration::default() -> Self
-pub fn ChromaticAberration::new(Float, Int) -> Self
-pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
-pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
-pub impl @ecs.Component for ChromaticAberration
 
 pub(all) struct ColorGrading {
   mut global : ColorGradingGlobal
@@ -154,7 +150,7 @@ pub impl @ecs.Component for CustomPostProcess3d
 pub(all) enum DebandDither {
   Disabled
   Enabled
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DebandDither::default() -> Self
 pub impl @ecs.Component for DebandDither
 
@@ -178,18 +174,15 @@ pub(all) enum FxaaSensitivity {
   High
   Ultra
   Extreme
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FxaaSensitivity::default() -> Self
 
-pub struct MotionBlur {
-  shutter_angle : Float
-  samples : Int
+pub struct MsaaWriteback {
+  enabled : Bool
 } derive(ToJson, @json.FromJson)
-pub fn MotionBlur::default() -> Self
-pub fn MotionBlur::new(Float, Int) -> Self
-pub fn MotionBlur::with_samples(Self, Int) -> Self
-pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
-pub impl @ecs.Component for MotionBlur
+pub fn MsaaWriteback::default() -> Self
+pub fn MsaaWriteback::new(Bool) -> Self
+pub impl @ecs.Component for MsaaWriteback
 
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel
@@ -205,7 +198,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> Self
 
 pub struct ScreenSpaceReflections {
@@ -232,24 +225,6 @@ pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
 pub impl @ecs.Component for ScreenSpaceReflections
 
-pub struct ScreenSpaceTransmission {
-  quality : ScreenSpaceTransmissionQuality
-  steps : Int
-} derive(ToJson, @json.FromJson)
-pub fn ScreenSpaceTransmission::default() -> Self
-pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
-pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
-pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
-pub impl @ecs.Component for ScreenSpaceTransmission
-
-pub(all) enum ScreenSpaceTransmissionQuality {
-  Low
-  Medium
-  High
-  Ultra
-} derive(Eq, Show, ToJson, @json.FromJson)
-pub fn ScreenSpaceTransmissionQuality::default() -> Self
-
 pub struct TemporalAntiAliasing {
   reset : Bool
 } derive(ToJson, @json.FromJson)
@@ -275,31 +250,16 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-} derive(Eq, Hash, Show, ToJson, @json.FromJson)
+} derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
 
-pub struct Vignette {
-  intensity : Float
-  radius : Float
-  smoothness : Float
-  roundness : Float
-  center : @math.Vec2
-  edge_compensation : Float
-  color : @color.Color
-} derive(ToJson, @json.FromJson)
-pub fn Vignette::default() -> Self
-pub fn Vignette::new(Float, Float, Float, Float) -> Self
-pub fn Vignette::with_center(Self, @math.Vec2) -> Self
-pub fn Vignette::with_color(Self, @color.Color) -> Self
-pub fn Vignette::with_edge_compensation(Self, Float) -> Self
-pub fn Vignette::with_intensity(Self, Float) -> Self
-pub fn Vignette::with_radius(Self, Float) -> Self
-pub fn Vignette::with_roundness(Self, Float) -> Self
-pub fn Vignette::with_smoothness(Self, Float) -> Self
-pub impl @ecs.Component for Vignette
-
 // Type aliases
+pub using @effect_stack {type ChromaticAberration}
+
+pub using @motion_blur {type MotionBlur}
+
+pub using @effect_stack {type Vignette}
 
 // Traits
 

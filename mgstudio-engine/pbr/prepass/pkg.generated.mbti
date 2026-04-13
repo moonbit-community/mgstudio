@@ -1,0 +1,114 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/prepass"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline/deferred",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const EARLY_PREPASS_LABEL : String = "early prepass"
+
+pub const LATE_PREPASS_LABEL : String = "late prepass"
+
+pub fn early_prepass_should_run(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub let ecs_key_any_prepass_plugin_loaded : @ecs.ResourceKey[AnyPrepassPluginLoaded]
+
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
+
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.DepthPrepass]
+
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.MotionVectorPrepass]
+
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.NormalPrepass]
+
+pub let ecs_key_prepass_pipeline_state : @ecs.ResourceKey[PrepassPipelineState]
+
+pub let ecs_key_prepass_view_state : @ecs.ResourceKey[@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState]
+
+pub fn late_prepass_should_run(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub fn prepass_any_color_attachment_enabled(has_normal~ : Bool, has_motion_vectors~ : Bool, has_deferred~ : Bool, has_deferred_lighting_pass_id~ : Bool) -> Bool
+
+pub fn prepass_has_any_color_attachment(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub fn prepass_has_any_phase(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub fn prepass_pipeline_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn prepass_pipeline_plugin_with(@app.App[@ecs.World], PrepassPipelinePlugin) -> @app.App[@ecs.World]
+
+pub fn prepass_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn prepass_plugin_with(@app.App[@ecs.World], @Milky2018/mgstudio/core_pipeline/prepass.PrepassPlugin) -> @app.App[@ecs.World]
+
+pub fn prepass_should_copy_depth_to_prepass_depth(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub fn prepass_should_skip_due_to_deferred(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub fn prepass_update_pipeline_state(@ecs.World) -> Unit
+
+pub fn render3d_prepass_any_enabled(PrepassBindings3d) -> Bool
+
+pub fn render3d_prepass_bindings(Bool, Bool, Bool, Bool) -> PrepassBindings3d
+
+pub fn render3d_prepass_bindings_for_entity(@ecs.World, @core.Entity) -> PrepassBindings3d
+
+// Errors
+
+// Types and methods
+pub struct AnyPrepassPluginLoaded {
+} derive(Default, Eq, @debug.Debug)
+pub impl @app.Resource for AnyPrepassPluginLoaded
+
+pub struct PrepassBindings3d {
+  depth : Bool
+  normal : Bool
+  motion_vector : Bool
+  deferred : Bool
+}
+pub fn PrepassBindings3d::any_enabled(Self) -> Bool
+pub fn PrepassBindings3d::default() -> Self
+pub fn PrepassBindings3d::with_deferred(Self, Bool) -> Self
+pub fn PrepassBindings3d::with_depth(Self, Bool) -> Self
+pub fn PrepassBindings3d::with_motion_vector(Self, Bool) -> Self
+pub fn PrepassBindings3d::with_normal(Self, Bool) -> Self
+
+pub struct PrepassPipelinePlugin {
+}
+pub fn PrepassPipelinePlugin::default() -> Self
+
+pub struct PrepassPipelineState {
+  pipeline_ready : Bool
+  view_bind_group_ready : Bool
+} derive(Eq, @debug.Debug)
+pub fn PrepassPipelineState::default() -> Self
+pub impl @app.Resource for PrepassPipelineState
+
+pub struct PrepassPluginState {
+  enabled : Bool
+  view_count : Int
+}
+pub fn PrepassPluginState::default() -> Self
+
+// Type aliases
+pub using @deferred {type DeferredPrepass}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type DepthPrepass}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type MotionVectorPrepass}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassNode}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassPlugin}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassViewState}
+
+// Traits
+

@@ -1,0 +1,6 @@
+import {
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio/math" @math,
+}
+
+supported_targets = "native"

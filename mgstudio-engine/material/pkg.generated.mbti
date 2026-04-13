@@ -6,20 +6,50 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
 pub fn[S : IntoStandardMaterialAsset] add(@asset.Assets[StandardMaterial], S) -> @asset.Handle[StandardMaterial]
 
+pub fn bind_group_layout_entries_sequential(UInt, Array[BindGroupLayoutEntryBuilder]) -> BindGroupLayoutEntries
+
+pub fn bind_group_layout_entries_single(UInt, BindGroupLayoutEntryBuilder) -> Array[@render_resource.BindGroupLayoutEntry]
+
+pub fn bind_group_layout_entries_with_indices(UInt, Array[(Int, BindGroupLayoutEntryBuilder)]) -> BindGroupLayoutEntries
+
+pub fn bind_group_layout_entry_builder(@render_resource.BindingType) -> BindGroupLayoutEntryBuilder
+
+pub fn draw_function_label(String) -> String
+
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
 
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
 
+pub let ecs_key_material_default_opaque_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
+
+pub let ecs_key_material_forward_decal_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
+
+pub let ecs_key_material_mesh3d : @ecs.ComponentKey[MeshMaterial3d]
+
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d]
 
 pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
+
+pub fn material_alpha_is_blended(AlphaMode3d) -> Bool
+
+pub fn material_default_opaque_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
+
+pub fn material_specialize_base((@ecs.World, String, Int) -> UInt64 raise, @ecs.World, String, Int) -> UInt64 raise
+
+pub fn material_specialize_user((String, Int) -> Unit raise, String, Int) -> Unit raise
+
+pub fn missing_vertex_attribute_error(String) -> SpecializedMeshPipelineError
+
+pub fn shader_label(String) -> String
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
@@ -28,9 +58,13 @@ pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMateria
 pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) -> Bool
 
 // Errors
+pub suberror SpecializedMeshPipelineError {
+  MissingVertexAttribute(String)
+}
 
 // Types and methods
 #alias(AlphaMode)
+#alias(MaterialAlphaMode)
 pub(all) enum AlphaMode3d {
   Opaque
   Mask(Float)
@@ -41,6 +75,21 @@ pub(all) enum AlphaMode3d {
   AlphaToCoverage
 }
 
+pub struct BindGroupLayoutEntries {
+  entries : Array[@render_resource.BindGroupLayoutEntry]
+}
+pub fn BindGroupLayoutEntries::entries(Self) -> Array[@render_resource.BindGroupLayoutEntry]
+
+pub struct BindGroupLayoutEntryBuilder {
+  kind : @render_resource.BindingType
+  visibility : UInt?
+  count : UInt?
+}
+pub fn BindGroupLayoutEntryBuilder::build(Self, Int, UInt) -> @render_resource.BindGroupLayoutEntry
+pub fn BindGroupLayoutEntryBuilder::count(Self, UInt) -> Self
+pub fn BindGroupLayoutEntryBuilder::visibility(Self, UInt) -> Self
+
+#alias(MaterialDefaultOpaqueMethod)
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 } derive(ToJson, @json.FromJson)
@@ -52,6 +101,12 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+
+pub struct DrawFunctionId {
+  id : UInt
+} derive(Eq)
+pub fn DrawFunctionId::id(Self) -> UInt
+pub fn DrawFunctionId::new(UInt) -> Self
 
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
@@ -77,6 +132,7 @@ pub(all) enum Face3d {
   Back
 }
 
+#alias(MaterialForwardDecalExt)
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
 } derive(ToJson, @json.FromJson)
@@ -85,6 +141,8 @@ pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
 pub impl @ecs.Component for ForwardDecalMaterialExt
 
+#alias(MaterialMesh3d)
+#alias(MaterialMesh3dComponent)
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
   extended_material : ExtendedMaterialMetadata3d?
@@ -102,21 +160,25 @@ pub impl @ecs.Component for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d
 pub impl @json.FromJson for MeshMaterial3d
 
+#alias(MaterialOpaqueRendererMethod)
 pub(all) enum OpaqueRendererMethod {
   Auto
   Forward
   Deferred
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn OpaqueRendererMethod::default() -> Self
+pub fn OpaqueRendererMethod::resolve_runtime(Self, Self) -> Self
 
+#alias(MaterialParallaxMethod)
 pub(all) enum ParallaxMappingMethod {
   Occlusion
   Relief(Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ParallaxMappingMethod::default() -> Self
 pub fn ParallaxMappingMethod::max_steps(Self) -> Int
 pub fn ParallaxMappingMethod::relief_default() -> Self
 
+#alias(MaterialDescriptor)
 pub struct StandardMaterial {
   base_color : @color.Color
   base_color_texture : @asset.Handle[@image.Image]?
@@ -192,6 +254,23 @@ pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 
 // Type aliases
+pub type BaseSpecializeFn = (@ecs.World, String, Int) -> UInt64 raise
+
+pub type DrawFunctionLabel = String
+
+pub type InternedDrawFunctionLabel = String
+
+pub type InternedShaderLabel = String
+
+pub using @render_resource {type BindGroupLayoutEntry as MaterialBindGroupLayoutEntry}
+
+pub type MaterialMeshVertexLayout = Int
+
+pub type MaterialPipelineKey = String
+
+pub type ShaderLabel = String
+
+pub type UserSpecializeFn = (String, Int) -> Unit raise
 
 // Traits
 pub(open) trait IntoStandardMaterialAsset {

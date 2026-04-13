@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/examples/ecs/removal_detection"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -10,7 +11,7 @@ import {
 // Errors
 
 // Types and methods
-type MyComponent derive(Eq, Show)
+type MyComponent derive(Eq, @debug.Debug)
 pub impl @ecs.Component for MyComponent
 
 // Type aliases

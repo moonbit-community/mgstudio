@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const DEPTH_CHANGE_RATE : Float = 0.1F
 
 ///|

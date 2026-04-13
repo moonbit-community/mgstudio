@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/state/computed_states"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -14,34 +15,34 @@ import {
 pub(all) enum AppState {
   Menu
   InGame(Bool, Bool)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
-type InGame derive(Eq, Show)
+type InGame derive(Eq, @debug.Debug)
 
 pub(all) enum IsPaused {
   NotPaused
   Paused
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum MenuButton {
   Play
   Tutorial
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type MenuData
 pub impl @app.Resource for MenuData
 
-type TurboMode derive(Eq, Show)
+type TurboMode derive(Eq, @debug.Debug)
 
 pub(all) enum Tutorial {
   MovementInstructions
   PauseInstructions
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum TutorialState {
   Active
   Inactive
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

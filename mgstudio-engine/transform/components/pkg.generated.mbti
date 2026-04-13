@@ -1,0 +1,109 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/transform/components"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn affine2_identity() -> Affine2
+
+pub fn global_transform_identity() -> GlobalTransform
+
+pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[StaticTransformOptimizations]
+
+pub fn transform_identity() -> Transform
+
+// Errors
+
+// Types and methods
+pub struct Affine2 {
+  a : Float
+  b : Float
+  c : Float
+  d : Float
+  tx : Float
+  ty : Float
+}
+pub fn Affine2::from_scale(@math.Vec2) -> Self
+pub fn Affine2::from_scale_translation(@math.Vec2, @math.Vec2) -> Self
+pub fn Affine2::from_translation(@math.Vec2) -> Self
+pub fn Affine2::identity() -> Self
+pub fn Affine2::mul(Self, Self) -> Self
+pub fn Affine2::transform_point2(Self, @math.Vec2) -> @math.Vec2
+
+pub struct GlobalTransform {
+  affine : Affine2
+  z : Float
+}
+pub fn GlobalTransform::compute_transform(Self) -> Transform
+pub fn GlobalTransform::from_transform(Transform) -> Self
+pub fn GlobalTransform::identity() -> Self
+pub fn GlobalTransform::inverse(Self) -> Self
+pub fn GlobalTransform::mul(Self, Self) -> Self
+pub fn GlobalTransform::reparented_to(Self, Self) -> Self
+pub fn GlobalTransform::to_transform_approx(Self) -> Transform
+pub impl Default for GlobalTransform
+pub impl ToJson for GlobalTransform
+pub impl @json.FromJson for GlobalTransform
+
+pub struct StaticTransformOptimizations {
+  threshold : Float
+  enabled : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn StaticTransformOptimizations::disabled() -> Self
+pub fn StaticTransformOptimizations::enabled() -> Self
+pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
+pub impl @app.Resource for StaticTransformOptimizations
+pub impl Default for StaticTransformOptimizations
+
+pub struct Transform {
+  mut translation : @math.Vec3
+  mut rotation : @math.Quat
+  scale : @math.Vec3
+}
+pub fn Transform::align(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Unit
+pub fn Transform::aligned_by(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Self
+pub fn Transform::back(Self) -> @math.Vec3
+pub fn Transform::down(Self) -> @math.Vec3
+pub fn Transform::forward(Self) -> @math.Vec3
+pub fn Transform::from_rotation(@math.Quat) -> Self
+pub fn Transform::from_translation(@math.Vec3) -> Self
+pub fn Transform::from_xy(Float, Float) -> Self
+pub fn Transform::from_xy_rotation_scale(@math.Vec2, Float, @math.Vec2, z? : Float) -> Self
+pub fn Transform::from_xyz(Float, Float, Float) -> Self
+pub fn Transform::identity() -> Self
+pub fn Transform::left(Self) -> @math.Vec3
+pub fn Transform::local_x(Self) -> @math.Vec3
+pub fn Transform::local_y(Self) -> @math.Vec3
+pub fn Transform::local_z(Self) -> @math.Vec3
+pub fn Transform::looking_at(Self, @math.Vec3, @math.Vec3) -> Self
+pub fn Transform::looking_to(Self, @math.Vec3, @math.Vec3) -> Self
+pub fn Transform::new(@math.Vec3, @math.Quat, @math.Vec3) -> Self
+pub fn Transform::right(Self) -> @math.Vec3
+pub fn Transform::rotate(Self, @math.Quat) -> Unit
+pub fn Transform::rotate_around(Self, @math.Vec3, @math.Quat) -> Unit
+pub fn Transform::rotate_y(Self, Float) -> Unit
+pub fn Transform::rotate_z(Self, Float) -> Unit
+pub fn Transform::rotation_z(Self) -> Float
+pub fn Transform::translate_around(Self, @math.Vec3, @math.Quat) -> Unit
+pub fn Transform::up(Self) -> @math.Vec3
+pub fn Transform::with_rotation(Self, @math.Quat) -> Self
+pub fn Transform::with_scale(Self, @math.Vec3) -> Self
+pub fn Transform::with_translation(Self, @math.Vec3) -> Self
+pub impl Default for Transform
+pub impl ToJson for Transform
+pub impl @json.FromJson for Transform
+
+pub struct TransformTreeChanged {
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub impl Default for TransformTreeChanged
+
+// Type aliases
+
+// Traits
+

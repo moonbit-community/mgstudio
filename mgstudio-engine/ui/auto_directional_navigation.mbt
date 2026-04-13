@@ -31,7 +31,7 @@ pub struct AutoDirectionalNavigator {
 let ecs_key_auto_directional_navigation : @ecs.ComponentKey[
   AutoDirectionalNavigation,
 ] = @ecs.register_component(
-  debug_name="bevy_ui::auto_directional_navigation::AutoDirectionalNavigation",
+  debug_name="mgstudio_ui::auto_directional_navigation::AutoDirectionalNavigation",
 )
 
 ///|

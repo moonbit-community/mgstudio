@@ -6,10 +6,82 @@ import {
 }
 
 // Values
+pub fn color_approx_eq(Color, Color, Float) -> Bool
+
+pub fn color_clear() -> Color
+
+pub fn color_component_delta(Color, Color) -> (Float, Float, Float, Float)
+
+pub fn color_distance(Color, Color) -> Float
+
+pub fn color_distance_squared(Color, Color) -> Float
+
+pub fn color_gradient(Array[Color]) -> ColorGradient raise ColorGradientError
+
+pub fn color_gray(Float) -> Color
+
+pub fn color_lerp(Color, Color, Float) -> Color
+
+pub fn color_lerp_float(Float, Float, Float) -> Float
+
+pub fn color_lerp_hue(Float, Float, Float) -> Float
+
+pub fn color_srgb(Float, Float, Float) -> Color
+
+pub fn color_srgba(Float, Float, Float, Float) -> Color
+
+pub fn laba_from_color(Color) -> Color
+
+pub fn laba_gray(Float) -> Color
+
+pub fn laba_to_color(Color) -> Color
+
+pub fn lcha_from_color(Color) -> Color
+
+pub fn lcha_gray(Float) -> Color
+
+pub fn lcha_to_color(Color) -> Color
+
+pub fn linear_rgba(Float, Float, Float) -> Color
+
+pub fn linear_rgba_from_color(Color) -> Color
+
+pub fn linear_rgba_to_color(Color) -> Color
+
+pub fn linear_rgba_with_alpha(Float, Float, Float, Float) -> Color
+
+pub fn oklaba_from_color(Color) -> Color
+
+pub fn oklaba_gray(Float) -> Color
+
+pub fn oklaba_to_color(Color) -> Color
+
+pub fn oklcha_from_color(Color) -> Color
+
+pub fn oklcha_gray(Float) -> Color
+
+pub fn oklcha_to_color(Color) -> Color
+
+pub fn test_colors() -> Array[TestColor]
+
+pub fn xyza_from_color(Color) -> Color
+
+pub fn xyza_gray(Float) -> Color
+
+pub fn xyza_to_color(Color) -> Color
 
 // Errors
+pub suberror ColorGradientError {
+  NotEnoughStops(Int)
+}
 
 // Types and methods
+#alias(Laba)
+#alias(Lcha)
+#alias(LinearRgba)
+#alias(Oklaba)
+#alias(Oklcha)
+#alias(Xyza)
 pub struct Color {
   r : Float
   g : Float
@@ -17,16 +89,93 @@ pub struct Color {
   a : Float
 }
 pub fn Color::alpha(Self) -> Float
+pub fn Color::as_linear_rgba(Self) -> Self
 pub fn Color::black() -> Self
 pub fn Color::darker(Self, Float) -> Self
 pub fn Color::hsl(Float, Float, Float) -> Self
 pub fn Color::hsla(Float, Float, Float, Float) -> Self
+pub fn Color::hsv(Float, Float, Float) -> Self
+pub fn Color::hsva(Float, Float, Float, Float) -> Self
+pub fn Color::hwb(Float, Float, Float) -> Self
+pub fn Color::hwba(Float, Float, Float, Float) -> Self
+pub fn Color::is_fully_opaque(Self) -> Bool
+pub fn Color::is_fully_transparent(Self) -> Bool
+pub fn Color::lighter(Self, Float) -> Self
+pub fn Color::luminance(Self) -> Float
+pub fn Color::mix(Self, Self, Float) -> Self
 pub fn Color::new(Float, Float, Float, Float) -> Self
+pub fn Color::range_to(Self, Self) -> ColorRange
 pub fn Color::srgb(Float, Float, Float) -> Self
 pub fn Color::srgba(Float, Float, Float, Float) -> Self
+pub fn Color::to_hsla(Self) -> Hsla
+pub fn Color::to_hsva(Self) -> Hsva
+pub fn Color::to_hwba(Self) -> Hwba
+pub fn Color::to_linear_rgba_tuple(Self) -> (Float, Float, Float, Float)
+pub fn Color::to_srgba_tuple(Self) -> (Float, Float, Float, Float)
 pub fn Color::white() -> Self
+pub fn Color::with_alpha(Self, Float) -> Self
 pub impl ToJson for Color
 pub impl @json.FromJson for Color
+
+pub struct ColorGradient {
+  colors : Array[Color]
+}
+pub fn ColorGradient::at(Self, Float) -> Color
+pub fn ColorGradient::length(Self) -> Int
+pub fn ColorGradient::new(Array[Color]) -> Self raise ColorGradientError
+
+pub struct ColorRange {
+  start : Color
+  end_ : Color
+}
+pub fn ColorRange::at(Self, Float) -> Color
+pub fn ColorRange::new(Color, Color) -> Self
+
+pub struct Hsla {
+  hue : Float
+  saturation : Float
+  lightness : Float
+  alpha : Float
+}
+pub fn Hsla::from_color(Color) -> Self
+pub fn Hsla::hsl(Float, Float, Float) -> Self
+pub fn Hsla::mix(Self, Self, Float) -> Self
+pub fn Hsla::new(Float, Float, Float, Float) -> Self
+pub fn Hsla::to_color(Self) -> Color
+
+pub struct Hsva {
+  hue : Float
+  saturation : Float
+  value : Float
+  alpha : Float
+}
+pub fn Hsva::from_color(Color) -> Self
+pub fn Hsva::hsv(Float, Float, Float) -> Self
+pub fn Hsva::mix(Self, Self, Float) -> Self
+pub fn Hsva::new(Float, Float, Float, Float) -> Self
+pub fn Hsva::to_color(Self) -> Color
+
+pub struct Hwba {
+  hue : Float
+  whiteness : Float
+  blackness : Float
+  alpha : Float
+}
+pub fn Hwba::from_color(Color) -> Self
+pub fn Hwba::from_hsva(Hsva) -> Self
+pub fn Hwba::hwb(Float, Float, Float) -> Self
+pub fn Hwba::mix(Self, Self, Float) -> Self
+pub fn Hwba::new(Float, Float, Float, Float) -> Self
+pub fn Hwba::to_color(Self) -> Color
+pub fn Hwba::to_hsva(Self) -> Hsva
+
+pub struct TestColor {
+  name : String
+  color : Color
+  hsla : Hsla
+  hsva : Hsva
+  hwba : Hwba
+}
 
 // Type aliases
 

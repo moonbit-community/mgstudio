@@ -1,0 +1,61 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/post_process/bloom"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn bloom_downsample_passes(@post_process.Bloom, Int, Int) -> Array[BloomDownsamplePass]
+
+pub fn bloom_is_anamorphic(@post_process.Bloom) -> Bool
+
+pub fn bloom_upsample_passes(@post_process.Bloom, Array[BloomDownsamplePass]) -> Array[BloomUpsamplePass]
+
+pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
+
+// Errors
+
+// Types and methods
+pub struct BloomDownsamplePass {
+  mip_level : Int
+  width : Int
+  height : Int
+  threshold : Float
+  threshold_softness : Float
+} derive(ToJson, @json.FromJson)
+
+pub struct BloomSettingsUniform {
+  intensity : Float
+  low_frequency_boost : Float
+  low_frequency_boost_curvature : Float
+  high_pass_frequency : Float
+  threshold : Float
+  threshold_softness : Float
+  composite_mode_additive : Bool
+  max_mip_dimension : Int
+  scale_x : Float
+  scale_y : Float
+} derive(ToJson, @json.FromJson)
+pub fn BloomSettingsUniform::from_settings(@post_process.Bloom) -> Self
+
+pub struct BloomUpsamplePass {
+  source_mip_level : Int
+  target_mip_level : Int
+  width : Int
+  height : Int
+  blend_factor : Float
+  additive : Bool
+} derive(ToJson, @json.FromJson)
+
+// Type aliases
+pub using @post_process {type Bloom}
+
+pub using @post_process {type BloomCompositeMode}
+
+pub using @post_process {type BloomPrefilter}
+
+// Traits
+

@@ -13,11 +13,22 @@
 // limitations under the License.
 
 ///|
-pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
+pub struct SpritePlugin {}
 
 ///|
-/// Keep an explicit sprite plugin boundary so default plugins can mirror
-/// Bevy's `SpritePlugin` + `SpriteRenderPlugin` layering.
-pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+pub fn sprite_plugin_id() -> String {
+  SPRITE_PLUGIN_NAME
+}
+
+///|
+pub fn sprite_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : SpritePlugin,
+) -> @app.App[@ecs.World] {
+  sprite_plugin(app)
+}
+
+///|
+pub fn SpritePlugin::default() -> SpritePlugin {
+  SpritePlugin::{  }
 }

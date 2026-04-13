@@ -36,13 +36,16 @@ test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
   app = app.update()
 
   let json_text = @fs.read_file_to_string(output_path) catch { _ => "" }
-  inspect(json_text.contains("\"traceEvents\""), content="true")
-  inspect(json_text.contains("\"cat\":\"system\""), content="true")
-  inspect(
+  debug_inspect(json_text.contains("\"traceEvents\""), content="true")
+  debug_inspect(json_text.contains("\"cat\":\"system\""), content="true")
+  debug_inspect(
     json_text.contains("\"name\":\"timeline_trace_test_system\""),
     content="true",
   )
-  inspect(!json_text.contains("\"cat\":\"schedule_stage\""), content="true")
+  debug_inspect(
+    !json_text.contains("\"cat\":\"schedule_stage\""),
+    content="true",
+  )
 }
 
 ///|
@@ -72,8 +75,8 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
   app = app.update()
 
   let json_text = @fs.read_file_to_string(output_path) catch { _ => "" }
-  inspect(json_text.contains("\"cat\":\"render_queue\""), content="true")
-  inspect(json_text.contains("\"name\":\"queue_2d\""), content="true")
+  debug_inspect(json_text.contains("\"cat\":\"render_queue\""), content="true")
+  debug_inspect(json_text.contains("\"name\":\"queue_2d\""), content="true")
 }
 
 ///|
@@ -87,11 +90,11 @@ test "diagnostics: stress diagnostics plugin installs frame and render diagnosti
     .world()
     .get_resource(DiagnosticsStore::resource())
     .unwrap()
-  inspect(
+  debug_inspect(
     diagnostics_store.get(frame_time_diagnostic_fps) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     diagnostics_store.get(render_diagnostic_queue_cpu_ms_2d) is Some(_),
     content="true",
   )

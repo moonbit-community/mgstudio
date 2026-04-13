@@ -46,8 +46,8 @@ test "ui: interaction updates component state" {
   let cursor0 = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  inspect(s0 == Interaction::Hovered, content="true")
-  inspect(cursor0.cursor_over(), content="true")
+  debug_inspect(s0 == Interaction::Hovered, content="true")
+  debug_inspect(cursor0.cursor_over(), content="true")
 
   // Pressed.
   let ctx2 = UiContext::new(
@@ -67,8 +67,8 @@ test "ui: interaction updates component state" {
   let cursor1 = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  inspect(s1 == Interaction::Pressed, content="true")
-  inspect(cursor1.cursor_over(), content="true")
+  debug_inspect(s1 == Interaction::Pressed, content="true")
+  debug_inspect(cursor1.cursor_over(), content="true")
 
   // Outside.
   let ctx3 = UiContext::new(
@@ -88,9 +88,9 @@ test "ui: interaction updates component state" {
   let cursor2 = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  inspect(s2 == Interaction::None, content="true")
-  inspect(cursor2.cursor_over(), content="false")
-  inspect(cursor2.normalized is None, content="true")
+  debug_inspect(s2 == Interaction::None, content="true")
+  debug_inspect(cursor2.cursor_over(), content="false")
+  debug_inspect(cursor2.normalized is None, content="true")
 }
 
 ///|
@@ -102,15 +102,15 @@ test "ui: pointer viewport conversion keeps top-left y direction" {
     pointer, viewport_origin, viewport_size,
   )
   let point = converted.unwrap()
-  inspect(point.x == 50.0F, content="true")
-  inspect(point.y == 360.0F, content="true")
+  debug_inspect(point.x == 50.0F, content="true")
+  debug_inspect(point.y == 360.0F, content="true")
 }
 
 ///|
 test "ui: RelativeCursorPosition default reports cursor outside" {
   let relative_cursor_position = RelativeCursorPosition::default()
-  inspect(relative_cursor_position.cursor_over(), content="false")
-  inspect(relative_cursor_position.normalized is None, content="true")
+  debug_inspect(relative_cursor_position.cursor_over(), content="false")
+  debug_inspect(relative_cursor_position.normalized is None, content="true")
 }
 
 ///|
@@ -151,8 +151,8 @@ test "ui: interaction hit test respects node transform rotation" {
   let cursor = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  inspect(interaction == Interaction::Hovered, content="true")
-  inspect(cursor.cursor_over(), content="true")
+  debug_inspect(interaction == Interaction::Hovered, content="true")
+  debug_inspect(cursor.cursor_over(), content="true")
 }
 
 ///|
@@ -225,8 +225,8 @@ test "ui: interaction keeps top and bottom rows distinct" {
   let bottom_interaction = try! world
     .get_by_key(bottom, ecs_key_interaction)
     .unwrap()
-  inspect(top_interaction == Interaction::Hovered, content="true")
-  inspect(bottom_interaction == Interaction::None, content="true")
+  debug_inspect(top_interaction == Interaction::Hovered, content="true")
+  debug_inspect(bottom_interaction == Interaction::None, content="true")
 
   let ctx_bottom = UiContext::new(
     @asset.Handle::new(1),
@@ -248,6 +248,6 @@ test "ui: interaction keeps top and bottom rows distinct" {
   let bottom_interaction2 = try! world
     .get_by_key(bottom, ecs_key_interaction)
     .unwrap()
-  inspect(top_interaction2 == Interaction::None, content="true")
-  inspect(bottom_interaction2 == Interaction::Hovered, content="true")
+  debug_inspect(top_interaction2 == Interaction::None, content="true")
+  debug_inspect(bottom_interaction2 == Interaction::Hovered, content="true")
 }

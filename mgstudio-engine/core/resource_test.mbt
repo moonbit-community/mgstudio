@@ -15,12 +15,12 @@
 ///|
 test "resource: insert/get/remove" {
   let res : Resource[Int] = Resource::new()
-  inspect(res.is_present(), content="false")
+  debug_inspect(res.is_present(), content="false")
   res.insert(7)
-  inspect(res.is_present(), content="true")
-  inspect(res.get().unwrap() == 7, content="true")
-  inspect(res.remove().unwrap() == 7, content="true")
-  inspect(res.is_present(), content="false")
+  debug_inspect(res.is_present(), content="true")
+  debug_inspect(res.get().unwrap() == 7, content="true")
+  debug_inspect(res.remove().unwrap() == 7, content="true")
+  debug_inspect(res.is_present(), content="false")
 }
 
 ///|
@@ -29,5 +29,5 @@ test "resource: get_ref_mut returns the live resource cell" {
   res.insert(1)
   let resource_ref = res.get_ref_mut().unwrap()
   resource_ref.val = 9
-  inspect(res.get().unwrap() == 9, content="true")
+  debug_inspect(res.get().unwrap() == 9, content="true")
 }

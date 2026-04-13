@@ -1,0 +1,113 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/light/cluster"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/light",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn cluster_assign_lights(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn cluster_assign_lights_system(@ecs.World) -> Unit
+
+pub fn cluster_light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn cluster_light_plugin_with(@app.App[@ecs.World], ClusterLightPlugin) -> @app.App[@ecs.World]
+
+pub fn cluster_test_enabled() -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) enum ClusterConfig {
+  None
+  Single
+  XYZ(Int, Int, Int, ClusterZConfig, Bool)
+  FixedZ(Int, Int, ClusterZConfig, Bool)
+} derive(Eq, @debug.Debug)
+pub fn ClusterConfig::default() -> Self
+pub impl @ecs.Component for ClusterConfig
+
+pub(all) enum ClusterFarZMode {
+  MaxClusterableObjectRange
+  Constant(Float)
+} derive(Eq, @debug.Debug)
+pub fn ClusterFarZMode::default() -> Self
+
+pub struct ClusterLightPlugin {
+}
+pub fn ClusterLightPlugin::default() -> Self
+pub impl @app.PluginReplacement for ClusterLightPlugin
+
+pub struct ClusterZConfig {
+  first_slice_depth : Float
+  far_z_mode : ClusterFarZMode
+} derive(Eq, @debug.Debug)
+pub fn ClusterZConfig::default() -> Self
+
+pub struct ClusterableObjectCounts {
+  point_lights : Int
+  spot_lights : Int
+  reflection_probes : Int
+  irradiance_volumes : Int
+  decals : Int
+} derive(Eq, @debug.Debug)
+pub fn ClusterableObjectCounts::default() -> Self
+
+pub(all) enum ClusterableObjectType {
+  PointLight(Bool, Bool)
+  SpotLight(Bool, Bool, Float)
+  ReflectionProbe
+  IrradianceVolume
+  Decal
+} derive(Eq, @debug.Debug)
+pub fn ClusterableObjectType::ordering(Self) -> (Int, Bool, Bool)
+
+pub struct Clusters {
+  tile_size_x : Int
+  tile_size_y : Int
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
+  near : Float
+  far : Float
+  clusterable_objects : Array[ObjectsInCluster]
+} derive(Eq, @debug.Debug)
+pub fn Clusters::default() -> Self
+pub impl @ecs.Component for Clusters
+
+pub struct GlobalClusterSettings {
+  supports_storage_buffers : Bool
+  clustered_decals_are_usable : Bool
+  max_uniform_buffer_clusterable_objects : Int
+  view_cluster_bindings_max_indices : Int
+} derive(Eq, @debug.Debug)
+pub fn GlobalClusterSettings::default() -> Self
+pub impl @app.Resource for GlobalClusterSettings
+
+pub struct ObjectsInCluster {
+  counts : ClusterableObjectCounts
+} derive(Eq, @debug.Debug)
+pub fn ObjectsInCluster::default() -> Self
+
+pub struct VisibleClusterableObjects {
+  point_and_spot_lights : Int
+  reflection_probes : Int
+  irradiance_volumes : Int
+  decals : Int
+} derive(Eq, @debug.Debug)
+pub fn VisibleClusterableObjects::default() -> Self
+pub impl @ecs.Component for VisibleClusterableObjects
+
+// Type aliases
+pub using @light {type DirectionalLight as ClusterDirectionalLight}
+
+pub using @light {type PointLight as ClusterPointLight}
+
+pub using @light {type SpotLight as ClusterSpotLight}
+
+// Traits
+

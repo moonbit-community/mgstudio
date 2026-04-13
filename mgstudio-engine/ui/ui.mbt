@@ -18,54 +18,20 @@
 /// Baseline: Bevy v0.15.3 (see docs/BEVY_BASELINE.md).
 
 ///|
-pub(all) enum Val {
-  Auto
-  Px(Float)
-  Percent(Float)
-  Vw(Float)
-  Vh(Float)
-  VMin(Float)
-  VMax(Float)
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub struct UiRect {
-  left : Val
-  top : Val
-  right : Val
-  bottom : Val
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiRect::new(left : Val, top : Val, right : Val, bottom : Val) -> UiRect {
-  UiRect::{ left, top, right, bottom }
-}
-
-///|
-pub fn UiRect::default() -> UiRect {
-  UiRect::new(Val::Px(0.0F), Val::Px(0.0F), Val::Px(0.0F), Val::Px(0.0F))
-}
-
-///|
-pub fn UiRect::all(value : Val) -> UiRect {
-  UiRect::new(value, value, value, value)
-}
-
-///|
 /// Bevy-aligned display (matches Taffy).
 pub(all) enum Display {
   Block
   Flex
   Grid
   None
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned position type (subset).
 pub(all) enum PositionType {
   Relative
   Absolute
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum OverflowAxis {
@@ -73,7 +39,7 @@ pub(all) enum OverflowAxis {
   Hidden
   Scroll
   Visible
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct Overflow {
@@ -96,7 +62,7 @@ pub(all) enum OverflowClipBox {
   BorderBox
   PaddingBox
   ContentBox
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct OverflowClipMargin {
@@ -147,7 +113,7 @@ pub(all) enum FlexDirection {
   ColumnReverse
   Row
   RowReverse
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned flex wrap.
@@ -155,7 +121,7 @@ pub(all) enum FlexWrap {
   NoWrap
   Wrap
   WrapReverse
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify content.
@@ -170,7 +136,7 @@ pub(all) enum JustifyContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify items.
@@ -181,7 +147,7 @@ pub(all) enum JustifyItems {
   End
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify self.
@@ -192,7 +158,7 @@ pub(all) enum JustifySelf {
   End
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align items.
@@ -205,7 +171,7 @@ pub(all) enum AlignItems {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align self.
@@ -218,7 +184,7 @@ pub(all) enum AlignSelf {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align content.
@@ -233,7 +199,7 @@ pub(all) enum AlignContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum GridAutoFlow {
@@ -241,7 +207,7 @@ pub(all) enum GridAutoFlow {
   ColumnDense
   Row
   RowDense
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum GridTrack {
@@ -251,14 +217,14 @@ pub(all) enum GridTrack {
   Fr(Float)
   MinContent
   MaxContent
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum GridTrackRepetition {
   Count(Int)
   AutoFill
   AutoFit
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub struct RepeatedGridTrack {
@@ -351,267 +317,6 @@ pub fn GridPlacement::end_span(end : Int, span : Int) -> GridPlacement {
   } else {
     GridPlacement::{ start: None, end: Some(end), span: Some(span) }
   }
-}
-
-///|
-pub struct ZIndex {
-  value : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn ZIndex::new(value : Int) -> ZIndex {
-  ZIndex::{ value, }
-}
-
-///|
-pub struct GlobalZIndex {
-  value : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
-  GlobalZIndex::{ value, }
-}
-
-///|
-pub struct UiScale {
-  value : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiScale::new(value : Float) -> UiScale {
-  UiScale::{ value, }
-}
-
-///|
-pub struct UiStack {
-  mut uinodes : Array[@core.Entity]
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiStack::default() -> UiStack {
-  UiStack::{ uinodes: [] }
-}
-
-///|
-pub fn UiStack::uinodes(self : UiStack) -> Array[@core.Entity] {
-  self.uinodes
-}
-
-///|
-pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
-  self.val.uinodes = []
-}
-
-///|
-pub struct ScrollPosition {
-  offset_x : Float
-  offset_y : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn ScrollPosition::default() -> ScrollPosition {
-  ScrollPosition::{ offset_x: 0.0F, offset_y: 0.0F }
-}
-
-///|
-pub fn ScrollPosition::new(
-  offset_x : Float,
-  offset_y : Float,
-) -> ScrollPosition {
-  ScrollPosition::{ offset_x, offset_y }
-}
-
-///|
-pub fn ScrollPosition::with_delta(
-  self : ScrollPosition,
-  dx : Float,
-  dy : Float,
-) -> ScrollPosition {
-  ScrollPosition::{ offset_x: self.offset_x + dx, offset_y: self.offset_y + dy }
-}
-
-///|
-pub struct CalculatedClip {
-  clip : @math.Rect
-} derive(ToJson, FromJson)
-
-///|
-pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
-  CalculatedClip::{ clip, }
-}
-
-///|
-pub struct RelativeCursorPosition {
-  normalized_visible_node_rect : @math.Rect
-  normalized : @math.Vec2?
-} derive(ToJson, FromJson)
-
-///|
-pub fn RelativeCursorPosition::default() -> RelativeCursorPosition {
-  RelativeCursorPosition::{
-    normalized_visible_node_rect: @math.Rect::new(
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-    normalized: None,
-  }
-}
-
-///|
-pub fn RelativeCursorPosition::cursor_over(
-  self : RelativeCursorPosition,
-) -> Bool {
-  match self.normalized {
-    Some(normalized) => self.normalized_visible_node_rect.contains(normalized)
-    None => false
-  }
-}
-
-///|
-pub(all) enum FocusPolicy {
-  Block
-  Pass
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub fn FocusPolicy::default() -> FocusPolicy {
-  FocusPolicy::Pass
-}
-
-///|
-pub struct BorderRadius {
-  top_left : Val
-  top_right : Val
-  bottom_left : Val
-  bottom_right : Val
-} derive(ToJson, FromJson)
-
-///|
-pub fn BorderRadius::default() -> BorderRadius {
-  BorderRadius::{
-    top_left: Val::Px(0.0F),
-    top_right: Val::Px(0.0F),
-    bottom_left: Val::Px(0.0F),
-    bottom_right: Val::Px(0.0F),
-  }
-}
-
-///|
-pub fn BorderRadius::all(radius : Val) -> BorderRadius {
-  BorderRadius::{
-    top_left: radius,
-    top_right: radius,
-    bottom_left: radius,
-    bottom_right: radius,
-  }
-}
-
-///|
-pub fn BorderRadius::new(
-  top_left : Val,
-  top_right : Val,
-  bottom_right : Val,
-  bottom_left : Val,
-) -> BorderRadius {
-  BorderRadius::{ top_left, top_right, bottom_left, bottom_right }
-}
-
-///|
-pub fn BorderRadius::px(
-  top_left : Float,
-  top_right : Float,
-  bottom_right : Float,
-  bottom_left : Float,
-) -> BorderRadius {
-  BorderRadius::new(
-    Val::Px(top_left),
-    Val::Px(top_right),
-    Val::Px(bottom_right),
-    Val::Px(bottom_left),
-  )
-}
-
-///|
-pub fn BorderRadius::percent(
-  top_left : Float,
-  top_right : Float,
-  bottom_right : Float,
-  bottom_left : Float,
-) -> BorderRadius {
-  BorderRadius::new(
-    Val::Percent(top_left),
-    Val::Percent(top_right),
-    Val::Percent(bottom_right),
-    Val::Percent(bottom_left),
-  )
-}
-
-///|
-pub struct Outline {
-  width : Val
-  offset : Val
-  color : @sprite.Color
-} derive(ToJson, FromJson)
-
-///|
-pub fn Outline::new(
-  width : Val,
-  offset : Val,
-  color : @sprite.Color,
-) -> Outline {
-  Outline::{ width, offset, color }
-}
-
-///|
-pub fn Outline::default() -> Outline {
-  Outline::{
-    width: Val::Px(0.0F),
-    offset: Val::Px(0.0F),
-    color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
-  }
-}
-
-///|
-pub struct BoxShadow {
-  color : @sprite.Color
-  x_offset : Val
-  y_offset : Val
-  spread_radius : Val
-  blur_radius : Val
-} derive(ToJson, FromJson)
-
-///|
-pub fn BoxShadow::new(
-  color : @sprite.Color,
-  x_offset : Val,
-  y_offset : Val,
-  spread_radius : Val,
-  blur_radius : Val,
-) -> BoxShadow {
-  BoxShadow::{ color, x_offset, y_offset, spread_radius, blur_radius }
-}
-
-///|
-pub fn BoxShadow::default() -> BoxShadow {
-  // Match Bevy defaults (v0.15.3).
-  BoxShadow::{
-    color: @sprite.Color::black(),
-    x_offset: Val::Percent(20.0F),
-    y_offset: Val::Percent(20.0F),
-    spread_radius: Val::Px(0.0F),
-    blur_radius: Val::Percent(10.0F),
-  }
-}
-
-///|
-pub struct BorderColor {
-  color : @sprite.Color
-} derive(ToJson, FromJson)
-
-///|
-pub fn BorderColor::new(color : @sprite.Color) -> BorderColor {
-  BorderColor::{ color, }
 }
 
 ///|
@@ -851,158 +556,6 @@ pub fn UiRoot::default() -> UiRoot {
 }
 
 ///|
-/// Marker for the screen camera that should render UI by default.
-pub struct IsDefaultUiCamera {} derive(ToJson, FromJson)
-
-///|
-pub fn IsDefaultUiCamera::default() -> IsDefaultUiCamera {
-  IsDefaultUiCamera::{  }
-}
-
-///|
-/// Bevy-aligned explicit UI camera routing for a root UI node.
-pub struct UiTargetCamera {
-  camera : @core.Entity
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiTargetCamera::new(camera : @core.Entity) -> UiTargetCamera {
-  UiTargetCamera::{ camera, }
-}
-
-///|
-pub fn UiTargetCamera::entity(self : UiTargetCamera) -> @core.Entity {
-  self.camera
-}
-
-///|
-/// Derived UI target camera propagated from the root UI node.
-pub struct ComputedUiTargetCamera {
-  camera : @core.Entity
-} derive(ToJson, FromJson)
-
-///|
-pub fn ComputedUiTargetCamera::new(
-  camera : @core.Entity,
-) -> ComputedUiTargetCamera {
-  ComputedUiTargetCamera::{ camera, }
-}
-
-///|
-pub fn ComputedUiTargetCamera::default() -> ComputedUiTargetCamera {
-  ComputedUiTargetCamera::{ camera: @core.Entity::placeholder() }
-}
-
-///|
-pub fn ComputedUiTargetCamera::get(
-  self : ComputedUiTargetCamera,
-) -> @core.Entity? {
-  if self.camera.is_placeholder() {
-    None
-  } else {
-    Some(self.camera)
-  }
-}
-
-///|
-/// Derived render target information propagated from the root UI node.
-pub struct ComputedUiRenderTargetInfo {
-  scale_factor : Float
-  physical_size : @math.IVec2
-} derive(ToJson, FromJson)
-
-///|
-pub fn ComputedUiRenderTargetInfo::new(
-  scale_factor : Float,
-  physical_size : @math.IVec2,
-) -> ComputedUiRenderTargetInfo {
-  ComputedUiRenderTargetInfo::{ scale_factor, physical_size }
-}
-
-///|
-pub fn ComputedUiRenderTargetInfo::default() -> ComputedUiRenderTargetInfo {
-  ComputedUiRenderTargetInfo::{
-    scale_factor: 1.0F,
-    physical_size: @math.IVec2::new(0, 0),
-  }
-}
-
-///|
-pub fn ComputedUiRenderTargetInfo::scale_factor(
-  self : ComputedUiRenderTargetInfo,
-) -> Float {
-  safe_scale_factor(self.scale_factor)
-}
-
-///|
-pub fn ComputedUiRenderTargetInfo::physical_size(
-  self : ComputedUiRenderTargetInfo,
-) -> @math.IVec2 {
-  self.physical_size
-}
-
-///|
-pub fn ComputedUiRenderTargetInfo::logical_size(
-  self : ComputedUiRenderTargetInfo,
-) -> @math.Vec2 {
-  let scale = self.scale_factor()
-  @math.Vec2::new(
-    int_to_float(self.physical_size.x) / scale,
-    int_to_float(self.physical_size.y) / scale,
-  )
-}
-
-///|
-/// Computed layout rectangle in logical pixels, top-left origin (viewport space).
-pub struct UiLayout {
-  rect : @math.Rect
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
-  UiLayout::{ rect, }
-}
-
-///|
-/// Intrinsic content size used by the layout engine when width/height are `Auto`.
-pub struct ContentSize {
-  size : @math.Vec2
-} derive(ToJson, FromJson)
-
-///|
-pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
-  ContentSize::{ size, }
-}
-
-///|
-/// Bevy-aligned image size component (Bevy v0.15.3 `ImageNodeSize`).
-///
-/// Stores the size of the selected image region in pixels (rect/atlas/texture).
-pub struct ImageNodeSize {
-  size : @math.UVec2
-} derive(ToJson, FromJson)
-
-///|
-pub fn ImageNodeSize::default() -> ImageNodeSize {
-  ImageNodeSize::{ size: @math.UVec2::zero() }
-}
-
-///|
-pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
-  self.size
-}
-
-///|
-pub struct BackgroundColor {
-  color : @sprite.Color
-} derive(ToJson, FromJson)
-
-///|
-pub fn BackgroundColor::new(color : @sprite.Color) -> BackgroundColor {
-  BackgroundColor::{ color, }
-}
-
-///|
 pub struct UiImage {
   color : @sprite.Color
   image : @asset.Handle[@asset.Image]
@@ -1051,8 +604,6 @@ pub fn UiImage::with_flip_y(self : UiImage) -> UiImage {
 pub fn UiImage::with_rect(self : UiImage, rect : @math.Rect?) -> UiImage {
   UiImage::{ ..self, rect, }
 }
-
-///|
 
 ///|
 /// Controls how an image widget is altered to fit within layout constraints.
@@ -1108,7 +659,7 @@ pub fn BorderRect::default() -> BorderRect {
 pub(all) enum SliceScaleMode {
   Stretch
   Tile(Float)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn SliceScaleMode::default() -> SliceScaleMode {
@@ -1272,7 +823,7 @@ pub(all) enum Interaction {
   None
   Hovered
   Pressed
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned button marker component.
@@ -1307,152 +858,6 @@ pub fn ButtonColors::new(
 ) -> ButtonColors {
   ButtonColors::{ normal, hovered, pressed }
 }
-
-///|
-/// Optional accessibility label for UI nodes (used by the host a11y bridge).
-pub struct AccessibilityLabel {
-  text : String
-} derive(ToJson, FromJson)
-
-///|
-pub fn AccessibilityLabel::new(text : String) -> AccessibilityLabel {
-  AccessibilityLabel::{ text, }
-}
-
-///|
-pub struct UiContext {
-  mut white_texture : @asset.Handle[@asset.Image]
-  mut viewport_origin : @math.Vec2
-  mut viewport_size : @math.Vec2
-  mut camera_entity : @core.Entity?
-  mut camera_transform : @transform.Transform
-  mut camera_scale : Float
-  mut pointer_pos : @math.Vec2?
-  mut pointer_down : Bool
-  mut pointer_just_pressed : Bool
-  mut pointer_just_released : Bool
-  mut wheel_delta : @math.Vec2
-}
-
-///|
-pub fn UiContext::default() -> UiContext {
-  UiContext::{
-    white_texture: @asset.Handle::new(-1),
-    viewport_origin: @math.Vec2::new(0.0F, 0.0F),
-    viewport_size: @math.Vec2::new(0.0F, 0.0F),
-    camera_entity: None,
-    camera_transform: @transform.Transform::identity(),
-    camera_scale: 1.0F,
-    pointer_pos: None,
-    pointer_down: false,
-    pointer_just_pressed: false,
-    pointer_just_released: false,
-    wheel_delta: @math.Vec2::new(0.0F, 0.0F),
-  }
-}
-
-///|
-/// Public constructor (required because `UiContext` contains `mut` fields).
-pub fn UiContext::new(
-  white_texture : @asset.Handle[@asset.Image],
-  viewport_origin : @math.Vec2,
-  viewport_size : @math.Vec2,
-  camera_entity : @core.Entity?,
-  camera_transform : @transform.Transform,
-  camera_scale : Float,
-  pointer_pos : @math.Vec2?,
-  pointer_down : Bool,
-  pointer_just_pressed? : Bool = false,
-  pointer_just_released? : Bool = false,
-  wheel_delta? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
-) -> UiContext {
-  UiContext::{
-    white_texture,
-    viewport_origin,
-    viewport_size,
-    camera_entity,
-    camera_transform,
-    camera_scale,
-    pointer_pos,
-    pointer_down,
-    pointer_just_pressed,
-    pointer_just_released,
-    wheel_delta,
-  }
-}
-
-///|
-let ui_context_serde_next_id : Ref[Int] = Ref::new(1)
-
-///|
-let ui_context_serde_values : Map[Int, UiContext] = {}
-
-///|
-pub impl ToJson for UiContext with to_json(self) {
-  let id = ui_context_serde_next_id.val
-  ui_context_serde_next_id.val = id + 1
-  ui_context_serde_values.set(id, self)
-  id.to_json()
-}
-
-///|
-pub impl @json.FromJson for UiContext with from_json(json, path) {
-  let id : Int = @json.from_json(json, path~)
-  ui_context_serde_values.get(id).unwrap_or(UiContext::default())
-}
-
-///|
-/// Bevy-aligned UI system sets (`UiSystems::{Focus, Prepare, Propagate, Content, Layout, PostLayout, Stack}`).
-pub let ui_set_focus : @app.SystemSet = @app.system_set("mgstudio.ui.focus")
-
-///|
-pub let ui_set_prepare : @app.SystemSet = @app.system_set("mgstudio.ui.prepare")
-
-///|
-pub let ui_set_propagate : @app.SystemSet = @app.system_set(
-  "mgstudio.ui.propagate",
-)
-
-///|
-pub let ui_set_text_content : @app.SystemSet = @app.system_set(
-  "mgstudio.ui.text_content",
-)
-
-///|
-pub let ui_set_content : @app.SystemSet = @app.system_set("mgstudio.ui.content")
-
-///|
-pub let ui_set_layout : @app.SystemSet = @app.system_set("mgstudio.ui.layout")
-
-///|
-pub let ui_set_post_layout : @app.SystemSet = @app.system_set(
-  "mgstudio.ui.post_layout",
-)
-
-///|
-pub let ui_set_stack : @app.SystemSet = @app.system_set("mgstudio.ui.stack")
-
-///|
-/// Legacy aliases kept for source compatibility.
-pub let ui_set_context : @app.SystemSet = ui_set_prepare
-
-///|
-pub let ui_set_interaction : @app.SystemSet = ui_set_focus
-
-///|
-pub let ui_set_scroll : @app.SystemSet = ui_set_propagate
-
-///|
-pub let ui_set_measure : @app.SystemSet = ui_set_content
-
-///|
-pub let ui_set_clip : @app.SystemSet = ui_set_post_layout
-
-///|
-pub let ui_set_a11y : @app.SystemSet = ui_set_post_layout
-
-///|
-pub let ui_set_a11y_apply : @app.SystemSet = ui_set_post_layout
 
 ///|
 const UI_STACK_Z_BASE : Float = 10000.0F
@@ -1510,171 +915,10 @@ fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
 }
 
 ///|
-fn ui_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
-  a.id == b.id && a.generation == b.generation
-}
-
-///|
-fn ui_entity_key(entity : @core.Entity) -> (Int, Int) {
-  (entity.id, entity.generation)
-}
-
-///|
-fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
-  if a.id > b.id {
-    true
-  } else if a.id < b.id {
-    false
-  } else {
-    a.generation > b.generation
-  }
-}
-
-///|
-fn ui_is_ghost_node(world : @ecs.World, entity : @core.Entity) -> Bool {
-  try! world.contains_by_key(entity, ecs_key_ghost_node)
-}
-
-///|
-fn ui_effective_parent(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> @core.Entity? {
-  let mut current = match
-    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
-    Some(parent) => Some(parent.entity())
-    None => None
-  }
-  while current is Some(parent_entity) {
-    if !ui_is_ghost_node(world, parent_entity) {
-      return Some(parent_entity)
-    }
-    current = match
-      (try! world.get_by_key(parent_entity, @hierarchy.ecs_key_parent)) {
-      Some(parent) => Some(parent.entity())
-      None => None
-    }
-  }
-  None
-}
-
-///|
-fn ui_collect_effective_child_entities(
-  world : @ecs.World,
-  entity : @core.Entity,
-  out : Array[@core.Entity],
-) -> Unit {
-  if ui_is_ghost_node(world, entity) {
-    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-      is Some(children) {
-      for child in children.entities {
-        ui_collect_effective_child_entities(world, child, out)
-      }
-    }
-    return
-  }
-  out.push(entity)
-}
-
-///|
-fn ui_collect_effective_children(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> Array[@core.Entity] {
-  let out : Array[@core.Entity] = []
-  if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-    is Some(children) {
-    for child in children.entities {
-      ui_collect_effective_child_entities(world, child, out)
-    }
-  }
-  out
-}
-
-///|
-fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
-  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
-  let roots : Array[@core.Entity] = []
-  world.for_each_component(ecs_key_node, fn(entity, _node) {
-    if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
-      return
-    }
-    let key = ui_entity_key(entity)
-    if visited.contains(key) {
-      return
-    }
-    visited.set(key, true)
-    roots.push(entity)
-  })
-  world.for_each_component(ecs_key_ui_root, fn(entity, _marker) {
-    let key = ui_entity_key(entity)
-    if visited.contains(key) {
-      return
-    }
-    visited.set(key, true)
-    roots.push(entity)
-  })
-  world.for_each_component(ecs_key_ghost_node, fn(entity, _ghost) {
-    if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
-      return
-    }
-    let key = ui_entity_key(entity)
-    if visited.contains(key) {
-      return
-    }
-    visited.set(key, true)
-    roots.push(entity)
-  })
-  roots
-}
-
-///|
 fn rotate_vec2(v : @math.Vec2, radians : Float) -> @math.Vec2 {
   let cosv = @math.cos(radians)
   let sinv = @math.sin(radians)
   @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
-}
-
-///|
-/// Convert a window-space pointer into viewport-space coordinates.
-///
-/// Returns `None` if the pointer is outside the viewport bounds.
-pub fn ui_pointer_pos_in_viewport(
-  mouse_pos : @math.Vec2,
-  viewport_origin : @math.Vec2,
-  viewport_size : @math.Vec2,
-) -> @math.Vec2? {
-  let pos_in_view = @math.Vec2::new(
-    mouse_pos.x - viewport_origin.x,
-    mouse_pos.y - viewport_origin.y,
-  )
-  if pos_in_view.x >= 0.0F &&
-    pos_in_view.y >= 0.0F &&
-    pos_in_view.x <= viewport_size.x &&
-    pos_in_view.y <= viewport_size.y {
-    Some(pos_in_view)
-  } else {
-    None
-  }
-}
-
-///|
-/// Resolve pointer position in the target viewport of a UI entity.
-///
-/// This follows the same camera-target propagation path used by layout/extract,
-/// so callers do not need to manually route pointers per camera.
-pub fn ui_pointer_pos_for_entity(
-  world : @ecs.World,
-  entity : @core.Entity,
-  pointer_window_pos : @math.Vec2,
-) -> @math.Vec2? {
-  let legacy_ctx = get_ui_context_resource(world).get()
-  let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
-  ui_pointer_pos_in_viewport(
-    pointer_window_pos,
-    entity_ctx.viewport_origin,
-    entity_ctx.viewport_size,
-  )
 }
 
 ///|
@@ -1714,37 +958,48 @@ fn ui_viewport_point_to_world(
   entity_ctx : UiResolvedCameraState,
   point : @math.Vec2,
 ) -> @math.Vec2 {
-  if entity_ctx.camera_entity is Some(camera_entity) &&
-    (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
-    is Some(camera) {
-    let projection = match
-      (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
-      Some(@sprite.Orthographic(orthographic)) => orthographic
-      _ => @sprite.OrthographicProjection::default_2d()
+  if entity_ctx.camera_entity is Some(camera_entity) {
+    let camera_opt : @sprite.Camera? = try
+      world.get_by_key(camera_entity, @sprite.ecs_key_camera)
+    catch {
+      _ => (None : @sprite.Camera?)
+    } noraise {
+      value => value
     }
-    let target_size = match camera.physical_target_size() {
-      Some(size) => size
-      None => {
-        let fallback_scale = safe_scale_factor(@window.window_scale_factor())
-        @math.IVec2::new(
-          (int_to_float(@window.window_width()) * fallback_scale).to_int(),
-          (int_to_float(@window.window_height()) * fallback_scale).to_int(),
-        )
+    if camera_opt is Some(camera) {
+      let projection = match
+        (try world.get_by_key(camera_entity, @sprite.ecs_key_projection) catch {
+          _ => (None : @sprite.Projection?)
+        } noraise {
+          value => value
+        }) {
+        Some(@sprite.Orthographic(orthographic)) => orthographic
+        _ => @sprite.OrthographicProjection::default_2d()
       }
-    }
-    let scale_factor = safe_scale_factor(
-      camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
-    )
-    if @sprite.render2d_camera_viewport_to_world_2d(
-        point,
-        camera,
-        projection,
-        entity_ctx.camera_transform,
-        target_size,
-        scale_factor,
+      let target_size = match camera.physical_target_size() {
+        Some(size) => size
+        None => {
+          let fallback_scale = safe_scale_factor(@window.window_scale_factor())
+          @math.IVec2::new(
+            (int_to_float(@window.window_width()) * fallback_scale).to_int(),
+            (int_to_float(@window.window_height()) * fallback_scale).to_int(),
+          )
+        }
+      }
+      let scale_factor = safe_scale_factor(
+        camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
       )
-      is Some(world_point) {
-      return world_point
+      if @sprite.render2d_camera_viewport_to_world_2d(
+          point,
+          camera,
+          projection,
+          entity_ctx.camera_transform,
+          target_size,
+          scale_factor,
+        )
+        is Some(world_point) {
+        return world_point
+      }
     }
   }
   let cam_scale = safe_camera_scale(entity_ctx.camera_scale)
@@ -1818,42 +1073,6 @@ fn ui_pointer_hit_transform_for_entity(
 }
 
 ///|
-/// Bevy-style UI hit test for a single entity using its routed target camera.
-///
-/// This includes viewport routing, transform-aware contains-point, and clip check.
-pub fn ui_entity_contains_pointer(
-  world : @ecs.World,
-  entity : @core.Entity,
-  pointer_window_pos : @math.Vec2,
-) -> Bool {
-  guard ui_pointer_pos_for_entity(world, entity, pointer_window_pos)
-    is Some(pointer) else {
-    return false
-  }
-  let legacy_ctx = get_ui_context_resource(world).get()
-  let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
-  guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
-    return false
-  }
-  let node_rect = layout.rect
-  if !ui_pointer_hit_for_entity_transform(
-      world, entity, node_rect, pointer, entity_ctx,
-    ) {
-    return false
-  }
-  let (clip_rect, has_clip) = match
-    (try! world.get_by_key(entity, ecs_key_calculated_clip)) {
-    Some(v) => (v.clip, true)
-    None => (node_rect, false)
-  }
-  let visible_rect = ui_rect_intersect(node_rect, clip_rect)
-  if has_clip && !visible_rect.contains(pointer) {
-    return false
-  }
-  true
-}
-
-///|
 fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
   let res = get_ui_context_resource(world)
   match res.get() {
@@ -1877,46 +1096,6 @@ fn ensure_ui_scale_resource(world : @ecs.World) -> UiScale {
       value
     }
   }
-}
-
-///|
-fn register_ui_text_required_components(
-  world : @ecs.World,
-) -> Unit raise @ecs.RequiredComponentsError {
-  world.register_required_components_with(@text.ecs_key_text, ecs_key_node, fn() {
-    Node::default()
-  })
-  world.register_required_components_with(
-    @text.ecs_key_text,
-    @text.ecs_key_text_font,
-    fn() { @text.TextFont::default() },
-  )
-  world.register_required_components_with(
-    @text.ecs_key_text,
-    @text.ecs_key_text_color,
-    fn() { @text.TextColor::default() },
-  )
-  world.register_required_components_with(
-    @text.ecs_key_text,
-    @text.ecs_key_text_layout,
-    fn() { @text.TextLayout::default() },
-  )
-  world.register_required_components_with(
-    @text.ecs_key_text,
-    @text.ecs_key_text_line_height,
-    fn() { @text.LineHeight::default() },
-  )
-}
-
-///|
-fn register_ui_ghost_required_components(
-  world : @ecs.World,
-) -> Unit raise @ecs.RequiredComponentsError {
-  world.register_required_components_with(
-    ecs_key_ghost_node,
-    @transform.ecs_key_transform,
-    fn() { @transform.Transform::identity() },
-  )
 }
 
 ///|
@@ -2156,7 +1335,7 @@ fn ui_compute_render_target_info(
 }
 
 ///|
-fn ui_resolved_camera_state_from_legacy(
+fn ui_resolved_camera_state_from_fallback_ctx(
   ctx : UiContext,
 ) -> UiResolvedCameraState {
   UiResolvedCameraState::{
@@ -2197,7 +1376,7 @@ fn ui_resolved_camera_state_from_computed(
 fn ui_root_resolved_camera_state(
   world : @ecs.World,
   root : @core.Entity,
-  legacy_ctx : UiContext?,
+  fallback_ctx : UiContext?,
 ) -> UiResolvedCameraState {
   match (try! world.get_by_key(root, ecs_key_computed_ui_render_target_info)) {
     Some(render_target_info) =>
@@ -2210,8 +1389,8 @@ fn ui_root_resolved_camera_state(
         render_target_info,
       )
     None =>
-      match legacy_ctx {
-        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+      match fallback_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_fallback_ctx(ctx)
         None => ui_resolved_camera_state_default()
       }
   }
@@ -2221,7 +1400,7 @@ fn ui_root_resolved_camera_state(
 fn ui_entity_resolved_camera_state(
   world : @ecs.World,
   entity : @core.Entity,
-  legacy_ctx : UiContext?,
+  fallback_ctx : UiContext?,
 ) -> UiResolvedCameraState {
   match
     (try! world.get_by_key(entity, ecs_key_computed_ui_render_target_info)) {
@@ -2236,8 +1415,8 @@ fn ui_entity_resolved_camera_state(
         render_target_info,
       )
     None =>
-      match legacy_ctx {
-        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+      match fallback_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_fallback_ctx(ctx)
         None => ui_resolved_camera_state_default()
       }
   }
@@ -2263,30 +1442,6 @@ fn ui_propagate_target_camera_subtree(
         world, child, computed_camera, render_target_info,
       )
     }
-  }
-}
-
-///|
-pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
-  let roots = ui_collect_root_entities(world)
-  let default_camera_entity = ui_select_default_camera_entity(world)
-  for root in roots {
-    let camera_entity = match
-      (try! world.get_by_key(root, ecs_key_ui_target_camera)) {
-      Some(target_camera) => Some(target_camera.entity())
-      None => default_camera_entity
-    }
-    let computed_camera = match camera_entity {
-      Some(entity) => ComputedUiTargetCamera::new(entity)
-      None => ComputedUiTargetCamera::default()
-    }
-    let render_target_info = match camera_entity {
-      Some(entity) => ui_compute_render_target_info(world, entity)
-      None => ComputedUiRenderTargetInfo::default()
-    }
-    ui_propagate_target_camera_subtree(
-      world, root, computed_camera, render_target_info,
-    )
   }
 }
 
@@ -2354,84 +1509,6 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn ensure_visibility_defaults(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> Unit {
-  if !(try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
-    try! world.set_by_key(
-      entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Inherited,
-    )
-  }
-  if !(try! world.contains_by_key(
-      entity, @visibility.ecs_key_inherited_visibility,
-    )) {
-    try! world.set_by_key(
-      entity,
-      @visibility.ecs_key_inherited_visibility,
-      @visibility.InheritedVisibility::new(true),
-    )
-  }
-  if !(try! world.contains_by_key(entity, @visibility.ecs_key_view_visibility)) {
-    try! world.set_by_key(
-      entity,
-      @visibility.ecs_key_view_visibility,
-      @visibility.ViewVisibility::new(true),
-    )
-  }
-}
-
-///|
-fn ensure_layers_default(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> @sprite.RenderLayers {
-  match (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
-    Some(v) => v
-    None => {
-      let layers = @sprite.RenderLayers::default()
-      try! world.set_by_key(entity, @sprite.ecs_key_render_layers, layers)
-      layers
-    }
-  }
-}
-
-///|
-fn ui_world_transform(
-  ctx : UiResolvedCameraState,
-  rect : @math.Rect,
-  z : Float,
-) -> @transform.Transform {
-  let viewport_w = ctx.viewport_size.x
-  let viewport_h = ctx.viewport_size.y
-  let cam_scale = safe_camera_scale(ctx.camera_scale)
-  let cam_rot = ctx.camera_transform.rotation_z()
-  let cam_pos = @math.Vec2::new(
-    ctx.camera_transform.translation.x,
-    ctx.camera_transform.translation.y,
-  )
-  let center = rect.center()
-  let half_w = viewport_w / 2.0F
-  let half_h = viewport_h / 2.0F
-  // Viewport top-left origin -> viewport center origin, with +Y up.
-  let center_px = @math.Vec2::new(center.x - half_w, half_h - center.y)
-  let center_scaled = @math.Vec2::new(
-    center_px.x * cam_scale,
-    center_px.y * cam_scale,
-  )
-  let offset = rotate_vec2(center_scaled, cam_rot)
-  let world_pos = @math.Vec2::new(cam_pos.x + offset.x, cam_pos.y + offset.y)
-  @transform.Transform::from_xy_rotation_scale(
-    world_pos,
-    cam_rot,
-    @math.Vec2::new(cam_scale, cam_scale),
-    z~,
-  )
-}
-
-///|
 fn image_measure_size_px(
   rect : @math.Rect?,
   atlas_rect : @math.Rect?,
@@ -2462,7 +1539,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   } else {
     ui_scale.value
   }
-  let legacy_inv_px_scale = ui_scale_value / sf
+  let fallback_inv_px_scale = ui_scale_value / sf
   let transparent_id = @asset.asset_transparent_texture().id()
   fn texture_size(handle : @asset.Handle[@asset.Image]) -> @math.Vec2 {
     let w = @asset.asset_texture_width(handle)
@@ -2495,7 +1572,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
     let inv_px_scale = match
       (try! world.get_by_key(entity, ecs_key_computed_ui_render_target_info)) {
       Some(render_target_info) => 1.0F / render_target_info.scale_factor()
-      None => legacy_inv_px_scale
+      None => fallback_inv_px_scale
     }
     let next = ContentSize::new(
       @math.Vec2::new(size_px.x * inv_px_scale, size_px.y * inv_px_scale),
@@ -2583,7 +1660,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
 ///|
 pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
-  let legacy_ctx = res.get()
+  let fallback_ctx = res.get()
   let roots = ui_collect_root_entities(world)
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match (try! world.get_by_key(entity, ecs_key_content_size)) {
@@ -3030,7 +2107,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   }
 
   fn layout_root(root : @core.Entity) -> Unit {
-    let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
+    let root_ctx = ui_root_resolved_camera_state(world, root, fallback_ctx)
     root_viewport_size.val = root_ctx.viewport_size
     let explicit_root = try! world.contains_by_key(root, ecs_key_ui_root)
     let root_rect = @math.Rect::new(
@@ -3413,7 +2490,6 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   let abs_dy = if delta.y < 0.0F { 0.0F - delta.y } else { delta.y }
   let mut dx = delta.x
   let mut dy = delta.y
-  // Match the host accessibility wheel bridge: when both axes are scrollable,
   // pick the dominant axis to avoid accidental horizontal drift from touchpads.
   if scrolls_x && scrolls_y {
     if abs_dy >= abs_dx {
@@ -3530,7 +2606,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 /// Compute `CalculatedClip` and attach `@sprite.ScissorRect` for clipped UI.
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
-  let legacy_ctx = res.get()
+  let fallback_ctx = res.get()
   let roots = ui_collect_root_entities(world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
@@ -3729,7 +2805,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   }
 
   for root in roots {
-    let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
+    let root_ctx = ui_root_resolved_camera_state(world, root, fallback_ctx)
     let viewport_rect = @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
@@ -3923,7 +2999,7 @@ pub fn ui_build_a11y_tree_update(
   world : @ecs.World,
 ) -> @moon_accesskit.TreeUpdate {
   let res = get_ui_context_resource(world)
-  let legacy_ctx = res.get()
+  let fallback_ctx = res.get()
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else {
     let root = @moon_accesskit.NodeId::root()
@@ -3934,8 +3010,6 @@ pub fn ui_build_a11y_tree_update(
     update.set_tree(@moon_accesskit.Tree::new(root))
     update
   }
-  let a11y_state_res = @a11y.get_a11y_state_resource(world)
-
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
   let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
@@ -4040,9 +3114,20 @@ pub fn ui_build_a11y_tree_update(
   // Root node.
   let tree_id = @moon_accesskit.TreeId::root()
   let root_id = @moon_accesskit.NodeId::root()
-  let mut focus_id = match a11y_state_res.get() {
-    Some(state) => @a11y.A11yState::focused_node(state)
-    None => root_id
+  let mut focus_id = root_id
+  let input_focus_value : @input_focus.InputFocus? = try
+    world.get_resource(@input_focus.InputFocus::resource())
+  catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+  let focus_entity : @core.Entity? = match input_focus_value {
+    Some(input_focus) => input_focus.get()
+    None => None
+  }
+  if focus_entity is Some(entity) {
+    focus_id = @a11y.node_id_for_entity(entity)
   }
   if focus_id != root_id {
     let mut exists = false
@@ -4071,7 +3156,9 @@ pub fn ui_build_a11y_tree_update(
     guard (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) else {
       continue
     }
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(
+      world, entity, fallback_ctx,
+    )
     let size = layout.rect.size()
     let x0 = (entity_ctx.viewport_origin.x + layout.rect.min.x).to_double()
     let y0 = (entity_ctx.viewport_origin.y + layout.rect.min.y).to_double()
@@ -4154,7 +3241,9 @@ pub fn ui_build_a11y_tree_update(
       }
     }
     let rect = layout.rect
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(
+      world, entity, fallback_ctx,
+    )
     let x0 = (entity_ctx.viewport_origin.x + rect.min.x).to_double()
     let y0 = (entity_ctx.viewport_origin.y + rect.min.y).to_double()
     let size = rect.size()
@@ -4215,10 +3304,43 @@ pub fn ui_build_a11y_tree_update(
 }
 
 ///|
-/// Extract UI accessibility nodes and send them to the host bridge.
 pub fn ui_a11y_update_system(world : @ecs.World) -> Unit {
   let update = ui_build_a11y_tree_update(world)
-  @a11y.a11y_host_apply_update(update)
+  let root_id = @moon_accesskit.NodeId::root()
+  let synced : Map[UInt64, Bool] = {}
+  for nu in update.nodes() {
+    let node_id = nu.id()
+    if node_id == root_id {
+      continue
+    }
+    let entity = @core.Entity::from_bits(node_id.to_u64())
+    if !world.is_alive(entity) {
+      continue
+    }
+    let accessibility_node = @a11y.AccessibilityNode::new(nu.node())
+    synced.set(entity.to_bits(), true)
+    if (try! world.contains_by_key(entity, @a11y.ecs_key_accessibility_node)) {
+      ignore(
+        try! world.replace(
+          entity, @a11y.ecs_key_accessibility_node, accessibility_node,
+        ),
+      )
+    } else {
+      try! world.set_by_key(
+        entity, @a11y.ecs_key_accessibility_node, accessibility_node,
+      )
+    }
+  }
+  let stale_entities : Array[@core.Entity] = []
+  world.for_each_component(@a11y.ecs_key_accessibility_node, fn(entity, _node) {
+    if (try! world.contains_by_key(entity, ecs_key_ui_layout)) &&
+      !synced.contains(entity.to_bits()) {
+      stale_entities.push(entity)
+    }
+  })
+  for entity in stale_entities {
+    ignore(try! world.remove_by_key(entity, @a11y.ecs_key_accessibility_node))
+  }
 }
 
 ///|
@@ -4229,7 +3351,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   guard stack_res.get() is Some(stack0) else { return }
   let pointer_window = @input.mouse_position()
   let pointer_ctx = ctx0.pointer_pos
-  let legacy_ctx = Some(ctx0)
+  let fallback_ctx = Some(ctx0)
   let down = ctx0.pointer_down
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
     a.id == b.id && a.generation == b.generation
@@ -4360,7 +3482,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       let idx = stack0.uinodes.length() - 1 - i
       let entity = stack0.uinodes[idx]
       let entity_ctx = ui_entity_resolved_camera_state(
-        world, entity, legacy_ctx,
+        world, entity, fallback_ctx,
       )
       let pointer = match pointer_window {
         Some(pointer_window_pos) =>
@@ -4482,70 +3604,4 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       |> ignore)
     }
   }
-}
-
-///|
-pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_ui_text_required_components(app.world())
-  try! register_ui_ghost_required_components(app.world())
-  app
-  .add_pre_update_system_config(
-    @app.system(ui_update_context_system).in_set(ui_set_focus),
-  )
-  .add_pre_update_system_config(
-    @app.system(ui_interaction_system).in_set(ui_set_focus),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_update_context_system).in_set(ui_set_prepare),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_propagate_target_cameras_system).in_set(ui_set_prepare),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_scroll_system).in_set(ui_set_propagate),
-  )
-  .add_post_update_system_config(
-    @app.system(@text.ui_text_sync_ecs_system).in_set(ui_set_text_content),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_image_content_size_system).in_set(ui_set_content),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_layout_system).in_set(ui_set_layout),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_clip_system).in_set(ui_set_post_layout),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_stack_system).in_set(ui_set_stack),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_a11y_update_system).in_set(ui_set_post_layout),
-  )
-  .configure_set(@app.PreUpdate, ui_set_focus)
-  .configure_set(
-    @app.PostUpdate,
-    ui_set_prepare,
-    after=[@sprite.camera_update_systems],
-    before=[ui_set_propagate],
-  )
-  .configure_set(@app.PostUpdate, ui_set_propagate, after=[ui_set_prepare], before=[
-    ui_set_text_content,
-  ])
-  .configure_set(
-    @app.PostUpdate,
-    ui_set_text_content,
-    after=[ui_set_propagate],
-    before=[ui_set_content],
-  )
-  .configure_set(@app.PostUpdate, ui_set_content, after=[ui_set_text_content], before=[
-    ui_set_layout,
-  ])
-  .configure_set(@app.PostUpdate, ui_set_layout, after=[ui_set_content], before=[
-    ui_set_post_layout,
-  ])
-  .configure_set(@app.PostUpdate, ui_set_post_layout, after=[ui_set_layout], before=[
-    ui_set_stack,
-  ])
-  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout])
 }

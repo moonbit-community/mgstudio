@@ -15,24 +15,6 @@
 // Core pipeline and camera settings live in `core_pipeline.mbt`.
 
 ///|
-pub type AlphaMode3d = @material.AlphaMode3d
-
-///|
-pub type Face3d = @material.Face3d
-
-///|
-pub type ParallaxMappingMethod = @material.ParallaxMappingMethod
-
-///|
-pub type OpaqueRendererMethod = @material.OpaqueRendererMethod
-
-///|
-pub type DefaultOpaqueRendererMethod = @material.DefaultOpaqueRendererMethod
-
-///|
-pub type StandardMaterial = @material.StandardMaterial
-
-///|
 pub(open) trait IntoPbrMaterialAsset {
   into_pbr_material_asset(Self) -> StandardMaterial
 }
@@ -67,15 +49,6 @@ pub impl IntoPbrMaterialAsset for @asset.Handle[@asset.Image] with into_pbr_mate
 }
 
 ///|
-pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
-
-///|
-pub type MeshMaterial3d = @material.MeshMaterial3d
-
-///|
-pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
-
-///|
 /// Light-facing ownership lives in `Milky2018/mgstudio/light`.
 pub type VolumetricLight = @light.VolumetricLight
 
@@ -90,9 +63,6 @@ pub type AtmosphereMode = @light.AtmosphereMode
 
 ///|
 pub type AtmosphereSettings = @light.AtmosphereSettings
-
-///|
-pub type ScatteringMedium = @light.ScatteringMedium
 
 ///|
 pub type Atmosphere = @light.Atmosphere
@@ -210,10 +180,6 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
 
 ///|
 /// Marker component aligned with Bevy's `ForwardDecal`.
-///
-/// Current runtime note: projected forward-decal shading is not wired in this
-/// backend yet. This component preserves scene/API parity for example
-/// migration and future renderer integration.
 pub struct ForwardDecal {} derive(ToJson, FromJson)
 
 ///|
@@ -235,9 +201,6 @@ fn clustered_decal_tag_safe(tag : Int) -> Int {
 ///
 /// The decal volume follows Bevy semantics: a transformed unit cube that
 /// projects textures along local `-Z`.
-///
-/// Current runtime note: clustered projection is not yet active in this
-/// backend; this component currently carries scene intent metadata.
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@asset.Image]?
   normal_map_texture : @asset.Handle[@asset.Image]?
@@ -364,133 +327,49 @@ pub type IrradianceVolume = @light.IrradianceVolume
 pub type GlobalAmbientLight = @light.GlobalAmbientLight
 
 ///|
-priv struct ProjectionRuntime3d {
-  last_view_width : Float
-  last_view_height : Float
-}
+type ProjectionRuntime3d = @pbr_render.ProjectionRuntime3d
 
 ///|
-let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
-  debug_name="render3d.projection_runtime3d",
-)
+let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @pbr_render.ecs_key_projection_runtime3d
 
 ///|
-priv struct Render3dLightingState {
-  ambient_color : @sprite.Color
-  ambient_brightness : Float
-  directional_dir : @math.Vec3
-  directional_color : @sprite.Color
-  directional_illuminance : Float
-  point_entity : @core.Entity
-  point_pos : @math.Vec3
-  point_color : @sprite.Color
-  point_intensity : Float
-  point_range : Float
-  point_shadow_maps_enabled : Bool
-  point_shadow_depth_bias : Float
-  point_shadow_map_near_z : Float
-  spot_pos : @math.Vec3
-  spot_dir : @math.Vec3
-  spot_color : @sprite.Color
-  spot_intensity : Float
-  spot_range : Float
-  spot_inner_angle : Float
-  spot_outer_angle : Float
-}
+type Render3dLightingState = @pbr_render.Render3dLightingState
 
 ///|
-priv struct PreparedSkinBinding3d {
-  entity_generation : Int
-  key_hi : Int
-  key_lo : Int
-}
+type MeshPreprocessStatic3d = @pbr_render.MeshPreprocessStatic3d
 
 ///|
-priv struct MeshPreprocessStatic3d {
-  is_indexed : Bool
-  first_vertex_index : Int
-  first_index_index : Int
-  index_count : Int
-  has_local_aabb : Bool
-  aabb_center : @math.Vec3
-  aabb_half_extents : @math.Vec3
-}
+type GpuPreprocessPhaseRange3d = @pbr_render.GpuPreprocessPhaseRange3d
 
 ///|
-priv struct GpuPreprocessPhaseRange3d {
-  phase : Int
-  start : Int
-  end : Int
-}
+type GpuPreprocessIndirectParametersCpuMetadata3d = @pbr_render.GpuPreprocessIndirectParametersCpuMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectParametersCpuMetadata3d {
-  base_output_index : Int
-  batch_set_index : Int
-}
+type GpuPreprocessIndirectParametersGpuMetadata3d = @pbr_render.GpuPreprocessIndirectParametersGpuMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectParametersGpuMetadata3d {
-  mesh_index : Int
-  early_instance_count : Int
-  late_instance_count : Int
-}
+type GpuPreprocessIndirectBatchSet3d = @pbr_render.GpuPreprocessIndirectBatchSet3d
 
 ///|
-priv struct GpuPreprocessIndirectBatchSet3d {
-  indirect_parameters_count : Int
-  indirect_parameters_base : Int
-}
+type GpuPreprocessIndirectMeshClassMetadata3d = @pbr_render.GpuPreprocessIndirectMeshClassMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectMeshClassMetadata3d {
-  indirect_parameters_cpu_metadata : Array[
-    GpuPreprocessIndirectParametersCpuMetadata3d,
-  ]
-  indirect_parameters_gpu_metadata : Array[
-    GpuPreprocessIndirectParametersGpuMetadata3d,
-  ]
-  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
-}
+type GpuPreprocessIndirectMetadata3d = @pbr_render.GpuPreprocessIndirectMetadata3d
 
 ///|
-priv struct GpuPreprocessIndirectMetadata3d {
-  indexed : GpuPreprocessIndirectMeshClassMetadata3d
-  non_indexed : GpuPreprocessIndirectMeshClassMetadata3d
-}
+type GpuPreprocessShaderWorkItem3d = @pbr_render.GpuPreprocessShaderWorkItem3d
 
 ///|
-priv struct GpuPreprocessShaderWorkItem3d {
-  input_index : Int
-  output_or_indirect_parameters_index : Int
-}
+type GpuOcclusionCullingWorkItemBuffers3d = @pbr_render.GpuOcclusionCullingWorkItemBuffers3d
 
 ///|
-priv struct GpuOcclusionCullingWorkItemBuffers3d {
-  enabled : Bool
-}
+type GpuPreprocessWorkItemBuffers3d = @pbr_render.GpuPreprocessWorkItemBuffers3d
 
 ///|
-priv enum GpuPreprocessWorkItemBuffers3d {
-  Direct(Array[GpuPreprocessShaderWorkItem3d])
-  Indirect(
-    Array[GpuPreprocessShaderWorkItem3d],
-    Array[GpuPreprocessShaderWorkItem3d],
-    GpuOcclusionCullingWorkItemBuffers3d?
-  )
-}
+const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = @pbr_render.RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE
 
 ///|
-const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
-
-///|
-priv struct GpuPreprocessDispatchMetadata3d {
-  direct_workgroup_count : Int
-  indexed_workgroup_count : Int
-  non_indexed_workgroup_count : Int
-  late_indexed_workgroup_count : Int
-  late_non_indexed_workgroup_count : Int
-}
+type GpuPreprocessDispatchMetadata3d = @pbr_render.GpuPreprocessDispatchMetadata3d
 
 ///|
 priv struct GpuPreprocessResolvedCameraQueueEntry3d {
@@ -504,19 +383,19 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
 }
 
 ///|
-let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
+let render3d_runtime_initialized_ref : Ref[Bool] = @pbr_render.render3d_runtime_initialized_ref
 
 ///|
-let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
+let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = @pbr_render.render3d_diagnostic_queued_visible_mesh_count_ref
 
 ///|
-let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = @pbr_render.render3d_diagnostic_prepared_camera_count_ref
 
 ///|
-let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = @pbr_render.render3d_diagnostic_queue_cpu_ms_ref
 
 ///|
-let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = @pbr_render.render3d_diagnostic_execute_cpu_ms_ref
 
 ///|
 fn render3d_ray_local_aabb_hit(
@@ -562,7 +441,7 @@ fn render3d_ray_local_aabb_hit(
     let d = axis_data.2
     let slab_min = axis_data.3
     let slab_max = axis_data.4
-    if absf(d) <= 1.0e-9F {
+    if @pbr_render.absf(d) <= 1.0e-9F {
       if o < slab_min || o > slab_max {
         return None
       }
@@ -626,12 +505,12 @@ fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
   let mut max_z = geometry3d.positions[0].z
   for i in 1..<geometry3d.positions.length() {
     let p = geometry3d.positions[i]
-    min_x = minf(min_x, p.x)
-    min_y = minf(min_y, p.y)
-    min_z = minf(min_z, p.z)
-    max_x = maxf(max_x, p.x)
-    max_y = maxf(max_y, p.y)
-    max_z = maxf(max_z, p.z)
+    min_x = @pbr_render.minf(min_x, p.x)
+    min_y = @pbr_render.minf(min_y, p.y)
+    min_z = @pbr_render.minf(min_z, p.z)
+    max_x = @pbr_render.maxf(max_x, p.x)
+    max_y = @pbr_render.maxf(max_y, p.y)
+    max_z = @pbr_render.maxf(max_z, p.z)
   }
   Some(
     (@math.Vec3::new(min_x, min_y, min_z), @math.Vec3::new(max_x, max_y, max_z)),
@@ -679,3 +558,329 @@ fn render3d_visibility_range_visible(
 }
 
 ///|
+const RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS : Int = 64
+
+///|
+fn render3d_morph_entity_key(entity : @core.Entity) -> UInt64 {
+  let hi = entity.id.reinterpret_as_uint().to_uint64()
+  let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+  (hi << 32) | lo
+}
+
+///|
+fn render3d_morph_is_visible(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  if (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+    is Some(view_visibility) {
+    view_visibility.is_visible()
+  } else {
+    true
+  }
+}
+
+///|
+fn render3d_resolved_morph_weights(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Array[Float] {
+  let animation_weights : @animation.AnimationWeights? = try! source_world
+    .entity(entity)
+    .get()
+  let morph_weights_component : @mesh.MorphWeights? = try! source_world
+    .entity(entity)
+    .get()
+  match animation_weights {
+    Some(weights) => {
+      let values = weights.values()
+      try! source_world.set_by_key(
+        entity,
+        @mesh.MorphWeights::component(),
+        @mesh.MorphWeights::new(values),
+      )
+      values
+    }
+    None =>
+      match morph_weights_component {
+        Some(weights) => weights.values()
+        None => []
+      }
+  }
+}
+
+///|
+fn render3d_push_morph_weights_to_uniform_buffer(
+  uniform_weights : Array[Float],
+  weights : Array[Float],
+) -> UInt {
+  let start = uniform_weights.length()
+  let normalized = @pbr_render.render3d_normalize_morph_weights(weights)
+  let limit = if normalized.length() < RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS {
+    normalized.length()
+  } else {
+    RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
+  }
+  for index in 0..<limit {
+    uniform_weights.push(normalized[index])
+  }
+  let target_len = start + RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
+  while uniform_weights.length() < target_len {
+    uniform_weights.push(0.0F)
+  }
+  start.reinterpret_as_uint() * 4U
+}
+
+///|
+fn render3d_read_morph_weights_from_uniform_buffer(
+  uniform_weights : Array[Float],
+  byte_offset : UInt,
+) -> Array[Float] {
+  let start = (byte_offset / 4U).reinterpret_as_int()
+  let end = start + RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
+  let clamped_end = if end < uniform_weights.length() {
+    end
+  } else {
+    uniform_weights.length()
+  }
+  let values : Array[Float] = []
+  if start >= clamped_end {
+    return values
+  }
+  for index in start..<clamped_end {
+    values.push(uniform_weights[index])
+  }
+  values
+}
+
+///|
+fn render3d_clone_mesh3d_geometry(
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  for position in geometry.positions {
+    positions.push(position)
+  }
+  let uvs : Array[@math.Vec2] = []
+  for uv in geometry.uvs {
+    uvs.push(uv)
+  }
+  let indices = match geometry.indices {
+    Some(existing) => {
+      let next : Array[Int] = []
+      for index in existing {
+        next.push(index)
+      }
+      Some(next)
+    }
+    None => None
+  }
+  let colors = match geometry.colors {
+    Some(existing) => {
+      let next : Array[@math.Vec4] = []
+      for color in existing {
+        next.push(color)
+      }
+      Some(next)
+    }
+    None => None
+  }
+  let mut cloned = @mesh.Mesh3dGeometry::new_with_topology(
+    positions,
+    uvs,
+    indices,
+    geometry.topology,
+  ).with_colors(colors)
+  if geometry.joint_indices is Some(joint_indices) {
+    let copied_indices : Array[@mesh.MeshJointIndices] = []
+    for joint_index in joint_indices {
+      copied_indices.push(joint_index)
+    }
+    let copied_weights = match geometry.joint_weights {
+      Some(existing) => {
+        let next : Array[@math.Vec4] = []
+        for weight in existing {
+          next.push(weight)
+        }
+        Some(next)
+      }
+      None => None
+    }
+    cloned = cloned.with_joint_data(Some(copied_indices), copied_weights)
+  } else if geometry.joint_weights is Some(existing) {
+    let next : Array[@math.Vec4] = []
+    for weight in existing {
+      next.push(weight)
+    }
+    cloned = cloned.with_joint_data(None, Some(next))
+  }
+  if geometry.morph_target_positions is Some(morph_targets) {
+    let copied_targets : Array[Array[@math.Vec3]] = []
+    for morph_target in morph_targets {
+      let copied_positions : Array[@math.Vec3] = []
+      for position in morph_target {
+        copied_positions.push(position)
+      }
+      copied_targets.push(copied_positions)
+    }
+    let copied_names = match geometry.morph_target_names {
+      Some(existing) => {
+        let next : Array[String] = []
+        for name in existing {
+          next.push(name)
+        }
+        Some(next)
+      }
+      None => None
+    }
+    cloned = cloned.with_morph_targets(
+      Some(copied_targets),
+      morph_target_names=copied_names,
+    )
+  }
+  for attribute in geometry.custom_attributes_vec3 {
+    let values : Array[@math.Vec3] = []
+    for value in attribute.values() {
+      values.push(value)
+    }
+    cloned = cloned.with_custom_attribute_vec3(attribute.name(), values)
+  }
+  if geometry.tangents is Some(existing) {
+    let copied : Array[@math.Vec4] = []
+    for tangent in existing {
+      copied.push(tangent)
+    }
+    ignore(cloned.replace_tangents(Some(copied)))
+  }
+  cloned
+}
+
+///|
+fn render3d_apply_morph_targets(
+  base_positions : Array[@math.Vec3],
+  morph_targets : Array[Array[@math.Vec3]],
+  weights : Array[Float],
+) -> Array[@math.Vec3] {
+  let positions : Array[@math.Vec3] = []
+  for position in base_positions {
+    positions.push(position)
+  }
+  let limit = if morph_targets.length() < weights.length() {
+    morph_targets.length()
+  } else {
+    weights.length()
+  }
+  for morph_index in 0..<limit {
+    let weight = weights[morph_index]
+    if weight == 0.0F {
+      continue
+    }
+    let morph_target = morph_targets[morph_index]
+    let vertex_limit = if morph_target.length() < positions.length() {
+      morph_target.length()
+    } else {
+      positions.length()
+    }
+    for vertex_index in 0..<vertex_limit {
+      positions[vertex_index] = @math.Vec3::add(
+        positions[vertex_index],
+        @math.Vec3::mul_scalar(morph_target[vertex_index], weight),
+      )
+    }
+  }
+  positions
+}
+
+///|
+pub fn render3d_extract_morphs(
+  source_world : @ecs.World,
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+) -> Unit {
+  phase_state_ref.val.morph_indices_prev = phase_state_ref.val.morph_indices_current
+  phase_state_ref.val.morph_weights_prev = phase_state_ref.val.morph_weights_current
+  phase_state_ref.val.morph_indices_current = {}
+  phase_state_ref.val.morph_weights_current = []
+  if source_world.component_count(@mesh.MorphTargetMesh::component()) == 0 {
+    return
+  }
+  let mesh_query : @ecs.Query[
+    (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! mesh_query.view(fn(_entity, data) {
+    let (entity, _mesh_component, _morph_target_mesh_component) = data
+    if !render3d_morph_is_visible(source_world, entity) {
+      return
+    }
+    let active_morph_weights = render3d_resolved_morph_weights(
+      source_world, entity,
+    )
+    let uniform_offset = render3d_push_morph_weights_to_uniform_buffer(
+      phase_state_ref.val.morph_weights_current,
+      active_morph_weights,
+    )
+    phase_state_ref.val.morph_indices_current.set(
+      render3d_morph_entity_key(entity),
+      uniform_offset,
+    )
+  })
+}
+
+///|
+pub fn render3d_prepare_morphs(
+  source_world : @ecs.World,
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+) -> Unit {
+  let mesh_query : @ecs.Query[
+    (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  let mesh_assets_ref = mesh_assets_mut_or_abort()
+
+  try! mesh_query.view(fn(_entity, data) {
+    let (entity, mesh_component, morph_target_mesh_component) = data
+    let entity_key = render3d_morph_entity_key(entity)
+    let morph_weights_offset = match
+      phase_state_ref.val.morph_indices_current.get(entity_key) {
+      Some(offset) => offset
+      None => return
+    }
+    let source_mesh_handle = morph_target_mesh_component.value().source_mesh()
+    let instance_mesh_handle = mesh_component.value().mesh()
+    let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
+      Some(value) => value
+      None => return
+    }
+    let source_geometry = match source_mesh.as_3d_geometry() {
+      Some(value) => value
+      None => return
+    }
+
+    let active_morph_weights = render3d_read_morph_weights_from_uniform_buffer(
+      phase_state_ref.val.morph_weights_current,
+      morph_weights_offset,
+    )
+
+    let mut positions = source_geometry.positions
+    if source_geometry.morph_target_positions() is Some(morph_targets) &&
+      active_morph_weights.length() > 0 {
+      positions = render3d_apply_morph_targets(
+        positions, morph_targets, active_morph_weights,
+      )
+    }
+
+    let updated_geometry = render3d_clone_mesh3d_geometry(source_geometry)
+    guard updated_geometry.replace_positions(positions) else { return }
+    guard source_mesh.with_3d_geometry(updated_geometry) is Some(updated_mesh) else {
+      return
+    }
+    ignore(mesh_assets_ref.val.set(instance_mesh_handle, updated_mesh))
+  })
+}
+
+///|
+pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
+  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  render3d_extract_morphs(world, phase_state_ref)
+  render3d_prepare_morphs(world, phase_state_ref)
+}

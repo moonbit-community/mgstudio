@@ -15,7 +15,7 @@
 ///|
 struct ObserverMarker {
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let observer_marker_key : ComponentKey[ObserverMarker] = register_component(
@@ -142,12 +142,12 @@ test "ecs observer: world add_component_observer is world-scoped and fires on re
     value: 3,
   })
 
-  inspect(first_handle.world_id() == world0.world_id(), content="true")
-  inspect(first_handle.id() > 0, content="true")
-  inspect(first_hits.val, content="2")
-  inspect(second_hits.val, content="2")
-  inspect(seen_entities, content="[0, 0]")
-  inspect(captured_world_id.val == world0.world_id(), content="true")
+  debug_inspect(first_handle.world_id() == world0.world_id(), content="true")
+  debug_inspect(first_handle.id() > 0, content="true")
+  debug_inspect(first_hits.val, content="2")
+  debug_inspect(second_hits.val, content="2")
+  debug_inspect(seen_entities, content="[0, 0]")
+  debug_inspect(captured_world_id.val == world0.world_id(), content="true")
 }
 
 ///|
@@ -177,8 +177,8 @@ test "ecs observer: add_entity_component_observer only fires for the bound entit
     value: 3,
   })
 
-  inspect(hits.val, content="2")
-  inspect(seen_entities, content="[0, 0]")
+  debug_inspect(hits.val, content="2")
+  debug_inspect(seen_entities, content="[0, 0]")
 }
 
 ///|
@@ -200,14 +200,17 @@ test "ecs observer: world add_component_observer fires on remove" {
   try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
     value: 1,
   })
-  inspect(try! world.remove_by_key(entity, observer_marker_key), content="true")
-  inspect(
+  debug_inspect(
+    try! world.remove_by_key(entity, observer_marker_key),
+    content="true",
+  )
+  debug_inspect(
     try! world.remove_by_key(entity, observer_marker_key),
     content="false",
   )
 
-  inspect(hits.val, content="1")
-  inspect(seen_entities, content="[0]")
+  debug_inspect(hits.val, content="1")
+  debug_inspect(seen_entities, content="[0]")
 }
 
 ///|
@@ -239,10 +242,10 @@ test "ecs observer: world add_observer and add_entity_observer handle custom eve
   world.trigger(ObserverDetonate::{ entity: entity0, radius: 1 })
   world.trigger(ObserverDetonate::{ entity: entity1, radius: 2 })
 
-  inspect(global_hits.val, content="2")
-  inspect(bound_hits.val, content="1")
-  inspect(global_entities, content="[0, 1]")
-  inspect(bound_entities, content="[0]")
+  debug_inspect(global_hits.val, content="2")
+  debug_inspect(bound_hits.val, content="1")
+  debug_inspect(global_entities, content="[0, 1]")
+  debug_inspect(bound_entities, content="[0]")
 }
 
 ///|
@@ -276,7 +279,7 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
   world.trigger(ObserverAttack::{ damage: 10, entity: child })
   set_observer_parent_lookup(fn(_world, _entity) { None })
 
-  inspect(order, content="[\"child\", \"parent:7\"]")
+  debug_inspect(order, content="[\"child\", \"parent:7\"]")
 }
 
 ///|
@@ -310,7 +313,7 @@ test "ecs observer: trigger propagation can be halted early" {
   world.trigger(ObserverAttack::{ damage: 4, entity: child })
   set_observer_parent_lookup(fn(_world, _entity) { None })
 
-  inspect(order, content="[\"child\"]")
+  debug_inspect(order, content="[\"child\"]")
 }
 
 ///|
@@ -336,15 +339,15 @@ test "ecs observer: add_remove_entity_component_observer only fires for the boun
   try! world.set_by_key(entity1, observer_marker_key, ObserverMarker::{
     value: 2,
   })
-  inspect(
+  debug_inspect(
     try! world.remove_by_key(entity0, observer_marker_key),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! world.remove_by_key(entity1, observer_marker_key),
     content="true",
   )
 
-  inspect(hits.val, content="1")
-  inspect(seen_entities, content="[0]")
+  debug_inspect(hits.val, content="1")
+  debug_inspect(seen_entities, content="[0]")
 }

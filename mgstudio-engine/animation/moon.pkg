@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
+  "moonbitlang/core/encoding/utf8" @utf8,
   "moonbitlang/core/ref",
   "tonyfettes/any",
 }

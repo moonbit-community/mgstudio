@@ -1,14 +1,19 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/dev_tools/ci_testing" @dev_tools_ci_testing,
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/picking",
+  "Milky2018/mgstudio/pointer_events",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/ui",
+  "Milky2018/mgstudio/window",
 }
 
 supported_targets = "native"

@@ -1,19 +1,18 @@
 import {
   "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/input_focus",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/ui_render",
   "Milky2018/mgstudio/window",
-  "Milky2018/moon_accesskit",
 }
 
 supported_targets = "native"

@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/ref",
 }
 
@@ -13,7 +14,7 @@ import {
 // Errors
 
 // Types and methods
-type Armor derive(Show)
+type Armor derive(@debug.Debug)
 pub impl @ecs.Component for Armor
 
 type Attack
@@ -23,7 +24,7 @@ type AttackSchedule
 pub impl @app.Resource for AttackSchedule
 pub impl Default for AttackSchedule
 
-type HitPoints derive(Show)
+type HitPoints derive(@debug.Debug)
 pub impl @ecs.Component for HitPoints
 
 // Type aliases

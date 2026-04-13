@@ -17,7 +17,7 @@ pub(all) enum RunFixedMainLoopSystems {
   BeforeFixedMainLoop
   FixedMainLoop
   AfterFixedMainLoop
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn run_fixed_main_loop_system_set_name(
@@ -37,7 +37,7 @@ pub fn run_fixed_main_loop_system_set_name(
 pub struct MainScheduleOrder {
   labels : Array[ScheduleStage]
   startup_labels : Array[ScheduleStage]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn MainScheduleOrder::new(
@@ -58,7 +58,7 @@ pub fn MainScheduleOrder::default() -> MainScheduleOrder {
 ///|
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct MainScheduleRuntimeState {
@@ -85,21 +85,21 @@ pub fn FixedMainScheduleOrder::default() -> FixedMainScheduleOrder {
 
 ///|
 pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder] {
-  @ecs.register_resource(debug_name="bevy_app::MainScheduleOrder")
+  @ecs.register_resource(debug_name="mgstudio_app::MainScheduleOrder")
 }
 
 ///|
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[
   FixedMainScheduleOrder,
 ] {
-  @ecs.register_resource(debug_name="bevy_app::FixedMainScheduleOrder")
+  @ecs.register_resource(debug_name="mgstudio_app::FixedMainScheduleOrder")
 }
 
 ///|
 fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
   MainScheduleRuntimeState,
 ] {
-  @ecs.register_resource(debug_name="bevy_app::MainScheduleRuntimeState")
+  @ecs.register_resource(debug_name="mgstudio_app::MainScheduleRuntimeState")
 }
 
 ///|
@@ -135,7 +135,8 @@ fn schedule_stage_insert_after(
 ) -> Unit {
   match schedule_stage_position(labels, after) {
     Some(index) => labels.insert(index + 1, stage)
-    None => abort("Expected schedule stage to exist: \{after.to_string()}")
+    None =>
+      abort("Expected schedule stage to exist: \{to_repr(after).to_string()}")
   }
 }
 
@@ -147,7 +148,8 @@ fn schedule_stage_insert_before(
 ) -> Unit {
   match schedule_stage_position(labels, before) {
     Some(index) => labels.insert(index, stage)
-    None => abort("Expected schedule stage to exist: \{before.to_string()}")
+    None =>
+      abort("Expected schedule stage to exist: \{to_repr(before).to_string()}")
   }
 }
 

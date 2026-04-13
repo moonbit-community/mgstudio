@@ -27,7 +27,7 @@ fn sampler_tag(sampler : @image.ImageSampler) -> Int {
 
 ///|
 test "image boundary re-exports sampler constructors" {
-  inspect(sampler_tag(@image.ImageSampler::default()), content="0")
-  inspect(sampler_tag(@image.ImageSampler::nearest()), content="1")
-  inspect(sampler_tag(@image.ImageSampler::linear()), content="2")
+  debug_inspect(sampler_tag(@image.ImageSampler::default()), content="0")
+  debug_inspect(sampler_tag(@image.ImageSampler::nearest()), content="1")
+  debug_inspect(sampler_tag(@image.ImageSampler::linear()), content="2")
 }

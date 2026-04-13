@@ -15,7 +15,7 @@
 ///|
 pub struct Instant {
   nanos_since_start : Int64
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 let instant_start_timestamp_ref : Ref[@bench.Timestamp?] = Ref::new(None)

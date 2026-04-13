@@ -60,7 +60,7 @@ pub fn PitchAssets::set(
 
 ///|
 let pitch_assets_resource_key : @ecs.ResourceKey[PitchAssets] = @ecs.register_resource(
-  debug_name="bevy_audio::PitchAssets",
+  debug_name="mgstudio_audio::PitchAssets",
 )
 
 ///|

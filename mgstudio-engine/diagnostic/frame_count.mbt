@@ -19,7 +19,7 @@
 ///|
 pub struct FrameCount {
   mut value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn FrameCount::default() -> FrameCount {
@@ -28,7 +28,7 @@ pub fn FrameCount::default() -> FrameCount {
 
 ///|
 let frame_count_resource_key : @ecs.ResourceKey[FrameCount] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::FrameCount",
+  debug_name="mgstudio_diagnostic::FrameCount",
 )
 
 ///|
@@ -36,7 +36,7 @@ priv struct FrameCountPluginMarker {}
 
 ///|
 let frame_count_plugin_marker_key : @ecs.ResourceKey[FrameCountPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::FrameCountPluginMarker",
+  debug_name="mgstudio_diagnostic::FrameCountPluginMarker",
 )
 
 ///|

@@ -23,7 +23,7 @@ const DEFAULT_LIGHT_GIZMO_RADIUS_RESOLUTION : Int = 16
 
 ///|
 let ecs_key_show_light_gizmo : @ecs.ComponentKey[ShowLightGizmo] = @ecs.register_component(
-  debug_name="bevy_light::ShowLightGizmo",
+  debug_name="mgstudio_light::ShowLightGizmo",
 )
 
 ///|

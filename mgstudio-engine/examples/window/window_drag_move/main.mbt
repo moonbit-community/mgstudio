@@ -13,13 +13,11 @@
 // limitations under the License.
 
 ///|
-
-///|
 pub(all) enum LeftClickAction {
   Nothing
   Move
   Resize
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct ResizeDir {
@@ -27,7 +25,7 @@ struct ResizeDir {
 }
 
 ///|
-struct ExampleText {} derive(Eq, Show)
+struct ExampleText {} derive(Eq, Debug)
 
 ///|
 let left_click_action_key : @ecs.ResourceKey[LeftClickAction] = @ecs.register_resource(
@@ -82,7 +80,7 @@ fn instruction_text(
   action : LeftClickAction,
   direction : @math.CompassOctant,
 ) -> String {
-  "Demonstrate drag move and drag resize without window decorations.\n\nControls:\nA - change left click action [\{action.to_string()}]\nS / D - change resize direction [\{direction.to_string()}]\n"
+  "Demonstrate drag move and drag resize without window decorations.\n\nControls:\nA - change left click action [\{to_repr(action).to_string()}]\nS / D - change resize direction [\{to_repr(direction).to_string()}]\n"
 }
 
 ///|

@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/examples/ecs/send_and_receive_messages"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -16,7 +17,7 @@ pub impl @ecs.Message for A
 type B
 pub impl @ecs.Message for B
 
-type DebugMessage derive(Show)
+type DebugMessage derive(@debug.Debug)
 pub impl @ecs.Message for DebugMessage
 
 // Type aliases

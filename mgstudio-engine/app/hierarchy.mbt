@@ -78,7 +78,7 @@ pub fn[C] check_parent_has_component_message_key(
   component_key : @ecs.ComponentKey[C],
 ) -> @ecs.MessageKey[CheckParentHasComponent[C]] {
   @ecs.register_message(
-    debug_name="bevy_app::CheckParentHasComponent<\{component_debug_name(component_key)}>",
+    debug_name="mgstudio_app::CheckParentHasComponent<\{component_debug_name(component_key)}>",
   )
 }
 

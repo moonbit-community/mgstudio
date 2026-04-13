@@ -6,6 +6,10 @@ import {
 }
 
 // Values
+pub fn convert_axis(@gamepad.Axis) -> Int?
+
+pub fn convert_button(@gamepad.Button) -> Int?
+
 pub fn gamepad_axis_value(gamepad_id~ : Int, axis~ : Int) -> Float
 
 pub fn gamepad_button_pressed(gamepad_id~ : Int, button~ : Int) -> Bool
@@ -43,6 +47,18 @@ pub fn gamepad_test_use_ff_mock(Int) -> Unit
 pub fn gamepad_test_use_mock_gilrs(@gamepad.Gil) -> Unit
 
 pub fn gamepad_vendor_id(Int) -> Int
+
+pub fn gilrs_event_poll_count() -> Int
+
+pub fn gilrs_event_reset_runtime_state() -> Unit
+
+pub fn gilrs_event_startup_system() -> Unit
+
+pub fn gilrs_event_system() -> Unit
+
+pub fn play_gilrs_rumble(Int, Float, Float, Int64) -> GamepadRumbleResult
+
+pub fn to_gilrs_magnitude(Float) -> Int
 
 // Errors
 

@@ -15,17 +15,17 @@
 ///|
 test "naga_oil: composable and naga descriptors default to empty source" {
   let composable = @naga_oil.ComposableModuleDescriptor::default()
-  inspect(composable.source, content="")
-  inspect(composable.file_path, content="")
-  inspect(composable.language, content="Wgsl")
-  inspect(composable.as_name, content="None")
-  inspect(composable.additional_imports.length(), content="0")
-  inspect(composable.shader_defs.length(), content="0")
+  debug_inspect(composable.source, content="")
+  debug_inspect(composable.file_path, content="")
+  debug_inspect(composable.language, content="Wgsl")
+  debug_inspect(composable.as_name, content="None")
+  debug_inspect(composable.additional_imports.length(), content="0")
+  debug_inspect(composable.shader_defs.length(), content="0")
 
   let naga = @naga_oil.NagaModuleDescriptor::default()
-  inspect(naga.source, content="")
-  inspect(naga.file_path, content="")
-  inspect(naga.shader_type, content="Wgsl")
-  inspect(naga.additional_imports.length(), content="0")
-  inspect(naga.shader_defs.length(), content="0")
+  debug_inspect(naga.source, content="")
+  debug_inspect(naga.file_path, content="")
+  debug_inspect(naga.shader_type, content="Wgsl")
+  debug_inspect(naga.additional_imports.length(), content="0")
+  debug_inspect(naga.shader_defs.length(), content="0")
 }

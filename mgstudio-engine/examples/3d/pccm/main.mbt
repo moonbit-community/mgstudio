@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const ENVIRONMENT_MAP_INTENSITY : Float = 100.0F
 
 ///|

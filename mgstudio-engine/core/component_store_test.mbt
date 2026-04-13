@@ -18,11 +18,11 @@ test "component_store: insert/set/remove" {
   let e = entities.spawn()
   let store : ComponentStore[Int] = ComponentStore::new()
   store.insert(e, 1)
-  inspect(store.get(e).unwrap() == 1, content="true")
-  inspect(store.set(e, 2), content="true")
-  inspect(store.get(e).unwrap() == 2, content="true")
-  inspect(store.remove(e).unwrap() == 2, content="true")
-  inspect(store.contains(e), content="false")
+  debug_inspect(store.get(e).unwrap() == 1, content="true")
+  debug_inspect(store.set(e, 2), content="true")
+  debug_inspect(store.get(e).unwrap() == 2, content="true")
+  debug_inspect(store.remove(e).unwrap() == 2, content="true")
+  debug_inspect(store.contains(e), content="false")
 }
 
 ///|
@@ -34,8 +34,8 @@ test "component_store: swap-remove keeps other entity accessible" {
   store.insert(e1, 1)
   store.insert(e2, 2)
   store.remove(e1) |> ignore
-  inspect(store.get(e2).unwrap() == 2, content="true")
-  inspect(store.len() == 1, content="true")
+  debug_inspect(store.get(e2).unwrap() == 2, content="true")
+  debug_inspect(store.len() == 1, content="true")
 }
 
 ///|
@@ -43,9 +43,9 @@ test "component_store: update and upsert" {
   let entities = Entities::new()
   let e = entities.spawn()
   let store : ComponentStore[Int] = ComponentStore::new()
-  inspect(!store.update(e, fn(v) { v + 1 }), content="true")
+  debug_inspect(!store.update(e, fn(v) { v + 1 }), content="true")
   store.upsert(e, 10)
   assert_true(store.get(e) is Some(10))
-  inspect(store.update(e, fn(v) { v + 5 }), content="true")
+  debug_inspect(store.update(e, fn(v) { v + 5 }), content="true")
   assert_true(store.get(e) is Some(15))
 }

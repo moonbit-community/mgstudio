@@ -1,0 +1,95 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline/mip_generation"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const REQUIRED_STORAGE_TEXTURES : Int = 12
+
+pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs]
+
+pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[MipGenerationPipelines]
+
+pub fn mip_generation_job_should_run(Int, Int) -> Bool
+
+pub fn mip_generation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn mip_generation_plugin_with(@app.App[@ecs.World], MipGenerationPlugin) -> @app.App[@ecs.World]
+
+pub fn mip_generation_supports_downsample(Int) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct DownsampleShaders {
+  depth_shader_path : String
+  general_shader_count : Int
+}
+pub fn DownsampleShaders::new(depth_shader_path? : String, general_shader_count? : Int) -> Self
+
+pub struct MipGenerationJob {
+  phase : MipGenerationPhaseId
+  image_asset_id : Int
+}
+pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : Int) -> Self
+
+pub struct MipGenerationJobs {
+  phases : Map[Int, MipGenerationPhase]
+} derive(Eq, @debug.Debug)
+pub fn MipGenerationJobs::add(Self, MipGenerationPhaseId, Int) -> Self
+pub fn MipGenerationJobs::clear(Self) -> Self
+pub fn MipGenerationJobs::default() -> Self
+pub fn MipGenerationJobs::drain_phase(Self, MipGenerationPhaseId) -> (Self, Array[Int])
+pub fn MipGenerationJobs::has_phase(Self, MipGenerationPhaseId) -> Bool
+pub fn MipGenerationJobs::job_count(Self) -> Int
+pub fn MipGenerationJobs::phase(Self, MipGenerationPhaseId) -> MipGenerationPhase?
+pub fn MipGenerationJobs::phase_count(Self) -> Int
+pub fn MipGenerationJobs::remove_phase(Self, MipGenerationPhaseId) -> (Self, MipGenerationPhase?)
+pub impl @app.Resource for MipGenerationJobs
+
+pub struct MipGenerationPhase {
+  image_asset_ids : Array[Int]
+} derive(Eq, @debug.Debug)
+pub fn MipGenerationPhase::default() -> Self
+pub fn MipGenerationPhase::is_empty(Self) -> Bool
+pub fn MipGenerationPhase::len(Self) -> Int
+pub fn MipGenerationPhase::push(Self, Int) -> Self
+pub fn MipGenerationPhase::to_array(Self) -> Array[Int]
+
+pub struct MipGenerationPhaseId {
+  value : Int
+} derive(Eq, @debug.Debug)
+pub fn MipGenerationPhaseId::new(value~ : Int) -> Self
+pub fn MipGenerationPhaseId::value(Self) -> Int
+
+pub struct MipGenerationPipelines {
+  texture_format_pipeline_count : Int
+  bind_group_cache_count : Int
+} derive(Eq, @debug.Debug)
+pub fn MipGenerationPipelines::cache_bind_group(Self) -> Self
+pub fn MipGenerationPipelines::clear(Self) -> Self
+pub fn MipGenerationPipelines::default() -> Self
+pub fn MipGenerationPipelines::new(texture_format_pipeline_count? : Int, bind_group_cache_count? : Int) -> Self
+pub fn MipGenerationPipelines::register_texture_format_pipeline(Self) -> Self
+pub fn MipGenerationPipelines::reset_bind_group_cache(Self) -> Self
+pub impl @app.Resource for MipGenerationPipelines
+
+pub struct MipGenerationPipelinesState {
+  texture_format_pipeline_count : Int
+  bind_group_cache_count : Int
+}
+pub fn MipGenerationPipelinesState::new(texture_format_pipeline_count? : Int, bind_group_cache_count? : Int) -> Self
+
+pub struct MipGenerationPlugin {
+}
+pub fn MipGenerationPlugin::default() -> Self
+pub impl @app.PluginReplacement for MipGenerationPlugin
+
+// Type aliases
+
+// Traits
+

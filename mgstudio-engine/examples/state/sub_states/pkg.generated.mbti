@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/state/sub_states"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -14,12 +15,12 @@ import {
 pub(all) enum AppState {
   Menu
   InGame
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum IsPaused {
   Running
   Paused
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type MenuData
 pub impl @app.Resource for MenuData

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const OFFSET_X : Float = 125.0F
 
 ///|
@@ -36,7 +34,7 @@ pub(all) enum Test {
   RayCast
   AabbCast
   CircleCast
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl @app.States for Test with debug_name(self) {

@@ -1,0 +1,51 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/anti_alias/smaa"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const SMAA_RUNTIME_SUPPORTED : Bool = false
+
+pub fn smaa_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn smaa_plugin_with(@app.App[@ecs.World], SmaaPlugin) -> @app.App[@ecs.World]
+
+pub fn smaa_update_runtime_state(@ecs.World) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct Smaa {
+  preset : SmaaPreset
+} derive(Eq, @debug.Debug)
+pub fn Smaa::default() -> Self
+pub impl @ecs.Component for Smaa
+
+pub struct SmaaPlugin {
+}
+pub fn SmaaPlugin::default() -> Self
+pub impl @app.PluginReplacement for SmaaPlugin
+
+pub(all) enum SmaaPreset {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, @debug.Debug)
+pub fn SmaaPreset::default() -> Self
+
+pub struct SmaaRuntimeState {
+  enabled_camera_count : Int
+  runtime_supported : Bool
+} derive(Eq, @debug.Debug)
+pub fn SmaaRuntimeState::default() -> Self
+pub impl @app.Resource for SmaaRuntimeState
+
+// Type aliases
+
+// Traits
+

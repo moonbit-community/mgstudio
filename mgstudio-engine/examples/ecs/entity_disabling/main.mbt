@@ -13,12 +13,10 @@
 // limitations under the License.
 
 ///|
+struct DisableOnClick {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-struct DisableOnClick {} derive(Eq, Show, ToJson, FromJson)
-
-///|
-struct EntityNameText {} derive(Eq, Show, ToJson, FromJson)
+struct EntityNameText {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 let disable_on_click_key : @ecs.ComponentKey[DisableOnClick] = @ecs.register_component(

@@ -29,9 +29,9 @@ fn pan_camera_approx_eq(a : Float, b : Float) -> Bool {
 ///|
 test "render2d: pan camera default text matches bevy controls" {
   let text = PanCamera::default().to_string()
-  inspect(text.contains("PanCamera Controls:"), content="true")
-  inspect(text.contains("KeyW / KeyS"), content="true")
-  inspect(text.contains("Mouse Scroll + Equal / Minus"), content="true")
+  debug_inspect(text.contains("PanCamera Controls:"), content="true")
+  debug_inspect(text.contains("KeyW / KeyS"), content="true")
+  debug_inspect(text.contains("Mouse Scroll + Equal / Minus"), content="true")
 }
 
 ///|
@@ -47,10 +47,10 @@ test "render2d: pan camera movement normalizes diagonal input" {
     key_input,
     scroll,
   )
-  inspect(transform.translation.x > 176.7F, content="true")
-  inspect(transform.translation.x < 176.8F, content="true")
-  inspect(transform.translation.y > 176.7F, content="true")
-  inspect(transform.translation.y < 176.8F, content="true")
+  debug_inspect(transform.translation.x > 176.7F, content="true")
+  debug_inspect(transform.translation.x < 176.8F, content="true")
+  debug_inspect(transform.translation.y > 176.7F, content="true")
+  debug_inspect(transform.translation.y < 176.8F, content="true")
 }
 
 ///|
@@ -69,13 +69,16 @@ test "render2d: pan camera rotation and zoom follow controller settings" {
     key_input,
     scroll,
   )
-  inspect(
+  debug_inspect(
     pan_camera_approx_eq(transform.rotation_z(), 1.5707963267948966F),
     content="true",
   )
-  inspect(pan_camera_approx_eq(controller.zoom_factor, 1.0F), content="true")
-  inspect(pan_camera_approx_eq(transform.scale.x, 1.0F), content="true")
-  inspect(pan_camera_approx_eq(transform.scale.y, 1.0F), content="true")
+  debug_inspect(
+    pan_camera_approx_eq(controller.zoom_factor, 1.0F),
+    content="true",
+  )
+  debug_inspect(pan_camera_approx_eq(transform.scale.x, 1.0F), content="true")
+  debug_inspect(pan_camera_approx_eq(transform.scale.y, 1.0F), content="true")
 }
 
 ///|
@@ -97,7 +100,7 @@ test "render2d: pan camera zoom clamps to configured bounds" {
     key_input,
     scroll,
   )
-  inspect(pan_camera_approx_eq(updated.zoom_factor, 0.5F), content="true")
-  inspect(pan_camera_approx_eq(transform.scale.x, 0.5F), content="true")
-  inspect(pan_camera_approx_eq(transform.scale.y, 0.5F), content="true")
+  debug_inspect(pan_camera_approx_eq(updated.zoom_factor, 0.5F), content="true")
+  debug_inspect(pan_camera_approx_eq(transform.scale.x, 0.5F), content="true")
+  debug_inspect(pan_camera_approx_eq(transform.scale.y, 0.5F), content="true")
 }

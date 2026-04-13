@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|

@@ -1703,3 +1703,112 @@ pub fn GpuBackend::draw_ui_box_shadow(
     size_y, radius_tl, radius_tr, radius_br, radius_bl, blur, samples,
   )
 }
+
+///|
+pub fn draw_ui_rect(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  uv_min_x~ : Float,
+  uv_min_y~ : Float,
+  uv_max_x~ : Float,
+  uv_max_y~ : Float,
+  flags~ : Int,
+  radius_tl~ : Float,
+  radius_tr~ : Float,
+  radius_br~ : Float,
+  radius_bl~ : Float,
+  border_left~ : Float,
+  border_top~ : Float,
+  border_right~ : Float,
+  border_bottom~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_rect(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      uv_min_x, uv_min_y, uv_max_x, uv_max_y, flags, radius_tl, radius_tr, radius_br,
+      radius_bl, border_left, border_top, border_right, border_bottom,
+    ) catch {
+      err => debug_runtime_error("draw_ui_rect", err)
+    }
+  }
+}
+
+///|
+pub fn draw_ui_box_shadow(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  size_x~ : Float,
+  size_y~ : Float,
+  radius_tl~ : Float,
+  radius_tr~ : Float,
+  radius_br~ : Float,
+  radius_bl~ : Float,
+  blur~ : Float,
+  samples~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_box_shadow(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      size_x, size_y, radius_tl, radius_tr, radius_br, radius_bl, blur, samples,
+    ) catch {
+      err => debug_runtime_error("draw_ui_box_shadow", err)
+    }
+  }
+}
+
+///|
+pub fn draw_ui_texture_slice(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_slice_l~ : Float,
+  texture_slice_t~ : Float,
+  texture_slice_r~ : Float,
+  texture_slice_b~ : Float,
+  target_slice_l~ : Float,
+  target_slice_t~ : Float,
+  target_slice_r~ : Float,
+  target_slice_b~ : Float,
+  repeat_side_x~ : Float,
+  repeat_side_y~ : Float,
+  repeat_center_x~ : Float,
+  repeat_center_y~ : Float,
+  atlas_l~ : Float,
+  atlas_t~ : Float,
+  atlas_r~ : Float,
+  atlas_b~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_texture_slice(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      texture_slice_l, texture_slice_t, texture_slice_r, texture_slice_b, target_slice_l,
+      target_slice_t, target_slice_r, target_slice_b, repeat_side_x, repeat_side_y,
+      repeat_center_x, repeat_center_y, atlas_l, atlas_t, atlas_r, atlas_b,
+    ) catch {
+      err => debug_runtime_error("draw_ui_texture_slice", err)
+    }
+  }
+}

@@ -35,8 +35,8 @@ test "window: duplicate screenshot targets are despawned during queueing" {
 
   screenshot_queue_capture_requests(world)
 
-  inspect(world.is_alive(first_request), content="true")
-  inspect(world.is_alive(duplicate_request), content="false")
+  debug_inspect(world.is_alive(first_request), content="true")
+  debug_inspect(world.is_alive(duplicate_request), content="false")
 }
 
 ///|
@@ -60,8 +60,8 @@ test "window: non-primary window screenshot target still deduplicates" {
 
   screenshot_queue_capture_requests(world)
 
-  inspect(world.is_alive(first_request), content="true")
-  inspect(world.is_alive(duplicate_request), content="false")
+  debug_inspect(world.is_alive(first_request), content="true")
+  debug_inspect(world.is_alive(duplicate_request), content="false")
 }
 
 ///|
@@ -82,6 +82,6 @@ test "window: duplicate texture-view screenshot targets are despawned during que
 
   screenshot_queue_capture_requests(world)
 
-  inspect(world.is_alive(first_request), content="true")
-  inspect(world.is_alive(duplicate_request), content="false")
+  debug_inspect(world.is_alive(first_request), content="true")
+  debug_inspect(world.is_alive(duplicate_request), content="false")
 }

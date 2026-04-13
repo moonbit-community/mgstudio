@@ -16,7 +16,7 @@
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf_loader.gltf_plugin, @time.time_plugin,
   ]
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
@@ -37,7 +37,7 @@ test "scene: load gltf animation keeps stable handle" {
     let second = @scene.scene_load_gltf_animation(asset_server, path)
     same_handle.val = first.id() == second.id()
   })
-  inspect(same_handle.val, content="true")
+  debug_inspect(same_handle.val, content="true")
 }
 
 ///|
@@ -52,7 +52,7 @@ test "scene: load gltf primitive mesh keeps stable handle" {
     let second : @asset.Handle[@mesh.Mesh] = asset_server.load(path)
     same_handle.val = first.id() == second.id()
   })
-  inspect(same_handle.val, content="true")
+  debug_inspect(same_handle.val, content="true")
 }
 
 ///|
@@ -68,7 +68,7 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
     let meshes = (try! world.get_resource(key)).unwrap()
     asset_missing.val = meshes.get(handle) is None
   })
-  inspect(asset_missing.val, content="true")
+  debug_inspect(asset_missing.val, content="true")
 }
 
 ///|
@@ -81,7 +81,7 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf_loader.gltf_plugin, @time.time_plugin,
   ]
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(plugins)
@@ -122,10 +122,10 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
     }
   }
 
-  inspect(root_loaded.val, content="true")
-  inspect(scene_count.val == 1, content="true")
-  inspect(has_default_scene.val, content="true")
-  inspect(first_scene_ready.val, content="true")
+  debug_inspect(root_loaded.val, content="true")
+  debug_inspect(scene_count.val == 1, content="true")
+  debug_inspect(has_default_scene.val, content="true")
+  debug_inspect(first_scene_ready.val, content="true")
 }
 
 ///|
@@ -145,8 +145,8 @@ test "scene: register keeps stable handle" {
     same_handle.val = first_handle.id() == second_handle.id()
     ready_scene.val = @scene.scene_get(second_handle).unwrap().ready
   })
-  inspect(same_handle.val, content="true")
-  inspect(ready_scene.val, content="true")
+  debug_inspect(same_handle.val, content="true")
+  debug_inspect(ready_scene.val, content="true")
 }
 
 ///|
@@ -243,11 +243,11 @@ test "scene: skinned mesh joints map by gltf node index" {
     }
   })
 
-  inspect(skinned_present.val, content="true")
-  inspect(joint_count.val, content="2")
-  inspect(first_joint_ok.val, content="true")
-  inspect(second_joint_ok.val, content="true")
-  inspect(mesh_root_ok.val, content="true")
+  debug_inspect(skinned_present.val, content="true")
+  debug_inspect(joint_count.val, content="2")
+  debug_inspect(first_joint_ok.val, content="true")
+  debug_inspect(second_joint_ok.val, content="true")
+  debug_inspect(mesh_root_ok.val, content="true")
 }
 
 ///|
@@ -310,7 +310,7 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
     })
   })
 
-  inspect(skinned_present.val, content="false")
+  debug_inspect(skinned_present.val, content="false")
 }
 
 ///|
@@ -416,16 +416,22 @@ test "scene: SceneRoot propagates gltf extras metadata" {
     }
   })
 
-  inspect(root_scene_extras.val, content="{\"scene\":\"root\"}")
-  inspect(child_name.val, content="NamedMesh.Top")
-  inspect(child_scene_index.val, content="2")
-  inspect(child_node_index.val, content="3")
-  inspect(child_mesh_index.val, content="4")
-  inspect(child_primitive_mesh_index.val, content="4")
-  inspect(child_primitive_index.val, content="5")
-  inspect(primitive_extras.val, content="{\"primitive\":1}")
-  inspect(mesh_extras.val, content="{\"mesh\":true}")
-  inspect(material_extras.val, content="{\"material\":\"value\"}")
+  debug_inspect(
+    root_scene_extras.val,
+    content="\"{\\\"scene\\\":\\\"root\\\"}\"",
+  )
+  debug_inspect(child_name.val, content="\"NamedMesh.Top\"")
+  debug_inspect(child_scene_index.val, content="2")
+  debug_inspect(child_node_index.val, content="3")
+  debug_inspect(child_mesh_index.val, content="4")
+  debug_inspect(child_primitive_mesh_index.val, content="4")
+  debug_inspect(child_primitive_index.val, content="5")
+  debug_inspect(primitive_extras.val, content="\"{\\\"primitive\\\":1}\"")
+  debug_inspect(mesh_extras.val, content="\"{\\\"mesh\\\":true}\"")
+  debug_inspect(
+    material_extras.val,
+    content="\"{\\\"material\\\":\\\"value\\\"}\"",
+  )
 }
 
 ///|
@@ -463,15 +469,15 @@ test "scene: gltf lod visibility policy set/get/reset" {
     restored_end.val = restored.first_end_margin_min.to_double()
     restored_step.val = restored.step.to_double()
   })
-  inspect(default_enabled.val, content="true")
-  inspect(default_step.val, content="5")
-  inspect(customized_enabled.val, content="false")
-  inspect(customized_start.val, content="1")
-  inspect(customized_end.val, content="7")
-  inspect(customized_step.val, content="3")
-  inspect(restored_enabled.val, content="true")
-  inspect(restored_end.val, content="3")
-  inspect(restored_step.val, content="5")
+  debug_inspect(default_enabled.val, content="true")
+  debug_inspect(default_step.val, content="5")
+  debug_inspect(customized_enabled.val, content="false")
+  debug_inspect(customized_start.val, content="1")
+  debug_inspect(customized_end.val, content="7")
+  debug_inspect(customized_step.val, content="3")
+  debug_inspect(restored_enabled.val, content="true")
+  debug_inspect(restored_end.val, content="3")
+  debug_inspect(restored_step.val, content="5")
 }
 
 ///|
@@ -586,20 +592,20 @@ test "scene: SceneRoot spawns children and marks ready" {
     })
     child_count_after_second_tick.val = children_second.length()
   })
-  inspect(instance_id.val, content="1")
-  inspect(ready_instance_id.val, content="1")
-  inspect(spawned_entities.val, content="1")
-  inspect(child_count.val, content="1")
-  inspect(child_count_after_second_tick.val, content="1")
-  inspect(has_mesh.val, content="true")
-  inspect(has_material.val, content="true")
-  inspect(has_transform.val, content="true")
-  inspect(has_visibility.val, content="true")
-  inspect(has_player.val, content="true")
-  inspect(has_target.val, content="true")
-  inspect(has_animated_by.val, content="true")
-  inspect(instance_after_second_tick.val, content="1")
-  inspect(ready_after_second_tick.val, content="1")
+  debug_inspect(instance_id.val, content="1")
+  debug_inspect(ready_instance_id.val, content="1")
+  debug_inspect(spawned_entities.val, content="1")
+  debug_inspect(child_count.val, content="1")
+  debug_inspect(child_count_after_second_tick.val, content="1")
+  debug_inspect(has_mesh.val, content="true")
+  debug_inspect(has_material.val, content="true")
+  debug_inspect(has_transform.val, content="true")
+  debug_inspect(has_visibility.val, content="true")
+  debug_inspect(has_player.val, content="true")
+  debug_inspect(has_target.val, content="true")
+  debug_inspect(has_animated_by.val, content="true")
+  debug_inspect(instance_after_second_tick.val, content="1")
+  debug_inspect(ready_after_second_tick.val, content="1")
 }
 
 ///|
@@ -651,7 +657,7 @@ test "scene: SceneRoot propagates gltf material name" {
       }
     })
   })
-  inspect(material_name.val, content="LeatherPartsMat")
+  debug_inspect(material_name.val, content="\"LeatherPartsMat\"")
 }
 
 ///|
@@ -766,12 +772,12 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )).unwrap()
     new_child_x.val = transform.translation.x.to_double()
   })
-  inspect(old_instance_id.val == new_instance_id.val, content="false")
-  inspect(ready_instance_id.val == new_instance_id.val, content="true")
-  inspect(spawned_entities.val, content="1")
-  inspect(old_child_alive.val, content="false")
-  inspect(new_child_count.val, content="1")
-  inspect(new_child_x.val, content="9")
+  debug_inspect(old_instance_id.val == new_instance_id.val, content="false")
+  debug_inspect(ready_instance_id.val == new_instance_id.val, content="true")
+  debug_inspect(spawned_entities.val, content="1")
+  debug_inspect(old_child_alive.val, content="false")
+  debug_inspect(new_child_count.val, content="1")
+  debug_inspect(new_child_x.val, content="9")
 }
 
 ///|
@@ -858,8 +864,8 @@ test "scene: modified scene asset respawns SceneRoot children" {
     new_child_x.val = transform.translation.x.to_double()
   })
 
-  inspect(handle_stable.val, content="true")
-  inspect(old_child_alive.val, content="false")
-  inspect(new_child_count.val, content="1")
-  inspect(new_child_x.val, content="9")
+  debug_inspect(handle_stable.val, content="true")
+  debug_inspect(old_child_alive.val, content="false")
+  debug_inspect(new_child_count.val, content="1")
+  debug_inspect(new_child_x.val, content="9")
 }

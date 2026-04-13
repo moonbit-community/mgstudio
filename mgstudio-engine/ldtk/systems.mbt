@@ -74,6 +74,15 @@ fn ldtk_blob_assets_or_empty(world : @ecs.World) -> @asset.Assets[@asset.Blob]? 
 }
 
 ///|
+fn ldtk_asset_server_or_default(world : @ecs.World) -> @asset.AssetServer {
+  let key : @ecs.ResourceKey[@asset.AssetServer] = @asset.AssetServer::resource()
+  match (try! world.get_resource(key)) {
+    Some(value) => value
+    None => @asset.AssetServer::new()
+  }
+}
+
+///|
 fn ldtk_set_clear_color(world : @ecs.World, color : @sprite.Color) -> Unit {
   world.insert_resource(
     @sprite.ClearColor::resource(),
@@ -382,6 +391,7 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
     return
   }
   let blob_assets = ldtk_blob_assets_or_empty(world)
+  let asset_server = ldtk_asset_server_or_default(world)
   let query : @ecs.Query[
     (@ecs.Comp[LevelIid], @ecs.Comp[@hierarchy.Parent], @ecs.Comp[Respawn]),
     @ecs.All,
@@ -420,7 +430,7 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
       level,
       background_image,
       world,
-      @asset.AssetServer::new(),
+      asset_server,
       project.tileset_map(),
       project.int_grid_image_handle(),
       level_entity,

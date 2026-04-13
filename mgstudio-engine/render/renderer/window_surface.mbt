@@ -18,6 +18,85 @@
 /// Split from gpu.mbt to keep backend subsystems cohesive and closer to Bevy's module layout.
 
 ///|
+priv struct SurfaceBinding {
+  surface_id : NativeGpuSurface
+  window : Int
+  target_id : Int
+}
+
+///|
+priv struct FrameBinding {
+  frame_id : NativeGpuFrame
+  surface_id : NativeGpuSurface
+}
+
+///|
+let surfaces_ref : Ref[Array[SurfaceBinding]] = Ref::new([])
+
+///|
+let next_surface_id_ref : Ref[Int] = Ref::new(1)
+
+///|
+let next_frame_id_ref : Ref[Int] = Ref::new(1)
+
+///|
+let frames_ref : Ref[Array[FrameBinding]] = Ref::new([])
+
+///|
+fn next_surface_id() -> NativeGpuSurface {
+  let id = next_surface_id_ref.val
+  next_surface_id_ref.val = next_surface_id_ref.val + 1
+  id
+}
+
+///|
+fn next_frame_id() -> NativeGpuFrame {
+  let id = next_frame_id_ref.val
+  next_frame_id_ref.val = next_frame_id_ref.val + 1
+  id
+}
+
+///|
+fn surface_target_id_from_surface_id(surface_id : NativeGpuSurface) -> Int {
+  -surface_id
+}
+
+///|
+fn find_surface_binding(surface_id : NativeGpuSurface) -> SurfaceBinding? {
+  for binding in surfaces_ref.val {
+    if binding.surface_id == surface_id {
+      return Some(binding)
+    }
+  }
+  None
+}
+
+///|
+fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
+  for binding in surfaces_ref.val {
+    if binding.window == window {
+      return Some(binding)
+    }
+  }
+  None
+}
+
+///|
+fn remove_frame_binding(frame_id : NativeGpuFrame) -> NativeGpuSurface? {
+  let next : Array[FrameBinding] = []
+  let found : Ref[NativeGpuSurface?] = Ref::new(None)
+  for binding in frames_ref.val {
+    if binding.frame_id == frame_id {
+      found.val = Some(binding.surface_id)
+    } else {
+      next.push(binding)
+    }
+  }
+  frames_ref.val = next
+  found.val
+}
+
+///|
 fn surface_state_index_by_surface_id(
   backend : GpuBackend,
   surface_id : Int,
@@ -155,7 +234,7 @@ fn surface_preferred_format(
 }
 
 ///|
-fn sync_active_surface_legacy_state(backend : GpuBackend) -> Unit {
+fn sync_active_surface_state(backend : GpuBackend) -> Unit {
   guard surface_state_index_by_target_id(
       backend,
       backend.active_surface_target_id,
@@ -221,7 +300,7 @@ fn activate_surface_frame_for_target(
     backend.surfaces[index].frame = None
     backend.frame = Some(frame)
   }
-  sync_active_surface_legacy_state(backend)
+  sync_active_surface_state(backend)
   true
 }
 
@@ -282,7 +361,7 @@ pub fn GpuBackend::set_active_surface_target(
   }
   store_active_surface_frame(self)
   self.active_surface_target_id = target_id
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 }
 
 ///|
@@ -313,7 +392,7 @@ pub fn GpuBackend::create_surface_binding(
   if self.active_surface_target_id >= 0 {
     self.active_surface_target_id = target_id
   }
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 }
 
 ///|
@@ -395,8 +474,8 @@ pub fn GpuBackend::configure_surface_binding(
   if self.active_surface_target_id >= 0 {
     self.active_surface_target_id = state.target_id
   }
-  sync_active_surface_legacy_state(self)
-  @debug.debug(
+  sync_active_surface_state(self)
+  debug(
     "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{configured_format.to_u32().to_string()}",
   )
 }
@@ -487,7 +566,7 @@ pub fn GpuBackend::begin_frame_binding(
   let target_id = self.surfaces[index].target_id
   self.set_active_surface_target(target_id)
   self.surfaces[index].cleared_this_frame = false
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 
   self.mesh2d_instance_used = 0
   mesh2d_reset_pending_batch(self)
@@ -540,7 +619,7 @@ pub fn GpuBackend::end_frame_binding(
     flush_ui_slice_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
-    render_diagnostics_end_active_pass_timing()
+    render_pass_timing_end_active_pass()
     pass.end()
     pass.release()
     frame.pass = None
@@ -562,7 +641,7 @@ pub fn GpuBackend::end_frame_binding(
   self.surfaces[index].cleared_this_frame = false
   self.frame = None
   self.pass_state = None
-  sync_active_surface_legacy_state(self)
+  sync_active_surface_state(self)
 }
 
 ///|
@@ -572,4 +651,125 @@ pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
     return
   }
   self.end_frame_binding(self.surfaces[index].surface_id)
+}
+
+///|
+pub fn create_surface(window : Int) -> NativeGpuSurface {
+  let surface_id = next_surface_id()
+  let target_id = surface_target_id_from_surface_id(surface_id)
+  surfaces_ref.val.push(SurfaceBinding::{ surface_id, window, target_id })
+  if ensure_backend() is Some(backend) {
+    backend.create_surface_binding(surface_id, target_id, window)
+  }
+  surface_id
+}
+
+///|
+pub fn surface_target_id(surface : NativeGpuSurface) -> Int {
+  match find_surface_binding(surface) {
+    Some(binding) => binding.target_id
+    None => 0
+  }
+}
+
+///|
+pub fn surface_target_id_for_window(window : Int) -> Int {
+  match find_surface_binding_by_window(window) {
+    Some(binding) => binding.target_id
+    None => 0
+  }
+}
+
+///|
+pub fn set_active_surface_target(target_id : Int) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.set_active_surface_target(target_id)
+  }
+}
+
+///|
+pub fn configure_surface(
+  device~ : NativeGpuDevice,
+  surface~ : NativeGpuSurface,
+  width~ : Int,
+  height~ : Int,
+  present_mode_kind? : Int = SURFACE_PRESENT_MODE_AUTO_VSYNC,
+  composite_alpha_mode_kind? : Int = SURFACE_COMPOSITE_ALPHA_MODE_AUTO,
+  desired_maximum_frame_latency? : Int = SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
+) -> Unit {
+  device |> ignore
+  if surface <= 0 {
+    return
+  }
+  if ensure_backend() is Some(backend) {
+    backend.configure_surface_binding(
+      surface, width, height, present_mode_kind, composite_alpha_mode_kind, desired_maximum_frame_latency,
+    )
+  }
+}
+
+///|
+pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
+  if surface <= 0 {
+    return 0
+  }
+  active_pass_phase_ref.val = RENDER_PASS_PHASE_NONE
+  active_pass_start_time_ref.val = None
+  current_frame_mesh2d_draw_calls_ref.val = 0
+  current_frame_mesh2d_executed_draw_calls_ref.val = 0
+  current_frame_mesh3d_draw_calls_ref.val = 0
+  current_frame_mesh3d_executed_draw_calls_ref.val = 0
+  render_pass_timing_reset_counters()
+  if ensure_backend() is Some(backend) {
+    backend.begin_frame_binding(surface)
+    let frame_id = next_frame_id()
+    frames_ref.val.push(FrameBinding::{ frame_id, surface_id: surface })
+    return frame_id
+  }
+  0
+}
+
+///|
+pub fn end_frame(frame : NativeGpuFrame) -> Unit {
+  guard remove_frame_binding(frame) is Some(surface_id) else { return }
+  if ensure_backend() is Some(backend) {
+    backend.end_frame_binding(surface_id) catch {
+      err => debug_runtime_error("end_frame", err)
+    }
+  }
+  render_pass_timing_end_active_pass()
+  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
+    mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
+    mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
+    mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
+    pass_total_count: current_frame_pass_total_count_ref.val,
+    pass_2d_count: current_frame_pass_2d_count_ref.val,
+    pass_3d_main_count: current_frame_pass_3d_main_count_ref.val,
+    pass_3d_motion_vector_count: current_frame_pass_3d_motion_vector_count_ref.val,
+    pass_3d_point_shadow_count: current_frame_pass_3d_point_shadow_count_ref.val,
+    pass_total_cpu_ms: current_frame_pass_total_cpu_ms_ref.val,
+    pass_2d_cpu_ms: current_frame_pass_2d_cpu_ms_ref.val,
+    pass_3d_main_cpu_ms: current_frame_pass_3d_main_cpu_ms_ref.val,
+    pass_3d_motion_vector_cpu_ms: current_frame_pass_3d_motion_vector_cpu_ms_ref.val,
+    pass_3d_point_shadow_cpu_ms: current_frame_pass_3d_point_shadow_cpu_ms_ref.val,
+  }
+  debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
+  if debug_frame_counter_ref.val % 60 == 0 {
+    debug_mesh2d_draw_calls_ref.val = 0
+    debug_mesh3d_draw_calls_ref.val = 0
+    debug_mesh2d_invalid_id_calls_ref.val = 0
+    debug_mesh3d_invalid_id_calls_ref.val = 0
+    debug_mesh2d_executed_draw_calls_ref.val = 0
+    debug_mesh3d_executed_draw_calls_ref.val = 0
+    debug_mesh2d_drop_no_frame_ref.val = 0
+    debug_mesh2d_drop_no_pass_ref.val = 0
+    debug_mesh2d_drop_no_pass_state_ref.val = 0
+    debug_mesh2d_drop_missing_mesh_ref.val = 0
+    debug_mesh2d_drop_bad_stride_ref.val = 0
+    debug_mesh2d_drop_no_pipeline_ref.val = 0
+    debug_mesh2d_drop_no_uniform_buf_ref.val = 0
+    debug_mesh2d_drop_no_uniform_bg_ref.val = 0
+    debug_mesh2d_drop_no_texture_ref.val = 0
+  }
 }

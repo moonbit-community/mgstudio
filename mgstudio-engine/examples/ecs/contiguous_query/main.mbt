@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct Health {
   mut value : Float
 }

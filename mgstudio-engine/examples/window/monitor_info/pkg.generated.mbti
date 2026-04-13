@@ -1,11 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/window/monitor_info"
 
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub struct MonitorRef {
+  monitor : @core.Entity
+}
+pub impl @ecs.Component for MonitorRef
 
 // Type aliases
 

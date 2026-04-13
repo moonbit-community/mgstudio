@@ -136,7 +136,7 @@ pub fn LogDiagnosticsState::default() -> LogDiagnosticsState {
 
 ///|
 let log_diagnostics_state_resource_key : @ecs.ResourceKey[LogDiagnosticsState] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::LogDiagnosticsState",
+  debug_name="mgstudio_diagnostic::LogDiagnosticsState",
 )
 
 ///|
@@ -259,7 +259,7 @@ fn log_diagnostics_debug_system(
     }
     @app.log_record(
       @app.Debug,
-      message=diagnostic.to_string(),
+      message=to_repr(diagnostic).to_string(),
       target="bevy_diagnostic",
     )
   }

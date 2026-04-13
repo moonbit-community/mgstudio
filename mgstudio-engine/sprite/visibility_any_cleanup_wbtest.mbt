@@ -17,12 +17,12 @@ test "render2d: visibility helper reads typed ViewVisibility component after Any
   let world = @ecs.World::new()
   let entity = world.spawn_empty()
 
-  inspect(render2d_entity_visible_ecs(world, entity), content="true")
+  debug_inspect(render2d_entity_visible_ecs(world, entity), content="true")
 
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
     @visibility.ViewVisibility::new(false),
   )
-  inspect(render2d_entity_visible_ecs(world, entity), content="false")
+  debug_inspect(render2d_entity_visible_ecs(world, entity), content="false")
 }

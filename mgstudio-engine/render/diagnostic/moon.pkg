@@ -1,0 +1,10 @@
+import {
+  "Milky2018/mgstudio/app" @app,
+  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/time" @time,
+  "moonbitlang/core/string",
+  "moonbitlang/x/sys",
+}
+
+supported_targets = "native"

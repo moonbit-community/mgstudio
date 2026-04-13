@@ -15,7 +15,7 @@
 ///|
 pub(all) struct WindowWrapper {
   window : HostWindow
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn WindowWrapper::new(window : HostWindow) -> WindowWrapper {
@@ -25,7 +25,7 @@ pub fn WindowWrapper::new(window : HostWindow) -> WindowWrapper {
 ///|
 pub(all) struct RawHandleWrapper {
   window : HostWindow
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn RawHandleWrapper::new(window : WindowWrapper) -> RawHandleWrapper {
@@ -49,13 +49,15 @@ pub fn RawHandleWrapperHolder::new() -> RawHandleWrapperHolder {
 
 ///|
 pub let ecs_key_raw_handle_wrapper : @ecs.ComponentKey[RawHandleWrapper] = @ecs.register_component(
-  debug_name="bevy_window::RawHandleWrapper",
+  debug_name="mgstudio_window::RawHandleWrapper",
 )
 
 ///|
 pub let ecs_key_raw_handle_wrapper_holder : @ecs.ComponentKey[
   RawHandleWrapperHolder,
-] = @ecs.register_component(debug_name="bevy_window::RawHandleWrapperHolder")
+] = @ecs.register_component(
+  debug_name="mgstudio_window::RawHandleWrapperHolder",
+)
 
 ///|
 pub impl @ecs.Component for RawHandleWrapper with component() {

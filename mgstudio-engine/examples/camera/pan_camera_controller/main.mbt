@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn spawn_text(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],

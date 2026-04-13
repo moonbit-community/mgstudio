@@ -13,9 +13,7 @@
 // limitations under the License.
 
 ///|
-
-///|
-struct MyComponent {} derive(Eq, Show)
+struct MyComponent {} derive(Eq, Debug)
 
 ///|
 let my_component_key : @ecs.ComponentKey[MyComponent] = @ecs.register_component(

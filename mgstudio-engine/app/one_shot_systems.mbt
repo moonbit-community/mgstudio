@@ -15,7 +15,7 @@
 ///|
 pub struct SystemId {
   index : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) suberror RegisteredSystemError {
@@ -29,7 +29,7 @@ priv struct RegisteredSystemsResource {
 
 ///|
 let ecs_res_key_registered_systems : @ecs.ResourceKey[RegisteredSystemsResource] = @ecs.register_resource(
-  debug_name="bevy_ecs::system::RegisteredSystems",
+  debug_name="mgstudio_ecs::system::RegisteredSystems",
 )
 
 ///|

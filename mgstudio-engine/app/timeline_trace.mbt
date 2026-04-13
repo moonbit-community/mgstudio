@@ -18,7 +18,7 @@ pub(all) enum TimelineTraceCategory {
   System
   RenderPass
   RenderQueue
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct TimelineTraceSpan {

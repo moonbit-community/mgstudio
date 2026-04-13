@@ -13,60 +13,22 @@
 // limitations under the License.
 
 ///|
-/// Gizmo API boundary aligned with Bevy's `bevy_gizmos` crate.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/sprite`.
+// Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
 
 ///|
-pub type Isometry2d = @sprite.Isometry2d
-
-///|
-pub type GizmoLineJoint = @sprite.GizmoLineJoint
-
-///|
-pub type GizmoLineStyle = @sprite.GizmoLineStyle
-
-///|
-pub type GizmoLineConfig = @sprite.GizmoLineConfig
-
-///|
-pub type GizmoConfig = @sprite.GizmoConfig
-
-///|
-pub type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
-
-///|
-pub type GizmoConfigStore = @sprite.GizmoConfigStore
-
-///|
-pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(
-  app : @app.App[@ecs.World],
-  group : G,
-) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(app, group)
+pub fn gizmos_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  gizmo_plugin(app)
 }
 
 ///|
-pub type Gizmos[G] = @sprite.Gizmos[G]
+pub fn gizmos_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoPlugin,
+) -> @app.App[@ecs.World] {
+  gizmo_plugin_with(app, plugin)
+}
 
 ///|
-pub type RoundedRectBuilder = @sprite.RoundedRectBuilder
-
-///|
-pub type Ellipse2dBuilder = @sprite.Ellipse2dBuilder
-
-///|
-pub type Arc2dBuilder = @sprite.Arc2dBuilder
-
-///|
-pub type ArrowBuilder = @sprite.ArrowBuilder
-
-///|
-pub type Grid2dBuilder = @sprite.Grid2dBuilder
-
-///|
-pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(
-    @sprite_render.sprite_render_plugin(app),
-    DefaultGizmoConfigGroup::default(),
-  )
+pub fn gizmos_default_group() -> DefaultGizmoConfigGroup {
+  DefaultGizmoConfigGroup::default()
 }

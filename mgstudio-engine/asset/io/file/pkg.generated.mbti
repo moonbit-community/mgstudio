@@ -1,0 +1,59 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/asset/io/file"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn asset_file_format_path(@asset.AssetPath) -> String
+
+pub fn asset_file_loader_kind_for_path(String) -> @asset.AssetLoaderKind
+
+pub fn asset_file_parse_path(String) -> @asset.AssetPath
+
+pub fn[P : @asset.IntoAssetPath] asset_file_read_bytes(P) -> Bytes
+
+pub fn[P : @asset.IntoAssetPath] asset_file_read_text(P) -> String?
+
+pub fn asset_file_register_source(@app.App[@ecs.World], @asset.AssetSourceId, @asset.AssetSourceBuilder) -> @app.App[@ecs.World]
+
+pub fn asset_file_try_parse_path(String) -> @asset.AssetPath raise @asset.ParseAssetPathError
+
+pub fn sync_file_asset_bytes(String, Bytes) -> Unit
+
+pub fn sync_file_asset_texture_png(String, Bytes) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct FileAsset {
+  path : String
+  bytes : Bytes
+}
+pub fn FileAsset::bytes(Self) -> Bytes
+pub fn FileAsset::new(String, Bytes) -> Self
+pub fn FileAsset::path(Self) -> String
+pub fn FileAsset::size(Self) -> Int
+
+pub struct FileWatcher {
+  root_path : String
+  recursive : Bool
+  enabled : Bool
+}
+pub fn FileWatcher::new(String) -> Self
+pub fn FileWatcher::should_watch(Self, String) -> Bool
+pub fn FileWatcher::with_enabled(Self, Bool) -> Self
+pub fn FileWatcher::with_recursive(Self, Bool) -> Self
+
+// Type aliases
+pub using @asset {type AssetPath as FileAssetPath}
+
+pub using @asset {type AssetReader as FileAssetReader}
+
+pub using @asset {type AssetSourceId as FileAssetSourceId}
+
+// Traits
+

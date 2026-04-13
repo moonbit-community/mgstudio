@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ui/experimental"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/ui",
+}
+
+// Values
+pub let ecs_key_ghost_node : @ecs.ComponentKey[@ui.GhostNode]
+
+pub fn experimental_ui_children(@ecs.World) -> UiChildren
+
+pub fn experimental_ui_root_nodes(@ecs.World) -> UiRootNodes
+
+pub fn ui_children(@ecs.World) -> UiChildren
+
+pub fn ui_root_nodes(@ecs.World) -> UiRootNodes
+
+// Errors
+
+// Types and methods
+pub struct UiChildren {
+  world : @ecs.World
+}
+pub fn UiChildren::get_parent(Self, @core.Entity) -> @core.Entity?
+pub fn UiChildren::is_changed(Self, @core.Entity) -> Bool
+pub fn UiChildren::is_ui_node(Self, @core.Entity) -> Bool
+pub fn UiChildren::iter_ghost_nodes(Self, @core.Entity) -> Array[@core.Entity]
+pub fn UiChildren::iter_ui_children(Self, @core.Entity) -> Array[@core.Entity]
+pub fn UiChildren::new(@ecs.World) -> Self
+
+pub struct UiRootNodes {
+  world : @ecs.World
+  children : UiChildren
+}
+pub fn UiRootNodes::iter(Self) -> Array[@core.Entity]
+pub fn UiRootNodes::new(@ecs.World) -> Self
+
+// Type aliases
+pub using @ui {type GhostNode}
+
+// Traits
+

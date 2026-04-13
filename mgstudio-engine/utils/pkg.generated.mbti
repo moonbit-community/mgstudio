@@ -2,24 +2,118 @@
 package "Milky2018/mgstudio/utils"
 
 import {
+  "moonbitlang/core/builtin",
   "tonyfettes/any",
 }
 
 // Values
+pub fn atomic_id_next() -> Int
+
+pub fn atomic_id_next_non_zero_u32() -> UInt
+
+pub fn bloom_filter_hashes_empty() -> Array[Int]
+
+pub fn[T] buffered_channel_new_buffer() -> Array[T]
+
 pub fn[T : Default] default() -> T
 
+pub fn[T : Default] default_of() -> T
+
+pub fn[K : Hash + Eq, V] map_from_entries(Array[(K, V)]) -> Map[K, V]
+
+pub fn[K, V] map_new() -> Map[K, V]
+
+pub fn[T] parallel_queue_values_empty() -> Array[T]
+
 pub fn type_id(@any.Any) -> @any.TypeId
+
+pub fn type_id_of(@any.Any) -> @any.TypeId
+
+pub fn type_info(@any.Any) -> (@any.TypeId, String)
 
 pub fn type_name(@any.Any) -> String
 
 // Errors
 
 // Types and methods
+pub struct BloomFilter {
+  bits : Array[UInt]
+  hash_count : Int
+}
+pub fn BloomFilter::check_insert_hash(Self, Int) -> Bool
+pub fn BloomFilter::clear(Self) -> Unit
+pub fn BloomFilter::contains_hash(Self, Int) -> Bool
+pub fn BloomFilter::default() -> Self
+pub fn BloomFilter::hash_count(Self) -> Int
+pub fn BloomFilter::insert_hash(Self, Int) -> Unit
+pub fn BloomFilter::new(segment_count? : Int, hash_count? : Int) -> Self
+pub fn BloomFilter::segment_count(Self) -> Int
+
+pub struct BufferedChannel[T] {
+  mut chunk_size : Int
+  queued_chunks : Array[Array[T]]
+  pooled_chunks : Array[Array[T]]
+}
+pub fn[T] BufferedChannel::bounded(Self[T], Int) -> (BufferedReceiver[T], BufferedSender[T])
+pub fn[T] BufferedChannel::chunk_size(Self[T]) -> Int
+pub fn[T] BufferedChannel::default() -> Self[T]
+pub fn[T] BufferedChannel::new(chunk_size? : Int) -> Self[T]
+pub fn[T] BufferedChannel::queued_chunk_count(Self[T]) -> Int
+pub fn[T] BufferedChannel::set_chunk_size(Self[T], Int) -> Unit
+pub fn[T] BufferedChannel::unbounded(Self[T]) -> (BufferedReceiver[T], BufferedSender[T])
+
+pub struct BufferedReceiver[T] {
+  channel : BufferedChannel[T]
+}
+pub fn[T] BufferedReceiver::recv(Self[T]) -> Array[T]?
+pub fn[T] BufferedReceiver::recycle(Self[T], Array[T]) -> Unit
+
+pub struct BufferedSender[T] {
+  channel : BufferedChannel[T]
+  mut buffer : Array[T]
+}
+pub fn[T] BufferedSender::close(Self[T]) -> Unit
+pub fn[T] BufferedSender::flush(Self[T]) -> Unit
+pub fn[T] BufferedSender::send(Self[T], T) -> Unit
+pub fn[T] BufferedSender::send_many(Self[T], Array[T]) -> Unit
+
+pub struct OnceCell[T] {
+  mut value : T?
+}
+pub fn[T] OnceCell::get(Self[T]) -> T?
+pub fn[T] OnceCell::get_or_init(Self[T], () -> T) -> T
+pub fn[T] OnceCell::new() -> Self[T]
+pub fn[T] OnceCell::set(Self[T], T) -> Unit
+pub fn[T] OnceCell::set_once(Self[T], T) -> Bool
+
+pub struct OnceFlag {
+  mut should_fire : Bool
+}
+pub fn OnceFlag::default() -> Self
+pub fn OnceFlag::new() -> Self
+pub fn OnceFlag::set(Self) -> Bool
+
+pub struct ParallelQueue[T] {
+  mut values : Array[T]
+}
+pub fn[T] ParallelQueue::clear(Self[T]) -> Unit
+pub fn[T] ParallelQueue::default() -> Self[T]
+pub fn[T] ParallelQueue::drain(Self[T]) -> Array[T]
+pub fn[T] ParallelQueue::drain_into(Self[T], Array[T]) -> Unit
+pub fn[T] ParallelQueue::extend(Self[T], Array[T]) -> Unit
+pub fn[T] ParallelQueue::is_empty(Self[T]) -> Bool
+pub fn[T] ParallelQueue::len(Self[T]) -> Int
+pub fn[T] ParallelQueue::new() -> Self[T]
+pub fn[T] ParallelQueue::push(Self[T], T) -> Unit
 
 // Type aliases
-pub using @any {type TypeId}
+pub type BloomFilterHashes = Array[Int]
 
-pub using @any {type TypeInfo}
+pub using @builtin {type Array as BufferedChannelBuffer}
+
+pub using @builtin {type Map as HashMap}
+
+pub using @builtin {type Array as ParallelQueueValues}
 
 // Traits
 

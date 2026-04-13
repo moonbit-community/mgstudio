@@ -35,24 +35,6 @@ pub type CameraDeferredConfig3d = @pbr.CameraDeferredConfig3d
 pub type CameraDeferredMode3d = @pbr.CameraDeferredMode3d
 
 ///|
-pub type PerspectiveProjection3d = @pbr.PerspectiveProjection3d
-
-///|
-pub type OrthographicProjection3d = @pbr.OrthographicProjection3d
-
-///|
-pub type OrthographicScalingMode3d = @pbr.OrthographicScalingMode3d
-
-///|
-pub type Projection = @pbr.Projection
-
-///|
-pub type ProjectionMatrix3d = @pbr.ProjectionMatrix3d
-
-///|
-pub type SubCameraView3d = @pbr.SubCameraView3d
-
-///|
 pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
 
 ///|
@@ -68,10 +50,10 @@ pub type DepthOfField = @pbr.DepthOfField
 pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
 
 ///|
-pub type MeshRayCastHit = @pbr.MeshRayCastHit
+pub type MeshRayCastHit = @picking_mesh_ray_cast.MeshRayCastHit
 
 ///|
-pub type MeshRayCastSettings = @pbr.MeshRayCastSettings
+pub type MeshRayCastSettings = @picking_mesh_ray_cast.MeshRayCastSettings
 
 ///|
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @pbr.ecs_key_camera3d
@@ -121,7 +103,7 @@ pub fn mesh_ray_cast_from_camera(
   render_scale : Float,
   settings : MeshRayCastSettings,
 ) -> Array[(@core.Entity, MeshRayCastHit)] {
-  @pbr.mesh_ray_cast_from_camera(
+  @picking_mesh_ray_cast.mesh_ray_cast_from_camera(
     world, viewport_position, camera, projection, camera_transform, viewport_size,
     render_scale, settings,
   )
@@ -138,7 +120,7 @@ pub fn mesh_ray_cast_from_camera_first(
   render_scale : Float,
   settings : MeshRayCastSettings,
 ) -> (@core.Entity, MeshRayCastHit)? {
-  @pbr.mesh_ray_cast_from_camera_first(
+  @picking_mesh_ray_cast.mesh_ray_cast_from_camera_first(
     world, viewport_position, camera, projection, camera_transform, viewport_size,
     render_scale, settings,
   )

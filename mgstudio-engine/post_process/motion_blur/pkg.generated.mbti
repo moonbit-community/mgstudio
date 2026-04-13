@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/post_process/motion_blur"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
+
+pub fn motion_blur_component_key() -> @ecs.ComponentKey[MotionBlur]
+
+pub fn motion_blur_generate_samples(MotionBlur) -> Array[MotionBlurSample]
+
+pub fn motion_blur_samples(MotionBlur) -> Array[MotionBlurSample]
+
+// Errors
+
+// Types and methods
+pub struct MotionBlur {
+  shutter_angle : Float
+  samples : Int
+} derive(ToJson, @json.FromJson)
+pub fn MotionBlur::default() -> Self
+pub fn MotionBlur::new(Float, Int) -> Self
+pub fn MotionBlur::with_samples(Self, Int) -> Self
+pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
+pub impl @ecs.Component for MotionBlur
+
+pub struct MotionBlurSample {
+  offset : Float
+  weight : Float
+} derive(ToJson, @json.FromJson)
+
+// Type aliases
+
+// Traits
+

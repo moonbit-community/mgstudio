@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct CursorIcons {
   icons : Array[@window.CursorIcon]
 }
@@ -135,7 +133,7 @@ fn toggle_vsync(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     present_mode_ref.val = window.present_mode
   })
-  log_line("PRESENT_MODE: \{present_mode_ref.val.to_string()}")
+  log_line("PRESENT_MODE: \{to_repr(present_mode_ref.val).to_string()}")
 }
 
 ///|

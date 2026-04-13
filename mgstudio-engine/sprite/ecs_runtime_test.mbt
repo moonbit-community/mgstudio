@@ -159,34 +159,34 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
   )
   let entity = bundle.spawn(world)
 
-  inspect(world.is_alive(entity), content="true")
-  inspect(
+  debug_inspect(world.is_alive(entity), content="true")
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_sprite),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_anchor),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, @visibility.ecs_key_visibility),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(
       world, entity, @visibility.ecs_key_inherited_visibility,
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, @visibility.ecs_key_view_visibility),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_transform_matches(world, entity, bundle.transform),
     content="true",
   )
@@ -201,8 +201,8 @@ test "render2d: Sprite::sized uses the white texture handle" {
     Some(custom_size) => custom_size.x == size.x && custom_size.y == size.y
     None => false
   }
-  inspect(matches_size, content="true")
-  inspect(sprite.image.id() == white.id(), content="true")
+  debug_inspect(matches_size, content="true")
+  debug_inspect(sprite.image.id() == white.id(), content="true")
 }
 
 ///|
@@ -224,15 +224,15 @@ test "render2d: Commands can spawn SpriteBundle" {
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn(SpriteBundle) to return an entity")
   }
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_sprite),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_render_layers),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_transform_matches(app.world(), entity, bundle.transform),
     content="true",
   )
@@ -249,48 +249,48 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
     .with_color_grading(Some(ColorGrading::default()))
   let entity = bundle.spawn(world)
 
-  inspect(world.is_alive(entity), content="true")
-  inspect(
+  debug_inspect(world.is_alive(entity), content="true")
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_camera2d),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_camera),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_projection),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_pan_camera),
     content="false",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_target),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_bloom),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_color_grading),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_transform_matches(world, entity, bundle.transform),
     content="true",
   )
@@ -317,19 +317,19 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn to return an entity")
   }
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_camera2d),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_camera),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_bloom),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_color_grading),
     content="true",
   )
@@ -356,8 +356,8 @@ test "render2d: tonemapping and deband components share post_process ownership" 
     Some(Enabled) => true
     _ => false
   }
-  inspect(tonemapping_ok, content="true")
-  inspect(deband_ok, content="true")
+  debug_inspect(tonemapping_ok, content="true")
+  debug_inspect(deband_ok, content="true")
 }
 
 ///|
@@ -375,7 +375,7 @@ test "render2d: bloom component shares post_process ownership" {
     Some(bloom) => bloom.intensity == 0.35F
     None => false
   }
-  inspect(bloom_ok, content="true")
+  debug_inspect(bloom_ok, content="true")
 }
 
 ///|
@@ -388,35 +388,38 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   |> ignore)
   try! (world.set_by_key(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
 
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_camera),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_projection),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, @transform.ecs_key_transform),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_target),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
     content="true",
   )
-  inspect(ecs_has_non_null_payload(world, entity, ecs_key_hdr), content="true")
+  debug_inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_hdr),
+    content="true",
+  )
 
   let tonemapping_ok = match
     (try! world.get_by_key(entity, ecs_key_tonemapping)) {
@@ -427,8 +430,8 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     Some(Screen) => true
     _ => false
   }
-  inspect(tonemapping_ok, content="true")
-  inspect(target_ok, content="true")
+  debug_inspect(tonemapping_ok, content="true")
+  debug_inspect(target_ok, content="true")
 }
 
 ///|
@@ -445,7 +448,7 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
   let target : RenderTarget? = try! world.get_by_key(
     entity, ecs_key_render_target,
   )
-  inspect(
+  debug_inspect(
     target.map(fn(value) {
       value.to_json() ==
       RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
@@ -475,41 +478,41 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   .run_once()
   |> ignore
 
-  inspect(entity_ref.val is Some(_), content="true")
+  debug_inspect(entity_ref.val is Some(_), content="true")
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
 
-  inspect(world.is_alive(entity), content="true")
-  inspect(
+  debug_inspect(world.is_alive(entity), content="true")
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_mesh2d),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_color_material),
     content="false",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_mesh_material2d),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, @visibility.ecs_key_visibility),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(
       world, entity, @visibility.ecs_key_inherited_visibility,
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_has_non_null_payload(world, entity, @visibility.ecs_key_view_visibility),
     content="true",
   )
-  inspect(
+  debug_inspect(
     ecs_transform_matches(world, entity, expected_transform),
     content="true",
   )
@@ -554,8 +557,11 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
   let mesh_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
     app.world(),
   )
-  inspect(mesh_query.count(), content="1")
-  inspect(render2d_diagnostic_queued_draw_item_count() > 0, content="true")
+  debug_inspect(mesh_query.count(), content="1")
+  debug_inspect(
+    render2d_diagnostic_queued_draw_item_count() > 0,
+    content="true",
+  )
 }
 
 ///|
@@ -591,11 +597,11 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   .run_once()
   |> ignore
 
-  inspect(
+  debug_inspect(
     wrapped_material_handle.val == color_material_handle.val,
     content="true",
   )
-  inspect(
+  debug_inspect(
     preserved_material_handle.val == explicit_mesh_material_handle.val,
     content="true",
   )
@@ -611,13 +617,13 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
   let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
   let material = assets.get(handle).unwrap()
 
-  inspect(assets.contains(handle), content="true")
-  inspect(material.color.r.to_double(), content="1")
-  inspect(material.color.g.to_double(), content="0")
-  inspect(material.color.b.to_double(), content="1")
-  inspect(material.color.a.to_double(), content="1")
-  inspect(material.alpha_mode is Blend, content="true")
-  inspect(material.texture is None, content="true")
+  debug_inspect(assets.contains(handle), content="true")
+  debug_inspect(material.color.r.to_double(), content="1")
+  debug_inspect(material.color.g.to_double(), content="0")
+  debug_inspect(material.color.b.to_double(), content="1")
+  debug_inspect(material.color.a.to_double(), content="1")
+  debug_inspect(material.alpha_mode is Blend, content="true")
+  debug_inspect(material.texture is None, content="true")
 }
 
 ///|
@@ -642,33 +648,33 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let registry = try! render_world.get_resource(registry_key).unwrap()
   let probe : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(0)
 
-  inspect(app.contains_resource(key), content="true")
-  inspect(
+  debug_inspect(app.contains_resource(key), content="true")
+  debug_inspect(
     (try! render_world.get_resource(prepared_key)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! render_world.get_resource(instances_key)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! render_world.get_resource(pipeline_key)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! render_world.get_resource(registry_key)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     pipeline.vertex_shader,
     content="Some(\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
   )
-  inspect(
+  debug_inspect(
     pipeline.fragment_shader,
     content="Some(\"shaders/custom/mesh2d_checker_material.wgsl\")",
   )
-  inspect(registry.entry_count(), content="1")
-  inspect(
+  debug_inspect(registry.entry_count(), content="1")
+  debug_inspect(
     registry.contains_type_name(material2d_runtime_type_name(probe)),
     content="true",
   )
@@ -722,18 +728,21 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     .get(PreparedMaterial2d::prepared_handle(handle))
     .unwrap()
 
-  inspect(instances.contains(entity), content="true")
-  inspect(
+  debug_inspect(instances.contains(entity), content="true")
+  debug_inspect(
     instances.get(entity).map(fn(value) { value.id() == handle.id() }),
     content="Some(true)",
   )
-  inspect(prepared.source.id() == handle.id(), content="true")
-  inspect(prepared.bind_group.layout_key(), content="0:uniform;3:uniform")
-  inspect(
+  debug_inspect(prepared.source.id() == handle.id(), content="true")
+  debug_inspect(
+    prepared.bind_group.layout_key(),
+    content="\"0:uniform;3:uniform\"",
+  )
+  debug_inspect(
     prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),
     content="true",
   )
-  inspect(
+  debug_inspect(
     prepared.key.bind_group_data == expected.bind_group().bind_group_data(),
     content="true",
   )
@@ -768,8 +777,8 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   ] = RenderMaterial2dInstances::resource()
   let instances = try! render_world.get_resource(instances_key).unwrap()
 
-  inspect(instances.contains(entity), content="true")
-  inspect(
+  debug_inspect(instances.contains(entity), content="true")
+  debug_inspect(
     instances.get(entity).map(fn(value) { value.id() == handle.id() }),
     content="Some(true)",
   )
@@ -808,30 +817,30 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let source_material = source_assets.get(handle).unwrap()
   let prepared = prepared_assets.get(prepared_handle).unwrap()
 
-  inspect(prepared.source.id() == handle.id(), content="true")
-  inspect(
+  debug_inspect(prepared.source.id() == handle.id(), content="true")
+  debug_inspect(
     material2d_bind_group_texture_id(prepared.bind_group, 1),
     content="Some(11)",
   )
-  inspect(prepared.properties.alpha_mode is Blend, content="true")
-  inspect(
+  debug_inspect(prepared.properties.alpha_mode is Blend, content="true")
+  debug_inspect(
     prepared.key.mesh_key == prepared.properties.mesh_pipeline_key_bits,
     content="true",
   )
-  inspect(
+  debug_inspect(
     prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),
     content="true",
   )
-  inspect(
+  debug_inspect(
     prepared.key.bind_group_data ==
     source_material.bind_group().bind_group_data(),
     content="true",
   )
-  inspect(
+  debug_inspect(
     pipeline.vertex_shader,
     content="Some(\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
   )
-  inspect(
+  debug_inspect(
     pipeline.fragment_shader,
     content="Some(\"shaders/bevy_sprite_render/mesh2d/color_material.wgsl\")",
   )
@@ -845,8 +854,8 @@ test "render2d: MeshMaterial2d component keys are registered per material type" 
   ] = MeshMaterial2d::component()
   let dummy_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()
 
-  inspect(color_key.id() == color_key_from_trait.id(), content="true")
-  inspect(color_key.id() == dummy_key.id(), content="false")
+  debug_inspect(color_key.id() == color_key_from_trait.id(), content="true")
+  debug_inspect(color_key.id() == dummy_key.id(), content="false")
 }
 
 ///|
@@ -867,11 +876,11 @@ test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
   .run_once()
   |> ignore
 
-  inspect(
+  debug_inspect(
     opaque_alpha_mode.val.map(fn(mode) { mode is Opaque }),
     content="Some(true)",
   )
-  inspect(
+  debug_inspect(
     blend_alpha_mode.val.map(fn(mode) { mode is Blend }),
     content="Some(true)",
   )

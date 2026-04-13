@@ -368,8 +368,6 @@ pub fn Anchor::default() -> Anchor {
 }
 
 ///|
-
-///|
 pub struct ClearColor {
   color : Color
 }
@@ -395,7 +393,7 @@ fn clear_color_default_value() -> Color {
 
 ///|
 let clear_color_resource_key : @ecs.ResourceKey[ClearColor] = @ecs.register_resource(
-  debug_name="bevy_render::ClearColor",
+  debug_name="mgstudio_render::ClearColor",
 )
 
 ///|
@@ -819,8 +817,6 @@ pub impl Show for PanCamera with output(self, logger) {
 }
 
 ///|
-
-///|
 pub(all) enum RenderTarget {
   Screen
   Window(@window.WindowRef)
@@ -1012,18 +1008,8 @@ fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
 }
 
 ///|
-pub fn render_mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
-  mesh_asset_add(mesh)
-}
-
-///|
 fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
   mesh_assets_or_abort().get(handle)
-}
-
-///|
-pub fn render_mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
-  mesh_asset_get(handle)
 }
 
 ///|
@@ -1032,77 +1018,6 @@ fn mesh_asset_set(
   mesh : @mesh.Mesh,
 ) -> Bool {
   mesh_assets_mut_or_abort().val.set(handle, mesh)
-}
-
-///|
-pub fn render_mesh_asset_set(
-  handle : @asset.Handle[@mesh.Mesh],
-  mesh : @mesh.Mesh,
-) -> Bool {
-  mesh_asset_set(handle, mesh)
-}
-
-///|
-pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
-  mesh_upload_cache_sync_with_asset_events()
-  let mesh_handle_id = mesh.id()
-  if mesh_upload_cache.val.get(mesh_handle_id) is Some(mesh_id) {
-    return mesh_id
-  }
-  let mut uploaded_mesh_radius = 1.0F
-  let uploaded_mesh_id = match mesh_asset_get(mesh) {
-    Some(mesh_asset) =>
-      match mesh_asset.geometry {
-        @mesh.MeshGeometry::Geometry2d(geometry2d) => {
-          uploaded_mesh_radius = mesh2d_geometry_base_radius(geometry2d)
-          match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
-            Some(vertices_csv) =>
-              @render.host_gpu_create_mesh_triangles_xyuvrgba(
-                vertices_xyuvrgba_csv=vertices_csv,
-              )
-            None => {
-              let message = match geometry2d.validate() {
-                Some(err) =>
-                  "Mesh2dGeometry validation failed: \{err.to_string()}"
-                None => "Mesh2dGeometry flatten failed"
-              }
-              @window.host_debug_string(value=message)
-              0
-            }
-          }
-        }
-        @mesh.MeshGeometry::Geometry3d(geometry3d) => {
-          uploaded_mesh_radius = 64.0F
-          match mesh3d_geometry_flatten_vertices_f32(geometry3d) {
-            Some(vertices_f32) =>
-              @render.host_gpu_create_mesh3d_xyznuvrgba(
-                vertices_xyznuvrgba=vertices_f32,
-                primitive_topology=geometry3d.primitive_topology().to_int(),
-              )
-            None => {
-              let message = match geometry3d.validate() {
-                Some(err) =>
-                  "Mesh3dGeometry validation failed: \{err.to_string()}"
-                None => "Mesh3dGeometry flatten failed"
-              }
-              @window.host_debug_string(value=message)
-              0
-            }
-          }
-        }
-      }
-    None => {
-      @window.host_debug_string(
-        value="Mesh2d upload failed: mesh handle not found",
-      )
-      0
-    }
-  }
-  if uploaded_mesh_id > 0 {
-    mesh_upload_cache.val.set(mesh_handle_id, uploaded_mesh_id)
-    mesh_upload_radius_cache.val.set(uploaded_mesh_id, uploaded_mesh_radius)
-  }
-  uploaded_mesh_id
 }
 
 ///|
@@ -1244,11 +1159,6 @@ fn generic_triangle_ring_to_mesh2d_geometry(
   triangle_ring_to_mesh2d_geometry(
     Triangle2dRing::new(ring.outer_shape, ring.inner_shape),
   )
-}
-
-///|
-pub(open) trait IntoSpriteRingMeshGeometry {
-  into_sprite_ring_mesh_geometry(self : Self, inner_shape : Self) -> Mesh2dGeometry
 }
 
 ///|
@@ -2060,341 +1970,6 @@ fn capsule_ring_to_mesh2d_geometry(
       segments,
     ),
   )
-}
-
-///|
-pub fn mesh2d_geometry_capsule(capsule : Capsule2d) -> Mesh2dGeometry {
-  capsule_to_mesh2d_geometry(capsule)
-}
-
-///|
-pub fn mesh2d_geometry_circular_sector(
-  sector : CircularSector,
-) -> Mesh2dGeometry {
-  circular_sector_to_mesh2d_geometry(sector)
-}
-
-///|
-pub fn mesh2d_geometry_circular_segment(
-  segment : CircularSegment,
-) -> Mesh2dGeometry {
-  circular_segment_to_mesh2d_geometry(segment)
-}
-
-///|
-pub fn mesh2d_geometry_circle(circle : Circle) -> Mesh2dGeometry {
-  circle_to_mesh2d_geometry(circle)
-}
-
-///|
-pub fn mesh2d_geometry_ellipse(ellipse : Ellipse) -> Mesh2dGeometry {
-  ellipse_to_mesh2d_geometry(ellipse)
-}
-
-///|
-pub fn mesh2d_geometry_annulus(annulus : Annulus) -> Mesh2dGeometry {
-  annulus_to_mesh2d_geometry(annulus)
-}
-
-///|
-pub fn mesh2d_geometry_ring(ring : Ring2d) -> Mesh2dGeometry {
-  ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_circular_sector_ring(
-  ring : CircularSectorRing,
-) -> Mesh2dGeometry {
-  circular_sector_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_circular_segment_ring(
-  ring : CircularSegmentRing,
-) -> Mesh2dGeometry {
-  circular_segment_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_ellipse_ring(ring : EllipseRing) -> Mesh2dGeometry {
-  ellipse_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_capsule_ring(ring : Capsule2dRing) -> Mesh2dGeometry {
-  capsule_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_rhombus_ring(ring : RhombusRing) -> Mesh2dGeometry {
-  rhombus_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_rectangle_ring(ring : RectangleRing) -> Mesh2dGeometry {
-  rectangle_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_regular_polygon_ring(
-  ring : RegularPolygonRing,
-) -> Mesh2dGeometry {
-  regular_polygon_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_triangle_ring(ring : Triangle2dRing) -> Mesh2dGeometry {
-  triangle_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_rhombus(rhombus : Rhombus) -> Mesh2dGeometry {
-  rhombus_to_mesh2d_geometry(rhombus)
-}
-
-///|
-pub fn mesh2d_geometry_regular_polygon(
-  polygon : RegularPolygon,
-) -> Mesh2dGeometry {
-  regular_polygon_to_mesh2d_geometry(polygon)
-}
-
-///|
-pub fn mesh2d_geometry_triangle(triangle : Triangle2d) -> Mesh2dGeometry {
-  triangle_to_mesh2d_geometry(triangle)
-}
-
-///|
-pub fn mesh2d_geometry_segment(segment : Segment2d) -> Mesh2dGeometry {
-  segment_to_mesh2d_geometry(segment)
-}
-
-///|
-pub fn mesh2d_geometry_polyline(polyline : Polyline2d) -> Mesh2dGeometry {
-  polyline_to_mesh2d_geometry(polyline)
-}
-
-///|
-pub fn mesh2d_geometry_rectangle(rectangle : Rectangle) -> Mesh2dGeometry {
-  rectangle_to_mesh2d_geometry(rectangle)
-}
-
-///|
-pub(open) trait IntoSpriteMeshAsset {
-  into_sprite_mesh_asset(Self) -> @mesh.Mesh
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for Circle with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_circle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for CircularSector with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_circular_sector_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for CircularSegment with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_circular_segment_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for Ellipse with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_ellipse_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for Capsule2d with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_capsule_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for Rhombus with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_rhombus_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for Rectangle with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_rectangle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for RegularPolygon with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_regular_polygon_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub impl IntoSpriteRingMeshGeometry for Triangle2d with into_sprite_ring_mesh_geometry(
-  self,
-  inner_shape,
-) {
-  generic_triangle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
-}
-
-///|
-pub fn[S : IntoSpriteMeshAsset] add_mesh(
-  assets : @asset.Assets[@mesh.Mesh],
-  value : S,
-) -> @asset.Handle[@mesh.Mesh] {
-  assets.add(value.into_sprite_mesh_asset())
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Mesh2dGeometry with into_sprite_mesh_asset(
-  self,
-) {
-  self.to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Capsule2d with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_capsule(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for CircularSector with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_circular_sector(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for CircularSegment with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_circular_segment(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Circle with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_circle(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Ellipse with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_ellipse(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Annulus with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_annulus(self).to_mesh()
-}
-
-///|
-pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for Ring[P] with into_sprite_mesh_asset(
-  self,
-) {
-  self.outer_shape.into_sprite_ring_mesh_geometry(self.inner_shape).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Ring2d with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for CircularSectorRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_circular_sector_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for CircularSegmentRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_circular_segment_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for EllipseRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_ellipse_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Capsule2dRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_capsule_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RhombusRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_rhombus_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RectangleRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_rectangle_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RegularPolygonRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_regular_polygon_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Triangle2dRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_triangle_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Rhombus with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_rhombus(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RegularPolygon with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_regular_polygon(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Triangle2d with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_triangle(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Segment2d with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_segment(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Polyline2d with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_polyline(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Rectangle with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_rectangle(self).to_mesh()
 }
 
 ///|
@@ -3567,8 +3142,6 @@ priv struct PostProcessIntermediateTargetInfo {
   height : Int
   target : @asset.Handle[@asset.Image]
 }
-
-///|
 
 ///|
 struct RenderState {
@@ -5836,7 +5409,7 @@ test "render2d: slice batch cull radius keeps batch bounds over sprite padding" 
     @math.Vec2::new(80.0F, 20.0F),
     @math.Vec2::new(1.0F, 1.0F),
   )
-  inspect(radius == 80.0F, content="true")
+  debug_inspect(radius == 80.0F, content="true")
 }
 
 ///|
@@ -6841,7 +6414,7 @@ test "render2d: mesh prepared material handle resolves from extracted entity ins
     Some(prepared_handle) => prepared_handle.id()
     None => -1
   }
-  inspect(prepared_id, content="77")
+  debug_inspect(prepared_id, content="77")
 }
 
 ///|
@@ -6858,7 +6431,7 @@ test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
     extracted.payload.wireframe_color.r == 0.25F &&
     extracted.payload.wireframe_color.g == 0.5F &&
     extracted.payload.wireframe_color.b == 0.75F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6931,7 +6504,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -6998,7 +6571,7 @@ test "render2d: UI overlay draw items route by target camera" {
     layers,
   )
   let ok = items.length() == 1 && items[0].kind is UiRectExtra(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7045,7 +6618,7 @@ test "render2d: scene draw items exclude UI overlays" {
   let ok = scene_items.length() == 0 &&
     ui_items.length() == 1 &&
     ui_items[0].kind is UiRectExtra(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7055,7 +6628,7 @@ test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
     plan.apply_bloom_before_tonemapping &&
     !plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7069,7 +6642,7 @@ test "render2d: host window tonemapping without bloom still leaves UI after post
     !plan.apply_bloom_before_tonemapping &&
     plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7083,7 +6656,7 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
     !plan.apply_bloom_before_tonemapping &&
     plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7178,7 +6751,10 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   render_queue_system(world)
 
   let counts = render_state_ref(world).unwrap().queued_draw_item_counts
-  inspect(counts.to_json(), content="Array([Number(1), Number(1)])")
+  debug_inspect(
+    counts.to_json().to_string(),
+    content="\"Array([Number(1), Number(1)])\"",
+  )
 }
 
 ///|
@@ -7222,7 +6798,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   let ok = cameras.length() == 1 &&
     cameras[0].entity.id == camera.id &&
     cameras[0].entity.generation == camera.generation
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7291,7 +6867,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is Mesh(1)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7345,7 +6921,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7414,7 +6990,7 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is Mesh(1)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7426,14 +7002,14 @@ test "render2d: tiled sprite mode computes repeated slices" {
     .with_custom_size(Some(@math.Vec2::new(64.0F, 32.0F)))
   guard compute_sprite_slices(sprite, @math.Vec2::new(32.0F, 32.0F))
     is Some(slices) else {
-    inspect(false, content="true")
+    debug_inspect(false, content="true")
     return
   }
   let ok = slices.slices.length() == 4 &&
     slices.slices[0].draw_size.x == 16.0F &&
     slices.slices[0].draw_size.y == 32.0F &&
     slices.slices[3].offset.x == 24.0F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7461,7 +7037,7 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     sprites[0].payload.texture.id() == 1 &&
     sprites[0].payload.uv_min.x == 0.0F &&
     sprites[0].payload.uv_max.x == 0.25F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7535,7 +7111,7 @@ test "render2d: shape geometry builders validate" {
       ok = false
     }
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7591,11 +7167,11 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
   })
   app = app.run_once()
 
-  inspect(extracted_count.val, content="2")
-  inspect(first_uv_min_y.val, content="0")
-  inspect(first_uv_max_y.val, content="0.25")
-  inspect(second_uv_min_y.val, content="0.75")
-  inspect(second_uv_max_y.val, content="1")
+  debug_inspect(extracted_count.val, content="2")
+  debug_inspect(first_uv_min_y.val, content="0")
+  debug_inspect(first_uv_max_y.val, content="0.25")
+  debug_inspect(second_uv_min_y.val, content="0.75")
+  debug_inspect(second_uv_max_y.val, content="1")
 }
 
 ///|
@@ -7609,7 +7185,7 @@ test "render2d: camera viewport clamp matches bevy edge behavior" {
     clamped.physical_position.y == 99 &&
     clamped.physical_size.x == 1 &&
     clamped.physical_size.y == 1
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7623,7 +7199,7 @@ test "render2d: camera viewport scales with dpi resize factor" {
     scaled.physical_position.y == 30 &&
     scaled.physical_size.x == 60 &&
     scaled.physical_size.y == 45
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -7631,7 +7207,7 @@ test "render2d: logical view extent derives from physical viewport and scale fac
   let ok = render2d_logical_view_extent_axis(2560, 2.0F) == 1280 &&
     render2d_logical_view_extent_axis(1440, 2.0F) == 720 &&
     render2d_logical_view_extent_axis(999, 1.5F) == 666
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -8757,162 +8333,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn render2d_viewport_to_world_2d(
-  world : @ecs.World,
-  screen : @math.Vec2,
-) -> @math.Vec2? {
-  guard render_state_ref(world) is Some(rs) else { return None }
-  let id = rs.primary_camera
-  if id.is_placeholder() {
-    return None
-  }
-  let mut found : ExtractedCamera2d? = None
-  for camera in rs.cameras {
-    if camera.entity.id == id.id && camera.entity.generation == id.generation {
-      found = Some(camera)
-      break
-    }
-  }
-  guard found is Some(cam) else { return None }
-  render2d_camera_viewport_to_world_2d(
-    screen,
-    cam.camera,
-    cam.projection,
-    cam.transform,
-    cam.computed.target_size,
-    cam.computed.scale_factor,
-  )
-}
-
-///|
-pub fn render2d_world_to_viewport(
-  world_ : @ecs.World,
-  world : @math.Vec2,
-) -> @math.Vec2? {
-  guard render_state_ref(world_) is Some(rs) else { return None }
-  let id = rs.primary_camera
-  if id.is_placeholder() {
-    return None
-  }
-  let mut found : ExtractedCamera2d? = None
-  for camera in rs.cameras {
-    if camera.entity.id == id.id && camera.entity.generation == id.generation {
-      found = Some(camera)
-      break
-    }
-  }
-  guard found is Some(cam) else { return None }
-  render2d_camera_world_to_viewport_2d(
-    world,
-    cam.camera,
-    cam.projection,
-    cam.transform,
-    cam.computed.target_size,
-    cam.computed.scale_factor,
-  )
-}
-
-///|
-/// Shared math for camera viewport conversions. `screen` is in logical pixels.
-pub fn render2d_camera_viewport_to_world_2d(
-  screen : @math.Vec2,
-  camera : Camera,
-  projection : OrthographicProjection,
-  camera_transform : @transform.Transform,
-  target_size : @math.IVec2,
-  scale_factor : Float,
-) -> @math.Vec2? {
-  let width = target_size.x
-  let height = target_size.y
-  if width <= 0 || height <= 0 {
-    return None
-  }
-  let mut safe_scale_factor = scale_factor
-  if safe_scale_factor <= 0.0F {
-    safe_scale_factor = 1.0F
-  }
-  guard camera_viewport_rect_physical(width, height, camera.viewport)
-    is Some((rect_x, rect_y, rect_width, rect_height)) else {
-    return None
-  }
-  let rect_x_f = Float::from_double(rect_x.to_double()) / safe_scale_factor
-  let rect_y_f = Float::from_double(rect_y.to_double()) / safe_scale_factor
-  let rect_width_f = Float::from_double(rect_width.to_double()) /
-    safe_scale_factor
-  let rect_height_f = Float::from_double(rect_height.to_double()) /
-    safe_scale_factor
-  if rect_width_f <= 0.0F || rect_height_f <= 0.0F {
-    return None
-  }
-  let half_width = rect_width_f / 2.0F
-  let half_height = rect_height_f / 2.0F
-  let scale = render2d_camera_uniform_scale(projection, camera_transform)
-  let local_x = screen.x - rect_x_f
-  let local_y = screen.y - rect_y_f
-  let view_x = (local_x - half_width) * scale
-  let view_y = (half_height - local_y) * scale
-  let rot_z = camera_transform.rotation_z()
-  let cosv = @math.cos(rot_z)
-  let sinv = @math.sin(rot_z)
-  let world_x = camera_transform.translation.x + view_x * cosv + view_y * sinv
-  let world_y = camera_transform.translation.y - view_x * sinv + view_y * cosv
-  Some(@math.Vec2::new(world_x, world_y))
-}
-
-///|
-/// Shared math for camera viewport conversions. Return value is in logical pixels.
-pub fn render2d_camera_world_to_viewport_2d(
-  world : @math.Vec2,
-  camera : Camera,
-  projection : OrthographicProjection,
-  camera_transform : @transform.Transform,
-  target_size : @math.IVec2,
-  scale_factor : Float,
-) -> @math.Vec2? {
-  let width = target_size.x
-  let height = target_size.y
-  if width <= 0 || height <= 0 {
-    return None
-  }
-  let mut safe_scale_factor = scale_factor
-  if safe_scale_factor <= 0.0F {
-    safe_scale_factor = 1.0F
-  }
-  guard camera_viewport_rect_physical(width, height, camera.viewport)
-    is Some((rect_x, rect_y, rect_width, rect_height)) else {
-    return None
-  }
-  let rect_x_f = Float::from_double(rect_x.to_double()) / safe_scale_factor
-  let rect_y_f = Float::from_double(rect_y.to_double()) / safe_scale_factor
-  let rect_width_f = Float::from_double(rect_width.to_double()) /
-    safe_scale_factor
-  let rect_height_f = Float::from_double(rect_height.to_double()) /
-    safe_scale_factor
-  if rect_width_f <= 0.0F || rect_height_f <= 0.0F {
-    return None
-  }
-  let half_width = rect_width_f / 2.0F
-  let half_height = rect_height_f / 2.0F
-  let dx = world.x - camera_transform.translation.x
-  let dy = world.y - camera_transform.translation.y
-  let rot_z = camera_transform.rotation_z()
-  let cosv = @math.cos(rot_z)
-  let sinv = @math.sin(rot_z)
-  let view_x = dx * cosv - dy * sinv
-  let view_y = dx * sinv + dy * cosv
-  let safe_scale = render2d_camera_uniform_scale(projection, camera_transform)
-  let local_x = view_x / safe_scale + half_width
-  let local_y = half_height - view_y / safe_scale
-  if local_x < 0.0F ||
-    local_y < 0.0F ||
-    local_x > rect_width_f ||
-    local_y > rect_height_f {
-    return None
-  }
-  Some(@math.Vec2::new(local_x + rect_x_f, local_y + rect_y_f))
-}
-
-///|
 fn camera_viewport_rect_physical(
   target_width : Int,
   target_height : Int,
@@ -9006,10 +8426,6 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
-/// Legacy alias kept for source compatibility.
-pub let render2d_set_execute : @app.SystemSet = render2d_set_render
-
-///|
 fn configure_render2d_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -9089,7 +8505,7 @@ fn configure_render2d_render_sub_app_ecs(
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_render2d_required_components(app.world())
+  ensure_render2d_required_components(app.world())
   let next = color_material_plugin(ColorMaterialPlugin::default())(
       init_gizmo_group(
         app.init_resource(fn() { ClearColor::default() }),
@@ -9109,7 +8525,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_render2d_required_components(app.world())
+  ensure_render2d_required_components(app.world())
   let next = color_material_plugin(ColorMaterialPlugin::default())(
       init_gizmo_group(
         app.init_resource(fn() { ClearColor::default() }),

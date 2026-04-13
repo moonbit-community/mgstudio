@@ -1,0 +1,146 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/gltf/loader/gltf_ext"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn gltf_animation_asset_label(Int) -> GltfAssetLabel
+
+pub fn gltf_default_material_asset_label() -> GltfAssetLabel
+
+pub fn gltf_extras(String) -> GltfExtras
+
+pub fn gltf_inverse_bind_matrices_asset_label(Int) -> GltfAssetLabel
+
+pub fn gltf_material_asset_label(Int, Bool) -> GltfAssetLabel
+
+pub fn gltf_material_extras(String) -> GltfMaterialExtras
+
+pub fn gltf_material_name(String) -> GltfMaterialName
+
+pub fn gltf_mesh_asset_label(Int) -> GltfAssetLabel
+
+pub fn gltf_mesh_extras(String) -> GltfMeshExtras
+
+pub fn gltf_mesh_index(Int) -> GltfMeshIndex
+
+pub fn gltf_node_asset_label(Int) -> GltfAssetLabel
+
+pub fn gltf_node_index(Int) -> GltfNodeIndex
+
+pub fn gltf_primitive_asset_label(Int, Int) -> GltfAssetLabel
+
+pub fn gltf_primitive_index(Int, Int) -> GltfPrimitiveIndex
+
+pub fn gltf_scene_asset_label(Int) -> GltfAssetLabel
+
+pub fn gltf_scene_extras(String) -> GltfSceneExtras
+
+pub fn gltf_scene_index(Int) -> GltfSceneIndex
+
+pub fn gltf_skin_asset_label(Int) -> GltfAssetLabel
+
+pub fn gltf_skin_index(Int) -> GltfSkinIndex
+
+pub fn gltf_texture_asset_label(Int) -> GltfAssetLabel
+
+// Errors
+
+// Types and methods
+pub(all) enum GltfAssetLabel {
+  Scene(Int)
+  Node(Int)
+  Mesh(Int)
+  Primitive(Int, Int)
+  MorphTarget(Int, Int)
+  Texture(Int)
+  Material(Int, Bool)
+  DefaultMaterial
+  Animation(Int)
+  Skin(Int)
+  InverseBindMatrices(Int)
+}
+pub fn GltfAssetLabel::from_asset(Self, String) -> String
+pub fn GltfAssetLabel::to_label(Self) -> String
+
+pub struct GltfExtras {
+  value : String
+}
+pub fn GltfExtras::as_str(Self) -> String
+pub fn GltfExtras::new(String) -> Self
+pub impl @ecs.Component for GltfExtras
+
+pub struct GltfMaterialExtras {
+  value : String
+}
+pub fn GltfMaterialExtras::as_str(Self) -> String
+pub fn GltfMaterialExtras::new(String) -> Self
+pub impl @ecs.Component for GltfMaterialExtras
+
+pub struct GltfMaterialName {
+  name : String
+}
+pub fn GltfMaterialName::as_str(Self) -> String
+pub fn GltfMaterialName::new(String) -> Self
+pub impl @ecs.Component for GltfMaterialName
+
+pub struct GltfMeshExtras {
+  value : String
+}
+pub fn GltfMeshExtras::as_str(Self) -> String
+pub fn GltfMeshExtras::new(String) -> Self
+pub impl @ecs.Component for GltfMeshExtras
+
+pub struct GltfMeshIndex {
+  mesh_index : Int
+}
+pub fn GltfMeshIndex::index(Self) -> Int
+pub fn GltfMeshIndex::new(Int) -> Self
+pub impl @ecs.Component for GltfMeshIndex
+
+pub struct GltfNodeIndex {
+  node_index : Int
+}
+pub fn GltfNodeIndex::index(Self) -> Int
+pub fn GltfNodeIndex::new(Int) -> Self
+pub impl @ecs.Component for GltfNodeIndex
+
+pub struct GltfPrimitiveIndex {
+  mesh_index : Int
+  primitive_index : Int
+}
+pub fn GltfPrimitiveIndex::mesh_index(Self) -> Int
+pub fn GltfPrimitiveIndex::new(Int, Int) -> Self
+pub fn GltfPrimitiveIndex::primitive_index(Self) -> Int
+pub impl @ecs.Component for GltfPrimitiveIndex
+
+pub struct GltfSceneExtras {
+  value : String
+}
+pub fn GltfSceneExtras::as_str(Self) -> String
+pub fn GltfSceneExtras::new(String) -> Self
+pub impl @ecs.Component for GltfSceneExtras
+
+pub struct GltfSceneIndex {
+  scene_index : Int
+}
+pub fn GltfSceneIndex::index(Self) -> Int
+pub fn GltfSceneIndex::new(Int) -> Self
+pub impl @ecs.Component for GltfSceneIndex
+
+pub struct GltfSkinIndex {
+  index : Int
+}
+pub fn GltfSkinIndex::index(Self) -> Int
+pub fn GltfSkinIndex::new(Int) -> Self
+pub impl @ecs.Component for GltfSkinIndex
+pub impl ToJson for GltfSkinIndex
+pub impl @json.FromJson for GltfSkinIndex
+
+// Type aliases
+
+// Traits
+

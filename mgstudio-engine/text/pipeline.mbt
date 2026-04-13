@@ -394,6 +394,26 @@ let text_render_overlay_sprite_slices_batches_cache_ref : Ref[
 ] = Ref::new([])
 
 ///|
+let text_render_prepared_scene_overlay_sprites_ref : Ref[
+  Array[@sprite.OverlaySpriteUvScissor],
+] = Ref::new([])
+
+///|
+let text_render_prepared_ui_overlay_sprites_ref : Ref[
+  Array[@sprite.OverlaySpriteUvScissor],
+] = Ref::new([])
+
+///|
+let text_render_prepared_scene_overlay_sprite_slices_batches_ref : Ref[
+  Array[@sprite.OverlaySpriteUvScissorSlices],
+] = Ref::new([])
+
+///|
+let text_render_prepared_ui_overlay_sprite_slices_batches_ref : Ref[
+  Array[@sprite.OverlaySpriteUvScissorSlices],
+] = Ref::new([])
+
+///|
 priv struct OverlaySpriteSliceBatchBounds {
   mut has_bounds : Bool
   mut min_x : Float
@@ -1913,16 +1933,74 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       )
     }
   }
-  @sprite_render.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
-  @sprite.render2d_push_sprite_uv_scissor_slices_batch(
-    world, overlay_sprite_slices_batches,
-  )
+  let scene_overlay_sprites : Array[@sprite.OverlaySpriteUvScissor] = []
+  let ui_overlay_sprites : Array[@sprite.OverlaySpriteUvScissor] = []
+  for sprite in overlay_sprites {
+    match sprite.target_camera {
+      Some(_) => ui_overlay_sprites.push(sprite)
+      None => scene_overlay_sprites.push(sprite)
+    }
+  }
+  let scene_overlay_sprite_slices_batches : Array[
+    @sprite.OverlaySpriteUvScissorSlices,
+  ] = []
+  let ui_overlay_sprite_slices_batches : Array[
+    @sprite.OverlaySpriteUvScissorSlices,
+  ] = []
+  for batch in overlay_sprite_slices_batches {
+    match batch.target_camera {
+      Some(_) => ui_overlay_sprite_slices_batches.push(batch)
+      None => scene_overlay_sprite_slices_batches.push(batch)
+    }
+  }
+  text_render_prepared_scene_overlay_sprites_ref.val = scene_overlay_sprites
+  text_render_prepared_ui_overlay_sprites_ref.val = ui_overlay_sprites
+  text_render_prepared_scene_overlay_sprite_slices_batches_ref.val = scene_overlay_sprite_slices_batches
+  text_render_prepared_ui_overlay_sprite_slices_batches_ref.val = ui_overlay_sprite_slices_batches
   text_diagnostic_render_visible_text_count_ref.val = visible_text_count.val
   text_diagnostic_render_culled_text_count_ref.val = culled_text_count.val
-  text_diagnostic_render_submitted_item_count_ref.val = overlay_sprites.length() +
-    overlay_sprite_slices_batches.length()
+  text_diagnostic_render_submitted_item_count_ref.val = scene_overlay_sprites.length() +
+    ui_overlay_sprites.length() +
+    scene_overlay_sprite_slices_batches.length() +
+    ui_overlay_sprite_slices_batches.length()
   text_diagnostic_render_cpu_ms_ref.val = (@time.host_time_now() - render_start) *
     1000.0F
+}
+
+///|
+pub fn text_render_transparent_2d_queue_system(world : @ecs.World) -> Unit {
+  let scene_overlay_sprites = text_render_prepared_scene_overlay_sprites_ref.val
+  let scene_overlay_sprite_slices_batches = text_render_prepared_scene_overlay_sprite_slices_batches_ref.val
+  if scene_overlay_sprites.length() > 0 {
+    @sprite_render.render2d_push_sprite_uv_scissor_batch(
+      world, scene_overlay_sprites,
+    )
+  }
+  if scene_overlay_sprite_slices_batches.length() > 0 {
+    @sprite.render2d_push_sprite_uv_scissor_slices_batch(
+      world, scene_overlay_sprite_slices_batches,
+    )
+  }
+  text_render_prepared_scene_overlay_sprites_ref.val = []
+  text_render_prepared_scene_overlay_sprite_slices_batches_ref.val = []
+}
+
+///|
+pub fn text_render_transparent_ui_queue_system(world : @ecs.World) -> Unit {
+  let ui_overlay_sprites = text_render_prepared_ui_overlay_sprites_ref.val
+  let ui_overlay_sprite_slices_batches = text_render_prepared_ui_overlay_sprite_slices_batches_ref.val
+  if ui_overlay_sprites.length() > 0 {
+    @sprite_render.render2d_push_sprite_uv_scissor_batch(
+      world, ui_overlay_sprites,
+    )
+  }
+  if ui_overlay_sprite_slices_batches.length() > 0 {
+    @sprite.render2d_push_sprite_uv_scissor_slices_batch(
+      world, ui_overlay_sprite_slices_batches,
+    )
+  }
+  text_render_prepared_ui_overlay_sprites_ref.val = []
+  text_render_prepared_ui_overlay_sprite_slices_batches_ref.val = []
 }
 
 ///|
@@ -1956,14 +2034,30 @@ pub fn text_diagnostic_render_submitted_item_count() -> Int {
 }
 
 ///|
-pub let text_set_render_extract : @app.SystemSet = @app.system_set(
-  "mgstudio.text.render_extract",
+pub let text_set_render_prepare : @app.SystemSet = @app.system_set(
+  "mgstudio.text.render_prepare",
+)
+
+///|
+pub let text_set_render_transparent_2d : @app.SystemSet = @app.system_set(
+  "mgstudio.text.render_transparent_2d",
+)
+
+///|
+pub let text_set_render_transparent_ui : @app.SystemSet = @app.system_set(
+  "mgstudio.text.render_transparent_ui",
 )
 
 ///|
 pub let text_set_sync_ecs : @app.SystemSet = @app.system_set(
   "mgstudio.text.sync_ecs",
 )
+
+///|
+pub let text_set_render_extract : @app.SystemSet = text_set_render_prepare
+
+///|
+pub let text_set_render_queue : @app.SystemSet = text_set_render_transparent_2d
 
 ///|
 pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -1984,19 +2078,61 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
         @app.system_set("mgstudio.ui.stack"),
         @transform.transform_set_sync_simple_transforms,
       ],
-      before=[text_set_render_extract],
+      before=[text_set_render_prepare],
     )
-    .configure_set(@app.PostUpdate, text_set_render_extract, after=[
-      text_set_sync_ecs,
-    ])
+    .configure_set(
+      @app.PostUpdate,
+      text_set_render_prepare,
+      after=[text_set_sync_ecs, @sprite_render.render2d_set_extract],
+      before=[text_set_render_transparent_2d],
+    )
+    .configure_set(
+      @app.PostUpdate,
+      text_set_render_transparent_2d,
+      after=[text_set_render_prepare, @sprite_render.render2d_set_prepare],
+      before=[text_set_render_transparent_ui],
+    )
+    .configure_set(
+      @app.PostUpdate,
+      text_set_render_transparent_ui,
+      after=[text_set_render_transparent_2d],
+      before=[@sprite_render.render2d_set_queue],
+    )
   @render.with_render_app(next, fn(render_app) {
     render_app
     .add_systems(
       @app.PostUpdate,
-      @app.system(text_render_system).in_set(text_set_render_extract),
+      @app.system(text_render_system).in_set(text_set_render_prepare),
     )
-    .configure_set(@app.PostUpdate, text_set_render_extract, before=[
-      @sprite_render.render2d_set_extract,
-    ])
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(text_render_transparent_2d_queue_system).in_set(
+        text_set_render_transparent_2d,
+      ),
+    )
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(text_render_transparent_ui_queue_system).in_set(
+        text_set_render_transparent_ui,
+      ),
+    )
+    .configure_set(
+      @app.PostUpdate,
+      text_set_render_prepare,
+      after=[@sprite_render.render2d_set_extract],
+      before=[text_set_render_transparent_2d],
+    )
+    .configure_set(
+      @app.PostUpdate,
+      text_set_render_transparent_2d,
+      after=[text_set_render_prepare, @sprite_render.render2d_set_prepare],
+      before=[text_set_render_transparent_ui],
+    )
+    .configure_set(
+      @app.PostUpdate,
+      text_set_render_transparent_ui,
+      after=[text_set_render_transparent_2d],
+      before=[@sprite_render.render2d_set_queue],
+    )
   })
 }

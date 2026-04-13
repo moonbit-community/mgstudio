@@ -1,0 +1,8 @@
+import {
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"

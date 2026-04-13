@@ -696,3 +696,83 @@ pub fn GpuBackend::draw_sprite_uv_slices(
     })
   }
 }
+
+///|
+pub fn draw_sprite(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+) -> Unit {
+  draw_sprite_uv(
+    texture_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    color_r~,
+    color_g~,
+    color_b~,
+    color_a~,
+    uv_min_x=0.0F,
+    uv_min_y=0.0F,
+    uv_max_x=1.0F,
+    uv_max_y=1.0F,
+  )
+}
+
+///|
+pub fn draw_sprite_uv(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  uv_min_x~ : Float,
+  uv_min_y~ : Float,
+  uv_max_x~ : Float,
+  uv_max_y~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_sprite_uv(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      uv_min_x, uv_min_y, uv_max_x, uv_max_y,
+    ) catch {
+      err => debug_runtime_error("draw_sprite_uv", err)
+    }
+  }
+}
+
+///|
+pub fn draw_sprite_uv_slices(
+  texture_id~ : Int,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  slices_xy_uv~ : Array[Float],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_sprite_uv_slices(
+      texture_id, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      slices_xy_uv,
+    ) catch {
+      err => debug_runtime_error("draw_sprite_uv_slices", err)
+    }
+  }
+}

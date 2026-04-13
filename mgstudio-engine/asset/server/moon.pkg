@@ -1,0 +1,6 @@
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
+supported_targets = "native"

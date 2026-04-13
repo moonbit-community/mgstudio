@@ -30,18 +30,22 @@ test "examples ecs component_hooks: hooks keep index and message queue in sync" 
   )
 
   match my_component_index_or_abort(world).entities.get(@window.KeyCode::KeyA) {
-    Some(indexed_entity) => inspect(indexed_entity == entity, content="true")
+    Some(indexed_entity) =>
+      debug_inspect(indexed_entity == entity, content="true")
     None => abort("expected KeyA to be indexed after on_add")
   }
   match world.resource(my_message_key.messages_resource()).get() {
-    Some(messages) => inspect(messages.len(), content="1")
+    Some(messages) => debug_inspect(messages.len(), content="1")
     None =>
       abort("expected MyMessage queue to exist in component_hooks example")
   }
 
-  inspect(try! world.remove_by_key(entity, my_component_key), content="true")
-  inspect(world.is_alive(entity), content="false")
-  inspect(
+  debug_inspect(
+    try! world.remove_by_key(entity, my_component_key),
+    content="true",
+  )
+  debug_inspect(world.is_alive(entity), content="false")
+  debug_inspect(
     my_component_index_or_abort(world).entities.contains(@window.KeyCode::KeyA),
     content="false",
   )

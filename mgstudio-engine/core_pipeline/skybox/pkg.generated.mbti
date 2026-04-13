@@ -1,0 +1,125 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline/skybox"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const SKYBOX_PIPELINE_LABEL : String = "skybox_pipeline"
+
+pub const SKYBOX_PREPASS_BIND_GROUP_LABEL : String = "skybox_prepass_bind_group"
+
+pub const SKYBOX_PREPASS_LABEL : String = "skybox_prepass"
+
+pub const SKYBOX_PREPASS_PIPELINE_LABEL : String = "skybox_prepass_pipeline"
+
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
+
+pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState]
+
+pub fn skybox_pipeline_key(SkyboxPrepareViewState, depth_format? : String) -> SkyboxPipelineKey
+
+pub fn skybox_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn skybox_plugin_with(@app.App[@ecs.World], SkyboxPlugin) -> @app.App[@ecs.World]
+
+pub fn skybox_prepass_pipeline_key(SkyboxPrepassViewState) -> SkyboxPrepassPipelineKey
+
+pub fn skybox_prepass_should_prepare_bind_group(SkyboxPrepassViewState) -> Bool
+
+pub fn skybox_prepass_should_prepare_pipeline(SkyboxPrepassViewState) -> Bool
+
+pub fn skybox_should_prepare_bind_group(SkyboxPrepareViewState) -> Bool
+
+pub fn skybox_should_prepare_pipeline(SkyboxPrepareViewState) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct RenderSkyboxPrepassPipeline {
+  pipeline_id : Int
+}
+pub fn RenderSkyboxPrepassPipeline::new(pipeline_id~ : Int) -> Self
+
+pub struct Skybox {
+} derive(ToJson, @json.FromJson)
+pub fn Skybox::default() -> Self
+pub impl @ecs.Component for Skybox
+
+pub struct SkyboxBindGroup {
+  bind_group_id : Int
+  skybox_uniform_index : Int
+}
+pub fn SkyboxBindGroup::new(bind_group_id~ : Int, skybox_uniform_index~ : Int) -> Self
+
+pub struct SkyboxPipelineId {
+  pipeline_id : Int
+}
+pub fn SkyboxPipelineId::new(pipeline_id~ : Int) -> Self
+
+pub struct SkyboxPipelineKey {
+  hdr : Bool
+  samples : Int
+  depth_format : String
+} derive(Eq, @debug.Debug)
+pub fn SkyboxPipelineKey::new(hdr? : Bool, samples? : Int, depth_format? : String) -> Self
+
+pub struct SkyboxPipelineState {
+  mut pipeline_count : Int
+  mut bind_group_count : Int
+}
+pub fn SkyboxPipelineState::default() -> Self
+pub fn SkyboxPipelineState::record_bind_group(Self) -> Unit
+pub fn SkyboxPipelineState::record_pipeline(Self) -> Unit
+pub impl @app.Resource for SkyboxPipelineState
+
+pub struct SkyboxPlugin {
+}
+pub fn SkyboxPlugin::default() -> Self
+pub impl @app.PluginReplacement for SkyboxPlugin
+
+pub struct SkyboxPrepareViewState {
+  has_skybox : Bool
+  hdr : Bool
+  msaa_samples : Int
+  has_view_uniform_binding : Bool
+  has_skybox_uniform_binding : Bool
+  has_skybox_gpu_image : Bool
+}
+pub fn SkyboxPrepareViewState::new(has_skybox? : Bool, hdr? : Bool, msaa_samples? : Int, has_view_uniform_binding? : Bool, has_skybox_uniform_binding? : Bool, has_skybox_gpu_image? : Bool) -> Self
+
+pub struct SkyboxPrepassBindGroup {
+  bind_group_id : Int
+}
+pub fn SkyboxPrepassBindGroup::new(bind_group_id~ : Int) -> Self
+
+pub struct SkyboxPrepassNode {
+  label : String
+}
+pub fn SkyboxPrepassNode::default() -> Self
+pub fn SkyboxPrepassNode::label(Self) -> String
+
+pub struct SkyboxPrepassPipelineKey {
+  samples : Int
+  normal_prepass : Bool
+} derive(Eq, @debug.Debug)
+pub fn SkyboxPrepassPipelineKey::new(samples~ : Int, normal_prepass~ : Bool) -> Self
+
+pub struct SkyboxPrepassViewState {
+  has_skybox : Bool
+  has_motion_vector_prepass : Bool
+  has_normal_prepass : Bool
+  msaa_samples : Int
+  has_view_uniform_binding : Bool
+  has_previous_view_uniform_binding : Bool
+}
+pub fn SkyboxPrepassViewState::new(has_skybox? : Bool, has_motion_vector_prepass? : Bool, has_normal_prepass? : Bool, msaa_samples? : Int, has_view_uniform_binding? : Bool, has_previous_view_uniform_binding? : Bool) -> Self
+
+// Type aliases
+
+// Traits
+

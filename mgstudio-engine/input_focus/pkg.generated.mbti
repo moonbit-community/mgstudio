@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
 }
@@ -18,6 +19,8 @@ pub fn auto_generate_navigation_edges(@ref.Ref[DirectionalNavigationMap], Array[
 pub fn directional_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[M : @ecs.Message] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
+
+pub fn find_best_candidate(FocusableArea, @math.CompassOctant, Array[FocusableArea], AutoNavigationConfig) -> @core.Entity?
 
 pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
 
@@ -33,6 +36,8 @@ pub fn is_focus_within_visible(@ecs.World, @core.Entity) -> Bool
 
 pub fn is_focused(@ecs.World, @core.Entity) -> Bool
 
+pub fn on_auto_focus_added(@ecs.World, @core.Entity) -> Unit
+
 pub fn set_initial_focus(@ecs.World) -> Unit
 
 pub fn tab_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -44,6 +49,10 @@ pub(all) suberror DirectionalNavigationError {
 }
 
 // Types and methods
+pub struct AutoFocus {
+} derive(Default, @debug.Debug)
+pub impl @ecs.Component for AutoFocus
+
 pub struct AutoNavigationConfig {
   min_alignment_factor : Float
   max_search_distance : Float?
@@ -115,7 +124,7 @@ pub impl @app.Resource for InputFocus
 
 pub(all) enum InputFocusSystems {
   Dispatch
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct InputFocusVisible {
   mut visible : Bool

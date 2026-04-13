@@ -149,7 +149,7 @@ pub fn[T : GizmoConfigGroup] GizmoConfigStore::config_mut(
 
 ///|
 let ecs_res_key_gizmo_config_store : @ecs.ResourceKey[GizmoConfigStore] = @ecs.register_resource(
-  debug_name="bevy_gizmos::GizmoConfigStore",
+  debug_name="mgstudio_gizmos::GizmoConfigStore",
 )
 
 ///|

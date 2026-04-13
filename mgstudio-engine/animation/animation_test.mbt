@@ -101,7 +101,7 @@ pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with debug_name() {
 struct ObservedTypedAnimationEvent {
   entity_id : Int
   value : String
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let observed_typed_animation_events : Ref[
@@ -133,13 +133,15 @@ fn observe_typed_animation_event(
 ///|
 test "animation target id: deterministic and path-sensitive" {
   let a = AnimationTargetId::from_names(["Root", "Arm", "Hand"])
+  let a_iter = AnimationTargetId::from_iter(["Root", "Arm", "Hand"])
   let b = AnimationTargetId::from_names(["Root", "Arm", "Hand"])
   let c = AnimationTargetId::from_names(["Root", "Hand", "Arm"])
   let d = AnimationTargetId::from_names(["Root", "ArmHand"])
 
-  inspect(a == b, content="true")
-  inspect(a == c, content="false")
-  inspect(a == d, content="false")
+  debug_inspect(a == a_iter, content="true")
+  debug_inspect(a == b, content="true")
+  debug_inspect(a == c, content="false")
+  debug_inspect(a == d, content="false")
 }
 
 ///|
@@ -155,7 +157,7 @@ test "animation clip: duration tracks added trs/weights curves" {
     ])
     .add_weights_curve(target, [KeyframeWeights::new(4.0F, [0.0F, 1.0F])])
 
-  inspect(clip.duration(), content="4")
+  debug_inspect(clip.duration(), content="4")
 }
 
 ///|
@@ -166,8 +168,8 @@ test "animation clip: text color curves sample and extend duration" {
     KeyframeColor::new(2.0F, @sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
   ])
 
-  inspect(clip.duration(), content="2")
-  inspect(
+  debug_inspect(clip.duration(), content="2")
+  debug_inspect(
     if clip.sample_target(target, 1.0F) is Some(sample) {
       if sample.text_color() is Some(color) {
         color.r > 0.49F &&
@@ -187,6 +189,111 @@ test "animation clip: text color curves sample and extend duration" {
 }
 
 ///|
+test "animation clip: step interpolation keeps previous keyframe before boundary" {
+  let target = AnimationTargetId::from_name("StepTarget")
+  let clip = AnimationClip::new().add_translation_curve(target, [
+    KeyframeVec3::new_stepped(0.0F, @math.Vec3::new(1.0F, 0.0F, 0.0F)),
+    KeyframeVec3::new_stepped(1.0F, @math.Vec3::new(3.0F, 0.0F, 0.0F)),
+  ])
+  let sample = clip.sample_target(target, 0.5F).unwrap()
+  let translation = sample.translation().unwrap()
+  debug_inspect(translation.x.to_double(), content="1")
+}
+
+///|
+test "animation clip: cubic spline interpolation uses tangents" {
+  let target = AnimationTargetId::from_name("CubicTarget")
+  let clip = AnimationClip::new().add_scale_curve(target, [
+    KeyframeVec3::new_cubic(
+      0.0F,
+      @math.Vec3::new(1.0F, 1.0F, 1.0F),
+      @math.Vec3::zero(),
+      @math.Vec3::zero(),
+    ),
+    KeyframeVec3::new_cubic(
+      1.0F,
+      @math.Vec3::new(3.0F, 3.0F, 3.0F),
+      @math.Vec3::zero(),
+      @math.Vec3::zero(),
+    ),
+  ])
+  let sample = clip.sample_target(target, 0.25F).unwrap()
+  let scale = sample.scale().unwrap()
+  debug_inspect(approx_eq_animation(scale.x, 1.3125F), content="true")
+}
+
+///|
+test "animation gltf curves: decode translation cubic spline keyframes" {
+  let target = AnimationTargetId::from_name("GltfTranslation")
+  let keyframes = gltf_translation_keyframes_from_samples(
+    [0.0F, 1.0F],
+    [
+      @math.Vec3::zero(),
+      @math.Vec3::new(1.0F, 1.0F, 1.0F),
+      @math.Vec3::zero(),
+      @math.Vec3::zero(),
+      @math.Vec3::new(3.0F, 3.0F, 3.0F),
+      @math.Vec3::zero(),
+    ],
+    gltf_interpolation_from_name(Some("CUBICSPLINE")),
+  ).unwrap()
+  let clip = AnimationClip::new().add_translation_curve(target, keyframes)
+  let translation = clip
+    .sample_target(target, 0.25F)
+    .unwrap()
+    .translation()
+    .unwrap()
+  debug_inspect(approx_eq_animation(translation.x, 1.3125F), content="true")
+}
+
+///|
+test "animation gltf curves: decode rotation step keyframes" {
+  let target = AnimationTargetId::from_name("GltfRotation")
+  let keyframes = gltf_rotation_keyframes_from_samples(
+    [0.0F, 1.0F],
+    [
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @math.Vec4::new(0.0F, 0.70710677F, 0.0F, 0.70710677F),
+    ],
+    gltf_interpolation_from_name(Some("STEP")),
+  ).unwrap()
+  let clip = AnimationClip::new().add_rotation_curve(target, keyframes)
+  let rotation_mid = clip
+    .sample_target(target, 0.5F)
+    .unwrap()
+    .rotation()
+    .unwrap()
+  let rotation_end = clip
+    .sample_target(target, 1.0F)
+    .unwrap()
+    .rotation()
+    .unwrap()
+  debug_inspect(
+    rotation_mid.w >= 0.99F && rotation_mid.w <= 1.01F,
+    content="true",
+  )
+  debug_inspect(
+    rotation_end.w >= 0.70F && rotation_end.w <= 0.71F,
+    content="true",
+  )
+}
+
+///|
+test "animation gltf curves: decode weights cubic spline keyframes" {
+  let target = AnimationTargetId::from_name("GltfWeights")
+  let keyframes = gltf_weight_keyframes_from_flat_samples(
+    [0.0F, 1.0F],
+    [0.0F, 0.0F, 0.1F, 0.9F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2F, 0.8F, 0.0F, 0.0F],
+    gltf_interpolation_from_name(Some("CUBICSPLINE")),
+  ).unwrap()
+  let clip = AnimationClip::new().add_weights_curve(target, keyframes)
+  let weights = clip.sample_target(target, 1.0F).unwrap().weights().unwrap()
+  debug_inspect(weights.length(), content="2")
+  debug_inspect(weights[0] >= 0.19F && weights[0] <= 0.21F, content="true")
+  debug_inspect(weights[1] >= 0.79F && weights[1] <= 0.81F, content="true")
+}
+
+///|
 test "animation graph: from_clip/from_clips/add APIs" {
   let clips : @asset.Assets[AnimationClip] = @asset.Assets::new()
   let h0 = clips.add(AnimationClip::new())
@@ -194,24 +301,24 @@ test "animation graph: from_clip/from_clips/add APIs" {
   let h2 = clips.add(AnimationClip::new())
 
   let (g0, n0) = AnimationGraph::from_clip(h0)
-  inspect(g0.get(n0) is Some(_), content="true")
+  debug_inspect(g0.get(n0) is Some(_), content="true")
 
   let (g1, nodes) = AnimationGraph::from_clips([h0, h1])
-  inspect(nodes.length(), content="2")
-  inspect(g1.nodes().length(), content="3")
+  debug_inspect(nodes.length(), content="2")
+  debug_inspect(g1.nodes().length(), content="3")
 
   let blend = g1.add_blend(0.5F, g1.root())
   let add = g1.add_add(0.25F, blend)
   let clip = g1.add_clip(h0, 0.75F, add)
   let extra = g1.add_clips([h1, h2], 0.5F, blend)
-  inspect(g1.get(clip) is Some(_), content="true")
-  inspect(extra.length(), content="2")
-  inspect(g1.nodes().length(), content="8")
+  debug_inspect(g1.get(clip) is Some(_), content="true")
+  debug_inspect(extra.length(), content="2")
+  debug_inspect(g1.nodes().length(), content="8")
 
   if g1.get_mut(blend) is Some(blend_node) {
     blend_node.set_weight(0.25F).add_mask(4U) |> ignore
   }
-  inspect(
+  debug_inspect(
     if g1.get(blend) is Some(blend_node) {
       approx_eq_animation(blend_node.weight(), 0.25F) && blend_node.mask() == 4U
     } else {
@@ -227,19 +334,34 @@ test "active animation: repeat semantics" {
     .set_repeat(RepeatAnimation::Never)
     .update(0.6F, 1.0F)
     .update(0.6F, 1.0F)
-  inspect(never.is_finished(), content="true")
-  inspect(never.completions(), content="1")
+  debug_inspect(never.is_finished(), content="true")
+  debug_inspect(never.completions(), content="1")
 
   let count = ActiveAnimation::default()
     .set_repeat(RepeatAnimation::Count(2))
     .update(1.1F, 1.0F)
     .update(1.1F, 1.0F)
-  inspect(count.is_finished(), content="true")
-  inspect(count.completions(), content="2")
+  debug_inspect(count.is_finished(), content="true")
+  debug_inspect(count.completions(), content="2")
 
   let forever = ActiveAnimation::default().repeat_forever().update(3.1F, 1.0F)
-  inspect(forever.is_finished(), content="false")
-  inspect(forever.completions() >= 1, content="true")
+  debug_inspect(forever.is_finished(), content="false")
+  debug_inspect(forever.completions() >= 1, content="true")
+}
+
+///|
+test "active animation: replay and weight semantics match bevy" {
+  let weighted = ActiveAnimation::default().set_weight(-0.5F)
+  assert_true(approx_eq_animation(weighted.weight(), -0.5F))
+
+  let replayed = ActiveAnimation::default()
+    .pause()
+    .seek_to(0.7F)
+    .set_repeat(RepeatAnimation::Count(3))
+    .replay()
+  debug_inspect(replayed.is_paused(), content="true")
+  assert_true(approx_eq_animation(replayed.seek_time(), 0.0F))
+  debug_inspect(replayed.completions(), content="0")
 }
 
 ///|
@@ -251,9 +373,9 @@ test "animation transitions: play updates main animation and starts new clip" {
   let transitions = AnimationTransitions::new()
   transitions.play(player, node_a, 0.2F).repeat() |> ignore
 
-  inspect(transitions.main_animation() is Some(_), content="true")
-  inspect(transitions.get_main_animation() is Some(_), content="true")
-  inspect(player.animation(node_a) is Some(_), content="true")
+  debug_inspect(transitions.main_animation() is Some(_), content="true")
+  debug_inspect(transitions.get_main_animation() is Some(_), content="true")
+  debug_inspect(player.animation(node_a) is Some(_), content="true")
 
   transitions.play(player, node_b, 0.5F).repeat() |> ignore
   assert_true(
@@ -263,8 +385,8 @@ test "animation transitions: play updates main animation and starts new clip" {
       false
     },
   )
-  inspect(player.animation(node_b) is Some(_), content="true")
-  inspect(transitions.transitions.length(), content="1")
+  debug_inspect(player.animation(node_b) is Some(_), content="true")
+  debug_inspect(transitions.transitions.length(), content="1")
 }
 
 ///|
@@ -276,16 +398,16 @@ test "animation player: live active handles and bulk helpers mutate in place" {
   player.play(node_a).set_speed(1.5F).repeat().pause() |> ignore
   player.play(node_b).seek_to(0.25F) |> ignore
 
-  inspect(player.animation_mut(node_a) is Some(_), content="true")
-  inspect(player.playing_animations_mut().length(), content="2")
-  inspect(player.all_paused(), content="false")
+  debug_inspect(player.animation_mut(node_a) is Some(_), content="true")
+  debug_inspect(player.playing_animations_mut().length(), content="2")
+  debug_inspect(player.all_paused(), content="false")
 
   player.pause_all() |> ignore
-  inspect(player.all_paused(), content="true")
+  debug_inspect(player.all_paused(), content="true")
 
   player.resume_all().adjust_speeds(2.0F).seek_all_by(0.25F) |> ignore
-  inspect(player.all_paused(), content="false")
-  inspect(
+  debug_inspect(player.all_paused(), content="false")
+  debug_inspect(
     if player.animation(node_a) is Some(active_a) {
       approx_eq_animation(active_a.speed(), 3.0F) &&
       approx_eq_animation(active_a.seek_time(), 0.25F)
@@ -294,7 +416,7 @@ test "animation player: live active handles and bulk helpers mutate in place" {
     },
     content="true",
   )
-  inspect(
+  debug_inspect(
     if player.animation(node_b) is Some(active_b) {
       approx_eq_animation(active_b.seek_time(), 0.5F)
     } else {
@@ -304,7 +426,7 @@ test "animation player: live active handles and bulk helpers mutate in place" {
   )
 
   player.rewind_all() |> ignore
-  inspect(
+  debug_inspect(
     if player.animation(node_b) is Some(active_b) {
       approx_eq_animation(active_b.seek_time(), 0.0F)
     } else {
@@ -327,15 +449,18 @@ test "animation graph: blend/add weights and mask groups" {
   let idle_weight = graph.effective_weight(idle)
   let walk_weight = graph.effective_weight(walk)
   let run_weight = graph.effective_weight(run)
-  inspect(idle_weight > 0.66F && idle_weight < 0.67F, content="true")
-  inspect(walk_weight > 0.16F && walk_weight < 0.17F, content="true")
-  inspect(run_weight > 0.16F && run_weight < 0.17F, content="true")
+  debug_inspect(idle_weight > 0.66F && idle_weight < 0.67F, content="true")
+  debug_inspect(walk_weight > 0.16F && walk_weight < 0.17F, content="true")
+  debug_inspect(run_weight > 0.16F && run_weight < 0.17F, content="true")
 
   let target = AnimationTargetId::from_name("Hips")
   graph.add_target_to_mask_group(target, 3) |> ignore
-  inspect(graph.target_mask(target).reinterpret_as_int() > 0, content="true")
-  inspect(graph.add_node_mask_group(run, 3), content="true")
-  inspect(
+  debug_inspect(
+    graph.target_mask(target).reinterpret_as_int() > 0,
+    content="true",
+  )
+  debug_inspect(graph.add_node_mask_group(run, 3), content="true")
+  debug_inspect(
     (graph.computed_mask(run) & graph.target_mask(target)) != 0U,
     content="true",
   )
@@ -351,14 +476,14 @@ test "animation clip events: forward and looping intervals" {
   let active0 = ActiveAnimation::default().repeat_forever()
   let active1 = active0.update(0.5F, clip.duration())
   let events1 = clip.triggered_root_events(active1)
-  inspect(events1.length(), content="1")
-  inspect(events1[0].label(), content="first")
+  debug_inspect(events1.length(), content="1")
+  debug_inspect(events1[0].label(), content="\"first\"")
 
   let active2 = active1.update(0.7F, clip.duration())
   let events2 = clip.triggered_root_events(active2)
-  inspect(events2.length(), content="2")
-  inspect(events2[0].label(), content="second")
-  inspect(events2[1].label(), content="first")
+  debug_inspect(events2.length(), content="2")
+  debug_inspect(events2[0].label(), content="\"second\"")
+  debug_inspect(events2[1].label(), content="\"first\"")
 }
 
 ///|
@@ -370,10 +495,13 @@ test "animation clip events: match bevy forward reverse and looping edge cases" 
   clip.set_duration(1.0F) |> ignore
 
   let active0 = ActiveAnimation::default().repeat_forever()
-  inspect(clip_event_times(clip.triggered_root_events(active0)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active0)),
+    content="[]",
+  )
 
   let active1 = active0.update(0.8F, clip.duration())
-  inspect(
+  debug_inspect(
     clip_event_times(clip.triggered_root_events(active1)),
     content="[0.5, 0.5, 0.5]",
   )
@@ -386,7 +514,7 @@ test "animation clip events: match bevy forward reverse and looping edge cases" 
   |> ignore
 
   let active2 = active1.update(0.4F, clip.duration())
-  inspect(
+  debug_inspect(
     clip_event_times(clip.triggered_root_events(active2)),
     content="[1, 1, 0, 0]",
   )
@@ -397,16 +525,22 @@ test "animation clip events: bevy reverse and looping traversal cases" {
   let clip = AnimationClip::new()
     .add_event(0.2F, "middle", "")
     .add_event(0.0F, "start", "")
-  inspect(approx_eq_animation(clip.duration(), 0.2F), content="true")
+  debug_inspect(approx_eq_animation(clip.duration(), 0.2F), content="true")
 
   let active0 = ActiveAnimation::default()
-  inspect(clip_event_times(clip.triggered_root_events(active0)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active0)),
+    content="[]",
+  )
 
   let active1 = active0.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(active1)), content="[0]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active1)),
+    content="[0]",
+  )
 
   let active2 = active1.update(0.1F, clip.duration())
-  inspect(
+  debug_inspect(
     approx_eq_animation_slice(
       clip_event_times(clip.triggered_root_events(active2)),
       [0.2F],
@@ -415,13 +549,16 @@ test "animation clip events: bevy reverse and looping traversal cases" {
   )
 
   let active3 = active2.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(active3)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active3)),
+    content="[]",
+  )
 
   let reverse0 = ActiveAnimation::default()
     .set_speed(-1.0F)
     .set_seek_time(clip.duration())
   let reverse1 = reverse0.update(0.1F, clip.duration())
-  inspect(
+  debug_inspect(
     approx_eq_animation_slice(
       clip_event_times(clip.triggered_root_events(reverse1)),
       [0.2F],
@@ -430,13 +567,22 @@ test "animation clip events: bevy reverse and looping traversal cases" {
   )
 
   let reverse2 = reverse1.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(reverse2)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(reverse2)),
+    content="[]",
+  )
 
   let reverse3 = reverse2.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(reverse3)), content="[0]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(reverse3)),
+    content="[0]",
+  )
 
   let reverse4 = reverse3.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(reverse4)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(reverse4)),
+    content="[]",
+  )
 }
 
 ///|
@@ -445,19 +591,28 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
     .add_event(0.3F, "end", "")
     .add_event(0.0F, "start", "")
     .add_event(0.2F, "middle", "")
-  inspect(approx_eq_animation(clip.duration(), 0.3F), content="true")
+  debug_inspect(approx_eq_animation(clip.duration(), 0.3F), content="true")
 
   let active0 = ActiveAnimation::default().repeat_forever()
-  inspect(clip_event_times(clip.triggered_root_events(active0)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active0)),
+    content="[]",
+  )
 
   let active1 = active0.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(active1)), content="[0]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active1)),
+    content="[0]",
+  )
 
   let active2 = active1.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(active2)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active2)),
+    content="[]",
+  )
 
   let active3 = active2.update(0.1F, clip.duration())
-  inspect(
+  debug_inspect(
     approx_eq_animation_slice(
       clip_event_times(clip.triggered_root_events(active3)),
       [0.2F, 0.3F],
@@ -466,13 +621,19 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
   )
 
   let active4 = active3.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(active4)), content="[0]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active4)),
+    content="[0]",
+  )
 
   let active5 = active4.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(active5)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(active5)),
+    content="[]",
+  )
 
   let reverse1 = active5.set_speed(-1.0F).update(0.1F, clip.duration())
-  inspect(
+  debug_inspect(
     approx_eq_animation_slice(
       clip_event_times(clip.triggered_root_events(reverse1)),
       [0.2F],
@@ -481,10 +642,13 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
   )
 
   let reverse2 = reverse1.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(reverse2)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(reverse2)),
+    content="[]",
+  )
 
   let reverse3 = reverse2.update(0.1F, clip.duration())
-  inspect(
+  debug_inspect(
     approx_eq_animation_slice(
       clip_event_times(clip.triggered_root_events(reverse3)),
       [0.0F, 0.3F],
@@ -493,7 +657,7 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
   )
 
   let reverse4 = reverse3.update(0.1F, clip.duration())
-  inspect(
+  debug_inspect(
     approx_eq_animation_slice(
       clip_event_times(clip.triggered_root_events(reverse4)),
       [0.2F],
@@ -502,7 +666,10 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
   )
 
   let reverse5 = reverse4.update(0.1F, clip.duration())
-  inspect(clip_event_times(clip.triggered_root_events(reverse5)), content="[]")
+  debug_inspect(
+    clip_event_times(clip.triggered_root_events(reverse5)),
+    content="[]",
+  )
 }
 
 ///|
@@ -558,12 +725,15 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   let transform = (try! app
   .world()
   .get_by_key(target_entity, @transform.ecs_key_transform)).unwrap()
-  inspect(approx_eq_animation(transform.translation.x, 1.0F), content="true")
+  debug_inspect(
+    approx_eq_animation(transform.translation.x, 1.0F),
+    content="true",
+  )
 
   let weights = (try! app
   .world()
   .get_by_key(target_entity, ecs_key_animation_weights)).unwrap()
-  inspect(weights.values(), content="[0.5, 0.5]")
+  debug_inspect(weights.values(), content="[0.5, 0.5]")
 }
 
 ///|
@@ -620,16 +790,16 @@ test "animation runtime: trigger_events emits root and target messages" {
 
   app = app.run_once()
 
-  inspect(captured.length(), content="2")
-  inspect(captured[0].label(), content="root")
-  inspect(captured[0].payload(), content="player")
-  inspect(captured[0].player().id == player_entity.id, content="true")
-  inspect(captured[0].target().id == player_entity.id, content="true")
-  inspect(captured[0].target_id() is None, content="true")
-  inspect(captured[1].label(), content="target")
-  inspect(captured[1].payload(), content="bone")
-  inspect(captured[1].target().id == target_entity.id, content="true")
-  inspect(
+  debug_inspect(captured.length(), content="2")
+  debug_inspect(captured[0].label(), content="\"root\"")
+  debug_inspect(captured[0].payload(), content="\"player\"")
+  debug_inspect(captured[0].player().id == player_entity.id, content="true")
+  debug_inspect(captured[0].target().id == player_entity.id, content="true")
+  debug_inspect(captured[0].target_id() is None, content="true")
+  debug_inspect(captured[1].label(), content="\"target\"")
+  debug_inspect(captured[1].payload(), content="\"bone\"")
+  debug_inspect(captured[1].target().id == target_entity.id, content="true")
+  debug_inspect(
     if captured[1].target_id() is Some(id) {
       id == target_id
     } else {
@@ -637,6 +807,78 @@ test "animation runtime: trigger_events emits root and target messages" {
     },
     content="true",
   )
+}
+
+///|
+test "animation runtime: untargeted and targeted event systems are split" {
+  let root_stage_labels : Array[String] = []
+  let final_stage_labels : Array[String] = []
+  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+    @core.Duration::from_millis(250L),
+  )
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([animation_plugin])
+    .insert_resource(delta_time)
+    .add_post_update_system_config(
+      @app.system(
+        @app.system_param(fn(
+          reader : @core.MessageReader[AnimationTriggeredEvent],
+        ) {
+          for message in reader.read() {
+            root_stage_labels.push(message.label())
+          }
+        }),
+      )
+      .after(animation_set_trigger_untargeted_events)
+      .before(animation_set_trigger_events),
+    )
+    .add_post_update_system_config(
+      @app.system(
+        @app.system_param(fn(
+          reader : @core.MessageReader[AnimationTriggeredEvent],
+        ) {
+          for message in reader.read() {
+            final_stage_labels.push(message.label())
+          }
+        }),
+      ).after(animation_set_trigger_events),
+    )
+  let world = app.world()
+  let player_entity = world.spawn()
+  let target_entity = world.spawn()
+  let target_id = AnimationTargetId::from_name("Foot")
+  let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
+  let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
+  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
+  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+
+  let clip = AnimationClip::new()
+    .set_duration(1.0F)
+    .add_event(0.1F, "root", "player")
+    .add_event_to_target(target_id, 0.2F, "target", "bone")
+  let clip_handle = clip_assets.add(clip)
+  let (graph, node) = AnimationGraph::from_clip(clip_handle)
+  let graph_handle = graph_assets.add(graph)
+  let player = AnimationPlayer::default()
+  player.play(node).repeat() |> ignore
+
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
+    player_entity,
+    ecs_key_animation_graph_handle,
+    AnimationGraphHandle::new(graph_handle),
+  )
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
+    target_entity,
+    ecs_key_animated_by,
+    AnimatedBy::new(player_entity),
+  )
+
+  app = app.run_once()
+
+  debug_inspect(root_stage_labels, content="[\"target\", \"root\"]")
+  debug_inspect(final_stage_labels, content="[\"root\", \"target\"]")
 }
 
 ///|
@@ -692,11 +934,11 @@ test "animation runtime: trigger_events dispatches typed root and target observe
     @core.SystemSequence::new(0, world.read_sequence()),
   )
   let captured = reader.read()
-  inspect(captured.length(), content="2")
-  inspect(captured[0].entity_id, content="0")
-  inspect(captured[0].value, content="root")
-  inspect(captured[1].entity_id, content="1")
-  inspect(captured[1].value, content="target")
+  debug_inspect(captured.length(), content="2")
+  debug_inspect(captured[0].entity_id, content="0")
+  debug_inspect(captured[0].value, content="\"root\"")
+  debug_inspect(captured[1].entity_id, content="1")
+  debug_inspect(captured[1].value, content="\"target\"")
 }
 
 ///|
@@ -763,8 +1005,11 @@ test "animation runtime: animate_targets updates text color" {
   .world()
   .get_by_key(target_entity, @text.ecs_key_text_color)).unwrap()
 
-  inspect(transform.scale.x > 1.9F && transform.scale.x < 2.1F, content="true")
-  inspect(color.color.r > 0.49F && color.color.r < 0.51F, content="true")
-  inspect(color.color.g > 0.49F && color.color.g < 0.51F, content="true")
-  inspect(approx_eq_animation(color.color.b, 0.0F), content="true")
+  debug_inspect(
+    transform.scale.x > 1.9F && transform.scale.x < 2.1F,
+    content="true",
+  )
+  debug_inspect(color.color.r > 0.49F && color.color.r < 0.51F, content="true")
+  debug_inspect(color.color.g > 0.49F && color.color.g < 0.51F, content="true")
+  debug_inspect(approx_eq_animation(color.color.b, 0.0F), content="true")
 }

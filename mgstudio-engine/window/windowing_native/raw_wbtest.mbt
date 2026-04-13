@@ -83,13 +83,13 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
 
   assert_eq(events[1].window_id, 9)
   match events[1].event {
-    HoveredFile(path) => inspect(path, content="/tmp/winit_a.txt")
+    HoveredFile(path) => debug_inspect(path, content="/tmp/winit_a.txt")
     _ => abort("expected first HoveredFile snapshot")
   }
 
   assert_eq(events[2].window_id, 9)
   match events[2].event {
-    HoveredFile(path) => inspect(path, content="/tmp/winit_b.txt")
+    HoveredFile(path) => debug_inspect(path, content="/tmp/winit_b.txt")
     _ => abort("expected second HoveredFile snapshot")
   }
 
@@ -123,9 +123,9 @@ test "windowing_native wbtest: any-thread preference is applied on event loop cr
   }
 
   set_event_loop_any_thread(true)
-  inspect(event_loop_any_thread_requested(), content="true")
+  debug_inspect(event_loop_any_thread_requested(), content="true")
   ignore(ensure_native_event_loop())
-  inspect(event_loop_any_thread_applied(), content="true")
+  debug_inspect(event_loop_any_thread_applied(), content="true")
 
   match native_event_loop_ref.val {
     Some(event_loop) => {

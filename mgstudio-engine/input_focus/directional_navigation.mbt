@@ -189,14 +189,14 @@ pub(open) trait Navigable {
 
 ///|
 let auto_navigation_config_resource_key : @ecs.ResourceKey[AutoNavigationConfig] = @ecs.register_resource(
-  debug_name="bevy_input_focus::AutoNavigationConfig",
+  debug_name="mgstudio_input_focus::AutoNavigationConfig",
 )
 
 ///|
 let directional_navigation_map_resource_key : @ecs.ResourceKey[
   DirectionalNavigationMap,
 ] = @ecs.register_resource(
-  debug_name="bevy_input_focus::DirectionalNavigationMap",
+  debug_name="mgstudio_input_focus::DirectionalNavigationMap",
 )
 
 ///|

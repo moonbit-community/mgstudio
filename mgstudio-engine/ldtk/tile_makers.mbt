@@ -19,13 +19,9 @@ pub fn layer_grid_tiles(
   let layer : Array[TileInstance] = []
   let overflow : Array[TileInstance] = []
   for tile in grid_tiles {
-    let mut exists = false
-    for existing in layer {
-      if existing.px.x == tile.px.x && existing.px.y == tile.px.y {
-        exists = true
-        break
-      }
-    }
+    let exists = layer.any(fn(existing) {
+      existing.px.x == tile.px.x && existing.px.y == tile.px.y
+    })
     if exists {
       overflow.push(tile)
     } else {

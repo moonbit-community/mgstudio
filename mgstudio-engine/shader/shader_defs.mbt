@@ -16,7 +16,7 @@
 pub(all) enum ValidateShader {
   Disabled
   Enabled
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ValidateShader::default() -> ValidateShader {
@@ -28,14 +28,14 @@ pub(all) enum ShaderStage {
   Vertex
   Fragment
   Compute
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ShaderDefVal {
   Bool(String, Bool)
   Int(String, Int)
   UInt(String, UInt)
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, Debug)
 
 ///|
 pub fn shader_def(name : String) -> ShaderDefVal {

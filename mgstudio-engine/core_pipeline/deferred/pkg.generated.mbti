@@ -1,0 +1,92 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline/deferred"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const COPY_DEFERRED_LIGHTING_ID_PASS_LABEL : String = "copy_deferred_lighting_id"
+
+pub const DEFERRED_PREPASS_EARLY_LABEL : String = "early deferred prepass"
+
+pub const DEFERRED_PREPASS_LATE_LABEL : String = "late deferred prepass"
+
+pub fn copy_deferred_lighting_id_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn copy_deferred_lighting_id_plugin_with(@app.App[@ecs.World], CopyDeferredLightingIdPlugin) -> @app.App[@ecs.World]
+
+pub fn copy_deferred_lighting_id_should_run(CopyDeferredLightingIdState) -> Bool
+
+pub fn deferred_lighting_id_depth_texture_id(DeferredLightingIdDepthTexture) -> Int
+
+pub fn deferred_lighting_id_depth_texture_should_prepare(Int, Int) -> Bool
+
+pub fn deferred_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn deferred_plugin_with(@app.App[@ecs.World], DeferredPlugin) -> @app.App[@ecs.World]
+
+pub fn deferred_prepass_any_phase_non_empty(has_opaque_phase~ : Bool, has_alpha_mask_phase~ : Bool) -> Bool
+
+pub fn deferred_prepass_has_any_phase(DeferredPrepassViewState) -> Bool
+
+pub fn early_deferred_prepass_should_run(DeferredPrepassViewState) -> Bool
+
+pub let ecs_key_copy_deferred_lighting_id_state : @ecs.ResourceKey[CopyDeferredLightingIdState]
+
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass]
+
+pub fn late_deferred_prepass_should_run(DeferredPrepassViewState) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct CopyDeferredLightingIdPlugin {
+}
+pub fn CopyDeferredLightingIdPlugin::default() -> Self
+pub impl @app.PluginReplacement for CopyDeferredLightingIdPlugin
+
+pub struct CopyDeferredLightingIdState {
+  has_copy_pipeline : Bool
+  has_deferred_lighting_pass_id_texture : Bool
+}
+pub fn CopyDeferredLightingIdState::default() -> Self
+pub fn CopyDeferredLightingIdState::new(has_copy_pipeline? : Bool, has_deferred_lighting_pass_id_texture? : Bool) -> Self
+pub impl @app.Resource for CopyDeferredLightingIdState
+
+pub struct DeferredLightingIdDepthTexture {
+  texture_id : Int
+}
+pub fn DeferredLightingIdDepthTexture::new(texture_id~ : Int) -> Self
+
+pub struct DeferredPlugin {
+}
+pub fn DeferredPlugin::default() -> Self
+pub impl @app.PluginReplacement for DeferredPlugin
+
+pub struct DeferredPrepass {
+} derive(ToJson, @json.FromJson)
+pub fn DeferredPrepass::default() -> Self
+pub impl @ecs.Component for DeferredPrepass
+
+pub struct DeferredPrepassNode {
+  label : String
+}
+pub fn DeferredPrepassNode::early() -> Self
+pub fn DeferredPrepassNode::label(Self) -> String
+pub fn DeferredPrepassNode::late() -> Self
+
+pub struct DeferredPrepassViewState {
+  has_opaque_deferred_phase : Bool
+  has_alpha_mask_deferred_phase : Bool
+  occlusion_culling_enabled : Bool
+  no_indirect_drawing : Bool
+}
+pub fn DeferredPrepassViewState::new(has_opaque_deferred_phase? : Bool, has_alpha_mask_deferred_phase? : Bool, occlusion_culling_enabled? : Bool, no_indirect_drawing? : Bool) -> Self
+
+// Type aliases
+
+// Traits
+

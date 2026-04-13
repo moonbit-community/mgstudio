@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const TOGGLE_INTERVAL_SECONDS : Float = 10.0F
 
 ///|

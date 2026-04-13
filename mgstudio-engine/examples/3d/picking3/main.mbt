@@ -91,7 +91,7 @@ fn build_cursor_ray(
     world,
     @window.WindowRef::Primary,
   )
-  @pbr.render3d_camera_viewport_to_world_ray(
+  @camera.camera_viewport_to_world_ray(
     cursor_position,
     pick_state.val.camera,
     pick_state.val.projection,

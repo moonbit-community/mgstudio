@@ -15,8 +15,6 @@ import {
 }
 
 // Values
-pub const SPRITE_RENDER_PLUGIN_ID : String = "bevy_sprite_render::SpriteRenderPlugin"
-
 pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
@@ -75,8 +73,6 @@ pub fn render2d_scene_cull_context_values(@sprite.SceneCullContext) -> (Float, F
 
 pub fn render2d_scene_item_visible(@sprite.SceneCullContext, Float, Float, Float) -> Bool
 
-pub let render2d_set_execute : String
-
 pub let render2d_set_extract : String
 
 pub let render2d_set_prepare : String
@@ -84,6 +80,8 @@ pub let render2d_set_prepare : String
 pub let render2d_set_queue : String
 
 pub let render2d_set_render : String
+
+pub let render2d_set_transparent_2d : String
 
 pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
 

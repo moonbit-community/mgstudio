@@ -6,11 +6,10 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/window/windowing_native",
+  "moonbitlang/core/debug",
 }
 
 // Values
-pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
-
 pub fn convert_winit_monitor(@Milky2018/window/core.MonitorHandle) -> @window.Monitor
 
 pub fn convert_winit_video_mode(@Milky2018/window/core.VideoMode) -> @window.VideoMode
@@ -20,8 +19,6 @@ pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent]
 pub fn get_selected_videomode(@Milky2018/window/core.MonitorHandle, @window.VideoModeSelection) -> @Milky2018/window/core.VideoMode?
 
 pub fn select_monitor(WinitMonitors, @Milky2018/window/core.MonitorHandle?, @Milky2018/window/core.MonitorHandle?, @window.MonitorSelection) -> @Milky2018/window/core.MonitorHandle?
-
-pub fn winit_changed_cursor_options_system(@ecs.World) -> Unit
 
 pub fn winit_changed_windows_system(@ecs.World) -> Unit
 
@@ -53,13 +50,13 @@ pub fn winit_write_raw_winit_window_events_system(@ecs.World) -> Unit
 pub(all) struct RawWinitWindowEvent {
   window_id : Int
   event : @windowing_native.RawWinitWindowEventData
-} derive(Eq, Show)
+} derive(Eq)
 pub impl @ecs.Message for RawWinitWindowEvent
 
 pub(all) enum UpdateMode {
   Continuous
   Reactive(@Milky2018/mgstudio/core.Duration, Bool, Bool, Bool)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn UpdateMode::reactive(@Milky2018/mgstudio/core.Duration) -> Self
 pub fn UpdateMode::reactive_low_power(@Milky2018/mgstudio/core.Duration) -> Self
 
@@ -87,7 +84,7 @@ pub impl @app.PluginReplacement for WinitPlugin
 pub(all) struct WinitSettings {
   focused_mode : UpdateMode
   unfocused_mode : UpdateMode
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn WinitSettings::continuous() -> Self
 pub fn WinitSettings::desktop_app() -> Self
 pub fn WinitSettings::game() -> Self

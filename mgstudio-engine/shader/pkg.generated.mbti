@@ -6,12 +6,11 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/naga_oil",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
 
 // Values
-pub const SHADER_PLUGIN_ID : String = "mgstudio::ShaderPlugin"
-
 pub fn shader_def(String) -> ShaderDefVal
 
 pub fn shader_from_source(String) -> Shader
@@ -72,7 +71,7 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::set_shader(Self[ShaderModule, Re
 pub(all) enum ShaderCacheSource {
   SpirV(Bytes)
   Wgsl(String)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type ShaderData[ShaderModule, ShaderId]
 pub fn[ShaderModule, ShaderId] ShaderData::cache_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal], ShaderModule) -> Unit
@@ -90,14 +89,14 @@ pub(all) enum ShaderDefVal {
   Bool(String, Bool)
   Int(String, Int)
   UInt(String, UInt)
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, @debug.Debug)
 pub fn ShaderDefVal::name(Self) -> String
 pub fn ShaderDefVal::value_as_string(Self) -> String
 
 pub(all) enum ShaderImport {
   AssetPath(String)
   Custom(String)
-} derive(Eq, Hash, Show)
+} derive(Eq, Hash, @debug.Debug)
 pub fn ShaderImport::module_name(Self) -> String
 
 pub struct ShaderLoader {
@@ -115,14 +114,14 @@ pub fn ShaderRef::default() -> Self
 
 pub(all) struct ShaderSettings {
   shader_defs : Array[ShaderDefVal]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ShaderSettings::default() -> Self
 
 pub(all) enum ShaderStage {
   Vertex
   Fragment
   Compute
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Source {
   Wgsl(String)
@@ -136,7 +135,7 @@ pub fn Source::shader_type(Self) -> @naga_oil.ShaderType
 pub(all) enum ValidateShader {
   Disabled
   Enabled
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ValidateShader::default() -> Self
 
 // Type aliases

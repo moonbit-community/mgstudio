@@ -16,22 +16,22 @@
 struct MutQueryPosition {
   mut x : Int
   y : Int
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 struct MutQueryVelocity {
   mut dx : Int
   mut dy : Int
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 struct MutQueryAcceleration {
   ax : Int
   ay : Int
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
-struct MutQueryMarker {} derive(Show, Eq)
+struct MutQueryMarker {} derive(Debug, Eq)
 
 ///|
 let mut_query_position_key : ComponentKey[MutQueryPosition] = register_component(
@@ -82,7 +82,7 @@ fn set_test_sequence(world : World, last_run : Int, this_run : Int) -> Unit {
 
 ///|
 test "ecs batching strategy: calc batch size respects limits" {
-  inspect(
+  debug_inspect(
     BatchingStrategy::new()
     .min_batch_size(4)
     .max_batch_size(16)
@@ -91,7 +91,7 @@ test "ecs batching strategy: calc batch size respects limits" {
     content="13",
   )
 
-  inspect(
+  debug_inspect(
     BatchingStrategy::fixed(32).calc_batch_size(fn() { 1000 }, 4),
     content="32",
   )
@@ -132,15 +132,15 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
     position_mut.get_ref().val.x = position_mut.get_ref().val.x + 100
   })
 
-  inspect(seen_visible, content="[0]")
-  inspect(seen_disabled, content="[1]")
-  inspect(
+  debug_inspect(seen_visible, content="[0]")
+  debug_inspect(seen_disabled, content="[1]")
+  debug_inspect(
     try! world.get_by_key(enabled, mut_query_position_key),
-    content="Some({x: 11, y: 1})",
+    content="Some({ x: 11, y: 1 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(disabled, mut_query_position_key),
-    content="Some({x: 102, y: 2})",
+    content="Some({ x: 102, y: 2 })",
   )
 }
 
@@ -179,9 +179,9 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
     Without[MutQueryAcceleration],
   ] = world.query_filtered(Without::new(mut_query_acceleration_key))
 
-  inspect(state.count(world), content="1")
+  debug_inspect(state.count(world), content="1")
   if (try! state.get(world, e0)) is Some((position, velocity_mut)) {
-    inspect(position.value(), content="{x: 2, y: 3}")
+    debug_inspect(position.value(), content="{ x: 2, y: 3 }")
     velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
       position.value().x
   } else {
@@ -189,8 +189,8 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   }
 
   let (single_position, single_velocity) = try! state.require_single(world)
-  inspect(single_position.value(), content="{x: 2, y: 3}")
-  inspect(single_velocity.get_ref().val, content="{dx: 12, dy: 20}")
+  debug_inspect(single_position.value(), content="{ x: 2, y: 3 }")
+  debug_inspect(single_velocity.get_ref().val, content="{ dx: 12, dy: 20 }")
 
   let query : Query[
     (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
@@ -206,7 +206,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
     fail("expected duplicate entity diagnostics")
   }
-  inspect(entity.id, content="0")
+  debug_inspect(entity.id, content="0")
 
   let seen : Array[Int] = []
   let iter = try! query.iter_many_unique([e1, e2, e0])
@@ -217,14 +217,14 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
       position.value().y
   }
 
-  inspect(seen, content="[0]")
-  inspect(
+  debug_inspect(seen, content="[0]")
+  debug_inspect(
     try! world.get_by_key(e0, mut_query_velocity_key),
-    content="Some({dx: 12, dy: 23})",
+    content="Some({ dx: 12, dy: 23 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e1, mut_query_velocity_key),
-    content="Some({dx: 30, dy: 40})",
+    content="Some({ dx: 30, dy: 40 })",
   )
 }
 
@@ -278,7 +278,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
     velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
       position.value().x
   }
-  inspect(chunk_values, content="[1, 2, 4]")
+  debug_inspect(chunk_values, content="[1, 2, 4]")
 
   let query : Query[(Comp[MutQueryPosition], Mut[MutQueryVelocity]), All] = query(
     world,
@@ -292,21 +292,21 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
       position.value().y
   })
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e0, mut_query_velocity_key),
-    content="Some({dx: 11, dy: 1})",
+    content="Some({ dx: 11, dy: 1 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e1, mut_query_velocity_key),
-    content="Some({dx: 22, dy: 2})",
+    content="Some({ dx: 22, dy: 2 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e2, mut_query_velocity_key),
-    content="Some({dx: 30, dy: 0})",
+    content="Some({ dx: 30, dy: 0 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e3, mut_query_velocity_key),
-    content="Some({dx: 44, dy: 4})",
+    content="Some({ dx: 44, dy: 4 })",
   )
 }
 
@@ -333,8 +333,11 @@ test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
     With::new(mut_query_marker_key),
   )
   let entity_mut = try! entity_query.require_single()
-  inspect(entity_mut.id().id, content="0")
-  inspect(try! entity_mut.contains(key=mut_query_velocity_key), content="true")
+  debug_inspect(entity_mut.id().id, content="0")
+  debug_inspect(
+    try! entity_mut.contains(key=mut_query_velocity_key),
+    content="true",
+  )
   if (try! entity_mut.get_mut(key=mut_query_velocity_key)) is Some(velocity_mut) {
     velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + 5
   } else {
@@ -346,18 +349,18 @@ test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
   let other_mut = try! world.entity_mut(other)
   try! other_mut.despawn()
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, mut_query_velocity_key),
-    content="Some({dx: 3, dy: 9})",
+    content="Some({ dx: 3, dy: 9 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, mut_query_acceleration_key),
-    content="Some({ax: 7, ay: 8})",
+    content="Some({ ax: 7, ay: 8 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, mut_query_marker_key),
     content="Some({})",
   )
   let alive_query : Query[@core.Entity, All] = query(world)
-  inspect(alive_query.count(), content="1")
+  debug_inspect(alive_query.count(), content="1")
 }

@@ -34,15 +34,15 @@ test "examples ecs state_scoped: scheduled update queues UI overlay for Camera3d
   app = app.update()
 
   let world = app.world()
-  inspect(
+  debug_inspect(
     @ui.get_ui_context_resource(world).get().unwrap().camera_entity is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     @sprite.render2d_diagnostic_prepared_camera_count() > 0,
     content="true",
   )
-  inspect(
+  debug_inspect(
     @sprite.render2d_diagnostic_queued_draw_item_count() > 0,
     content="true",
   )

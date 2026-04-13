@@ -1,0 +1,92 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/lightmap"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const LIGHTMAPS_PER_SLAB : Int = 4
+
+pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
+
+pub let ecs_key_render_lightmaps : @ecs.ResourceKey[RenderLightmaps]
+
+pub fn lightmap_plugin() -> LightmapPlugin
+
+pub fn lightmap_plugin_state(Bool) -> LightmapPluginState
+
+// Errors
+
+// Types and methods
+pub struct Lightmap {
+  image : @asset.Handle[@image.Image]
+  uv_rect : @math.Rect
+  bicubic_sampling : Bool
+} derive(ToJson, @json.FromJson)
+pub fn Lightmap::default() -> Self
+pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
+pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
+pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
+pub impl @ecs.Component for Lightmap
+
+pub struct LightmapPlugin {
+}
+
+pub struct LightmapPluginState {
+  bindless_supported : Bool
+  lightmaps_per_slab : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LightmapPluginState::default() -> Self
+
+pub struct LightmapSlab {
+  capacity : Int
+  allocated : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LightmapSlab::available_slots(Self) -> Int
+pub fn LightmapSlab::default() -> Self
+pub fn LightmapSlab::is_full(Self) -> Bool
+
+pub struct LightmapSlabIndex {
+  value : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LightmapSlabIndex::new(Int) -> Self
+pub fn LightmapSlabIndex::to_int(Self) -> Int
+
+pub struct LightmapSlotIndex {
+  value : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LightmapSlotIndex::new(Int) -> Self
+pub fn LightmapSlotIndex::to_int(Self) -> Int
+
+pub struct RenderLightmap {
+  uv_rect : @math.Rect
+  slab_index : LightmapSlabIndex
+  slot_index : LightmapSlotIndex
+  bicubic_sampling : Bool
+} derive(ToJson, @json.FromJson)
+pub fn RenderLightmap::new(@math.Rect, LightmapSlabIndex, LightmapSlotIndex, Bool) -> Self
+
+pub struct RenderLightmaps {
+  render_lightmaps : Map[Int, RenderLightmap]
+  slabs : Array[LightmapSlab]
+  mut bindless_supported : Bool
+}
+pub fn RenderLightmaps::clear(Self) -> Unit
+pub fn RenderLightmaps::default() -> Self
+pub fn RenderLightmaps::entity_count(Self) -> Int
+pub fn RenderLightmaps::get(Self, @core.Entity) -> RenderLightmap?
+pub fn RenderLightmaps::insert_lightmap(Self, @core.Entity, Lightmap) -> RenderLightmap
+pub fn RenderLightmaps::remove(Self, @core.Entity) -> RenderLightmap?
+pub fn RenderLightmaps::set_bindless_supported(Self, Bool) -> Unit
+
+// Type aliases
+
+// Traits
+

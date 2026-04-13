@@ -17,8 +17,6 @@
 /// Baseline parity:
 /// - This example now attaches `ClusteredDecal` components directly with Bevy-
 ///   aligned texture/tag data.
-/// - Clustered projected decal rendering and custom decal-extension shader
-///   execution are not yet active in this backend.
 /// - This port preserves Bevy's control model (selection + drag mode) and
 ///   scene layout, mapping decals onto textured translucent proxy meshes.
 
@@ -51,14 +49,14 @@ pub(all) enum Selection {
   Camera
   DecalA
   DecalB
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum DragMode {
   Move
   Scale
   Roll
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct SelectionWidget {

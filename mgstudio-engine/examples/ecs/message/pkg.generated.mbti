@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/ecs/message"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -11,19 +12,19 @@ import {
 // Errors
 
 // Types and methods
-type ArmorBlockedDamage derive(Show)
+type ArmorBlockedDamage derive(@debug.Debug)
 pub impl @ecs.Message for ArmorBlockedDamage
 pub impl Default for ArmorBlockedDamage
 
-type DamageReceived derive(Show)
+type DamageReceived derive(@debug.Debug)
 pub impl @ecs.Message for DamageReceived
 pub impl Default for DamageReceived
 
-type DamageTimer derive(Show)
+type DamageTimer derive(@debug.Debug)
 pub impl @app.Resource for DamageTimer
 pub impl Default for DamageTimer
 
-type DealDamage derive(Show)
+type DealDamage derive(@debug.Debug)
 pub impl @ecs.Message for DealDamage
 
 // Type aliases

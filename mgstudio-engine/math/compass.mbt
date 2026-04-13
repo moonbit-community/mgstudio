@@ -18,7 +18,7 @@ pub(all) enum CompassQuadrant {
   SouthEast
   SouthWest
   NorthWest
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum CompassOctant {
@@ -30,4 +30,4 @@ pub(all) enum CompassOctant {
   SouthWest
   West
   NorthWest
-} derive(Eq, Show)
+} derive(Eq, Debug)

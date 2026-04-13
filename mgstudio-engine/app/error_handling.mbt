@@ -18,7 +18,7 @@ pub(all) enum ErrorContextKind {
   Command
   Observer
   Validation
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct ErrorContext {
@@ -65,7 +65,7 @@ priv struct DefaultErrorHandlerResource {
 ///|
 let ecs_res_key_default_error_handler : @ecs.ResourceKey[
   DefaultErrorHandlerResource,
-] = @ecs.register_resource(debug_name="bevy_app::DefaultErrorHandler")
+] = @ecs.register_resource(debug_name="mgstudio_app::DefaultErrorHandler")
 
 ///|
 fn error_context_prefix(context : ErrorContext) -> String {
@@ -76,7 +76,7 @@ fn error_context_prefix(context : ErrorContext) -> String {
     ErrorContextKind::Validation => "Encountered a validation error"
   }
   let stage_suffix = match context.stage {
-    Some(stage) => " during \{stage.to_string()}"
+    Some(stage) => " during \{to_repr(stage).to_string()}"
     None => ""
   }
   "\{base} `\{context.source}`\{stage_suffix}"

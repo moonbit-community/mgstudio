@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -64,8 +65,6 @@ pub fn time_real_elapsed() -> @core.Duration
 
 pub fn time_real_elapsed_seconds() -> Float
 
-pub fn[T : Default] time_resource_key_of(T) -> @ecs.ResourceKey[Time[T]]
-
 pub fn time_run_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn time_virtual_delta() -> @core.Duration
@@ -109,7 +108,7 @@ pub impl Default for Real
 pub struct Stopwatch {
   elapsed : @core.Duration
   paused : Bool
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn Stopwatch::elapsed(Self) -> @core.Duration
 pub fn Stopwatch::elapsed_seconds(Self) -> Float
 pub fn Stopwatch::elapsed_secs(Self) -> Float
@@ -213,7 +212,7 @@ pub(all) enum TimeUpdateStrategy {
   ManualInstant(@core.Instant)
   ManualDuration(@core.Duration)
   FixedTimesteps(Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn TimeUpdateStrategy::default() -> Self
 pub impl @app.Resource for TimeUpdateStrategy
 
@@ -223,7 +222,7 @@ pub struct Timer {
   mode : TimerMode
   finished : Bool
   times_finished_this_tick : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn Timer::almost_finish(Self) -> Self
 pub fn Timer::duration(Self) -> @core.Duration
 pub fn Timer::duration_seconds(Self) -> Float
@@ -257,7 +256,7 @@ pub fn Timer::unpause(Self) -> Self
 pub(all) enum TimerMode {
   Once
   Repeating
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct Virtual {
   max_delta : @core.Duration

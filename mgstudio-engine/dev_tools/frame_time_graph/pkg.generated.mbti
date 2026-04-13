@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/dev_tools/frame_time_graph"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/dev_tools",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn fps_overlay_default_config() -> @dev_tools.FpsOverlayConfig
+
+pub let fps_overlay_set_customize : String
+
+pub let fps_overlay_set_update_text : String
+
+pub fn frame_time_graph_default_config() -> @dev_tools.FrameTimeGraphConfig
+
+pub fn frame_time_graph_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn frame_time_graph_plugin_with(@app.App[@ecs.World], @dev_tools.FpsOverlayPlugin) -> @app.App[@ecs.World]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

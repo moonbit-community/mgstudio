@@ -118,7 +118,7 @@ priv struct TimelineTraceState {
 
 ///|
 let timeline_trace_state_resource_key : @ecs.ResourceKey[TimelineTraceState] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::TimelineTraceState",
+  debug_name="mgstudio_diagnostic::TimelineTraceState",
 )
 
 ///|
@@ -377,7 +377,7 @@ fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
 
 ///|
 let timeline_trace_plugin_marker_key : @ecs.ResourceKey[Bool] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::TimelineTracePluginMarker",
+  debug_name="mgstudio_diagnostic::TimelineTracePluginMarker",
 )
 
 ///|

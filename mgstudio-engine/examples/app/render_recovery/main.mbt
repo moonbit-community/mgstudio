@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn setup(_world : @ecs.World) -> Unit {
   println("Press O/V/D/L to trigger render runtime errors")
   println(
@@ -92,7 +90,7 @@ fn input_system(_world : @ecs.World) -> Unit {
 fn report_status(_world : @ecs.World) -> Unit {
   if @app.render_runtime_error() is Some(error) {
     println(
-      "last render runtime error: \{error.to_string()}, rendering_enabled=\{@app.app_rendering_enabled().to_string()}",
+      "last render runtime error: \{to_repr(error).to_string()}, rendering_enabled=\{@app.app_rendering_enabled().to_string()}",
     )
   }
 }

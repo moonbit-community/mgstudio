@@ -16,7 +16,7 @@
 pub(all) enum AppState {
   Setup
   Finished
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl Default for AppState with default() {

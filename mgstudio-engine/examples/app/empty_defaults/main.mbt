@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn main {
   let plugins = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new()).add_plugins(plugins).run()

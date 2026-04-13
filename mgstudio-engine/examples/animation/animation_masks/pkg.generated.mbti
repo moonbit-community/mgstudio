@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/animation/animation_masks"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -20,7 +21,7 @@ pub(all) enum AnimationLabel {
   Walk
   Run
   Off
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 type AnimationMaskSetup
 pub impl @app.Resource for AnimationMaskSetup

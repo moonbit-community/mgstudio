@@ -19,7 +19,7 @@
 ///|
 pub struct DiagnosticPath {
   path : String
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn DiagnosticPath::const_new(path : String) -> DiagnosticPath {
@@ -68,7 +68,7 @@ pub fn DiagnosticPath::components(self : DiagnosticPath) -> Array[String] {
 pub struct DiagnosticMeasurement {
   time : @core.Instant
   value : Float
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn DiagnosticMeasurement::new(
@@ -89,7 +89,7 @@ pub struct Diagnostic {
   max_history_length : Int
   mut is_enabled : Bool
   mut last_system_tick : Int?
-} derive(Show)
+} derive(Debug)
 
 ///|
 fn diagnostic_value_is_finite(value : Float) -> Bool {
@@ -335,7 +335,7 @@ pub fn DiagnosticsStore::default() -> DiagnosticsStore {
 
 ///|
 let diagnostics_store_resource_key : @ecs.ResourceKey[DiagnosticsStore] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::DiagnosticsStore",
+  debug_name="mgstudio_diagnostic::DiagnosticsStore",
 )
 
 ///|

@@ -16,200 +16,13 @@
 /// Post-process runtime and ECS surfaces aligned with Bevy post-process modules.
 
 ///|
-/// Camera post-process settings aligned with Bevy's `ChromaticAberration`.
-///
-/// This renderer currently applies a lightweight per-object approximation in
-/// the draw phase instead of a full-screen post-process pass.
-pub struct ChromaticAberration {
-  intensity : Float
-  max_samples : Int
-} derive(ToJson, FromJson)
+pub type ChromaticAberration = @post_process_effect_stack.ChromaticAberration
 
 ///|
-pub fn ChromaticAberration::default() -> ChromaticAberration {
-  ChromaticAberration::{ intensity: 0.02F, max_samples: 8 }
-}
+pub type Vignette = @post_process_effect_stack.Vignette
 
 ///|
-pub fn ChromaticAberration::new(
-  intensity : Float,
-  max_samples : Int,
-) -> ChromaticAberration {
-  let safe_intensity = if intensity < 0.0F { 0.0F } else { intensity }
-  let safe_max_samples = if max_samples <= 0 { 1 } else { max_samples }
-  ChromaticAberration::{
-    intensity: safe_intensity,
-    max_samples: safe_max_samples,
-  }
-}
-
-///|
-pub fn ChromaticAberration::with_intensity(
-  self : ChromaticAberration,
-  intensity : Float,
-) -> ChromaticAberration {
-  ChromaticAberration::new(intensity, self.max_samples)
-}
-
-///|
-pub fn ChromaticAberration::with_max_samples(
-  self : ChromaticAberration,
-  max_samples : Int,
-) -> ChromaticAberration {
-  ChromaticAberration::new(self.intensity, max_samples)
-}
-
-///|
-/// Camera post-process settings aligned with Bevy's `Vignette`.
-///
-/// Runtime executes this in the shared full-screen post-process composite pass.
-pub struct Vignette {
-  intensity : Float
-  radius : Float
-  smoothness : Float
-  roundness : Float
-  center : @math.Vec2
-  edge_compensation : Float
-  color : @color.Color
-} derive(ToJson, FromJson)
-
-///|
-pub fn Vignette::default() -> Vignette {
-  Vignette::{
-    intensity: 1.0F,
-    radius: 0.75F,
-    smoothness: 5.0F,
-    roundness: 1.0F,
-    center: @math.Vec2::new(0.5F, 0.5F),
-    edge_compensation: 1.0F,
-    color: @color.Color::black(),
-  }
-}
-
-///|
-pub fn Vignette::new(
-  intensity : Float,
-  radius : Float,
-  smoothness : Float,
-  roundness : Float,
-) -> Vignette {
-  let safe_intensity = if intensity < 0.0F { 0.0F } else { intensity }
-  let safe_radius = if radius < 0.0F { 0.0F } else { radius }
-  let safe_smoothness = if smoothness <= 0.01F { 0.01F } else { smoothness }
-  let safe_roundness = if roundness <= 0.01F { 0.01F } else { roundness }
-  Vignette::{
-    ..Vignette::default(),
-    intensity: safe_intensity,
-    radius: safe_radius,
-    smoothness: safe_smoothness,
-    roundness: safe_roundness,
-  }
-}
-
-///|
-pub fn Vignette::with_intensity(self : Vignette, intensity : Float) -> Vignette {
-  Vignette::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
-
-///|
-pub fn Vignette::with_radius(self : Vignette, radius : Float) -> Vignette {
-  Vignette::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
-}
-
-///|
-pub fn Vignette::with_smoothness(
-  self : Vignette,
-  smoothness : Float,
-) -> Vignette {
-  Vignette::{
-    ..self,
-    smoothness: if smoothness <= 0.01F {
-      0.01F
-    } else {
-      smoothness
-    },
-  }
-}
-
-///|
-pub fn Vignette::with_roundness(self : Vignette, roundness : Float) -> Vignette {
-  Vignette::{
-    ..self,
-    roundness: if roundness <= 0.01F {
-      0.01F
-    } else {
-      roundness
-    },
-  }
-}
-
-///|
-pub fn Vignette::with_center(self : Vignette, center : @math.Vec2) -> Vignette {
-  Vignette::{ ..self, center, }
-}
-
-///|
-pub fn Vignette::with_edge_compensation(
-  self : Vignette,
-  edge_compensation : Float,
-) -> Vignette {
-  let safe = if edge_compensation < 0.0F {
-    0.0F
-  } else if edge_compensation > 1.0F {
-    1.0F
-  } else {
-    edge_compensation
-  }
-  Vignette::{ ..self, edge_compensation: safe }
-}
-
-///|
-pub fn Vignette::with_color(self : Vignette, color : @color.Color) -> Vignette {
-  Vignette::{ ..self, color, }
-}
-
-///|
-/// Camera post-process settings aligned with Bevy's `MotionBlur`.
-pub struct MotionBlur {
-  shutter_angle : Float
-  samples : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn MotionBlur::default() -> MotionBlur {
-  MotionBlur::{ shutter_angle: 0.5F, samples: 1 }
-}
-
-///|
-pub fn MotionBlur::new(shutter_angle : Float, samples : Int) -> MotionBlur {
-  let safe_shutter_angle = if shutter_angle < 0.0F {
-    0.0F
-  } else {
-    shutter_angle
-  }
-  let safe_samples = if samples < 0 { 0 } else { samples }
-  MotionBlur::{ shutter_angle: safe_shutter_angle, samples: safe_samples }
-}
-
-///|
-pub fn MotionBlur::with_shutter_angle(
-  self : MotionBlur,
-  shutter_angle : Float,
-) -> MotionBlur {
-  MotionBlur::new(shutter_angle, self.samples)
-}
-
-///|
-pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur {
-  MotionBlur::new(self.shutter_angle, samples)
-}
+pub type MotionBlur = @post_process_motion_blur.MotionBlur
 
 ///|
 pub(all) enum FxaaSensitivity {
@@ -218,7 +31,7 @@ pub(all) enum FxaaSensitivity {
   High
   Ultra
   Extreme
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn FxaaSensitivity::default() -> FxaaSensitivity {
@@ -561,7 +374,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-} derive(Eq, Hash, Show, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {
@@ -573,7 +386,7 @@ pub fn Tonemapping::default() -> Tonemapping {
 pub(all) enum DebandDither {
   Disabled
   Enabled
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn DebandDither::default() -> DebandDither {
@@ -632,7 +445,7 @@ pub fn BloomPrefilter::with_threshold_softness(
 pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn BloomCompositeMode::default() -> BloomCompositeMode {
@@ -856,7 +669,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientOcclusionQualityLevel {
@@ -899,82 +712,6 @@ pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(
     } else {
       constant_object_thickness
     },
-  }
-}
-
-///|
-/// Camera screen-space transmission quality aligned with Bevy's
-/// `ScreenSpaceTransmissionQuality`.
-pub(all) enum ScreenSpaceTransmissionQuality {
-  Low
-  Medium
-  High
-  Ultra
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
-  ScreenSpaceTransmissionQuality::High
-}
-
-///|
-/// Camera screen-space transmission settings aligned with Bevy's
-/// `ScreenSpaceTransmission`.
-pub struct ScreenSpaceTransmission {
-  quality : ScreenSpaceTransmissionQuality
-  steps : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn ScreenSpaceTransmission::default() -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{
-    quality: ScreenSpaceTransmissionQuality::default(),
-    steps: 2,
-  }
-}
-
-///|
-pub fn ScreenSpaceTransmission::new(
-  quality : ScreenSpaceTransmissionQuality,
-  steps : Int,
-) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{
-    quality,
-    steps: if steps < 0 {
-      0
-    } else if steps > 4 {
-      4
-    } else {
-      steps
-    },
-  }
-}
-
-///|
-pub fn ScreenSpaceTransmission::with_quality(
-  self : ScreenSpaceTransmission,
-  quality : ScreenSpaceTransmissionQuality,
-) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{ ..self, quality, }
-}
-
-///|
-pub fn ScreenSpaceTransmission::with_steps(
-  self : ScreenSpaceTransmission,
-  steps : Int,
-) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::new(self.quality, steps)
-}
-
-///|
-pub fn screen_space_transmission_blur_taps(
-  quality : ScreenSpaceTransmissionQuality,
-) -> Int {
-  match quality {
-    Low => 4
-    Medium => 8
-    High => 16
-    Ultra => 32
   }
 }
 
@@ -1206,14 +943,10 @@ pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[CustomPostProcess3d] =
 )
 
 ///|
-pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @ecs.register_component(
-  debug_name="render3d.vignette",
-)
+pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process_effect_stack.ecs_key_vignette
 
 ///|
-pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @ecs.register_component(
-  debug_name="render3d.motion_blur",
-)
+pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process_motion_blur.ecs_key_motion_blur
 
 ///|
 pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @ecs.register_component(
@@ -1236,9 +969,7 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @ecs.regis
 )
 
 ///|
-pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @ecs.register_component(
-  debug_name="render3d.chromatic_aberration",
-)
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process_effect_stack.ecs_key_chromatic_aberration
 
 ///|
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @ecs.register_component(
@@ -1249,11 +980,6 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
   ScreenSpaceReflections,
 ] = @ecs.register_component(debug_name="render3d.screen_space_reflections")
-
-///|
-pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
-  ScreenSpaceTransmission,
-] = @ecs.register_component(debug_name="render3d.screen_space_transmission")
 
 ///|
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
@@ -1278,16 +1004,6 @@ pub impl @ecs.Component for CustomPostProcess3d with component() {
 }
 
 ///|
-pub impl @ecs.Component for Vignette with component() {
-  ecs_key_vignette
-}
-
-///|
-pub impl @ecs.Component for MotionBlur with component() {
-  ecs_key_motion_blur
-}
-
-///|
 pub impl @ecs.Component for Tonemapping with component() {
   ecs_key_tonemapping
 }
@@ -1308,11 +1024,6 @@ pub impl @ecs.Component for TemporalJitter with component() {
 }
 
 ///|
-pub impl @ecs.Component for ChromaticAberration with component() {
-  ecs_key_chromatic_aberration
-}
-
-///|
 pub impl @ecs.Component for TemporalAntiAliasing with component() {
   ecs_key_temporal_anti_aliasing
 }
@@ -1320,11 +1031,6 @@ pub impl @ecs.Component for TemporalAntiAliasing with component() {
 ///|
 pub impl @ecs.Component for ScreenSpaceReflections with component() {
   ecs_key_screen_space_reflections
-}
-
-///|
-pub impl @ecs.Component for ScreenSpaceTransmission with component() {
-  ecs_key_screen_space_transmission
 }
 
 ///|

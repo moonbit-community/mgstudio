@@ -28,12 +28,12 @@ test "asset host io: save_rgba8_png writes a valid png file" {
   let out_path = resolve_output_path(path)
   save_rgba8_png(width=2, height=1, pixels~, path~)
   let encoded = @fs.read_file_to_bytes(out_path)
-  inspect(png_dimensions(encoded), content="Some((2, 1))")
-  inspect(encoded.length() > 16, content="true")
-  inspect(encoded[0].to_uint(), content="137")
-  inspect(encoded[1].to_uint(), content="80")
-  inspect(encoded[2].to_uint(), content="78")
-  inspect(encoded[3].to_uint(), content="71")
+  debug_inspect(png_dimensions(encoded), content="Some((2, 1))")
+  debug_inspect(encoded.length() > 16, content="true")
+  debug_inspect(encoded[0].to_uint(), content="137")
+  debug_inspect(encoded[1].to_uint(), content="80")
+  debug_inspect(encoded[2].to_uint(), content="78")
+  debug_inspect(encoded[3].to_uint(), content="71")
 }
 
 ///|
@@ -42,10 +42,10 @@ test "asset host io: palette png preserves transparent background" {
   let bytes = @fs.read_file_to_bytes(path)
   let decoded = decode_texture_image(bytes).unwrap()
   let center = (32 * decoded.width + 32) * 4
-  inspect((decoded.width, decoded.height), content="(64, 64)")
-  inspect(decoded.pixels[0].to_uint(), content="0")
-  inspect(decoded.pixels[1].to_uint(), content="0")
-  inspect(decoded.pixels[2].to_uint(), content="0")
-  inspect(decoded.pixels[3].to_uint(), content="0")
-  inspect(decoded.pixels[center + 3].to_uint(), content="255")
+  debug_inspect((decoded.width, decoded.height), content="(64, 64)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="0")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="0")
+  debug_inspect(decoded.pixels[center + 3].to_uint(), content="255")
 }

@@ -1,0 +1,8 @@
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+}
+
+supported_targets = "native"

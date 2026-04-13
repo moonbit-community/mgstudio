@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/ui/styling/box_shadow"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -27,9 +28,9 @@ pub(all) enum ShadowAction {
   XOffsetInc
   YOffsetDec
   YOffsetInc
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
-type ShadowControlButton derive(Eq, Show, ToJson, @json.FromJson)
+type ShadowControlButton derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for ShadowControlButton
 
 pub(all) enum ShadowField {
@@ -38,15 +39,15 @@ pub(all) enum ShadowField {
   Spread
   XOffset
   YOffset
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
-type ShadowNode derive(Eq, Show, ToJson, @json.FromJson)
+type ShadowNode derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for ShadowNode
 
 type ShadowSettings
 pub impl @app.Resource for ShadowSettings
 
-type ShadowValueLabel derive(Eq, Show, ToJson, @json.FromJson)
+type ShadowValueLabel derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for ShadowValueLabel
 
 // Type aliases

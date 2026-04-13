@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn setup(_world : @ecs.World) -> Unit {
   println("Press P to panic")
 }

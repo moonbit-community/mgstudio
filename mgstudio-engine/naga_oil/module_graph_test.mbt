@@ -18,12 +18,12 @@ test "naga_oil: import target parser preserves nested group and alias shapes" {
   @naga_oil.collect_wgsl_import_targets(
     "bevy_render::{view::View, globals::Globals, maths as maths}", "", targets,
   )
-  inspect(targets.length(), content="3")
-  inspect(targets[0].raw_path, content="bevy_render::view::View")
-  inspect(targets[0].alias_name, content="")
-  inspect(targets[1].raw_path, content="bevy_render::globals::Globals")
-  inspect(targets[2].raw_path, content="bevy_render::maths")
-  inspect(targets[2].alias_name, content="maths")
+  debug_inspect(targets.length(), content="3")
+  debug_inspect(targets[0].raw_path, content="bevy_render::view::View")
+  debug_inspect(targets[0].alias_name, content="")
+  debug_inspect(targets[1].raw_path, content="bevy_render::globals::Globals")
+  debug_inspect(targets[2].raw_path, content="bevy_render::maths")
+  debug_inspect(targets[2].alias_name, content="maths")
 }
 
 ///|
@@ -32,12 +32,12 @@ test "naga_oil: registered source registry tracks define_import_path" {
   @naga_oil.register_wgsl_source(
     "shaders/demo/module.wgsl", "#define_import_path demo::module\nfn shade() -> f32 { return 1.0; }\n",
   )
-  inspect(
+  debug_inspect(
     @naga_oil.registered_wgsl_source("shaders/demo/module.wgsl"),
     content="Some(\"#define_import_path demo::module\\nfn shade() -> f32 { return 1.0; }\\n\")",
   )
   let modules = @naga_oil.build_wgsl_import_module_paths("")
-  inspect(
+  debug_inspect(
     modules.get("demo::module"),
     content="Some(\"shaders/demo/module.wgsl\")",
   )
@@ -54,7 +54,7 @@ test "naga_oil: resolve import module prefers registered map entries" {
   let resolved = @naga_oil.resolve_wgsl_import_module(
     "", "bevy_sprite_render::render::sprite_view_bindings::View", modules,
   )
-  inspect(
+  debug_inspect(
     resolved,
     content="Some({module_path: \"bevy_sprite_render::render::sprite_view_bindings\", rel_path: \"shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl\"})",
   )

@@ -15,22 +15,22 @@
 ///|
 struct Counter {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct BrokenCounter {
   value : String
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct GlobalConfig {
   fps : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct TickEvent {
   frame : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 let typed_counter_key : ComponentKey[TypedCounter] = register_component(
@@ -45,12 +45,12 @@ let typed_marker_key : ComponentKey[TypedMarker] = register_component(
 ///|
 struct TypedCounter {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct TypedMarker {
   enabled : Bool
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub impl Component for TypedCounter with component() {
@@ -68,15 +68,15 @@ test "ecs: register key ids are monotonic" {
   let comp_b : ComponentKey[Counter] = register_component(
     debug_name="counter_b",
   )
-  inspect(comp_b.id() > comp_a.id(), content="true")
+  debug_inspect(comp_b.id() > comp_a.id(), content="true")
 
   let res_a : ResourceKey[GlobalConfig] = register_resource(debug_name="cfg")
   let res_b : ResourceKey[GlobalConfig] = register_resource(debug_name="cfg_b")
-  inspect(res_b.id() > res_a.id(), content="true")
+  debug_inspect(res_b.id() > res_a.id(), content="true")
 
   let event_a : EventKey[TickEvent] = register_event(debug_name="tick")
   let event_b : EventKey[TickEvent] = register_event(debug_name="tick_b")
-  inspect(event_b.id() > event_a.id(), content="true")
+  debug_inspect(event_b.id() > event_a.id(), content="true")
 }
 
 ///|
@@ -87,7 +87,7 @@ test "ecs: register_resource reuses stable id for repeated debug_name" {
   let res_b : ResourceKey[GlobalConfig] = register_resource(
     debug_name="stable_cfg",
   )
-  inspect(res_a.id() == res_b.id(), content="true")
+  debug_inspect(res_a.id() == res_b.id(), content="true")
 }
 
 ///|
@@ -98,7 +98,7 @@ test "ecs: register_message reuses stable id for repeated debug_name" {
   let message_b : MessageKey[TickEvent] = register_message(
     debug_name="stable_tick_message",
   )
-  inspect(message_a.id() == message_b.id(), content="true")
+  debug_inspect(message_a.id() == message_b.id(), content="true")
 }
 
 ///|
@@ -110,24 +110,24 @@ test "ecs: spawn set get update and despawn cleanup" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, comp_counter, Counter::{ value: 3 })
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, comp_counter),
-    content="Some({value: 3})",
+    content="Some({ value: 3 })",
   )
 
-  inspect(
+  debug_inspect(
     try! world.update_by_key(entity, comp_counter, fn(counter) {
       Counter::{ value: counter.value + 9 }
     }),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(entity, comp_counter),
-    content="Some({value: 12})",
+    content="Some({ value: 12 })",
   )
 
   try! world.despawn(entity)
-  inspect(world.is_alive(entity), content="false")
+  debug_inspect(world.is_alive(entity), content="false")
 }
 
 ///|
@@ -147,7 +147,7 @@ test "ecs: type mismatch includes context" {
   guard result is Err(ComponentTypeMismatch(key_id, _name, _entity, _actual)) else {
     fail("expected component type mismatch")
   }
-  inspect(key_id == comp_counter.id(), content="true")
+  debug_inspect(key_id == comp_counter.id(), content="true")
 }
 
 ///|
@@ -177,8 +177,8 @@ test "ecs: typed component api uses component ownership" {
   let counter_key : ComponentKey[TypedCounter] = Component::component()
   let marker_key : ComponentKey[TypedMarker] = Component::component()
 
-  inspect(counter_key.id() == typed_counter_key.id(), content="true")
-  inspect(marker_key.id() == typed_marker_key.id(), content="true")
+  debug_inspect(counter_key.id() == typed_counter_key.id(), content="true")
+  debug_inspect(marker_key.id() == typed_marker_key.id(), content="true")
 
   try! (world.entity_mut(e0).insert_component(TypedCounter::{ value: 10 })
   |> ignore)
@@ -188,29 +188,29 @@ test "ecs: typed component api uses component ownership" {
   |> ignore)
 
   let initial_counter : TypedCounter? = try! World::get(world, e0)
-  inspect(initial_counter, content="Some({value: 10})")
-  inspect(
+  debug_inspect(initial_counter, content="Some({ value: 10 })")
+  debug_inspect(
     try! World::update(world, e0, fn(counter : TypedCounter) {
       TypedCounter::{ value: counter.value + 5 }
     }),
     content="true",
   )
   let updated_counter : TypedCounter? = try! World::get(world, e0)
-  inspect(updated_counter, content="Some({value: 15})")
+  debug_inspect(updated_counter, content="Some({ value: 15 })")
 
   let without_marker : Without[TypedMarker] = Without::new(marker_key)
   let filtered : Query[@ecs.Comp[TypedCounter], Without[TypedMarker]] = @ecs.query_filtered(
     world, without_marker,
   )
-  inspect(filtered.count(), content="1")
-  inspect(
+  debug_inspect(filtered.count(), content="1")
+  debug_inspect(
     match (try! filtered.get(e0)) {
       Some(counter) => Some(counter.value())
       None => None
     },
-    content="Some({value: 15})",
+    content="Some({ value: 15 })",
   )
-  inspect(
+  debug_inspect(
     match (try! filtered.get(e1)) {
       Some(counter) => Some(counter.value())
       None => None
@@ -220,8 +220,8 @@ test "ecs: typed component api uses component ownership" {
 
   let tick = world.advance_sequence()
   ignore(tick)
-  inspect(tick == 1, content="true")
-  inspect(try! world.remove_by_key(e0, counter_key), content="true")
+  debug_inspect(tick == 1, content="true")
+  debug_inspect(try! world.remove_by_key(e0, counter_key), content="true")
   let removed : Array[@core.Entity] = world
     .removed_components(counter_key, @core.SystemSequence::new(0, 1))
     .read()

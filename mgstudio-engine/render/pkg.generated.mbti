@@ -3,9 +3,15 @@ package "Milky2018/mgstudio/render"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -23,7 +29,11 @@ pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
 
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
 
-pub const RENDER_PLUGIN_ID : String = "bevy_render::RenderPlugin"
+pub fn app_rendering_enabled() -> Bool
+
+pub fn app_rendering_resume() -> Unit
+
+pub fn app_rendering_stop() -> Unit
 
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
@@ -54,6 +64,34 @@ pub fn asset_write_texture_region_rgba8(texture_id~ : Int, x~ : Int, y~ : Int, w
 pub fn asset_write_texture_region_rgba8_mip(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, pixels_rgba8~ : Bytes) -> Unit
 
 pub fn clear_registered_wgsl_source_registry() -> Unit
+
+pub fn[EI] extract_all(Array[EI]) -> ExtractedInstances[EI]
+
+pub fn[C, F] extract_component_only_extract_visible(ExtractComponentPlugin[C, F]) -> Bool
+
+pub fn extract_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn extract_component_source_world(@ecs.World) -> @ecs.World
+
+pub fn extract_instances_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[T] extract_param_from_source_world(@ecs.World, (@ecs.World) -> T) -> Extract[T]
+
+pub fn extract_param_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn extract_param_source_world(@ecs.World) -> @ecs.World
+
+pub fn[R, S] extract_resource_once(S, (S) -> R) -> R
+
+pub fn extract_resource_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn extract_resource_source_world(@ecs.World) -> @ecs.World
+
+pub fn[EI] extract_visible(Array[EI], Array[Bool]) -> ExtractedInstances[EI]
+
+pub fn[C] gpu_component_array_buffer_plugin(@app.App[@ecs.World], _plugin? : GpuComponentArrayBufferPlugin[C]) -> @app.App[@ecs.World]
+
+pub fn[C] gpu_component_array_buffer_state_key(debug_name? : String) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]]
 
 pub fn host_color_grading_from_post_process(@post_process.ColorGrading?) -> HostColorGrading
 
@@ -175,6 +213,12 @@ pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : 
 
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : @renderer.HostMesh3dPreprocessCameraPayload) -> Unit
 
+pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
+
+pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
@@ -183,9 +227,19 @@ pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
 pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
 
+pub fn render_error_policy_recover() -> @app.RenderErrorPolicy
+
+pub fn render_extract_app_label() -> @app.AppLabel
+
 pub fn render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn render_runtime_error() -> @app.RenderRuntimeError?
+
 pub fn render_source_world(@ecs.World) -> @ecs.World
+
+pub fn report_render_runtime_error(@app.RenderRuntimeError) -> Unit
+
+pub fn reset_render_error_handler() -> Unit
 
 pub fn screenshot_capture_surface_request() -> Int
 
@@ -197,11 +251,138 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
+pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
+
+pub fn sync_component(@ecs.World) -> Unit
+
+pub fn sync_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn sync_world(@ecs.World, @ecs.World) -> Unit
+
+pub fn sync_world_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
+pub(all) suberror ErasedPrepareAssetError {
+  RetryNextUpdate(String)
+  AsBindGroupError(String)
+}
+
+pub(all) suberror PrepareAssetError {
+  RetryNextUpdate(String)
+  AsBindGroupError(String)
+}
 
 // Types and methods
+pub struct AssetExtractionSystems {
+}
+pub fn AssetExtractionSystems::new() -> Self
+
+pub struct ComponentUniforms[C] {
+  uniforms : Array[C]
+}
+pub fn[C] ComponentUniforms::default() -> Self[C]
+pub fn[C] ComponentUniforms::len(Self[C]) -> Int
+pub fn[C] ComponentUniforms::push(Self[C], C) -> Unit
+
+pub struct DynamicUniformIndex[_] {
+  index : UInt
+}
+pub fn[C] DynamicUniformIndex::index(Self[C]) -> UInt
+pub fn[C] DynamicUniformIndex::new(UInt) -> Self[C]
+
+pub(all) enum EntityRecord {
+  Added(Int)
+  Removed(RenderEntity)
+  ComponentRemoved(Int)
+}
+
+pub struct ErasedAssetExtractionSystems {
+}
+pub fn ErasedAssetExtractionSystems::new() -> Self
+
+pub struct ErasedPrepareNextFrameAssets[A] {
+  values : Array[(Int, A)]
+}
+pub fn[A] ErasedPrepareNextFrameAssets::clear(Self[A]) -> Unit
+pub fn[A] ErasedPrepareNextFrameAssets::len(Self[A]) -> Int
+pub fn[A] ErasedPrepareNextFrameAssets::new() -> Self[A]
+pub fn[A] ErasedPrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
+pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A]
+
+pub struct ErasedRenderAssets[A] {
+  items : @hashmap.HashMap[Int, @ref.Ref[A]]
+}
+pub fn[A] ErasedRenderAssets::clear(Self[A]) -> Unit
+pub fn[A] ErasedRenderAssets::contains(Self[A], Int) -> Bool
+pub fn[A] ErasedRenderAssets::get(Self[A], Int) -> A?
+pub fn[A] ErasedRenderAssets::get_mut(Self[A], Int) -> @ref.Ref[A]?
+pub fn[A] ErasedRenderAssets::insert(Self[A], Int, A) -> Unit
+pub fn[A] ErasedRenderAssets::is_empty(Self[A]) -> Bool
+pub fn[A] ErasedRenderAssets::len(Self[A]) -> Int
+pub fn[A] ErasedRenderAssets::new() -> Self[A]
+pub fn[A] ErasedRenderAssets::remove(Self[A], Int) -> A?
+pub fn[A] ErasedRenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A] ErasedRenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
+pub impl[A] @app.Resource for ErasedRenderAssets[A]
+
+pub struct Extract[T] {
+  item : T
+}
+pub fn[T] Extract::item(Self[T]) -> T
+pub fn[T, U] Extract::map(Self[T], (T) -> U) -> Self[U]
+pub fn[T] Extract::new(T) -> Self[T]
+
+pub struct ExtractComponentPlugin[_, _] {
+  only_extract_visible : Bool
+}
+pub fn[C, F] ExtractComponentPlugin::default() -> Self[C, F]
+pub fn[C, F] ExtractComponentPlugin::extract_visible() -> Self[C, F]
+
+pub struct ExtractResourcePlugin[_, _] {
+}
+pub fn[R, F] ExtractResourcePlugin::default() -> Self[R, F]
+
+pub struct ExtractedAssets[A] {
+  extracted : Array[(Int, A)]
+  removed : @hashset.HashSet[Int]
+  modified : @hashset.HashSet[Int]
+  added : @hashset.HashSet[Int]
+}
+pub fn[A] ExtractedAssets::new() -> Self[A]
+
+pub struct ExtractedInstances[EI] {
+  mut items : Array[EI]
+}
+pub fn[EI] ExtractedInstances::clear(Self[EI]) -> Unit
+pub fn[EI] ExtractedInstances::items(Self[EI]) -> Array[EI]
+pub fn[EI] ExtractedInstances::len(Self[EI]) -> Int
+pub fn[EI] ExtractedInstances::new() -> Self[EI]
+pub fn[EI] ExtractedInstances::push(Self[EI], EI) -> Unit
+
+pub struct ExtractedResourceState[R] {
+  mut has_value : Bool
+  mut value : R?
+}
+pub fn[R] ExtractedResourceState::default() -> Self[R]
+pub fn[R] ExtractedResourceState::get(Self[R]) -> R?
+pub fn[R] ExtractedResourceState::replace(Self[R], R) -> Unit
+
+pub struct GpuComponentArrayBufferPlugin[_] {
+}
+pub fn[C] GpuComponentArrayBufferPlugin::default() -> Self[C]
+
+pub struct GpuComponentArrayBufferState[C] {
+  buffer : @render_resource.GpuArrayBuffer[C]
+  indices : Map[UInt64, UInt]
+}
+pub fn[C] GpuComponentArrayBufferState::buffer(Self[C]) -> @render_resource.GpuArrayBuffer[C]
+pub fn[C] GpuComponentArrayBufferState::clear(Self[C]) -> Unit
+pub fn[C] GpuComponentArrayBufferState::index(Self[C], @core.Entity) -> UInt?
+pub fn[C] GpuComponentArrayBufferState::new() -> Self[C]
+
 pub(all) struct HostColorGrading {
   balance_x_axis_x : Float
   balance_x_axis_y : Float
@@ -241,7 +422,7 @@ pub(all) enum HostGpuCompositeAlphaMode {
   PreMultiplied
   PostMultiplied
   Inherit
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn HostGpuCompositeAlphaMode::default() -> Self
 
 pub(all) enum HostGpuPresentMode {
@@ -251,8 +432,133 @@ pub(all) enum HostGpuPresentMode {
   FifoRelaxed
   Immediate
   Mailbox
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn HostGpuPresentMode::default() -> Self
+
+pub struct MainEntity {
+  id : Int
+}
+pub fn MainEntity::id(Self) -> Int
+pub fn MainEntity::new(Int) -> Self
+
+pub struct PendingSyncEntity {
+  records : Array[EntityRecord]
+}
+pub fn PendingSyncEntity::default() -> Self
+pub fn PendingSyncEntity::drain(Self) -> Array[EntityRecord]
+pub fn PendingSyncEntity::push(Self, EntityRecord) -> Unit
+
+pub struct PrepareNextFrameAssets[A] {
+  values : Array[(Int, A)]
+}
+pub fn[A] PrepareNextFrameAssets::clear(Self[A]) -> Unit
+pub fn[A] PrepareNextFrameAssets::len(Self[A]) -> Int
+pub fn[A] PrepareNextFrameAssets::new() -> Self[A]
+pub fn[A] PrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
+pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub impl[A] @app.Resource for PrepareNextFrameAssets[A]
+
+pub struct RenderAppChannels {
+  mut render_app_in_render_thread : Bool
+}
+pub fn RenderAppChannels::new() -> Self
+pub fn RenderAppChannels::recv(Self, @app.SubApp[@ecs.World]) -> (Self, @app.SubApp[@ecs.World])
+pub fn RenderAppChannels::render_app_in_render_thread(Self) -> Bool
+pub fn RenderAppChannels::send_blocking(Self, @app.SubApp[@ecs.World]) -> Self
+pub impl @app.Resource for RenderAppChannels
+
+pub struct RenderAssets[A] {
+  items : @hashmap.HashMap[Int, @ref.Ref[A]]
+}
+pub fn[A] RenderAssets::clear(Self[A]) -> Unit
+pub fn[A] RenderAssets::contains(Self[A], Int) -> Bool
+pub fn[A] RenderAssets::get(Self[A], Int) -> A?
+pub fn[A] RenderAssets::get_mut(Self[A], Int) -> @ref.Ref[A]?
+pub fn[A] RenderAssets::insert(Self[A], Int, A) -> Unit
+pub fn[A] RenderAssets::is_empty(Self[A]) -> Bool
+pub fn[A] RenderAssets::len(Self[A]) -> Int
+pub fn[A] RenderAssets::new() -> Self[A]
+pub fn[A] RenderAssets::remove(Self[A], Int) -> A?
+pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A] RenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
+pub impl[A] @app.Resource for RenderAssets[A]
+
+pub(all) enum RenderCreation {
+  Manual(RenderResources)
+  Automatic(WgpuSettings)
+} derive(Eq, @debug.Debug)
+pub fn RenderCreation::automatic(WgpuSettings) -> Self
+pub fn RenderCreation::manual(RenderResources) -> Self
+
+pub struct RenderEntity {
+  id : Int
+}
+pub fn RenderEntity::id(Self) -> Int
+pub fn RenderEntity::new(Int) -> Self
+
+pub struct RenderResources {
+  device_id : Int
+  queue_id : Int
+  adapter_name : String
+} derive(Eq, @debug.Debug)
+pub fn RenderResources::new(device_id~ : Int, queue_id~ : Int, adapter_name~ : String) -> Self
+
+pub struct RenderStorage[K, V] {
+  values : @hashmap.HashMap[K, V]
+}
+pub fn[K, V] RenderStorage::clear(Self[K, V]) -> Unit
+pub fn[K : Hash + Eq, V] RenderStorage::contains(Self[K, V], K) -> Bool
+pub fn[K : Hash + Eq, V] RenderStorage::get(Self[K, V], K) -> V?
+pub fn[K : Hash + Eq, V] RenderStorage::insert(Self[K, V], K, V) -> Unit
+pub fn[K, V] RenderStorage::is_empty(Self[K, V]) -> Bool
+pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
+pub fn[K, V] RenderStorage::new() -> Self[K, V]
+pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
+
+pub struct SyncComponentHooksState {
+  mut removed_component_records : Int
+}
+pub fn SyncComponentHooksState::default() -> Self
+pub fn SyncComponentHooksState::record_component_removed(Self) -> Unit
+pub fn SyncComponentHooksState::removed_component_records(Self) -> Int
+
+pub struct SyncComponentPlugin[_, _] {
+}
+pub fn[C, F] SyncComponentPlugin::default() -> Self[C, F]
+
+pub struct SyncToRenderWorld {
+}
+pub fn SyncToRenderWorld::default() -> Self
+
+pub struct SyncWorldPlugin {
+}
+pub fn SyncWorldPlugin::default() -> Self
+
+pub struct WgpuSettings {
+  device_label : String?
+  backends : String?
+  power_preference : String
+  priority : WgpuSettingsPriority
+  features_mask : UInt64
+  disabled_features_mask : UInt64
+  limits_profile : String
+  constrained_limits_profile : String?
+  force_fallback_adapter : Bool
+  adapter_name : String?
+} derive(Eq, @debug.Debug)
+pub fn WgpuSettings::default() -> Self
+pub fn WgpuSettings::with_adapter_name(Self, String?) -> Self
+pub fn WgpuSettings::with_backends(Self, String?) -> Self
+pub fn WgpuSettings::with_force_fallback_adapter(Self, Bool) -> Self
+pub fn WgpuSettings::with_power_preference(Self, String) -> Self
+pub fn WgpuSettings::with_priority(Self, WgpuSettingsPriority) -> Self
+
+pub(all) enum WgpuSettingsPriority {
+  Compatibility
+  Functionality
+  WebGL2
+} derive(Eq, @debug.Debug)
+pub fn WgpuSettingsPriority::default() -> Self
 
 // Type aliases
 pub using @renderer {type GpuClipMatrix as HostGpuClipMatrix}
@@ -292,6 +598,8 @@ pub using @renderer {type HostMesh3dPreprocessPreviousView}
 pub using @renderer {type HostMesh3dPreprocessShaderWorkItem}
 
 pub using @renderer {type HostMesh3dPreprocessView}
+
+pub type UntypedRenderAssetId = Int
 
 // Traits
 

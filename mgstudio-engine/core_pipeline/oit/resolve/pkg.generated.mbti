@@ -1,0 +1,91 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline/oit/resolve"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const OIT_REQUIRED_STORAGE_BUFFERS : Int = 3
+
+pub const OIT_RESOLVE_PASS_LABEL : String = "oit_resolve"
+
+pub let ecs_key_oit_resolve_pipeline : @ecs.ResourceKey[OitResolvePipeline]
+
+pub fn is_oit_supported(OitSupportState) -> Bool
+
+pub fn oit_resolve_pipeline_target_format(OitResolvePipelineKey) -> String
+
+pub fn oit_resolve_pipeline_uses_depth_bind_group(OitResolvePipelineKey) -> Bool
+
+pub fn oit_resolve_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn oit_resolve_plugin_with(@app.App[@ecs.World], OitResolvePlugin) -> @app.App[@ecs.World]
+
+pub fn oit_resolve_requires_depth_bind_group(OitResolveNodeState) -> Bool
+
+pub fn oit_resolve_should_run(OitResolveNodeState) -> Bool
+
+pub fn oit_resolve_should_set_camera_viewport(OitResolveNodeState) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct OitResolveBindGroup {
+  bind_group_id : Int
+}
+pub fn OitResolveBindGroup::new(bind_group_id~ : Int) -> Self
+
+pub struct OitResolveNode {
+  label : String
+}
+pub fn OitResolveNode::default() -> Self
+pub fn OitResolveNode::label(Self) -> String
+
+pub struct OitResolveNodeState {
+  has_oit_resolve_pipeline_resource : Bool
+  has_oit_resolve_bind_group_resource : Bool
+  has_specialized_resolve_pipeline : Bool
+  has_view_depth_texture : Bool
+  has_depth_prepass : Bool
+  has_camera_viewport_override : Bool
+}
+pub fn OitResolveNodeState::new(has_oit_resolve_pipeline_resource? : Bool, has_oit_resolve_bind_group_resource? : Bool, has_specialized_resolve_pipeline? : Bool, has_view_depth_texture? : Bool, has_depth_prepass? : Bool, has_camera_viewport_override? : Bool) -> Self
+
+pub struct OitResolvePipeline {
+  has_view_bind_group_layout : Bool
+  has_depth_bind_group_layout : Bool
+}
+pub fn OitResolvePipeline::default() -> Self
+pub fn OitResolvePipeline::new() -> Self
+pub impl @app.Resource for OitResolvePipeline
+
+pub struct OitResolvePipelineId {
+  pipeline_id : Int
+}
+pub fn OitResolvePipelineId::new(pipeline_id~ : Int) -> Self
+
+pub struct OitResolvePipelineKey {
+  hdr : Bool
+  sorted_fragment_max_count : Int
+  depth_prepass : Bool
+} derive(Eq, @debug.Debug)
+pub fn OitResolvePipelineKey::new(hdr? : Bool, sorted_fragment_max_count? : Int, depth_prepass? : Bool) -> Self
+
+pub struct OitResolvePlugin {
+}
+pub fn OitResolvePlugin::default() -> Self
+pub impl @app.PluginReplacement for OitResolvePlugin
+
+pub struct OitSupportState {
+  has_fragment_writable_storage : Bool
+  max_storage_buffers_per_shader_stage : Int
+}
+pub fn OitSupportState::new(has_fragment_writable_storage? : Bool, max_storage_buffers_per_shader_stage? : Int) -> Self
+
+// Type aliases
+
+// Traits
+

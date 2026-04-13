@@ -1,0 +1,80 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/view/visibility"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+pub const VISIBILITY_RANGES_STORAGE_BUFFER_COUNT : Int = 4
+
+pub const VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE : Int = 64
+
+pub let ecs_key_render_visibility_ranges : @ecs.ResourceKey[RenderVisibilityRanges]
+
+pub let ecs_key_render_visible_entities : @ecs.ComponentKey[RenderVisibleEntities]
+
+pub fn render_visibility_range_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render_visibility_range_plugin_with(@app.App[@ecs.World], RenderVisibilityRangePlugin) -> @app.App[@ecs.World]
+
+pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn visibility_propagate_system(@ecs.World) -> Unit
+
+pub fn visibility_range_always_visible() -> @Milky2018/mgstudio/visibility.VisibilityRange
+
+pub fn visibility_range_invisible() -> @Milky2018/mgstudio/visibility.VisibilityRange
+
+pub fn visibility_range_new(Float, Float, Float, Float, Bool) -> @Milky2018/mgstudio/visibility.VisibilityRange
+
+pub fn visibility_ranges_should_use_uniform_buffer(Int, Bool) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct RenderVisibilityRangePlugin {
+}
+pub fn RenderVisibilityRangePlugin::default() -> Self
+pub impl @app.PluginReplacement for RenderVisibilityRangePlugin
+
+pub struct RenderVisibilityRanges {
+  mut entity_count : Int
+  mut range_count : Int
+  mut buffer_dirty : Bool
+}
+pub fn RenderVisibilityRanges::buffer_dirty(Self) -> Bool
+pub fn RenderVisibilityRanges::clear(Self) -> Unit
+pub fn RenderVisibilityRanges::default() -> Self
+pub fn RenderVisibilityRanges::entity_count(Self) -> Int
+pub fn RenderVisibilityRanges::insert(Self, Int, @Milky2018/mgstudio/visibility.VisibilityRange) -> Unit
+pub fn RenderVisibilityRanges::mark_flushed(Self) -> Unit
+pub fn RenderVisibilityRanges::range_count(Self) -> Int
+pub impl @app.Resource for RenderVisibilityRanges
+
+pub struct RenderVisibleEntities {
+  entities : @hashmap.HashMap[String, Array[(Int, Int)]]
+}
+pub fn RenderVisibleEntities::clear(Self) -> Unit
+pub fn RenderVisibleEntities::default() -> Self
+pub fn RenderVisibleEntities::get(Self, String) -> Array[(Int, Int)]
+pub fn RenderVisibleEntities::is_empty(Self, String) -> Bool
+pub fn RenderVisibleEntities::len(Self, String) -> Int
+pub fn RenderVisibleEntities::set(Self, String, Array[(Int, Int)]) -> Unit
+pub impl @ecs.Component for RenderVisibleEntities
+
+// Type aliases
+pub using @Milky2018/mgstudio/visibility {type InheritedVisibility}
+
+pub using @Milky2018/mgstudio/visibility {type NoFrustumCulling}
+
+pub using @Milky2018/mgstudio/visibility {type ViewVisibility}
+
+pub using @Milky2018/mgstudio/visibility {type Visibility}
+
+pub using @Milky2018/mgstudio/visibility {type VisibilityRange}
+
+// Traits
+

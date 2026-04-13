@@ -1,0 +1,60 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/asset/server"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn asset_loader_kind_for_path(String) -> @asset.AssetLoaderKind
+
+pub fn asset_register_loader_extension(String, @asset.AssetLoaderKind) -> Unit
+
+pub fn asset_remove_loader_extension(String) -> Unit
+
+pub fn asset_server_loader_info_for_path(String) -> AssetServerLoaderInfo
+
+pub fn asset_server_register_loader_extension(String, @asset.AssetLoaderKind) -> Unit
+
+pub fn asset_server_remove_loader_extension(String) -> Unit
+
+pub fn asset_server_resource_key() -> @ecs.ResourceKey[@asset.AssetServer]
+
+pub fn asset_set_default_sampler_nearest(Bool) -> Unit
+
+pub fn asset_supported_compressed_image_formats() -> Int
+
+pub fn asset_system(@ecs.World) -> Unit
+
+pub fn asset_update_event_messages(@ecs.World) -> Unit
+
+pub fn asset_update_loaded_folders(@ecs.World) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct AssetServerInfo {
+  supported_compressed_image_formats : Int
+  default_sampler_nearest : Bool
+}
+pub fn AssetServerInfo::default() -> Self
+pub fn AssetServerInfo::default_sampler_nearest(Self) -> Bool
+pub fn AssetServerInfo::loader_kind(Self, String) -> @asset.AssetLoaderKind
+pub fn AssetServerInfo::supported_compressed_image_formats(Self) -> Int
+
+pub struct AssetServerLoaderInfo {
+  extension : String
+  kind : @asset.AssetLoaderKind
+}
+pub fn AssetServerLoaderInfo::extension(Self) -> String
+pub fn AssetServerLoaderInfo::kind(Self) -> @asset.AssetLoaderKind
+pub fn AssetServerLoaderInfo::new(String, @asset.AssetLoaderKind) -> Self
+
+// Type aliases
+pub using @asset {type AssetLoaderKind}
+
+pub using @asset {type AssetServer}
+
+// Traits
+

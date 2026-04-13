@@ -15,7 +15,7 @@
 ///|
 pub struct State[S] {
   value : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] State::new(state : S) -> State[S] {
@@ -30,7 +30,7 @@ pub fn[S] State::get(self : State[S]) -> S {
 ///|
 pub struct PreviousState[S] {
   value : S
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn[S] PreviousState::get(self : PreviousState[S]) -> S {
@@ -42,14 +42,14 @@ pub(all) enum NextState[S] {
   Unchanged
   Pending(S)
   PendingIfNeq(S)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct StateTransitionEvent[S] {
   exited : S?
   entered : S?
   allow_same_state_transitions : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let state_type_debug_name_registry : Ref[@hashmap.HashMap[String, String]] = Ref::new(
@@ -119,7 +119,7 @@ fn[S] registered_state_resource_key() -> @ecs.ResourceKey[State[S]] {
       }
     None => {
       let key : @ecs.ResourceKey[State[S]] = @ecs.register_resource(
-        debug_name="bevy_state::State<\{registered_state_type_debug_name(probe)}>",
+        debug_name="mgstudio_state::State<\{registered_state_type_debug_name(probe)}>",
       )
       state_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -144,7 +144,7 @@ fn[S] registered_previous_state_resource_key() -> @ecs.ResourceKey[
       }
     None => {
       let key : @ecs.ResourceKey[PreviousState[S]] = @ecs.register_resource(
-        debug_name="bevy_state::PreviousState<\{registered_state_type_debug_name(probe)}>",
+        debug_name="mgstudio_state::PreviousState<\{registered_state_type_debug_name(probe)}>",
       )
       previous_state_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -167,7 +167,7 @@ fn[S] registered_next_state_resource_key() -> @ecs.ResourceKey[NextState[S]] {
       }
     None => {
       let key : @ecs.ResourceKey[NextState[S]] = @ecs.register_resource(
-        debug_name="bevy_state::NextState<\{registered_state_type_debug_name(probe)}>",
+        debug_name="mgstudio_state::NextState<\{registered_state_type_debug_name(probe)}>",
       )
       next_state_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -192,7 +192,7 @@ fn[S] registered_state_transition_event_resource_key() -> @ecs.ResourceKey[
       }
     None => {
       let key : @ecs.ResourceKey[StateTransitionEvent[S]] = @ecs.register_resource(
-        debug_name="bevy_state::StateTransitionEvent<\{registered_state_type_debug_name(probe)}>",
+        debug_name="mgstudio_state::StateTransitionEvent<\{registered_state_type_debug_name(probe)}>",
       )
       state_transition_event_resource_registry.val.set(type_key, @any.of(key))
       key
@@ -217,7 +217,7 @@ fn[S] registered_pending_state_transition_event_resource_key() -> @ecs.ResourceK
       }
     None => {
       let key : @ecs.ResourceKey[StateTransitionEvent[S]] = @ecs.register_resource(
-        debug_name="bevy_state::PendingStateTransitionEvent<\{registered_state_type_debug_name(probe)}>",
+        debug_name="mgstudio_state::PendingStateTransitionEvent<\{registered_state_type_debug_name(probe)}>",
       )
       pending_state_transition_event_resource_registry.val.set(
         type_key,

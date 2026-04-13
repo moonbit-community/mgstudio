@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn startup_system(_world : @ecs.World) -> Unit {
   println("startup system ran first")
 }

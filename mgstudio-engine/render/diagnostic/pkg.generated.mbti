@@ -1,0 +1,113 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/diagnostic"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/renderer",
+}
+
+// Values
+pub const TRACY_GPU_ENV_BACKEND : String = "MGSTUDIO_TRACY_GPU_BACKEND"
+
+pub const TRACY_GPU_ENV_ENABLED : String = "MGSTUDIO_TRACY_GPU"
+
+pub fn erased_render_asset_diagnostic_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn erased_render_asset_diagnostic_plugin_with(@app.App[@ecs.World], ErasedRenderAssetDiagnosticPlugin) -> @app.App[@ecs.World]
+
+pub fn mesh_allocator_diagnostic_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn mesh_allocator_diagnostic_plugin_with(@app.App[@ecs.World], MeshAllocatorDiagnosticPlugin) -> @app.App[@ecs.World]
+
+pub fn new_tracy_gpu_context() -> TracyGpuContext
+
+pub fn render_asset_diagnostic_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render_asset_diagnostic_plugin_with(@app.App[@ecs.World], RenderAssetDiagnosticPlugin) -> @app.App[@ecs.World]
+
+pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
+
+pub fn render_diagnostics_module_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render_diagnostics_module_snapshot() -> @renderer.RenderDiagnosticsSnapshot
+
+pub fn render_diagnostics_reset_current_frame_counters() -> Unit
+
+pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
+
+pub fn tracy_gpu_context_backend() -> String
+
+pub fn tracy_gpu_context_enabled() -> Bool
+
+// Errors
+
+// Types and methods
+pub struct ErasedRenderAssetDiagnosticPlugin {
+  suffix : String
+}
+pub fn ErasedRenderAssetDiagnosticPlugin::default() -> Self
+pub fn ErasedRenderAssetDiagnosticPlugin::new(String) -> Self
+
+pub struct ErasedRenderAssetDiagnosticState {
+  suffix : String
+  mut snapshot : @renderer.RenderDiagnosticsSnapshot
+  mut sample_count : Int
+  mut last_sample_us : Float
+}
+pub fn ErasedRenderAssetDiagnosticState::new(String) -> Self
+pub impl @app.Resource for ErasedRenderAssetDiagnosticState
+
+pub struct MeshAllocatorDiagnosticPlugin {
+  suffix : String
+}
+pub fn MeshAllocatorDiagnosticPlugin::default() -> Self
+pub fn MeshAllocatorDiagnosticPlugin::new(String) -> Self
+
+pub struct MeshAllocatorDiagnosticState {
+  suffix : String
+  mut snapshot : @renderer.RenderDiagnosticsSnapshot
+  mut sample_count : Int
+  mut last_sample_us : Float
+}
+pub fn MeshAllocatorDiagnosticState::new(String) -> Self
+pub impl @app.Resource for MeshAllocatorDiagnosticState
+
+pub struct RenderAssetDiagnosticPlugin {
+  suffix : String
+}
+pub fn RenderAssetDiagnosticPlugin::default() -> Self
+pub fn RenderAssetDiagnosticPlugin::new(String) -> Self
+
+pub struct RenderAssetDiagnosticState {
+  suffix : String
+  mut snapshot : @renderer.RenderDiagnosticsSnapshot
+  mut sample_count : Int
+  mut last_sample_us : Float
+}
+pub fn RenderAssetDiagnosticState::new(String) -> Self
+pub impl @app.Resource for RenderAssetDiagnosticState
+
+pub struct RenderDiagnosticsModuleState {
+  mut last_snapshot : @renderer.RenderDiagnosticsSnapshot
+  mut last_sample_us : Float
+  mut sample_count : Int
+}
+pub fn RenderDiagnosticsModuleState::default() -> Self
+pub impl @app.Resource for RenderDiagnosticsModuleState
+
+pub struct TracyGpuContext {
+  backend : String
+  created_at_us : Float
+  enabled : Bool
+}
+pub fn TracyGpuContext::backend(Self) -> String
+pub fn TracyGpuContext::created_at_us(Self) -> Float
+pub fn TracyGpuContext::default() -> Self
+pub fn TracyGpuContext::enabled(Self) -> Bool
+pub fn TracyGpuContext::new(String, Bool) -> Self
+
+// Type aliases
+
+// Traits
+

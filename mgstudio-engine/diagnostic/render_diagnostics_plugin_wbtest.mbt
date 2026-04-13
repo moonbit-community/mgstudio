@@ -47,7 +47,7 @@ test "diagnostics: render snapshot records render measurements" {
     mesh3d_draw_calls: 4,
     mesh3d_executed_draw_calls: 1,
   })
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_prepared_cameras_2d)
     .unwrap()
@@ -55,7 +55,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="2",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_queued_draw_items_2d)
     .unwrap()
@@ -63,7 +63,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="14",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_queue_cpu_ms_2d)
     .unwrap()
@@ -71,7 +71,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="1.25",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_execute_cpu_ms_2d)
     .unwrap()
@@ -79,7 +79,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="2.5",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_prepared_cameras_3d)
     .unwrap()
@@ -87,7 +87,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="1",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_visible_meshes_3d)
     .unwrap()
@@ -95,7 +95,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="6",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_queue_cpu_ms_3d)
     .unwrap()
@@ -103,7 +103,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="3.75",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_execute_cpu_ms_3d)
     .unwrap()
@@ -111,7 +111,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="4.5",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_total_count)
     .unwrap()
@@ -119,11 +119,11 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="9",
   )
-  inspect(
+  debug_inspect(
     store_ref.val.get(render_diagnostic_pass_2d_count).unwrap().value().unwrap(),
     content="4",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_3d_main_count)
     .unwrap()
@@ -131,7 +131,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="3",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_3d_motion_vector_count)
     .unwrap()
@@ -139,7 +139,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="1",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_3d_point_shadow_count)
     .unwrap()
@@ -147,7 +147,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="1",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_total_cpu_ms)
     .unwrap()
@@ -155,7 +155,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="16",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_2d_cpu_ms)
     .unwrap()
@@ -163,7 +163,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="5",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_3d_main_cpu_ms)
     .unwrap()
@@ -171,7 +171,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="7",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_3d_motion_vector_cpu_ms)
     .unwrap()
@@ -179,7 +179,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="2",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_pass_3d_point_shadow_cpu_ms)
     .unwrap()
@@ -187,7 +187,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="2",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_mesh2d_draw_calls)
     .unwrap()
@@ -195,7 +195,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="3",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_mesh2d_executed_draw_calls)
     .unwrap()
@@ -203,7 +203,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="2",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_mesh3d_draw_calls)
     .unwrap()
@@ -211,7 +211,7 @@ test "diagnostics: render snapshot records render measurements" {
     .unwrap(),
     content="4",
   )
-  inspect(
+  debug_inspect(
     store_ref.val
     .get(render_diagnostic_mesh3d_executed_draw_calls)
     .unwrap()

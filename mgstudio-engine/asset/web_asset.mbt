@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub const WEB_ASSET_PLUGIN_ID : String = "bevy_asset::io::web::WebAssetPlugin"
+const WEB_ASSET_PLUGIN_NAME : String = "mgstudio.asset.io.web.WebAssetPlugin"
 
 ///|
 pub(all) struct WebAssetPlugin {
@@ -71,8 +71,8 @@ pub fn web_asset_plugin(plugin : WebAssetPlugin) -> @app.Plugin[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for WebAssetPlugin with replacement_id(_self) {
-  WEB_ASSET_PLUGIN_ID
+pub impl @app.PluginReplacement for WebAssetPlugin with plugin_name(_self) {
+  WEB_ASSET_PLUGIN_NAME
 }
 
 ///|

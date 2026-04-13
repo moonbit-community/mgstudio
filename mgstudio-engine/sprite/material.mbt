@@ -96,7 +96,7 @@ fn[M] registered_render_material2d_instances_resource_key() -> @ecs.ResourceKey[
       }
     None => {
       let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_resource(
-        debug_name="bevy_sprite_render::\{type_name}",
+        debug_name="mgstudio_sprite_render::\{type_name}",
       )
       render_material2d_instances_resource_registry.val.set(
         type_name,
@@ -450,7 +450,7 @@ fn[M] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
       }
     None => {
       let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_resource(
-        debug_name="bevy_sprite_render::\{type_name}",
+        debug_name="mgstudio_sprite_render::\{type_name}",
       )
       material2d_pipeline_resource_registry.val.set(type_name, @any.of(key))
       key
@@ -869,7 +869,7 @@ pub impl @app.Resource for Material2dRuntimeRegistry with resource() {
 let material2d_runtime_registry_key : @ecs.ResourceKey[
   Material2dRuntimeRegistry,
 ] = @ecs.register_resource(
-  debug_name="bevy_sprite_render::Material2dRuntimeRegistry",
+  debug_name="mgstudio_sprite_render::Material2dRuntimeRegistry",
 )
 
 ///|

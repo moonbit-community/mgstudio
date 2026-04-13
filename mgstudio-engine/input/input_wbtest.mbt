@@ -182,11 +182,11 @@ test "input: InputSystems set gates pre-update polling systems" {
     ])
     .run_once()
 
-  inspect(input_probe_before_ran_ref.val, content="true")
-  inspect(input_probe_before_stage_ref.val, content="pre_update")
-  inspect(input_probe_after_stage_ref.val, content="pre_update")
-  inspect(input_probe_after_raw_event_count_ref.val > 0, content="true")
-  inspect(mapped_gamepad_entity(0) is Some(_), content="true")
+  debug_inspect(input_probe_before_ran_ref.val, content="true")
+  debug_inspect(input_probe_before_stage_ref.val, content="\"pre_update\"")
+  debug_inspect(input_probe_after_stage_ref.val, content="\"pre_update\"")
+  debug_inspect(input_probe_after_raw_event_count_ref.val > 0, content="true")
+  debug_inspect(mapped_gamepad_entity(0) is Some(_), content="true")
   app |> ignore
 }
 
@@ -202,10 +202,10 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
     .add_system(input_probe_update_system)
     .run_once()
 
-  inspect(input_probe_update_stage_ref.val, content="update")
-  inspect(input_probe_update_previous_snapshot_count_ref.val, content="1")
-  inspect(current_gamepads_ref.val.length(), content="0")
-  inspect(previous_gamepads_ref.val.length(), content="0")
+  debug_inspect(input_probe_update_stage_ref.val, content="\"update\"")
+  debug_inspect(input_probe_update_previous_snapshot_count_ref.val, content="1")
+  debug_inspect(current_gamepads_ref.val.length(), content="0")
+  debug_inspect(previous_gamepads_ref.val.length(), content="0")
   app |> ignore
 }
 
@@ -240,8 +240,8 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
 
   let focus_lost_reader = app
     .world()
-    .message_reader(keyboard_focus_lost_message_key, Ref::new(0))
-  inspect((try! focus_lost_reader.read()).length(), content="1")
+    .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
+  debug_inspect((try! focus_lost_reader.read()).length(), content="1")
 
   let window_event_reader = app
     .world()
@@ -253,7 +253,7 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
       aggregate_focus_lost_count = aggregate_focus_lost_count + 1
     }
   }
-  inspect(aggregate_focus_lost_count, content="1")
+  debug_inspect(aggregate_focus_lost_count, content="1")
 }
 
 ///|
@@ -264,22 +264,22 @@ test "input: common conditions mirror ButtonInput pressed edge semantics" {
   just_pressed.press(Toggle)
 
   set_test_button_snapshot(idle)
-  inspect(input_pressed(Toggle)(world), content="false")
-  inspect(input_just_pressed(Toggle)(world), content="false")
-  inspect(input_just_released(Toggle)(world), content="false")
+  debug_inspect(input_pressed(Toggle)(world), content="false")
+  debug_inspect(input_just_pressed(Toggle)(world), content="false")
+  debug_inspect(input_just_released(Toggle)(world), content="false")
 
   set_test_button_snapshot(just_pressed)
-  inspect(input_pressed(Toggle)(world), content="true")
-  inspect(input_just_pressed(Toggle)(world), content="true")
-  inspect(input_just_released(Toggle)(world), content="false")
+  debug_inspect(input_pressed(Toggle)(world), content="true")
+  debug_inspect(input_just_pressed(Toggle)(world), content="true")
+  debug_inspect(input_just_released(Toggle)(world), content="false")
 
   set_test_button_snapshot(test_button_pressed_snapshot(Toggle))
-  inspect(input_pressed(Toggle)(world), content="true")
-  inspect(input_just_pressed(Toggle)(world), content="false")
+  debug_inspect(input_pressed(Toggle)(world), content="true")
+  debug_inspect(input_just_pressed(Toggle)(world), content="false")
 
   set_test_button_snapshot(test_button_just_released_snapshot(Toggle))
-  inspect(input_pressed(Toggle)(world), content="false")
-  inspect(input_just_released(Toggle)(world), content="true")
+  debug_inspect(input_pressed(Toggle)(world), content="false")
+  debug_inspect(input_just_released(Toggle)(world), content="true")
 }
 
 ///|
@@ -294,20 +294,20 @@ test "input: input_toggle_active keeps independent state across frames" {
   alt_press.press(Alt)
 
   set_test_button_snapshot(idle)
-  inspect(toggle(world), content="false")
-  inspect(other(world), content="true")
+  debug_inspect(toggle(world), content="false")
+  debug_inspect(other(world), content="true")
 
   set_test_button_snapshot(toggle_press)
-  inspect(toggle(world), content="true")
-  inspect(other(world), content="true")
+  debug_inspect(toggle(world), content="true")
+  debug_inspect(other(world), content="true")
 
   set_test_button_snapshot(test_button_pressed_snapshot(Toggle))
-  inspect(toggle(world), content="true")
+  debug_inspect(toggle(world), content="true")
 
   set_test_button_snapshot(toggle_press)
-  inspect(toggle(world), content="false")
+  debug_inspect(toggle(world), content="false")
 
   set_test_button_snapshot(alt_press)
-  inspect(other(world), content="false")
-  inspect(toggle(world), content="false")
+  debug_inspect(other(world), content="false")
+  debug_inspect(toggle(world), content="false")
 }

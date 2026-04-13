@@ -25,7 +25,7 @@ pub(all) enum ShadowAction {
   XOffsetInc
   YOffsetDec
   YOffsetInc
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum ShadowField {
@@ -34,20 +34,20 @@ pub(all) enum ShadowField {
   Spread
   XOffset
   YOffset
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ShadowControlButton {
   action : ShadowAction
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ShadowValueLabel {
   field : ShadowField
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-struct ShadowNode {} derive(Eq, Show, ToJson, FromJson)
+struct ShadowNode {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ShadowSettings {

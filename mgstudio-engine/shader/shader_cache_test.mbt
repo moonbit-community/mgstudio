@@ -24,10 +24,10 @@ test "shader cache data preserves shader-def sequence as cache key" {
   ]
   data.cache_processed_shader(ab, "module-ab")
 
-  inspect(data.processed_shader_count(), content="1")
-  inspect(data.get_processed_shader(ab), content="Some(\"module-ab\")")
-  inspect(data.get_processed_shader(ba), content="None")
-  inspect(data.get_processed_shader(abb), content="None")
+  debug_inspect(data.processed_shader_count(), content="1")
+  debug_inspect(data.get_processed_shader(ab), content="Some(\"module-ab\")")
+  debug_inspect(data.get_processed_shader(ba), content="None")
+  debug_inspect(data.get_processed_shader(abb), content="None")
 }
 
 ///|
@@ -44,21 +44,21 @@ test "shader cache data tracks pipelines imports and dependents" {
   data.track_dependent("shader-a")
   data.track_dependent("shader-b")
 
-  inspect(data.pipeline_count(), content="2")
-  inspect(
+  debug_inspect(data.pipeline_count(), content="2")
+  debug_inspect(
     data.resolved_import(@shader.ShaderImport::Custom("bevy_render::view")),
     content="Some(\"shader-view\")",
   )
-  inspect(data.dependent_count(), content="2")
+  debug_inspect(data.dependent_count(), content="2")
 }
 
 ///|
 test "shader cache source keeps fully composed source variants" {
-  inspect(
+  debug_inspect(
     @shader.ShaderCacheSource::Wgsl("fn main() {}"),
     content="Wgsl(\"fn main() {}\")",
   )
-  inspect(
+  debug_inspect(
     @shader.ShaderCacheSource::SpirV(@utf8.encode("SPV")),
     content="SpirV(b\"SPV\")",
   )
@@ -123,8 +123,8 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
   child_data_before.track_pipeline(7)
   cache.data.set(child_id.index(), child_data_before)
 
-  inspect(cache.contains_shader(child_id), content="true")
-  inspect(
+  debug_inspect(cache.contains_shader(child_id), content="true")
+  debug_inspect(
     cache.waiting_on_import.contains(@shader.ShaderImport::Custom("test::base")),
     content="true",
   )
@@ -140,28 +140,28 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
     Some(data) => data
     None => abort("expected child shader data after import resolution")
   }
-  inspect(
+  debug_inspect(
     child_data_after.resolved_import(@shader.ShaderImport::Custom("test::base")),
     content="Some(1)",
   )
-  inspect(
+  debug_inspect(
     cache.waiting_on_import.contains(@shader.ShaderImport::Custom("test::base")),
     content="false",
   )
 
   let invalidated = cache.remove(base_id)
-  inspect(invalidated.length(), content="1")
-  inspect(invalidated[0], content="7")
-  inspect(cache.contains_shader(base_id), content="false")
+  debug_inspect(invalidated.length(), content="1")
+  debug_inspect(invalidated[0], content="7")
+  debug_inspect(cache.contains_shader(base_id), content="false")
 }
 
 ///|
 test "shader cache error messages match lifecycle surface" {
-  inspect(
+  debug_inspect(
     @shader.ShaderCacheError::ShaderImportNotYetAvailable.message(),
     content="Shader import not yet available.",
   )
-  inspect(
+  debug_inspect(
     @shader.ShaderCacheError::CreateShaderModule("bad pipeline").message(),
     content="Could not create shader module: bad pipeline",
   )

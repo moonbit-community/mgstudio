@@ -69,27 +69,27 @@ pub(all) enum LevelEvent {
 
 ///|
 let ldtk_level_selection_key : @ecs.ResourceKey[LevelSelection] = @ecs.register_resource(
-  debug_name="bevy_ecs_ldtk.LevelSelection",
+  debug_name="mgstudio_ecs_ldtk.LevelSelection",
 )
 
 ///|
 let ldtk_settings_key : @ecs.ResourceKey[LdtkSettings] = @ecs.register_resource(
-  debug_name="bevy_ecs_ldtk.LdtkSettings",
+  debug_name="mgstudio_ecs_ldtk.LdtkSettings",
 )
 
 ///|
 let ldtk_runtime_state_key : @ecs.ResourceKey[LdtkRuntimeState] = @ecs.register_resource(
-  debug_name="bevy_ecs_ldtk.LdtkRuntimeState",
+  debug_name="mgstudio_ecs_ldtk.LdtkRuntimeState",
 )
 
 ///|
 let ldtk_spawned_level_iids_key : @ecs.ResourceKey[LdtkSpawnedLevelIids] = @ecs.register_resource(
-  debug_name="bevy_ecs_ldtk.LdtkSpawnedLevelIids",
+  debug_name="mgstudio_ecs_ldtk.LdtkSpawnedLevelIids",
 )
 
 ///|
 pub let ldtk_level_event_key : @ecs.MessageKey[LevelEvent] = @ecs.register_message(
-  debug_name="bevy_ecs_ldtk.LevelEvent",
+  debug_name="mgstudio_ecs_ldtk.LevelEvent",
 )
 
 ///|

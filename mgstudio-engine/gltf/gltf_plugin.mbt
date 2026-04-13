@@ -13,53 +13,42 @@
 // limitations under the License.
 
 ///|
-pub type GltfLoaderRegistration = () -> Unit
-
-///|
-let gltf_loader_registration_ref : Ref[GltfLoaderRegistration?] = Ref::new(None)
-
-///|
-let gltf_loader_registered_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let gltf_pbr_material_handler_enabled_ref : Ref[Bool] = Ref::new(true)
-
-///|
 pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
-  gltf_pbr_material_handler_enabled_ref.val = enabled
+  @gltf_loader.gltf_set_pbr_material_handler_enabled(enabled)
 }
 
 ///|
 pub fn gltf_pbr_material_handler_enabled() -> Bool {
-  gltf_pbr_material_handler_enabled_ref.val
+  @gltf_loader.gltf_pbr_material_handler_enabled()
+}
+
+///|
+pub fn gltf_set_default_convert_coordinates(
+  convert_coordinates : GltfConvertCoordinates,
+) -> Unit {
+  @gltf_loader.gltf_set_default_convert_coordinates(convert_coordinates)
+}
+
+///|
+pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
+  @gltf_loader.gltf_default_convert_coordinates()
+}
+
+///|
+pub fn gltf_set_default_skinned_mesh_bounds_policy(
+  policy : GltfSkinnedMeshBoundsPolicy,
+) -> Unit {
+  @gltf_loader.gltf_set_default_skinned_mesh_bounds_policy(policy)
+}
+
+///|
+pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy {
+  @gltf_loader.gltf_default_skinned_mesh_bounds_policy()
 }
 
 ///|
 pub fn gltf_install_loader_registration(
   register : GltfLoaderRegistration,
 ) -> Unit {
-  gltf_loader_registration_ref.val = Some(register)
-  gltf_loader_registered_ref.val = false
-}
-
-///|
-fn gltf_register_asset_loaders_once() -> Unit {
-  if gltf_loader_registered_ref.val {
-    return
-  }
-  let register = match gltf_loader_registration_ref.val {
-    Some(value) => value
-    None =>
-      abort(
-        "gltf plugin loader registration is not installed; add scene loader wiring before running gltf_plugin",
-      )
-  }
-  register()
-  gltf_loader_registered_ref.val = true
-}
-
-///|
-pub fn gltf_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gltf_register_asset_loaders_once()
-  app
+  @gltf_loader.gltf_install_loader_registration(register)
 }

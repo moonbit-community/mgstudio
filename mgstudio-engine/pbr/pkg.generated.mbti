@@ -6,7 +6,9 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
+  "Milky2018/mgstudio/core_pipeline/deferred",
+  "Milky2018/mgstudio/core_pipeline/prepass",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -14,30 +16,66 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr/lightmap",
+  "Milky2018/mgstudio/pbr/render",
+  "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/effect_stack",
+  "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
 
 // Values
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
+pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3
 
-pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
+pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
-pub const MATERIALS_PLUGIN_ID : String = "bevy_pbr::MaterialsPlugin"
+pub const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
 
-pub const MESH_RENDER_PLUGIN_ID : String = "bevy_pbr::MeshRenderPlugin"
+pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100
 
-pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
+pub const STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE : UInt64 = 0x000200
 
-pub const STANDARD_MATERIAL_PLUGIN_ID : String = "bevy_pbr::MaterialPlugin<StandardMaterial>"
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT : UInt64 = 0x000040
+
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP : UInt64 = 0x000080
+
+pub const STANDARD_MATERIAL_KEY_CULL_BACK : UInt64 = 0x000002
+
+pub const STANDARD_MATERIAL_KEY_CULL_FRONT : UInt64 = 0x000001
+
+pub const STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK : UInt64 = 0xffffffff00000000
+
+pub const STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT : Int = 32
+
+pub const STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION : UInt64 = 0x000010
+
+pub const STANDARD_MATERIAL_KEY_EMISSIVE_TEXTURE : UInt64 = 0x000400
+
+pub const STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_TEXTURE : UInt64 = 0x000800
+
+pub const STANDARD_MATERIAL_KEY_NORMAL_MAP : UInt64 = 0x000004
+
+pub const STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE : UInt64 = 0x001000
+
+pub const STANDARD_MATERIAL_KEY_RELIEF_MAPPING : UInt64 = 0x000008
+
+pub const STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION : UInt64 = 0x000020
+
+pub const VIEW_CLUSTER_BINDINGS_MAX_INDICES : Int = 16384
+
+pub const VIEW_CLUSTER_BINDINGS_MAX_OFFSETS : Int = 4096
 
 pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
+pub const VIEW_FRUSTUM_PLANE_COUNT : Int = 6
 
 pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMaterial], S) -> @asset.Handle[@material.StandardMaterial]
 
@@ -55,7 +93,7 @@ pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
-pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@post_process.ChromaticAberration]
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
 
@@ -71,9 +109,9 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.Defa
 
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[DeferredPbrLightingState]
 
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[@core_pipeline.DepthPrepass]
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
 
 pub let ecs_key_directional_light : @ecs.ComponentKey[@light.DirectionalLight]
 
@@ -97,7 +135,7 @@ pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
 
-pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
+pub let ecs_key_frustum : @ecs.ComponentKey[@render.Frustum]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
@@ -105,7 +143,7 @@ pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[@light.Gener
 
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@light.GlobalAmbientLight]
 
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
+pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState]
 
@@ -113,7 +151,7 @@ pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@light.IrradianceVolume]
 
 pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
 
-pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
+pub let ecs_key_lightmap : @ecs.ComponentKey[@lightmap.Lightmap]
 
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
@@ -123,17 +161,17 @@ pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
 
 pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginState]
 
-pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
+pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
 
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@core_pipeline.MotionVectorPrepass]
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@prepass.MotionVectorPrepass]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_pipeline.Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
 pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing]
 
 pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
 
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[@core_pipeline.NormalPrepass]
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@prepass.NormalPrepass]
 
 pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
 
@@ -155,11 +193,15 @@ pub let ecs_key_point_light_texture : @ecs.ComponentKey[@light.PointLightTexture
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
+pub let ecs_key_scattering_medium_plugin_state : @ecs.ResourceKey[ScatteringMediumPluginState]
+
+pub let ecs_key_scattering_medium_sampler : @ecs.ResourceKey[ScatteringMediumSampler]
+
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[@post_process.ScreenSpaceAmbientOcclusion]
 
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[@post_process.ScreenSpaceReflections]
 
-pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@post_process.ScreenSpaceTransmission]
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@transmission.ScreenSpaceTransmission]
 
 pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
 
@@ -171,7 +213,7 @@ pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
 
 pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[StandardMaterialPluginState]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
@@ -181,7 +223,7 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
 
-pub let ecs_key_vignette : @ecs.ComponentKey[@post_process.Vignette]
+pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
 
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[@light.VolumetricLight]
 
@@ -193,7 +235,17 @@ pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
 
 pub let ecs_resources : Array[String]
 
+pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
+
+pub fn extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
+
 pub fn fog_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
+
+pub fn forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialExt
+
+pub fn forward_decal_material_extension_metadata(@material.ForwardDecalMaterialExt) -> @material.ExtendedMaterialMetadata3d
 
 pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -206,6 +258,8 @@ pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@lig
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.PointLightShadowMap]
 
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
+
+pub fn[T : MaterialExtension] material_extension_metadata_from_extension(T) -> @material.ExtendedMaterialMetadata3d
 
 pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -247,11 +301,67 @@ pub fn mesh_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn mesh_render_plugin_with(@app.App[@ecs.World], MeshRenderPlugin) -> @app.App[@ecs.World]
 
+pub fn pbr_cluster_tile_count(ClusterConfig3d) -> Int
+
+pub fn pbr_default_opaque_renderer_method_deferred() -> @material.DefaultOpaqueRendererMethod
+
+pub fn pbr_default_opaque_renderer_method_forward() -> @material.DefaultOpaqueRendererMethod
+
 pub fn pbr_deferred_lighting_enabled() -> Bool
+
+pub fn pbr_extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
+
+pub fn pbr_extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
+
+pub fn pbr_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
+
+pub fn pbr_forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialExt
+
+pub fn pbr_forward_decal_material_extension_metadata(@material.ForwardDecalMaterialExt) -> @material.ExtendedMaterialMetadata3d
 
 pub fn pbr_gltf_render_enabled() -> Bool
 
 pub fn pbr_gpu_instance_buffer_builder_enabled() -> Bool
+
+pub fn pbr_make_global_cluster_settings(Bool, Bool) -> PbrGlobalClusterSettings
+
+pub fn pbr_material_bind_group_index() -> Int
+
+pub fn pbr_material_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
+
+pub fn pbr_material_forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialExt
+
+pub fn pbr_materials_plugin_default() -> MaterialsPlugin
+
+pub fn pbr_materials_plugin_state_default() -> MaterialsPluginState
+
+pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState
+
+pub fn pbr_mesh_material3d_new(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
+
+pub fn pbr_mesh_material3d_with_extended_metadata(@material.MeshMaterial3d, @material.ExtendedMaterialMetadata3d?) -> @material.MeshMaterial3d
+
+pub fn pbr_mesh_material3d_with_extension_shader_path(@material.MeshMaterial3d, String?) -> @material.MeshMaterial3d
+
+pub fn pbr_mesh_material3d_with_extension_tag(@material.MeshMaterial3d, Int) -> @material.MeshMaterial3d
+
+pub fn pbr_pack_cluster_offset_and_counts(UInt, ClusterableObjectCounts3d) -> UInt
+
+pub fn pbr_parallax_default_method() -> @material.ParallaxMappingMethod
+
+pub fn pbr_parallax_is_occlusion(@material.ParallaxMappingMethod) -> Bool
+
+pub fn pbr_parallax_is_relief(@material.ParallaxMappingMethod) -> Bool
+
+pub fn pbr_parallax_max_steps(@material.ParallaxMappingMethod) -> Int
+
+pub fn pbr_parallax_occlusion_method() -> @material.ParallaxMappingMethod
+
+pub fn pbr_parallax_relief_default_method() -> @material.ParallaxMappingMethod
+
+pub fn pbr_parallax_relief_method(Int) -> @material.ParallaxMappingMethod
+
+pub fn pbr_parallax_with_max_steps(@material.ParallaxMappingMethod, Int) -> @material.ParallaxMappingMethod
 
 pub fn pbr_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -260,6 +370,42 @@ pub fn pbr_plugin_runtime_config() -> PbrPluginRuntimeConfig
 pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
 pub fn pbr_prepass_enabled() -> Bool
+
+pub fn pbr_scattering_medium_default() -> @light.ScatteringMedium
+
+pub fn pbr_scattering_medium_default_density_lut(ScatteringMediumRuntime) -> Array[@math.Vec4]
+
+pub fn pbr_scattering_medium_default_scattering_lut(ScatteringMediumRuntime) -> Array[@math.Vec4]
+
+pub fn pbr_scattering_medium_earthlike() -> @light.ScatteringMedium
+
+pub fn pbr_scattering_medium_gpu_default() -> GpuScatteringMedium
+
+pub fn pbr_scattering_medium_gpu_from_runtime(ScatteringMediumRuntime) -> GpuScatteringMedium
+
+pub fn pbr_scattering_medium_gpu_with_sampler(ScatteringMediumRuntime, ScatteringMediumSampler) -> GpuScatteringMedium
+
+pub fn pbr_scattering_medium_lut_config_default() -> ScatteringMediumLutConfig
+
+pub fn pbr_scattering_medium_runtime_default() -> ScatteringMediumRuntime
+
+pub fn pbr_scattering_medium_runtime_earthlike() -> ScatteringMediumRuntime
+
+pub fn pbr_scattering_medium_runtime_with_density_multiplier(ScatteringMediumRuntime, Float) -> ScatteringMediumRuntime
+
+pub fn pbr_scattering_medium_runtime_with_lut_config(ScatteringMediumRuntime, ScatteringMediumLutConfig) -> ScatteringMediumRuntime
+
+pub fn pbr_scattering_medium_sampler_default() -> ScatteringMediumSampler
+
+pub fn pbr_scattering_medium_with_density_multiplier(@light.ScatteringMedium, Float) -> @light.ScatteringMedium
+
+pub fn pbr_standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
+
+pub fn pbr_standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
+
+pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
+
+pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
@@ -275,11 +421,33 @@ pub fn render3d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
 
+pub fn render3d_diagnostics_snapshot() -> Render3dDiagnosticsSnapshot
+
 pub fn render3d_execute_system(@ecs.World) -> Unit
+
+pub fn render3d_extract_morphs(@ecs.World, @ref.Ref[@render.Render3dPhaseState]) -> Unit
 
 pub fn render3d_extract_system(@ecs.World) -> Unit
 
+pub fn render3d_frustum_plane_count() -> Int
+
+pub fn render3d_frustum_plane_index_clamp(Int) -> Int
+
+pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
+
+pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
+
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render3d_prepare_bind_groups_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_contact_shadows_settings(@ecs.World, Array[@core.Entity], ContactShadowsBuffer) -> Array[(@core.Entity, ViewContactShadowsUniformOffset)]
+
+pub fn render3d_prepare_meshes_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_morphs(@ecs.World, @ref.Ref[@render.Render3dPhaseState]) -> Unit
+
+pub fn render3d_prepare_resources_flush_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit
 
@@ -289,15 +457,11 @@ pub fn render3d_queue_system(@ecs.World) -> Unit
 
 pub fn render3d_queued_visible_mesh_count() -> Int?
 
-pub let render3d_set_execute : String
-
 pub let render3d_set_extract : String
 
 pub let render3d_set_prepare : String
 
 pub let render3d_set_prepare_bind_groups : String
-
-pub let render3d_set_prepare_legacy : String
 
 pub let render3d_set_prepare_meshes : String
 
@@ -317,11 +481,17 @@ pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
+pub fn scattering_medium_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn scattering_medium_plugin_with(@app.App[@ecs.World], ScatteringMediumPlugin) -> @app.App[@ecs.World]
+
 pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
 
 pub fn standard_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@material.StandardMaterial]]
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
+
+pub fn standard_material_key_from_material(@material.StandardMaterial) -> StandardMaterialKey
 
 pub fn standard_material_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -396,16 +566,16 @@ pub impl @ecs.Component for Camera3d
 pub struct Camera3dBundle {
   camera : @sprite.Camera
   projection : Projection
-  sub_camera_view : SubCameraView3d?
-  screen_space_transmission : @post_process.ScreenSpaceTransmission?
+  sub_camera_view : @render.SubCameraView3d?
+  screen_space_transmission : @transmission.ScreenSpaceTransmission?
   screen_space_reflections : @post_process.ScreenSpaceReflections?
   bloom : @post_process.Bloom?
   tonemapping : @post_process.Tonemapping?
   deband_dither : @post_process.DebandDither?
-  chromatic_aberration : @post_process.ChromaticAberration?
+  chromatic_aberration : @effect_stack.ChromaticAberration?
   custom_post_process3d : @post_process.CustomPostProcess3d?
-  vignette : @post_process.Vignette?
-  motion_blur : @post_process.MotionBlur?
+  vignette : @effect_stack.Vignette?
+  motion_blur : @motion_blur.MotionBlur?
   exposure : Exposure?
   color_grading : @post_process.ColorGrading?
   camera3d : Camera3d
@@ -422,7 +592,7 @@ pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?
 pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
 pub fn Camera3dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
 pub fn Camera3dBundle::with_camera3d(Self, Camera3d) -> Self
-pub fn Camera3dBundle::with_chromatic_aberration(Self, @post_process.ChromaticAberration?) -> Self
+pub fn Camera3dBundle::with_chromatic_aberration(Self, @effect_stack.ChromaticAberration?) -> Self
 pub fn Camera3dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
 pub fn Camera3dBundle::with_custom_post_process3d(Self, @post_process.CustomPostProcess3d?) -> Self
 pub fn Camera3dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
@@ -431,13 +601,13 @@ pub fn Camera3dBundle::with_deferred_config(Self, CameraDeferredConfig3d) -> Sel
 pub fn Camera3dBundle::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3dBundle::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
-pub fn Camera3dBundle::with_motion_blur(Self, @post_process.MotionBlur?) -> Self
+pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
-pub fn Camera3dBundle::with_screen_space_transmission(Self, @post_process.ScreenSpaceTransmission?) -> Self
-pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_screen_space_transmission(Self, @transmission.ScreenSpaceTransmission?) -> Self
+pub fn Camera3dBundle::with_sub_camera_view(Self, @render.SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_target(Self, @sprite.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
-pub fn Camera3dBundle::with_vignette(Self, @post_process.Vignette?) -> Self
+pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @app.CommandSpawnComponents for Camera3dBundle
 
@@ -463,8 +633,41 @@ pub(all) enum CameraDeferredMode3d {
   Auto
   Forward
   Deferred
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn CameraDeferredMode3d::default() -> Self
+
+pub struct ClusterConfig3d {
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
+  dynamic_resizing : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ClusterConfig3d::default() -> Self
+pub fn ClusterConfig3d::dimensions(Self) -> (Int, Int, Int)
+pub fn ClusterConfig3d::with_dimensions(Self, Int, Int, Int) -> Self
+pub fn ClusterConfig3d::with_dynamic_resizing(Self, Bool) -> Self
+
+pub struct ClusterOffsetAndCountsPacked3d {
+  offset : UInt
+  point_lights : UInt
+  spot_lights : UInt
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ClusterOffsetAndCountsPacked3d::offset(Self) -> UInt
+pub fn ClusterOffsetAndCountsPacked3d::point_lights(Self) -> UInt
+pub fn ClusterOffsetAndCountsPacked3d::spot_lights(Self) -> UInt
+
+pub struct ClusterableObjectCounts3d {
+  point_lights : UInt
+  spot_lights : UInt
+  reflection_probes : UInt
+  irradiance_volumes : UInt
+  decals : UInt
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ClusterableObjectCounts3d::default() -> Self
+pub fn ClusterableObjectCounts3d::new(UInt, UInt, UInt, UInt, UInt) -> Self
+pub fn ClusterableObjectCounts3d::point_lights(Self) -> UInt
+pub fn ClusterableObjectCounts3d::spot_lights(Self) -> UInt
+pub fn ClusterableObjectCounts3d::total(Self) -> UInt
 
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@image.Image]?
@@ -494,13 +697,34 @@ pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
 pub fn ContactShadows::with_thickness(Self, Float) -> Self
 pub impl @ecs.Component for ContactShadows
 
+pub struct ContactShadowsBuffer {
+  uniforms : Array[ContactShadowsUniform]
+}
+pub fn ContactShadowsBuffer::clear(Self) -> Unit
+pub fn ContactShadowsBuffer::default() -> Self
+pub fn ContactShadowsBuffer::len(Self) -> Int
+pub fn ContactShadowsBuffer::push(Self, ContactShadowsUniform) -> UInt
+pub fn ContactShadowsBuffer::uniform_at(Self, UInt) -> ContactShadowsUniform?
+
+pub struct ContactShadowsUniform {
+  linear_steps : UInt
+  thickness : Float
+  length : Float
+} derive(ToJson, @json.FromJson)
+pub fn ContactShadowsUniform::default() -> Self
+pub fn ContactShadowsUniform::disabled() -> Self
+pub fn ContactShadowsUniform::from_settings(ContactShadows) -> Self
+pub fn ContactShadowsUniform::length(Self) -> Float
+pub fn ContactShadowsUniform::linear_steps(Self) -> UInt
+pub fn ContactShadowsUniform::thickness(Self) -> Float
+
 type CustomProjection3d
-pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
+pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @render.Frustum
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T] CustomProjection3d::get(Self) -> T?
-pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
@@ -512,7 +736,7 @@ pub(all) enum DecalRenderMode3d {
   ForwardOnly
   ClusteredOnly
   ForwardAndClustered
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DecalRenderMode3d::default() -> Self
 
 pub struct DeferredPbrLightingPlugin {
@@ -540,7 +764,7 @@ pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
 pub(all) enum DepthOfFieldMode {
   Bokeh
   Gaussian
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DepthOfFieldMode::default() -> Self
 
 pub struct DistanceFog {
@@ -570,7 +794,21 @@ pub fn Exposure::sunlight() -> Self
 pub fn Exposure::with_ev100(Self, Float) -> Self
 pub impl @ecs.Component for Exposure
 
-pub(all) enum FogFalloff3d {
+#alias(ExtendedMaterial3d)
+pub struct ExtendedMaterial[B, E] {
+  base : B
+  extension : E
+}
+pub fn[B, E] ExtendedMaterial::base(Self[B, E]) -> B
+pub fn[B : Default, E : Default] ExtendedMaterial::default() -> Self[B, E]
+pub fn[B, E] ExtendedMaterial::extension(Self[B, E]) -> E
+pub fn[B, E : MaterialExtension] ExtendedMaterial::material_pipeline_support(Self[B, E], MaterialExtensionPipeline) -> Bool
+pub fn[B, E : MaterialExtension] ExtendedMaterial::metadata(Self[B, E]) -> @material.ExtendedMaterialMetadata3d
+pub fn[B, E] ExtendedMaterial::new(B, E) -> Self[B, E]
+pub fn[B, E] ExtendedMaterial::with_base(Self[B, E], B) -> Self[B, E]
+pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
+
+pub enum FogFalloff3d {
   Linear(Float, Float)
   Exponential(Float)
   ExponentialSquared(Float)
@@ -597,6 +835,15 @@ pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)
 pub fn ForwardDecal::default() -> Self
 pub impl @ecs.Component for ForwardDecal
+
+#alias(ForwardDecalMaterialExtension3d)
+pub struct ForwardDecalMaterialExtension {
+  ext : @material.ForwardDecalMaterialExt
+}
+pub fn ForwardDecalMaterialExtension::default() -> Self
+pub fn ForwardDecalMaterialExtension::ext(Self) -> @material.ForwardDecalMaterialExt
+pub fn ForwardDecalMaterialExtension::new(@material.ForwardDecalMaterialExt) -> Self
+pub impl MaterialExtension for ForwardDecalMaterialExtension
 
 pub(all) struct FreeCamera {
   sensitivity : Float
@@ -628,24 +875,115 @@ pub(all) struct FreeCameraState {
 pub fn FreeCameraState::default() -> Self
 pub impl @ecs.Component for FreeCameraState
 
-pub struct Frustum {
-  half_spaces : Array[@math.HalfSpace]
-} derive(Eq, ToJson, @json.FromJson)
-pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
-pub fn Frustum::new(ViewFrustum) -> Self
-pub fn Frustum::view_frustum(Self) -> ViewFrustum
-pub impl @ecs.Component for Frustum
+pub struct GpuScatteringMedium {
+  runtime : ScatteringMediumRuntime
+  sampler : ScatteringMediumSampler
+  density_lut : Array[@math.Vec4]
+  scattering_lut : Array[@math.Vec4]
+}
+pub fn GpuScatteringMedium::density_lut(Self) -> Array[@math.Vec4]
+pub fn GpuScatteringMedium::density_lut_len(Self) -> Int
+pub fn GpuScatteringMedium::new(ScatteringMediumRuntime, ScatteringMediumSampler) -> Self
+pub fn GpuScatteringMedium::runtime(Self) -> ScatteringMediumRuntime
+pub fn GpuScatteringMedium::sampler(Self) -> ScatteringMediumSampler
+pub fn GpuScatteringMedium::scattering_lut(Self) -> Array[@math.Vec4]
+pub fn GpuScatteringMedium::scattering_lut_len(Self) -> Int
 
-pub struct Lightmap {
-  image : @asset.Handle[@image.Image]
-  uv_rect : @math.Rect
-  bicubic_sampling : Bool
-} derive(ToJson, @json.FromJson)
-pub fn Lightmap::default() -> Self
-pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
-pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
-pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
-pub impl @ecs.Component for Lightmap
+pub(all) enum MaterialBindGroupAllocator {
+  Bindless(MaterialBindGroupBindlessAllocator)
+  NonBindless(MaterialBindGroupNonBindlessAllocator)
+}
+pub fn MaterialBindGroupAllocator::default_bindless() -> Self
+pub fn MaterialBindGroupAllocator::default_non_bindless() -> Self
+
+pub struct MaterialBindGroupAllocators {
+  allocators : Map[String, MaterialBindGroupAllocator]
+}
+pub fn MaterialBindGroupAllocators::contains(Self, String) -> Bool
+pub fn MaterialBindGroupAllocators::default() -> Self
+pub fn MaterialBindGroupAllocators::get(Self, String) -> MaterialBindGroupAllocator?
+pub fn MaterialBindGroupAllocators::insert(Self, String, MaterialBindGroupAllocator) -> Unit
+
+pub struct MaterialBindGroupBindlessAllocator {
+  slab_capacity : Int
+  slots : Array[Int?]
+  free_slots : Array[Int]
+}
+pub fn MaterialBindGroupBindlessAllocator::allocate(Self, Int) -> MaterialBindingId?
+pub fn MaterialBindGroupBindlessAllocator::default() -> Self
+pub fn MaterialBindGroupBindlessAllocator::free(Self, MaterialBindingId) -> Unit
+pub fn MaterialBindGroupBindlessAllocator::len(Self) -> Int
+pub fn MaterialBindGroupBindlessAllocator::with_slab_capacity(Int) -> Self
+
+pub struct MaterialBindGroupEntry {
+  material_id : Int
+  binding_id : MaterialBindingId
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MaterialBindGroupEntry::binding_id(Self) -> MaterialBindingId
+pub fn MaterialBindGroupEntry::material_id(Self) -> Int
+pub fn MaterialBindGroupEntry::new(Int, MaterialBindingId) -> Self
+
+pub struct MaterialBindGroupIndex {
+  value : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MaterialBindGroupIndex::new(Int) -> Self
+pub fn MaterialBindGroupIndex::to_int(Self) -> Int
+
+pub struct MaterialBindGroupNonBindlessAllocator {
+  bind_groups : Array[MaterialNonBindlessAllocatedBindGroup?]
+  free_indices : Array[Int]
+}
+pub fn MaterialBindGroupNonBindlessAllocator::allocate(Self, Int) -> MaterialBindingId
+pub fn MaterialBindGroupNonBindlessAllocator::default() -> Self
+pub fn MaterialBindGroupNonBindlessAllocator::free(Self, MaterialBindingId) -> Unit
+pub fn MaterialBindGroupNonBindlessAllocator::get(Self, MaterialBindGroupIndex) -> MaterialNonBindlessAllocatedBindGroup?
+pub fn MaterialBindGroupNonBindlessAllocator::len(Self) -> Int
+
+pub struct MaterialBindGroupSlot {
+  value : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MaterialBindGroupSlot::new(Int) -> Self
+pub fn MaterialBindGroupSlot::to_int(Self) -> Int
+
+pub struct MaterialBindGroups {
+  entries : Array[MaterialBindGroupEntry]
+}
+pub fn MaterialBindGroups::default() -> Self
+pub fn MaterialBindGroups::entry_count(Self) -> Int
+pub fn MaterialBindGroups::push(Self, MaterialBindGroupEntry) -> Unit
+
+pub struct MaterialBindingId {
+  group : MaterialBindGroupIndex
+  slot : MaterialBindGroupSlot
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MaterialBindingId::default() -> Self
+pub fn MaterialBindingId::group(Self) -> MaterialBindGroupIndex
+pub fn MaterialBindingId::new(MaterialBindGroupIndex, MaterialBindGroupSlot) -> Self
+pub fn MaterialBindingId::slot(Self) -> MaterialBindGroupSlot
+
+#alias(MaterialExtensionKey3d)
+pub struct MaterialExtensionKey[E] {
+  mesh_key : UInt64
+  bind_group_data : E
+}
+pub fn[E] MaterialExtensionKey::bind_group_data(Self[E]) -> E
+pub fn[E] MaterialExtensionKey::mesh_key(Self[E]) -> UInt64
+pub fn[E] MaterialExtensionKey::new(UInt64, E) -> Self[E]
+
+#alias(MaterialExtensionPipeline3d)
+pub struct MaterialExtensionPipeline {
+  use_prepass : Bool
+  use_shadows : Bool
+}
+pub fn MaterialExtensionPipeline::default() -> Self
+pub fn MaterialExtensionPipeline::with_prepass(Self, Bool) -> Self
+pub fn MaterialExtensionPipeline::with_shadows(Self, Bool) -> Self
+
+pub struct MaterialNonBindlessAllocatedBindGroup {
+  bind_group_id : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MaterialNonBindlessAllocatedBindGroup::bind_group_id(Self) -> Int
+pub fn MaterialNonBindlessAllocatedBindGroup::new(Int) -> Self
 
 pub struct MaterialsPlugin {
 }
@@ -654,6 +992,8 @@ pub impl @app.PluginReplacement for MaterialsPlugin
 
 pub struct MaterialsPluginState {
 }
+pub fn MaterialsPluginState::default() -> Self
+pub fn MaterialsPluginState::new() -> Self
 
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
@@ -746,40 +1086,12 @@ pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Se
 pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
 pub impl @ecs.Component for OrderIndependentTransparencySettings
 
-pub(all) struct OrthographicProjection3d {
-  mut near : Float
-  mut far : Float
-  mut viewport_origin : @math.Vec2
-  mut scaling_mode : OrthographicScalingMode3d
-  mut scale : Float
-  mut area : @math.Rect
-} derive(ToJson, @json.FromJson)
-pub fn OrthographicProjection3d::area(Self) -> @math.Rect
-pub fn OrthographicProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn OrthographicProjection3d::default() -> Self
-pub fn OrthographicProjection3d::default_2d() -> Self
-pub fn OrthographicProjection3d::default_3d() -> Self
-pub fn OrthographicProjection3d::far(Self) -> Float
-pub fn OrthographicProjection3d::near(Self) -> Float
-pub fn OrthographicProjection3d::scale(Self) -> Float
-pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
-pub fn OrthographicProjection3d::viewport_origin(Self) -> @math.Vec2
-pub fn OrthographicProjection3d::with_area(Self, @math.Rect) -> Self
-pub fn OrthographicProjection3d::with_far(Self, Float) -> Self
-pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
-pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
-pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
-pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
-pub impl CameraProjection3d for OrthographicProjection3d
-
-pub(all) enum OrthographicScalingMode3d {
-  WindowSize
-  Fixed(Float, Float)
-  AutoMin(Float, Float)
-  AutoMax(Float, Float)
-  FixedVertical(Float)
-  FixedHorizontal(Float)
-} derive(Eq, Show, ToJson, @json.FromJson)
+pub struct PbrGlobalClusterSettings {
+  supports_storage_buffers : Bool
+  clustered_decals_are_usable : Bool
+  max_uniform_buffer_clusterable_objects : Int
+  view_cluster_bindings_max_indices : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
@@ -798,27 +1110,6 @@ pub struct PbrPluginRuntimeConfig {
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
 
-pub(all) struct PerspectiveProjection3d {
-  mut fov : Float
-  mut near : Float
-  mut far : Float
-  mut aspect_ratio : Float
-  mut near_clip_plane : @math.Vec4
-} derive(ToJson, @json.FromJson)
-pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
-pub fn PerspectiveProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn PerspectiveProjection3d::default() -> Self
-pub fn PerspectiveProjection3d::far(Self) -> Float
-pub fn PerspectiveProjection3d::fov(Self) -> Float
-pub fn PerspectiveProjection3d::near(Self) -> Float
-pub fn PerspectiveProjection3d::near_clip_plane(Self) -> @math.Vec4
-pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
-pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
-pub impl CameraProjection3d for PerspectiveProjection3d
-
 pub(all) struct PhysicalCameraParameters {
   mut aperture_f_stops : Float
   mut shutter_speed_s : Float
@@ -829,42 +1120,88 @@ pub fn PhysicalCameraParameters::default() -> Self
 pub fn PhysicalCameraParameters::ev100(Self) -> Float
 
 pub(all) enum Projection {
-  Perspective(PerspectiveProjection3d)
-  Orthographic(OrthographicProjection3d)
+  Perspective(@render.PerspectiveProjection3d)
+  Orthographic(@render.OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
-pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
+pub fn Projection::compute_frustum(Self, @transform.Transform) -> @render.Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
-pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn Projection::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
 pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
 pub impl CameraProjection3d for Projection
 
-pub(all) struct ProjectionMatrix3d {
-  x_axis : @math.Vec4
-  y_axis : @math.Vec4
-  z_axis : @math.Vec4
-  w_axis : @math.Vec4
+pub struct Render3dDiagnosticsSnapshot {
+  prepared_camera_count : Int
+  queued_visible_mesh_count : Int
+  queue_cpu_ms : Float
+  execute_cpu_ms : Float
 }
-pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
-pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
-pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
-pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
-pub fn ProjectionMatrix3d::row(Self, Int) -> @math.Vec4
-pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
+pub fn Render3dDiagnosticsSnapshot::default() -> Self
 
 type Render3dInternalAssetsState
+
+pub struct ScatteringMediumLutConfig {
+  falloff_resolution : Int
+  phase_resolution : Int
+}
+pub fn ScatteringMediumLutConfig::default() -> Self
+pub fn ScatteringMediumLutConfig::with_falloff_resolution(Self, Int) -> Self
+pub fn ScatteringMediumLutConfig::with_phase_resolution(Self, Int) -> Self
+
+pub struct ScatteringMediumPlugin {
+  enabled : Bool
+  runtime_config : ScatteringMediumLutConfig
+  sampler : ScatteringMediumSampler
+}
+pub fn ScatteringMediumPlugin::default() -> Self
+pub fn ScatteringMediumPlugin::disabled() -> Self
+pub fn ScatteringMediumPlugin::with_lut_config(Self, ScatteringMediumLutConfig) -> Self
+pub fn ScatteringMediumPlugin::with_sampler(Self, ScatteringMediumSampler) -> Self
+pub impl @app.PluginReplacement for ScatteringMediumPlugin
+
+pub struct ScatteringMediumPluginState {
+  enabled : Bool
+  runtime_config : ScatteringMediumLutConfig
+  sampler : ScatteringMediumSampler
+  default_gpu_medium : GpuScatteringMedium
+}
+
+pub struct ScatteringMediumRuntime {
+  medium : @light.ScatteringMedium
+  density_multiplier : Float
+  lut_config : ScatteringMediumLutConfig
+}
+pub fn ScatteringMediumRuntime::default() -> Self
+pub fn ScatteringMediumRuntime::earthlike() -> Self
+pub fn ScatteringMediumRuntime::from_medium(@light.ScatteringMedium) -> Self
+pub fn ScatteringMediumRuntime::with_density_multiplier(Self, Float) -> Self
+pub fn ScatteringMediumRuntime::with_lut_config(Self, ScatteringMediumLutConfig) -> Self
+
+pub struct ScatteringMediumSampler {
+  address_mode_u : @image.ImageAddressMode
+  address_mode_v : @image.ImageAddressMode
+  address_mode_w : @image.ImageAddressMode
+  mag_filter : @image.ImageFilterMode
+  min_filter : @image.ImageFilterMode
+  mipmap_filter : @image.ImageFilterMode
+}
+pub fn ScatteringMediumSampler::default() -> Self
+pub fn ScatteringMediumSampler::is_linear_clamp(Self) -> Bool
+pub fn ScatteringMediumSampler::linear_clamp() -> Self
+pub fn ScatteringMediumSampler::with_address_mode(Self, @image.ImageAddressMode) -> Self
+pub fn ScatteringMediumSampler::with_filter(Self, @image.ImageFilterMode) -> Self
 
 pub(all) enum ShadowFilteringMethod {
   Hardware2x2
   Gaussian
   Temporal
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl @ecs.Component for ShadowFilteringMethod
 
@@ -880,10 +1217,23 @@ pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for Skybox
 
+pub struct StandardMaterialKey {
+  bits : UInt64
+} derive(Eq, @debug.Debug)
+pub fn StandardMaterialKey::bits(Self) -> UInt64
+pub fn StandardMaterialKey::contains(Self, UInt64) -> Bool
+pub fn StandardMaterialKey::depth_bias(Self) -> UInt
+pub fn StandardMaterialKey::empty() -> Self
+pub fn StandardMaterialKey::from_bits(UInt64) -> Self
+pub fn StandardMaterialKey::with_depth_bias(Self, UInt) -> Self
+pub fn StandardMaterialKey::with_flag(Self, UInt64) -> Self
+pub fn StandardMaterialKey::without_flag(Self, UInt64) -> Self
+
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
 }
 pub fn StandardMaterialPlugin::default() -> Self
+pub fn StandardMaterialPlugin::with_prepass_enabled(Self, Bool) -> Self
 pub impl @app.PluginReplacement for StandardMaterialPlugin
 
 pub struct StandardMaterialPluginState {
@@ -891,27 +1241,33 @@ pub struct StandardMaterialPluginState {
 }
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 
-pub struct SubCameraView3d {
-  full_size : @math.IVec2
-  offset : @math.Vec2
-  size : @math.IVec2
-} derive(ToJson, @json.FromJson)
-pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
-pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
-pub impl @ecs.Component for SubCameraView3d
-
 pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
 pub fn TransmittedShadowReceiver::default() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
 
-pub struct ViewFrustum {
-  inner : @math.ViewFrustum
-} derive(Eq, ToJson, @json.FromJson)
-pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
-pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
-pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
-pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
+pub struct ViewClusterBindings3d {
+  indices : Array[UInt]
+  offsets_and_counts : Array[(UInt, ClusterableObjectCounts3d)]
+  max_indices : Int
+  max_offsets : Int
+}
+pub fn ViewClusterBindings3d::clear(Self) -> Unit
+pub fn ViewClusterBindings3d::default() -> Self
+pub fn ViewClusterBindings3d::index(Self, Int) -> UInt?
+pub fn ViewClusterBindings3d::n_indices(Self) -> Int
+pub fn ViewClusterBindings3d::n_offsets(Self) -> Int
+pub fn ViewClusterBindings3d::push_dummy_index(Self) -> Bool
+pub fn ViewClusterBindings3d::push_index(Self, UInt) -> Bool
+pub fn ViewClusterBindings3d::push_offset_and_counts(Self, UInt, ClusterableObjectCounts3d) -> Bool
+pub fn ViewClusterBindings3d::uniform_packed_offsets_and_counts(Self) -> Array[UInt]
+pub fn ViewClusterBindings3d::with_limits(Int, Int) -> Self
+
+pub struct ViewContactShadowsUniformOffset {
+  offset : UInt
+} derive(ToJson, @json.FromJson)
+pub fn ViewContactShadowsUniformOffset::new(UInt) -> Self
+pub fn ViewContactShadowsUniformOffset::offset(Self) -> UInt
 
 pub struct Wireframe {
 } derive(ToJson, @json.FromJson)
@@ -957,7 +1313,7 @@ pub using @light {type CascadeShadowConfig}
 
 pub using @light {type CascadeShadowConfigBuilder}
 
-pub using @post_process {type ChromaticAberration}
+pub using @effect_stack {type ChromaticAberration}
 
 pub using @post_process {type ColorGrading}
 
@@ -975,9 +1331,9 @@ pub using @post_process {type DebandDither}
 
 pub using @material {type DefaultOpaqueRendererMethod}
 
-pub using @core_pipeline {type DeferredPrepass}
+pub using @deferred {type DeferredPrepass}
 
-pub using @core_pipeline {type DepthPrepass}
+pub using @prepass {type DepthPrepass}
 
 pub using @light {type DirectionalLight}
 
@@ -987,6 +1343,8 @@ pub using @light {type DirectionalLightTexture}
 
 pub using @light {type EnvironmentMapLight}
 
+pub using @material {type ExtendedMaterialMetadata3d as ExtendedMaterialMetadata}
+
 pub using @material {type ExtendedMaterialMetadata3d}
 
 pub using @material {type Face3d}
@@ -994,6 +1352,8 @@ pub using @material {type Face3d}
 pub using @light {type FogVolume}
 
 pub using @material {type ForwardDecalMaterialExt}
+
+pub using @render {type Frustum}
 
 pub using @post_process {type Fxaa}
 
@@ -1005,7 +1365,7 @@ pub using @light {type GlobalAmbientLight}
 
 pub using @math {type HalfSpace}
 
-pub using @core_pipeline {type Hdr}
+pub using @core_3d {type Hdr}
 
 pub using @light {type IrradianceVolume}
 
@@ -1015,31 +1375,41 @@ pub using @light {type LightGizmoConfigGroup}
 
 pub using @light {type LightProbe}
 
+pub using @lightmap {type Lightmap}
+
 pub using @mesh {type Mesh}
 
 pub using @mesh {type Mesh3dGeometry}
 
 pub using @material {type MeshMaterial3d}
 
-pub using @post_process {type MotionBlur}
+pub using @motion_blur {type MotionBlur}
 
-pub using @core_pipeline {type MotionVectorPrepass}
+pub using @prepass {type MotionVectorPrepass}
 
-pub using @core_pipeline {type Msaa}
+pub using @core_3d {type Msaa}
 
-pub using @core_pipeline {type NormalPrepass}
+pub using @prepass {type NormalPrepass}
 
 pub using @material {type OpaqueRendererMethod}
+
+pub using @render {type OrthographicProjection3d}
+
+pub using @render {type OrthographicScalingMode3d}
 
 pub using @light {type ParallaxCorrection}
 
 pub using @material {type ParallaxMappingMethod}
+
+pub using @render {type PerspectiveProjection3d}
 
 pub using @light {type PointLight}
 
 pub using @light {type PointLightShadowMap}
 
 pub using @light {type PointLightTexture}
+
+pub using @render {type ProjectionMatrix3d}
 
 pub using @light {type ScatteringMedium}
 
@@ -1049,9 +1419,9 @@ pub using @post_process {type ScreenSpaceAmbientOcclusionQualityLevel}
 
 pub using @post_process {type ScreenSpaceReflections}
 
-pub using @post_process {type ScreenSpaceTransmission}
+pub using @transmission {type ScreenSpaceTransmission}
 
-pub using @post_process {type ScreenSpaceTransmissionQuality}
+pub using @transmission {type ScreenSpaceTransmissionQuality}
 
 pub using @light {type ShowLightGizmo}
 
@@ -1061,13 +1431,17 @@ pub using @light {type SpotLightTexture}
 
 pub using @material {type StandardMaterial}
 
+pub using @render {type SubCameraView3d}
+
 pub using @post_process {type TemporalAntiAliasing}
 
 pub using @post_process {type TemporalJitter}
 
 pub using @post_process {type Tonemapping}
 
-pub using @post_process {type Vignette}
+pub using @render {type ViewFrustum}
+
+pub using @effect_stack {type Vignette}
 
 pub using @light {type VolumetricFog}
 
@@ -1081,13 +1455,15 @@ pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2]
 pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2]
 
 pub(open) trait CameraProjection3d {
-  get_clip_from_view(Self) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  get_clip_from_view(Self) -> @render.ProjectionMatrix3d
+  get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
   update(Self, Float, Float) -> Self
   far(Self) -> Float
-  compute_frustum(Self, @transform.Transform) -> Frustum
+  compute_frustum(Self, @transform.Transform) -> @render.Frustum
   get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
+pub impl CameraProjection3d for @render.OrthographicProjection3d
+pub impl CameraProjection3d for @render.PerspectiveProjection3d
 
 pub(open) trait IntoPbrMaterialAsset {
   into_pbr_material_asset(Self) -> @material.StandardMaterial
@@ -1106,4 +1482,13 @@ pub impl IntoPbrMeshAsset for @math.Sphere
 pub impl IntoPbrMeshAsset for @math.Tetrahedron
 pub impl IntoPbrMeshAsset for @math.Triangle3d
 pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry
+
+pub(open) trait MaterialExtension {
+  extension_tag(Self) -> Int
+  shader_path(Self) -> String?
+  alpha_mode(Self) -> @material.AlphaMode3d?
+  opaque_render_method(Self) -> @material.OpaqueRendererMethod?
+  enable_prepass(Self) -> Bool
+  enable_shadows(Self) -> Bool
+}
 

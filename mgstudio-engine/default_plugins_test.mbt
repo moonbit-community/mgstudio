@@ -13,22 +13,22 @@
 // limitations under the License.
 
 ///|
-const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
+const DEFAULT_PLUGIN_NAME_RENDER3D : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = "bevy_anti_alias::AntiAliasPlugin"
+const DEFAULT_PLUGIN_NAME_ANTI_ALIAS : String = "mgstudio.anti_alias.AntiAliasPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_SHADER : String = "mgstudio::ShaderPlugin"
+const DEFAULT_PLUGIN_NAME_SHADER : String = "mgstudio.shader.ShaderPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_WEB_ASSET : String = @asset.WEB_ASSET_PLUGIN_ID
+const DEFAULT_PLUGIN_NAME_WEB_ASSET : String = "mgstudio.asset.WebAssetPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_SPRITE : String = "bevy_sprite::SpritePlugin"
+const DEFAULT_PLUGIN_NAME_SPRITE : String = "mgstudio.sprite.SpritePlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_SPRITE_RENDER : String = "bevy_sprite_render::SpriteRenderPlugin"
+const DEFAULT_PLUGIN_NAME_SPRITE_RENDER : String = "mgstudio.sprite_render.SpriteRenderPlugin"
 
 ///|
 fn plugin_index(
@@ -45,40 +45,106 @@ fn plugin_index(
 }
 
 ///|
+fn plugin_contains(
+  builder : @app.PluginGroupBuilder[@ecs.World],
+  plugin_id : String,
+) -> Bool {
+  plugin_index(builder, plugin_id) >= 0
+}
+
+///|
+fn plugin_enabled(
+  builder : @app.PluginGroupBuilder[@ecs.World],
+  plugin_id : String,
+) -> Bool {
+  for entry in builder.plugins {
+    if entry.id == plugin_id {
+      return entry.enabled
+    }
+  }
+  false
+}
+
+///|
 test "default plugins: include winit plugin after window plugin" {
   let builder = @internal.DefaultPlugins::build()
-  inspect(builder.contains(@window.WINDOW_PLUGIN_ID), content="true")
-  inspect(builder.contains("bevy_winit::WinitPlugin"), content="true")
-  inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_SHADER), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SHADER), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE), content="true")
-  inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
-  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
-  let shader_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SHADER)
-  let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_ID_WEB_ASSET)
-  let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER3D)
-  let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_ID_ANTI_ALIAS)
-  let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SPRITE)
-  let sprite_render_index = plugin_index(
-    builder,
-    DEFAULT_PLUGIN_ID_SPRITE_RENDER,
-  )
-  inspect(
-    web_asset_index < plugin_index(builder, "bevy_asset::AssetPlugin"),
+  debug_inspect(
+    plugin_contains(builder, "mgstudio.window.WindowPlugin"),
     content="true",
   )
-  inspect(shader_index < render3d_index, content="true")
-  inspect(render3d_index < anti_alias_index, content="true")
-  inspect(anti_alias_index < sprite_index, content="true")
-  inspect(sprite_index < sprite_render_index, content="true")
-  inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
-  inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
+  debug_inspect(
+    plugin_contains(builder, "mgstudio.winit.WinitPlugin"),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, "mgstudio.winit.WinitPlugin"),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_SHADER),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_SHADER),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_SPRITE),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_SPRITE),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_SPRITE_RENDER),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_SPRITE_RENDER),
+    content="true",
+  )
+  let shader_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_SHADER)
+  let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET)
+  let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_RENDER3D)
+  let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS)
+  let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_SPRITE)
+  let sprite_render_index = plugin_index(
+    builder,
+    DEFAULT_PLUGIN_NAME_SPRITE_RENDER,
+  )
+  debug_inspect(
+    web_asset_index < plugin_index(builder, "mgstudio.asset.AssetPlugin"),
+    content="true",
+  )
+  debug_inspect(shader_index < render3d_index, content="true")
+  debug_inspect(render3d_index < anti_alias_index, content="true")
+  debug_inspect(anti_alias_index < sprite_index, content="true")
+  debug_inspect(sprite_index < sprite_render_index, content="true")
+  debug_inspect(
+    plugin_contains(builder, "mgstudio.gltf.GltfPlugin"),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, "mgstudio.gltf.GltfPlugin"),
+    content="true",
+  )
 }
 
 ///|
@@ -123,10 +189,13 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     None => abort("missing window component")
   }
 
-  inspect(stored_window.title, content="Scale Override")
-  inspect(stored_window.physical_width(), content="500")
-  inspect(stored_window.physical_height(), content="300")
-  inspect(stored_window.resolution.scale_factor_override(), content="Some(1)")
+  debug_inspect(stored_window.title, content="\"Scale Override\"")
+  debug_inspect(stored_window.physical_width(), content="500")
+  debug_inspect(stored_window.physical_height(), content="300")
+  debug_inspect(
+    stored_window.resolution.scale_factor_override(),
+    content="Some(1)",
+  )
 }
 
 ///|
@@ -141,7 +210,7 @@ test "default plugins: set(AssetPlugin::default_nearest()) replaces default asse
     None => abort("missing asset server resource")
   }
 
-  inspect(asset_server.default_sampler_nearest.val, content="true")
+  debug_inspect(asset_server.default_sampler_nearest.val, content="true")
 }
 
 ///|
@@ -165,9 +234,9 @@ test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root"
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(handle), content="true")
-  inspect(@asset.asset_texture_width(handle), content="16")
-  inspect(@asset.asset_texture_height(handle), content="12")
+  debug_inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  debug_inspect(@asset.asset_texture_width(handle), content="16")
+  debug_inspect(@asset.asset_texture_height(handle), content="12")
 }
 
 ///|
@@ -195,9 +264,9 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(handle), content="true")
-  inspect(@asset.asset_texture_width(handle), content="128")
-  inspect(@asset.asset_texture_height(handle), content="96")
+  debug_inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  debug_inspect(@asset.asset_texture_width(handle), content="128")
+  debug_inspect(@asset.asset_texture_height(handle), content="96")
 }
 
 ///|
@@ -253,12 +322,18 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(image_handle), content="true")
-  inspect(reads.val.contains("bevy_pixel_dark_with_meta.png"), content="true")
-  inspect(metas.val.contains("bevy_pixel_dark_with_meta.png"), content="true")
-  inspect(directories.val.contains(""), content="true")
-  inspect(dir_checks.val.contains(""), content="true")
-  inspect(
+  debug_inspect(@asset.asset_is_texture_loaded(image_handle), content="true")
+  debug_inspect(
+    reads.val.contains("bevy_pixel_dark_with_meta.png"),
+    content="true",
+  )
+  debug_inspect(
+    metas.val.contains("bevy_pixel_dark_with_meta.png"),
+    content="true",
+  )
+  debug_inspect(directories.val.contains(""), content="true")
+  debug_inspect(dir_checks.val.contains(""), content="true")
+  debug_inspect(
     match
       (try! app.world().get_resource(@asset.loaded_folder_assets_resource_key())) {
       Some(loaded_folders) =>
@@ -309,6 +384,6 @@ test "default plugins: register_asset_source can wrap the default source reader"
     }
   }
 
-  inspect(@asset.asset_is_texture_loaded(handle), content="true")
-  inspect(reads.val.contains("branding/icon.png"), content="true")
+  debug_inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  debug_inspect(reads.val.contains("branding/icon.png"), content="true")
 }

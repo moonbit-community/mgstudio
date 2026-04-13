@@ -1,0 +1,6 @@
+import {
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio/ecs",
+}
+
+supported_targets = "native"

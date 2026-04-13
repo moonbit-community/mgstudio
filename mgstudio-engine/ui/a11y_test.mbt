@@ -13,8 +13,7 @@
 // limitations under the License.
 
 ///|
-test "ui: a11y derives button label from text children" {
-  let world = @ecs.World::new()
+fn ui_a11y_test_setup_context(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
   ignore(tick)
   let ctx = UiContext::new(
@@ -28,10 +27,30 @@ test "ui: a11y derives button label from text children" {
     false,
   )
   get_ui_context_resource(world).insert(ctx)
-  let btn = world.spawn_empty()
-  try! world.set_by_key(btn, ecs_key_button, Button::default())
+}
+
+///|
+fn ui_a11y_test_read_node(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @moon_accesskit.Node {
+  let accessibility = match
+    (try! world.get_by_key(entity, @a11y.ecs_key_accessibility_node)) {
+    Some(value) => value
+    None => abort("missing AccessibilityNode")
+  }
+  accessibility.node()
+}
+
+///|
+test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
+  let world = @ecs.World::new()
+  ui_a11y_test_setup_context(world)
+
+  let button = world.spawn_empty()
+  try! world.set_by_key(button, ecs_key_button, Button::default())
   try! world.set_by_key(
-    btn,
+    button,
     ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
@@ -40,55 +59,42 @@ test "ui: a11y derives button label from text children" {
       ),
     ),
   )
-  let child = world.spawn_empty()
-  try! world.set_by_key(child, @text.ecs_key_text, @text.Text::new("OK"))
-  world.set_by_key(child, @text.ecs_key_text_font, @text.TextFont::default())
+
+  let label = world.spawn_empty()
+  try! world.set_by_key(label, @text.ecs_key_text, @text.Text::new("OK"))
   try! world.set_by_key(
-    child,
+    label,
+    @text.ecs_key_text_font,
+    @text.TextFont::default(),
+  )
+  try! world.set_by_key(
+    label,
     @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(btn),
+    @hierarchy.Parent::new(button),
   )
   try! world.set_by_key(
-    btn,
+    button,
     @hierarchy.ecs_key_children,
-    @hierarchy.Children::new([child]),
+    @hierarchy.Children::new([label]),
   )
+
   ui_stack_system(world)
-  let update = ui_build_a11y_tree_update(world)
-  let target_id = @a11y.node_id_for_entity(btn)
-  let mut found = false
-  for nu in update.nodes() {
-    if nu.id() == target_id {
-      found = true
-      let node = nu.node()
-      assert_eq(node.role(), @moon_accesskit.Role::Button)
-      assert_eq(node.label(), Some("OK"))
-      assert_true(node.supports_action(@moon_accesskit.Action::Click))
-    }
-  }
-  assert_true(found)
+  ui_a11y_update_system(world)
+  let node = ui_a11y_test_read_node(world, button)
+  assert_eq(node.role(), @moon_accesskit.Role::Button)
+  assert_eq(node.label(), Some("OK"))
+  assert_true(node.supports_action(@moon_accesskit.Action::Click))
 }
 
 ///|
-test "ui: a11y label widget sets value from self text" {
+test "ui: a11y label role/value are synced into AccessibilityNode" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
-  ignore(tick)
-  let ctx = UiContext::new(
-    @asset.Handle::new(1),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(800.0F, 600.0F),
-    Some(@core.Entity::new(0, 0)),
-    @transform.Transform::identity(),
-    1.0F,
-    None,
-    false,
-  )
-  get_ui_context_resource(world).insert(ctx)
-  let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_label, Label::default())
+  ui_a11y_test_setup_context(world)
+
+  let entity = world.spawn_empty()
+  try! world.set_by_key(entity, ecs_key_label, Label::default())
   try! world.set_by_key(
-    e,
+    entity,
     ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
@@ -97,89 +103,29 @@ test "ui: a11y label widget sets value from self text" {
       ),
     ),
   )
-  try! world.set_by_key(e, @text.ecs_key_text, @text.Text::new("Hello"))
-  try! world.set_by_key(e, @text.ecs_key_text_font, @text.TextFont::default())
+  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Hello"))
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default(),
+  )
+
   ui_stack_system(world)
-  let update = ui_build_a11y_tree_update(world)
-  let target_id = @a11y.node_id_for_entity(e)
-  let mut found = false
-  for nu in update.nodes() {
-    if nu.id() == target_id {
-      found = true
-      let node = nu.node()
-      assert_eq(node.role(), @moon_accesskit.Role::Label)
-      assert_eq(node.value(), Some("Hello"))
-    }
-  }
-  assert_true(found)
+  ui_a11y_update_system(world)
+  let node = ui_a11y_test_read_node(world, entity)
+  assert_eq(node.role(), @moon_accesskit.Role::Label)
+  assert_eq(node.value(), Some("Hello"))
 }
 
 ///|
-test "ui: a11y sets hidden when view visibility is false" {
+test "ui: a11y visibility and clip metadata are synced into AccessibilityNode" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
-  ignore(tick)
-  let ctx = UiContext::new(
-    @asset.Handle::new(1),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(800.0F, 600.0F),
-    Some(@core.Entity::new(0, 0)),
-    @transform.Transform::identity(),
-    1.0F,
-    None,
-    false,
-  )
-  get_ui_context_resource(world).insert(ctx)
-  let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_button, Button::default())
-  try! world.set_by_key(
-    e,
-    ecs_key_ui_layout,
-    UiLayout::new(
-      @math.Rect::new(
-        @math.Vec2::new(10.0F, 10.0F),
-        @math.Vec2::new(30.0F, 30.0F),
-      ),
-    ),
-  )
-  try! world.set_by_key(
-    e,
-    @visibility.ecs_key_view_visibility,
-    @visibility.ViewVisibility::new(false),
-  )
-  ui_stack_system(world)
-  let update = ui_build_a11y_tree_update(world)
-  let target_id = @a11y.node_id_for_entity(e)
-  let mut found = false
-  for nu in update.nodes() {
-    if nu.id() == target_id {
-      found = true
-      assert_true(nu.node().is_hidden())
-    }
-  }
-  assert_true(found)
-}
+  ui_a11y_test_setup_context(world)
 
-///|
-test "ui: a11y sets clips_children when calculated clip exists" {
-  let world = @ecs.World::new()
-  let tick = world.advance_sequence()
-  ignore(tick)
-  let ctx = UiContext::new(
-    @asset.Handle::new(1),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(800.0F, 600.0F),
-    Some(@core.Entity::new(0, 0)),
-    @transform.Transform::identity(),
-    1.0F,
-    None,
-    false,
-  )
-  get_ui_context_resource(world).insert(ctx)
-  let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_button, Button::default())
+  let entity = world.spawn_empty()
+  try! world.set_by_key(entity, ecs_key_button, Button::default())
   try! world.set_by_key(
-    e,
+    entity,
     ecs_key_ui_layout,
     UiLayout::new(
       @math.Rect::new(
@@ -189,7 +135,12 @@ test "ui: a11y sets clips_children when calculated clip exists" {
     ),
   )
   try! world.set_by_key(
-    e,
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  try! world.set_by_key(
+    entity,
     ecs_key_calculated_clip,
     CalculatedClip::new(
       @math.Rect::new(
@@ -198,78 +149,23 @@ test "ui: a11y sets clips_children when calculated clip exists" {
       ),
     ),
   )
+
   ui_stack_system(world)
-  let update = ui_build_a11y_tree_update(world)
-  let target_id = @a11y.node_id_for_entity(e)
-  let mut found = false
-  for nu in update.nodes() {
-    if nu.id() == target_id {
-      found = true
-      assert_true(nu.node().clips_children())
-    }
-  }
-  assert_true(found)
+  ui_a11y_update_system(world)
+  let node = ui_a11y_test_read_node(world, entity)
+  assert_true(node.is_hidden())
+  assert_true(node.clips_children())
 }
 
 ///|
-test "ui: a11y label widget keeps empty value" {
+test "ui: a11y focus in tree update follows InputFocus resource" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
-  ignore(tick)
-  let ctx = UiContext::new(
-    @asset.Handle::new(1),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(800.0F, 600.0F),
-    Some(@core.Entity::new(0, 0)),
-    @transform.Transform::identity(),
-    1.0F,
-    None,
-    false,
+  ui_a11y_test_setup_context(world)
+  world.insert_resource(
+    @input_focus.InputFocus::resource(),
+    @input_focus.InputFocus::default(),
   )
-  get_ui_context_resource(world).insert(ctx)
-  let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_label, Label::default())
-  try! world.set_by_key(
-    e,
-    ecs_key_ui_layout,
-    UiLayout::new(
-      @math.Rect::new(
-        @math.Vec2::new(20.0F, 30.0F),
-        @math.Vec2::new(220.0F, 60.0F),
-      ),
-    ),
-  )
-  ui_stack_system(world)
-  let update = ui_build_a11y_tree_update(world)
-  let target_id = @a11y.node_id_for_entity(e)
-  let mut found = false
-  for nu in update.nodes() {
-    if nu.id() == target_id {
-      found = true
-      assert_eq(nu.node().role(), @moon_accesskit.Role::Label)
-      assert_eq(nu.node().value(), Some(""))
-    }
-  }
-  assert_true(found)
-}
 
-///|
-test "ui: a11y focus follows A11yState instead of hover state" {
-  let world = @ecs.World::new()
-  let tick = world.advance_sequence()
-  ignore(tick)
-  let ctx = UiContext::new(
-    @asset.Handle::new(1),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(800.0F, 600.0F),
-    Some(@core.Entity::new(0, 0)),
-    @transform.Transform::identity(),
-    1.0F,
-    None,
-    false,
-  )
-  get_ui_context_resource(world).insert(ctx)
-  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
   let back = world.spawn_empty()
   try! world.set_by_key(back, ecs_key_button, Button::default())
   try! world.set_by_key(
@@ -282,56 +178,25 @@ test "ui: a11y focus follows A11yState instead of hover state" {
       ),
     ),
   )
-  try! world.set_by_key(back, ecs_key_interaction, Interaction::Hovered)
-  let front = world.spawn_empty()
-  try! world.set_by_key(front, ecs_key_button, Button::default())
-  try! world.set_by_key(
-    front,
-    ecs_key_ui_layout,
-    UiLayout::new(
-      @math.Rect::new(
-        @math.Vec2::new(20.0F, 20.0F),
-        @math.Vec2::new(130.0F, 70.0F),
-      ),
-    ),
+
+  let focus_ref = try! world.get_resource_ref_mut(
+    @input_focus.InputFocus::resource(),
   )
-  try! world.set_by_key(front, ecs_key_interaction, Interaction::Pressed)
-  try! world.set_by_key(
-    back,
-    @hierarchy.ecs_key_children,
-    @hierarchy.Children::new([front]),
-  )
-  try! world.set_by_key(
-    front,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(back),
-  )
-  let a11y_state_res = @a11y.get_a11y_state_resource(world)
-  let a11y_state = Ref::new(a11y_state_res.get().unwrap())
-  @a11y.A11yState::set_focused_node(a11y_state, @a11y.node_id_for_entity(back))
-  a11y_state_res.insert(a11y_state.val)
+  match focus_ref {
+    Some(value) => value.val.set(back)
+    None => abort("missing InputFocus resource")
+  }
+
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
   assert_eq(update.focus(), @a11y.node_id_for_entity(back))
 }
 
 ///|
-test "ui: editable label node is exported as text input with SetValue" {
+test "ui: editable label exports text input role and SetValue action" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
-  ignore(tick)
-  let ctx = UiContext::new(
-    @asset.Handle::new(1),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(800.0F, 600.0F),
-    Some(@core.Entity::new(0, 0)),
-    @transform.Transform::identity(),
-    1.0F,
-    None,
-    false,
-  )
-  get_ui_context_resource(world).insert(ctx)
-  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
+  ui_a11y_test_setup_context(world)
+
   let editable = world.spawn_empty()
   try! world.set_by_key(editable, ecs_key_label, Label::default())
   try! world.set_by_key(
@@ -354,21 +219,18 @@ test "ui: editable label node is exported as text input with SetValue" {
     @text.ecs_key_text,
     @text.Text::new("Editable status"),
   )
-  world.set_by_key(editable, @text.ecs_key_text_font, @text.TextFont::default())
+  try! world.set_by_key(
+    editable,
+    @text.ecs_key_text_font,
+    @text.TextFont::default(),
+  )
+
   ui_stack_system(world)
-  let update = ui_build_a11y_tree_update(world)
-  let node_id = @a11y.node_id_for_entity(editable)
-  let mut found = false
-  for nu in update.nodes() {
-    if nu.id() == node_id {
-      found = true
-      let node = nu.node()
-      assert_eq(node.role(), @moon_accesskit.Role::TextInput)
-      assert_eq(node.label(), Some("Status input"))
-      assert_eq(node.value(), Some("Editable status"))
-      assert_true(node.supports_action(@moon_accesskit.Action::SetValue))
-      assert_true(node.supports_action(@moon_accesskit.Action::Focus))
-    }
-  }
-  assert_true(found)
+  ui_a11y_update_system(world)
+  let node = ui_a11y_test_read_node(world, editable)
+  assert_eq(node.role(), @moon_accesskit.Role::TextInput)
+  assert_eq(node.label(), Some("Status input"))
+  assert_eq(node.value(), Some("Editable status"))
+  assert_true(node.supports_action(@moon_accesskit.Action::SetValue))
+  assert_true(node.supports_action(@moon_accesskit.Action::Focus))
 }

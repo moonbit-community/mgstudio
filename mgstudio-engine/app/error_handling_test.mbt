@@ -15,10 +15,10 @@
 ///|
 struct ErrorHandlingResource {
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
-struct ErrorHandlingMarker {} derive(Eq, Show)
+struct ErrorHandlingMarker {} derive(Eq, Debug)
 
 ///|
 let error_handling_resource_key : @ecs.ResourceKey[ErrorHandlingResource] = @ecs.register_resource(
@@ -69,9 +69,9 @@ test "app error handling: default handler captures fallible system body errors" 
 
   app = app.run_once()
 
-  inspect(kinds.length(), content="1")
-  inspect(kinds[0] == ErrorContextKind::System, content="true")
-  inspect(sources[0], content="<anonymous system>")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::System, content="true")
+  debug_inspect(sources[0], content="\"<anonymous system>\"")
 }
 
 ///|
@@ -91,9 +91,9 @@ test "app error handling: missing Res routes invalid validation through default 
 
   app = app.run_once()
 
-  inspect(ran.val, content="false")
-  inspect(kinds.length(), content="1")
-  inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(ran.val, content="false")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
 }
 
 ///|
@@ -115,8 +115,8 @@ test "app error handling: skipped validated params do not invoke error handlers"
 
   app = app.run_once()
 
-  inspect(ran.val, content="false")
-  inspect(errors.length(), content="0")
+  debug_inspect(ran.val, content="false")
+  debug_inspect(errors.length(), content="0")
 }
 
 ///|
@@ -142,10 +142,10 @@ test "app error handling: per-system handler captures body errors" {
 
   app = app.run_once()
 
-  inspect(default_count.val, content="0")
-  inspect(local_count.val, content="1")
-  inspect(local_kinds.length(), content="1")
-  inspect(local_kinds[0] == ErrorContextKind::System, content="true")
+  debug_inspect(default_count.val, content="0")
+  debug_inspect(local_count.val, content="1")
+  debug_inspect(local_kinds.length(), content="1")
+  debug_inspect(local_kinds[0] == ErrorContextKind::System, content="true")
 }
 
 ///|
@@ -169,7 +169,10 @@ test "app error handling: per-system handler does not intercept validation failu
 
   app = app.run_once()
 
-  inspect(local_kinds.length(), content="0")
-  inspect(default_kinds.length(), content="1")
-  inspect(default_kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(local_kinds.length(), content="0")
+  debug_inspect(default_kinds.length(), content="1")
+  debug_inspect(
+    default_kinds[0] == ErrorContextKind::Validation,
+    content="true",
+  )
 }

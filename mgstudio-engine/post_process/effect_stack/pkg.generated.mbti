@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/post_process/effect_stack"
+
+import {
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn chromatic_aberration_sample_offsets(ChromaticAberration) -> Array[Float]
+
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration]
+
+pub let ecs_key_vignette : @ecs.ComponentKey[Vignette]
+
+pub fn effect_stack_build_chromatic_aberration_uniform(ChromaticAberration) -> ChromaticAberrationUniform
+
+pub fn effect_stack_build_vignette_uniform(Vignette) -> VignetteUniform
+
+pub fn vignette_screen_centered(Vignette) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct ChromaticAberration {
+  intensity : Float
+  max_samples : Int
+} derive(ToJson, @json.FromJson)
+pub fn ChromaticAberration::default() -> Self
+pub fn ChromaticAberration::new(Float, Int) -> Self
+pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
+pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
+pub impl @ecs.Component for ChromaticAberration
+
+pub struct ChromaticAberrationUniform {
+  intensity : Float
+  inverse_max_samples : Float
+} derive(ToJson, @json.FromJson)
+pub fn ChromaticAberrationUniform::from_settings(ChromaticAberration) -> Self
+
+pub struct Vignette {
+  intensity : Float
+  radius : Float
+  smoothness : Float
+  roundness : Float
+  center : @math.Vec2
+  edge_compensation : Float
+  color : @color.Color
+} derive(ToJson, @json.FromJson)
+pub fn Vignette::default() -> Self
+pub fn Vignette::new(Float, Float, Float, Float) -> Self
+pub fn Vignette::with_center(Self, @math.Vec2) -> Self
+pub fn Vignette::with_color(Self, @color.Color) -> Self
+pub fn Vignette::with_edge_compensation(Self, Float) -> Self
+pub fn Vignette::with_intensity(Self, Float) -> Self
+pub fn Vignette::with_radius(Self, Float) -> Self
+pub fn Vignette::with_roundness(Self, Float) -> Self
+pub fn Vignette::with_smoothness(Self, Float) -> Self
+pub impl @ecs.Component for Vignette
+
+pub struct VignetteUniform {
+  intensity : Float
+  radius : Float
+  smoothness : Float
+  roundness : Float
+  center : @math.Vec2
+  edge_compensation : Float
+  color : @color.Color
+} derive(ToJson, @json.FromJson)
+pub fn VignetteUniform::from_settings(Vignette) -> Self
+
+// Type aliases
+
+// Traits
+

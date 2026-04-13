@@ -18,7 +18,7 @@ pub(all) struct WinitPlugin {
 }
 
 ///|
-pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
+const WINIT_PLUGIN_NAME : String = "mgstudio.winit.WinitPlugin"
 
 ///|
 pub type RawWinitWindowEventData = @windowing.RawWinitWindowEventData
@@ -27,11 +27,11 @@ pub type RawWinitWindowEventData = @windowing.RawWinitWindowEventData
 pub(all) struct RawWinitWindowEvent {
   window_id : Int
   event : RawWinitWindowEventData
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent] = @ecs.register_message(
-  debug_name="bevy_winit::RawWinitWindowEvent",
+  debug_name="mgstudio_winit::RawWinitWindowEvent",
 )
 
 ///|
@@ -49,7 +49,7 @@ priv struct WinitPluginMarker {}
 
 ///|
 let ecs_key_winit_plugin_marker : @ecs.ResourceKey[WinitPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_winit::WinitPluginMarker",
+  debug_name="mgstudio_winit::WinitPluginMarker",
 )
 
 ///|
@@ -58,8 +58,8 @@ pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for WinitPlugin with replacement_id(_self) {
-  WINIT_PLUGIN_ID
+pub impl @app.PluginReplacement for WinitPlugin with plugin_name(_self) {
+  WINIT_PLUGIN_NAME
 }
 
 ///|
@@ -91,10 +91,15 @@ pub fn winit_plugin_with(
           @a11y.a11y_set,
         ),
       )
-      .add_pre_update_system_config(
+      .add_post_update_system_config(
         @app.system(winit_poll_accessibility_actions_system).in_set(
           @a11y.a11y_set,
         ),
+      )
+      .add_post_update_system_config(
+        @app.system(winit_update_accessibility_nodes_system)
+        .in_set(@a11y.a11y_set)
+        .run_if(winit_should_update_accessibility_nodes),
       )
       .add_last_system_config(
         @app.system(winit_commit_pending_accessibility_update_system).in_set(
@@ -105,7 +110,7 @@ pub fn winit_plugin_with(
         @app.Last,
         (
           @app.system(winit_changed_windows_system),
-          @app.system(winit_changed_cursor_options_system),
+          @app.system(@winit_cursor.winit_changed_cursor_options_system),
           @app.system(winit_despawn_windows_system),
           @app.system(winit_check_keyboard_focus_lost_system),
         )

@@ -1,0 +1,94 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline/tonemapping"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const TONEMAPPING_PASS_2D_LABEL : String = "tonemapping_pass_2d"
+
+pub const TONEMAPPING_PASS_3D_LABEL : String = "tonemapping_pass_3d"
+
+pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
+
+pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
+
+pub let ecs_key_tonemapping_pipeline_key : @ecs.ResourceKey[TonemappingPipelineKey]
+
+pub fn tonemapping_bind_group_cache_hit(TonemappingBindGroupCacheState, view_uniform_buffer_id~ : Int, source_texture_view_id~ : Int, lut_texture_view_id~ : Int, fallback_lut_texture_view_id~ : Int, String) -> Bool
+
+pub fn tonemapping_bind_group_cache_record(TonemappingBindGroupCacheState, view_uniform_buffer_id~ : Int, source_texture_view_id~ : Int, lut_texture_view_id~ : Int, String) -> TonemappingBindGroupCacheState
+
+pub fn tonemapping_bind_group_cache_tonemapping_changed(TonemappingBindGroupCacheState, String) -> Bool
+
+pub fn tonemapping_is_enabled(@post_process.Tonemapping) -> Bool
+
+pub fn tonemapping_pipeline_key_shader_defs(TonemappingPipelineKey) -> Array[String]
+
+pub fn tonemapping_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn tonemapping_plugin_with(@app.App[@ecs.World], TonemappingPlugin) -> @app.App[@ecs.World]
+
+pub fn tonemapping_should_run(TonemappingNodeState) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct TonemappingBindGroupCacheState {
+  has_cached_bind_group : Bool
+  cached_view_uniform_buffer_id : Int
+  cached_source_texture_view_id : Int
+  cached_lut_texture_view_id : Int
+  has_last_tonemapping_method : Bool
+  last_tonemapping_method : String
+}
+pub fn TonemappingBindGroupCacheState::new(has_cached_bind_group? : Bool, cached_view_uniform_buffer_id? : Int, cached_source_texture_view_id? : Int, cached_lut_texture_view_id? : Int, has_last_tonemapping_method? : Bool, last_tonemapping_method? : String) -> Self
+
+pub struct TonemappingNode {
+  label : String
+}
+pub fn TonemappingNode::label(Self) -> String
+pub fn TonemappingNode::new(label~ : String) -> Self
+pub fn TonemappingNode::pass_2d() -> Self
+pub fn TonemappingNode::pass_3d() -> Self
+
+pub struct TonemappingNodeState {
+  tonemapping_enabled : Bool
+  view_target_is_hdr : Bool
+  has_specialized_pipeline : Bool
+}
+pub fn TonemappingNodeState::new(tonemapping_enabled? : Bool, view_target_is_hdr? : Bool, has_specialized_pipeline? : Bool) -> Self
+
+pub struct TonemappingPipelineKey {
+  deband_dither : @post_process.DebandDither
+  tonemapping : @post_process.Tonemapping
+  flags : TonemappingPipelineKeyFlags
+} derive(Eq, @debug.Debug)
+pub fn TonemappingPipelineKey::default() -> Self
+pub fn TonemappingPipelineKey::new(deband_dither? : @post_process.DebandDither, tonemapping? : @post_process.Tonemapping, flags? : TonemappingPipelineKeyFlags) -> Self
+pub impl @app.Resource for TonemappingPipelineKey
+
+pub struct TonemappingPipelineKeyFlags {
+  hue_rotate : Bool
+  white_balance : Bool
+  sectional_color_grading : Bool
+} derive(Eq, @debug.Debug)
+pub fn TonemappingPipelineKeyFlags::default() -> Self
+pub fn TonemappingPipelineKeyFlags::new(hue_rotate? : Bool, white_balance? : Bool, sectional_color_grading? : Bool) -> Self
+
+pub struct TonemappingPlugin {
+}
+pub fn TonemappingPlugin::default() -> Self
+pub impl @app.PluginReplacement for TonemappingPlugin
+
+// Type aliases
+pub using @post_process {type DebandDither}
+
+pub using @post_process {type Tonemapping}
+
+// Traits
+

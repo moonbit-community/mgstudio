@@ -20,10 +20,13 @@ fn gpu_float_approx_eq(a : Float, b : Float) -> Bool {
 ///|
 test "gpu: 2d clip matrix maps logical viewport coordinates to clip space" {
   let matrix = gpu_clip_matrix_2d(800.0F, 600.0F, 0.0F, 0.0F, 0.0F, 1.0F)
-  inspect(gpu_float_approx_eq(matrix.x_axis_x, 0.0025F), content="true")
-  inspect(gpu_float_approx_eq(matrix.y_axis_y, 0.0033333334F), content="true")
-  inspect(gpu_float_approx_eq(matrix.w_axis_x, 0.0F), content="true")
-  inspect(gpu_float_approx_eq(matrix.w_axis_y, 0.0F), content="true")
+  debug_inspect(gpu_float_approx_eq(matrix.x_axis_x, 0.0025F), content="true")
+  debug_inspect(
+    gpu_float_approx_eq(matrix.y_axis_y, 0.0033333334F),
+    content="true",
+  )
+  debug_inspect(gpu_float_approx_eq(matrix.w_axis_x, 0.0F), content="true")
+  debug_inspect(gpu_float_approx_eq(matrix.w_axis_y, 0.0F), content="true")
 }
 
 ///|
@@ -176,7 +179,7 @@ test "renderer: interleaved 2d mesh csv keeps original vertex count" {
     backend.meshes[0].id == mesh_id &&
     backend.meshes[0].vertex_count.reinterpret_as_int() == 3 &&
     backend.meshes[0].vertex_stride_bytes == MESH2D_VERTEX_STRIDE_BYTES
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -187,7 +190,7 @@ test "renderer: mesh2d resources initialize expected bind groups" {
     backend.mesh2d_instance_bg is Some(_) &&
     backend.mesh2d_material_bgl is Some(_) &&
     backend.mesh2d_instance_capacity >= MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -203,7 +206,7 @@ test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
     is Some(_) &&
     ensure_mesh2d_instance_uniform_binding(backend, grow_required) is Some(_) &&
     backend.mesh2d_instance_capacity >= grow_required
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -287,7 +290,7 @@ test "renderer: mesh2d color material uniform bytes match Bevy size" {
     MESH2D_ALPHA_MODE_KIND_MASK,
     0.33F,
   )
-  inspect(bytes.length(), content="80")
+  debug_inspect(bytes.length(), content="80")
 }
 
 ///|
@@ -304,12 +307,12 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
   )
-  inspect(key.material_layout_key, content="0:uniform;3:uniform")
-  inspect(
+  debug_inspect(key.material_layout_key, content="0:uniform;3:uniform")
+  debug_inspect(
     key.vertex_shader_path,
     content="shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
   )
-  inspect(
+  debug_inspect(
     key.fragment_shader_path,
     content="shaders/custom/mesh2d_checker_material.wgsl",
   )
@@ -344,7 +347,7 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
   let ok = !fill.wireframe &&
     wireframe.wireframe &&
     mesh2d_pipeline_cache_key(fill) != mesh2d_pipeline_cache_key(wireframe)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -355,7 +358,7 @@ test "renderer: mesh2d wireframe shader loads dedicated uniform material" {
     Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
     ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(2) @binding(0) var<uniform> material: Wireframe2dMaterial;",
     ),
@@ -375,14 +378,14 @@ test "renderer: mesh2d material loader appends custom fragment shader" {
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
     ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
   )
-  inspect(wgsl.contains("fn checker_value("), content="true")
-  inspect(
+  debug_inspect(wgsl.contains("fn checker_value("), content="true")
+  debug_inspect(
     wgsl.contains(
       "@group(2) @binding(0) var<uniform> material: CheckerMaterial;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(2) @binding(3) var<uniform> settings: CheckerSettings;",
     ),
@@ -395,13 +398,13 @@ test "renderer: mesh2d material loader appends custom fragment shader" {
 test "renderer: mesh3d draw slot pool grows per draw slot" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
-  let ok = ensure_mesh3d_draw_slot(backend, 0) is Some(_) &&
-    ensure_mesh3d_draw_slot(backend, 1) is Some(_) &&
+  let ok = backend.ensure_mesh3d_draw_slot(0) is Some(_) &&
+    backend.ensure_mesh3d_draw_slot(1) is Some(_) &&
     backend.mesh3d_bgl_view is Some(_) &&
     backend.mesh3d_view_buf is Some(_) &&
     backend.mesh3d_bgl_draw is Some(_) &&
     backend.mesh3d_draw_slots.length() == 2
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -438,8 +441,8 @@ test "renderer: mesh3d preprocess mesh input bytes match bevy struct size" {
       },
     ],
   )
-  inspect(current_bytes.length(), content="96")
-  inspect(previous_bytes.length(), content="96")
+  debug_inspect(current_bytes.length(), content="96")
+  debug_inspect(previous_bytes.length(), content="96")
 }
 
 ///|
@@ -456,7 +459,7 @@ test "renderer: mesh3d preprocess indirect resources initialize canonical comput
     backend.mesh3d_preprocess_build_indexed_indirect_pipeline is Some(_) &&
     backend.mesh3d_preprocess_build_non_indexed_indirect_bgl is Some(_) &&
     backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is Some(_)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -468,7 +471,7 @@ test "renderer: backend requests indirect-first-instance when adapter supports i
   let device_supports = backend.device.supported_features_contains_u32(
     @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
   )
-  inspect(!adapter_supports || device_supports, content="true")
+  debug_inspect(!adapter_supports || device_supports, content="true")
 }
 
 ///|
@@ -498,31 +501,31 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
     state.late_non_indexed_dispatch_indirect_buffer is Some(_) &&
     state.depth_pyramid_texture is Some(_) &&
     state.depth_pyramid_mips.length() >= 1
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
 test "renderer: indexed indirect builder shader keeps gpu metadata read-only" {
   let wgsl = load_wgsl_required_mesh3d_build_indexed_indirect_params("assets")
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(2) var<storage> indirect_parameters_gpu_metadata:",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     !wgsl.contains(
       "@group(0) @binding(2) var<storage, read_write> indirect_parameters_gpu_metadata:",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(3) var<storage, read_write> indirect_batch_sets:",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(4) var<storage, read_write> indirect_parameters:",
     ),
@@ -546,7 +549,7 @@ test "renderer: motion vector resources initialize prepass-style bind groups" {
     backend.mesh3d_motion_vector_view_bg is Some(_) &&
     has_mesh_slot &&
     backend.mesh3d_motion_vector_mesh_slots.length() == 1
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -629,42 +632,45 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
   )
-  inspect(
+  debug_inspect(
     mesh3d_motion_vector_view_uniform_bytes(pass_state).length(),
     content="1024",
   )
-  inspect(
+  debug_inspect(
     mesh3d_motion_vector_previous_view_uniform_bytes(pass_state).length(),
     content="320",
   )
-  inspect(mesh_bytes.length(), content="176")
+  debug_inspect(mesh_bytes.length(), content="176")
 }
 
 ///|
 test "renderer: motion vector shader reads canonical Bevy prepass bindings" {
   let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass("assets")
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(2) var<uniform> previous_view_uniforms: PreviousViewUniforms;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(14) var<storage> visibility_ranges: array<vec4<f32>>;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(2) @binding(0) var<storage> mesh: array<Mesh>;"),
     content="true",
   )
-  inspect(wgsl.contains("fn vertex(vertex_no_morph: Vertex)"), content="true")
-  inspect(wgsl.contains("fn fragment(in: VertexOutput)"), content="true")
+  debug_inspect(
+    wgsl.contains("fn vertex(vertex_no_morph: Vertex)"),
+    content="true",
+  )
+  debug_inspect(wgsl.contains("fn fragment(in: VertexOutput)"), content="true")
 }
 
 ///|
@@ -697,7 +703,7 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
     backend.meshes[0].vertex_stride_bytes == MESH3D_VERTEX_STRIDE_BYTES &&
     backend.meshes[0].index_stride_bytes == 4UL &&
     backend.meshes[0].uses_u32_indices
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -705,177 +711,192 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   let wgsl = load_wgsl_from_assets_base_required(
     "assets", "shaders/custom/mesh3d_forward.wgsl",
   )
-  inspect(wgsl.contains("struct Mesh3dViewUniform {"), content="true")
-  inspect(wgsl.contains("struct Mesh3dLightsUniform {"), content="true")
-  inspect(wgsl.contains("struct Mesh3dViewBindings {"), content="true")
-  inspect(wgsl.contains("struct LightContribution {"), content="true")
-  inspect(wgsl.contains("struct Mesh3dTransformUniform {"), content="true")
-  inspect(wgsl.contains("struct Mesh3dMaterialUniform {"), content="true")
-  inspect(
+  debug_inspect(wgsl.contains("struct Mesh3dViewUniform {"), content="true")
+  debug_inspect(wgsl.contains("struct Mesh3dLightsUniform {"), content="true")
+  debug_inspect(wgsl.contains("struct Mesh3dViewBindings {"), content="true")
+  debug_inspect(wgsl.contains("struct LightContribution {"), content="true")
+  debug_inspect(
+    wgsl.contains("struct Mesh3dTransformUniform {"),
+    content="true",
+  )
+  debug_inspect(wgsl.contains("struct Mesh3dMaterialUniform {"), content="true")
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(0) @binding(1) var u_transmission_source_texture : texture_2d<f32>;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@builtin(instance_index) instance_index : u32,"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@location(4) @interpolate(flat) draw_index : u32,"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(1) @binding(2) var u_base_color_sampler : sampler;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(1) @binding(9) var u_normal_map_texture : texture_2d<f32>;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(1) @binding(10) var u_normal_map_sampler : sampler;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(1) @binding(29) var u_specular_tint_texture : texture_2d<f32>;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "@group(1) @binding(30) var u_specular_tint_sampler : sampler;",
     ),
     content="true",
   )
-  inspect(wgsl.contains("uv_transform : mat3x3<f32>,"), content="true")
-  inspect(wgsl.contains("reflectance : vec3<f32>,"), content="true")
-  inspect(wgsl.contains("flags : u32,"), content="true")
-  inspect(wgsl.contains("uv_transform_mode : f32,"), content="true")
-  inspect(wgsl.contains("world_position : vec4<f32>,"), content="true")
-  inspect(wgsl.contains("ambient_color : vec4<f32>,"), content="true")
-  inspect(
+  debug_inspect(wgsl.contains("uv_transform : mat3x3<f32>,"), content="true")
+  debug_inspect(wgsl.contains("reflectance : vec3<f32>,"), content="true")
+  debug_inspect(wgsl.contains("flags : u32,"), content="true")
+  debug_inspect(wgsl.contains("uv_transform_mode : f32,"), content="true")
+  debug_inspect(wgsl.contains("world_position : vec4<f32>,"), content="true")
+  debug_inspect(wgsl.contains("ambient_color : vec4<f32>,"), content="true")
+  debug_inspect(
     wgsl.contains("directional_light_direction_to_light : vec4<f32>,"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("point_light_color_inverse_square_range : vec4<f32>,"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("point_light_shadow_params : vec4<f32>,"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("spot_light_color_inverse_square_range : vec4<f32>,"),
     content="true",
   )
-  inspect(wgsl.contains("spot_light_custom_data : vec4<f32>,"), content="true")
-  inspect(wgsl.contains("fn specular_light("), content="true")
-  inspect(wgsl.contains("fn directional_light("), content="true")
-  inspect(wgsl.contains("fn point_light_shadow("), content="true")
-  inspect(wgsl.contains("fn point_light("), content="true")
-  inspect(wgsl.contains("fn spot_light("), content="true")
-  inspect(wgsl.contains("fn direct_diffuse_light("), content="true")
-  inspect(wgsl.contains("fn indirect_diffuse_light("), content="true")
-  inspect(wgsl.contains("fn direct_specular_light("), content="true")
-  inspect(
+  debug_inspect(
+    wgsl.contains("spot_light_custom_data : vec4<f32>,"),
+    content="true",
+  )
+  debug_inspect(wgsl.contains("fn specular_light("), content="true")
+  debug_inspect(wgsl.contains("fn directional_light("), content="true")
+  debug_inspect(wgsl.contains("fn point_light_shadow("), content="true")
+  debug_inspect(wgsl.contains("fn point_light("), content="true")
+  debug_inspect(wgsl.contains("fn spot_light("), content="true")
+  debug_inspect(wgsl.contains("fn direct_diffuse_light("), content="true")
+  debug_inspect(wgsl.contains("fn indirect_diffuse_light("), content="true")
+  debug_inspect(wgsl.contains("fn direct_specular_light("), content="true")
+  debug_inspect(
     wgsl.contains("fn direct_diffuse_transmissive_light("),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("fn indirect_diffuse_transmissive_light("),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("fn specular_transmissive_incident_light("),
     content="true",
   )
-  inspect(wgsl.contains("fn specular_transmissive_light("), content="true")
-  inspect(wgsl.contains("fn transmitted_light("), content="true")
-  inspect(wgsl.contains("fn transmission_source_uv("), content="true")
-  inspect(wgsl.contains("let directional = directional_light("), content="true")
-  inspect(wgsl.contains("let point = point_light("), content="true")
-  inspect(wgsl.contains("let spot = spot_light("), content="true")
-  inspect(
+  debug_inspect(
+    wgsl.contains("fn specular_transmissive_light("),
+    content="true",
+  )
+  debug_inspect(wgsl.contains("fn transmitted_light("), content="true")
+  debug_inspect(wgsl.contains("fn transmission_source_uv("), content="true")
+  debug_inspect(
+    wgsl.contains("let directional = directional_light("),
+    content="true",
+  )
+  debug_inspect(wgsl.contains("let point = point_light("), content="true")
+  debug_inspect(wgsl.contains("let spot = spot_light("), content="true")
+  debug_inspect(
     wgsl.contains(
       "let direct_light = diffuse_color * direct_diffuse + direct_specular;",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("let indirect_light = diffuse_color * indirect_diffuse;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "let transmission_blur_taps = i32(max(u_view.lights.spot_light_custom_data.z, 0.0));",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains(
       "let transmission_steps = max(u_view.lights.spot_light_custom_data.w, 0.0);",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y"),
     content="true",
   )
-  inspect(wgsl.contains("material_flag_enabled("), content="true")
-  inspect(wgsl.contains("apply_normal_mapping("), content="true")
-  inspect(wgsl.contains("discard;"), content="true")
-  inspect(!wgsl.contains("has_normal_map ="), content="true")
-  inspect(!wgsl.contains("let directional_term ="), content="true")
-  inspect(!wgsl.contains("let point_term ="), content="true")
-  inspect(!wgsl.contains("let spot_term ="), content="true")
-  inspect(!wgsl.contains("point_color_intensity"), content="true")
-  inspect(!wgsl.contains("spot_color_intensity"), content="true")
-  inspect(!wgsl.contains("emissive_params"), content="true")
-  inspect(!wgsl.contains("material_params"), content="true")
-  inspect(!wgsl.contains("parallax_params"), content="true")
-  inspect(!wgsl.contains("anisotropy_params"), content="true")
-  inspect(!wgsl.contains("transmission_params"), content="true")
-  inspect(!wgsl.contains("let diffuse_lighting ="), content="true")
-  inspect(!wgsl.contains("let specular_lighting ="), content="true")
-  inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
-  inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
-  inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")
-  inspect(
+  debug_inspect(wgsl.contains("material_flag_enabled("), content="true")
+  debug_inspect(wgsl.contains("apply_normal_mapping("), content="true")
+  debug_inspect(wgsl.contains("discard;"), content="true")
+  debug_inspect(!wgsl.contains("has_normal_map ="), content="true")
+  debug_inspect(!wgsl.contains("let directional_term ="), content="true")
+  debug_inspect(!wgsl.contains("let point_term ="), content="true")
+  debug_inspect(!wgsl.contains("let spot_term ="), content="true")
+  debug_inspect(!wgsl.contains("point_color_intensity"), content="true")
+  debug_inspect(!wgsl.contains("spot_color_intensity"), content="true")
+  debug_inspect(!wgsl.contains("emissive_params"), content="true")
+  debug_inspect(!wgsl.contains("material_params"), content="true")
+  debug_inspect(!wgsl.contains("parallax_params"), content="true")
+  debug_inspect(!wgsl.contains("anisotropy_params"), content="true")
+  debug_inspect(!wgsl.contains("transmission_params"), content="true")
+  debug_inspect(!wgsl.contains("let diffuse_lighting ="), content="true")
+  debug_inspect(!wgsl.contains("let specular_lighting ="), content="true")
+  debug_inspect(
+    wgsl.contains("@location(1) normal : vec3<f32>"),
+    content="true",
+  )
+  debug_inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
+  debug_inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")
+  debug_inspect(
     wgsl.contains("@location(3) world_normal : vec3<f32>"),
     content="true",
   )
@@ -890,7 +911,7 @@ test "renderer: mesh3d light scalar helpers align with Bevy-style scalar contrac
   let ok = gpu_float_approx_eq(inverse_square_range, 0.01F) &&
     gpu_float_approx_eq(spot_scale, 1.0F / (inner_cos - outer_cos)) &&
     gpu_float_approx_eq(spot_offset, -outer_cos * spot_scale)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -899,13 +920,13 @@ test "renderer: mesh3d normal map fallback texture is flat normal blue" {
   let previous_backend = backend_ref.val
   backend_ref.val = Some(backend)
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
-  inspect(
+  debug_inspect(
     fallback_texture.format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     content="true",
   )
   let capture = screenshot_capture_texture_sync(texture_id=fallback_texture.id)
-  inspect(capture is Some(_), content="true")
-  inspect(
+  debug_inspect(capture is Some(_), content="true")
+  debug_inspect(
     capture.map(fn(value) {
       [
         value.pixels[0].to_uint(),
@@ -929,7 +950,7 @@ test "renderer: mesh3d runtime flags infer two-component normal map format" {
     format_raw: @wgpu.TEXTURE_FORMAT_RG8_UNORM,
   }
   let flags = mesh3d_runtime_material_flags(0U, 42, two_component_texture)
-  inspect((flags & (1U << 6)) != 0U, content="true")
+  debug_inspect((flags & (1U << 6)) != 0U, content="true")
 }
 
 ///|
@@ -940,7 +961,7 @@ test "renderer: present mode fallbacks align with bevy auto-vsync policy" {
   let ok = candidates.length() == 2 &&
     candidates[0] == @wgpu.PRESENT_MODE_FIFO_RELAXED &&
     candidates[1] == @wgpu.PRESENT_MODE_FIFO
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -952,7 +973,7 @@ test "renderer: present mode fallbacks align with bevy auto-no-vsync policy" {
     candidates[0] == @wgpu.PRESENT_MODE_IMMEDIATE &&
     candidates[1] == @wgpu.PRESENT_MODE_MAILBOX &&
     candidates[2] == @wgpu.PRESENT_MODE_FIFO
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -962,7 +983,7 @@ test "renderer: present mode mailbox fallback keeps bevy ordering" {
     candidates[0] == @wgpu.PRESENT_MODE_MAILBOX &&
     candidates[1] == @wgpu.PRESENT_MODE_IMMEDIATE &&
     candidates[2] == @wgpu.PRESENT_MODE_FIFO
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -977,7 +998,7 @@ test "renderer: composite alpha mode mapping matches wgpu native constants" {
     @wgpu.COMPOSITE_ALPHA_MODE_UNPREMULTIPLIED &&
     surface_alpha_mode_resolve(SURFACE_COMPOSITE_ALPHA_MODE_INHERIT) ==
     @wgpu.COMPOSITE_ALPHA_MODE_INHERIT
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -989,8 +1010,8 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
     "bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}",
     "", targets,
   )
-  inspect(targets.length(), content="4")
-  inspect(
+  debug_inspect(targets.length(), content="4")
+  debug_inspect(
     resolve_wgsl_import_module_path_for_test(
       assets_base,
       targets[0].raw_path,
@@ -998,7 +1019,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
     ),
     content="bevy_render::color_operations",
   )
-  inspect(
+  debug_inspect(
     resolve_wgsl_import_module_path_for_test(
       assets_base,
       targets[1].raw_path,
@@ -1006,7 +1027,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
     ),
     content="bevy_render::color_operations",
   )
-  inspect(
+  debug_inspect(
     resolve_wgsl_import_module_path_for_test(
       assets_base,
       targets[2].raw_path,
@@ -1014,7 +1035,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
     ),
     content="bevy_render::maths",
   )
-  inspect(
+  debug_inspect(
     resolve_wgsl_import_module_path_for_test(
       assets_base,
       targets[3].raw_path,
@@ -1034,10 +1055,10 @@ test "renderer: preprocess_wgsl_source supports multiline grouped imports" {
     "assets", "#import bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}\nfn demo(color: vec3<f32>) -> vec3<f32> {\n  let h = rgb_to_hsv(color);\n  return hsv_to_rgb(vec3<f32>(h.x + PI_2, h.y, powsafe(h.z, 1.0)));\n}\n",
     defines, value_defines, visited, modules,
   )
-  inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
-  inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
-  inspect(preprocessed.contains("const PI_2"), content="true")
-  inspect(preprocessed.contains("bevy_render::"), content="false")
+  debug_inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
+  debug_inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
+  debug_inspect(preprocessed.contains("const PI_2"), content="true")
+  debug_inspect(preprocessed.contains("bevy_render::"), content="false")
 }
 
 ///|
@@ -1050,8 +1071,8 @@ test "renderer: preprocess_wgsl_source strips module aliases" {
     "assets", "#import bevy_render::maths as maths\nfn demo() -> f32 {\n  return maths::PI_2;\n}\n",
     defines, value_defines, visited, modules,
   )
-  inspect(preprocessed.contains("return PI_2;"), content="true")
-  inspect(preprocessed.contains("maths::PI_2"), content="false")
+  debug_inspect(preprocessed.contains("return PI_2;"), content="true")
+  debug_inspect(preprocessed.contains("maths::PI_2"), content="false")
 }
 
 ///|
@@ -1066,55 +1087,64 @@ test "renderer: canonical prepass import preprocessing keeps motion-vector bindi
     "assets", "shaders/bevy_pbr/prepass/prepass.wgsl", defines, value_defines, visited,
     modules,
   )
-  inspect(
+  debug_inspect(
     preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     preprocessed.contains(
       "@group(0) @binding(2) var<uniform> previous_view_uniforms: PreviousViewUniforms;",
     ),
     content="true",
   )
-  inspect(preprocessed.contains("point_shadow_textures"), content="false")
-  inspect(preprocessed.contains("environment_map_sampler"), content="false")
+  debug_inspect(preprocessed.contains("point_shadow_textures"), content="false")
+  debug_inspect(
+    preprocessed.contains("environment_map_sampler"),
+    content="false",
+  )
 }
 
 ///|
 test "renderer: mesh preprocess indirect import preprocessing keeps view bindings narrow" {
   let preprocessed = load_wgsl_required_mesh3d_preprocess_indirect("assets")
-  inspect(
+  debug_inspect(
     preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     preprocessed.contains(
       "@group(0) @binding(7) var<storage> indirect_parameters_cpu_metadata:",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     preprocessed.contains(
       "@group(0) @binding(8) var<storage, read_write> indirect_parameters_gpu_metadata:",
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     preprocessed.contains(
       "@group(0) @binding(9) var<storage> mesh_culling_data: array<MeshCullingData>;",
     ),
     content="true",
   )
-  inspect(preprocessed.contains("previous_view_uniforms"), content="false")
-  inspect(
+  debug_inspect(
+    preprocessed.contains("previous_view_uniforms"),
+    content="false",
+  )
+  debug_inspect(
     preprocessed.contains(
       "@group(0) @binding(2) var<uniform> previous_view_uniforms:",
     ),
     content="false",
   )
-  inspect(preprocessed.contains("point_shadow_textures"), content="false")
-  inspect(preprocessed.contains("environment_map_sampler"), content="false")
-  inspect(
+  debug_inspect(preprocessed.contains("point_shadow_textures"), content="false")
+  debug_inspect(
+    preprocessed.contains("environment_map_sampler"),
+    content="false",
+  )
+  debug_inspect(
     preprocessed.contains(
       "@group(1) @binding(0) var diffuse_environment_map: texture_cube<f32>;",
     ),
@@ -1134,9 +1164,12 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
     "", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl", defines, value_defines,
     sprite_visited, modules,
   )
-  inspect(sprite_preprocessed.contains("struct ColorGrading"), content="true")
-  inspect(sprite_preprocessed.contains("struct View"), content="true")
-  inspect(
+  debug_inspect(
+    sprite_preprocessed.contains("struct ColorGrading"),
+    content="true",
+  )
+  debug_inspect(sprite_preprocessed.contains("struct View"), content="true")
+  debug_inspect(
     sprite_preprocessed.contains(
       "@group(0) @binding(0) var<uniform> view: View;",
     ),
@@ -1148,9 +1181,12 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
     "", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", defines, value_defines,
     mesh2d_visited, modules,
   )
-  inspect(mesh2d_preprocessed.contains("struct ColorGrading"), content="true")
-  inspect(mesh2d_preprocessed.contains("struct View"), content="true")
-  inspect(
+  debug_inspect(
+    mesh2d_preprocessed.contains("struct ColorGrading"),
+    content="true",
+  )
+  debug_inspect(mesh2d_preprocessed.contains("struct View"), content="true")
+  debug_inspect(
     mesh2d_preprocessed.contains(
       "@group(0) @binding(0) var<uniform> view: View;",
     ),
@@ -1179,9 +1215,9 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
     "", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
     visited, modules,
   )
-  inspect(preprocessed.contains("const PI_2"), content="true")
-  inspect(preprocessed.contains("return twice_pi();"), content="true")
-  inspect(preprocessed.contains("mesh_functions::"), content="false")
+  debug_inspect(preprocessed.contains("const PI_2"), content="true")
+  debug_inspect(preprocessed.contains("return twice_pi();"), content="true")
+  debug_inspect(preprocessed.contains("mesh_functions::"), content="false")
   clear_registered_wgsl_source_registry()
 }
 
@@ -1369,7 +1405,7 @@ test "renderer: sprite pipeline specializes to hdr render target format" {
     Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1380,7 +1416,7 @@ test "renderer: rg16f render target preserves Bevy motion-vector texture format"
     Some(texture) => texture.format_raw == @wgpu.TEXTURE_FORMAT_RG16_FLOAT
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1399,7 +1435,7 @@ test "renderer: render target keeps an sRGB sampled view distinct from attachmen
       texture.sample_view is Some(_)
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1407,16 +1443,16 @@ test "renderer: ui node shader loads canonical bevy ui module with anti alias de
   register_renderer_test_shaders()
   let with_anti_alias = load_ui_node_wgsl(true)
   let without_anti_alias = load_ui_node_wgsl(false)
-  inspect(
+  debug_inspect(
     with_anti_alias.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
-  inspect(with_anti_alias.contains("bevy_ui::"), content="false")
-  inspect(
+  debug_inspect(with_anti_alias.contains("bevy_ui::"), content="false")
+  debug_inspect(
     with_anti_alias.contains("antialias(border_distance)"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     without_anti_alias.contains("let t = 1.0 - step(0.0, border_distance);"),
     content="true",
   )
@@ -1462,38 +1498,38 @@ test "renderer: ui node batching expands rects to vertices and splits anti alias
     backend, texture_id, 8.0F, 4.0F, 0.0F, 20.0F, 10.0F, 1.0F, 1.0F, 1.0F, 1.0F,
     0.0F, 0.0F, 1.0F, 1.0F, 1, 2.0F, 2.0F, 2.0F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F,
   )
-  inspect(backend.ui_vertex_count.reinterpret_as_int(), content="12")
-  inspect(backend.ui_vertex_data.length(), content="264")
-  inspect(backend.ui_batches.length(), content="2")
-  inspect(
+  debug_inspect(backend.ui_vertex_count.reinterpret_as_int(), content="12")
+  debug_inspect(backend.ui_vertex_data.length(), content="264")
+  debug_inspect(backend.ui_batches.length(), content="2")
+  debug_inspect(
     backend.ui_batches[0].instance_count.reinterpret_as_int(),
     content="6",
   )
-  inspect(backend.ui_batches[0].anti_alias, content="true")
-  inspect(
+  debug_inspect(backend.ui_batches[0].anti_alias, content="true")
+  debug_inspect(
     backend.ui_batches[1].instance_count.reinterpret_as_int(),
     content="6",
   )
-  inspect(backend.ui_batches[1].anti_alias, content="false")
+  debug_inspect(backend.ui_batches[1].anti_alias, content="false")
 }
 
 ///|
 test "renderer: ui texture slice shader loads canonical bevy ui texture slice module" {
   register_renderer_test_shaders()
   let wgsl = load_ui_texture_slice_wgsl()
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(0) @binding(0)\nvar<uniform> view: View;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(0) @binding(1)\nvar<uniform> globals: Globals;"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     wgsl.contains("@group(1) @binding(0) var sprite_texture: texture_2d<f32>;"),
     content="true",
   )
-  inspect(wgsl.contains("bevy_render::"), content="false")
+  debug_inspect(wgsl.contains("bevy_render::"), content="false")
 }
 
 ///|
@@ -1527,15 +1563,18 @@ test "renderer: ui texture slice batching expands rects to vertices and merges b
     0.1F, 0.1F, 0.9F, 0.9F, 0.1F, 0.1F, 0.9F, 0.9F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F,
     0.0F, 1.0F, 1.0F,
   )
-  inspect(backend.ui_slice_view_bg is Some(_), content="true")
-  inspect(backend.ui_slice_vertex_count.reinterpret_as_int(), content="18")
-  inspect(backend.ui_slice_vertex_data.length(), content="450")
-  inspect(backend.ui_slice_batches.length(), content="2")
-  inspect(
+  debug_inspect(backend.ui_slice_view_bg is Some(_), content="true")
+  debug_inspect(
+    backend.ui_slice_vertex_count.reinterpret_as_int(),
+    content="18",
+  )
+  debug_inspect(backend.ui_slice_vertex_data.length(), content="450")
+  debug_inspect(backend.ui_slice_batches.length(), content="2")
+  debug_inspect(
     backend.ui_slice_batches[0].instance_count.reinterpret_as_int(),
     content="12",
   )
-  inspect(
+  debug_inspect(
     backend.ui_slice_batches[1].instance_count.reinterpret_as_int(),
     content="6",
   )
@@ -1545,13 +1584,13 @@ test "renderer: ui texture slice batching expands rects to vertices and merges b
 test "renderer: ui box shadow shader loads canonical bevy ui box shadow module" {
   register_renderer_test_shaders()
   let wgsl = load_ui_box_shadow_wgsl(16)
-  inspect(wgsl.contains("const SAMPLES: i32 = "), content="true")
-  inspect(load_ui_box_shadow_wgsl(8) == wgsl, content="false")
-  inspect(
+  debug_inspect(wgsl.contains("const SAMPLES: i32 = "), content="true")
+  debug_inspect(load_ui_box_shadow_wgsl(8) == wgsl, content="false")
+  debug_inspect(
     wgsl.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
-  inspect(wgsl.contains("bevy_render::"), content="false")
+  debug_inspect(wgsl.contains("bevy_render::"), content="false")
 }
 
 ///|
@@ -1570,17 +1609,20 @@ test "renderer: ui box shadow batching expands rects to vertices and merges by s
     backend, 16.0F, 8.0F, 0.0F, 24.0F, 16.0F, 1.0F, 1.0F, 1.0F, 0.5F, 18.0F, 10.0F,
     2.0F, 2.0F, 2.0F, 2.0F, 4.0F, 8,
   )
-  inspect(backend.ui_shadow_view_bg is Some(_), content="true")
-  inspect(backend.ui_shadow_vertex_count.reinterpret_as_int(), content="18")
-  inspect(backend.ui_shadow_vertex_data.length(), content="324")
-  inspect(backend.ui_shadow_batches.length(), content="2")
-  inspect(backend.ui_shadow_batches[0].samples, content="16")
-  inspect(
+  debug_inspect(backend.ui_shadow_view_bg is Some(_), content="true")
+  debug_inspect(
+    backend.ui_shadow_vertex_count.reinterpret_as_int(),
+    content="18",
+  )
+  debug_inspect(backend.ui_shadow_vertex_data.length(), content="324")
+  debug_inspect(backend.ui_shadow_batches.length(), content="2")
+  debug_inspect(backend.ui_shadow_batches[0].samples, content="16")
+  debug_inspect(
     backend.ui_shadow_batches[0].instance_count.reinterpret_as_int(),
     content="12",
   )
-  inspect(backend.ui_shadow_batches[1].samples, content="8")
-  inspect(
+  debug_inspect(backend.ui_shadow_batches[1].samples, content="8")
+  debug_inspect(
     backend.ui_shadow_batches[1].instance_count.reinterpret_as_int(),
     content="6",
   )
@@ -1595,7 +1637,7 @@ test "renderer: ui box shadow pipeline specializes by sample count" {
   let ok = ui_shadow_pipeline_for_current_pass(backend, 16) is Some(_) &&
     ui_shadow_pipeline_for_current_pass(backend, 8) is Some(_) &&
     backend.ui_shadow_pipeline_cache.length() == 2
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1635,7 +1677,7 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
     Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1656,7 +1698,7 @@ test "renderer: bloom final composite uses hdr scene target format even from rgb
     Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1685,7 +1727,7 @@ test "renderer: bloom runtime resources initialize before first apply path" {
     }
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1693,7 +1735,7 @@ test "renderer: bloom uniforms match canonical bevy struct size" {
   let bytes = bloom_uniform_bytes(
     1920.0F, 1080.0F, 0.0F, 0.0F, 1920.0F, 1080.0F, 1.0F, 0.25F, 1.0F, 1.0F,
   )
-  inspect(bytes.length(), content="48")
+  debug_inspect(bytes.length(), content="48")
 }
 
 ///|
@@ -1707,7 +1749,7 @@ test "renderer: bloom intermediate format prefers canonical rg11b10 when rendera
   } else {
     format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1724,7 +1766,7 @@ test "renderer: bloom mip texture allocates requested mip count" {
   } catch {
     _ => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1734,21 +1776,24 @@ test "renderer: fullscreen tonemapping loads canonical grouped imports from asse
   let source = load_fullscreen_tonemapping_wgsl_with_defines_required(backend, [
     tonemapping_method_define(6),
   ])
-  inspect(source.contains("fn hsv_to_rgb"), content="true")
-  inspect(source.contains("fn rgb_to_hsv"), content="true")
-  inspect(
+  debug_inspect(source.contains("fn hsv_to_rgb"), content="true")
+  debug_inspect(source.contains("fn rgb_to_hsv"), content="true")
+  debug_inspect(
     source.contains("fn tonemapping_luminance(v: vec3<f32>) -> f32 {"),
     content="true",
   )
-  inspect(
+  debug_inspect(
     source.contains(
       "fn saturation(color: vec3<f32>, saturationAmount: f32) -> vec3<f32> {",
     ),
     content="true",
   )
-  inspect(source.contains("fn sample_tony_mc_mapface_lut("), content="true")
-  inspect(source.contains("#define TONEMAPPING_PASS"), content="false")
-  inspect(
+  debug_inspect(
+    source.contains("fn sample_tony_mc_mapface_lut("),
+    content="true",
+  )
+  debug_inspect(source.contains("#define TONEMAPPING_PASS"), content="false")
+  debug_inspect(
     source.contains("bevy_render::color_operations::hsv_to_rgb"),
     content="false",
   )
@@ -1760,9 +1805,12 @@ test "renderer: fxaa manual source merges fullscreen shader directly" {
   let source = load_fxaa_wgsl_with_defines_required(backend, [
     "EDGE_THRESH_HIGH", "EDGE_THRESH_MIN_LOW",
   ])
-  inspect(source.contains("struct FullscreenVertexOutput"), content="true")
-  inspect(source.contains("fn fullscreen_vertex_shader("), content="true")
-  inspect(
+  debug_inspect(
+    source.contains("struct FullscreenVertexOutput"),
+    content="true",
+  )
+  debug_inspect(source.contains("fn fullscreen_vertex_shader("), content="true")
+  debug_inspect(
     source.contains(
       "bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput",
     ),
@@ -1774,9 +1822,9 @@ test "renderer: fxaa manual source merges fullscreen shader directly" {
 test "renderer: effect stack manual source merges chromatic and vignette helpers" {
   let backend = GpuBackend::new(assets_base="assets")
   let source = load_effect_stack_wgsl_required(backend)
-  inspect(source.contains("fn chromatic_aberration("), content="true")
-  inspect(source.contains("fn vignette("), content="true")
-  inspect(
+  debug_inspect(source.contains("fn chromatic_aberration("), content="true")
+  debug_inspect(source.contains("fn vignette("), content="true")
+  debug_inspect(
     source.contains(
       "bevy_post_process::effect_stack::chromatic_aberration::chromatic_aberration",
     ),
@@ -1807,7 +1855,7 @@ test "renderer: tonemapping final pipeline specializes to current final target w
       backend.bloom_upsample_final_pipeline_format is None
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1829,7 +1877,7 @@ test "renderer: blit pipeline specializes to current final target for bloom-only
       format.raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -1860,7 +1908,7 @@ test "renderer: sampler cache key includes compare anisotropy and lod" {
     4,
     IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED,
   )
-  inspect(key0 == key1, content="false")
+  debug_inspect(key0 == key1, content="false")
 }
 
 ///|
@@ -1874,7 +1922,10 @@ test "renderer: unsupported border color validation raises exact blocker" {
         Fatal(message) => message
       }
   }
-  inspect(result.contains("ImageSamplerBorderColor is blocked"), content="true")
+  debug_inspect(
+    result.contains("ImageSamplerBorderColor is blocked"),
+    content="true",
+  )
 }
 
 ///|
@@ -1891,7 +1942,7 @@ test "renderer: screenshot capture swizzles bgra8 into rgba8" {
     1,
     pixels,
   )
-  inspect(
+  debug_inspect(
     converted.map(fn(value) {
       [
         value[0].to_uint(),
@@ -1921,10 +1972,10 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
     true,
   )
   let capture = screenshot_capture_texture_sync(texture_id~)
-  inspect(capture is Some(_), content="true")
-  inspect(capture.map(fn(value) { value.width }), content="Some(1)")
-  inspect(capture.map(fn(value) { value.height }), content="Some(1)")
-  inspect(
+  debug_inspect(capture is Some(_), content="true")
+  debug_inspect(capture.map(fn(value) { value.width }), content="Some(1)")
+  debug_inspect(capture.map(fn(value) { value.height }), content="Some(1)")
+  debug_inspect(
     capture.map(fn(value) {
       [
         value.pixels[0].to_uint(),
@@ -1942,12 +1993,12 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
 test "renderer: sprite uv axis metrics preserves flipped spans" {
   let (signed_scale, region_extent) = sprite_uv_axis_metrics(1.0F, 0.0F, 128)
   let ok = signed_scale == -1.0F && region_extent == 128.0F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
 test "renderer: sprite uv axis metrics keeps zero span safe" {
   let (signed_scale, region_extent) = sprite_uv_axis_metrics(0.5F, 0.5F, 128)
   let ok = signed_scale == 1.0F && region_extent == 128.0F
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

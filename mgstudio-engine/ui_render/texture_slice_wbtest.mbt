@@ -44,9 +44,12 @@ test "ui_render: sliced image uses Bevy-like normalized borders" {
     @math.Vec2::new(300.0F, 400.0F),
     @ui.NodeImageMode::Sliced(slicer),
   )
-  inspect(vec4_approx_eq(slices, 0.1F, 0.1F, 0.7F, 0.8F), content="true")
-  inspect(vec4_approx_eq(border, 0.0333333F, 0.05F, 0.9F, 0.9F), content="true")
-  inspect(vec4_approx_eq(repeat, 1.0F, 1.0F, 1.0F, 1.0F), content="true")
+  debug_inspect(vec4_approx_eq(slices, 0.1F, 0.1F, 0.7F, 0.8F), content="true")
+  debug_inspect(
+    vec4_approx_eq(border, 0.0333333F, 0.05F, 0.9F, 0.9F),
+    content="true",
+  )
+  debug_inspect(vec4_approx_eq(repeat, 1.0F, 1.0F, 1.0F, 1.0F), content="true")
 }
 
 ///|
@@ -56,7 +59,7 @@ test "ui_render: tiled image mode maps repeat to center channels" {
     @math.Vec2::new(256.0F, 96.0F),
     @ui.NodeImageMode::Tiled(true, false, 2.0F),
   )
-  inspect(vec4_approx_eq(slices, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
-  inspect(vec4_approx_eq(border, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
-  inspect(vec4_approx_eq(repeat, 1.0F, 1.0F, 2.0F, 1.0F), content="true")
+  debug_inspect(vec4_approx_eq(slices, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
+  debug_inspect(vec4_approx_eq(border, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
+  debug_inspect(vec4_approx_eq(repeat, 1.0F, 1.0F, 2.0F, 1.0F), content="true")
 }

@@ -104,10 +104,10 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  @gltf.gltf_clear_custom_vertex_attributes()
-  @gltf.gltf_clear_extension_handlers()
-  @gltf.gltf_add_custom_vertex_attribute("_BARYCENTRIC", "Barycentric")
-  @gltf.gltf_register_extension_handler(
+  @gltf_loader.gltf_clear_custom_vertex_attributes()
+  @gltf_loader_extensions.gltf_clear_extension_handlers()
+  @gltf_loader.gltf_add_custom_vertex_attribute("_BARYCENTRIC", "Barycentric")
+  @gltf_loader_extensions.gltf_register_extension_handler(
     @gltf.GltfExtensionHandler::new(
       on_mesh_spawned=Some(fn(
         asset_path : String,

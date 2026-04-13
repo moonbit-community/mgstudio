@@ -6,6 +6,8 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf",
+  "Milky2018/mgstudio/gltf/loader" @gltf_loader,
+  "Milky2018/mgstudio/gltf/loader/extensions" @gltf_loader_extensions,
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",

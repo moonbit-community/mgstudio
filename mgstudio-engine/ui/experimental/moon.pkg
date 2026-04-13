@@ -1,0 +1,9 @@
+import {
+  "moonbitlang/core/hashmap" @hashmap,
+  "Milky2018/mgstudio/core" @core,
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/hierarchy" @hierarchy,
+  "Milky2018/mgstudio/ui" @ui,
+}
+
+supported_targets = "native"

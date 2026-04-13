@@ -36,7 +36,7 @@ pub(all) enum Mesh2dValidationError {
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)
   IndexOutOfBounds(Int, Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn Mesh2dGeometry::new(

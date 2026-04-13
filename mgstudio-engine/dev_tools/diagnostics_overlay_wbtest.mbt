@@ -43,11 +43,11 @@ test "dev_tools: diagnostics overlay creates plane and window for overlay entity
   guard runtime_state.plane_entity is Some(plane_entity) else {
     abort("missing diagnostics overlay plane")
   }
-  inspect(
+  debug_inspect(
     try! (app.world().get_by_key(plane_entity, @ui.ecs_key_ui_root) is Some(_)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     try! (app
     .world()
     .get_by_key(overlay_entity, ecs_key_diagnostics_overlay_window)
@@ -62,14 +62,20 @@ test "dev_tools: diagnostics overlay uses Missing text for absent diagnostics" {
     @diagnostic.DiagnosticPath::const_new("missing.path"),
   )
   let store = @diagnostic.DiagnosticsStore::default()
-  inspect(
+  debug_inspect(
     diagnostics_overlay_measurement_text(missing_item, store),
-    content="Missing",
+    content="\"Missing\"",
   )
 }
 
 ///|
 test "dev_tools: diagnostics overlay precision rounding is stable" {
-  inspect(diagnostics_overlay_round_precision(12.3456F, 0), content="12")
-  inspect(diagnostics_overlay_round_precision(12.3456F, 2), content="12.35")
+  debug_inspect(
+    diagnostics_overlay_round_precision(12.3456F, 0),
+    content="\"12\"",
+  )
+  debug_inspect(
+    diagnostics_overlay_round_precision(12.3456F, 2),
+    content="\"12.35\"",
+  )
 }

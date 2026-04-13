@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
+const DEFERRED_PBR_LIGHTING_PLUGIN_NAME : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
 
 ///|
 pub struct DeferredPbrLightingState {
@@ -33,7 +33,7 @@ pub fn DeferredPbrLightingState::disabled() -> DeferredPbrLightingState {
 ///|
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[
   DeferredPbrLightingState,
-] = @ecs.register_resource(debug_name="bevy_pbr::DeferredPbrLightingState")
+] = @ecs.register_resource(debug_name="mgstudio_pbr::DeferredPbrLightingState")
 
 ///|
 pub struct DeferredPbrLightingPlugin {}
@@ -44,10 +44,10 @@ pub fn DeferredPbrLightingPlugin::default() -> DeferredPbrLightingPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for DeferredPbrLightingPlugin with replacement_id(
+pub impl @app.PluginReplacement for DeferredPbrLightingPlugin with plugin_name(
   _self,
 ) {
-  DEFERRED_PBR_LIGHTING_PLUGIN_ID
+  DEFERRED_PBR_LIGHTING_PLUGIN_NAME
 }
 
 ///|

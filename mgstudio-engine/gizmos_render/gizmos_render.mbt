@@ -13,25 +13,27 @@
 // limitations under the License.
 
 ///|
-/// Gizmo-render API boundary aligned with Bevy's `bevy_gizmos_render` crate.
-/// Runtime implementation currently maps to render queue stages in
-/// `Milky2018/mgstudio/sprite_render` and `Milky2018/mgstudio/pbr`.
+// Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
 
 ///|
-pub(all) enum GizmoRenderSystems {
-  QueueLineGizmos2d
-  QueueLineGizmos3d
-} derive(Eq, Show)
-
-///|
-pub fn gizmo_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite_render.sprite_render_plugin(app)
+pub fn gizmos_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  gizmo_render_plugin(app)
 }
 
 ///|
-pub fn gizmo_render_system_set(system : GizmoRenderSystems) -> @app.SystemSet {
-  match system {
-    QueueLineGizmos2d => @sprite_render.render2d_set_queue
-    QueueLineGizmos3d => @pbr.render3d_set_queue
-  }
+pub fn gizmos_render_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoRenderPlugin,
+) -> @app.App[@ecs.World] {
+  gizmo_render_plugin_with(app, plugin)
+}
+
+///|
+pub fn gizmos_render_system_set_2d() -> @app.SystemSet {
+  gizmo_render_system_set(QueueLineGizmos2d)
+}
+
+///|
+pub fn gizmos_render_system_set_3d() -> @app.SystemSet {
+  gizmo_render_system_set(QueueLineGizmos3d)
 }

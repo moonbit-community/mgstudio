@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/examples/ecs/entity_disabling"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -11,10 +12,10 @@ import {
 // Errors
 
 // Types and methods
-type DisableOnClick derive(Eq, Show, ToJson, @json.FromJson)
+type DisableOnClick derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for DisableOnClick
 
-type EntityNameText derive(Eq, Show, ToJson, @json.FromJson)
+type EntityNameText derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for EntityNameText
 
 // Type aliases

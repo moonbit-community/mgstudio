@@ -18,16 +18,16 @@ pub(all) enum ConstraintKind {
   Width
   MinWidth
   MaxWidth
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-struct Bar {} derive(Eq, Show, ToJson, FromJson)
+struct Bar {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ConstraintButton {
   kind : ConstraintKind
   value : @ui.Val
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct ConstraintSettings {

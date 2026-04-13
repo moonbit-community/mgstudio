@@ -20,7 +20,7 @@ pub(all) enum Visibility {
   Inherited
   Hidden
   Visible
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub impl ToJson for Visibility with to_json(self) {
@@ -53,7 +53,7 @@ pub fn Visibility::is_visible(self : Visibility) -> Bool {
 ///|
 pub struct InheritedVisibility {
   visible : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub impl ToJson for InheritedVisibility with to_json(self) {
@@ -79,7 +79,7 @@ pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
 ///|
 pub struct ViewVisibility {
   visible : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub impl ToJson for ViewVisibility with to_json(self) {
@@ -103,7 +103,7 @@ pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
 }
 
 ///|
-pub struct NoFrustumCulling {} derive(Eq, Show)
+pub struct NoFrustumCulling {} derive(Eq, Debug)
 
 ///|
 pub fn NoFrustumCulling::default() -> NoFrustumCulling {

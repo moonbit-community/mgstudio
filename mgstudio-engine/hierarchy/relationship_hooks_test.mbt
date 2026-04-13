@@ -30,7 +30,7 @@ test "hierarchy: inserting Parent immediately inserts Children on target" {
   try! world.set_by_key(child, ecs_key_parent, Parent::new(parent))
 
   let children = (try! world.get_by_key(parent, ecs_key_children)).unwrap()
-  inspect(hierarchy_child_ids(children), content="[1]")
+  debug_inspect(hierarchy_child_ids(children), content="[1]")
 }
 
 ///|
@@ -43,12 +43,12 @@ test "hierarchy: replacing Parent moves child between parents" {
   try! world.set_by_key(child, ecs_key_parent, Parent::new(parent_a))
   try! world.set_by_key(child, ecs_key_parent, Parent::new(parent_b))
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(parent_a, ecs_key_children)) is None,
     content="true",
   )
   let children = (try! world.get_by_key(parent_b, ecs_key_children)).unwrap()
-  inspect(hierarchy_child_ids(children), content="[2]")
+  debug_inspect(hierarchy_child_ids(children), content="[2]")
 }
 
 ///|
@@ -60,7 +60,7 @@ test "hierarchy: removing Parent removes child from Children" {
   try! world.set_by_key(child, ecs_key_parent, Parent::new(parent))
   try! (world.remove_by_key(child, ecs_key_parent) |> ignore)
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(parent, ecs_key_children)) is None,
     content="true",
   )
@@ -77,9 +77,9 @@ test "hierarchy: despawning parent recursively despawns descendants" {
   try! world.set_by_key(grandchild, ecs_key_parent, Parent::new(child))
   try! world.despawn(root)
 
-  inspect(world.is_alive(root), content="false")
-  inspect(world.is_alive(child), content="false")
-  inspect(world.is_alive(grandchild), content="false")
+  debug_inspect(world.is_alive(root), content="false")
+  debug_inspect(world.is_alive(child), content="false")
+  debug_inspect(world.is_alive(grandchild), content="false")
 }
 
 ///|
@@ -89,7 +89,7 @@ test "hierarchy: invalid self parent is removed immediately" {
 
   try! world.set_by_key(entity, ecs_key_parent, Parent::new(entity))
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_parent)) is None,
     content="true",
   )
@@ -103,7 +103,7 @@ test "hierarchy: missing parent target is removed immediately" {
 
   try! world.set_by_key(child, ecs_key_parent, Parent::new(missing_parent))
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(child, ecs_key_parent)) is None,
     content="true",
   )

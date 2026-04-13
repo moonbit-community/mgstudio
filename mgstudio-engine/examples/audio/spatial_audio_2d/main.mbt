@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const AUDIO_SCALE : Float = 0.01F
 
 ///|

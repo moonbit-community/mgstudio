@@ -13,12 +13,10 @@
 // limitations under the License.
 
 ///|
-
-///|
 pub(all) enum GameState {
   A
   B
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct TickTock {

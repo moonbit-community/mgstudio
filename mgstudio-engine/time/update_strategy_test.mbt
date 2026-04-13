@@ -128,28 +128,49 @@ test "time: manual instant keeps first update delta at zero" {
       TimeUpdateStrategy::ManualInstant(@core.Instant::from_secs_f32(10.0F)),
     )
     .run_once()
-  inspect(
+  debug_inspect(
     read_real_time_test_resource(app).first_update_seconds(),
     content="Some(10)",
   )
-  inspect(read_real_time_test_resource(app).delta_seconds(), content="0")
-  inspect(read_real_time_test_resource(app).elapsed_seconds(), content="0")
-  inspect(read_virtual_time_test_resource(app).delta_seconds(), content="0")
-  inspect(read_default_time_test_resource(app).elapsed_seconds(), content="0")
+  debug_inspect(read_real_time_test_resource(app).delta_seconds(), content="0")
+  debug_inspect(
+    read_real_time_test_resource(app).elapsed_seconds(),
+    content="0",
+  )
+  debug_inspect(
+    read_virtual_time_test_resource(app).delta_seconds(),
+    content="0",
+  )
+  debug_inspect(
+    read_default_time_test_resource(app).elapsed_seconds(),
+    content="0",
+  )
 
   app = app
     .insert_resource(
       TimeUpdateStrategy::ManualInstant(@core.Instant::from_secs_f32(12.5F)),
     )
     .run_once()
-  inspect(
+  debug_inspect(
     read_real_time_test_resource(app).last_update_seconds(),
     content="Some(12.5)",
   )
-  inspect(read_real_time_test_resource(app).delta_seconds(), content="2.5")
-  inspect(read_real_time_test_resource(app).elapsed_seconds(), content="2.5")
-  inspect(read_virtual_time_test_resource(app).delta_seconds(), content="2.5")
-  inspect(read_default_time_test_resource(app).elapsed_seconds(), content="2.5")
+  debug_inspect(
+    read_real_time_test_resource(app).delta_seconds(),
+    content="2.5",
+  )
+  debug_inspect(
+    read_real_time_test_resource(app).elapsed_seconds(),
+    content="2.5",
+  )
+  debug_inspect(
+    read_virtual_time_test_resource(app).delta_seconds(),
+    content="2.5",
+  )
+  debug_inspect(
+    read_default_time_test_resource(app).elapsed_seconds(),
+    content="2.5",
+  )
 }
 
 ///|
@@ -166,9 +187,12 @@ test "time: virtual time clamps large deltas by default" {
       TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(1.0F)),
     )
     .run_once()
-  inspect(read_real_time_test_resource(app).delta_seconds(), content="1")
-  inspect(read_virtual_time_test_resource(app).delta_seconds(), content="0.25")
-  inspect(
+  debug_inspect(read_real_time_test_resource(app).delta_seconds(), content="1")
+  debug_inspect(
+    read_virtual_time_test_resource(app).delta_seconds(),
+    content="0.25",
+  )
+  debug_inspect(
     read_default_time_test_resource(app).elapsed_seconds(),
     content="0.25",
   )
@@ -190,10 +214,19 @@ test "time: pause and relative speed follow bevy virtual semantics" {
       TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(2.0F)),
     )
     .run_once()
-  inspect(read_real_time_test_resource(app).delta_seconds(), content="2")
-  inspect(read_virtual_time_test_resource(app).delta_seconds(), content="0")
-  inspect(read_virtual_time_test_resource(app).effective_speed(), content="0")
-  inspect(read_virtual_time_test_resource(app).was_paused(), content="true")
+  debug_inspect(read_real_time_test_resource(app).delta_seconds(), content="2")
+  debug_inspect(
+    read_virtual_time_test_resource(app).delta_seconds(),
+    content="0",
+  )
+  debug_inspect(
+    read_virtual_time_test_resource(app).effective_speed(),
+    content="0",
+  )
+  debug_inspect(
+    read_virtual_time_test_resource(app).was_paused(),
+    content="true",
+  )
 
   app = unpause_virtual_time(app)
   app = set_virtual_relative_speed(app, 0.5F)
@@ -202,10 +235,19 @@ test "time: pause and relative speed follow bevy virtual semantics" {
       TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(2.0F)),
     )
     .run_once()
-  inspect(read_real_time_test_resource(app).delta_seconds(), content="2")
-  inspect(read_virtual_time_test_resource(app).delta_seconds(), content="1")
-  inspect(read_virtual_time_test_resource(app).effective_speed(), content="0.5")
-  inspect(read_virtual_time_test_resource(app).was_paused(), content="false")
+  debug_inspect(read_real_time_test_resource(app).delta_seconds(), content="2")
+  debug_inspect(
+    read_virtual_time_test_resource(app).delta_seconds(),
+    content="1",
+  )
+  debug_inspect(
+    read_virtual_time_test_resource(app).effective_speed(),
+    content="0.5",
+  )
+  debug_inspect(
+    read_virtual_time_test_resource(app).was_paused(),
+    content="false",
+  )
 }
 
 ///|
@@ -220,14 +262,20 @@ test "time: fixed timesteps strategy drives fixed update loop" {
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
-  inspect(counter.val, content="0")
+  debug_inspect(counter.val, content="0")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
-  inspect(counter.val, content="2")
-  inspect(time_fixed_steps_ran_this_frame(), content="2")
-  inspect(read_fixed_time_test_resource(app).delta_seconds(), content="0.125")
-  inspect(read_fixed_time_test_resource(app).elapsed_seconds(), content="0.25")
-  inspect(
+  debug_inspect(counter.val, content="2")
+  debug_inspect(time_fixed_steps_ran_this_frame(), content="2")
+  debug_inspect(
+    read_fixed_time_test_resource(app).delta_seconds(),
+    content="0.125",
+  )
+  debug_inspect(
+    read_fixed_time_test_resource(app).elapsed_seconds(),
+    content="0.25",
+  )
+  debug_inspect(
     read_default_time_test_resource(app).elapsed_seconds(),
     content="0.25",
   )
@@ -253,15 +301,18 @@ test "time: generic time switches to fixed during fixed update and restores afte
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
-  inspect(fixed_log.length(), content="0")
+  debug_inspect(fixed_log.length(), content="0")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
-  inspect(
+  debug_inspect(
     fixed_log.join(","),
     content="0.125/0.125|0.125/0.125,0.125/0.25|0.125/0.25",
   )
-  inspect(read_default_time_test_resource(app).delta_seconds(), content="0.25")
-  inspect(
+  debug_inspect(
+    read_default_time_test_resource(app).delta_seconds(),
+    content="0.25",
+  )
+  debug_inspect(
     read_default_time_test_resource(app).elapsed_seconds(),
     content="0.25",
   )
@@ -284,20 +335,20 @@ test "time: fixed resource timestep changes affect later steps in the same frame
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
-  inspect(steps.val, content="0")
+  debug_inspect(steps.val, content="0")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
-  inspect(steps.val, content="3")
-  inspect(time_fixed_steps_ran_this_frame(), content="3")
-  inspect(
+  debug_inspect(steps.val, content="3")
+  debug_inspect(time_fixed_steps_ran_this_frame(), content="3")
+  debug_inspect(
     read_fixed_time_test_resource(app).timestep_seconds(),
     content="0.10000000149011612",
   )
-  inspect(
+  debug_inspect(
     read_fixed_time_test_resource(app).elapsed_seconds(),
     content="0.4000000059604645",
   )
-  inspect(
+  debug_inspect(
     read_default_time_test_resource(app).elapsed_seconds(),
     content="0.4000000059604645",
   )
@@ -327,10 +378,10 @@ test "time: fixed main schedule runs substages in bevy order" {
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  inspect(log.length(), content="0")
+  debug_inspect(log.length(), content="0")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  inspect(
+  debug_inspect(
     log.join(","),
     content="FixedFirst,FixedPreUpdate,FixedUpdate,FixedPostUpdate,FixedLast",
   )
@@ -362,10 +413,10 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  inspect(log.join(","), content="before,after")
+  debug_inspect(log.join(","), content="before,after")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  inspect(log.join(","), content="before,after,before,fixed_update,after")
+  debug_inspect(log.join(","), content="before,after,before,fixed_update,after")
 }
 
 ///|
@@ -387,8 +438,8 @@ test "time: fixed main schedule order resource drives fixed substage order" {
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  inspect(log.length(), content="0")
+  debug_inspect(log.length(), content="0")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  inspect(log.join(","), content="FixedLast,FixedUpdate")
+  debug_inspect(log.join(","), content="FixedLast,FixedUpdate")
 }

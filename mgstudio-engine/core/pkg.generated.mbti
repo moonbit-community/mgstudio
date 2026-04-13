@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/core"
 
 import {
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -32,7 +33,7 @@ pub fn[T] ComponentStore::upsert(Self[T], Entity, T) -> Unit
 
 pub struct Duration {
   nanos : Int64
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Duration::as_micros(Self) -> Int64
 pub fn Duration::as_millis(Self) -> Int64
 pub fn Duration::as_nanos(Self) -> Int64
@@ -66,13 +67,15 @@ pub struct Entity {
   id : Int
   generation : Int
 } derive(Eq, ToJson, @json.FromJson)
+pub fn Entity::from_bits(UInt64) -> Self
 pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
+pub fn Entity::to_bits(Self) -> UInt64
 
 pub struct Instant {
   nanos_since_start : Int64
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Instant::as_duration_since_start(Self) -> Duration
 pub fn Instant::as_millis(Self) -> Int64
 pub fn Instant::as_secs_f32(Self) -> Float

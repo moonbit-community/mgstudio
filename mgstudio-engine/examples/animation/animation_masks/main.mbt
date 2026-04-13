@@ -60,7 +60,7 @@ pub(all) enum AnimationLabel {
   Walk
   Run
   Off
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 fn animation_label_index(label : AnimationLabel) -> Int {

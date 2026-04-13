@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn file_drag_and_drop_system(
   reader : @ecs.MessageReader[@window.FileDragAndDrop],
 ) -> Unit {

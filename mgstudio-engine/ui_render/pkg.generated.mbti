@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/ui_render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -18,6 +19,8 @@ pub fn ui_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ui_render_set_extract : String
 
+pub let ui_render_set_transparent_ui : String
+
 // Errors
 
 // Types and methods
@@ -31,7 +34,7 @@ pub impl @ecs.Component for BoxShadowSamples
 pub(all) enum UiAntiAlias {
   Off
   On
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for UiAntiAlias
 
 // Type aliases

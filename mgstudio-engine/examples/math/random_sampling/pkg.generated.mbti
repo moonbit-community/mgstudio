@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/math/random_sampling"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -9,7 +13,7 @@ package "Milky2018/mgstudio/examples/math/random_sampling"
 pub(all) enum Mode {
   Interior
   Boundary
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type MousePressed
 

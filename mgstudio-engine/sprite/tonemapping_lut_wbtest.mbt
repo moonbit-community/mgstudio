@@ -29,22 +29,22 @@ test "render2d: tonemapping LUT cache is stored per world render state" {
 
   ensure_render_state_resource(world_a)
   ensure_render_state_resource(world_b)
-  inspect(
+  debug_inspect(
     render_state_ref(world_a).unwrap().tonemapping_lut_handles is None,
     content="true",
   )
-  inspect(
+  debug_inspect(
     render_state_ref(world_b).unwrap().tonemapping_lut_handles is None,
     content="true",
   )
 
   render2d_tonemapping_lut_handles(world_a) |> ignore
 
-  inspect(
+  debug_inspect(
     render_state_ref(world_a).unwrap().tonemapping_lut_handles is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     render_state_ref(world_b).unwrap().tonemapping_lut_handles is None,
     content="true",
   )

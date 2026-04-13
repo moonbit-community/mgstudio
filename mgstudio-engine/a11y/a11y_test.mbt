@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "a11y: accessibility plugin initializes bevy-aligned resources" {
+test "a11y: accessibility plugin initializes resources and ambiguous allowance" {
   let app = accessibility_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
 
@@ -21,41 +21,11 @@ test "a11y: accessibility plugin initializes bevy-aligned resources" {
   let manage_updates = get_manage_accessibility_updates_resource(world)
     .get()
     .unwrap()
-  let state = get_a11y_state_resource(world).get().unwrap()
 
   assert_true(!requested.get())
   assert_true(manage_updates.get())
-  assert_eq(state.focused_node(), @moon_accesskit.NodeId::root())
   assert_true(!world.contains_message(ecs_msg_key_action_request))
-}
-
-///|
-test "a11y: plugin no longer owns backend action propagation" {
-  @windowing.set_accessibility_requested(false)
-  ignore(@windowing.take_accessibility_actions())
-
-  let target = @moon_accesskit.NodeId::from_u64(42UL)
-  let request = @moon_accesskit.ActionRequest::new(
-    @moon_accesskit.Action::Focus,
-    @moon_accesskit.TreeId::root(),
-    target,
+  assert_true(
+    app.is_ambiguous_component_allowed(key=ecs_key_accessibility_node),
   )
-
-  let mut app = accessibility_plugin(@app.App::new(@ecs.World::new()))
-  app = app.run_once()
-
-  @windowing.enqueue_accessibility_action(request)
-  let before_payload = @windowing.last_accessibility_update_payload()
-  a11y_host_apply_update_payload("a11y-plugin-does-not-commit")
-  app = app.run_once()
-
-  let world = app.world()
-  let state = Ref::new(get_a11y_state_resource(world).get().unwrap())
-  let drained = A11yState::drain_actions(state)
-
-  assert_true(!world.contains_message(ecs_msg_key_action_request))
-  assert_eq(drained.length(), 0)
-  assert_eq(state.val.focused_node(), @moon_accesskit.NodeId::root())
-  assert_true(!get_accessibility_requested_resource(world).get().unwrap().get())
-  assert_eq(@windowing.last_accessibility_update_payload(), before_payload)
 }

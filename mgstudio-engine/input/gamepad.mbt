@@ -40,7 +40,7 @@ pub(all) enum GamepadButton {
   DPadLeft
   DPadRight
   Other(Int)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn GamepadButton::to_index(self : GamepadButton) -> Int {
@@ -133,7 +133,7 @@ pub(all) enum GamepadAxis {
   RightStickY
   RightZ
   Other(Int)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn GamepadAxis::to_index(self : GamepadAxis) -> Int {
@@ -170,7 +170,7 @@ fn gamepad_axis_from_index(index : Int) -> GamepadAxis {
 pub(all) enum GamepadInput {
   Axis(GamepadAxis)
   Button(GamepadButton)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub(open) trait IntoGamepadInput {
@@ -1287,7 +1287,7 @@ impl Default for RunningRumbleEffects with default() {
 
 ///|
 let running_rumble_effects_resource_key : @ecs.ResourceKey[RunningRumbleEffects] = @ecs.register_resource(
-  debug_name="bevy_input::RunningRumbleEffects",
+  debug_name="mgstudio_input::RunningRumbleEffects",
 )
 
 ///|

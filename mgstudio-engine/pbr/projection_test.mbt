@@ -43,15 +43,18 @@ test "render3d: perspective projection getters expose configured values" {
   projection.far = 250.0F
   projection.aspect_ratio = 1.6F
   projection.near_clip_plane = @math.Vec4::new(0.0F, 0.0F, -1.0F, -0.3F)
-  inspect(projection_approx_eq(projection.fov, 1.2F), content="true")
-  inspect(projection_approx_eq(projection.near, 0.3F), content="true")
-  inspect(projection_approx_eq(projection.far, 250.0F), content="true")
-  inspect(projection_approx_eq(projection.aspect_ratio, 1.6F), content="true")
-  inspect(
+  debug_inspect(projection_approx_eq(projection.fov, 1.2F), content="true")
+  debug_inspect(projection_approx_eq(projection.near, 0.3F), content="true")
+  debug_inspect(projection_approx_eq(projection.far, 250.0F), content="true")
+  debug_inspect(
+    projection_approx_eq(projection.aspect_ratio, 1.6F),
+    content="true",
+  )
+  debug_inspect(
     projection_approx_eq(projection.near_clip_plane.z, -1.0F),
     content="true",
   )
-  inspect(
+  debug_inspect(
     projection_approx_eq(projection.near_clip_plane.w, -0.3F),
     content="true",
   )
@@ -63,15 +66,15 @@ test "render3d: perspective with_near keeps default clip plane in sync and prese
   let preserved = PerspectiveProjection3d::default()
     .with_near_clip_plane(@math.Vec4::new(0.0F, -1.0F, 0.0F, -2.0F))
     .with_near(0.75F)
-  inspect(
+  debug_inspect(
     projection_approx_eq(synced.near_clip_plane().w, -0.75F),
     content="true",
   )
-  inspect(
+  debug_inspect(
     projection_approx_eq(preserved.near_clip_plane().y, -1.0F),
     content="true",
   )
-  inspect(
+  debug_inspect(
     projection_approx_eq(preserved.near_clip_plane().w, -2.0F),
     content="true",
   )
@@ -89,7 +92,7 @@ test "render3d: custom projection default stores perspective default payload" {
       projection_approx_eq(perspective.aspect_ratio, 1.0F)
     None => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -109,7 +112,7 @@ test "render3d: projection preserves configured orthographic values" {
     Projection::Perspective(_) => false
     Projection::Custom(_) => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -123,7 +126,7 @@ test "render3d: orthographic projection update matches Bevy fixed vertical area"
     projection_approx_eq(area.max.x, 6.0F) &&
     projection_approx_eq(area.min.y, -3.0F) &&
     projection_approx_eq(area.max.y, 3.0F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -136,7 +139,7 @@ test "render3d: orthographic projection update matches Bevy auto min area" {
     projection_approx_eq(area.max.x, 6.0F) &&
     projection_approx_eq(area.min.y, -3.0F) &&
     projection_approx_eq(area.max.y, 3.0F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -146,11 +149,11 @@ test "render3d: projection compute_frustum uses camera transform and custom far 
     @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
   )
   let far_plane = frustum.half_spaces[VIEW_FRUSTUM_FAR_PLANE_IDX].normal_d()
-  inspect(frustum.half_spaces.length(), content="6")
-  inspect(projection_approx_eq(far_plane.x, 0.0F), content="true")
-  inspect(projection_approx_eq(far_plane.y, 0.0F), content="true")
-  inspect(projection_approx_eq(far_plane.z, 1.0F), content="true")
-  inspect(projection_approx_eq(far_plane.w, 7.0F), content="true")
+  debug_inspect(frustum.half_spaces.length(), content="6")
+  debug_inspect(projection_approx_eq(far_plane.x, 0.0F), content="true")
+  debug_inspect(projection_approx_eq(far_plane.y, 0.0F), content="true")
+  debug_inspect(projection_approx_eq(far_plane.z, 1.0F), content="true")
+  debug_inspect(projection_approx_eq(far_plane.w, 7.0F), content="true")
 }
 
 ///|
@@ -162,8 +165,8 @@ test "render3d: standard material stores full affine uv transform" {
   let point = material.uv_transform.transform_point2(
     @math.Vec2::new(0.5F, 0.25F),
   )
-  inspect(projection_approx_eq(point.x, 1.25F), content="true")
-  inspect(projection_approx_eq(point.y, 0.25F), content="true")
+  debug_inspect(projection_approx_eq(point.x, 1.25F), content="true")
+  debug_inspect(projection_approx_eq(point.y, 0.25F), content="true")
 }
 
 ///|
@@ -281,7 +284,7 @@ test "render3d: custom projection stores typed payload and updates lifecycle sta
     Projection::Perspective(_) => false
     Projection::Orthographic(_) => false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -301,7 +304,7 @@ test "render3d: projection and custom projection satisfy CameraProjection3d forw
   )
   let ok = projection_approx_eq(generic_projection_far(custom), 321.0F) &&
     projection_approx_eq(updated_projection, 654.0F)
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -315,7 +318,7 @@ test "render3d: CameraProjection3d trait exposes compute_frustum" {
     custom,
     @transform.Transform::identity(),
   )
-  inspect(frustum.half_spaces.length(), content="6")
+  debug_inspect(frustum.half_spaces.length(), content="6")
 }
 
 ///|
@@ -328,7 +331,7 @@ test "render3d: camera helper projection APIs respect custom runtime updates" {
   })
   let transform = @transform.Transform::identity()
   let target_size = @math.IVec2::new(200, 100)
-  inspect(
+  debug_inspect(
     render3d_camera_world_to_viewport(
       @math.Vec3::new(50.0F, 25.0F, 0.0F),
       camera,
@@ -342,7 +345,7 @@ test "render3d: camera helper projection APIs respect custom runtime updates" {
     }),
     content="Some(true)",
   )
-  inspect(
+  debug_inspect(
     render3d_camera_viewport_to_world_ray(
       @math.Vec2::new(100.0F, 50.0F),
       camera,

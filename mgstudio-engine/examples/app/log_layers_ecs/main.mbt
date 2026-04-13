@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct LogMessage {
   message : String
   level : @app.LogLevel
@@ -65,7 +63,7 @@ fn log_system(_world : @ecs.World) -> Unit {
 ///|
 fn print_logs(reader : @ecs.MessageReader[LogMessage]) -> Unit {
   for log_message in (try! reader.read()) {
-    println("\{log_message.level.to_string()} \{log_message.message}")
+    println("\{to_repr(log_message.level).to_string()} \{log_message.message}")
   }
 }
 

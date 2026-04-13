@@ -16,21 +16,21 @@
 pub(all) enum ShaderLanguage {
   Wgsl
   Glsl
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ShaderType {
   Wgsl
   GlslVertex
   GlslFragment
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ShaderDefValue {
   Bool(Bool)
   Int(Int)
   UInt(UInt)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ShaderDefValue::value_as_string(self : ShaderDefValue) -> String {
@@ -45,7 +45,7 @@ pub fn ShaderDefValue::value_as_string(self : ShaderDefValue) -> String {
 pub(all) struct ImportDefinition {
   import_path : String
   items : Array[String]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ImportDefinition::default() -> ImportDefinition {
@@ -56,33 +56,33 @@ pub fn ImportDefinition::default() -> ImportDefinition {
 pub struct ImportDefWithOffset {
   definition : ImportDefinition
   offset : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct EnableDirective {
   extensions : Array[String]
   source_location : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct RequiresDirective {
   extensions : Array[String]
   source_location : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct DiagnosticDirective {
   severity : String
   rule : String
   source_location : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct WgslDirectives {
   enables : Array[EnableDirective]
   requires : Array[RequiresDirective]
   diagnostics : Array[DiagnosticDirective]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn WgslDirectives::default() -> WgslDirectives {

@@ -16,7 +16,7 @@
 pub(all) enum AssetMode {
   Unprocessed
   Processed
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) suberror AssetProcessError {

@@ -20,7 +20,7 @@ pub(all) enum DiagnosticsOverlayStatistic {
   Value
   Average
   Smoothed
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn DiagnosticsOverlayStatistic::default() -> DiagnosticsOverlayStatistic {
@@ -106,7 +106,7 @@ pub fn DiagnosticsOverlay::render() -> DiagnosticsOverlay {
 
 ///|
 let ecs_key_diagnostics_overlay : @ecs.ComponentKey[DiagnosticsOverlay] = @ecs.register_component(
-  debug_name="bevy_dev_tools::DiagnosticsOverlay",
+  debug_name="mgstudio_dev_tools::DiagnosticsOverlay",
 )
 
 ///|
@@ -121,7 +121,7 @@ pub struct DiagnosticsOverlayPlane {}
 let ecs_key_diagnostics_overlay_plane : @ecs.ComponentKey[
   DiagnosticsOverlayPlane,
 ] = @ecs.register_component(
-  debug_name="bevy_dev_tools::DiagnosticsOverlayPlane",
+  debug_name="mgstudio_dev_tools::DiagnosticsOverlayPlane",
 )
 
 ///|

@@ -84,7 +84,7 @@ pub fn FpsOverlayConfig::default() -> FpsOverlayConfig {
 
 ///|
 let fps_overlay_config_resource_key : @ecs.ResourceKey[FpsOverlayConfig] = @ecs.register_resource(
-  debug_name="bevy_dev_tools::fps_overlay::FpsOverlayConfig",
+  debug_name="mgstudio_dev_tools::fps_overlay::FpsOverlayConfig",
 )
 
 ///|
@@ -136,7 +136,7 @@ priv struct FpsOverlayPluginMarker {}
 
 ///|
 let fps_overlay_plugin_marker_key : @ecs.ResourceKey[FpsOverlayPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_dev_tools::fps_overlay::FpsOverlayPluginMarker",
+  debug_name="mgstudio_dev_tools::fps_overlay::FpsOverlayPluginMarker",
 )
 
 ///|
@@ -159,7 +159,7 @@ fn FpsOverlayState::default() -> FpsOverlayState {
 
 ///|
 let fps_overlay_state_resource_key : @ecs.ResourceKey[FpsOverlayState] = @ecs.register_resource(
-  debug_name="bevy_dev_tools::fps_overlay::FpsOverlayState",
+  debug_name="mgstudio_dev_tools::fps_overlay::FpsOverlayState",
 )
 
 ///|
@@ -183,7 +183,7 @@ fn fps_overlay_warn_on_low_interval(config : FpsOverlayConfig) -> Unit {
   if config.refresh_interval.as_millis() < MIN_SAFE_INTERVAL_MILLIS {
     @app.log_record(
       @app.Warn,
-      message="Low refresh interval (\{config.refresh_interval.to_string()}) may degrade performance. Min recommended: \{@core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS).to_string()}",
+      message="Low refresh interval (\{to_repr(config.refresh_interval).to_string()}) may degrade performance. Min recommended: \{to_repr(@core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS)).to_string()}",
     )
   }
 }

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct ObliquePerspectiveProjection {
   horizontal_obliqueness : Float
   vertical_obliqueness : Float

@@ -32,7 +32,7 @@ pub(all) enum Mesh3dPrimitiveTopology {
   TriangleList
   LineList
   LineStrip
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn Mesh3dPrimitiveTopology::to_int(self : Mesh3dPrimitiveTopology) -> Int {
@@ -56,14 +56,14 @@ pub(all) enum Mesh3dValidationError {
   NonLineStripVertexCount(Int)
   NonLineStripIndexCount(Int)
   IndexOutOfBounds(Int, Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Mesh3dGenerateTangentsError {
   InvalidGeometry(Mesh3dValidationError)
   UnsupportedTopology(Mesh3dPrimitiveTopology)
   DegenerateUvTriangle(Int, Int, Int)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn Mesh3dGeometry::new(

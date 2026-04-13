@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const PLAYER_SPEED : Float = 100.0F
 
 ///|
@@ -98,12 +96,9 @@ fn setup_camera(commands : @app.Commands) -> Unit {
 
 ///|
 fn move_player(
-  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  player : @app.Single[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[Player]),
-    @ecs.All,
-  ],
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
   let direction = @math.Vec2::zero()
   if keyboard_input.pressed(@window.KeyCode::KeyW) {
@@ -123,48 +118,38 @@ fn move_player(
   let move_delta = direction
     .normalize_or_zero()
     .mul_scalar(PLAYER_SPEED * delta_seconds)
-  try! query.for_each(fn(_entity, data) {
-    let (transform, _player) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      @math.Vec3::new(move_delta.x, move_delta.y, 0.0F),
-    )
-  })
+  let transform = player.get()
+  let transform_ref = transform.get_ref()
+  transform_ref.val.translation = transform_ref.val.translation.add(
+    @math.Vec3::new(move_delta.x, move_delta.y, 0.0F),
+  )
 }
 
 ///|
 fn update_camera(
-  player_query : @ecs.Query[
-    (@ecs.Comp[@transform.Transform], @ecs.Comp[Player]),
-    @ecs.All,
+  camera : @app.Single[
+    @ecs.Mut[@transform.Transform],
+    (@ecs.With[@sprite.Camera2d], @ecs.Without[Player]),
   ],
-  camera_query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[@sprite.Camera2d]),
-    @ecs.All,
+  player : @app.Single[
+    @ecs.Comp[@transform.Transform],
+    (@ecs.With[Player], @ecs.Without[@sprite.Camera2d]),
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let player_translation : Ref[@math.Vec3?] = Ref::new(None)
-  try! player_query.for_each(fn(_entity, data) {
-    let (transform, _player) = data
-    player_translation.val = Some(transform.value().translation)
-  })
-  guard player_translation.val is Some(target_translation) else { return }
-
+  let target_translation = player.get().value().translation
   let delta_seconds = time.get().delta_seconds()
-  try! camera_query.for_each(fn(_entity, data) {
-    let (transform, _camera) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.smooth_nudge(
-      @math.Vec3::new(
-        target_translation.x,
-        target_translation.y,
-        transform_ref.val.translation.z,
-      ),
-      CAMERA_DECAY_RATE,
-      delta_seconds,
-    )
-  })
+  let camera_transform = camera.get()
+  let transform_ref = camera_transform.get_ref()
+  transform_ref.val.translation.smooth_nudge(
+    @math.Vec3::new(
+      target_translation.x,
+      target_translation.y,
+      transform_ref.val.translation.z,
+    ),
+    CAMERA_DECAY_RATE,
+    delta_seconds,
+  )
 }
 
 ///|

@@ -2,35 +2,97 @@
 package "Milky2018/mgstudio/camera"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/pbr/render",
+  "Milky2018/mgstudio/picking/mesh_picking/ray_cast",
+  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
 }
 
 // Values
+pub fn camera_2d_bundle_new(@sprite.Camera, @transform.Transform) -> @sprite.Camera2dBundle
+
+pub fn camera_2d_bundle_new_with_layers(@sprite.Camera, @transform.Transform, @sprite.RenderTarget, @sprite.RenderLayers) -> @sprite.Camera2dBundle
+
+pub fn camera_2d_bundle_new_with_projection(@sprite.Camera, @sprite.Projection, @transform.Transform) -> @sprite.Camera2dBundle
+
+pub fn camera_2d_bundle_new_with_target(@sprite.Camera, @transform.Transform, @sprite.RenderTarget) -> @sprite.Camera2dBundle
+
+pub fn camera_clear_color_config_default() -> @sprite.ClearColorConfig
+
+pub fn camera_clear_color_config_resolve(@sprite.ClearColorConfig) -> (Bool, @color.Color)
+
+pub fn camera_clear_color_default() -> @sprite.ClearColor
+
+pub fn camera_clear_color_new(@color.Color) -> @sprite.ClearColor
+
+pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
+
+pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let camera_update_systems : String
+
 pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn camera_world_to_viewport(@math.Vec3, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
 
 pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@pbr.SubCameraView3d]
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
 
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> Array[(@core.Entity, @pbr.MeshRayCastHit)]
+pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
 
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> (@core.Entity, @pbr.MeshRayCastHit)?
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @ray_cast.MeshRayCastIntersectionSettings) -> Array[(@core.Entity, @ray_cast.MeshRayCastIntersectionHit)]
+
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @ray_cast.MeshRayCastIntersectionSettings) -> (@core.Entity, @ray_cast.MeshRayCastIntersectionHit)?
+
+pub fn orthographic_projection_2d_default() -> @sprite.OrthographicProjection
+
+pub fn orthographic_projection_2d_with_scale(Float) -> @sprite.OrthographicProjection
+
+pub fn orthographic_projection_3d_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
+
+pub fn perspective_projection_3d_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
+
+pub fn perspective_projection_3d_default() -> @render.PerspectiveProjection3d
+
+pub fn perspective_projection_3d_update(@render.PerspectiveProjection3d, Float, Float) -> @render.PerspectiveProjection3d
+
+pub fn perspective_projection_3d_with_aspect_ratio(@render.PerspectiveProjection3d, Float) -> @render.PerspectiveProjection3d
 
 // Errors
 
 // Types and methods
+pub struct Aabb {
+  inner : @math.Aabb3d
+}
+pub fn Aabb::center(Self) -> @math.Vec3
+pub fn Aabb::from_math(@math.Aabb3d) -> Self
+pub fn Aabb::from_min_max(@math.Vec3, @math.Vec3) -> Self
+pub fn Aabb::half_size(Self) -> @math.Vec3
+pub fn Aabb::to_math(Self) -> @math.Aabb3d
+pub impl @ecs.Component for Aabb
 
 // Type aliases
 pub using @pbr {type AutoExposure}
+
+pub using @sprite {type Camera}
+
+pub using @sprite {type Camera2d}
+
+pub using @sprite {type Camera2dBundle}
 
 pub using @pbr {type Camera3d}
 
@@ -50,23 +112,38 @@ pub using @pbr {type DepthOfFieldMode}
 
 pub using @pbr {type Exposure}
 
-pub using @pbr {type MeshRayCastHit}
+pub using @render {type Frustum}
 
-pub using @pbr {type MeshRayCastSettings}
+pub using @core_3d {type Hdr}
 
-pub using @pbr {type OrthographicProjection3d}
+pub using @ray_cast {type MeshRayCastIntersectionHit as MeshRayCastHit}
 
-pub using @pbr {type OrthographicScalingMode3d}
+pub using @ray_cast {type MeshRayCastIntersectionSettings as MeshRayCastSettings}
 
-pub using @pbr {type PerspectiveProjection3d}
+pub using @sprite {type OrthographicProjection as OrthographicProjection2d}
+
+pub using @render {type OrthographicProjection3d}
+
+pub using @render {type OrthographicScalingMode3d}
+
+pub using @render {type PerspectiveProjection3d as PerspectiveProjection}
+
+pub using @render {type PerspectiveProjection3d}
 
 pub using @pbr {type PhysicalCameraParameters}
 
 pub using @pbr {type Projection}
 
-pub using @pbr {type ProjectionMatrix3d}
+pub using @render {type ProjectionMatrix3d}
 
-pub using @pbr {type SubCameraView3d}
+pub using @math {type BoundingSphere as Sphere}
+
+pub using @render {type SubCameraView3d}
 
 // Traits
+pub(open) trait MeshAabb {
+  compute_aabb(Self) -> Aabb?
+}
+pub impl MeshAabb for @mesh.Mesh
+pub impl MeshAabb for @mesh.Mesh3dGeometry
 

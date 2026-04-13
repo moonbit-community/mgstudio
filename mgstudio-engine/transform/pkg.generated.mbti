@@ -3,13 +3,19 @@ package "Milky2018/mgstudio/transform"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub fn compute_global_transform(@ecs.World, @core.Entity) -> GlobalTransform?
+
+pub fn compute_parent_global_transform(@ecs.World, @core.Entity) -> GlobalTransform?
+
 pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
 
 pub let ecs_key_transform : @ecs.ComponentKey[Transform]
@@ -30,6 +36,14 @@ pub fn propagate_transforms_system_ecs(@ecs.World) -> Unit
 
 pub fn register_transform_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
+pub fn remove_parent_in_place(@ecs.World, @core.Entity) -> Unit
+
+pub fn remove_parent_preserving_global_transform(@ecs.World, @core.Entity) -> Unit
+
+pub fn reparent_preserving_global_transform(@ecs.World, @core.Entity, @core.Entity) -> Unit
+
+pub fn set_parent_in_place(@ecs.World, @core.Entity, @core.Entity) -> Unit
+
 pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[StaticTransformOptimizations]
 
 pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query[(@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children], @ecs.Changed[Transform])], @ecs.Query[(@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
@@ -39,6 +53,8 @@ pub fn sync_simple_transforms_world(@ecs.World) -> Unit
 pub fn transform_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn transform_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[T : TransformPoint] transform_points(T, Array[@math.Vec3]) -> Array[@math.Vec3]
 
 pub let transform_set_mark_dirty_trees : String
 
@@ -68,11 +84,15 @@ pub struct GlobalTransform {
   affine : Affine2
   z : Float
 }
+pub fn GlobalTransform::compute_transform(Self) -> Transform
 pub fn GlobalTransform::from_transform(Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
+pub fn GlobalTransform::inverse(Self) -> Self
 pub fn GlobalTransform::mul(Self, Self) -> Self
+pub fn GlobalTransform::reparented_to(Self, Self) -> Self
 pub fn GlobalTransform::to_transform_approx(Self) -> Transform
 pub impl @ecs.Component for GlobalTransform
+pub impl TransformPoint for GlobalTransform
 pub impl Default for GlobalTransform
 pub impl ToJson for GlobalTransform
 pub impl @json.FromJson for GlobalTransform
@@ -80,7 +100,7 @@ pub impl @json.FromJson for GlobalTransform
 pub struct StaticTransformOptimizations {
   threshold : Float
   mut enabled : Bool
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn StaticTransformOptimizations::disabled() -> Self
 pub fn StaticTransformOptimizations::enabled() -> Self
 pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
@@ -123,16 +143,26 @@ pub fn Transform::with_scale(Self, @math.Vec3) -> Self
 pub fn Transform::with_translation(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for Transform
 pub impl @math.Ease for Transform
+pub impl TransformPoint for Transform
 pub impl Default for Transform
 pub impl ToJson for Transform
 pub impl @json.FromJson for Transform
 
+pub struct TransformHelper {
+}
+pub fn TransformHelper::compute_global_transform(Self, @ecs.World, @core.Entity) -> GlobalTransform?
+pub fn TransformHelper::default() -> Self
+
 pub struct TransformTreeChanged {
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for TransformTreeChanged
 pub impl Default for TransformTreeChanged
 
 // Type aliases
 
 // Traits
+pub(open) trait TransformPoint {
+  transform_point(Self, @math.Vec3) -> @math.Vec3
+}
+pub impl TransformPoint for @math.Isometry3d
 

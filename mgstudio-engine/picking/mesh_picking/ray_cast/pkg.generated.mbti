@@ -1,0 +1,54 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/picking/mesh_picking/ray_cast"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
+}
+
+// Values
+pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
+
+pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
+
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
+
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
+
+pub fn mesh_ray_cast_intersections(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
+
+pub fn mesh_ray_cast_intersections_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
+
+// Errors
+
+// Types and methods
+#alias(MeshRayCastHit)
+pub struct MeshRayCastIntersectionHit {
+  point : @math.Vec3
+  normal : @math.Vec3
+  distance : Float
+}
+
+#alias(MeshRayCastSettings)
+pub struct MeshRayCastIntersectionSettings {
+  max_distance : Float
+  ray_epsilon : Float
+  max_hits : Int
+  include_invisible : Bool
+  only_entities : Array[@core.Entity]?
+}
+pub fn MeshRayCastIntersectionSettings::default() -> Self
+pub fn MeshRayCastIntersectionSettings::with_include_invisible(Self, Bool) -> Self
+pub fn MeshRayCastIntersectionSettings::with_max_distance(Self, Float) -> Self
+pub fn MeshRayCastIntersectionSettings::with_max_hits(Self, Int) -> Self
+pub fn MeshRayCastIntersectionSettings::with_only_entities(Self, Array[@core.Entity]?) -> Self
+pub fn MeshRayCastIntersectionSettings::with_ray_epsilon(Self, Float) -> Self
+
+// Type aliases
+
+// Traits
+

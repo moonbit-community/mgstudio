@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/examples/ui/layout/size_constraints"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -12,10 +13,10 @@ import {
 // Errors
 
 // Types and methods
-type Bar derive(Eq, Show, ToJson, @json.FromJson)
+type Bar derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for Bar
 
-type ConstraintButton derive(Eq, Show, ToJson, @json.FromJson)
+type ConstraintButton derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for ConstraintButton
 
 pub(all) enum ConstraintKind {
@@ -23,7 +24,7 @@ pub(all) enum ConstraintKind {
   Width
   MinWidth
   MaxWidth
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 type ConstraintSettings
 pub impl @app.Resource for ConstraintSettings

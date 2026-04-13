@@ -100,7 +100,7 @@ const SWITCH_TO_SPHERE_HELP_TEXT : String = "Tab: Switch to a plain sphere mesh"
 pub(all) enum ExampleModel {
   Sphere
   Fox
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct IrradianceVolumesState {
@@ -671,7 +671,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   )
   let scale_factor = @window.window_scale_factor()
 
-  guard @pbr.render3d_camera_viewport_to_world_ray(
+  guard @camera.camera_viewport_to_world_ray(
       screen_pos, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((origin, direction)) else {

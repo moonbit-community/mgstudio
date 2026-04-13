@@ -17,22 +17,6 @@
 /// Current runtime maps type-id helpers to `tonyfettes/any`.
 
 ///|
-pub type TypeId = @any.TypeId
-
-///|
-pub type TypeInfo = @any.TypeInfo
-
-///|
-pub fn[T : Default] default() -> T {
-  Default::default()
-}
-
-///|
-pub fn type_id(value : @any.Any) -> TypeId {
+pub fn type_id_of(value : @any.Any) -> @any.TypeId {
   value.type_id()
-}
-
-///|
-pub fn type_name(value : @any.Any) -> String {
-  value.type_name()
 }

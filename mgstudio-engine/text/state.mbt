@@ -13,31 +13,6 @@
 // limitations under the License.
 
 ///|
-pub struct TextHandle {
-  id : Int
-}
-
-///|
-pub fn TextHandle::new(id : Int) -> TextHandle {
-  TextHandle::{ id, }
-}
-
-///|
-pub fn TextHandle::id(self : TextHandle) -> Int {
-  self.id
-}
-
-///|
-pub struct TextSpanHandle {
-  id : Int
-}
-
-///|
-pub fn TextSpanHandle::new(id : Int) -> TextSpanHandle {
-  TextSpanHandle::{ id, }
-}
-
-///|
 pub struct Text2dBundle {
   text : Text2d
   font : TextFont
@@ -1053,8 +1028,6 @@ pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
 }
 
 ///| Mark a text handle as UI text and provide the size of the owning UI node in logical pixels.
-
-///|
 
 ///|
 /// This does not affect shaping, but it changes how glyphs are positioned when rendered.

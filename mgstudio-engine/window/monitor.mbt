@@ -47,16 +47,16 @@ pub fn Monitor::physical_size(self : Monitor) -> @math.UVec2 {
 }
 
 ///|
-pub(all) struct PrimaryMonitor {} derive(Eq, Show)
+pub(all) struct PrimaryMonitor {} derive(Eq, Debug)
 
 ///|
 pub let ecs_key_monitor : @ecs.ComponentKey[Monitor] = @ecs.register_component(
-  debug_name="bevy_window::Monitor",
+  debug_name="mgstudio_window::Monitor",
 )
 
 ///|
 pub let ecs_key_primary_monitor : @ecs.ComponentKey[PrimaryMonitor] = @ecs.register_component(
-  debug_name="bevy_window::PrimaryMonitor",
+  debug_name="mgstudio_window::PrimaryMonitor",
 )
 
 ///|

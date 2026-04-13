@@ -13,10 +13,89 @@
 // limitations under the License.
 
 ///|
+const FREE_CAMERA_RADIANS_PER_DOT : Float = 0.005555555555555556F
+
+///|
+/// A freecam-style controller configuration aligned with Bevy's `FreeCamera`.
+pub(all) struct FreeCamera {
+  sensitivity : Float
+  key_forward : @window.KeyCode
+  key_back : @window.KeyCode
+  key_left : @window.KeyCode
+  key_right : @window.KeyCode
+  key_up : @window.KeyCode
+  key_down : @window.KeyCode
+  key_run : @window.KeyCode
+  mouse_key_cursor_grab : @window.MouseButton
+  keyboard_key_toggle_cursor_grab : @window.KeyCode
+  walk_speed : Float
+  run_speed : Float
+  scroll_factor : Float
+  friction : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn FreeCamera::default() -> FreeCamera {
+  FreeCamera::{
+    sensitivity: 0.2F,
+    key_forward: @window.KeyCode::KeyW,
+    key_back: @window.KeyCode::KeyS,
+    key_left: @window.KeyCode::KeyA,
+    key_right: @window.KeyCode::KeyD,
+    key_up: @window.KeyCode::KeyE,
+    key_down: @window.KeyCode::KeyQ,
+    key_run: @window.KeyCode::ShiftLeft,
+    mouse_key_cursor_grab: @window.MouseButton::Left,
+    keyboard_key_toggle_cursor_grab: @window.KeyCode::KeyM,
+    walk_speed: 5.0F,
+    run_speed: 15.0F,
+    scroll_factor: 0.5F,
+    friction: 40.0F,
+  }
+}
+
+///|
+/// Runtime state for `FreeCamera`.
+pub(all) struct FreeCameraState {
+  enabled : Bool
+  initialized : Bool
+  pitch : Float
+  yaw : Float
+  speed_multiplier : Float
+  velocity : @math.Vec3
+} derive(ToJson, FromJson)
+
+///|
+pub fn FreeCameraState::default() -> FreeCameraState {
+  FreeCameraState::{
+    enabled: true,
+    initialized: false,
+    pitch: 0.0F,
+    yaw: 0.0F,
+    speed_multiplier: 1.0F,
+    velocity: @math.Vec3::zero(),
+  }
+}
+
+///|
+priv struct FreeCameraSystemState {
+  toggle_cursor_grab : Bool
+  mouse_cursor_grab : Bool
+  last_mouse_position : @math.Vec2?
+}
+
+///|
+let free_camera_system_state : Ref[FreeCameraSystemState] = Ref::new(FreeCameraSystemState::{
+  toggle_cursor_grab: false,
+  mouse_cursor_grab: false,
+  last_mouse_position: None,
+})
+
+///|
 fn free_camera_angles_from_transform(
   transform : @transform.Transform,
 ) -> (Float, Float) {
-  let forward = render3d_transform_forward(transform)
+  let forward = @pbr_render.render3d_transform_forward(transform)
   let horizontal = @math.sqrt(forward.x * forward.x + forward.z * forward.z)
   let pitch = @math.atan2(forward.y, horizontal)
   let yaw = @math.atan2(-forward.x, -forward.z)
@@ -45,7 +124,7 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
-  let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
+  let delta_seconds = @pbr_render.render3d_default_time_or_default(world).delta_seconds()
   let mut system_state = free_camera_system_state.val
 
   let controlled_entities : Array[@core.Entity] = []
@@ -177,8 +256,8 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   state = FreeCameraState::{ ..state, velocity, }
 
   if velocity.length_squared() > 0.0F {
-    let forward = render3d_transform_forward(transform)
-    let right = quat_rotate_vec3(
+    let forward = @pbr_render.render3d_transform_forward(transform)
+    let right = @pbr_render.quat_rotate_vec3(
       transform.rotation,
       @math.Vec3::new(1.0F, 0.0F, 0.0F),
     ).normalize_or_zero()

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn main {
   // Create a simple closure.
   let simple_closure = fn(_world : @ecs.World) {

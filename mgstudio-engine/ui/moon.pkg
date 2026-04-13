@@ -21,3 +21,12 @@ import {
 }
 
 supported_targets = "native"
+
+options(
+  link: {
+    "native": {
+      "cc-link-flags": "-lz -lcurl",
+      "stub-cc-link-flags": "-lz -lcurl",
+    },
+  },
+)

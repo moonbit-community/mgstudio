@@ -18,6 +18,7 @@ pub struct SubApp[W] {
   update_schedule : ScheduleStage?
   schedule : ScheduleRegistry[W]
   extract : SubAppExtractFn[W]?
+  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool]
 }
 
 ///|
@@ -31,7 +32,13 @@ pub fn SubApp::new(world : @ecs.World) -> SubApp[@ecs.World] {
     FixedMain,
     system(run_fixed_main_schedule_driver_system),
   )
-  SubApp::{ world, update_schedule: None, schedule, extract: None }
+  SubApp::{
+    world,
+    update_schedule: None,
+    schedule,
+    extract: None,
+    allowed_ambiguous_components: @hashmap.HashMap::new(),
+  }
 }
 
 ///|
@@ -90,6 +97,26 @@ pub fn SubApp::update(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
 ///|
 pub fn SubApp::run_once(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
   self.update()
+}
+
+///|
+pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(
+  self : SubApp[@ecs.World],
+  key? : @ecs.ComponentKey[T] = T::component(),
+) -> SubApp[@ecs.World] {
+  self.allowed_ambiguous_components.set(key.id(), true)
+  self
+}
+
+///|
+pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(
+  self : SubApp[@ecs.World],
+  key? : @ecs.ComponentKey[T] = T::component(),
+) -> Bool {
+  match self.allowed_ambiguous_components.get(key.id()) {
+    Some(allowed) => allowed
+    None => false
+  }
 }
 
 ///|

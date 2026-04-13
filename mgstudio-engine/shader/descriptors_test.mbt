@@ -29,16 +29,19 @@ test "shader: composable descriptor keeps asset-path as_name and shader defs" {
   }
   let descriptor = shader.composable_module_descriptor()
 
-  inspect(
+  debug_inspect(
     descriptor.source,
     content="#import bevy_render::view\nfn main() -> f32 {\n  return 1.0;\n}\n",
   )
-  inspect(descriptor.file_path, content="shaders/demo.wgsl")
-  inspect(descriptor.language, content="Wgsl")
-  inspect(descriptor.as_name, content="Some(\"\\\"shaders/demo.wgsl\\\"\")")
-  inspect(descriptor.additional_imports.length(), content="1")
-  inspect(descriptor.shader_defs.get("HDR"), content="Some(Bool(true))")
-  inspect(descriptor.shader_defs.get("MODE"), content="Some(UInt(2))")
+  debug_inspect(descriptor.file_path, content="shaders/demo.wgsl")
+  debug_inspect(descriptor.language, content="Wgsl")
+  debug_inspect(
+    descriptor.as_name,
+    content="Some(\"\\\"shaders/demo.wgsl\\\"\")",
+  )
+  debug_inspect(descriptor.additional_imports.length(), content="1")
+  debug_inspect(descriptor.shader_defs.get("HDR"), content="Some(Bool(true))")
+  debug_inspect(descriptor.shader_defs.get("MODE"), content="Some(UInt(2))")
 }
 
 ///|
@@ -49,7 +52,7 @@ test "shader: composable descriptor leaves custom import path unnamed" {
   )
   let descriptor = shader.composable_module_descriptor()
 
-  inspect(descriptor.as_name, content="None")
+  debug_inspect(descriptor.as_name, content="None")
 }
 
 ///|
@@ -70,9 +73,9 @@ test "shader: naga descriptor keeps source and shader type but defaults defs" {
   }
   let descriptor = shader.naga_module_descriptor()
 
-  inspect(descriptor.source, content="void main() {}")
-  inspect(descriptor.file_path, content="shaders/demo.frag")
-  inspect(descriptor.shader_type, content="GlslFragment")
-  inspect(descriptor.additional_imports.length(), content="0")
-  inspect(descriptor.shader_defs.length(), content="0")
+  debug_inspect(descriptor.source, content="void main() {}")
+  debug_inspect(descriptor.file_path, content="shaders/demo.frag")
+  debug_inspect(descriptor.shader_type, content="GlslFragment")
+  debug_inspect(descriptor.additional_imports.length(), content="0")
+  debug_inspect(descriptor.shader_defs.length(), content="0")
 }

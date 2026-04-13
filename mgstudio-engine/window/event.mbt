@@ -115,7 +115,7 @@ pub(all) enum AppLifecycle {
   WillSuspend
   Suspended
   WillResume
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn AppLifecycle::is_active(self : AppLifecycle) -> Bool {
@@ -129,7 +129,7 @@ pub fn AppLifecycle::is_active(self : AppLifecycle) -> Bool {
 pub(all) struct ImeCursorRange {
   start : Int
   end : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ImeCursorRange::new(start : Int, end : Int) -> ImeCursorRange {
@@ -220,104 +220,106 @@ pub(all) enum WindowEvent {
 
 ///|
 pub let ecs_key_window_created : @ecs.MessageKey[WindowCreated] = @ecs.register_message(
-  debug_name="bevy_window::WindowCreated",
+  debug_name="mgstudio_window::WindowCreated",
 )
 
 ///|
 pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized] = @ecs.register_message(
-  debug_name="bevy_window::WindowResized",
+  debug_name="mgstudio_window::WindowResized",
 )
 
 ///|
 pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw] = @ecs.register_message(
-  debug_name="bevy_window::RequestRedraw",
+  debug_name="mgstudio_window::RequestRedraw",
 )
 
 ///|
 pub let ecs_key_window_close_requested : @ecs.MessageKey[WindowCloseRequested] = @ecs.register_message(
-  debug_name="bevy_window::WindowCloseRequested",
+  debug_name="mgstudio_window::WindowCloseRequested",
 )
 
 ///|
 pub let ecs_key_window_closing : @ecs.MessageKey[WindowClosing] = @ecs.register_message(
-  debug_name="bevy_window::WindowClosing",
+  debug_name="mgstudio_window::WindowClosing",
 )
 
 ///|
 pub let ecs_key_window_closed : @ecs.MessageKey[WindowClosed] = @ecs.register_message(
-  debug_name="bevy_window::WindowClosed",
+  debug_name="mgstudio_window::WindowClosed",
 )
 
 ///|
 pub let ecs_key_window_destroyed : @ecs.MessageKey[WindowDestroyed] = @ecs.register_message(
-  debug_name="bevy_window::WindowDestroyed",
+  debug_name="mgstudio_window::WindowDestroyed",
 )
 
 ///|
 pub let ecs_key_cursor_moved : @ecs.MessageKey[CursorMoved] = @ecs.register_message(
-  debug_name="bevy_window::CursorMoved",
+  debug_name="mgstudio_window::CursorMoved",
 )
 
 ///|
 pub let ecs_key_cursor_entered : @ecs.MessageKey[CursorEntered] = @ecs.register_message(
-  debug_name="bevy_window::CursorEntered",
+  debug_name="mgstudio_window::CursorEntered",
 )
 
 ///|
 pub let ecs_key_cursor_left : @ecs.MessageKey[CursorLeft] = @ecs.register_message(
-  debug_name="bevy_window::CursorLeft",
+  debug_name="mgstudio_window::CursorLeft",
 )
 
 ///|
 pub let ecs_key_file_drag_and_drop : @ecs.MessageKey[FileDragAndDrop] = @ecs.register_message(
-  debug_name="bevy_window::FileDragAndDrop",
+  debug_name="mgstudio_window::FileDragAndDrop",
 )
 
 ///|
 pub let ecs_key_window_event : @ecs.MessageKey[WindowEvent] = @ecs.register_message(
-  debug_name="bevy_window::WindowEvent",
+  debug_name="mgstudio_window::WindowEvent",
 )
 
 ///|
 pub let ecs_key_window_moved : @ecs.MessageKey[WindowMoved] = @ecs.register_message(
-  debug_name="bevy_window::WindowMoved",
+  debug_name="mgstudio_window::WindowMoved",
 )
 
 ///|
 pub let ecs_key_window_scale_factor_changed : @ecs.MessageKey[
   WindowScaleFactorChanged,
-] = @ecs.register_message(debug_name="bevy_window::WindowScaleFactorChanged")
+] = @ecs.register_message(
+  debug_name="mgstudio_window::WindowScaleFactorChanged",
+)
 
 ///|
 pub let ecs_key_window_backend_scale_factor_changed : @ecs.MessageKey[
   WindowBackendScaleFactorChanged,
 ] = @ecs.register_message(
-  debug_name="bevy_window::WindowBackendScaleFactorChanged",
+  debug_name="mgstudio_window::WindowBackendScaleFactorChanged",
 )
 
 ///|
 pub let ecs_key_window_focused : @ecs.MessageKey[WindowFocused] = @ecs.register_message(
-  debug_name="bevy_window::WindowFocused",
+  debug_name="mgstudio_window::WindowFocused",
 )
 
 ///|
 pub let ecs_key_window_occluded : @ecs.MessageKey[WindowOccluded] = @ecs.register_message(
-  debug_name="bevy_window::WindowOccluded",
+  debug_name="mgstudio_window::WindowOccluded",
 )
 
 ///|
 pub let ecs_key_window_theme_changed : @ecs.MessageKey[WindowThemeChanged] = @ecs.register_message(
-  debug_name="bevy_window::WindowThemeChanged",
+  debug_name="mgstudio_window::WindowThemeChanged",
 )
 
 ///|
 pub let ecs_key_app_lifecycle : @ecs.MessageKey[AppLifecycle] = @ecs.register_message(
-  debug_name="bevy_window::AppLifecycle",
+  debug_name="mgstudio_window::AppLifecycle",
 )
 
 ///|
 pub let ecs_key_ime : @ecs.MessageKey[Ime] = @ecs.register_message(
-  debug_name="bevy_window::Ime",
+  debug_name="mgstudio_window::Ime",
 )
 
 ///|

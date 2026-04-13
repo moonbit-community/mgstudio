@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pointer_events",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -64,6 +65,18 @@ pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainSch
 
 pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
 
+pub fn hotpatch_mark_patched(@ecs.World) -> Unit
+
+pub fn hotpatch_plugin(App[@ecs.World]) -> App[@ecs.World]
+
+pub fn hotpatch_reset_runtime() -> Unit
+
+pub fn hotpatch_restart_runtime() -> Unit
+
+pub fn hotpatch_resume_rendering() -> Unit
+
+pub fn hotpatch_stop_rendering() -> Unit
+
 pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
 
 pub fn[S : States] insert_state_app(App[@ecs.World], S) -> App[@ecs.World]
@@ -104,11 +117,33 @@ pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder]
 
 pub let message_update_system_set : String
 
+pub fn named_world_plugin(String, (App[@ecs.World]) -> App[@ecs.World]) -> NamedWorldPlugin
+
 pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
 
 pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], @ref.Ref[Json]) -> Bool
 
 pub fn[S] optional_state(S) -> OptionalStateSource[S]
+
+pub fn panic_handler_default(Error, ErrorContext) -> Unit
+
+pub fn panic_handler_ignore(Error, ErrorContext) -> Unit
+
+pub fn panic_handler_log(Error, ErrorContext) -> Unit
+
+pub fn panic_handler_warn(Error, ErrorContext) -> Unit
+
+pub fn[W] plugin_from_system((W) -> Unit) -> (App[W]) -> App[W]
+
+pub fn[W] plugin_from_system_config(SystemConfig[W]) -> (App[W]) -> App[W]
+
+pub fn[W, P : SystemParam] plugin_from_system_param((P) -> Unit) -> (App[W]) -> App[W]
+
+pub fn[W] plugin_group_from_plugins(String, Array[(App[W]) -> App[W]]) -> PluginGroupBuilder[W]
+
+pub fn[W] plugin_group_start() -> PluginGroupBuilder[W]
+
+pub fn[W] plugin_group_start_named(String) -> PluginGroupBuilder[W]
 
 pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
 
@@ -150,6 +185,8 @@ pub fn[T] resource_exists(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
 pub fn[T] resource_exists_and_changed(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
+pub fn run_all_fixed_schedules(@ecs.World) -> Unit
+
 pub fn[W] run_condition_and((W) -> Bool, (W) -> Bool) -> (W) -> Bool
 
 pub fn[W] run_condition_not((W) -> Bool) -> (W) -> Bool
@@ -161,6 +198,12 @@ pub fn run_current_fixed_main_schedule(@ecs.World) -> Unit
 pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
+
+pub fn run_fixed_main_stage(@ecs.World) -> Unit
+
+pub fn run_fixed_schedules_with_config(@ecs.World, FixedSchedulePropagationConfig) -> Unit
+
+pub fn run_fixed_update_schedule(@ecs.World) -> Unit
 
 pub fn run_registered_observer_system(@ecs.World, @ref.Ref[Int], (@ecs.World) -> Unit, context_kind? : ErrorContextKind, source? : String) -> Unit
 
@@ -181,6 +224,12 @@ pub fn run_world_system_once(@ecs.World, (@ecs.World) -> Unit) -> Unit raise
 pub fn schedule_label(String) -> ScheduleStage
 
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
+
+pub fn schedule_runner_plugin_loop(Float) -> (App[@ecs.World]) -> App[@ecs.World]
+
+pub fn schedule_runner_plugin_loop_hz(Float) -> (App[@ecs.World]) -> App[@ecs.World]
+
+pub fn schedule_runner_plugin_once() -> (App[@ecs.World]) -> App[@ecs.World]
 
 pub fn set_default_error_handler(@ecs.World, (Error, ErrorContext) -> Unit) -> Unit
 
@@ -227,6 +276,20 @@ pub fn[W, P : SystemParam, O] system_param_output((P) -> O) -> OutputSystemConfi
 pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
 
 pub fn system_set(String) -> String
+
+pub fn task_pool_plugin(App[@ecs.World]) -> App[@ecs.World]
+
+pub fn terminal_ctrl_c_exit_on_flag(@ecs.World) -> Unit
+
+pub fn terminal_ctrl_c_gracefully_exit() -> Unit
+
+pub fn terminal_ctrl_c_handler_plugin(App[@ecs.World]) -> App[@ecs.World]
+
+pub fn terminal_ctrl_c_request_close() -> Unit
+
+pub fn terminal_ctrl_c_request_close_and_reset() -> Unit
+
+pub fn terminal_ctrl_c_reset() -> Unit
 
 pub fn timeline_trace_begin_span(TimelineTraceCategory, String) -> Int64
 
@@ -399,6 +462,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
@@ -409,6 +473,7 @@ pub fn[T : Resource] App::insert_resource(Self[@ecs.World], T) -> Self[@ecs.Worl
 pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
 pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
+pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[T] App::remove_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
@@ -432,7 +497,7 @@ pub fn App::world(Self[@ecs.World]) -> @ecs.World
 pub(all) enum AppExit {
   Success
   Error(Int)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn AppExit::error() -> Self
 pub fn AppExit::from_code(Int) -> Self
 pub fn AppExit::is_error(Self) -> Bool
@@ -442,8 +507,9 @@ pub impl @ecs.Message for AppExit
 pub(all) enum AppLabel {
   MainApp
   RenderApp
+  RenderExtractApp
   Custom(String)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct CheckParentHasComponent[_] {
   entity : @core.Entity
@@ -543,7 +609,7 @@ pub(all) enum ErrorContextKind {
   Command
   Observer
   Validation
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct ErrorHandlers {
 }
@@ -558,15 +624,36 @@ pub fn ErrorHandlers::warn(Error, ErrorContext) -> Unit
 pub(all) enum ExecutorKind {
   SingleThreaded
   MultiThreaded
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn FixedMainScheduleOrder::default() -> Self
 pub fn FixedMainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
+
+pub struct FixedSchedulePropagationConfig {
+  run_fixed_update : Bool
+  run_fixed_main : Bool
+}
+pub fn FixedSchedulePropagationConfig::default() -> Self
+
+pub struct HotPatchChanges {
+  mut revision : Int
+}
+pub fn HotPatchChanges::default() -> Self
+pub impl Resource for HotPatchChanges
+
+pub struct HotPatchPlugin {
+}
+pub fn HotPatchPlugin::default() -> Self
+
+pub struct HotPatched {
+}
+pub fn HotPatched::default() -> Self
+pub impl @ecs.Message for HotPatched
 
 pub struct In[T] {
   value : T
@@ -590,7 +677,7 @@ pub(all) enum LogLevel {
   Info
   Debug
   Trace
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct LogPlugin {
   level : LogLevel
@@ -618,7 +705,7 @@ pub fn LogRecord::target(Self) -> String
 pub struct MainScheduleOrder {
   labels : Array[ScheduleStage]
   startup_labels : Array[ScheduleStage]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn MainScheduleOrder::default() -> Self
 pub fn MainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
@@ -626,11 +713,17 @@ pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStag
 pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
 
+pub struct NamedWorldPlugin {
+  name : String
+  plugin : (App[@ecs.World]) -> App[@ecs.World]
+}
+pub impl PluginReplacement for NamedWorldPlugin
+
 pub(all) enum NextState[S] {
   Unchanged
   Pending(S)
   PendingIfNeq(S)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[S] NextState::reset(Self[S]) -> Self[S]
 pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
@@ -638,13 +731,13 @@ pub impl[S] Resource for NextState[S]
 
 pub struct OnEnter[S] {
   state : S
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[S] OnEnter::new(S) -> Self[S]
 pub fn[S] OnEnter::state(Self[S]) -> S
 
 pub struct OnExit[S] {
   state : S
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[S] OnExit::new(S) -> Self[S]
 pub fn[S] OnExit::state(Self[S]) -> S
 
@@ -672,7 +765,7 @@ pub fn[S] OnReexit::state(Self[S]) -> S
 pub struct OnTransition[S] {
   exited : S
   entered : S
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[S] OnTransition::entered(Self[S]) -> S
 pub fn[S] OnTransition::exited(Self[S]) -> S
 pub fn[S] OnTransition::new(S, S) -> Self[S]
@@ -713,19 +806,17 @@ pub struct PluginGroupBuilder[W] {
   plugins : Array[PluginGroupEntry[W]]
 }
 pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
-pub fn[W] PluginGroupBuilder::add_named(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W]
+pub fn[P : PluginReplacement] PluginGroupBuilder::add_typed(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
-pub fn[W] PluginGroupBuilder::contains(Self[W], String) -> Bool
-pub fn[W] PluginGroupBuilder::disable(Self[W], String) -> Self[W]
-pub fn[W] PluginGroupBuilder::enable(Self[W], String) -> Self[W]
-pub fn[W] PluginGroupBuilder::enabled(Self[W], String) -> Bool
+pub fn[P : PluginReplacement] PluginGroupBuilder::contains(Self[@ecs.World], P) -> Bool
+pub fn[P : PluginReplacement] PluginGroupBuilder::disable(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : PluginReplacement] PluginGroupBuilder::enable(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : PluginReplacement] PluginGroupBuilder::enabled(Self[@ecs.World], P) -> Bool
 pub fn[P : PluginReplacement] PluginGroupBuilder::set(Self[@ecs.World], P) -> Self[@ecs.World]
-pub fn[W] PluginGroupBuilder::set_plugin(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
 pub fn[W] PluginGroupBuilder::start_named(String) -> Self[W]
-pub fn[W] PluginGroupBuilder::try_disable(Self[W], String) -> Self[W] raise PluginGroupError
+pub fn[P : PluginReplacement] PluginGroupBuilder::try_disable(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
 pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
-pub fn[W] PluginGroupBuilder::try_set_plugin(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W] raise PluginGroupError
 
 pub struct PluginGroupEntry[W] {
   id : String
@@ -765,7 +856,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 
 pub struct PreviousState[S] {
   value : S
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[S] PreviousState::get(Self[S]) -> S
 pub impl[S] Resource for PreviousState[S]
 
@@ -775,7 +866,7 @@ pub(all) enum RenderErrorPolicy {
   ExitApp
   StopRendering
   Recover
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum RenderRuntimeError {
   OutOfMemory
@@ -783,7 +874,7 @@ pub(all) enum RenderRuntimeError {
   DeviceLost
   Loop
   Unknown(String)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct Res[T] {
   value : T
@@ -804,7 +895,7 @@ pub(all) enum RunFixedMainLoopSystems {
   BeforeFixedMainLoop
   FixedMainLoop
   AfterFixedMainLoop
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct Schedule {
   label : ScheduleStage
@@ -854,7 +945,7 @@ pub(all) enum ScheduleStage {
   PostUpdate
   Last
   Custom(String)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct Single[D, _] {
   value : D
@@ -864,7 +955,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 
 pub struct State[S] {
   value : S
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn[S] State::get(Self[S]) -> S
 pub fn[S] State::new(S) -> Self[S]
 pub impl[S] Resource for State[S]
@@ -873,7 +964,7 @@ pub struct StateTransitionEvent[S] {
   exited : S?
   entered : S?
   allow_same_state_transitions : Bool
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl[S] Resource for StateTransitionEvent[S]
 
 pub(all) enum StateTransitionSystems {
@@ -881,7 +972,7 @@ pub(all) enum StateTransitionSystems {
   ExitSchedules
   TransitionSchedules
   EnterSchedules
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct StatesPlugin {
 }
@@ -910,13 +1001,14 @@ pub(all) enum SteppingAction {
   Waiting
   Continue
   Step
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct SubApp[W] {
   mut world : W
   update_schedule : ScheduleStage?
   schedule : ScheduleRegistry[W]
   extract : ((W, W) -> (W, W))?
+  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool]
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_component_observer2(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit) -> Self[@ecs.World]
@@ -940,8 +1032,10 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
 pub fn SubApp::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApp::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
@@ -990,21 +1084,51 @@ pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bo
 
 pub struct SystemId {
   index : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum SystemSteppingBehavior {
   AlwaysRun
   NeverRun
   Break
   Continue
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TaskPoolOptions {
+  min_total_threads : Int
+  max_total_threads : Int
+  io : TaskPoolThreadAssignmentPolicy
+  async_compute : TaskPoolThreadAssignmentPolicy
+  compute : TaskPoolThreadAssignmentPolicy
+} derive(@debug.Debug)
+pub fn TaskPoolOptions::create_default_pools(Self) -> Unit
+pub fn TaskPoolOptions::default() -> Self
+pub fn TaskPoolOptions::with_num_threads(Int) -> Self
+
+pub(all) struct TaskPoolPlugin {
+  task_pool_options : TaskPoolOptions
+} derive(@debug.Debug)
+pub fn TaskPoolPlugin::build(Self, App[@ecs.World]) -> App[@ecs.World]
+pub fn TaskPoolPlugin::default() -> Self
+
+pub(all) struct TaskPoolThreadAssignmentPolicy {
+  min_threads : Int
+  max_threads : Int
+  percent : Float
+} derive(@debug.Debug)
+pub fn TaskPoolThreadAssignmentPolicy::default_async_compute() -> Self
+pub fn TaskPoolThreadAssignmentPolicy::default_compute() -> Self
+pub fn TaskPoolThreadAssignmentPolicy::default_io() -> Self
+
+pub struct TerminalCtrlCHandlerPlugin {
+}
+pub fn TerminalCtrlCHandlerPlugin::default() -> Self
 
 pub(all) enum TimelineTraceCategory {
   ScheduleStage
   System
   RenderPass
   RenderQueue
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct TimelineTraceSpan {
   category : TimelineTraceCategory
@@ -1098,7 +1222,7 @@ pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B)
 pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
 
 pub(open) trait PluginReplacement {
-  replacement_id(Self) -> String
+  plugin_name(Self) -> String
   world_plugin(Self) -> (App[@ecs.World]) -> App[@ecs.World]
 }
 
@@ -1112,7 +1236,7 @@ pub(open) trait Resource {
 }
 pub impl[T : @ecs.Message] Resource for @ecs.Messages[T]
 
-pub(open) trait States : Eq + Show {
+pub(open) trait States : Eq + @debug.Debug {
   debug_name(Self) -> String
   dependency_depth(Self) -> Int = _
 }

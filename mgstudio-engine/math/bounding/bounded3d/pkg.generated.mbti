@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/math/bounding/bounded3d"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub fn[T : @math.Bounded3d] aabb_3d_of(T, @math.Isometry3d) -> @math.Aabb3d
+
+pub fn[T : @math.Bounded3d] bounding_sphere_of(T, @math.Isometry3d) -> @math.BoundingSphere
+
+pub fn extrusion_aabb_3d(@math.Isometry3d, Array[@math.Vec3]) -> @math.Aabb3d
+
+pub fn extrusion_bounding_sphere(@math.Isometry3d, Array[@math.Vec3]) -> @math.BoundingSphere
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @math {type Aabb3d}
+
+pub using @math {type BoundingSphere}
+
+// Traits
+

@@ -18,7 +18,7 @@ const ATTACK_INTERVAL_SECONDS : Float = 0.2F
 ///|
 struct HitPoints {
   mut value : Int
-} derive(Show)
+} derive(Debug)
 
 ///|
 let hit_points_component_key : @ecs.ComponentKey[HitPoints] = @ecs.register_component(
@@ -33,7 +33,7 @@ pub impl @ecs.Component for HitPoints with component() {
 ///|
 struct Armor {
   value : Int
-} derive(Show)
+} derive(Debug)
 
 ///|
 let armor_component_key : @ecs.ComponentKey[Armor] = @ecs.register_component(

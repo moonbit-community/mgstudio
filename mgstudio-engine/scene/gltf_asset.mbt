@@ -94,54 +94,11 @@ fn scene_load_gltf_root_asset(
       named_animations.push((animation.name, handle))
     }
   }
-  @gltf.gltf_extension_notify_animations_collected(
+  @gltf_loader_extensions.gltf_extension_notify_animations_collected(
     @asset.asset_format_path(root_path),
     animations,
     named_animations,
     gltf_collect_animation_root_indices(doc),
   )
   Gltf::new(scenes, default_scene, animations~, named_animations~)
-}
-
-///|
-fn scene_asset_ready(world : @ecs.World, handle : @asset.Handle[Scene]) -> Bool {
-  let key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
-    Some(assets) =>
-      match assets.get(handle) {
-        Some(scene) => scene.ready
-        None => false
-      }
-    None => false
-  }
-}
-
-///|
-fn gltf_asset_ready(world : @ecs.World, handle : @asset.Handle[Gltf]) -> Bool {
-  let key : @ecs.ResourceKey[@asset.Assets[Gltf]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
-    Some(assets) =>
-      match assets.get(handle) {
-        Some(gltf) => {
-          for scene_handle in gltf.scenes {
-            if !scene_asset_ready(world, scene_handle) {
-              return false
-            }
-          }
-          true
-        }
-        None => false
-      }
-    None => false
-  }
-}
-
-///|
-fn scene_init_gltf_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @asset.asset_register_ready_checker(scene_asset_ready)
-  @asset.asset_register_ready_checker(gltf_asset_ready)
-  @asset.init_asset_loader(
-    @asset.init_asset(app, gltf_asset_default),
-    @asset.AssetLoader::new(["gltf", "glb"], scene_load_gltf_root_asset),
-  )
 }

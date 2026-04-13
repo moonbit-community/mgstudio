@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/naga_oil"
 
 import {
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
 }
@@ -81,7 +82,7 @@ pub(all) struct ComposableModuleDescriptor {
   as_name : String?
   additional_imports : Array[ImportDefinition]
   shader_defs : @hashmap.HashMap[String, ShaderDefValue]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ComposableModuleDescriptor::default() -> Self
 
 pub struct Composer {
@@ -100,22 +101,22 @@ pub struct DiagnosticDirective {
   severity : String
   rule : String
   source_location : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct EnableDirective {
   extensions : Array[String]
   source_location : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct ImportDefWithOffset {
   definition : ImportDefinition
   offset : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) struct ImportDefinition {
   import_path : String
   items : Array[String]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ImportDefinition::default() -> Self
 
 pub(all) struct NagaModuleDescriptor {
@@ -124,7 +125,7 @@ pub(all) struct NagaModuleDescriptor {
   shader_type : ShaderType
   shader_defs : @hashmap.HashMap[String, ShaderDefValue]
   additional_imports : Array[ImportDefinition]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn NagaModuleDescriptor::default() -> Self
 
 pub struct PreprocessOutput {
@@ -151,7 +152,7 @@ pub struct PreprocessorMetaData {
 pub struct RequiresDirective {
   extensions : Array[String]
   source_location : Int
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type ScopeLevel derive(Eq)
 
@@ -159,27 +160,27 @@ pub(all) enum ShaderDefValue {
   Bool(Bool)
   Int(Int)
   UInt(UInt)
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn ShaderDefValue::value_as_string(Self) -> String
 
 pub(all) enum ShaderLanguage {
   Wgsl
   Glsl
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ShaderType {
   Wgsl
   GlslVertex
   GlslFragment
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
-type Token derive(Eq, Show)
+type Token derive(Eq, @debug.Debug)
 
 pub struct WgslDirectives {
   enables : Array[EnableDirective]
   requires : Array[RequiresDirective]
   diagnostics : Array[DiagnosticDirective]
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub fn WgslDirectives::default() -> Self
 pub fn WgslDirectives::is_empty(Self) -> Bool
 pub fn WgslDirectives::to_wgsl_string(Self) -> String
@@ -187,12 +188,12 @@ pub fn WgslDirectives::to_wgsl_string(Self) -> String
 pub struct WgslImportTarget {
   raw_path : String
   alias_name : String
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 pub struct WgslResolvedImportModule {
   module_path : String
   rel_path : String
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

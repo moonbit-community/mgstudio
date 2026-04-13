@@ -14,7 +14,7 @@
 
 ///|
 test "app: current_world is only available during system execution" {
-  inspect(current_world() is None, content="true")
+  debug_inspect(current_world() is None, content="true")
 
   let observed_world_id : Ref[Int] = Ref::new(-1)
   let observed_stage : Ref[String] = Ref::new("missing")
@@ -34,7 +34,7 @@ test "app: current_world is only available during system execution" {
 
   app.run_once() |> ignore
 
-  inspect(observed_world_id.val == world_id, content="true")
-  inspect(observed_stage.val, content="update")
-  inspect(current_world() is None, content="true")
+  debug_inspect(observed_world_id.val == world_id, content="true")
+  debug_inspect(observed_stage.val, content="\"update\"")
+  debug_inspect(current_world() is None, content="true")
 }

@@ -70,7 +70,7 @@ test "transform ecs: root global matches local" {
   sync_simple_transforms_world(world)
 
   let gt = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(gt.affine.tx, 1.0F) && approx_eq(gt.affine.ty, 2.0F),
     content="true",
   )
@@ -82,8 +82,8 @@ test "transform affine2: translation after scale preserves full affine uv transf
     Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
   )
   let point = transform.transform_point2(@math.Vec2::new(0.5F, 0.25F))
-  inspect(approx_eq(point.x, 1.25F), content="true")
-  inspect(approx_eq(point.y, 0.25F), content="true")
+  debug_inspect(approx_eq(point.x, 1.25F), content="true")
+  debug_inspect(approx_eq(point.y, 0.25F), content="true")
 }
 
 ///|
@@ -127,7 +127,7 @@ test "transform ecs: parent translation affects child global translation" {
   sync_simple_transforms_world(world)
 
   let gt = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(gt.affine.tx, 1.0F) && approx_eq(gt.affine.ty, 2.0F),
     content="true",
   )
@@ -154,7 +154,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let first_global = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  inspect(approx_eq(first_global.affine.tx, 1.0F), content="true")
+  debug_inspect(approx_eq(first_global.affine.tx, 1.0F), content="true")
 
   // Second run: no local changes, the propagated value should stay stable.
   next_system_sequence(world) |> ignore
@@ -162,7 +162,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let second_global = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(second_global.affine.tx, first_global.affine.tx) &&
     approx_eq(second_global.affine.ty, first_global.affine.ty),
     content="true",
@@ -183,7 +183,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let gt = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  inspect(approx_eq(gt.affine.tx, 2.0F), content="true")
+  debug_inspect(approx_eq(gt.affine.tx, 2.0F), content="true")
 }
 
 ///|
@@ -222,7 +222,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let child_before = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(approx_eq(child_before.affine.tx, 3.0F), content="true")
+  debug_inspect(approx_eq(child_before.affine.tx, 3.0F), content="true")
 
   next_system_sequence(world) |> ignore
   try! (world.remove_by_key(child, @hierarchy.ecs_key_parent) |> ignore)
@@ -230,7 +230,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let child_after = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(approx_eq(child_after.affine.tx, 1.0F), content="true")
+  debug_inspect(approx_eq(child_after.affine.tx, 1.0F), content="true")
 }
 
 ///|
@@ -285,7 +285,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   sync_simple_transforms_world(world)
 
   let parent_before = (try! world.get_by_key(parent, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(parent_before.affine.tx, 7.7F) &&
     approx_eq(parent_before.affine.ty, 7.7F),
     content="true",
@@ -298,7 +298,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   sync_simple_transforms_world(world)
 
   let parent_after = (try! world.get_by_key(parent, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(parent_after.affine.tx, 4.4F) &&
     approx_eq(parent_after.affine.ty, 4.4F),
     content="true",
@@ -311,7 +311,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   sync_simple_transforms_world(world)
 
   let child_after = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(child_after.affine.tx, 5.5F) &&
     approx_eq(child_after.affine.ty, 5.5F),
     content="true",
@@ -335,11 +335,11 @@ test "transform ecs: inserting Transform auto-inserts required components" {
     ),
   )
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_global_transform)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_transform_tree_changed)) is Some(_),
     content="true",
   )
@@ -362,11 +362,11 @@ test "transform ecs: component access insert also inserts required components" {
     ),
   )
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_global_transform)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(entity, ecs_key_transform_tree_changed)) is Some(_),
     content="true",
   )
@@ -423,11 +423,11 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
   )
   mark_dirty_trees(world)
 
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(parent, ecs_key_transform_tree_changed)) is Some(_),
     content="true",
   )
-  inspect(
+  debug_inspect(
     (try! world.get_by_key(child, ecs_key_transform_tree_changed)) is Some(_),
     content="true",
   )
@@ -469,7 +469,7 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
   let state = (try! world.get_resource(
     static_transform_optimizations_resource_key(),
   )).unwrap()
-  inspect(state.enabled, content="false")
+  debug_inspect(state.enabled, content="false")
 }
 
 ///|
@@ -506,7 +506,7 @@ test "transform plugin: post startup populates hierarchy globals" {
   app.run_startup() |> ignore
 
   let gt = (try! app.world().get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(gt.affine.tx, 5.0F) && approx_eq(gt.affine.ty, 5.0F),
     content="true",
   )
@@ -538,7 +538,7 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
     @app.check_parent_has_component_message_key(ecs_key_global_transform),
     Ref::new(0),
   )
-  inspect(reader.len(), content="1")
+  debug_inspect(reader.len(), content="1")
 }
 
 ///|
@@ -549,7 +549,7 @@ test "transform plugin: keeps preinserted static optimization resource" {
   let value = (try! app
   .world()
   .get_resource(static_transform_optimizations_resource_key())).unwrap()
-  inspect(value.threshold == 0.0F && !value.enabled, content="true")
+  debug_inspect(value.threshold == 0.0F && !value.enabled, content="true")
 }
 
 ///|
@@ -585,7 +585,7 @@ test "transform plugin: post update reflects update stage transform writes" {
   app.run_once() |> ignore
 
   let gt = (try! app.world().get_by_key(entity, ecs_key_global_transform)).unwrap()
-  inspect(
+  debug_inspect(
     approx_eq(gt.affine.tx, 7.0F) && approx_eq(gt.affine.ty, 8.0F),
     content="true",
   )
@@ -643,6 +643,9 @@ test "transform ecs: reparenting in the same frame preserves global transform" {
 
   let parent_after = (try! world.get_by_key(parent, ecs_key_global_transform)).unwrap()
   let child_after = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  inspect(parent_after.to_json() == parent_before.to_json(), content="true")
-  inspect(child_after.to_json() == child_before.to_json(), content="true")
+  debug_inspect(
+    parent_after.to_json() == parent_before.to_json(),
+    content="true",
+  )
+  debug_inspect(child_after.to_json() == child_before.to_json(), content="true")
 }

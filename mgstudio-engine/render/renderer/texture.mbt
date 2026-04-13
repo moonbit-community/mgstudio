@@ -1418,3 +1418,362 @@ fn ensure_shadow_color_view(
   backend.shadow_color_height = safe_height
   view
 }
+
+///|
+fn mip_dim(base : Int, level : Int) -> Int {
+  let shifted = base >> level
+  if shifted <= 0 {
+    1
+  } else {
+    shifted
+  }
+}
+
+///|
+pub fn create_render_target(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_render_target(width, height, nearest)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_render_target_rgba16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_render_target_rgba16f(width, height, nearest)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_render_target_rg16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_render_target_rg16f(width, height, nearest)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_render_target_with_formats(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+  format_raw~ : Int,
+  sample_format_raw~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      let sample_format = if sample_format_raw < 0 {
+        None
+      } else {
+        Some(sample_format_raw.reinterpret_as_uint())
+      }
+      return backend.create_render_target_with_formats(
+        width,
+        height,
+        nearest,
+        format_raw.reinterpret_as_uint(),
+        sample_format,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_point_light_shadow_target(size~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_point_light_shadow_target(size)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_create_texture_empty(
+  width~ : Int,
+  height~ : Int,
+  mip_level_count~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  let safe_mips = if mip_level_count <= 0 { 1 } else { mip_level_count }
+  if ensure_backend() is Some(backend) {
+    try {
+      if safe_mips == 1 {
+        let bytes = Bytes::makei(safe_width * safe_height * 4, _ => {
+          (0).to_byte()
+        })
+        return backend.create_texture_rgba8(
+          safe_width, safe_height, bytes, nearest,
+        )
+      }
+      let levels : Array[Bytes] = []
+      for level in 0..<safe_mips {
+        let level_width = mip_dim(safe_width, level)
+        let level_height = mip_dim(safe_height, level)
+        levels.push(
+          Bytes::makei(level_width * level_height * 4, _ => (0).to_byte()),
+        )
+      }
+      return backend.create_texture_stacked_2d_with_format(
+        safe_width,
+        safe_height,
+        1,
+        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+        levels,
+        nearest,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_create_texture_3d_with_format(
+  width~ : Int,
+  height~ : Int,
+  depth~ : Int,
+  format_raw~ : Int,
+  pixels~ : Bytes,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  let safe_depth = if depth <= 0 { 1 } else { depth }
+  if ensure_backend() is Some(backend) {
+    try {
+      let levels = [pixels]
+      return backend.create_texture_3d_with_format(
+        safe_width,
+        safe_height,
+        safe_depth,
+        format_raw.reinterpret_as_uint(),
+        levels,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_create_texture_stacked_2d_with_format(
+  width~ : Int,
+  height_per_slice~ : Int,
+  slice_count~ : Int,
+  format_raw~ : Int,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height_per_slice = if height_per_slice <= 0 {
+    1
+  } else {
+    height_per_slice
+  }
+  let safe_slice_count = if slice_count <= 0 { 1 } else { slice_count }
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_stacked_2d_with_format(
+        safe_width,
+        safe_height_per_slice,
+        safe_slice_count,
+        format_raw.reinterpret_as_uint(),
+        levels,
+        nearest,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_create_texture_cube_with_format(
+  width~ : Int,
+  height~ : Int,
+  format_raw~ : Int,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_cube_with_format(
+        safe_width,
+        safe_height,
+        format_raw.reinterpret_as_uint(),
+        levels,
+        nearest,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_write_texture_region_rgba8(
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  pixels_rgba8~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.write_texture_region_rgba8(
+      texture_id, x, y, width, height, pixels_rgba8,
+    )
+  }
+}
+
+///|
+pub fn asset_write_texture_region_rgba8_mip(
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  mip_level~ : Int,
+  pixels_rgba8~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.write_texture_region_rgba8_mip(
+      texture_id, x, y, width, height, mip_level, pixels_rgba8,
+    )
+  }
+}
+
+///|
+pub fn asset_create_texture_mip_view(
+  texture_id~ : Int,
+  mip_level~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_mip_view(texture_id, mip_level)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_texture_width(texture_id~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.texture_width(texture_id)
+  } else {
+    0
+  }
+}
+
+///|
+pub fn asset_texture_height(texture_id~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.texture_height(texture_id)
+  } else {
+    0
+  }
+}
+
+///|
+pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool {
+  if ensure_backend() is Some(backend) {
+    backend.is_texture_loaded(texture_id)
+  } else {
+    false
+  }
+}
+
+///|
+pub fn asset_supported_compressed_image_formats() -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.supported_compressed_image_formats_mask()
+  } else {
+    0
+  }
+}
+
+///|
+pub fn asset_copy_texture_to_texture(
+  dst_texture_id~ : Int,
+  dst_x~ : Int,
+  dst_y~ : Int,
+  src_texture_id~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.copy_texture_to_texture(
+      dst_texture_id, dst_x, dst_y, src_texture_id,
+    )
+  }
+}
+
+///|
+pub fn asset_set_texture_sampler(
+  texture_id~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.set_texture_sampler(
+      texture_id, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
+      mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
+    ) catch {
+      err => {
+        let error_message = match err {
+          Fatal(message) => message
+        }
+        abort(
+          "wgpu: failed to set texture sampler for texture \{texture_id.to_string()}: \{error_message}",
+        )
+      }
+    }
+  }
+}

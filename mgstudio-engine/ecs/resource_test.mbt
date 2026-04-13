@@ -15,12 +15,12 @@
 ///|
 struct RuntimeConfig {
   fps : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 struct BrokenConfig {
   enabled : Bool
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 test "ecs resource: insert/get/update" {
@@ -29,18 +29,24 @@ test "ecs resource: insert/get/update" {
     debug_name="runtime_config",
   )
 
-  inspect(try! world.get_resource(res_config), content="None")
+  debug_inspect(try! world.get_resource(res_config), content="None")
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  inspect(try! world.get_resource(res_config), content="Some({fps: 60})")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 60 })",
+  )
 
-  inspect(
+  debug_inspect(
     try! world.update_resource(res_config, fn(config) {
       RuntimeConfig::{ fps: config.fps + 30 }
     }),
     content="true",
   )
-  inspect(try! world.get_resource(res_config), content="Some({fps: 90})")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 90 })",
+  )
 }
 
 ///|
@@ -50,7 +56,7 @@ test "ecs resource: update missing returns false" {
     debug_name="missing_runtime_config",
   )
 
-  inspect(
+  debug_inspect(
     try! world.update_resource(res_config, fn(config) {
       RuntimeConfig::{ fps: config.fps + 1 }
     }),
@@ -74,7 +80,7 @@ test "ecs resource: type mismatch diagnostics fail fast" {
   guard result is Err(ResourceTypeMismatch(key_id, _debug_name, _actual)) else {
     fail("expected resource type mismatch diagnostics")
   }
-  inspect(key_id == res_config.id(), content="true")
+  debug_inspect(key_id == res_config.id(), content="true")
 }
 
 ///|
@@ -88,7 +94,10 @@ test "ecs resource: get_resource_ref observes live world storage" {
   let config_ref = try! world.get_resource_ref(res_config).unwrap()
   config_ref.val = RuntimeConfig::{ fps: 75 }
 
-  inspect(try! world.get_resource(res_config), content="Some({fps: 75})")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 75 })",
+  )
 }
 
 ///|
@@ -102,5 +111,8 @@ test "ecs resource: get_resource_ref_mut observes live world storage" {
   let config_ref = try! world.get_resource_ref_mut(res_config).unwrap()
   config_ref.val = RuntimeConfig::{ fps: 90 }
 
-  inspect(try! world.get_resource(res_config), content="Some({fps: 90})")
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 90 })",
+  )
 }

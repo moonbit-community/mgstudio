@@ -16,19 +16,19 @@
 struct Position {
   mut x : Int
   mut y : Int
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 struct Velocity {
   mut dx : Int
   mut dy : Int
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 struct Acceleration {
   mut ax : Int
   mut ay : Int
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 let position_key : ComponentKey[Position] = register_component(
@@ -64,16 +64,16 @@ pub impl Component for Acceleration with component() {
 struct GenericPosition {
   x : Int
   y : Int
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 struct GenericVelocity {
   dx : Int
   dy : Int
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Debug, Eq, ToJson, FromJson)
 
 ///|
-struct GenericTag {} derive(Show, Eq, ToJson, FromJson)
+struct GenericTag {} derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 let generic_position_key : ComponentKey[GenericPosition] = register_component(
@@ -277,7 +277,7 @@ test "ecs query: query1 view and for_each" {
     let position = position.value()
     sum_ref.val = sum_ref.val + position.x + position.y
   })
-  inspect(sum_ref.val, content="13")
+  debug_inspect(sum_ref.val, content="13")
 
   let write_query : Query[Mut[Position], All] = query(world)
   try! write_query.view(fn(_entity, position) {
@@ -286,13 +286,13 @@ test "ecs query: query1 view and for_each" {
     position.val.y = position.val.y + 20
   })
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e1, comp_position),
-    content="Some({x: 11, y: 22})",
+    content="Some({ x: 11, y: 22 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e2, comp_position),
-    content="Some({x: 14, y: 26})",
+    content="Some({ x: 14, y: 26 })",
   )
 }
 
@@ -305,33 +305,36 @@ test "ecs query: single returns only for exactly one match" {
   let e1 = world.spawn()
 
   let position_query : Query[Comp[Position], All] = query(world)
-  inspect(comp_option_value(try! position_query.single()), content="None")
+  debug_inspect(comp_option_value(try! position_query.single()), content="None")
 
   try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
   let all_position_query : Query[Comp[Position], All] = query_filtered(
     world,
     All::new(),
   )
-  inspect(
+  debug_inspect(
     comp_option_value(try! all_position_query.single()),
-    content="Some({x: 5, y: 8})",
+    content="Some({ x: 5, y: 8 })",
   )
 
   try! world.set_by_key(e1, comp_position, Position::{ x: 13, y: 21 })
-  inspect(comp_option_value(try! position_query.single()), content="None")
+  debug_inspect(comp_option_value(try! position_query.single()), content="None")
 
   try! world.set_by_key(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
   let with_velocity_query : Query[Comp[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
   )
-  inspect(
+  debug_inspect(
     comp_option_value(try! with_velocity_query.single()),
-    content="Some({x: 5, y: 8})",
+    content="Some({ x: 5, y: 8 })",
   )
 
   try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 2, dy: 3 })
-  inspect(comp_option_value(try! with_velocity_query.single()), content="None")
+  debug_inspect(
+    comp_option_value(try! with_velocity_query.single()),
+    content="None",
+  )
 }
 
 ///|
@@ -371,8 +374,8 @@ test "ecs query: query2 view intersection and for_each" {
       v.value().dx +
       v.value().dy
   })
-  inspect(hits_ref.val, content="1")
-  inspect(sum_ref.val, content="26")
+  debug_inspect(hits_ref.val, content="1")
+  debug_inspect(sum_ref.val, content="26")
 
   let write_query : Query[(Mut[Position], Mut[Velocity]), All] = query(world)
   try! write_query.view(fn(_entity, data) {
@@ -385,21 +388,21 @@ test "ecs query: query2 view intersection and for_each" {
     v.val.dy = v.val.dy + 1
   })
 
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e_match, comp_position),
-    content="Some({x: 10, y: 16})",
+    content="Some({ x: 10, y: 16 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e_match, comp_velocity),
-    content="Some({dx: 8, dy: 12})",
+    content="Some({ dx: 8, dy: 12 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e_only_position, comp_position),
-    content="Some({x: 100, y: 200})",
+    content="Some({ x: 100, y: 200 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e_only_velocity0, comp_velocity),
-    content="Some({dx: 1, dy: 2})",
+    content="Some({ dx: 1, dy: 2 })",
   )
 }
 
@@ -437,8 +440,8 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
     hits_ref.val = hits_ref.val + 1
     score_ref.val = score_ref.val + p.x + p.y + v.dx + v.dy + a.ax + a.ay
   })
-  inspect(hits_ref.val, content="1")
-  inspect(score_ref.val, content="36")
+  debug_inspect(hits_ref.val, content="1")
+  debug_inspect(score_ref.val, content="36")
 
   let write_query : Query[
     (Mut[Position], Mut[Velocity], Mut[Acceleration]),
@@ -456,19 +459,19 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
     a.val.ax = a.val.ax + 1
     a.val.ay = a.val.ay + 1
   })
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e2, comp_position),
-    content="Some({x: 103, y: 103})",
+    content="Some({ x: 103, y: 103 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e2, comp_velocity),
-    content="Some({dx: 16, dy: 17})",
+    content="Some({ dx: 16, dy: 17 })",
   )
-  inspect(
+  debug_inspect(
     try! world.get_by_key(e2, comp_accel),
-    content="Some({ax: 9, ay: 10})",
+    content="Some({ ax: 9, ay: 10 })",
   )
-  inspect(try! world.get_by_key(e1, comp_accel), content="None")
+  debug_inspect(try! world.get_by_key(e1, comp_accel), content="None")
 }
 
 ///|
@@ -493,16 +496,19 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
     world,
     (With::new(comp_velocity), Without::new(comp_accel)),
   )
-  inspect(query.count(), content="1")
-  inspect(comp_option_value(try! query.get(e0)), content="None")
-  inspect(comp_option_value(try! query.get(e1)), content="Some({x: 2, y: 2})")
-  inspect(comp_option_value(try! query.get(e2)), content="None")
+  debug_inspect(query.count(), content="1")
+  debug_inspect(comp_option_value(try! query.get(e0)), content="None")
+  debug_inspect(
+    comp_option_value(try! query.get(e1)),
+    content="Some({ x: 2, y: 2 })",
+  )
+  debug_inspect(comp_option_value(try! query.get(e2)), content="None")
 
   let matched_entities : Array[Int] = []
   try! world
   .query_entities_filtered((With::new(comp_position), Without::new(comp_accel)))
   .view(fn(_query_entity, entity) { matched_entities.push(entity.id) })
-  inspect(matched_entities, content="[0, 1]")
+  debug_inspect(matched_entities, content="[0, 1]")
 }
 
 ///|
@@ -518,11 +524,11 @@ test "ecs query: component ref exposes live component values" {
   ctx1.set(@core.SystemSequence::new(0, 1))
   world.set_sequence_context(ctx1)
   let initial_position = (try! world.get_by_key(entity, comp_position)).unwrap()
-  inspect(initial_position, content="{x: 1, y: 2}")
+  debug_inspect(initial_position, content="{ x: 1, y: 2 }")
 
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
-  inspect(
+  debug_inspect(
     try! world.update_by_key(entity, comp_position, fn(position) {
       Position::{ x: position.x + 10, y: position.y + 20 }
     }),
@@ -532,7 +538,7 @@ test "ecs query: component ref exposes live component values" {
   ctx2.set(@core.SystemSequence::new(1, 2))
   world.set_sequence_context(ctx2)
   let changed_position = (try! world.get_by_key(entity, comp_position)).unwrap()
-  inspect(changed_position, content="{x: 11, y: 22}")
+  debug_inspect(changed_position, content="{ x: 11, y: 22 }")
 }
 
 ///|
@@ -551,7 +557,7 @@ test "ecs query: structural filters compose without change detection" {
     world,
     With::new(comp_position),
   )
-  inspect(with_position_query.count(), content="2")
+  debug_inspect(with_position_query.count(), content="2")
   let any_position_query : Query[
     Comp[Position],
     Or[(Without[Velocity], With[Velocity])],
@@ -559,24 +565,24 @@ test "ecs query: structural filters compose without change detection" {
     world,
     Or::new((Without::new(comp_velocity), With::new(comp_velocity))),
   )
-  inspect(any_position_query.count(), content="2")
+  debug_inspect(any_position_query.count(), content="2")
 
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
-  inspect(
+  debug_inspect(
     try! world.update_by_key(e1, comp_position, fn(position) {
       Position::{ x: position.x + 1, y: position.y + 1 }
     }),
     content="true",
   )
 
-  inspect(with_position_query.count(), content="2")
+  debug_inspect(with_position_query.count(), content="2")
   let without_velocity_query : Query[Comp[Position], Without[Velocity]] = query_filtered(
     world,
     Without::new(comp_velocity),
   )
-  inspect(without_velocity_query.count(), content="1")
-  inspect(any_position_query.count(), content="2")
+  debug_inspect(without_velocity_query.count(), content="1")
+  debug_inspect(any_position_query.count(), content="2")
 }
 
 ///|
@@ -593,7 +599,7 @@ test "ecs query: added filter only matches entities inserted in the current sequ
     world,
     Added::new(position_key),
   )
-  inspect(first_added_query.count(), content="1")
+  debug_inspect(first_added_query.count(), content="1")
 
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
@@ -605,18 +611,18 @@ test "ecs query: added filter only matches entities inserted in the current sequ
     world,
     Added::new(position_key),
   )
-  inspect(second_added_query.count(), content="1")
+  debug_inspect(second_added_query.count(), content="1")
 
   let seen : Array[Int] = []
   try! second_added_query.for_each(fn(entity, _position) {
     seen.push(entity.id)
   })
-  inspect(seen, content="[1]")
+  debug_inspect(seen, content="[1]")
 
   let ctx2 = @core.SystemSequenceContext::new()
   ctx2.set(@core.SystemSequence::new(2, 3))
   world.set_sequence_context(ctx2)
-  inspect(second_added_query.count(), content="0")
+  debug_inspect(second_added_query.count(), content="0")
 }
 
 ///|
@@ -652,7 +658,7 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
       break
     }
   }
-  inspect(seen, content="[1, 2]")
+  debug_inspect(seen, content="[1, 2]")
 }
 
 ///|
@@ -685,7 +691,7 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
     fail("expected duplicate entity diagnostics")
   }
-  inspect(entity.id, content="1")
+  debug_inspect(entity.id, content="1")
 
   let seen : Array[Int] = []
   let iter = try! query.iter_many_unique([e2, e0, e1])
@@ -697,7 +703,7 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
       break
     }
   }
-  inspect(seen, content="[2, 1]")
+  debug_inspect(seen, content="[2, 1]")
 }
 
 ///|
@@ -713,18 +719,18 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   guard none_result is Err(@ecs.Skipped(message0)) else {
     fail("expected skipped error when no entity matches")
   }
-  inspect(message0, content="Expected exactly one matching entity")
+  debug_inspect(message0, content="\"Expected exactly one matching entity\"")
 
   try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
-  inspect(
+  debug_inspect(
     (try! (query_filtered(world, All::new()) : Query[Comp[Position], All]).require_single()).value(),
-    content="{x: 5, y: 8}",
+    content="{ x: 5, y: 8 }",
   )
   let single_entity = try! world
     .query_entities_filtered(With::new(comp_position))
     .require_single()
-  inspect(single_entity.id, content="0")
-  inspect(single_entity.generation, content="1")
+  debug_inspect(single_entity.id, content="0")
+  debug_inspect(single_entity.generation, content="1")
 
   try! world.set_by_key(e1, comp_position, Position::{ x: 13, y: 21 })
   try! world.set_by_key(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
@@ -732,16 +738,16 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
     world,
     With::new(comp_velocity),
   )
-  inspect(
+  debug_inspect(
     (try! filtered_query.require_single()).value(),
-    content="{x: 5, y: 8}",
+    content="{ x: 5, y: 8 }",
   )
 
   let many_result = try? position_query.require_single()
   guard many_result is Err(@ecs.Skipped(message1)) else {
     fail("expected skipped error when many entities match")
   }
-  inspect(message1, content="Expected exactly one matching entity")
+  debug_inspect(message1, content="\"Expected exactly one matching entity\"")
 }
 
 ///|
@@ -761,27 +767,27 @@ test "ecs query: generic query supports wrappers and disabled mentions" {
   try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   let entity_query : Query[@core.Entity, All] = query(world)
-  inspect(entity_query.count(), content="1")
+  debug_inspect(entity_query.count(), content="1")
 
   let has_query : Query[Has[Disabled], All] = query(world)
-  inspect(has_query.count(), content="2")
+  debug_inspect(has_query.count(), content="2")
   let has_seen : Array[(Int, Bool)] = []
   try! has_query.view(fn(entity, has_disabled) {
     has_seen.push((entity.id, has_disabled.present()))
   })
-  inspect(has_seen, content="[(0, false), (1, true)]")
+  debug_inspect(has_seen, content="[(0, false), (1, true)]")
 
   let optional_query : Query[Optional[Disabled], All] = query(world)
-  inspect(optional_query.count(), content="1")
+  debug_inspect(optional_query.count(), content="1")
   guard (try! optional_query.single()) is Some(optional_disabled) else {
     fail("expected enabled entity to remain visible")
   }
-  inspect(optional_disabled.value() is None, content="true")
+  debug_inspect(optional_disabled.value() is None, content="true")
 
   let tuple_query : Query[(Comp[GenericPosition], Has[Disabled]), All] = query(
     world,
   )
-  inspect(tuple_query.count(), content="2")
+  debug_inspect(tuple_query.count(), content="2")
   let contiguous = tuple_query.contiguous_iter()
   guard contiguous is Some(iter) else {
     fail("expected contiguous iterator for anchored generic query")
@@ -794,7 +800,7 @@ test "ecs query: generic query supports wrappers and disabled mentions" {
       break
     }
   }
-  inspect(values, content="[(1, false), (3, true)]")
+  debug_inspect(values, content="[(1, false), (3, true)]")
 }
 
 ///|
@@ -828,30 +834,30 @@ test "ecs query: generic query supports named reusable data, filters and iterato
     world,
     GenericTagFilter::{  },
   )
-  inspect(named_query.count(), content="2")
-  inspect((try! named_query.get(e2)) is None, content="true")
-  inspect((try! named_query.single()) is None, content="true")
+  debug_inspect(named_query.count(), content="2")
+  debug_inspect((try! named_query.get(e2)) is None, content="true")
+  debug_inspect((try! named_query.single()) is None, content="true")
 
   guard (try! named_query.get(e0)) is Some(first) else {
     fail("expected filtered entity to exist")
   }
-  inspect(first.entity.id, content="0")
-  inspect(first.position, content="{x: 10, y: 20}")
-  inspect(first.maybe_velocity, content="Some({dx: 1, dy: 2})")
-  inspect(first.has_disabled, content="false")
-  inspect(first.nested is Some(_), content="true")
+  debug_inspect(first.entity.id, content="0")
+  debug_inspect(first.position, content="{ x: 10, y: 20 }")
+  debug_inspect(first.maybe_velocity, content="Some({ dx: 1, dy: 2 })")
+  debug_inspect(first.has_disabled, content="false")
+  debug_inspect(first.nested is Some(_), content="true")
   guard first.nested is Some(first_nested) else {
     fail("expected nested velocity data")
   }
-  inspect(first_nested.velocity, content="{dx: 1, dy: 2}")
+  debug_inspect(first_nested.velocity, content="{ dx: 1, dy: 2 }")
 
   guard (try! named_query.get(e1)) is Some(second) else {
     fail("expected disabled tagged entity to remain visible")
   }
-  inspect(second.position, content="{x: 30, y: 40}")
-  inspect(second.maybe_velocity, content="None")
-  inspect(second.has_disabled, content="true")
-  inspect(second.nested is Some(_), content="false")
+  debug_inspect(second.position, content="{ x: 30, y: 40 }")
+  debug_inspect(second.maybe_velocity, content="None")
+  debug_inspect(second.has_disabled, content="true")
+  debug_inspect(second.nested is Some(_), content="false")
 
   let iter = named_query.iter_many([e1, e2, e0])
   let iter_seen : Array[(Int, Int)] = []
@@ -862,7 +868,7 @@ test "ecs query: generic query supports named reusable data, filters and iterato
       break
     }
   }
-  inspect(iter_seen, content="[(1, 30), (0, 10)]")
+  debug_inspect(iter_seen, content="[(1, 30), (0, 10)]")
 
   guard named_query.contiguous_iter() is Some(contiguous_iter) else {
     fail("expected contiguous iterator for named anchored query data")
@@ -875,18 +881,18 @@ test "ecs query: generic query supports named reusable data, filters and iterato
       break
     }
   }
-  inspect(contiguous_seen, content="[10, 30]")
+  debug_inspect(contiguous_seen, content="[10, 30]")
 
   let generic_query : Query[
     GenericPair[Comp[GenericPosition], Optional[GenericVelocity]],
     All,
   ] = query(world)
-  inspect(generic_query.count(), content="2")
+  debug_inspect(generic_query.count(), content="2")
   guard (try! generic_query.get(e0)) is Some(generic_value) else {
     fail("expected generic fragment query item")
   }
-  inspect(generic_value.pair.0.value(), content="{x: 10, y: 20}")
-  inspect(generic_value.pair.1.value(), content="Some({dx: 1, dy: 2})")
+  debug_inspect(generic_value.pair.0.value(), content="{ x: 10, y: 20 }")
+  debug_inspect(generic_value.pair.1.value(), content="Some({ dx: 1, dy: 2 })")
 }
 
 ///|
@@ -912,7 +918,7 @@ test "ecs query: iter_combinations returns pairwise combinations in anchor order
       break
     }
   }
-  inspect(values, content="[(1, 2), (1, 3), (2, 3)]")
+  debug_inspect(values, content="[(1, 2), (1, 3), (2, 3)]")
 
   let state : QueryState[Comp[Position], All] = world.query()
   let state_combinations = state.iter_combinations(world)
@@ -924,7 +930,7 @@ test "ecs query: iter_combinations returns pairwise combinations in anchor order
       break
     }
   }
-  inspect(state_values, content="[(1, 2), (1, 3), (2, 3)]")
+  debug_inspect(state_values, content="[(1, 2), (1, 3), (2, 3)]")
 }
 
 ///|
@@ -956,7 +962,16 @@ test "ecs query: iter_combinations supports mut query data across distinct entit
     }
   }
 
-  inspect(try! world.get_by_key(e0, position_key), content="Some({x: 5, y: 0})")
-  inspect(try! world.get_by_key(e1, position_key), content="Some({x: 4, y: 0})")
-  inspect(try! world.get_by_key(e2, position_key), content="Some({x: 3, y: 0})")
+  debug_inspect(
+    try! world.get_by_key(e0, position_key),
+    content="Some({ x: 5, y: 0 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(e1, position_key),
+    content="Some({ x: 4, y: 0 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(e2, position_key),
+    content="Some({ x: 3, y: 0 })",
+  )
 }

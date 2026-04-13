@@ -16,18 +16,75 @@
 test "color owns Color constructors" {
   let white = @color.Color::white()
   let black = @color.Color::black()
-  inspect(white.r.to_double(), content="1")
-  inspect(white.g.to_double(), content="1")
-  inspect(white.b.to_double(), content="1")
-  inspect(white.a.to_double(), content="1")
-  inspect(black.r.to_double(), content="0")
-  inspect(black.g.to_double(), content="0")
-  inspect(black.b.to_double(), content="0")
-  inspect(black.a.to_double(), content="1")
+  debug_inspect(white.r.to_double(), content="1")
+  debug_inspect(white.g.to_double(), content="1")
+  debug_inspect(white.b.to_double(), content="1")
+  debug_inspect(white.a.to_double(), content="1")
+  debug_inspect(black.r.to_double(), content="0")
+  debug_inspect(black.g.to_double(), content="0")
+  debug_inspect(black.b.to_double(), content="0")
+  debug_inspect(black.a.to_double(), content="1")
 }
 
 ///|
 test "color exposes alpha channel" {
   let color = @color.Color::new(0.2F, 0.4F, 0.6F, 0.25F)
-  inspect(color.alpha().to_double(), content="0.25")
+  debug_inspect(color.alpha().to_double(), content="0.25")
+}
+
+///|
+test "color space bridges round-trip primary colors" {
+  let red = @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
+  debug_inspect(
+    @color.color_approx_eq(
+      @color.Hsla::from_color(red).to_color(),
+      red,
+      0.0001F,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    @color.color_approx_eq(
+      @color.Hsva::from_color(red).to_color(),
+      red,
+      0.0001F,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    @color.color_approx_eq(
+      @color.Hwba::from_color(red).to_color(),
+      red,
+      0.0001F,
+    ),
+    content="true",
+  )
+}
+
+///|
+test "color range and gradient interpolate linear colors" {
+  let red = @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+  let blue = @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+  let midpoint = red.range_to(blue).at(0.5F)
+  debug_inspect(midpoint.r.to_double(), content="0.5")
+  debug_inspect(midpoint.g.to_double(), content="0")
+  debug_inspect(midpoint.b.to_double(), content="0.5")
+  debug_inspect(midpoint.a.to_double(), content="1")
+  let gradient = @color.color_gradient([red, blue]) catch {
+    _ => abort("expected color gradient")
+  }
+  let sample = gradient.at(0.5F)
+  debug_inspect(sample.r.to_double(), content="0.5")
+  debug_inspect(sample.b.to_double(), content="0.5")
+}
+
+///|
+test "srgba tuple converts back to authored components" {
+  let color = @color.Color::srgba(0.25F, 0.5F, 0.75F, 0.4F)
+  let (r, g, b, a) = color.to_srgba_tuple()
+  let round_trip = @color.Color::srgba(r, g, b, a)
+  debug_inspect(
+    @color.color_approx_eq(round_trip, color, 0.000001F),
+    content="true",
+  )
 }

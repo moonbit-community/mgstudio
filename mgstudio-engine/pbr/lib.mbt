@@ -13,10 +13,7 @@
 // limitations under the License.
 
 ///|
-pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
-
-///|
-pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
+const PBR_PLUGIN_NAME : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
 pub(all) struct PbrPlugin {
@@ -91,13 +88,13 @@ priv struct PbrPluginMarker {}
 
 ///|
 let ecs_key_pbr_plugin_marker : @ecs.ResourceKey[PbrPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_pbr::PbrPluginMarker",
+  debug_name="mgstudio_pbr::PbrPluginMarker",
 )
 
 ///|
 pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[
   PbrPluginRuntimeConfig,
-] = @ecs.register_resource(debug_name="bevy_pbr::PbrPluginRuntimeConfig")
+] = @ecs.register_resource(debug_name="mgstudio_pbr::PbrPluginRuntimeConfig")
 
 ///|
 fn init_wireframe_resources(world : @ecs.World) -> Unit {
@@ -118,7 +115,7 @@ pub struct FogPluginState {}
 
 ///|
 pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState] = @ecs.register_resource(
-  debug_name="bevy_pbr::FogPluginState",
+  debug_name="mgstudio_pbr::FogPluginState",
 )
 
 ///|
@@ -178,7 +175,7 @@ fn pbr_plugin_sync_gltf_material_handler_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  @gltf.gltf_set_pbr_material_handler_enabled(
+  @gltf_loader.gltf_set_pbr_material_handler_enabled(
     runtime_config.gltf_render_enabled,
   )
   app
@@ -230,21 +227,13 @@ pub let render3d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
-/// Legacy alias kept for source compatibility.
-pub let render3d_set_execute : @app.SystemSet = render3d_set_render
-
-///|
-/// Legacy alias kept for source compatibility.
-pub let render3d_set_prepare_legacy : @app.SystemSet = render3d_set_prepare
-
-///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   pbr_plugin_with(app, PbrPlugin::default())
 }
 
 ///|
-pub impl @app.PluginReplacement for PbrPlugin with replacement_id(_self) {
-  PBR_PLUGIN_ID
+pub impl @app.PluginReplacement for PbrPlugin with plugin_name(_self) {
+  PBR_PLUGIN_NAME
 }
 
 ///|

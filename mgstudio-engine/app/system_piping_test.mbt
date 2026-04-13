@@ -15,15 +15,15 @@
 ///|
 struct SystemPipingMessage {
   value : String
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct SystemPipingCounter {
   mut value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
-struct SystemPipingMarker {} derive(Eq, Show)
+struct SystemPipingMarker {} derive(Eq, Debug)
 
 ///|
 let system_piping_message_key : @ecs.ResourceKey[SystemPipingMessage] = @ecs.register_resource(
@@ -100,7 +100,7 @@ test "app system piping: pipe passes output into handler" {
 
   app = app.run_once()
 
-  inspect(log, content="[\"parsed 42\"]")
+  debug_inspect(log, content="[\"parsed 42\"]")
 }
 
 ///|
@@ -123,10 +123,10 @@ test "app system piping: map and pipe_param can use additional system params" {
 
   app = app.run_once()
 
-  inspect(log, content="[\"map:hello\", \"pipe:hello\"]")
-  inspect(
+  debug_inspect(log, content="[\"map:hello\", \"pipe:hello\"]")
+  debug_inspect(
     try! app.world().get_resource(system_piping_counter_key),
-    content="Some({value: 5})",
+    content="Some({ value: 5 })",
   )
 }
 
@@ -148,6 +148,6 @@ test "app system piping: source validation skip prevents downstream handler" {
 
   app = app.run_once()
 
-  inspect(ran.val, content="false")
-  inspect(errors.length(), content="0")
+  debug_inspect(ran.val, content="false")
+  debug_inspect(errors.length(), content="0")
 }

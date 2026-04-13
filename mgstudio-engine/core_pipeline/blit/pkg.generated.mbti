@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline/blit"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const BLIT_PASS_LABEL : String = "blit"
+
+pub fn blit_bind_group_matches_source(BlitBindGroup, source_texture_view_id~ : Int) -> Bool
+
+pub fn blit_draw(scene_texture_id~ : Int) -> Unit
+
+pub fn blit_pipeline_ready(BlitPipeline) -> Bool
+
+pub fn blit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn blit_plugin_with(@app.App[@ecs.World], BlitPlugin) -> @app.App[@ecs.World]
+
+pub let ecs_key_blit_pipeline : @ecs.ResourceKey[BlitPipeline]
+
+// Errors
+
+// Types and methods
+pub struct BlitBindGroup {
+  source_texture_view_id : Int
+}
+pub fn BlitBindGroup::new(source_texture_view_id~ : Int) -> Self
+
+pub struct BlitPipeline {
+  has_bind_group_layout : Bool
+  has_sampler : Bool
+  has_fullscreen_shader : Bool
+  has_fragment_shader : Bool
+}
+pub fn BlitPipeline::default() -> Self
+pub fn BlitPipeline::new(has_bind_group_layout? : Bool, has_sampler? : Bool, has_fullscreen_shader? : Bool, has_fragment_shader? : Bool) -> Self
+pub impl @app.Resource for BlitPipeline
+
+pub struct BlitPipelineKey {
+  texture_format : String
+  blend_state : String
+  samples : Int
+} derive(Eq, @debug.Debug)
+pub fn BlitPipelineKey::new(texture_format? : String, blend_state? : String, samples? : Int) -> Self
+
+pub struct BlitPlugin {
+}
+pub fn BlitPlugin::default() -> Self
+pub impl @app.PluginReplacement for BlitPlugin
+
+// Type aliases
+
+// Traits
+

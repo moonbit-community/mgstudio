@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -16,11 +17,31 @@ pub const AXIS_MAX : Float = 1.0
 
 pub const AXIS_MIN : Float = -1.
 
-pub const INPUT_PLUGIN_ID : String = "bevy_input::InputPlugin"
+pub fn[T] axis_all(Axis[T]) -> Array[T]
+
+pub fn[T : Eq] axis_get(Axis[T], T) -> Float?
+
+pub fn[T : Eq] axis_get_unclamped(Axis[T], T) -> Float?
+
+pub fn[T] axis_new() -> Axis[T]
+
+pub fn[T : Eq] axis_remove(Axis[T], T) -> Float?
+
+pub fn[T : Eq] axis_set(Axis[T], T, Float) -> Float?
+
+pub fn[T] button_input_clear(ButtonInput[T]) -> Unit
+
+pub fn[T : ButtonInputButton] button_input_press(ButtonInput[T], T) -> Unit
+
+pub fn[T : ButtonInputButton] button_input_release(ButtonInput[T], T) -> Unit
+
+pub fn double_tap_gesture_message_key() -> @ecs.MessageKey[@events.DoubleTapGesture]
 
 pub let ecs_key_gamepad : @ecs.ComponentKey[Gamepad]
 
 pub let ecs_key_gamepad_settings : @ecs.ComponentKey[GamepadSettings]
+
+pub fn gesture_message_keys() -> (@ecs.MessageKey[@events.RotationGesture], @ecs.MessageKey[@events.DoubleTapGesture], @ecs.MessageKey[@events.PanGesture])
 
 pub fn host_input_cursor_entered_window() -> Int
 
@@ -78,21 +99,51 @@ pub fn key_pressed(@events.KeyCode) -> Bool
 
 pub fn key_repeated(@events.KeyCode) -> Bool
 
+pub fn keyboard_character_message_key() -> @ecs.MessageKey[@events.KeyboardCharacter]
+
+pub fn keyboard_focus_lost_message_key() -> @ecs.MessageKey[@events.KeyboardFocusLost]
+
+pub fn keyboard_input_message_key() -> @ecs.MessageKey[@events.KeyboardInput]
+
+pub fn keyboard_input_snapshot() -> ButtonInput[@events.KeyCode]
+
+pub fn keyboard_keycode_pressed(@events.KeyCode) -> Bool
+
+pub fn keyboard_logical_key_pressed(@events.Key) -> Bool
+
+pub fn logical_key_snapshot() -> ButtonInput[@events.Key]
+
 pub fn mouse_button_just_pressed(@events.MouseButton) -> Bool
 
 pub fn mouse_button_just_released(@events.MouseButton) -> Bool
 
+pub fn mouse_button_message_key() -> @ecs.MessageKey[@events.MouseButtonInput]
+
 pub fn mouse_button_pressed(@events.MouseButton) -> Bool
+
+pub fn mouse_button_pressed_snapshot(@events.MouseButton) -> Bool
+
+pub fn mouse_button_snapshot() -> ButtonInput[@events.MouseButton]
 
 pub fn mouse_motion_delta() -> @math.Vec2
 
 pub fn mouse_motion_delta_opt() -> @math.Vec2?
 
+pub fn mouse_motion_message_key() -> @ecs.MessageKey[@events.MouseMotion]
+
 pub fn mouse_position() -> @math.Vec2?
+
+pub fn mouse_position_snapshot() -> @math.Vec2?
 
 pub fn mouse_wheel_delta() -> @math.Vec2
 
 pub fn mouse_wheel_delta_opt() -> @math.Vec2?
+
+pub fn mouse_wheel_message_key() -> @ecs.MessageKey[@events.MouseWheel]
+
+pub fn pan_gesture_message_key() -> @ecs.MessageKey[@events.PanGesture]
+
+pub fn pinch_gesture_message_key() -> @ecs.MessageKey[@events.PinchGesture]
 
 pub fn primary_pointer_delta() -> @math.Vec2
 
@@ -105,6 +156,20 @@ pub fn primary_pointer_just_released() -> Bool
 pub fn primary_pointer_position() -> @math.Vec2?
 
 pub fn primary_pointer_pressed() -> Bool
+
+pub fn rotation_gesture_message_key() -> @ecs.MessageKey[@events.RotationGesture]
+
+pub fn touch_input_message_key() -> @ecs.MessageKey[@events.TouchInput]
+
+pub fn touches_any_just_pressed(Touches) -> Bool
+
+pub fn touches_iter_active(Touches) -> Array[Touch]
+
+pub fn touches_iter_just_pressed(Touches) -> Array[Touch]
+
+pub fn touches_iter_just_released(Touches) -> Array[Touch]
+
+pub fn touches_new() -> Touches
 
 // Errors
 pub(all) suberror AxisSettingsError {
@@ -198,14 +263,17 @@ pub fn[T : ButtonInputButton] ButtonInput::any_pressed(Self[T], Array[T]) -> Boo
 pub fn[T] ButtonInput::clear(Self[T]) -> Unit
 pub fn[T : ButtonInputButton] ButtonInput::clear_just_pressed(Self[T], T) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::clear_just_released(Self[T], T) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::contains(Self[T], T) -> Bool
 pub fn[T] ButtonInput::get_just_pressed(Self[T]) -> Array[T]
 pub fn[T] ButtonInput::get_just_released(Self[T]) -> Array[T]
 pub fn[T] ButtonInput::get_pressed(Self[T]) -> Array[T]
+pub fn[T] ButtonInput::is_empty(Self[T]) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::just_pressed(Self[T], T) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::just_released(Self[T], T) -> Bool
 pub fn[T] ButtonInput::new() -> Self[T]
 pub fn[T : ButtonInputButton] ButtonInput::press(Self[T], T) -> Unit
 pub fn[T : ButtonInputButton] ButtonInput::pressed(Self[T], T) -> Bool
+pub fn[T] ButtonInput::pressed_count(Self[T]) -> Int
 pub fn[T : ButtonInputButton] ButtonInput::release(Self[T], T) -> Unit
 pub fn[T : ButtonInputButton] ButtonInput::release_all(Self[T]) -> Unit
 pub fn[T : ButtonInputButton] ButtonInput::reset(Self[T], T) -> Unit
@@ -271,7 +339,7 @@ pub(all) enum GamepadAxis {
   RightStickY
   RightZ
   Other(Int)
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn GamepadAxis::all() -> Array[Self]
 pub fn GamepadAxis::to_index(Self) -> Int
 pub impl IntoGamepadInput for GamepadAxis
@@ -305,7 +373,7 @@ pub(all) enum GamepadButton {
   DPadLeft
   DPadRight
   Other(Int)
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn GamepadButton::all() -> Array[Self]
 pub fn GamepadButton::to_index(Self) -> Int
 pub impl ButtonInputButton for GamepadButton
@@ -359,7 +427,7 @@ pub impl @ecs.Message for GamepadEvent
 pub(all) enum GamepadInput {
   Axis(GamepadAxis)
   Button(GamepadButton)
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl IntoGamepadInput for GamepadInput
 
 pub(all) struct GamepadRumbleIntensity {

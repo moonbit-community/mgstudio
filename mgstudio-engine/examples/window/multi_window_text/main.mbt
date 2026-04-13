@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const PRIMARY_WINDOW_TITLE : String = "Primary window"
 
 ///|

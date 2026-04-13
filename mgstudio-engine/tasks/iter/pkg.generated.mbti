@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/tasks/iter"
+
+// Values
+pub fn[T] parallel_chain(ParallelIterator[T], ParallelIterator[T]) -> ParallelIterator[T]
+
+// Errors
+
+// Types and methods
+pub struct ParallelIterator[T] {
+  batches : Array[Array[T]]
+  mut cursor : Int
+}
+pub fn[T] ParallelIterator::collect(Self[T]) -> Array[T]
+pub fn[T] ParallelIterator::count(Self[T]) -> Int
+pub fn[T] ParallelIterator::from_items(Array[T], Int) -> Self[T]
+pub fn[T] ParallelIterator::last(Self[T]) -> T?
+pub fn[T] ParallelIterator::new(Array[Array[T]]) -> Self[T]
+pub fn[T] ParallelIterator::next_batch(Self[T]) -> Array[T]?
+pub fn[T] ParallelIterator::size_hint(Self[T]) -> (Int, Int?)
+
+pub struct ParallelIteratorAdapter[T] {
+  iter : ParallelIterator[T]
+}
+pub fn[T] ParallelIteratorAdapter::new(ParallelIterator[T]) -> Self[T]
+pub fn[T] ParallelIteratorAdapter::next_batch(Self[T]) -> Array[T]?
+
+// Type aliases
+
+// Traits
+

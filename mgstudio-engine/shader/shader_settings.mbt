@@ -15,7 +15,7 @@
 ///|
 pub(all) struct ShaderSettings {
   shader_defs : Array[ShaderDefVal]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ShaderSettings::default() -> ShaderSettings {

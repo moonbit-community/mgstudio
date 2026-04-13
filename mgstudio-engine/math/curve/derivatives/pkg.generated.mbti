@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/math/curve/derivatives"
+
+// Values
+pub fn[T] with_derivative(T, T) -> WithDerivative[T]
+
+pub fn[T] with_derivative_derivative(WithDerivative[T]) -> T
+
+pub fn[T, S] with_derivative_map(WithDerivative[T], (T) -> S) -> WithDerivative[S]
+
+pub fn[T] with_derivative_value(WithDerivative[T]) -> T
+
+pub fn[T] with_two_derivatives(T, T, T) -> WithTwoDerivatives[T]
+
+pub fn[T] with_two_derivatives_first(WithTwoDerivatives[T]) -> T
+
+pub fn[T, S] with_two_derivatives_map(WithTwoDerivatives[T], (T) -> S) -> WithTwoDerivatives[S]
+
+pub fn[T] with_two_derivatives_second(WithTwoDerivatives[T]) -> T
+
+pub fn[T] with_two_derivatives_value(WithTwoDerivatives[T]) -> T
+
+// Errors
+
+// Types and methods
+pub struct WithDerivative[T] {
+  value : T
+  derivative : T
+}
+
+pub struct WithTwoDerivatives[T] {
+  value : T
+  derivative : T
+  second_derivative : T
+}
+
+// Type aliases
+
+// Traits
+

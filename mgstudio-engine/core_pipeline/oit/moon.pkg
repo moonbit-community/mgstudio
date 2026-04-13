@@ -1,0 +1,8 @@
+import {
+  "Milky2018/mgstudio/app" @app,
+  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/core_pipeline/oit/resolve" @resolve,
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"

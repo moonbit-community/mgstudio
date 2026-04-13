@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/deferred"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
+
+pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
+
+pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@pbr.DeferredPbrLightingState]
+
+// Errors
+
+// Types and methods
+pub struct PbrDeferredLightingDepthId {
+  mut depth_id : Int
+}
+pub fn PbrDeferredLightingDepthId::default() -> Self
+pub fn PbrDeferredLightingDepthId::get(Self) -> Int
+pub fn PbrDeferredLightingDepthId::new(Int) -> Self
+pub fn PbrDeferredLightingDepthId::set(Self, Int) -> Unit
+
+// Type aliases
+pub using @pbr {type DeferredPbrLightingPlugin}
+
+pub using @pbr {type DeferredPbrLightingState}
+
+// Traits
+

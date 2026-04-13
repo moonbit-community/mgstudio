@@ -15,19 +15,22 @@
 ///|
 test "post_process boundary re-exports bloom and tonemapping APIs" {
   let bloom = @post_process.Bloom::default()
-  inspect(bloom.max_mip_dimension, content="512")
+  debug_inspect(bloom.max_mip_dimension, content="512")
   let tonemapping = @post_process.Tonemapping::default()
-  inspect(
+  debug_inspect(
     tonemapping.to_json().to_string(),
     content="String(\"TonyMcMapface\")",
   )
-  inspect(@post_process.DebandDither::default() == Disabled, content="true")
+  debug_inspect(
+    @post_process.DebandDither::default() == Disabled,
+    content="true",
+  )
 }
 
 ///|
 test "post_process boundary re-exports fxaa and ssao APIs" {
   let fxaa = @post_process.Fxaa::default()
-  inspect(fxaa.enabled, content="true")
+  debug_inspect(fxaa.enabled, content="true")
   let ssao = @post_process.ScreenSpaceAmbientOcclusion::default()
-  inspect(ssao.constant_object_thickness.to_double(), content="0.25")
+  debug_inspect(ssao.constant_object_thickness.to_double(), content="0.25")
 }

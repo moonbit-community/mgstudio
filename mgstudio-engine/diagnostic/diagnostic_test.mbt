@@ -25,8 +25,8 @@ test "diagnostic: max_history_length zero keeps only latest measurement" {
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(2.0F), 20.0F),
     2,
   )
-  inspect(diagnostic.history_len(), content="1")
-  inspect(diagnostic.value().unwrap(), content="20")
+  debug_inspect(diagnostic.history_len(), content="1")
+  debug_inspect(diagnostic.value().unwrap(), content="20")
 }
 
 ///|
@@ -40,8 +40,8 @@ test "diagnostic: same system sequence overwrites the latest measurement" {
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(2.0F), 12.0F),
     7,
   )
-  inspect(diagnostic.history_len(), content="1")
-  inspect(diagnostic.value().unwrap(), content="12")
+  debug_inspect(diagnostic.history_len(), content="1")
+  debug_inspect(diagnostic.value().unwrap(), content="12")
 }
 
 ///|
@@ -55,7 +55,7 @@ test "diagnostic: duration tracks instant span" {
     DiagnosticMeasurement::new(@core.Instant::from_millis(750L), 2.0F),
     2,
   )
-  inspect(diagnostic.duration().unwrap().as_millis(), content="500")
+  debug_inspect(diagnostic.duration().unwrap().as_millis(), content="500")
 }
 
 ///|
@@ -64,15 +64,15 @@ test "diagnostics store iter_mut exposes live diagnostic refs" {
   let path = DiagnosticPath::new("test")
   store.add(Diagnostic::new(path))
   let diagnostics = store.iter_mut()
-  inspect(diagnostics.length(), content="1")
+  debug_inspect(diagnostics.length(), content="1")
   diagnostics[0].val.set_enabled(false)
-  inspect(store.get(path).unwrap().is_enabled(), content="false")
+  debug_inspect(store.get(path).unwrap().is_enabled(), content="false")
 }
 
 ///|
 test "diagnostic: enable flag can be toggled through public API" {
   let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
-  inspect(diagnostic.is_enabled(), content="true")
+  debug_inspect(diagnostic.is_enabled(), content="true")
   diagnostic.set_enabled(false)
-  inspect(diagnostic.is_enabled(), content="false")
+  debug_inspect(diagnostic.is_enabled(), content="false")
 }

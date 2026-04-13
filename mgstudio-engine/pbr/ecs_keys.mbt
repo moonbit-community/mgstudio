@@ -18,9 +18,7 @@ pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @ecs.register_component(
-  debug_name="render3d.lightmap",
-)
+pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @lightmap.ecs_key_lightmap
 
 ///|
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @material.ecs_key_mesh_material3d
@@ -95,7 +93,7 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.
 pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
 
 ///|
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @pbr_prepass.ecs_key_depth_prepass
 
 ///|
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_component(
@@ -103,7 +101,7 @@ pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_
 )
 
 ///|
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @core_pipeline.ecs_key_normal_prepass
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @pbr_prepass.ecs_key_normal_prepass
 
 ///|
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
@@ -124,7 +122,7 @@ pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor] = @ecs.regis
 )
 
 ///|
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @pbr_prepass.ecs_key_deferred_prepass
 
 ///|
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.register_component(
@@ -137,9 +135,7 @@ pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @ecs.re
 )
 
 ///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.register_component(
-  debug_name="render3d.sub_camera_view3d",
-)
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr_render.ecs_key_sub_camera_view3d
 
 ///|
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
@@ -180,9 +176,7 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_compo
 )
 
 ///|
-pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
-  debug_name="render3d.frustum",
-)
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @pbr_render.ecs_key_frustum
 
 ///|
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @light.ecs_key_parallax_correction
@@ -194,7 +188,7 @@ pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = 
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] = @light.ecs_key_environment_map_light
 
 ///|
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @pbr_prepass.ecs_key_motion_vector_prepass
 
 ///|
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing
@@ -222,7 +216,7 @@ pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[
 ///|
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
   ScreenSpaceTransmission,
-] = @post_process.ecs_key_screen_space_transmission
+] = @transmission.ecs_key_screen_space_transmission
 
 ///|
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
@@ -254,11 +248,6 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 ///|
 pub impl @ecs.Component for Mesh3d with component() {
   ecs_key_mesh3d
-}
-
-///|
-pub impl @ecs.Component for Lightmap with component() {
-  ecs_key_lightmap
 }
 
 ///|
@@ -322,11 +311,6 @@ pub impl @ecs.Component for NotShadowCaster with component() {
 }
 
 ///|
-pub impl @ecs.Component for SubCameraView3d with component() {
-  ecs_key_sub_camera_view3d
-}
-
-///|
 pub impl @ecs.Component for OcclusionCulling with component() {
   ecs_key_occlusion_culling
 }
@@ -344,11 +328,6 @@ pub impl @ecs.Component for NotShadowReceiver with component() {
 ///|
 pub impl @ecs.Component for Projection with component() {
   ecs_key_projection
-}
-
-///|
-pub impl @ecs.Component for Frustum with component() {
-  ecs_key_frustum
 }
 
 ///|
@@ -391,3 +370,60 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(
   debug_name="render3d.internal_assets",
 )
+
+///|
+pub let ecs_components : Array[String] = [
+  "Hdr", "Fxaa", "Msaa", "Bloom", "CustomPostProcess3d", "Mesh3d", "Skybox", "Camera3d",
+  "Exposure", "Vignette", "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur",
+  "PointLight", "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass",
+  "ForwardDecal", "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d",
+  "Lightmap", "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState",
+  "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
+  "NoIndirectDrawing", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
+  "Projection", "Frustum", "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight",
+  "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections",
+  "DirectionalLightTexture", "ForwardDecalMaterialExt", "ScreenSpaceTransmission",
+  "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
+  "OrderIndependentTransparencySettings",
+]
+
+///|
+pub let ecs_resources : Array[String] = [
+  "WireframeConfig", "GlobalAmbientLight", "PointLightShadowMap", "DirectionalLightShadowMap",
+  "DefaultOpaqueRendererMethod",
+]
+
+///|
+pub fn get_wireframe_config_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[WireframeConfig] {
+  world.resource(ecs_key_wireframe_config)
+}
+
+///|
+pub fn get_global_ambient_light_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[GlobalAmbientLight] {
+  @light.get_global_ambient_light_resource(world)
+}
+
+///|
+pub fn get_point_light_shadow_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PointLightShadowMap] {
+  @light.get_point_light_shadow_map_resource(world)
+}
+
+///|
+pub fn get_directional_light_shadow_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[DirectionalLightShadowMap] {
+  @light.get_directional_light_shadow_map_resource(world)
+}
+
+///|
+pub fn get_default_opaque_renderer_method_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod] {
+  @material.get_default_opaque_renderer_method_resource(world)
+}

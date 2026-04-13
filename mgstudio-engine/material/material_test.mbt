@@ -19,10 +19,13 @@ test "material boundary re-exports standard material APIs" {
     .with_perceptual_roughness(0.75)
     .with_unlit(true)
     .with_alpha_mode(@material.AlphaMode::Blend)
-  inspect(material.metallic.to_double(), content="0.25")
-  inspect(material.perceptual_roughness.to_double(), content="0.75")
-  inspect(material.unlit, content="true")
-  inspect(material.alpha_mode is @material.AlphaMode::Blend, content="true")
+  debug_inspect(material.metallic.to_double(), content="0.25")
+  debug_inspect(material.perceptual_roughness.to_double(), content="0.75")
+  debug_inspect(material.unlit, content="true")
+  debug_inspect(
+    material.alpha_mode is @material.AlphaMode::Blend,
+    content="true",
+  )
 }
 
 ///|
@@ -35,20 +38,36 @@ test "material boundary re-exports material metadata APIs" {
   let mesh_material = @material.MeshMaterial3d::new(@asset.Handle::new(42)).with_extension_shader_path(
     Some("shaders/custom/manual_material_3d.wgsl"),
   )
-  inspect(metadata.extension_tag, content="7")
-  inspect(metadata.disable_shadows, content="true")
-  inspect(
+  debug_inspect(metadata.extension_tag, content="7")
+  debug_inspect(metadata.disable_shadows, content="true")
+  debug_inspect(
     metadata.shader_path,
     content="Some(\"shaders/custom/manual_material_3d.wgsl\")",
   )
-  inspect(forward_ext.depth_fade_factor.to_double(), content="0.5")
-  inspect(
+  debug_inspect(forward_ext.depth_fade_factor.to_double(), content="0.5")
+  debug_inspect(
     renderer_method.renderer_method() is @material.OpaqueRendererMethod::Forward,
     content="true",
   )
-  inspect(
+  debug_inspect(
     mesh_material.extended_material.map(fn(ext) { ext.shader_path }),
     content="Some(Some(\"shaders/custom/manual_material_3d.wgsl\"))",
+  )
+}
+
+///|
+test "material boundary resolves auto opaque render method at runtime" {
+  let default_method = @material.OpaqueRendererMethod::Deferred
+  let resolved_auto = @material.OpaqueRendererMethod::Auto.resolve_runtime(
+    default_method,
+  )
+  let resolved_forward = @material.OpaqueRendererMethod::Forward.resolve_runtime(
+    default_method,
+  )
+  debug_inspect(
+    resolved_auto is @material.OpaqueRendererMethod::Deferred &&
+    resolved_forward is @material.OpaqueRendererMethod::Forward,
+    content="true",
   )
 }
 
@@ -72,5 +91,5 @@ test "material boundary Assets::add accepts Color and Image handle inputs" {
   } else {
     false
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

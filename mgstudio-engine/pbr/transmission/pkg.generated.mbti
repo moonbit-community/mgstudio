@@ -1,0 +1,107 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr/transmission"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[ScreenSpaceTransmission]
+
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+
+pub fn main_transmissive_pass_3d_should_copy_texture_per_step(MainTransmissivePass3dConfig) -> Bool
+
+pub fn main_transmissive_pass_3d_should_run(MainTransmissivePass3dConfig, Array[Transmissive3d]) -> Bool
+
+pub fn main_transmissive_pass_3d_sorted_items(Array[Transmissive3d]) -> Array[Transmissive3d]
+
+pub fn main_transmissive_pass_3d_step_ranges(MainTransmissivePass3dConfig, Array[Transmissive3d]) -> Array[(Int, Int)]
+
+pub fn pbr_prepare_view_transmission_texture(Int, Int, Int) -> ViewTransmissionTexture
+
+pub fn pbr_should_prepare_transmission_texture(Int, Int, Bool, Bool, Bool) -> Bool
+
+pub fn screen_space_transmission_blur_taps(ScreenSpaceTransmissionQuality) -> Int
+
+pub fn transmissive3d_render_step_ranges(Array[Transmissive3d], ScreenSpaceTransmission) -> Array[(Int, Int)]
+
+pub fn transmissive3d_sort(Array[Transmissive3d]) -> Array[Transmissive3d]
+
+pub fn transmissive3d_split_range(Int, Int) -> Array[(Int, Int)]
+
+// Errors
+
+// Types and methods
+pub struct MainTransmissivePass3dConfig {
+  enabled : Bool
+  steps : Int
+  should_copy_main_texture : Bool
+}
+pub fn MainTransmissivePass3dConfig::default() -> Self
+pub fn MainTransmissivePass3dConfig::from_transmission(ScreenSpaceTransmission) -> Self
+pub fn MainTransmissivePass3dConfig::with_enabled(Self, Bool) -> Self
+pub fn MainTransmissivePass3dConfig::with_steps(Self, Int) -> Self
+
+pub struct ScreenSpaceTransmission {
+  quality : ScreenSpaceTransmissionQuality
+  steps : Int
+} derive(ToJson, @json.FromJson)
+pub fn ScreenSpaceTransmission::default() -> Self
+pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
+pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
+pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
+pub impl @ecs.Component for ScreenSpaceTransmission
+
+pub(all) enum ScreenSpaceTransmissionQuality {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ScreenSpaceTransmissionQuality::default() -> Self
+
+pub struct TransmissionTextureState {
+  source_texture_id : Int
+  blur_texture_id : Int
+}
+pub fn TransmissionTextureState::default() -> Self
+pub fn TransmissionTextureState::with_blur_texture_id(Self, Int) -> Self
+pub fn TransmissionTextureState::with_source_texture_id(Self, Int) -> Self
+
+pub struct Transmissive3d {
+  distance : Float
+  pipeline_id : Int
+  render_entity : @core.Entity
+  main_entity : @core.Entity
+  draw_function_id : Int
+  batch_range_start : Int
+  batch_range_end : Int
+  indexed : Bool
+} derive(ToJson, @json.FromJson)
+pub fn Transmissive3d::batch_len(Self) -> Int
+pub fn Transmissive3d::new(@core.Entity, @core.Entity, Float, Int, Int, Int, Int, Bool) -> Self
+pub fn Transmissive3d::simple(@core.Entity, @core.Entity, Float, Int, Int) -> Self
+pub fn Transmissive3d::sort_key(Self) -> Float
+
+pub struct TransmittedShadowReceiver {
+} derive(ToJson, @json.FromJson)
+pub fn TransmittedShadowReceiver::default() -> Self
+pub impl @ecs.Component for TransmittedShadowReceiver
+
+pub struct ViewTransmissionTexture {
+  texture_id : Int
+  width : Int
+  height : Int
+  sampler_linear : Bool
+}
+pub fn ViewTransmissionTexture::default() -> Self
+pub fn ViewTransmissionTexture::is_ready(Self) -> Bool
+
+// Type aliases
+
+// Traits
+

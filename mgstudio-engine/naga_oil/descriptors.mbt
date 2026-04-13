@@ -20,7 +20,7 @@ pub(all) struct ComposableModuleDescriptor {
   as_name : String?
   additional_imports : Array[ImportDefinition]
   shader_defs : @hashmap.HashMap[String, ShaderDefValue]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn ComposableModuleDescriptor::default() -> ComposableModuleDescriptor {
@@ -41,7 +41,7 @@ pub(all) struct NagaModuleDescriptor {
   shader_type : ShaderType
   shader_defs : @hashmap.HashMap[String, ShaderDefValue]
   additional_imports : Array[ImportDefinition]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn NagaModuleDescriptor::default() -> NagaModuleDescriptor {

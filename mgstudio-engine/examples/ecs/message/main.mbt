@@ -13,22 +13,20 @@
 // limitations under the License.
 
 ///|
-
-///|
 struct DealDamage {
   mut amount : Int
-} derive(Show)
+} derive(Debug)
 
 ///|
-struct DamageReceived {} derive(Show)
+struct DamageReceived {} derive(Debug)
 
 ///|
-struct ArmorBlockedDamage {} derive(Show)
+struct ArmorBlockedDamage {} derive(Debug)
 
 ///|
 struct DamageTimer {
   mut timer : @time.Timer
-} derive(Show)
+} derive(Debug)
 
 ///|
 let deal_damage_key : @ecs.MessageKey[DealDamage] = @ecs.register_message(

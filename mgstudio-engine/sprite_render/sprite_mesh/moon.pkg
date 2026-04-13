@@ -1,0 +1,6 @@
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/sprite_render",
+}
+
+supported_targets = "native"

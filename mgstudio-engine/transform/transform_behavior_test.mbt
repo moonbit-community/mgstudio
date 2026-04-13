@@ -65,16 +65,16 @@ test "transform behavior: looking_to aligns forward direction" {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
   let forward = transform.forward()
-  inspect(forward.x == 0.0F, content="true")
-  inspect(forward.y == 0.0F, content="true")
-  inspect(forward.z < -0.999F, content="true")
+  debug_inspect(forward.x == 0.0F, content="true")
+  debug_inspect(forward.y == 0.0F, content="true")
+  debug_inspect(forward.z < -0.999F, content="true")
 }
 
 ///|
 test "transform behavior: rotate_z updates z rotation" {
   let transform = Transform::identity()
   transform.rotate_z(@math.pi_half())
-  inspect(
+  debug_inspect(
     transform.rotation_z() > 1.56F && transform.rotation_z() < 1.58F,
     content="true",
   )
@@ -84,13 +84,13 @@ test "transform behavior: rotate_z updates z rotation" {
 test "transform behavior: constructors and rotate_y preserve semantics" {
   let translation = @math.Vec3::new(1.0F, 2.0F, 3.0F)
   let from_translation = Transform::from_translation(translation)
-  inspect(
+  debug_inspect(
     from_translation.translation.x == 1.0F &&
     from_translation.translation.y == 2.0F &&
     from_translation.translation.z == 3.0F,
     content="true",
   )
-  inspect(
+  debug_inspect(
     from_translation.scale.x == 1.0F &&
     from_translation.scale.y == 1.0F &&
     from_translation.scale.z == 1.0F,
@@ -99,18 +99,18 @@ test "transform behavior: constructors and rotate_y preserve semantics" {
 
   let rotation = @math.Quat::from_rotation_y(@math.pi_half())
   let from_rotation = Transform::from_rotation(rotation)
-  inspect(
+  debug_inspect(
     behavior_quat_same_rotation(from_rotation.rotation, rotation),
     content="true",
   )
   let forward = from_rotation.forward()
-  inspect(behavior_approx_eq(forward.x, -1.0F), content="true")
-  inspect(behavior_approx_eq(forward.y, 0.0F), content="true")
-  inspect(behavior_approx_eq(forward.z, 0.0F), content="true")
+  debug_inspect(behavior_approx_eq(forward.x, -1.0F), content="true")
+  debug_inspect(behavior_approx_eq(forward.y, 0.0F), content="true")
+  debug_inspect(behavior_approx_eq(forward.z, 0.0F), content="true")
 
   let rotated = Transform::identity()
   rotated.rotate_y(@math.pi_half())
-  inspect(
+  debug_inspect(
     behavior_quat_same_rotation(rotated.rotation, rotation),
     content="true",
   )
@@ -123,10 +123,19 @@ test "transform behavior: rotate_around orbits translation and rotation" {
     @math.Vec3::zero(),
     @math.Quat::from_rotation_y(@math.pi_half()),
   )
-  inspect(behavior_approx_eq(transform.translation.x, 0.0F), content="true")
-  inspect(behavior_approx_eq(transform.translation.y, 0.0F), content="true")
-  inspect(behavior_approx_eq(transform.translation.z, -1.0F), content="true")
-  inspect(
+  debug_inspect(
+    behavior_approx_eq(transform.translation.x, 0.0F),
+    content="true",
+  )
+  debug_inspect(
+    behavior_approx_eq(transform.translation.y, 0.0F),
+    content="true",
+  )
+  debug_inspect(
+    behavior_approx_eq(transform.translation.z, -1.0F),
+    content="true",
+  )
+  debug_inspect(
     behavior_approx_vec3(
       transform.forward(),
       @math.Vec3::new(-1.0F, 0.0F, 0.0F),
@@ -152,11 +161,11 @@ test "transform behavior: align matches documented example" {
     transform.rotation,
     @math.Vec3::new(1.0F, 1.0F, 0.0F),
   )
-  inspect(
+  debug_inspect(
     behavior_approx_vec3(main_axis_image, @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     behavior_approx_vec3(
       secondary_axis_image,
       @math.Vec3::new(0.0F, 1.0F, 1.0F),
@@ -181,7 +190,7 @@ test "transform behavior: align falls back to default axes" {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
     @math.Vec3::new(1.0F, 0.0F, 0.0F),
   )
-  inspect(
+  debug_inspect(
     behavior_quat_same_rotation(lhs.rotation, rhs.rotation),
     content="true",
   )
@@ -196,11 +205,11 @@ test "transform behavior: align ignores degenerate secondary pair" {
     @math.Vec3::new(1.0F, 0.0F, 0.0F),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  inspect(
+  debug_inspect(
     behavior_approx_vec3(transform.right(), @math.Vec3::new(0.0F, 0.0F, 1.0F)),
     content="true",
   )
-  inspect(
+  debug_inspect(
     behavior_approx_vec3(transform.up(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     content="true",
   )
@@ -215,16 +224,16 @@ test "transform behavior: aligned_by preserves translation and returns aligned c
     @math.Vec3::new(1.0F, 0.0F, 0.0F),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  inspect(
+  debug_inspect(
     behavior_quat_same_rotation(base.rotation, @math.Quat::identity()),
     content="true",
   )
-  inspect(
+  debug_inspect(
     behavior_approx_vec3(aligned.translation, base.translation),
     content="true",
   )
-  inspect(behavior_approx_vec3(aligned.scale, base.scale), content="true")
-  inspect(
+  debug_inspect(behavior_approx_vec3(aligned.scale, base.scale), content="true")
+  debug_inspect(
     behavior_approx_vec3(aligned.forward(), @math.Vec3::new(1.0F, 0.0F, 0.0F)),
     content="true",
   )

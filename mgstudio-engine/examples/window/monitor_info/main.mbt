@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,46 +13,107 @@
 // limitations under the License.
 
 ///|
-///
-/// Baseline parity:
-/// - Reports available window size and scale information.
-/// - Full monitor enumeration/details are not available in current API.
-let logged_ref : Ref[Bool] = Ref::new(false)
+// Bevy source: `bevy/examples/window/monitor_info.rs`.
 
 ///|
-fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup_visual))
-  .add_systems(@app.Update, @app.system(monitor_info_system))
-  .run()
+pub struct MonitorRef {
+  monitor : @core.Entity
 }
 
 ///|
-fn setup_visual(world : @ecs.World) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_clear_color(
-      @sprite.Color::srgb(0.10F, 0.20F, 0.18F),
-    ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+let monitor_ref_component_key : @ecs.ComponentKey[MonitorRef] = @ecs.register_component(
+  debug_name="examples.window.monitor_info.MonitorRef",
+)
+
+///|
+pub impl @ecs.Component for MonitorRef with component() {
+  monitor_ref_component_key
 }
 
 ///|
-fn monitor_info_system(world : @ecs.World) -> Unit {
-  world |> ignore
-  if logged_ref.val {
-    return
+fn spawn_window_for_monitor(
+  commands : @app.Commands,
+  monitor_entity : @core.Entity,
+  monitor : @window.Monitor,
+) -> Unit {
+  let title = match monitor.name {
+    Some(name) => name
+    None => "<no name>"
   }
-  logged_ref.val = true
-  log_line(
-    "window info: width=\{@window.window_width()}, height=\{@window.window_height()}, scale=\{@window.window_scale_factor()} (monitor details unavailable)",
+  @window.host_debug_string(
+    value="[monitor_info] monitor=\{title} size=\{monitor.physical_width.to_string()}x\{monitor.physical_height.to_string()} scale=\{monitor.scale_factor.to_string()}",
+  )
+
+  let window_entity = commands.spawn(
+    (
+      @window.Window::{
+        ..@window.Window::default(),
+        title,
+        mode: @window.WindowMode::Fullscreen(
+          @window.MonitorSelection::Entity(monitor_entity),
+          @window.VideoModeSelection::Current,
+        ),
+        position: @window.WindowPosition::Centered(
+          @window.MonitorSelection::Entity(monitor_entity),
+        ),
+      },
+      MonitorRef::{ monitor: monitor_entity },
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      @sprite.Camera2dBundle::new_with_target(
+        @sprite.Camera::default(),
+        @transform.Transform::identity(),
+        @sprite.RenderTarget::Window(@window.WindowRef::Entity(window_entity)),
+      ),
+    ),
   )
 }
 
 ///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[monitor_info] \{text}")
+fn update(
+  commands : @app.Commands,
+  monitors_added : @ecs.Query[
+    (@core.Entity, @ecs.Comp[@window.Monitor]),
+    @ecs.Added[@window.Monitor],
+  ],
+) -> Unit {
+  try! monitors_added.view(fn(_query_entity, pair) {
+    let (entity, monitor) = pair
+    spawn_window_for_monitor(commands, entity, monitor.value())
+  })
+}
+
+///|
+fn close_on_esc(
+  commands : @app.Commands,
+  keyboard : @input.ButtonInput[@window.KeyCode],
+  windows : @ecs.Query[(@core.Entity, @ecs.Comp[@window.Window]), @ecs.All],
+) -> Unit {
+  if !keyboard.just_pressed(@window.KeyCode::Escape) {
+    return
+  }
+  try! windows.view(fn(_query_entity, pair) {
+    let (entity, window) = pair
+    if window.value().focused {
+      commands.entity(entity).despawn()
+    }
+  })
+}
+
+///|
+fn main {
+  @app.App::new(@ecs.World::new())
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set_window(@window.WindowPlugin::{
+      ..@window.WindowPlugin::default(),
+      primary_window: None,
+      exit_condition: @window.ExitCondition::DontExit,
+    })
+  })
+  .add_systems(@app.Update, @app.system(@app.system_param2(update)))
+  .add_systems(@app.Update, @app.system(@app.system_param3(close_on_esc)))
+  .run()
 }

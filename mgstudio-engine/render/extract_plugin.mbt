@@ -13,14 +13,11 @@
 // limitations under the License.
 
 ///|
-pub const RENDER_PLUGIN_ID : String = "bevy_render::RenderPlugin"
-
-///|
 priv struct RenderPluginMarker {}
 
 ///|
 let ecs_key_render_plugin_marker : @ecs.ResourceKey[RenderPluginMarker] = @ecs.register_resource(
-  debug_name="bevy_render::RenderPluginMarker",
+  debug_name="mgstudio_render::RenderPluginMarker",
 )
 
 ///|
@@ -30,7 +27,7 @@ priv struct RenderMainWorld {
 
 ///|
 let ecs_key_render_main_world : @ecs.ResourceKey[RenderMainWorld] = @ecs.register_resource(
-  debug_name="bevy_render::MainWorld",
+  debug_name="mgstudio_render::MainWorld",
 )
 
 ///|

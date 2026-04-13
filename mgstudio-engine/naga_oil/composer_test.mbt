@@ -57,10 +57,10 @@ test "naga_oil: composer preprocess supports multiline grouped imports" {
   ) catch {
     err => abort("expected composer preprocess success: \{err.message()}")
   }
-  inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
-  inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
-  inspect(preprocessed.contains("const PI_2"), content="true")
-  inspect(preprocessed.contains("bevy_render::"), content="false")
+  debug_inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
+  debug_inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
+  debug_inspect(preprocessed.contains("const PI_2"), content="true")
+  debug_inspect(preprocessed.contains("bevy_render::"), content="false")
 }
 
 ///|
@@ -78,8 +78,8 @@ test "naga_oil: composer preprocess strips module aliases" {
   ) catch {
     err => abort("expected composer preprocess success: \{err.message()}")
   }
-  inspect(preprocessed.contains("return PI_2;"), content="true")
-  inspect(preprocessed.contains("maths::PI_2"), content="false")
+  debug_inspect(preprocessed.contains("return PI_2;"), content="true")
+  debug_inspect(preprocessed.contains("maths::PI_2"), content="false")
 }
 
 ///|
@@ -100,8 +100,11 @@ test "naga_oil: composer item imports keep dependent view declarations" {
     err =>
       abort("expected sprite composer preprocess success: \{err.message()}")
   }
-  inspect(sprite_preprocessed.contains("struct ColorGrading"), content="true")
-  inspect(sprite_preprocessed.contains("struct View"), content="true")
+  debug_inspect(
+    sprite_preprocessed.contains("struct ColorGrading"),
+    content="true",
+  )
+  debug_inspect(sprite_preprocessed.contains("struct View"), content="true")
 
   let mesh2d_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let mesh2d_preprocessed = @naga_oil.Composer::default().load_wgsl_preprocessed(
@@ -115,8 +118,11 @@ test "naga_oil: composer item imports keep dependent view declarations" {
     err =>
       abort("expected mesh2d composer preprocess success: \{err.message()}")
   }
-  inspect(mesh2d_preprocessed.contains("struct ColorGrading"), content="true")
-  inspect(mesh2d_preprocessed.contains("struct View"), content="true")
+  debug_inspect(
+    mesh2d_preprocessed.contains("struct ColorGrading"),
+    content="true",
+  )
+  debug_inspect(mesh2d_preprocessed.contains("struct View"), content="true")
   @naga_oil.clear_registered_wgsl_source_registry()
 }
 
@@ -138,12 +144,15 @@ test "naga_oil: composer drops preprocess previous-view imports outside active b
         "expected mesh preprocess composer preprocess success: \{err.message()}",
       )
   }
-  inspect(
+  debug_inspect(
     preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
-  inspect(preprocessed.contains("previous_view_uniforms"), content="false")
-  inspect(
+  debug_inspect(
+    preprocessed.contains("previous_view_uniforms"),
+    content="false",
+  )
+  debug_inspect(
     preprocessed.contains(
       "@group(0) @binding(2) var<uniform> previous_view_uniforms:",
     ),
@@ -177,8 +186,8 @@ test "naga_oil: composer registered sources satisfy strict mesh2d preprocessing"
     err =>
       abort("expected registered-source preprocess success: \{err.message()}")
   }
-  inspect(preprocessed.contains("const PI_2"), content="true")
-  inspect(preprocessed.contains("return twice_pi();"), content="true")
-  inspect(preprocessed.contains("mesh_functions::"), content="false")
+  debug_inspect(preprocessed.contains("const PI_2"), content="true")
+  debug_inspect(preprocessed.contains("return twice_pi();"), content="true")
+  debug_inspect(preprocessed.contains("mesh_functions::"), content="false")
   @naga_oil.clear_registered_wgsl_source_registry()
 }

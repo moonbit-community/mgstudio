@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,46 +13,63 @@
 // limitations under the License.
 
 ///|
-///
-/// Baseline parity:
-/// - Demonstrates low-power/window-update strategy intent.
-/// - Bevy present-mode and wakeup tuning surface is not available in this path.
-let logged_ref : Ref[Bool] = Ref::new(false)
+// Bevy source: `bevy/examples/window/low_power.rs`.
+
+///|
+pub(all) enum ExampleMode {
+  Game
+  Application
+  ApplicationWithRequestRedraw
+} derive(Eq, Debug)
+
+///|
+let example_mode_resource : @ecs.ResourceKey[ExampleMode] = @ecs.register_resource(
+  debug_name="examples.window.low_power.ExampleMode",
+)
+
+///|
+pub impl @app.Resource for ExampleMode with resource() {
+  example_mode_resource
+}
+
+///|
+fn cycle_modes(
+  mode : @app.ResMut[ExampleMode],
+  keyboard : @input.ButtonInput[@window.KeyCode],
+) -> Unit {
+  if !keyboard.just_pressed(@window.KeyCode::Space) {
+    return
+  }
+  mode.get_ref().val = match mode.get_ref().val {
+    Game => Application
+    Application => ApplicationWithRequestRedraw
+    ApplicationWithRequestRedraw => Game
+  }
+}
+
+///|
+fn update_winit(
+  mode : @app.Res[ExampleMode],
+  settings : @app.ResMut[@winit.WinitSettings],
+  redraw_request_writer : @ecs.MessageWriter[@window.RequestRedraw],
+) -> Unit {
+  settings.get_ref().val = match mode.get() {
+    Game => @winit.WinitSettings::game()
+    Application => @winit.WinitSettings::desktop_app()
+    ApplicationWithRequestRedraw => {
+      ignore(redraw_request_writer.write(@window.RequestRedraw::{  }))
+      @winit.WinitSettings::desktop_app()
+    }
+  }
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup_visual))
-  .add_systems(@app.Update, @app.system(low_power_system))
+  .insert_resource(@winit.WinitSettings::desktop_app())
+  .insert_resource(ExampleMode::Game)
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Update, @app.system(@app.system_param2(cycle_modes)))
+  .add_systems(@app.Update, @app.system(@app.system_param3(update_winit)))
   .run()
-}
-
-///|
-fn setup_visual(world : @ecs.World) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_clear_color(
-      @sprite.Color::srgb(0.14F, 0.18F, 0.24F),
-    ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn low_power_system(world : @ecs.World) -> Unit {
-  world |> ignore
-  if logged_ref.val {
-    return
-  }
-  logged_ref.val = true
-  log_line(
-    "low-power scheduling knobs are not exposed; runtime uses default loop behavior",
-  )
-}
-
-///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[low_power] \{text}")
 }

@@ -13,42 +13,40 @@
 // limitations under the License.
 
 ///|
-
-///|
 pub(all) enum AppState {
   Menu
   InGame(Bool, Bool)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum TutorialState {
   Active
   Inactive
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
-struct InGame {} derive(Eq, Show)
+struct InGame {} derive(Eq, Debug)
 
 ///|
-struct TurboMode {} derive(Eq, Show)
+struct TurboMode {} derive(Eq, Debug)
 
 ///|
 pub(all) enum IsPaused {
   NotPaused
   Paused
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Tutorial {
   MovementInstructions
   PauseInstructions
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum MenuButton {
   Play
   Tutorial
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct MenuData {

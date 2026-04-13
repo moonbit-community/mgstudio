@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/examples/ecs_json_move"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -13,13 +14,13 @@ import {
 pub struct Position {
   mut x : Float
   mut y : Float
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl @ecs.Component for Position
 
 pub struct Velocity {
   x : Float
   y : Float
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 pub impl @ecs.Component for Velocity
 
 // Type aliases

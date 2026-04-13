@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn color_green() -> @sprite.Color {
   @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }

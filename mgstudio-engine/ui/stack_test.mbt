@@ -84,5 +84,5 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
       }
     }
   }
-  inspect(ok, content="true")
+  debug_inspect(ok, content="true")
 }

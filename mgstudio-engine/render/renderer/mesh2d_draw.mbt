@@ -40,6 +40,158 @@ const MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE : Int = 128
 const MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE_U64 : UInt64 = 128UL
 
 ///|
+let gizmo_line_mesh_id_ref : Ref[Int] = Ref::new(0)
+
+///|
+fn host_material2d_u32le_pack(xs : Array[UInt]) -> Bytes {
+  let len = xs.length()
+  Bytes::makei(len * 4, i => {
+    let word = xs[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn host_material2d_f32le_pack(xs : Array[Float]) -> Bytes {
+  host_material2d_u32le_pack(xs.map(f32_bits))
+}
+
+///|
+pub(all) enum HostMaterial2dBindingValue {
+  Uniform(Bytes)
+  Texture(Int)
+  Sampler(Int)
+}
+
+///|
+pub(all) struct HostMaterial2dBinding {
+  binding : UInt
+  value : HostMaterial2dBindingValue
+}
+
+///|
+pub fn HostMaterial2dBinding::uniform(
+  binding : UInt,
+  bytes : Bytes,
+) -> HostMaterial2dBinding {
+  HostMaterial2dBinding::{ binding, value: Uniform(bytes) }
+}
+
+///|
+pub fn HostMaterial2dBinding::texture(
+  binding : UInt,
+  texture_id : Int,
+) -> HostMaterial2dBinding {
+  HostMaterial2dBinding::{ binding, value: Texture(texture_id) }
+}
+
+///|
+pub fn HostMaterial2dBinding::sampler(
+  binding : UInt,
+  texture_id : Int,
+) -> HostMaterial2dBinding {
+  HostMaterial2dBinding::{ binding, value: Sampler(texture_id) }
+}
+
+///|
+pub struct HostMaterial2dBindGroup {
+  bindings : Array[HostMaterial2dBinding]
+}
+
+///|
+pub fn HostMaterial2dBindGroup::new(
+  bindings : Array[HostMaterial2dBinding],
+) -> HostMaterial2dBindGroup {
+  let normalized = bindings.copy()
+  normalized.sort_by(fn(a, b) {
+    if a.binding < b.binding {
+      -1
+    } else if a.binding > b.binding {
+      1
+    } else {
+      0
+    }
+  })
+  for i in 1..<normalized.length() {
+    if normalized[i - 1].binding == normalized[i].binding {
+      abort(
+        "duplicate HostMaterial2d bind-group binding \{normalized[i].binding.to_string()}",
+      )
+    }
+  }
+  HostMaterial2dBindGroup::{ bindings: normalized }
+}
+
+///|
+pub fn HostMaterial2dBindGroup::default() -> HostMaterial2dBindGroup {
+  HostMaterial2dBindGroup::new([])
+}
+
+///|
+fn host_material2d_color_material_bind_group(
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  alpha_mode_kind : Int,
+  alpha_cutoff : Float,
+  texture_id : Int,
+  uv_offset_x : Float,
+  uv_offset_y : Float,
+  uv_scale_x : Float,
+  uv_scale_y : Float,
+) -> HostMaterial2dBindGroup {
+  let flags = (if texture_id >= 0 { 1U } else { 0U }) |
+    alpha_mode_kind.reinterpret_as_uint()
+  let bindings : Array[HostMaterial2dBinding] = [
+    HostMaterial2dBinding::uniform(
+      0U,
+      host_material2d_u32le_pack([
+        f32_bits(color_r),
+        f32_bits(color_g),
+        f32_bits(color_b),
+        f32_bits(color_a),
+        f32_bits(uv_scale_x),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(uv_scale_y),
+        f32_bits(0.0F),
+        f32_bits(0.0F),
+        f32_bits(uv_offset_x),
+        f32_bits(uv_offset_y),
+        f32_bits(1.0F),
+        f32_bits(0.0F),
+        flags,
+        f32_bits(alpha_cutoff),
+        0U,
+        0U,
+      ]),
+    ),
+    HostMaterial2dBinding::texture(1U, texture_id),
+    HostMaterial2dBinding::sampler(2U, texture_id),
+  ]
+  HostMaterial2dBindGroup::new(bindings)
+}
+
+///|
+fn host_material2d_wireframe_bind_group(
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+) -> HostMaterial2dBindGroup {
+  HostMaterial2dBindGroup::new([
+    HostMaterial2dBinding::uniform(
+      0U,
+      host_material2d_f32le_pack([color_r, color_g, color_b, color_a]),
+    ),
+  ])
+}
+
+///|
 priv struct Mesh2dPipelineKey {
   color_format : @wgpu.TextureFormat
   primitive_topology : UInt
@@ -1673,6 +1825,196 @@ pub fn GpuBackend::draw_mesh_material(
     fragment_shader_path~,
     wireframe=false,
   )
+}
+
+///|
+pub fn draw_mesh(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  alpha_mode_kind~ : Int,
+  alpha_cutoff~ : Float,
+  texture_id~ : Int,
+  uv_offset_x~ : Float,
+  uv_offset_y~ : Float,
+  uv_scale_x~ : Float,
+  uv_scale_y~ : Float,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
+) -> Unit {
+  let material_bind_group = host_material2d_color_material_bind_group(
+    color_r, color_g, color_b, color_a, alpha_mode_kind, alpha_cutoff, texture_id,
+    uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
+  )
+  draw_mesh_material(
+    mesh_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    alpha_mode_kind~,
+    material_bind_group~,
+    vertex_shader_path~,
+    fragment_shader_path~,
+  )
+}
+
+///|
+pub fn draw_mesh_wireframe(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+) -> Unit {
+  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
+      1
+  }
+  if ensure_backend() is Some(backend) {
+    let alpha_mode_kind = if color_a < 1.0F {
+      MESH2D_ALPHA_MODE_KIND_BLEND
+    } else {
+      MESH2D_ALPHA_MODE_KIND_OPAQUE
+    }
+    let material_bind_group = host_material2d_wireframe_bind_group(
+      color_r, color_g, color_b, color_a,
+    )
+    backend.draw_mesh_material_with_options(
+      mesh_id,
+      x,
+      y,
+      rotation,
+      scale_x,
+      scale_y,
+      alpha_mode_kind,
+      material_bind_group,
+      vertex_shader_path=None,
+      fragment_shader_path=Some(MESH2D_WIREFRAME_SHADER_PATH),
+      wireframe=true,
+    ) catch {
+      err => debug_runtime_error("draw_mesh_wireframe", err)
+    }
+  }
+}
+
+///|
+pub fn draw_mesh_material(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  alpha_mode_kind~ : Int,
+  material_bind_group~ : HostMaterial2dBindGroup,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
+) -> Unit {
+  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
+      1
+  }
+  if ensure_backend() is Some(backend) {
+    backend.draw_mesh_material(
+      mesh_id,
+      x,
+      y,
+      rotation,
+      scale_x,
+      scale_y,
+      alpha_mode_kind,
+      material_bind_group,
+      vertex_shader_path~,
+      fragment_shader_path~,
+    ) catch {
+      err => debug_runtime_error("draw_mesh_material", err)
+    }
+  }
+}
+
+///|
+pub fn draw_gizmo_line(
+  start_x~ : Float,
+  start_y~ : Float,
+  start_r~ : Float,
+  start_g~ : Float,
+  start_b~ : Float,
+  start_a~ : Float,
+  end_x~ : Float,
+  end_y~ : Float,
+  end_r~ : Float,
+  end_g~ : Float,
+  end_b~ : Float,
+  end_a~ : Float,
+  line_width~ : Float,
+  style_kind~ : Int,
+  gap_scale~ : Float,
+  line_scale~ : Float,
+) -> Unit {
+  let line_width_value = if line_width < 1.0F { 1.0F } else { line_width }
+  style_kind |> ignore
+  gap_scale |> ignore
+  line_scale |> ignore
+  let dx = end_x - start_x
+  let dy = end_y - start_y
+  let length = Float::sqrt(dx * dx + dy * dy)
+  if length <= 0.0F {
+    return
+  }
+  let center_x = (start_x + end_x) * 0.5F
+  let center_y = (start_y + end_y) * 0.5F
+  let rotation = atan2f(dy, dx)
+  let color_r = (start_r + end_r) * 0.5F
+  let color_g = (start_g + end_g) * 0.5F
+  let color_b = (start_b + end_b) * 0.5F
+  let color_a = (start_a + end_a) * 0.5F
+  if ensure_backend() is Some(backend) {
+    try {
+      let mesh_id = if gizmo_line_mesh_id_ref.val > 0 {
+        gizmo_line_mesh_id_ref.val
+      } else {
+        let created = backend.create_mesh_rectangle(1.0F, 1.0F)
+        if created > 0 {
+          gizmo_line_mesh_id_ref.val = created
+        }
+        created
+      }
+      if mesh_id > 0 {
+        let alpha_mode_kind = if color_a < 1.0F {
+          MESH2D_ALPHA_MODE_KIND_BLEND
+        } else {
+          MESH2D_ALPHA_MODE_KIND_OPAQUE
+        }
+        backend.draw_mesh(
+          mesh_id, center_x, center_y, rotation, length, line_width_value, color_r,
+          color_g, color_b, color_a, alpha_mode_kind, 0.5F, -1, 0.0F, 0.0F, 1.0F,
+          1.0F,
+        )
+      }
+    } catch {
+      err => debug_runtime_error("draw_gizmo_line", err)
+    }
+  }
 }
 
 ///|

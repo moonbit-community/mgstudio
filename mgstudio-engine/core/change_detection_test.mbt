@@ -17,5 +17,8 @@ test "change_detection: system context stores execution sequence window" {
   let ctx = SystemSequenceContext::new()
   ctx.set(SystemSequence::new(2, 5))
   let sequence = ctx.sequence()
-  inspect(sequence.last_run == 2 && sequence.this_run == 5, content="true")
+  debug_inspect(
+    sequence.last_run == 2 && sequence.this_run == 5,
+    content="true",
+  )
 }

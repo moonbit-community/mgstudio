@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct CameraSettings {
   orbit_distance : Float
   pitch_max : Float

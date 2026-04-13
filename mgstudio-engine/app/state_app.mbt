@@ -25,7 +25,7 @@ priv struct StatesPluginMarker {}
 
 ///|
 fn states_plugin_marker_key() -> @ecs.ResourceKey[StatesPluginMarker] {
-  @ecs.register_resource(debug_name="bevy_state::StatesPlugin")
+  @ecs.register_resource(debug_name="mgstudio_state::StatesPlugin")
 }
 
 ///|

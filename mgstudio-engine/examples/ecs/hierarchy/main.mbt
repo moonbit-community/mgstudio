@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
   match (try! world.get_resource(@time.Time::resource())) {
     Some(time) => time

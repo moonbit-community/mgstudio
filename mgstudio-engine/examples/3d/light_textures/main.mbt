@@ -49,14 +49,14 @@ pub(all) enum Selection {
   SpotLight
   PointLight
   DirectionalLight
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum DragMode {
   Move
   Scale
   Roll
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 priv struct LightTexturesState {

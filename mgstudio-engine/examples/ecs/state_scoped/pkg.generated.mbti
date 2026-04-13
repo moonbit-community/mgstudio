@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/ecs/state_scoped"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -9,7 +13,7 @@ package "Milky2018/mgstudio/examples/ecs/state_scoped"
 pub(all) enum GameState {
   A
   B
-} derive(Eq, Show)
+} derive(Eq, @debug.Debug)
 
 type TickTock
 

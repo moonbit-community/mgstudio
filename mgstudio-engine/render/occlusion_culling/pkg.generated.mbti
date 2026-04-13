@@ -1,0 +1,67 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/occlusion_culling"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
+
+pub let ecs_key_occlusion_culling_runtime_state : @ecs.ResourceKey[OcclusionCullingRuntimeState]
+
+pub fn occlusion_culling_mesh3d_gpu_culling_supported() -> Bool
+
+pub fn occlusion_culling_mesh3d_indirect_first_instance_supported() -> Bool
+
+pub fn occlusion_culling_mesh3d_preprocess_disabled() -> Bool
+
+pub fn occlusion_culling_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn occlusion_culling_plugin_with(@app.App[@ecs.World], OcclusionCullingPlugin) -> @app.App[@ecs.World]
+
+pub fn occlusion_culling_set_mesh3d_gpu_instance_builder_enabled(Bool) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct OcclusionCulling {
+} derive(Eq, @debug.Debug)
+pub fn OcclusionCulling::default() -> Self
+pub impl @ecs.Component for OcclusionCulling
+
+pub struct OcclusionCullingPlugin {
+}
+pub fn OcclusionCullingPlugin::default() -> Self
+pub impl @app.PluginReplacement for OcclusionCullingPlugin
+
+pub struct OcclusionCullingRuntimeState {
+  mut subview_count : Int
+  mut subview_entity_count : Int
+}
+pub fn OcclusionCullingRuntimeState::clear(Self) -> Unit
+pub fn OcclusionCullingRuntimeState::default() -> Self
+pub fn OcclusionCullingRuntimeState::record_subview(Self, entity_count~ : Int) -> Unit
+pub impl @app.Resource for OcclusionCullingRuntimeState
+
+pub struct OcclusionCullingSubview {
+  depth_texture_view_id : Int
+  depth_texture_size : Int
+} derive(Eq, @debug.Debug)
+pub fn OcclusionCullingSubview::depth_texture_size(Self) -> Int
+pub fn OcclusionCullingSubview::depth_texture_view_id(Self) -> Int
+pub fn OcclusionCullingSubview::new(depth_texture_view_id~ : Int, depth_texture_size~ : Int) -> Self
+
+pub struct OcclusionCullingSubviewEntities {
+  entity_ids : Array[Int]
+} derive(Eq, @debug.Debug)
+pub fn OcclusionCullingSubviewEntities::is_empty(Self) -> Bool
+pub fn OcclusionCullingSubviewEntities::iter(Self) -> Iter[Int]
+pub fn OcclusionCullingSubviewEntities::new(Array[Int]) -> Self
+
+// Type aliases
+
+// Traits
+

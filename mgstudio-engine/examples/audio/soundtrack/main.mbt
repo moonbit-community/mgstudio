@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 const STATE_CHANGE_SECONDS : Float = 10.0F
 
 ///|

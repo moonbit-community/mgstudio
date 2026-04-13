@@ -18,13 +18,13 @@ test "mipmap: odd dimensions follow GPU mip sizing" {
   let height = 480
   let base = Bytes::make(width * height * 4, (0).to_byte())
   let levels = asset_generate_mip_chain_rgba8(width, height, base)
-  inspect(levels.length(), content="10")
-  inspect(levels[0].0, content="640")
-  inspect(levels[0].1, content="480")
-  inspect(levels[6].0, content="10")
-  inspect(levels[6].1, content="7")
-  inspect(levels[9].0, content="1")
-  inspect(levels[9].1, content="1")
+  debug_inspect(levels.length(), content="10")
+  debug_inspect(levels[0].0, content="640")
+  debug_inspect(levels[0].1, content="480")
+  debug_inspect(levels[6].0, content="10")
+  debug_inspect(levels[6].1, content="7")
+  debug_inspect(levels[9].0, content="1")
+  debug_inspect(levels[9].1, content="1")
 }
 
 ///|
@@ -33,9 +33,9 @@ test "mipmap: 3x3 stops at 1x1 in two levels" {
   let height = 3
   let base = Bytes::make(width * height * 4, (0).to_byte())
   let levels = asset_generate_mip_chain_rgba8(width, height, base)
-  inspect(levels.length(), content="2")
-  inspect(levels[0].0, content="3")
-  inspect(levels[0].1, content="3")
-  inspect(levels[1].0, content="1")
-  inspect(levels[1].1, content="1")
+  debug_inspect(levels.length(), content="2")
+  debug_inspect(levels[0].0, content="3")
+  debug_inspect(levels[0].1, content="3")
+  debug_inspect(levels[1].0, content="1")
+  debug_inspect(levels[1].1, content="1")
 }

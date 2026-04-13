@@ -13,6 +13,98 @@
 // limitations under the License.
 
 ///|
+struct PluginGroupTestPlugin1 {}
+
+///|
+struct PluginGroupTestPlugin1Override {}
+
+///|
+struct PluginGroupTestPlugin2 {}
+
+///|
+struct MissingPluginTest {}
+
+///|
+let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
+fn plugin_group_test_reset_log() -> Unit {
+  plugin_group_test_log_ref.val = []
+}
+
+///|
+fn plugin_group_test_plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(1)
+  })
+}
+
+///|
+fn plugin_group_test_plugin_1_override(
+  app : App[@ecs.World],
+) -> App[@ecs.World] {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(10)
+  })
+}
+
+///|
+fn plugin_group_test_plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(2)
+  })
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1 with plugin_name(_self) {
+  "mgstudio.app.test_plugin_1"
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1 with world_plugin(_self) {
+  plugin_group_test_plugin_1
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1Override with plugin_name(
+  _self,
+) {
+  "mgstudio.app.test_plugin_1"
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1Override with world_plugin(
+  _self,
+) {
+  plugin_group_test_plugin_1_override
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin2 with plugin_name(_self) {
+  "mgstudio.app.test_plugin_2"
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin2 with world_plugin(_self) {
+  plugin_group_test_plugin_2
+}
+
+///|
+fn missing_plugin_test(app : App[@ecs.World]) -> App[@ecs.World] {
+  app
+}
+
+///|
+pub impl PluginReplacement for MissingPluginTest with plugin_name(_self) {
+  "mgstudio.app.missing_plugin_test"
+}
+
+///|
+pub impl PluginReplacement for MissingPluginTest with world_plugin(_self) {
+  missing_plugin_test
+}
+
+///|
 test "app: run_if skips system execution" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_system_config(
@@ -23,7 +115,7 @@ test "app: run_if skips system execution" {
     }),
   )
   app.run_once() |> ignore
-  inspect(log.length(), content="0")
+  debug_inspect(log.length(), content="0")
 }
 
 ///|
@@ -43,10 +135,10 @@ test "app: run_if evaluates with condition system sequence" {
   app.run_once() |> ignore
   app.run_once() |> ignore
 
-  inspect(observed.length(), content="2")
-  inspect(system_ran.val, content="false")
-  inspect(observed[0].0 == 0 && observed[0].1 == 3, content="true")
-  inspect(observed[1].0 == 3 && observed[1].1 == 6, content="true")
+  debug_inspect(observed.length(), content="2")
+  debug_inspect(system_ran.val, content="false")
+  debug_inspect(observed[0].0 == 0 && observed[0].1 == 3, content="true")
+  debug_inspect(observed[1].0 == 3 && observed[1].1 == 6, content="true")
 }
 
 ///|
@@ -66,7 +158,7 @@ test "app: repeated run_if composes and short-circuits" {
 
   app.run_once() |> ignore
 
-  inspect(log.join(","), content="first")
+  debug_inspect(log.join(","), content="\"first\"")
 }
 
 ///|
@@ -96,9 +188,9 @@ test "app: repeated run_if_stateful keeps independent condition state" {
   app.run_once() |> ignore
   app.run_once() |> ignore
 
-  inspect(system_runs.val, content="2")
-  inspect(first_seen[0] == 0 && first_seen[1] == 1, content="true")
-  inspect(second_seen[0] == 100 && second_seen[1] == 110, content="true")
+  debug_inspect(system_runs.val, content="2")
+  debug_inspect(first_seen[0] == 0 && first_seen[1] == 1, content="true")
+  debug_inspect(second_seen[0] == 100 && second_seen[1] == 110, content="true")
 }
 
 ///|
@@ -115,56 +207,46 @@ test "app: add_plugin_group registers grouped plugins" {
   }
   let app = App::new(@ecs.World::new()).add_plugin_group(group)
   app.run_once() |> ignore
-  inspect(log.length() == 2 && log[0] == 1 && log[1] == 2, content="true")
+  debug_inspect(log.length() == 2 && log[0] == 1 && log[1] == 2, content="true")
 }
 
 ///|
 test "app: plugin group set_plugin and disable preserve configured plugins" {
-  let log : Array[Int] = []
-  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(1) })
-  }
-  fn plugin_1_override(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(10) })
-  }
-  fn plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(2) })
-  }
-
+  plugin_group_test_reset_log()
   let group = PluginGroupBuilder::start_named("TestPlugins")
-    .add_named(id="plugin_1", plugin_1)
-    .add_named(id="plugin_2", plugin_2)
-  inspect(group.contains("plugin_1"), content="true")
-  inspect(group.enabled("plugin_2"), content="true")
+    .add_typed(PluginGroupTestPlugin1::{  })
+    .add_typed(PluginGroupTestPlugin2::{  })
+  debug_inspect(group.contains(PluginGroupTestPlugin1::{  }), content="true")
+  debug_inspect(group.enabled(PluginGroupTestPlugin2::{  }), content="true")
 
   let app = App::new(@ecs.World::new()).add_plugin_group(fn() {
-    group.set_plugin(id="plugin_1", plugin_1_override).disable("plugin_2")
+    group
+    .set(PluginGroupTestPlugin1Override::{  })
+    .disable(PluginGroupTestPlugin2::{  })
   })
   app.run_once() |> ignore
 
-  inspect(log.length(), content="1")
-  inspect(log[0], content="10")
+  debug_inspect(plugin_group_test_log_ref.val.length(), content="1")
+  debug_inspect(plugin_group_test_log_ref.val[0], content="10")
 }
 
 ///|
 test "app: plugin group try_set_plugin raises when id is missing" {
-  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
-    app
-  }
-
   let missing_plugin_id = try {
     ignore(
-      PluginGroupBuilder::start_named("TestPlugins").try_set_plugin(
-        id="missing",
-        plugin_1,
-      ),
+      PluginGroupBuilder::start_named("TestPlugins").try_set(MissingPluginTest::{
+
+      }),
     )
     "ok"
   } catch {
     MissingPlugin(id) => id
   }
 
-  inspect(missing_plugin_id, content="missing")
+  debug_inspect(
+    missing_plugin_id,
+    content="\"mgstudio.app.missing_plugin_test\"",
+  )
 }
 
 ///|
@@ -189,7 +271,7 @@ test "app: schedule sets order and preserve insertion within a set" {
   .configure_sets(Update, set_a, before=[set_b])
   .run_once()
   |> ignore
-  inspect(
+  debug_inspect(
     log.length() == 3 && log[0] == 1 && log[1] == 2 && log[2] == 3,
     content="true",
   )
@@ -208,7 +290,7 @@ test "app: chained tuple system configs run in declared order" {
     |> chain(),
   )
   app.run_once() |> ignore
-  inspect(log, content="[1, 2, 3]")
+  debug_inspect(log, content="[1, 2, 3]")
 }
 
 ///|
@@ -231,7 +313,7 @@ test "app: chained tuple preserves per-system run_if evaluation" {
     |> chain(),
   )
   app.run_once() |> ignore
-  inspect(log.join(","), content="second")
+  debug_inspect(log.join(","), content="\"second\"")
 }
 
 ///|
@@ -243,7 +325,7 @@ test "app: Last stage runs after PostUpdate" {
     .add_post_update_system(fn(_world : @ecs.World) { log.push("post") })
     .add_last_system(fn(_world : @ecs.World) { log.push("last") })
   app.run_once() |> ignore
-  inspect(log.join(","), content="pre,update,post,last")
+  debug_inspect(log.join(","), content="\"pre,update,post,last\"")
 }
 
 ///|
@@ -267,9 +349,9 @@ test "app: update runs startup once and update every frame" {
   app = app.update()
   app = app.update()
 
-  inspect(
+  debug_inspect(
     log.join(","),
-    content="pre_startup,startup,post_startup,update,update",
+    content="\"pre_startup,startup,post_startup,update,update\"",
   )
 }
 
@@ -443,7 +525,7 @@ test "app: add_system_param4 injects parameters in order" {
     log.push(p4.value)
   })
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     log.length() == 4 &&
     log[0] == 1 &&
     log[1] == 2 &&
@@ -472,7 +554,7 @@ test "app: system_param5 injects parameters in order" {
     }),
   )
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     log.length() == 5 &&
     log[0] == 1 &&
     log[1] == 2 &&
@@ -504,7 +586,7 @@ test "app: system_param6 injects parameters in order" {
     }),
   )
   app.run_once() |> ignore
-  inspect(
+  debug_inspect(
     log.length() == 6 &&
     log[0] == 1 &&
     log[1] == 2 &&
@@ -529,9 +611,9 @@ test "app: system param can read current system sequence" {
   })
   .run_once()
   |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[0].0 == 0 && log[0].1 == 3, content="true")
-  inspect(log[1].0 == 0 && log[1].1 == 4, content="true")
+  debug_inspect(log.length(), content="2")
+  debug_inspect(log[0].0 == 0 && log[0].1 == 3, content="true")
+  debug_inspect(log[1].0 == 0 && log[1].1 == 4, content="true")
 }
 
 ///|
@@ -549,18 +631,18 @@ test "app: MessageWriter system param writes messages for MessageReader" {
       }
     })
   app.run_once() |> ignore
-  inspect(observed.val, content="42")
+  debug_inspect(observed.val, content="42")
 }
 
 ///|
 struct EcsPosition {
   mut x : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 struct EcsVelocity {
   x : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 let ecs_position_key : @ecs.ComponentKey[EcsPosition] = @ecs.register_component(
@@ -616,5 +698,5 @@ test "app: SystemParam Query2 injects typed query into update system" {
     query_world,
   )
   try! query.view(fn(_entity, position) { value_ref.val = position.value().x })
-  inspect(value_ref.val, content="42")
+  debug_inspect(value_ref.val, content="42")
 }

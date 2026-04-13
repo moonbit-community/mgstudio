@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -139,7 +140,7 @@ pub(all) enum PlaybackMode {
   Loop
   Despawn
   Remove
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct PlaybackRemoveMarker {
 } derive(ToJson, @json.FromJson)

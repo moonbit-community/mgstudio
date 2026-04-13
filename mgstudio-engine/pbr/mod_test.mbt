@@ -49,25 +49,31 @@ fn read_mesh_render_plugin_state(world : @ecs.World) -> MeshRenderPluginState {
 ///|
 test "render3d: plugin replacement id aligns with bevy_pbr" {
   let plugin = PbrPlugin::default()
-  inspect(plugin.replacement_id(), content=PBR_PLUGIN_ID)
+  debug_inspect(plugin.plugin_name(), content="\"mgstudio.pbr.PbrPlugin\"")
 }
 
 ///|
 test "render3d: default pbr plugin installs bevy-style runtime config defaults" {
   let app = pbr_plugin(@app.App::new(@ecs.World::new()))
   let config = read_pbr_runtime_config(app.world())
-  inspect(config.prepass_enabled, content="true")
-  inspect(config.add_default_deferred_lighting_plugin, content="true")
-  inspect(config.use_gpu_instance_buffer_builder, content="true")
-  inspect(config.gltf_render_enabled, content="true")
-  inspect(
+  debug_inspect(config.prepass_enabled, content="true")
+  debug_inspect(config.add_default_deferred_lighting_plugin, content="true")
+  debug_inspect(config.use_gpu_instance_buffer_builder, content="true")
+  debug_inspect(config.gltf_render_enabled, content="true")
+  debug_inspect(
     read_mesh_render_plugin_state(app.world()).use_gpu_instance_buffer_builder,
     content="true",
   )
-  inspect(app.contains_resource(ecs_key_materials_plugin_state), content="true")
-  inspect(app.contains_resource(ecs_key_fog_plugin_state), content="true")
-  inspect(read_deferred_lighting_state(app.world()).enabled, content="true")
-  inspect(
+  debug_inspect(
+    app.contains_resource(ecs_key_materials_plugin_state),
+    content="true",
+  )
+  debug_inspect(app.contains_resource(ecs_key_fog_plugin_state), content="true")
+  debug_inspect(
+    read_deferred_lighting_state(app.world()).enabled,
+    content="true",
+  )
+  debug_inspect(
     read_standard_material_plugin_state(app.world()).prepass_enabled,
     content="true",
   )
@@ -82,30 +88,39 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     gltf_render_enabled: false,
   })
 
-  inspect(pbr_prepass_enabled(), content="false")
-  inspect(pbr_deferred_lighting_enabled(), content="false")
-  inspect(pbr_gpu_instance_buffer_builder_enabled(), content="false")
-  inspect(pbr_gltf_render_enabled(), content="false")
-  inspect(@gltf.gltf_pbr_material_handler_enabled(), content="false")
-  inspect(
+  debug_inspect(pbr_prepass_enabled(), content="false")
+  debug_inspect(pbr_deferred_lighting_enabled(), content="false")
+  debug_inspect(pbr_gpu_instance_buffer_builder_enabled(), content="false")
+  debug_inspect(pbr_gltf_render_enabled(), content="false")
+  debug_inspect(
+    @gltf_loader.gltf_pbr_material_handler_enabled(),
+    content="false",
+  )
+  debug_inspect(
     read_mesh_render_plugin_state(_app.world()).use_gpu_instance_buffer_builder,
     content="false",
   )
-  inspect(read_deferred_lighting_state(_app.world()).enabled, content="false")
-  inspect(
+  debug_inspect(
+    read_deferred_lighting_state(_app.world()).enabled,
+    content="false",
+  )
+  debug_inspect(
     read_standard_material_plugin_state(_app.world()).prepass_enabled,
     content="false",
   )
 
   let _reset = pbr_plugin(@app.App::new(@ecs.World::new()))
-  inspect(@gltf.gltf_pbr_material_handler_enabled(), content="true")
+  debug_inspect(
+    @gltf_loader.gltf_pbr_material_handler_enabled(),
+    content="true",
+  )
 }
 
 ///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
     @app.PluginGroupBuilder::start_named("test-pbr")
-    .add_named(id=PBR_PLUGIN_ID, pbr_plugin)
+    .add_typed(PbrPlugin::default())
     .set(PbrPlugin::{
       prepass_enabled: false,
       add_default_deferred_lighting_plugin: false,
@@ -115,31 +130,37 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   })
 
   let config = read_pbr_runtime_config(app.world())
-  inspect(config.prepass_enabled, content="false")
-  inspect(config.add_default_deferred_lighting_plugin, content="false")
-  inspect(config.use_gpu_instance_buffer_builder, content="false")
-  inspect(config.gltf_render_enabled, content="false")
-  inspect(
+  debug_inspect(config.prepass_enabled, content="false")
+  debug_inspect(config.add_default_deferred_lighting_plugin, content="false")
+  debug_inspect(config.use_gpu_instance_buffer_builder, content="false")
+  debug_inspect(config.gltf_render_enabled, content="false")
+  debug_inspect(
     read_mesh_render_plugin_state(app.world()).use_gpu_instance_buffer_builder,
     content="false",
   )
-  inspect(read_deferred_lighting_state(app.world()).enabled, content="false")
-  inspect(
+  debug_inspect(
+    read_deferred_lighting_state(app.world()).enabled,
+    content="false",
+  )
+  debug_inspect(
     read_standard_material_plugin_state(app.world()).prepass_enabled,
     content="false",
   )
 }
 
 ///|
-test "render3d: legacy render3d_plugin alias maps to pbr plugin" {
+test "render3d: render3d_plugin alias maps to pbr plugin" {
   let app = render3d_plugin(@app.App::new(@ecs.World::new()))
-  inspect(
+  debug_inspect(
     app.contains_resource(ecs_key_pbr_plugin_runtime_config),
     content="true",
   )
-  inspect(
+  debug_inspect(
     app.contains_resource(ecs_key_mesh_render_plugin_state),
     content="true",
   )
-  inspect(app.contains_resource(ecs_key_materials_plugin_state), content="true")
+  debug_inspect(
+    app.contains_resource(ecs_key_materials_plugin_state),
+    content="true",
+  )
 }

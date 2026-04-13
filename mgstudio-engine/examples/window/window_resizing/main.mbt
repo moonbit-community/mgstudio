@@ -13,9 +13,7 @@
 // limitations under the License.
 
 ///|
-
-///|
-struct ResolutionText {} derive(Eq, Show)
+struct ResolutionText {} derive(Eq, Debug)
 
 ///|
 let resolution_text_key : @ecs.ComponentKey[ResolutionText] = @ecs.register_component(

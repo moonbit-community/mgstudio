@@ -28,15 +28,18 @@ test "mesh2d: validate indexed triangle list" {
   ]
   let indices = [0, 1, 2, 0, 2, 3]
   let mesh = Mesh2dGeometry::new(positions, uvs, Some(indices))
-  inspect(mesh.validate() is None, content="true")
-  inspect(mesh.triangle_count().unwrap(), content="2")
-  inspect(mesh.flatten_triangle_positions_xy().unwrap().length(), content="12")
-  inspect(mesh.encode_triangle_positions_csv() is Some(_), content="true")
-  inspect(
+  debug_inspect(mesh.validate() is None, content="true")
+  debug_inspect(mesh.triangle_count().unwrap(), content="2")
+  debug_inspect(
+    mesh.flatten_triangle_positions_xy().unwrap().length(),
+    content="12",
+  )
+  debug_inspect(mesh.encode_triangle_positions_csv() is Some(_), content="true")
+  debug_inspect(
     mesh.flatten_triangle_interleaved_xy_uv_rgba().unwrap().length(),
     content="48",
   )
-  inspect(
+  debug_inspect(
     mesh.encode_triangle_interleaved_xy_uv_rgba_csv() is Some(_),
     content="true",
   )
@@ -49,8 +52,8 @@ test "mesh2d: validate attribute length mismatch" {
   let mesh = Mesh2dGeometry::new(positions, uvs, None)
   match mesh.validate() {
     Some(Mesh2dValidationError::AttributeLengthMismatch(_, _)) =>
-      inspect(true, content="true")
-    _ => inspect(false, content="false")
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -61,8 +64,8 @@ test "mesh2d: validate non-indexed vertex count multiple of 3" {
   let mesh = Mesh2dGeometry::new(positions, uvs, None)
   match mesh.validate() {
     Some(Mesh2dValidationError::NonIndexedVertexCountNotMultipleOf3(_)) =>
-      inspect(true, content="true")
-    _ => inspect(false, content="false")
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -74,8 +77,8 @@ test "mesh2d: validate color attribute length mismatch" {
   let mesh = Mesh2dGeometry::new_with_colors(positions, uvs, colors, None)
   match mesh.validate() {
     Some(Mesh2dValidationError::ColorAttributeLengthMismatch(_, _)) =>
-      inspect(true, content="true")
-    _ => inspect(false, content="false")
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -95,8 +98,8 @@ test "mesh2d: validate index bounds" {
   let mesh = Mesh2dGeometry::new(positions, uvs, Some(indices))
   match mesh.validate() {
     Some(Mesh2dValidationError::IndexOutOfBounds(_, _)) =>
-      inspect(true, content="true")
-    _ => inspect(false, content="false")
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }
 
@@ -116,7 +119,7 @@ test "mesh2d: validate indices multiple of 3" {
   let mesh = Mesh2dGeometry::new(positions, uvs, Some(indices))
   match mesh.validate() {
     Some(Mesh2dValidationError::IndicesCountNotMultipleOf3(_)) =>
-      inspect(true, content="true")
-    _ => inspect(false, content="false")
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="false")
   }
 }

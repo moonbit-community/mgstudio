@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/mesh/primitives"
+
+import {
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+}
+
+// Values
+pub fn circle(Float) -> @math.Circle
+
+pub fn circle_line_strip_mesh(Float, Int) -> @mesh.Mesh3dGeometry
+
+pub fn circle_mesh(Float, Int) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_wireframe_mesh(@mesh.Mesh3dGeometry) -> @mesh.Mesh3dGeometry?
+
+pub fn rectangle(Float, Float) -> @math.Rectangle
+
+pub fn rectangle_mesh(Float, Float) -> @mesh.Mesh3dGeometry
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @math {type Circle}
+
+pub using @mesh {type Mesh2dGeometry}
+
+pub using @mesh {type Mesh3dGeometry}
+
+pub using @mesh {type Mesh3dPrimitiveTopology}
+
+pub using @math {type Rectangle}
+
+// Traits
+

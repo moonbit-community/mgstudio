@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/sprite/texture_slice"
+
+import {
+  "Milky2018/mgstudio/sprite",
+}
+
+// Values
+pub fn texture_slice_border_rect(Float, Float, Float, Float) -> @sprite.BorderRect
+
+pub fn texture_slice_border_rect_square(Float) -> @sprite.BorderRect
+
+pub fn texture_slice_default_slicer() -> @sprite.TextureSlicer
+
+pub fn texture_slice_slicer(@sprite.BorderRect) -> @sprite.TextureSlicer
+
+pub fn texture_slice_tiled(@sprite.TextureSlice, Float, (Bool, Bool)) -> Array[@sprite.TextureSlice]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @sprite {type TextureSlice}
+
+pub using @sprite {type BorderRect as TextureSliceBorderRect}
+
+pub using @sprite {type SliceScaleMode as TextureSliceScaleMode}
+
+pub using @sprite {type TextureSlicer as TextureSliceSlicer}
+
+// Traits
+

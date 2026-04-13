@@ -14,36 +14,58 @@
 
 ///|
 pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
-  render3d_diagnostic_queued_visible_mesh_count_ref.val
+  @pbr_render.render3d_diagnostic_queued_visible_mesh_count()
 }
 
 ///|
 pub fn render3d_diagnostic_prepared_camera_count() -> Int {
-  render3d_diagnostic_prepared_camera_count_ref.val
+  @pbr_render.render3d_diagnostic_prepared_camera_count()
 }
 
 ///|
 pub fn render3d_diagnostic_queue_cpu_ms() -> Float {
-  render3d_diagnostic_queue_cpu_ms_ref.val
+  @pbr_render.render3d_diagnostic_queue_cpu_ms()
 }
 
 ///|
 pub fn render3d_diagnostic_execute_cpu_ms() -> Float {
-  render3d_diagnostic_execute_cpu_ms_ref.val
+  @pbr_render.render3d_diagnostic_execute_cpu_ms()
 }
 
 ///|
 pub fn render3d_prepared_camera_count() -> Int? {
-  if !render3d_runtime_initialized_ref.val {
-    return Some(0)
-  }
-  Some(render3d_diagnostic_prepared_camera_count_ref.val)
+  @pbr_render.render3d_prepared_camera_count()
 }
 
 ///|
 pub fn render3d_queued_visible_mesh_count() -> Int? {
-  if !render3d_runtime_initialized_ref.val {
-    return Some(0)
+  @pbr_render.render3d_queued_visible_mesh_count()
+}
+
+///|
+pub struct Render3dDiagnosticsSnapshot {
+  prepared_camera_count : Int
+  queued_visible_mesh_count : Int
+  queue_cpu_ms : Float
+  execute_cpu_ms : Float
+}
+
+///|
+pub fn Render3dDiagnosticsSnapshot::default() -> Render3dDiagnosticsSnapshot {
+  Render3dDiagnosticsSnapshot::{
+    prepared_camera_count: 0,
+    queued_visible_mesh_count: 0,
+    queue_cpu_ms: 0.0F,
+    execute_cpu_ms: 0.0F,
   }
-  Some(render3d_diagnostic_queued_visible_mesh_count_ref.val)
+}
+
+///|
+pub fn render3d_diagnostics_snapshot() -> Render3dDiagnosticsSnapshot {
+  Render3dDiagnosticsSnapshot::{
+    prepared_camera_count: render3d_diagnostic_prepared_camera_count(),
+    queued_visible_mesh_count: render3d_diagnostic_queued_visible_mesh_count(),
+    queue_cpu_ms: render3d_diagnostic_queue_cpu_ms(),
+    execute_cpu_ms: render3d_diagnostic_execute_cpu_ms(),
+  }
 }

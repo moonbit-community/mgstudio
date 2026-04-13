@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 priv struct ViewportToWorld3dState {
   mut camera : @core.Entity?
   mut ground : @core.Entity?
@@ -262,7 +260,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
               @window.window_height(),
             )
             let scale_factor = @window.window_scale_factor()
-            if @pbr.render3d_camera_viewport_to_world_ray(
+            if @camera.camera_viewport_to_world_ray(
                 screen_pos, camera, projection, camera_transform, target_size, scale_factor,
               )
               is Some((ray_origin, ray_dir)) {

@@ -40,15 +40,15 @@ test "app: timeline trace captures schedule stage and system spans" {
       all_non_negative = false
     }
   }
-  inspect(has_stage, content="true")
-  inspect(has_system, content="true")
-  inspect(all_non_negative, content="true")
+  debug_inspect(has_stage, content="true")
+  debug_inspect(has_system, content="true")
+  debug_inspect(all_non_negative, content="true")
 }
 
 ///|
 test "app: timeline trace disabled path stays no-op" {
   clear_timeline_trace_span_sink()
-  inspect(timeline_trace_enabled(), content="false")
+  debug_inspect(timeline_trace_enabled(), content="false")
 
   let begin_ts = timeline_trace_begin_span(
     TimelineTraceCategory::System,
@@ -56,5 +56,5 @@ test "app: timeline trace disabled path stays no-op" {
   )
   timeline_trace_end_span(TimelineTraceCategory::System, "disabled", begin_ts)
 
-  inspect(begin_ts, content="-1")
+  debug_inspect(begin_ts, content="-1")
 }

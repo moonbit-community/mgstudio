@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/sprite_render/text2d"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn text_render_system(@ecs.World) -> Unit
+
+pub fn text_render_transparent_2d_queue_system(@ecs.World) -> Unit
+
+pub fn text_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let text_set_render_extract : String
+
+pub let text_set_render_prepare : String
+
+pub let text_set_render_queue : String
+
+pub let text_set_render_transparent_2d : String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

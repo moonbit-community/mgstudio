@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/asset/io/embedded"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn[P : @asset.IntoAssetPath] embedded_asset(@app.App[@ecs.World], P, String) -> @app.App[@ecs.World]
+
+pub fn embedded_asset_watcher_canonical_path(String) -> String
+
+// Errors
+
+// Types and methods
+pub struct EmbeddedAssetWatcher {
+  asset_path : String
+  source_path : String
+}
+pub fn EmbeddedAssetWatcher::asset_path(Self) -> String
+pub fn EmbeddedAssetWatcher::new(String, String) -> Self
+pub fn EmbeddedAssetWatcher::source_path(Self) -> String
+
+// Type aliases
+
+// Traits
+

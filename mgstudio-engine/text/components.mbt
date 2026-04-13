@@ -13,51 +13,6 @@
 // limitations under the License.
 
 ///|
-pub(all) struct Text {
-  mut content : String
-}
-
-///|
-pub fn Text::default() -> Text {
-  Text::new("")
-}
-
-///|
-pub fn Text::new(content : String) -> Text {
-  Text::{ content, }
-}
-
-///|
-pub(all) struct Text2d {
-  mut content : String
-}
-
-///|
-pub fn Text2d::default() -> Text2d {
-  Text2d::new("")
-}
-
-///|
-pub fn Text2d::new(content : String) -> Text2d {
-  Text2d::{ content, }
-}
-
-///|
-pub(all) struct TextSpan {
-  mut content : String
-}
-
-///|
-pub fn TextSpan::default() -> TextSpan {
-  TextSpan::new("")
-}
-
-///|
-pub fn TextSpan::new(content : String) -> TextSpan {
-  TextSpan::{ content, }
-}
-
-///|
 pub(all) enum Justify {
   Left
   Center
@@ -75,8 +30,6 @@ pub(all) enum LineBreak {
 
 ///| Y-axis orientation for text layout coordinates.
 
-///|
-
 ///| - `TopToBottom`: origin at top-left, +Y goes down (UI-style layout).
 
 ///|
@@ -84,7 +37,7 @@ pub(all) enum LineBreak {
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub struct TextLayout {
@@ -833,32 +786,6 @@ pub fn LineHeight::eval(self : LineHeight, font_size : Float) -> Float {
     Px(value) => value
     RelativeToFont(scale) => scale * font_size
   }
-}
-
-///|
-pub struct TextBounds {
-  width : Float?
-  height : Float?
-}
-
-///|
-pub fn TextBounds::default() -> TextBounds {
-  TextBounds::{ width: None, height: None }
-}
-
-///|
-pub fn TextBounds::new(width : Float, height : Float) -> TextBounds {
-  TextBounds::{ width: Some(width), height: Some(height) }
-}
-
-///|
-pub fn TextBounds::new_horizontal(width : Float) -> TextBounds {
-  TextBounds::{ width: Some(width), height: None }
-}
-
-///|
-pub fn TextBounds::new_vertical(height : Float) -> TextBounds {
-  TextBounds::{ width: None, height: Some(height) }
 }
 
 ///|

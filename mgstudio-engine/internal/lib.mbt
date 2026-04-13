@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,10 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Adapted from Bevy's `bevy_internal` crate.
-// Copyright (c) Bevy Contributors.
-// Licensed under Apache-2.0 or MIT.
 
 ///|
-/// Package root for Bevy-aligned internal engine aggregation.
+// Bevy source: `bevy/crates/bevy_internal/src/lib.rs`.
+// Internal package entry keeps default/minimal plugin groups colocated.
+
+///|
+pub fn internal_plugin_groups() -> (
+  Array[@app.Plugin[@ecs.World]],
+  Array[@app.Plugin[@ecs.World]],
+  Array[@app.Plugin[@ecs.World]],
+) {
+  (default_plugins(), default_plugins_nearest(), minimal_plugins())
+}
