@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/prepass/mod.rs`.
 
 ///|
+const PREPASS_PIPELINE_PLUGIN_NAME : String = "mgstudio.pbr.prepass.PrepassPipelinePlugin"
+
+///|
 pub const EARLY_PREPASS_LABEL : String = @core_prepass.EARLY_PREPASS_LABEL
 
 ///|
@@ -30,6 +33,18 @@ pub struct PrepassPipelinePlugin {}
 ///|
 pub fn PrepassPipelinePlugin::default() -> PrepassPipelinePlugin {
   PrepassPipelinePlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for PrepassPipelinePlugin with plugin_name(_self) {
+  PREPASS_PIPELINE_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for PrepassPipelinePlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    prepass_pipeline_plugin_with(app, self)
+  }
 }
 
 ///|
