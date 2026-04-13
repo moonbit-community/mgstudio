@@ -60,3 +60,22 @@ test "render3d: allocator registry stores by key" {
   debug_inspect(allocators.get("StandardMaterial") is Some(_), content="true")
   debug_inspect(allocators.get("Missing") is None, content="true")
 }
+
+///|
+test "render3d: allocator exposes slab and allocation counters" {
+  let bindless = MaterialBindGroupBindlessAllocator::with_slab_capacity(4)
+  ignore(bindless.allocate(1))
+  ignore(bindless.allocate(2))
+  let bindless_alloc = MaterialBindGroupAllocator::Bindless(bindless)
+  debug_inspect(bindless_alloc.slab_count(), content="1")
+  debug_inspect(bindless_alloc.slabs_size(), content="4")
+  debug_inspect(bindless_alloc.allocations(), content="2")
+
+  let non_bindless = MaterialBindGroupNonBindlessAllocator::default()
+  ignore(non_bindless.allocate(7))
+  ignore(non_bindless.allocate(8))
+  let non_bindless_alloc = MaterialBindGroupAllocator::NonBindless(non_bindless)
+  debug_inspect(non_bindless_alloc.slab_count(), content="2")
+  debug_inspect(non_bindless_alloc.slabs_size(), content="2")
+  debug_inspect(non_bindless_alloc.allocations(), content="2")
+}

@@ -73,3 +73,56 @@ pub fn render3d_diagnostics_snapshot(
     execute_cpu_ms: render3d_diagnostic_execute_cpu_ms(world),
   }
 }
+
+///|
+pub struct MaterialAllocatorDiagnosticsSnapshot {
+  slabs : Int
+  slabs_size : Int
+  allocations : UInt
+}
+
+///|
+pub fn MaterialAllocatorDiagnosticsSnapshot::default() -> MaterialAllocatorDiagnosticsSnapshot {
+  MaterialAllocatorDiagnosticsSnapshot::{
+    slabs: 0,
+    slabs_size: 0,
+    allocations: 0U,
+  }
+}
+
+///|
+pub fn render3d_material_allocator_slabs_path(material_name : String) -> String {
+  "material_allocator_slabs/\{material_name}"
+}
+
+///|
+pub fn render3d_material_allocator_slabs_size_path(
+  material_name : String,
+) -> String {
+  "material_allocator_slabs_size/\{material_name}"
+}
+
+///|
+pub fn render3d_material_allocator_allocations_path(
+  material_name : String,
+) -> String {
+  "material_allocator_allocations/\{material_name}"
+}
+
+///|
+pub fn render3d_material_allocator_snapshot_for_key(
+  allocators : MaterialBindGroupAllocators,
+  material_name : String,
+) -> MaterialAllocatorDiagnosticsSnapshot? {
+  match allocators.get(material_name) {
+    Some(allocator) =>
+      Some(
+        MaterialAllocatorDiagnosticsSnapshot::{
+          slabs: allocator.slab_count(),
+          slabs_size: allocator.slabs_size(),
+          allocations: allocator.allocations(),
+        },
+      )
+    None => None
+  }
+}

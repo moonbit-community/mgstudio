@@ -209,6 +209,27 @@ pub fn MaterialBindGroupNonBindlessAllocator::len(
 }
 
 ///|
+pub fn MaterialBindGroupNonBindlessAllocator::slab_count(
+  self : MaterialBindGroupNonBindlessAllocator,
+) -> Int {
+  self.bind_groups.length()
+}
+
+///|
+pub fn MaterialBindGroupNonBindlessAllocator::slabs_size(
+  self : MaterialBindGroupNonBindlessAllocator,
+) -> Int {
+  self.bind_groups.length()
+}
+
+///|
+pub fn MaterialBindGroupNonBindlessAllocator::allocations(
+  self : MaterialBindGroupNonBindlessAllocator,
+) -> UInt {
+  self.len().reinterpret_as_uint()
+}
+
+///|
 pub struct MaterialBindGroupBindlessAllocator {
   slab_capacity : Int
   slots : Array[Int?]
@@ -292,6 +313,31 @@ pub fn MaterialBindGroupBindlessAllocator::len(
 }
 
 ///|
+pub fn MaterialBindGroupBindlessAllocator::slab_count(
+  self : MaterialBindGroupBindlessAllocator,
+) -> Int {
+  if self.slots.length() == 0 {
+    0
+  } else {
+    (self.slots.length() + self.slab_capacity - 1) / self.slab_capacity
+  }
+}
+
+///|
+pub fn MaterialBindGroupBindlessAllocator::slabs_size(
+  self : MaterialBindGroupBindlessAllocator,
+) -> Int {
+  self.slab_count() * self.slab_capacity
+}
+
+///|
+pub fn MaterialBindGroupBindlessAllocator::allocations(
+  self : MaterialBindGroupBindlessAllocator,
+) -> UInt {
+  self.len().reinterpret_as_uint()
+}
+
+///|
 pub(all) enum MaterialBindGroupAllocator {
   Bindless(MaterialBindGroupBindlessAllocator)
   NonBindless(MaterialBindGroupNonBindlessAllocator)
@@ -309,6 +355,36 @@ pub fn MaterialBindGroupAllocator::default_non_bindless() -> MaterialBindGroupAl
   MaterialBindGroupAllocator::NonBindless(
     MaterialBindGroupNonBindlessAllocator::default(),
   )
+}
+
+///|
+pub fn MaterialBindGroupAllocator::slab_count(
+  self : MaterialBindGroupAllocator,
+) -> Int {
+  match self {
+    Bindless(allocator) => allocator.slab_count()
+    NonBindless(allocator) => allocator.slab_count()
+  }
+}
+
+///|
+pub fn MaterialBindGroupAllocator::slabs_size(
+  self : MaterialBindGroupAllocator,
+) -> Int {
+  match self {
+    Bindless(allocator) => allocator.slabs_size()
+    NonBindless(allocator) => allocator.slabs_size()
+  }
+}
+
+///|
+pub fn MaterialBindGroupAllocator::allocations(
+  self : MaterialBindGroupAllocator,
+) -> UInt {
+  match self {
+    Bindless(allocator) => allocator.allocations()
+    NonBindless(allocator) => allocator.allocations()
+  }
 }
 
 ///|
