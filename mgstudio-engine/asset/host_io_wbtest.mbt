@@ -301,3 +301,52 @@ test "asset host io: qoi decode and dimensions work" {
   debug_inspect(decoded.pixels[2].to_uint(), content="0")
   debug_inspect(decoded.pixels[3].to_uint(), content="255")
 }
+
+///|
+fn test_ico_with_png_1x1_red_bytes() -> Bytes {
+  let red = Bytes::from_array([
+    (255).to_byte(),
+    (0).to_byte(),
+    (0).to_byte(),
+    (255).to_byte(),
+  ])
+  let payload = png_encode_rgba8(1, 1, red).unwrap()
+  let out : Array[Byte] = []
+  let push_u32_le_test = fn(out : Array[Byte], value : UInt) {
+    out.push((value & 0xFFU).to_byte())
+    out.push(((value >> 8) & 0xFFU).to_byte())
+    out.push(((value >> 16) & 0xFFU).to_byte())
+    out.push(((value >> 24) & 0xFFU).to_byte())
+  }
+  // ICONDIR
+  push_u16_le(out, 0U)
+  push_u16_le(out, 1U)
+  push_u16_le(out, 1U)
+  // ICONDIRENTRY
+  out.push((1).to_byte()) // width
+  out.push((1).to_byte()) // height
+  out.push((0).to_byte()) // color count
+  out.push((0).to_byte()) // reserved
+  push_u16_le(out, 1U) // planes
+  push_u16_le(out, 32U) // bit count
+  let payload_size = payload.length().reinterpret_as_uint()
+  push_u32_le_test(out, payload_size)
+  push_u32_le_test(out, 22U) // payload offset
+  push_bytes(out, payload)
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: ico dimensions and embedded png decode work" {
+  let bytes = test_ico_with_png_1x1_red_bytes()
+  debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Ico),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(1, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+}

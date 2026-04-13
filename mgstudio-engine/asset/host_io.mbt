@@ -882,6 +882,15 @@ fn is_qoi_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
+fn is_ico_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 6 &&
+  blob_u8_at(bytes, 0) == 0 &&
+  blob_u8_at(bytes, 1) == 0 &&
+  blob_u8_at(bytes, 2) == 1 &&
+  blob_u8_at(bytes, 3) == 0
+}
+
+///|
 fn blob_u16_at(bytes : Bytes, index : Int) -> Int {
   blob_u8_at(bytes, index) | (blob_u8_at(bytes, index + 1) << 8)
 }
@@ -1192,6 +1201,45 @@ fn qoi_dimensions(bytes : Bytes) -> (Int, Int)? {
 }
 
 ///|
+fn ico_dimensions(bytes : Bytes) -> (Int, Int)? {
+  guard is_ico_bytes(bytes) else { return None }
+  let count = blob_u16_at(bytes, 4)
+  if count <= 0 || bytes.length() < 6 + 16 {
+    return None
+  }
+  let width_raw = blob_u8_at(bytes, 6)
+  let height_raw = blob_u8_at(bytes, 7)
+  let width = if width_raw == 0 { 256 } else { width_raw }
+  let height = if height_raw == 0 { 256 } else { height_raw }
+  Some((clamp_dim(width), clamp_dim(height)))
+}
+
+///|
+fn decode_texture_image_from_ico(bytes : Bytes) -> DecodedTextureImage? {
+  guard is_ico_bytes(bytes) else { return None }
+  let count = blob_u16_at(bytes, 4)
+  if count <= 0 || bytes.length() < 6 + 16 {
+    return None
+  }
+  let image_size = blob_u32_at(bytes, 14)
+  let image_offset = blob_u32_at(bytes, 18)
+  if image_size <= 0 || image_offset < 0 {
+    return None
+  }
+  guard bytes_slice_copy(bytes, image_offset, image_size) is Some(payload) else {
+    return None
+  }
+  if decode_texture_image_with_container(
+      payload,
+      Some(@image.ImageContainerFormat::Png),
+    )
+    is Some(decoded) {
+    return Some(decoded)
+  }
+  None
+}
+
+///|
 fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
   guard qoi_dimensions(bytes) is Some((width, height)) else { return None }
   if bytes.length() < 22 {
@@ -1492,6 +1540,11 @@ fn decode_texture_image_with_container(
       return Some(decoded)
     }
   }
+  if container is Some(@image.ImageContainerFormat::Ico) {
+    if decode_texture_image_from_ico(bytes) is Some(decoded) {
+      return Some(decoded)
+    }
+  }
   if is_png_bytes(bytes) {
     return decode_texture_image_from_gm_png(bytes)
   }
@@ -1500,6 +1553,9 @@ fn decode_texture_image_with_container(
   }
   if is_qoi_bytes(bytes) {
     return decode_texture_image_from_qoi(bytes)
+  }
+  if is_ico_bytes(bytes) {
+    return decode_texture_image_from_ico(bytes)
   }
   if is_farbfeld_bytes(bytes) {
     return decode_texture_image_from_farbfeld(bytes)
@@ -2035,6 +2091,9 @@ fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
     return Some(dims)
   }
   if qoi_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if ico_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
   if bmp_decode_info(bytes) is Some(info) {
