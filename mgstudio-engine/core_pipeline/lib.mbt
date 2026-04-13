@@ -91,6 +91,39 @@ pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_3d.ecs_key_msaa
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @prepass.ecs_key_normal_prepass
 
 ///|
+fn core_pipeline_configure_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  if (try! world.get_resource(@fullscreen_vertex_shader.ecs_key_fullscreen_shader))
+    is None {
+    world.insert_resource(
+      @fullscreen_vertex_shader.ecs_key_fullscreen_shader,
+      FullscreenShader::default(),
+    )
+  }
+  if (try! world.get_resource(ecs_key_camera_driver_state)) is None {
+    world.insert_resource(
+      ecs_key_camera_driver_state,
+      CameraDriverState::default(),
+    )
+  }
+  sub_app.add_systems(@app.PostUpdate, @app.system(camera_driver))
+}
+
+///|
+fn core_pipeline_install_render_graph_driver(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  if app.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
+    render_sub_app_ref.val = core_pipeline_configure_render_sub_app(
+      render_sub_app_ref.val,
+    )
+  }
+  app
+}
+
+///|
 pub fn core_pipeline_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   core_pipeline_plugin_with(app, CorePipelinePlugin::default())
 }
@@ -100,9 +133,7 @@ pub fn core_pipeline_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : CorePipelinePlugin,
 ) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { FullscreenShader::default() })
-  .add_system(camera_driver)
+  let app = app
   .add_plugin(@core_2d.core_2d_plugin)
   .add_plugin(@core_3d.core_3d_plugin)
   .add_plugin(@deferred.copy_deferred_lighting_id_plugin)
@@ -111,4 +142,5 @@ pub fn core_pipeline_plugin_with(
   .add_plugin(@upscaling.upscaling_plugin)
   .add_plugin(@oit.oit_plugin)
   .add_plugin(@mip_generation.mip_generation_plugin)
+  core_pipeline_install_render_graph_driver(app)
 }

@@ -9,7 +9,7 @@ This file must not exceed 200 lines.
 | `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
 | `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 71% | 71% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
 | `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 69% | 69% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
-| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 73% | 73% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
+| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 75% | 75% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 94% | 94% | 🟡 In Progress | Remaining bind-group lifecycle depth still needs Bevy-level matching. |
