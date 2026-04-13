@@ -125,40 +125,43 @@ let current_frame_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
 let current_frame_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
 
 ///|
-let current_frame_pass_total_count_ref : Ref[Int] = Ref::new(0)
+priv struct RenderPassTimingRuntimeState {
+  mut pass_total_count : Int
+  mut pass_2d_count : Int
+  mut pass_3d_main_count : Int
+  mut pass_3d_motion_vector_count : Int
+  mut pass_3d_point_shadow_count : Int
+  mut pass_total_cpu_ms : Float
+  mut pass_2d_cpu_ms : Float
+  mut pass_3d_main_cpu_ms : Float
+  mut pass_3d_motion_vector_cpu_ms : Float
+  mut pass_3d_point_shadow_cpu_ms : Float
+  mut active_pass_phase : Int
+  mut active_pass_start_time : Float?
+}
 
 ///|
-let current_frame_pass_2d_count_ref : Ref[Int] = Ref::new(0)
+fn render_pass_timing_runtime_state_default() -> RenderPassTimingRuntimeState {
+  RenderPassTimingRuntimeState::{
+    pass_total_count: 0,
+    pass_2d_count: 0,
+    pass_3d_main_count: 0,
+    pass_3d_motion_vector_count: 0,
+    pass_3d_point_shadow_count: 0,
+    pass_total_cpu_ms: 0.0F,
+    pass_2d_cpu_ms: 0.0F,
+    pass_3d_main_cpu_ms: 0.0F,
+    pass_3d_motion_vector_cpu_ms: 0.0F,
+    pass_3d_point_shadow_cpu_ms: 0.0F,
+    active_pass_phase: RENDER_PASS_PHASE_NONE,
+    active_pass_start_time: None,
+  }
+}
 
 ///|
-let current_frame_pass_3d_main_count_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_pass_3d_motion_vector_count_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_pass_3d_point_shadow_count_ref : Ref[Int] = Ref::new(0)
-
-///|
-let current_frame_pass_total_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
-
-///|
-let current_frame_pass_2d_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
-
-///|
-let current_frame_pass_3d_main_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
-
-///|
-let current_frame_pass_3d_motion_vector_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
-
-///|
-let current_frame_pass_3d_point_shadow_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
-
-///|
-let active_pass_phase_ref : Ref[Int] = Ref::new(RENDER_PASS_PHASE_NONE)
-
-///|
-let active_pass_start_time_ref : Ref[Float?] = Ref::new(None)
+let render_pass_timing_runtime_state_ref : Ref[RenderPassTimingRuntimeState] = Ref::new(
+  render_pass_timing_runtime_state_default(),
+)
 
 ///|
 let last_frame_render_diagnostics_snapshot_ref : Ref[RenderDiagnosticsSnapshot] = Ref::new(
@@ -194,16 +197,17 @@ let debug_mesh2d_drop_no_texture_ref : Ref[Int] = Ref::new(0)
 
 ///|
 fn render_pass_timing_reset_counters() -> Unit {
-  current_frame_pass_total_count_ref.val = 0
-  current_frame_pass_2d_count_ref.val = 0
-  current_frame_pass_3d_main_count_ref.val = 0
-  current_frame_pass_3d_motion_vector_count_ref.val = 0
-  current_frame_pass_3d_point_shadow_count_ref.val = 0
-  current_frame_pass_total_cpu_ms_ref.val = 0.0F
-  current_frame_pass_2d_cpu_ms_ref.val = 0.0F
-  current_frame_pass_3d_main_cpu_ms_ref.val = 0.0F
-  current_frame_pass_3d_motion_vector_cpu_ms_ref.val = 0.0F
-  current_frame_pass_3d_point_shadow_cpu_ms_ref.val = 0.0F
+  let state = render_pass_timing_runtime_state_ref.val
+  state.pass_total_count = 0
+  state.pass_2d_count = 0
+  state.pass_3d_main_count = 0
+  state.pass_3d_motion_vector_count = 0
+  state.pass_3d_point_shadow_count = 0
+  state.pass_total_cpu_ms = 0.0F
+  state.pass_2d_cpu_ms = 0.0F
+  state.pass_3d_main_cpu_ms = 0.0F
+  state.pass_3d_motion_vector_cpu_ms = 0.0F
+  state.pass_3d_point_shadow_cpu_ms = 0.0F
 }
 
 ///|
@@ -217,48 +221,43 @@ fn render_pass_timing_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
 
 ///|
 fn render_pass_timing_end_active_pass() -> Unit {
-  if active_pass_start_time_ref.val is Some(start_time) {
+  let state = render_pass_timing_runtime_state_ref.val
+  if state.active_pass_start_time is Some(start_time) {
     let elapsed_ms = (@time.host_time_now() - start_time) * 1000.0F
-    current_frame_pass_total_count_ref.val = current_frame_pass_total_count_ref.val +
-      1
-    current_frame_pass_total_cpu_ms_ref.val = current_frame_pass_total_cpu_ms_ref.val +
-      elapsed_ms
-    match active_pass_phase_ref.val {
+    state.pass_total_count = state.pass_total_count + 1
+    state.pass_total_cpu_ms = state.pass_total_cpu_ms + elapsed_ms
+    match state.active_pass_phase {
       RENDER_PASS_PHASE_2D => {
-        current_frame_pass_2d_count_ref.val = current_frame_pass_2d_count_ref.val +
-          1
-        current_frame_pass_2d_cpu_ms_ref.val = current_frame_pass_2d_cpu_ms_ref.val +
-          elapsed_ms
+        state.pass_2d_count = state.pass_2d_count + 1
+        state.pass_2d_cpu_ms = state.pass_2d_cpu_ms + elapsed_ms
       }
       RENDER_PASS_PHASE_3D_MOTION_VECTOR => {
-        current_frame_pass_3d_motion_vector_count_ref.val = current_frame_pass_3d_motion_vector_count_ref.val +
+        state.pass_3d_motion_vector_count = state.pass_3d_motion_vector_count +
           1
-        current_frame_pass_3d_motion_vector_cpu_ms_ref.val = current_frame_pass_3d_motion_vector_cpu_ms_ref.val +
+        state.pass_3d_motion_vector_cpu_ms = state.pass_3d_motion_vector_cpu_ms +
           elapsed_ms
       }
       RENDER_PASS_PHASE_3D_POINT_SHADOW => {
-        current_frame_pass_3d_point_shadow_count_ref.val = current_frame_pass_3d_point_shadow_count_ref.val +
-          1
-        current_frame_pass_3d_point_shadow_cpu_ms_ref.val = current_frame_pass_3d_point_shadow_cpu_ms_ref.val +
+        state.pass_3d_point_shadow_count = state.pass_3d_point_shadow_count + 1
+        state.pass_3d_point_shadow_cpu_ms = state.pass_3d_point_shadow_cpu_ms +
           elapsed_ms
       }
       RENDER_PASS_PHASE_3D_MAIN => {
-        current_frame_pass_3d_main_count_ref.val = current_frame_pass_3d_main_count_ref.val +
-          1
-        current_frame_pass_3d_main_cpu_ms_ref.val = current_frame_pass_3d_main_cpu_ms_ref.val +
-          elapsed_ms
+        state.pass_3d_main_count = state.pass_3d_main_count + 1
+        state.pass_3d_main_cpu_ms = state.pass_3d_main_cpu_ms + elapsed_ms
       }
       _ => ()
     }
   }
-  active_pass_start_time_ref.val = None
-  active_pass_phase_ref.val = RENDER_PASS_PHASE_NONE
+  state.active_pass_start_time = None
+  state.active_pass_phase = RENDER_PASS_PHASE_NONE
 }
 
 ///|
 fn render_pass_timing_begin_active_pass(phase : Int) -> Unit {
-  active_pass_phase_ref.val = phase
-  active_pass_start_time_ref.val = Some(@time.host_time_now())
+  let state = render_pass_timing_runtime_state_ref.val
+  state.active_pass_phase = phase
+  state.active_pass_start_time = Some(@time.host_time_now())
 }
 
 ///|
@@ -285,8 +284,9 @@ fn render_diagnostics_reset_debug_counters_if_needed() -> Unit {
 
 ///|
 pub fn render_diagnostics_begin_frame() -> Unit {
-  active_pass_phase_ref.val = RENDER_PASS_PHASE_NONE
-  active_pass_start_time_ref.val = None
+  let state = render_pass_timing_runtime_state_ref.val
+  state.active_pass_phase = RENDER_PASS_PHASE_NONE
+  state.active_pass_start_time = None
   current_frame_mesh2d_draw_calls_ref.val = 0
   current_frame_mesh2d_executed_draw_calls_ref.val = 0
   current_frame_mesh3d_draw_calls_ref.val = 0
@@ -386,28 +386,30 @@ pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
 ///|
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
   render_pass_timing_end_active_pass()
+  let timing_state = render_pass_timing_runtime_state_ref.val
   last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
     mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
     mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
     mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
     mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
-    pass_total_count: current_frame_pass_total_count_ref.val,
-    pass_2d_count: current_frame_pass_2d_count_ref.val,
-    pass_3d_main_count: current_frame_pass_3d_main_count_ref.val,
-    pass_3d_motion_vector_count: current_frame_pass_3d_motion_vector_count_ref.val,
-    pass_3d_point_shadow_count: current_frame_pass_3d_point_shadow_count_ref.val,
-    pass_total_cpu_ms: current_frame_pass_total_cpu_ms_ref.val,
-    pass_2d_cpu_ms: current_frame_pass_2d_cpu_ms_ref.val,
-    pass_3d_main_cpu_ms: current_frame_pass_3d_main_cpu_ms_ref.val,
-    pass_3d_motion_vector_cpu_ms: current_frame_pass_3d_motion_vector_cpu_ms_ref.val,
-    pass_3d_point_shadow_cpu_ms: current_frame_pass_3d_point_shadow_cpu_ms_ref.val,
+    pass_total_count: timing_state.pass_total_count,
+    pass_2d_count: timing_state.pass_2d_count,
+    pass_3d_main_count: timing_state.pass_3d_main_count,
+    pass_3d_motion_vector_count: timing_state.pass_3d_motion_vector_count,
+    pass_3d_point_shadow_count: timing_state.pass_3d_point_shadow_count,
+    pass_total_cpu_ms: timing_state.pass_total_cpu_ms,
+    pass_2d_cpu_ms: timing_state.pass_2d_cpu_ms,
+    pass_3d_main_cpu_ms: timing_state.pass_3d_main_cpu_ms,
+    pass_3d_motion_vector_cpu_ms: timing_state.pass_3d_motion_vector_cpu_ms,
+    pass_3d_point_shadow_cpu_ms: timing_state.pass_3d_point_shadow_cpu_ms,
   }
 }
 
 ///|
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
-  active_pass_phase_ref.val = RENDER_PASS_PHASE_NONE
-  active_pass_start_time_ref.val = None
+  let state = render_pass_timing_runtime_state_ref.val
+  state.active_pass_phase = RENDER_PASS_PHASE_NONE
+  state.active_pass_start_time = None
   current_frame_mesh2d_draw_calls_ref.val = 0
   current_frame_mesh2d_executed_draw_calls_ref.val = 0
   current_frame_mesh3d_draw_calls_ref.val = 0
