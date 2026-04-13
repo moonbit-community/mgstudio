@@ -31,7 +31,8 @@ let gilrs_event_runtime_state_ref : Ref[GilrsEventRuntimeState] = Ref::new(Gilrs
 ///|
 fn gilrs_poll_once() -> Unit {
   gamepad_poll()
-  gilrs_event_runtime_state_ref.val.poll_count = gilrs_event_runtime_state_ref.val.poll_count + 1
+  gilrs_event_runtime_state_ref.val.poll_count = gilrs_event_runtime_state_ref.val.poll_count +
+    1
 }
 
 ///|

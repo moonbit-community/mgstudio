@@ -42,6 +42,32 @@ pub fn ScrollPosition::with_delta(
 }
 
 ///|
+pub fn ScrollPosition::x(self : ScrollPosition) -> Float {
+  self.offset_x
+}
+
+///|
+pub fn ScrollPosition::y(self : ScrollPosition) -> Float {
+  self.offset_y
+}
+
+///|
+pub fn ScrollPosition::with_x(
+  self : ScrollPosition,
+  offset_x : Float,
+) -> ScrollPosition {
+  ScrollPosition::{ ..self, offset_x, }
+}
+
+///|
+pub fn ScrollPosition::with_y(
+  self : ScrollPosition,
+  offset_y : Float,
+) -> ScrollPosition {
+  ScrollPosition::{ ..self, offset_y, }
+}
+
+///|
 pub struct CalculatedClip {
   clip : @math.Rect
 } derive(ToJson, FromJson)
@@ -59,6 +85,11 @@ pub struct ContentSize {
 ///|
 pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
   ContentSize::{ size, }
+}
+
+///|
+pub fn ContentSize::size(self : ContentSize) -> @math.Vec2 {
+  self.size
 }
 
 ///|

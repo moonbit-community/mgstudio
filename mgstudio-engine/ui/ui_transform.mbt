@@ -122,6 +122,16 @@ pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
 }
 
 ///|
+pub fn UiLayout::rect(self : UiLayout) -> @math.Rect {
+  self.rect
+}
+
+///|
+pub fn UiLayout::size(self : UiLayout) -> @math.Vec2 {
+  self.rect.size()
+}
+
+///|
 pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
   let roots = ui_collect_root_entities(world)
   let default_camera_entity = ui_select_default_camera_entity(world)

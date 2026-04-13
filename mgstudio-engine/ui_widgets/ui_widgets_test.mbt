@@ -13,21 +13,29 @@
 // limitations under the License.
 
 ///|
-test "ui_widgets boundary re-exports widget markers and interaction" {
+test "ui_widgets: owner widget surface exposes core event and marker types" {
   @ui_widgets.Button::default() |> ignore
-  @ui_widgets.Label::default() |> ignore
+  @ui_widgets.MenuPopup::default() |> ignore
+  @ui_widgets.Slider::default() |> ignore
+  @ui_widgets.Scrollbar::new(
+    @core.Entity::placeholder(),
+    @ui_widgets.ControlOrientation::default(),
+    8.0F,
+  )
+  |> ignore
+  @ui_widgets.Popover::default() |> ignore
+  ignore(@ui_widgets.ecs_key_checkbox.id())
+  ignore(@ui_widgets.ecs_key_radio_group.id())
+  ignore(@ui_widgets.ecs_key_radio_button.id())
+  ignore(@ui_widgets.ecs_key_menu_item.id())
   debug_inspect(
-    @ui_widgets.Interaction::Hovered.to_json().to_string(),
-    content="String(\"Hovered\")",
+    @ui_widgets.MenuLayout::default() == @ui_widgets.MenuLayout::Column,
+    content="true",
   )
 }
 
 ///|
-test "ui_widgets boundary re-exports interaction set and ecs keys" {
-  debug_inspect(
-    @ui_widgets.ui_widgets_set_interaction == @ui.ui_set_interaction,
-    content="true",
-  )
+test "ui_widgets: plugin entry installs widget plugins on top of ui plugin" {
   let app = @app.App::new(@ecs.World::new())
   @ui_widgets.ui_widgets_plugin(app) |> ignore
   debug_inspect(true, content="true")

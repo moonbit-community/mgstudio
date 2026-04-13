@@ -26,3 +26,63 @@ pub let ui_widgets_set_interaction : @app.SystemSet = @ui.ui_set_interaction
 pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   @ui.ui_interaction_system(world)
 }
+
+///|
+pub struct InteractionDisabled {} derive(ToJson, FromJson)
+
+///|
+pub struct Pressed {} derive(ToJson, FromJson)
+
+///|
+pub struct Checkable {} derive(ToJson, FromJson)
+
+///|
+pub struct Checked {} derive(ToJson, FromJson)
+
+///|
+pub let ecs_key_interaction_disabled : @ecs.ComponentKey[InteractionDisabled] = @ecs.register_component(
+  debug_name="mgstudio_ui_widgets::InteractionDisabled",
+)
+
+///|
+pub let ecs_key_pressed : @ecs.ComponentKey[Pressed] = @ecs.register_component(
+  debug_name="mgstudio_ui_widgets::Pressed",
+)
+
+///|
+pub let ecs_key_checkable : @ecs.ComponentKey[Checkable] = @ecs.register_component(
+  debug_name="mgstudio_ui_widgets::Checkable",
+)
+
+///|
+pub let ecs_key_checked : @ecs.ComponentKey[Checked] = @ecs.register_component(
+  debug_name="mgstudio_ui_widgets::Checked",
+)
+
+///|
+pub impl @ecs.Component for InteractionDisabled with component() {
+  ecs_key_interaction_disabled
+}
+
+///|
+pub impl @ecs.Component for Pressed with component() {
+  ecs_key_pressed
+}
+
+///|
+pub impl @ecs.Component for Checkable with component() {
+  ecs_key_checkable
+}
+
+///|
+pub impl @ecs.Component for Checked with component() {
+  ecs_key_checked
+}
+
+///|
+pub fn[E : @ecs.TriggerEvent] observe(
+  commands : @app.EntityCommands,
+  observer : (@ecs.On[E]) -> Unit raise,
+) -> @app.EntityCommands {
+  commands.observe(observer)
+}
