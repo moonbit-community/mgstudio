@@ -17,13 +17,22 @@
 
 ///|
 pub(all) enum ImageContainerFormat {
-  Png
-  Jpeg
-  Hdr
-  Exr
-  Dds
-  Ktx2
   Basis
+  Bmp
+  Dds
+  Exr
+  Farbfeld
+  Gif
+  Hdr
+  Ico
+  Jpeg
+  Ktx2
+  Png
+  Pnm
+  Qoi
+  Tga
+  Tiff
+  Webp
   Unknown(String)
 } derive(Eq)
 
@@ -32,14 +41,28 @@ pub fn image_container_format_from_extension(
   extension : String,
 ) -> ImageContainerFormat {
   match extension {
-    "png" => ImageContainerFormat::Png
+    "basis" => ImageContainerFormat::Basis
+    "bmp" => ImageContainerFormat::Bmp
+    "dds" => ImageContainerFormat::Dds
+    "exr" => ImageContainerFormat::Exr
+    "ff" => ImageContainerFormat::Farbfeld
+    "farbfeld" => ImageContainerFormat::Farbfeld
+    "gif" => ImageContainerFormat::Gif
+    "hdr" => ImageContainerFormat::Hdr
+    "ico" => ImageContainerFormat::Ico
     "jpg" => ImageContainerFormat::Jpeg
     "jpeg" => ImageContainerFormat::Jpeg
-    "hdr" => ImageContainerFormat::Hdr
-    "exr" => ImageContainerFormat::Exr
-    "dds" => ImageContainerFormat::Dds
     "ktx2" => ImageContainerFormat::Ktx2
-    "basis" => ImageContainerFormat::Basis
+    "png" => ImageContainerFormat::Png
+    "pnm" => ImageContainerFormat::Pnm
+    "ppm" => ImageContainerFormat::Pnm
+    "pgm" => ImageContainerFormat::Pnm
+    "pbm" => ImageContainerFormat::Pnm
+    "qoi" => ImageContainerFormat::Qoi
+    "tga" => ImageContainerFormat::Tga
+    "tif" => ImageContainerFormat::Tiff
+    "tiff" => ImageContainerFormat::Tiff
+    "webp" => ImageContainerFormat::Webp
     _ => ImageContainerFormat::Unknown(extension)
   }
 }
@@ -96,6 +119,62 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
 }
 
 ///|
+pub fn image_loader_supported_formats() -> Array[ImageContainerFormat] {
+  [
+    ImageContainerFormat::Basis,
+    ImageContainerFormat::Bmp,
+    ImageContainerFormat::Dds,
+    ImageContainerFormat::Exr,
+    ImageContainerFormat::Farbfeld,
+    ImageContainerFormat::Gif,
+    ImageContainerFormat::Hdr,
+    ImageContainerFormat::Ico,
+    ImageContainerFormat::Jpeg,
+    ImageContainerFormat::Ktx2,
+    ImageContainerFormat::Png,
+    ImageContainerFormat::Pnm,
+    ImageContainerFormat::Qoi,
+    ImageContainerFormat::Tga,
+    ImageContainerFormat::Tiff,
+    ImageContainerFormat::Webp,
+  ]
+}
+
+///|
+fn image_container_format_extensions(format : ImageContainerFormat) -> Array[String] {
+  match format {
+    ImageContainerFormat::Basis => ["basis"]
+    ImageContainerFormat::Bmp => ["bmp"]
+    ImageContainerFormat::Dds => ["dds"]
+    ImageContainerFormat::Exr => ["exr"]
+    ImageContainerFormat::Farbfeld => ["ff", "farbfeld"]
+    ImageContainerFormat::Gif => ["gif"]
+    ImageContainerFormat::Hdr => ["hdr"]
+    ImageContainerFormat::Ico => ["ico"]
+    ImageContainerFormat::Jpeg => ["jpg", "jpeg"]
+    ImageContainerFormat::Ktx2 => ["ktx2"]
+    ImageContainerFormat::Png => ["png"]
+    ImageContainerFormat::Pnm => ["pnm", "ppm", "pgm", "pbm"]
+    ImageContainerFormat::Qoi => ["qoi"]
+    ImageContainerFormat::Tga => ["tga"]
+    ImageContainerFormat::Tiff => ["tif", "tiff"]
+    ImageContainerFormat::Webp => ["webp"]
+    ImageContainerFormat::Unknown(extension) => [extension]
+  }
+}
+
+///|
+pub fn image_loader_supported_file_extensions() -> Array[String] {
+  let out : Array[String] = []
+  for format in image_loader_supported_formats() {
+    for extension in image_container_format_extensions(format) {
+      out.push(extension)
+    }
+  }
+  out
+}
+
+///|
 fn image_string_last_index_of_char(input : String, code_unit : Int) -> Int {
   let mut out = -1
   for i in 0..<input.length() {
@@ -126,6 +205,64 @@ fn image_extension_normalize(extension : String) -> String {
 }
 
 ///|
+fn image_blob_u8_at(bytes : Bytes, index : Int) -> Int {
+  guard index >= 0 && index < bytes.length() else { return -1 }
+  bytes[index].to_int() & 0xFF
+}
+
+///|
+fn image_bytes_starts_with(bytes : Bytes, prefix : Array[Int]) -> Bool {
+  if bytes.length() < prefix.length() {
+    return false
+  }
+  for i in 0..<prefix.length() {
+    if image_blob_u8_at(bytes, i) != prefix[i] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? {
+  if image_bytes_starts_with(bytes, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+    return Some(ImageContainerFormat::Png)
+  }
+  if image_bytes_starts_with(bytes, [0xFF, 0xD8]) {
+    return Some(ImageContainerFormat::Jpeg)
+  }
+  if image_bytes_starts_with(bytes, [0x44, 0x44, 0x53, 0x20]) {
+    return Some(ImageContainerFormat::Dds)
+  }
+  if image_bytes_starts_with(bytes, [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A]) {
+    return Some(ImageContainerFormat::Ktx2)
+  }
+  if image_bytes_starts_with(bytes, [0x76, 0x2F, 0x31, 0x01]) {
+    return Some(ImageContainerFormat::Exr)
+  }
+  if image_bytes_starts_with(bytes, [0x23, 0x3F, 0x52, 0x41, 0x44, 0x49, 0x41, 0x4E, 0x43, 0x45]) ||
+    image_bytes_starts_with(bytes, [0x23, 0x3F, 0x52, 0x47, 0x42, 0x45]) {
+    return Some(ImageContainerFormat::Hdr)
+  }
+  if image_bytes_starts_with(bytes, [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]) ||
+    image_bytes_starts_with(bytes, [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]) {
+    return Some(ImageContainerFormat::Gif)
+  }
+  if image_bytes_starts_with(bytes, [0x42, 0x4D]) {
+    return Some(ImageContainerFormat::Bmp)
+  }
+  if bytes.length() >= 12 &&
+    image_bytes_starts_with(bytes, [0x52, 0x49, 0x46, 0x46]) &&
+    image_blob_u8_at(bytes, 8) == 0x57 &&
+    image_blob_u8_at(bytes, 9) == 0x45 &&
+    image_blob_u8_at(bytes, 10) == 0x42 &&
+    image_blob_u8_at(bytes, 11) == 0x50 {
+    return Some(ImageContainerFormat::Webp)
+  }
+  None
+}
+
+///|
 pub fn image_extension_from_path(path : String) -> String? {
   let slash = image_string_last_index_of_char(path, 47)
   let file_name = match slash {
@@ -141,25 +278,36 @@ pub fn image_extension_from_path(path : String) -> String? {
 }
 
 ///|
-pub fn image_loader_container_from_path(
+pub fn image_loader_container_from_input(
   path : String,
+  bytes : Bytes?,
   format_setting : ImageFormatSetting,
 ) -> ImageContainerFormat? {
   match format_setting {
     ImageFormatSetting::Format(format) => Some(format)
-    ImageFormatSetting::Guess => None
+    ImageFormatSetting::Guess =>
+      match bytes {
+        Some(blob) => image_guess_container_from_bytes(blob)
+        None => None
+      }
     ImageFormatSetting::FromExtension =>
       match image_extension_from_path(path) {
-        Some(extension) => {
-          let guessed = image_container_format_from_extension(extension)
-          match guessed {
+        Some(extension) =>
+          match image_container_format_from_extension(extension) {
             ImageContainerFormat::Unknown(_) => None
-            _ => Some(guessed)
+            known => Some(known)
           }
-        }
         None => None
       }
   }
+}
+
+///|
+pub fn image_loader_container_from_path(
+  path : String,
+  format_setting : ImageFormatSetting,
+) -> ImageContainerFormat? {
+  image_loader_container_from_input(path, None, format_setting)
 }
 
 ///|

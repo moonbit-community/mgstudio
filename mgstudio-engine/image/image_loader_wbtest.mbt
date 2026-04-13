@@ -13,6 +13,38 @@
 // limitations under the License.
 
 ///|
+fn image_wb_bytes(values : Array[Int]) -> Bytes {
+  let out : Array[Byte] = []
+  for value in values {
+    out.push(value.to_byte())
+  }
+  Bytes::from_array(out)
+}
+
+///|
+fn image_wb_has_extension(values : Array[String], expected : String) -> Bool {
+  for value in values {
+    if value == expected {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn image_wb_has_format(
+  values : Array[ImageContainerFormat],
+  expected : ImageContainerFormat,
+) -> Bool {
+  for value in values {
+    if value == expected {
+      return true
+    }
+  }
+  false
+}
+
+///|
 test "image wb: container format detection by extension" {
   debug_inspect(
     image_container_format_from_extension("png") == ImageContainerFormat::Png,
@@ -34,6 +66,14 @@ test "image wb: container format detection by extension" {
   debug_inspect(
     image_container_format_from_extension("foo") ==
     ImageContainerFormat::Unknown("foo"),
+    content="true",
+  )
+  debug_inspect(
+    image_container_format_from_extension("webp") == ImageContainerFormat::Webp,
+    content="true",
+  )
+  debug_inspect(
+    image_container_format_from_extension("gif") == ImageContainerFormat::Gif,
     content="true",
   )
 }
@@ -221,6 +261,100 @@ test "image wb: array layout layer counting" {
   )
   debug_inspect(
     image_array_layout_layers(100, ImageArrayLayout::RowCount(0)) == None,
+    content="true",
+  )
+}
+
+///|
+test "image wb: supported image formats and file extensions" {
+  let formats = image_loader_supported_formats()
+  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Png), content="true")
+  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Ktx2), content="true")
+  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Webp), content="true")
+  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Gif), content="true")
+
+  let extensions = image_loader_supported_file_extensions()
+  debug_inspect(image_wb_has_extension(extensions, "png"), content="true")
+  debug_inspect(image_wb_has_extension(extensions, "ktx2"), content="true")
+  debug_inspect(image_wb_has_extension(extensions, "jpeg"), content="true")
+  debug_inspect(image_wb_has_extension(extensions, "webp"), content="true")
+}
+
+///|
+test "image wb: format guess from magic bytes" {
+  debug_inspect(
+    image_guess_container_from_bytes(
+      image_wb_bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+    ) == Some(ImageContainerFormat::Png),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0xFF, 0xD8, 0xFF, 0xEE])) ==
+    Some(ImageContainerFormat::Jpeg),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(
+      image_wb_bytes([
+        0xAB,
+        0x4B,
+        0x54,
+        0x58,
+        0x20,
+        0x32,
+        0x30,
+        0xBB,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+      ]),
+    ) == Some(ImageContainerFormat::Ktx2),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(
+      image_wb_bytes([0x44, 0x44, 0x53, 0x20, 0x7C]),
+    ) == Some(ImageContainerFormat::Dds),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(
+      image_wb_bytes([0x52, 0x49, 0x46, 0x46, 0x01, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]),
+    ) == Some(ImageContainerFormat::Webp),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0x00, 0x01, 0x02])) == None,
+    content="true",
+  )
+}
+
+///|
+test "image wb: format resolution from path + bytes + setting" {
+  let png_magic = image_wb_bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+  debug_inspect(
+    image_loader_container_from_input(
+      "textures/no_extension",
+      Some(png_magic),
+      ImageFormatSetting::Guess,
+    ) == Some(ImageContainerFormat::Png),
+    content="true",
+  )
+  debug_inspect(
+    image_loader_container_from_input(
+      "textures/no_extension",
+      None,
+      ImageFormatSetting::Guess,
+    ) == None,
+    content="true",
+  )
+  debug_inspect(
+    image_loader_container_from_input(
+      "textures/fox.jpeg",
+      None,
+      ImageFormatSetting::FromExtension,
+    ) == Some(ImageContainerFormat::Jpeg),
     content="true",
   )
 }
