@@ -80,6 +80,26 @@ test "asset loader registry supports extension override" {
     asset_loader_kind_for_path("textures/a.png") is AssetLoaderKind::Texture,
     content="true",
   )
+  debug_inspect(
+    asset_loader_kind_for_path("textures/a.hdr") is AssetLoaderKind::Texture,
+    content="true",
+  )
+  debug_inspect(
+    asset_loader_kind_for_path("textures/a.exr") is AssetLoaderKind::Texture,
+    content="true",
+  )
+  debug_inspect(
+    asset_loader_kind_for_path("textures/a.dds") is AssetLoaderKind::Texture,
+    content="true",
+  )
+  debug_inspect(
+    asset_loader_kind_for_path("textures/a.webp") is AssetLoaderKind::Texture,
+    content="true",
+  )
+  debug_inspect(
+    asset_loader_kind_for_path("textures/a.qoi") is AssetLoaderKind::Texture,
+    content="true",
+  )
 
   asset_remove_loader_extension("customx")
   debug_inspect(
