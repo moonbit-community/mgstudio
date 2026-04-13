@@ -2,22 +2,22 @@ This file must not exceed 200 lines.
 
 | Bevy Side | mgstudio Side | Structure | Runtime | Overall | Status | Main Gaps |
 |---|---|---:|---:|---:|---|---|
-| `bevy_app` | `mgstudio-engine/app` | 96% | 85% | 85% | 🟡 In Progress | System scheduling and ergonomics still diverge in several APIs. |
+| `bevy_app` | `mgstudio-engine/app` | 96% | 87% | 87% | 🟡 In Progress | System scheduling and ergonomics still diverge in several APIs. |
 | `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 88% | 80% | 80% | 🟡 In Progress | By-design architecture differences from Bevy remain and need documented boundaries. |
 | `bevy_transform` | `mgstudio-engine/transform` | 95% | 86% | 86% | 🟡 In Progress | Stress-scene throughput and integration ordering still need parity validation. |
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
 | `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
 | `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
-| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
-| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 71% | 71% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
+| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 69% | 69% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
+| `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 73% | 73% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 78% | 78% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
-| `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
+| `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 76% | 76% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
-| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 78% | 78% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
+| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 79% | 79% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 74% | 74% | 🟡 In Progress | Pointer-hit and layout/render consistency still require continuous parity checks. |
 | `bevy_text` | `mgstudio-engine/text` | 90% | 72% | 72% | 🟡 In Progress | Core shaping path is stable, but full visual/line-break parity across all scripts still needs evidence. |
 | `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 93% | 77% | 77% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
@@ -40,13 +40,13 @@ This file must not exceed 200 lines.
 | `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 67% | 67% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
 | Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
 | Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
-| Workspace-wide native validation | `moon check/test` integration | 90% | 58% | 58% | 🟡 In Progress | Full native test reliability is still blocked by remaining environment/runtime gaps. |
+| Workspace-wide native validation | `moon check/test` integration | 90% | 60% | 60% | 🟡 In Progress | Full native test reliability is still blocked by remaining environment/runtime gaps. |
 
 | Rollup | Value |
 |---|---:|
 | Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
-| Current weighted migration completion (included scope) | 92% |
+| Current weighted migration completion (included scope) | 93% |
 | Last updated | 2026-04-13 |
 
 - [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
