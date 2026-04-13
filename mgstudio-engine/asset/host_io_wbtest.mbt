@@ -181,6 +181,57 @@ test "asset host io: tga decode supports uncompressed true-color with container 
 }
 
 ///|
+fn test_tga_rle_24_2x1_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  // Header
+  out.push((0).to_byte()) // id length
+  out.push((0).to_byte()) // color map type
+  out.push((10).to_byte()) // image type: RLE true-color
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte()) // x origin
+  out.push((0).to_byte())
+  out.push((0).to_byte()) // y origin
+  out.push((0).to_byte())
+  out.push((2).to_byte()) // width = 2
+  out.push((0).to_byte())
+  out.push((1).to_byte()) // height = 1
+  out.push((0).to_byte())
+  out.push((24).to_byte()) // pixel depth
+  out.push((0x20).to_byte()) // top-left origin
+  // One raw packet with two pixels (red, green)
+  out.push((1).to_byte()) // raw packet, length 2
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: tga decode supports RLE true-color payload" {
+  let bytes = test_tga_rle_24_2x1_bytes()
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Tga),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(2, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+  debug_inspect(decoded.pixels[4].to_uint(), content="0")
+  debug_inspect(decoded.pixels[5].to_uint(), content="255")
+  debug_inspect(decoded.pixels[6].to_uint(), content="0")
+  debug_inspect(decoded.pixels[7].to_uint(), content="255")
+}
+
+///|
 fn test_pnm_p6_2x1_bytes() -> Bytes {
   let out : Array[Byte] = []
   for code in @utf8.encode("P6\n2 1\n255\n"[:]) {
@@ -212,6 +263,27 @@ test "asset host io: pnm decode supports binary P6 payload" {
   debug_inspect(decoded.pixels[5].to_uint(), content="255")
   debug_inspect(decoded.pixels[6].to_uint(), content="0")
   debug_inspect(decoded.pixels[7].to_uint(), content="255")
+}
+
+///|
+fn test_pnm_p3_2x1_bytes() -> Bytes {
+  @utf8.encode("P3\n2 1\n255\n255 0 0 0 255 0\n"[:])
+}
+
+///|
+test "asset host io: pnm decode supports ascii P3 payload" {
+  let bytes = test_pnm_p3_2x1_bytes()
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Pnm),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(2, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[4].to_uint(), content="0")
+  debug_inspect(decoded.pixels[5].to_uint(), content="255")
+  debug_inspect(decoded.pixels[6].to_uint(), content="0")
 }
 
 ///|

@@ -1074,7 +1074,7 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
   if color_map_type != 0 {
     return None
   }
-  if image_type != 2 && image_type != 3 {
+  if image_type != 2 && image_type != 3 && image_type != 10 && image_type != 11 {
     return None
   }
   let width_raw = blob_u16_at(bytes, 12)
@@ -1092,7 +1092,9 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
   if data_start < 18 || data_start > bytes.length() {
     return None
   }
-  let pixel_stride = if image_type == 2 {
+  let is_truecolor = image_type == 2 || image_type == 10
+  let is_rle = image_type == 10 || image_type == 11
+  let pixel_stride = if is_truecolor {
     if pixel_depth == 24 {
       3
     } else if pixel_depth == 32 {
@@ -1106,9 +1108,59 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
     }
     1
   }
-  let data_len = width * height * pixel_stride
-  if data_start + data_len > bytes.length() {
-    return None
+  let pixel_count = width * height
+  let packed_len = pixel_count * pixel_stride
+  let packed = Array::make(packed_len, b'\x00')
+  if is_rle {
+    let mut source = data_start
+    let mut decoded = 0
+    while decoded < pixel_count {
+      if source >= bytes.length() {
+        return None
+      }
+      let header = blob_u8_at(bytes, source)
+      source = source + 1
+      let packet_len = (header & 0x7F) + 1
+      let is_run = (header & 0x80) != 0
+      if is_run {
+        if source + pixel_stride > bytes.length() {
+          return None
+        }
+        for _ in 0..<packet_len {
+          if decoded >= pixel_count {
+            break
+          }
+          let dst = decoded * pixel_stride
+          for channel in 0..<pixel_stride {
+            packed[dst + channel] = bytes[source + channel]
+          }
+          decoded = decoded + 1
+        }
+        source = source + pixel_stride
+      } else {
+        for _ in 0..<packet_len {
+          if decoded >= pixel_count {
+            break
+          }
+          if source + pixel_stride > bytes.length() {
+            return None
+          }
+          let dst = decoded * pixel_stride
+          for channel in 0..<pixel_stride {
+            packed[dst + channel] = bytes[source + channel]
+          }
+          source = source + pixel_stride
+          decoded = decoded + 1
+        }
+      }
+    }
+  } else {
+    if data_start + packed_len > bytes.length() {
+      return None
+    }
+    for i in 0..<packed_len {
+      packed[i] = bytes[data_start + i]
+    }
   }
   let pixels = Array::make(rgba8_len(width, height), b'\x00')
   let mut out_index = 0
@@ -1116,20 +1168,19 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
     let source_y = if top_origin { y } else { height - 1 - y }
     for x in 0..<width {
       let source_x = if right_origin { width - 1 - x } else { x }
-      let source_index = data_start +
-        (source_y * width + source_x) * pixel_stride
-      let (r, g, b, a) = if image_type == 2 {
-        let b = blob_u8_at(bytes, source_index)
-        let g = blob_u8_at(bytes, source_index + 1)
-        let r = blob_u8_at(bytes, source_index + 2)
+      let source_index = (source_y * width + source_x) * pixel_stride
+      let (r, g, b, a) = if is_truecolor {
+        let b = packed[source_index].to_int() & 0xFF
+        let g = packed[source_index + 1].to_int() & 0xFF
+        let r = packed[source_index + 2].to_int() & 0xFF
         let a = if pixel_stride == 4 {
-          blob_u8_at(bytes, source_index + 3)
+          packed[source_index + 3].to_int() & 0xFF
         } else {
           255
         }
         (r, g, b, a)
       } else {
-        let gray = blob_u8_at(bytes, source_index)
+        let gray = packed[source_index].to_int() & 0xFF
         (gray, gray, gray, 255)
       }
       pixels[out_index] = r.to_byte()
@@ -1436,7 +1487,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
   }
   let width = clamp_dim(width_raw)
   let height = clamp_dim(height_raw)
-  let max_value_and_index = if magic == 0x34 {
+  let max_value_and_index = if magic == 0x34 || magic == 0x31 {
     Some((1, index3))
   } else {
     pnm_read_uint_token(bytes, index3)
@@ -1445,10 +1496,10 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
   if max_value <= 0 || max_value > 255 {
     return None
   }
-  let data_start = pnm_skip_ws_and_comments(bytes, index4)
+  let mut data_start = pnm_skip_ws_and_comments(bytes, index4)
   let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  let pixel_count = width * height
   if magic == 0x36 {
-    let pixel_count = width * height
     let data_len = pixel_count * 3
     if data_start + data_len > bytes.length() {
       return None
@@ -1468,7 +1519,6 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
     })
   }
   if magic == 0x35 {
-    let pixel_count = width * height
     let data_len = pixel_count
     if data_start + data_len > bytes.length() {
       return None
@@ -1505,6 +1555,68 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
         pixels[dst + 2] = gray
         pixels[dst + 3] = (255).to_byte()
       }
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
+  if magic == 0x33 {
+    for i in 0..<pixel_count {
+      guard pnm_read_uint_token(bytes, data_start) is Some((r_raw, next1)) else {
+        return None
+      }
+      guard pnm_read_uint_token(bytes, next1) is Some((g_raw, next2)) else {
+        return None
+      }
+      guard pnm_read_uint_token(bytes, next2) is Some((b_raw, next3)) else {
+        return None
+      }
+      data_start = next3
+      let dst = i * 4
+      pixels[dst] = pnm_scale_channel(r_raw, max_value).to_byte()
+      pixels[dst + 1] = pnm_scale_channel(g_raw, max_value).to_byte()
+      pixels[dst + 2] = pnm_scale_channel(b_raw, max_value).to_byte()
+      pixels[dst + 3] = (255).to_byte()
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
+  if magic == 0x32 {
+    for i in 0..<pixel_count {
+      guard pnm_read_uint_token(bytes, data_start) is Some((gray_raw, next)) else {
+        return None
+      }
+      data_start = next
+      let gray = pnm_scale_channel(gray_raw, max_value).to_byte()
+      let dst = i * 4
+      pixels[dst] = gray
+      pixels[dst + 1] = gray
+      pixels[dst + 2] = gray
+      pixels[dst + 3] = (255).to_byte()
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
+  if magic == 0x31 {
+    for i in 0..<pixel_count {
+      guard pnm_read_uint_token(bytes, data_start) is Some((bit, next)) else {
+        return None
+      }
+      data_start = next
+      let gray = if bit == 1 { (0).to_byte() } else { (255).to_byte() }
+      let dst = i * 4
+      pixels[dst] = gray
+      pixels[dst + 1] = gray
+      pixels[dst + 2] = gray
+      pixels[dst + 3] = (255).to_byte()
     }
     return Some(DecodedTextureImage::{
       width,
