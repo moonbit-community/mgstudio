@@ -162,9 +162,14 @@ fn pbr_plugin_sync_standard_material_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  standard_material_plugin_with(app, StandardMaterialPlugin::{
+  let app = standard_material_plugin_with(app, StandardMaterialPlugin::{
     prepass_enabled: runtime_config.prepass_enabled,
   })
+  if runtime_config.prepass_enabled {
+    app.add_plugin(@pbr_prepass.prepass_plugin)
+  } else {
+    app
+  }
 }
 
 ///|

@@ -77,6 +77,10 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     read_standard_material_plugin_state(app.world()).prepass_enabled,
     content="true",
   )
+  debug_inspect(
+    app.contains_resource(@pbr_prepass.ecs_key_any_prepass_plugin_loaded),
+    content="true",
+  )
 }
 
 ///|
@@ -109,6 +113,10 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   )
   debug_inspect(
     read_standard_material_plugin_state(_app.world()).prepass_enabled,
+    content="false",
+  )
+  debug_inspect(
+    _app.contains_resource(@pbr_prepass.ecs_key_any_prepass_plugin_loaded),
     content="false",
   )
 
