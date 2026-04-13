@@ -36,7 +36,7 @@ This file must not exceed 200 lines.
 | `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
-| `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 93% | 93% | 🟡 In Progress | Final semantic parity audit against Bevy accessibility behavior is pending. |
+| `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 64% | 64% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
 | Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
 | Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
@@ -119,7 +119,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-directional-fixed-array-shape`: align `GpuLights` directional payload shape with Bevy by padding to `MAX_DIRECTIONAL_LIGHTS` and using `n_directional_lights` as logical count.
 - [x] `pbr/render-gpu-ambient-premultiply`: align `GpuLights.ambient_color` with Bevy by writing pre-multiplied ambient color (`color * brightness`) instead of split GPU fields.
 - [x] `pbr/render-directional-cascade-fixed-array-shape`: align directional cascade payload shape with Bevy by padding to `MAX_CASCADES_PER_LIGHT` and separating logical cascade count from storage length.
-- [x] `a11y/resource-shared-flag-semantics`: add explicit clone/shared-handle semantics tests for `AccessibilityRequested`, mutation coverage for `ManageAccessibilityUpdates`, `init_resource` keep-existing semantics parity, and `ActionRequest` wrapper passthrough assertions.
+- [x] `a11y/resource-shared-flag-semantics`: add clone/shared-handle semantics tests for `AccessibilityRequested`, mutation coverage for `ManageAccessibilityUpdates`, `init_resource` keep-existing semantics parity, `ActionRequest` passthrough, and `node_id`/`AccessibilityNode` mutator coverage.
 - [x] `pbr/render-uninitialized-slot-flags`: align padded directional GPU slot defaults with Bevy flag semantics by using `DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED`.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.

@@ -87,3 +87,29 @@ test "a11y: ActionRequest wrapper forwards accesskit payload" {
   assert_true(wrapped.data() is None)
   assert_eq(wrapped.accesskit_request().target_node(), target)
 }
+
+///|
+test "a11y: node_id_for_entity is stable and roundtrips entity bits" {
+  let entity = @core.Entity::from_bits(12345UL)
+  let node_id = node_id_for_entity(entity)
+  assert_eq(node_id.to_u64(), entity.to_bits())
+}
+
+///|
+test "a11y: AccessibilityNode mutators forward to accesskit node" {
+  let node = @moon_accesskit.Node::new(@moon_accesskit.Role::Button)
+  let wrapped = AccessibilityNode::new(node)
+  assert_eq(wrapped.role(), @moon_accesskit.Role::Button)
+  wrapped.set_label("play")
+  wrapped.set_value("enabled")
+  wrapped.set_bounds(@moon_accesskit.Rect::new(1.0, 2.0, 3.0, 4.0))
+  wrapped.add_action(@moon_accesskit.Action::Focus)
+
+  let labels = wrapped.label()
+  assert_true(labels is Some("play"))
+  let values = wrapped.value()
+  assert_true(values is Some("enabled"))
+  let bounds = wrapped.bounds()
+  assert_true(bounds is Some(_))
+  assert_true(wrapped.supports_action(@moon_accesskit.Action::Focus))
+}
