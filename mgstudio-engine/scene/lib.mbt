@@ -593,10 +593,39 @@ fn scene_asset_base_path(asset_path : String) -> String {
 }
 
 ///|
-let scene_modified_event_cursor_ref : Ref[Int] = Ref::new(0)
+priv struct SceneModifiedEventsCursorState {
+  modified_event_cursor : Ref[Int]
+}
 
 ///|
-let scene_modified_event_cursor_world_id_ref : Ref[Int] = Ref::new(-1)
+fn SceneModifiedEventsCursorState::default() -> SceneModifiedEventsCursorState {
+  SceneModifiedEventsCursorState::{ modified_event_cursor: Ref::new(0) }
+}
+
+///|
+fn scene_modified_events_cursor_state_resource_key() -> @ecs.ResourceKey[
+  SceneModifiedEventsCursorState,
+] {
+  @ecs.register_resource(debug_name="mgstudio_scene::SceneModifiedEventsCursorState")
+}
+
+///|
+impl @app.Resource for SceneModifiedEventsCursorState with resource() {
+  scene_modified_events_cursor_state_resource_key()
+}
+
+///|
+fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
+  match (
+    try! world.get_resource(scene_modified_events_cursor_state_resource_key())
+  ) {
+    Some(state) => state.modified_event_cursor
+    None =>
+      abort(
+        "scene modified-events cursor resource is missing; ScenePlugin must initialize SceneModifiedEventsCursorState before running reload systems",
+      )
+  }
+}
 
 ///|
 pub fn scene_set_gltf_lod_visibility_policy(

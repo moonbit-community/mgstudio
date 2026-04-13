@@ -18,13 +18,10 @@
 ///|
 pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   let modified_scene_ids : Array[Int] = []
-  if scene_modified_event_cursor_world_id_ref.val != world.world_id() {
-    scene_modified_event_cursor_world_id_ref.val = world.world_id()
-    scene_modified_event_cursor_ref.val = 0
-  }
   let message_key : @ecs.MessageKey[@asset.AssetEvent[Scene]] = @ecs.Message::message()
+  let cursor_ref = scene_modified_events_cursor_ref_or_abort(world)
   let reader = world.message_reader(
-    message_key, scene_modified_event_cursor_ref,
+    message_key, cursor_ref,
   )
   for event in (try! reader.read()) {
     match event {
@@ -101,6 +98,7 @@ fn scene_runtime_plugin_base(
 ) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() { SceneRuntimeState::default() })
+  .init_resource(fn() { SceneModifiedEventsCursorState::default() })
   .add_pre_update_system(scene_load_pending_system)
   .add_pre_update_system(scene_reload_modified_roots_system)
   .add_pre_update_system(scene_spawn_roots_system)
