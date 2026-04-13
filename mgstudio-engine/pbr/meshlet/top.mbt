@@ -41,11 +41,23 @@ pub(all) enum MeshletRuntimeStatus {
 }
 
 ///|
-pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
-  if !meshlet_runtime_available() {
+pub fn meshlet_runtime_status_from_availability(
+  runtime_available : Bool,
+  plugin_enabled : Bool,
+) -> MeshletRuntimeStatus {
+  if !runtime_available {
     return MeshletRuntimeStatus::RuntimeUnavailable
   }
-  MeshletRuntimeStatus::Disabled
+  if plugin_enabled {
+    MeshletRuntimeStatus::Enabled
+  } else {
+    MeshletRuntimeStatus::Disabled
+  }
+}
+
+///|
+pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
+  meshlet_runtime_status_from_availability(meshlet_runtime_available(), true)
 }
 
 ///|
@@ -60,9 +72,7 @@ fn meshlet_cluster_buffer_slots_validate(value : Int) -> Int {
     abort("MeshletPlugin::cluster_buffer_slots must be greater than zero")
   }
   if value > MESHLET_MAX_CLUSTER_BUFFER_SLOTS {
-    abort(
-      "MeshletPlugin::cluster_buffer_slots must not be greater than 2^25",
-    )
+    abort("MeshletPlugin::cluster_buffer_slots must not be greater than 2^25")
   }
   value
 }
@@ -107,9 +117,12 @@ pub struct MeshletPluginState {
 ///|
 pub fn MeshletPluginState::default() -> MeshletPluginState {
   MeshletPluginState::{
-    runtime_status: meshlet_runtime_status(),
+    runtime_status: meshlet_runtime_status_from_availability(
+      meshlet_runtime_available(),
+      false,
+    ),
     missing_required_features: meshlet_missing_wgpu_features(),
-    adapter_supports_mesh_shader: false,
+    adapter_supports_mesh_shader: @renderer.meshlet_adapter_supports_mesh_shader(),
   }
 }
 

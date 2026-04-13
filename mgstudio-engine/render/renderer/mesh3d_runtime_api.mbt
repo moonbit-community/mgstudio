@@ -93,7 +93,9 @@ pub fn meshlet_required_features_supported() -> Bool {
       backend_type != @wgpu.BACKEND_TYPE_METAL {
       return false
     }
-    if !backend.device.supports_rust_features_u64(meshlet_required_rust_features_u64()) {
+    if !backend.device.supports_rust_features_u64(
+        meshlet_required_rust_features_u64(),
+      ) {
       return false
     }
     if !backend.device.has_feature_native_subgroup_barrier() {
@@ -104,6 +106,13 @@ pub fn meshlet_required_features_supported() -> Bool {
     }
     return true
   }
+  false
+}
+
+///|
+pub fn meshlet_adapter_supports_mesh_shader() -> Bool {
+  // `wgpu_mbt` does not expose mesh-shader feature constants yet.
+  // Keep this value conservative until upstream exposes the capability surface.
   false
 }
 

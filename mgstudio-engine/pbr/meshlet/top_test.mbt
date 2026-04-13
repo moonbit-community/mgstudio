@@ -14,16 +14,43 @@
 
 ///|
 test "pbr meshlet: runtime defaults to unavailable on current path" {
-  inspect(meshlet_runtime_available(), content="false")
-  inspect(meshlet_runtime_status() is RuntimeUnavailable, content="true")
+  let runtime_available = meshlet_runtime_available()
+  match meshlet_runtime_status() {
+    Enabled => inspect(runtime_available, content="true")
+    Disabled => inspect(false, content="true")
+    RuntimeUnavailable => inspect(!runtime_available, content="true")
+  }
 }
 
 ///|
 test "pbr meshlet: required feature mask includes texture atomics" {
   let required = meshlet_required_wgpu_features()
-  inspect(required == @renderer.meshlet_required_rust_features_u64(), content="true")
+  inspect(
+    required == @renderer.meshlet_required_rust_features_u64(),
+    content="true",
+  )
   inspect((required & 0x0000000010000000UL) != 0UL, content="true")
   inspect((required & 0x0000400000000000UL) != 0UL, content="true")
+}
+
+///|
+test "pbr meshlet: runtime status helper follows availability and enable flags" {
+  inspect(
+    meshlet_runtime_status_from_availability(false, false) is RuntimeUnavailable,
+    content="true",
+  )
+  inspect(
+    meshlet_runtime_status_from_availability(false, true) is RuntimeUnavailable,
+    content="true",
+  )
+  inspect(
+    meshlet_runtime_status_from_availability(true, false) is Disabled,
+    content="true",
+  )
+  inspect(
+    meshlet_runtime_status_from_availability(true, true) is Enabled,
+    content="true",
+  )
 }
 
 ///|
@@ -38,10 +65,20 @@ test "panic pbr meshlet: plugin rejects non-positive cluster buffer slots" {
 
 ///|
 test "pbr meshlet: plugin state includes missing feature mask" {
+  let runtime_available = meshlet_runtime_available()
   let state = MeshletPluginState::default()
-  inspect(state.runtime_status is RuntimeUnavailable, content="true")
+  if runtime_available {
+    inspect(state.runtime_status is Disabled, content="true")
+  } else {
+    inspect(state.runtime_status is RuntimeUnavailable, content="true")
+  }
   inspect(
     (state.missing_required_features & meshlet_required_wgpu_features()) != 0UL,
+    content="true",
+  )
+  inspect(
+    state.adapter_supports_mesh_shader ==
+    @renderer.meshlet_adapter_supports_mesh_shader(),
     content="true",
   )
 }

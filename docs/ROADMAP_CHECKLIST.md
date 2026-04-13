@@ -13,7 +13,7 @@ This file must not exceed 200 lines.
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 95% | 95% | 95% | ✅ Mostly Done | Remaining parity work is maintenance-level drift monitoring. |
-| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
+| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 65% | 65% | 🟡 In Progress | Runtime state semantics are aligned; full meshlet render pipeline integration is still partial. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 77% | 77% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 79% | 79% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
@@ -189,8 +189,8 @@ This file must not exceed 200 lines.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
 - [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
 - [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
-- [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe with Bevy-shaped required-feature mask + cluster-slot bound validation.
-- [ ] `render/wgpu_mbt` (deferred, upstream): bridge Bevy meshlet-required texture atomic feature request path (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`) in native C surface (`supports_rust_features` + `missing_rust_features` gating已接入，tracked at `moonbit-community/wgpu-mbt#11`).
+- [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe with Bevy-shaped required-feature mask + cluster-slot bound validation, and align runtime state transitions (`Enabled/Disabled/RuntimeUnavailable`) with deterministic tests.
+- [ ] `render/wgpu_mbt` (deferred, upstream): meshlet texture-atomic rust-feature gating is wired; remaining gap is mesh-shader feature constant/capability surface in `wgpu_mbt` for Bevy-equivalent meshlet capability reporting (tracked at `moonbit-community/wgpu-mbt#11`).
 - [x] `animation/gltf/scene`: ownerization convergence continued (done: scene LOD registration moved to plugin install path, animation/gltf runtime bootstrap data now clears after runtime resource initialization, and runtime-time callback/dispatcher registration is resource-first to reduce cross-app leakage).
 - [x] `ui/sprite/picking`: close camera/pointer drift baseline (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests + `moon test picking` green).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
