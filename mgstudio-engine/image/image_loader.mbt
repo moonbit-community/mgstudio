@@ -56,7 +56,7 @@ pub(all) suberror ImageLoaderError {
 
 ///|
 pub fn ImageLoader::new(supported_compressed_formats : Int) -> ImageLoader {
-  ImageLoader::{ supported_compressed_formats }
+  ImageLoader::{ supported_compressed_formats, }
 }
 
 ///|
@@ -201,7 +201,9 @@ pub fn image_loader_supported_formats() -> Array[ImageContainerFormat] {
 }
 
 ///|
-fn image_container_format_extensions(format : ImageContainerFormat) -> Array[String] {
+fn image_container_format_extensions(
+  format : ImageContainerFormat,
+) -> Array[String] {
   match format {
     ImageContainerFormat::Basis => ["basis"]
     ImageContainerFormat::Bmp => ["bmp"]
@@ -285,7 +287,9 @@ fn image_bytes_starts_with(bytes : Bytes, prefix : Array[Int]) -> Bool {
 
 ///|
 pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? {
-  if image_bytes_starts_with(bytes, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+  if image_bytes_starts_with(bytes, [
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+    ]) {
     return Some(ImageContainerFormat::Png)
   }
   if image_bytes_starts_with(bytes, [0xFF, 0xD8]) {
@@ -294,13 +298,17 @@ pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? 
   if image_bytes_starts_with(bytes, [0x44, 0x44, 0x53, 0x20]) {
     return Some(ImageContainerFormat::Dds)
   }
-  if image_bytes_starts_with(bytes, [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A]) {
+  if image_bytes_starts_with(bytes, [
+      0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
+    ]) {
     return Some(ImageContainerFormat::Ktx2)
   }
   if image_bytes_starts_with(bytes, [0x76, 0x2F, 0x31, 0x01]) {
     return Some(ImageContainerFormat::Exr)
   }
-  if image_bytes_starts_with(bytes, [0x23, 0x3F, 0x52, 0x41, 0x44, 0x49, 0x41, 0x4E, 0x43, 0x45]) ||
+  if image_bytes_starts_with(bytes, [
+      0x23, 0x3F, 0x52, 0x41, 0x44, 0x49, 0x41, 0x4E, 0x43, 0x45,
+    ]) ||
     image_bytes_starts_with(bytes, [0x23, 0x3F, 0x52, 0x47, 0x42, 0x45]) {
     return Some(ImageContainerFormat::Hdr)
   }
@@ -314,7 +322,9 @@ pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? 
   if image_bytes_starts_with(bytes, [0x00, 0x00, 0x01, 0x00]) {
     return Some(ImageContainerFormat::Ico)
   }
-  if image_bytes_starts_with(bytes, [0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64]) {
+  if image_bytes_starts_with(bytes, [
+      0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64,
+    ]) {
     return Some(ImageContainerFormat::Farbfeld)
   }
   if image_bytes_starts_with(bytes, [0x71, 0x6F, 0x69, 0x66]) {
@@ -350,7 +360,11 @@ pub fn image_extension_from_path(path : String) -> String? {
   }
   let dot = image_string_last_index_of_char(file_name, 46)
   if dot >= 0 && dot + 1 < file_name.length() {
-    Some(image_extension_normalize(file_name[dot + 1:file_name.length()].to_string()))
+    Some(
+      image_extension_normalize(
+        file_name[dot + 1:file_name.length()].to_string(),
+      ),
+    )
   } else {
     None
   }
@@ -398,12 +412,7 @@ pub fn image_array_layout_layers(
     return None
   }
   match layout {
-    ImageArrayLayout::RowCount(rows) =>
-      if rows > 0 {
-        Some(rows)
-      } else {
-        None
-      }
+    ImageArrayLayout::RowCount(rows) => if rows > 0 { Some(rows) } else { None }
     ImageArrayLayout::RowHeight(row_height) =>
       if row_height > 0 && image_height % row_height == 0 {
         Some(image_height / row_height)

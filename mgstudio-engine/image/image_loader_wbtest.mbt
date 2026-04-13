@@ -214,28 +214,32 @@ test "image wb: extension extraction and lookup from path" {
     image_loader_container_from_path(
       "textures/fox.png",
       ImageFormatSetting::FromExtension,
-    ) == Some(ImageContainerFormat::Png),
+    ) ==
+    Some(ImageContainerFormat::Png),
     content="true",
   )
   debug_inspect(
     image_loader_container_from_path(
       "textures/fox.unknown",
       ImageFormatSetting::FromExtension,
-    ) == None,
+    ) ==
+    None,
     content="true",
   )
   debug_inspect(
     image_loader_container_from_path(
       "textures/fox.any",
       ImageFormatSetting::Format(ImageContainerFormat::Dds),
-    ) == Some(ImageContainerFormat::Dds),
+    ) ==
+    Some(ImageContainerFormat::Dds),
     content="true",
   )
   debug_inspect(
     image_loader_container_from_path(
       "textures/fox.png",
       ImageFormatSetting::Guess,
-    ) == None,
+    ) ==
+    None,
     content="true",
   )
 }
@@ -247,8 +251,7 @@ test "image wb: array layout layer counting" {
     content="true",
   )
   debug_inspect(
-    image_array_layout_layers(1024, ImageArrayLayout::RowHeight(256)) ==
-    Some(4),
+    image_array_layout_layers(1024, ImageArrayLayout::RowHeight(256)) == Some(4),
     content="true",
   )
   debug_inspect(
@@ -268,10 +271,22 @@ test "image wb: array layout layer counting" {
 ///|
 test "image wb: supported image formats and file extensions" {
   let formats = image_loader_supported_formats()
-  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Png), content="true")
-  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Ktx2), content="true")
-  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Webp), content="true")
-  debug_inspect(image_wb_has_format(formats, ImageContainerFormat::Gif), content="true")
+  debug_inspect(
+    image_wb_has_format(formats, ImageContainerFormat::Png),
+    content="true",
+  )
+  debug_inspect(
+    image_wb_has_format(formats, ImageContainerFormat::Ktx2),
+    content="true",
+  )
+  debug_inspect(
+    image_wb_has_format(formats, ImageContainerFormat::Webp),
+    content="true",
+  )
+  debug_inspect(
+    image_wb_has_format(formats, ImageContainerFormat::Gif),
+    content="true",
+  )
 
   let extensions = image_loader_supported_file_extensions()
   debug_inspect(image_wb_has_extension(extensions, "png"), content="true")
@@ -285,7 +300,8 @@ test "image wb: format guess from magic bytes" {
   debug_inspect(
     image_guess_container_from_bytes(
       image_wb_bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
-    ) == Some(ImageContainerFormat::Png),
+    ) ==
+    Some(ImageContainerFormat::Png),
     content="true",
   )
   debug_inspect(
@@ -296,32 +312,26 @@ test "image wb: format guess from magic bytes" {
   debug_inspect(
     image_guess_container_from_bytes(
       image_wb_bytes([
-        0xAB,
-        0x4B,
-        0x54,
-        0x58,
-        0x20,
-        0x32,
-        0x30,
-        0xBB,
-        0x0D,
-        0x0A,
-        0x1A,
-        0x0A,
+        0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
       ]),
-    ) == Some(ImageContainerFormat::Ktx2),
+    ) ==
+    Some(ImageContainerFormat::Ktx2),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(
       image_wb_bytes([0x44, 0x44, 0x53, 0x20, 0x7C]),
-    ) == Some(ImageContainerFormat::Dds),
+    ) ==
+    Some(ImageContainerFormat::Dds),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(
-      image_wb_bytes([0x52, 0x49, 0x46, 0x46, 0x01, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]),
-    ) == Some(ImageContainerFormat::Webp),
+      image_wb_bytes([
+        0x52, 0x49, 0x46, 0x46, 0x01, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+      ]),
+    ) ==
+    Some(ImageContainerFormat::Webp),
     content="true",
   )
   debug_inspect(
@@ -332,7 +342,8 @@ test "image wb: format guess from magic bytes" {
   debug_inspect(
     image_guess_container_from_bytes(
       image_wb_bytes([0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64]),
-    ) == Some(ImageContainerFormat::Farbfeld),
+    ) ==
+    Some(ImageContainerFormat::Farbfeld),
     content="true",
   )
   debug_inspect(
@@ -358,13 +369,16 @@ test "image wb: format guess from magic bytes" {
 
 ///|
 test "image wb: format resolution from path + bytes + setting" {
-  let png_magic = image_wb_bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+  let png_magic = image_wb_bytes([
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+  ])
   debug_inspect(
     image_loader_container_from_input(
       "textures/no_extension",
       Some(png_magic),
       ImageFormatSetting::Guess,
-    ) == Some(ImageContainerFormat::Png),
+    ) ==
+    Some(ImageContainerFormat::Png),
     content="true",
   )
   debug_inspect(
@@ -372,7 +386,8 @@ test "image wb: format resolution from path + bytes + setting" {
       "textures/no_extension",
       None,
       ImageFormatSetting::Guess,
-    ) == None,
+    ) ==
+    None,
     content="true",
   )
   debug_inspect(
@@ -380,7 +395,8 @@ test "image wb: format resolution from path + bytes + setting" {
       "textures/fox.jpeg",
       None,
       ImageFormatSetting::FromExtension,
-    ) == Some(ImageContainerFormat::Jpeg),
+    ) ==
+    Some(ImageContainerFormat::Jpeg),
     content="true",
   )
 }

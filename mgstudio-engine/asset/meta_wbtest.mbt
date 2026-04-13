@@ -34,7 +34,10 @@ test "asset wb: image meta applies format/texture/usages and row-height layout" 
   let content = "(asset: Load(settings: (format: Guess, texture_format: Some(Rgba16Float), is_srgb: false, array_layout: Some(RowHeight { pixels: 64 }), asset_usage: RenderAssetUsages(\"RENDER_WORLD\"), load_meshes: RenderAssetUsages(\"MAIN_WORLD\"),),),)"
   apply_image_meta_settings(settings, content)
   debug_inspect(settings.format == ImageFormatSetting::Guess, content="true")
-  debug_inspect(settings.texture_format == Some(TextureFormat::Rgba16Float), content="true")
+  debug_inspect(
+    settings.texture_format == Some(TextureFormat::Rgba16Float),
+    content="true",
+  )
   debug_inspect(!settings.is_srgb, content="true")
   debug_inspect(
     settings.asset_usage == RenderAssetUsages::render_world(),
@@ -44,7 +47,10 @@ test "asset wb: image meta applies format/texture/usages and row-height layout" 
     settings.load_meshes == RenderAssetUsages::main_world(),
     content="true",
   )
-  debug_inspect(meta_layout_is_row_height(settings.array_layout, 64), content="true")
+  debug_inspect(
+    meta_layout_is_row_height(settings.array_layout, 64),
+    content="true",
+  )
 }
 
 ///|
@@ -56,9 +62,18 @@ test "asset wb: image meta accepts row-count and explicit format variant" {
     settings.format == ImageFormatSetting::Format(ImageContainerFormat::Png),
     content="true",
   )
-  debug_inspect(meta_layout_is_row_count(settings.array_layout, 4), content="true")
-  debug_inspect(settings.asset_usage == RenderAssetUsages::all(), content="true")
-  debug_inspect(settings.load_meshes == RenderAssetUsages::all(), content="true")
+  debug_inspect(
+    meta_layout_is_row_count(settings.array_layout, 4),
+    content="true",
+  )
+  debug_inspect(
+    settings.asset_usage == RenderAssetUsages::all(),
+    content="true",
+  )
+  debug_inspect(
+    settings.load_meshes == RenderAssetUsages::all(),
+    content="true",
+  )
 }
 
 ///|

@@ -852,6 +852,129 @@ fn is_bmp_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
+priv struct BmpDecodeInfo {
+  width : Int
+  height : Int
+  top_down : Bool
+  bits_per_pixel : Int
+  data_offset : Int
+  row_stride : Int
+  has_alpha : Bool
+}
+
+///|
+fn bmp_decode_info(bytes : Bytes) -> BmpDecodeInfo? {
+  guard is_bmp_bytes(bytes) else { return None }
+  if bytes.length() < 54 {
+    return None
+  }
+  let header_size = blob_u32_at(bytes, 14)
+  if header_size < 40 {
+    return None
+  }
+  let width_raw = blob_u32_at(bytes, 18)
+  let height_raw = blob_u32_at(bytes, 22)
+  if width_raw <= 0 || height_raw == 0 {
+    return None
+  }
+  let top_down = height_raw < 0
+  let height_abs = if top_down { 0 - height_raw } else { height_raw }
+  let width = clamp_dim(width_raw)
+  let height = clamp_dim(height_abs)
+  let planes = blob_u8_at(bytes, 26) | (blob_u8_at(bytes, 27) << 8)
+  if planes != 1 {
+    return None
+  }
+  let bits_per_pixel = blob_u8_at(bytes, 28) | (blob_u8_at(bytes, 29) << 8)
+  if bits_per_pixel != 24 && bits_per_pixel != 32 {
+    return None
+  }
+  let compression = blob_u32_at(bytes, 30)
+  if compression != 0 {
+    return None
+  }
+  let data_offset = blob_u32_at(bytes, 10)
+  if data_offset < 0 {
+    return None
+  }
+  let row_stride = if bits_per_pixel == 24 {
+    (width * 3 + 3) / 4 * 4
+  } else {
+    width * 4
+  }
+  let pixel_data_size = row_stride * height
+  if data_offset + pixel_data_size > bytes.length() {
+    return None
+  }
+  let has_alpha = if bits_per_pixel == 32 {
+    let mut found = false
+    let mut y = 0
+    while y < height {
+      let row = data_offset + y * row_stride
+      let mut x = 0
+      while x < width {
+        if blob_u8_at(bytes, row + x * 4 + 3) != 0 {
+          found = true
+          x = width
+          y = height
+        } else {
+          x = x + 1
+        }
+      }
+      y = y + 1
+    }
+    found
+  } else {
+    false
+  }
+  Some(BmpDecodeInfo::{
+    width,
+    height,
+    top_down,
+    bits_per_pixel,
+    data_offset,
+    row_stride,
+    has_alpha,
+  })
+}
+
+///|
+fn decode_texture_image_from_bmp(bytes : Bytes) -> DecodedTextureImage? {
+  guard bmp_decode_info(bytes) is Some(info) else { return None }
+  let pixels = Array::make(rgba8_len(info.width, info.height), b'\x00')
+  let mut out_index = 0
+  for y in 0..<info.height {
+    let source_y = if info.top_down { y } else { info.height - 1 - y }
+    let row_start = info.data_offset + source_y * info.row_stride
+    for x in 0..<info.width {
+      let pixel_start = row_start + x * (info.bits_per_pixel / 8)
+      let b = blob_u8_at(bytes, pixel_start)
+      let g = blob_u8_at(bytes, pixel_start + 1)
+      let r = blob_u8_at(bytes, pixel_start + 2)
+      let a = if info.bits_per_pixel == 32 {
+        if info.has_alpha {
+          blob_u8_at(bytes, pixel_start + 3)
+        } else {
+          255
+        }
+      } else {
+        255
+      }
+      pixels[out_index] = r.to_byte()
+      pixels[out_index + 1] = g.to_byte()
+      pixels[out_index + 2] = b.to_byte()
+      pixels[out_index + 3] = a.to_byte()
+      out_index += 4
+    }
+  }
+  Some(DecodedTextureImage::{
+    width: info.width,
+    height: info.height,
+    pixels: Bytes::from_array(pixels),
+  })
+}
+
+///|
 fn decoded_texture_image_from_gm_image(
   decoded : &@gm_image.Image,
 ) -> DecodedTextureImage {
@@ -900,7 +1023,7 @@ fn decode_texture_image(bytes : Bytes) -> DecodedTextureImage? {
     return decode_texture_image_from_gm_jpeg(bytes)
   }
   if is_bmp_bytes(bytes) {
-    return None
+    return decode_texture_image_from_bmp(bytes)
   }
   None
 }
@@ -1422,6 +1545,9 @@ fn save_asset_file_bytes(path : String, bytes : Bytes) -> Unit {
 fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
   if png_dimensions(bytes) is Some(dims) {
     return Some(dims)
+  }
+  if bmp_decode_info(bytes) is Some(info) {
+    return Some((info.width, info.height))
   }
   if ktx2_dimensions(bytes) is Some(dims) {
     return Some(dims)

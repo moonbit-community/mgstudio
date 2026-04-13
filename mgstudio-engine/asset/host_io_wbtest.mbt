@@ -49,3 +49,81 @@ test "asset host io: palette png preserves transparent background" {
   debug_inspect(decoded.pixels[3].to_uint(), content="0")
   debug_inspect(decoded.pixels[center + 3].to_uint(), content="255")
 }
+
+///|
+fn test_bmp_24_2x2_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  let push_u32_le_test = fn(out : Array[Byte], value : UInt) {
+    out.push((value & 0xFFU).to_byte())
+    out.push(((value >> 8) & 0xFFU).to_byte())
+    out.push(((value >> 16) & 0xFFU).to_byte())
+    out.push(((value >> 24) & 0xFFU).to_byte())
+  }
+  // BITMAPFILEHEADER
+  out.push((0x42).to_byte())
+  out.push((0x4D).to_byte())
+  push_u32_le_test(out, 70U)
+  push_u16_le(out, 0U)
+  push_u16_le(out, 0U)
+  push_u32_le_test(out, 54U)
+  // BITMAPINFOHEADER
+  push_u32_le_test(out, 40U)
+  push_u32_le_test(out, 2U)
+  push_u32_le_test(out, 2U)
+  push_u16_le(out, 1U)
+  push_u16_le(out, 24U)
+  push_u32_le_test(out, 0U)
+  push_u32_le_test(out, 16U)
+  push_u32_le_test(out, 2835U)
+  push_u32_le_test(out, 2835U)
+  push_u32_le_test(out, 0U)
+  push_u32_le_test(out, 0U)
+  // Pixel rows (bottom-up), each row padded to 4-byte alignment.
+  // Bottom row: blue, white
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((255).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  // Top row: red, green
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: bmp decode supports 24-bit bottom-up bitmap" {
+  let bytes = test_bmp_24_2x2_bytes()
+  let decoded = decode_texture_image(bytes).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(2, 2)")
+  // Top-left pixel should be red after bottom-up conversion.
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+  // Top-right pixel should be green.
+  debug_inspect(decoded.pixels[4].to_uint(), content="0")
+  debug_inspect(decoded.pixels[5].to_uint(), content="255")
+  debug_inspect(decoded.pixels[6].to_uint(), content="0")
+  debug_inspect(decoded.pixels[7].to_uint(), content="255")
+  // Bottom-left pixel should be blue.
+  debug_inspect(decoded.pixels[8].to_uint(), content="0")
+  debug_inspect(decoded.pixels[9].to_uint(), content="0")
+  debug_inspect(decoded.pixels[10].to_uint(), content="255")
+  debug_inspect(decoded.pixels[11].to_uint(), content="255")
+}
+
+///|
+test "asset host io: texture dimensions read from bmp header" {
+  let bytes = test_bmp_24_2x2_bytes()
+  debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((2, 2))")
+}

@@ -466,7 +466,9 @@ fn image_data_texture_format(is_srgb : Bool) -> TextureFormat {
 }
 
 ///|
-fn image_container_supports_rgba_decode(container : ImageContainerFormat) -> Bool {
+fn image_container_supports_rgba_decode(
+  container : ImageContainerFormat,
+) -> Bool {
   match container {
     ImageContainerFormat::Basis => false
     ImageContainerFormat::Dds => false
@@ -483,9 +485,9 @@ fn image_from_loaded_texture_bytes(
   format_setting : ImageFormatSetting,
   texture_format_override : TextureFormat?,
 ) -> Image? {
-  if @image.image_loader_container_from_input(path, Some(bytes), format_setting) is Some(
-    container,
-  ) && !image_container_supports_rgba_decode(container) {
+  if @image.image_loader_container_from_input(path, Some(bytes), format_setting)
+    is Some(container) &&
+    !image_container_supports_rgba_decode(container) {
     return None
   }
   if ktx2_decode_uncompressed_3d_payload(bytes) is Some(_) ||
@@ -581,13 +583,10 @@ fn AssetServer::update_pending_image_asset_from_bytes(
   format_setting : ImageFormatSetting,
   texture_format_override : TextureFormat?,
 ) -> Unit {
-  match image_from_loaded_texture_bytes(
-    path,
-    bytes,
-    is_srgb,
-    format_setting,
-    texture_format_override,
-  ) {
+  match
+    image_from_loaded_texture_bytes(
+      path, bytes, is_srgb, format_setting, texture_format_override,
+    ) {
     Some(asset) => self.set_pending_image_asset(image, asset)
     None => self.pending_image_assets.val.remove(image.id()) |> ignore
   }

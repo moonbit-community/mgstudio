@@ -45,56 +45,69 @@ fn meta_image_format_setting(content : String) -> ImageFormatSetting? {
   if string_contains(content, "format: FromExtension") {
     return Some(ImageFormatSetting::FromExtension)
   }
-  guard string_contains(content, "format: Format") else {
-    return None
-  }
-  if string_contains(content, "Format(Basis)") || string_contains(content, "Format (Basis)") {
+  guard string_contains(content, "format: Format") else { return None }
+  if string_contains(content, "Format(Basis)") ||
+    string_contains(content, "Format (Basis)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Basis))
   }
-  if string_contains(content, "Format(Bmp)") || string_contains(content, "Format (Bmp)") {
+  if string_contains(content, "Format(Bmp)") ||
+    string_contains(content, "Format (Bmp)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Bmp))
   }
-  if string_contains(content, "Format(Dds)") || string_contains(content, "Format (Dds)") {
+  if string_contains(content, "Format(Dds)") ||
+    string_contains(content, "Format (Dds)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Dds))
   }
-  if string_contains(content, "Format(Exr)") || string_contains(content, "Format (Exr)") {
+  if string_contains(content, "Format(Exr)") ||
+    string_contains(content, "Format (Exr)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Exr))
   }
   if string_contains(content, "Format(Farbfeld)") ||
     string_contains(content, "Format (Farbfeld)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Farbfeld))
   }
-  if string_contains(content, "Format(Gif)") || string_contains(content, "Format (Gif)") {
+  if string_contains(content, "Format(Gif)") ||
+    string_contains(content, "Format (Gif)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Gif))
   }
-  if string_contains(content, "Format(Hdr)") || string_contains(content, "Format (Hdr)") {
+  if string_contains(content, "Format(Hdr)") ||
+    string_contains(content, "Format (Hdr)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Hdr))
   }
-  if string_contains(content, "Format(Ico)") || string_contains(content, "Format (Ico)") {
+  if string_contains(content, "Format(Ico)") ||
+    string_contains(content, "Format (Ico)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Ico))
   }
-  if string_contains(content, "Format(Jpeg)") || string_contains(content, "Format (Jpeg)") {
+  if string_contains(content, "Format(Jpeg)") ||
+    string_contains(content, "Format (Jpeg)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Jpeg))
   }
-  if string_contains(content, "Format(Ktx2)") || string_contains(content, "Format (Ktx2)") {
+  if string_contains(content, "Format(Ktx2)") ||
+    string_contains(content, "Format (Ktx2)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Ktx2))
   }
-  if string_contains(content, "Format(Png)") || string_contains(content, "Format (Png)") {
+  if string_contains(content, "Format(Png)") ||
+    string_contains(content, "Format (Png)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Png))
   }
-  if string_contains(content, "Format(Pnm)") || string_contains(content, "Format (Pnm)") {
+  if string_contains(content, "Format(Pnm)") ||
+    string_contains(content, "Format (Pnm)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Pnm))
   }
-  if string_contains(content, "Format(Qoi)") || string_contains(content, "Format (Qoi)") {
+  if string_contains(content, "Format(Qoi)") ||
+    string_contains(content, "Format (Qoi)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Qoi))
   }
-  if string_contains(content, "Format(Tga)") || string_contains(content, "Format (Tga)") {
+  if string_contains(content, "Format(Tga)") ||
+    string_contains(content, "Format (Tga)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Tga))
   }
-  if string_contains(content, "Format(Tiff)") || string_contains(content, "Format (Tiff)") {
+  if string_contains(content, "Format(Tiff)") ||
+    string_contains(content, "Format (Tiff)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Tiff))
   }
-  if string_contains(content, "Format(Webp)") || string_contains(content, "Format (Webp)") {
+  if string_contains(content, "Format(Webp)") ||
+    string_contains(content, "Format (Webp)") {
     return Some(ImageFormatSetting::Format(ImageContainerFormat::Webp))
   }
   None
@@ -253,7 +266,8 @@ fn meta_render_asset_usages_field(
   content : String,
   field_name : String,
 ) -> RenderAssetUsages? {
-  guard meta_extract_render_asset_usage_value(content, field_name) is Some(value) else {
+  guard meta_extract_render_asset_usage_value(content, field_name)
+    is Some(value) else {
     return None
   }
   let has_main_world = string_contains(value, "MAIN_WORLD")
@@ -297,28 +311,40 @@ fn meta_parse_positive_int_after(content : String, marker : String) -> Int? {
 
 ///|
 fn meta_image_array_layout(content : String) -> ImageArrayLayout? {
-  if meta_parse_positive_int_after(content, "array_layout: Some(RowCount(rows: ") is Some(rows) {
+  if meta_parse_positive_int_after(
+      content, "array_layout: Some(RowCount(rows: ",
+    )
+    is Some(rows) {
     return Some(ImageArrayLayout::RowCount(rows))
   }
-  if meta_parse_positive_int_after(content, "array_layout: Some(RowCount (rows: ") is Some(rows) {
+  if meta_parse_positive_int_after(
+      content, "array_layout: Some(RowCount (rows: ",
+    )
+    is Some(rows) {
     return Some(ImageArrayLayout::RowCount(rows))
   }
-  if meta_parse_positive_int_after(content, "array_layout: Some(RowCount { rows: ") is Some(rows) {
+  if meta_parse_positive_int_after(
+      content, "array_layout: Some(RowCount { rows: ",
+    )
+    is Some(rows) {
     return Some(ImageArrayLayout::RowCount(rows))
   }
-  if meta_parse_positive_int_after(content, "array_layout: Some(RowHeight(pixels: ") is Some(
-    pixels,
-  ) {
+  if meta_parse_positive_int_after(
+      content, "array_layout: Some(RowHeight(pixels: ",
+    )
+    is Some(pixels) {
     return Some(ImageArrayLayout::RowHeight(pixels))
   }
-  if meta_parse_positive_int_after(content, "array_layout: Some(RowHeight (pixels: ") is Some(
-    pixels,
-  ) {
+  if meta_parse_positive_int_after(
+      content, "array_layout: Some(RowHeight (pixels: ",
+    )
+    is Some(pixels) {
     return Some(ImageArrayLayout::RowHeight(pixels))
   }
-  if meta_parse_positive_int_after(content, "array_layout: Some(RowHeight { pixels: ") is Some(
-    pixels,
-  ) {
+  if meta_parse_positive_int_after(
+      content, "array_layout: Some(RowHeight { pixels: ",
+    )
+    is Some(pixels) {
     return Some(ImageArrayLayout::RowHeight(pixels))
   }
   None
@@ -361,8 +387,7 @@ fn apply_image_meta_settings(
   let compare = meta_image_compare_function(content, "compare")
   let border_color = meta_image_border_color(content, "border_color")
   let anisotropy_clamp = meta_parse_positive_int_after(
-    content,
-    "anisotropy_clamp: ",
+    content, "anisotropy_clamp: ",
   )
   let has_descriptor = address_mode_u is Some(_) ||
     address_mode_v is Some(_) ||
