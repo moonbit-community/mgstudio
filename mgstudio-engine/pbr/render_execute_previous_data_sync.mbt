@@ -24,7 +24,7 @@ fn render3d_entity_world_transform_from_main_world(
 }
 
 ///|
-fn render3d_sync_previous_view_data_pre_update(world : @ecs.World) -> Unit {
+fn update_previous_view_data(world : @ecs.World) -> Unit {
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
     let world_transform = match
       render3d_entity_world_transform_from_main_world(world, entity) {
@@ -63,7 +63,7 @@ fn render3d_has_active_camera(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn render3d_sync_previous_global_transforms_pre_update(
+fn update_mesh_previous_global_transforms(
   world : @ecs.World,
 ) -> Unit {
   guard render3d_has_active_camera(world) else { return }
@@ -79,10 +79,4 @@ fn render3d_sync_previous_global_transforms_pre_update(
       @pbr_prepass.PreviousGlobalTransform::new(world_transform),
     )
   })
-}
-
-///|
-fn render3d_preupdate_previous_data_sync_system(world : @ecs.World) -> Unit {
-  render3d_sync_previous_view_data_pre_update(world)
-  render3d_sync_previous_global_transforms_pre_update(world)
 }

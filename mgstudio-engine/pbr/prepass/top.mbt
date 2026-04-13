@@ -207,7 +207,7 @@ pub fn prepass_pipeline_plugin_with(
       PrepassPipelineState::default(),
     )
   }
-  app.add_system(prepass_update_pipeline_state)
+  app.add_pre_update_system(prepass_update_pipeline_state)
 }
 
 ///|

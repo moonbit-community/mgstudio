@@ -49,7 +49,8 @@ test "render3d preupdate sync: writes previous view and global transform" {
   try! (world.set_by_key(mesh_entity, @transform.ecs_key_transform, mesh_transform)
   |> ignore)
 
-  render3d_preupdate_previous_data_sync_system(world)
+  update_mesh_previous_global_transforms(world)
+  update_previous_view_data(world)
 
   let previous_view_data : @pbr_prepass.PreviousViewData? = try! world.get_by_key(
     camera_entity,
@@ -117,7 +118,8 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   )
   |> ignore)
 
-  render3d_preupdate_previous_data_sync_system(world)
+  update_mesh_previous_global_transforms(world)
+  update_previous_view_data(world)
   let not_synced : @pbr_prepass.PreviousGlobalTransform? = try! world.get_by_key(
     mesh_entity,
     ecs_key_previous_global_transform,
@@ -131,7 +133,8 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   )
   |> ignore)
 
-  render3d_preupdate_previous_data_sync_system(world)
+  update_mesh_previous_global_transforms(world)
+  update_previous_view_data(world)
   let synced : @pbr_prepass.PreviousGlobalTransform? = try! world.get_by_key(
     mesh_entity,
     ecs_key_previous_global_transform,
