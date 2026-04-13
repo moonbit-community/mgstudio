@@ -37,10 +37,10 @@ This file must not exceed 200 lines.
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
-| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 74% | 74% | 🟡 In Progress | Package tests are green and 2D visual captures pass; remaining work is 3D visual-capture parity and full bevy_rapier behavior closure. |
-| Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
-| Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
-| Workspace-wide native validation | `moon check/test` integration | 90% | 64% | 64% | 🟡 In Progress | Package-level native reliability improved (`asset/ui/anti_alias*` green), but full-suite runtime parity is still open. |
+| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 82% | 82% | 🟡 In Progress | Package tests are green and 2D/3D visual captures now exist; remaining work is full behavior-level parity closure vs `bevy_rapier`. |
+| Stress test parity | `examples/stress_tests/*` + scripts | 95% | 70% | 70% | 🟡 In Progress | Full-suite profile baseline now runs end-to-end; remaining work is source-first convergence for low-FPS heavy cases. |
+| Visual screenshot parity | `/tmp` captures + parity gates | 96% | 75% | 75% | 🟡 In Progress | Coverage expanded to heavy stress + physics3d cases; remaining work is full-suite visual equivalence closure. |
+| Workspace-wide native validation | `moon check/test` integration | 90% | 66% | 66% | 🟡 In Progress | Package-level native reliability improved and stress diagnostics are stable; full-suite runtime parity is still open. |
 
 | Rollup | Value |
 |---|---:|
@@ -195,7 +195,6 @@ This file must not exceed 200 lines.
 - [x] `ui/sprite/picking`: close camera/pointer drift baseline (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests + `moon test picking` green).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
 - [x] `asset/image`: close mainline runtime decode/dimension gaps (done: embedded source-path fallback + capability-gated web fetch + native `moon test asset` green + settings/format-selection/array-layout + extension routing from loader tables + BMP/TGA(RLE)/PNM(P1..P7, 8/16-bit)/farbfeld/QOI/ICO(PNG+DIB32) decode + GIF/WEBP/TIFF/JPEG/TGA/PNM dimensions with wb coverage); remaining codec long-tail is tracked under module-level parity depth.
-- [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
-- [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
+- [ ] `physics2d/physics3d`: finish bevy_rapier behavior parity closure (evidence updated: `physics2d` + `physics3d` screenshots and sanity reports in `/tmp/mgstudio_physics*_visual_20260414`).
+- [ ] `stress_tests`: keep source-level convergence tracker from full-suite baseline (`/tmp/mgstudio_stress_full_20260414/results.tsv`) and per-case traces (e.g. `/tmp/mgstudio_trace_many_foxes_20260414`).
 - [x] `render/mesh2d-depth-pipeline-key`: fix render crash by adding `with_depth` to mesh2d pipeline key/cache and only enabling depth-stencil state when pass has depth (prevents depth/no-depth pass pipeline mismatch in physics2d examples).
-- [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.
