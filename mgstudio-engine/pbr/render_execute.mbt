@@ -13,6 +13,47 @@
 // limitations under the License.
 
 ///|
+fn render3d_sync_previous_frame_components(
+  source_world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+  meshes : Array[ExtractedMesh3d],
+  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
+) -> Unit {
+  let camera_count = if cameras.length() < prepared_camera_queues.length() {
+    cameras.length()
+  } else {
+    prepared_camera_queues.length()
+  }
+  for camera_index in 0..<camera_count {
+    match prepared_camera_queues[camera_index] {
+      Some(prepared_queue) => {
+        let extracted_camera = cameras[camera_index]
+        let clip_from_world = @pbr_render.render3d_pass_projection_clip_from_world(
+          prepared_queue.camera_pass_projection,
+          extracted_camera.payload.transform,
+        )
+        try! source_world.set_by_key(
+          extracted_camera.entity.main_entity,
+          ecs_key_previous_view_data,
+          @pbr_prepass.PreviousViewData::new(
+            extracted_camera.payload.transform,
+            clip_from_world,
+          ),
+        )
+      }
+      None => ()
+    }
+  }
+  for mesh in meshes {
+    try! source_world.set_by_key(
+      mesh.entity.main_entity,
+      ecs_key_previous_global_transform,
+      @pbr_prepass.PreviousGlobalTransform::new(mesh.payload.transform),
+    )
+  }
+}
+
+///|
 fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
   let execute_trace_start_us = @app.timeline_trace_begin_span(
@@ -52,6 +93,12 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     frame_config.default_opaque_renderer_method,
     frame_config.wireframe_config,
     frame_config.delta_seconds,
+  )
+  render3d_sync_previous_frame_components(
+    source_world,
+    queued_frame.cameras,
+    queued_frame.meshes,
+    queued_frame.prepared_camera_queues,
   )
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()

@@ -46,7 +46,7 @@ fn render3d_execute_render_cameras(
       None
     }
     render3d_execute_camera(
-      world, source_world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
+      world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
       deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
       lighting, delta_seconds, cleared_targets_this_frame,
       prepared_camera_queue,

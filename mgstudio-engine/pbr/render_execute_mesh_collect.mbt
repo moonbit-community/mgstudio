@@ -263,15 +263,7 @@ fn render3d_execute_collect_meshes(
       },
     })
   })
-  if needs_mesh_previous_transform {
-    for mesh in meshes {
-      try! source_world.set_by_key(
-        mesh.entity.main_entity,
-        ecs_key_previous_global_transform,
-        @pbr_prepass.PreviousGlobalTransform::new(mesh.payload.transform),
-      )
-    }
-  }
+  ignore(needs_mesh_previous_transform)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,
     meshes.length(),
