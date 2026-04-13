@@ -31,3 +31,13 @@ test "pbr meshlet: plugin clamps cluster buffer slots" {
   let plugin = MeshletPlugin::new(MESHLET_MAX_CLUSTER_BUFFER_SLOTS + 100)
   inspect(plugin.cluster_buffer_slots(), content="33554432")
 }
+
+///|
+test "pbr meshlet: plugin state includes missing feature mask" {
+  let state = MeshletPluginState::default()
+  inspect(state.runtime_status is RuntimeUnavailable, content="true")
+  inspect(
+    (state.missing_required_features & meshlet_required_wgpu_features()) != 0UL,
+    content="true",
+  )
+}

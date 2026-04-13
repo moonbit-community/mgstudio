@@ -77,6 +77,15 @@ pub fn meshlet_required_rust_features_u64() -> UInt64 {
 }
 
 ///|
+pub fn meshlet_missing_rust_features_u64() -> UInt64 {
+  let required = meshlet_required_rust_features_u64()
+  if ensure_backend() is Some(backend) {
+    return backend.device.missing_rust_features_u64(required)
+  }
+  required
+}
+
+///|
 pub fn meshlet_required_features_supported() -> Bool {
   if ensure_backend() is Some(backend) {
     let backend_type = backend.device.info_backend_type_u32()
@@ -84,9 +93,7 @@ pub fn meshlet_required_features_supported() -> Bool {
       backend_type != @wgpu.BACKEND_TYPE_METAL {
       return false
     }
-    if !backend.device.supports_rust_features_u64(
-        meshlet_required_rust_features_u64(),
-      ) {
+    if !backend.device.supports_rust_features_u64(meshlet_required_rust_features_u64()) {
       return false
     }
     if !backend.device.has_feature_native_subgroup_barrier() {

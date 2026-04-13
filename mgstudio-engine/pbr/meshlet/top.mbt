@@ -24,6 +24,11 @@ pub fn meshlet_required_wgpu_features() -> UInt64 {
 }
 
 ///|
+pub fn meshlet_missing_wgpu_features() -> UInt64 {
+  @renderer.meshlet_missing_rust_features_u64()
+}
+
+///|
 pub fn meshlet_runtime_available() -> Bool {
   @renderer.meshlet_required_features_supported()
 }
@@ -93,6 +98,7 @@ pub fn meshlet_plugin() -> MeshletPlugin {
 ///|
 pub struct MeshletPluginState {
   runtime_status : MeshletRuntimeStatus
+  missing_required_features : UInt64
   adapter_supports_mesh_shader : Bool
 }
 
@@ -100,6 +106,7 @@ pub struct MeshletPluginState {
 pub fn MeshletPluginState::default() -> MeshletPluginState {
   MeshletPluginState::{
     runtime_status: meshlet_runtime_status(),
+    missing_required_features: meshlet_missing_wgpu_features(),
     adapter_supports_mesh_shader: false,
   }
 }
