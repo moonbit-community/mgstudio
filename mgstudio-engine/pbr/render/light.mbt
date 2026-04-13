@@ -93,6 +93,16 @@ fn render3d_transform_back(transform : @transform.Transform) -> @math.Vec3 {
 }
 
 ///|
+fn render3d_scale_color(color : @sprite.Color, scale : Float) -> @sprite.Color {
+  @sprite.Color::new(
+    color.r * scale,
+    color.g * scale,
+    color.b * scale,
+    color.a * scale,
+  )
+}
+
+///|
 fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
   let shadow_map_size = match
     (try! world.get_resource(@light.ecs_key_point_light_shadow_map)) {
@@ -339,14 +349,12 @@ fn render3d_extract_directional_light(
     Some(v) => v
     None => @light.SunDisk::default()
   }
-  let cascade_count = match light.cascade_shadow_config {
-    Some(config) => config.bounds.length()
-    None => 0
+  let cascade_config = match light.cascade_shadow_config {
+    Some(config) => config
+    None => @light.CascadeShadowConfig::default()
   }
-  let cascade_overlap_proportion = match light.cascade_shadow_config {
-    Some(config) => config.overlap_proportion
-    None => @light.CascadeShadowConfig::default().overlap_proportion
-  }
+  let cascade_count = cascade_config.bounds.length()
+  let cascade_overlap_proportion = cascade_config.overlap_proportion
   ExtractedDirectionalLight3d::{
     entity,
     color: light.color,
@@ -491,7 +499,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     }
     gpu_directional_lights.push(GpuDirectionalLight3d::{
       cascades,
-      color: item.color,
+      color: render3d_scale_color(item.color, item.illuminance),
       dir_to_light: render3d_transform_back(item.transform),
       flags: render3d_directional_light_flags(item),
       soft_shadow_size: item.soft_shadow_size.unwrap_or(0.0F),

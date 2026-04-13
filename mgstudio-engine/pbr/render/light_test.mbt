@@ -118,6 +118,14 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
     approx_eq(gpu_lights.directional_lights[0].dir_to_light.z, 1.0F, 1.0e-5F),
     content="true",
   )
+  inspect(
+    approx_eq(
+      gpu_lights.directional_lights[0].color.r,
+      extracted_directional[0].color.r * extracted_directional[0].illuminance,
+      1.0e-5F,
+    ),
+    content="true",
+  )
 }
 
 ///|
@@ -233,6 +241,25 @@ test "pbr render light: directional without shadows keeps zero cascades" {
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(gpu_lights.directional_lights[0].num_cascades, content="0")
   inspect(gpu_lights.directional_lights[0].cascades.length(), content="0")
+}
+
+///|
+test "pbr render light: directional with shadows uses default cascade config" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(extracted[0].cascade_count, content="4")
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.n_directional_lights, content="1")
+  inspect(gpu_lights.directional_lights[0].num_cascades, content="4")
 }
 
 ///|
