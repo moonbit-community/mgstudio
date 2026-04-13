@@ -42,6 +42,19 @@ pub struct ImageLoader {
 } derive(Eq, Debug)
 
 ///|
+pub(all) struct FileTextureError {
+  error : String
+  path : String
+} derive(Eq, Debug)
+
+///|
+pub(all) suberror ImageLoaderError {
+  Io(String)
+  FileTexture(FileTextureError)
+  ArrayLayout(String)
+}
+
+///|
 pub fn ImageLoader::new(supported_compressed_formats : Int) -> ImageLoader {
   ImageLoader::{ supported_compressed_formats }
 }
@@ -66,6 +79,21 @@ pub fn ImageLoader::supported_formats(
 ///|
 pub fn ImageLoader::extensions(_self : ImageLoader) -> Array[String] {
   image_loader_supported_file_extensions()
+}
+
+///|
+pub fn file_texture_error_message(error : FileTextureError) -> String {
+  "Error reading image file \{error.path}: \{error.error}."
+}
+
+///|
+pub fn image_loader_error_message(error : ImageLoaderError) -> String {
+  match error {
+    ImageLoaderError::Io(message) => "Failed to load image bytes: \{message}"
+    ImageLoaderError::FileTexture(file_error) =>
+      "Could not load texture file: \{file_texture_error_message(file_error)}"
+    ImageLoaderError::ArrayLayout(message) => "Invalid array layout: \{message}"
+  }
 }
 
 ///|

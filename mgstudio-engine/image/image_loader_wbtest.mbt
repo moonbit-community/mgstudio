@@ -376,3 +376,28 @@ test "image wb: image loader type exposes supported formats/extensions" {
     content="true",
   )
 }
+
+///|
+test "image wb: image loader error message helpers" {
+  let file_error = FileTextureError::{ error: "decode failed", path: "foo.png" }
+  debug_inspect(
+    file_texture_error_message(file_error) ==
+    "Error reading image file foo.png: decode failed.",
+    content="true",
+  )
+  debug_inspect(
+    image_loader_error_message(ImageLoaderError::Io("eof")) ==
+    "Failed to load image bytes: eof",
+    content="true",
+  )
+  debug_inspect(
+    image_loader_error_message(ImageLoaderError::FileTexture(file_error)) ==
+    "Could not load texture file: Error reading image file foo.png: decode failed.",
+    content="true",
+  )
+  debug_inspect(
+    image_loader_error_message(ImageLoaderError::ArrayLayout("zero rows")) ==
+    "Invalid array layout: zero rows",
+    content="true",
+  )
+}
