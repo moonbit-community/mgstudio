@@ -232,6 +232,14 @@ test "asset host io: tga decode supports RLE true-color payload" {
 }
 
 ///|
+test "asset host io: texture dimensions read from tga header" {
+  debug_inspect(
+    texture_dimensions_from_bytes(test_tga_24_2x1_bytes()),
+    content="Some((2, 1))",
+  )
+}
+
+///|
 fn test_pnm_p6_2x1_bytes() -> Bytes {
   let out : Array[Byte] = []
   for code in @utf8.encode("P6\n2 1\n255\n"[:]) {
@@ -263,6 +271,36 @@ test "asset host io: pnm decode supports binary P6 payload" {
   debug_inspect(decoded.pixels[5].to_uint(), content="255")
   debug_inspect(decoded.pixels[6].to_uint(), content="0")
   debug_inspect(decoded.pixels[7].to_uint(), content="255")
+}
+
+///|
+fn test_pnm_p6_16bit_1x1_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  for code in @utf8.encode("P6\n1 1\n65535\n"[:]) {
+    out.push(code)
+  }
+  // RGB16BE pixel: (65535, 0, 32768)
+  out.push((0xFF).to_byte())
+  out.push((0xFF).to_byte())
+  out.push((0x00).to_byte())
+  out.push((0x00).to_byte())
+  out.push((0x80).to_byte())
+  out.push((0x00).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: pnm decode supports binary P6 16-bit samples" {
+  let bytes = test_pnm_p6_16bit_1x1_bytes()
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Pnm),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(1, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="127")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
 }
 
 ///|
@@ -314,6 +352,40 @@ test "asset host io: pnm decode supports pam P7 payload and dimensions" {
   debug_inspect(decoded.pixels[1].to_uint(), content="20")
   debug_inspect(decoded.pixels[2].to_uint(), content="30")
   debug_inspect(decoded.pixels[3].to_uint(), content="128")
+}
+
+///|
+fn test_pnm_p7_rgba_16bit_1x1_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  for code in @utf8.encode(
+    "P7\nWIDTH 1\nHEIGHT 1\nDEPTH 4\nMAXVAL 65535\nTUPLTYPE RGB_ALPHA\nENDHDR\n"[:],
+  ) {
+    out.push(code)
+  }
+  // RGBA16BE pixel: (65535, 0, 32768, 65535)
+  out.push((0xFF).to_byte())
+  out.push((0xFF).to_byte())
+  out.push((0x00).to_byte())
+  out.push((0x00).to_byte())
+  out.push((0x80).to_byte())
+  out.push((0x00).to_byte())
+  out.push((0xFF).to_byte())
+  out.push((0xFF).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: pnm decode supports pam P7 16-bit samples" {
+  let bytes = test_pnm_p7_rgba_16bit_1x1_bytes()
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Pnm),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(1, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="127")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
 }
 
 ///|

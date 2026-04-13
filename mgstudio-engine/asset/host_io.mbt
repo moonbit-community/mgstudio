@@ -1614,12 +1614,38 @@ fn pnm_read_p7_header(
 
 ///|
 fn pnm_scale_channel(value : Int, max_value : Int) -> Int {
-  if max_value <= 0 {
+  if max_value <= 0 || value <= 0 {
     0
+  } else if value >= max_value {
+    255
   } else if max_value == 255 {
     value
   } else {
     value * 255 / max_value
+  }
+}
+
+///|
+fn pnm_sample_width_bytes(max_value : Int) -> Int {
+  if max_value > 255 { 2 } else { 1 }
+}
+
+///|
+fn pnm_read_binary_sample(
+  bytes : Bytes,
+  start : Int,
+  max_value : Int,
+) -> (Int, Int)? {
+  if max_value > 255 {
+    if start + 1 >= bytes.length() {
+      return None
+    }
+    Some((blob_u16_be_at(bytes, start), start + 2))
+  } else {
+    if start >= bytes.length() {
+      return None
+    }
+    Some((blob_u8_at(bytes, start), start + 1))
   }
 }
 
@@ -1637,7 +1663,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       is Some((width_raw, height_raw, depth, max_value, data_start)) else {
       return None
     }
-    if max_value <= 0 || max_value > 255 {
+    if max_value <= 0 || max_value > 65535 {
       return None
     }
     if width_raw <= 0 || height_raw <= 0 {
@@ -1646,15 +1672,23 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
     let width = clamp_dim(width_raw)
     let height = clamp_dim(height_raw)
     let pixel_count = width * height
-    let data_len = pixel_count * depth
+    let sample_width = pnm_sample_width_bytes(max_value)
+    let data_len = pixel_count * depth * sample_width
     if data_start + data_len > bytes.length() {
       return None
     }
     let pixels = Array::make(rgba8_len(width, height), b'\x00')
     for i in 0..<pixel_count {
-      let src = data_start + i * depth
+      let src_base = data_start + i * depth * sample_width
       let dst = i * 4
-      let channel0 = pnm_scale_channel(blob_u8_at(bytes, src), max_value).to_byte()
+      guard pnm_read_binary_sample(bytes, src_base, max_value)
+        is Some((channel0_raw, _next0)) else {
+        return None
+      }
+      let channel0 = pnm_scale_channel(channel0_raw, max_value).to_byte()
+      let src1 = src_base + sample_width
+      let src2 = src_base + sample_width * 2
+      let src3 = src_base + sample_width * 3
       if depth == 1 {
         pixels[dst] = channel0
         pixels[dst + 1] = channel0
@@ -1663,20 +1697,36 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
         continue
       }
       if depth == 2 {
-        let alpha = pnm_scale_channel(blob_u8_at(bytes, src + 1), max_value).to_byte()
+        guard pnm_read_binary_sample(bytes, src1, max_value)
+          is Some((alpha_raw, _next1)) else {
+          return None
+        }
+        let alpha = pnm_scale_channel(alpha_raw, max_value).to_byte()
         pixels[dst] = channel0
         pixels[dst + 1] = channel0
         pixels[dst + 2] = channel0
         pixels[dst + 3] = alpha
         continue
       }
+      guard pnm_read_binary_sample(bytes, src1, max_value)
+        is Some((channel1_raw, _next1)) else {
+        return None
+      }
+      guard pnm_read_binary_sample(bytes, src2, max_value)
+        is Some((channel2_raw, _next2)) else {
+        return None
+      }
       pixels[dst] = channel0
-      pixels[dst + 1] = pnm_scale_channel(blob_u8_at(bytes, src + 1), max_value).to_byte()
-      pixels[dst + 2] = pnm_scale_channel(blob_u8_at(bytes, src + 2), max_value).to_byte()
-      pixels[dst + 3] = if depth >= 4 {
-        pnm_scale_channel(blob_u8_at(bytes, src + 3), max_value).to_byte()
+      pixels[dst + 1] = pnm_scale_channel(channel1_raw, max_value).to_byte()
+      pixels[dst + 2] = pnm_scale_channel(channel2_raw, max_value).to_byte()
+      if depth >= 4 {
+        guard pnm_read_binary_sample(bytes, src3, max_value)
+          is Some((channel3_raw, _next3)) else {
+          return None
+        }
+        pixels[dst + 3] = pnm_scale_channel(channel3_raw, max_value).to_byte()
       } else {
-        (255).to_byte()
+        pixels[dst + 3] = (255).to_byte()
       }
     }
     return Some(DecodedTextureImage::{
@@ -1702,23 +1752,35 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
     pnm_read_uint_token(bytes, index3)
   }
   guard max_value_and_index is Some((max_value, index4)) else { return None }
-  if max_value <= 0 || max_value > 255 {
+  if max_value <= 0 || max_value > 65535 {
     return None
   }
   let mut data_start = pnm_skip_ws_and_comments(bytes, index4)
   let pixels = Array::make(rgba8_len(width, height), b'\x00')
   let pixel_count = width * height
   if magic == 0x36 {
-    let data_len = pixel_count * 3
+    let sample_width = pnm_sample_width_bytes(max_value)
+    let data_len = pixel_count * 3 * sample_width
     if data_start + data_len > bytes.length() {
       return None
     }
     for i in 0..<pixel_count {
-      let src = data_start + i * 3
+      let src = data_start + i * 3 * sample_width
       let dst = i * 4
-      pixels[dst] = pnm_scale_channel(blob_u8_at(bytes, src), max_value).to_byte()
-      pixels[dst + 1] = pnm_scale_channel(blob_u8_at(bytes, src + 1), max_value).to_byte()
-      pixels[dst + 2] = pnm_scale_channel(blob_u8_at(bytes, src + 2), max_value).to_byte()
+      guard pnm_read_binary_sample(bytes, src, max_value) is Some((r, _next_r)) else {
+        return None
+      }
+      guard pnm_read_binary_sample(bytes, src + sample_width, max_value)
+        is Some((g, _next_g)) else {
+        return None
+      }
+      guard pnm_read_binary_sample(bytes, src + sample_width * 2, max_value)
+        is Some((b, _next_b)) else {
+        return None
+      }
+      pixels[dst] = pnm_scale_channel(r, max_value).to_byte()
+      pixels[dst + 1] = pnm_scale_channel(g, max_value).to_byte()
+      pixels[dst + 2] = pnm_scale_channel(b, max_value).to_byte()
       pixels[dst + 3] = (255).to_byte()
     }
     return Some(DecodedTextureImage::{
@@ -1728,12 +1790,17 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
     })
   }
   if magic == 0x35 {
-    let data_len = pixel_count
+    let sample_width = pnm_sample_width_bytes(max_value)
+    let data_len = pixel_count * sample_width
     if data_start + data_len > bytes.length() {
       return None
     }
     for i in 0..<pixel_count {
-      let gray = pnm_scale_channel(blob_u8_at(bytes, data_start + i), max_value).to_byte()
+      guard pnm_read_binary_sample(bytes, data_start + i * sample_width, max_value)
+        is Some((gray_value, _next)) else {
+        return None
+      }
+      let gray = pnm_scale_channel(gray_value, max_value).to_byte()
       let dst = i * 4
       pixels[dst] = gray
       pixels[dst + 1] = gray
@@ -1912,6 +1979,103 @@ fn png_dimensions(bytes : Bytes) -> (Int, Int)? {
   Some(
     (clamp_dim(blob_u32_be_at(bytes, 16)), clamp_dim(blob_u32_be_at(bytes, 20))),
   )
+}
+
+///|
+fn tga_dimensions(bytes : Bytes) -> (Int, Int)? {
+  if bytes.length() < 18 {
+    return None
+  }
+  let color_map_type = blob_u8_at(bytes, 1)
+  let image_type = blob_u8_at(bytes, 2)
+  if color_map_type != 0 {
+    return None
+  }
+  if image_type != 2 && image_type != 3 && image_type != 10 && image_type != 11 {
+    return None
+  }
+  let pixel_depth = blob_u8_at(bytes, 16)
+  if image_type == 2 || image_type == 10 {
+    if pixel_depth != 24 && pixel_depth != 32 {
+      return None
+    }
+  } else if pixel_depth != 8 {
+    return None
+  }
+  let width = clamp_dim(blob_u16_at(bytes, 12))
+  let height = clamp_dim(blob_u16_at(bytes, 14))
+  if width <= 0 || height <= 0 {
+    None
+  } else {
+    Some((width, height))
+  }
+}
+
+///|
+fn jpeg_is_sof_marker(marker : Int) -> Bool {
+  marker == 0xC0 ||
+  marker == 0xC1 ||
+  marker == 0xC2 ||
+  marker == 0xC3 ||
+  marker == 0xC5 ||
+  marker == 0xC6 ||
+  marker == 0xC7 ||
+  marker == 0xC9 ||
+  marker == 0xCA ||
+  marker == 0xCB ||
+  marker == 0xCD ||
+  marker == 0xCE ||
+  marker == 0xCF
+}
+
+///|
+fn jpeg_dimensions(bytes : Bytes) -> (Int, Int)? {
+  if !is_jpeg_bytes(bytes) || bytes.length() < 4 {
+    return None
+  }
+  let mut index = 2
+  while index + 3 < bytes.length() {
+    while index < bytes.length() && blob_u8_at(bytes, index) != 0xFF {
+      index = index + 1
+    }
+    if index + 1 >= bytes.length() {
+      break
+    }
+    while index + 1 < bytes.length() && blob_u8_at(bytes, index + 1) == 0xFF {
+      index = index + 1
+    }
+    if index + 1 >= bytes.length() {
+      break
+    }
+    let marker = blob_u8_at(bytes, index + 1)
+    if marker == 0xD9 || marker == 0xDA {
+      return None
+    }
+    if marker == 0x01 || (marker >= 0xD0 && marker <= 0xD7) {
+      index = index + 2
+      continue
+    }
+    if index + 3 >= bytes.length() {
+      return None
+    }
+    let segment_length = blob_u16_be_at(bytes, index + 2)
+    if segment_length < 2 {
+      return None
+    }
+    if jpeg_is_sof_marker(marker) {
+      if index + 8 >= bytes.length() {
+        return None
+      }
+      let height = clamp_dim(blob_u16_be_at(bytes, index + 5))
+      let width = clamp_dim(blob_u16_be_at(bytes, index + 7))
+      if width <= 0 || height <= 0 {
+        return None
+      }
+      return Some((width, height))
+    }
+    index = index + 2 + segment_length
+  }
+  None
 }
 
 ///|
@@ -2611,6 +2775,9 @@ fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
   if png_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
+  if jpeg_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
   if pnm_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
@@ -2636,6 +2803,9 @@ fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
     return Some((info.width, info.height))
   }
   if ktx2_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if tga_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
   None
