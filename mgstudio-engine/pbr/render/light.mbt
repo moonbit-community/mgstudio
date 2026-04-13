@@ -154,6 +154,7 @@ pub struct ExtractedDirectionalLight3d {
   affects_lightmapped_mesh_diffuse : Bool
   soft_shadow_size : Float?
   cascade_count : Int
+  cascade_overlap_proportion : Float
 }
 
 ///|
@@ -333,6 +334,10 @@ fn render3d_extract_directional_light(
     Some(config) => config.bounds.length()
     None => 0
   }
+  let cascade_overlap_proportion = match light.cascade_shadow_config {
+    Some(config) => config.overlap_proportion
+    None => @light.CascadeShadowConfig::default().overlap_proportion
+  }
   ExtractedDirectionalLight3d::{
     entity,
     color: light.color,
@@ -352,6 +357,7 @@ fn render3d_extract_directional_light(
     } else {
       cascade_count
     },
+    cascade_overlap_proportion,
   }
 }
 
@@ -460,10 +466,14 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   for i in 0..<max_count {
     let item = directional[i]
     let cascades : Array[GpuDirectionalCascade3d] = []
-    let cascade_count = if item.cascade_count <= 0 {
-      1
+    let cascade_count = if item.shadow_maps_enabled {
+      if item.cascade_count <= 0 {
+        1
+      } else {
+        item.cascade_count
+      }
     } else {
-      item.cascade_count
+      0
     }
     for _ in 0..<cascade_count {
       cascades.push(render3d_gpu_directional_cascade_default())
@@ -477,7 +487,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       shadow_depth_bias: item.shadow_depth_bias,
       shadow_normal_bias: item.shadow_normal_bias,
       num_cascades: cascades.length(),
-      cascades_overlap_proportion: 0.2F,
+      cascades_overlap_proportion: item.cascade_overlap_proportion,
     })
   }
   GpuLights3d::{

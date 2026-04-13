@@ -185,3 +185,52 @@ test "pbr render light: spot/directional propagate affects_lightmapped_mesh_diff
   inspect(directionals.length(), content="1")
   inspect(directionals[0].affects_lightmapped_mesh_diffuse, content="false")
 }
+
+///|
+test "pbr render light: directional cascade overlap propagates to gpu lights" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let updated = @light.CascadeShadowConfigBuilder::default().with_overlap_proportion(
+    0.37F,
+  ).build()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_cascade_shadow_config(Some(updated)),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(
+    approx_eq(extracted[0].cascade_overlap_proportion, 0.37F, 1.0e-6F),
+    content="true",
+  )
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.n_directional_lights, content="1")
+  inspect(
+    approx_eq(
+      gpu_lights.directional_lights[0].cascades_overlap_proportion,
+      0.37F,
+      1.0e-6F,
+    ),
+    content="true",
+  )
+}
+
+///|
+test "pbr render light: directional without shadows keeps zero cascades" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.n_directional_lights, content="1")
+  inspect(gpu_lights.directional_lights[0].num_cascades, content="0")
+  inspect(gpu_lights.directional_lights[0].cascades.length(), content="0")
+}
