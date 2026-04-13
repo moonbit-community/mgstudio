@@ -58,7 +58,7 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   let ecs_world = world
-  render3d_runtime_initialized_ref.val = true
+  @pbr_render.render3d_set_runtime_initialized(world, true)
   let ambient = get_global_ambient_light_resource(ecs_world)
   if !ambient.is_present() {
     ambient.insert(GlobalAmbientLight::default())

@@ -85,11 +85,34 @@ priv struct FreeCameraSystemState {
 }
 
 ///|
-let free_camera_system_state : Ref[FreeCameraSystemState] = Ref::new(FreeCameraSystemState::{
-  toggle_cursor_grab: false,
-  mouse_cursor_grab: false,
-  last_mouse_position: None,
-})
+let free_camera_system_state_key : @ecs.ResourceKey[FreeCameraSystemState] = @ecs.register_resource(
+  debug_name="mgstudio.pbr.free_camera.system_state",
+)
+
+///|
+impl @app.Resource for FreeCameraSystemState with resource() {
+  free_camera_system_state_key
+}
+
+///|
+fn free_camera_system_state_ref_or_init(
+  world : @ecs.World,
+) -> Ref[FreeCameraSystemState] {
+  if (try! world.get_resource(FreeCameraSystemState::resource())) is None {
+    world.insert_resource(
+      FreeCameraSystemState::resource(),
+      FreeCameraSystemState::{
+        toggle_cursor_grab: false,
+        mouse_cursor_grab: false,
+        last_mouse_position: None,
+      },
+    )
+  }
+  match (try! world.get_resource_ref_mut(FreeCameraSystemState::resource())) {
+    Some(state_ref) => state_ref
+    None => abort("Missing FreeCameraSystemState resource")
+  }
+}
 
 ///|
 fn free_camera_angles_from_transform(
@@ -125,7 +148,8 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = @pbr_render.render3d_default_time_or_default(world).delta_seconds()
-  let mut system_state = free_camera_system_state.val
+  let system_state_ref = free_camera_system_state_ref_or_init(world)
+  let mut system_state = system_state_ref.val
 
   let controlled_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_free_camera, fn(entity, _config) {
@@ -176,7 +200,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
       @window.window_set_cursor_grab_mode(mode=@window.CursorGrabMode::GrabNone)
       @window.window_set_cursor_visible(visible=true)
     }
-    free_camera_system_state.val = system_state
+    system_state_ref.val = system_state
     try! (world.replace(controlled_entity, ecs_key_free_camera_state, state)
     |> ignore)
     return
@@ -320,7 +344,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
     }
   }
 
-  free_camera_system_state.val = system_state
+  system_state_ref.val = system_state
   try! (world.replace(
     controlled_entity, @transform.ecs_key_transform, transform,
   )

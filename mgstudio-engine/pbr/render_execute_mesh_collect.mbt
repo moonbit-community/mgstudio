@@ -272,7 +272,10 @@ fn render3d_execute_collect_meshes(
   if needs_mesh_previous_transform {
     motion_blur_history_sync(world, meshes, motion_blur_frame_stamp)
   }
-  render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()
+  @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
+    world,
+    meshes.length(),
+  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",

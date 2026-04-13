@@ -26,12 +26,14 @@ pub fn Render3dPluginState::default() -> Render3dPluginState {
 }
 
 ///|
-pub fn render3d_queue_diagnostics_snapshot() -> (Int, Int, Float, Float) {
+pub fn render3d_queue_diagnostics_snapshot(
+  world : @ecs.World,
+) -> (Int, Int, Float, Float) {
   (
-    render3d_diagnostic_prepared_camera_count(),
-    render3d_diagnostic_queued_visible_mesh_count(),
-    render3d_diagnostic_queue_cpu_ms(),
-    render3d_diagnostic_execute_cpu_ms(),
+    render3d_diagnostic_prepared_camera_count(world),
+    render3d_diagnostic_queued_visible_mesh_count(world),
+    render3d_diagnostic_queue_cpu_ms(world),
+    render3d_diagnostic_execute_cpu_ms(world),
   )
 }
 
@@ -52,8 +54,12 @@ pub fn render3d_build_mesh_view_bindings(
 }
 
 ///|
-pub fn render3d_plugin_state_from_diagnostics() -> Render3dPluginState {
-  let (_, _, queue_cpu_ms, execute_cpu_ms) = render3d_queue_diagnostics_snapshot()
+pub fn render3d_plugin_state_from_diagnostics(
+  world : @ecs.World,
+) -> Render3dPluginState {
+  let (_, _, queue_cpu_ms, execute_cpu_ms) = render3d_queue_diagnostics_snapshot(
+    world,
+  )
   Render3dPluginState::{ queue_cpu_ms, execute_cpu_ms }
 }
 

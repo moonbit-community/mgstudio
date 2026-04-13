@@ -402,7 +402,9 @@ fn render_diagnostics_record_snapshot(
 }
 
 ///|
-fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
+fn render_diagnostics_collect_snapshot(
+  world : @ecs.World,
+) -> RenderDiagnosticsMeasurements {
   let gpu_snapshot = @render.render_diagnostics_snapshot()
   RenderDiagnosticsMeasurements::{
     prepared_cameras_2d: Some(
@@ -413,12 +415,14 @@ fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
     ),
     queue_cpu_ms_2d: Some(@sprite_render.render2d_diagnostic_queue_cpu_ms()),
     execute_cpu_ms_2d: Some(@sprite_render.render2d_diagnostic_execute_cpu_ms()),
-    prepared_cameras_3d: Some(@pbr.render3d_diagnostic_prepared_camera_count()),
-    visible_meshes_3d: Some(
-      @pbr.render3d_diagnostic_queued_visible_mesh_count(),
+    prepared_cameras_3d: Some(
+      @pbr.render3d_diagnostic_prepared_camera_count(world),
     ),
-    queue_cpu_ms_3d: Some(@pbr.render3d_diagnostic_queue_cpu_ms()),
-    execute_cpu_ms_3d: Some(@pbr.render3d_diagnostic_execute_cpu_ms()),
+    visible_meshes_3d: Some(
+      @pbr.render3d_diagnostic_queued_visible_mesh_count(world),
+    ),
+    queue_cpu_ms_3d: Some(@pbr.render3d_diagnostic_queue_cpu_ms(world)),
+    execute_cpu_ms_3d: Some(@pbr.render3d_diagnostic_execute_cpu_ms(world)),
     pass_total_count: gpu_snapshot.pass_total_count,
     pass_2d_count: gpu_snapshot.pass_2d_count,
     pass_3d_main_count: gpu_snapshot.pass_3d_main_count,
@@ -445,6 +449,6 @@ fn render_diagnostics_system(world : @ecs.World) -> Unit {
   render_diagnostics_record_snapshot(
     store_ref.val,
     sequence,
-    render_diagnostics_collect_snapshot(),
+    render_diagnostics_collect_snapshot(world),
   )
 }

@@ -382,22 +382,6 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput]
 }
 
-///|
-let render3d_runtime_initialized_ref : Ref[Bool] = @pbr_render.render3d_runtime_initialized_ref
-
-///|
-let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = @pbr_render.render3d_diagnostic_queued_visible_mesh_count_ref
-
-///|
-let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = @pbr_render.render3d_diagnostic_prepared_camera_count_ref
-
-///|
-let render3d_diagnostic_queue_cpu_ms_ref : Ref[Float] = @pbr_render.render3d_diagnostic_queue_cpu_ms_ref
-
-///|
-let render3d_diagnostic_execute_cpu_ms_ref : Ref[Float] = @pbr_render.render3d_diagnostic_execute_cpu_ms_ref
-
-///|
 fn render3d_ray_local_aabb_hit(
   origin : @math.Vec3,
   direction : @math.Vec3,

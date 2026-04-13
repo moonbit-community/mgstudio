@@ -14,7 +14,8 @@
 
 ///|
 test "pbr diagnostic: snapshot can be read" {
-  let snapshot = render3d_diagnostics_snapshot()
+  let world = @ecs.World::new()
+  let snapshot = render3d_diagnostics_snapshot(world)
   inspect(snapshot.prepared_camera_count >= 0, content="true")
   inspect(snapshot.queued_visible_mesh_count >= 0, content="true")
 }

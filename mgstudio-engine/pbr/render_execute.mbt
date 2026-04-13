@@ -20,10 +20,10 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     "execute_3d",
   )
   fn finish_execute() -> Unit {
-    render3d_diagnostic_execute_cpu_ms_ref.val = (
-        @time.host_time_now() - execute_start
-      ) *
-      1000.0F
+    @pbr_render.render3d_set_diagnostic_execute_cpu_ms(
+      world,
+      (@time.host_time_now() - execute_start) * 1000.0F,
+    )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
       "execute_3d",
@@ -75,8 +75,11 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   @pbr_render.render3d_extract_skin_bindings(
     source_world, phase_state_ref, world_transform_cache_ref,
   )
-  render3d_diagnostic_prepared_camera_count_ref.val = phase_state_ref.val.prepared_camera_order.length()
-  render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+  @pbr_render.render3d_set_diagnostic_prepared_camera_count(
+    world,
+    phase_state_ref.val.prepared_camera_order.length(),
+  )
+  @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
 }
 
 ///|
@@ -103,7 +106,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   if phase_state_ref.val.prepared_camera_order.length() == 0 {
     render3d_queue_clear_frame(world)
-    render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+    @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
   let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
@@ -126,7 +129,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     phase_state_ref.val.last_camera3d_count = 0
     phase_state_ref.val.camera_order_needs_refresh = true
     render3d_queue_clear_frame(world)
-    render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+    @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
   let meshes = render3d_execute_collect_meshes(
@@ -141,7 +144,10 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   )
   render3d_queue_store_frame(world, frame_config, cameras, meshes)
   render3d_queue_update_prepared_camera_queues(world, prepared_camera_queues)
-  render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()
+  @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
+    world,
+    meshes.length(),
+  )
 }
 
 ///|
@@ -200,10 +206,10 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     "queue_3d",
   )
   fn finish_queue() -> Unit {
-    render3d_diagnostic_queue_cpu_ms_ref.val = (
-        @time.host_time_now() - queue_start
-      ) *
-      1000.0F
+    @pbr_render.render3d_set_diagnostic_queue_cpu_ms(
+      world,
+      (@time.host_time_now() - queue_start) * 1000.0F,
+    )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
       "queue_3d",
@@ -211,7 +217,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     )
   }
   if !render3d_queue_has_frame(world) {
-    render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+    @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
   } else {
     match render3d_queue_take_frame(world) {
       Some(frame) => {

@@ -13,33 +13,33 @@
 // limitations under the License.
 
 ///|
-pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
-  @pbr_render.render3d_diagnostic_queued_visible_mesh_count()
+pub fn render3d_diagnostic_queued_visible_mesh_count(world : @ecs.World) -> Int {
+  @pbr_render.render3d_diagnostic_queued_visible_mesh_count(world)
 }
 
 ///|
-pub fn render3d_diagnostic_prepared_camera_count() -> Int {
-  @pbr_render.render3d_diagnostic_prepared_camera_count()
+pub fn render3d_diagnostic_prepared_camera_count(world : @ecs.World) -> Int {
+  @pbr_render.render3d_diagnostic_prepared_camera_count(world)
 }
 
 ///|
-pub fn render3d_diagnostic_queue_cpu_ms() -> Float {
-  @pbr_render.render3d_diagnostic_queue_cpu_ms()
+pub fn render3d_diagnostic_queue_cpu_ms(world : @ecs.World) -> Float {
+  @pbr_render.render3d_diagnostic_queue_cpu_ms(world)
 }
 
 ///|
-pub fn render3d_diagnostic_execute_cpu_ms() -> Float {
-  @pbr_render.render3d_diagnostic_execute_cpu_ms()
+pub fn render3d_diagnostic_execute_cpu_ms(world : @ecs.World) -> Float {
+  @pbr_render.render3d_diagnostic_execute_cpu_ms(world)
 }
 
 ///|
-pub fn render3d_prepared_camera_count() -> Int? {
-  @pbr_render.render3d_prepared_camera_count()
+pub fn render3d_prepared_camera_count(world : @ecs.World) -> Int? {
+  @pbr_render.render3d_prepared_camera_count(world)
 }
 
 ///|
-pub fn render3d_queued_visible_mesh_count() -> Int? {
-  @pbr_render.render3d_queued_visible_mesh_count()
+pub fn render3d_queued_visible_mesh_count(world : @ecs.World) -> Int? {
+  @pbr_render.render3d_queued_visible_mesh_count(world)
 }
 
 ///|
@@ -61,11 +61,15 @@ pub fn Render3dDiagnosticsSnapshot::default() -> Render3dDiagnosticsSnapshot {
 }
 
 ///|
-pub fn render3d_diagnostics_snapshot() -> Render3dDiagnosticsSnapshot {
+pub fn render3d_diagnostics_snapshot(
+  world : @ecs.World,
+) -> Render3dDiagnosticsSnapshot {
   Render3dDiagnosticsSnapshot::{
-    prepared_camera_count: render3d_diagnostic_prepared_camera_count(),
-    queued_visible_mesh_count: render3d_diagnostic_queued_visible_mesh_count(),
-    queue_cpu_ms: render3d_diagnostic_queue_cpu_ms(),
-    execute_cpu_ms: render3d_diagnostic_execute_cpu_ms(),
+    prepared_camera_count: render3d_diagnostic_prepared_camera_count(world),
+    queued_visible_mesh_count: render3d_diagnostic_queued_visible_mesh_count(
+      world,
+    ),
+    queue_cpu_ms: render3d_diagnostic_queue_cpu_ms(world),
+    execute_cpu_ms: render3d_diagnostic_execute_cpu_ms(world),
   }
 }
