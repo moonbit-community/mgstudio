@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr/deferred" @pbr_deferred,
   "Milky2018/mgstudio/pbr/lightmap" @lightmap,
   "Milky2018/mgstudio/pbr/prepass" @pbr_prepass,
   "Milky2018/mgstudio/post_process",
