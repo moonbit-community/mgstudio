@@ -873,6 +873,15 @@ fn is_farbfeld_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
+fn is_qoi_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 14 &&
+  blob_u8_at(bytes, 0) == 0x71 &&
+  blob_u8_at(bytes, 1) == 0x6F &&
+  blob_u8_at(bytes, 2) == 0x69 &&
+  blob_u8_at(bytes, 3) == 0x66
+}
+
+///|
 fn blob_u16_at(bytes : Bytes, index : Int) -> Int {
   blob_u8_at(bytes, index) | (blob_u8_at(bytes, index + 1) << 8)
 }
@@ -1158,6 +1167,141 @@ fn decode_texture_image_from_farbfeld(bytes : Bytes) -> DecodedTextureImage? {
 }
 
 ///|
+priv struct QoiPixel {
+  r : Int
+  g : Int
+  b : Int
+  a : Int
+}
+
+///|
+fn qoi_pixel_hash(pixel : QoiPixel) -> Int {
+  (pixel.r * 3 + pixel.g * 5 + pixel.b * 7 + pixel.a * 11) % 64
+}
+
+///|
+fn qoi_dimensions(bytes : Bytes) -> (Int, Int)? {
+  guard is_qoi_bytes(bytes) else { return None }
+  let width = clamp_dim(blob_u32_be_at(bytes, 4))
+  let height = clamp_dim(blob_u32_be_at(bytes, 8))
+  if width <= 0 || height <= 0 {
+    None
+  } else {
+    Some((width, height))
+  }
+}
+
+///|
+fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
+  guard qoi_dimensions(bytes) is Some((width, height)) else { return None }
+  if bytes.length() < 22 {
+    return None
+  }
+  let channels = blob_u8_at(bytes, 12)
+  if channels != 3 && channels != 4 {
+    return None
+  }
+  let pixel_count = width * height
+  let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  let index : Array[QoiPixel] = Array::make(64, QoiPixel::{
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 0,
+  })
+  let mut previous = QoiPixel::{ r: 0, g: 0, b: 0, a: 255 }
+  let mut source = 14
+  let mut decoded = 0
+
+  let write_pixel = fn(pixel : QoiPixel) {
+    let dst = decoded * 4
+    pixels[dst] = pixel.r.to_byte()
+    pixels[dst + 1] = pixel.g.to_byte()
+    pixels[dst + 2] = pixel.b.to_byte()
+    pixels[dst + 3] = pixel.a.to_byte()
+    index[qoi_pixel_hash(pixel)] = pixel
+    previous = pixel
+    decoded = decoded + 1
+  }
+
+  while decoded < pixel_count {
+    if source >= bytes.length() {
+      return None
+    }
+    let tag = blob_u8_at(bytes, source)
+    source = source + 1
+    if tag == 0xFE {
+      if source + 2 >= bytes.length() {
+        return None
+      }
+      write_pixel(QoiPixel::{
+        r: blob_u8_at(bytes, source),
+        g: blob_u8_at(bytes, source + 1),
+        b: blob_u8_at(bytes, source + 2),
+        a: previous.a,
+      })
+      source = source + 3
+      continue
+    }
+    if tag == 0xFF {
+      if source + 3 >= bytes.length() {
+        return None
+      }
+      write_pixel(QoiPixel::{
+        r: blob_u8_at(bytes, source),
+        g: blob_u8_at(bytes, source + 1),
+        b: blob_u8_at(bytes, source + 2),
+        a: blob_u8_at(bytes, source + 3),
+      })
+      source = source + 4
+      continue
+    }
+    let op = tag & 0xC0
+    if op == 0x00 {
+      write_pixel(index[tag & 0x3F])
+      continue
+    }
+    if op == 0x40 {
+      let dr = ((tag >> 4) & 0x03) - 2
+      let dg = ((tag >> 2) & 0x03) - 2
+      let db = (tag & 0x03) - 2
+      write_pixel(QoiPixel::{
+        r: (previous.r + dr) & 0xFF,
+        g: (previous.g + dg) & 0xFF,
+        b: (previous.b + db) & 0xFF,
+        a: previous.a,
+      })
+      continue
+    }
+    if op == 0x80 {
+      if source >= bytes.length() {
+        return None
+      }
+      let b2 = blob_u8_at(bytes, source)
+      source = source + 1
+      let dg = (tag & 0x3F) - 32
+      let dr = dg + ((b2 >> 4) & 0x0F) - 8
+      let db = dg + (b2 & 0x0F) - 8
+      write_pixel(QoiPixel::{
+        r: (previous.r + dr) & 0xFF,
+        g: (previous.g + dg) & 0xFF,
+        b: (previous.b + db) & 0xFF,
+        a: previous.a,
+      })
+      continue
+    }
+    let run = (tag & 0x3F) + 1
+    for _ in 0..<run {
+      if decoded >= pixel_count {
+        break
+      }
+      write_pixel(previous)
+    }
+  }
+  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+}
+
+///|
 fn pnm_is_whitespace(code : Int) -> Bool {
   code == 32 ||
   code == 9 ||
@@ -1343,11 +1487,19 @@ fn decode_texture_image_with_container(
       return Some(decoded)
     }
   }
+  if container is Some(@image.ImageContainerFormat::Qoi) {
+    if decode_texture_image_from_qoi(bytes) is Some(decoded) {
+      return Some(decoded)
+    }
+  }
   if is_png_bytes(bytes) {
     return decode_texture_image_from_gm_png(bytes)
   }
   if is_jpeg_bytes(bytes) {
     return decode_texture_image_from_gm_jpeg(bytes)
+  }
+  if is_qoi_bytes(bytes) {
+    return decode_texture_image_from_qoi(bytes)
   }
   if is_farbfeld_bytes(bytes) {
     return decode_texture_image_from_farbfeld(bytes)
@@ -1880,6 +2032,9 @@ fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
     return Some(dims)
   }
   if farbfeld_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if qoi_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
   if bmp_decode_info(bytes) is Some(info) {

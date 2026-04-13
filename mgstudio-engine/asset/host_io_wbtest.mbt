@@ -258,3 +258,46 @@ test "asset host io: farbfeld decode and dimensions work" {
   // 0x8000 >> 8 = 128
   debug_inspect(decoded.pixels[7].to_uint(), content="128")
 }
+
+///|
+fn test_qoi_1x1_red_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  for code in @utf8.encode("qoif"[:]) {
+    out.push(code)
+  }
+  push_u32_be(out, 1U) // width
+  push_u32_be(out, 1U) // height
+  out.push((4).to_byte()) // channels
+  out.push((0).to_byte()) // colorspace
+  // QOI_OP_RGBA + pixel
+  out.push((0xFF).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  // End marker
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((1).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: qoi decode and dimensions work" {
+  let bytes = test_qoi_1x1_red_bytes()
+  debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Qoi),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(1, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+}
