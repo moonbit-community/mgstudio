@@ -2463,8 +2463,10 @@ fn scene_build_material_component(
 }
 
 ///|
-fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange? {
-  let policy = scene_get_gltf_lod_visibility_policy()
+fn gltf_lod_visibility_range_with_policy(
+  policy : GltfLodVisibilityPolicy,
+  lod_level : Int,
+) -> @visibility.VisibilityRange? {
   if !policy.enabled {
     return None
   }
@@ -2486,6 +2488,14 @@ fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange? {
     @visibility.VisibilityRange::new(
       start_min, start_max, end_min, end_max, false,
     ),
+  )
+}
+
+///|
+fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange? {
+  gltf_lod_visibility_range_with_policy(
+    scene_get_gltf_lod_visibility_policy(),
+    lod_level,
   )
 }
 

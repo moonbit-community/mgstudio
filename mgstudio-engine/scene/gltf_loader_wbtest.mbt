@@ -285,20 +285,20 @@ test "scene gltf wb: parse node MSFT_lod ids" {
 
 ///|
 test "scene gltf wb: default visibility ranges for lod levels" {
-  scene_reset_gltf_lod_visibility_policy()
-  let lod0 = gltf_lod_visibility_range(0).unwrap()
+  let policy = GltfLodVisibilityPolicy::default()
+  let lod0 = gltf_lod_visibility_range_with_policy(policy, 0).unwrap()
   debug_inspect(lod0.start_margin_min.to_double(), content="0")
   debug_inspect(lod0.start_margin_max.to_double(), content="0")
   debug_inspect(lod0.end_margin_min.to_double(), content="3")
   debug_inspect(lod0.end_margin_max.to_double(), content="4")
 
-  let lod1 = gltf_lod_visibility_range(1).unwrap()
+  let lod1 = gltf_lod_visibility_range_with_policy(policy, 1).unwrap()
   debug_inspect(lod1.start_margin_min.to_double(), content="3")
   debug_inspect(lod1.start_margin_max.to_double(), content="4")
   debug_inspect(lod1.end_margin_min.to_double(), content="8")
   debug_inspect(lod1.end_margin_max.to_double(), content="9")
 
-  let lod2 = gltf_lod_visibility_range(2).unwrap()
+  let lod2 = gltf_lod_visibility_range_with_policy(policy, 2).unwrap()
   debug_inspect(lod2.start_margin_min.to_double(), content="8")
   debug_inspect(lod2.start_margin_max.to_double(), content="9")
   debug_inspect(lod2.end_margin_min.to_double(), content="13")
@@ -307,32 +307,30 @@ test "scene gltf wb: default visibility ranges for lod levels" {
 
 ///|
 test "scene gltf wb: custom lod visibility policy and disable switch" {
-  scene_set_gltf_lod_visibility_policy(
-    GltfLodVisibilityPolicy::default()
-    .with_first_lod_range(1.0F, 2.0F, 11.0F, 12.0F)
-    .with_step(2.0F),
-  )
-  let lod0 = gltf_lod_visibility_range(0).unwrap()
+  let custom_policy = GltfLodVisibilityPolicy::default()
+  .with_first_lod_range(1.0F, 2.0F, 11.0F, 12.0F)
+  .with_step(2.0F)
+  let lod0 = gltf_lod_visibility_range_with_policy(custom_policy, 0).unwrap()
   debug_inspect(lod0.start_margin_min.to_double(), content="1")
   debug_inspect(lod0.start_margin_max.to_double(), content="2")
   debug_inspect(lod0.end_margin_min.to_double(), content="11")
   debug_inspect(lod0.end_margin_max.to_double(), content="12")
 
-  let lod2 = gltf_lod_visibility_range(2).unwrap()
+  let lod2 = gltf_lod_visibility_range_with_policy(custom_policy, 2).unwrap()
   debug_inspect(lod2.start_margin_min.to_double(), content="13")
   debug_inspect(lod2.start_margin_max.to_double(), content="14")
   debug_inspect(lod2.end_margin_min.to_double(), content="15")
   debug_inspect(lod2.end_margin_max.to_double(), content="16")
 
-  scene_set_gltf_lod_visibility_policy(
-    scene_get_gltf_lod_visibility_policy().with_enabled(false),
-  )
-  let disabled_is_none = match gltf_lod_visibility_range(0) {
+  let disabled_policy = custom_policy.with_enabled(false)
+  let disabled_is_none = match gltf_lod_visibility_range_with_policy(
+    disabled_policy,
+    0,
+  ) {
     None => true
     Some(_) => false
   }
   debug_inspect(disabled_is_none, content="true")
-  scene_reset_gltf_lod_visibility_policy()
 }
 
 ///|

@@ -215,11 +215,6 @@ pub fn GltfLodVisibilityPolicy::with_step(
 }
 
 ///|
-let scene_gltf_lod_visibility_policy_ref : Ref[GltfLodVisibilityPolicy] = Ref::new(
-  GltfLodVisibilityPolicy::default(),
-)
-
-///|
 fn scene_pending() -> Scene {
   Scene::{ nodes3d: [], gltf_scene_extras: None, ready: false }
 }
@@ -631,7 +626,6 @@ fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
 pub fn scene_set_gltf_lod_visibility_policy(
   policy : GltfLodVisibilityPolicy,
 ) -> Unit {
-  scene_gltf_lod_visibility_policy_ref.val = policy
   if scene_registry_mut_if_present() is Some(state_ref) {
     state_ref.val.lod_visibility_policy = policy
   }
@@ -641,7 +635,7 @@ pub fn scene_set_gltf_lod_visibility_policy(
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy {
   match scene_registry_if_present() {
     Some(state) => state.lod_visibility_policy
-    None => scene_gltf_lod_visibility_policy_ref.val
+    None => GltfLodVisibilityPolicy::default()
   }
 }
 

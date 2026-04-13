@@ -105,14 +105,25 @@ fn scene_runtime_plugin_base(
 }
 
 ///|
-pub(all) struct ScenePlugin {}
+pub(all) struct ScenePlugin {
+  lod_visibility_policy : GltfLodVisibilityPolicy
+}
 
 ///|
 const SCENE_PLUGIN_NAME : String = "mgstudio.scene.ScenePlugin"
 
 ///|
 pub fn ScenePlugin::default() -> ScenePlugin {
-  ScenePlugin::{  }
+  ScenePlugin::{ lod_visibility_policy: GltfLodVisibilityPolicy::default() }
+}
+
+///|
+pub fn ScenePlugin::with_gltf_lod_visibility_policy(
+  self : ScenePlugin,
+  policy : GltfLodVisibilityPolicy,
+) -> ScenePlugin {
+  ignore(self)
+  ScenePlugin::{ lod_visibility_policy: policy }
 }
 
 ///|
@@ -135,7 +146,7 @@ pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 pub fn scene_plugin_with(
   app : @app.App[@ecs.World],
-  _plugin : ScenePlugin,
+  plugin : ScenePlugin,
 ) -> @app.App[@ecs.World] {
   scene_runtime_plugin_base(
     scene_init_gltf_assets(app)
@@ -148,7 +159,7 @@ pub fn scene_plugin_with(
         scene_registry: [],
         animation_registry: [],
         mesh_registry: [],
-        lod_visibility_policy: scene_gltf_lod_visibility_policy_ref.val,
+        lod_visibility_policy: plugin.lod_visibility_policy,
       }
     }),
   )
