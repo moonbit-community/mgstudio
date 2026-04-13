@@ -87,6 +87,13 @@ pub fn AccessibilityRequested::handle(
 }
 
 ///|
+pub fn AccessibilityRequested::clone(
+  self : AccessibilityRequested,
+) -> AccessibilityRequested {
+  AccessibilityRequested::{ requested: self.requested }
+}
+
+///|
 pub struct ManageAccessibilityUpdates {
   mut value : Bool
 }

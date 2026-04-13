@@ -29,3 +29,28 @@ test "a11y: accessibility plugin initializes resources and ambiguous allowance" 
     app.is_ambiguous_component_allowed(key=ecs_key_accessibility_node),
   )
 }
+
+///|
+test "a11y: AccessibilityRequested clone shares underlying request flag" {
+  let requested = AccessibilityRequested::default()
+  let cloned = requested.clone()
+  assert_true(!requested.get())
+  assert_true(!cloned.get())
+  cloned.set(true)
+  assert_true(requested.get())
+  assert_true(cloned.get())
+  let handle = requested.handle()
+  handle.val = false
+  assert_true(!requested.get())
+  assert_true(!cloned.get())
+}
+
+///|
+test "a11y: ManageAccessibilityUpdates defaults true and supports mutation" {
+  let updates = ManageAccessibilityUpdates::default()
+  assert_true(updates.get())
+  updates.set(false)
+  assert_true(!updates.get())
+  updates.set(true)
+  assert_true(updates.get())
+}
