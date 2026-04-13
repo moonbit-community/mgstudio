@@ -11,8 +11,8 @@ This file must not exceed 200 lines.
 | `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
 | `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 72% | 72% | 🟡 In Progress | Remaining parity gaps concentrate in material/light/fog/detail behavior, not stage ownership. |
-| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 74% | 74% | 🟡 In Progress | Core stage split is landed; remaining gaps are feature-depth deltas (meshlet/advanced passes). |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 74% | 74% | 🟡 In Progress | Remaining parity gaps concentrate in light/fog/meshlet/deferred depth behavior. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 77% | 77% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
@@ -58,6 +58,10 @@ This file must not exceed 200 lines.
 - [x] `render/pbr`: close `RENDER-010` by removing execute-side queue-build/preprocess duties from camera hot path.
 - [x] `render/pbr`: close `RENDER-011` by confining depth-pyramid and late-occlusion preprocess dispatch to queue stage.
 - [x] `render/pbr`: close `RENDER-012` by wiring concrete work to staged `prepare meshes -> prepare bind groups -> queue -> execute` topology.
+- [x] `pbr/wireframe-ownerization`: move wireframe mesh-cache/runtime helpers from main-pass file into `pbr/wireframe.mbt` owner module.
+- [x] `pbr/material-ownerization`: add `ExtractedMaterialInstances3d` world resource and populate it from `render3d_prepare_meshes_system`.
+- [x] `pbr/render/mesh_view_bindings-depth`: add Bevy-shaped `MeshPipelineViewLayoutKey` + layout label + layout-entry generation.
+- [x] `pbr/render/gpu_preprocess-depth`: add Bevy-shaped preprocess/bind-indirect pipeline key models and pipeline prepare-id flow.
 - [x] `render/pbr`: replace point-light shadow sentinel entity path with `Option<Entity>` ownership flow.
 - [x] `render/pbr`: move point-shadow target cache and scene postprocess target caches from global `Ref` to render-world resources.
 - [x] `render/pbr`: move wireframe mesh cache from global `Ref` to render-world resource ownership.

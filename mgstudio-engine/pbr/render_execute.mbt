@@ -135,6 +135,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let meshes = render3d_execute_collect_meshes(
     world, source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
+  render3d_extract_material_instances(world, meshes)
   let prepared_camera_queues = render3d_prepare_camera_queue_entries(
     phase_state_ref,
     cameras,

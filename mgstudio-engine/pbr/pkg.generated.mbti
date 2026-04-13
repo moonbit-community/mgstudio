@@ -123,6 +123,8 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
 
+pub let ecs_key_extracted_material_instances_3d : @ecs.ResourceKey[ExtractedMaterialInstances3d]
+
 pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState]
 
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
@@ -433,6 +435,8 @@ pub fn render3d_frustum_plane_count() -> Int
 
 pub fn render3d_frustum_plane_index_clamp(Int) -> Int
 
+pub fn render3d_material_instance_for_entity(@ecs.World, @core.Entity) -> ExtractedMaterialInstance3d?
+
 pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
 
 pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
@@ -502,6 +506,8 @@ pub fn standard_material_prepass_enabled(@ecs.World) -> Bool
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
 pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn wireframe_plugin_with(@app.App[@ecs.World], WireframePlugin) -> @app.App[@ecs.World]
 
 // Errors
 pub(all) suberror AutoExposureCompensationCurveError {
@@ -807,6 +813,21 @@ pub fn[B, E : MaterialExtension] ExtendedMaterial::metadata(Self[B, E]) -> @mate
 pub fn[B, E] ExtendedMaterial::new(B, E) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_base(Self[B, E], B) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
+
+pub struct ExtractedMaterialInstance3d {
+  entity : @core.Entity
+  alpha_mode : @material.AlphaMode3d
+  opaque_render_method : @material.OpaqueRendererMethod
+  unlit : Bool
+  extension_tag : Int?
+  extension_shader_path : String?
+}
+
+pub struct ExtractedMaterialInstances3d {
+  mut by_entity_id : Map[Int, ExtractedMaterialInstance3d]
+}
+pub fn ExtractedMaterialInstances3d::default() -> Self
+pub impl @app.Resource for ExtractedMaterialInstances3d
 
 pub enum FogFalloff3d {
   Linear(Float, Float)
@@ -1291,6 +1312,11 @@ pub fn WireframeConfig::new(Bool, @color.Color) -> Self
 pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for WireframeConfig
+
+pub struct WireframePlugin {
+}
+pub fn WireframePlugin::default() -> Self
+pub impl @app.PluginReplacement for WireframePlugin
 
 // Type aliases
 pub using @material {type AlphaMode3d}

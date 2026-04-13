@@ -98,3 +98,125 @@ pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState {
 pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
   MaterialsPlugin::default()
 }
+
+///|
+pub struct ExtractedMaterialInstance3d {
+  entity : @core.Entity
+  alpha_mode : AlphaMode3d
+  opaque_render_method : OpaqueRendererMethod
+  unlit : Bool
+  extension_tag : Int?
+  extension_shader_path : String?
+}
+
+///|
+pub struct ExtractedMaterialInstances3d {
+  mut by_entity_id : Map[Int, ExtractedMaterialInstance3d]
+}
+
+///|
+pub fn ExtractedMaterialInstances3d::default() -> ExtractedMaterialInstances3d {
+  ExtractedMaterialInstances3d::{ by_entity_id: {} }
+}
+
+///|
+pub let ecs_key_extracted_material_instances_3d : @ecs.ResourceKey[
+  ExtractedMaterialInstances3d,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::ExtractedMaterialInstances3d",
+)
+
+///|
+pub impl @app.Resource for ExtractedMaterialInstances3d with resource() {
+  ecs_key_extracted_material_instances_3d
+}
+
+///|
+fn render3d_extracted_material_extension_tag(
+  extension : ExtendedMaterialMetadata3d?,
+) -> Int? {
+  match extension {
+    Some(metadata) => Some(metadata.extension_tag)
+    None => None
+  }
+}
+
+///|
+fn render3d_extracted_material_extension_shader_path(
+  extension : ExtendedMaterialMetadata3d?,
+) -> String? {
+  match extension {
+    Some(metadata) => metadata.shader_path
+    None => None
+  }
+}
+
+///|
+fn render3d_extracted_material_instance_for_mesh(
+  mesh : ExtractedMesh3d,
+) -> ExtractedMaterialInstance3d {
+  let material = mesh.payload.material
+  let extension = mesh.payload.material_extension
+  let opaque_render_method = material.opaque_render_method.resolve_runtime(
+    OpaqueRendererMethod::Forward,
+  )
+  ExtractedMaterialInstance3d::{
+    entity: mesh.entity.main_entity,
+    alpha_mode: material.alpha_mode,
+    opaque_render_method,
+    unlit: material.unlit,
+    extension_tag: render3d_extracted_material_extension_tag(extension),
+    extension_shader_path: render3d_extracted_material_extension_shader_path(
+      extension,
+    ),
+  }
+}
+
+///|
+fn render3d_extracted_material_entity_id(entity : @core.Entity) -> Int {
+  entity.id * 131 + entity.generation
+}
+
+///|
+fn render3d_extracted_material_instances_ref_or_init(
+  world : @ecs.World,
+) -> Ref[ExtractedMaterialInstances3d] {
+  if (try! world.get_resource(ExtractedMaterialInstances3d::resource())) is None {
+    world.insert_resource(
+      ExtractedMaterialInstances3d::resource(),
+      ExtractedMaterialInstances3d::default(),
+    )
+  }
+  match
+    (try! world.get_resource_ref_mut(ExtractedMaterialInstances3d::resource())) {
+    Some(v) => v
+    None => abort("Missing ExtractedMaterialInstances3d resource")
+  }
+}
+
+///|
+fn render3d_extract_material_instances(
+  world : @ecs.World,
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
+  let extracted_ref = render3d_extracted_material_instances_ref_or_init(world)
+  let next : Map[Int, ExtractedMaterialInstance3d] = {}
+  for mesh in meshes {
+    let instance = render3d_extracted_material_instance_for_mesh(mesh)
+    let entity_id = render3d_extracted_material_entity_id(instance.entity)
+    next.set(entity_id, instance)
+  }
+  extracted_ref.val.by_entity_id = next
+}
+
+///|
+pub fn render3d_material_instance_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> ExtractedMaterialInstance3d? {
+  match (try! world.get_resource(ExtractedMaterialInstances3d::resource())) {
+    Some(instances) =>
+      instances.by_entity_id.get(render3d_extracted_material_entity_id(entity))
+    None => None
+  }
+}

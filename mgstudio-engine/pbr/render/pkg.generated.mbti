@@ -91,6 +91,8 @@ pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
 pub fn absf(Float) -> Float
 
+pub fn build_indirect_parameters_pipeline_key(Bool, Bool, Bool, Bool, Bool, Bool) -> BuildIndirectParametersPipelineKey
+
 pub fn clamp01(Float) -> Float
 
 pub fn cmp_float(Float, Float) -> Int
@@ -111,9 +113,19 @@ pub fn maxf(Float, Float) -> Float
 
 pub fn mesh_binding_slot_index(MeshBindingSlot3d) -> Int
 
+pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> MeshPipelineViewLayoutKey
+
+pub fn mesh_view_layout_key_from_msaa(Int) -> MeshPipelineViewLayoutKey
+
 pub fn minf(Float, Float) -> Float
 
 pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
+
+pub fn preprocess_phase_pipelines_default(String) -> PreprocessPhasePipelines
+
+pub fn preprocess_pipeline_key(Bool, Bool, Bool) -> PreprocessPipelineKey
+
+pub fn preprocess_pipelines_default() -> PreprocessPipelines
 
 pub fn projection_from_custom(CustomProjection3d) -> Projection
 
@@ -225,6 +237,8 @@ pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform)
 
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
 
+pub fn render3d_mesh_view_layout_entries(Bool, Bool, MeshPipelineViewLayoutKey) -> (Array[MeshViewBindGroupLayoutEntry], Array[MeshViewBindGroupLayoutEntry])
+
 pub fn render3d_morph_non_zero_weight_count(Array[Float]) -> Int
 
 pub fn render3d_morph_state(Array[Float]) -> Render3dMorphState
@@ -277,6 +291,16 @@ pub fn render3d_point_shadow_face_transform(@math.Vec3, Int) -> @transform.Trans
 
 pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjection
 
+pub fn render3d_prepare_build_indirect_parameters_pipeline(BuildIndirectParametersPipeline) -> BuildIndirectParametersPipeline
+
+pub fn render3d_prepare_preprocess_phase_pipelines(PreprocessPhasePipelines) -> PreprocessPhasePipelines
+
+pub fn render3d_prepare_preprocess_pipeline(PreprocessPipeline) -> PreprocessPipeline
+
+pub fn render3d_prepare_preprocess_pipelines(PreprocessPipelines) -> PreprocessPipelines
+
+pub fn render3d_prepare_reset_indirect_batch_sets_pipeline(ResetIndirectBatchSetsPipeline) -> ResetIndirectBatchSetsPipeline
+
 pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
 
 pub let render3d_prepare_system_label : String
@@ -284,6 +308,8 @@ pub let render3d_prepare_system_label : String
 pub fn render3d_prepared_camera_count(@ecs.World) -> Int?
 
 pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
+
+pub fn render3d_preprocess_dispatch_workgroup_count(Int) -> Int
 
 pub fn render3d_projection_aspect_ratio(Float, Float) -> Float
 
@@ -348,6 +374,20 @@ pub fn render3d_world_transform_cache_ref(@ecs.World) -> @ref.Ref[Render3dWorldT
 // Errors
 
 // Types and methods
+pub struct BuildIndirectParametersPipeline {
+  bind_group_layout_label : String
+  shader_path : String
+  pipeline_id : Int?
+}
+pub fn BuildIndirectParametersPipeline::new(String, String) -> Self
+
+pub struct BuildIndirectParametersPipelineKey {
+  bits : UInt
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn BuildIndirectParametersPipelineKey::contains(Self, UInt) -> Bool
+pub fn BuildIndirectParametersPipelineKey::default() -> Self
+pub fn BuildIndirectParametersPipelineKey::shader_defs(Self) -> Array[String]
+
 pub struct CustomProjection3d {
   type_name : String
   payload : @any.Any
@@ -376,6 +416,12 @@ pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::new(ViewFrustum) -> Self
 pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
+
+pub struct GpuMeshPreprocessPlugin {
+  use_gpu_instance_buffer_builder : Bool
+}
+pub fn GpuMeshPreprocessPlugin::default() -> Self
+pub fn GpuMeshPreprocessPlugin::new(Bool) -> Self
 
 pub(all) struct GpuOcclusionCullingWorkItemBuffers3d {
   enabled : Bool
@@ -513,6 +559,13 @@ pub struct MeshLayouts3d {
   morphed_skinned_motion : MeshBindingLayout3d
 }
 
+pub struct MeshPipelineViewLayoutKey {
+  bits : UInt
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
+pub fn MeshPipelineViewLayoutKey::default() -> Self
+pub fn MeshPipelineViewLayoutKey::label(Self) -> String
+
 pub(all) struct MeshPreprocessStatic3d {
   is_indexed : Bool
   first_vertex_index : Int
@@ -523,11 +576,20 @@ pub(all) struct MeshPreprocessStatic3d {
   aabb_half_extents : @math.Vec3
 }
 
+pub struct MeshViewBindGroupLayoutEntry {
+  binding : Int
+  name : String
+  is_storage : Bool
+  read_only : Bool
+  has_dynamic_offset : Bool
+}
+
 pub struct MeshViewBindings3d {
   viewport : (Int, Int, Int, Int)?
   clear_enabled : Bool
   logical_rect : (Float, Float, Float, Float)
   view_matrix : ProjectionMatrix3d
+  layout_key : MeshPipelineViewLayoutKey
 }
 pub fn MeshViewBindings3d::default() -> Self
 
@@ -593,10 +655,48 @@ pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
 pub impl CameraProjection3d for PerspectiveProjection3d
 
+pub(all) enum PhasePreprocessBindGroups {
+  Direct(Int)
+  IndirectFrustumCulling(Int, Int)
+  IndirectOcclusionCulling(Int, Int, Int?, Int?)
+}
+
 pub(all) struct PreparedSkinBinding3d {
   entity_generation : Int
   key_hi : Int
   key_lo : Int
+}
+
+pub struct PreprocessPhasePipelines {
+  reset_indirect_batch_sets : ResetIndirectBatchSetsPipeline
+  gpu_occlusion_culling_build_indexed_indirect_params : BuildIndirectParametersPipeline
+  gpu_occlusion_culling_build_non_indexed_indirect_params : BuildIndirectParametersPipeline
+}
+
+pub struct PreprocessPipeline {
+  bind_group_layout_label : String
+  shader_path : String
+  pipeline_id : Int?
+}
+pub fn PreprocessPipeline::new(String, String) -> Self
+
+pub struct PreprocessPipelineKey {
+  bits : UInt
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PreprocessPipelineKey::contains(Self, UInt) -> Bool
+pub fn PreprocessPipelineKey::default() -> Self
+pub fn PreprocessPipelineKey::shader_defs(Self) -> Array[String]
+
+pub struct PreprocessPipelines {
+  direct_preprocess : PreprocessPipeline
+  gpu_frustum_culling_preprocess : PreprocessPipeline
+  early_gpu_occlusion_culling_preprocess : PreprocessPipeline
+  late_gpu_occlusion_culling_preprocess : PreprocessPipeline
+  gpu_frustum_culling_build_indexed_indirect_params : BuildIndirectParametersPipeline
+  gpu_frustum_culling_build_non_indexed_indirect_params : BuildIndirectParametersPipeline
+  early_phase : PreprocessPhasePipelines
+  late_phase : PreprocessPhasePipelines
+  main_phase : PreprocessPhasePipelines
 }
 
 pub enum Projection {
@@ -747,6 +847,13 @@ pub struct RenderTargetComputed3d {
   target_size : @math.IVec2
   scale_factor : Float
 }
+
+pub struct ResetIndirectBatchSetsPipeline {
+  bind_group_layout_label : String
+  shader_path : String
+  pipeline_id : Int?
+}
+pub fn ResetIndirectBatchSetsPipeline::new(String, String) -> Self
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

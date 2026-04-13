@@ -100,20 +100,6 @@ pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::PbrPluginRuntimeConfig")
 
 ///|
-fn init_wireframe_resources(world : @ecs.World) -> Unit {
-  let ecs_world = world
-  let wireframe_config = get_wireframe_config_resource(ecs_world)
-  if !wireframe_config.is_present() {
-    wireframe_config.insert(WireframeConfig::default())
-  }
-}
-
-///|
-pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_startup_system(init_wireframe_resources)
-}
-
-///|
 pub struct FogPluginState {}
 
 ///|
