@@ -18,8 +18,8 @@ pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for WindowPlugin with replacement_id(_self) {
-  WINDOW_PLUGIN_ID
+pub impl @app.PluginReplacement for WindowPlugin with plugin_name(_self) {
+  WINDOW_PLUGIN_NAME
 }
 
 ///|

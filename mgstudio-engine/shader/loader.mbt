@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-pub const SHADER_PLUGIN_ID : String = "mgstudio::ShaderPlugin"
-
-///|
 pub struct ShaderLoader {}
 
 ///|

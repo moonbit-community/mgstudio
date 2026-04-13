@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-pub const RENDER_PLUGIN_ID : String = "bevy_render::RenderPlugin"
-
-///|
 priv struct RenderPluginMarker {}
 
 ///|

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
+const DEFERRED_PBR_LIGHTING_PLUGIN_NAME : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
 
 ///|
 pub struct DeferredPbrLightingState {
@@ -44,10 +44,10 @@ pub fn DeferredPbrLightingPlugin::default() -> DeferredPbrLightingPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for DeferredPbrLightingPlugin with replacement_id(
+pub impl @app.PluginReplacement for DeferredPbrLightingPlugin with plugin_name(
   _self,
 ) {
-  DEFERRED_PBR_LIGHTING_PLUGIN_ID
+  DEFERRED_PBR_LIGHTING_PLUGIN_NAME
 }
 
 ///|

@@ -19,7 +19,7 @@
 pub const SMAA_RUNTIME_SUPPORTED : Bool = false
 
 ///|
-pub const SMAA_PLUGIN_ID : String = "bevy_anti_alias::smaa::SmaaPlugin"
+const SMAA_PLUGIN_NAME : String = "mgstudio.anti_alias.smaa.SmaaPlugin"
 
 ///|
 pub struct SmaaPlugin {}
@@ -87,8 +87,8 @@ pub impl @app.Resource for SmaaRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for SmaaPlugin with replacement_id(_self) {
-  SMAA_PLUGIN_ID
+pub impl @app.PluginReplacement for SmaaPlugin with plugin_name(_self) {
+  SMAA_PLUGIN_NAME
 }
 
 ///|

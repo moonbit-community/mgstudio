@@ -17,8 +17,6 @@ pub const AXIS_MAX : Float = 1.0
 
 pub const AXIS_MIN : Float = -1.
 
-pub const INPUT_PLUGIN_ID : String = "bevy_input::InputPlugin"
-
 pub fn[T] axis_all(Axis[T]) -> Array[T]
 
 pub fn[T : Eq] axis_get(Axis[T], T) -> Float?

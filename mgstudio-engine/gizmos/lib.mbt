@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs`.
 // Package-level plugin boundary aligned with Bevy gizmos crate.
 
-pub const GIZMO_PLUGIN_ID : String = "mgstudio_gizmos::GizmoPlugin"
+const GIZMO_PLUGIN_NAME : String = "mgstudio.gizmos.GizmoPlugin"
 
 ///|
 priv struct GizmoPluginMarker {}
@@ -87,8 +87,8 @@ pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for GizmoPlugin with replacement_id(_self) {
-  GIZMO_PLUGIN_ID
+pub impl @app.PluginReplacement for GizmoPlugin with plugin_name(_self) {
+  GIZMO_PLUGIN_NAME
 }
 
 ///|

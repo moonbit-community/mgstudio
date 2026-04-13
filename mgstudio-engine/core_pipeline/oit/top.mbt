@@ -17,7 +17,7 @@
 // Order-independent transparency plugin and settings.
 
 ///|
-pub const OIT_PLUGIN_ID : String = "bevy_core_pipeline::oit::OrderIndependentTransparencyPlugin"
+const OIT_PLUGIN_NAME : String = "mgstudio.core_pipeline.oit.OrderIndependentTransparencyPlugin"
 
 ///|
 pub struct OrderIndependentTransparencyPlugin {}
@@ -61,10 +61,10 @@ pub fn oit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for OrderIndependentTransparencyPlugin with replacement_id(
+pub impl @app.PluginReplacement for OrderIndependentTransparencyPlugin with plugin_name(
   _self,
 ) {
-  OIT_PLUGIN_ID
+  OIT_PLUGIN_NAME
 }
 
 ///|

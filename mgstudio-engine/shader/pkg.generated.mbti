@@ -11,8 +11,6 @@ import {
 }
 
 // Values
-pub const SHADER_PLUGIN_ID : String = "mgstudio::ShaderPlugin"
-
 pub fn shader_def(String) -> ShaderDefVal
 
 pub fn shader_from_source(String) -> Shader

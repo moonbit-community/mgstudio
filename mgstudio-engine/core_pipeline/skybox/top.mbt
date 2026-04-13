@@ -17,7 +17,7 @@
 // Skybox plugin owner surface.
 
 ///|
-pub const SKYBOX_PLUGIN_ID : String = "bevy_core_pipeline::skybox::SkyboxPlugin"
+const SKYBOX_PLUGIN_NAME : String = "mgstudio.core_pipeline.skybox.SkyboxPlugin"
 
 ///|
 pub struct SkyboxPlugin {}
@@ -149,8 +149,8 @@ pub fn skybox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for SkyboxPlugin with replacement_id(_self) {
-  SKYBOX_PLUGIN_ID
+pub impl @app.PluginReplacement for SkyboxPlugin with plugin_name(_self) {
+  SKYBOX_PLUGIN_NAME
 }
 
 ///|

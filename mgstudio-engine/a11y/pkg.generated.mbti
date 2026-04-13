@@ -11,8 +11,6 @@ import {
 }
 
 // Values
-pub const ACCESSIBILITY_PLUGIN_ID : String = "mgstudio_a11y::AccessibilityPlugin"
-
 pub fn a11y_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let a11y_set : String

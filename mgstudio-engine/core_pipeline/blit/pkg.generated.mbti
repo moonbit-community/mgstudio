@@ -10,8 +10,6 @@ import {
 // Values
 pub const BLIT_PASS_LABEL : String = "blit"
 
-pub const BLIT_PLUGIN_ID : String = "bevy_core_pipeline::blit::BlitPlugin"
-
 pub fn blit_bind_group_matches_source(BlitBindGroup, source_texture_view_id~ : Int) -> Bool
 
 pub fn blit_draw(scene_texture_id~ : Int) -> Unit

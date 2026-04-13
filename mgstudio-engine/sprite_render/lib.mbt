@@ -17,9 +17,6 @@
 // Runtime owner split out of `sprite_render/sprite_render.mbt`.
 
 ///|
-pub const SPRITE_RENDER_PLUGIN_ID : String = "bevy_sprite_render::SpriteRenderPlugin"
-
-///|
 pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @sprite.render2d_plugin(app)
 }

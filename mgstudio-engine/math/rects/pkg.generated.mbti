@@ -3,25 +3,51 @@ package "Milky2018/mgstudio/math/rects"
 
 import {
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub fn irect(@math.IVec2, @math.IVec2) -> @math.IRect
+pub fn irect(@math.IVec2, @math.IVec2) -> IRect
 
-pub fn rect(@math.Vec2, @math.Vec2) -> @math.Rect
+pub fn rect(@math.Vec2, @math.Vec2) -> Rect
 
-pub fn urect(@math.UVec2, @math.UVec2) -> @math.URect
+pub fn urect(@math.UVec2, @math.UVec2) -> URect
 
 // Errors
 
 // Types and methods
+pub struct IRect {
+  min : @math.IVec2
+  max : @math.IVec2
+}
+pub fn IRect::as_rect(Self) -> Rect
+pub fn IRect::new(@math.IVec2, @math.IVec2) -> Self
+pub fn IRect::size(Self) -> @math.IVec2
+pub impl ToJson for IRect
+pub impl @json.FromJson for IRect
+
+pub struct Rect {
+  min : @math.Vec2
+  max : @math.Vec2
+}
+pub fn Rect::center(Self) -> @math.Vec2
+pub fn Rect::contains(Self, @math.Vec2) -> Bool
+pub fn Rect::new(@math.Vec2, @math.Vec2) -> Self
+pub fn Rect::size(Self) -> @math.Vec2
+pub impl ToJson for Rect
+pub impl @json.FromJson for Rect
+
+pub struct URect {
+  min : @math.UVec2
+  max : @math.UVec2
+}
+pub fn URect::as_rect(Self) -> Rect
+pub fn URect::new(@math.UVec2, @math.UVec2) -> Self
+pub fn URect::size(Self) -> @math.UVec2
+pub impl ToJson for URect
+pub impl @json.FromJson for URect
 
 // Type aliases
-pub using @math {type IRect}
-
-pub using @math {type Rect}
-
-pub using @math {type URect}
 
 // Traits
 

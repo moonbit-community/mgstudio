@@ -26,11 +26,11 @@ pub fn AntiAliasPlugin::default() -> AntiAliasPlugin {
 }
 
 ///|
-pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
+const ANTI_ALIAS_PLUGIN_NAME : String = "mgstudio.anti_alias.AntiAliasPlugin"
 
 ///|
-pub impl @app.PluginReplacement for AntiAliasPlugin with replacement_id(_self) {
-  ANTI_ALIAS_PLUGIN_ID
+pub impl @app.PluginReplacement for AntiAliasPlugin with plugin_name(_self) {
+  ANTI_ALIAS_PLUGIN_NAME
 }
 
 ///|

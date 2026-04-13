@@ -18,7 +18,7 @@ pub(all) struct WinitPlugin {
 }
 
 ///|
-pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
+const WINIT_PLUGIN_NAME : String = "mgstudio.winit.WinitPlugin"
 
 ///|
 pub type RawWinitWindowEventData = @windowing.RawWinitWindowEventData
@@ -58,8 +58,8 @@ pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for WinitPlugin with replacement_id(_self) {
-  WINIT_PLUGIN_ID
+pub impl @app.PluginReplacement for WinitPlugin with plugin_name(_self) {
+  WINIT_PLUGIN_NAME
 }
 
 ///|

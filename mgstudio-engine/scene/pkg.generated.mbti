@@ -17,8 +17,6 @@ import {
 }
 
 // Values
-pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
-
 pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 
 pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]

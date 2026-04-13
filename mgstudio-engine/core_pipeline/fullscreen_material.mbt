@@ -17,7 +17,7 @@
 // Fullscreen material plugin owner surface.
 
 ///|
-pub const FULLSCREEN_MATERIAL_PLUGIN_ID : String = "bevy_core_pipeline::fullscreen_material::FullscreenMaterialPlugin"
+const FULLSCREEN_MATERIAL_PLUGIN_NAME : String = "mgstudio.core_pipeline.fullscreen_material.FullscreenMaterialPlugin"
 
 ///|
 pub struct FullscreenMaterialPlugin {}
@@ -35,10 +35,10 @@ pub fn fullscreen_material_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for FullscreenMaterialPlugin with replacement_id(
+pub impl @app.PluginReplacement for FullscreenMaterialPlugin with plugin_name(
   _self,
 ) {
-  FULLSCREEN_MATERIAL_PLUGIN_ID
+  FULLSCREEN_MATERIAL_PLUGIN_NAME
 }
 
 ///|

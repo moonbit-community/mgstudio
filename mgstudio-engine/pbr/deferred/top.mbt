@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = @pbr.DEFERRED_PBR_LIGHTING_PLUGIN_ID
-
-///|
 pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
 
 ///|

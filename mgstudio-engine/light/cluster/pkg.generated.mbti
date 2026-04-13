@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub const CLUSTER_LIGHT_PLUGIN_ID : String = "bevy_light::cluster::ClusterLightPlugin"
-
 pub fn cluster_assign_lights(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cluster_assign_lights_system(@ecs.World) -> Unit

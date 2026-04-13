@@ -15,7 +15,7 @@
 ///|
 // Bevy source: `bevy/crates/bevy_sprite/src/lib.rs`.
 // Package-level plugin boundary aligned with Bevy crate responsibilities.
-pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
+const SPRITE_PLUGIN_NAME : String = "mgstudio.sprite.SpritePlugin"
 
 ///|
 priv struct SpritePluginMarker {}

@@ -14,8 +14,6 @@ import {
 }
 
 // Values
-pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
-
 pub const CAS_RUNTIME_SUPPORTED : Bool = false
 
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false

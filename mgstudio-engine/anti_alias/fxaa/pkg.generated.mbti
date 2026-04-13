@@ -10,8 +10,6 @@ import {
 }
 
 // Values
-pub const FXAA_PLUGIN_ID : String = "bevy_anti_alias::fxaa::FxaaPlugin"
-
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
 pub let ecs_key_fxaa_runtime_state : @ecs.ResourceKey[FxaaRuntimeState]

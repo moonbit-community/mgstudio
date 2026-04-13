@@ -18,13 +18,21 @@ pub fn auto_exposure_adapt_ev100(Float, Float, @pbr.AutoExposure, Float) -> Floa
 
 pub fn auto_exposure_buffers_from_samples(@pbr.AutoExposure, AutoExposurePipeline, @pbr.AutoExposureCompensationCurve?, Array[Float], Array[Float]?, Float, Float) -> AutoExposureBuffers
 
+pub fn auto_exposure_compensation_curve_default() -> @pbr.AutoExposureCompensationCurve
+
+pub fn[T : @pbr.AutoExposureCompensationCurveSource] auto_exposure_compensation_curve_from_curve(T) -> @pbr.AutoExposureCompensationCurve raise @pbr.AutoExposureCompensationCurveError
+
 pub fn auto_exposure_curve_extents(@pbr.AutoExposureCompensationCurve) -> (Float, Float, Float, Float)
 
 pub fn auto_exposure_curve_sample(@pbr.AutoExposureCompensationCurve, Float) -> Float
 
+pub fn auto_exposure_default() -> @pbr.AutoExposure
+
 pub fn auto_exposure_filter(@pbr.AutoExposure) -> (Float, Float)
 
 pub fn auto_exposure_histogram_workgroups(AutoExposurePipeline, Int, Int) -> (Int, Int)
+
+pub fn auto_exposure_new(Float, Float) -> @pbr.AutoExposure
 
 pub fn auto_exposure_pipeline_passes() -> Array[AutoExposurePass]
 
@@ -35,6 +43,12 @@ pub fn auto_exposure_uniform(@pbr.AutoExposure, @pbr.AutoExposureCompensationCur
 pub fn auto_exposure_uses_compensation_curve(@pbr.AutoExposure) -> Bool
 
 pub fn auto_exposure_uses_mask(@pbr.AutoExposure) -> Bool
+
+pub fn auto_exposure_with_range(@pbr.AutoExposure, Float, Float) -> @pbr.AutoExposure
+
+pub fn physical_camera_parameters_default() -> @pbr.PhysicalCameraParameters
+
+pub fn physical_camera_parameters_ev100(@pbr.PhysicalCameraParameters) -> Float
 
 // Errors
 

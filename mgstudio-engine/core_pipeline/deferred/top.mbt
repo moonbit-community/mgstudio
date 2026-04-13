@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/mod.rs`.
-pub const DEFERRED_PLUGIN_ID : String = "bevy_core_pipeline::deferred::DeferredPlugin"
+const DEFERRED_PLUGIN_NAME : String = "mgstudio.core_pipeline.deferred.DeferredPlugin"
 
 ///|
 pub struct DeferredPlugin {}
@@ -30,8 +30,8 @@ pub fn deferred_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for DeferredPlugin with replacement_id(_self) {
-  DEFERRED_PLUGIN_ID
+pub impl @app.PluginReplacement for DeferredPlugin with plugin_name(_self) {
+  DEFERRED_PLUGIN_NAME
 }
 
 ///|

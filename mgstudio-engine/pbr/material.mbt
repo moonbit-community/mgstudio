@@ -16,7 +16,7 @@
 pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
 ///|
-pub const MATERIALS_PLUGIN_ID : String = "mgstudio.pbr.MaterialsPlugin"
+const MATERIALS_PLUGIN_NAME : String = "mgstudio.pbr.MaterialsPlugin"
 
 ///|
 pub struct MaterialsPlugin {}
@@ -57,8 +57,8 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub impl @app.PluginReplacement for MaterialsPlugin with replacement_id(_self) {
-  MATERIALS_PLUGIN_ID
+pub impl @app.PluginReplacement for MaterialsPlugin with plugin_name(_self) {
+  MATERIALS_PLUGIN_NAME
 }
 
 ///|

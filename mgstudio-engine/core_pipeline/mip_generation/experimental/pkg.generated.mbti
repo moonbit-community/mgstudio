@@ -12,8 +12,6 @@ pub const DEPTH_PYRAMID_MIP_COUNT : Int = 12
 
 pub const EXPERIMENTAL_DEPTH_MIP_GENERATION_LABEL : String = "mip_generation.experimental.depth"
 
-pub const EXPERIMENTAL_MIP_GENERATION_MODULE_ID : String = "bevy_core_pipeline::mip_generation::experimental"
-
 pub fn downsample_depth_pass_label(DownsampleDepthPassKind) -> String
 
 pub fn downsample_depth_pipeline_pair_ready(DownsampleDepthPipelinePairState, multisampled~ : Bool) -> Bool

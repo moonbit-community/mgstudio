@@ -65,6 +65,10 @@ pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainSch
 
 pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
 
+pub fn hotpatch_mark_patched(@ecs.World) -> Unit
+
+pub fn hotpatch_plugin(App[@ecs.World]) -> App[@ecs.World]
+
 pub fn hotpatch_reset_runtime() -> Unit
 
 pub fn hotpatch_restart_runtime() -> Unit
@@ -112,6 +116,8 @@ pub fn log_warn_once(String, String) -> Unit
 pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder]
 
 pub let message_update_system_set : String
+
+pub fn named_world_plugin(String, (App[@ecs.World]) -> App[@ecs.World]) -> NamedWorldPlugin
 
 pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
 
@@ -179,6 +185,8 @@ pub fn[T] resource_exists(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
 pub fn[T] resource_exists_and_changed(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
+pub fn run_all_fixed_schedules(@ecs.World) -> Unit
+
 pub fn[W] run_condition_and((W) -> Bool, (W) -> Bool) -> (W) -> Bool
 
 pub fn[W] run_condition_not((W) -> Bool) -> (W) -> Bool
@@ -192,6 +200,8 @@ pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
 pub fn run_fixed_main_stage(@ecs.World) -> Unit
+
+pub fn run_fixed_schedules_with_config(@ecs.World, FixedSchedulePropagationConfig) -> Unit
 
 pub fn run_fixed_update_schedule(@ecs.World) -> Unit
 
@@ -268,6 +278,12 @@ pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
 pub fn system_set(String) -> String
 
 pub fn task_pool_plugin(App[@ecs.World]) -> App[@ecs.World]
+
+pub fn terminal_ctrl_c_exit_on_flag(@ecs.World) -> Unit
+
+pub fn terminal_ctrl_c_gracefully_exit() -> Unit
+
+pub fn terminal_ctrl_c_handler_plugin(App[@ecs.World]) -> App[@ecs.World]
 
 pub fn terminal_ctrl_c_request_close() -> Unit
 
@@ -618,6 +634,27 @@ pub fn FixedMainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) 
 pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
 
+pub struct FixedSchedulePropagationConfig {
+  run_fixed_update : Bool
+  run_fixed_main : Bool
+}
+pub fn FixedSchedulePropagationConfig::default() -> Self
+
+pub struct HotPatchChanges {
+  mut revision : Int
+}
+pub fn HotPatchChanges::default() -> Self
+pub impl Resource for HotPatchChanges
+
+pub struct HotPatchPlugin {
+}
+pub fn HotPatchPlugin::default() -> Self
+
+pub struct HotPatched {
+}
+pub fn HotPatched::default() -> Self
+pub impl @ecs.Message for HotPatched
+
 pub struct In[T] {
   value : T
 }
@@ -675,6 +712,12 @@ pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> S
 pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
+
+pub struct NamedWorldPlugin {
+  name : String
+  plugin : (App[@ecs.World]) -> App[@ecs.World]
+}
+pub impl PluginReplacement for NamedWorldPlugin
 
 pub(all) enum NextState[S] {
   Unchanged
@@ -763,19 +806,17 @@ pub struct PluginGroupBuilder[W] {
   plugins : Array[PluginGroupEntry[W]]
 }
 pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
-pub fn[W] PluginGroupBuilder::add_named(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W]
+pub fn[P : PluginReplacement] PluginGroupBuilder::add_typed(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
-pub fn[W] PluginGroupBuilder::contains(Self[W], String) -> Bool
-pub fn[W] PluginGroupBuilder::disable(Self[W], String) -> Self[W]
-pub fn[W] PluginGroupBuilder::enable(Self[W], String) -> Self[W]
-pub fn[W] PluginGroupBuilder::enabled(Self[W], String) -> Bool
+pub fn[P : PluginReplacement] PluginGroupBuilder::contains(Self[@ecs.World], P) -> Bool
+pub fn[P : PluginReplacement] PluginGroupBuilder::disable(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : PluginReplacement] PluginGroupBuilder::enable(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : PluginReplacement] PluginGroupBuilder::enabled(Self[@ecs.World], P) -> Bool
 pub fn[P : PluginReplacement] PluginGroupBuilder::set(Self[@ecs.World], P) -> Self[@ecs.World]
-pub fn[W] PluginGroupBuilder::set_plugin(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
 pub fn[W] PluginGroupBuilder::start_named(String) -> Self[W]
-pub fn[W] PluginGroupBuilder::try_disable(Self[W], String) -> Self[W] raise PluginGroupError
+pub fn[P : PluginReplacement] PluginGroupBuilder::try_disable(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
 pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
-pub fn[W] PluginGroupBuilder::try_set_plugin(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W] raise PluginGroupError
 
 pub struct PluginGroupEntry[W] {
   id : String
@@ -1078,6 +1119,10 @@ pub fn TaskPoolThreadAssignmentPolicy::default_async_compute() -> Self
 pub fn TaskPoolThreadAssignmentPolicy::default_compute() -> Self
 pub fn TaskPoolThreadAssignmentPolicy::default_io() -> Self
 
+pub struct TerminalCtrlCHandlerPlugin {
+}
+pub fn TerminalCtrlCHandlerPlugin::default() -> Self
+
 pub(all) enum TimelineTraceCategory {
   ScheduleStage
   System
@@ -1177,7 +1222,7 @@ pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B)
 pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
 
 pub(open) trait PluginReplacement {
-  replacement_id(Self) -> String
+  plugin_name(Self) -> String
   world_plugin(Self) -> (App[@ecs.World]) -> App[@ecs.World]
 }
 

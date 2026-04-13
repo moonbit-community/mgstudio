@@ -13,22 +13,22 @@
 // limitations under the License.
 
 ///|
-const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
+const DEFAULT_PLUGIN_NAME_RENDER3D : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = "bevy_anti_alias::AntiAliasPlugin"
+const DEFAULT_PLUGIN_NAME_ANTI_ALIAS : String = "mgstudio.anti_alias.AntiAliasPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_SHADER : String = "mgstudio::ShaderPlugin"
+const DEFAULT_PLUGIN_NAME_SHADER : String = "mgstudio.shader.ShaderPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_WEB_ASSET : String = @asset.WEB_ASSET_PLUGIN_ID
+const DEFAULT_PLUGIN_NAME_WEB_ASSET : String = "mgstudio.asset.WebAssetPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_SPRITE : String = "bevy_sprite::SpritePlugin"
+const DEFAULT_PLUGIN_NAME_SPRITE : String = "mgstudio.sprite.SpritePlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_SPRITE_RENDER : String = "bevy_sprite_render::SpriteRenderPlugin"
+const DEFAULT_PLUGIN_NAME_SPRITE_RENDER : String = "mgstudio.sprite_render.SpriteRenderPlugin"
 
 ///|
 fn plugin_index(
@@ -45,46 +45,106 @@ fn plugin_index(
 }
 
 ///|
+fn plugin_contains(
+  builder : @app.PluginGroupBuilder[@ecs.World],
+  plugin_id : String,
+) -> Bool {
+  plugin_index(builder, plugin_id) >= 0
+}
+
+///|
+fn plugin_enabled(
+  builder : @app.PluginGroupBuilder[@ecs.World],
+  plugin_id : String,
+) -> Bool {
+  for entry in builder.plugins {
+    if entry.id == plugin_id {
+      return entry.enabled
+    }
+  }
+  false
+}
+
+///|
 test "default plugins: include winit plugin after window plugin" {
   let builder = @internal.DefaultPlugins::build()
-  debug_inspect(builder.contains(@window.WINDOW_PLUGIN_ID), content="true")
-  debug_inspect(builder.contains("bevy_winit::WinitPlugin"), content="true")
-  debug_inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
-  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_SHADER), content="true")
-  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_SHADER), content="true")
-  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
-  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
-  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
-  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
-  debug_inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE), content="true")
-  debug_inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE), content="true")
   debug_inspect(
-    builder.contains(DEFAULT_PLUGIN_ID_SPRITE_RENDER),
+    plugin_contains(builder, "mgstudio.window.WindowPlugin"),
     content="true",
   )
   debug_inspect(
-    builder.enabled(DEFAULT_PLUGIN_ID_SPRITE_RENDER),
+    plugin_contains(builder, "mgstudio.winit.WinitPlugin"),
     content="true",
   )
-  let shader_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SHADER)
-  let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_ID_WEB_ASSET)
-  let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER3D)
-  let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_ID_ANTI_ALIAS)
-  let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SPRITE)
+  debug_inspect(
+    plugin_enabled(builder, "mgstudio.winit.WinitPlugin"),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_SHADER),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_SHADER),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_SPRITE),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_SPRITE),
+    content="true",
+  )
+  debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_SPRITE_RENDER),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_SPRITE_RENDER),
+    content="true",
+  )
+  let shader_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_SHADER)
+  let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET)
+  let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_RENDER3D)
+  let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS)
+  let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_SPRITE)
   let sprite_render_index = plugin_index(
     builder,
-    DEFAULT_PLUGIN_ID_SPRITE_RENDER,
+    DEFAULT_PLUGIN_NAME_SPRITE_RENDER,
   )
   debug_inspect(
-    web_asset_index < plugin_index(builder, "bevy_asset::AssetPlugin"),
+    web_asset_index < plugin_index(builder, "mgstudio.asset.AssetPlugin"),
     content="true",
   )
   debug_inspect(shader_index < render3d_index, content="true")
   debug_inspect(render3d_index < anti_alias_index, content="true")
   debug_inspect(anti_alias_index < sprite_index, content="true")
   debug_inspect(sprite_index < sprite_render_index, content="true")
-  debug_inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
-  debug_inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
+  debug_inspect(
+    plugin_contains(builder, "mgstudio.gltf.GltfPlugin"),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, "mgstudio.gltf.GltfPlugin"),
+    content="true",
+  )
 }
 
 ///|
@@ -129,7 +189,7 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     None => abort("missing window component")
   }
 
-  debug_inspect(stored_window.title, content="Scale Override")
+  debug_inspect(stored_window.title, content="\"Scale Override\"")
   debug_inspect(stored_window.physical_width(), content="500")
   debug_inspect(stored_window.physical_height(), content="300")
   debug_inspect(

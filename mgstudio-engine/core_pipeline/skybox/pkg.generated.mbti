@@ -11,8 +11,6 @@ import {
 // Values
 pub const SKYBOX_PIPELINE_LABEL : String = "skybox_pipeline"
 
-pub const SKYBOX_PLUGIN_ID : String = "bevy_core_pipeline::skybox::SkyboxPlugin"
-
 pub const SKYBOX_PREPASS_BIND_GROUP_LABEL : String = "skybox_prepass_bind_group"
 
 pub const SKYBOX_PREPASS_LABEL : String = "skybox_prepass"

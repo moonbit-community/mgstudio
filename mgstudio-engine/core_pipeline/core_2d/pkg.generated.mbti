@@ -11,8 +11,6 @@ import {
 // Values
 pub const CORE_2D_DEPTH_FORMAT : String = "depth32float"
 
-pub const CORE_2D_PLUGIN_ID : String = "bevy_core_pipeline::core_2d::Core2dPlugin"
-
 pub const MAIN_OPAQUE_PASS_2D_LABEL : String = "main_opaque_pass_2d"
 
 pub const MAIN_TRANSPARENT_PASS_2D_LABEL : String = "main_transparent_pass_2d"

@@ -27,6 +27,10 @@ pub fn[T] parallel_queue_values_empty() -> Array[T]
 
 pub fn type_id(@any.Any) -> @any.TypeId
 
+pub fn type_id_of(@any.Any) -> @any.TypeId
+
+pub fn type_info(@any.Any) -> (@any.TypeId, String)
+
 pub fn type_name(@any.Any) -> String
 
 // Errors
@@ -110,10 +114,6 @@ pub using @builtin {type Array as BufferedChannelBuffer}
 pub using @builtin {type Map as HashMap}
 
 pub using @builtin {type Array as ParallelQueueValues}
-
-pub using @any {type TypeId}
-
-pub using @any {type TypeInfo}
 
 // Traits
 

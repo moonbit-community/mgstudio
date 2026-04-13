@@ -24,11 +24,6 @@ pub struct DepthOfFieldUniform {
 pub fn DepthOfFieldUniform::from_settings(@pbr.DepthOfField) -> Self
 
 // Type aliases
-pub using @pbr {type DepthOfField}
-
-pub using @pbr {type DepthOfFieldMode}
-
-pub using @pbr {type PhysicalCameraParameters}
 
 // Traits
 

@@ -25,7 +25,7 @@ pub type ClusterDirectionalLight = @light.DirectionalLight
 pub type ClusterSpotLight = @light.SpotLight
 
 ///|
-pub const CLUSTER_LIGHT_PLUGIN_ID : String = "bevy_light::cluster::ClusterLightPlugin"
+const CLUSTER_LIGHT_PLUGIN_NAME : String = "mgstudio.light.cluster.ClusterLightPlugin"
 
 ///|
 pub struct ClusterLightPlugin {}
@@ -208,10 +208,8 @@ pub impl @ecs.Component for VisibleClusterableObjects with component() {
 }
 
 ///|
-pub impl @app.PluginReplacement for ClusterLightPlugin with replacement_id(
-  _self,
-) {
-  CLUSTER_LIGHT_PLUGIN_ID
+pub impl @app.PluginReplacement for ClusterLightPlugin with plugin_name(_self) {
+  CLUSTER_LIGHT_PLUGIN_NAME
 }
 
 ///|

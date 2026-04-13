@@ -15,7 +15,11 @@
 ///|
 fn main {
   let plugins = @mgstudio.DefaultPlugins::build()
-    .disable("mgstudio::Physics2dPlugin")
+    .disable(
+      @app.named_world_plugin(
+        "mgstudio.physics2d.Physics2dPlugin", @physics2d.physics2d_plugin,
+      ),
+    )
     .build()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

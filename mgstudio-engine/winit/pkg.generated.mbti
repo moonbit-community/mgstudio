@@ -10,8 +10,6 @@ import {
 }
 
 // Values
-pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
-
 pub fn convert_winit_monitor(@Milky2018/window/core.MonitorHandle) -> @window.Monitor
 
 pub fn convert_winit_video_mode(@Milky2018/window/core.VideoMode) -> @window.VideoMode

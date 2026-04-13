@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const SMAA_PLUGIN_ID : String = "bevy_anti_alias::smaa::SmaaPlugin"
-
 pub const SMAA_RUNTIME_SUPPORTED : Bool = false
 
 pub fn smaa_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

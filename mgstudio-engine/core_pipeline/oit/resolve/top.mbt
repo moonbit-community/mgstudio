@@ -17,7 +17,7 @@
 // OIT resolve plugin owner surface.
 
 ///|
-pub const OIT_RESOLVE_PLUGIN_ID : String = "bevy_core_pipeline::oit::resolve::OitResolvePlugin"
+const OIT_RESOLVE_PLUGIN_NAME : String = "mgstudio.core_pipeline.oit.resolve.OitResolvePlugin"
 
 ///|
 pub const OIT_RESOLVE_PASS_LABEL : String = "oit_resolve"
@@ -48,8 +48,8 @@ pub fn oit_resolve_plugin_with(
 pub const OIT_REQUIRED_STORAGE_BUFFERS : Int = 3
 
 ///|
-pub impl @app.PluginReplacement for OitResolvePlugin with replacement_id(_self) {
-  OIT_RESOLVE_PLUGIN_ID
+pub impl @app.PluginReplacement for OitResolvePlugin with plugin_name(_self) {
+  OIT_RESOLVE_PLUGIN_NAME
 }
 
 ///|

@@ -19,10 +19,10 @@
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
 ///|
-pub const DLSS_INIT_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssInitPlugin"
+const DLSS_INIT_PLUGIN_NAME : String = "mgstudio.anti_alias.dlss.DlssInitPlugin"
 
 ///|
-pub const DLSS_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssPlugin"
+const DLSS_PLUGIN_NAME : String = "mgstudio.anti_alias.dlss.DlssPlugin"
 
 ///|
 pub(all) enum DlssPerfQualityMode {
@@ -187,8 +187,8 @@ pub impl @app.Resource for DlssRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for DlssInitPlugin with replacement_id(_self) {
-  DLSS_INIT_PLUGIN_ID
+pub impl @app.PluginReplacement for DlssInitPlugin with plugin_name(_self) {
+  DLSS_INIT_PLUGIN_NAME
 }
 
 ///|
@@ -199,8 +199,8 @@ pub impl @app.PluginReplacement for DlssInitPlugin with world_plugin(self) {
 }
 
 ///|
-pub impl @app.PluginReplacement for DlssPlugin with replacement_id(_self) {
-  DLSS_PLUGIN_ID
+pub impl @app.PluginReplacement for DlssPlugin with plugin_name(_self) {
+  DLSS_PLUGIN_NAME
 }
 
 ///|

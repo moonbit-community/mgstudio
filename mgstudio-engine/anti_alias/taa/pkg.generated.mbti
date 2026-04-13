@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub const TEMPORAL_ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::taa::TemporalAntiAliasPlugin"
-
 pub let ecs_key_temporal_anti_alias_runtime_state : @ecs.ResourceKey[TemporalAntiAliasRuntimeState]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]

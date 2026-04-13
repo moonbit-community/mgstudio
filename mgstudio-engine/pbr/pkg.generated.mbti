@@ -33,19 +33,9 @@ import {
 // Values
 pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3
 
-pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "mgstudio.pbr.DeferredPbrLightingPlugin"
-
-pub const MATERIALS_PLUGIN_ID : String = "mgstudio.pbr.MaterialsPlugin"
-
 pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
 pub const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
-
-pub const MESH_RENDER_PLUGIN_ID : String = "mgstudio.pbr.MeshRenderPlugin"
-
-pub const PBR_PLUGIN_ID : String = "mgstudio.pbr.PbrPlugin"
-
-pub const SCATTERING_MEDIUM_PLUGIN_ID : String = "mgstudio.pbr.ScatteringMediumPlugin"
 
 pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100
 
@@ -76,8 +66,6 @@ pub const STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE : UInt64 = 0x001000
 pub const STANDARD_MATERIAL_KEY_RELIEF_MAPPING : UInt64 = 0x000008
 
 pub const STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION : UInt64 = 0x000020
-
-pub const STANDARD_MATERIAL_PLUGIN_ID : String = "mgstudio.pbr.MaterialPlugin<StandardMaterial>"
 
 pub const VIEW_CLUSTER_BINDINGS_MAX_INDICES : Int = 16384
 

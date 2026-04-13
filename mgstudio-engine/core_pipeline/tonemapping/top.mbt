@@ -17,7 +17,7 @@
 // Tonemapping plugin owner surface.
 
 ///|
-pub const TONEMAPPING_PLUGIN_ID : String = "bevy_core_pipeline::tonemapping::TonemappingPlugin"
+const TONEMAPPING_PLUGIN_NAME : String = "mgstudio.core_pipeline.tonemapping.TonemappingPlugin"
 
 ///|
 pub struct TonemappingPlugin {}
@@ -135,8 +135,8 @@ pub fn tonemapping_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for TonemappingPlugin with replacement_id(_self) {
-  TONEMAPPING_PLUGIN_ID
+pub impl @app.PluginReplacement for TonemappingPlugin with plugin_name(_self) {
+  TONEMAPPING_PLUGIN_NAME
 }
 
 ///|

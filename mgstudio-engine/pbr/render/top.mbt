@@ -15,9 +15,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/render/mod.rs`.
 
 ///|
-pub const PBR_RENDER_PLUGIN_ID : String = "mgstudio.pbr.render"
-
-///|
 pub struct Render3dPluginState {
   queue_cpu_ms : Float
   execute_cpu_ms : Float

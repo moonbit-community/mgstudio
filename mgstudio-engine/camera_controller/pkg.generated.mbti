@@ -4,18 +4,19 @@ package "Milky2018/mgstudio/camera_controller"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/pbr",
-  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/input/events",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub fn camera_controller_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
-pub let ecs_key_free_camera : @ecs.ComponentKey[@pbr.FreeCamera]
+pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
-pub let ecs_key_free_camera_state : @ecs.ComponentKey[@pbr.FreeCameraState]
+pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
 
-pub let ecs_key_pan_camera : @ecs.ComponentKey[@sprite.PanCamera]
+pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera]
 
 pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -23,18 +24,67 @@ pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn run_free_camera_controller(@ecs.World) -> Unit
 
+pub fn run_freecamera_controller(@ecs.World) -> Unit
+
 pub fn run_pan_camera_controller(@ecs.World) -> Unit
+
+pub fn run_pancamera_controller(@ecs.World) -> Unit
 
 // Errors
 
 // Types and methods
+pub(all) struct FreeCamera {
+  sensitivity : Float
+  key_forward : @events.KeyCode
+  key_back : @events.KeyCode
+  key_left : @events.KeyCode
+  key_right : @events.KeyCode
+  key_up : @events.KeyCode
+  key_down : @events.KeyCode
+  key_run : @events.KeyCode
+  mouse_key_cursor_grab : @events.MouseButton
+  keyboard_key_toggle_cursor_grab : @events.KeyCode
+  walk_speed : Float
+  run_speed : Float
+  scroll_factor : Float
+  friction : Float
+} derive(ToJson, @json.FromJson)
+pub fn FreeCamera::default() -> Self
+pub impl @ecs.Component for FreeCamera
+
+pub(all) struct FreeCameraState {
+  enabled : Bool
+  initialized : Bool
+  pitch : Float
+  yaw : Float
+  speed_multiplier : Float
+  velocity : @math.Vec3
+} derive(ToJson, @json.FromJson)
+pub fn FreeCameraState::default() -> Self
+pub impl @ecs.Component for FreeCameraState
+
+pub struct PanCamera {
+  enabled : Bool
+  mut zoom_factor : Float
+  min_zoom : Float
+  max_zoom : Float
+  zoom_speed : Float
+  key_zoom_in : @events.KeyCode?
+  key_zoom_out : @events.KeyCode?
+  pan_speed : Float
+  key_up : @events.KeyCode?
+  key_down : @events.KeyCode?
+  key_left : @events.KeyCode?
+  key_right : @events.KeyCode?
+  rotation_speed : Float
+  key_rotate_ccw : @events.KeyCode?
+  key_rotate_cw : @events.KeyCode?
+} derive(ToJson, @json.FromJson)
+pub fn PanCamera::default() -> Self
+pub impl @ecs.Component for PanCamera
+pub impl Show for PanCamera
 
 // Type aliases
-pub using @pbr {type FreeCamera}
-
-pub using @pbr {type FreeCameraState}
-
-pub using @sprite {type PanCamera}
 
 // Traits
 

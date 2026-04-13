@@ -35,7 +35,5 @@ pub fn window_screenshot_take_capture_result(Int) -> @renderer.ScreenshotCapture
 // Type aliases
 pub type ManualTextureViewHandle = Int
 
-pub using @renderer {type ScreenshotCaptureResult}
-
 // Traits
 

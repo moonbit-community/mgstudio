@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`.
-pub const CORE_3D_PLUGIN_ID : String = "bevy_core_pipeline::core_3d::Core3dPlugin"
+const CORE_3D_PLUGIN_NAME : String = "mgstudio.core_pipeline.core_3d.Core3dPlugin"
 
 ///|
 pub const CORE_3D_DEPTH_FORMAT : String = "depth32float"
@@ -51,8 +51,8 @@ pub fn core_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for Core3dPlugin with replacement_id(_self) {
-  CORE_3D_PLUGIN_ID
+pub impl @app.PluginReplacement for Core3dPlugin with plugin_name(_self) {
+  CORE_3D_PLUGIN_NAME
 }
 
 ///|

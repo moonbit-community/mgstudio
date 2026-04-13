@@ -28,14 +28,42 @@ pub(all) suberror PluginGroupError {
 
 ///|
 pub(open) trait PluginReplacement {
-  replacement_id(Self) -> String
+  plugin_name(Self) -> String
   world_plugin(Self) -> Plugin[@ecs.World]
+  is_unique(Self) -> Bool = _
+  ready(Self, App[@ecs.World]) -> Bool = _
+  finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
+  cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
+}
+
+///|
+impl PluginReplacement with is_unique(_self) {
+  true
+}
+
+///|
+impl PluginReplacement with ready(_self, _app) {
+  true
+}
+
+///|
+impl PluginReplacement with finish(_self, app) {
+  app
+}
+
+///|
+impl PluginReplacement with cleanup(_self, app) {
+  app
 }
 
 ///|
 pub struct PluginGroupEntry[W] {
   id : String
-  mut plugin : Plugin[W]
+  plugin : Plugin[W]
+  is_unique : Bool
+  ready : (App[W]) -> Bool
+  finish : Plugin[W]
+  cleanup : Plugin[W]
   mut enabled : Bool
 }
 
@@ -43,6 +71,57 @@ pub struct PluginGroupEntry[W] {
 pub struct PluginGroupBuilder[W] {
   group_name : String
   plugins : Array[PluginGroupEntry[W]]
+}
+
+///|
+pub struct NamedWorldPlugin {
+  name : String
+  plugin : Plugin[@ecs.World]
+}
+
+///|
+pub fn named_world_plugin(
+  name : String,
+  plugin : Plugin[@ecs.World],
+) -> NamedWorldPlugin {
+  NamedWorldPlugin::{ name, plugin }
+}
+
+///|
+fn[W] plugin_group_ready_default(_app : App[W]) -> Bool {
+  true
+}
+
+///|
+fn[W] plugin_group_finish_default(app : App[W]) -> App[W] {
+  app
+}
+
+///|
+fn[W] plugin_group_cleanup_default(app : App[W]) -> App[W] {
+  app
+}
+
+///|
+fn[W] plugin_group_entry_new(
+  id : String,
+  plugin : Plugin[W],
+  is_unique~ : Bool = false,
+  ready~ : (App[W]) -> Bool = plugin_group_ready_default,
+  finish~ : Plugin[W] = plugin_group_finish_default,
+  cleanup~ : Plugin[W] = plugin_group_cleanup_default,
+) -> PluginGroupEntry[W] {
+  { id, plugin, is_unique, ready, finish, cleanup, enabled: true }
+}
+
+///|
+pub impl PluginReplacement for NamedWorldPlugin with plugin_name(self) {
+  self.name
+}
+
+///|
+pub impl PluginReplacement for NamedWorldPlugin with world_plugin(self) {
+  self.plugin
 }
 
 ///|
@@ -76,7 +155,7 @@ fn[W] PluginGroupBuilder::plugin_group_find_index(
 }
 
 ///|
-pub fn[W] PluginGroupBuilder::contains(
+fn[W] PluginGroupBuilder::plugin_group_contains_id(
   self : PluginGroupBuilder[W],
   id : String,
 ) -> Bool {
@@ -84,7 +163,7 @@ pub fn[W] PluginGroupBuilder::contains(
 }
 
 ///|
-pub fn[W] PluginGroupBuilder::enabled(
+fn[W] PluginGroupBuilder::plugin_group_enabled_id(
   self : PluginGroupBuilder[W],
   id : String,
 ) -> Bool {
@@ -93,44 +172,79 @@ pub fn[W] PluginGroupBuilder::enabled(
 }
 
 ///|
-pub fn[W] PluginGroupBuilder::add(
-  self : PluginGroupBuilder[W],
-  plugin : Plugin[W],
-) -> PluginGroupBuilder[W] {
-  self.add_named(id=plugin_group_anonymous_id(self.plugins.length()), plugin)
-}
-
-///|
-pub fn[W] PluginGroupBuilder::add_named(
+fn[W] PluginGroupBuilder::plugin_group_add_id(
   self : PluginGroupBuilder[W],
   id~ : String,
   plugin : Plugin[W],
 ) -> PluginGroupBuilder[W] {
-  self.plugins.push({ id, plugin, enabled: true })
+  self.plugins.push(plugin_group_entry_new(id, plugin))
   self
 }
 
 ///|
-pub fn[W] PluginGroupBuilder::set_plugin(
+fn[W] PluginGroupBuilder::plugin_group_add_entry(
   self : PluginGroupBuilder[W],
-  id~ : String,
-  plugin : Plugin[W],
+  entry : PluginGroupEntry[W],
 ) -> PluginGroupBuilder[W] {
-  try! self.try_set_plugin(id~, plugin)
+  self.plugins.push(entry)
+  self
 }
 
-///|
-pub fn[W] PluginGroupBuilder::try_set_plugin(
+fn[W] PluginGroupBuilder::plugin_group_try_set_entry(
   self : PluginGroupBuilder[W],
   id~ : String,
-  plugin : Plugin[W],
+  entry : PluginGroupEntry[W],
 ) -> PluginGroupBuilder[W] raise PluginGroupError {
   guard self.plugin_group_find_index(id) is Some(index) else {
     raise MissingPlugin(id)
   }
-  self.plugins[index].plugin = plugin
+  self.plugins[index] = entry
   self.plugins[index].enabled = true
   self
+}
+
+///|
+pub fn[W] PluginGroupBuilder::add(
+  self : PluginGroupBuilder[W],
+  plugin : Plugin[W],
+) -> PluginGroupBuilder[W] {
+  self.plugin_group_add_id(
+    id=plugin_group_anonymous_id(self.plugins.length()),
+    plugin,
+  )
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::add_typed(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> PluginGroupBuilder[@ecs.World] {
+  self.plugin_group_add_entry(
+    plugin_group_entry_new(
+      P::plugin_name(plugin),
+      P::world_plugin(plugin),
+      is_unique=P::is_unique(plugin),
+      ready=fn(app) { P::ready(plugin, app) },
+      finish=fn(app) { P::finish(plugin, app) },
+      cleanup=fn(app) { P::cleanup(plugin, app) },
+    ),
+  )
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::contains(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> Bool {
+  self.plugin_group_contains_id(P::plugin_name(plugin))
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::enabled(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> Bool {
+  self.plugin_group_enabled_id(P::plugin_name(plugin))
 }
 
 ///|
@@ -138,9 +252,16 @@ pub fn[P : PluginReplacement] PluginGroupBuilder::set(
   self : PluginGroupBuilder[@ecs.World],
   replacement : P,
 ) -> PluginGroupBuilder[@ecs.World] {
-  self.set_plugin(
-    id=P::replacement_id(replacement),
-    P::world_plugin(replacement),
+  try! self.plugin_group_try_set_entry(
+    id=P::plugin_name(replacement),
+    plugin_group_entry_new(
+      P::plugin_name(replacement),
+      P::world_plugin(replacement),
+      is_unique=P::is_unique(replacement),
+      ready=fn(app) { P::ready(replacement, app) },
+      finish=fn(app) { P::finish(replacement, app) },
+      cleanup=fn(app) { P::cleanup(replacement, app) },
+    ),
   )
 }
 
@@ -149,22 +270,21 @@ pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(
   self : PluginGroupBuilder[@ecs.World],
   replacement : P,
 ) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
-  self.try_set_plugin(
-    id=P::replacement_id(replacement),
-    P::world_plugin(replacement),
+  self.plugin_group_try_set_entry(
+    id=P::plugin_name(replacement),
+    plugin_group_entry_new(
+      P::plugin_name(replacement),
+      P::world_plugin(replacement),
+      is_unique=P::is_unique(replacement),
+      ready=fn(app) { P::ready(replacement, app) },
+      finish=fn(app) { P::finish(replacement, app) },
+      cleanup=fn(app) { P::cleanup(replacement, app) },
+    ),
   )
 }
 
 ///|
-pub fn[W] PluginGroupBuilder::disable(
-  self : PluginGroupBuilder[W],
-  id : String,
-) -> PluginGroupBuilder[W] {
-  try! self.try_disable(id)
-}
-
-///|
-pub fn[W] PluginGroupBuilder::try_disable(
+fn[W] PluginGroupBuilder::plugin_group_try_disable_id(
   self : PluginGroupBuilder[W],
   id : String,
 ) -> PluginGroupBuilder[W] raise PluginGroupError {
@@ -176,7 +296,7 @@ pub fn[W] PluginGroupBuilder::try_disable(
 }
 
 ///|
-pub fn[W] PluginGroupBuilder::enable(
+fn[W] PluginGroupBuilder::plugin_group_enable_id(
   self : PluginGroupBuilder[W],
   id : String,
 ) -> PluginGroupBuilder[W] {
@@ -186,16 +306,51 @@ pub fn[W] PluginGroupBuilder::enable(
 }
 
 ///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::disable(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> PluginGroupBuilder[@ecs.World] {
+  try! self.plugin_group_try_disable_id(P::plugin_name(plugin))
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::try_disable(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  self.plugin_group_try_disable_id(P::plugin_name(plugin))
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::enable(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> PluginGroupBuilder[@ecs.World] {
+  self.plugin_group_enable_id(P::plugin_name(plugin))
+}
+
+///|
 pub fn[W] PluginGroupBuilder::build(
   self : PluginGroupBuilder[W],
 ) -> Array[Plugin[W]] {
   let plugins : Array[Plugin[W]] = []
-  for entry in self.plugins {
-    if entry.enabled {
-      plugins.push(entry.plugin)
-    }
+  for entry in self.build_entries() {
+    plugins.push(entry.plugin)
   }
   plugins
+}
+
+///|
+pub fn[W] PluginGroupBuilder::build_entries(
+  self : PluginGroupBuilder[W],
+) -> Array[PluginGroupEntry[W]] {
+  let entries : Array[PluginGroupEntry[W]] = []
+  for entry in self.plugins {
+    if entry.enabled {
+      entries.push(entry)
+    }
+  }
+  entries
 }
 
 ///|
@@ -1512,6 +1667,7 @@ pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 ///|
 pub struct App[W] {
   mut sub_apps : SubApps[W]
+  mut plugin_names : Array[String]
   runner_builder : RunnerBuilder[W]?
 }
 
@@ -1521,21 +1677,88 @@ pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
   let main_sub_app = SubApp::new(world)
     .add_message(app_exit_key)
     .set_update_schedule(Some(Main))
-  App::{ sub_apps: SubApps::new(main_sub_app), runner_builder: None }
+  App::{
+    sub_apps: SubApps::new(main_sub_app),
+    plugin_names: [],
+    runner_builder: None,
+  }
 }
 
 ///|
-pub fn[W] App::add_plugins(self : App[W], plugins : Array[Plugin[W]]) -> App[W] {
+fn[W] App::plugin_name_registered(self : App[W], plugin_name : String) -> Bool {
+  for existing in self.plugin_names {
+    if existing == plugin_name {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn[W] App::add_plugin_entry(
+  self : App[W],
+  entry : PluginGroupEntry[W],
+) -> App[W] {
+  if entry.is_unique && self.plugin_name_registered(entry.id) {
+    abort("Duplicate unique plugin: \{entry.id}")
+  }
+  self.plugin_names.push(entry.id)
+  let mut app = (entry.plugin)(self)
+  if !(entry.ready)(app) {
+    abort("Plugin not ready after build: \{entry.id}")
+  }
+  app = (entry.finish)(app)
+  (entry.cleanup)(app)
+}
+
+///|
+fn[W] App::add_plugin_entries(
+  self : App[W],
+  entries : Array[PluginGroupEntry[W]],
+) -> App[W] {
   let mut app = self
-  for plugin in plugins {
-    app = plugin(app)
+  for entry in entries {
+    app = app.add_plugin_entry(entry)
   }
   app
 }
 
 ///|
+pub fn[W] App::add_plugins(self : App[W], plugins : Array[Plugin[W]]) -> App[W] {
+  let entries : Array[PluginGroupEntry[W]] = []
+  for plugin in plugins {
+    entries.push(
+      plugin_group_entry_new(
+        plugin_group_anonymous_id(entries.length()),
+        plugin,
+      ),
+    )
+  }
+  self.add_plugin_entries(entries)
+}
+
+///|
+pub fn[P : PluginReplacement] App::add_plugin_typed(
+  self : App[@ecs.World],
+  plugin : P,
+) -> App[@ecs.World] {
+  self.add_plugin_entry(
+    plugin_group_entry_new(
+      P::plugin_name(plugin),
+      P::world_plugin(plugin),
+      is_unique=P::is_unique(plugin),
+      ready=fn(app) { P::ready(plugin, app) },
+      finish=fn(app) { P::finish(plugin, app) },
+      cleanup=fn(app) { P::cleanup(plugin, app) },
+    ),
+  )
+}
+
+///|
 pub fn[W] App::add_plugin(self : App[W], plugin : Plugin[W]) -> App[W] {
-  plugin(self)
+  self.add_plugin_entries([
+    plugin_group_entry_new(plugin_group_anonymous_id(0), plugin),
+  ])
 }
 
 ///|
@@ -1543,7 +1766,18 @@ pub fn[W] App::add_plugin_group(
   self : App[W],
   group : PluginGroup[W],
 ) -> App[W] {
-  self.add_plugins(group().build())
+  self.add_plugin_entries(group().build_entries())
+}
+
+///|
+pub fn[W] App::plugin_names(self : App[W]) -> Array[String] {
+  self.plugin_names
+}
+
+///|
+pub fn[W] App::clear_plugin_names(self : App[W]) -> App[W] {
+  self.plugin_names.clear()
+  self
 }
 
 ///|

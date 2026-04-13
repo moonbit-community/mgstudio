@@ -17,7 +17,7 @@
 // Blit plugin owner surface.
 
 ///|
-pub const BLIT_PLUGIN_ID : String = "bevy_core_pipeline::blit::BlitPlugin"
+const BLIT_PLUGIN_NAME : String = "mgstudio.core_pipeline.blit.BlitPlugin"
 
 ///|
 pub const BLIT_PASS_LABEL : String = "blit"
@@ -36,8 +36,8 @@ pub fn blit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for BlitPlugin with replacement_id(_self) {
-  BLIT_PLUGIN_ID
+pub impl @app.PluginReplacement for BlitPlugin with plugin_name(_self) {
+  BLIT_PLUGIN_NAME
 }
 
 ///|

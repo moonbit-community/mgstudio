@@ -14,8 +14,6 @@ import {
 }
 
 // Values
-pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
-
 pub const COMPRESSED_IMAGE_FORMAT_ASTC_LDR : Int = 1
 
 pub const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
@@ -31,8 +29,6 @@ pub const IMAGE_USAGE_COPY_SRC : Int = 4
 pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
 
 pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
-
-pub const WEB_ASSET_PLUGIN_ID : String = "bevy_asset::io::web::WebAssetPlugin"
 
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 

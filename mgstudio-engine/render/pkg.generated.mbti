@@ -29,8 +29,6 @@ pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
 
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
 
-pub const RENDER_PLUGIN_ID : String = "bevy_render::RenderPlugin"
-
 pub fn app_rendering_enabled() -> Bool
 
 pub fn app_rendering_resume() -> Unit
@@ -228,6 +226,8 @@ pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
 pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
+
+pub fn render_error_policy_recover() -> @app.RenderErrorPolicy
 
 pub fn render_extract_app_label() -> @app.AppLabel
 
@@ -598,12 +598,6 @@ pub using @renderer {type HostMesh3dPreprocessPreviousView}
 pub using @renderer {type HostMesh3dPreprocessShaderWorkItem}
 
 pub using @renderer {type HostMesh3dPreprocessView}
-
-pub type RenderErrorHandler = (@app.RenderRuntimeError) -> @app.RenderErrorPolicy
-
-pub using @app {type RenderErrorPolicy}
-
-pub using @app {type RenderRuntimeError}
 
 pub type UntypedRenderAssetId = Int
 

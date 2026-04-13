@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_gizmos_render/src/lib.rs`.
 // Package-level render-queue boundary for gizmos.
 
-pub const GIZMO_RENDER_PLUGIN_ID : String = "mgstudio_gizmos_render::GizmoRenderPlugin"
+const GIZMO_RENDER_PLUGIN_NAME : String = "mgstudio.gizmos_render.GizmoRenderPlugin"
 
 ///|
 priv struct GizmoRenderPluginMarker {}
@@ -48,8 +48,8 @@ pub fn gizmo_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for GizmoRenderPlugin with replacement_id(_self) {
-  GIZMO_RENDER_PLUGIN_ID
+pub impl @app.PluginReplacement for GizmoRenderPlugin with plugin_name(_self) {
+  GIZMO_RENDER_PLUGIN_NAME
 }
 
 ///|

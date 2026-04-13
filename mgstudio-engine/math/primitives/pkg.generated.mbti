@@ -52,6 +52,14 @@ pub fn polygon_signed_area(Array[@math.Vec2]) -> Float
 
 pub fn polygon_winding_order(Array[@math.Vec2]) -> @math.WindingOrder
 
+pub fn primitive_half_space(@math.Vec4) -> @math.HalfSpace
+
+pub fn primitive_polygon_winding_order(Array[@math.Vec2]) -> @math.WindingOrder
+
+pub fn primitive_view_frustum(Array[@math.HalfSpace]) -> @math.ViewFrustum
+
+pub fn primitive_view_frustum_corners(@math.ViewFrustum) -> Array[@math.Vec3]?
+
 pub fn sphere_diameter(@math.Sphere) -> Float
 
 pub fn view_frustum(Array[@math.HalfSpace]) -> @math.ViewFrustum

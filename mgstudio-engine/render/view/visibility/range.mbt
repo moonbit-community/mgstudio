@@ -22,7 +22,7 @@ pub const VISIBILITY_RANGES_STORAGE_BUFFER_COUNT : Int = 4
 pub const VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE : Int = 64
 
 ///|
-pub const RENDER_VISIBILITY_RANGE_PLUGIN_ID : String = "bevy_render::view::visibility::range::RenderVisibilityRangePlugin"
+const RENDER_VISIBILITY_RANGE_PLUGIN_NAME : String = "mgstudio.render.view.visibility.range.RenderVisibilityRangePlugin"
 
 ///|
 pub struct RenderVisibilityRangePlugin {}
@@ -52,10 +52,10 @@ pub fn render_visibility_range_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for RenderVisibilityRangePlugin with replacement_id(
+pub impl @app.PluginReplacement for RenderVisibilityRangePlugin with plugin_name(
   _self,
 ) {
-  RENDER_VISIBILITY_RANGE_PLUGIN_ID
+  RENDER_VISIBILITY_RANGE_PLUGIN_NAME
 }
 
 ///|

@@ -17,7 +17,7 @@
 // Upscaling plugin owner surface.
 
 ///|
-pub const UPSCALING_PLUGIN_ID : String = "bevy_core_pipeline::upscaling::UpscalingPlugin"
+const UPSCALING_PLUGIN_NAME : String = "mgstudio.core_pipeline.upscaling.UpscalingPlugin"
 
 ///|
 pub struct UpscalingPlugin {}
@@ -33,8 +33,8 @@ pub fn upscaling_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for UpscalingPlugin with replacement_id(_self) {
-  UPSCALING_PLUGIN_ID
+pub impl @app.PluginReplacement for UpscalingPlugin with plugin_name(_self) {
+  UPSCALING_PLUGIN_NAME
 }
 
 ///|

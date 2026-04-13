@@ -3,11 +3,16 @@ package "Milky2018/mgstudio/gizmos"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
   "moonbitlang/core/debug",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -19,13 +24,83 @@ pub const SIMPLEX_HEIGHT : Float = 28.0
 
 pub const SIMPLEX_LINE_HEIGHT : Float = 1.3
 
+pub fn aabb_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn default_gizmo_config() -> @sprite.GizmoConfig
+
+pub fn default_gizmo_config_group() -> @sprite.DefaultGizmoConfigGroup
+
+pub fn default_gizmo_line_config() -> @sprite.GizmoLineConfig
+
+pub fn draw_aabb_gizmos(@ecs.Query[(@ecs.Comp[@camera.Aabb], @ecs.Comp[@transform.GlobalTransform], @ecs.Comp[@visibility.ViewVisibility]?, @ecs.Comp[ShowAabbGizmo]), @ecs.All], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
+
+pub fn draw_all_aabb_gizmos(@ecs.Query[(@ecs.Comp[@camera.Aabb], @ecs.Comp[@transform.GlobalTransform], @ecs.Comp[@visibility.ViewVisibility]?), @ecs.Without[ShowAabbGizmo]], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
+
+pub fn draw_all_frustum_gizmos(@ecs.Query[@ecs.Comp[@render.Frustum], @ecs.Without[ShowFrustumGizmo]], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
+
+pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Comp[@render.Frustum], @ecs.Comp[ShowFrustumGizmo]), @ecs.All], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
+
+pub fn frustum_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[Config] gizmo_arc_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, Float, Float, @color.Color) -> @sprite.Arc2dBuilder
+
+pub fn[Config] gizmo_arc_3d(@sprite.Gizmos[Config], @math.Isometry3d, Float, Float, @color.Color) -> Unit
+
+pub fn[Config] gizmo_arrow_2d(@sprite.Gizmos[Config], @math.Vec2, @math.Vec2, @color.Color) -> @sprite.ArrowBuilder
+
+pub fn[Config] gizmo_arrow_3d(@sprite.Gizmos[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
+
+pub fn[Config] gizmo_axes_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, Float) -> Unit
+
+pub fn[Config] gizmo_axes_3d(@sprite.Gizmos[Config], @transform.Transform, Float) -> Unit
+
+pub fn[Config] gizmo_circle_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, Float, @color.Color) -> @sprite.Ellipse2dBuilder
+
+pub fn[Config] gizmo_circle_3d(@sprite.Gizmos[Config], @math.Isometry3d, Float, @color.Color) -> Unit
+
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_config(@sprite.GizmoConfigStore, G) -> (@sprite.GizmoConfig, G)
+
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_config_mut(@sprite.GizmoConfigStore, G) -> (@ref.Ref[@sprite.GizmoConfig], @ref.Ref[G])
+
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_get_config(@sprite.GizmoConfigStore, G) -> (@sprite.GizmoConfig, G)?
+
+pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_get_config_mut(@sprite.GizmoConfigStore, G) -> (@ref.Ref[@sprite.GizmoConfig], @ref.Ref[G])?
+
 pub fn[Config] gizmo_cross(@sprite.Gizmos[Config], @math.Isometry3d, Float, @color.Color) -> Unit
 
 pub fn[Config] gizmo_cross_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, Float, @color.Color) -> Unit
 
+pub fn[Config] gizmo_curve_2d(@sprite.Gizmos[Config], Array[@math.Vec2], @color.Color) -> Unit
+
+pub fn[Config] gizmo_curve_3d(@sprite.Gizmos[Config], Array[@math.Vec3], @color.Color) -> Unit
+
+pub fn[Config] gizmo_curve_gradient_2d(@sprite.Gizmos[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
+
+pub fn[Config] gizmo_curve_gradient_3d(@sprite.Gizmos[Config], Array[(@math.Vec3, @color.Color)]) -> Unit
+
+pub fn[Config] gizmo_draw_arc_shape_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Arc2d, @color.Color) -> @sprite.Arc2dBuilder
+
+pub fn[Config] gizmo_draw_circle_shape_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Circle, @color.Color) -> @sprite.Ellipse2dBuilder
+
+pub fn[Config] gizmo_ellipse_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Vec2, @color.Color) -> @sprite.Ellipse2dBuilder
+
 pub fn gizmo_global_init(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn[Config] gizmo_grid_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.IVec2, @math.Vec2, @color.Color) -> @sprite.Grid2dBuilder
+
+pub fn[Config] gizmo_grid_3d(@sprite.Gizmos[Config], @math.Isometry3d, @math.IVec2, @math.Vec2, @color.Color) -> Unit
+
+pub fn[Config] gizmo_long_arc_2d_between(@sprite.Gizmos[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> @sprite.Arc2dBuilder
+
 pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gizmo_plugin_with(@app.App[@ecs.World], GizmoPlugin) -> @app.App[@ecs.World]
+
+pub fn[Config] gizmo_rounded_rect_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Vec2, @color.Color) -> @sprite.RoundedRectBuilder
+
+pub fn[Config] gizmo_short_arc_2d_between(@sprite.Gizmos[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> @sprite.Arc2dBuilder
+
+pub fn[Config] gizmo_sphere_3d(@sprite.Gizmos[Config], @math.Isometry3d, Float, @color.Color) -> Unit
 
 pub fn gizmo_stroke_text_measure(String, Float) -> @math.Vec2
 
@@ -37,6 +112,10 @@ pub fn gizmos_default_group() -> @sprite.DefaultGizmoConfigGroup
 
 pub fn gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn gizmos_plugin_with(@app.App[@ecs.World], GizmoPlugin) -> @app.App[@ecs.World]
+
+pub fn global_gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
 
 pub fn simplex_stroke_font_cap_height() -> Float
@@ -45,13 +124,40 @@ pub fn simplex_stroke_font_height() -> Float
 
 pub fn simplex_stroke_font_line_height() -> Float
 
+pub fn skinned_mesh_bounds_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 // Errors
 
 // Types and methods
+pub(all) struct AabbGizmoConfigGroup {
+  draw_all : Bool
+  default_color : @color.Color?
+}
+pub fn AabbGizmoConfigGroup::default() -> Self
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup
+pub impl Default for AabbGizmoConfigGroup
+
+pub(all) struct FrustumGizmoConfigGroup {
+  draw_all : Bool
+  default_color : @color.Color?
+}
+pub fn FrustumGizmoConfigGroup::default() -> Self
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup
+pub impl Default for FrustumGizmoConfigGroup
+
 pub struct GizmoAssetHandle {
   id : Int
 } derive(Eq, @debug.Debug)
 pub fn GizmoAssetHandle::new(id~ : Int) -> Self
+
+pub struct GizmoPlugin {
+}
+pub fn GizmoPlugin::default() -> Self
+pub impl @app.PluginReplacement for GizmoPlugin
+
+pub struct GlobalGizmosPlugin {
+}
+pub fn GlobalGizmosPlugin::default() -> Self
 
 pub struct RetainedGizmo {
   handle : GizmoAssetHandle
@@ -60,16 +166,33 @@ pub struct RetainedGizmo {
 }
 pub fn RetainedGizmo::default() -> Self
 
+pub struct ShowAabbGizmo {
+  color : @color.Color?
+}
+pub fn ShowAabbGizmo::default() -> Self
+pub fn ShowAabbGizmo::with_color(Self, @color.Color?) -> Self
+pub impl @ecs.Component for ShowAabbGizmo
+
+pub struct ShowFrustumGizmo {
+  color : @color.Color?
+}
+pub fn ShowFrustumGizmo::default() -> Self
+pub fn ShowFrustumGizmo::with_color(Self, @color.Color?) -> Self
+pub impl @ecs.Component for ShowFrustumGizmo
+
 pub struct ShowSkinnedMeshBoundsGizmo {
   color : @color.Color?
 }
 pub fn ShowSkinnedMeshBoundsGizmo::default() -> Self
+pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo
 
 pub struct SkinnedMeshBoundsGizmoConfigGroup {
   draw_all : Bool
   default_color : @color.Color
 }
 pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> Self
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup
+pub impl Default for SkinnedMeshBoundsGizmoConfigGroup
 
 pub struct SkinnedMeshBoundsGizmoPlugin {
 }
@@ -82,49 +205,17 @@ pub using @sprite {type ArrowBuilder}
 
 pub using @sprite {type DefaultGizmoConfigGroup}
 
-pub using @sprite {type DefaultGizmoConfigGroup as DefaultGizmoConfigValue}
-
 pub using @sprite {type Ellipse2dBuilder}
-
-pub using @math {type Aabb2d as GizmoAabb2d}
-
-pub using @math {type Aabb3d as GizmoAabb3d}
-
-pub using @math {type Arc2d as GizmoArc2d}
-
-pub using @sprite {type Arc2dBuilder as GizmoArc2dBuilder}
-
-pub using @sprite {type ArrowBuilder as GizmoArrowBuilder}
-
-pub using @math {type Circle as GizmoCircle}
 
 pub using @sprite {type GizmoConfig}
 
 pub using @sprite {type GizmoConfigStore}
 
-pub using @sprite {type GizmoConfigStore as GizmoConfigStoreValue}
-
-pub using @sprite {type GizmoConfig as GizmoConfigValue}
-
-pub type GizmoCubicCurve2d = @math.CubicCurve[@math.Vec2]
-
-pub type GizmoCubicCurve3d = @math.CubicCurve[@math.Vec3]
-
-pub using @sprite {type DefaultGizmoConfigGroup as GizmoGlobalDefaultGroup}
-
-pub using @sprite {type Grid2dBuilder as GizmoGrid2dBuilder}
-
 pub using @sprite {type GizmoLineConfig}
-
-pub using @sprite {type GizmoLineConfig as GizmoLineConfigValue}
 
 pub using @sprite {type GizmoLineJoint}
 
 pub using @sprite {type GizmoLineStyle}
-
-pub using @sprite {type RoundedRectBuilder as GizmoRoundedRectBuilder}
-
-pub using @math {type ViewFrustum as GizmoViewFrustum}
 
 pub using @sprite {type Gizmos}
 

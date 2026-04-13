@@ -17,7 +17,7 @@
 // Deferred lighting-id copy node/plugin surface.
 
 ///|
-pub const COPY_DEFERRED_LIGHTING_ID_PLUGIN_ID : String = "bevy_core_pipeline::deferred::copy_lighting_id::CopyDeferredLightingIdPlugin"
+const COPY_DEFERRED_LIGHTING_ID_PLUGIN_NAME : String = "mgstudio.core_pipeline.deferred.copy_lighting_id.CopyDeferredLightingIdPlugin"
 
 ///|
 pub const COPY_DEFERRED_LIGHTING_ID_PASS_LABEL : String = "copy_deferred_lighting_id"
@@ -53,10 +53,10 @@ pub fn copy_deferred_lighting_id_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for CopyDeferredLightingIdPlugin with replacement_id(
+pub impl @app.PluginReplacement for CopyDeferredLightingIdPlugin with plugin_name(
   _self,
 ) {
-  COPY_DEFERRED_LIGHTING_ID_PLUGIN_ID
+  COPY_DEFERRED_LIGHTING_ID_PLUGIN_NAME
 }
 
 ///|

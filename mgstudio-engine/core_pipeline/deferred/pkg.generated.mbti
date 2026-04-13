@@ -10,10 +10,6 @@ import {
 // Values
 pub const COPY_DEFERRED_LIGHTING_ID_PASS_LABEL : String = "copy_deferred_lighting_id"
 
-pub const COPY_DEFERRED_LIGHTING_ID_PLUGIN_ID : String = "bevy_core_pipeline::deferred::copy_lighting_id::CopyDeferredLightingIdPlugin"
-
-pub const DEFERRED_PLUGIN_ID : String = "bevy_core_pipeline::deferred::DeferredPlugin"
-
 pub const DEFERRED_PREPASS_EARLY_LABEL : String = "early deferred prepass"
 
 pub const DEFERRED_PREPASS_LATE_LABEL : String = "late deferred prepass"

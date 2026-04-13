@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/prepass/mod.rs`.
-pub const PREPASS_PLUGIN_ID : String = "bevy_core_pipeline::prepass::PrepassPlugin"
+const PREPASS_PLUGIN_NAME : String = "mgstudio.core_pipeline.prepass.PrepassPlugin"
 
 ///|
 pub const EARLY_PREPASS_LABEL : String = "early prepass"
@@ -36,8 +36,8 @@ pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for PrepassPlugin with replacement_id(_self) {
-  PREPASS_PLUGIN_ID
+pub impl @app.PluginReplacement for PrepassPlugin with plugin_name(_self) {
+  PREPASS_PLUGIN_NAME
 }
 
 ///|

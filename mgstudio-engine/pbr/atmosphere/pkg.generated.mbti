@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub const ATMOSPHERE_PLUGIN_ID : String = "mgstudio.pbr.AtmospherePlugin"
-
 pub fn atmosphere_plugin() -> AtmospherePlugin
 
 pub fn atmosphere_plugin_id() -> String

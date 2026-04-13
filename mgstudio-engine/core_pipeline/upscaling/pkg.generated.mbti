@@ -9,8 +9,6 @@ import {
 // Values
 pub const UPSCALING_PASS_LABEL : String = "upscaling"
 
-pub const UPSCALING_PLUGIN_ID : String = "bevy_core_pipeline::upscaling::UpscalingPlugin"
-
 pub let ecs_key_view_upscaling_pipeline : @ecs.ResourceKey[ViewUpscalingPipeline]
 
 pub fn upscaling_bind_group_cache_hit(UpscalingBindGroupCacheState, main_texture_view_id~ : Int) -> Bool

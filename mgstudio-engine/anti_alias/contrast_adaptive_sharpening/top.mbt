@@ -19,7 +19,7 @@
 pub const CAS_RUNTIME_SUPPORTED : Bool = false
 
 ///|
-pub const CAS_PLUGIN_ID : String = "bevy_anti_alias::contrast_adaptive_sharpening::CasPlugin"
+const CAS_PLUGIN_NAME : String = "mgstudio.anti_alias.contrast_adaptive_sharpening.CasPlugin"
 
 ///|
 pub struct CasPlugin {}
@@ -124,8 +124,8 @@ pub impl @app.Resource for CasRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for CasPlugin with replacement_id(_self) {
-  CAS_PLUGIN_ID
+pub impl @app.PluginReplacement for CasPlugin with plugin_name(_self) {
+  CAS_PLUGIN_NAME
 }
 
 ///|

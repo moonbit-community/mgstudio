@@ -3,65 +3,302 @@ package "Milky2018/mgstudio/ui_widgets"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/ui",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
-pub let ecs_key_accessibility_label : @ecs.ComponentKey[@ui.AccessibilityLabel]
+pub fn button_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn checkbox_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn checkbox_self_update(@ecs.On[ValueChange[Bool]], @ecs.Query[@ecs.Has[Checkbox], @ecs.All], @app.Commands) -> Unit
 
 pub let ecs_key_button : @ecs.ComponentKey[@ui.Button]
 
 pub let ecs_key_button_colors : @ecs.ComponentKey[@ui.ButtonColors]
 
-pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[@ui.ComputedUiTargetCamera]
+pub let ecs_key_checkable : @ecs.ComponentKey[Checkable]
 
-pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize]
+pub let ecs_key_checkbox : @ecs.ComponentKey[Checkbox]
 
-pub let ecs_key_focus_policy : @ecs.ComponentKey[@ui.FocusPolicy]
+pub let ecs_key_checked : @ecs.ComponentKey[Checked]
+
+pub let ecs_key_core_scrollbar_drag_state : @ecs.ComponentKey[CoreScrollbarDragState]
+
+pub let ecs_key_core_scrollbar_thumb : @ecs.ComponentKey[CoreScrollbarThumb]
 
 pub let ecs_key_interaction : @ecs.ComponentKey[@ui.Interaction]
 
-pub let ecs_key_label : @ecs.ComponentKey[@ui.Label]
+pub let ecs_key_interaction_disabled : @ecs.ComponentKey[InteractionDisabled]
 
-pub let ecs_key_scroll_position : @ecs.ComponentKey[@ui.ScrollPosition]
+pub let ecs_key_menu_item : @ecs.ComponentKey[MenuItem]
 
-pub let ecs_key_ui_layout : @ecs.ComponentKey[@ui.UiLayout]
+pub let ecs_key_menu_popup : @ecs.ComponentKey[MenuPopup]
 
-pub let ecs_key_ui_target_camera : @ecs.ComponentKey[@ui.UiTargetCamera]
+pub let ecs_key_popover : @ecs.ComponentKey[Popover]
+
+pub let ecs_key_pressed : @ecs.ComponentKey[Pressed]
+
+pub let ecs_key_radio_button : @ecs.ComponentKey[RadioButton]
+
+pub let ecs_key_radio_group : @ecs.ComponentKey[RadioGroup]
+
+pub let ecs_key_scrollbar : @ecs.ComponentKey[Scrollbar]
+
+pub let ecs_key_slider : @ecs.ComponentKey[Slider]
+
+pub let ecs_key_slider_precision : @ecs.ComponentKey[SliderPrecision]
+
+pub let ecs_key_slider_range : @ecs.ComponentKey[SliderRange]
+
+pub let ecs_key_slider_step : @ecs.ComponentKey[SliderStep]
+
+pub let ecs_key_slider_thumb : @ecs.ComponentKey[SliderThumb]
+
+pub let ecs_key_slider_value : @ecs.ComponentKey[SliderValue]
+
+pub fn menu_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[E : @ecs.TriggerEvent] observe(@app.EntityCommands, (@ecs.On[E]) -> Unit raise) -> @app.EntityCommands
+
+pub fn popover_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn radio_group_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn scrollbar_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn slider_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn slider_self_update(@ecs.On[ValueChange[Float]], @ecs.Query[@ecs.Has[Slider], @ecs.All], @app.Commands) -> Unit
 
 pub fn ui_interaction_system(@ecs.World) -> Unit
 
 pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ui_widgets_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
 
 pub let ui_widgets_set_interaction : String
 
 // Errors
 
 // Types and methods
+pub struct Activate {
+  mut entity : @core.Entity
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.TriggerEvent for Activate
+
+pub struct Checkable {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for Checkable
+
+pub struct Checkbox {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for Checkbox
+
+pub struct Checked {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for Checked
+
+pub(all) enum ControlOrientation {
+  Horizontal
+  Vertical
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ControlOrientation::default() -> Self
+
+pub struct CoreScrollbarDragState {
+  dragging : Bool
+  drag_origin : Float
+} derive(ToJson, @json.FromJson)
+pub fn CoreScrollbarDragState::default() -> Self
+pub impl @ecs.Component for CoreScrollbarDragState
+
+pub struct CoreScrollbarThumb {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for CoreScrollbarThumb
+
+pub struct InteractionDisabled {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for InteractionDisabled
+
+pub(all) enum MenuAction {
+  Open
+  Toggle
+  Close
+  CloseAll
+  FocusRoot
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub struct MenuEvent {
+  mut source : @core.Entity
+  action : MenuAction
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.TriggerEvent for MenuEvent
+
+pub struct MenuItem {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for MenuItem
+
+pub(all) enum MenuLayout {
+  Column
+  Row
+  Grid
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MenuLayout::default() -> Self
+
+pub struct MenuPopup {
+  layout : MenuLayout
+} derive(ToJson, @json.FromJson)
+pub fn MenuPopup::default() -> Self
+pub impl @ecs.Component for MenuPopup
+
+pub struct Popover {
+  positions : Array[PopoverPlacement]
+  window_margin : Float
+} derive(ToJson, @json.FromJson)
+pub fn Popover::default() -> Self
+pub impl @ecs.Component for Popover
+
+pub(all) enum PopoverAlign {
+  Start
+  Center
+  End
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PopoverAlign::default() -> Self
+
+pub struct PopoverPlacement {
+  side : PopoverSide
+  align : PopoverAlign
+  gap : Float
+} derive(ToJson, @json.FromJson)
+pub fn PopoverPlacement::default() -> Self
+
+pub(all) enum PopoverSide {
+  Top
+  Bottom
+  Left
+  Right
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PopoverSide::default() -> Self
+pub fn PopoverSide::mirror(Self) -> Self
+
+pub struct Pressed {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for Pressed
+
+pub struct RadioButton {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for RadioButton
+
+pub struct RadioGroup {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for RadioGroup
+
+pub struct Scrollbar {
+  target : @core.Entity
+  orientation : ControlOrientation
+  min_thumb_length : Float
+} derive(ToJson, @json.FromJson)
+pub fn Scrollbar::new(@core.Entity, ControlOrientation, Float) -> Self
+pub impl @ecs.Component for Scrollbar
+
+pub struct SetChecked {
+  mut entity : @core.Entity
+  checked : Bool
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.TriggerEvent for SetChecked
+
+pub struct SetSliderValue {
+  mut entity : @core.Entity
+  value : Float
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.TriggerEvent for SetSliderValue
+
+pub struct Slider {
+  track_click : TrackClick
+} derive(ToJson, @json.FromJson)
+pub fn Slider::default() -> Self
+pub impl @ecs.Component for Slider
+
+pub struct SliderPrecision {
+  digits : Int
+} derive(ToJson, @json.FromJson)
+pub fn SliderPrecision::default() -> Self
+pub fn SliderPrecision::new(Int) -> Self
+pub fn SliderPrecision::round(Self, Float) -> Float
+pub impl @ecs.Component for SliderPrecision
+
+pub struct SliderRange {
+  start : Float
+  end : Float
+} derive(ToJson, @json.FromJson)
+pub fn SliderRange::center(Self) -> Float
+pub fn SliderRange::clamp(Self, Float) -> Float
+pub fn SliderRange::default() -> Self
+pub fn SliderRange::end(Self) -> Float
+pub fn SliderRange::new(Float, Float) -> Self
+pub fn SliderRange::span(Self) -> Float
+pub fn SliderRange::start(Self) -> Float
+pub fn SliderRange::thumb_position(Self, Float) -> Float
+pub impl @ecs.Component for SliderRange
+
+pub struct SliderStep {
+  value : Float
+} derive(ToJson, @json.FromJson)
+pub fn SliderStep::default() -> Self
+pub fn SliderStep::new(Float) -> Self
+pub fn SliderStep::value(Self) -> Float
+pub impl @ecs.Component for SliderStep
+
+pub struct SliderThumb {
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.Component for SliderThumb
+
+pub struct SliderValue {
+  value : Float
+} derive(ToJson, @json.FromJson)
+pub fn SliderValue::default() -> Self
+pub fn SliderValue::new(Float) -> Self
+pub fn SliderValue::value(Self) -> Float
+pub impl @ecs.Component for SliderValue
+
+pub struct ToggleChecked {
+  mut entity : @core.Entity
+} derive(ToJson, @json.FromJson)
+pub impl @ecs.TriggerEvent for ToggleChecked
+
+pub(all) enum TrackClick {
+  Drag
+  Step
+  Snap
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn TrackClick::default() -> Self
+
+pub struct UiWidgetsPluginMarker {
+}
+pub impl @app.Resource for UiWidgetsPluginMarker
+
+pub struct UiWidgetsPlugins {
+}
+pub fn UiWidgetsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
+pub fn UiWidgetsPlugins::default() -> Self
+
+pub struct ValueChange[T] {
+  mut source : @core.Entity
+  value : T
+} derive(ToJson, @json.FromJson)
+pub impl[T] @ecs.TriggerEvent for ValueChange[T]
 
 // Type aliases
-pub using @ui {type AccessibilityLabel}
-
 pub using @ui {type Button}
 
 pub using @ui {type ButtonColors}
 
-pub using @ui {type ComputedUiTargetCamera}
-
-pub using @ui {type ContentSize}
-
-pub using @ui {type FocusPolicy}
-
 pub using @ui {type Interaction}
-
-pub using @ui {type Label}
-
-pub using @ui {type ScrollPosition}
-
-pub using @ui {type UiLayout}
-
-pub using @ui {type UiTargetCamera}
 
 // Traits
 

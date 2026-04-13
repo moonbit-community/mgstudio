@@ -17,11 +17,7 @@ pub const CORE_2D_SCHEDULE_LABEL : String = "mgstudio.core_pipeline.core_2d"
 
 pub const CORE_3D_SCHEDULE_LABEL : String = "mgstudio.core_pipeline.core_3d"
 
-pub const CORE_PIPELINE_PLUGIN_ID : String = "bevy_core_pipeline::CorePipelinePlugin"
-
 pub const FULLSCREEN_MATERIAL_PASS_LABEL : String = "fullscreen_material_pass"
-
-pub const FULLSCREEN_MATERIAL_PLUGIN_ID : String = "bevy_core_pipeline::fullscreen_material::FullscreenMaterialPlugin"
 
 pub fn camera_driver(@ecs.World) -> Unit
 

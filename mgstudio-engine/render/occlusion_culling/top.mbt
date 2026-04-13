@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_render/src/occlusion_culling/mod.rs`.
 
 ///|
-pub const OCCLUSION_CULLING_PLUGIN_ID : String = "bevy_render::occlusion_culling::OcclusionCullingPlugin"
+const OCCLUSION_CULLING_PLUGIN_NAME : String = "mgstudio.render.occlusion_culling.OcclusionCullingPlugin"
 
 ///|
 pub struct OcclusionCullingPlugin {}
@@ -34,10 +34,10 @@ pub fn occlusion_culling_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for OcclusionCullingPlugin with replacement_id(
+pub impl @app.PluginReplacement for OcclusionCullingPlugin with plugin_name(
   _self,
 ) {
-  OCCLUSION_CULLING_PLUGIN_ID
+  OCCLUSION_CULLING_PLUGIN_NAME
 }
 
 ///|

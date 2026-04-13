@@ -21,8 +21,6 @@ import {
 }
 
 // Values
-pub const PBR_RENDER_PLUGIN_ID : String = "mgstudio.pbr.render"
-
 pub const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
 
 pub const RENDER3D_JOINT_BUFFER_SIZE_BYTES : Int = 16384

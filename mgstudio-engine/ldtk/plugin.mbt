@@ -19,7 +19,7 @@ pub(all) struct ProcessLdtkApi {}
 pub(all) struct LdtkPlugin {}
 
 ///|
-pub const LDTK_PLUGIN_ID : String = "bevy_ecs_ldtk::LdtkPlugin"
+const LDTK_PLUGIN_NAME : String = "mgstudio.ecs_ldtk.LdtkPlugin"
 
 ///|
 let process_ldtk_api_schedule : @app.ScheduleStage = @app.schedule_label(
@@ -42,8 +42,8 @@ pub fn LdtkPlugin::default() -> LdtkPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for LdtkPlugin with replacement_id(_self) {
-  LDTK_PLUGIN_ID
+pub impl @app.PluginReplacement for LdtkPlugin with plugin_name(_self) {
+  LDTK_PLUGIN_NAME
 }
 
 ///|

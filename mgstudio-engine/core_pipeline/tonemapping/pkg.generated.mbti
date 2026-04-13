@@ -13,8 +13,6 @@ pub const TONEMAPPING_PASS_2D_LABEL : String = "tonemapping_pass_2d"
 
 pub const TONEMAPPING_PASS_3D_LABEL : String = "tonemapping_pass_3d"
 
-pub const TONEMAPPING_PLUGIN_ID : String = "bevy_core_pipeline::tonemapping::TonemappingPlugin"
-
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]

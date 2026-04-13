@@ -43,7 +43,6 @@ pub fn ViewRangefinder3d::distance(Self, @math.Vec3) -> Float
 pub fn ViewRangefinder3d::from_world_from_view(@math.Affine3) -> Self
 
 // Type aliases
-pub using @renderer {type GpuPassState as DrawState}
 
 // Traits
 

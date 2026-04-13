@@ -44,13 +44,15 @@ pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection,
 
 pub fn camera_world_to_viewport(@math.Vec3, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
+
 pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
 
 pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
 
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
 
-pub fn mesh_compute_aabb(@mesh.Mesh) -> @math.Aabb3d?
+pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
 
 pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @ray_cast.MeshRayCastIntersectionSettings) -> Array[(@core.Entity, @ray_cast.MeshRayCastIntersectionHit)]
 
@@ -73,10 +75,17 @@ pub fn perspective_projection_3d_with_aspect_ratio(@render.PerspectiveProjection
 // Errors
 
 // Types and methods
+pub struct Aabb {
+  inner : @math.Aabb3d
+}
+pub fn Aabb::center(Self) -> @math.Vec3
+pub fn Aabb::from_math(@math.Aabb3d) -> Self
+pub fn Aabb::from_min_max(@math.Vec3, @math.Vec3) -> Self
+pub fn Aabb::half_size(Self) -> @math.Vec3
+pub fn Aabb::to_math(Self) -> @math.Aabb3d
+pub impl @ecs.Component for Aabb
 
 // Type aliases
-pub using @math {type Aabb3d as Aabb}
-
 pub using @pbr {type AutoExposure}
 
 pub using @sprite {type Camera}
@@ -97,10 +106,6 @@ pub using @pbr {type CameraDeferredConfig3d}
 
 pub using @pbr {type CameraDeferredMode3d}
 
-pub using @sprite {type ClearColor}
-
-pub using @sprite {type ClearColorConfig}
-
 pub using @pbr {type DepthOfField}
 
 pub using @pbr {type DepthOfFieldMode}
@@ -114,8 +119,6 @@ pub using @core_3d {type Hdr}
 pub using @ray_cast {type MeshRayCastIntersectionHit as MeshRayCastHit}
 
 pub using @ray_cast {type MeshRayCastIntersectionSettings as MeshRayCastSettings}
-
-pub using @post_process {type MsaaWriteback}
 
 pub using @sprite {type OrthographicProjection as OrthographicProjection2d}
 
@@ -139,7 +142,7 @@ pub using @render {type SubCameraView3d}
 
 // Traits
 pub(open) trait MeshAabb {
-  compute_aabb(Self) -> @math.Aabb3d?
+  compute_aabb(Self) -> Aabb?
 }
 pub impl MeshAabb for @mesh.Mesh
 pub impl MeshAabb for @mesh.Mesh3dGeometry

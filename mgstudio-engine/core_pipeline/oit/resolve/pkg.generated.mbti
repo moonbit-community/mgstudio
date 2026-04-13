@@ -12,8 +12,6 @@ pub const OIT_REQUIRED_STORAGE_BUFFERS : Int = 3
 
 pub const OIT_RESOLVE_PASS_LABEL : String = "oit_resolve"
 
-pub const OIT_RESOLVE_PLUGIN_ID : String = "bevy_core_pipeline::oit::resolve::OitResolvePlugin"
-
 pub let ecs_key_oit_resolve_pipeline : @ecs.ResourceKey[OitResolvePipeline]
 
 pub fn is_oit_supported(OitSupportState) -> Bool

@@ -17,7 +17,7 @@
 // Core 2D plugin owner surface.
 
 ///|
-pub const CORE_2D_PLUGIN_ID : String = "bevy_core_pipeline::core_2d::Core2dPlugin"
+const CORE_2D_PLUGIN_NAME : String = "mgstudio.core_pipeline.core_2d.Core2dPlugin"
 
 ///|
 pub const CORE_2D_DEPTH_FORMAT : String = "depth32float"
@@ -68,8 +68,8 @@ pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for Core2dPlugin with replacement_id(_self) {
-  CORE_2D_PLUGIN_ID
+pub impl @app.PluginReplacement for Core2dPlugin with plugin_name(_self) {
+  CORE_2D_PLUGIN_NAME
 }
 
 ///|

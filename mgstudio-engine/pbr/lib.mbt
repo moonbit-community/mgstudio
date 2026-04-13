@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub const PBR_PLUGIN_ID : String = "mgstudio.pbr.PbrPlugin"
+const PBR_PLUGIN_NAME : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
 pub(all) struct PbrPlugin {
@@ -232,8 +232,8 @@ pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for PbrPlugin with replacement_id(_self) {
-  PBR_PLUGIN_ID
+pub impl @app.PluginReplacement for PbrPlugin with plugin_name(_self) {
+  PBR_PLUGIN_NAME
 }
 
 ///|

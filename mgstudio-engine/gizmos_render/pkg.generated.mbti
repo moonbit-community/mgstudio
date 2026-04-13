@@ -13,9 +13,13 @@ pub fn extract_line_gizmos(@ecs.World) -> Unit
 
 pub fn gizmo_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn gizmo_render_plugin_with(@app.App[@ecs.World], GizmoRenderPlugin) -> @app.App[@ecs.World]
+
 pub fn gizmo_render_system_set(GizmoRenderSystems) -> String
 
 pub fn gizmos_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gizmos_render_plugin_with(@app.App[@ecs.World], GizmoRenderPlugin) -> @app.App[@ecs.World]
 
 pub fn gizmos_render_system_set_2d() -> String
 
@@ -28,6 +32,11 @@ pub fn line_gizmo_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 // Errors
 
 // Types and methods
+pub struct GizmoRenderPlugin {
+}
+pub fn GizmoRenderPlugin::default() -> Self
+pub impl @app.PluginReplacement for GizmoRenderPlugin
+
 pub(all) enum GizmoRenderSystems {
   QueueLineGizmos2d
   QueueLineGizmos3d

@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const OCCLUSION_CULLING_PLUGIN_ID : String = "bevy_render::occlusion_culling::OcclusionCullingPlugin"
-
 pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
 
 pub let ecs_key_occlusion_culling_runtime_state : @ecs.ResourceKey[OcclusionCullingRuntimeState]

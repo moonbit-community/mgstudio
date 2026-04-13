@@ -18,7 +18,7 @@
 /// `prepass`, and `deferred`.
 
 ///|
-pub const CORE_PIPELINE_PLUGIN_ID : String = "bevy_core_pipeline::CorePipelinePlugin"
+const CORE_PIPELINE_PLUGIN_NAME : String = "mgstudio.core_pipeline.CorePipelinePlugin"
 
 ///|
 pub struct CorePipelinePlugin {}
@@ -29,10 +29,8 @@ pub fn CorePipelinePlugin::default() -> CorePipelinePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for CorePipelinePlugin with replacement_id(
-  _self,
-) {
-  CORE_PIPELINE_PLUGIN_ID
+pub impl @app.PluginReplacement for CorePipelinePlugin with plugin_name(_self) {
+  CORE_PIPELINE_PLUGIN_NAME
 }
 
 ///|

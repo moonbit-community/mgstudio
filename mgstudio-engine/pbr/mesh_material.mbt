@@ -16,7 +16,7 @@
 pub type MeshMaterial3d = @material.MeshMaterial3d
 
 ///|
-pub const MESH_RENDER_PLUGIN_ID : String = "mgstudio.pbr.MeshRenderPlugin"
+const MESH_RENDER_PLUGIN_NAME : String = "mgstudio.pbr.MeshRenderPlugin"
 
 ///|
 pub(all) struct MeshRenderPlugin {
@@ -214,8 +214,8 @@ fn configure_mesh_render_sub_app(
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshRenderPlugin with replacement_id(_self) {
-  MESH_RENDER_PLUGIN_ID
+pub impl @app.PluginReplacement for MeshRenderPlugin with plugin_name(_self) {
+  MESH_RENDER_PLUGIN_NAME
 }
 
 ///|

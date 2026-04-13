@@ -112,9 +112,12 @@ fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
 }
 
 ///|
-test "winit: plugin replacement id aligns with bevy_winit" {
+test "winit: plugin identity name is stable" {
   let plugin = WinitPlugin::default()
-  debug_inspect(plugin.replacement_id(), content="\"\{WINIT_PLUGIN_ID}\"")
+  debug_inspect(
+    WinitPlugin::plugin_name(plugin),
+    content="\"mgstudio.winit.WinitPlugin\"",
+  )
 }
 
 ///|

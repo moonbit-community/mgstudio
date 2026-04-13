@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/lib.rs`.
-pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
+const ASSET_PLUGIN_NAME : String = "mgstudio.asset.AssetPlugin"
 
 ///|
 pub(all) struct AssetPlugin {
@@ -144,8 +144,8 @@ pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
 }
 
 ///|
-pub impl @app.PluginReplacement for AssetPlugin with replacement_id(_self) {
-  ASSET_PLUGIN_ID
+pub impl @app.PluginReplacement for AssetPlugin with plugin_name(_self) {
+  ASSET_PLUGIN_NAME
 }
 
 ///|

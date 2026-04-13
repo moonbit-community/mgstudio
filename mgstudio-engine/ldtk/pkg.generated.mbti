@@ -15,8 +15,6 @@ import {
 }
 
 // Values
-pub const LDTK_PLUGIN_ID : String = "bevy_ecs_ldtk::LdtkPlugin"
-
 pub fn apply_level_selection(@ecs.World) -> Unit
 
 pub fn apply_level_set(@ecs.World) -> Unit

@@ -2,13 +2,27 @@
 package "Milky2018/mgstudio/gizmos/primitives"
 
 import {
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
 }
 
 // Values
-pub const GIZMOS_PRIMITIVES_MODULE_ID : String = "bevy_gizmos::primitives"
-
 pub const GIZMO_PRIMITIVE_HELPER_EPSILON : Float = 0.00001
+
+pub fn[Config] gizmo_draw_capsule_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Capsule2d, @color.Color) -> Unit
+
+pub fn[Config] gizmo_draw_capsule_3d(@sprite.Gizmos[Config], @math.Isometry3d, @math.Capsule3d, @color.Color) -> Unit
+
+pub fn[Config] gizmo_draw_circle_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Circle, @color.Color) -> @sprite.Ellipse2dBuilder
+
+pub fn[Config] gizmo_draw_cone_3d(@sprite.Gizmos[Config], @math.Isometry3d, @math.Cone, @color.Color) -> Unit
+
+pub fn[Config] gizmo_draw_rect_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Rectangle, @color.Color) -> Unit
+
+pub fn[Config] gizmo_draw_sphere_3d(@sprite.Gizmos[Config], @math.Isometry3d, @math.Sphere, @color.Color) -> Unit
+
+pub fn[Config] gizmo_draw_torus_3d(@sprite.Gizmos[Config], @math.Isometry3d, @math.Torus, @color.Color) -> Unit
 
 pub fn gizmo_primitive_helper_epsilon() -> Float
 
@@ -16,26 +30,11 @@ pub fn gizmo_primitive_near_zero(Float) -> Bool
 
 pub fn gizmos_primitives_helper_epsilon() -> Float
 
-pub fn gizmos_primitives_module_id() -> String
-
 // Errors
 
 // Types and methods
 
 // Type aliases
-pub using @math {type Capsule2d as GizmoPrimitiveCapsule2d}
-
-pub using @math {type Capsule3d as GizmoPrimitiveCapsule3d}
-
-pub using @math {type Circle as GizmoPrimitiveCircle2d}
-
-pub using @math {type Cone as GizmoPrimitiveCone3d}
-
-pub using @math {type Rectangle as GizmoPrimitiveRect2d}
-
-pub using @math {type Sphere as GizmoPrimitiveSphere3d}
-
-pub using @math {type Torus as GizmoPrimitiveTorus3d}
 
 // Traits
 

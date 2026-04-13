@@ -25,7 +25,7 @@ pub type FxaaSensitivity = @post_process.FxaaSensitivity
 pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @post_process.ecs_key_fxaa
 
 ///|
-pub const FXAA_PLUGIN_ID : String = "bevy_anti_alias::fxaa::FxaaPlugin"
+const FXAA_PLUGIN_NAME : String = "mgstudio.anti_alias.fxaa.FxaaPlugin"
 
 ///|
 pub struct FxaaPlugin {}
@@ -56,8 +56,8 @@ pub impl @app.Resource for FxaaRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for FxaaPlugin with replacement_id(_self) {
-  FXAA_PLUGIN_ID
+pub impl @app.PluginReplacement for FxaaPlugin with plugin_name(_self) {
+  FXAA_PLUGIN_NAME
 }
 
 ///|

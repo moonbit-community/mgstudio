@@ -17,7 +17,7 @@
 // Mip-generation plugin owner surface.
 
 ///|
-pub const MIP_GENERATION_PLUGIN_ID : String = "bevy_core_pipeline::mip_generation::MipGenerationPlugin"
+const MIP_GENERATION_PLUGIN_NAME : String = "mgstudio.core_pipeline.mip_generation.MipGenerationPlugin"
 
 ///|
 pub struct MipGenerationPlugin {}
@@ -35,10 +35,8 @@ pub fn mip_generation_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for MipGenerationPlugin with replacement_id(
-  _self,
-) {
-  MIP_GENERATION_PLUGIN_ID
+pub impl @app.PluginReplacement for MipGenerationPlugin with plugin_name(_self) {
+  MIP_GENERATION_PLUGIN_NAME
 }
 
 ///|

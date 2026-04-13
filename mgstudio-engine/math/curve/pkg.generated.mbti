@@ -3,71 +3,263 @@ package "Milky2018/mgstudio/math/curve"
 
 import {
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub fn[T] constant_curve(@math.Interval, T) -> @math.ConstantCurve[T]
+pub fn[T] constant_curve(Interval, T) -> ConstantCurve[T]
 
-pub fn[T] even_core(@math.Interval, Array[T]) -> @math.EvenCore[T] raise @math.EvenCoreError
+pub fn[T] even_core(Interval, Array[T]) -> EvenCore[T] raise EvenCoreError
 
-pub fn[T] function_curve(@math.Interval, (Float) -> T) -> @math.FunctionCurve[T]
+pub fn even_interp(Interval, Int, Float) -> InterpolationDatum[Int]
 
-pub fn interval(Float, Float) -> @math.Interval raise @math.InvalidIntervalError
+pub fn[T] function_curve(Interval, (Float) -> T) -> FunctionCurve[T]
 
-pub fn[T] iterable_curve(@math.Interval, (Float) -> Iter[T]) -> @math.IterableCurve[T]
+pub fn interval(Float, Float) -> Interval raise InvalidIntervalError
 
-pub fn[T] sample_auto_curve(@math.Interval, Array[T]) -> @math.SampleAutoCurve[T] raise @math.EvenCoreError
+pub fn[T] iterable_curve(Interval, (Float) -> Iter[T]) -> IterableCurve[T]
 
-pub fn[T] sample_curve(@math.Interval, Array[T], (T, T, Float) -> T) -> @math.SampleCurve[T] raise @math.EvenCoreError
+pub fn[T] sample_auto_curve(Interval, Array[T]) -> SampleAutoCurve[T] raise EvenCoreError
 
-pub fn[T] sample_iter(@math.IterableCurve[T], Float) -> Iter[T]?
+pub fn[T] sample_curve(Interval, Array[T], (T, T, Float) -> T) -> SampleCurve[T] raise EvenCoreError
 
-pub fn[T] uneven_core(Array[(Float, T)]) -> @math.UnevenCore[T] raise @math.UnevenCoreError
+pub fn[T] sample_iter(IterableCurve[T], Float) -> Iter[T]?
 
-pub fn[T] uneven_sample_curve(Array[(Float, T)], (T, T, Float) -> T) -> @math.UnevenSampleCurve[T] raise @math.UnevenCoreError
+pub fn[T] uneven_core(Array[(Float, T)]) -> UnevenCore[T] raise UnevenCoreError
+
+pub fn[T] uneven_sample_curve(Array[(Float, T)], (T, T, Float) -> T) -> UnevenSampleCurve[T] raise UnevenCoreError
 
 // Errors
+pub(all) suberror CurveChainError {
+  UnboundedDomain
+}
+
+pub(all) suberror EvenCoreError {
+  NotEnoughSamples(Int)
+  UnboundedDomain
+}
+
+pub(all) suberror InvalidIntervalError {
+  Invalid
+}
+
+pub(all) suberror LinearMapError {
+  SourceUnbounded
+  TargetUnbounded
+}
+
+pub(all) suberror SpacedPointsError {
+  Unbounded
+}
+
+pub(all) suberror UnevenCoreError {
+  NotEnoughSamples(Int)
+  NonFiniteSampleTime
+  NonIncreasingSampleTimes
+}
 
 // Types and methods
+pub struct ConstantCurve[T] {
+  domain_ : Interval
+  value : T
+}
+pub fn[T] ConstantCurve::domain(Self[T]) -> Interval
+pub fn[T] ConstantCurve::new(Interval, T) -> Self[T]
+pub fn[T] ConstantCurve::sample(Self[T], Float) -> T?
+pub fn[T] ConstantCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] ConstantCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] ConstantCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct Curve[T] {
+  domain_ : Interval
+  sample_unchecked_fn : (Float) -> T
+}
+pub fn[T] Curve::chain(Self[T], Self[T]) -> Self[T] raise CurveChainError
+pub fn[T] Curve::domain(Self[T]) -> Interval
+pub fn[T] Curve::graph(Self[T]) -> Self[(Float, T)]
+pub fn[T, S] Curve::map(Self[T], (T) -> S) -> Self[S]
+pub fn[T] Curve::new(Interval, (Float) -> T) -> Self[T]
+pub fn[T] Curve::reparametrize(Self[T], Interval, (Float) -> Float) -> Self[T]
+pub fn[T] Curve::reparametrize_linear(Self[T], Interval) -> Self[T] raise LinearMapError
+pub fn[T] Curve::resample(Self[T], Int, (T, T, Float) -> T) -> SampleCurve[T] raise EvenCoreError
+pub fn[T] Curve::resample_auto(Self[T], Int) -> SampleAutoCurve[T] raise EvenCoreError
+pub fn[T] Curve::reverse(Self[T]) -> Self[T] raise LinearMapError
+pub fn[T] Curve::sample(Self[T], Float) -> T?
+pub fn[T] Curve::sample_clamped(Self[T], Float) -> T
+pub fn[T] Curve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] Curve::samples(Self[T], Int) -> Array[T] raise SpacedPointsError
+pub fn[T, S] Curve::zip(Self[T], Self[S]) -> Self[(T, S)] raise InvalidIntervalError
+
+pub(all) enum EaseFunction {
+  Linear
+  QuadraticIn
+  QuadraticOut
+  QuadraticInOut
+  CubicIn
+  CubicOut
+  CubicInOut
+  QuarticIn
+  QuarticOut
+  QuarticInOut
+  QuinticIn
+  QuinticOut
+  QuinticInOut
+  SmoothStepIn
+  SmoothStepOut
+  SmoothStep
+  SmootherStepIn
+  SmootherStepOut
+  SmootherStep
+  SineIn
+  SineOut
+  SineInOut
+  CircularIn
+  CircularOut
+  CircularInOut
+  ExponentialIn
+  ExponentialOut
+  ExponentialInOut
+  ElasticIn
+  ElasticOut
+  ElasticInOut
+  BackIn
+  BackOut
+  BackInOut
+  BounceIn
+  BounceOut
+  BounceInOut
+  Steps(Int, JumpAt)
+  Elastic(Float)
+} derive(ToJson, @debug.Debug, @json.FromJson)
+pub fn EaseFunction::sample(Self, Float) -> Float?
+pub fn EaseFunction::sample_clamped(Self, Float) -> Float
+pub impl Default for EaseFunction
+
+pub struct EasingCurve[T] {
+  start : T
+  end : T
+  ease_fn : EaseFunction
+}
+pub fn[T] EasingCurve::new(T, T, EaseFunction) -> Self[T]
+pub fn[T : Ease] EasingCurve::sample(Self[T], Float) -> T?
+pub fn[T : Ease] EasingCurve::sample_clamped(Self[T], Float) -> T
+
+pub struct EvenCore[T] {
+  domain_ : Interval
+  samples : Array[T]
+}
+pub fn[T] EvenCore::domain(Self[T]) -> Interval
+pub fn[T] EvenCore::new(Interval, Array[T]) -> Self[T] raise EvenCoreError
+pub fn[T] EvenCore::sample_interp(Self[T], Float) -> InterpolationDatum[T]
+pub fn[T] EvenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
+
+pub struct FunctionCurve[T] {
+  domain_ : Interval
+  f : (Float) -> T
+}
+pub fn[T] FunctionCurve::domain(Self[T]) -> Interval
+pub fn[T] FunctionCurve::new(Interval, (Float) -> T) -> Self[T]
+pub fn[T] FunctionCurve::sample(Self[T], Float) -> T?
+pub fn[T] FunctionCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] FunctionCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] FunctionCurve::to_curve(Self[T]) -> Curve[T]
+
+pub(all) enum InterpolationDatum[T] {
+  Exact(T)
+  LeftTail(T)
+  RightTail(T)
+  Between(T, T, Float)
+}
+pub fn[T, S] InterpolationDatum::map(Self[T], (T) -> S) -> Self[S]
+
+pub(all) struct Interval {
+  start_ : Float
+  end_ : Float
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn Interval::clamp(Self, Float) -> Float
+pub fn Interval::contains(Self, Float) -> Bool
+pub fn Interval::contains_interval(Self, Self) -> Bool
+pub fn Interval::end_(Self) -> Float
+pub fn Interval::everywhere() -> Self
+pub fn Interval::has_finite_end(Self) -> Bool
+pub fn Interval::has_finite_start(Self) -> Bool
+pub fn Interval::intersect(Self, Self) -> Self raise InvalidIntervalError
+pub fn Interval::is_bounded(Self) -> Bool
+pub fn Interval::length(Self) -> Float
+pub fn Interval::linear_map_value_to(Self, Self, Float) -> Float raise LinearMapError
+pub fn Interval::new(Float, Float) -> Self raise InvalidIntervalError
+pub fn Interval::spaced_points(Self, Int) -> Array[Float] raise SpacedPointsError
+pub fn Interval::start(Self) -> Float
+pub fn Interval::unit() -> Self
+
+pub struct IterableCurve[T] {
+  domain_ : Interval
+  sample_iter_unchecked_fn : (Float) -> Iter[T]
+}
+pub fn[T] IterableCurve::domain(Self[T]) -> Interval
+pub fn[T] IterableCurve::new(Interval, (Float) -> Iter[T]) -> Self[T]
+pub fn[T] IterableCurve::sample_iter(Self[T], Float) -> Iter[T]?
+pub fn[T] IterableCurve::sample_iter_clamped(Self[T], Float) -> Iter[T]
+pub fn[T] IterableCurve::sample_iter_unchecked(Self[T], Float) -> Iter[T]
+
+pub(all) enum JumpAt {
+  Start
+  End
+  None
+  Both
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub impl Default for JumpAt
+
+pub struct SampleAutoCurve[T] {
+  core : EvenCore[T]
+}
+pub fn[T] SampleAutoCurve::domain(Self[T]) -> Interval
+pub fn[T] SampleAutoCurve::new(Interval, Array[T]) -> Self[T] raise EvenCoreError
+pub fn[T : @math.StableInterpolate] SampleAutoCurve::sample(Self[T], Float) -> T?
+pub fn[T : @math.StableInterpolate] SampleAutoCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T : @math.StableInterpolate] SampleAutoCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T : @math.StableInterpolate] SampleAutoCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct SampleCurve[T] {
+  core : EvenCore[T]
+  interpolation : (T, T, Float) -> T
+}
+pub fn[T] SampleCurve::domain(Self[T]) -> Interval
+pub fn[T] SampleCurve::new(Interval, Array[T], (T, T, Float) -> T) -> Self[T] raise EvenCoreError
+pub fn[T] SampleCurve::sample(Self[T], Float) -> T?
+pub fn[T] SampleCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] SampleCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] SampleCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct UnevenCore[T] {
+  sample_points : Array[(Float, T)]
+}
+pub fn[T] UnevenCore::domain(Self[T]) -> Interval
+pub fn[T] UnevenCore::new(Array[(Float, T)]) -> Self[T] raise UnevenCoreError
+pub fn[T] UnevenCore::sample_interp(Self[T], Float) -> InterpolationDatum[(Float, T)]
+pub fn[T] UnevenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
+
+pub struct UnevenSampleCurve[T] {
+  core : UnevenCore[T]
+  interpolation : (T, T, Float) -> T
+}
+pub fn[T] UnevenSampleCurve::domain(Self[T]) -> Interval
+pub fn[T] UnevenSampleCurve::new(Array[(Float, T)], (T, T, Float) -> T) -> Self[T] raise UnevenCoreError
+pub fn[T] UnevenSampleCurve::sample(Self[T], Float) -> T?
+pub fn[T] UnevenSampleCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] UnevenSampleCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] UnevenSampleCurve::to_curve(Self[T]) -> Curve[T]
 
 // Type aliases
-pub using @math {type ConstantCurve}
-
-pub using @math {type Curve}
-
-pub using @math {type CurveChainError}
-
-pub using @math {type EaseFunction}
-
-pub using @math {type EasingCurve}
-
-pub using @math {type EvenCore}
-
-pub using @math {type EvenCoreError}
-
-pub using @math {type FunctionCurve}
-
-pub using @math {type Interval}
-
-pub using @math {type InvalidIntervalError}
-
-pub using @math {type IterableCurve}
-
-pub using @math {type JumpAt}
-
-pub using @math {type LinearMapError}
-
-pub using @math {type SampleAutoCurve}
-
-pub using @math {type SampleCurve}
-
-pub using @math {type SpacedPointsError}
-
-pub using @math {type UnevenCore}
-
-pub using @math {type UnevenCoreError}
-
-pub using @math {type UnevenSampleCurve}
 
 // Traits
+pub(open) trait Ease {
+  interpolate(Self, Self, Float) -> Self
+}
+pub impl Ease for Float
+pub impl Ease for @math.Quat
+pub impl Ease for @math.Vec2
+pub impl Ease for @math.Vec3
+pub impl Ease for @math.Vec4
 

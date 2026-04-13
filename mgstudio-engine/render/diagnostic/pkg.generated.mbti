@@ -108,7 +108,6 @@ pub fn TracyGpuContext::enabled(Self) -> Bool
 pub fn TracyGpuContext::new(String, Bool) -> Self
 
 // Type aliases
-pub using @renderer {type RenderDiagnosticsSnapshot}
 
 // Traits
 

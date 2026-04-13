@@ -48,6 +48,10 @@ pub fn gamepad_test_use_mock_gilrs(@gamepad.Gil) -> Unit
 
 pub fn gamepad_vendor_id(Int) -> Int
 
+pub fn gilrs_event_poll_count() -> Int
+
+pub fn gilrs_event_reset_runtime_state() -> Unit
+
 pub fn gilrs_event_startup_system() -> Unit
 
 pub fn gilrs_event_system() -> Unit

@@ -16,11 +16,11 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/atmosphere/mod.rs`.
 
 ///|
-pub const ATMOSPHERE_PLUGIN_ID : String = "mgstudio.pbr.AtmospherePlugin"
+const ATMOSPHERE_PLUGIN_NAME : String = "mgstudio.pbr.AtmospherePlugin"
 
 ///|
 pub fn atmosphere_plugin_id() -> String {
-  ATMOSPHERE_PLUGIN_ID
+  ATMOSPHERE_PLUGIN_NAME
 }
 
 ///|

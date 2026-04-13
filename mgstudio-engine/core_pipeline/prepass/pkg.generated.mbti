@@ -12,8 +12,6 @@ pub const EARLY_PREPASS_LABEL : String = "early prepass"
 
 pub const LATE_PREPASS_LABEL : String = "late prepass"
 
-pub const PREPASS_PLUGIN_ID : String = "bevy_core_pipeline::prepass::PrepassPlugin"
-
 pub fn early_prepass_should_run(PrepassViewState) -> Bool
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass]

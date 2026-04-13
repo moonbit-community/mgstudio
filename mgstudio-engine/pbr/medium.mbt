@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/medium.rs`.
 
 ///|
-pub const SCATTERING_MEDIUM_PLUGIN_ID : String = "mgstudio.pbr.ScatteringMediumPlugin"
+const SCATTERING_MEDIUM_PLUGIN_NAME : String = "mgstudio.pbr.ScatteringMediumPlugin"
 
 ///|
 pub type ScatteringMedium = @light.ScatteringMedium
@@ -454,10 +454,10 @@ pub fn scattering_medium_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for ScatteringMediumPlugin with replacement_id(
+pub impl @app.PluginReplacement for ScatteringMediumPlugin with plugin_name(
   _self,
 ) {
-  SCATTERING_MEDIUM_PLUGIN_ID
+  SCATTERING_MEDIUM_PLUGIN_NAME
 }
 
 ///|

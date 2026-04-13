@@ -16,7 +16,7 @@
 pub(all) struct AccessibilityPlugin {}
 
 ///|
-pub const ACCESSIBILITY_PLUGIN_ID : String = "mgstudio_a11y::AccessibilityPlugin"
+const ACCESSIBILITY_PLUGIN_NAME : String = "mgstudio.a11y.AccessibilityPlugin"
 
 ///|
 pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
@@ -24,10 +24,8 @@ pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for AccessibilityPlugin with replacement_id(
-  _self,
-) {
-  ACCESSIBILITY_PLUGIN_ID
+pub impl @app.PluginReplacement for AccessibilityPlugin with plugin_name(_self) {
+  ACCESSIBILITY_PLUGIN_NAME
 }
 
 ///|

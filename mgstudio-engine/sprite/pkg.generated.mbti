@@ -23,8 +23,6 @@ import {
 }
 
 // Values
-pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
-
 pub fn[S : IntoColorMaterialAsset] add_material(@asset.Assets[ColorMaterialAsset], S) -> @asset.Handle[ColorMaterialAsset]
 
 pub fn[S : IntoSpriteMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]

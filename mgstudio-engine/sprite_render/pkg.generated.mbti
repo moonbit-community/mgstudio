@@ -15,8 +15,6 @@ import {
 }
 
 // Values
-pub const SPRITE_RENDER_PLUGIN_ID : String = "bevy_sprite_render::SpriteRenderPlugin"
-
 pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]

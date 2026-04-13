@@ -28,7 +28,7 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
 
 ///|
-pub const TEMPORAL_ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::taa::TemporalAntiAliasPlugin"
+const TEMPORAL_ANTI_ALIAS_PLUGIN_NAME : String = "mgstudio.anti_alias.taa.TemporalAntiAliasPlugin"
 
 ///|
 pub struct TemporalAntiAliasPlugin {}
@@ -63,10 +63,10 @@ pub impl @app.Resource for TemporalAntiAliasRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for TemporalAntiAliasPlugin with replacement_id(
+pub impl @app.PluginReplacement for TemporalAntiAliasPlugin with plugin_name(
   _self,
 ) {
-  TEMPORAL_ANTI_ALIAS_PLUGIN_ID
+  TEMPORAL_ANTI_ALIAS_PLUGIN_NAME
 }
 
 ///|

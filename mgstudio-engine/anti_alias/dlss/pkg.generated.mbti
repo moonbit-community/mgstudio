@@ -8,10 +8,6 @@ import {
 }
 
 // Values
-pub const DLSS_INIT_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssInitPlugin"
-
-pub const DLSS_PLUGIN_ID : String = "bevy_anti_alias::dlss::DlssPlugin"
-
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn dlss_extract_enabled() -> Bool

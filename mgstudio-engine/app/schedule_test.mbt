@@ -13,6 +13,98 @@
 // limitations under the License.
 
 ///|
+struct PluginGroupTestPlugin1 {}
+
+///|
+struct PluginGroupTestPlugin1Override {}
+
+///|
+struct PluginGroupTestPlugin2 {}
+
+///|
+struct MissingPluginTest {}
+
+///|
+let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
+fn plugin_group_test_reset_log() -> Unit {
+  plugin_group_test_log_ref.val = []
+}
+
+///|
+fn plugin_group_test_plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(1)
+  })
+}
+
+///|
+fn plugin_group_test_plugin_1_override(
+  app : App[@ecs.World],
+) -> App[@ecs.World] {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(10)
+  })
+}
+
+///|
+fn plugin_group_test_plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(2)
+  })
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1 with plugin_name(_self) {
+  "mgstudio.app.test_plugin_1"
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1 with world_plugin(_self) {
+  plugin_group_test_plugin_1
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1Override with plugin_name(
+  _self,
+) {
+  "mgstudio.app.test_plugin_1"
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin1Override with world_plugin(
+  _self,
+) {
+  plugin_group_test_plugin_1_override
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin2 with plugin_name(_self) {
+  "mgstudio.app.test_plugin_2"
+}
+
+///|
+pub impl PluginReplacement for PluginGroupTestPlugin2 with world_plugin(_self) {
+  plugin_group_test_plugin_2
+}
+
+///|
+fn missing_plugin_test(app : App[@ecs.World]) -> App[@ecs.World] {
+  app
+}
+
+///|
+pub impl PluginReplacement for MissingPluginTest with plugin_name(_self) {
+  "mgstudio.app.missing_plugin_test"
+}
+
+///|
+pub impl PluginReplacement for MissingPluginTest with world_plugin(_self) {
+  missing_plugin_test
+}
+
+///|
 test "app: run_if skips system execution" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_system_config(
@@ -120,51 +212,41 @@ test "app: add_plugin_group registers grouped plugins" {
 
 ///|
 test "app: plugin group set_plugin and disable preserve configured plugins" {
-  let log : Array[Int] = []
-  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(1) })
-  }
-  fn plugin_1_override(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(10) })
-  }
-  fn plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(2) })
-  }
-
+  plugin_group_test_reset_log()
   let group = PluginGroupBuilder::start_named("TestPlugins")
-    .add_named(id="plugin_1", plugin_1)
-    .add_named(id="plugin_2", plugin_2)
-  debug_inspect(group.contains("plugin_1"), content="true")
-  debug_inspect(group.enabled("plugin_2"), content="true")
+    .add_typed(PluginGroupTestPlugin1::{  })
+    .add_typed(PluginGroupTestPlugin2::{  })
+  debug_inspect(group.contains(PluginGroupTestPlugin1::{  }), content="true")
+  debug_inspect(group.enabled(PluginGroupTestPlugin2::{  }), content="true")
 
   let app = App::new(@ecs.World::new()).add_plugin_group(fn() {
-    group.set_plugin(id="plugin_1", plugin_1_override).disable("plugin_2")
+    group
+    .set(PluginGroupTestPlugin1Override::{  })
+    .disable(PluginGroupTestPlugin2::{  })
   })
   app.run_once() |> ignore
 
-  debug_inspect(log.length(), content="1")
-  debug_inspect(log[0], content="10")
+  debug_inspect(plugin_group_test_log_ref.val.length(), content="1")
+  debug_inspect(plugin_group_test_log_ref.val[0], content="10")
 }
 
 ///|
 test "app: plugin group try_set_plugin raises when id is missing" {
-  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
-    app
-  }
-
   let missing_plugin_id = try {
     ignore(
-      PluginGroupBuilder::start_named("TestPlugins").try_set_plugin(
-        id="missing",
-        plugin_1,
-      ),
+      PluginGroupBuilder::start_named("TestPlugins").try_set(MissingPluginTest::{
+
+      }),
     )
     "ok"
   } catch {
     MissingPlugin(id) => id
   }
 
-  debug_inspect(missing_plugin_id, content="\"missing\"")
+  debug_inspect(
+    missing_plugin_id,
+    content="\"mgstudio.app.missing_plugin_test\"",
+  )
 }
 
 ///|

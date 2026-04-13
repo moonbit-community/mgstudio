@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const CAS_PLUGIN_ID : String = "bevy_anti_alias::contrast_adaptive_sharpening::CasPlugin"
-
 pub const CAS_RUNTIME_SUPPORTED : Bool = false
 
 pub fn cas_node_enabled() -> Bool

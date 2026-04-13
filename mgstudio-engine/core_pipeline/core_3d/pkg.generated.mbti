@@ -11,8 +11,6 @@ import {
 // Values
 pub const CORE_3D_DEPTH_FORMAT : String = "depth32float"
 
-pub const CORE_3D_PLUGIN_ID : String = "bevy_core_pipeline::core_3d::Core3dPlugin"
-
 pub const DEPTH_TEXTURE_SAMPLING_SUPPORTED : Bool = true
 
 pub const MAIN_OPAQUE_PASS_3D_LABEL : String = "main_opaque_pass_3d"

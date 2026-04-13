@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/prepass/mod.rs`.
 
 ///|
-pub const PREPASS_PLUGIN_ID : String = @core_prepass.PREPASS_PLUGIN_ID
-
-///|
 pub const EARLY_PREPASS_LABEL : String = @core_prepass.EARLY_PREPASS_LABEL
 
 ///|

@@ -8,20 +8,17 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/window/cursor",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
 
 // Values
-pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
-
 pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.Query[@Milky2018/mgstudio/core.Entity, @ecs.With[ClosingWindow]]) -> Unit
 
-pub fn cursor_icon_from_custom(@cursor.CustomCursor) -> @cursor.CursorIcon
+pub fn cursor_icon_from_custom(CustomCursor) -> CursorIcon
 
-pub fn cursor_icon_from_system(@cursor.SystemCursorIcon) -> @cursor.CursorIcon
+pub fn cursor_icon_from_system(SystemCursorIcon) -> CursorIcon
 
 pub let ecs_key_app_lifecycle : @ecs.MessageKey[AppLifecycle]
 
@@ -33,13 +30,13 @@ pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow]
 
 pub let ecs_key_cursor_entered : @ecs.MessageKey[CursorEntered]
 
-pub let ecs_key_cursor_icon : @ecs.ComponentKey[@cursor.CursorIcon]
+pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
 
 pub let ecs_key_cursor_left : @ecs.MessageKey[CursorLeft]
 
 pub let ecs_key_cursor_moved : @ecs.MessageKey[CursorMoved]
 
-pub let ecs_key_cursor_options : @ecs.ComponentKey[@cursor.CursorOptions]
+pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
 
 pub let ecs_key_double_tap_gesture : @ecs.MessageKey[@events.DoubleTapGesture]
 
@@ -149,9 +146,9 @@ pub fn host_window_poll_events(Int) -> Unit
 
 pub fn host_window_request_close(Int) -> Unit
 
-pub fn host_window_set_cursor_grab_mode(Int, mode~ : @cursor.CursorGrabMode) -> Unit
+pub fn host_window_set_cursor_grab_mode(Int, mode~ : CursorGrabMode) -> Unit
 
-pub fn host_window_set_cursor_icon(Int, icon~ : @cursor.CursorIcon) -> Unit
+pub fn host_window_set_cursor_icon(Int, icon~ : CursorIcon) -> Unit
 
 pub fn host_window_set_cursor_visible(Int, visible~ : Bool) -> Unit
 
@@ -285,9 +282,9 @@ pub fn window_scale_factor() -> Float
 
 pub fn window_scale_factor_for(@ecs.World, WindowRef) -> Float
 
-pub fn window_set_cursor_grab_mode(mode~ : @cursor.CursorGrabMode) -> Unit
+pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit
 
-pub fn window_set_cursor_icon(icon~ : @cursor.CursorIcon) -> Unit
+pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit
 
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit
 
@@ -358,6 +355,22 @@ pub(all) struct CursorEntered {
 } derive(Eq)
 pub impl @ecs.Message for CursorEntered
 
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CursorIcon {
+  System(SystemCursorIcon)
+  Custom(CustomCursor)
+}
+pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
+pub fn CursorIcon::from(SystemCursorIcon) -> Self
+pub fn CursorIcon::from_custom(CustomCursor) -> Self
+pub impl @ecs.Component for CursorIcon
+pub impl Default for CursorIcon
+
 pub(all) struct CursorLeft {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
@@ -369,6 +382,35 @@ pub(all) struct CursorMoved {
   delta : @math.Vec2?
 }
 pub impl @ecs.Message for CursorMoved
+
+pub(all) struct CursorOptions {
+  mut visible : Bool
+  mut grab_mode : CursorGrabMode
+  hit_test : Bool
+} derive(Eq, @debug.Debug)
+pub fn CursorOptions::default() -> Self
+pub impl @ecs.Component for CursorOptions
+
+pub(all) enum CustomCursor {
+  Image(CustomCursorImage)
+  Url(CustomCursorUrl)
+}
+
+pub struct CustomCursorImage {
+  handle : @asset.Handle[@image.Image]
+  texture_atlas : @asset.TextureAtlas?
+  flip_x : Bool
+  flip_y : Bool
+  rect : @math.URect?
+  hotspot : (Int, Int)
+}
+pub fn CustomCursorImage::new(@asset.Handle[@image.Image], (Int, Int), texture_atlas? : @asset.TextureAtlas?, flip_x? : Bool, flip_y? : Bool, rect? : @math.URect?) -> Self
+
+pub struct CustomCursorUrl {
+  url : String
+  hotspot : (Int, Int)
+}
+pub fn CustomCursorUrl::new(String, (Int, Int)) -> Self
 
 pub(all) struct EnabledButtons {
   mut minimize : Bool
@@ -499,6 +541,45 @@ pub(all) enum ScreenshotTarget {
   Image(@asset.Handle[@image.Image])
   TextureView(Int)
 }
+
+pub(all) enum SystemCursorIcon {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
+  EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ColResize
+  RowResize
+  AllScroll
+  ZoomIn
+  ZoomOut
+} derive(Eq, @debug.Debug)
+pub fn SystemCursorIcon::from_native(@Milky2018/window/core.CursorIcon) -> Self
+pub fn SystemCursorIcon::to_native(Self) -> @Milky2018/window/core.CursorIcon
 
 pub(all) struct VideoMode {
   physical_size : @math.UVec2
@@ -671,7 +752,7 @@ pub impl @ecs.Message for WindowOccluded
 
 pub(all) struct WindowPlugin {
   primary_window : Window?
-  primary_cursor_options : @cursor.CursorOptions?
+  primary_cursor_options : CursorOptions?
   exit_condition : ExitCondition
   close_when_requested : Bool
 }
@@ -749,18 +830,6 @@ pub fn WindowWrapper::new(Int) -> Self
 // Type aliases
 pub using @events {type ButtonState}
 
-pub using @cursor {type CursorGrabMode}
-
-pub using @cursor {type CursorIcon}
-
-pub using @cursor {type CursorOptions}
-
-pub using @cursor {type CustomCursor}
-
-pub using @cursor {type CustomCursorImage}
-
-pub using @cursor {type CustomCursorUrl}
-
 pub using @events {type DoubleTapGesture}
 
 pub type HostWindow = Int
@@ -790,8 +859,6 @@ pub using @events {type PanGesture}
 pub using @events {type PinchGesture}
 
 pub using @events {type RotationGesture}
-
-pub using @cursor {type SystemCursorIcon}
 
 pub using @events {type TouchInput}
 

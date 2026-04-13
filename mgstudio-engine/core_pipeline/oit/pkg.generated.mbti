@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const OIT_PLUGIN_ID : String = "bevy_core_pipeline::oit::OrderIndependentTransparencyPlugin"
-
 pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[OrderIndependentTransparencySettings]
 
 pub fn oit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

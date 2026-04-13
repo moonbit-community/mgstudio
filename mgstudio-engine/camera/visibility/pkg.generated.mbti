@@ -8,9 +8,13 @@ import {
 }
 
 // Values
-pub const CAMERA_VISIBILITY_MODULE_ID : String = "bevy_camera::visibility"
-
 pub let default_layers : @sprite.RenderLayers
+
+pub fn default_visibility() -> @Milky2018/mgstudio/visibility.Visibility
+
+pub fn inherited_visibility(Bool) -> @Milky2018/mgstudio/visibility.InheritedVisibility
+
+pub fn no_frustum_culling() -> @Milky2018/mgstudio/visibility.NoFrustumCulling
 
 pub fn render_layers_default() -> @sprite.RenderLayers
 
@@ -21,6 +25,8 @@ pub fn render_layers_layer(Int) -> @sprite.RenderLayers
 pub fn render_layers_matches(@sprite.RenderLayers, @sprite.RenderLayers) -> Bool
 
 pub fn render_layers_none() -> @sprite.RenderLayers
+
+pub fn view_visibility(Bool) -> @Milky2018/mgstudio/visibility.ViewVisibility
 
 pub fn visibility_component_keys() -> (@ecs.ComponentKey[@Milky2018/mgstudio/visibility.Visibility], @ecs.ComponentKey[@Milky2018/mgstudio/visibility.InheritedVisibility], @ecs.ComponentKey[@Milky2018/mgstudio/visibility.ViewVisibility])
 
@@ -39,19 +45,7 @@ pub fn visibility_range_new(Float, Float, Float, Float, Bool) -> @Milky2018/mgst
 // Types and methods
 
 // Type aliases
-pub using @Milky2018/mgstudio/visibility {type InheritedVisibility}
-
 pub type Layer = Int
-
-pub using @Milky2018/mgstudio/visibility {type NoFrustumCulling}
-
-pub using @sprite {type RenderLayers}
-
-pub using @Milky2018/mgstudio/visibility {type ViewVisibility}
-
-pub using @Milky2018/mgstudio/visibility {type Visibility}
-
-pub using @Milky2018/mgstudio/visibility {type VisibilityRange}
 
 // Traits
 

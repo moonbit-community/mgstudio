@@ -1999,7 +1999,7 @@ pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub(all) struct InputPlugin {}
 
 ///|
-pub const INPUT_PLUGIN_ID : String = "bevy_input::InputPlugin"
+const INPUT_PLUGIN_NAME : String = "mgstudio.input.InputPlugin"
 
 ///|
 pub fn InputPlugin::default() -> InputPlugin {
@@ -2007,8 +2007,8 @@ pub fn InputPlugin::default() -> InputPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for InputPlugin with replacement_id(_self) {
-  INPUT_PLUGIN_ID
+pub impl @app.PluginReplacement for InputPlugin with plugin_name(_self) {
+  INPUT_PLUGIN_NAME
 }
 
 ///|

@@ -8,8 +8,6 @@ import {
 }
 
 // Values
-pub const MIP_GENERATION_PLUGIN_ID : String = "bevy_core_pipeline::mip_generation::MipGenerationPlugin"
-
 pub const REQUIRED_STORAGE_TEXTURES : Int = 12
 
 pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs]

@@ -44,7 +44,7 @@ pub fn experimental_mip_generation_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for ExperimentalMipGeneration with replacement_id(
+pub impl @app.PluginReplacement for ExperimentalMipGeneration with plugin_name(
   _self,
 ) {
   "mgstudio.core_pipeline.mip_generation.experimental"

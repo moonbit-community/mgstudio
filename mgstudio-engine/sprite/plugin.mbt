@@ -17,7 +17,7 @@ pub struct SpritePlugin {}
 
 ///|
 pub fn sprite_plugin_id() -> String {
-  SPRITE_PLUGIN_ID
+  SPRITE_PLUGIN_NAME
 }
 
 ///|

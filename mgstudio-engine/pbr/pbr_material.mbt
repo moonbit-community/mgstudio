@@ -28,7 +28,7 @@ pub type DefaultOpaqueRendererMethod = @material.DefaultOpaqueRendererMethod
 pub type StandardMaterial = @material.StandardMaterial
 
 ///|
-pub const STANDARD_MATERIAL_PLUGIN_ID : String = "mgstudio.pbr.MaterialPlugin<StandardMaterial>"
+const STANDARD_MATERIAL_PLUGIN_NAME : String = "mgstudio.pbr.MaterialPlugin<StandardMaterial>"
 
 ///|
 pub const STANDARD_MATERIAL_KEY_CULL_FRONT : UInt64 = 0x000001UL
@@ -230,10 +230,10 @@ pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.PluginReplacement for StandardMaterialPlugin with replacement_id(
+pub impl @app.PluginReplacement for StandardMaterialPlugin with plugin_name(
   _self,
 ) {
-  STANDARD_MATERIAL_PLUGIN_ID
+  STANDARD_MATERIAL_PLUGIN_NAME
 }
 
 ///|

@@ -7,8 +7,6 @@ import {
 }
 
 // Values
-pub const UI_LAYOUT_MODULE_ID : String = "bevy_ui::layout"
-
 pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[@ui.ComputedUiRenderTargetInfo]
 
 pub let ecs_key_content_size : @ecs.ComponentKey[@ui.ContentSize]

@@ -8,9 +8,13 @@ import {
 }
 
 // Values
+pub fn fps_overlay_default_config() -> @dev_tools.FpsOverlayConfig
+
 pub let fps_overlay_set_customize : String
 
 pub let fps_overlay_set_update_text : String
+
+pub fn frame_time_graph_default_config() -> @dev_tools.FrameTimeGraphConfig
 
 pub fn frame_time_graph_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -21,11 +25,6 @@ pub fn frame_time_graph_plugin_with(@app.App[@ecs.World], @dev_tools.FpsOverlayP
 // Types and methods
 
 // Type aliases
-pub using @dev_tools {type FpsOverlayConfig}
-
-pub using @dev_tools {type FpsOverlayPlugin}
-
-pub using @dev_tools {type FrameTimeGraphConfig}
 
 // Traits
 

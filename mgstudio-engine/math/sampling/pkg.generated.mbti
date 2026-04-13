@@ -7,25 +7,25 @@ import {
 }
 
 // Values
-pub fn capsule3d_boundary_distribution(@math.Capsule3d) -> @math.SamplingDistribution[@math.Vec3]
+pub fn capsule3d_boundary_distribution(@math.Capsule3d) -> SamplingDistribution[@math.Vec3]
 
-pub fn capsule3d_interior_distribution(@math.Capsule3d) -> @math.SamplingDistribution[@math.Vec3]
+pub fn capsule3d_interior_distribution(@math.Capsule3d) -> SamplingDistribution[@math.Vec3]
 
 pub fn capsule3d_sample_boundary(@math.Capsule3d, @random.Rand) -> @math.Vec3
 
 pub fn capsule3d_sample_interior(@math.Capsule3d, @random.Rand) -> @math.Vec3
 
-pub fn cuboid_boundary_distribution(@math.Cuboid) -> @math.SamplingDistribution[@math.Vec3]
+pub fn cuboid_boundary_distribution(@math.Cuboid) -> SamplingDistribution[@math.Vec3]
 
-pub fn cuboid_interior_distribution(@math.Cuboid) -> @math.SamplingDistribution[@math.Vec3]
+pub fn cuboid_interior_distribution(@math.Cuboid) -> SamplingDistribution[@math.Vec3]
 
 pub fn cuboid_sample_boundary(@math.Cuboid, @random.Rand) -> @math.Vec3
 
 pub fn cuboid_sample_interior(@math.Cuboid, @random.Rand) -> @math.Vec3
 
-pub fn cylinder_boundary_distribution(@math.Cylinder) -> @math.SamplingDistribution[@math.Vec3]
+pub fn cylinder_boundary_distribution(@math.Cylinder) -> SamplingDistribution[@math.Vec3]
 
-pub fn cylinder_interior_distribution(@math.Cylinder) -> @math.SamplingDistribution[@math.Vec3]
+pub fn cylinder_interior_distribution(@math.Cylinder) -> SamplingDistribution[@math.Vec3]
 
 pub fn cylinder_sample_boundary(@math.Cylinder, @random.Rand) -> @math.Vec3
 
@@ -35,46 +35,76 @@ pub fn sample_dir2(@random.Rand) -> @math.Dir2
 
 pub fn sample_dir3(@random.Rand) -> @math.Dir3
 
-pub fn[T] sample_points(@math.SamplingDistribution[T], @random.Rand, Int) -> Array[T]
+pub fn[T] sample_points(SamplingDistribution[T], @random.Rand, Int) -> Array[T]
 
 pub fn sample_quat(@random.Rand) -> @math.Quat
 
 pub fn sample_rot2(@random.Rand) -> @math.Rot2
 
-pub fn sphere_boundary_distribution(@math.Sphere) -> @math.SamplingDistribution[@math.Vec3]
+pub fn sphere_boundary_distribution(@math.Sphere) -> SamplingDistribution[@math.Vec3]
 
-pub fn sphere_interior_distribution(@math.Sphere) -> @math.SamplingDistribution[@math.Vec3]
+pub fn sphere_interior_distribution(@math.Sphere) -> SamplingDistribution[@math.Vec3]
 
 pub fn sphere_sample_boundary(@math.Sphere, @random.Rand) -> @math.Vec3
 
 pub fn sphere_sample_interior(@math.Sphere, @random.Rand) -> @math.Vec3
 
-pub fn tetrahedron_boundary_distribution(@math.Tetrahedron) -> @math.SamplingDistribution[@math.Vec3]
+pub fn tetrahedron_boundary_distribution(@math.Tetrahedron) -> SamplingDistribution[@math.Vec3]
 
-pub fn tetrahedron_interior_distribution(@math.Tetrahedron) -> @math.SamplingDistribution[@math.Vec3]
+pub fn tetrahedron_interior_distribution(@math.Tetrahedron) -> SamplingDistribution[@math.Vec3]
 
 pub fn tetrahedron_sample_boundary(@math.Tetrahedron, @random.Rand) -> @math.Vec3
 
 pub fn tetrahedron_sample_interior(@math.Tetrahedron, @random.Rand) -> @math.Vec3
 
-pub fn triangle3d_boundary_distribution(@math.Triangle3d) -> @math.SamplingDistribution[@math.Vec3]
+pub fn triangle3d_boundary_distribution(@math.Triangle3d) -> SamplingDistribution[@math.Vec3]
 
-pub fn triangle3d_interior_distribution(@math.Triangle3d) -> @math.SamplingDistribution[@math.Vec3]
+pub fn triangle3d_interior_distribution(@math.Triangle3d) -> SamplingDistribution[@math.Vec3]
 
 pub fn triangle3d_sample_boundary(@math.Triangle3d, @random.Rand) -> @math.Vec3
 
 pub fn triangle3d_sample_interior(@math.Triangle3d, @random.Rand) -> @math.Vec3
 
 // Errors
+pub(all) suberror UniformMeshSamplerError {
+  Empty
+  ZeroSurfaceArea
+}
 
 // Types and methods
+pub struct SamplingDistribution[T] {
+  sample_one : (@random.Rand) -> T
+}
+pub fn[T] SamplingDistribution::new((@random.Rand) -> T) -> Self[T]
+pub fn[T] SamplingDistribution::sample(Self[T], @random.Rand) -> T
+pub fn[T] SamplingDistribution::sample_iter(Self[T], @random.Rand) -> Iter[T]
+
+pub struct UniformMeshSampler {
+  triangles : Array[@math.Triangle3d]
+  cumulative_areas : Array[Float]
+  total_area : Float
+}
+pub fn UniformMeshSampler::sample(Self, @random.Rand) -> @math.Vec3
+pub fn UniformMeshSampler::sample_iter(Self, @random.Rand) -> Iter[@math.Vec3]
+pub fn UniformMeshSampler::try_new(Array[@math.Triangle3d]) -> Self raise UniformMeshSamplerError
 
 // Type aliases
-pub using @math {type SamplingDistribution}
-
-pub using @math {type UniformMeshSampler}
-
-pub using @math {type UniformMeshSamplerError}
 
 // Traits
+pub(open) trait FromRng {
+  from_rng(@random.Rand) -> Self
+}
+pub impl FromRng for @math.Dir2
+pub impl FromRng for @math.Dir3
+pub impl FromRng for @math.Quat
+pub impl FromRng for @math.Rot2
+
+pub(open) trait ShapeSample {
+}
+pub impl ShapeSample for @math.Capsule3d
+pub impl ShapeSample for @math.Cuboid
+pub impl ShapeSample for @math.Cylinder
+pub impl ShapeSample for @math.Sphere
+pub impl ShapeSample for @math.Tetrahedron
+pub impl ShapeSample for @math.Triangle3d
 

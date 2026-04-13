@@ -110,7 +110,7 @@ fn scene_runtime_plugin_base(
 pub(all) struct ScenePlugin {}
 
 ///|
-pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
+const SCENE_PLUGIN_NAME : String = "mgstudio.scene.ScenePlugin"
 
 ///|
 pub fn ScenePlugin::default() -> ScenePlugin {
@@ -118,8 +118,8 @@ pub fn ScenePlugin::default() -> ScenePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for ScenePlugin with replacement_id(_self) {
-  SCENE_PLUGIN_ID
+pub impl @app.PluginReplacement for ScenePlugin with plugin_name(_self) {
+  SCENE_PLUGIN_NAME
 }
 
 ///|

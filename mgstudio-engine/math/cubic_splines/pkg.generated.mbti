@@ -6,38 +6,89 @@ import {
 }
 
 // Values
-pub fn[P : @math.SplinePoint] cubic_curve_sample_with_derivative(@math.CubicCurve[P], Float) -> @math.WithDerivative[P]
+pub fn[P : @math.SplinePoint] cubic_curve_sample_with_derivative(CubicCurve[P], Float) -> WithDerivative[P]
 
-pub fn[P : @math.SplinePoint] cubic_curve_sample_with_two_derivatives(@math.CubicCurve[P], Float) -> @math.WithTwoDerivatives[P]
+pub fn[P : @math.SplinePoint] cubic_curve_sample_with_two_derivatives(CubicCurve[P], Float) -> WithTwoDerivatives[P]
 
-pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(@math.CubicSegment[P], Float) -> @math.WithDerivative[P]
+pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(CubicSegment[P], Float) -> WithDerivative[P]
 
-pub fn[P : @math.SplinePoint] cubic_segment_sample_with_two_derivatives(@math.CubicSegment[P], Float) -> @math.WithTwoDerivatives[P]
+pub fn[P : @math.SplinePoint] cubic_segment_sample_with_two_derivatives(CubicSegment[P], Float) -> WithTwoDerivatives[P]
 
 // Errors
+pub(all) suberror InsufficientDataError {
+  InsufficientData(Int, Int)
+}
 
 // Types and methods
+pub struct CubicBSpline[P] {
+  inner : @math.CubicBSpline[P]
+}
+pub fn[P] CubicBSpline::new(Array[P]) -> Self[P]
+pub fn[P : @math.SplinePoint] CubicBSpline::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : @math.SplinePoint] CubicBSpline::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+
+pub struct CubicCardinalSpline[P] {
+  inner : @math.CubicCardinalSpline[P]
+}
+pub fn[P] CubicCardinalSpline::new(Float, Array[P]) -> Self[P]
+pub fn[P] CubicCardinalSpline::new_catmull_rom(Array[P]) -> Self[P]
+pub fn[P : @math.SplinePoint] CubicCardinalSpline::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : @math.SplinePoint] CubicCardinalSpline::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+
+pub struct CubicCurve[P] {
+  inner : @math.CubicCurve[P]
+}
+pub fn[P : @math.SplinePoint] CubicCurve::acceleration(Self[P], Float) -> P
+pub fn[P] CubicCurve::from_math(@math.CubicCurve[P]) -> Self[P]
+pub fn[P] CubicCurve::from_segments(Array[CubicSegment[P]]) -> Self[P]?
+pub fn[P : @math.SplinePoint] CubicCurve::iter_accelerations(Self[P], Int) -> Array[P]
+pub fn[P : @math.SplinePoint] CubicCurve::iter_positions(Self[P], Int) -> Array[P]
+pub fn[P : @math.SplinePoint] CubicCurve::iter_velocities(Self[P], Int) -> Array[P]
+pub fn[P : @math.SplinePoint] CubicCurve::position(Self[P], Float) -> P
+pub fn[P] CubicCurve::push_segment(Self[P], CubicSegment[P]) -> Unit
+pub fn[P] CubicCurve::segments(Self[P]) -> Array[CubicSegment[P]]
+pub fn[P] CubicCurve::to_math(Self[P]) -> @math.CubicCurve[P]
+pub fn[P : @math.SplinePoint] CubicCurve::velocity(Self[P], Float) -> P
+
+pub struct CubicHermite[P] {
+  inner : @math.CubicHermite[P]
+}
+pub fn[P] CubicHermite::new(Array[P], Array[P]) -> Self[P]
+pub fn[P : @math.SplinePoint] CubicHermite::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : @math.SplinePoint] CubicHermite::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+
+pub struct CubicSegment[P] {
+  inner : @math.CubicSegment[P]
+}
+pub fn[P : @math.SplinePoint] CubicSegment::acceleration(Self[P], Float) -> P
+pub fn[P] CubicSegment::from_math(@math.CubicSegment[P]) -> Self[P]
+pub fn[P : @math.SplinePoint] CubicSegment::iter_accelerations(Self[P], Int) -> Array[P]
+pub fn[P : @math.SplinePoint] CubicSegment::iter_positions(Self[P], Int) -> Array[P]
+pub fn[P : @math.SplinePoint] CubicSegment::iter_velocities(Self[P], Int) -> Array[P]
+pub fn[P : @math.SplinePoint] CubicSegment::new_bezier(P, P, P, P) -> Self[P]
+pub fn[P : @math.SplinePoint] CubicSegment::position(Self[P], Float) -> P
+pub fn[P] CubicSegment::to_math(Self[P]) -> @math.CubicSegment[P]
+pub fn[P : @math.SplinePoint] CubicSegment::velocity(Self[P], Float) -> P
+
+pub struct LinearSpline[P] {
+  inner : @math.LinearSpline[P]
+}
+pub fn[P] LinearSpline::new(Array[P]) -> Self[P]
+pub fn[P : @math.SplinePoint] LinearSpline::to_curve(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+pub fn[P : @math.SplinePoint] LinearSpline::to_curve_cyclic(Self[P]) -> CubicCurve[P] raise InsufficientDataError
+
+pub struct WithDerivative[P] {
+  value : P
+  derivative : P
+}
+
+pub struct WithTwoDerivatives[P] {
+  value : P
+  derivative : P
+  second_derivative : P
+}
 
 // Type aliases
-pub using @math {type CubicBSpline}
-
-pub using @math {type CubicCardinalSpline}
-
-pub using @math {type CubicCurve}
-
-pub using @math {type CubicHermite}
-
-pub using @math {type CubicSegment}
-
-pub using @math {type InsufficientDataError}
-
-pub using @math {type Interval}
-
-pub using @math {type LinearSpline}
-
-pub using @math {type WithDerivative}
-
-pub using @math {type WithTwoDerivatives}
 
 // Traits
 
