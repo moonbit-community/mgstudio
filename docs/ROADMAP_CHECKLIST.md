@@ -55,7 +55,7 @@ This file must not exceed 200 lines.
 - [x] `render/pbr`: close `RENDER-006` by moving camera preprocess payload uploads into `render3d_prepare_bind_groups_system`.
 - [x] `render/pbr`: close `RENDER-007` by storing per-view prepared queue/projection/viewport state and consuming it at execute.
 - [x] `render/pbr`: close `RENDER-008` by splitting camera queue build/upload/dispatch across prepare-bind-groups/queue stages.
-- [x] `render/pbr`: close `RENDER-010` by removing execute-side queue-build/preprocess duties from camera hot path.
+- [x] `render/pbr`: close `RENDER-010` by removing execute-side queue-build/preprocess duties from camera hot path, and correct clip-matrix axis wiring in `render3d_begin_pass_3d` (unjittered/previous x-axis fields).
 - [x] `render/pbr`: close `RENDER-011` by confining depth-pyramid and late-occlusion preprocess dispatch to queue stage.
 - [x] `render/pbr`: close `RENDER-012` by wiring concrete work to staged `prepare meshes -> prepare bind groups -> queue -> execute` topology.
 - [x] `pbr/wireframe-ownerization`: move wireframe mesh-cache/runtime helpers from main-pass file into `pbr/wireframe.mbt` owner module.
