@@ -307,11 +307,13 @@ pub fn render3d_apply_view_fog_uniform_offsets(
 ) -> Unit {
   for item in offsets {
     let (entity, offset) = item
-    if (try! world.contains_by_key(entity, ecs_key_view_fog_uniform_offset)) {
-      try! (world.replace(entity, ecs_key_view_fog_uniform_offset, offset)
-      |> ignore)
-    } else {
-      try! world.set_by_key(entity, ecs_key_view_fog_uniform_offset, offset)
+    if !world.is_alive(entity) {
+      continue
+    }
+    try world.set_by_key(entity, ecs_key_view_fog_uniform_offset, offset) catch {
+      _ => ()
+    } noraise {
+      _ => ()
     }
   }
 }
