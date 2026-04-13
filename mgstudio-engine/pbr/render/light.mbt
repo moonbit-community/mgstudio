@@ -201,7 +201,7 @@ pub struct GpuLights3d {
 }
 
 ///|
-fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
+pub fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
   let mut flags = 0U
   if extracted.shadow_maps_enabled {
     flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
@@ -212,7 +212,7 @@ fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
       flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
     }
   }
-  if extracted.volumetric {
+  if extracted.volumetric && extracted.shadow_maps_enabled {
     flags = flags | POINT_LIGHT_FLAG_VOLUMETRIC
   }
   if extracted.affects_lightmapped_mesh_diffuse {
@@ -225,14 +225,14 @@ fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
 }
 
 ///|
-fn render3d_directional_light_flags(
+pub fn render3d_directional_light_flags(
   extracted : ExtractedDirectionalLight3d,
 ) -> UInt {
   let mut flags = 0U
   if extracted.shadow_maps_enabled {
     flags = flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED
   }
-  if extracted.volumetric {
+  if extracted.volumetric && extracted.shadow_maps_enabled {
     flags = flags | DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC
   }
   if extracted.affects_lightmapped_mesh_diffuse {

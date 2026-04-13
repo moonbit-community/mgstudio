@@ -274,6 +274,73 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
 }
 
 ///|
+test "pbr render light: volumetric flags require shadow maps for point and directional lights" {
+  let world = @ecs.World::new()
+
+  let point_entity = world.spawn()
+  try! world.set_by_key(
+    point_entity,
+    @light.ecs_key_point_light,
+    @light.PointLight::default(),
+  )
+  |> ignore
+  try! world.set_by_key(
+    point_entity,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::default(),
+  )
+  |> ignore
+  let points_no_shadow = render3d_collect_extracted_point_lights(world)
+  inspect(points_no_shadow.length(), content="1")
+  let point_flags_no_shadow = render3d_point_light_flags(points_no_shadow[0])
+  inspect((point_flags_no_shadow & (1U << 2)) == 0U, content="true")
+
+  try! world.set_by_key(
+    point_entity,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+  let points_with_shadow = render3d_collect_extracted_point_lights(world)
+  let point_flags_with_shadow = render3d_point_light_flags(points_with_shadow[0])
+  inspect((point_flags_with_shadow & (1U << 2)) != 0U, content="true")
+
+  let directional_entity = world.spawn()
+  try! world.set_by_key(
+    directional_entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+  try! world.set_by_key(
+    directional_entity,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::default(),
+  )
+  |> ignore
+  let directional_no_shadow = render3d_collect_extracted_directional_lights(world)
+  inspect(directional_no_shadow.length(), content="1")
+  let directional_flags_no_shadow = render3d_directional_light_flags(
+    directional_no_shadow[0],
+  )
+  inspect((directional_flags_no_shadow & (1U << 1)) == 0U, content="true")
+
+  try! world.set_by_key(
+    directional_entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+  let directional_with_shadow = render3d_collect_extracted_directional_lights(
+    world,
+  )
+  let directional_flags_with_shadow = render3d_directional_light_flags(
+    directional_with_shadow[0],
+  )
+  inspect((directional_flags_with_shadow & (1U << 1)) != 0U, content="true")
+}
+
+///|
 test "pbr render light: directional sun disk defaults and component override propagate" {
   let world = @ecs.World::new()
   let entity_default = world.spawn()
