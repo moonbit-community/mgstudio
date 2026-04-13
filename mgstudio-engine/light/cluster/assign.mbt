@@ -152,9 +152,21 @@ fn cluster_assign_cluster_objects(cluster_count : Int) -> Array[ObjectsInCluster
 
 ///|
 pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
-  let point_light_count = world.component_count(@light.ecs_key_point_light)
-  let spot_light_count = world.component_count(@light.ecs_key_spot_light)
-  let total = point_light_count + spot_light_count
+  let point_and_spot_lights : Array[@core.Entity] = []
+  world.for_each_component(@light.ecs_key_point_light, fn(entity, _light) {
+    point_and_spot_lights.push(entity)
+  })
+  world.for_each_component(@light.ecs_key_spot_light, fn(entity, _light) {
+    point_and_spot_lights.push(entity)
+  })
+  let reflection_probes : Array[@core.Entity] = []
+  world.for_each_component(@light.ecs_key_environment_map_light, fn(entity, _probe) {
+    reflection_probes.push(entity)
+  })
+  let irradiance_volumes : Array[@core.Entity] = []
+  world.for_each_component(@light.ecs_key_irradiance_volume, fn(entity, _probe) {
+    irradiance_volumes.push(entity)
+  })
   let max_clusterable_object_range = cluster_assign_max_clusterable_object_range(
     world,
   )
@@ -188,10 +200,10 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       clusterable_objects: cluster_assign_cluster_objects(cluster_count),
     }
     let visible = VisibleClusterableObjects::{
-      point_and_spot_lights: total,
-      reflection_probes: 0,
-      irradiance_volumes: 0,
-      decals: 0,
+      point_and_spot_lights: point_and_spot_lights.copy(),
+      reflection_probes: reflection_probes.copy(),
+      irradiance_volumes: irradiance_volumes.copy(),
+      decals: [],
     }
     try! world.set_by_key(entity, Clusters::component(), clusters)
     try! world.set_by_key(entity, VisibleClusterableObjects::component(), visible)
@@ -203,8 +215,10 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       return
     }
     let next = VisibleClusterableObjects::{
-      ..existing,
-      point_and_spot_lights: total,
+      point_and_spot_lights: point_and_spot_lights.copy(),
+      reflection_probes: reflection_probes.copy(),
+      irradiance_volumes: irradiance_volumes.copy(),
+      decals: [],
     }
     if next != existing {
       try! world.set_by_key(

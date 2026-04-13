@@ -21,7 +21,7 @@
 pub struct Entity {
   id : Int
   generation : Int
-} derive(Eq, ToJson, FromJson)
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn Entity::new(id : Int, generation : Int) -> Entity {

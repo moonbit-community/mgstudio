@@ -248,21 +248,27 @@ pub fn ClusterableObjectCounts::default() -> ClusterableObjectCounts {
 
 ///|
 pub struct ObjectsInCluster {
+  clusterables : Array[@core.Entity]
   mut counts : ClusterableObjectCounts
 } derive(Eq, Debug)
 
 ///|
 pub fn ObjectsInCluster::default() -> ObjectsInCluster {
-  ObjectsInCluster::{ counts: ClusterableObjectCounts::default() }
+  ObjectsInCluster::{ clusterables: [], counts: ClusterableObjectCounts::default() }
 }
 
 ///|
 pub fn ObjectsInCluster::clear(self : ObjectsInCluster) -> Unit {
+  self.clusterables.clear()
   self.counts = ClusterableObjectCounts::default()
 }
 
 ///|
-pub fn ObjectsInCluster::add_point_light(self : ObjectsInCluster) -> Unit {
+pub fn ObjectsInCluster::add_point_light(
+  self : ObjectsInCluster,
+  entity : @core.Entity,
+) -> Unit {
+  self.clusterables.push(entity)
   self.counts = ClusterableObjectCounts::{
     ..self.counts,
     point_lights: self.counts.point_lights + 1,
@@ -270,7 +276,11 @@ pub fn ObjectsInCluster::add_point_light(self : ObjectsInCluster) -> Unit {
 }
 
 ///|
-pub fn ObjectsInCluster::add_spot_light(self : ObjectsInCluster) -> Unit {
+pub fn ObjectsInCluster::add_spot_light(
+  self : ObjectsInCluster,
+  entity : @core.Entity,
+) -> Unit {
+  self.clusterables.push(entity)
   self.counts = ClusterableObjectCounts::{
     ..self.counts,
     spot_lights: self.counts.spot_lights + 1,
@@ -278,7 +288,11 @@ pub fn ObjectsInCluster::add_spot_light(self : ObjectsInCluster) -> Unit {
 }
 
 ///|
-pub fn ObjectsInCluster::add_reflection_probe(self : ObjectsInCluster) -> Unit {
+pub fn ObjectsInCluster::add_reflection_probe(
+  self : ObjectsInCluster,
+  entity : @core.Entity,
+) -> Unit {
+  self.clusterables.push(entity)
   self.counts = ClusterableObjectCounts::{
     ..self.counts,
     reflection_probes: self.counts.reflection_probes + 1,
@@ -286,7 +300,11 @@ pub fn ObjectsInCluster::add_reflection_probe(self : ObjectsInCluster) -> Unit {
 }
 
 ///|
-pub fn ObjectsInCluster::add_irradiance_volume(self : ObjectsInCluster) -> Unit {
+pub fn ObjectsInCluster::add_irradiance_volume(
+  self : ObjectsInCluster,
+  entity : @core.Entity,
+) -> Unit {
+  self.clusterables.push(entity)
   self.counts = ClusterableObjectCounts::{
     ..self.counts,
     irradiance_volumes: self.counts.irradiance_volumes + 1,
@@ -294,11 +312,22 @@ pub fn ObjectsInCluster::add_irradiance_volume(self : ObjectsInCluster) -> Unit 
 }
 
 ///|
-pub fn ObjectsInCluster::add_decal(self : ObjectsInCluster) -> Unit {
+pub fn ObjectsInCluster::add_decal(
+  self : ObjectsInCluster,
+  entity : @core.Entity,
+) -> Unit {
+  self.clusterables.push(entity)
   self.counts = ClusterableObjectCounts::{
     ..self.counts,
     decals: self.counts.decals + 1,
   }
+}
+
+///|
+pub fn ObjectsInCluster::clusterables(
+  self : ObjectsInCluster,
+) -> Array[@core.Entity] {
+  self.clusterables.copy()
 }
 
 ///|
@@ -420,19 +449,19 @@ pub fn Clusters::update(
 
 ///|
 pub struct VisibleClusterableObjects {
-  mut point_and_spot_lights : Int
-  mut reflection_probes : Int
-  mut irradiance_volumes : Int
-  mut decals : Int
+  point_and_spot_lights : Array[@core.Entity]
+  reflection_probes : Array[@core.Entity]
+  irradiance_volumes : Array[@core.Entity]
+  decals : Array[@core.Entity]
 } derive(Eq, Debug)
 
 ///|
 pub fn VisibleClusterableObjects::default() -> VisibleClusterableObjects {
   VisibleClusterableObjects::{
-    point_and_spot_lights: 0,
-    reflection_probes: 0,
-    irradiance_volumes: 0,
-    decals: 0,
+    point_and_spot_lights: [],
+    reflection_probes: [],
+    irradiance_volumes: [],
+    decals: [],
   }
 }
 
@@ -445,27 +474,28 @@ pub fn VisibleClusterableObjects::new() -> VisibleClusterableObjects {
 pub fn VisibleClusterableObjects::clear(
   self : VisibleClusterableObjects,
 ) -> Unit {
-  self.point_and_spot_lights = 0
-  self.reflection_probes = 0
-  self.irradiance_volumes = 0
-  self.decals = 0
+  self.point_and_spot_lights.clear()
+  self.reflection_probes.clear()
+  self.irradiance_volumes.clear()
+  self.decals.clear()
 }
 
 ///|
 pub fn VisibleClusterableObjects::add(
   self : VisibleClusterableObjects,
+  entity : @core.Entity,
   object_type : ClusterableObjectType,
 ) -> Unit {
   match object_type {
     ClusterableObjectType::PointLight(_, _) =>
-      self.point_and_spot_lights = self.point_and_spot_lights + 1
+      self.point_and_spot_lights.push(entity)
     ClusterableObjectType::SpotLight(_, _, _) =>
-      self.point_and_spot_lights = self.point_and_spot_lights + 1
+      self.point_and_spot_lights.push(entity)
     ClusterableObjectType::ReflectionProbe =>
-      self.reflection_probes = self.reflection_probes + 1
+      self.reflection_probes.push(entity)
     ClusterableObjectType::IrradianceVolume =>
-      self.irradiance_volumes = self.irradiance_volumes + 1
-    ClusterableObjectType::Decal => self.decals = self.decals + 1
+      self.irradiance_volumes.push(entity)
+    ClusterableObjectType::Decal => ()
   }
 }
 
