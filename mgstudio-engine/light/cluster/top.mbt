@@ -88,7 +88,112 @@ pub(all) enum ClusterConfig {
 
 ///|
 pub fn ClusterConfig::default() -> ClusterConfig {
-  XYZ(16, 9, 24, ClusterZConfig::default(), true)
+  // Bevy default shape:
+  // - total clusters: 4096
+  // - z slices: 24
+  // - dynamic resizing enabled
+  FixedZ(4096, 24, ClusterZConfig::default(), true)
+}
+
+///|
+fn cluster_config_positive(value : Int, fallback : Int) -> Int {
+  if value <= 0 {
+    fallback
+  } else {
+    value
+  }
+}
+
+///|
+fn cluster_config_requested_dimensions_for_screen_size(
+  config : ClusterConfig,
+  screen_width : Int,
+  screen_height : Int,
+) -> (Int, Int, Int) {
+  match config {
+    None => (0, 0, 0)
+    Single => (1, 1, 1)
+    XYZ(x, y, z, _, _) => (
+      cluster_config_positive(x, 1),
+      cluster_config_positive(y, 1),
+      cluster_config_positive(z, 1),
+    )
+    // Bevy `FixedZ { total, z_slices, .. }` shape:
+    // derive XY from total-per-layer and screen aspect ratio.
+    FixedZ(total, z_slices, _, _) => {
+      let safe_total = cluster_config_positive(total, 1)
+      let safe_z_slices = cluster_config_positive(z_slices, 1)
+      let resolved_z_slices = if safe_total < safe_z_slices {
+        safe_total
+      } else {
+        safe_z_slices
+      }
+      let safe_width = cluster_config_positive(screen_width, 1)
+      let safe_height = cluster_config_positive(screen_height, 1)
+      let aspect_ratio = Float::from_double(safe_width.to_double()) /
+        Float::from_double(safe_height.to_double())
+      let per_layer = Float::from_double(safe_total.to_double()) /
+        Float::from_double(resolved_z_slices.to_double())
+      let y_estimate = @math.sqrt(per_layer / aspect_ratio)
+      let mut x = (y_estimate * aspect_ratio).to_int()
+      let mut y = y_estimate.to_int()
+
+      if x <= 0 {
+        x = 1
+        y = cluster_config_positive(per_layer.to_int(), 1)
+      }
+      if y <= 0 {
+        y = 1
+        x = cluster_config_positive(per_layer.to_int(), 1)
+      }
+      (x, y, resolved_z_slices)
+    }
+  }
+}
+
+///|
+pub fn cluster_config_dimensions_for_screen_size(
+  config : ClusterConfig,
+  screen_width : Int,
+  screen_height : Int,
+) -> (Int, Int, Int) {
+  let (requested_x, requested_y, requested_z) =
+    cluster_config_requested_dimensions_for_screen_size(
+      config,
+      screen_width,
+      screen_height,
+    )
+  if requested_x <= 0 || requested_y <= 0 || requested_z <= 0 {
+    return (0, 0, 0)
+  }
+  let safe_width = cluster_config_positive(screen_width, 1)
+  let safe_height = cluster_config_positive(screen_height, 1)
+
+  // Align with Bevy's `Clusters::update` behavior:
+  // tile size is rounded up, then realized dimensions are rounded down.
+  let tile_size_x = cluster_config_positive(
+    @math_core.ceil(
+      safe_width.to_double() / requested_x.to_double(),
+    ).to_int(),
+    1,
+  )
+  let tile_size_y = cluster_config_positive(
+    @math_core.ceil(
+      safe_height.to_double() / requested_y.to_double(),
+    ).to_int(),
+    1,
+  )
+  let dimensions_x = cluster_config_positive(
+    (Float::from_double(safe_width.to_double()) /
+      Float::from_double(tile_size_x.to_double())).to_int(),
+    1,
+  )
+  let dimensions_y = cluster_config_positive(
+    (Float::from_double(safe_height.to_double()) /
+      Float::from_double(tile_size_y.to_double())).to_int(),
+    1,
+  )
+  (dimensions_x, dimensions_y, requested_z)
 }
 
 ///|

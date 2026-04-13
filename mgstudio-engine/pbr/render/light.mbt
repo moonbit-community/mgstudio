@@ -684,6 +684,35 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
 }
 
 ///|
+fn render3d_cluster_screen_size(world : @ecs.World) -> (Int, Int) {
+  let width = @window.window_physical_width_for(world, @window.WindowRef::Primary)
+  let height = @window.window_physical_height_for(world, @window.WindowRef::Primary)
+  if width > 0 && height > 0 {
+    (width, height)
+  } else {
+    (1280, 720)
+  }
+}
+
+///|
+fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
+  let config_ref : Ref[@light_cluster.ClusterConfig?] = Ref::new(None)
+  world.for_each_component(@light_cluster.ClusterConfig::component(), fn(
+    _entity,
+    config,
+  ) {
+    if config_ref.val is Some(_) {
+      return
+    }
+    config_ref.val = Some(config)
+  })
+  match config_ref.val {
+    Some(config) => config
+    None => @light_cluster.ClusterConfig::default()
+  }
+}
+
+///|
 pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
   let clusterable_point_lights = render3d_collect_extracted_clusterable_point_lights(
@@ -701,9 +730,16 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   } else {
     @light.GlobalAmbientLight::default()
   }
-  let cluster_dimensions_x = 16
-  let cluster_dimensions_y = 9
-  let cluster_dimensions_z = 24
+  let (cluster_screen_width, cluster_screen_height) = render3d_cluster_screen_size(
+    world,
+  )
+  let cluster_config = render3d_cluster_config(world)
+  let (cluster_dimensions_x, cluster_dimensions_y, cluster_dimensions_z) =
+    @light_cluster.cluster_config_dimensions_for_screen_size(
+      cluster_config,
+      cluster_screen_width,
+      cluster_screen_height,
+    )
   let n_clusters = cluster_dimensions_x * cluster_dimensions_y * cluster_dimensions_z
   let cluster_factors_zw = @light_cluster.calculate_cluster_factors(
     0.1F,

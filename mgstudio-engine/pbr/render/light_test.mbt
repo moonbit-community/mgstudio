@@ -582,6 +582,29 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
 }
 
 ///|
+test "pbr render light: gpu lights cluster dimensions follow cluster config component" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::XYZ(
+      8,
+      4,
+      12,
+      @light_cluster.ClusterZConfig::default(),
+      false,
+    ),
+  )
+  |> ignore
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.cluster_dimensions.0, content="8")
+  inspect(gpu_lights.cluster_dimensions.1, content="4")
+  inspect(gpu_lights.cluster_dimensions.2, content="12")
+  inspect(gpu_lights.cluster_dimensions.3, content="384")
+}
+
+///|
 test "pbr render light: volumetric flags require shadow maps for point and directional lights" {
   let world = @ecs.World::new()
 

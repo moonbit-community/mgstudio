@@ -33,3 +33,23 @@ test "light cluster: calculate_cluster_factors matches bevy orthographic formula
   inspect(cluster_approx_eq(factors.x, -0.1F, 1.0e-6F), content="true")
   inspect(cluster_approx_eq(factors.y, -0.0240024F, 1.0e-6F), content="true")
 }
+
+///|
+test "light cluster: default cluster config uses bevy fixed-z shape" {
+  let config = ClusterConfig::default()
+  let ok = match config {
+    FixedZ(total, z_slices, _, dynamic_resizing) =>
+      total == 4096 && z_slices == 24 && dynamic_resizing
+    _ => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "light cluster: dimensions_for_screen_size matches bevy fixed-z rounding shape" {
+  let config = ClusterConfig::default()
+  let dimensions = cluster_config_dimensions_for_screen_size(config, 1920, 1080)
+  inspect(dimensions.0, content="16")
+  inspect(dimensions.1, content="9")
+  inspect(dimensions.2, content="24")
+}
