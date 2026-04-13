@@ -217,6 +217,7 @@ pub struct GpuLights3d {
   ambient_color : @sprite.Color
   ambient_brightness : Float
   n_directional_lights : Int
+  spot_light_shadowmap_offset : Int
   ambient_light_affects_lightmapped_meshes : Int
 }
 
@@ -553,6 +554,7 @@ fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
 ///|
 pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
+  let point_light_count = render3d_collect_extracted_point_lights(world).length()
   let ambient = if (try! world.get_resource(@light.ecs_key_global_ambient_light))
     is Some(v) {
     v
@@ -604,6 +606,8 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     ambient_color: ambient.color,
     ambient_brightness: ambient.brightness,
     n_directional_lights: gpu_directional_lights.length(),
+    spot_light_shadowmap_offset: directional_shadow_texture_base_index -
+      point_light_count,
     ambient_light_affects_lightmapped_meshes: if ambient
       .affects_lightmapped_meshes {
       1

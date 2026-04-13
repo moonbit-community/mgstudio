@@ -423,6 +423,36 @@ test "pbr render light: spot extraction order keeps shadow and volumetric first"
 }
 
 ///|
+test "pbr render light: gpu lights computes spot shadow map offset" {
+  let world = @ecs.World::new()
+
+  let point = world.spawn()
+  try! world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  let directional = world.spawn()
+  let directional_config = @light.CascadeShadowConfigBuilder::default().with_num_cascades(
+    2,
+  ).build()
+  try! world.set_by_key(
+    directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true)
+      .with_cascade_shadow_config(Some(directional_config)),
+  )
+  |> ignore
+
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="1")
+  inspect(gpu.directional_lights[0].num_cascades, content="2")
+  inspect(gpu.spot_light_shadowmap_offset, content="1")
+}
+
+///|
 test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   let world = @ecs.World::new()
   world.insert_resource(
