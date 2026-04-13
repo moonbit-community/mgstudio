@@ -71,3 +71,19 @@ test "a11y: plugin init_resource keeps existing resource values" {
   assert_true(requested_after.get())
   assert_true(!updates_after.get())
 }
+
+///|
+test "a11y: ActionRequest wrapper forwards accesskit payload" {
+  let target = @moon_accesskit.NodeId::from_u64(42UL)
+  let request = @moon_accesskit.ActionRequest::new(
+    @moon_accesskit.Action::Focus,
+    @moon_accesskit.TreeId::root(),
+    target,
+  )
+  let wrapped = ActionRequest::new(request)
+  assert_eq(wrapped.action(), @moon_accesskit.Action::Focus)
+  assert_eq(wrapped.target_tree(), @moon_accesskit.TreeId::root())
+  assert_eq(wrapped.target_node(), target)
+  assert_true(wrapped.data() is None)
+  assert_eq(wrapped.accesskit_request().target_node(), target)
+}
