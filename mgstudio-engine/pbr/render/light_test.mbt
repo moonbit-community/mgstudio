@@ -260,6 +260,7 @@ test "pbr render light: directional with shadows uses default cascade config" {
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(gpu_lights.directional_lights[0].num_cascades, content="4")
+  inspect(gpu_lights.directional_lights[0].depth_texture_base_index, content="0")
 }
 
 ///|
@@ -301,6 +302,44 @@ test "pbr render light: directional extraction order follows bevy key" {
   inspect(extracted[0].entity.id, content="2")
   inspect(extracted[1].entity.id, content="1")
   inspect(extracted[2].entity.id, content="0")
+}
+
+///|
+test "pbr render light: directional depth texture base index accumulates cascades" {
+  let world = @ecs.World::new()
+
+  let first = world.spawn()
+  let first_config = @light.CascadeShadowConfigBuilder::default().with_num_cascades(
+    2,
+  ).build()
+  try! world.set_by_key(
+    first,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true)
+      .with_cascade_shadow_config(Some(first_config)),
+  )
+  |> ignore
+
+  let second = world.spawn()
+  let second_config = @light.CascadeShadowConfigBuilder::default().with_num_cascades(
+    3,
+  ).build()
+  try! world.set_by_key(
+    second,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true)
+      .with_cascade_shadow_config(Some(second_config)),
+  )
+  |> ignore
+
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="2")
+  inspect(gpu.directional_lights[0].num_cascades, content="2")
+  inspect(gpu.directional_lights[0].depth_texture_base_index, content="0")
+  inspect(gpu.directional_lights[1].num_cascades, content="3")
+  inspect(gpu.directional_lights[1].depth_texture_base_index, content="2")
+  inspect(gpu.directional_lights[0].decal_index, content="-1")
+  inspect(gpu.directional_lights[1].decal_index, content="-1")
 }
 
 ///|

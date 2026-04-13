@@ -196,6 +196,8 @@ pub struct GpuDirectionalLight3d {
   shadow_normal_bias : Float
   num_cascades : Int
   cascades_overlap_proportion : Float
+  depth_texture_base_index : Int
+  decal_index : Int
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }
@@ -507,6 +509,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     @light.GlobalAmbientLight::default()
   }
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
+  let mut directional_shadow_texture_base_index = 0
   let max_count = if directional.length() < MAX_DIRECTIONAL_LIGHTS {
     directional.length()
   } else {
@@ -517,7 +520,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     let cascades : Array[GpuDirectionalCascade3d] = []
     let cascade_count = if item.shadow_maps_enabled {
       if item.cascade_count <= 0 {
-        1
+        0
       } else {
         item.cascade_count
       }
@@ -537,9 +540,13 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       shadow_normal_bias: item.shadow_normal_bias,
       num_cascades: cascades.length(),
       cascades_overlap_proportion: item.cascade_overlap_proportion,
+      depth_texture_base_index: directional_shadow_texture_base_index,
+      decal_index: -1,
       sun_disk_angular_size: item.sun_disk_angular_size,
       sun_disk_intensity: item.sun_disk_intensity,
     })
+    directional_shadow_texture_base_index = directional_shadow_texture_base_index +
+      cascades.length()
   }
   GpuLights3d::{
     directional_lights: gpu_directional_lights,
