@@ -213,3 +213,48 @@ test "asset host io: pnm decode supports binary P6 payload" {
   debug_inspect(decoded.pixels[6].to_uint(), content="0")
   debug_inspect(decoded.pixels[7].to_uint(), content="255")
 }
+
+///|
+fn test_farbfeld_1x2_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  for code in @utf8.encode("farbfeld"[:]) {
+    out.push(code)
+  }
+  push_u32_be(out, 1U)
+  push_u32_be(out, 2U)
+  let push_u16_be_test = fn(out : Array[Byte], value : UInt) {
+    out.push(((value >> 8) & 0xFFU).to_byte())
+    out.push((value & 0xFFU).to_byte())
+  }
+  // Pixel 0: opaque red.
+  push_u16_be_test(out, 0xFFFFU)
+  push_u16_be_test(out, 0U)
+  push_u16_be_test(out, 0U)
+  push_u16_be_test(out, 0xFFFFU)
+  // Pixel 1: blue with 50% alpha.
+  push_u16_be_test(out, 0U)
+  push_u16_be_test(out, 0U)
+  push_u16_be_test(out, 0xFFFFU)
+  push_u16_be_test(out, 0x8000U)
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: farbfeld decode and dimensions work" {
+  let bytes = test_farbfeld_1x2_bytes()
+  debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 2))")
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Farbfeld),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(1, 2)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+  debug_inspect(decoded.pixels[4].to_uint(), content="0")
+  debug_inspect(decoded.pixels[5].to_uint(), content="0")
+  debug_inspect(decoded.pixels[6].to_uint(), content="255")
+  // 0x8000 >> 8 = 128
+  debug_inspect(decoded.pixels[7].to_uint(), content="128")
+}

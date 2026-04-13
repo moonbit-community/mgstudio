@@ -860,8 +860,26 @@ fn is_bmp_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
+fn is_farbfeld_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 16 &&
+  blob_u8_at(bytes, 0) == 0x66 &&
+  blob_u8_at(bytes, 1) == 0x61 &&
+  blob_u8_at(bytes, 2) == 0x72 &&
+  blob_u8_at(bytes, 3) == 0x62 &&
+  blob_u8_at(bytes, 4) == 0x66 &&
+  blob_u8_at(bytes, 5) == 0x65 &&
+  blob_u8_at(bytes, 6) == 0x6C &&
+  blob_u8_at(bytes, 7) == 0x64
+}
+
+///|
 fn blob_u16_at(bytes : Bytes, index : Int) -> Int {
   blob_u8_at(bytes, index) | (blob_u8_at(bytes, index + 1) << 8)
+}
+
+///|
+fn blob_u16_be_at(bytes : Bytes, index : Int) -> Int {
+  (blob_u8_at(bytes, index) << 8) | blob_u8_at(bytes, index + 1)
 }
 
 ///|
@@ -1107,6 +1125,39 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
 }
 
 ///|
+fn farbfeld_dimensions(bytes : Bytes) -> (Int, Int)? {
+  guard is_farbfeld_bytes(bytes) else { return None }
+  let width = clamp_dim(blob_u32_be_at(bytes, 8))
+  let height = clamp_dim(blob_u32_be_at(bytes, 12))
+  if width <= 0 || height <= 0 {
+    None
+  } else {
+    Some((width, height))
+  }
+}
+
+///|
+fn decode_texture_image_from_farbfeld(bytes : Bytes) -> DecodedTextureImage? {
+  guard farbfeld_dimensions(bytes) is Some((width, height)) else { return None }
+  let pixel_count = width * height
+  let data_start = 16
+  let data_len = pixel_count * 8
+  if data_start + data_len > bytes.length() {
+    return None
+  }
+  let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  for i in 0..<pixel_count {
+    let src = data_start + i * 8
+    let dst = i * 4
+    pixels[dst] = (blob_u16_be_at(bytes, src) >> 8).to_byte()
+    pixels[dst + 1] = (blob_u16_be_at(bytes, src + 2) >> 8).to_byte()
+    pixels[dst + 2] = (blob_u16_be_at(bytes, src + 4) >> 8).to_byte()
+    pixels[dst + 3] = (blob_u16_be_at(bytes, src + 6) >> 8).to_byte()
+  }
+  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+}
+
+///|
 fn pnm_is_whitespace(code : Int) -> Bool {
   code == 32 ||
   code == 9 ||
@@ -1287,11 +1338,19 @@ fn decode_texture_image_with_container(
       return Some(decoded)
     }
   }
+  if container is Some(@image.ImageContainerFormat::Farbfeld) {
+    if decode_texture_image_from_farbfeld(bytes) is Some(decoded) {
+      return Some(decoded)
+    }
+  }
   if is_png_bytes(bytes) {
     return decode_texture_image_from_gm_png(bytes)
   }
   if is_jpeg_bytes(bytes) {
     return decode_texture_image_from_gm_jpeg(bytes)
+  }
+  if is_farbfeld_bytes(bytes) {
+    return decode_texture_image_from_farbfeld(bytes)
   }
   if is_pnm_bytes(bytes) {
     return decode_texture_image_from_pnm(bytes)
@@ -1818,6 +1877,9 @@ fn save_asset_file_bytes(path : String, bytes : Bytes) -> Unit {
 ///|
 fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
   if png_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if farbfeld_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
   if bmp_decode_info(bytes) is Some(info) {
