@@ -89,6 +89,7 @@ This file must not exceed 200 lines.
 - [x] `gltf-extensions-callsites`: switch scene runtime and extension examples from `@gltf.gltf_extension_*` forwarding helpers to `@gltf_loader_extensions` owner APIs.
 - [x] `scene/dead-wrapper-prune`: remove unreferenced compatibility wrappers (`scene_spawner_run_*`, `scene_spawner_plugin*`, `scene_loader_plugin`, `scene_*_to_json`) to keep scene surface behavior-only.
 - [x] `pbr/deferred-ownerization`: move deferred lighting plugin/state/depth-id ownership into `pbr/deferred/top` and reduce root `pbr/deferred.mbt` to compatibility forwarding.
+- [x] `pbr/deferred-depth-id-runtime`: add PostUpdate auto-insert system for `DeferredPrepass -> PbrDeferredLightingDepthId` defaulting without overwriting explicit values.
 - [x] `pbr/diagnostic-material-allocator-shape`: add Bevy-shaped material allocator diagnostic paths and slab/size/allocation snapshot helpers.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.

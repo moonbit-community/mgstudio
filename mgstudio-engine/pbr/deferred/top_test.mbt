@@ -19,3 +19,50 @@ test "pbr deferred: depth id clamps to byte range" {
   depth.set(-1)
   inspect(depth.get(), content="0")
 }
+
+///|
+test "pbr deferred: plugin inserts default depth id for deferred prepass entity" {
+  let mut app = @app.App::new(@ecs.World::new()).add_plugin(
+    deferred_pbr_lighting_plugin,
+  )
+  let world = app.world()
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @core_pipeline.ecs_key_deferred_prepass,
+    @core_pipeline.DeferredPrepass::default(),
+  )
+  app = app.run_once()
+  let depth = match
+    (try! app.world().get_by_key(entity, ecs_key_pbr_deferred_lighting_depth_id)) {
+    Some(v) => v
+    None => abort("missing deferred depth id component")
+  }
+  inspect(depth.get(), content="1")
+}
+
+///|
+test "pbr deferred: plugin keeps explicit depth id value" {
+  let mut app = @app.App::new(@ecs.World::new()).add_plugin(
+    deferred_pbr_lighting_plugin,
+  )
+  let world = app.world()
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @core_pipeline.ecs_key_deferred_prepass,
+    @core_pipeline.DeferredPrepass::default(),
+  )
+  try! world.set_by_key(
+    entity,
+    ecs_key_pbr_deferred_lighting_depth_id,
+    PbrDeferredLightingDepthId::new(7),
+  )
+  app = app.run_once()
+  let depth = match
+    (try! app.world().get_by_key(entity, ecs_key_pbr_deferred_lighting_depth_id)) {
+    Some(v) => v
+    None => abort("missing deferred depth id component")
+  }
+  inspect(depth.get(), content="7")
+}

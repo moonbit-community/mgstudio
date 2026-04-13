@@ -30,6 +30,11 @@ pub type DeferredPbrLightingPlugin = @pbr_deferred.DeferredPbrLightingPlugin
 pub type PbrDeferredLightingDepthId = @pbr_deferred.PbrDeferredLightingDepthId
 
 ///|
+pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[
+  PbrDeferredLightingDepthId,
+] = @pbr_deferred.ecs_key_pbr_deferred_lighting_depth_id
+
+///|
 pub fn deferred_pbr_lighting_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
