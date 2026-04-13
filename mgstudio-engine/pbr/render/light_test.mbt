@@ -502,6 +502,20 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
 }
 
 ///|
+test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
+  let world = @ecs.World::new()
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.cluster_dimensions.0, content="16")
+  inspect(gpu_lights.cluster_dimensions.1, content="9")
+  inspect(gpu_lights.cluster_dimensions.2, content="24")
+  inspect(gpu_lights.cluster_dimensions.3, content="3456")
+  inspect(approx_eq(gpu_lights.cluster_factors.x, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(gpu_lights.cluster_factors.y, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(gpu_lights.cluster_factors.z, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(gpu_lights.cluster_factors.w, 0.0F, 1.0e-6F), content="true")
+}
+
+///|
 test "pbr render light: volumetric flags require shadow maps for point and directional lights" {
   let world = @ecs.World::new()
 

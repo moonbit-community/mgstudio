@@ -243,6 +243,8 @@ pub struct GpuLights3d {
   directional_lights : Array[GpuDirectionalLight3d]
   ambient_color : @sprite.Color
   ambient_brightness : Float
+  cluster_dimensions : (Int, Int, Int, Int)
+  cluster_factors : @math.Vec4
   n_directional_lights : Int
   spot_light_shadowmap_offset : Int
   ambient_light_affects_lightmapped_meshes : Int
@@ -655,6 +657,10 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   } else {
     @light.GlobalAmbientLight::default()
   }
+  let cluster_dimensions_x = 16
+  let cluster_dimensions_y = 9
+  let cluster_dimensions_z = 24
+  let n_clusters = cluster_dimensions_x * cluster_dimensions_y * cluster_dimensions_z
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
   let mut directional_shadow_texture_base_index = 0
   let max_count = if directional.length() < MAX_DIRECTIONAL_LIGHTS {
@@ -699,6 +705,13 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     directional_lights: gpu_directional_lights,
     ambient_color: ambient.color,
     ambient_brightness: ambient.brightness,
+    cluster_dimensions: (
+      cluster_dimensions_x,
+      cluster_dimensions_y,
+      cluster_dimensions_z,
+      n_clusters,
+    ),
+    cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
     n_directional_lights: gpu_directional_lights.length(),
     spot_light_shadowmap_offset: directional_shadow_texture_base_index -
       point_light_count,
