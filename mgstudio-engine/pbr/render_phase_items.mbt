@@ -124,6 +124,7 @@ priv struct Mesh3dExtractedPayload {
   wireframe_color : WireframeColor?
   skinning_key_hi : Int
   skinning_key_lo : Int
+  motion_vector_enabled : Bool
 }
 
 ///|

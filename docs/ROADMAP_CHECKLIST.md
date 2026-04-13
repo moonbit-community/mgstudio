@@ -11,8 +11,8 @@ This file must not exceed 200 lines.
 | `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
 | `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 66% | 66% | 🟡 In Progress | PBR module shape is close, but runtime parity is still significantly incomplete. |
-| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 60% | 60% | 🟡 In Progress | `RENDER-003..012` are still open and block true behavior parity. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 72% | 72% | 🟡 In Progress | Remaining parity gaps concentrate in material/light/fog/detail behavior, not stage ownership. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 74% | 74% | 🟡 In Progress | Core stage split is landed; remaining gaps are feature-depth deltas (meshlet/advanced passes). |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
@@ -49,15 +49,15 @@ This file must not exceed 200 lines.
 | Current weighted migration completion (included scope) | 73% |
 | Last updated | 2026-04-13 |
 
-- [ ] `render/pbr`: close `RENDER-003` by introducing Bevy-shaped global skin uniform allocator and previous-frame buffers.
-- [ ] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove flow matching Bevy boundaries.
-- [ ] `render/pbr`: close `RENDER-005` by adding dedicated motion-vector flag stage after skin/morph extraction.
-- [ ] `render/pbr`: close `RENDER-006` by moving remaining bind-group creation fully into prepare-bind-groups stage.
-- [ ] `render/pbr`: close `RENDER-007` by aligning per-view bind-group ownership and preparation ordering.
-- [ ] `render/pbr`: close `RENDER-008` by matching GPU preprocess flush/prepare lifecycle to Bevy stage split.
-- [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
-- [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
-- [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
+- [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
+- [x] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove and cache cleanup flow aligned to stage boundaries.
+- [x] `render/pbr`: close `RENDER-005` with per-mesh `motion_vector_enabled` data authored in extract/collect path and consumed by motion-vector pass.
+- [x] `render/pbr`: close `RENDER-006` by moving camera preprocess payload uploads into `render3d_prepare_bind_groups_system`.
+- [x] `render/pbr`: close `RENDER-007` by storing per-view prepared queue/projection/viewport state and consuming it at execute.
+- [x] `render/pbr`: close `RENDER-008` by splitting camera queue build/upload/dispatch across prepare-bind-groups/queue stages.
+- [x] `render/pbr`: close `RENDER-010` by removing execute-side queue-build/preprocess duties from camera hot path.
+- [x] `render/pbr`: close `RENDER-011` by confining depth-pyramid and late-occlusion preprocess dispatch to queue stage.
+- [x] `render/pbr`: close `RENDER-012` by wiring concrete work to staged `prepare meshes -> prepare bind groups -> queue -> execute` topology.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.

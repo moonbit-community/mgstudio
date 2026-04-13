@@ -15,12 +15,9 @@
 ///|
 fn render3d_execute_camera(
   world : @ecs.World,
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
   extracted_camera : ExtractedCamera3d,
   meshes : Array[ExtractedMesh3d],
   point_light_shadow_map_size : Int,
-  gpu_instance_buffer_builder_enabled : Bool,
-  gpu_culling_supported : Bool,
   prepass_enabled : Bool,
   deferred_lighting_enabled : Bool,
   default_opaque_renderer_method : OpaqueRendererMethod,
@@ -29,14 +26,13 @@ fn render3d_execute_camera(
   delta_seconds : Float,
   cleared_targets_this_frame : Array[Int],
   next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry],
+  prepared_camera_queue : Render3dPreparedCameraQueue?,
 ) -> Unit {
   let camera_entity = extracted_camera.entity.main_entity
   let camera = extracted_camera.payload
+  guard prepared_camera_queue is Some(prepared_queue) else { return }
   @render.host_gpu_set_active_surface_target(camera.target_id)
-  let viewport_state = match render3d_execute_camera_viewport_state(camera) {
-    Some(state) => state
-    None => return
-  }
+  let viewport_state = prepared_queue.viewport_state
   let viewport_x = viewport_state.viewport_x
   let viewport_y = viewport_state.viewport_y
   let viewport_width = viewport_state.viewport_width
@@ -48,17 +44,7 @@ fn render3d_execute_camera(
   let view_width_logical = viewport_state.view_width_logical
   let view_height_logical = viewport_state.view_height_logical
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
-  let camera_pass_projection = render3d_camera_pass_projection(
-    camera.projection,
-    camera.sub_camera_view,
-    camera.temporal_jitter,
-    view_width,
-    view_height,
-  )
-  let camera_frustum_planes = render3d_host_preprocess_view_frustum_planes(
-    camera.projection,
-    camera.transform,
-  )
+  let camera_pass_projection = prepared_queue.camera_pass_projection
   let camera_near = camera_pass_projection.camera_near
   let camera_far = camera_pass_projection.camera_far
   let current_clip_from_world = @pbr_render.render3d_pass_projection_clip_from_world(
@@ -115,15 +101,10 @@ fn render3d_execute_camera(
   let mut point_shadow_enabled = 0.0F
   let mut point_shadow_depth_bias = 0.0F
   let point_shadow_near = pass_config.point_shadow_near
-  let queue_build_result = render3d_execute_camera_queue_build(
-    phase_state_ref, camera_entity, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
-    gpu_culling_supported, camera_pass_projection, viewport_x, viewport_y, viewport_width,
-    viewport_height, camera_exposure_value,
-  )
-  let draw_queue_entry = queue_build_result.draw_queue_entry
-  let opaque_alpha_draw_item_indices = queue_build_result.opaque_alpha_draw_item_indices
-  let indexed_indirect_parameter_indices = queue_build_result.indexed_indirect_parameter_indices
-  let non_indexed_indirect_parameter_indices = queue_build_result.non_indexed_indirect_parameter_indices
+  let draw_queue_entry = prepared_queue.draw_queue_entry
+  let opaque_alpha_draw_item_indices = prepared_queue.opaque_alpha_draw_item_indices
+  let indexed_indirect_parameter_indices = prepared_queue.indexed_indirect_parameter_indices
+  let non_indexed_indirect_parameter_indices = prepared_queue.non_indexed_indirect_parameter_indices
   let (scene_target_id_next, velocity_target_id_next) = render3d_execute_camera_motion_vector_pass(
     camera_entity, camera, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
     indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, motion_vector_prepass_enabled,

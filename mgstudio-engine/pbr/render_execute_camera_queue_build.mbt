@@ -21,28 +21,41 @@ priv struct Render3dExecuteCameraQueueBuildResult {
 }
 
 ///|
-fn render3d_execute_camera_queue_build(
+fn render3d_camera_queue_needs_gpu_preprocess(
+  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
+) -> Bool {
+  match draw_queue_entry.work_item_buffers {
+    Indirect(_, _, _) => true
+    _ => false
+  }
+}
+
+///|
+fn render3d_camera_exposure_value_for_preprocess(
+  camera : Camera3dViewPayload,
+) -> Float {
+  match camera.exposure {
+    Some(value) => value.exposure()
+    None => Exposure::default().exposure()
+  }
+}
+
+///|
+fn render3d_build_camera_queue_entry(
   phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
-  camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
-  camera_pass_projection : @pbr_render.Render3dPassProjection,
-  viewport_x : Int,
-  viewport_y : Int,
-  viewport_width : Int,
-  viewport_height : Int,
-  camera_exposure_value : Float,
 ) -> Render3dExecuteCameraQueueBuildResult {
   let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_queue_build",
+    "prepare_3d_camera_queue_build",
   )
   let trace_camera_queue_entry_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_queue_entry",
+    "prepare_3d_camera_queue_entry",
   )
   let camera_indirect_enabled = @pbr_render.render3d_camera_indirect_enabled(
     gpu_instance_buffer_builder_enabled,
@@ -65,13 +78,13 @@ fn render3d_execute_camera_queue_build(
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_queue_entry",
+    "prepare_3d_camera_queue_entry",
     trace_camera_queue_entry_start_us,
   )
   let draw_items = draw_queue_entry.draw_items
   let trace_camera_queue_indices_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_queue_indices",
+    "prepare_3d_camera_queue_indices",
   )
   let opaque_alpha_draw_item_indices = render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
     draw_items,
@@ -85,103 +98,14 @@ fn render3d_execute_camera_queue_build(
     draw_items,
     draw_queue_entry.work_item_buffers,
   )
-  let needs_gpu_preprocess = match draw_queue_entry.work_item_buffers {
-    Indirect(_, _, _) => true
-    _ => false
-  }
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_queue_indices",
+    "prepare_3d_camera_queue_indices",
     trace_camera_queue_indices_start_us,
   )
-  if needs_gpu_preprocess {
-    let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_upload",
-    )
-    @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      payload=render3d_host_preprocess_camera_payload(
-        draw_queue_entry, camera, camera_pass_projection, viewport_x, viewport_y,
-        viewport_width, viewport_height, camera_exposure_value,
-      ),
-    )
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_upload",
-      trace_camera_queue_upload_start_us,
-    )
-    let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_preprocess",
-    )
-    if camera.gpu_occlusion_culling_enabled {
-      let trace_camera_preprocess_dispatch_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_preprocess_dispatch",
-      )
-      @render.host_gpu_preprocess_mesh3d(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
-        phase_kind=@render.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION,
-      )
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_preprocess_dispatch",
-        trace_camera_preprocess_dispatch_start_us,
-      )
-      let trace_camera_build_indirect_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_build_indirect",
-      )
-      @render.host_gpu_build_mesh3d_indirect_parameters(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
-        phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
-      )
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_build_indirect",
-        trace_camera_build_indirect_start_us,
-      )
-    } else {
-      let trace_camera_preprocess_dispatch_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_preprocess_dispatch",
-      )
-      @render.host_gpu_preprocess_mesh3d(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
-      )
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_preprocess_dispatch",
-        trace_camera_preprocess_dispatch_start_us,
-      )
-      let trace_camera_build_indirect_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_build_indirect",
-      )
-      @render.host_gpu_build_mesh3d_indirect_parameters(
-        camera_key_hi=camera_entity.id,
-        camera_key_lo=camera_entity.generation,
-      )
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "execute_3d_camera_build_indirect",
-        trace_camera_build_indirect_start_us,
-      )
-    }
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "execute_3d_camera_queue_preprocess",
-      trace_camera_queue_preprocess_start_us,
-    )
-  }
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_queue_build",
+    "prepare_3d_camera_queue_build",
     trace_camera_queue_build_start_us,
   )
   Render3dExecuteCameraQueueBuildResult::{
@@ -190,4 +114,157 @@ fn render3d_execute_camera_queue_build(
     indexed_indirect_parameter_indices,
     non_indexed_indirect_parameter_indices,
   }
+}
+
+///|
+fn render3d_upload_camera_queue_entry(
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  queue_build_result : Render3dExecuteCameraQueueBuildResult,
+  camera_pass_projection : @pbr_render.Render3dPassProjection,
+  viewport_state : Render3dCameraViewportState,
+  camera_exposure_value : Float,
+) -> Unit {
+  if !render3d_camera_queue_needs_gpu_preprocess(
+      queue_build_result.draw_queue_entry,
+    ) {
+    return
+  }
+  let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "prepare_3d_camera_queue_upload",
+  )
+  @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+    payload=render3d_host_preprocess_camera_payload(
+      queue_build_result.draw_queue_entry,
+      camera,
+      camera_pass_projection,
+      viewport_state.viewport_x,
+      viewport_state.viewport_y,
+      viewport_state.viewport_width,
+      viewport_state.viewport_height,
+      camera_exposure_value,
+    ),
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "prepare_3d_camera_queue_upload",
+    trace_camera_queue_upload_start_us,
+  )
+}
+
+///|
+fn render3d_dispatch_camera_queue_entry(
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  queue_build_result : Render3dExecuteCameraQueueBuildResult,
+) -> Unit {
+  if !render3d_camera_queue_needs_gpu_preprocess(
+      queue_build_result.draw_queue_entry,
+    ) {
+    return
+  }
+  let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_3d_camera_preprocess",
+  )
+  if camera.gpu_occlusion_culling_enabled {
+    @render.host_gpu_preprocess_mesh3d(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      phase_kind=@render.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION,
+    )
+    @render.host_gpu_build_mesh3d_indirect_parameters(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
+    )
+    @render.host_gpu_downsample_mesh3d_depth_pyramid(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+    )
+    @render.host_gpu_preprocess_mesh3d(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      phase_kind=@render.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION,
+    )
+    @render.host_gpu_build_mesh3d_indirect_parameters(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_MAIN,
+    )
+  } else {
+    @render.host_gpu_preprocess_mesh3d(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+    )
+    @render.host_gpu_build_mesh3d_indirect_parameters(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+    )
+  }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_3d_camera_preprocess",
+    trace_camera_queue_preprocess_start_us,
+  )
+}
+
+///|
+fn render3d_prepare_camera_queue_entry(
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  extracted_camera : ExtractedCamera3d,
+  meshes : Array[ExtractedMesh3d],
+  gpu_instance_buffer_builder_enabled : Bool,
+  gpu_culling_supported : Bool,
+) -> Render3dPreparedCameraQueue? {
+  let camera = extracted_camera.payload
+  guard render3d_execute_camera_viewport_state(camera) is Some(viewport_state) else {
+    return None
+  }
+  let camera_pass_projection = render3d_camera_pass_projection(
+    camera.projection,
+    camera.sub_camera_view,
+    camera.temporal_jitter,
+    viewport_state.view_width,
+    viewport_state.view_height,
+  )
+  let camera_frustum_planes = render3d_host_preprocess_view_frustum_planes(
+    camera.projection,
+    camera.transform,
+  )
+  let queue_build_result = render3d_build_camera_queue_entry(
+    phase_state_ref, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
+    gpu_culling_supported,
+  )
+  Some(Render3dPreparedCameraQueue::{
+    draw_queue_entry: queue_build_result.draw_queue_entry,
+    opaque_alpha_draw_item_indices: queue_build_result.opaque_alpha_draw_item_indices,
+    indexed_indirect_parameter_indices: queue_build_result.indexed_indirect_parameter_indices,
+    non_indexed_indirect_parameter_indices: queue_build_result.non_indexed_indirect_parameter_indices,
+    camera_pass_projection,
+    viewport_state,
+    camera_exposure_value: render3d_camera_exposure_value_for_preprocess(camera),
+  })
+}
+
+///|
+fn render3d_prepare_camera_queue_entries(
+  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  cameras : Array[ExtractedCamera3d],
+  meshes : Array[ExtractedMesh3d],
+  gpu_instance_buffer_builder_enabled : Bool,
+  gpu_culling_supported : Bool,
+) -> Array[Render3dPreparedCameraQueue?] {
+  let prepared : Array[Render3dPreparedCameraQueue?] = []
+  for camera in cameras {
+    prepared.push(
+      render3d_prepare_camera_queue_entry(
+        phase_state_ref, camera, meshes, gpu_instance_buffer_builder_enabled, gpu_culling_supported,
+      ),
+    )
+  }
+  prepared
 }

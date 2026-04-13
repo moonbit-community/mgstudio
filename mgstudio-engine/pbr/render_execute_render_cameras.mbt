@@ -16,12 +16,10 @@
 fn render3d_execute_render_cameras(
   world : @ecs.World,
   source_world : @ecs.World,
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
+  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
   point_light_shadow_map_size : Int,
-  gpu_instance_buffer_builder_enabled : Bool,
-  gpu_culling_supported : Bool,
   prepass_enabled : Bool,
   deferred_lighting_enabled : Bool,
   default_opaque_renderer_method : OpaqueRendererMethod,
@@ -42,11 +40,17 @@ fn render3d_execute_render_cameras(
   let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
   for camera_phase_item in camera_phase_items {
     let extracted_camera = cameras[camera_phase_item.extracted_index]
+    let prepared_camera_queue = if camera_phase_item.extracted_index >= 0 &&
+      camera_phase_item.extracted_index < prepared_camera_queues.length() {
+      prepared_camera_queues[camera_phase_item.extracted_index]
+    } else {
+      None
+    }
     render3d_execute_camera(
-      world, phase_state_ref, extracted_camera, meshes, point_light_shadow_map_size,
-      gpu_instance_buffer_builder_enabled, gpu_culling_supported, prepass_enabled,
+      world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
       deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
       lighting, delta_seconds, cleared_targets_this_frame, next_camera_motion_blur_history,
+      prepared_camera_queue,
     )
   }
   @app.timeline_trace_end_span(

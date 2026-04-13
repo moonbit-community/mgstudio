@@ -135,6 +135,7 @@ fn render3d_phase_remove_skin(
     None => ()
   }
   phase_state_ref.val.skin_joint_count_by_skin.remove(skin_key)
+  phase_state_ref.val.skin_previous_matrices.remove(skin_key)
   match phase_state_ref.val.skin_joints_by_skin.get(skin_key) {
     Some(joints) =>
       for joint in joints {
@@ -259,6 +260,7 @@ pub fn render3d_extract_skin_bindings(
     phase_state_ref.val.skin_joint_to_skins.clear()
     phase_state_ref.val.skin_joints_by_skin.clear()
     phase_state_ref.val.skin_joint_count_by_skin.clear()
+    phase_state_ref.val.skin_previous_matrices.clear()
     phase_state_ref.val.total_skin_joints = 0
     return
   }
@@ -398,10 +400,24 @@ pub fn render3d_prepare_skin_bindings_upload(
     }
     if render3d_cached_skinning_matrices(world_transform_cache_ref, entity)
       is Some(skinning_matrices) {
+      let skin_key = render3d_skin_entity_key(entity)
+      let previous_skinning_matrices = match
+        phase_state_ref.val.skin_previous_matrices.get(skin_key) {
+        Some(previous) => previous
+        None => skinning_matrices
+      }
       @render_gpu.host_gpu_prepare_mesh3d_skin_binding(
         key_hi~,
         key_lo~,
         skinning_matrices~,
+      )
+      @render_gpu.host_gpu_prepare_mesh3d_skin_binding(
+        key_hi~,
+        key_lo=key_lo + 1,
+        skinning_matrices=previous_skinning_matrices,
+      )
+      phase_state_ref.val.skin_previous_matrices.set(
+        skin_key, skinning_matrices,
       )
     }
   }

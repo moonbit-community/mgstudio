@@ -106,10 +106,10 @@ fn[W] plugin_group_cleanup_default(app : App[W]) -> App[W] {
 fn[W] plugin_group_entry_new(
   id : String,
   plugin : Plugin[W],
-  is_unique~ : Bool = false,
-  ready~ : (App[W]) -> Bool = plugin_group_ready_default,
-  finish~ : Plugin[W] = plugin_group_finish_default,
-  cleanup~ : Plugin[W] = plugin_group_cleanup_default,
+  is_unique? : Bool = false,
+  ready? : (App[W]) -> Bool = plugin_group_ready_default,
+  finish? : Plugin[W] = plugin_group_finish_default,
+  cleanup? : Plugin[W] = plugin_group_cleanup_default,
 ) -> PluginGroupEntry[W] {
   { id, plugin, is_unique, ready, finish, cleanup, enabled: true }
 }
@@ -190,6 +190,7 @@ fn[W] PluginGroupBuilder::plugin_group_add_entry(
   self
 }
 
+///|
 fn[W] PluginGroupBuilder::plugin_group_try_set_entry(
   self : PluginGroupBuilder[W],
   id~ : String,

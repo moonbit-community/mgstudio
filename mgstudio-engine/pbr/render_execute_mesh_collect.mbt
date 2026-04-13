@@ -136,7 +136,16 @@ fn render3d_execute_collect_meshes(
       local_transform_comp.value(),
       world_transform_cache_ref,
     )
-    let previous_transform = if needs_mesh_previous_transform {
+    let motion_vector_enabled = if needs_mesh_previous_transform {
+      match
+        render3d_mesh_draw_alpha(material.alpha_mode, material.base_color.a) {
+        Some(alpha) => alpha >= 0.999F
+        None => false
+      }
+    } else {
+      false
+    }
+    let previous_transform = if motion_vector_enabled {
       match
         motion_blur_history_get(world, entity, previous_motion_blur_frame_stamp) {
         Some(v) => v
@@ -256,6 +265,7 @@ fn render3d_execute_collect_meshes(
         wireframe_color,
         skinning_key_hi,
         skinning_key_lo,
+        motion_vector_enabled,
       },
     })
   })

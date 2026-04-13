@@ -43,12 +43,10 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
   render3d_execute_render_cameras(
     world,
     source_world,
-    phase_state_ref,
     queued_frame.cameras,
     queued_frame.meshes,
+    queued_frame.prepared_camera_queues,
     frame_config.point_light_shadow_map_size,
-    frame_config.gpu_instance_buffer_builder_enabled,
-    frame_config.gpu_culling_supported,
     frame_config.prepass_enabled,
     frame_config.deferred_lighting_enabled,
     frame_config.default_opaque_renderer_method,
@@ -128,7 +126,15 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let meshes = render3d_execute_collect_meshes(
     world, source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
+  let prepared_camera_queues = render3d_prepare_camera_queue_entries(
+    phase_state_ref,
+    cameras,
+    meshes,
+    frame_config.gpu_instance_buffer_builder_enabled,
+    frame_config.gpu_culling_supported,
+  )
   render3d_queue_store_frame(world, frame_config, cameras, meshes)
+  render3d_queue_update_prepared_camera_queues(world, prepared_camera_queues)
   render3d_diagnostic_queued_visible_mesh_count_ref.val = meshes.length()
 }
 
@@ -137,6 +143,47 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   @pbr_prepass.prepass_update_pipeline_state(source_world)
   ignore(@pbr_render.render3d_mesh_layouts())
+  match render3d_queue_take_frame(world) {
+    Some(frame) => {
+      let camera_count = if frame.cameras.length() <
+        frame.prepared_camera_queues.length() {
+        frame.cameras.length()
+      } else {
+        frame.prepared_camera_queues.length()
+      }
+      for camera_index in 0..<camera_count {
+        let extracted_camera = frame.cameras[camera_index]
+        match frame.prepared_camera_queues[camera_index] {
+          Some(prepared_queue) =>
+            render3d_upload_camera_queue_entry(
+              extracted_camera.entity.main_entity,
+              extracted_camera.payload,
+              Render3dExecuteCameraQueueBuildResult::{
+                draw_queue_entry: prepared_queue.draw_queue_entry,
+                opaque_alpha_draw_item_indices: prepared_queue.opaque_alpha_draw_item_indices,
+                indexed_indirect_parameter_indices: prepared_queue.indexed_indirect_parameter_indices,
+                non_indexed_indirect_parameter_indices: prepared_queue.non_indexed_indirect_parameter_indices,
+              },
+              prepared_queue.camera_pass_projection,
+              prepared_queue.viewport_state,
+              prepared_queue.camera_exposure_value,
+            )
+          None => ()
+        }
+      }
+      render3d_queue_store_frame(
+        world,
+        frame.frame_config,
+        frame.cameras,
+        frame.meshes,
+      )
+      render3d_queue_update_prepared_camera_queues(
+        world,
+        frame.prepared_camera_queues,
+      )
+    }
+    None => ()
+  }
 }
 
 ///|
@@ -159,6 +206,45 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   }
   if !render3d_queue_has_frame(world) {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+  } else {
+    match render3d_queue_take_frame(world) {
+      Some(frame) => {
+        let camera_count = if frame.cameras.length() <
+          frame.prepared_camera_queues.length() {
+          frame.cameras.length()
+        } else {
+          frame.prepared_camera_queues.length()
+        }
+        for camera_index in 0..<camera_count {
+          let extracted_camera = frame.cameras[camera_index]
+          match frame.prepared_camera_queues[camera_index] {
+            Some(prepared_queue) =>
+              render3d_dispatch_camera_queue_entry(
+                extracted_camera.entity.main_entity,
+                extracted_camera.payload,
+                Render3dExecuteCameraQueueBuildResult::{
+                  draw_queue_entry: prepared_queue.draw_queue_entry,
+                  opaque_alpha_draw_item_indices: prepared_queue.opaque_alpha_draw_item_indices,
+                  indexed_indirect_parameter_indices: prepared_queue.indexed_indirect_parameter_indices,
+                  non_indexed_indirect_parameter_indices: prepared_queue.non_indexed_indirect_parameter_indices,
+                },
+              )
+            None => ()
+          }
+        }
+        render3d_queue_store_frame(
+          world,
+          frame.frame_config,
+          frame.cameras,
+          frame.meshes,
+        )
+        render3d_queue_update_prepared_camera_queues(
+          world,
+          frame.prepared_camera_queues,
+        )
+      }
+      None => ()
+    }
   }
   finish_queue()
 }

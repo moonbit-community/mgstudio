@@ -29,6 +29,7 @@ pub(all) struct Render3dPhaseState {
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
   skin_joint_count_by_skin : Map[UInt64, Int]
+  skin_previous_matrices : Map[UInt64, Array[Float]]
   mut total_skin_joints : Int
   skin_upload_queue : Array[@core.Entity]
 }
@@ -51,6 +52,7 @@ pub fn Render3dPhaseState::new() -> Render3dPhaseState {
     skin_joint_to_skins: {},
     skin_joints_by_skin: {},
     skin_joint_count_by_skin: {},
+    skin_previous_matrices: {},
     total_skin_joints: 0,
     skin_upload_queue: [],
   }

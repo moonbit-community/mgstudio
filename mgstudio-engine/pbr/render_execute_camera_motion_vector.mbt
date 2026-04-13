@@ -95,14 +95,7 @@ fn render3d_execute_camera_motion_vector_pass(
     }
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
-    guard render3d_mesh_draw_alpha(
-        mesh.material.alpha_mode,
-        mesh.material.base_color.a,
-      )
-      is Some(draw_alpha) else {
-      continue
-    }
-    if draw_alpha < 0.999F {
+    if !mesh.motion_vector_enabled {
       continue
     }
     let motion_vector_indexed = mesh.mesh_is_indexed
@@ -162,25 +155,15 @@ fn render3d_execute_camera_motion_vector_pass(
         0.0F,
         0.0F,
         render3d_mesh_draw_flags(extracted_mesh),
+        skinning_key_hi=mesh.skinning_key_hi,
+        skinning_key_lo=if mesh.skinning_key_hi >= 0 {
+          mesh.skinning_key_lo + 1
+        } else {
+          -1
+        },
       ),
     )
   }
   @render.host_gpu_end_pass()
-  if camera.gpu_occlusion_culling_enabled {
-    @render.host_gpu_downsample_mesh3d_depth_pyramid(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-    )
-    @render.host_gpu_preprocess_mesh3d(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      phase_kind=@render.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION,
-    )
-    @render.host_gpu_build_mesh3d_indirect_parameters(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_MAIN,
-    )
-  }
   (next_scene_target_id, next_velocity_target_id)
 }
