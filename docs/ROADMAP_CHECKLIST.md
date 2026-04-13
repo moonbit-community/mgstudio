@@ -31,7 +31,7 @@ This file must not exceed 200 lines.
 | `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
-| `bevy_light` | `mgstudio-engine/light` | 93% | 74% | 74% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
+| `bevy_light` | `mgstudio-engine/light` | 93% | 75% | 75% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
 | `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -102,6 +102,7 @@ This file must not exceed 200 lines.
 - [x] `light/authoring-shadow-toggle-api`: add missing `with_shadow_maps_enabled` authoring helpers for directional/spot lights to match Bevy-side usage ergonomics.
 - [x] `pbr/render-ambient-lightmap-flag`: add Bevy-shaped ambient lightmap influence field (`affects_lightmapped_meshes`) and propagate it into `GpuLights3d`.
 - [x] `pbr/render-sun-disk-propagation`: add `SunDisk` component in `light` and propagate directional sun-disk angular-size/intensity through extract and GPU light payload.
+- [x] `light/directional-shadow-map-validate`: add Bevy-shaped directional shadow-map size validation path (`non-power-of-two -> next power-of-two`) on world resource.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.

@@ -109,3 +109,9 @@ test "sun disk defaults and off profile align with bevy intent" {
   debug_inspect(approx_eq(off.angular_size, 0.0F, 1.0e-6F), content="true")
   debug_inspect(approx_eq(off.intensity, 0.0F, 1.0e-6F), content="true")
 }
+
+///|
+test "directional shadow map validation produces next power-of-two size" {
+  debug_inspect(@light.directional_light_validated_shadow_map_size(1500), content="2048")
+  debug_inspect(@light.directional_light_validated_shadow_map_size(2048), content="2048")
+}
