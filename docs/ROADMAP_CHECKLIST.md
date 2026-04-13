@@ -71,6 +71,7 @@ This file must not exceed 200 lines.
 - [x] `render/renderer`: collapse screenshot capture/parity globals into one owner runtime state (`ScreenshotRuntimeState`) and remove multi-Ref scattered mutation.
 - [x] `render/render_resource`: collapse 8 independent id-seed globals into single owner runtime state (`RenderResourceIdState`).
 - [x] `render/renderer`: replace direct mesh2d/mesh3d diagnostic counter mutations with owner API calls from `render_diagnostics_runtime`.
+- [x] `render/render_phase`: collapse render-pass trace active-span global into owner runtime state (`RenderPassTraceRuntimeState`).
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.

@@ -21,31 +21,43 @@ priv struct RenderPassTraceActiveSpan {
 }
 
 ///|
-let render_pass_trace_active_span_ref : Ref[RenderPassTraceActiveSpan?] = Ref::new(
-  None,
+priv struct RenderPassTraceRuntimeState {
+  mut active_span : RenderPassTraceActiveSpan?
+}
+
+///|
+fn render_pass_trace_runtime_state_default() -> RenderPassTraceRuntimeState {
+  RenderPassTraceRuntimeState::{ active_span: None }
+}
+
+///|
+let render_pass_trace_runtime_state_ref : Ref[RenderPassTraceRuntimeState] = Ref::new(
+  render_pass_trace_runtime_state_default(),
 )
 
 ///|
 pub fn render_pass_trace_end_active_span() -> Unit {
-  if render_pass_trace_active_span_ref.val is Some(active_pass) {
+  let state = render_pass_trace_runtime_state_ref.val
+  if state.active_span is Some(active_pass) {
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderPass,
       active_pass.name,
       active_pass.ts_us,
     )
   }
-  render_pass_trace_active_span_ref.val = None
+  state.active_span = None
 }
 
 ///|
 pub fn render_pass_trace_begin_span(name : String) -> Unit {
+  let state = render_pass_trace_runtime_state_ref.val
   render_pass_trace_end_active_span()
   let ts_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderPass,
     name,
   )
   if ts_us >= 0L {
-    render_pass_trace_active_span_ref.val = Some(RenderPassTraceActiveSpan::{
+    state.active_span = Some(RenderPassTraceActiveSpan::{
       name,
       ts_us,
     })
