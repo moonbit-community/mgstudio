@@ -53,3 +53,34 @@ test "light cluster: dimensions_for_screen_size matches bevy fixed-z rounding sh
   inspect(dimensions.1, content="9")
   inspect(dimensions.2, content="24")
 }
+
+///|
+test "light cluster: cluster config helper semantics match bevy shape" {
+  let none_config = ClusterConfig::None
+  inspect(cluster_config_first_slice_depth(none_config), content="0")
+  inspect(
+    cluster_config_far_z_mode(none_config) is ClusterFarZMode::Constant(0.0F),
+    content="true",
+  )
+  inspect(!cluster_config_dynamic_resizing(none_config), content="true")
+
+  let single_config = ClusterConfig::Single
+  inspect(cluster_config_first_slice_depth(single_config), content="0")
+  inspect(
+    cluster_config_far_z_mode(single_config) is ClusterFarZMode::MaxClusterableObjectRange,
+    content="true",
+  )
+  inspect(!cluster_config_dynamic_resizing(single_config), content="true")
+
+  let z_config = ClusterZConfig::{
+    first_slice_depth: 7.5F,
+    far_z_mode: ClusterFarZMode::Constant(33.0F),
+  }
+  let xyz = ClusterConfig::XYZ(4, 3, 2, z_config, true)
+  inspect(cluster_config_first_slice_depth(xyz), content="7.5")
+  inspect(
+    cluster_config_far_z_mode(xyz) is ClusterFarZMode::Constant(33.0F),
+    content="true",
+  )
+  inspect(cluster_config_dynamic_resizing(xyz), content="true")
+}

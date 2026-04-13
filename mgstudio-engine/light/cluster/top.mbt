@@ -152,6 +152,36 @@ fn cluster_config_requested_dimensions_for_screen_size(
 }
 
 ///|
+pub fn cluster_config_first_slice_depth(config : ClusterConfig) -> Float {
+  match config {
+    None => 0.0F
+    Single => 0.0F
+    XYZ(_, _, _, z_config, _) => z_config.first_slice_depth
+    FixedZ(_, _, z_config, _) => z_config.first_slice_depth
+  }
+}
+
+///|
+pub fn cluster_config_far_z_mode(config : ClusterConfig) -> ClusterFarZMode {
+  match config {
+    None => ClusterFarZMode::Constant(0.0F)
+    Single => ClusterFarZMode::MaxClusterableObjectRange
+    XYZ(_, _, _, z_config, _) => z_config.far_z_mode
+    FixedZ(_, _, z_config, _) => z_config.far_z_mode
+  }
+}
+
+///|
+pub fn cluster_config_dynamic_resizing(config : ClusterConfig) -> Bool {
+  match config {
+    None => false
+    Single => false
+    XYZ(_, _, _, _, dynamic_resizing) => dynamic_resizing
+    FixedZ(_, _, _, dynamic_resizing) => dynamic_resizing
+  }
+}
+
+///|
 pub fn cluster_config_dimensions_for_screen_size(
   config : ClusterConfig,
   screen_width : Int,
