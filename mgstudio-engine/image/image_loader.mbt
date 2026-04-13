@@ -37,6 +37,38 @@ pub(all) enum ImageContainerFormat {
 } derive(Eq)
 
 ///|
+pub struct ImageLoader {
+  supported_compressed_formats : Int
+} derive(Eq, Debug)
+
+///|
+pub fn ImageLoader::new(supported_compressed_formats : Int) -> ImageLoader {
+  ImageLoader::{ supported_compressed_formats }
+}
+
+///|
+pub fn ImageLoader::default() -> ImageLoader {
+  ImageLoader::new(0)
+}
+
+///|
+pub fn ImageLoader::supported_compressed_formats(self : ImageLoader) -> Int {
+  self.supported_compressed_formats
+}
+
+///|
+pub fn ImageLoader::supported_formats(
+  _self : ImageLoader,
+) -> Array[ImageContainerFormat] {
+  image_loader_supported_formats()
+}
+
+///|
+pub fn ImageLoader::extensions(_self : ImageLoader) -> Array[String] {
+  image_loader_supported_file_extensions()
+}
+
+///|
 pub fn image_container_format_from_extension(
   extension : String,
 ) -> ImageContainerFormat {

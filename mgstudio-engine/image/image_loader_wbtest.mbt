@@ -358,3 +358,21 @@ test "image wb: format resolution from path + bytes + setting" {
     content="true",
   )
 }
+
+///|
+test "image wb: image loader type exposes supported formats/extensions" {
+  let loader = ImageLoader::new(7)
+  debug_inspect(loader.supported_compressed_formats() == 7, content="true")
+  debug_inspect(
+    image_wb_has_format(loader.supported_formats(), ImageContainerFormat::Png),
+    content="true",
+  )
+  debug_inspect(
+    image_wb_has_extension(loader.extensions(), "jpeg"),
+    content="true",
+  )
+  debug_inspect(
+    image_wb_has_extension(loader.extensions(), "webp"),
+    content="true",
+  )
+}
