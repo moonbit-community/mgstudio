@@ -58,6 +58,8 @@ const POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : UInt = 1U << 3
 const POINT_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 4
 
 ///|
+const POINT_LIGHT_FLAG_NONE : UInt = 0U
+
 const DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED : UInt = 1U << 0
 
 ///|
@@ -68,6 +70,12 @@ const DIRECTIONAL_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : UInt = 1U << 2
 
 ///|
 const DIRECTIONAL_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 3
+
+///|
+const DIRECTIONAL_LIGHT_FLAG_NONE : UInt = 0U
+
+///|
+const DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED : UInt = 0xFFFFU
 
 ///|
 fn render3d_sqrt2() -> Float {
@@ -265,7 +273,7 @@ pub struct GpuLights3d {
 
 ///|
 pub fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
-  let mut flags = 0U
+  let mut flags = POINT_LIGHT_FLAG_NONE
   if extracted.shadow_maps_enabled {
     flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
   }
@@ -291,7 +299,7 @@ pub fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
 pub fn render3d_directional_light_flags(
   extracted : ExtractedDirectionalLight3d,
 ) -> UInt {
-  let mut flags = 0U
+  let mut flags = DIRECTIONAL_LIGHT_FLAG_NONE
   if extracted.shadow_maps_enabled {
     flags = flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED
   }
@@ -662,7 +670,7 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
     cascades,
     color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     dir_to_light: @math.Vec3::new(0.0F, 0.0F, 1.0F),
-    flags: 0U,
+    flags: DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED,
     soft_shadow_size: 0.0F,
     shadow_depth_bias: 0.0F,
     shadow_normal_bias: 0.0F,

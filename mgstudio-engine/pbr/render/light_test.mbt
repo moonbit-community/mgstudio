@@ -534,6 +534,7 @@ test "pbr render light: gpu directional array is padded to max while count stays
   inspect(gpu.n_directional_lights, content="1")
   inspect(gpu.directional_lights.length(), content=MAX_DIRECTIONAL_LIGHTS.to_string())
   inspect(gpu.directional_lights[1].num_cascades, content="0")
+  inspect(gpu.directional_lights[1].flags, content="65535")
   inspect(gpu.directional_lights[1].decal_index, content="-1")
 }
 
