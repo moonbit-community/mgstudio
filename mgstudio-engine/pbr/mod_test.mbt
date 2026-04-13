@@ -88,10 +88,13 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     gltf_render_enabled: false,
   })
 
-  debug_inspect(pbr_prepass_enabled(), content="false")
-  debug_inspect(pbr_deferred_lighting_enabled(), content="false")
-  debug_inspect(pbr_gpu_instance_buffer_builder_enabled(), content="false")
-  debug_inspect(pbr_gltf_render_enabled(), content="false")
+  debug_inspect(pbr_prepass_enabled(_app.world()), content="false")
+  debug_inspect(pbr_deferred_lighting_enabled(_app.world()), content="false")
+  debug_inspect(
+    pbr_gpu_instance_buffer_builder_enabled(_app.world()),
+    content="false",
+  )
+  debug_inspect(pbr_gltf_render_enabled(_app.world()), content="false")
   debug_inspect(
     @gltf_loader.gltf_pbr_material_handler_enabled(),
     content="false",

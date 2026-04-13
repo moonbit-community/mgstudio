@@ -18,7 +18,7 @@ fn render3d_runtime_config_or_default(
 ) -> PbrPluginRuntimeConfig {
   match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
     Some(config) => config
-    None => pbr_plugin_runtime_config()
+    None => pbr_plugin_runtime_config(world)
   }
 }
 

@@ -62,7 +62,9 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
 pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
+  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
+    world,
+  )
   @pbr_render.render3d_world_transform_cache_begin_frame(
     world_transform_cache_ref,
   )
@@ -81,7 +83,9 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
+  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
+    world,
+  )
   render3d_prepare_morphs(source_world, phase_state_ref)
   @pbr_render.render3d_prepare_skin_bindings_upload(
     source_world, phase_state_ref, world_transform_cache_ref,
@@ -102,7 +106,9 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
     return
   }
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref()
+  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
+    world,
+  )
   let frame_config = render3d_execute_frame_config(source_world)
   let cameras = render3d_execute_collect_cameras(
     world,

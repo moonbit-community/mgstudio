@@ -61,6 +61,8 @@ This file must not exceed 200 lines.
 - [x] `render/pbr`: replace point-light shadow sentinel entity path with `Option<Entity>` ownership flow.
 - [x] `render/pbr`: move point-shadow target cache and scene postprocess target caches from global `Ref` to render-world resources.
 - [x] `render/pbr`: move wireframe mesh cache from global `Ref` to render-world resource ownership.
+- [x] `render/pbr`: move world-transform cache from global shared `Ref` to render-world resource ownership.
+- [x] `pbr/plugin`: remove global plugin runtime-config `Ref`; resolve runtime config from ECS resource/default per world.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.

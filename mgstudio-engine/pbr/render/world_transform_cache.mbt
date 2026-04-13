@@ -83,13 +83,30 @@ fn render3d_world_transform_cache_new() -> Render3dWorldTransformCache {
 }
 
 ///|
-let render3d_world_transform_cache_shared_ref : Ref[Render3dWorldTransformCache] = Ref::new(
-  render3d_world_transform_cache_new(),
-)
+let render3d_world_transform_cache_key : @ecs.ResourceKey[
+  Render3dWorldTransformCache,
+] = @ecs.register_resource(debug_name="mgstudio.render3d.world_transform_cache")
 
 ///|
-pub fn render3d_world_transform_cache_ref() -> Ref[Render3dWorldTransformCache] {
-  render3d_world_transform_cache_shared_ref
+impl @app.Resource for Render3dWorldTransformCache with resource() {
+  render3d_world_transform_cache_key
+}
+
+///|
+pub fn render3d_world_transform_cache_ref(
+  world : @ecs.World,
+) -> Ref[Render3dWorldTransformCache] {
+  if (try! world.get_resource(Render3dWorldTransformCache::resource())) is None {
+    world.insert_resource(
+      Render3dWorldTransformCache::resource(),
+      render3d_world_transform_cache_new(),
+    )
+  }
+  match
+    (try! world.get_resource_ref_mut(Render3dWorldTransformCache::resource())) {
+    Some(cache_ref) => cache_ref
+    None => abort("Missing Render3dWorldTransformCache resource")
+  }
 }
 
 ///|

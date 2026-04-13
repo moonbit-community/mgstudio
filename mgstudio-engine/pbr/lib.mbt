@@ -54,33 +54,36 @@ pub fn PbrPluginRuntimeConfig::from_plugin(
 }
 
 ///|
-let pbr_plugin_runtime_config_ref : Ref[PbrPluginRuntimeConfig] = Ref::new(
-  PbrPluginRuntimeConfig::from_plugin(PbrPlugin::default()),
-)
-
-///|
-pub fn pbr_plugin_runtime_config() -> PbrPluginRuntimeConfig {
-  pbr_plugin_runtime_config_ref.val
+fn pbr_default_runtime_config() -> PbrPluginRuntimeConfig {
+  PbrPluginRuntimeConfig::from_plugin(PbrPlugin::default())
 }
 
 ///|
-pub fn pbr_prepass_enabled() -> Bool {
-  pbr_plugin_runtime_config_ref.val.prepass_enabled
+pub fn pbr_plugin_runtime_config(world : @ecs.World) -> PbrPluginRuntimeConfig {
+  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
+    Some(config) => config
+    None => pbr_default_runtime_config()
+  }
 }
 
 ///|
-pub fn pbr_deferred_lighting_enabled() -> Bool {
-  pbr_plugin_runtime_config_ref.val.add_default_deferred_lighting_plugin
+pub fn pbr_prepass_enabled(world : @ecs.World) -> Bool {
+  pbr_plugin_runtime_config(world).prepass_enabled
 }
 
 ///|
-pub fn pbr_gpu_instance_buffer_builder_enabled() -> Bool {
-  pbr_plugin_runtime_config_ref.val.use_gpu_instance_buffer_builder
+pub fn pbr_deferred_lighting_enabled(world : @ecs.World) -> Bool {
+  pbr_plugin_runtime_config(world).add_default_deferred_lighting_plugin
 }
 
 ///|
-pub fn pbr_gltf_render_enabled() -> Bool {
-  pbr_plugin_runtime_config_ref.val.gltf_render_enabled
+pub fn pbr_gpu_instance_buffer_builder_enabled(world : @ecs.World) -> Bool {
+  pbr_plugin_runtime_config(world).use_gpu_instance_buffer_builder
+}
+
+///|
+pub fn pbr_gltf_render_enabled(world : @ecs.World) -> Bool {
+  pbr_plugin_runtime_config(world).gltf_render_enabled
 }
 
 ///|
@@ -249,7 +252,6 @@ pub fn pbr_plugin_with(
   plugin : PbrPlugin,
 ) -> @app.App[@ecs.World] {
   let runtime_config = PbrPluginRuntimeConfig::from_plugin(plugin)
-  pbr_plugin_runtime_config_ref.val = runtime_config
   let mut next = app
   if !next.contains_resource(ecs_key_pbr_plugin_marker) {
     next = next
