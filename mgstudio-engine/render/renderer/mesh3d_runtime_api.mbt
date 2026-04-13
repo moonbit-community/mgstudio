@@ -75,15 +75,11 @@ pub fn meshlet_required_features_supported() -> Bool {
       backend_type != @wgpu.BACKEND_TYPE_METAL {
       return false
     }
-    if !backend.device.supported_features_contains_u32(
-        @wgpu.FEATURE_NAME_DEPTH_CLIP_CONTROL,
+    if !backend.device.supports_known_rust_features_u64(
+        @wgpu.FEATURES_DEPTH_CLIP_CONTROL |
+        @wgpu.FEATURES_SHADER_INT64 |
+        @wgpu.FEATURES_SUBGROUP,
       ) {
-      return false
-    }
-    if !backend.device.has_feature_native_shader_int64() {
-      return false
-    }
-    if !backend.device.has_feature_native_subgroup() {
       return false
     }
     if !backend.device.has_feature_native_subgroup_barrier() {

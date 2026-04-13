@@ -17,21 +17,39 @@ pub fn GpuBackend::new(
   assets_base? : String = "",
 ) -> GpuBackend raise GpuBackendError {
   let instance = @wgpu.Instance::create() catch {
-    err => fatal("wgpu: Instance::create failed: " + err.message())
+    err => fatal("wgpu: Instance::create failed: \{err.message()}")
   }
   let adapter = instance.request_adapter_sync() catch {
     err =>
-      fatal("wgpu: Instance::request_adapter_sync failed: " + err.message())
+      fatal("wgpu: Instance::request_adapter_sync failed: \{err.message()}")
   }
   let required_features : Array[UInt] = []
-  if adapter.supported_features_contains_u32(0x00000007U) {
-    required_features.push(0x00000007U)
+  if adapter.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ASTC,
+    ) {
+    required_features.push(@wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ASTC)
   }
-  if adapter.supported_features_contains_u32(0x00000004U) {
-    required_features.push(0x00000004U)
+  if adapter.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_BC,
+    ) {
+    required_features.push(@wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_BC)
   }
-  if adapter.supported_features_contains_u32(0x00000006U) {
-    required_features.push(0x00000006U)
+  if adapter.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ETC2,
+    ) {
+    required_features.push(@wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ETC2)
+  }
+  if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_DEPTH_CLIP_CONTROL) {
+    required_features.push(@wgpu.FEATURE_NAME_DEPTH_CLIP_CONTROL)
+  }
+  if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_SHADER_INT64) {
+    required_features.push(@wgpu.NATIVE_FEATURE_SHADER_INT64)
+  }
+  if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_SUBGROUP) {
+    required_features.push(@wgpu.NATIVE_FEATURE_SUBGROUP)
+  }
+  if adapter.has_feature_native_subgroup_barrier() {
+    required_features.push(@wgpu.NATIVE_FEATURE_SUBGROUP_BARRIER)
   }
   if adapter.supported_features_contains_u32(
       @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
@@ -52,7 +70,7 @@ pub fn GpuBackend::new(
   let device = adapter.request_device_sync_with_features_and_limits(
     instance, required_features,
   ) catch {
-    err => fatal("wgpu: Adapter::request_device_sync failed: " + err.message())
+    err => fatal("wgpu: Adapter::request_device_sync failed: \{err.message()}")
   }
   if @sys.get_env_var("MGSTUDIO_WGPU_UNCAPTURED_ERROR_STDERR") is Some(flag) &&
     flag == "1" {

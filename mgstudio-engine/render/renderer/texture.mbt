@@ -795,13 +795,19 @@ pub fn GpuBackend::supported_compressed_image_formats_mask(
   self : GpuBackend,
 ) -> Int {
   let mut gpu_feature_mask = 0
-  if self.device.supported_features_contains_u32(0x00000007U) {
+  if self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ASTC,
+    ) {
     gpu_feature_mask = gpu_feature_mask + COMPRESSED_IMAGE_FORMAT_ASTC_LDR
   }
-  if self.device.supported_features_contains_u32(0x00000004U) {
+  if self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_BC,
+    ) {
     gpu_feature_mask = gpu_feature_mask + COMPRESSED_IMAGE_FORMAT_BC
   }
-  if self.device.supported_features_contains_u32(0x00000006U) {
+  if self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ETC2,
+    ) {
     gpu_feature_mask = gpu_feature_mask + COMPRESSED_IMAGE_FORMAT_ETC2
   }
   let runtime_decoder_mask = COMPRESSED_IMAGE_FORMAT_ASTC_LDR |
