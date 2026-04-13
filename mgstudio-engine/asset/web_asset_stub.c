@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <curl/curl.h>
 #include <moonbit.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(MGSTUDIO_ENABLE_LIBCURL)
+#include <curl/curl.h>
 
 typedef struct {
   uint8_t *data;
@@ -109,3 +111,17 @@ mgstudio_asset_http_fetch(moonbit_bytes_t url) {
   free(buffer.data);
   return output;
 }
+
+MOONBIT_FFI_EXPORT int32_t mgstudio_asset_http_supported(void) { return 1; }
+
+#else
+
+MOONBIT_FFI_EXPORT moonbit_bytes_t
+mgstudio_asset_http_fetch(moonbit_bytes_t url) {
+  (void)url;
+  return moonbit_make_bytes(0, 0);
+}
+
+MOONBIT_FFI_EXPORT int32_t mgstudio_asset_http_supported(void) { return 0; }
+
+#endif

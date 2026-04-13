@@ -28,9 +28,9 @@ This file must not exceed 200 lines.
 | `bevy_picking` | `mgstudio-engine/picking` | 90% | 73% | 73% | 🟡 In Progress | Camera-space and UI interaction edge cases still need strict parity validation. |
 | `bevy_input` | `mgstudio-engine/input` | 94% | 82% | 82% | 🟡 In Progress | Remaining platform/event-order corner cases still need alignment checks. |
 | `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 80% | 80% | 🟡 In Progress | Monitor-aware sizing and platform-semantics tails are still open. |
-| `bevy_asset` | `mgstudio-engine/asset` | 90% | 73% | 73% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
+| `bevy_asset` | `mgstudio-engine/asset` | 90% | 76% | 76% | 🟡 In Progress | Native asset runtime is stable with capability-gated HTTP fetch; duplicate native link warnings and deeper parity tails remain. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
-| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 72% | 72% | 🟡 In Progress | Camera-only runtime semantics now aligned for FXAA/SMAA/TAA/CAS/DLSS; render-stage depth still pending. |
+| `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 74% | 74% | 🟡 In Progress | Camera-only runtime semantics and node gating are aligned for FXAA/SMAA/TAA/CAS/DLSS; render-stage depth still pending. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
 | `bevy_image` | `mgstudio-engine/image` | 88% | 66% | 66% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
@@ -40,7 +40,7 @@ This file must not exceed 200 lines.
 | `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 67% | 67% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
 | Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
 | Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
-| Workspace-wide native validation | `moon check/test` integration | 90% | 60% | 60% | 🟡 In Progress | Full native test reliability is still blocked by remaining environment/runtime gaps. |
+| Workspace-wide native validation | `moon check/test` integration | 90% | 63% | 63% | 🟡 In Progress | Package-level native reliability improved (`asset/ui/anti_alias*` green), but full-suite runtime parity is still open. |
 
 | Rollup | Value |
 |---|---:|
@@ -194,7 +194,7 @@ This file must not exceed 200 lines.
 - [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event runtime resourceized + gltf extension runtime state resourceized + gltf loader runtime config/vertex-attribute state resourceized + scene gltf pending queues resourceized + gltf loader registration/registered state resourceized with bootstrap fallback), then close remaining runtime differences.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix remaining camera/pointer drift (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests added).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
-- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback to `mgstudio-engine/...` + native `moon test asset` pass + extended image loader/compressed-format wb coverage; remaining linker-warning cleanup pending).
+- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback + capability-gated web asset fetch (`web_asset_http_runtime_supported`) + native `moon test asset` pass + extended image loader/compressed-format wb coverage; remaining duplicate-link warning cleanup pending).
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.

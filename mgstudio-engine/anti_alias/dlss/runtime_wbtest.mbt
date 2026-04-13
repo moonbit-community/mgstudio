@@ -50,4 +50,16 @@ test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
   debug_inspect(runtime.enabled_camera_count, content="1")
   debug_inspect(runtime.reset_requested_count, content="1")
   debug_inspect(runtime.runtime_supported, content="false")
+  debug_inspect(
+    dlss_node_enabled_for_entity(app.world(), camera_entity),
+    content="false",
+  )
+  debug_inspect(
+    dlss_extract_enabled_for_entity(app.world(), camera_entity),
+    content="false",
+  )
+  debug_inspect(
+    dlss_prepare_enabled_for_entity(app.world(), camera_entity),
+    content="false",
+  )
 }

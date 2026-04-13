@@ -19,3 +19,20 @@
 pub fn dlss_node_enabled() -> Bool {
   DLSS_RUNTIME_SUPPORTED
 }
+
+///|
+pub fn dlss_node_enabled_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  if !DLSS_RUNTIME_SUPPORTED {
+    return false
+  }
+  if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    return false
+  }
+  match (try! world.entity(entity).get() : Dlss?) {
+    Some(_) => true
+    None => false
+  }
+}

@@ -19,3 +19,17 @@
 pub fn cas_node_enabled() -> Bool {
   CAS_RUNTIME_SUPPORTED
 }
+
+///|
+pub fn cas_node_enabled_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    return false
+  }
+  match (try! world.entity(entity).get() : ContrastAdaptiveSharpening?) {
+    Some(cas) => cas.enabled && cas.sharpening_strength > 0.0
+    None => false
+  }
+}

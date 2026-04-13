@@ -93,8 +93,8 @@ fn fxaa_camera_component_present(
 ///|
 pub fn fxaa_update_runtime_state(world : @ecs.World) -> Unit {
   let mut enabled_camera_count = 0
-  world.for_each_component(ecs_key_fxaa, fn(entity, _fxaa : Fxaa) {
-    if fxaa_camera_component_present(world, entity) {
+  world.for_each_component(ecs_key_fxaa, fn(entity, fxaa : Fxaa) {
+    if fxaa_camera_component_present(world, entity) && fxaa.enabled {
       enabled_camera_count = enabled_camera_count + 1
     }
   })

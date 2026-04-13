@@ -17,7 +17,18 @@
 extern "c" fn host_asset_http_fetch(url_bytes : Bytes) -> Bytes = "mgstudio_asset_http_fetch"
 
 ///|
+extern "c" fn host_asset_http_supported() -> Int = "mgstudio_asset_http_supported"
+
+///|
+pub fn web_asset_http_runtime_supported() -> Bool {
+  host_asset_http_supported() != 0
+}
+
+///|
 fn web_asset_fetch(url : String) -> Bytes? {
+  if !web_asset_http_runtime_supported() {
+    return None
+  }
   let bytes = host_asset_http_fetch(@utf8.encode(url[:]))
   if bytes.length() == 0 {
     None

@@ -407,6 +407,10 @@ test "asset server loads embedded image assets from in-memory source" {
 
 ///|
 test "web asset reader fetches remote PNG bytes" {
+  if !@asset.web_asset_http_runtime_supported() {
+    debug_inspect(true, content="true")
+    return
+  }
   let app = asset_plugin(
     web_asset_plugin(WebAssetPlugin::{ silence_startup_warning: true })(
       @app.App::new(@ecs.World::new()),

@@ -19,3 +19,11 @@
 pub fn dlss_prepare_enabled() -> Bool {
   DLSS_RUNTIME_SUPPORTED
 }
+
+///|
+pub fn dlss_prepare_enabled_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  dlss_node_enabled_for_entity(world, entity)
+}

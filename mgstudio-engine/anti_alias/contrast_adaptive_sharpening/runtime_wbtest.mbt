@@ -50,4 +50,12 @@ test "anti_alias/cas: runtime state counts camera-only CAS components" {
   debug_inspect(runtime.enabled_camera_count, content="1")
   debug_inspect(runtime.active_camera_count, content="1")
   debug_inspect(runtime.denoise_camera_count, content="0")
+  debug_inspect(
+    cas_node_enabled_for_entity(app.world(), camera_entity),
+    content="true",
+  )
+  debug_inspect(
+    cas_node_enabled_for_entity(app.world(), non_camera_entity),
+    content="false",
+  )
 }
