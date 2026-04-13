@@ -151,7 +151,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
 - [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
 - [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe.
-- [ ] `render/wgpu_mbt` (deferred, upstream): expose Bevy meshlet-required feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`, `SHADER_INT64`, `SUBGROUP`, `IMMEDIATES`) for full meshlet capability parity (tracked at `moonbit-community/wgpu-mbt#11`).
+- [ ] `render/wgpu_mbt` (deferred, upstream): expose queryable/bridgeable Bevy meshlet-required texture atomic feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`) for full meshlet capability parity (`SHADER_INT64`/`SUBGROUP`/`IMMEDIATES`已接入，tracked at `moonbit-community/wgpu-mbt#11`).
 - [ ] `animation/gltf/scene`: audit and close remaining runtime ownership differences against Bevy source modules.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.

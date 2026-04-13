@@ -67,6 +67,9 @@ pub fn GpuBackend::new(
   if adapter.has_feature_native_vertex_writable_storage() {
     required_features.push(@wgpu.NATIVE_FEATURE_VERTEX_WRITABLE_STORAGE)
   }
+  if adapter.has_feature_native_immediates() {
+    required_features.push(@wgpu.NATIVE_FEATURE_IMMEDIATES)
+  }
   let device = adapter.request_device_sync_with_features_and_limits(
     instance, required_features,
   ) catch {

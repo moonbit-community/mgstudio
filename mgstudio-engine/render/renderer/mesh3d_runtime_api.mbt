@@ -85,6 +85,9 @@ pub fn meshlet_required_features_supported() -> Bool {
     if !backend.device.has_feature_native_subgroup_barrier() {
       return false
     }
+    if !backend.device.has_feature_native_immediates() {
+      return false
+    }
     return true
   }
   false
