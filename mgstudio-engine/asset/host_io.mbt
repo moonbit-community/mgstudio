@@ -845,6 +845,14 @@ fn is_jpeg_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
+fn is_pnm_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 2 &&
+  blob_u8_at(bytes, 0) == 0x50 &&
+  blob_u8_at(bytes, 1) >= 0x31 &&
+  blob_u8_at(bytes, 1) <= 0x36
+}
+
+///|
 fn is_bmp_bytes(bytes : Bytes) -> Bool {
   bytes.length() >= 2 &&
   blob_u8_at(bytes, 0) == 0x42 &&
@@ -1099,6 +1107,172 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
 }
 
 ///|
+fn pnm_is_whitespace(code : Int) -> Bool {
+  code == 32 ||
+  code == 9 ||
+  code == 10 ||
+  code == 11 ||
+  code == 12 ||
+  code == 13
+}
+
+///|
+fn pnm_skip_ws_and_comments(bytes : Bytes, start : Int) -> Int {
+  let mut index = start
+  while index < bytes.length() {
+    let code = blob_u8_at(bytes, index)
+    if pnm_is_whitespace(code) {
+      index = index + 1
+      continue
+    }
+    if code == 35 {
+      index = index + 1
+      while index < bytes.length() && blob_u8_at(bytes, index) != 10 {
+        index = index + 1
+      }
+      continue
+    }
+    break
+  }
+  index
+}
+
+///|
+fn pnm_read_uint_token(bytes : Bytes, start : Int) -> (Int, Int)? {
+  let mut index = pnm_skip_ws_and_comments(bytes, start)
+  if index >= bytes.length() {
+    return None
+  }
+  let mut value = 0
+  let mut parsed = false
+  while index < bytes.length() {
+    let code = blob_u8_at(bytes, index)
+    if code >= 48 && code <= 57 {
+      parsed = true
+      value = value * 10 + code - 48
+      index = index + 1
+    } else {
+      break
+    }
+  }
+  if parsed {
+    Some((value, index))
+  } else {
+    None
+  }
+}
+
+///|
+fn pnm_scale_channel(value : Int, max_value : Int) -> Int {
+  if max_value <= 0 {
+    0
+  } else if max_value == 255 {
+    value
+  } else {
+    value * 255 / max_value
+  }
+}
+
+///|
+fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
+  guard is_pnm_bytes(bytes) else { return None }
+  let index0 = pnm_skip_ws_and_comments(bytes, 0)
+  if index0 + 1 >= bytes.length() || blob_u8_at(bytes, index0) != 0x50 {
+    return None
+  }
+  let magic = blob_u8_at(bytes, index0 + 1)
+  let index1 = index0 + 2
+  guard pnm_read_uint_token(bytes, index1) is Some((width_raw, index2)) else {
+    return None
+  }
+  guard pnm_read_uint_token(bytes, index2) is Some((height_raw, index3)) else {
+    return None
+  }
+  if width_raw <= 0 || height_raw <= 0 {
+    return None
+  }
+  let width = clamp_dim(width_raw)
+  let height = clamp_dim(height_raw)
+  let max_value_and_index = if magic == 0x34 {
+    Some((1, index3))
+  } else {
+    pnm_read_uint_token(bytes, index3)
+  }
+  guard max_value_and_index is Some((max_value, index4)) else { return None }
+  if max_value <= 0 || max_value > 255 {
+    return None
+  }
+  let data_start = pnm_skip_ws_and_comments(bytes, index4)
+  let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  if magic == 0x36 {
+    let pixel_count = width * height
+    let data_len = pixel_count * 3
+    if data_start + data_len > bytes.length() {
+      return None
+    }
+    for i in 0..<pixel_count {
+      let src = data_start + i * 3
+      let dst = i * 4
+      pixels[dst] = pnm_scale_channel(blob_u8_at(bytes, src), max_value).to_byte()
+      pixels[dst + 1] = pnm_scale_channel(blob_u8_at(bytes, src + 1), max_value).to_byte()
+      pixels[dst + 2] = pnm_scale_channel(blob_u8_at(bytes, src + 2), max_value).to_byte()
+      pixels[dst + 3] = (255).to_byte()
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
+  if magic == 0x35 {
+    let pixel_count = width * height
+    let data_len = pixel_count
+    if data_start + data_len > bytes.length() {
+      return None
+    }
+    for i in 0..<pixel_count {
+      let gray = pnm_scale_channel(blob_u8_at(bytes, data_start + i), max_value).to_byte()
+      let dst = i * 4
+      pixels[dst] = gray
+      pixels[dst + 1] = gray
+      pixels[dst + 2] = gray
+      pixels[dst + 3] = (255).to_byte()
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
+  if magic == 0x34 {
+    let row_bytes = (width + 7) / 8
+    let data_len = row_bytes * height
+    if data_start + data_len > bytes.length() {
+      return None
+    }
+    for y in 0..<height {
+      for x in 0..<width {
+        let source = data_start + y * row_bytes + x / 8
+        let bit = 7 - x % 8
+        let is_black = ((blob_u8_at(bytes, source) >> bit) & 1) == 1
+        let gray = if is_black { (0).to_byte() } else { (255).to_byte() }
+        let dst = (y * width + x) * 4
+        pixels[dst] = gray
+        pixels[dst + 1] = gray
+        pixels[dst + 2] = gray
+        pixels[dst + 3] = (255).to_byte()
+      }
+    }
+    return Some(DecodedTextureImage::{
+      width,
+      height,
+      pixels: Bytes::from_array(pixels),
+    })
+  }
+  None
+}
+
+///|
 fn decode_texture_image_with_container(
   bytes : Bytes,
   container : @image.ImageContainerFormat?,
@@ -1108,11 +1282,19 @@ fn decode_texture_image_with_container(
       return Some(decoded)
     }
   }
+  if container is Some(@image.ImageContainerFormat::Pnm) {
+    if decode_texture_image_from_pnm(bytes) is Some(decoded) {
+      return Some(decoded)
+    }
+  }
   if is_png_bytes(bytes) {
     return decode_texture_image_from_gm_png(bytes)
   }
   if is_jpeg_bytes(bytes) {
     return decode_texture_image_from_gm_jpeg(bytes)
+  }
+  if is_pnm_bytes(bytes) {
+    return decode_texture_image_from_pnm(bytes)
   }
   if is_bmp_bytes(bytes) {
     return decode_texture_image_from_bmp(bytes)

@@ -179,3 +179,37 @@ test "asset host io: tga decode supports uncompressed true-color with container 
   debug_inspect(decoded.pixels[6].to_uint(), content="0")
   debug_inspect(decoded.pixels[7].to_uint(), content="255")
 }
+
+///|
+fn test_pnm_p6_2x1_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  for code in @utf8.encode("P6\n2 1\n255\n"[:]) {
+    out.push(code)
+  }
+  // RGB pixels: red, green
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: pnm decode supports binary P6 payload" {
+  let bytes = test_pnm_p6_2x1_bytes()
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Pnm),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(2, 1)")
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+  debug_inspect(decoded.pixels[4].to_uint(), content="0")
+  debug_inspect(decoded.pixels[5].to_uint(), content="255")
+  debug_inspect(decoded.pixels[6].to_uint(), content="0")
+  debug_inspect(decoded.pixels[7].to_uint(), content="255")
+}
