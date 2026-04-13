@@ -484,3 +484,104 @@ test "asset host io: ico dimensions and DIB BGRA32 decode work" {
   debug_inspect(decoded.pixels[2].to_uint(), content="0")
   debug_inspect(decoded.pixels[3].to_uint(), content="255")
 }
+
+///|
+fn test_gif_2x3_header_bytes() -> Bytes {
+  Bytes::from_array([
+    // GIF89a
+    (0x47).to_byte(),
+    (0x49).to_byte(),
+    (0x46).to_byte(),
+    (0x38).to_byte(),
+    (0x39).to_byte(),
+    (0x61).to_byte(),
+    // width=2, height=3
+    (0x02).to_byte(),
+    (0x00).to_byte(),
+    (0x03).to_byte(),
+    (0x00).to_byte(),
+  ])
+}
+
+///|
+fn test_webp_vp8x_4x5_header_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  // RIFF + fake size + WEBP
+  for code in @utf8.encode("RIFF"[:]) {
+    out.push(code)
+  }
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  for code in @utf8.encode("WEBPVP8X"[:]) {
+    out.push(code)
+  }
+  // chunk size = 10
+  out.push((10).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  // features + reserved
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  // width-1 = 3 (24-bit little endian)
+  out.push((3).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  // height-1 = 4
+  out.push((4).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+fn test_tiff_le_7x5_header_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  let push_u32_le_test = fn(out : Array[Byte], value : UInt) {
+    out.push((value & 0xFFU).to_byte())
+    out.push(((value >> 8) & 0xFFU).to_byte())
+    out.push(((value >> 16) & 0xFFU).to_byte())
+    out.push(((value >> 24) & 0xFFU).to_byte())
+  }
+  // TIFF header: II* and first IFD at offset 8
+  out.push((0x49).to_byte())
+  out.push((0x49).to_byte())
+  out.push((0x2A).to_byte())
+  out.push((0x00).to_byte())
+  push_u32_le_test(out, 8U)
+  // IFD with 2 entries
+  push_u16_le(out, 2U)
+  // Tag 256 (ImageWidth), type LONG, count 1, value 7
+  push_u16_le(out, 256U)
+  push_u16_le(out, 4U)
+  push_u32_le_test(out, 1U)
+  push_u32_le_test(out, 7U)
+  // Tag 257 (ImageLength), type LONG, count 1, value 5
+  push_u16_le(out, 257U)
+  push_u16_le(out, 4U)
+  push_u32_le_test(out, 1U)
+  push_u32_le_test(out, 5U)
+  // Next IFD offset
+  push_u32_le_test(out, 0U)
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: texture dimensions parse gif/webp/tiff headers" {
+  debug_inspect(
+    texture_dimensions_from_bytes(test_gif_2x3_header_bytes()),
+    content="Some((2, 3))",
+  )
+  debug_inspect(
+    texture_dimensions_from_bytes(test_webp_vp8x_4x5_header_bytes()),
+    content="Some((4, 5))",
+  )
+  debug_inspect(
+    texture_dimensions_from_bytes(test_tiff_le_7x5_header_bytes()),
+    content="Some((7, 5))",
+  )
+}

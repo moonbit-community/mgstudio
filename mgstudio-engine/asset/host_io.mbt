@@ -901,6 +901,13 @@ fn blob_u16_be_at(bytes : Bytes, index : Int) -> Int {
 }
 
 ///|
+fn blob_u24_le_at(bytes : Bytes, index : Int) -> Int {
+  blob_u8_at(bytes, index) |
+  (blob_u8_at(bytes, index + 1) << 8) |
+  (blob_u8_at(bytes, index + 2) << 16)
+}
+
+///|
 priv struct BmpDecodeInfo {
   width : Int
   height : Int
@@ -1779,6 +1786,175 @@ fn png_dimensions(bytes : Bytes) -> (Int, Int)? {
 }
 
 ///|
+fn gif_dimensions(bytes : Bytes) -> (Int, Int)? {
+  if bytes.length() < 10 {
+    return None
+  }
+  let is_gif87a = blob_u8_at(bytes, 0) == 0x47 &&
+    blob_u8_at(bytes, 1) == 0x49 &&
+    blob_u8_at(bytes, 2) == 0x46 &&
+    blob_u8_at(bytes, 3) == 0x38 &&
+    blob_u8_at(bytes, 4) == 0x37 &&
+    blob_u8_at(bytes, 5) == 0x61
+  let is_gif89a = blob_u8_at(bytes, 0) == 0x47 &&
+    blob_u8_at(bytes, 1) == 0x49 &&
+    blob_u8_at(bytes, 2) == 0x46 &&
+    blob_u8_at(bytes, 3) == 0x38 &&
+    blob_u8_at(bytes, 4) == 0x39 &&
+    blob_u8_at(bytes, 5) == 0x61
+  if !is_gif87a && !is_gif89a {
+    return None
+  }
+  let width = clamp_dim(blob_u16_at(bytes, 6))
+  let height = clamp_dim(blob_u16_at(bytes, 8))
+  if width <= 0 || height <= 0 {
+    None
+  } else {
+    Some((width, height))
+  }
+}
+
+///|
+fn webp_dimensions(bytes : Bytes) -> (Int, Int)? {
+  if bytes.length() < 30 {
+    return None
+  }
+  if blob_u8_at(bytes, 0) != 0x52 ||
+    blob_u8_at(bytes, 1) != 0x49 ||
+    blob_u8_at(bytes, 2) != 0x46 ||
+    blob_u8_at(bytes, 3) != 0x46 ||
+    blob_u8_at(bytes, 8) != 0x57 ||
+    blob_u8_at(bytes, 9) != 0x45 ||
+    blob_u8_at(bytes, 10) != 0x42 ||
+    blob_u8_at(bytes, 11) != 0x50 {
+    return None
+  }
+  let chunk_tag = [
+    blob_u8_at(bytes, 12),
+    blob_u8_at(bytes, 13),
+    blob_u8_at(bytes, 14),
+    blob_u8_at(bytes, 15),
+  ]
+  // VP8X extended header.
+  if chunk_tag == [0x56, 0x50, 0x38, 0x58] {
+    let width = clamp_dim(blob_u24_le_at(bytes, 24) + 1)
+    let height = clamp_dim(blob_u24_le_at(bytes, 27) + 1)
+    if width > 0 && height > 0 {
+      return Some((width, height))
+    }
+    return None
+  }
+  // VP8L lossless header.
+  if chunk_tag == [0x56, 0x50, 0x38, 0x4C] {
+    if bytes.length() < 25 || blob_u8_at(bytes, 20) != 0x2F {
+      return None
+    }
+    let b0 = blob_u8_at(bytes, 21)
+    let b1 = blob_u8_at(bytes, 22)
+    let b2 = blob_u8_at(bytes, 23)
+    let b3 = blob_u8_at(bytes, 24)
+    let width = clamp_dim(1 + (b0 | ((b1 & 0x3F) << 8)))
+    let height = clamp_dim(1 + ((b1 >> 6) | (b2 << 2) | ((b3 & 0x0F) << 10)))
+    if width > 0 && height > 0 {
+      return Some((width, height))
+    }
+    return None
+  }
+  // VP8 lossy frame header.
+  if chunk_tag == [0x56, 0x50, 0x38, 0x20] {
+    if blob_u8_at(bytes, 23) != 0x9D ||
+      blob_u8_at(bytes, 24) != 0x01 ||
+      blob_u8_at(bytes, 25) != 0x2A {
+      return None
+    }
+    let width = clamp_dim(blob_u16_at(bytes, 26) & 0x3FFF)
+    let height = clamp_dim(blob_u16_at(bytes, 28) & 0x3FFF)
+    if width > 0 && height > 0 {
+      return Some((width, height))
+    }
+    return None
+  }
+  None
+}
+
+///|
+fn tiff_u16(bytes : Bytes, index : Int, little_endian : Bool) -> Int {
+  if little_endian {
+    blob_u16_at(bytes, index)
+  } else {
+    blob_u16_be_at(bytes, index)
+  }
+}
+
+///|
+fn tiff_u32(bytes : Bytes, index : Int, little_endian : Bool) -> Int {
+  if little_endian {
+    blob_u32_at(bytes, index)
+  } else {
+    blob_u32_be_at(bytes, index)
+  }
+}
+
+///|
+fn tiff_dimensions(bytes : Bytes) -> (Int, Int)? {
+  if bytes.length() < 8 {
+    return None
+  }
+  let little_endian = if blob_u8_at(bytes, 0) == 0x49 &&
+    blob_u8_at(bytes, 1) == 0x49 &&
+    blob_u8_at(bytes, 2) == 0x2A &&
+    blob_u8_at(bytes, 3) == 0x00 {
+    true
+  } else if blob_u8_at(bytes, 0) == 0x4D &&
+    blob_u8_at(bytes, 1) == 0x4D &&
+    blob_u8_at(bytes, 2) == 0x00 &&
+    blob_u8_at(bytes, 3) == 0x2A {
+    false
+  } else {
+    return None
+  }
+  let ifd_offset = tiff_u32(bytes, 4, little_endian)
+  if ifd_offset < 0 || ifd_offset + 2 > bytes.length() {
+    return None
+  }
+  let entry_count = tiff_u16(bytes, ifd_offset, little_endian)
+  let mut width = 0
+  let mut height = 0
+  for i in 0..<entry_count {
+    let entry_offset = ifd_offset + 2 + i * 12
+    if entry_offset + 12 > bytes.length() {
+      break
+    }
+    let tag = tiff_u16(bytes, entry_offset, little_endian)
+    if tag != 256 && tag != 257 {
+      continue
+    }
+    let typ = tiff_u16(bytes, entry_offset + 2, little_endian)
+    let count = tiff_u32(bytes, entry_offset + 4, little_endian)
+    if count != 1 {
+      continue
+    }
+    let value = if typ == 3 {
+      tiff_u16(bytes, entry_offset + 8, little_endian)
+    } else if typ == 4 {
+      tiff_u32(bytes, entry_offset + 8, little_endian)
+    } else {
+      continue
+    }
+    if tag == 256 {
+      width = value
+    } else {
+      height = value
+    }
+  }
+  if width <= 0 || height <= 0 {
+    None
+  } else {
+    Some((clamp_dim(width), clamp_dim(height)))
+  }
+}
+
+///|
 fn ktx2_dimensions(bytes : Bytes) -> (Int, Int)? {
   if bytes.length() < 28 {
     return None
@@ -2270,6 +2446,15 @@ fn save_asset_file_bytes(path : String, bytes : Bytes) -> Unit {
 ///|
 fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
   if png_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if gif_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if webp_dimensions(bytes) is Some(dims) {
+    return Some(dims)
+  }
+  if tiff_dimensions(bytes) is Some(dims) {
     return Some(dims)
   }
   if farbfeld_dimensions(bytes) is Some(dims) {
