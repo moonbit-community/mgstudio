@@ -135,6 +135,14 @@ fn pbr_plugin_sync_materials_state(
 }
 
 ///|
+fn pbr_plugin_sync_light_probe_state(
+  app : @app.App[@ecs.World],
+  _runtime_config : PbrPluginRuntimeConfig,
+) -> @app.App[@ecs.World] {
+  app.add_plugin(@pbr_light_probe.light_probe_plugin)
+}
+
+///|
 fn pbr_plugin_sync_deferred_lighting_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
@@ -255,6 +263,7 @@ pub fn pbr_plugin_with(
   try! register_render3d_required_components(next.world())
   next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
   next = pbr_plugin_sync_materials_state(next, runtime_config)
+  next = pbr_plugin_sync_light_probe_state(next, runtime_config)
   next = pbr_plugin_sync_standard_material_state(next, runtime_config)
   next = fog_plugin(next)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)

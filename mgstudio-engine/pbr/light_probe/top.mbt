@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/light_probe/mod.rs`.
 
 ///|
+const LIGHT_PROBE_PLUGIN_NAME : String = "mgstudio.pbr.light_probe.LightProbePlugin"
+
+///|
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
 
 ///|
@@ -35,6 +38,18 @@ pub fn LightProbePlugin::default() -> LightProbePlugin {
 }
 
 ///|
+pub impl @app.PluginReplacement for LightProbePlugin with plugin_name(_self) {
+  LIGHT_PROBE_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for LightProbePlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    light_probe_plugin_with(app, self)
+  }
+}
+
+///|
 pub struct LightProbePluginState {
   binding_arrays_supported : Bool
   extracted_probe_count : Int
@@ -46,6 +61,23 @@ pub fn LightProbePluginState::default() -> LightProbePluginState {
     binding_arrays_supported: true,
     extracted_probe_count: 0,
   }
+}
+
+///|
+pub fn light_probe_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  light_probe_plugin_with(app, LightProbePlugin::default())
+}
+
+///|
+pub fn light_probe_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : LightProbePlugin,
+) -> @app.App[@ecs.World] {
+  app
+  .init_resource(fn() { LightProbePluginState::default() })
+  .init_resource(fn() { LightProbesUniform::default() })
 }
 
 ///|
@@ -158,6 +190,20 @@ pub fn RenderViewLightProbes::probe_count(self : RenderViewLightProbes) -> Int {
 }
 
 ///|
+pub let ecs_key_light_probe_plugin_state : @ecs.ResourceKey[
+  LightProbePluginState,
+] = @ecs.register_resource(
+  debug_name="mgstudio.pbr.light_probe.plugin_state",
+)
+
+///|
+pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[
+  RenderViewLightProbes,
+] = @ecs.register_component(
+  debug_name="mgstudio.pbr.light_probe.render_view_light_probes",
+)
+
+///|
 pub struct LightProbesUniform {
   reflection_probe_count : Int
   irradiance_volume_count : Int
@@ -174,6 +220,11 @@ pub fn LightProbesUniform::default() -> LightProbesUniform {
 }
 
 ///|
+pub let ecs_key_light_probes_uniform : @ecs.ResourceKey[LightProbesUniform] = @ecs.register_resource(
+  debug_name="mgstudio.pbr.light_probe.uniform",
+)
+
+///|
 pub struct ViewLightProbesUniformOffset {
   offset : UInt
 }
@@ -181,4 +232,31 @@ pub struct ViewLightProbesUniformOffset {
 ///|
 pub fn ViewLightProbesUniformOffset::default() -> ViewLightProbesUniformOffset {
   ViewLightProbesUniformOffset::{ offset: 0U }
+}
+
+///|
+pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[
+  ViewLightProbesUniformOffset,
+] = @ecs.register_component(
+  debug_name="mgstudio.pbr.light_probe.uniform_offset",
+)
+
+///|
+pub impl @app.Resource for LightProbePluginState with resource() {
+  ecs_key_light_probe_plugin_state
+}
+
+///|
+pub impl @ecs.Component for RenderViewLightProbes with component() {
+  ecs_key_render_view_light_probes
+}
+
+///|
+pub impl @app.Resource for LightProbesUniform with resource() {
+  ecs_key_light_probes_uniform
+}
+
+///|
+pub impl @ecs.Component for ViewLightProbesUniformOffset with component() {
+  ecs_key_view_light_probes_uniform_offset
 }

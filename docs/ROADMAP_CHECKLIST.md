@@ -13,7 +13,7 @@ This file must not exceed 200 lines.
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
-| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
+| `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 76% | 76% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 76% | 76% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
