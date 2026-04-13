@@ -34,6 +34,9 @@ let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 let plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
+let plugin_lifecycle_ready_ref : Ref[Bool] = Ref::new(true)
+
+///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
 }
@@ -41,6 +44,7 @@ fn plugin_group_test_reset_log() -> Unit {
 ///|
 fn plugin_lifecycle_test_reset_log() -> Unit {
   plugin_lifecycle_log_ref.val = []
+  plugin_lifecycle_ready_ref.val = true
 }
 
 ///|
@@ -135,7 +139,7 @@ pub impl PluginReplacement for PluginLifecycleTestPlugin with world_plugin(
 
 ///|
 pub impl PluginReplacement for PluginLifecycleTestPlugin with ready(_self, _app) {
-  true
+  plugin_lifecycle_ready_ref.val
 }
 
 ///|
@@ -304,6 +308,24 @@ test "app: plugin lifecycle finish/cleanup run on first update, not add_plugin" 
   debug_inspect(app.plugins_state() == Ready, content="true")
   debug_inspect(plugin_lifecycle_log_ref.val, content="[1]")
   app = app.run_once()
+  debug_inspect(app.plugins_state() == Cleaned, content="true")
+  debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2, 3]")
+}
+
+///|
+test "app: schedules do not run before plugin ready lifecycle finalizes" {
+  plugin_lifecycle_test_reset_log()
+  plugin_lifecycle_ready_ref.val = false
+  let run_log : Array[Int] = []
+  let mut app = App::new(@ecs.World::new())
+    .add_plugin_typed(PluginLifecycleTestPlugin::{  })
+    .add_system(fn(_world : @ecs.World) { run_log.push(1) })
+  app = app.run_once()
+  debug_inspect(run_log.length(), content="0")
+  debug_inspect(app.plugins_state() == Adding, content="true")
+  plugin_lifecycle_ready_ref.val = true
+  app = app.run_once()
+  debug_inspect(run_log.length(), content="1")
   debug_inspect(app.plugins_state() == Cleaned, content="true")
   debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2, 3]")
 }

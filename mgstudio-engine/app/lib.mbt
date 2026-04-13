@@ -1792,6 +1792,11 @@ fn[W] App::finalize_plugins(self : App[W]) -> App[W] {
 }
 
 ///|
+fn[W] App::plugins_finalized(self : App[W]) -> Bool {
+  self.plugin_registry.length() == 0 || self.plugins_state == Cleaned
+}
+
+///|
 pub fn[W] App::add_plugins(self : App[W], plugins : Array[Plugin[W]]) -> App[W] {
   let entries : Array[PluginGroupEntry[W]] = []
   for plugin in plugins {
@@ -3540,6 +3545,9 @@ fn run_schedule_stage(
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
   let self = self.finalize_plugins()
+  if !self.plugins_finalized() {
+    return self
+  }
   self.sub_apps = self.sub_apps.run_startup()
   self
 }
@@ -3547,6 +3555,9 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 ///|
 pub fn App::update(self : App[@ecs.World]) -> App[@ecs.World] {
   let self = self.finalize_plugins()
+  if !self.plugins_finalized() {
+    return self
+  }
   self.sub_apps = self.sub_apps.update()
   self
 }
