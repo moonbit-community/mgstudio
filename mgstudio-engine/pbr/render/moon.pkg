@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/pbr/decal" @pbr_decal,
   "Milky2018/mgstudio/render" @render_gpu,
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",

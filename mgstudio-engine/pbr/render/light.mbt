@@ -150,6 +150,20 @@ fn render3d_light_is_view_visible(
 }
 
 ///|
+fn render3d_directional_light_decal_index(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  match (try! world.get_resource(@pbr_decal.ecs_key_render_clustered_decals)) {
+    Some(decals) => match decals.get_decal_index(entity) {
+      Some(index) => index
+      None => -1
+    }
+    None => -1
+  }
+}
+
+///|
 pub struct ExtractedPointLight3d {
   entity : @core.Entity
   color : @sprite.Color
@@ -694,7 +708,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       num_cascades: cascades.length(),
       cascades_overlap_proportion: item.cascade_overlap_proportion,
       depth_texture_base_index: directional_shadow_texture_base_index,
-      decal_index: -1,
+      decal_index: render3d_directional_light_decal_index(world, item.entity),
       sun_disk_angular_size: item.sun_disk_angular_size,
       sun_disk_intensity: item.sun_disk_intensity,
     })

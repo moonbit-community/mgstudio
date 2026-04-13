@@ -343,6 +343,33 @@ test "pbr render light: directional depth texture base index accumulates cascade
 }
 
 ///|
+test "pbr render light: directional light reads decal index from clustered decals resource" {
+  let world = @ecs.World::new()
+
+  let directional = world.spawn()
+  try! world.set_by_key(
+    directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+
+  let decals = @pbr_decal.RenderClusteredDecals::default()
+  let inserted_decal_index = decals.insert_decal(
+    directional,
+    @pbr_decal.ClusteredDecal::default(),
+  )
+  world.insert_resource(@pbr_decal.ecs_key_render_clustered_decals, decals)
+
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="1")
+  inspect(
+    gpu.directional_lights[0].decal_index,
+    content=inserted_decal_index.to_string(),
+  )
+}
+
+///|
 test "pbr render light: point extraction order keeps shadow and volumetric first" {
   let world = @ecs.World::new()
   let no_shadow = world.spawn()
