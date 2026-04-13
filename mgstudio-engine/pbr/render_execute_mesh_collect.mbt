@@ -21,12 +21,6 @@ fn render3d_execute_collect_meshes(
   needs_mesh_previous_transform : Bool,
 ) -> Array[ExtractedMesh3d] {
   let meshes : Array[ExtractedMesh3d] = []
-  let motion_blur_frame_stamp = if needs_mesh_previous_transform {
-    motion_blur_history_begin_frame(world)
-  } else {
-    0
-  }
-  let previous_motion_blur_frame_stamp = motion_blur_frame_stamp - 1
   let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_meshes",
@@ -147,8 +141,8 @@ fn render3d_execute_collect_meshes(
     }
     let previous_transform = if motion_vector_enabled {
       match
-        motion_blur_history_get(world, entity, previous_motion_blur_frame_stamp) {
-        Some(v) => v
+        (try! source_world.get_by_key(entity, ecs_key_previous_global_transform)) {
+        Some(v) => v.transform()
         None => transform
       }
     } else {
@@ -270,7 +264,13 @@ fn render3d_execute_collect_meshes(
     })
   })
   if needs_mesh_previous_transform {
-    motion_blur_history_sync(world, meshes, motion_blur_frame_stamp)
+    for mesh in meshes {
+      try! source_world.set_by_key(
+        mesh.entity.main_entity,
+        ecs_key_previous_global_transform,
+        @pbr_prepass.PreviousGlobalTransform::new(mesh.payload.transform),
+      )
+    }
   }
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,

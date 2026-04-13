@@ -114,7 +114,6 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   )
   let frame_config = render3d_execute_frame_config(source_world)
   let cameras = render3d_execute_collect_cameras(
-    world,
     source_world,
     world_transform_cache_ref,
     frame_config.gpu_instance_buffer_builder_requested,

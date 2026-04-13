@@ -15,6 +15,7 @@
 ///|
 fn render3d_execute_camera(
   world : @ecs.World,
+  source_world : @ecs.World,
   extracted_camera : ExtractedCamera3d,
   meshes : Array[ExtractedMesh3d],
   point_light_shadow_map_size : Int,
@@ -25,7 +26,6 @@ fn render3d_execute_camera(
   lighting : Render3dLightingState,
   delta_seconds : Float,
   cleared_targets_this_frame : Array[Int],
-  next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry],
   prepared_camera_queue : Render3dPreparedCameraQueue?,
 ) -> Unit {
   let camera_entity = extracted_camera.entity.main_entity
@@ -51,11 +51,14 @@ fn render3d_execute_camera(
     camera_pass_projection,
     camera.transform,
   )
-  next_camera_motion_blur_history.push({
-    entity: camera_entity,
-    transform: camera.transform,
-    clip_from_world: current_clip_from_world,
-  })
+  try! source_world.set_by_key(
+    camera_entity,
+    ecs_key_previous_view_data,
+    @pbr_prepass.PreviousViewData::new(
+      camera.transform,
+      current_clip_from_world,
+    ),
+  )
   let pass_lighting = render3d_camera_apply_environment_map_lighting(
     lighting, extracted_camera,
   )

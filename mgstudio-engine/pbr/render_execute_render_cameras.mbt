@@ -37,7 +37,6 @@ fn render3d_execute_render_cameras(
     None => render3d_queue_camera_phase_items(cameras)
   }
   let cleared_targets_this_frame : Array[Int] = []
-  let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
   for camera_phase_item in camera_phase_items {
     let extracted_camera = cameras[camera_phase_item.extracted_index]
     let prepared_camera_queue = if camera_phase_item.extracted_index >= 0 &&
@@ -47,9 +46,9 @@ fn render3d_execute_render_cameras(
       None
     }
     render3d_execute_camera(
-      world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
+      world, source_world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
       deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
-      lighting, delta_seconds, cleared_targets_this_frame, next_camera_motion_blur_history,
+      lighting, delta_seconds, cleared_targets_this_frame,
       prepared_camera_queue,
     )
   }
@@ -58,7 +57,6 @@ fn render3d_execute_render_cameras(
     "execute_3d_render_cameras",
     trace_render_cameras_start_us,
   )
-  camera_motion_blur_history_sync(world, next_camera_motion_blur_history)
 }
 
 ///|

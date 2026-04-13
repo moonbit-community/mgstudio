@@ -194,6 +194,16 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] =
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @pbr_prepass.ecs_key_motion_vector_prepass
 
 ///|
+pub let ecs_key_previous_view_data : @ecs.ComponentKey[
+  @pbr_prepass.PreviousViewData,
+] = @pbr_prepass.ecs_key_previous_view_data
+
+///|
+pub let ecs_key_previous_global_transform : @ecs.ComponentKey[
+  @pbr_prepass.PreviousGlobalTransform,
+] = @pbr_prepass.ecs_key_previous_global_transform
+
+///|
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing
 
 ///|

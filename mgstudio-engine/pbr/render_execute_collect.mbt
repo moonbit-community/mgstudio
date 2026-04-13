@@ -14,7 +14,6 @@
 
 ///|
 fn render3d_execute_collect_cameras(
-  world : @ecs.World,
   source_world : @ecs.World,
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   gpu_instance_buffer_builder_requested : Bool,
@@ -125,9 +124,12 @@ fn render3d_execute_collect_cameras(
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_ref,
     )
-    let previous_camera_history = camera_motion_blur_history_get(world, entity)
-    let previous_transform = match previous_camera_history {
-      Some(v) => v.transform
+    let previous_view_data : @pbr_prepass.PreviousViewData? = try! source_world.get_by_key(
+      entity,
+      ecs_key_previous_view_data,
+    )
+    let previous_transform = match previous_view_data {
+      Some(v) => v.transform()
       None => transform
     }
     match @pbr_render.render3d_target_info(source_world, target) {
@@ -199,8 +201,8 @@ fn render3d_execute_collect_cameras(
             msaa,
             transform,
             previous_transform,
-            previous_clip_from_world: match previous_camera_history {
-              Some(v) => Some(v.clip_from_world)
+            previous_clip_from_world: match previous_view_data {
+              Some(v) => Some(v.clip_from_world())
               None => None
             },
             target_id: target_info.target_id,

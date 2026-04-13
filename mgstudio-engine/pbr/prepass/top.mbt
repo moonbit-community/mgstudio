@@ -84,6 +84,53 @@ pub type MotionVectorPrepass = @core_pipeline.MotionVectorPrepass
 pub type DeferredPrepass = @core_pipeline.DeferredPrepass
 
 ///|
+pub struct PreviousViewData {
+  transform : @transform.Transform
+  clip_from_world : @pbr_render.ProjectionMatrix3d
+}
+
+///|
+pub struct PreviousGlobalTransform {
+  transform : @transform.Transform
+}
+
+///|
+pub fn PreviousGlobalTransform::new(
+  transform : @transform.Transform,
+) -> PreviousGlobalTransform {
+  PreviousGlobalTransform::{ transform }
+}
+
+///|
+pub fn PreviousGlobalTransform::transform(
+  self : PreviousGlobalTransform,
+) -> @transform.Transform {
+  self.transform
+}
+
+///|
+pub fn PreviousViewData::new(
+  transform : @transform.Transform,
+  clip_from_world : @pbr_render.ProjectionMatrix3d,
+) -> PreviousViewData {
+  PreviousViewData::{ transform, clip_from_world }
+}
+
+///|
+pub fn PreviousViewData::transform(
+  self : PreviousViewData,
+) -> @transform.Transform {
+  self.transform
+}
+
+///|
+pub fn PreviousViewData::clip_from_world(
+  self : PreviousViewData,
+) -> @pbr_render.ProjectionMatrix3d {
+  self.clip_from_world
+}
+
+///|
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
 
 ///|
@@ -94,6 +141,18 @@ pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] =
 
 ///|
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
+
+///|
+pub let ecs_key_previous_view_data : @ecs.ComponentKey[PreviousViewData] = @ecs.register_component(
+  debug_name="pbr.prepass.previous_view_data",
+)
+
+///|
+pub let ecs_key_previous_global_transform : @ecs.ComponentKey[
+  PreviousGlobalTransform,
+] = @ecs.register_component(
+  debug_name="pbr.prepass.previous_global_transform",
+)
 
 ///|
 pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState] = @core_prepass.ecs_key_prepass_view_state
@@ -116,6 +175,16 @@ pub impl @app.Resource for AnyPrepassPluginLoaded with resource() {
 ///|
 pub impl @app.Resource for PrepassPipelineState with resource() {
   ecs_key_prepass_pipeline_state
+}
+
+///|
+pub impl @ecs.Component for PreviousViewData with component() {
+  ecs_key_previous_view_data
+}
+
+///|
+pub impl @ecs.Component for PreviousGlobalTransform with component() {
+  ecs_key_previous_global_transform
 }
 
 ///|
