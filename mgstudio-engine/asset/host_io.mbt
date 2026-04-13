@@ -213,33 +213,27 @@ const WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM : Int = 0x44
 const WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB : Int = 0x45
 
 ///|
-let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref::new([
-  ("basis", LOADER_KIND_TEXTURE),
-  ("bmp", LOADER_KIND_TEXTURE),
-  ("dds", LOADER_KIND_TEXTURE),
-  ("exr", LOADER_KIND_TEXTURE),
-  ("farbfeld", LOADER_KIND_TEXTURE),
-  ("ff", LOADER_KIND_TEXTURE),
-  ("gif", LOADER_KIND_TEXTURE),
-  ("hdr", LOADER_KIND_TEXTURE),
-  ("ico", LOADER_KIND_TEXTURE),
-  ("jpg", LOADER_KIND_TEXTURE),
-  ("jpeg", LOADER_KIND_TEXTURE),
-  ("ktx2", LOADER_KIND_TEXTURE),
-  ("pbm", LOADER_KIND_TEXTURE),
-  ("pgm", LOADER_KIND_TEXTURE),
-  ("pnm", LOADER_KIND_TEXTURE),
-  ("png", LOADER_KIND_TEXTURE),
-  ("ppm", LOADER_KIND_TEXTURE),
-  ("qoi", LOADER_KIND_TEXTURE),
-  ("tga", LOADER_KIND_TEXTURE),
-  ("tif", LOADER_KIND_TEXTURE),
-  ("tiff", LOADER_KIND_TEXTURE),
-  ("webp", LOADER_KIND_TEXTURE),
-  ("wgsl", LOADER_KIND_WGSL),
-  ("ttf", LOADER_KIND_FONT),
-  ("otf", LOADER_KIND_FONT),
-])
+fn loader_default_texture_extensions() -> Array[(String, Int)] {
+  let out : Array[(String, Int)] = []
+  for extension in @image.image_loader_supported_file_extensions() {
+    out.push((extension, LOADER_KIND_TEXTURE))
+  }
+  out
+}
+
+///|
+fn loader_default_extensions() -> Array[(String, Int)] {
+  let out = loader_default_texture_extensions()
+  out.push(("wgsl", LOADER_KIND_WGSL))
+  out.push(("ttf", LOADER_KIND_FONT))
+  out.push(("otf", LOADER_KIND_FONT))
+  out
+}
+
+///|
+let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref::new(
+  loader_default_extensions(),
+)
 
 ///|
 fn clamp_dim(value : Int) -> Int {
