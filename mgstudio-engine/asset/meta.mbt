@@ -152,12 +152,60 @@ fn meta_image_address_mode(
 }
 
 ///|
-fn meta_render_asset_usages(content : String) -> RenderAssetUsages? {
-  guard string_contains(content, "asset_usage: RenderAssetUsages(") else {
+fn meta_find_substring(content : String, pattern : String, start : Int) -> Int {
+  let content_len = content.length()
+  let pattern_len = pattern.length()
+  if pattern_len <= 0 {
+    return start
+  }
+  if start < 0 || start + pattern_len > content_len {
+    return -1
+  }
+  let mut index = start
+  while index + pattern_len <= content_len {
+    let mut matched = true
+    for offset in 0..<pattern_len {
+      if content.code_unit_at(index + offset) != pattern.code_unit_at(offset) {
+        matched = false
+        break
+      }
+    }
+    if matched {
+      return index
+    }
+    index = index + 1
+  }
+  -1
+}
+
+///|
+fn meta_extract_render_asset_usage_value(
+  content : String,
+  field_name : String,
+) -> String? {
+  let marker = "\{field_name}: RenderAssetUsages(\""
+  let start = meta_find_substring(content, marker, 0)
+  if start < 0 {
     return None
   }
-  let has_main_world = string_contains(content, "MAIN_WORLD")
-  let has_render_world = string_contains(content, "RENDER_WORLD")
+  let value_start = start + marker.length()
+  let value_end = meta_find_substring(content, "\")", value_start)
+  if value_end < value_start {
+    return None
+  }
+  Some(content[value_start:value_end].to_string())
+}
+
+///|
+fn meta_render_asset_usages_field(
+  content : String,
+  field_name : String,
+) -> RenderAssetUsages? {
+  guard meta_extract_render_asset_usage_value(content, field_name) is Some(value) else {
+    return None
+  }
+  let has_main_world = string_contains(value, "MAIN_WORLD")
+  let has_render_world = string_contains(value, "RENDER_WORLD")
   if has_main_world && has_render_world {
     return Some(RenderAssetUsages::all())
   }
@@ -166,6 +214,60 @@ fn meta_render_asset_usages(content : String) -> RenderAssetUsages? {
   }
   if has_render_world {
     return Some(RenderAssetUsages::render_world())
+  }
+  None
+}
+
+///|
+fn meta_parse_positive_int_after(content : String, marker : String) -> Int? {
+  let start = meta_find_substring(content, marker, 0)
+  if start < 0 {
+    return None
+  }
+  let mut index = start + marker.length()
+  let mut value = 0
+  let mut parsed = false
+  while index < content.length() {
+    let code = content.code_unit_at(index).to_int()
+    if code < 48 || code > 57 {
+      break
+    }
+    parsed = true
+    value = value * 10 + code - 48
+    index = index + 1
+  }
+  if parsed && value > 0 {
+    Some(value)
+  } else {
+    None
+  }
+}
+
+///|
+fn meta_image_array_layout(content : String) -> ImageArrayLayout? {
+  if meta_parse_positive_int_after(content, "array_layout: Some(RowCount(rows: ") is Some(rows) {
+    return Some(ImageArrayLayout::RowCount(rows))
+  }
+  if meta_parse_positive_int_after(content, "array_layout: Some(RowCount (rows: ") is Some(rows) {
+    return Some(ImageArrayLayout::RowCount(rows))
+  }
+  if meta_parse_positive_int_after(content, "array_layout: Some(RowCount { rows: ") is Some(rows) {
+    return Some(ImageArrayLayout::RowCount(rows))
+  }
+  if meta_parse_positive_int_after(content, "array_layout: Some(RowHeight(pixels: ") is Some(
+    pixels,
+  ) {
+    return Some(ImageArrayLayout::RowHeight(pixels))
+  }
+  if meta_parse_positive_int_after(content, "array_layout: Some(RowHeight (pixels: ") is Some(
+    pixels,
+  ) {
+    return Some(ImageArrayLayout::RowHeight(pixels))
+  }
+  if meta_parse_positive_int_after(content, "array_layout: Some(RowHeight { pixels: ") is Some(
+    pixels,
+  ) {
+    return Some(ImageArrayLayout::RowHeight(pixels))
   }
   None
 }
@@ -190,9 +292,13 @@ fn apply_image_meta_settings(
   } else if string_contains(content, "is_srgb: true") {
     settings.is_srgb = true
   }
-  if meta_render_asset_usages(content) is Some(asset_usage) {
+  if meta_render_asset_usages_field(content, "asset_usage") is Some(asset_usage) {
     settings.asset_usage = asset_usage
   }
+  if meta_render_asset_usages_field(content, "load_meshes") is Some(load_meshes) {
+    settings.load_meshes = load_meshes
+  }
+  settings.array_layout = meta_image_array_layout(content)
 
   let address_mode_u = meta_image_address_mode(content, "address_mode_u")
   let address_mode_v = meta_image_address_mode(content, "address_mode_v")
