@@ -331,6 +331,11 @@ pub fn ObjectsInCluster::clusterables(
 }
 
 ///|
+pub fn ObjectsInCluster::iter(self : ObjectsInCluster) -> Array[@core.Entity] {
+  self.clusterables()
+}
+
+///|
 pub struct Clusters {
   mut tile_size_x : Int
   mut tile_size_y : Int
@@ -511,6 +516,34 @@ pub fn VisibleClusterableObjects::decal_entities(
   self : VisibleClusterableObjects,
 ) -> Array[@core.Entity] {
   self.decals.copy()
+}
+
+///|
+pub fn VisibleClusterableObjects::point_and_spot_light_count(
+  self : VisibleClusterableObjects,
+) -> Int {
+  self.point_and_spot_lights.length()
+}
+
+///|
+pub fn VisibleClusterableObjects::reflection_probe_count(
+  self : VisibleClusterableObjects,
+) -> Int {
+  self.reflection_probes.length()
+}
+
+///|
+pub fn VisibleClusterableObjects::irradiance_volume_count(
+  self : VisibleClusterableObjects,
+) -> Int {
+  self.irradiance_volumes.length()
+}
+
+///|
+pub fn VisibleClusterableObjects::decal_count(
+  self : VisibleClusterableObjects,
+) -> Int {
+  self.decals.length()
 }
 
 ///|
