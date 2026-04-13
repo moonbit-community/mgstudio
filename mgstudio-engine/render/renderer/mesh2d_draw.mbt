@@ -1320,10 +1320,7 @@ fn flush_mesh2d_batches(backend : GpuBackend) -> Unit {
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
   gpu_mesh_bind_index_buffer(pass, mesh)
-  debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
-    1
-  current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
-    1
+  render_diagnostics_record_mesh2d_executed_draw()
   pass.draw_indexed(
     mesh.index_count,
     backend.mesh2d_batch_instance_count,
@@ -1672,16 +1669,15 @@ fn GpuBackend::draw_mesh_material_with_options(
   wireframe? : Bool = false,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
-    debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
+    render_diagnostics_record_mesh2d_drop_no_frame()
     return
   }
   guard frame.pass is Some(_) else {
-    debug_mesh2d_drop_no_pass_ref.val = debug_mesh2d_drop_no_pass_ref.val + 1
+    render_diagnostics_record_mesh2d_drop_no_pass()
     return
   }
   guard self.pass_state is Some(_) else {
-    debug_mesh2d_drop_no_pass_state_ref.val = debug_mesh2d_drop_no_pass_state_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_no_pass_state()
     return
   }
   flush_ui_shadow_batches(self)
@@ -1689,13 +1685,11 @@ fn GpuBackend::draw_mesh_material_with_options(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else {
-    debug_mesh2d_drop_missing_mesh_ref.val = debug_mesh2d_drop_missing_mesh_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_missing_mesh()
     return
   }
   if mesh.vertex_stride_bytes != MESH2D_VERTEX_STRIDE_BYTES {
-    debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_bad_stride()
     return
   }
   ensure_mesh2d_resources(self)
@@ -1715,14 +1709,12 @@ fn GpuBackend::draw_mesh_material_with_options(
       Some(resolved_fragment_shader_path),
     )
     is Some(pipeline) else {
-    debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_no_pipeline()
     return
   }
   guard mesh2d_material_bind_group_for_draw(self, material_bind_group)
     is Some((_, material_bg)) else {
-    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_no_uniform_buf()
     return
   }
   let material_bind_group_hash = host_material2d_bind_group_hash(
@@ -1764,8 +1756,7 @@ fn GpuBackend::draw_mesh_material_with_options(
   let required_binding_end = self.mesh2d_batch_uniform_base_offset.to_uint64() +
     MESH2D_UNIFORM_STRIDE_BYTES * MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE_U64
   if next_instance_used < 0 {
-    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_no_uniform_buf()
     mesh2d_reset_pending_batch(self)
     return
   }
@@ -1779,8 +1770,7 @@ fn GpuBackend::draw_mesh_material_with_options(
   }
   guard ensure_mesh2d_instance_uniform_binding(self, required_capacity)
     is Some((instance_uniform_buf, _)) else {
-    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
-      1
+    render_diagnostics_record_mesh2d_drop_no_uniform_buf()
     mesh2d_reset_pending_batch(self)
     return
   }
@@ -1877,13 +1867,7 @@ pub fn draw_mesh_wireframe(
   color_b~ : Float,
   color_a~ : Float,
 ) -> Unit {
-  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
-  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
-    1
-  if mesh_id <= 0 {
-    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
-      1
-  }
+  render_diagnostics_record_mesh2d_draw(mesh_id)
   if ensure_backend() is Some(backend) {
     let alpha_mode_kind = if color_a < 1.0F {
       MESH2D_ALPHA_MODE_KIND_BLEND
@@ -1924,13 +1908,7 @@ pub fn draw_mesh_material(
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
 ) -> Unit {
-  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
-  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
-    1
-  if mesh_id <= 0 {
-    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
-      1
-  }
+  render_diagnostics_record_mesh2d_draw(mesh_id)
   if ensure_backend() is Some(backend) {
     backend.draw_mesh_material(
       mesh_id,

@@ -301,6 +301,82 @@ pub fn render_diagnostics_end_frame() -> Unit {
 }
 
 ///|
+pub fn render_diagnostics_record_mesh2d_draw(mesh_id : Int) -> Unit {
+  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
+      1
+  }
+}
+
+///|
+pub fn render_diagnostics_record_mesh3d_draw(mesh_id : Int) -> Unit {
+  debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
+  current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val +
+      1
+  }
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_executed_draw() -> Unit {
+  debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
+    1
+  current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
+    1
+}
+
+///|
+pub fn render_diagnostics_record_mesh3d_executed_draw() -> Unit {
+  debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val +
+    1
+  current_frame_mesh3d_executed_draw_calls_ref.val = current_frame_mesh3d_executed_draw_calls_ref.val +
+    1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_no_frame() -> Unit {
+  debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_no_pass() -> Unit {
+  debug_mesh2d_drop_no_pass_ref.val = debug_mesh2d_drop_no_pass_ref.val + 1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_no_pass_state() -> Unit {
+  debug_mesh2d_drop_no_pass_state_ref.val = debug_mesh2d_drop_no_pass_state_ref.val +
+    1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_missing_mesh() -> Unit {
+  debug_mesh2d_drop_missing_mesh_ref.val = debug_mesh2d_drop_missing_mesh_ref.val +
+    1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_bad_stride() -> Unit {
+  debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val + 1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_no_pipeline() -> Unit {
+  debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val + 1
+}
+
+///|
+pub fn render_diagnostics_record_mesh2d_drop_no_uniform_buf() -> Unit {
+  debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
+    1
+}
+
+///|
 pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
   last_frame_render_diagnostics_snapshot_ref.val
 }

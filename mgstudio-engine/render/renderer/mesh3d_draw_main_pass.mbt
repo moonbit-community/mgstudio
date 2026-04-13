@@ -348,10 +348,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-  debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val +
-    1
-  current_frame_mesh3d_executed_draw_calls_ref.val = current_frame_mesh3d_executed_draw_calls_ref.val +
-    1
+  render_diagnostics_record_mesh3d_executed_draw()
   if use_indirect &&
     mesh3d_preprocess_camera_upload_state(
       self, preprocess_camera_key_hi, preprocess_camera_key_lo,

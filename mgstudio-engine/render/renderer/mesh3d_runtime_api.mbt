@@ -235,13 +235,7 @@ pub fn draw_mesh3d(
   skinning_key_lo? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
 ) -> Unit {
-  debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
-  current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
-    1
-  if mesh_id <= 0 {
-    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val +
-      1
-  }
+  render_diagnostics_record_mesh3d_draw(mesh_id)
   if ensure_backend() is Some(backend) {
     backend.draw_mesh3d(
       mesh_id,
