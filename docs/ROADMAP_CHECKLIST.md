@@ -11,8 +11,8 @@ This file must not exceed 200 lines.
 | `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 70% | 70% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
 | `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 68% | 68% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 72% | 72% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
-| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 82% | 82% | 🟡 In Progress | Remaining parity gaps concentrate in light/fog/meshlet/deferred depth behavior. |
-| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 84% | 84% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
+| `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 83% | 83% | 🟡 In Progress | Remaining parity gaps concentrate in light/fog/meshlet/deferred depth behavior. |
+| `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 85% | 85% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 74% | 74% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 76% | 76% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
@@ -46,7 +46,7 @@ This file must not exceed 200 lines.
 |---|---:|
 | Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
-| Current weighted migration completion (included scope) | 80% |
+| Current weighted migration completion (included scope) | 81% |
 | Last updated | 2026-04-13 |
 
 - [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
@@ -108,6 +108,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/light-shadowmap-resource-init+validate`: initialize directional shadow-map resource in mesh-render startup and run Bevy-shaped non-power-of-two correction system on post-update.
 - [x] `pbr/render-volumetric-flag-gating`: align point/directional light flags with Bevy by requiring `shadow_maps_enabled` before setting the `VOLUMETRIC` GPU flag.
 - [x] `pbr/light-sun-disk-public-surface`: export `SunDisk` through pbr-facing aliases and ECS key list so authoring surface matches Bevy light API shape.
+- [x] `pbr/render-directional-sort-key`: align directional-light ordering with Bevy key strategy (`volumetric`, `shadow_maps_enabled`, `entity`) to keep over-limit light selection deterministic.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.

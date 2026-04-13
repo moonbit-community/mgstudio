@@ -263,6 +263,47 @@ test "pbr render light: directional with shadows uses default cascade config" {
 }
 
 ///|
+test "pbr render light: directional extraction order follows bevy key" {
+  let world = @ecs.World::new()
+  let shadow_and_volumetric = world.spawn()
+  let shadow_only = world.spawn()
+  let no_shadow = world.spawn()
+
+  try! world.set_by_key(
+    shadow_and_volumetric,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+  try! world.set_by_key(
+    shadow_and_volumetric,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::default(),
+  )
+  |> ignore
+
+  try! world.set_by_key(
+    shadow_only,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  try! world.set_by_key(
+    no_shadow,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default(),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="3")
+  inspect(extracted[0].entity.id, content="2")
+  inspect(extracted[1].entity.id, content="1")
+  inspect(extracted[2].entity.id, content="0")
+}
+
+///|
 test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   let world = @ecs.World::new()
   world.insert_resource(
