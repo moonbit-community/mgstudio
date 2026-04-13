@@ -71,3 +71,13 @@ test "show light gizmo stores optional color override" {
     content="true",
   )
 }
+
+///|
+test "directional and spot support explicit shadow map toggles" {
+  let directional = @light.DirectionalLight::default().with_shadow_maps_enabled(
+    true,
+  )
+  let spot = @light.SpotLight::default().with_shadow_maps_enabled(true)
+  debug_inspect(directional.shadow_maps_enabled, content="true")
+  debug_inspect(spot.shadow_maps_enabled, content="true")
+}

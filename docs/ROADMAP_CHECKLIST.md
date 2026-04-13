@@ -99,6 +99,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/render-spot-flag-direction`: align `SPOT_LIGHT_Y_NEGATIVE` flag logic with Bevy by deriving from spotlight direction sign, not outer-angle value.
 - [x] `pbr/render-directional-cascade-overlap`: align directional GPU light payload to use extracted cascade overlap proportion instead of constant fallback.
 - [x] `pbr/render-directional-zero-shadow-cascades`: align directional GPU payload with Bevy behavior by keeping cascade count/array empty when directional shadows are disabled.
+- [x] `light/authoring-shadow-toggle-api`: add missing `with_shadow_maps_enabled` authoring helpers for directional/spot lights to match Bevy-side usage ergonomics.
 - [x] `ui_widgets/dead-wrapper-prune`: remove unreferenced identity/entry compatibility wrappers to keep `ui_widgets` surface behavior-bearing.
 - [x] `gltf/root-pure-functions`: make `gltf/assets` + `gltf/material` + `gltf/convert_coordinates` real implementations (direct `gltf_ext` / local logic), not loader pass-through.
 - [x] `sprite_render/mesh2d-dead-wrapper-prune`: remove unreferenced plugin forwarding wrappers from `mesh2d/top` and `mesh2d/wireframe2d`.

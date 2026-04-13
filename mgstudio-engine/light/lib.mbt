@@ -915,6 +915,14 @@ pub fn DirectionalLight::with_contact_shadows_enabled(
 }
 
 ///|
+pub fn DirectionalLight::with_shadow_maps_enabled(
+  self : DirectionalLight,
+  shadow_maps_enabled : Bool,
+) -> DirectionalLight {
+  DirectionalLight::{ ..self, shadow_maps_enabled, }
+}
+
+///|
 pub fn DirectionalLight::with_affects_lightmapped_mesh_diffuse(
   self : DirectionalLight,
   affects_lightmapped_mesh_diffuse : Bool,
@@ -1093,6 +1101,14 @@ pub fn SpotLight::with_contact_shadows_enabled(
   contact_shadows_enabled : Bool,
 ) -> SpotLight {
   SpotLight::{ ..self, contact_shadows_enabled, }
+}
+
+///|
+pub fn SpotLight::with_shadow_maps_enabled(
+  self : SpotLight,
+  shadow_maps_enabled : Bool,
+) -> SpotLight {
+  SpotLight::{ ..self, shadow_maps_enabled, }
 }
 
 ///|
