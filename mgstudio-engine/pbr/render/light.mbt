@@ -37,6 +37,360 @@ pub(all) struct Render3dLightingState {
 }
 
 ///|
+pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
+
+///|
+pub const MAX_CASCADES_PER_LIGHT : Int = 4
+
+///|
+const POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED : UInt = 1U << 0
+
+///|
+const POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE : UInt = 1U << 1
+
+///|
+const POINT_LIGHT_FLAG_VOLUMETRIC : UInt = 1U << 2
+
+///|
+const POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : UInt = 1U << 3
+
+///|
+const POINT_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 4
+
+///|
+const DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED : UInt = 1U << 0
+
+///|
+const DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC : UInt = 1U << 1
+
+///|
+const DIRECTIONAL_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : UInt = 1U << 2
+
+///|
+const DIRECTIONAL_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 3
+
+///|
+pub struct ExtractedPointLight3d {
+  entity : @core.Entity
+  color : @sprite.Color
+  intensity : Float
+  range : Float
+  radius : Float
+  transform : @transform.Transform
+  shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  shadow_map_near_z : Float
+  spot_light_angles : (Float, Float)?
+  volumetric : Bool
+  soft_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
+}
+
+///|
+pub struct ExtractedDirectionalLight3d {
+  entity : @core.Entity
+  color : @sprite.Color
+  illuminance : Float
+  transform : @transform.Transform
+  shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  volumetric : Bool
+  affects_lightmapped_mesh_diffuse : Bool
+  soft_shadow_size : Float?
+  cascade_count : Int
+}
+
+///|
+pub struct GpuDirectionalCascade3d {
+  far_bound : Float
+  texel_size : Float
+  clip_from_world : ProjectionMatrix3d
+}
+
+///|
+pub struct GpuDirectionalLight3d {
+  cascades : Array[GpuDirectionalCascade3d]
+  color : @sprite.Color
+  dir_to_light : @math.Vec3
+  flags : UInt
+  soft_shadow_size : Float
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  num_cascades : Int
+  cascades_overlap_proportion : Float
+}
+
+///|
+pub struct GpuLights3d {
+  directional_lights : Array[GpuDirectionalLight3d]
+  ambient_color : @sprite.Color
+  ambient_brightness : Float
+  n_directional_lights : Int
+}
+
+///|
+fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
+  let mut flags = 0U
+  if extracted.shadow_maps_enabled {
+    flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
+  }
+  if extracted.spot_light_angles is Some((_, outer)) && outer < 0.0F {
+    flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
+  }
+  if extracted.volumetric {
+    flags = flags | POINT_LIGHT_FLAG_VOLUMETRIC
+  }
+  if extracted.affects_lightmapped_mesh_diffuse {
+    flags = flags | POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE
+  }
+  if extracted.contact_shadows_enabled {
+    flags = flags | POINT_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED
+  }
+  flags
+}
+
+///|
+fn render3d_directional_light_flags(
+  extracted : ExtractedDirectionalLight3d,
+) -> UInt {
+  let mut flags = 0U
+  if extracted.shadow_maps_enabled {
+    flags = flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED
+  }
+  if extracted.volumetric {
+    flags = flags | DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC
+  }
+  if extracted.affects_lightmapped_mesh_diffuse {
+    flags = flags | DIRECTIONAL_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE
+  }
+  if extracted.contact_shadows_enabled {
+    flags = flags | DIRECTIONAL_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED
+  }
+  flags
+}
+
+///|
+fn render3d_extract_light_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+    Some(v) => v
+    None => @transform.Transform::identity()
+  }
+}
+
+///|
+fn render3d_extract_point_light(
+  world : @ecs.World,
+  entity : @core.Entity,
+  light : @light.PointLight,
+  volumetric : Bool,
+) -> ExtractedPointLight3d {
+  let transform = render3d_extract_light_transform(world, entity)
+  ExtractedPointLight3d::{
+    entity,
+    color: light.color,
+    intensity: light.intensity,
+    range: if light.range > 0.0F { light.range } else { 1.0F },
+    radius: if light.radius > 0.0F { light.radius } else { 0.0F },
+    transform,
+    shadow_maps_enabled: light.shadow_maps_enabled,
+    contact_shadows_enabled: light.contact_shadows_enabled,
+    shadow_depth_bias: light.shadow_depth_bias,
+    shadow_normal_bias: light.shadow_normal_bias,
+    shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
+      light.shadow_map_near_z
+    } else {
+      0.0001F
+    },
+    spot_light_angles: None,
+    volumetric,
+    soft_shadows_enabled: light.soft_shadows_enabled,
+    affects_lightmapped_mesh_diffuse: light.affects_lightmapped_mesh_diffuse,
+  }
+}
+
+///|
+fn render3d_extract_spot_light(
+  world : @ecs.World,
+  entity : @core.Entity,
+  light : @light.SpotLight,
+  volumetric : Bool,
+) -> ExtractedPointLight3d {
+  let transform = render3d_extract_light_transform(world, entity)
+  let inner = light.inner_angle
+  let outer = if light.outer_angle < inner {
+    inner
+  } else {
+    light.outer_angle
+  }
+  ExtractedPointLight3d::{
+    entity,
+    color: light.color,
+    intensity: light.intensity,
+    range: if light.range > 0.0F { light.range } else { 1.0F },
+    radius: if light.radius > 0.0F { light.radius } else { 0.0F },
+    transform,
+    shadow_maps_enabled: light.shadow_maps_enabled,
+    contact_shadows_enabled: light.contact_shadows_enabled,
+    shadow_depth_bias: light.shadow_depth_bias,
+    shadow_normal_bias: light.shadow_normal_bias,
+    shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
+      light.shadow_map_near_z
+    } else {
+      0.0001F
+    },
+    spot_light_angles: Some((inner, outer)),
+    volumetric,
+    soft_shadows_enabled: light.soft_shadows_enabled,
+    affects_lightmapped_mesh_diffuse: false,
+  }
+}
+
+///|
+fn render3d_extract_directional_light(
+  world : @ecs.World,
+  entity : @core.Entity,
+  light : @light.DirectionalLight,
+  volumetric : Bool,
+) -> ExtractedDirectionalLight3d {
+  let transform = render3d_extract_light_transform(world, entity)
+  let cascade_count = match light.cascade_shadow_config {
+    Some(config) => config.bounds.length()
+    None => 0
+  }
+  ExtractedDirectionalLight3d::{
+    entity,
+    color: light.color,
+    illuminance: light.illuminance,
+    transform,
+    shadow_maps_enabled: light.shadow_maps_enabled,
+    contact_shadows_enabled: light.contact_shadows_enabled,
+    shadow_depth_bias: light.shadow_depth_bias,
+    shadow_normal_bias: light.shadow_normal_bias,
+    volumetric,
+    affects_lightmapped_mesh_diffuse: true,
+    soft_shadow_size: light.soft_shadow_size,
+    cascade_count: if cascade_count > MAX_CASCADES_PER_LIGHT {
+      MAX_CASCADES_PER_LIGHT
+    } else if cascade_count < 0 {
+      0
+    } else {
+      cascade_count
+    },
+  }
+}
+
+///|
+pub fn render3d_collect_extracted_point_lights(
+  world : @ecs.World,
+) -> Array[ExtractedPointLight3d] {
+  let extracted : Array[ExtractedPointLight3d] = []
+  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
+    let volumetric = (try!
+      world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      is Some(_)
+    extracted.push(render3d_extract_point_light(world, entity, light, volumetric))
+  })
+  extracted
+}
+
+///|
+pub fn render3d_collect_extracted_spot_lights(
+  world : @ecs.World,
+) -> Array[ExtractedPointLight3d] {
+  let extracted : Array[ExtractedPointLight3d] = []
+  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
+    let volumetric = (try!
+      world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      is Some(_)
+    extracted.push(render3d_extract_spot_light(world, entity, light, volumetric))
+  })
+  extracted
+}
+
+///|
+pub fn render3d_collect_extracted_directional_lights(
+  world : @ecs.World,
+) -> Array[ExtractedDirectionalLight3d] {
+  let extracted : Array[ExtractedDirectionalLight3d] = []
+  world.for_each_component(@light.ecs_key_directional_light, fn(entity, light) {
+    let volumetric = (try!
+      world.get_by_key(entity, @light.ecs_key_volumetric_light))
+      is Some(_)
+    extracted.push(
+      render3d_extract_directional_light(world, entity, light, volumetric),
+    )
+  })
+  extracted
+}
+
+///|
+fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
+  GpuDirectionalCascade3d::{
+    far_bound: 0.0F,
+    texel_size: 1.0F,
+    clip_from_world: ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+    ),
+  }
+}
+
+///|
+pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
+  let directional = render3d_collect_extracted_directional_lights(world)
+  let ambient = if (try! world.get_resource(@light.ecs_key_global_ambient_light))
+    is Some(v) {
+    v
+  } else {
+    @light.GlobalAmbientLight::default()
+  }
+  let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
+  let max_count = if directional.length() < MAX_DIRECTIONAL_LIGHTS {
+    directional.length()
+  } else {
+    MAX_DIRECTIONAL_LIGHTS
+  }
+  for i in 0..<max_count {
+    let item = directional[i]
+    let cascades : Array[GpuDirectionalCascade3d] = []
+    let cascade_count = if item.cascade_count <= 0 {
+      1
+    } else {
+      item.cascade_count
+    }
+    for _ in 0..<cascade_count {
+      cascades.push(render3d_gpu_directional_cascade_default())
+    }
+    gpu_directional_lights.push(GpuDirectionalLight3d::{
+      cascades,
+      color: item.color,
+      dir_to_light: render3d_transform_forward(item.transform),
+      flags: render3d_directional_light_flags(item),
+      soft_shadow_size: item.soft_shadow_size.unwrap_or(0.0F),
+      shadow_depth_bias: item.shadow_depth_bias,
+      shadow_normal_bias: item.shadow_normal_bias,
+      num_cascades: cascades.length(),
+      cascades_overlap_proportion: 0.2F,
+    })
+  }
+  GpuLights3d::{
+    directional_lights: gpu_directional_lights,
+    ambient_color: ambient.color,
+    ambient_brightness: ambient.brightness,
+    n_directional_lights: gpu_directional_lights.length(),
+  }
+}
+
+///|
 pub fn render3d_default_lighting_state() -> Render3dLightingState {
   Render3dLightingState::{
     ambient_color: @sprite.Color::white(),
@@ -74,94 +428,75 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       ambient_brightness: ambient.brightness,
     }
   }
-  let mut directional_found = false
-  world.for_each_component(@light.ecs_key_directional_light, fn(entity, light) {
-    if directional_found {
-      return
-    }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    directional_found = true
+  let directional_lights = render3d_collect_extracted_directional_lights(world)
+  if directional_lights.length() > 0 {
+    let directional = directional_lights[0]
     lighting = Render3dLightingState::{
       ..lighting,
-      directional_dir: render3d_transform_forward(transform),
-      directional_color: light.color,
-      directional_illuminance: light.illuminance,
+      directional_dir: render3d_transform_forward(directional.transform),
+      directional_color: directional.color,
+      directional_illuminance: directional.illuminance,
     }
-  })
-  let mut point_found = false
-  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
-    if point_found {
-      return
-    }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    point_found = true
+  }
+  let point_lights = render3d_collect_extracted_point_lights(world)
+  if point_lights.length() > 0 {
+    let point = point_lights[0]
     lighting = Render3dLightingState::{
       ..lighting,
-      point_entity: Some(entity),
-      point_pos: transform.translation,
-      point_color: light.color,
+      point_entity: Some(point.entity),
+      point_pos: point.transform.translation,
+      point_color: point.color,
       point_intensity: if point_luminous_power_to_intensity <= 0.0F {
-        light.intensity
+        point.intensity
       } else {
-        light.intensity / point_luminous_power_to_intensity
+        point.intensity / point_luminous_power_to_intensity
       },
-      point_range: if light.range > 0.0F {
-        light.range
-      } else {
-        1.0F
-      },
-      point_shadow_maps_enabled: light.shadow_maps_enabled,
-      point_shadow_depth_bias: light.shadow_depth_bias,
-      point_shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
-        light.shadow_map_near_z
-      } else {
-        0.0001F
-      },
+      point_range: point.range,
+      point_shadow_maps_enabled: point.shadow_maps_enabled,
+      point_shadow_depth_bias: point.shadow_depth_bias,
+      point_shadow_map_near_z: point.shadow_map_near_z,
     }
-  })
-  let mut spot_found = false
-  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
-    if spot_found {
-      return
+    let point_flags = render3d_point_light_flags(point)
+    point_flags |> ignore
+  }
+  let spot_lights = render3d_collect_extracted_spot_lights(world)
+  if spot_lights.length() > 0 {
+    let spot = spot_lights[0]
+    let spot_flags = render3d_point_light_flags(spot)
+    spot_flags |> ignore
+    match spot.spot_light_angles {
+      Some((inner, outer)) =>
+        lighting = Render3dLightingState::{
+          ..lighting,
+          spot_pos: spot.transform.translation,
+          spot_dir: render3d_transform_forward(spot.transform),
+          spot_color: spot.color,
+          spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
+            spot.intensity
+          } else {
+            spot.intensity / point_luminous_power_to_intensity
+          },
+          spot_range: spot.range,
+          spot_inner_angle: inner,
+          spot_outer_angle: outer,
+        }
+      None =>
+        lighting = Render3dLightingState::{
+          ..lighting,
+          spot_pos: spot.transform.translation,
+          spot_dir: render3d_transform_forward(spot.transform),
+          spot_color: spot.color,
+          spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
+            spot.intensity
+          } else {
+            spot.intensity / point_luminous_power_to_intensity
+          },
+          spot_range: spot.range,
+        }
     }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
-    let inner = light.inner_angle
-    let mut outer = light.outer_angle
-    if outer < inner {
-      outer = inner
-    }
-    spot_found = true
-    lighting = Render3dLightingState::{
-      ..lighting,
-      spot_pos: transform.translation,
-      spot_dir: render3d_transform_forward(transform),
-      spot_color: light.color,
-      spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
-        light.intensity
-      } else {
-        light.intensity / point_luminous_power_to_intensity
-      },
-      spot_range: if light.range > 0.0F {
-        light.range
-      } else {
-        1.0F
-      },
-      spot_inner_angle: inner,
-      spot_outer_angle: outer,
-    }
-  })
+  }
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  gpu_lights.n_directional_lights |> ignore
   lighting
 }
 
