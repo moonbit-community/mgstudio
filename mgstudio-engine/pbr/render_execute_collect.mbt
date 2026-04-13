@@ -24,6 +24,16 @@ fn render3d_execute_collect_cameras(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_cameras",
   )
+  fn entity_key(entity : @core.Entity) -> UInt64 {
+    let hi = entity.id.reinterpret_as_uint().to_uint64()
+    let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+    (hi << 32) | lo
+  }
+  let projection_changed_entities : Map[UInt64, Bool] = {}
+  let sequence = source_world.get_sequence_context().sequence()
+  for entity in source_world.changed_components(ecs_key_projection, sequence).read() {
+    projection_changed_entities.set(entity_key(entity), true)
+  }
   let cameras : Array[ExtractedCamera3d] = []
   let projection_updates : Array[
     (@core.Entity, Projection, ProjectionRuntime3d),
@@ -45,7 +55,9 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => Projection::default()
     }
-    let projection_changed = true
+    let projection_changed = projection_changed_entities.contains(
+      entity_key(entity),
+    )
     let sub_camera_view = try! source_world.get_by_key(
       entity, ecs_key_sub_camera_view3d,
     )

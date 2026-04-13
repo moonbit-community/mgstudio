@@ -15,7 +15,7 @@ This file must not exceed 200 lines.
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 94% | 89% | 89% | 🟡 In Progress | Remaining pass ordering/bind-group lifecycle needs Bevy-level matching. |
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 92% | 64% | 64% | 🟡 In Progress | Meshlet runtime is still partial and must follow Bevy ownership boundaries. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
-| `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 76% | 76% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
+| `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 77% | 77% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 79% | 79% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 82% | 82% | 🟡 In Progress | Core package tests are green; remaining work is screenshot-level parity for complex UI/pointer edge cases. |
 | `bevy_text` | `mgstudio-engine/text` | 90% | 80% | 80% | 🟡 In Progress | Core package tests are green; remaining work is full visual/line-break parity across script families. |
@@ -71,7 +71,7 @@ This file must not exceed 200 lines.
 - [x] `render/pbr` + `diagnostic/timeline_trace`: move render3d diagnostics state to world-owned resource and move timeline pending-span buffer ownership from diagnostic global `Ref` to app timeline owner queue.
 - [x] `pbr/free_camera`: move controller system-state from global `Ref` to world-owned resource.
 - [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`), remove direct state mutation from `window_surface`, and merge pass-timing + draw/drop/debug/frame/snapshot refs into one owner runtime state.
-- [x] `pbr/prepass`: replace queue-state camera/mesh motion-blur history caches with ECS-owned previous-frame components (`PreviousViewData`, `PreviousGlobalTransform`), centralize write-back at execute tail, sync previous mesh transform for all Mesh3d entities, and align camera collection/order to `camera.is_active`.
+- [x] `pbr/prepass`: replace queue-state camera/mesh motion-blur history caches with ECS-owned previous-frame components (`PreviousViewData`, `PreviousGlobalTransform`), centralize write-back at execute tail, sync previous mesh transform for all Mesh3d entities, align camera collection/order to `camera.is_active`, and use projection `Changed` signals instead of force-updating runtime projection every frame.
 - [x] `render/renderer`: collapse `window_surface` scattered binding globals (`surfaces/frames/id seeds`) into a single owner runtime state (`WindowSurfaceRuntimeState`), keeping behavior-local ownership.
 - [x] `render/renderer`: move `mesh2d` gizmo-line mesh-id cache from global `Ref` to `GpuBackend` owner field (`mesh2d_gizmo_line_mesh_id`).
 - [x] `render/renderer`: collapse screenshot capture/parity globals into one owner runtime state (`ScreenshotRuntimeState`) and remove multi-Ref scattered mutation.
