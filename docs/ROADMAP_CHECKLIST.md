@@ -33,7 +33,7 @@ This file must not exceed 200 lines.
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
-| `bevy_image` | `mgstudio-engine/image` | 88% | 62% | 62% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
+| `bevy_image` | `mgstudio-engine/image` | 88% | 66% | 66% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -194,7 +194,7 @@ This file must not exceed 200 lines.
 - [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event runtime resourceized + gltf extension runtime state resourceized + gltf loader runtime config/vertex-attribute state resourceized + scene gltf pending queues resourceized + gltf loader registration/registered state resourceized with bootstrap fallback), then close remaining runtime differences.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix remaining camera/pointer drift (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests added).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
-- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback to `mgstudio-engine/...` + native `moon test asset` pass on current toolchain, with remaining linker-warning cleanup pending).
+- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback to `mgstudio-engine/...` + native `moon test asset` pass + extended image loader/compressed-format wb coverage; remaining linker-warning cleanup pending).
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.
