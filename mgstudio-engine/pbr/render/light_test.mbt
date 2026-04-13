@@ -343,6 +343,86 @@ test "pbr render light: directional depth texture base index accumulates cascade
 }
 
 ///|
+test "pbr render light: point extraction order keeps shadow and volumetric first" {
+  let world = @ecs.World::new()
+  let no_shadow = world.spawn()
+  try! world.set_by_key(
+    no_shadow,
+    @light.ecs_key_point_light,
+    @light.PointLight::default(),
+  )
+  |> ignore
+
+  let shadow_only = world.spawn()
+  try! world.set_by_key(
+    shadow_only,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  let shadow_and_vol = world.spawn()
+  try! world.set_by_key(
+    shadow_and_vol,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+  try! world.set_by_key(
+    shadow_and_vol,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::default(),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_point_lights(world)
+  inspect(extracted.length(), content="3")
+  inspect(extracted[0].entity.id, content="2")
+  inspect(extracted[1].entity.id, content="1")
+  inspect(extracted[2].entity.id, content="0")
+}
+
+///|
+test "pbr render light: spot extraction order keeps shadow and volumetric first" {
+  let world = @ecs.World::new()
+  let no_shadow = world.spawn()
+  try! world.set_by_key(
+    no_shadow,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default(),
+  )
+  |> ignore
+
+  let shadow_only = world.spawn()
+  try! world.set_by_key(
+    shadow_only,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+
+  let shadow_and_vol = world.spawn()
+  try! world.set_by_key(
+    shadow_and_vol,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore
+  try! world.set_by_key(
+    shadow_and_vol,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::default(),
+  )
+  |> ignore
+
+  let extracted = render3d_collect_extracted_spot_lights(world)
+  inspect(extracted.length(), content="3")
+  inspect(extracted[0].entity.id, content="2")
+  inspect(extracted[1].entity.id, content="1")
+  inspect(extracted[2].entity.id, content="0")
+}
+
+///|
 test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   let world = @ecs.World::new()
   world.insert_resource(
