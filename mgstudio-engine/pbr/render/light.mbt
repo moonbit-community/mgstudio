@@ -705,6 +705,12 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let cluster_dimensions_y = 9
   let cluster_dimensions_z = 24
   let n_clusters = cluster_dimensions_x * cluster_dimensions_y * cluster_dimensions_z
+  let cluster_factors_zw = @light_cluster.calculate_cluster_factors(
+    0.1F,
+    1000.0F,
+    Float::from_double(cluster_dimensions_z.to_double()),
+    false,
+  )
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
   let mut directional_shadow_texture_base_index = 0
   let max_count = if directional.length() < MAX_DIRECTIONAL_LIGHTS {
@@ -760,7 +766,12 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       cluster_dimensions_z,
       n_clusters,
     ),
-    cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    cluster_factors: @math.Vec4::new(
+      0.0F,
+      0.0F,
+      cluster_factors_zw.x,
+      cluster_factors_zw.y,
+    ),
     n_directional_lights: max_count,
     spot_light_shadowmap_offset: directional_shadow_texture_base_index -
       point_light_count,

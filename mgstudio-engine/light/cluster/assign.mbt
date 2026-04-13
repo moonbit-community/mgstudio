@@ -40,6 +40,42 @@ pub fn ClusterableObjectType::ordering(
 }
 
 ///|
+pub fn calculate_cluster_factors(
+  near : Float,
+  far : Float,
+  z_slices : Float,
+  is_orthographic : Bool,
+) -> @math.Vec2 {
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  let safe_far = if far <= safe_near { safe_near + 0.0001F } else { far }
+  let safe_slices = if z_slices <= 1.0F { 1.0F } else { z_slices }
+  if is_orthographic {
+    let denominator = -safe_far - -safe_near
+    let slope = if denominator.abs() <= 1.0e-6F {
+      0.0F
+    } else {
+      safe_slices / denominator
+    }
+    @math.Vec2::new(-safe_near, slope)
+  } else {
+    let ln_far_over_near = Float::from_double(
+      @math_core.ln((safe_far / safe_near).to_double()),
+    )
+    if ln_far_over_near.abs() <= 1.0e-6F {
+      @math.Vec2::new(0.0F, 0.0F)
+    } else {
+      let z_slices_of_ln_zfar_over_znear = (safe_slices - 1.0F) /
+        ln_far_over_near
+      @math.Vec2::new(
+        z_slices_of_ln_zfar_over_znear,
+        Float::from_double(@math_core.ln(safe_near.to_double())) *
+        z_slices_of_ln_zfar_over_znear,
+      )
+    }
+  }
+}
+
+///|
 pub fn cluster_assign_lights(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

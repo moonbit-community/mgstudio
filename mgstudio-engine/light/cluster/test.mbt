@@ -13,9 +13,23 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_light/src/cluster/test.rs`.
+// Bevy source: `bevy/crates/bevy_light/src/cluster/assign.rs`.
 
 ///|
-pub fn cluster_test_enabled() -> Bool {
-  true
+fn cluster_approx_eq(a : Float, b : Float, eps : Float) -> Bool {
+  (a - b).abs() <= eps
+}
+
+///|
+test "light cluster: calculate_cluster_factors matches bevy perspective formula shape" {
+  let factors = calculate_cluster_factors(0.1F, 1000.0F, 24.0F, false)
+  inspect(cluster_approx_eq(factors.x, 2.4971933F, 1.0e-5F), content="true")
+  inspect(cluster_approx_eq(factors.y, -5.75F, 1.0e-5F), content="true")
+}
+
+///|
+test "light cluster: calculate_cluster_factors matches bevy orthographic formula shape" {
+  let factors = calculate_cluster_factors(0.1F, 1000.0F, 24.0F, true)
+  inspect(cluster_approx_eq(factors.x, -0.1F, 1.0e-6F), content="true")
+  inspect(cluster_approx_eq(factors.y, -0.0240024F, 1.0e-6F), content="true")
 }

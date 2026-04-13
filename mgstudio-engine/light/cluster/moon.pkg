@@ -1,7 +1,9 @@
 import {
+  "moonbitlang/core/math" @math_core,
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/math",
 }
 
 supported_targets = "native"
