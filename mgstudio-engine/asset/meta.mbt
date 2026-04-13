@@ -152,6 +152,58 @@ fn meta_image_address_mode(
 }
 
 ///|
+fn meta_image_compare_function(
+  content : String,
+  field_name : String,
+) -> ImageCompareFunction? {
+  if string_contains(content, "\{field_name}: Some(Never)") {
+    return Some(ImageCompareFunction::Never)
+  }
+  if string_contains(content, "\{field_name}: Some(Less)") {
+    return Some(ImageCompareFunction::Less)
+  }
+  if string_contains(content, "\{field_name}: Some(Equal)") {
+    return Some(ImageCompareFunction::Equal)
+  }
+  if string_contains(content, "\{field_name}: Some(LessEqual)") {
+    return Some(ImageCompareFunction::LessEqual)
+  }
+  if string_contains(content, "\{field_name}: Some(Greater)") {
+    return Some(ImageCompareFunction::Greater)
+  }
+  if string_contains(content, "\{field_name}: Some(NotEqual)") {
+    return Some(ImageCompareFunction::NotEqual)
+  }
+  if string_contains(content, "\{field_name}: Some(GreaterEqual)") {
+    return Some(ImageCompareFunction::GreaterEqual)
+  }
+  if string_contains(content, "\{field_name}: Some(Always)") {
+    return Some(ImageCompareFunction::Always)
+  }
+  None
+}
+
+///|
+fn meta_image_border_color(
+  content : String,
+  field_name : String,
+) -> ImageSamplerBorderColor? {
+  if string_contains(content, "\{field_name}: Some(TransparentBlack)") {
+    return Some(ImageSamplerBorderColor::TransparentBlack)
+  }
+  if string_contains(content, "\{field_name}: Some(OpaqueBlack)") {
+    return Some(ImageSamplerBorderColor::OpaqueBlack)
+  }
+  if string_contains(content, "\{field_name}: Some(OpaqueWhite)") {
+    return Some(ImageSamplerBorderColor::OpaqueWhite)
+  }
+  if string_contains(content, "\{field_name}: Some(Zero)") {
+    return Some(ImageSamplerBorderColor::Zero)
+  }
+  None
+}
+
+///|
 fn meta_find_substring(content : String, pattern : String, start : Int) -> Int {
   let content_len = content.length()
   let pattern_len = pattern.length()
@@ -306,12 +358,21 @@ fn apply_image_meta_settings(
   let mag_filter = meta_image_filter_mode(content, "mag_filter")
   let min_filter = meta_image_filter_mode(content, "min_filter")
   let mipmap_filter = meta_image_filter_mode(content, "mipmap_filter")
+  let compare = meta_image_compare_function(content, "compare")
+  let border_color = meta_image_border_color(content, "border_color")
+  let anisotropy_clamp = meta_parse_positive_int_after(
+    content,
+    "anisotropy_clamp: ",
+  )
   let has_descriptor = address_mode_u is Some(_) ||
     address_mode_v is Some(_) ||
     address_mode_w is Some(_) ||
     mag_filter is Some(_) ||
     min_filter is Some(_) ||
-    mipmap_filter is Some(_)
+    mipmap_filter is Some(_) ||
+    compare is Some(_) ||
+    border_color is Some(_) ||
+    anisotropy_clamp is Some(_)
   if !has_descriptor {
     return
   }
@@ -334,6 +395,15 @@ fn apply_image_meta_settings(
   }
   if mipmap_filter is Some(value) {
     descriptor.mipmap_filter = value
+  }
+  if compare is Some(value) {
+    descriptor.compare = Some(value)
+  }
+  if border_color is Some(value) {
+    descriptor.border_color = Some(value)
+  }
+  if anisotropy_clamp is Some(value) {
+    descriptor.anisotropy_clamp = value
   }
   settings.sampler = ImageSampler::Descriptor(descriptor)
 }

@@ -60,3 +60,24 @@ test "asset wb: image meta accepts row-count and explicit format variant" {
   debug_inspect(settings.asset_usage == RenderAssetUsages::all(), content="true")
   debug_inspect(settings.load_meshes == RenderAssetUsages::all(), content="true")
 }
+
+///|
+test "asset wb: image meta parses sampler compare/border/anisotropy fields" {
+  let settings = ImageLoaderSettings::default()
+  let content = "(asset: Load(settings: (sampler: Descriptor (ImageSamplerDescriptor(compare: Some(LessEqual), border_color: Some(OpaqueWhite), anisotropy_clamp: 8,)),),),)"
+  apply_image_meta_settings(settings, content)
+  match settings.sampler {
+    ImageSampler::Descriptor(descriptor) => {
+      debug_inspect(
+        descriptor.compare == Some(ImageCompareFunction::LessEqual),
+        content="true",
+      )
+      debug_inspect(
+        descriptor.border_color == Some(ImageSamplerBorderColor::OpaqueWhite),
+        content="true",
+      )
+      debug_inspect(descriptor.anisotropy_clamp == 8, content="true")
+    }
+    _ => abort("expected descriptor sampler")
+  }
+}
