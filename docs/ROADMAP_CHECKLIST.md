@@ -33,7 +33,7 @@ This file must not exceed 200 lines.
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 74% | 74% | 🟡 In Progress | Camera-only runtime semantics and node gating are aligned for FXAA/SMAA/TAA/CAS/DLSS; render-stage depth still pending. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
-| `bevy_image` | `mgstudio-engine/image` | 88% | 66% | 66% | 🟡 In Progress | Codec/runtime behavior parity remains incomplete in constrained environments. |
+| `bevy_image` | `mgstudio-engine/image` | 89% | 69% | 69% | 🟡 In Progress | Loader settings/extension/array-layout behavior moved closer; codec/runtime parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
@@ -47,7 +47,7 @@ This file must not exceed 200 lines.
 | Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
 | Current weighted migration completion (included scope) | 93% |
-| Last updated | 2026-04-13 |
+| Last updated | 2026-04-14 |
 
 - [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
 - [x] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove and cache cleanup flow aligned to stage boundaries.
@@ -194,7 +194,7 @@ This file must not exceed 200 lines.
 - [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event runtime resourceized + gltf extension runtime state resourceized + gltf loader runtime config/vertex-attribute state resourceized + scene gltf pending queues resourceized + gltf loader registration/registered state resourceized with bootstrap fallback), then close remaining runtime differences.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix remaining camera/pointer drift (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests added).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
-- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback + capability-gated web asset fetch (`web_asset_http_runtime_supported`) + native `moon test asset` pass + extended image loader/compressed-format wb coverage; remaining parity-tail work is decode/path behavior depth).
+- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback + capability-gated web asset fetch (`web_asset_http_runtime_supported`) + native `moon test asset` pass + extended image loader settings/format-selection/array-layout wb coverage; remaining parity-tail work is decode/path behavior depth).
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.

@@ -134,3 +134,93 @@ test "image wb: compressed saver quality clamp and format eligibility" {
     content="true",
   )
 }
+
+///|
+test "image wb: image loader settings defaults" {
+  let settings = ImageLoaderSettings::default()
+  debug_inspect(
+    settings.format == ImageFormatSetting::FromExtension,
+    content="true",
+  )
+  debug_inspect(settings.texture_format == None, content="true")
+  debug_inspect(settings.is_srgb, content="true")
+  debug_inspect(
+    match settings.sampler {
+      ImageSampler::Default => true
+      _ => false
+    },
+    content="true",
+  )
+  debug_inspect(
+    match settings.array_layout {
+      None => true
+      _ => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "image wb: extension extraction and lookup from path" {
+  debug_inspect(
+    image_extension_from_path("textures/FOX.KTX2") == Some("ktx2"),
+    content="true",
+  )
+  debug_inspect(
+    image_extension_from_path("textures/no_ext") == None,
+    content="true",
+  )
+  debug_inspect(
+    image_loader_container_from_path(
+      "textures/fox.png",
+      ImageFormatSetting::FromExtension,
+    ) == Some(ImageContainerFormat::Png),
+    content="true",
+  )
+  debug_inspect(
+    image_loader_container_from_path(
+      "textures/fox.unknown",
+      ImageFormatSetting::FromExtension,
+    ) == None,
+    content="true",
+  )
+  debug_inspect(
+    image_loader_container_from_path(
+      "textures/fox.any",
+      ImageFormatSetting::Format(ImageContainerFormat::Dds),
+    ) == Some(ImageContainerFormat::Dds),
+    content="true",
+  )
+  debug_inspect(
+    image_loader_container_from_path(
+      "textures/fox.png",
+      ImageFormatSetting::Guess,
+    ) == None,
+    content="true",
+  )
+}
+
+///|
+test "image wb: array layout layer counting" {
+  debug_inspect(
+    image_array_layout_layers(1024, ImageArrayLayout::RowCount(4)) == Some(4),
+    content="true",
+  )
+  debug_inspect(
+    image_array_layout_layers(1024, ImageArrayLayout::RowHeight(256)) ==
+    Some(4),
+    content="true",
+  )
+  debug_inspect(
+    image_array_layout_layers(1024, ImageArrayLayout::RowHeight(300)) == None,
+    content="true",
+  )
+  debug_inspect(
+    image_array_layout_layers(0, ImageArrayLayout::RowCount(1)) == None,
+    content="true",
+  )
+  debug_inspect(
+    image_array_layout_layers(100, ImageArrayLayout::RowCount(0)) == None,
+    content="true",
+  )
+}
