@@ -18,16 +18,16 @@ This file must not exceed 200 lines.
 | `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 76% | 76% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 79% | 79% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
-| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 75% | 75% | 🟡 In Progress | Pointer-hit and layout/render consistency still require continuous parity checks. |
-| `bevy_text` | `mgstudio-engine/text` | 90% | 72% | 72% | 🟡 In Progress | Core shaping path is stable, but full visual/line-break parity across all scripts still needs evidence. |
+| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 82% | 82% | 🟡 In Progress | Core package tests are green; remaining work is screenshot-level parity for complex UI/pointer edge cases. |
+| `bevy_text` | `mgstudio-engine/text` | 90% | 80% | 80% | 🟡 In Progress | Core package tests are green; remaining work is full visual/line-break parity across script families. |
 | `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 93% | 80% | 80% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
 | `bevy_animation` | `mgstudio-engine/animation` | 93% | 72% | 72% | 🟡 In Progress | Typed event and runtime coupling still need deeper source-level alignment. |
 | `bevy_scene` (static scene path) | `mgstudio-engine/scene` | 92% | 77% | 77% | 🟡 In Progress | Spawn/runtime integration has remaining parity-tail differences. |
 | `bevy_scene` (`dynamic_scene*`) | N/A (explicit non-goal: dynamic) | 0% | 0% | 0% | ⏸ Excluded | Dynamic-scene path remains explicitly out of scope. |
 | `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | 90% | 74% | 74% | 🟡 In Progress | Gizmo rendering/runtime polish and behavior tails are still pending. |
-| `bevy_picking` | `mgstudio-engine/picking` | 90% | 75% | 75% | 🟡 In Progress | Camera-space and UI interaction edge cases still need strict parity validation. |
-| `bevy_input` | `mgstudio-engine/input` | 94% | 82% | 82% | 🟡 In Progress | Remaining platform/event-order corner cases still need alignment checks. |
-| `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 80% | 80% | 🟡 In Progress | Monitor-aware sizing and platform-semantics tails are still open. |
+| `bevy_picking` | `mgstudio-engine/picking` | 90% | 80% | 80% | 🟡 In Progress | Package tests are green; remaining work is broader screenshot/regression parity across mixed camera/UI scenes. |
+| `bevy_input` | `mgstudio-engine/input` | 94% | 88% | 88% | 🟡 In Progress | Package tests are green; remaining platform/event-order corner cases still need alignment checks. |
+| `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 86% | 86% | 🟡 In Progress | Package tests are green; monitor-aware sizing and platform-semantics tails are still open. |
 | `bevy_asset` | `mgstudio-engine/asset` | 95% | 95% | 95% | 🟡 In Progress | Native asset runtime is stable with capability-gated HTTP fetch; image extension routing now derives from `bevy_image`-shaped loader tables and image meta settings (including sampler compare/border/anisotropy) are wired; remaining gaps focus on broader codec parity depth. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 91% | 74% | 74% | 🟡 In Progress | Camera-only runtime semantics and node gating are aligned for FXAA/SMAA/TAA/CAS/DLSS; `FxaaSensitivity::get_str` API shape is aligned; render-stage depth still pending. |
@@ -37,7 +37,7 @@ This file must not exceed 200 lines.
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
-| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 67% | 67% | 🟡 In Progress | Full bevy_rapier example behavior parity is still not closed. |
+| `bevy_rapier` integration | `mgstudio-engine/physics2d` + `physics3d` | 92% | 74% | 74% | 🟡 In Progress | Package tests are green and 2D visual captures pass; remaining work is 3D visual-capture parity and full bevy_rapier behavior closure. |
 | Stress test parity | `examples/stress_tests/*` + scripts | 95% | 62% | 62% | 🟡 In Progress | Many heavy cases still require source-first render/runtime convergence. |
 | Visual screenshot parity | `/tmp` captures + parity gates | 96% | 70% | 70% | 🟡 In Progress | Representative coverage exists, but full-suite visual equivalence is incomplete. |
 | Workspace-wide native validation | `moon check/test` integration | 90% | 64% | 64% | 🟡 In Progress | Package-level native reliability improved (`asset/ui/anti_alias*` green), but full-suite runtime parity is still open. |
@@ -46,7 +46,7 @@ This file must not exceed 200 lines.
 |---|---:|
 | Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
-| Current weighted migration completion (included scope) | 94% |
+| Current weighted migration completion (included scope) | 95% |
 | Last updated | 2026-04-14 |
 
 - [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
@@ -80,7 +80,7 @@ This file must not exceed 200 lines.
 - [x] `render/render_phase`: collapse render-pass trace active-span global into owner runtime state (`RenderPassTraceRuntimeState`).
 - [x] `render/renderer`: wrap backend singleton in `RenderContextRuntimeState` and migrate renderer whitebox tests to explicit test-set/get hooks.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
-- [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
+- [x] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers (`scripts/check_bevy_rs_to_mbt_paths.sh` => `missing=0`, `scaffold_files=0`).
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.
 - [x] `camera`: switch camera mesh ray-cast API surface to `picking/mesh_picking/ray_cast` owner types/functions instead of `pbr` wrappers.
 - [x] `examples`: switch in-tree mesh ray-cast usage (`3d/mesh_ray_cast`, `ui/render_ui_to_texture`) from `@pbr` shim calls to `picking/mesh_picking/ray_cast` owner path.
@@ -197,4 +197,5 @@ This file must not exceed 200 lines.
 - [x] `asset/image`: close mainline runtime decode/dimension gaps (done: embedded source-path fallback + capability-gated web fetch + native `moon test asset` green + settings/format-selection/array-layout + extension routing from loader tables + BMP/TGA(RLE)/PNM(P1..P7, 8/16-bit)/farbfeld/QOI/ICO(PNG+DIB32) decode + GIF/WEBP/TIFF/JPEG/TGA/PNM dimensions with wb coverage); remaining codec long-tail is tracked under module-level parity depth.
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence (package tests currently green: `physics2d 17/17`, `physics3d 7/7`).
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
+- [x] `render/mesh2d-depth-pipeline-key`: fix render crash by adding `with_depth` to mesh2d pipeline key/cache and only enabling depth-stencil state when pass has depth (prevents depth/no-depth pass pipeline mismatch in physics2d examples).
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.

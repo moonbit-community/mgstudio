@@ -193,6 +193,7 @@ priv struct Mesh2dPipelineKey {
   color_format : @wgpu.TextureFormat
   primitive_topology : UInt
   blend_alpha : Bool
+  with_depth : Bool
   hdr : Bool
   tonemap_in_shader : Bool
   deband_dither : Bool
@@ -221,12 +222,13 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   let format_bits = key.color_format.raw.to_string()
   let topology_bits = key.primitive_topology.to_string()
   let blend_bits = if key.blend_alpha { "1" } else { "0" }
+  let depth_bits = if key.with_depth { "1" } else { "0" }
   let hdr_bits = if key.hdr { "1" } else { "0" }
   let tonemap_bits = if key.tonemap_in_shader { "1" } else { "0" }
   let deband_bits = if key.deband_dither { "1" } else { "0" }
   let discard_bits = if key.may_discard { "1" } else { "0" }
   let wireframe_bits = if key.wireframe { "1" } else { "0" }
-  "\{format_bits}_\{topology_bits}_\{blend_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}"
+  "\{format_bits}_\{topology_bits}_\{blend_bits}\{depth_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}"
 }
 
 ///|
@@ -849,11 +851,13 @@ fn create_mesh2d_pipeline(
     } else {
       builder.disable_blend()
     }
-    builder.set_depth_stencil(
-      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
-      depth_write_enabled=!key.blend_alpha,
-      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
-    )
+    if key.with_depth {
+      builder.set_depth_stencil(
+        tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+        depth_write_enabled=!key.blend_alpha,
+        depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      )
+    }
     builder.set_vertex_buffer_layout(
       MESH2D_VERTEX_STRIDE_BYTES,
       @wgpu.VERTEX_STEP_MODE_VERTEX,
@@ -1107,6 +1111,7 @@ fn mesh2d_pipeline_key_for_format(
   format : @wgpu.TextureFormat,
   primitive_topology : UInt,
   blend_alpha : Bool,
+  with_depth : Bool,
   tonemap_in_shader : Bool,
   deband_dither : Bool,
   may_discard : Bool,
@@ -1120,6 +1125,7 @@ fn mesh2d_pipeline_key_for_format(
     color_format: format,
     primitive_topology,
     blend_alpha,
+    with_depth,
     hdr,
     tonemap_in_shader,
     deband_dither,
@@ -1218,6 +1224,7 @@ fn mesh_pipeline_for_draw(
       format,
       mesh.primitive_topology,
       mesh2d_pipeline_blend_alpha(alpha_mode_kind),
+      backend.pass_has_depth,
       false,
       false,
       mesh2d_pipeline_may_discard(alpha_mode_kind),
