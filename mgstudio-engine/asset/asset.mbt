@@ -485,8 +485,12 @@ fn image_from_loaded_texture_bytes(
   format_setting : ImageFormatSetting,
   texture_format_override : TextureFormat?,
 ) -> Image? {
-  if @image.image_loader_container_from_input(path, Some(bytes), format_setting)
-    is Some(container) &&
+  let container = @image.image_loader_container_from_input(
+    path,
+    Some(bytes),
+    format_setting,
+  )
+  if container is Some(container) &&
     !image_container_supports_rgba_decode(container) {
     return None
   }
@@ -494,7 +498,10 @@ fn image_from_loaded_texture_bytes(
     ktx2_decode_2d_payload(bytes) is Some(_) {
     return None
   }
-  let (width, height, pixels) = if decode_texture_image(bytes) is Some(decoded) {
+  let (width, height, pixels) = if decode_texture_image_with_container(
+      bytes, container,
+    )
+    is Some(decoded) {
     (decoded.width, decoded.height, decoded.pixels)
   } else if texture_dimensions_from_bytes(bytes) is Some(dims) {
     (dims.0, dims.1, source_bytes_to_rgba8(bytes, dims.0, dims.1))

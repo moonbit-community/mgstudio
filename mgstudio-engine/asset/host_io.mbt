@@ -852,6 +852,11 @@ fn is_bmp_bytes(bytes : Bytes) -> Bool {
 }
 
 ///|
+fn blob_u16_at(bytes : Bytes, index : Int) -> Int {
+  blob_u8_at(bytes, index) | (blob_u8_at(bytes, index + 1) << 8)
+}
+
+///|
 priv struct BmpDecodeInfo {
   width : Int
   height : Int
@@ -1015,7 +1020,94 @@ fn decode_texture_image_from_gm_jpeg(bytes : Bytes) -> DecodedTextureImage? {
 }
 
 ///|
-fn decode_texture_image(bytes : Bytes) -> DecodedTextureImage? {
+fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
+  if bytes.length() < 18 {
+    return None
+  }
+  let id_length = blob_u8_at(bytes, 0)
+  let color_map_type = blob_u8_at(bytes, 1)
+  let image_type = blob_u8_at(bytes, 2)
+  if color_map_type != 0 {
+    return None
+  }
+  if image_type != 2 && image_type != 3 {
+    return None
+  }
+  let width_raw = blob_u16_at(bytes, 12)
+  let height_raw = blob_u16_at(bytes, 14)
+  if width_raw <= 0 || height_raw <= 0 {
+    return None
+  }
+  let width = clamp_dim(width_raw)
+  let height = clamp_dim(height_raw)
+  let pixel_depth = blob_u8_at(bytes, 16)
+  let descriptor = blob_u8_at(bytes, 17)
+  let top_origin = (descriptor & 0x20) != 0
+  let right_origin = (descriptor & 0x10) != 0
+  let data_start = 18 + id_length
+  if data_start < 18 || data_start > bytes.length() {
+    return None
+  }
+  let pixel_stride = if image_type == 2 {
+    if pixel_depth == 24 {
+      3
+    } else if pixel_depth == 32 {
+      4
+    } else {
+      return None
+    }
+  } else {
+    if pixel_depth != 8 {
+      return None
+    }
+    1
+  }
+  let data_len = width * height * pixel_stride
+  if data_start + data_len > bytes.length() {
+    return None
+  }
+  let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  let mut out_index = 0
+  for y in 0..<height {
+    let source_y = if top_origin { y } else { height - 1 - y }
+    for x in 0..<width {
+      let source_x = if right_origin { width - 1 - x } else { x }
+      let source_index = data_start +
+        (source_y * width + source_x) * pixel_stride
+      let (r, g, b, a) = if image_type == 2 {
+        let b = blob_u8_at(bytes, source_index)
+        let g = blob_u8_at(bytes, source_index + 1)
+        let r = blob_u8_at(bytes, source_index + 2)
+        let a = if pixel_stride == 4 {
+          blob_u8_at(bytes, source_index + 3)
+        } else {
+          255
+        }
+        (r, g, b, a)
+      } else {
+        let gray = blob_u8_at(bytes, source_index)
+        (gray, gray, gray, 255)
+      }
+      pixels[out_index] = r.to_byte()
+      pixels[out_index + 1] = g.to_byte()
+      pixels[out_index + 2] = b.to_byte()
+      pixels[out_index + 3] = a.to_byte()
+      out_index += 4
+    }
+  }
+  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+}
+
+///|
+fn decode_texture_image_with_container(
+  bytes : Bytes,
+  container : @image.ImageContainerFormat?,
+) -> DecodedTextureImage? {
+  if container is Some(@image.ImageContainerFormat::Tga) {
+    if decode_texture_image_from_tga(bytes) is Some(decoded) {
+      return Some(decoded)
+    }
+  }
   if is_png_bytes(bytes) {
     return decode_texture_image_from_gm_png(bytes)
   }
@@ -1843,11 +1935,28 @@ fn texture_cached_or_empty(
 ///|
 fn load_texture(path~ : String, nearest~ : Bool) -> Int {
   let bytes = load_asset_file_bytes(path)
-  load_texture_bytes(bytes~, nearest~)
+  let container = if @image.image_extension_from_path(path) is Some(extension) {
+    match @image.image_container_format_from_extension(extension) {
+      @image.ImageContainerFormat::Unknown(_) => None
+      known => Some(known)
+    }
+  } else {
+    None
+  }
+  load_texture_bytes_with_container(bytes~, nearest~, container)
 }
 
 ///|
 fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
+  load_texture_bytes_with_container(bytes~, nearest~, None)
+}
+
+///|
+fn load_texture_bytes_with_container(
+  bytes~ : Bytes,
+  nearest~ : Bool,
+  container : @image.ImageContainerFormat?,
+) -> Int {
   let loaded = bytes.length() > 0
   if ktx2_decode_uncompressed_3d_payload(bytes) is Some(payload) {
     let texture_id = @render.asset_create_texture_3d_with_format(
@@ -1879,7 +1988,9 @@ fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
       return texture_id
     }
   }
-  let (width, height, upload_pixels) = if decode_texture_image(bytes)
+  let (width, height, upload_pixels) = if decode_texture_image_with_container(
+      bytes, container,
+    )
     is Some(decoded) {
     (decoded.width, decoded.height, decoded.pixels)
   } else if texture_dimensions_from_bytes(bytes) is Some(dims) {

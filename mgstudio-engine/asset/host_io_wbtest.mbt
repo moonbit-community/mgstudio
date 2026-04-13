@@ -40,7 +40,7 @@ test "asset host io: save_rgba8_png writes a valid png file" {
 test "asset host io: palette png preserves transparent background" {
   let path = resolve_asset_path("textures/simplespace/ship_C.png")
   let bytes = @fs.read_file_to_bytes(path)
-  let decoded = decode_texture_image(bytes).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, None).unwrap()
   let center = (32 * decoded.width + 32) * 4
   debug_inspect((decoded.width, decoded.height), content="(64, 64)")
   debug_inspect(decoded.pixels[0].to_uint(), content="0")
@@ -103,7 +103,7 @@ fn test_bmp_24_2x2_bytes() -> Bytes {
 ///|
 test "asset host io: bmp decode supports 24-bit bottom-up bitmap" {
   let bytes = test_bmp_24_2x2_bytes()
-  let decoded = decode_texture_image(bytes).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, None).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(2, 2)")
   // Top-left pixel should be red after bottom-up conversion.
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
@@ -126,4 +126,56 @@ test "asset host io: bmp decode supports 24-bit bottom-up bitmap" {
 test "asset host io: texture dimensions read from bmp header" {
   let bytes = test_bmp_24_2x2_bytes()
   debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((2, 2))")
+}
+
+///|
+fn test_tga_24_2x1_bytes() -> Bytes {
+  let out : Array[Byte] = []
+  // Header
+  out.push((0).to_byte()) // id length
+  out.push((0).to_byte()) // color map type
+  out.push((2).to_byte()) // image type: uncompressed true-color
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte()) // x origin
+  out.push((0).to_byte())
+  out.push((0).to_byte()) // y origin
+  out.push((0).to_byte())
+  out.push((2).to_byte()) // width = 2
+  out.push((0).to_byte())
+  out.push((1).to_byte()) // height = 1
+  out.push((0).to_byte())
+  out.push((24).to_byte()) // pixel depth
+  out.push((0x20).to_byte()) // top-left origin
+  // Pixel data (BGR): red, green
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  out.push((255).to_byte())
+  out.push((0).to_byte())
+  Bytes::from_array(out)
+}
+
+///|
+test "asset host io: tga decode supports uncompressed true-color with container hint" {
+  let bytes = test_tga_24_2x1_bytes()
+  let decoded = decode_texture_image_with_container(
+    bytes,
+    Some(@image.ImageContainerFormat::Tga),
+  ).unwrap()
+  debug_inspect((decoded.width, decoded.height), content="(2, 1)")
+  // Left pixel red.
+  debug_inspect(decoded.pixels[0].to_uint(), content="255")
+  debug_inspect(decoded.pixels[1].to_uint(), content="0")
+  debug_inspect(decoded.pixels[2].to_uint(), content="0")
+  debug_inspect(decoded.pixels[3].to_uint(), content="255")
+  // Right pixel green.
+  debug_inspect(decoded.pixels[4].to_uint(), content="0")
+  debug_inspect(decoded.pixels[5].to_uint(), content="255")
+  debug_inspect(decoded.pixels[6].to_uint(), content="0")
+  debug_inspect(decoded.pixels[7].to_uint(), content="255")
 }
