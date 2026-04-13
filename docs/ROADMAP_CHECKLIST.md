@@ -65,6 +65,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/plugin`: remove global plugin runtime-config `Ref`; resolve runtime config from ECS resource/default per world.
 - [x] `render/pbr`: move render3d diagnostics state (runtime flag + queue/execute counters) from global `Ref` to world-owned resource.
 - [x] `pbr/free_camera`: move controller system-state from global `Ref` to world-owned resource.
+- [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`) and remove direct state mutation from `window_surface`.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.

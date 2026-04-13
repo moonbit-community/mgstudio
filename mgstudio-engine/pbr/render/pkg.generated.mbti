@@ -151,21 +151,13 @@ pub fn render3d_default_near_clip_plane(Float) -> @math.Vec4
 
 pub fn render3d_default_time_or_default(@ecs.World) -> @time.Time[Unit]
 
-pub fn render3d_diagnostic_execute_cpu_ms() -> Float
+pub fn render3d_diagnostic_execute_cpu_ms(@ecs.World) -> Float
 
-pub let render3d_diagnostic_execute_cpu_ms_ref : @ref.Ref[Float]
+pub fn render3d_diagnostic_prepared_camera_count(@ecs.World) -> Int
 
-pub fn render3d_diagnostic_prepared_camera_count() -> Int
+pub fn render3d_diagnostic_queue_cpu_ms(@ecs.World) -> Float
 
-pub let render3d_diagnostic_prepared_camera_count_ref : @ref.Ref[Int]
-
-pub fn render3d_diagnostic_queue_cpu_ms() -> Float
-
-pub let render3d_diagnostic_queue_cpu_ms_ref : @ref.Ref[Float]
-
-pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
-
-pub let render3d_diagnostic_queued_visible_mesh_count_ref : @ref.Ref[Int]
+pub fn render3d_diagnostic_queued_visible_mesh_count(@ecs.World) -> Int
 
 pub fn render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d) -> Unit
 
@@ -277,7 +269,7 @@ pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
 
 pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
 
-pub fn render3d_plugin_state_from_diagnostics() -> Render3dPluginState
+pub fn render3d_plugin_state_from_diagnostics(@ecs.World) -> Render3dPluginState
 
 pub fn render3d_point_light_shadow_map_size(@ecs.World) -> Int
 
@@ -289,7 +281,7 @@ pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseS
 
 pub let render3d_prepare_system_label : String
 
-pub fn render3d_prepared_camera_count() -> Int?
+pub fn render3d_prepared_camera_count(@ecs.World) -> Int?
 
 pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
 
@@ -305,15 +297,23 @@ pub fn render3d_quat_conjugate(@math.Quat) -> @math.Quat
 
 pub fn render3d_quat_inverse(@math.Quat) -> @math.Quat
 
-pub fn render3d_queue_diagnostics_snapshot() -> (Int, Int, Float, Float)
+pub fn render3d_queue_diagnostics_snapshot(@ecs.World) -> (Int, Int, Float, Float)
 
 pub let render3d_queue_system_label : String
 
-pub fn render3d_queued_visible_mesh_count() -> Int?
+pub fn render3d_queued_visible_mesh_count(@ecs.World) -> Int?
 
 pub fn render3d_rotate_by_quat(@math.Vec3, @math.Quat) -> @math.Vec3
 
-pub let render3d_runtime_initialized_ref : @ref.Ref[Bool]
+pub fn render3d_set_diagnostic_execute_cpu_ms(@ecs.World, Float) -> Unit
+
+pub fn render3d_set_diagnostic_prepared_camera_count(@ecs.World, Int) -> Unit
+
+pub fn render3d_set_diagnostic_queue_cpu_ms(@ecs.World, Float) -> Unit
+
+pub fn render3d_set_diagnostic_queued_visible_mesh_count(@ecs.World, Int) -> Unit
+
+pub fn render3d_set_runtime_initialized(@ecs.World, Bool) -> Unit
 
 pub fn render3d_signum(Float) -> Float
 
@@ -343,7 +343,7 @@ pub fn render3d_view_from_world_matrix(@transform.Transform) -> ProjectionMatrix
 
 pub fn render3d_world_transform_cache_begin_frame(@ref.Ref[Render3dWorldTransformCache]) -> Unit
 
-pub fn render3d_world_transform_cache_ref() -> @ref.Ref[Render3dWorldTransformCache]
+pub fn render3d_world_transform_cache_ref(@ecs.World) -> @ref.Ref[Render3dWorldTransformCache]
 
 // Errors
 
@@ -631,6 +631,14 @@ pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
 pub(all) struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
+}
+
+pub struct Render3dDiagnosticsState {
+  mut runtime_initialized : Bool
+  mut queued_visible_mesh_count : Int
+  mut prepared_camera_count : Int
+  mut queue_cpu_ms : Float
+  mut execute_cpu_ms : Float
 }
 
 pub struct Render3dGpuPreprocessState {

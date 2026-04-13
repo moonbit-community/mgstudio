@@ -262,6 +262,45 @@ fn render_pass_timing_begin_active_pass(phase : Int) -> Unit {
 }
 
 ///|
+fn render_diagnostics_reset_debug_counters_if_needed() -> Unit {
+  debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
+  if debug_frame_counter_ref.val % 60 == 0 {
+    debug_mesh2d_draw_calls_ref.val = 0
+    debug_mesh3d_draw_calls_ref.val = 0
+    debug_mesh2d_invalid_id_calls_ref.val = 0
+    debug_mesh3d_invalid_id_calls_ref.val = 0
+    debug_mesh2d_executed_draw_calls_ref.val = 0
+    debug_mesh3d_executed_draw_calls_ref.val = 0
+    debug_mesh2d_drop_no_frame_ref.val = 0
+    debug_mesh2d_drop_no_pass_ref.val = 0
+    debug_mesh2d_drop_no_pass_state_ref.val = 0
+    debug_mesh2d_drop_missing_mesh_ref.val = 0
+    debug_mesh2d_drop_bad_stride_ref.val = 0
+    debug_mesh2d_drop_no_pipeline_ref.val = 0
+    debug_mesh2d_drop_no_uniform_buf_ref.val = 0
+    debug_mesh2d_drop_no_uniform_bg_ref.val = 0
+    debug_mesh2d_drop_no_texture_ref.val = 0
+  }
+}
+
+///|
+pub fn render_diagnostics_begin_frame() -> Unit {
+  active_pass_phase_ref.val = RENDER_PASS_PHASE_NONE
+  active_pass_start_time_ref.val = None
+  current_frame_mesh2d_draw_calls_ref.val = 0
+  current_frame_mesh2d_executed_draw_calls_ref.val = 0
+  current_frame_mesh3d_draw_calls_ref.val = 0
+  current_frame_mesh3d_executed_draw_calls_ref.val = 0
+  render_pass_timing_reset_counters()
+}
+
+///|
+pub fn render_diagnostics_end_frame() -> Unit {
+  render_diagnostics_commit_current_frame_snapshot()
+  render_diagnostics_reset_debug_counters_if_needed()
+}
+
+///|
 pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
   last_frame_render_diagnostics_snapshot_ref.val
 }

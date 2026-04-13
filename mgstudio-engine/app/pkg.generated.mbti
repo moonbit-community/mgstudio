@@ -329,6 +329,7 @@ pub(all) suberror RegisteredSystemError {
 // Types and methods
 pub struct App[W] {
   mut sub_apps : SubApps[W]
+  mut plugin_names : Array[String]
   runner_builder : ((App[W]) -> (() -> Unit))?
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] App::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
@@ -406,6 +407,7 @@ pub fn[S : States] App::add_on_transition_system(Self[@ecs.World], S, S, (@ecs.W
 pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[W] App::add_plugin(Self[W], (Self[W]) -> Self[W]) -> Self[W]
 pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
+pub fn[P : PluginReplacement] App::add_plugin_typed(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
 pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit) -> Self[@ecs.World]
@@ -463,6 +465,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
+pub fn[W] App::clear_plugin_names(Self[W]) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
@@ -475,6 +478,7 @@ pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
 pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
+pub fn[W] App::plugin_names(Self[W]) -> Array[String]
 pub fn[T] App::remove_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn App::run(Self[@ecs.World]) -> Unit
@@ -808,6 +812,7 @@ pub struct PluginGroupBuilder[W] {
 pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
 pub fn[P : PluginReplacement] PluginGroupBuilder::add_typed(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
+pub fn[W] PluginGroupBuilder::build_entries(Self[W]) -> Array[PluginGroupEntry[W]]
 pub fn[P : PluginReplacement] PluginGroupBuilder::contains(Self[@ecs.World], P) -> Bool
 pub fn[P : PluginReplacement] PluginGroupBuilder::disable(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[P : PluginReplacement] PluginGroupBuilder::enable(Self[@ecs.World], P) -> Self[@ecs.World]
@@ -820,7 +825,11 @@ pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(Self[@ecs.World], P) -
 
 pub struct PluginGroupEntry[W] {
   id : String
-  mut plugin : (App[W]) -> App[W]
+  plugin : (App[W]) -> App[W]
+  is_unique : Bool
+  ready : (App[W]) -> Bool
+  finish : (App[W]) -> App[W]
+  cleanup : (App[W]) -> App[W]
   mut enabled : Bool
 }
 
@@ -1224,6 +1233,10 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
 pub(open) trait PluginReplacement {
   plugin_name(Self) -> String
   world_plugin(Self) -> (App[@ecs.World]) -> App[@ecs.World]
+  is_unique(Self) -> Bool = _
+  ready(Self, App[@ecs.World]) -> Bool = _
+  finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
+  cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
 }
 
 pub(open) trait PointerObserverKind {

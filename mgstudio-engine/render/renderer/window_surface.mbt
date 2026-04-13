@@ -713,13 +713,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
   if surface <= 0 {
     return 0
   }
-  active_pass_phase_ref.val = RENDER_PASS_PHASE_NONE
-  active_pass_start_time_ref.val = None
-  current_frame_mesh2d_draw_calls_ref.val = 0
-  current_frame_mesh2d_executed_draw_calls_ref.val = 0
-  current_frame_mesh3d_draw_calls_ref.val = 0
-  current_frame_mesh3d_executed_draw_calls_ref.val = 0
-  render_pass_timing_reset_counters()
+  render_diagnostics_begin_frame()
   if ensure_backend() is Some(backend) {
     backend.begin_frame_binding(surface)
     let frame_id = next_frame_id()
@@ -737,39 +731,5 @@ pub fn end_frame(frame : NativeGpuFrame) -> Unit {
       err => debug_runtime_error("end_frame", err)
     }
   }
-  render_pass_timing_end_active_pass()
-  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
-    mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
-    mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
-    mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
-    mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
-    pass_total_count: current_frame_pass_total_count_ref.val,
-    pass_2d_count: current_frame_pass_2d_count_ref.val,
-    pass_3d_main_count: current_frame_pass_3d_main_count_ref.val,
-    pass_3d_motion_vector_count: current_frame_pass_3d_motion_vector_count_ref.val,
-    pass_3d_point_shadow_count: current_frame_pass_3d_point_shadow_count_ref.val,
-    pass_total_cpu_ms: current_frame_pass_total_cpu_ms_ref.val,
-    pass_2d_cpu_ms: current_frame_pass_2d_cpu_ms_ref.val,
-    pass_3d_main_cpu_ms: current_frame_pass_3d_main_cpu_ms_ref.val,
-    pass_3d_motion_vector_cpu_ms: current_frame_pass_3d_motion_vector_cpu_ms_ref.val,
-    pass_3d_point_shadow_cpu_ms: current_frame_pass_3d_point_shadow_cpu_ms_ref.val,
-  }
-  debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
-  if debug_frame_counter_ref.val % 60 == 0 {
-    debug_mesh2d_draw_calls_ref.val = 0
-    debug_mesh3d_draw_calls_ref.val = 0
-    debug_mesh2d_invalid_id_calls_ref.val = 0
-    debug_mesh3d_invalid_id_calls_ref.val = 0
-    debug_mesh2d_executed_draw_calls_ref.val = 0
-    debug_mesh3d_executed_draw_calls_ref.val = 0
-    debug_mesh2d_drop_no_frame_ref.val = 0
-    debug_mesh2d_drop_no_pass_ref.val = 0
-    debug_mesh2d_drop_no_pass_state_ref.val = 0
-    debug_mesh2d_drop_missing_mesh_ref.val = 0
-    debug_mesh2d_drop_bad_stride_ref.val = 0
-    debug_mesh2d_drop_no_pipeline_ref.val = 0
-    debug_mesh2d_drop_no_uniform_buf_ref.val = 0
-    debug_mesh2d_drop_no_uniform_bg_ref.val = 0
-    debug_mesh2d_drop_no_texture_ref.val = 0
-  }
+  render_diagnostics_end_frame()
 }

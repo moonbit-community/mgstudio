@@ -307,7 +307,7 @@ pub fn pbr_default_opaque_renderer_method_deferred() -> @material.DefaultOpaqueR
 
 pub fn pbr_default_opaque_renderer_method_forward() -> @material.DefaultOpaqueRendererMethod
 
-pub fn pbr_deferred_lighting_enabled() -> Bool
+pub fn pbr_deferred_lighting_enabled(@ecs.World) -> Bool
 
 pub fn pbr_extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 
@@ -319,9 +319,9 @@ pub fn pbr_forward_decal_material_ext_new(Float) -> @material.ForwardDecalMateri
 
 pub fn pbr_forward_decal_material_extension_metadata(@material.ForwardDecalMaterialExt) -> @material.ExtendedMaterialMetadata3d
 
-pub fn pbr_gltf_render_enabled() -> Bool
+pub fn pbr_gltf_render_enabled(@ecs.World) -> Bool
 
-pub fn pbr_gpu_instance_buffer_builder_enabled() -> Bool
+pub fn pbr_gpu_instance_buffer_builder_enabled(@ecs.World) -> Bool
 
 pub fn pbr_make_global_cluster_settings(Bool, Bool) -> PbrGlobalClusterSettings
 
@@ -365,11 +365,11 @@ pub fn pbr_parallax_with_max_steps(@material.ParallaxMappingMethod, Int) -> @mat
 
 pub fn pbr_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn pbr_plugin_runtime_config() -> PbrPluginRuntimeConfig
+pub fn pbr_plugin_runtime_config(@ecs.World) -> PbrPluginRuntimeConfig
 
 pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
-pub fn pbr_prepass_enabled() -> Bool
+pub fn pbr_prepass_enabled(@ecs.World) -> Bool
 
 pub fn pbr_scattering_medium_default() -> @light.ScatteringMedium
 
@@ -413,15 +413,15 @@ pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Project
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render3d_diagnostic_execute_cpu_ms() -> Float
+pub fn render3d_diagnostic_execute_cpu_ms(@ecs.World) -> Float
 
-pub fn render3d_diagnostic_prepared_camera_count() -> Int
+pub fn render3d_diagnostic_prepared_camera_count(@ecs.World) -> Int
 
-pub fn render3d_diagnostic_queue_cpu_ms() -> Float
+pub fn render3d_diagnostic_queue_cpu_ms(@ecs.World) -> Float
 
-pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
+pub fn render3d_diagnostic_queued_visible_mesh_count(@ecs.World) -> Int
 
-pub fn render3d_diagnostics_snapshot() -> Render3dDiagnosticsSnapshot
+pub fn render3d_diagnostics_snapshot(@ecs.World) -> Render3dDiagnosticsSnapshot
 
 pub fn render3d_execute_system(@ecs.World) -> Unit
 
@@ -451,11 +451,11 @@ pub fn render3d_prepare_resources_flush_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit
 
-pub fn render3d_prepared_camera_count() -> Int?
+pub fn render3d_prepared_camera_count(@ecs.World) -> Int?
 
 pub fn render3d_queue_system(@ecs.World) -> Unit
 
-pub fn render3d_queued_visible_mesh_count() -> Int?
+pub fn render3d_queued_visible_mesh_count(@ecs.World) -> Int?
 
 pub let render3d_set_extract : String
 

@@ -207,7 +207,11 @@ pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBack
 
 pub fn register_wgsl_source(String, String) -> Unit
 
+pub fn render_diagnostics_begin_frame() -> Unit
+
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
+
+pub fn render_diagnostics_end_frame() -> Unit
 
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
