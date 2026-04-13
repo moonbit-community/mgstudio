@@ -256,7 +256,6 @@ pub struct GpuDirectionalLight3d {
 pub struct GpuLights3d {
   directional_lights : Array[GpuDirectionalLight3d]
   ambient_color : @sprite.Color
-  ambient_brightness : Float
   cluster_dimensions : (Int, Int, Int, Int)
   cluster_factors : @math.Vec4
   n_directional_lights : Int
@@ -739,8 +738,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   }
   GpuLights3d::{
     directional_lights: gpu_directional_lights,
-    ambient_color: ambient.color,
-    ambient_brightness: ambient.brightness,
+    ambient_color: render3d_scale_color(ambient.color, ambient.brightness),
     cluster_dimensions: (
       cluster_dimensions_x,
       cluster_dimensions_y,

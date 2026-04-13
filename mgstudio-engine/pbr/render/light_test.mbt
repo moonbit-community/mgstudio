@@ -539,10 +539,16 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   let world = @ecs.World::new()
   world.insert_resource(
     @light.ecs_key_global_ambient_light,
-    @light.GlobalAmbientLight::default().with_affects_lightmapped_meshes(false),
+    @light.GlobalAmbientLight::new(
+      @sprite.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+      2.0F,
+    ).with_affects_lightmapped_meshes(false),
   )
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.ambient_light_affects_lightmapped_meshes, content="0")
+  inspect(approx_eq(gpu_lights.ambient_color.r, 0.5F, 1.0e-6F), content="true")
+  inspect(approx_eq(gpu_lights.ambient_color.g, 1.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(gpu_lights.ambient_color.b, 1.5F, 1.0e-6F), content="true")
 }
 
 ///|
