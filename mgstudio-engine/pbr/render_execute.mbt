@@ -52,12 +52,6 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     frame_config.wireframe_config,
     frame_config.delta_seconds,
   )
-  render3d_sync_previous_frame_components(
-    world,
-    source_world,
-    queued_frame.cameras,
-    queued_frame.prepared_camera_queues,
-  )
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   phase_state_ref.val.prepared_camera_order.clear()
   finish_execute()

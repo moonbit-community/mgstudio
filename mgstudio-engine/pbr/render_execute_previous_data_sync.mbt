@@ -13,62 +13,51 @@
 // limitations under the License.
 
 ///|
-fn render3d_sync_previous_view_data(
-  source_world : @ecs.World,
-  cameras : Array[ExtractedCamera3d],
-  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
-) -> Unit {
-  let camera_count = if cameras.length() < prepared_camera_queues.length() {
-    cameras.length()
-  } else {
-    prepared_camera_queues.length()
-  }
-  for camera_index in 0..<camera_count {
-    match prepared_camera_queues[camera_index] {
-      Some(prepared_queue) => {
-        let extracted_camera = cameras[camera_index]
-        let clip_from_world = @pbr_render.render3d_pass_projection_clip_from_world(
-          prepared_queue.camera_pass_projection,
-          extracted_camera.payload.transform,
-        )
-        try! source_world.set_by_key(
-          extracted_camera.entity.main_entity,
-          ecs_key_previous_view_data,
-          @pbr_prepass.PreviousViewData::new(
-            extracted_camera.payload.transform,
-            clip_from_world,
-          ),
-        )
-      }
-      None => ()
-    }
+fn render3d_entity_world_transform_from_main_world(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform? {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => Some(global_transform.compute_transform())
+    None => try! world.get_by_key(entity, @transform.ecs_key_transform)
   }
 }
 
 ///|
-fn render3d_sync_previous_global_transforms_for_all_meshes(
-  world : @ecs.World,
-  source_world : @ecs.World,
-) -> Unit {
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
-    world,
-  )
-  let mesh_sync_query : @ecs.Query[
-    (
-      @ecs.Comp[Mesh3d],
-      @ecs.Comp[@transform.Transform],
-    ),
-    @ecs.All,
-  ] = @ecs.query(source_world)
-  try! mesh_sync_query.view(fn(entity, data) {
-    let (_mesh3d_comp, local_transform_comp) = data
-    let world_transform = @pbr_render.render3d_entity_world_transform_from_components(
-      source_world,
-      entity,
-      local_transform_comp.value(),
-      world_transform_cache_ref,
+fn render3d_sync_previous_view_data_pre_update(world : @ecs.World) -> Unit {
+  world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
+    let world_transform = match
+      render3d_entity_world_transform_from_main_world(world, entity) {
+      Some(value) => value
+      None => return
+    }
+    let projection = match (try! world.get_by_key(entity, ecs_key_projection)) {
+      Some(value) => value
+      None => Projection::default()
+    }
+    let view_from_world = @pbr_render.render3d_view_from_world_matrix(
+      world_transform,
     )
-    try! source_world.set_by_key(
+    let clip_from_world = projection.get_clip_from_view().mul(view_from_world)
+    try! world.set_by_key(
+      entity,
+      ecs_key_previous_view_data,
+      @pbr_prepass.PreviousViewData::new(world_transform, clip_from_world),
+    )
+  })
+}
+
+///|
+fn render3d_sync_previous_global_transforms_pre_update(
+  world : @ecs.World,
+) -> Unit {
+  world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
+    let world_transform = match
+      render3d_entity_world_transform_from_main_world(world, entity) {
+      Some(value) => value
+      None => return
+    }
+    try! world.set_by_key(
       entity,
       ecs_key_previous_global_transform,
       @pbr_prepass.PreviousGlobalTransform::new(world_transform),
@@ -77,16 +66,7 @@ fn render3d_sync_previous_global_transforms_for_all_meshes(
 }
 
 ///|
-fn render3d_sync_previous_frame_components(
-  world : @ecs.World,
-  source_world : @ecs.World,
-  cameras : Array[ExtractedCamera3d],
-  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
-) -> Unit {
-  render3d_sync_previous_view_data(
-    source_world,
-    cameras,
-    prepared_camera_queues,
-  )
-  render3d_sync_previous_global_transforms_for_all_meshes(world, source_world)
+fn render3d_preupdate_previous_data_sync_system(world : @ecs.World) -> Unit {
+  render3d_sync_previous_view_data_pre_update(world)
+  render3d_sync_previous_global_transforms_pre_update(world)
 }

@@ -112,6 +112,7 @@ fn configure_mesh_render_sets(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
+  .add_pre_update_system(render3d_preupdate_previous_data_sync_system)
   .add_post_update_system(validate_directional_light_shadow_map_size_system)
   .add_post_update_system_config(
     @app.system(render3d_update_frusta_system).in_set(
