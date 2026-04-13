@@ -442,6 +442,7 @@ fn render3d_execute_camera_main_pass(
   )
   if transmissive_draws.length() > 0 {
     let transmission_source_target_id = render3d_transmission_source_target_get_or_create(
+      world,
       camera_entity, view_width, view_height,
     )
     let transmission_ranges = if transmission_steps > 0 {
@@ -531,7 +532,7 @@ fn render3d_execute_camera_main_pass(
     if !render3d_mesh_should_draw_wireframe(extracted_mesh, wireframe_config) {
       continue
     }
-    guard render3d_wireframe_mesh_id(mesh.mesh_handle)
+    guard render3d_wireframe_mesh_id(world, mesh.mesh_handle)
       is Some(wireframe_mesh_id) else {
       continue
     }
@@ -646,11 +647,41 @@ priv struct WireframeMeshCacheEntry {
 }
 
 ///|
-let wireframe_mesh_cache : Ref[Array[WireframeMeshCacheEntry]] = Ref::new([])
+priv struct Render3dWireframeMeshCache {
+  mut entries : Array[WireframeMeshCacheEntry]
+}
 
 ///|
-fn render3d_wireframe_mesh_cache_get(source_mesh_handle_id : Int) -> Int? {
-  for item in wireframe_mesh_cache.val {
+let render3d_wireframe_mesh_cache_key : @ecs.ResourceKey[
+  Render3dWireframeMeshCache,
+] = @ecs.register_resource(debug_name="mgstudio.render3d.wireframe_mesh_cache")
+
+///|
+impl @app.Resource for Render3dWireframeMeshCache with resource() {
+  render3d_wireframe_mesh_cache_key
+}
+
+///|
+fn render3d_wireframe_mesh_cache_ref_or_init(
+  world : @ecs.World,
+) -> Ref[Render3dWireframeMeshCache] {
+  if (try! world.get_resource(Render3dWireframeMeshCache::resource())) is None {
+    world.insert_resource(Render3dWireframeMeshCache::resource(), { entries: [] })
+  }
+  match
+    (try! world.get_resource_ref_mut(Render3dWireframeMeshCache::resource())) {
+    Some(cache) => cache
+    None => abort("Missing Render3dWireframeMeshCache resource")
+  }
+}
+
+///|
+fn render3d_wireframe_mesh_cache_get(
+  world : @ecs.World,
+  source_mesh_handle_id : Int,
+) -> Int? {
+  let cache_ref = render3d_wireframe_mesh_cache_ref_or_init(world)
+  for item in cache_ref.val.entries {
     if item.source_mesh_handle_id == source_mesh_handle_id {
       return Some(item.wireframe_mesh_id)
     }
@@ -660,12 +691,14 @@ fn render3d_wireframe_mesh_cache_get(source_mesh_handle_id : Int) -> Int? {
 
 ///|
 fn render3d_wireframe_mesh_cache_set(
+  world : @ecs.World,
   source_mesh_handle_id : Int,
   wireframe_mesh_id : Int,
 ) -> Unit {
+  let cache_ref = render3d_wireframe_mesh_cache_ref_or_init(world)
   let next : Array[WireframeMeshCacheEntry] = []
   let mut replaced = false
-  for item in wireframe_mesh_cache.val {
+  for item in cache_ref.val.entries {
     if item.source_mesh_handle_id == source_mesh_handle_id {
       if !replaced {
         next.push({ source_mesh_handle_id, wireframe_mesh_id })
@@ -678,13 +711,16 @@ fn render3d_wireframe_mesh_cache_set(
   if !replaced {
     next.push({ source_mesh_handle_id, wireframe_mesh_id })
   }
-  wireframe_mesh_cache.val = next
+  cache_ref.val.entries = next
 }
 
 ///|
-fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
+fn render3d_wireframe_mesh_id(
+  world : @ecs.World,
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Int? {
   let source_mesh_handle_id = mesh_handle.id()
-  if render3d_wireframe_mesh_cache_get(source_mesh_handle_id) is Some(mesh_id) {
+  if render3d_wireframe_mesh_cache_get(world, source_mesh_handle_id) is Some(mesh_id) {
     return Some(mesh_id)
   }
   let source_mesh = match @sprite.render_mesh_asset_get(mesh_handle) {
@@ -704,6 +740,7 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
                 wireframe_handle,
               )
               render3d_wireframe_mesh_cache_set(
+                world,
                 source_mesh_handle_id, wireframe_mesh_id,
               )
               Some(wireframe_mesh_id)
@@ -712,12 +749,12 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
           }
         @mesh.Mesh3dPrimitiveTopology::LineList => {
           let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
-          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
+          render3d_wireframe_mesh_cache_set(world, source_mesh_handle_id, mesh_id)
           Some(mesh_id)
         }
         @mesh.Mesh3dPrimitiveTopology::LineStrip => {
           let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
-          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
+          render3d_wireframe_mesh_cache_set(world, source_mesh_handle_id, mesh_id)
           Some(mesh_id)
         }
       }

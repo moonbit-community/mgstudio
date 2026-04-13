@@ -650,7 +650,7 @@ pub(all) struct Render3dLightingState {
   directional_dir : @math.Vec3
   directional_color : @color.Color
   directional_illuminance : Float
-  point_entity : @core.Entity
+  point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @color.Color
   point_intensity : Float
@@ -702,6 +702,7 @@ pub(all) struct Render3dPhaseState {
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
   skin_joint_count_by_skin : Map[UInt64, Int]
+  skin_previous_matrices : Map[UInt64, Array[Float]]
   mut total_skin_joints : Int
   skin_upload_queue : Array[@core.Entity]
 }

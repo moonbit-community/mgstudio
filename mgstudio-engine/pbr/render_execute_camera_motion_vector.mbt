@@ -14,6 +14,7 @@
 
 ///|
 fn render3d_execute_camera_motion_vector_pass(
+  world : @ecs.World,
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
@@ -45,6 +46,7 @@ fn render3d_execute_camera_motion_vector_pass(
   let mut next_scene_target_id = scene_target_id
   let mut next_velocity_target_id = velocity_target_id
   let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
+    world,
     camera_entity, view_width, view_height,
   )
   if motion_blur_active {

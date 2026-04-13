@@ -58,6 +58,9 @@ This file must not exceed 200 lines.
 - [x] `render/pbr`: close `RENDER-010` by removing execute-side queue-build/preprocess duties from camera hot path.
 - [x] `render/pbr`: close `RENDER-011` by confining depth-pyramid and late-occlusion preprocess dispatch to queue stage.
 - [x] `render/pbr`: close `RENDER-012` by wiring concrete work to staged `prepare meshes -> prepare bind groups -> queue -> execute` topology.
+- [x] `render/pbr`: replace point-light shadow sentinel entity path with `Option<Entity>` ownership flow.
+- [x] `render/pbr`: move point-shadow target cache and scene postprocess target caches from global `Ref` to render-world resources.
+- [x] `render/pbr`: move wireframe mesh cache from global `Ref` to render-world resource ownership.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.

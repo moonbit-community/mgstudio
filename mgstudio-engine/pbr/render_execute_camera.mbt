@@ -106,7 +106,7 @@ fn render3d_execute_camera(
   let indexed_indirect_parameter_indices = prepared_queue.indexed_indirect_parameter_indices
   let non_indexed_indirect_parameter_indices = prepared_queue.non_indexed_indirect_parameter_indices
   let (scene_target_id_next, velocity_target_id_next) = render3d_execute_camera_motion_vector_pass(
-    camera_entity, camera, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
+    world, camera_entity, camera, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
     indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, motion_vector_prepass_enabled,
     motion_blur_active, scene_target_id, velocity_target_id, view_width, view_height,
     view_width_logical, view_height_logical, viewport_x, viewport_y, viewport_width,
@@ -120,7 +120,7 @@ fn render3d_execute_camera(
     point_shadow_enabled_value,
     point_shadow_depth_bias_value,
   ) = render3d_execute_camera_point_shadow_pass(
-    pass_lighting, point_light_shadow_map_size, camera_entity, draw_queue_entry,
+    world, pass_lighting, point_light_shadow_map_size, camera_entity, draw_queue_entry,
     meshes, opaque_alpha_draw_item_indices, indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices,
     point_shadow_pass_kind,
   )
@@ -141,6 +141,7 @@ fn render3d_execute_camera(
       auto_exposure_enabled
     ) {
     let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
+      world,
       camera_entity, view_width, view_height,
     )
     scene_target_id = scene_id

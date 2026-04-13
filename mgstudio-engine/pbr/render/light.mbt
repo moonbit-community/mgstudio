@@ -19,7 +19,7 @@ pub(all) struct Render3dLightingState {
   directional_dir : @math.Vec3
   directional_color : @sprite.Color
   directional_illuminance : Float
-  point_entity : @core.Entity
+  point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @sprite.Color
   point_intensity : Float
@@ -44,7 +44,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
     directional_color: @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     directional_illuminance: 0.0F,
-    point_entity: @core.Entity::placeholder(),
+    point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     point_color: @sprite.Color::white(),
     point_intensity: 0.0F,
@@ -105,7 +105,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     point_found = true
     lighting = Render3dLightingState::{
       ..lighting,
-      point_entity: entity,
+      point_entity: Some(entity),
       point_pos: transform.translation,
       point_color: light.color,
       point_intensity: if point_luminous_power_to_intensity <= 0.0F {

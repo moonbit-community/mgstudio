@@ -14,6 +14,7 @@
 
 ///|
 fn render3d_execute_camera_point_shadow_pass(
+  world : @ecs.World,
   pass_lighting : Render3dLightingState,
   point_light_shadow_map_size : Int,
   camera_entity : @core.Entity,
@@ -26,13 +27,17 @@ fn render3d_execute_camera_point_shadow_pass(
 ) -> (Int, Float, Float) {
   let draw_items = draw_queue_entry.draw_items
   if !pass_lighting.point_shadow_maps_enabled ||
-    pass_lighting.point_entity.is_placeholder() ||
+    pass_lighting.point_entity is None ||
     pass_lighting.point_range <= 0.0F ||
     point_light_shadow_map_size <= 0 {
     return (-1, 0.0F, 0.0F)
   }
+  guard pass_lighting.point_entity is Some(point_entity) else {
+    return (-1, 0.0F, 0.0F)
+  }
   let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
-    pass_lighting.point_entity,
+    world,
+    point_entity,
     point_light_shadow_map_size,
   )
   let point_shadow_texture_id = shadow_target_id
@@ -174,16 +179,50 @@ priv struct PointLightShadowTargetsEntry {
 }
 
 ///|
-let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
-)
+priv struct Render3dPointLightShadowTargets {
+  mut entries : Array[PointLightShadowTargetsEntry]
+}
+
+///|
+let render3d_point_light_shadow_targets_key : @ecs.ResourceKey[
+  Render3dPointLightShadowTargets,
+] = @ecs.register_resource(debug_name="mgstudio.render3d.point_light_shadow_targets")
+
+///|
+impl @app.Resource for Render3dPointLightShadowTargets with resource() {
+  render3d_point_light_shadow_targets_key
+}
+
+///|
+fn render3d_point_light_shadow_targets_ref_or_init(
+  world : @ecs.World,
+) -> Ref[Render3dPointLightShadowTargets] {
+  if (try! world.get_resource(Render3dPointLightShadowTargets::resource()))
+    is None {
+    world.insert_resource(
+      Render3dPointLightShadowTargets::resource(),
+      { entries: [] },
+    )
+  }
+  match
+    (try! world.get_resource_ref_mut(
+      Render3dPointLightShadowTargets::resource(),
+    )) {
+    Some(state) => state
+    None => abort("Missing Render3dPointLightShadowTargets resource")
+  }
+}
 
 ///|
 fn render3d_point_light_shadow_target_get_or_create(
+  world : @ecs.World,
   entity : @core.Entity,
   size : Int,
 ) -> Int {
+  let shadow_targets_ref = render3d_point_light_shadow_targets_ref_or_init(world)
+  let shadow_targets = shadow_targets_ref.val.entries
   let safe_size = if size <= 0 { 1 } else { size }
-  for item in point_light_shadow_targets.val {
+  for item in shadow_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
       item.size == safe_size {
@@ -195,7 +234,7 @@ fn render3d_point_light_shadow_target_get_or_create(
   )
   let next : Array[PointLightShadowTargetsEntry] = []
   let mut replaced = false
-  for item in point_light_shadow_targets.val {
+  for item in shadow_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
       if !replaced {
@@ -209,6 +248,6 @@ fn render3d_point_light_shadow_target_get_or_create(
   if !replaced {
     next.push({ entity, size: safe_size, target_id })
   }
-  point_light_shadow_targets.val = next
+  shadow_targets_ref.val.entries = next
   target_id
 }

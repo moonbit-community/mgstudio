@@ -30,19 +30,51 @@ priv struct TransmissionSourceTargetsEntry {
 }
 
 ///|
-let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
+priv struct Render3dSceneTargetsState {
+  mut motion_blur_targets : Array[MotionBlurTargetsEntry]
+  mut transmission_source_targets : Array[TransmissionSourceTargetsEntry]
+}
 
 ///|
-let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
-)
+let render3d_scene_targets_state_key : @ecs.ResourceKey[
+  Render3dSceneTargetsState,
+] = @ecs.register_resource(debug_name="mgstudio.render3d.scene_targets_state")
+
+///|
+impl @app.Resource for Render3dSceneTargetsState with resource() {
+  render3d_scene_targets_state_key
+}
+
+///|
+fn render3d_scene_targets_state_ref_or_init(
+  world : @ecs.World,
+) -> Ref[Render3dSceneTargetsState] {
+  if (try! world.get_resource(Render3dSceneTargetsState::resource())) is None {
+    world.insert_resource(
+      Render3dSceneTargetsState::resource(),
+      {
+        motion_blur_targets: [],
+        transmission_source_targets: [],
+      },
+    )
+  }
+  match
+    (try! world.get_resource_ref_mut(Render3dSceneTargetsState::resource())) {
+    Some(state) => state
+    None => abort("Missing Render3dSceneTargetsState resource")
+  }
+}
 
 ///|
 fn render3d_motion_blur_targets_get_or_create(
+  world : @ecs.World,
   entity : @core.Entity,
   width : Int,
   height : Int,
 ) -> (Int, Int) {
-  for item in motion_blur_targets.val {
+  let scene_targets_state_ref = render3d_scene_targets_state_ref_or_init(world)
+  let motion_blur_targets = scene_targets_state_ref.val.motion_blur_targets
+  for item in motion_blur_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
       item.width == width &&
@@ -62,7 +94,7 @@ fn render3d_motion_blur_targets_get_or_create(
   )
   let next : Array[MotionBlurTargetsEntry] = []
   let mut replaced = false
-  for item in motion_blur_targets.val {
+  for item in motion_blur_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
       if !replaced {
@@ -76,17 +108,20 @@ fn render3d_motion_blur_targets_get_or_create(
   if !replaced {
     next.push({ entity, width, height, scene_target_id, velocity_target_id })
   }
-  motion_blur_targets.val = next
+  scene_targets_state_ref.val.motion_blur_targets = next
   (scene_target_id, velocity_target_id)
 }
 
 ///|
 fn render3d_transmission_source_target_get_or_create(
+  world : @ecs.World,
   entity : @core.Entity,
   width : Int,
   height : Int,
 ) -> Int {
-  for item in transmission_source_targets.val {
+  let scene_targets_state_ref = render3d_scene_targets_state_ref_or_init(world)
+  let transmission_source_targets = scene_targets_state_ref.val.transmission_source_targets
+  for item in transmission_source_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
       item.width == width &&
@@ -101,7 +136,7 @@ fn render3d_transmission_source_target_get_or_create(
   )
   let next : Array[TransmissionSourceTargetsEntry] = []
   let mut replaced = false
-  for item in transmission_source_targets.val {
+  for item in transmission_source_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
       if !replaced {
@@ -115,7 +150,7 @@ fn render3d_transmission_source_target_get_or_create(
   if !replaced {
     next.push({ entity, width, height, source_target_id })
   }
-  transmission_source_targets.val = next
+  scene_targets_state_ref.val.transmission_source_targets = next
   source_target_id
 }
 
