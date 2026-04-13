@@ -245,7 +245,13 @@ pub fn[P : IntoAssetPath] AssetServer::load_image_direct(
   let parsed_path = path.into_asset_path()
   let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
   let settings = self.image_loader_settings_for_path(canonical_path)
-  match image_from_loaded_texture_bytes(bytes, settings.is_srgb) {
+  match image_from_loaded_texture_bytes(
+    canonical_path,
+    bytes,
+    settings.is_srgb,
+    settings.format,
+    settings.texture_format,
+  ) {
     Some(image) => image
     None =>
       abort(

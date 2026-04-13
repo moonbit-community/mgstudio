@@ -22,6 +22,12 @@ pub type TextureFormat = @image.TextureFormat
 pub type ImageKind = @image.ImageKind
 
 ///|
+pub type ImageFormatSetting = @image.ImageFormatSetting
+
+///|
+pub type ImageContainerFormat = @image.ImageContainerFormat
+
+///|
 pub type ImageArrayLayout = @image.ImageArrayLayout
 
 ///|
@@ -460,7 +466,28 @@ fn image_data_texture_format(is_srgb : Bool) -> TextureFormat {
 }
 
 ///|
-fn image_from_loaded_texture_bytes(bytes : Bytes, is_srgb : Bool) -> Image? {
+fn image_container_supports_rgba_decode(container : ImageContainerFormat) -> Bool {
+  match container {
+    ImageContainerFormat::Basis => false
+    ImageContainerFormat::Dds => false
+    ImageContainerFormat::Ktx2 => false
+    _ => true
+  }
+}
+
+///|
+fn image_from_loaded_texture_bytes(
+  path : String,
+  bytes : Bytes,
+  is_srgb : Bool,
+  format_setting : ImageFormatSetting,
+  texture_format_override : TextureFormat?,
+) -> Image? {
+  if @image.image_loader_container_from_input(path, Some(bytes), format_setting) is Some(
+    container,
+  ) && !image_container_supports_rgba_decode(container) {
+    return None
+  }
   if ktx2_decode_uncompressed_3d_payload(bytes) is Some(_) ||
     ktx2_decode_2d_payload(bytes) is Some(_) {
     return None
@@ -472,9 +499,13 @@ fn image_from_loaded_texture_bytes(bytes : Bytes, is_srgb : Bool) -> Image? {
   } else {
     (1, 1, source_bytes_to_rgba8(bytes, 1, 1))
   }
+  let texture_format = match texture_format_override {
+    Some(format) => format
+    None => image_data_texture_format(is_srgb)
+  }
   Some(
     Image::new(clamp_dim(width), clamp_dim(height), pixels).with_format(
-      image_data_texture_format(is_srgb),
+      texture_format,
     ),
   )
 }
@@ -544,10 +575,19 @@ fn AssetServer::set_pending_image_asset(
 fn AssetServer::update_pending_image_asset_from_bytes(
   self : AssetServer,
   image : Handle[Image],
+  path : String,
   bytes : Bytes,
   is_srgb : Bool,
+  format_setting : ImageFormatSetting,
+  texture_format_override : TextureFormat?,
 ) -> Unit {
-  match image_from_loaded_texture_bytes(bytes, is_srgb) {
+  match image_from_loaded_texture_bytes(
+    path,
+    bytes,
+    is_srgb,
+    format_setting,
+    texture_format_override,
+  ) {
     Some(asset) => self.set_pending_image_asset(image, asset)
     None => self.pending_image_assets.val.remove(image.id()) |> ignore
   }
@@ -1003,7 +1043,14 @@ fn AssetServer::load_image_with_settings(
   self.set_image_is_srgb(handle, settings.is_srgb)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   self.set_image_render_asset_usages(handle, settings.asset_usage)
-  self.update_pending_image_asset_from_bytes(handle, bytes, settings.is_srgb)
+  self.update_pending_image_asset_from_bytes(
+    handle,
+    canonical_path,
+    bytes,
+    settings.is_srgb,
+    settings.format,
+    settings.texture_format,
+  )
   handle
 }
 
@@ -1105,7 +1152,14 @@ pub fn AssetServer::load_texture_bytes(
   self.track_image_handle(handle)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
-  self.update_pending_image_asset_from_bytes(handle, bytes, true)
+  self.update_pending_image_asset_from_bytes(
+    handle,
+    "",
+    bytes,
+    true,
+    ImageFormatSetting::Guess,
+    None,
+  )
   handle
 }
 

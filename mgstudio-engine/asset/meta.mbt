@@ -15,6 +15,8 @@
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/meta.rs`.
 pub(all) struct ImageLoaderSettings {
+  mut format : ImageFormatSetting
+  mut texture_format : TextureFormat?
   mut sampler : ImageSampler
   mut is_srgb : Bool
   mut array_layout : ImageArrayLayout?
@@ -25,12 +27,94 @@ pub(all) struct ImageLoaderSettings {
 ///|
 pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
   ImageLoaderSettings::{
+    format: ImageFormatSetting::FromExtension,
+    texture_format: None,
     sampler: ImageSampler::Default,
     is_srgb: true,
     array_layout: None,
     asset_usage: RenderAssetUsages::all(),
     load_meshes: RenderAssetUsages::all(),
   }
+}
+
+///|
+fn meta_image_format_setting(content : String) -> ImageFormatSetting? {
+  if string_contains(content, "format: Guess") {
+    return Some(ImageFormatSetting::Guess)
+  }
+  if string_contains(content, "format: FromExtension") {
+    return Some(ImageFormatSetting::FromExtension)
+  }
+  guard string_contains(content, "format: Format") else {
+    return None
+  }
+  if string_contains(content, "Format(Basis)") || string_contains(content, "Format (Basis)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Basis))
+  }
+  if string_contains(content, "Format(Bmp)") || string_contains(content, "Format (Bmp)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Bmp))
+  }
+  if string_contains(content, "Format(Dds)") || string_contains(content, "Format (Dds)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Dds))
+  }
+  if string_contains(content, "Format(Exr)") || string_contains(content, "Format (Exr)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Exr))
+  }
+  if string_contains(content, "Format(Farbfeld)") ||
+    string_contains(content, "Format (Farbfeld)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Farbfeld))
+  }
+  if string_contains(content, "Format(Gif)") || string_contains(content, "Format (Gif)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Gif))
+  }
+  if string_contains(content, "Format(Hdr)") || string_contains(content, "Format (Hdr)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Hdr))
+  }
+  if string_contains(content, "Format(Ico)") || string_contains(content, "Format (Ico)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Ico))
+  }
+  if string_contains(content, "Format(Jpeg)") || string_contains(content, "Format (Jpeg)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Jpeg))
+  }
+  if string_contains(content, "Format(Ktx2)") || string_contains(content, "Format (Ktx2)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Ktx2))
+  }
+  if string_contains(content, "Format(Png)") || string_contains(content, "Format (Png)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Png))
+  }
+  if string_contains(content, "Format(Pnm)") || string_contains(content, "Format (Pnm)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Pnm))
+  }
+  if string_contains(content, "Format(Qoi)") || string_contains(content, "Format (Qoi)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Qoi))
+  }
+  if string_contains(content, "Format(Tga)") || string_contains(content, "Format (Tga)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Tga))
+  }
+  if string_contains(content, "Format(Tiff)") || string_contains(content, "Format (Tiff)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Tiff))
+  }
+  if string_contains(content, "Format(Webp)") || string_contains(content, "Format (Webp)") {
+    return Some(ImageFormatSetting::Format(ImageContainerFormat::Webp))
+  }
+  None
+}
+
+///|
+fn meta_texture_format_setting(content : String) -> TextureFormat? {
+  if string_contains(content, "texture_format: Some(Rgba8UnormSrgb)") {
+    return Some(TextureFormat::Rgba8UnormSrgb)
+  }
+  if string_contains(content, "texture_format: Some(Rgba8Unorm)") {
+    return Some(TextureFormat::Rgba8Unorm)
+  }
+  if string_contains(content, "texture_format: Some(Rgba16Float)") {
+    return Some(TextureFormat::Rgba16Float)
+  }
+  if string_contains(content, "texture_format: Some(Rg16Float)") {
+    return Some(TextureFormat::Rg16Float)
+  }
+  None
 }
 
 ///|
@@ -96,6 +180,11 @@ fn apply_image_meta_settings(
   settings : ImageLoaderSettings,
   content : String,
 ) -> Unit {
+  if meta_image_format_setting(content) is Some(format_setting) {
+    settings.format = format_setting
+  }
+  settings.texture_format = meta_texture_format_setting(content)
+
   if string_contains(content, "is_srgb: false") {
     settings.is_srgb = false
   } else if string_contains(content, "is_srgb: true") {
