@@ -51,4 +51,4 @@ Do not edit it. It is maintained by humans.
 - [ ] 现在的 event 都是用 any 实现的，并不 typed
 - [ ] test 没有链接对应的 package
 - [ ] 底层存储是 sparseset 而非 archetype/table
-- [ ] PLUGIN_ID 是什么？有什么用？
+- [x] PLUGIN_ID 是什么？有什么用？

@@ -44,7 +44,7 @@ This file must not exceed 200 lines.
 
 | Rollup | Value |
 |---|---:|
-| Bevy→mgstudio path parity (considered scope) | 100% (`1031/1031`, `missing=0`, 2026-04-12) |
+| Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
 | Current weighted migration completion (included scope) | 73% |
 | Last updated | 2026-04-13 |
@@ -58,7 +58,7 @@ This file must not exceed 200 lines.
 - [ ] `render/pbr`: close `RENDER-010` by removing non-queue responsibilities from queue/execute hot path.
 - [ ] `render/pbr`: close `RENDER-011` by aligning occlusion/depth-pyramid preprocess boundaries.
 - [ ] `render/pbr`: close `RENDER-012` by wiring concrete work to new Prepare* set topology.
-- [ ] `gltf/scene`: replace path-alignment wrapper files with owner-file real implementations (stopgap wrappers are currently back in tree).
+- [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [ ] `shell-packages`: keep Bevy path coverage without regressing into wrapper-only compatibility layers.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.
 - [x] `camera`: switch camera mesh ray-cast API surface to `picking/mesh_picking/ray_cast` owner types/functions instead of `pbr` wrappers.

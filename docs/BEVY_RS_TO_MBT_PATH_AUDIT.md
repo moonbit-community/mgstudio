@@ -27,12 +27,12 @@
   - `INCLUDE_NON_GOAL=1 scripts/sync_bevy_rs_to_mbt_paths.sh`
   - `INCLUDE_NON_GOAL=1 INCLUDE_EXCLUDED=1 scripts/sync_bevy_rs_to_mbt_paths.sh`
 
-## Current Snapshot (2026-04-12)
+## Current Snapshot (2026-04-13)
 
 - Canonical run:
   - `total_rs=1423`
-  - `considered_rs=1031`
-  - `excluded_rs=392` (`non_goal_ecs=151`, `non_goal_reflect=143`, `non_goal_tasks=12`, `non_goal_platform=27`, `non_goal_macro=16`, `non_goal_dynamic_scene=3`, `scope_removed_remote=6`, `scope_removed_solari=14`, `non_goal_example=20`)
+  - `considered_rs=1028`
+  - `excluded_rs=395` (`non_goal_ecs=151`, `non_goal_reflect=143`, `non_goal_tasks=12`, `non_goal_platform=30`, `non_goal_macro=16`, `non_goal_dynamic_scene=3`, `scope_removed_remote=6`, `scope_removed_solari=14`, `non_goal_example=20`)
   - `missing=0`
   - `collision_count=0`
   - `mod_rule_violation_count=0`
