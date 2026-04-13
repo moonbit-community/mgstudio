@@ -654,8 +654,12 @@ fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
 
 ///|
 fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
+  let cascades : Array[GpuDirectionalCascade3d] = []
+  while cascades.length() < MAX_CASCADES_PER_LIGHT {
+    cascades.push(render3d_gpu_directional_cascade_default())
+  }
   GpuDirectionalLight3d::{
-    cascades: [],
+    cascades,
     color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     dir_to_light: @math.Vec3::new(0.0F, 0.0F, 1.0F),
     flags: 0U,
@@ -715,6 +719,10 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     for _ in 0..<cascade_count {
       cascades.push(render3d_gpu_directional_cascade_default())
     }
+    let num_cascades = cascades.length()
+    while cascades.length() < MAX_CASCADES_PER_LIGHT {
+      cascades.push(render3d_gpu_directional_cascade_default())
+    }
     gpu_directional_lights.push(GpuDirectionalLight3d::{
       cascades,
       color: render3d_scale_color(item.color, item.illuminance),
@@ -723,15 +731,14 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       soft_shadow_size: item.soft_shadow_size.unwrap_or(0.0F),
       shadow_depth_bias: item.shadow_depth_bias,
       shadow_normal_bias: item.shadow_normal_bias,
-      num_cascades: cascades.length(),
+      num_cascades,
       cascades_overlap_proportion: item.cascade_overlap_proportion,
       depth_texture_base_index: directional_shadow_texture_base_index,
       decal_index: render3d_directional_light_decal_index(world, item.entity),
       sun_disk_angular_size: item.sun_disk_angular_size,
       sun_disk_intensity: item.sun_disk_intensity,
     })
-    directional_shadow_texture_base_index = directional_shadow_texture_base_index +
-      cascades.length()
+    directional_shadow_texture_base_index += num_cascades
   }
   while gpu_directional_lights.length() < MAX_DIRECTIONAL_LIGHTS {
     gpu_directional_lights.push(render3d_gpu_directional_light_default())

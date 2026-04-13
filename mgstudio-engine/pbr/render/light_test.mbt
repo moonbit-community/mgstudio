@@ -240,7 +240,10 @@ test "pbr render light: directional without shadows keeps zero cascades" {
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(gpu_lights.directional_lights[0].num_cascades, content="0")
-  inspect(gpu_lights.directional_lights[0].cascades.length(), content="0")
+  inspect(
+    gpu_lights.directional_lights[0].cascades.length(),
+    content=MAX_CASCADES_PER_LIGHT.to_string(),
+  )
 }
 
 ///|
