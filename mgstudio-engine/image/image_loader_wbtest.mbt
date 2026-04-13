@@ -325,6 +325,32 @@ test "image wb: format guess from magic bytes" {
     content="true",
   )
   debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0x00, 0x00, 0x01, 0x00])) ==
+    Some(ImageContainerFormat::Ico),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(
+      image_wb_bytes([0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64]),
+    ) == Some(ImageContainerFormat::Farbfeld),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0x71, 0x6F, 0x69, 0x66])) ==
+    Some(ImageContainerFormat::Qoi),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0x49, 0x49, 0x2A, 0x00])) ==
+    Some(ImageContainerFormat::Tiff),
+    content="true",
+  )
+  debug_inspect(
+    image_guess_container_from_bytes(image_wb_bytes([0x50, 0x36])) ==
+    Some(ImageContainerFormat::Pnm),
+    content="true",
+  )
+  debug_inspect(
     image_guess_container_from_bytes(image_wb_bytes([0x00, 0x01, 0x02])) == None,
     content="true",
   )

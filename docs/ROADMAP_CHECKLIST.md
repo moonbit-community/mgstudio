@@ -33,7 +33,7 @@ This file must not exceed 200 lines.
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 91% | 74% | 74% | 🟡 In Progress | Camera-only runtime semantics and node gating are aligned for FXAA/SMAA/TAA/CAS/DLSS; `FxaaSensitivity::get_str` API shape is aligned; render-stage depth still pending. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
-| `bevy_image` | `mgstudio-engine/image` | 92% | 74% | 74% | 🟡 In Progress | `ImageLoader` type + extensions/supported-format tables + magic-byte guess path + Bevy-shaped loader error surfaces moved closer; codec/runtime parity remains incomplete in constrained environments. |
+| `bevy_image` | `mgstudio-engine/image` | 93% | 75% | 75% | 🟡 In Progress | `ImageLoader` type + extensions/supported-format tables + expanded magic-byte guess path + Bevy-shaped loader error surfaces moved closer; codec/runtime parity remains incomplete in constrained environments. |
 | `bevy_color` | `mgstudio-engine/color` | 97% | 92% | 92% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_math` | `mgstudio-engine/math` | 96% | 90% | 90% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |
 | `bevy_a11y` | `mgstudio-engine/a11y` | 95% | 95% | 95% | ✅ Mostly Done | Only maintenance-level parity drift monitoring remains. |

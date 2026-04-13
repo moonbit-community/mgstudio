@@ -311,6 +311,25 @@ pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? 
   if image_bytes_starts_with(bytes, [0x42, 0x4D]) {
     return Some(ImageContainerFormat::Bmp)
   }
+  if image_bytes_starts_with(bytes, [0x00, 0x00, 0x01, 0x00]) {
+    return Some(ImageContainerFormat::Ico)
+  }
+  if image_bytes_starts_with(bytes, [0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64]) {
+    return Some(ImageContainerFormat::Farbfeld)
+  }
+  if image_bytes_starts_with(bytes, [0x71, 0x6F, 0x69, 0x66]) {
+    return Some(ImageContainerFormat::Qoi)
+  }
+  if image_bytes_starts_with(bytes, [0x49, 0x49, 0x2A, 0x00]) ||
+    image_bytes_starts_with(bytes, [0x4D, 0x4D, 0x00, 0x2A]) {
+    return Some(ImageContainerFormat::Tiff)
+  }
+  if bytes.length() >= 2 &&
+    image_blob_u8_at(bytes, 0) == 0x50 &&
+    image_blob_u8_at(bytes, 1) >= 0x31 &&
+    image_blob_u8_at(bytes, 1) <= 0x36 {
+    return Some(ImageContainerFormat::Pnm)
+  }
   if bytes.length() >= 12 &&
     image_bytes_starts_with(bytes, [0x52, 0x49, 0x46, 0x46]) &&
     image_blob_u8_at(bytes, 8) == 0x57 &&
