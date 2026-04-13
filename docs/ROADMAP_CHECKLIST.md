@@ -28,7 +28,7 @@ This file must not exceed 200 lines.
 | `bevy_picking` | `mgstudio-engine/picking` | 90% | 70% | 70% | 🟡 In Progress | Camera-space and UI interaction edge cases still need strict parity validation. |
 | `bevy_input` | `mgstudio-engine/input` | 94% | 82% | 82% | 🟡 In Progress | Remaining platform/event-order corner cases still need alignment checks. |
 | `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 80% | 80% | 🟡 In Progress | Monitor-aware sizing and platform-semantics tails are still open. |
-| `bevy_asset` | `mgstudio-engine/asset` | 90% | 68% | 68% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
+| `bevy_asset` | `mgstudio-engine/asset` | 90% | 69% | 69% | 🟡 In Progress | Asset tests/runtime still have unresolved environment/link/decode constraints. |
 | `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 90% | 68% | 68% | 🟡 In Progress | Anti-alias stage integration still needs stricter parity verification. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
@@ -194,7 +194,7 @@ This file must not exceed 200 lines.
 - [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event dispatcher/callback runtime resourceized), then close remaining runtime differences.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix any camera-space/pointer-space drift.
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.
-- [ ] `asset/image`: close runtime decode/link gaps and restore stable native testability.
+- [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback to `mgstudio-engine/...`) and restore stable native testability.
 - [ ] `physics2d/physics3d`: finish bevy_rapier example behavior parity and update parity evidence.
 - [ ] `stress_tests`: use render-trace evidence to drive source-level convergence, not heuristic tuning.
 - [x] `path-audit`: `scripts/check_bevy_rs_to_mbt_paths.sh` stays green (`missing=0`, `scaffold_files=0`) after non-scaffold path recovery.
