@@ -23,4 +23,10 @@ test "anti_alias boundary re-exports msaa/fxaa/taa components" {
   debug_inspect(taa.reset, content="true")
   debug_inspect(jitter.offset.x.to_double(), content="0")
   debug_inspect(jitter.offset.y.to_double(), content="0")
+  debug_inspect(@anti_alias.FxaaSensitivity::Low.get_str(), content="\"LOW\"")
+  debug_inspect(@anti_alias.FxaaSensitivity::High.get_str(), content="\"HIGH\"")
+  debug_inspect(
+    @anti_alias.FxaaSensitivity::Extreme.get_str(),
+    content="\"EXTREME\"",
+  )
 }

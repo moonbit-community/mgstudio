@@ -39,6 +39,17 @@ pub fn FxaaSensitivity::default() -> FxaaSensitivity {
 }
 
 ///|
+pub fn FxaaSensitivity::get_str(self : FxaaSensitivity) -> String {
+  match self {
+    FxaaSensitivity::Low => "LOW"
+    FxaaSensitivity::Medium => "MEDIUM"
+    FxaaSensitivity::High => "HIGH"
+    FxaaSensitivity::Ultra => "ULTRA"
+    FxaaSensitivity::Extreme => "EXTREME"
+  }
+}
+
+///|
 /// Camera post-process settings aligned with Bevy's `Fxaa`.
 pub struct Fxaa {
   enabled : Bool
