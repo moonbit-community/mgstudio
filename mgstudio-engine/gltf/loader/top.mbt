@@ -374,12 +374,15 @@ pub fn gltf_add_custom_vertex_attribute(
   name : String,
   mapped_name : String,
 ) -> Unit {
-  gltf_upsert_custom_vertex_attribute(
-    gltf_custom_vertex_attributes_bootstrap, name, mapped_name,
-  )
   if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
     gltf_upsert_custom_vertex_attribute(
       state_ref.val.custom_vertex_attributes,
+      name,
+      mapped_name,
+    )
+  } else {
+    gltf_upsert_custom_vertex_attribute(
+      gltf_custom_vertex_attributes_bootstrap,
       name,
       mapped_name,
     )
@@ -388,9 +391,10 @@ pub fn gltf_add_custom_vertex_attribute(
 
 ///|
 pub fn gltf_clear_custom_vertex_attributes() -> Unit {
-  gltf_custom_vertex_attributes_bootstrap.clear()
   if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.custom_vertex_attributes.clear()
+  } else {
+    gltf_custom_vertex_attributes_bootstrap.clear()
   }
 }
 
@@ -484,9 +488,10 @@ pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy 
 pub fn gltf_set_default_skinned_mesh_bounds_policy(
   policy : GltfSkinnedMeshBoundsPolicy,
 ) -> Unit {
-  gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = policy
   if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.default_skinned_mesh_bounds_policy = policy
+  } else {
+    gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = policy
   }
 }
 
@@ -503,9 +508,10 @@ pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
 pub fn gltf_set_default_convert_coordinates(
   convert_coordinates : GltfConvertCoordinates,
 ) -> Unit {
-  gltf_default_convert_coordinates_bootstrap_ref.val = convert_coordinates
   if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.default_convert_coordinates = convert_coordinates
+  } else {
+    gltf_default_convert_coordinates_bootstrap_ref.val = convert_coordinates
   }
 }
 

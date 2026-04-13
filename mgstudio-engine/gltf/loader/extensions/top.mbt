@@ -135,9 +135,10 @@ fn gltf_extension_runtime_handlers() -> Array[GltfExtensionHandler] {
 
 ///|
 pub fn gltf_register_extension_handler(handler : GltfExtensionHandler) -> Unit {
-  gltf_extension_handlers_registry_bootstrap.push(handler)
   if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.handlers.push(handler)
+  } else {
+    gltf_extension_handlers_registry_bootstrap.push(handler)
   }
 }
 
@@ -148,9 +149,10 @@ pub fn gltf_extension_handlers() -> GltfExtensionHandlers {
 
 ///|
 pub fn gltf_clear_extension_handlers() -> Unit {
-  gltf_extension_handlers_registry_bootstrap.clear()
   if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.handlers.clear()
+  } else {
+    gltf_extension_handlers_registry_bootstrap.clear()
   }
 }
 
@@ -213,9 +215,10 @@ pub fn gltf_extension_notify_scene_completed(
 
 ///|
 pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
-  gltf_pbr_material_handler_enabled_bootstrap_ref.val = enabled
   if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
     state_ref.val.pbr_material_handler_enabled = enabled
+  } else {
+    gltf_pbr_material_handler_enabled_bootstrap_ref.val = enabled
   }
 }
 
