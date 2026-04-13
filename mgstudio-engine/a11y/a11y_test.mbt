@@ -54,3 +54,20 @@ test "a11y: ManageAccessibilityUpdates defaults true and supports mutation" {
   updates.set(true)
   assert_true(updates.get())
 }
+
+///|
+test "a11y: plugin init_resource keeps existing resource values" {
+  let requested = AccessibilityRequested::default()
+  requested.set(true)
+  let updates = ManageAccessibilityUpdates::default()
+  updates.set(false)
+  let app = @app.App::new(@ecs.World::new())
+    .insert_world_resource(ecs_res_key_accessibility_requested, requested)
+    .insert_world_resource(ecs_res_key_manage_accessibility_updates, updates)
+  let app = accessibility_plugin(app)
+  let world = app.world()
+  let requested_after = get_accessibility_requested_resource(world).get().unwrap()
+  let updates_after = get_manage_accessibility_updates_resource(world).get().unwrap()
+  assert_true(requested_after.get())
+  assert_true(!updates_after.get())
+}
