@@ -331,6 +331,20 @@ test "app: schedules do not run before plugin ready lifecycle finalizes" {
 }
 
 ///|
+test "app: explicit finish/cleanup follow bevy lifecycle ordering" {
+  plugin_lifecycle_test_reset_log()
+  let app = App::new(@ecs.World::new()).add_plugin_typed(
+    PluginLifecycleTestPlugin::{  },
+  )
+  let app = app.finish()
+  debug_inspect(app.plugins_state() == Finished, content="true")
+  debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2]")
+  let app = app.cleanup()
+  debug_inspect(app.plugins_state() == Cleaned, content="true")
+  debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2, 3]")
+}
+
+///|
 test "app: schedule sets order and preserve insertion within a set" {
   let log : Array[Int] = []
   let set_a = system_set("A")

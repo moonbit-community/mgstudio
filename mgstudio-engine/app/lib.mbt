@@ -1773,6 +1773,11 @@ pub fn[W] App::finish_plugins(self : App[W]) -> App[W] {
 }
 
 ///|
+pub fn[W] App::finish(self : App[W]) -> App[W] {
+  self.finish_plugins()
+}
+
+///|
 pub fn[W] App::cleanup_plugins(self : App[W]) -> App[W] {
   if self.plugins_state != Finished {
     return self
@@ -1784,6 +1789,11 @@ pub fn[W] App::cleanup_plugins(self : App[W]) -> App[W] {
   }
   app.plugins_state = Cleaned
   app
+}
+
+///|
+pub fn[W] App::cleanup(self : App[W]) -> App[W] {
+  self.cleanup_plugins()
 }
 
 ///|
