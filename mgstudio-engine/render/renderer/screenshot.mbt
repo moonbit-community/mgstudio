@@ -111,17 +111,18 @@ fn parity_capture_delay_frames_from_env() -> Int {
 
 ///|
 fn parity_capture_load_config() -> Unit {
-  if parity_capture_config_loaded_ref.val {
+  let state = screenshot_runtime_state_ref.val
+  if state.parity_capture_config_loaded {
     return
   }
-  parity_capture_config_loaded_ref.val = true
-  parity_capture_delay_frames_ref.val = parity_capture_delay_frames_from_env()
-  parity_capture_blob_path_ref.val = screenshot_env_trimmed(
+  state.parity_capture_config_loaded = true
+  state.parity_capture_delay_frames = parity_capture_delay_frames_from_env()
+  state.parity_capture_blob_path = screenshot_env_trimmed(
     PARITY_CAPTURE_OUTPUT_ENV,
   )
-  if parity_capture_blob_path_ref.val is Some(path) {
+  if state.parity_capture_blob_path is Some(path) {
     screenshot_debug_log(
-      "parity capture enabled path=\{path}, delay_frames=\{parity_capture_delay_frames_ref.val}",
+      "parity capture enabled path=\{path}, delay_frames=\{state.parity_capture_delay_frames}",
     )
   }
 }
@@ -177,23 +178,24 @@ fn parity_capture_write_blob(
 
 ///|
 fn parity_capture_maybe_request_surface_capture() -> Unit {
+  let state = screenshot_runtime_state_ref.val
   parity_capture_load_config()
-  guard parity_capture_blob_path_ref.val is Some(_) else { return }
-  if parity_capture_written_ref.val || parity_capture_request_id_ref.val > 0 {
+  guard state.parity_capture_blob_path is Some(_) else { return }
+  if state.parity_capture_written || state.parity_capture_request_id > 0 {
     return
   }
-  if parity_capture_seen_frames_ref.val < parity_capture_delay_frames_ref.val {
-    parity_capture_seen_frames_ref.val = parity_capture_seen_frames_ref.val + 1
+  if state.parity_capture_seen_frames < state.parity_capture_delay_frames {
+    state.parity_capture_seen_frames = state.parity_capture_seen_frames + 1
     return
   }
   let capture_id = next_screenshot_capture_id()
-  pending_surface_screenshot_captures_ref.val.push(PendingSurfaceScreenshotCapture::{
+  state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
     id: capture_id,
     target_id: 0,
   })
-  parity_capture_request_id_ref.val = capture_id
+  state.parity_capture_request_id = capture_id
   screenshot_debug_log(
-    "request parity surface capture id=\{capture_id}, delay_frames=\{parity_capture_delay_frames_ref.val}",
+    "request parity surface capture id=\{capture_id}, delay_frames=\{state.parity_capture_delay_frames}",
   )
 }
 
@@ -201,14 +203,15 @@ fn parity_capture_maybe_request_surface_capture() -> Unit {
 fn parity_capture_try_write_completed_capture(
   capture : ScreenshotCaptureResult,
 ) -> Unit {
-  if parity_capture_request_id_ref.val <= 0 ||
-    capture.id != parity_capture_request_id_ref.val {
+  let state = screenshot_runtime_state_ref.val
+  if state.parity_capture_request_id <= 0 ||
+    capture.id != state.parity_capture_request_id {
     return
   }
-  parity_capture_request_id_ref.val = 0
-  guard parity_capture_blob_path_ref.val is Some(path) else { return }
+  state.parity_capture_request_id = 0
+  guard state.parity_capture_blob_path is Some(path) else { return }
   if parity_capture_write_blob(path, capture) {
-    parity_capture_written_ref.val = true
+    state.parity_capture_written = true
     screenshot_debug_log(
       "wrote parity capture blob id=\{capture.id}, size=\{capture.width}x\{capture.height}, path=\{path}",
     )
@@ -221,15 +224,16 @@ fn parity_capture_try_write_completed_capture(
 
 ///|
 fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
+  let state = screenshot_runtime_state_ref.val
   if backend.surface_capture_active {
     return
   }
-  if active_surface_screenshot_capture_ids_ref.val.length() > 0 {
+  if state.active_surface_screenshot_capture_ids.length() > 0 {
     backend.surface_capture_active = true
     return
   }
   parity_capture_maybe_request_surface_capture()
-  if pending_surface_screenshot_captures_ref.val.length() == 0 {
+  if state.pending_surface_screenshot_captures.length() == 0 {
     return
   }
   guard backend.surface_format is Some(_) else { return }
@@ -238,7 +242,7 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   }
   let captures_for_target : Array[Int] = []
   let remaining_captures : Array[PendingSurfaceScreenshotCapture] = []
-  for pending_capture in pending_surface_screenshot_captures_ref.val {
+  for pending_capture in state.pending_surface_screenshot_captures {
     if pending_capture.target_id <= 0 ||
       pending_capture.target_id == backend.active_surface_target_id {
       captures_for_target.push(pending_capture.id)
@@ -249,9 +253,9 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   if captures_for_target.length() == 0 {
     return
   }
-  active_surface_screenshot_capture_ids_ref.val = captures_for_target
-  pending_surface_screenshot_captures_ref.val = remaining_captures
-  active_surface_screenshot_capture_target_id_ref.val = backend.active_surface_target_id
+  state.active_surface_screenshot_capture_ids = captures_for_target
+  state.pending_surface_screenshot_captures = remaining_captures
+  state.active_surface_screenshot_capture_target_id = backend.active_surface_target_id
   backend.surface_capture_active = true
   screenshot_debug_log(
     "activate surface capture target=\{backend.active_surface_target_id}, ids=\{captures_for_target.length()}",
@@ -259,53 +263,51 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
 }
 
 ///|
-let next_screenshot_capture_id_ref : Ref[Int] = Ref::new(1)
+priv struct ScreenshotRuntimeState {
+  mut next_screenshot_capture_id : Int
+  mut pending_screenshot_captures : Array[PendingScreenshotCapture]
+  mut pending_surface_screenshot_captures : Array[PendingSurfaceScreenshotCapture]
+  mut active_surface_screenshot_capture_ids : Array[Int]
+  mut active_surface_screenshot_capture_target_id : Int
+  mut inflight_screenshot_captures : Array[InflightScreenshotCapture]
+  completed_screenshot_captures : Array[ScreenshotCaptureResult]
+  mut parity_capture_config_loaded : Bool
+  mut parity_capture_blob_path : String?
+  mut parity_capture_delay_frames : Int
+  mut parity_capture_seen_frames : Int
+  mut parity_capture_request_id : Int
+  mut parity_capture_written : Bool
+}
 
 ///|
-let pending_screenshot_captures_ref : Ref[Array[PendingScreenshotCapture]] = Ref::new([],
+fn screenshot_runtime_state_default() -> ScreenshotRuntimeState {
+  ScreenshotRuntimeState::{
+    next_screenshot_capture_id: 1,
+    pending_screenshot_captures: [],
+    pending_surface_screenshot_captures: [],
+    active_surface_screenshot_capture_ids: [],
+    active_surface_screenshot_capture_target_id: 0,
+    inflight_screenshot_captures: [],
+    completed_screenshot_captures: [],
+    parity_capture_config_loaded: false,
+    parity_capture_blob_path: None,
+    parity_capture_delay_frames: 0,
+    parity_capture_seen_frames: 0,
+    parity_capture_request_id: 0,
+    parity_capture_written: false,
+  }
+}
+
+///|
+let screenshot_runtime_state_ref : Ref[ScreenshotRuntimeState] = Ref::new(
+  screenshot_runtime_state_default(),
 )
-
-///|
-let pending_surface_screenshot_captures_ref : Ref[
-  Array[PendingSurfaceScreenshotCapture],
-] = Ref::new([])
-
-///|
-let active_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
-
-///|
-let active_surface_screenshot_capture_target_id_ref : Ref[Int] = Ref::new(0)
-
-///|
-let inflight_screenshot_captures_ref : Ref[Array[InflightScreenshotCapture]] = Ref::new([],
-)
-
-///|
-let completed_screenshot_captures_ref : Ref[Array[ScreenshotCaptureResult]] = Ref::new([],
-)
-
-///|
-let parity_capture_config_loaded_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let parity_capture_blob_path_ref : Ref[String?] = Ref::new(None)
-
-///|
-let parity_capture_delay_frames_ref : Ref[Int] = Ref::new(0)
-
-///|
-let parity_capture_seen_frames_ref : Ref[Int] = Ref::new(0)
-
-///|
-let parity_capture_request_id_ref : Ref[Int] = Ref::new(0)
-
-///|
-let parity_capture_written_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 fn next_screenshot_capture_id() -> Int {
-  let id = next_screenshot_capture_id_ref.val
-  next_screenshot_capture_id_ref.val = next_screenshot_capture_id_ref.val + 1
+  let state = screenshot_runtime_state_ref.val
+  let id = state.next_screenshot_capture_id
+  state.next_screenshot_capture_id = state.next_screenshot_capture_id + 1
   id
 }
 
@@ -387,12 +389,13 @@ fn screenshot_enqueue_texture_capture(
   height : Int,
   format_raw : UInt,
 ) -> Int {
+  let state = screenshot_runtime_state_ref.val
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(_) else {
     return 0
   }
   guard backend.frame is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  pending_screenshot_captures_ref.val.push(PendingScreenshotCapture::{
+  state.pending_screenshot_captures.push(PendingScreenshotCapture::{
     id: capture_id,
     width,
     height,
@@ -452,6 +455,7 @@ fn screenshot_enqueue_copy_to_buffer(
   height : Int,
   format_raw : UInt,
 ) -> Unit {
+  let state = screenshot_runtime_state_ref.val
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(bytes_per_pixel) else {
     return
   }
@@ -467,7 +471,7 @@ fn screenshot_enqueue_copy_to_buffer(
     height.reinterpret_as_uint(),
     bytes_per_pixel.reinterpret_as_uint(),
   )
-  inflight_screenshot_captures_ref.val.push(InflightScreenshotCapture::{
+  state.inflight_screenshot_captures.push(InflightScreenshotCapture::{
     id: capture_id,
     width,
     height,
@@ -482,8 +486,9 @@ fn screenshot_encode_pending_texture_captures(
   backend : GpuBackend,
   frame : GpuFrameState,
 ) -> Unit {
-  let pending = pending_screenshot_captures_ref.val
-  pending_screenshot_captures_ref.val = []
+  let state = screenshot_runtime_state_ref.val
+  let pending = state.pending_screenshot_captures
+  state.pending_screenshot_captures = []
   for capture in pending {
     screenshot_enqueue_copy_to_buffer(
       backend,
@@ -502,11 +507,11 @@ fn screenshot_encode_active_surface_captures(
   backend : GpuBackend,
   frame : GpuFrameState,
 ) -> Unit {
+  let state = screenshot_runtime_state_ref.val
   if !backend.surface_capture_active {
     return
   }
-  if active_surface_screenshot_capture_target_id_ref.val !=
-    backend.active_surface_target_id {
+  if state.active_surface_screenshot_capture_target_id != backend.active_surface_target_id {
     return
   }
   guard backend.surface_format is Some(surface_format) else { return }
@@ -526,8 +531,8 @@ fn screenshot_encode_active_surface_captures(
     )
     return
   }
-  let active_capture_ids = active_surface_screenshot_capture_ids_ref.val
-  active_surface_screenshot_capture_ids_ref.val = []
+  let active_capture_ids = state.active_surface_screenshot_capture_ids
+  state.active_surface_screenshot_capture_ids = []
   for capture_id in active_capture_ids {
     screenshot_debug_log(
       "enqueue surface capture id=\{capture_id}, size=\{width}x\{height}, format=\{surface_format.raw.reinterpret_as_int()}",
@@ -546,22 +551,23 @@ fn screenshot_encode_active_surface_captures(
 
 ///|
 fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit {
+  let state = screenshot_runtime_state_ref.val
   if !backend.surface_capture_active {
     return
   }
-  if active_surface_screenshot_capture_target_id_ref.val !=
-    backend.active_surface_target_id {
+  if state.active_surface_screenshot_capture_target_id != backend.active_surface_target_id {
     return
   }
   backend.surface_capture_active = false
-  active_surface_screenshot_capture_ids_ref.val.clear()
-  active_surface_screenshot_capture_target_id_ref.val = 0
+  state.active_surface_screenshot_capture_ids.clear()
+  state.active_surface_screenshot_capture_target_id = 0
 }
 
 ///|
 fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
-  let inflight = inflight_screenshot_captures_ref.val
-  inflight_screenshot_captures_ref.val = []
+  let state = screenshot_runtime_state_ref.val
+  let inflight = state.inflight_screenshot_captures
+  state.inflight_screenshot_captures = []
   for capture in inflight {
     let bytes = capture.buffer.readback(backend.instance, 0UL, capture.byte_len)
     capture.buffer.release()
@@ -578,7 +584,7 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
         height: capture.height,
         pixels,
       }
-      completed_screenshot_captures_ref.val.push(completed)
+      state.completed_screenshot_captures.push(completed)
       parity_capture_try_write_completed_capture(completed)
       screenshot_debug_log(
         "complete capture id=\{capture.id}, size=\{capture.width}x\{capture.height}",
@@ -593,9 +599,10 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
 
 ///|
 pub fn screenshot_capture_surface_request() -> Int {
+  let state = screenshot_runtime_state_ref.val
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  pending_surface_screenshot_captures_ref.val.push(PendingSurfaceScreenshotCapture::{
+  state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
     id: capture_id,
     target_id: 0,
   })
@@ -605,10 +612,11 @@ pub fn screenshot_capture_surface_request() -> Int {
 
 ///|
 pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
+  let state = screenshot_runtime_state_ref.val
   guard target_id > 0 else { return 0 }
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  pending_surface_screenshot_captures_ref.val.push(PendingSurfaceScreenshotCapture::{
+  state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
     id: capture_id,
     target_id,
   })
@@ -635,10 +643,11 @@ pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
 pub fn screenshot_take_capture_result(
   capture_id : Int,
 ) -> ScreenshotCaptureResult? {
-  for i in 0..<completed_screenshot_captures_ref.val.length() {
-    let capture = completed_screenshot_captures_ref.val[i]
+  let state = screenshot_runtime_state_ref.val
+  for i in 0..<state.completed_screenshot_captures.length() {
+    let capture = state.completed_screenshot_captures[i]
     if capture.id == capture_id {
-      completed_screenshot_captures_ref.val.remove(i) |> ignore
+      state.completed_screenshot_captures.remove(i) |> ignore
       screenshot_debug_log("take capture id=\{capture_id}: hit")
       return Some(capture)
     }
