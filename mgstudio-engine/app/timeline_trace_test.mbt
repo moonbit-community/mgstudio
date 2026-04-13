@@ -58,3 +58,29 @@ test "app: timeline trace disabled path stays no-op" {
 
   debug_inspect(begin_ts, content="-1")
 }
+
+///|
+test "app: timeline trace pending queue stores and drains spans" {
+  clear_timeline_trace_span_sink()
+  timeline_trace_clear_pending_spans()
+
+  set_timeline_trace_span_sink(Some(fn(span) { timeline_trace_push_pending_span(span) }))
+  timeline_trace_emit_complete_span(
+    TimelineTraceCategory::RenderQueue,
+    "queue_test",
+    10L,
+    20L,
+  )
+  clear_timeline_trace_span_sink()
+
+  let first_batch = timeline_trace_take_pending_spans()
+  let second_batch = timeline_trace_take_pending_spans()
+
+  debug_inspect(first_batch.length(), content="1")
+  debug_inspect(first_batch[0].name() == "queue_test", content="true")
+  debug_inspect(
+    first_batch[0].category() == TimelineTraceCategory::RenderQueue,
+    content="true",
+  )
+  debug_inspect(second_batch.length(), content="0")
+}

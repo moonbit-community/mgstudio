@@ -69,7 +69,7 @@ This file must not exceed 200 lines.
 - [x] `render/pbr`: move wireframe mesh cache from global `Ref` to render-world resource ownership.
 - [x] `render/pbr`: move world-transform cache from global shared `Ref` to render-world resource ownership.
 - [x] `pbr/plugin`: remove global plugin runtime-config `Ref`; resolve runtime config from ECS resource/default per world.
-- [x] `render/pbr`: move render3d diagnostics state (runtime flag + queue/execute counters) from global `Ref` to world-owned resource.
+- [x] `render/pbr` + `diagnostic/timeline_trace`: move render3d diagnostics state to world-owned resource and move timeline pending-span buffer ownership from diagnostic global `Ref` to app timeline owner queue.
 - [x] `pbr/free_camera`: move controller system-state from global `Ref` to world-owned resource.
 - [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`) and remove direct state mutation from `window_surface`.
 - [x] `render/renderer`: collapse `window_surface` scattered binding globals (`surfaces/frames/id seeds`) into a single owner runtime state (`WindowSurfaceRuntimeState`), keeping behavior-local ownership.

@@ -69,6 +69,11 @@ pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 let timeline_trace_span_sink_ref : Ref[TimelineTraceSpanSink?] = Ref::new(None)
 
 ///|
+let timeline_trace_pending_spans_ref : Ref[Array[TimelineTraceSpan]] = Ref::new(
+  [],
+)
+
+///|
 pub fn set_timeline_trace_span_sink(sink : TimelineTraceSpanSink?) -> Unit {
   timeline_trace_span_sink_ref.val = sink
 }
@@ -76,6 +81,23 @@ pub fn set_timeline_trace_span_sink(sink : TimelineTraceSpanSink?) -> Unit {
 ///|
 pub fn clear_timeline_trace_span_sink() -> Unit {
   timeline_trace_span_sink_ref.val = None
+}
+
+///|
+pub fn timeline_trace_push_pending_span(span : TimelineTraceSpan) -> Unit {
+  timeline_trace_pending_spans_ref.val.push(span)
+}
+
+///|
+pub fn timeline_trace_take_pending_spans() -> Array[TimelineTraceSpan] {
+  let pending = timeline_trace_pending_spans_ref.val
+  timeline_trace_pending_spans_ref.val = []
+  pending
+}
+
+///|
+pub fn timeline_trace_clear_pending_spans() -> Unit {
+  timeline_trace_pending_spans_ref.val = []
 }
 
 ///|

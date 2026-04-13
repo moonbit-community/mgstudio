@@ -122,10 +122,6 @@ let timeline_trace_state_resource_key : @ecs.ResourceKey[TimelineTraceState] = @
 )
 
 ///|
-let timeline_trace_pending_spans_ref : Ref[Array[@app.TimelineTraceSpan]] = Ref::new([],
-)
-
-///|
 fn timeline_trace_env_enabled(default_value : Bool) -> Bool {
   match @sys.get_env_var(TIMELINE_TRACE_ENV_ENABLED) {
     Some(raw) => {
@@ -255,7 +251,7 @@ fn timeline_trace_category_enabled(
 
 ///|
 fn timeline_trace_capture_span(span : @app.TimelineTraceSpan) -> Unit {
-  timeline_trace_pending_spans_ref.val.push(span)
+  @app.timeline_trace_push_pending_span(span)
 }
 
 ///|
@@ -339,8 +335,7 @@ fn timeline_trace_flush_to_disk(state : TimelineTraceState) -> Unit {
 
 ///|
 fn timeline_trace_append_pending_spans(state : TimelineTraceState) -> Unit {
-  let pending = timeline_trace_pending_spans_ref.val
-  timeline_trace_pending_spans_ref.val = []
+  let pending = @app.timeline_trace_take_pending_spans()
   for span in pending {
     if !timeline_trace_category_enabled(state.config, span.category()) {
       continue
@@ -405,7 +400,7 @@ pub fn timeline_trace_plugin_with(
       frame_count_since_flush: 0,
     })
 
-  timeline_trace_pending_spans_ref.val = []
+  @app.timeline_trace_clear_pending_spans()
   if config.enabled {
     @app.set_timeline_trace_span_sink(Some(timeline_trace_capture_span))
     app_ = app_.add_post_update_system(timeline_trace_flush_system)
