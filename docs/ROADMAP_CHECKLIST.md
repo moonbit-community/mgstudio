@@ -20,9 +20,9 @@ This file must not exceed 200 lines.
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 78% | 78% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
 | `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 72% | 72% | 🟡 In Progress | Pointer-hit and layout/render consistency still require continuous parity checks. |
 | `bevy_text` | `mgstudio-engine/text` | 90% | 66% | 66% | 🟡 In Progress | Text shaping/BiDi dependency gaps still block full behavior equivalence. |
-| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 93% | 76% | 76% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
+| `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 93% | 77% | 77% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
 | `bevy_animation` | `mgstudio-engine/animation` | 93% | 70% | 70% | 🟡 In Progress | Typed event and runtime coupling still need deeper source-level alignment. |
-| `bevy_scene` (static scene path) | `mgstudio-engine/scene` | 92% | 76% | 76% | 🟡 In Progress | Spawn/runtime integration has remaining parity-tail differences. |
+| `bevy_scene` (static scene path) | `mgstudio-engine/scene` | 92% | 77% | 77% | 🟡 In Progress | Spawn/runtime integration has remaining parity-tail differences. |
 | `bevy_scene` (`dynamic_scene*`) | N/A (explicit non-goal: dynamic) | 0% | 0% | 0% | ⏸ Excluded | Dynamic-scene path remains explicitly out of scope. |
 | `bevy_gizmos` | `mgstudio-engine/gizmos` + `gizmos_render` | 90% | 74% | 74% | 🟡 In Progress | Gizmo rendering/runtime polish and behavior tails are still pending. |
 | `bevy_picking` | `mgstudio-engine/picking` | 90% | 72% | 72% | 🟡 In Progress | Camera-space and UI interaction edge cases still need strict parity validation. |
@@ -191,7 +191,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/meshlet`: remove dead per-file `*_runtime_available()` forwarding wrappers and keep a single package-level runtime gate.
 - [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe.
 - [ ] `render/wgpu_mbt` (deferred, upstream): expose queryable/bridgeable Bevy meshlet-required texture atomic feature flags (`TEXTURE_INT64_ATOMIC`, `TEXTURE_ATOMIC`) for full meshlet capability parity (`SHADER_INT64`/`SUBGROUP`/`IMMEDIATES`已接入，tracked at `moonbit-community/wgpu-mbt#11`).
-- [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event runtime resourceized + gltf extension runtime state resourceized + gltf loader runtime config/vertex-attribute state resourceized + scene gltf pending queues resourceized), then close remaining runtime differences.
+- [ ] `animation/gltf/scene`: continue ownerization (done: scene modified-event cursor world-owned + LOD policy plugin-owned + animation event runtime resourceized + gltf extension runtime state resourceized + gltf loader runtime config/vertex-attribute state resourceized + scene gltf pending queues resourceized + gltf loader registration/registered state resourceized with bootstrap fallback), then close remaining runtime differences.
 - [ ] `ui/sprite/picking`: run visual + interaction parity gate and fix remaining camera/pointer drift (done: window->sprite Y-axis mapping wb tests + viewport-origin/rotation/scale mapping wb tests added).
 - [ ] `text`: track upstream shaping/BiDi blockers and keep behavior parity deltas explicit and minimized.
 - [ ] `asset/image`: close remaining runtime decode/link gaps (done: embedded asset source path fallback to `mgstudio-engine/...` + native `moon test asset` pass on current toolchain, with remaining linker-warning cleanup pending).

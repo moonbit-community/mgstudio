@@ -228,9 +228,17 @@ pub fn GltfPlugin::with_skinned_mesh_bounds_policy(
 }
 
 ///|
-priv struct GltfPluginRuntimeState {
+priv struct GltfLoaderPluginRuntimeState {
   mut registration : GltfLoaderRegistration?
   mut registered : Bool
+}
+
+///|
+fn GltfLoaderPluginRuntimeState::from_bootstrap() -> GltfLoaderPluginRuntimeState {
+  GltfLoaderPluginRuntimeState::{
+    registration: gltf_loader_registration_bootstrap_ref.val,
+    registered: gltf_loader_registered_bootstrap_ref.val,
+  }
 }
 
 ///|
@@ -254,10 +262,12 @@ fn GltfLoaderRuntimeState::from_bootstrap() -> GltfLoaderRuntimeState {
 }
 
 ///|
-let gltf_plugin_runtime_state_ref : Ref[GltfPluginRuntimeState] = Ref::new({
-  registration: None,
-  registered: false,
-})
+let gltf_loader_registration_bootstrap_ref : Ref[GltfLoaderRegistration?] = Ref::new(
+  None,
+)
+
+///|
+let gltf_loader_registered_bootstrap_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 let gltf_custom_vertex_attributes_bootstrap : Array[GltfCustomVertexAttribute] = []
@@ -273,6 +283,11 @@ let gltf_default_skinned_mesh_bounds_policy_bootstrap_ref : Ref[
 ] = Ref::new(GltfSkinnedMeshBoundsPolicy::default())
 
 ///|
+let ecs_res_key_gltf_loader_plugin_runtime_state : @ecs.ResourceKey[
+  GltfLoaderPluginRuntimeState,
+] = @ecs.register_resource(debug_name="gltf.loader.plugin_runtime_state")
+
+///|
 pub let ecs_res_key_gltf_loader_runtime_state : @ecs.ResourceKey[
   GltfLoaderRuntimeState,
 ] = @ecs.register_resource(debug_name="gltf.loader.runtime_state")
@@ -280,6 +295,28 @@ pub let ecs_res_key_gltf_loader_runtime_state : @ecs.ResourceKey[
 ///|
 pub impl @app.Resource for GltfLoaderRuntimeState with resource() {
   ecs_res_key_gltf_loader_runtime_state
+}
+
+///|
+fn gltf_loader_plugin_runtime_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  if app.contains_resource(ecs_res_key_gltf_loader_plugin_runtime_state) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_res_key_gltf_loader_plugin_runtime_state,
+      GltfLoaderPluginRuntimeState::from_bootstrap(),
+    )
+  }
+}
+
+///|
+fn gltf_loader_plugin_runtime_state_ref_if_present() -> Ref[
+  GltfLoaderPluginRuntimeState,
+]? {
+  guard @app.current_world() is Some(world) else { return None }
+  try! world.get_resource_ref_mut(ecs_res_key_gltf_loader_plugin_runtime_state)
 }
 
 ///|
@@ -372,8 +409,12 @@ pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute] {
 pub fn gltf_install_loader_registration(
   registration : GltfLoaderRegistration,
 ) -> Unit {
-  gltf_plugin_runtime_state_ref.val.registration = Some(registration)
-  gltf_plugin_runtime_state_ref.val.registered = false
+  gltf_loader_registration_bootstrap_ref.val = Some(registration)
+  gltf_loader_registered_bootstrap_ref.val = false
+  if gltf_loader_plugin_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.registration = Some(registration)
+    state_ref.val.registered = false
+  }
 }
 
 ///|
@@ -401,6 +442,7 @@ pub fn gltf_plugin_with(
     gltf_register_extension_handler(handler)
   }
   let app = @gltf_loader_extensions.gltf_extension_runtime_plugin(app)
+  let app = gltf_loader_plugin_runtime_plugin(app)
   let app = gltf_loader_runtime_plugin(app)
   gltf_register_asset_loaders_once()
   app
@@ -471,10 +513,26 @@ pub fn gltf_set_default_convert_coordinates(
 
 ///|
 fn gltf_register_asset_loaders_once() -> Unit {
-  if gltf_plugin_runtime_state_ref.val.registered {
+  if gltf_loader_plugin_runtime_state_ref_if_present() is Some(state_ref) {
+    if state_ref.val.registered {
+      return
+    }
+    let register = match state_ref.val.registration {
+      Some(value) => value
+      None =>
+        abort(
+          "gltf plugin loader registration is not installed; add scene loader wiring before running gltf_plugin",
+        )
+    }
+    register()
+    state_ref.val.registered = true
+    gltf_loader_registered_bootstrap_ref.val = true
     return
   }
-  let register = match gltf_plugin_runtime_state_ref.val.registration {
+  if gltf_loader_registered_bootstrap_ref.val {
+    return
+  }
+  let register = match gltf_loader_registration_bootstrap_ref.val {
     Some(value) => value
     None =>
       abort(
@@ -482,7 +540,7 @@ fn gltf_register_asset_loaders_once() -> Unit {
       )
   }
   register()
-  gltf_plugin_runtime_state_ref.val.registered = true
+  gltf_loader_registered_bootstrap_ref.val = true
 }
 
 ///|
