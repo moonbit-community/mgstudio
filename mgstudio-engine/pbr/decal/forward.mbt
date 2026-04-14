@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
+///| 
 /// Marker component aligned with Bevy's `ForwardDecal`.
 pub struct ForwardDecal {} derive(ToJson, FromJson)
+
+///|
+const FORWARD_DECAL_PLUGIN_NAME : String = "mgstudio.pbr.decal.ForwardDecalPlugin"
 
 ///|
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
@@ -25,6 +28,19 @@ pub struct ForwardDecalPlugin {}
 ///|
 pub fn ForwardDecalPlugin::default() -> ForwardDecalPlugin {
   ForwardDecalPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for ForwardDecalPlugin with plugin_name(_self) {
+  FORWARD_DECAL_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for ForwardDecalPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    ignore(self)
+    app
+  }
 }
 
 ///|

@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/lightmap/mod.rs`.
 
 ///|
+const LIGHTMAP_PLUGIN_NAME : String = "mgstudio.pbr.lightmap.LightmapPlugin"
+
+///|
 pub const LIGHTMAPS_PER_SLAB : Int = 4
 
 ///|
@@ -24,6 +27,18 @@ pub struct LightmapPlugin {}
 ///|
 pub fn lightmap_plugin() -> LightmapPlugin {
   LightmapPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for LightmapPlugin with plugin_name(_self) {
+  LIGHTMAP_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for LightmapPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    lightmap_plugin_install_with(app, self)
+  }
 }
 
 ///|
@@ -309,3 +324,45 @@ pub impl @ecs.Component for Lightmap with component() {
 pub let ecs_key_render_lightmaps : @ecs.ResourceKey[RenderLightmaps] = @ecs.register_resource(
   debug_name="render3d.render_lightmaps",
 )
+
+///|
+let ecs_key_lightmap_plugin_state : @ecs.ResourceKey[LightmapPluginState] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::LightmapPluginState",
+)
+
+///|
+pub impl @app.Resource for LightmapPluginState with resource() {
+  ecs_key_lightmap_plugin_state
+}
+
+///|
+pub impl @app.Resource for RenderLightmaps with resource() {
+  ecs_key_render_lightmaps
+}
+
+///|
+pub fn lightmap_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  lightmap_plugin_install_with(app, LightmapPlugin::{  })
+}
+
+///|
+pub fn lightmap_plugin_install_with(
+  app : @app.App[@ecs.World],
+  plugin : LightmapPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  let mut next = app
+  if !next.contains_resource(ecs_key_render_lightmaps) {
+    next = next.insert_world_resource(
+      ecs_key_render_lightmaps, RenderLightmaps::default(),
+    )
+  }
+  if !next.contains_resource(ecs_key_lightmap_plugin_state) {
+    next = next.insert_world_resource(
+      ecs_key_lightmap_plugin_state, LightmapPluginState::default(),
+    )
+  }
+  next
+}

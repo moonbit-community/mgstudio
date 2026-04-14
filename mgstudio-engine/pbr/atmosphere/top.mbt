@@ -19,11 +19,6 @@
 const ATMOSPHERE_PLUGIN_NAME : String = "mgstudio.pbr.AtmospherePlugin"
 
 ///|
-pub fn atmosphere_plugin_id() -> String {
-  ATMOSPHERE_PLUGIN_NAME
-}
-
-///|
 pub struct AtmospherePlugin {
   enabled : Bool
   supports_compute : Bool
@@ -36,6 +31,18 @@ pub fn AtmospherePlugin::default() -> AtmospherePlugin {
     enabled: true,
     supports_compute: true,
     supports_storage_binding: true,
+  }
+}
+
+///|
+pub impl @app.PluginReplacement for AtmospherePlugin with plugin_name(_self) {
+  ATMOSPHERE_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for AtmospherePlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    atmosphere_plugin_install_with(app, self)
   }
 }
 
@@ -53,6 +60,18 @@ pub fn AtmospherePluginState::default() -> AtmospherePluginState {
     extracted_camera_count: 0,
     lut_ready: false,
   }
+}
+
+///|
+let ecs_key_atmosphere_plugin_state : @ecs.ResourceKey[
+  AtmospherePluginState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::AtmospherePluginState",
+)
+
+///|
+pub impl @app.Resource for AtmospherePluginState with resource() {
+  ecs_key_atmosphere_plugin_state
 }
 
 ///|
@@ -81,4 +100,26 @@ pub fn atmosphere_plugin_state_with_lut_ready(
 ///|
 pub fn atmosphere_plugin() -> AtmospherePlugin {
   AtmospherePlugin::default()
+}
+
+///|
+pub fn atmosphere_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  atmosphere_plugin_install_with(app, AtmospherePlugin::default())
+}
+
+///|
+pub fn atmosphere_plugin_install_with(
+  app : @app.App[@ecs.World],
+  plugin : AtmospherePlugin,
+) -> @app.App[@ecs.World] {
+  if app.contains_resource(ecs_key_atmosphere_plugin_state) {
+    app
+  } else {
+    app.insert_world_resource(ecs_key_atmosphere_plugin_state, AtmospherePluginState::{
+      ..AtmospherePluginState::default(),
+      plugin,
+    })
+  }
 }

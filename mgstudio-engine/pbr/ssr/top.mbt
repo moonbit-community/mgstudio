@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/ssr/mod.rs`.
 
 ///|
+const SCREEN_SPACE_REFLECTIONS_PLUGIN_NAME : String = "mgstudio.pbr.ssr.ScreenSpaceReflectionsPlugin"
+
+///|
 pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections
 
 ///|
@@ -24,6 +27,22 @@ pub struct ScreenSpaceReflectionsPlugin {}
 ///|
 pub fn ScreenSpaceReflectionsPlugin::default() -> ScreenSpaceReflectionsPlugin {
   ScreenSpaceReflectionsPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for ScreenSpaceReflectionsPlugin with plugin_name(
+  _self,
+) {
+  SCREEN_SPACE_REFLECTIONS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for ScreenSpaceReflectionsPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    ssr_plugin_install_with(app, self)
+  }
 }
 
 ///|
@@ -64,6 +83,18 @@ pub fn ScreenSpaceReflectionsPluginState::default() -> ScreenSpaceReflectionsPlu
     enabled: true,
     pipeline_id: ScreenSpaceReflectionsPipelineId::default(),
   }
+}
+
+///|
+let ecs_key_ssr_plugin_state : @ecs.ResourceKey[
+  ScreenSpaceReflectionsPluginState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::ScreenSpaceReflectionsPluginState",
+)
+
+///|
+pub impl @app.Resource for ScreenSpaceReflectionsPluginState with resource() {
+  ecs_key_ssr_plugin_state
 }
 
 ///|
@@ -131,4 +162,27 @@ pub fn pbr_ssr_uniform_with_bisection_steps(
 ///|
 pub fn pbr_ssr_default() -> ScreenSpaceReflections {
   ScreenSpaceReflections::default()
+}
+
+///|
+pub fn ssr_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  ssr_plugin_install_with(app, ScreenSpaceReflectionsPlugin::default())
+}
+
+///|
+pub fn ssr_plugin_install_with(
+  app : @app.App[@ecs.World],
+  plugin : ScreenSpaceReflectionsPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  if app.contains_resource(ecs_key_ssr_plugin_state) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_key_ssr_plugin_state,
+      ScreenSpaceReflectionsPluginState::default(),
+    )
+  }
 }

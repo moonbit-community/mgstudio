@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/ssao/mod.rs`.
 
 ///|
+const SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_NAME : String = "mgstudio.pbr.ssao.ScreenSpaceAmbientOcclusionPlugin"
+
+///|
 pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbientOcclusionQualityLevel
 
 ///|
@@ -27,6 +30,22 @@ pub struct ScreenSpaceAmbientOcclusionPlugin {}
 ///|
 pub fn ScreenSpaceAmbientOcclusionPlugin::default() -> ScreenSpaceAmbientOcclusionPlugin {
   ScreenSpaceAmbientOcclusionPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for ScreenSpaceAmbientOcclusionPlugin with plugin_name(
+  _self,
+) {
+  SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for ScreenSpaceAmbientOcclusionPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    ssao_plugin_install_with(app, self)
+  }
 }
 
 ///|
@@ -87,6 +106,18 @@ pub fn ScreenSpaceAmbientOcclusionPluginState::default() -> ScreenSpaceAmbientOc
 }
 
 ///|
+let ecs_key_ssao_plugin_state : @ecs.ResourceKey[
+  ScreenSpaceAmbientOcclusionPluginState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::ScreenSpaceAmbientOcclusionPluginState",
+)
+
+///|
+pub impl @app.Resource for ScreenSpaceAmbientOcclusionPluginState with resource() {
+  ecs_key_ssao_plugin_state
+}
+
+///|
 pub fn ssao_quality_sample_counts(
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel,
 ) -> (Int, Int) {
@@ -109,4 +140,27 @@ pub fn ssao_pipeline_key(
 ///|
 pub fn pbr_ssao_default() -> ScreenSpaceAmbientOcclusion {
   ScreenSpaceAmbientOcclusion::default()
+}
+
+///|
+pub fn ssao_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  ssao_plugin_install_with(app, ScreenSpaceAmbientOcclusionPlugin::default())
+}
+
+///|
+pub fn ssao_plugin_install_with(
+  app : @app.App[@ecs.World],
+  plugin : ScreenSpaceAmbientOcclusionPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  if app.contains_resource(ecs_key_ssao_plugin_state) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_key_ssao_plugin_state,
+      ScreenSpaceAmbientOcclusionPluginState::default(),
+    )
+  }
 }

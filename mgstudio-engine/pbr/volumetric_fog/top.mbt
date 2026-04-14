@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/volumetric_fog/mod.rs`.
 
 ///|
+const VOLUMETRIC_FOG_PLUGIN_NAME : String = "mgstudio.pbr.volumetric_fog.VolumetricFogPlugin"
+
+///|
 pub type VolumetricFog = @light.VolumetricFog
 
 ///|
@@ -27,6 +30,18 @@ pub struct VolumetricFogPlugin {}
 ///|
 pub fn VolumetricFogPlugin::default() -> VolumetricFogPlugin {
   VolumetricFogPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for VolumetricFogPlugin with plugin_name(_self) {
+  VOLUMETRIC_FOG_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for VolumetricFogPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    volumetric_fog_plugin_install_with(app, self)
+  }
 }
 
 ///|
@@ -54,6 +69,18 @@ pub fn VolumetricFogPluginState::default() -> VolumetricFogPluginState {
     extracted_view_count: 0,
     extracted_volume_count: 0,
   }
+}
+
+///|
+let ecs_key_volumetric_fog_plugin_state : @ecs.ResourceKey[
+  VolumetricFogPluginState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::VolumetricFogPluginState",
+)
+
+///|
+pub impl @app.Resource for VolumetricFogPluginState with resource() {
+  ecs_key_volumetric_fog_plugin_state
 }
 
 ///|
@@ -93,4 +120,27 @@ pub fn pbr_volumetric_fog_default() -> VolumetricFog {
 ///|
 pub fn pbr_fog_volume_default() -> FogVolume {
   FogVolume::default()
+}
+
+///|
+pub fn volumetric_fog_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  volumetric_fog_plugin_install_with(app, VolumetricFogPlugin::default())
+}
+
+///|
+pub fn volumetric_fog_plugin_install_with(
+  app : @app.App[@ecs.World],
+  plugin : VolumetricFogPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  if app.contains_resource(ecs_key_volumetric_fog_plugin_state) {
+    app
+  } else {
+    app.insert_world_resource(
+      ecs_key_volumetric_fog_plugin_state,
+      VolumetricFogPluginState::default(),
+    )
+  }
 }

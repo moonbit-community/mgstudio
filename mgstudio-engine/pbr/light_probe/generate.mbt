@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/light_probe/generate.rs`.
 
 ///|
+const ENVIRONMENT_MAP_GENERATION_PLUGIN_NAME : String = "mgstudio.pbr.light_probe.EnvironmentMapGenerationPlugin"
+
+///|
 pub type GeneratedEnvironmentMapLight = @light.GeneratedEnvironmentMapLight
 
 ///|
@@ -96,6 +99,23 @@ pub struct EnvironmentMapGenerationPlugin {}
 ///|
 pub fn EnvironmentMapGenerationPlugin::default() -> EnvironmentMapGenerationPlugin {
   EnvironmentMapGenerationPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for EnvironmentMapGenerationPlugin with plugin_name(
+  _self,
+) {
+  ENVIRONMENT_MAP_GENERATION_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for EnvironmentMapGenerationPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    ignore(self)
+    app
+  }
 }
 
 ///|

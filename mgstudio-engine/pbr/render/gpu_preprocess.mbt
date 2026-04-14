@@ -15,6 +15,9 @@
 // Bevy-aligned render module anchor.
 
 ///|
+const GPU_MESH_PREPROCESS_PLUGIN_NAME : String = "mgstudio.pbr.render.GpuMeshPreprocessPlugin"
+
+///|
 pub struct Render3dGpuPreprocessState {
   enabled : Bool
   use_gpu_instance_buffer_builder : Bool
@@ -153,6 +156,53 @@ pub fn GpuMeshPreprocessPlugin::new(
   use_gpu_instance_buffer_builder : Bool,
 ) -> GpuMeshPreprocessPlugin {
   GpuMeshPreprocessPlugin::{ use_gpu_instance_buffer_builder, }
+}
+
+///|
+pub impl @app.PluginReplacement for GpuMeshPreprocessPlugin with plugin_name(
+  _self,
+) {
+  GPU_MESH_PREPROCESS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for GpuMeshPreprocessPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    gpu_mesh_preprocess_plugin_install_with(app, self)
+  }
+}
+
+///|
+let ecs_key_gpu_mesh_preprocess_state : @ecs.ResourceKey[
+  Render3dGpuPreprocessState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Render3dGpuPreprocessState",
+)
+
+///|
+pub impl @app.Resource for Render3dGpuPreprocessState with resource() {
+  ecs_key_gpu_mesh_preprocess_state
+}
+
+///|
+pub fn gpu_mesh_preprocess_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  gpu_mesh_preprocess_plugin_install_with(app, GpuMeshPreprocessPlugin::default())
+}
+
+///|
+pub fn gpu_mesh_preprocess_plugin_install_with(
+  app : @app.App[@ecs.World],
+  plugin : GpuMeshPreprocessPlugin,
+) -> @app.App[@ecs.World] {
+  let state = render3d_gpu_preprocess_state(
+    plugin.use_gpu_instance_buffer_builder,
+    false,
+  )
+  app.insert_world_resource(ecs_key_gpu_mesh_preprocess_state, state)
 }
 
 ///|
