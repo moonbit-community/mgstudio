@@ -20,8 +20,23 @@
 pub struct DiagnosticsPlugin {}
 
 ///|
+const DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.DiagnosticsPlugin"
+
+///|
 pub fn DiagnosticsPlugin::default() -> DiagnosticsPlugin {
   DiagnosticsPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for DiagnosticsPlugin with plugin_name(_self) {
+  DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for DiagnosticsPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    diagnostics_plugin_with(app, self)
+  }
 }
 
 ///|

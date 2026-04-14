@@ -25,6 +25,12 @@ const TIMELINE_TRACE_ENV_FLUSH_FRAMES : String = "MGSTUDIO_TIMELINE_TRACE_FLUSH_
 const TIMELINE_TRACE_ENV_CATEGORIES : String = "MGSTUDIO_TIMELINE_TRACE_CATEGORIES"
 
 ///|
+const TIMELINE_TRACE_PLUGIN_NAME : String = "mgstudio.diagnostic.TimelineTracePlugin"
+
+///|
+const STRESS_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.StressDiagnosticsPlugin"
+
+///|
 pub struct TimelineTraceConfig {
   enabled : Bool
   output_path : String
@@ -102,11 +108,35 @@ pub fn TimelineTracePlugin::with_config(
 }
 
 ///|
+pub impl @app.PluginReplacement for TimelineTracePlugin with plugin_name(_self) {
+  TIMELINE_TRACE_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for TimelineTracePlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    timeline_trace_plugin_with(app, self)
+  }
+}
+
+///|
 pub struct StressDiagnosticsPlugin {}
 
 ///|
 pub fn StressDiagnosticsPlugin::default() -> StressDiagnosticsPlugin {
   StressDiagnosticsPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for StressDiagnosticsPlugin with plugin_name(_self) {
+  STRESS_DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for StressDiagnosticsPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    stress_diagnostics_plugin_with(app, self)
+  }
 }
 
 ///|
@@ -414,6 +444,15 @@ pub fn timeline_trace_plugin_with(
 pub fn stress_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
+  stress_diagnostics_plugin_with(app, StressDiagnosticsPlugin::default())
+}
+
+///|
+pub fn stress_diagnostics_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : StressDiagnosticsPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   let log_plugin = LogDiagnosticsPlugin::{
     ..LogDiagnosticsPlugin::filtered([
       frame_time_diagnostic_fps, frame_time_diagnostic_frame_time, frame_time_diagnostic_frame_count,

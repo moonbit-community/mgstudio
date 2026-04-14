@@ -28,7 +28,7 @@ This file must not exceed 200 lines.
 | `bevy_input` | `mgstudio-engine/input` | 94% | 88% | 88% | 🟡 In Progress | Package tests are green; remaining platform/event-order corner cases still need alignment checks. |
 | `bevy_window` + `bevy_winit` | `mgstudio-engine/window` + `winit` | 93% | 86% | 86% | 🟡 In Progress | Package tests are green; monitor-aware sizing and platform-semantics tails are still open. |
 | `bevy_asset` | `mgstudio-engine/asset` | 95% | 95% | 95% | 🟡 In Progress | Native asset runtime is stable with capability-gated HTTP fetch; image extension routing now derives from `bevy_image`-shaped loader tables and image meta settings (including sampler compare/border/anisotropy) are wired; remaining gaps focus on broader codec parity depth. |
-| `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 91% | 76% | 76% | 🟡 In Progress | Trace/overlay pipeline is present but not fully equivalent to Bevy depth. |
+| `bevy_log` + diagnostics | `mgstudio-engine/log` + `diagnostic` + `dev_tools` | 92% | 78% | 78% | 🟡 In Progress | Trace/overlay pipeline is present with typed plugin surfaces, but not fully equivalent to Bevy depth. |
 | `bevy_anti_alias` | `mgstudio-engine/anti_alias` | 91% | 74% | 74% | 🟡 In Progress | Camera-only runtime semantics and node gating are aligned for FXAA/SMAA/TAA/CAS/DLSS; `FxaaSensitivity::get_str` API shape is aligned; render-stage depth still pending. |
 | `bevy_light` | `mgstudio-engine/light` | 93% | 87% | 87% | 🟡 In Progress | Light clustering/runtime integration still has parity-tail differences. |
 | `bevy_mesh` | `mgstudio-engine/mesh` | 93% | 74% | 74% | 🟡 In Progress | Mesh extraction/upload behavior is not yet fully Bevy-equivalent. |
