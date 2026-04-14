@@ -26,6 +26,9 @@ let ecs_key_show_skinned_mesh_bounds_gizmo : @ecs.ComponentKey[
 pub struct SkinnedMeshBoundsGizmoPlugin {}
 
 ///|
+const SKINNED_MESH_BOUNDS_GIZMO_PLUGIN_NAME : String = "mgstudio.gizmos.SkinnedMeshBoundsGizmoPlugin"
+
+///|
 pub fn SkinnedMeshBoundsGizmoPlugin::default() -> SkinnedMeshBoundsGizmoPlugin {
   SkinnedMeshBoundsGizmoPlugin::{  }
 }
@@ -75,6 +78,30 @@ pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo with component() {
 pub fn skinned_mesh_bounds_gizmo_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  ignore(SkinnedMeshBoundsGizmoPlugin::default())
+  skinned_mesh_bounds_gizmo_plugin_with(app, SkinnedMeshBoundsGizmoPlugin::default())
+}
+
+///|
+pub fn skinned_mesh_bounds_gizmo_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : SkinnedMeshBoundsGizmoPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   init_gizmo_group(app, SkinnedMeshBoundsGizmoConfigGroup::default())
+}
+
+///|
+pub impl @app.PluginReplacement for SkinnedMeshBoundsGizmoPlugin with plugin_name(
+  _self,
+) {
+  SKINNED_MESH_BOUNDS_GIZMO_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for SkinnedMeshBoundsGizmoPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    skinned_mesh_bounds_gizmo_plugin_with(app, self)
+  }
 }

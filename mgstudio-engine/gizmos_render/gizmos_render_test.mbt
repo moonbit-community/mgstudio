@@ -22,5 +22,6 @@ test "gizmos_render boundary exposes render systems and plugin entry" {
   let _set3d = @gizmos_render.gizmo_render_system_set(
     @gizmos_render.GizmoRenderSystems::QueueLineGizmos3d,
   )
-  debug_inspect("ok", content="ok")
+  ignore(_set2d)
+  ignore(_set3d)
 }

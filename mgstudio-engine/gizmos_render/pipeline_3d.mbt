@@ -19,11 +19,35 @@
 pub struct LineGizmo3dPlugin {}
 
 ///|
+const LINE_GIZMO_3D_PLUGIN_NAME : String = "mgstudio.gizmos_render.LineGizmo3dPlugin"
+
+///|
 pub fn LineGizmo3dPlugin::default() -> LineGizmo3dPlugin {
   LineGizmo3dPlugin::{  }
 }
 
 ///|
 pub fn line_gizmo_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  line_gizmo_3d_plugin_with(app, LineGizmo3dPlugin::default())
+}
+
+///|
+pub fn line_gizmo_3d_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : LineGizmo3dPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   @pbr.render3d_plugin(app)
+}
+
+///|
+pub impl @app.PluginReplacement for LineGizmo3dPlugin with plugin_name(_self) {
+  LINE_GIZMO_3D_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for LineGizmo3dPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    line_gizmo_3d_plugin_with(app, self)
+  }
 }
