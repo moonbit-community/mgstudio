@@ -104,15 +104,26 @@ pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
 fn render3d_prewarm_mesh_pipelines(
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
+  let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
     let mesh = extracted_mesh.payload
     let shader_path = match mesh.material_extension {
       Some(extension) => extension.shader_path
       None => None
     }
+    let shader_key = match shader_path {
+      Some(path) => path
+      None => ""
+    }
+    let cull_mode = @pbr_render.render3d_cull_mode_value(mesh.material, 0)
+    let prewarm_key = "\{mesh.mesh_topology_kind}|\{cull_mode}|\{mesh.is_forward_decal}|\{shader_key}"
+    if prewarmed_keys.contains(prewarm_key) {
+      continue
+    }
+    prewarmed_keys.set(prewarm_key, true)
     @render.host_gpu_prewarm_mesh3d_pipeline_variants(
       mesh_topology_kind=mesh.mesh_topology_kind,
-      cull_mode=@pbr_render.render3d_cull_mode_value(mesh.material, 0),
+      cull_mode~,
       shader_path~,
       forward_decal=mesh.is_forward_decal,
     )
