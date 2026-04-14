@@ -732,10 +732,9 @@ fn ensure_mesh3d_motion_vector_pipeline(
     builder.create_pipeline(backend.device)
   } catch {
     err => {
-      err |> ignore
       sm.release()
       fatal(
-        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline",
+        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline: \{err.message()}",
       )
     }
   }
