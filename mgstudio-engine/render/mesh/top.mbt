@@ -16,6 +16,63 @@
 // Bevy source: `bevy/crates/bevy_render/src/mesh/mod.rs`.
 
 ///|
+pub(all) enum RenderMeshDimension {
+  Dim2
+  Dim3
+} derive(Eq, Debug)
+
+///|
+pub(all) enum RenderMeshBufferInfo {
+  Indexed(Int)
+  NonIndexed
+} derive(Eq, Debug)
+
+///|
+pub struct RenderMesh {
+  vertex_count : Int
+  buffer_info : RenderMeshBufferInfo
+  dimension : RenderMeshDimension
+} derive(Eq, Debug)
+
+///|
+pub fn RenderMesh::new(
+  vertex_count~ : Int,
+  indexed? : Bool = false,
+  index_count? : Int = 0,
+  dimension? : RenderMeshDimension = Dim3,
+) -> RenderMesh {
+  let buffer_info = if indexed {
+    Indexed(index_count)
+  } else {
+    NonIndexed
+  }
+  RenderMesh::{ vertex_count, buffer_info, dimension }
+}
+
+///|
+pub fn RenderMesh::vertex_count(self : RenderMesh) -> Int {
+  self.vertex_count
+}
+
+///|
+pub fn RenderMesh::dimension(self : RenderMesh) -> RenderMeshDimension {
+  self.dimension
+}
+
+///|
+pub fn RenderMesh::indexed(self : RenderMesh) -> Bool {
+  match self.buffer_info {
+    Indexed(_) => true
+    NonIndexed => false
+  }
+}
+
+///|
+pub fn RenderMesh::buffer_info(self : RenderMesh) -> RenderMeshBufferInfo {
+  self.buffer_info
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_skin_binding(
   key_hi~ : Int,
   key_lo~ : Int,

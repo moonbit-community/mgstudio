@@ -13,6 +13,25 @@
 // limitations under the License.
 
 ///|
+pub fn Mesh::as_2d_geometry(self : Mesh) -> Mesh2dGeometry? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(geometry2d) => Some(geometry2d)
+    MeshGeometry::Geometry3d(_) => None
+  }
+}
+
+///|
+pub fn Mesh::with_2d_geometry(
+  self : Mesh,
+  geometry2d : Mesh2dGeometry,
+) -> Mesh? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => Some(Mesh::from_2d_geometry(geometry2d))
+    MeshGeometry::Geometry3d(_) => None
+  }
+}
+
+///|
 pub fn Mesh::as_3d_geometry(self : Mesh) -> Mesh3dGeometry? {
   match self.geometry {
     MeshGeometry::Geometry3d(geometry3d) => Some(geometry3d)
@@ -28,5 +47,21 @@ pub fn Mesh::with_3d_geometry(
   match self.geometry {
     MeshGeometry::Geometry3d(_) => Some(Mesh::from_3d_geometry(geometry3d))
     MeshGeometry::Geometry2d(_) => None
+  }
+}
+
+///|
+pub fn Mesh::vertex_count(self : Mesh) -> Int {
+  match self.geometry {
+    MeshGeometry::Geometry2d(geometry2d) => geometry2d.vertex_count()
+    MeshGeometry::Geometry3d(geometry3d) => geometry3d.vertex_count()
+  }
+}
+
+///|
+pub fn Mesh::indexed(self : Mesh) -> Bool {
+  match self.geometry {
+    MeshGeometry::Geometry2d(geometry2d) => geometry2d.has_indices()
+    MeshGeometry::Geometry3d(geometry3d) => geometry3d.has_indices()
   }
 }
