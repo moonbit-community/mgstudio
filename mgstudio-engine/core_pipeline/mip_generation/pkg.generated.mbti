@@ -12,6 +12,8 @@ import {
 // Values
 pub const REQUIRED_STORAGE_TEXTURES : Int = 12
 
+pub let ecs_key_downsample_shaders : @ecs.ResourceKey[DownsampleShaders]
+
 pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs]
 
 pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[MipGenerationPipelines]
@@ -31,7 +33,11 @@ pub struct DownsampleShaders {
   depth_shader_path : String
   general_shader_count : Int
 }
+pub fn DownsampleShaders::default() -> Self
+pub fn DownsampleShaders::depth_shader_path(Self) -> String
+pub fn DownsampleShaders::general_shader_count(Self) -> Int
 pub fn DownsampleShaders::new(depth_shader_path? : String, general_shader_count? : Int) -> Self
+pub impl @app.Resource for DownsampleShaders
 
 pub struct MipGenerationJob {
   phase : MipGenerationPhaseId

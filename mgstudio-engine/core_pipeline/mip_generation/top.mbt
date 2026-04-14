@@ -52,6 +52,7 @@ pub fn mip_generation_plugin_with(
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {
   app
+  .init_resource(fn() { DownsampleShaders::default() })
   .init_resource(fn() { MipGenerationJobs::default() })
   .init_resource(fn() { MipGenerationPipelines::default() })
   .add_plugin(@experimental.experimental_mip_generation_plugin)
@@ -67,6 +68,11 @@ pub struct DownsampleShaders {
 }
 
 ///|
+pub fn DownsampleShaders::default() -> DownsampleShaders {
+  DownsampleShaders::new(general_shader_count=40)
+}
+
+///|
 pub fn DownsampleShaders::new(
   depth_shader_path? : String = "core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
   general_shader_count? : Int = 0,
@@ -77,6 +83,26 @@ pub fn DownsampleShaders::new(
     general_shader_count
   }
   DownsampleShaders::{ depth_shader_path, general_shader_count }
+}
+
+///|
+pub fn DownsampleShaders::depth_shader_path(self : DownsampleShaders) -> String {
+  self.depth_shader_path
+}
+
+///|
+pub fn DownsampleShaders::general_shader_count(self : DownsampleShaders) -> Int {
+  self.general_shader_count
+}
+
+///|
+pub let ecs_key_downsample_shaders : @ecs.ResourceKey[DownsampleShaders] = @ecs.register_resource(
+  debug_name="core_pipeline.mip_generation.downsample_shaders",
+)
+
+///|
+pub impl @app.Resource for DownsampleShaders with resource() {
+  ecs_key_downsample_shaders
 }
 
 ///|

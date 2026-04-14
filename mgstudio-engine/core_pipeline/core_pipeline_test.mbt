@@ -26,3 +26,19 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
   debug_inspect(hdr.to_json().to_string(), content="\"Object({})\"")
   debug_inspect(@core_pipeline.Msaa::from_samples(4).samples(), content="4")
 }
+
+///|
+test "mip_generation plugin initializes downsample shader registry resource" {
+  let app = @app.App::new(@ecs.World::new()).add_plugin(
+    @mip_generation.mip_generation_plugin,
+  )
+  let world = app.world()
+  let shaders = try! world
+    .get_resource(@mip_generation.ecs_key_downsample_shaders)
+    .unwrap()
+  debug_inspect(
+    shaders.depth_shader_path(),
+    content="\"core_pipeline/mip_generation/experimental/downsample_depth.wgsl\"",
+  )
+  debug_inspect(shaders.general_shader_count(), content="40")
+}
