@@ -64,19 +64,67 @@ fn meshlet_pipeline_id_valid(pipeline_id : Int) -> Bool {
 }
 
 ///|
+pub struct MeshletMaterialDrawCall {
+  material_id : Int
+  material_pipeline_id : Int
+  material_bind_group : Int
+  vertex_start : Int
+  vertex_end : Int
+} derive(Eq, Debug)
+
+///|
+fn meshlet_material_bin_draw_calls(
+  material_bins : Array[(Int, Int, Int)],
+  instance_manager : InstanceManager,
+) -> Array[MeshletMaterialDrawCall] {
+  let draw_calls : Array[MeshletMaterialDrawCall] = []
+  for material_bin in material_bins {
+    let (material_id, material_pipeline_id, material_bind_group) = material_bin
+    if meshlet_pipeline_id_valid(material_pipeline_id) &&
+      instance_manager.material_present_in_scene(material_id) {
+      let vertex_start = material_id * 3
+      draw_calls.push(MeshletMaterialDrawCall::{
+        material_id,
+        material_pipeline_id,
+        material_bind_group,
+        vertex_start,
+        vertex_end: vertex_start + 3,
+      })
+    }
+  }
+  draw_calls
+}
+
+///|
 fn meshlet_material_bin_draw_count(
   material_bins : Array[(Int, Int, Int)],
   instance_manager : InstanceManager,
 ) -> Int {
-  let mut draw_count = 0
-  for material_bin in material_bins {
-    let (material_id, material_pipeline_id, _material_bind_group) = material_bin
-    if meshlet_pipeline_id_valid(material_pipeline_id) &&
-      instance_manager.material_present_in_scene(material_id) {
-      draw_count = draw_count + 1
-    }
-  }
-  draw_count
+  meshlet_material_bin_draw_calls(material_bins, instance_manager).length()
+}
+
+///|
+pub fn meshlet_main_opaque_pass_draw_calls(
+  materials : MeshletViewMaterialsMainOpaquePass,
+  instance_manager : InstanceManager,
+) -> Array[MeshletMaterialDrawCall] {
+  meshlet_material_bin_draw_calls(materials.entries, instance_manager)
+}
+
+///|
+pub fn meshlet_prepass_draw_calls(
+  materials : MeshletViewMaterialsPrepass,
+  instance_manager : InstanceManager,
+) -> Array[MeshletMaterialDrawCall] {
+  meshlet_material_bin_draw_calls(materials.entries, instance_manager)
+}
+
+///|
+pub fn meshlet_deferred_gbuffer_prepass_draw_calls(
+  materials : MeshletViewMaterialsDeferredGBufferPrepass,
+  instance_manager : InstanceManager,
+) -> Array[MeshletMaterialDrawCall] {
+  meshlet_material_bin_draw_calls(materials.entries, instance_manager)
 }
 
 ///|

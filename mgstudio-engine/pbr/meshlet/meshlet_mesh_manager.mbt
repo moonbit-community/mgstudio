@@ -50,9 +50,9 @@ pub struct MeshletMeshManager {
   vertex_normals : PersistentGpuBuffer[Int]
   vertex_uvs : PersistentGpuBuffer[Int]
   indices : PersistentGpuBuffer[Int]
-  bvh_nodes : PersistentGpuBuffer[Int]
-  meshlets : PersistentGpuBuffer[Int]
-  meshlet_cull_data : PersistentGpuBuffer[Int]
+  bvh_nodes : PersistentGpuBuffer[BvhNode]
+  meshlets : PersistentGpuBuffer[Meshlet]
+  meshlet_cull_data : PersistentGpuBuffer[MeshletCullData]
   mut pending_mesh_writes : Int
   mut committed_mesh_writes : Int
   pending_upload_asset_ids : Array[Int]
@@ -82,6 +82,36 @@ fn meshlet_empty_words(word_count : Int) -> Array[Int] {
   let values : Array[Int] = []
   for _ in 0..<safe_count {
     values.push(0)
+  }
+  values
+}
+
+///|
+fn meshlet_empty_bvh_nodes(node_count : Int) -> Array[BvhNode] {
+  let safe_count = if node_count < 0 { 0 } else { node_count }
+  let values : Array[BvhNode] = []
+  for index in 0..<safe_count {
+    values.push(BvhNode::leaf(index))
+  }
+  values
+}
+
+///|
+fn meshlet_empty_meshlets(meshlet_count : Int) -> Array[Meshlet] {
+  let safe_count = if meshlet_count < 0 { 0 } else { meshlet_count }
+  let values : Array[Meshlet] = []
+  for _ in 0..<safe_count {
+    values.push(Meshlet::new(0, 0, 0, 3, 1))
+  }
+  values
+}
+
+///|
+fn meshlet_empty_cull_data(meshlet_count : Int) -> Array[MeshletCullData] {
+  let safe_count = if meshlet_count < 0 { 0 } else { meshlet_count }
+  let values : Array[MeshletCullData] = []
+  for _ in 0..<safe_count {
+    values.push(MeshletCullData::default())
   }
   values
 }
@@ -129,15 +159,15 @@ fn meshlet_mesh_manager_insert_asset_slices(
     (),
   )
   let meshlets = manager.meshlets.queue_write(
-    meshlet_empty_words(meshlet_mesh.meshlet_count),
+    meshlet_empty_meshlets(meshlet_mesh.meshlet_count),
     (vertex_positions.start, vertex_normals.start, indices.start),
   )
   let bvh_nodes = manager.bvh_nodes.queue_write(
-    meshlet_empty_words(meshlet_mesh.bvh_node_count),
+    meshlet_empty_bvh_nodes(meshlet_mesh.bvh_node_count),
     meshlets.start,
   )
   let meshlet_cull_data = manager.meshlet_cull_data.queue_write(
-    meshlet_empty_words(meshlet_mesh.meshlet_count),
+    meshlet_empty_cull_data(meshlet_mesh.meshlet_count),
     (),
   )
   let slices = MeshletMeshSlices::{

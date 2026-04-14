@@ -29,6 +29,12 @@ test "pbr meshlet: main opaque pass draw count filters scene presence and pipeli
     meshlet_main_opaque_pass_materials(materials, instance_manager),
     content="1",
   )
+  let draw_calls = meshlet_main_opaque_pass_draw_calls(
+    materials, instance_manager,
+  )
+  debug_inspect(draw_calls.length(), content="1")
+  debug_inspect(draw_calls[0].vertex_start, content="3")
+  debug_inspect(draw_calls[0].vertex_end, content="6")
 }
 
 ///|
