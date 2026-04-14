@@ -18,15 +18,47 @@
 ///|
 pub(all) enum MeshToMeshletMeshConversionError {
   RuntimeUnavailable
+  WrongMeshPrimitiveTopology
+  WrongMeshVertexAttributes(Array[String])
+  MeshMissingIndices
   MissingPositions
   UnsupportedTopology
   TooManyVertices
 }
 
 ///|
+pub const MESHLET_DEFAULT_VERTEX_POSITION_QUANTIZATION_FACTOR : Int = 4
+
+///|
 pub struct MeshToMeshletMeshConversionConfig {
   max_vertices : Int
   max_triangles : Int
+}
+
+///|
+pub struct MeshToMeshletInputMeshSummary {
+  primitive_topology : String
+  vertex_attributes : Array[String]
+  has_indices : Bool
+  vertex_count : Int
+  triangle_count : Int
+}
+
+///|
+pub fn MeshToMeshletInputMeshSummary::new(
+  primitive_topology~ : String,
+  vertex_attributes~ : Array[String],
+  has_indices~ : Bool,
+  vertex_count~ : Int,
+  triangle_count~ : Int,
+) -> MeshToMeshletInputMeshSummary {
+  MeshToMeshletInputMeshSummary::{
+    primitive_topology,
+    vertex_attributes,
+    has_indices,
+    vertex_count,
+    triangle_count,
+  }
 }
 
 ///|
@@ -56,6 +88,55 @@ pub fn meshlet_validate_conversion_config(
 }
 
 ///|
+pub fn meshlet_required_vertex_attributes() -> Array[String] {
+  ["POSITION", "NORMAL", "UV_0"]
+}
+
+///|
+fn meshlet_vertex_attributes_match(attributes : Array[String]) -> Bool {
+  let required = meshlet_required_vertex_attributes()
+  if attributes.length() != required.length() {
+    return false
+  }
+  for index in 0..<required.length() {
+    if attributes[index] != required[index] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn meshlet_validate_input_mesh_summary(
+  summary : MeshToMeshletInputMeshSummary,
+  config : MeshToMeshletMeshConversionConfig,
+  runtime_available : Bool,
+) -> MeshToMeshletMeshConversionError? {
+  let safe = meshlet_validate_conversion_config(config)
+  if !runtime_available {
+    return Some(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+  }
+  if summary.primitive_topology != "TriangleList" {
+    return Some(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology)
+  }
+  if !meshlet_vertex_attributes_match(summary.vertex_attributes) {
+    return Some(
+      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+        summary.vertex_attributes,
+      ),
+    )
+  }
+  if !summary.has_indices {
+    return Some(MeshToMeshletMeshConversionError::MeshMissingIndices)
+  }
+  if summary.vertex_count > safe.max_vertices ||
+    summary.triangle_count > safe.max_triangles {
+    return Some(MeshToMeshletMeshConversionError::TooManyVertices)
+  }
+  None
+}
+
+///|
 pub fn meshlet_can_convert_from_mesh(
   vertex_count : Int,
   triangle_count : Int,
@@ -74,18 +155,22 @@ pub fn meshlet_conversion_error_for_counts(
   triangle_count : Int,
   config : MeshToMeshletMeshConversionConfig,
 ) -> MeshToMeshletMeshConversionError? {
-  let safe = meshlet_validate_conversion_config(config)
-  if !meshlet_runtime_available() {
-    return Some(MeshToMeshletMeshConversionError::RuntimeUnavailable)
-  }
   if vertex_count <= 0 {
     return Some(MeshToMeshletMeshConversionError::MissingPositions)
   }
   if triangle_count <= 0 {
     return Some(MeshToMeshletMeshConversionError::UnsupportedTopology)
   }
-  if vertex_count > safe.max_vertices || triangle_count > safe.max_triangles {
-    return Some(MeshToMeshletMeshConversionError::TooManyVertices)
-  }
-  None
+  let summary = MeshToMeshletInputMeshSummary::new(
+    primitive_topology="TriangleList",
+    vertex_attributes=meshlet_required_vertex_attributes(),
+    has_indices=true,
+    vertex_count~,
+    triangle_count~,
+  )
+  meshlet_validate_input_mesh_summary(
+    summary,
+    config,
+    meshlet_runtime_available(),
+  )
 }
