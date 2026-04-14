@@ -48,7 +48,7 @@ pub struct MipGenerationJob {
 pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : @asset.AssetId[@image.Image]) -> Self
 
 pub struct MipGenerationJobs {
-  phases : Map[Int, MipGenerationPhase]
+  phases : Map[UInt, MipGenerationPhase]
 }
 pub fn MipGenerationJobs::add(Self, MipGenerationPhaseId, @asset.AssetId[@image.Image]) -> Self
 pub fn MipGenerationJobs::add_handle(Self, MipGenerationPhaseId, @asset.Handle[@image.Image]) -> Self
@@ -72,10 +72,10 @@ pub fn MipGenerationPhase::push(Self, @asset.AssetId[@image.Image]) -> Self
 pub fn MipGenerationPhase::to_array(Self) -> Array[@asset.AssetId[@image.Image]]
 
 pub struct MipGenerationPhaseId {
-  value : Int
+  value : UInt
 } derive(Eq, @debug.Debug)
-pub fn MipGenerationPhaseId::new(value~ : Int) -> Self
-pub fn MipGenerationPhaseId::value(Self) -> Int
+pub fn MipGenerationPhaseId::new(value~ : UInt) -> Self
+pub fn MipGenerationPhaseId::value(Self) -> UInt
 
 pub struct MipGenerationPipelines {
   texture_format_pipeline_count : Int

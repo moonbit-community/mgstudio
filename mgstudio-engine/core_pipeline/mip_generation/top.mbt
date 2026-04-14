@@ -157,16 +157,16 @@ pub impl @app.Resource for DownsampleShaders with resource() {
 
 ///|
 pub struct MipGenerationPhaseId {
-  value : Int
+  value : UInt
 } derive(Eq, Debug)
 
 ///|
-pub fn MipGenerationPhaseId::new(value~ : Int) -> MipGenerationPhaseId {
+pub fn MipGenerationPhaseId::new(value~ : UInt) -> MipGenerationPhaseId {
   MipGenerationPhaseId::{ value, }
 }
 
 ///|
-pub fn MipGenerationPhaseId::value(self : MipGenerationPhaseId) -> Int {
+pub fn MipGenerationPhaseId::value(self : MipGenerationPhaseId) -> UInt {
   self.value
 }
 
@@ -209,7 +209,7 @@ pub fn MipGenerationPhase::push(
 
 ///|
 pub struct MipGenerationJobs {
-  phases : Map[Int, MipGenerationPhase]
+  phases : Map[UInt, MipGenerationPhase]
 }
 
 ///|
