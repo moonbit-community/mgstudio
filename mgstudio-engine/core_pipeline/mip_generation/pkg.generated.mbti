@@ -3,7 +3,9 @@ package "Milky2018/mgstudio/core_pipeline/mip_generation"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "moonbitlang/core/debug",
 }
 
@@ -33,17 +35,18 @@ pub fn DownsampleShaders::new(depth_shader_path? : String, general_shader_count?
 
 pub struct MipGenerationJob {
   phase : MipGenerationPhaseId
-  image_asset_id : Int
+  image_asset_id : @asset.AssetId[@image.Image]
 }
-pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : Int) -> Self
+pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : @asset.AssetId[@image.Image]) -> Self
 
 pub struct MipGenerationJobs {
   phases : Map[Int, MipGenerationPhase]
-} derive(Eq, @debug.Debug)
-pub fn MipGenerationJobs::add(Self, MipGenerationPhaseId, Int) -> Self
+}
+pub fn MipGenerationJobs::add(Self, MipGenerationPhaseId, @asset.AssetId[@image.Image]) -> Self
+pub fn MipGenerationJobs::add_handle(Self, MipGenerationPhaseId, @asset.Handle[@image.Image]) -> Self
 pub fn MipGenerationJobs::clear(Self) -> Self
 pub fn MipGenerationJobs::default() -> Self
-pub fn MipGenerationJobs::drain_phase(Self, MipGenerationPhaseId) -> (Self, Array[Int])
+pub fn MipGenerationJobs::drain_phase(Self, MipGenerationPhaseId) -> (Self, Array[@asset.AssetId[@image.Image]])
 pub fn MipGenerationJobs::has_phase(Self, MipGenerationPhaseId) -> Bool
 pub fn MipGenerationJobs::job_count(Self) -> Int
 pub fn MipGenerationJobs::phase(Self, MipGenerationPhaseId) -> MipGenerationPhase?
@@ -52,13 +55,13 @@ pub fn MipGenerationJobs::remove_phase(Self, MipGenerationPhaseId) -> (Self, Mip
 pub impl @app.Resource for MipGenerationJobs
 
 pub struct MipGenerationPhase {
-  image_asset_ids : Array[Int]
-} derive(Eq, @debug.Debug)
+  image_asset_ids : Array[@asset.AssetId[@image.Image]]
+}
 pub fn MipGenerationPhase::default() -> Self
 pub fn MipGenerationPhase::is_empty(Self) -> Bool
 pub fn MipGenerationPhase::len(Self) -> Int
-pub fn MipGenerationPhase::push(Self, Int) -> Self
-pub fn MipGenerationPhase::to_array(Self) -> Array[Int]
+pub fn MipGenerationPhase::push(Self, @asset.AssetId[@image.Image]) -> Self
+pub fn MipGenerationPhase::to_array(Self) -> Array[@asset.AssetId[@image.Image]]
 
 pub struct MipGenerationPhaseId {
   value : Int

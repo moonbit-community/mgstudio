@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/app" @app,
+  "Milky2018/mgstudio/asset" @asset,
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/core_pipeline/mip_generation/experimental" @experimental,
   "Milky2018/mgstudio/naga_oil" @naga_oil,

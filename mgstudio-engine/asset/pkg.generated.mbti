@@ -289,9 +289,8 @@ pub(all) enum AssetEvent[T] {
 }
 pub impl[T] @ecs.Message for AssetEvent[T]
 
-pub struct AssetId[T] {
+pub struct AssetId[_] {
   id : Int
-  phantom : T?
 } derive(Eq, @debug.Debug)
 pub fn[T] AssetId::index(Self[T]) -> Int
 pub fn[T] AssetId::new(Int) -> Self[T]

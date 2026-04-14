@@ -14,14 +14,13 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/id.rs`.
-pub struct AssetId[T] {
+pub struct AssetId[_] {
   id : Int
-  phantom : T?
 } derive(Eq, Debug)
 
 ///|
 pub fn[T] AssetId::new(id : Int) -> AssetId[T] {
-  AssetId::{ id, phantom: None }
+  AssetId::{ id, }
 }
 
 ///|

@@ -96,8 +96,8 @@ pub fn MipGenerationPhaseId::value(self : MipGenerationPhaseId) -> Int {
 
 ///|
 pub struct MipGenerationPhase {
-  image_asset_ids : Array[Int]
-} derive(Eq, Debug)
+  image_asset_ids : Array[@asset.AssetId[@asset.Image]]
+}
 
 ///|
 pub fn MipGenerationPhase::default() -> MipGenerationPhase {
@@ -115,14 +115,16 @@ pub fn MipGenerationPhase::is_empty(self : MipGenerationPhase) -> Bool {
 }
 
 ///|
-pub fn MipGenerationPhase::to_array(self : MipGenerationPhase) -> Array[Int] {
+pub fn MipGenerationPhase::to_array(
+  self : MipGenerationPhase,
+) -> Array[@asset.AssetId[@asset.Image]] {
   self.image_asset_ids.copy()
 }
 
 ///|
 pub fn MipGenerationPhase::push(
   self : MipGenerationPhase,
-  image_asset_id : Int,
+  image_asset_id : @asset.AssetId[@asset.Image],
 ) -> MipGenerationPhase {
   let next = self.image_asset_ids.copy()
   next.push(image_asset_id)
@@ -132,7 +134,7 @@ pub fn MipGenerationPhase::push(
 ///|
 pub struct MipGenerationJobs {
   phases : Map[Int, MipGenerationPhase]
-} derive(Eq, Debug)
+}
 
 ///|
 pub fn MipGenerationJobs::default() -> MipGenerationJobs {
@@ -164,7 +166,7 @@ pub fn MipGenerationJobs::has_phase(
 pub fn MipGenerationJobs::add(
   self : MipGenerationJobs,
   phase : MipGenerationPhaseId,
-  image_asset_id : Int,
+  image_asset_id : @asset.AssetId[@asset.Image],
 ) -> MipGenerationJobs {
   let key = phase.value()
   let phases = self.phases.copy()
@@ -174,6 +176,15 @@ pub fn MipGenerationJobs::add(
   }
   phases.set(key, next_phase)
   MipGenerationJobs::{ phases, }
+}
+
+///|
+pub fn MipGenerationJobs::add_handle(
+  self : MipGenerationJobs,
+  phase : MipGenerationPhaseId,
+  image : @asset.Handle[@asset.Image],
+) -> MipGenerationJobs {
+  self.add(phase, image.asset_id())
 }
 
 ///|
@@ -192,7 +203,7 @@ pub fn MipGenerationJobs::remove_phase(
 pub fn MipGenerationJobs::drain_phase(
   self : MipGenerationJobs,
   phase : MipGenerationPhaseId,
-) -> (MipGenerationJobs, Array[Int]) {
+) -> (MipGenerationJobs, Array[@asset.AssetId[@asset.Image]]) {
   let (next_jobs, removed) = self.remove_phase(phase)
   match removed {
     Some(entries) => (next_jobs, entries.to_array())
@@ -304,13 +315,13 @@ pub impl @app.Resource for MipGenerationPipelines with resource() {
 ///|
 pub struct MipGenerationJob {
   phase : MipGenerationPhaseId
-  image_asset_id : Int
+  image_asset_id : @asset.AssetId[@asset.Image]
 }
 
 ///|
 pub fn MipGenerationJob::new(
   phase : MipGenerationPhaseId,
-  image_asset_id~ : Int,
+  image_asset_id~ : @asset.AssetId[@asset.Image],
 ) -> MipGenerationJob {
   MipGenerationJob::{ phase, image_asset_id }
 }
