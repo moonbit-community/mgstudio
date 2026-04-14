@@ -1187,6 +1187,66 @@ pub let animation_set_expire_transitions : @app.SystemSet = @app.system_set(
 )
 
 ///|
+priv struct AnimationRuntimeScratch {
+  transform_updates : Array[(@core.Entity, @transform.Transform)]
+  weights_updates : Array[(@core.Entity, AnimationWeights)]
+  text_color_updates : Array[(@core.Entity, @text.TextColor)]
+  prepared_player_cache : Map[Int, (Int, Array[AnimationPreparedTargetSample])]
+  graph_cache : Map[Int, AnimationGraph]
+  clip_cache : Map[Int, AnimationClip]
+  threaded_graph_cache : Map[Int, ThreadedAnimationGraph]
+}
+
+///|
+fn AnimationRuntimeScratch::default() -> AnimationRuntimeScratch {
+  AnimationRuntimeScratch::{
+    transform_updates: [],
+    weights_updates: [],
+    text_color_updates: [],
+    prepared_player_cache: {},
+    graph_cache: {},
+    clip_cache: {},
+    threaded_graph_cache: {},
+  }
+}
+
+///|
+let ecs_key_animation_runtime_scratch : @ecs.ResourceKey[
+  AnimationRuntimeScratch,
+] = @ecs.register_resource(debug_name="mgstudio.animation.runtime_scratch")
+
+///|
+fn animation_runtime_scratch_ref_or_init(
+  world : @ecs.World,
+) -> Ref[AnimationRuntimeScratch] {
+  match (try! world.get_resource_ref_mut(ecs_key_animation_runtime_scratch)) {
+    Some(state_ref) => state_ref
+    None => {
+      world.insert_resource(
+        ecs_key_animation_runtime_scratch,
+        AnimationRuntimeScratch::default(),
+      )
+      match
+        (try! world.get_resource_ref_mut(ecs_key_animation_runtime_scratch)) {
+        Some(state_ref) => state_ref
+        None => abort("Missing AnimationRuntimeScratch resource")
+      }
+    }
+  }
+}
+
+///|
+fn animation_runtime_scratch_clear(state : AnimationRuntimeScratch) -> Unit {
+  state.transform_updates.clear()
+  state.weights_updates.clear()
+  state.text_color_updates.clear()
+  state.prepared_player_cache.clear()
+  state.graph_cache.clear()
+  state.clip_cache.clear()
+  state.threaded_graph_cache.clear()
+}
+
+///|
 pub let ecs_key_animation_graph_handle : @ecs.ComponentKey[AnimationGraphHandle] = @ecs.register_component(
   debug_name="animation.animation_graph_handle",
 )
@@ -1252,19 +1312,19 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
 
 ///|
 pub fn animate_targets(world : @ecs.World) -> Unit {
-  let transform_updates : Array[(@core.Entity, @transform.Transform)] = []
-  let weights_updates : Array[(@core.Entity, AnimationWeights)] = []
-  let text_color_updates : Array[(@core.Entity, @text.TextColor)] = []
-  let prepared_player_cache : Map[
-    Int,
-    (Int, Array[AnimationPreparedTargetSample]),
-  ] = {}
+  let runtime_scratch_ref = animation_runtime_scratch_ref_or_init(world)
+  let runtime_scratch = runtime_scratch_ref.val
+  animation_runtime_scratch_clear(runtime_scratch)
+  let transform_updates = runtime_scratch.transform_updates
+  let weights_updates = runtime_scratch.weights_updates
+  let text_color_updates = runtime_scratch.text_color_updates
+  let prepared_player_cache = runtime_scratch.prepared_player_cache
   let threaded_graphs = try! world.get_resource_ref(
     threaded_animation_graphs_key,
   )
-  let graph_cache : Map[Int, AnimationGraph] = {}
-  let clip_cache : Map[Int, AnimationClip] = {}
-  let threaded_graph_cache : Map[Int, ThreadedAnimationGraph] = {}
+  let graph_cache = runtime_scratch.graph_cache
+  let clip_cache = runtime_scratch.clip_cache
+  let threaded_graph_cache = runtime_scratch.threaded_graph_cache
 
   let player_query : @ecs.Query[
     (@core.Entity, @ecs.Comp[AnimationPlayer], @ecs.Comp[AnimationGraphHandle]),
