@@ -16,11 +16,30 @@
 // Bevy source: `bevy/crates/bevy_render/src/extract_resource.rs`.
 
 ///|
+const EXTRACT_RESOURCE_PLUGIN_NAME : String = "mgstudio.render.ExtractResourcePlugin"
+
+///|
 pub struct ExtractResourcePlugin[_, _] {}
 
 ///|
 pub fn[R, F] ExtractResourcePlugin::default() -> ExtractResourcePlugin[R, F] {
   ExtractResourcePlugin::{  }
+}
+
+///|
+pub impl[R, F] @app.PluginReplacement for ExtractResourcePlugin[R, F] with plugin_name(
+  _self,
+) {
+  EXTRACT_RESOURCE_PLUGIN_NAME
+}
+
+///|
+pub impl[R, F] @app.PluginReplacement for ExtractResourcePlugin[R, F] with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    extract_resource_plugin_with(app, self)
+  }
 }
 
 ///|
@@ -57,6 +76,15 @@ pub fn[R, S] extract_resource_once(source : S, extract : (S) -> R) -> R {
 pub fn extract_resource_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn[R, F] extract_resource_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : ExtractResourcePlugin[R, F],
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   render_plugin(app)
 }
 

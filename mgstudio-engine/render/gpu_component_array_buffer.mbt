@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/gpu_component_array_buffer.rs`.
 
 ///|
+const GPU_COMPONENT_ARRAY_BUFFER_PLUGIN_NAME : String = "mgstudio.render.GpuComponentArrayBufferPlugin"
+
+///|
 pub struct GpuComponentArrayBufferPlugin[_] {}
 
 ///|
@@ -23,6 +26,22 @@ pub fn[C] GpuComponentArrayBufferPlugin::default() -> GpuComponentArrayBufferPlu
   C,
 ] {
   GpuComponentArrayBufferPlugin::{  }
+}
+
+///|
+pub impl[C] @app.PluginReplacement for GpuComponentArrayBufferPlugin[C] with plugin_name(
+  _self,
+) {
+  GPU_COMPONENT_ARRAY_BUFFER_PLUGIN_NAME
+}
+
+///|
+pub impl[C] @app.PluginReplacement for GpuComponentArrayBufferPlugin[C] with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    gpu_component_array_buffer_plugin(app, _plugin=self)
+  }
 }
 
 ///|

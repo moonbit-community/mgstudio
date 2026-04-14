@@ -16,11 +16,30 @@
 // Bevy source: `bevy/crates/bevy_render/src/sync_component.rs`.
 
 ///|
+const SYNC_COMPONENT_PLUGIN_NAME : String = "mgstudio.render.SyncComponentPlugin"
+
+///|
 pub struct SyncComponentPlugin[_, _] {}
 
 ///|
 pub fn[C, F] SyncComponentPlugin::default() -> SyncComponentPlugin[C, F] {
   SyncComponentPlugin::{  }
+}
+
+///|
+pub impl[C, F] @app.PluginReplacement for SyncComponentPlugin[C, F] with plugin_name(
+  _self,
+) {
+  SYNC_COMPONENT_PLUGIN_NAME
+}
+
+///|
+pub impl[C, F] @app.PluginReplacement for SyncComponentPlugin[C, F] with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    sync_component_plugin_with(app, self)
+  }
 }
 
 ///|
@@ -51,6 +70,15 @@ pub fn SyncComponentHooksState::removed_component_records(
 pub fn sync_component_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn[C, F] sync_component_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : SyncComponentPlugin[C, F],
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   render_plugin(app)
 }
 

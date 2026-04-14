@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/extract_component.rs`.
 
 ///|
+const EXTRACT_COMPONENT_PLUGIN_NAME : String = "mgstudio.render.ExtractComponentPlugin"
+
+///|
 pub struct DynamicUniformIndex[_] {
   index : UInt
 }
@@ -79,9 +82,34 @@ pub fn[C, F] extract_component_only_extract_visible(
 }
 
 ///|
+pub impl[C, F] @app.PluginReplacement for ExtractComponentPlugin[C, F] with plugin_name(
+  _self,
+) {
+  EXTRACT_COMPONENT_PLUGIN_NAME
+}
+
+///|
+pub impl[C, F] @app.PluginReplacement for ExtractComponentPlugin[C, F] with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    extract_component_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn extract_component_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
+  render_plugin(app)
+}
+
+///|
+pub fn[C, F] extract_component_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : ExtractComponentPlugin[C, F],
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   render_plugin(app)
 }
 

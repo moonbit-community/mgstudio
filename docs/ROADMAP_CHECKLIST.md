@@ -7,7 +7,7 @@ This file must not exceed 200 lines.
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
 | `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
 | `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 71% | 71% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 72% | 72% | 🟡 In Progress | Stage-boundary ownership is still not fully equivalent in runtime behavior. |
 | `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 69% | 69% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 75% | 75% | 🟡 In Progress | Postprocess/mip/runtime ordering still needs stricter source-level convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
@@ -187,7 +187,7 @@ This file must not exceed 200 lines.
 - [x] `post_process/render_phase/pbr_transmission`: remove dead `*_runtime_available()` placeholder APIs and keep only behavior-bearing surfaces.
 - [x] `pbr/transmission`: move `ScreenSpaceTransmission*` type + ECS key ownership from `post_process` to `pbr/transmission`.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
-- [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
+- [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate, add typed `PluginReplacement`, and land world-install entry/state resource path.
 - [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe with Bevy-shaped required-feature mask + cluster-slot bound validation, and align runtime state transitions (`Enabled/Disabled/RuntimeUnavailable`) with deterministic tests.
 - [x] `pbr/meshlet`: align render-sub-app scheduling to Bevy-shaped stage ownership (`extract/prepare_resources_flush/prepare_meshes/prepare_resources/prepare_bind_groups/queue`), add `configure_meshlet_views` (`Msaa::Off` + prepass/deferred markers), wire meshlet pass entry systems into `core_3d` prepass/main-pass sets, and hook `prepare_material_meshlet_meshes_{main_opaque_pass,prepass}` into per-view material bin preparation.
 - [ ] `render/wgpu_mbt` (deferred, upstream): meshlet texture-atomic rust-feature gating is wired; remaining gap is mesh-shader feature constant/capability surface in `wgpu_mbt` for Bevy-equivalent meshlet capability reporting (tracked at `moonbit-community/wgpu-mbt#11`).
