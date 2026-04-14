@@ -1,5 +1,16 @@
 import {
   "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_screenshot_wgsl_source",
+      "input": "screenshot.wgsl",
+      "output": "embedded_wgsl_screenshot_wgsl.mbt",
+    },
+  ],
+)

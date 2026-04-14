@@ -4,6 +4,37 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_copy_wgsl_source",
+      "input": "copy.wgsl",
+      "output": "embedded_wgsl_copy_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_environment_filter_wgsl_source",
+      "input": "environment_filter.wgsl",
+      "output": "embedded_wgsl_environment_filter_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_environment_map_wgsl_source",
+      "input": "environment_map.wgsl",
+      "output": "embedded_wgsl_environment_map_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_irradiance_volume_wgsl_source",
+      "input": "irradiance_volume.wgsl",
+      "output": "embedded_wgsl_irradiance_volume_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_light_probe_wgsl_source",
+      "input": "light_probe.wgsl",
+      "output": "embedded_wgsl_light_probe_wgsl.mbt",
+    },
+  ],
+)

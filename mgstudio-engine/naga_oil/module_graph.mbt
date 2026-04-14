@@ -188,7 +188,6 @@ pub fn resolve_wgsl_source_file_path(
   if normalized_rel == "" {
     return None
   }
-  ensure_builtin_wgsl_sources_registered()
   if registered_wgsl_sources_ref.val.contains(normalized_rel) {
     return Some(normalized_rel)
   }
@@ -206,27 +205,13 @@ let registered_wgsl_import_modules_ref : Ref[@hashmap.HashMap[String, String]] =
 )
 
 ///|
-let builtin_wgsl_sources_registered_ref : Ref[Bool] = Ref::new(false)
-
-///|
-fn ensure_builtin_wgsl_sources_registered() -> Unit {
-  if builtin_wgsl_sources_registered_ref.val {
-    return
-  }
-  builtin_wgsl_sources_registered_ref.val = true
-  register_generated_embedded_wgsl_sources()
-}
-
-///|
 pub fn clear_registered_wgsl_source_registry() -> Unit {
   registered_wgsl_sources_ref.val = @hashmap.HashMap::new()
   registered_wgsl_import_modules_ref.val = @hashmap.HashMap::new()
-  builtin_wgsl_sources_registered_ref.val = false
 }
 
 ///|
 pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
-  ensure_builtin_wgsl_sources_registered()
   let normalized_rel = normalize_shader_rel_path(rel_path)
   if normalized_rel == "" {
     return
@@ -240,7 +225,6 @@ pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
 
 ///|
 pub fn registered_wgsl_source(rel_path : String) -> String? {
-  ensure_builtin_wgsl_sources_registered()
   let normalized_rel = normalize_shader_rel_path(rel_path)
   if normalized_rel == "" {
     return None
@@ -253,7 +237,6 @@ pub fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
   String,
   String,
 ] {
-  ensure_builtin_wgsl_sources_registered()
   let copied : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
   for entry in registered_wgsl_import_modules_ref.val.iter() {
     let (module_path, rel_path) = entry

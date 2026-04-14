@@ -9,6 +9,82 @@ import {
   "Milky2018/mgstudio/pbr" @pbr,
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_clear_visibility_buffer_wgsl_source",
+      "input": "clear_visibility_buffer.wgsl",
+      "output": "embedded_wgsl_clear_visibility_buffer_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_cull_bvh_wgsl_source",
+      "input": "cull_bvh.wgsl",
+      "output": "embedded_wgsl_cull_bvh_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_cull_clusters_wgsl_source",
+      "input": "cull_clusters.wgsl",
+      "output": "embedded_wgsl_cull_clusters_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_cull_instances_wgsl_source",
+      "input": "cull_instances.wgsl",
+      "output": "embedded_wgsl_cull_instances_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_dummy_visibility_buffer_resolve_wgsl_source",
+      "input": "dummy_visibility_buffer_resolve.wgsl",
+      "output": "embedded_wgsl_dummy_visibility_buffer_resolve_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_fill_counts_wgsl_source",
+      "input": "fill_counts.wgsl",
+      "output": "embedded_wgsl_fill_counts_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_meshlet_bindings_wgsl_source",
+      "input": "meshlet_bindings.wgsl",
+      "output": "embedded_wgsl_meshlet_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_meshlet_cull_shared_wgsl_source",
+      "input": "meshlet_cull_shared.wgsl",
+      "output": "embedded_wgsl_meshlet_cull_shared_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_meshlet_mesh_material_wgsl_source",
+      "input": "meshlet_mesh_material.wgsl",
+      "output": "embedded_wgsl_meshlet_mesh_material_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_remap_1d_to_2d_dispatch_wgsl_source",
+      "input": "remap_1d_to_2d_dispatch.wgsl",
+      "output": "embedded_wgsl_remap_1d_to_2d_dispatch_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_resolve_render_targets_wgsl_source",
+      "input": "resolve_render_targets.wgsl",
+      "output": "embedded_wgsl_resolve_render_targets_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_visibility_buffer_hardware_raster_wgsl_source",
+      "input": "visibility_buffer_hardware_raster.wgsl",
+      "output": "embedded_wgsl_visibility_buffer_hardware_raster_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_visibility_buffer_resolve_wgsl_source",
+      "input": "visibility_buffer_resolve.wgsl",
+      "output": "embedded_wgsl_visibility_buffer_resolve_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_visibility_buffer_software_raster_wgsl_source",
+      "input": "visibility_buffer_software_raster.wgsl",
+      "output": "embedded_wgsl_visibility_buffer_software_raster_wgsl.mbt",
+    },
+  ],
+)

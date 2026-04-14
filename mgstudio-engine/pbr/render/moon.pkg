@@ -20,6 +20,167 @@ import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_build_indirect_params_wgsl_source",
+      "input": "build_indirect_params.wgsl",
+      "output": "embedded_wgsl_build_indirect_params_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_clustered_forward_wgsl_source",
+      "input": "clustered_forward.wgsl",
+      "output": "embedded_wgsl_clustered_forward_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_fog_wgsl_source",
+      "input": "fog.wgsl",
+      "output": "embedded_wgsl_fog_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_forward_io_wgsl_source",
+      "input": "forward_io.wgsl",
+      "output": "embedded_wgsl_forward_io_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_bindings_wgsl_source",
+      "input": "mesh_bindings.wgsl",
+      "output": "embedded_wgsl_mesh_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_functions_wgsl_source",
+      "input": "mesh_functions.wgsl",
+      "output": "embedded_wgsl_mesh_functions_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_preprocess_wgsl_source",
+      "input": "mesh_preprocess.wgsl",
+      "output": "embedded_wgsl_mesh_preprocess_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_types_wgsl_source",
+      "input": "mesh_types.wgsl",
+      "output": "embedded_wgsl_mesh_types_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_view_bindings_wgsl_source",
+      "input": "mesh_view_bindings.wgsl",
+      "output": "embedded_wgsl_mesh_view_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_view_types_wgsl_source",
+      "input": "mesh_view_types.wgsl",
+      "output": "embedded_wgsl_mesh_view_types_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_wgsl_source",
+      "input": "mesh.wgsl",
+      "output": "embedded_wgsl_mesh_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_morph_wgsl_source",
+      "input": "morph.wgsl",
+      "output": "embedded_wgsl_morph_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_occlusion_culling_wgsl_source",
+      "input": "occlusion_culling.wgsl",
+      "output": "embedded_wgsl_occlusion_culling_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_parallax_mapping_wgsl_source",
+      "input": "parallax_mapping.wgsl",
+      "output": "embedded_wgsl_parallax_mapping_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_ambient_wgsl_source",
+      "input": "pbr_ambient.wgsl",
+      "output": "embedded_wgsl_pbr_ambient_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_bindings_wgsl_source",
+      "input": "pbr_bindings.wgsl",
+      "output": "embedded_wgsl_pbr_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_fragment_wgsl_source",
+      "input": "pbr_fragment.wgsl",
+      "output": "embedded_wgsl_pbr_fragment_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_functions_wgsl_source",
+      "input": "pbr_functions.wgsl",
+      "output": "embedded_wgsl_pbr_functions_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_lighting_wgsl_source",
+      "input": "pbr_lighting.wgsl",
+      "output": "embedded_wgsl_pbr_lighting_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_prepass_functions_wgsl_source",
+      "input": "pbr_prepass_functions.wgsl",
+      "output": "embedded_wgsl_pbr_prepass_functions_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_prepass_wgsl_source",
+      "input": "pbr_prepass.wgsl",
+      "output": "embedded_wgsl_pbr_prepass_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_types_wgsl_source",
+      "input": "pbr_types.wgsl",
+      "output": "embedded_wgsl_pbr_types_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_wgsl_source",
+      "input": "pbr.wgsl",
+      "output": "embedded_wgsl_pbr_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_reset_indirect_batch_sets_wgsl_source",
+      "input": "reset_indirect_batch_sets.wgsl",
+      "output": "embedded_wgsl_reset_indirect_batch_sets_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_rgb9e5_wgsl_source",
+      "input": "rgb9e5.wgsl",
+      "output": "embedded_wgsl_rgb9e5_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_shadow_sampling_wgsl_source",
+      "input": "shadow_sampling.wgsl",
+      "output": "embedded_wgsl_shadow_sampling_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_shadows_wgsl_source",
+      "input": "shadows.wgsl",
+      "output": "embedded_wgsl_shadows_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_skinning_wgsl_source",
+      "input": "skinning.wgsl",
+      "output": "embedded_wgsl_skinning_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_utils_wgsl_source",
+      "input": "utils.wgsl",
+      "output": "embedded_wgsl_utils_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_view_transformations_wgsl_source",
+      "input": "view_transformations.wgsl",
+      "output": "embedded_wgsl_view_transformations_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_wireframe_wgsl_source",
+      "input": "wireframe.wgsl",
+      "output": "embedded_wgsl_wireframe_wgsl.mbt",
+    },
+  ],
+)

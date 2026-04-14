@@ -2,6 +2,32 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_preprocess_depth_wgsl_source",
+      "input": "preprocess_depth.wgsl",
+      "output": "embedded_wgsl_preprocess_depth_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_spatial_denoise_wgsl_source",
+      "input": "spatial_denoise.wgsl",
+      "output": "embedded_wgsl_spatial_denoise_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_ssao_utils_wgsl_source",
+      "input": "ssao_utils.wgsl",
+      "output": "embedded_wgsl_ssao_utils_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_ssao_wgsl_source",
+      "input": "ssao.wgsl",
+      "output": "embedded_wgsl_ssao_wgsl.mbt",
+    },
+  ],
+)

@@ -9,6 +9,22 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_view_bindings_wgsl_source",
+      "input": "sprite_view_bindings.wgsl",
+      "output": "embedded_wgsl_sprite_view_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_wgsl_source",
+      "input": "sprite.wgsl",
+      "output": "embedded_wgsl_sprite_wgsl.mbt",
+    },
+  ],
+)

@@ -4,6 +4,62 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_aerial_view_lut_wgsl_source",
+      "input": "aerial_view_lut.wgsl",
+      "output": "embedded_wgsl_aerial_view_lut_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_bindings_wgsl_source",
+      "input": "bindings.wgsl",
+      "output": "embedded_wgsl_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_bruneton_functions_wgsl_source",
+      "input": "bruneton_functions.wgsl",
+      "output": "embedded_wgsl_bruneton_functions_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_environment_wgsl_source",
+      "input": "environment.wgsl",
+      "output": "embedded_wgsl_environment_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_functions_wgsl_source",
+      "input": "functions.wgsl",
+      "output": "embedded_wgsl_functions_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_multiscattering_lut_wgsl_source",
+      "input": "multiscattering_lut.wgsl",
+      "output": "embedded_wgsl_multiscattering_lut_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_render_sky_wgsl_source",
+      "input": "render_sky.wgsl",
+      "output": "embedded_wgsl_render_sky_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sky_view_lut_wgsl_source",
+      "input": "sky_view_lut.wgsl",
+      "output": "embedded_wgsl_sky_view_lut_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_transmittance_lut_wgsl_source",
+      "input": "transmittance_lut.wgsl",
+      "output": "embedded_wgsl_transmittance_lut_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_types_wgsl_source",
+      "input": "types.wgsl",
+      "output": "embedded_wgsl_types_wgsl.mbt",
+    },
+  ],
+)

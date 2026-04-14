@@ -2,6 +2,27 @@ import {
   "Milky2018/mgstudio/app" @app,
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/post_process" @post_process,
+  "Milky2018/mgstudio/naga_oil" @naga_oil,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_lut_bindings_wgsl_source",
+      "input": "lut_bindings.wgsl",
+      "output": "embedded_wgsl_lut_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_tonemapping_shared_wgsl_source",
+      "input": "tonemapping_shared.wgsl",
+      "output": "embedded_wgsl_tonemapping_shared_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_tonemapping_wgsl_source",
+      "input": "tonemapping.wgsl",
+      "output": "embedded_wgsl_tonemapping_wgsl.mbt",
+    },
+  ],
+)
