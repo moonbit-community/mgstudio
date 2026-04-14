@@ -37,6 +37,8 @@ test "pbr/meshlet: mesh manager removes slices from all persistent buffers" {
     .with_bvh_depth(2)
   ignore(manager.queue_upload_if_needed(7, meshlet_mesh))
   perform_pending_meshlet_mesh_writes(manager)
-  inspect(manager.remove(7), content="true")
-  inspect(manager.remove(7), content="false")
+  manager.remove(7)
+  inspect(manager.buffered_asset_count(), content="0")
+  manager.remove(7)
+  inspect(manager.buffered_asset_count(), content="0")
 }

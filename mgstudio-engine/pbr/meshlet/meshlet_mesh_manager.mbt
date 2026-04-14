@@ -239,9 +239,8 @@ pub fn MeshletMeshManager::queue_upload_if_needed(
 pub fn MeshletMeshManager::remove(
   self : MeshletMeshManager,
   asset_id : Int,
-) -> Bool {
+) -> Unit {
   let safe_asset_id = if asset_id < 0 { 0 } else { asset_id }
-  let was_present = self.meshlet_mesh_slices.get(safe_asset_id) is Some(_)
   match self.meshlet_mesh_slices.get(safe_asset_id) {
     Some(slices) => {
       self.vertex_positions.mark_slice_unused(
@@ -269,7 +268,6 @@ pub fn MeshletMeshManager::remove(
     None => ()
   }
   self.meshlet_mesh_slices.remove(safe_asset_id)
-  was_present
 }
 
 ///|
