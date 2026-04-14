@@ -220,6 +220,27 @@ pub fn prewarm_mesh3d_pipeline_variants(
 }
 
 ///|
+pub fn prepare_mesh3d_material_bind_group(
+  texture_id~ : Int,
+  normal_texture_id~ : Int,
+  emissive_texture_id~ : Int,
+  metallic_roughness_texture_id~ : Int,
+  occlusion_texture_id~ : Int,
+  depth_texture_id~ : Int,
+  anisotropy_texture_id~ : Int,
+  specular_tint_texture_id~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_material_bind_group(
+      texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
+      occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
+    ) catch {
+      err => debug_runtime_error("prepare_mesh3d_material_bind_group", err)
+    }
+  }
+}
+
+///|
 pub fn draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,

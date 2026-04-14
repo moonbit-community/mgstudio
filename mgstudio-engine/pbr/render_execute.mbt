@@ -113,6 +113,75 @@ pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_prepare_extracted_mesh_material_bind_group(
+  mesh : ExtractedMesh3d,
+) -> Unit {
+  let mut draw_material = mesh.payload.material
+  if mesh.payload.lightmap is Some(lightmap) && lightmap.image.id() > 0 {
+    draw_material = draw_material.with_base_color_texture(Some(lightmap.image))
+  }
+  let mut texture_id = match draw_material.base_color_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let mut normal_texture_id = match
+    (draw_material.normal_map_texture, draw_material.clearcoat_normal_texture) {
+    (Some(texture), _) => texture.id()
+    (None, Some(texture)) => texture.id()
+    (None, None) => -1
+  }
+  let mut emissive_texture_id = match draw_material.emissive_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let mut metallic_roughness_texture_id = match
+    draw_material.metallic_roughness_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let occlusion_texture_id = match draw_material.occlusion_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let depth_texture_id = match draw_material.depth_map {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let anisotropy_texture_id = match draw_material.anisotropy_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let specular_tint_texture_id = match draw_material.specular_tint_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  if mesh.payload.clustered_decal is Some(clustered_decal) {
+    if clustered_decal.base_color_texture is Some(texture) {
+      texture_id = texture.id()
+    }
+    if clustered_decal.normal_map_texture is Some(texture) {
+      normal_texture_id = texture.id()
+    }
+    if clustered_decal.metallic_roughness_texture is Some(texture) {
+      metallic_roughness_texture_id = texture.id()
+    }
+    if clustered_decal.emissive_texture is Some(texture) {
+      emissive_texture_id = texture.id()
+    }
+  }
+  @render.host_gpu_prepare_mesh3d_material_bind_group(
+    texture_id~,
+    normal_texture_id~,
+    emissive_texture_id~,
+    metallic_roughness_texture_id~,
+    occlusion_texture_id~,
+    depth_texture_id~,
+    anisotropy_texture_id~,
+    specular_tint_texture_id~,
+  )
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
@@ -215,6 +284,11 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
 pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   @pbr_prepass.prepass_update_pipeline_state(source_world)
+  if render3d_queue_frame_snapshot(world) is Some(frame) {
+    for mesh in frame.meshes {
+      render3d_prepare_extracted_mesh_material_bind_group(mesh)
+    }
+  }
   ignore(@pbr_render.render3d_mesh_layouts())
 }
 

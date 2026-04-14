@@ -47,6 +47,29 @@ pub fn host_gpu_prepare_mesh3d_skin_binding(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_material_bind_group(
+  texture_id~ : Int,
+  normal_texture_id~ : Int,
+  emissive_texture_id~ : Int,
+  metallic_roughness_texture_id~ : Int,
+  occlusion_texture_id~ : Int,
+  depth_texture_id~ : Int,
+  anisotropy_texture_id~ : Int,
+  specular_tint_texture_id~ : Int,
+) -> Unit {
+  @renderer.prepare_mesh3d_material_bind_group(
+    texture_id~,
+    normal_texture_id~,
+    emissive_texture_id~,
+    metallic_roughness_texture_id~,
+    occlusion_texture_id~,
+    depth_texture_id~,
+    anisotropy_texture_id~,
+    specular_tint_texture_id~,
+  )
+}
+
+///|
 pub type HostGpuClipMatrix = @renderer.GpuClipMatrix
 
 ///|

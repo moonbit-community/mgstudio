@@ -205,3 +205,92 @@ fn ensure_point_shadow_fallback_texture(
   }
   texture
 }
+
+///|
+pub fn GpuBackend::prepare_mesh3d_material_bind_group(
+  self : GpuBackend,
+  texture_id : Int,
+  normal_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  depth_texture_id : Int,
+  anisotropy_texture_id : Int,
+  specular_tint_texture_id : Int,
+) -> Unit raise GpuBackendError {
+  let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
+  let resolved_normal_texture_id = if normal_texture_id < 0 {
+    ensure_normal_map_fallback_texture(self).id
+  } else {
+    normal_texture_id
+  }
+  let resolved_emissive_texture_id = if emissive_texture_id < 0 {
+    -1
+  } else {
+    emissive_texture_id
+  }
+  let resolved_metallic_roughness_texture_id = if metallic_roughness_texture_id <
+    0 {
+    -1
+  } else {
+    metallic_roughness_texture_id
+  }
+  let resolved_occlusion_texture_id = if occlusion_texture_id < 0 {
+    -1
+  } else {
+    occlusion_texture_id
+  }
+  let resolved_depth_texture_id = if depth_texture_id < 0 {
+    -1
+  } else {
+    depth_texture_id
+  }
+  let resolved_anisotropy_texture_id = if anisotropy_texture_id < 0 {
+    -1
+  } else {
+    anisotropy_texture_id
+  }
+  let resolved_specular_tint_texture_id = if specular_tint_texture_id < 0 {
+    -1
+  } else {
+    specular_tint_texture_id
+  }
+  guard resolve_mesh3d_texture(self, resolved_base_texture_id)
+    is Some(base_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_normal_texture_id)
+    is Some(normal_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_emissive_texture_id)
+    is Some(emissive_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_metallic_roughness_texture_id)
+    is Some(metallic_roughness_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_occlusion_texture_id)
+    is Some(occlusion_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_depth_texture_id)
+    is Some(depth_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_anisotropy_texture_id)
+    is Some(anisotropy_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_specular_tint_texture_id)
+    is Some(specular_tint_texture) else {
+    return
+  }
+  ignore(
+    mesh3d_material_cache_get_or_create(
+      self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
+      occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
+    ),
+  )
+}

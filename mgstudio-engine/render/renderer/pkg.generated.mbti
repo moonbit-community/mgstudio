@@ -211,6 +211,8 @@ pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroup
 
 pub fn pipeline_layout_descriptor_4_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
+pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, anisotropy_texture_id~ : Int, specular_tint_texture_id~ : Int) -> Unit
+
 pub fn prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
@@ -655,6 +657,7 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_m
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
+pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_skin_binding(Self, Int, Int, Array[Float]) -> Unit
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
