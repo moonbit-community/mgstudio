@@ -59,6 +59,51 @@ fn meshlet_clamp_draw_count(draw_count : Int) -> Int {
 }
 
 ///|
+fn meshlet_pipeline_id_valid(pipeline_id : Int) -> Bool {
+  pipeline_id >= 0
+}
+
+///|
+fn meshlet_material_bin_draw_count(
+  material_bins : Array[(Int, Int, Int)],
+  instance_manager : InstanceManager,
+) -> Int {
+  let mut draw_count = 0
+  for material_bin in material_bins {
+    let (material_id, material_pipeline_id, _material_bind_group) = material_bin
+    if meshlet_pipeline_id_valid(material_pipeline_id) &&
+      instance_manager.material_present_in_scene(material_id) {
+      draw_count = draw_count + 1
+    }
+  }
+  draw_count
+}
+
+///|
+pub fn meshlet_main_opaque_pass_materials(
+  materials : MeshletViewMaterialsMainOpaquePass,
+  instance_manager : InstanceManager,
+) -> Int {
+  meshlet_material_bin_draw_count(materials.entries, instance_manager)
+}
+
+///|
+pub fn meshlet_prepass_materials(
+  materials : MeshletViewMaterialsPrepass,
+  instance_manager : InstanceManager,
+) -> Int {
+  meshlet_material_bin_draw_count(materials.entries, instance_manager)
+}
+
+///|
+pub fn meshlet_deferred_gbuffer_prepass_materials(
+  materials : MeshletViewMaterialsDeferredGBufferPrepass,
+  instance_manager : InstanceManager,
+) -> Int {
+  meshlet_material_bin_draw_count(materials.entries, instance_manager)
+}
+
+///|
 pub fn meshlet_prepass(draw_count : Int) -> Int {
   meshlet_clamp_draw_count(draw_count)
 }

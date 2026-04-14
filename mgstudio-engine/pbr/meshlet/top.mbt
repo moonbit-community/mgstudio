@@ -422,7 +422,7 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
         None => ()
       }
     }
-    if has_deferred {
+    if has_deferred_pass {
       match
         (try! source_world.get_by_key(
           entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
@@ -475,19 +475,58 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_prepass_system(world : @ecs.World) -> Unit {
-  ignore(meshlet_prepass(meshlet_instance_count_from_world(world)))
+  let source_world = @render.render_source_world(world)
+  let mut draw_count = 0
+  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) =>
+      source_world.for_each_component(ecs_key_meshlet_view_materials_prepass, fn(
+        _entity,
+        materials,
+      ) {
+        draw_count = draw_count +
+          meshlet_prepass_materials(materials, instance_manager)
+      })
+    None => ()
+  }
+  ignore(meshlet_prepass(draw_count))
 }
 
 ///|
 fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
-  ignore(
-    meshlet_deferred_gbuffer_prepass(meshlet_instance_count_from_world(world)),
-  )
+  let source_world = @render.render_source_world(world)
+  let mut draw_count = 0
+  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) =>
+      source_world.for_each_component(
+        ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+        fn(_entity, materials) {
+          draw_count = draw_count +
+            meshlet_deferred_gbuffer_prepass_materials(
+              materials, instance_manager,
+            )
+        },
+      )
+    None => ()
+  }
+  ignore(meshlet_deferred_gbuffer_prepass(draw_count))
 }
 
 ///|
 fn meshlet_main_opaque_pass_system(world : @ecs.World) -> Unit {
-  ignore(meshlet_main_opaque_pass(meshlet_instance_count_from_world(world)))
+  let source_world = @render.render_source_world(world)
+  let mut draw_count = 0
+  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) =>
+      source_world.for_each_component(
+        ecs_key_meshlet_view_materials_main_opaque_pass,
+        fn(_entity, materials) {
+          draw_count = draw_count +
+            meshlet_main_opaque_pass_materials(materials, instance_manager)
+        },
+      )
+    None => ()
+  }
+  ignore(meshlet_main_opaque_pass(draw_count))
 }
 
 ///|
