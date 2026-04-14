@@ -131,6 +131,29 @@ fn render3d_prewarm_mesh_pipelines(
 }
 
 ///|
+fn render3d_for_each_prepared_camera(
+  frame : Render3dQueuedFrame,
+  f : (
+    @core.Entity,
+    Camera3dViewPayload,
+    Render3dPreparedCameraQueue,
+  ) -> Unit,
+) -> Unit {
+  for camera_index in 0..<frame.prepared_camera_count {
+    let extracted_camera = frame.cameras[camera_index]
+    match frame.prepared_camera_queues[camera_index] {
+      Some(prepared_queue) =>
+        f(
+          extracted_camera.entity.main_entity,
+          extracted_camera.payload,
+          prepared_queue,
+        )
+      None => ()
+    }
+  }
+}
+
+///|
 pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
@@ -204,18 +227,16 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
         fog_meta_ref.val,
       )
       @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
-      for camera_index in 0..<frame.prepared_camera_count {
-        let extracted_camera = frame.cameras[camera_index]
-        match frame.prepared_camera_queues[camera_index] {
-          Some(prepared_queue) =>
-            render3d_upload_camera_queue_entry(
-              extracted_camera.entity.main_entity,
-              extracted_camera.payload,
-              prepared_queue,
-            )
-          None => ()
-        }
-      }
+      render3d_for_each_prepared_camera(
+        frame,
+        fn(camera_entity, camera_payload, prepared_queue) {
+          render3d_upload_camera_queue_entry(
+            camera_entity,
+            camera_payload,
+            prepared_queue,
+          )
+        },
+      )
     }
     None => ()
   }
@@ -241,18 +262,16 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
   }
   match render3d_queue_frame_snapshot(world) {
     Some(frame) => {
-      for camera_index in 0..<frame.prepared_camera_count {
-        let extracted_camera = frame.cameras[camera_index]
-        match frame.prepared_camera_queues[camera_index] {
-          Some(prepared_queue) =>
-            render3d_dispatch_camera_queue_entry(
-              extracted_camera.entity.main_entity,
-              extracted_camera.payload,
-              prepared_queue,
-            )
-          None => ()
-        }
-      }
+      render3d_for_each_prepared_camera(
+        frame,
+        fn(camera_entity, camera_payload, prepared_queue) {
+          render3d_dispatch_camera_queue_entry(
+            camera_entity,
+            camera_payload,
+            prepared_queue,
+          )
+        },
+      )
     }
     None => @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
   }
