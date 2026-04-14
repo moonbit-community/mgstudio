@@ -16,6 +16,11 @@
 // Bevy source: `bevy/crates/bevy_scene/src/scene_spawner.rs`.
 
 ///|
+pub let scene_spawner_set_spawn : @app.SystemSet = @app.system_set(
+  "mgstudio.scene.SceneSpawnerSystems.Spawn",
+)
+
+///|
 pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   let modified_scene_ids : Array[Int] = []
   let message_key : @ecs.MessageKey[@asset.AssetEvent[Scene]] = @ecs.Message::message()
@@ -98,9 +103,20 @@ fn scene_runtime_plugin_base(
   .init_resource(fn() { SceneRuntimeState::default() })
   .init_resource(fn() { SceneModifiedEventsCursorState::default() })
   .init_resource(fn() { SceneGltfPendingRequestsState::default() })
-  .add_pre_update_system(scene_load_pending_system)
-  .add_pre_update_system(scene_reload_modified_roots_system)
-  .add_pre_update_system(scene_spawn_roots_system)
+  .add_systems(
+    @app.PreUpdate,
+    (
+      @app.system(scene_load_pending_system).in_set(scene_spawner_set_spawn),
+      @app.system(scene_reload_modified_roots_system).in_set(
+        scene_spawner_set_spawn,
+      ),
+      @app.system(scene_spawn_roots_system).in_set(scene_spawner_set_spawn),
+    )
+    |> @app.chain(),
+  )
+  .configure_set(@app.PreUpdate, scene_spawner_set_spawn, before=[
+    @transform.transform_set_mark_dirty_trees,
+  ])
 }
 
 ///|

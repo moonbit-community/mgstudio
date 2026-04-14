@@ -59,6 +59,8 @@ pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
 pub fn scene_spawn_roots_system(@ecs.World) -> Unit
 
+pub let scene_spawner_set_spawn : String
+
 // Errors
 
 // Types and methods
