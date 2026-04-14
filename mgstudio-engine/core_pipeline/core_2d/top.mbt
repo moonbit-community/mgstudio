@@ -82,10 +82,14 @@ fn core_2d_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   let stage = @render.render_schedule_stage()
+  let core_2d_stage = @app.schedule_label("mgstudio.core_pipeline.core_2d")
   let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
-    @app.Schedule::new(@app.schedule_label("mgstudio.core_pipeline.core_2d")),
+    @app.Schedule::new(core_2d_stage),
   )
   sub_app
+  .configure_set(core_2d_stage, core_2d_set_main_pass, before=[
+    core_2d_set_post_process,
+  ])
   .configure_set(stage, @render.render_system_set_extract_commands, before=[
     core_2d_set_extract,
   ])
