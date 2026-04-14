@@ -15,6 +15,9 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/render/fog.rs`.
 
 ///|
+const FOG_PLUGIN_NAME : String = "mgstudio.pbr.render.fog.FogPlugin"
+
+///|
 pub const GPU_FOG_MODE_OFF : UInt = 0U
 
 ///|
@@ -144,6 +147,45 @@ let fog_meta_resource_key : @ecs.ResourceKey[FogMeta] = @ecs.register_resource(
 ///|
 pub impl @app.Resource for FogMeta with resource() {
   fog_meta_resource_key
+}
+
+///|
+pub struct FogPlugin {}
+
+///|
+pub fn FogPlugin::default() -> FogPlugin {
+  FogPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for FogPlugin with plugin_name(_self) {
+  FOG_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for FogPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    fog_plugin_install_with(app, self)
+  }
+}
+
+///|
+pub fn fog_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  fog_plugin_install_with(app, FogPlugin::default())
+}
+
+///|
+pub fn fog_plugin_install_with(
+  app : @app.App[@ecs.World],
+  _plugin : FogPlugin,
+) -> @app.App[@ecs.World] {
+  @render_gpu.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
+    let world = sub_app.world()
+    if (try! world.get_resource(FogMeta::resource())) is None {
+      world.insert_resource(FogMeta::resource(), FogMeta::default())
+    }
+    sub_app
+  })
 }
 
 ///|
