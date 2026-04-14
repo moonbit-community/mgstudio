@@ -3,7 +3,7 @@ package "Milky2018/mgstudio/gizmos"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/camera",
+  "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
@@ -32,9 +32,9 @@ pub fn default_gizmo_config_group() -> @sprite.DefaultGizmoConfigGroup
 
 pub fn default_gizmo_line_config() -> @sprite.GizmoLineConfig
 
-pub fn draw_aabb_gizmos(@ecs.Query[(@ecs.Comp[@camera.Aabb], @ecs.Comp[@transform.GlobalTransform], @ecs.Comp[@visibility.ViewVisibility]?, @ecs.Comp[ShowAabbGizmo]), @ecs.All], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
+pub fn draw_aabb_gizmos(@ecs.Query[(@ecs.Comp[@primitives.Aabb], @ecs.Comp[@transform.GlobalTransform], @ecs.Comp[@visibility.ViewVisibility]?, @ecs.Comp[ShowAabbGizmo]), @ecs.All], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
 
-pub fn draw_all_aabb_gizmos(@ecs.Query[(@ecs.Comp[@camera.Aabb], @ecs.Comp[@transform.GlobalTransform], @ecs.Comp[@visibility.ViewVisibility]?), @ecs.Without[ShowAabbGizmo]], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
+pub fn draw_all_aabb_gizmos(@ecs.Query[(@ecs.Comp[@primitives.Aabb], @ecs.Comp[@transform.GlobalTransform], @ecs.Comp[@visibility.ViewVisibility]?), @ecs.Without[ShowAabbGizmo]], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
 
 pub fn draw_all_frustum_gizmos(@ecs.Query[@ecs.Comp[@render.Frustum], @ecs.Without[ShowFrustumGizmo]], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
 

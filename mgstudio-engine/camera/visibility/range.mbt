@@ -137,19 +137,36 @@ fn check_visibility_ranges_system(world : @ecs.World) -> Unit {
   if view_positions.length() == 0 {
     return
   }
+  if world.component_count(@root_visibility.ecs_key_visibility_range) == 0 {
+    return
+  }
 
   let entity_query : @ecs.Query[
     (
       @core.Entity,
       @ecs.Comp[@transform.GlobalTransform],
       @ecs.Comp[@root_visibility.VisibilityRange],
+      @ecs.Comp[@camera_primitives.Aabb]?,
     ),
     @ecs.All,
   ] = @ecs.query(world)
   try! entity_query.view(fn(_, data) {
-    let (entity, global_transform_component, visibility_range_component) = data
-    let model_position = global_transform_component.value().compute_transform().translation
+    let (
+      entity,
+      global_transform_component,
+      visibility_range_component,
+      aabb_component,
+    ) = data
+    let global_transform = global_transform_component.value()
     let visibility_range = visibility_range_component.value()
+    let model_position = if visibility_range.use_aabb() {
+      match aabb_component {
+        Some(aabb) => global_transform.transform_point(aabb.value().center())
+        None => global_transform.compute_transform().translation
+      }
+    } else {
+      global_transform.compute_transform().translation
+    }
     let mut visibility = 0
     for index in 0..<view_positions.length() {
       let (view_index, view_position) = view_positions[index]
