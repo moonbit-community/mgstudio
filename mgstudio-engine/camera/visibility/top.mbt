@@ -17,7 +17,7 @@
 
 ///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @root_visibility.visibility_plugin(app)
+  visibility_range_plugin(@root_visibility.visibility_plugin(app))
 }
 
 ///|

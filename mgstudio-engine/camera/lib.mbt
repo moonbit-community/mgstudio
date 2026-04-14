@@ -22,7 +22,7 @@ pub let camera_update_systems : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @visibility.visibility_plugin(
+  @camera_visibility.visibility_plugin(
     app.init_resource(fn() { @sprite.ClearColor::default() }),
   )
 }
