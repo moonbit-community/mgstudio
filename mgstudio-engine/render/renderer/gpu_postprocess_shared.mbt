@@ -26,17 +26,14 @@ fn load_wgsl_asset_source_required(
   backend : GpuBackend,
   rel : String,
 ) -> String raise GpuBackendError {
-  let base = backend.assets_base.trim().to_string()
-  if base == "" {
+  if backend.assets_base.trim().to_string() == "" {
     fatal("wgpu: assets_base is empty; cannot load shader: \{rel}")
   }
-  let normalized_rel = normalize_shader_rel_path(rel)
-  let full_path = @path.Path::join(base, normalized_rel).normalize().to_string()
-  @fs.read_file_to_string(full_path) catch {
-    err =>
-      fatal(
-        "wgpu: failed to read shader asset \{normalized_rel}: \{err.to_string()}",
-      )
+  @naga_oil.Composer::default().load_wgsl_source_required_raw(
+    backend.assets_base,
+    rel,
+  ) catch {
+    err => fatal("wgpu: failed to read shader asset \{rel}: \{err.message()}")
   }
 }
 

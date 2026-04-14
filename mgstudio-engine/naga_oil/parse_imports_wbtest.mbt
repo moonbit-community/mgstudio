@@ -31,9 +31,12 @@ fn parse_imports_snapshot(input : String) -> String {
 test "naga_oil wb: parse_imports matches upstream top-level item-list disambiguation" {
   debug_inspect(
     parse_imports_snapshot("#import a::b c, d\n"),
-    content="c=a::b::c\nd=a::b::d",
+    content="\"c=a::b::c\\nd=a::b::d\"",
   )
-  debug_inspect(parse_imports_snapshot("#import a::b c\n"), content="c=a::b::c")
+  debug_inspect(
+    parse_imports_snapshot("#import a::b c\n"),
+    content="\"c=a::b::c\"",
+  )
 }
 
 ///|
@@ -42,7 +45,7 @@ test "naga_oil wb: parse_imports matches upstream grouped nested imports" {
     parse_imports_snapshot(
       "#import a::b::{c::{d, e}, f, g::{h as i, j::k::l as m}}\n",
     ),
-    content="d=a::b::c::d\ne=a::b::c::e\nf=a::b::f\ni=a::b::g::h\nm=a::b::g::j::k::l",
+    content="\"d=a::b::c::d\\ne=a::b::c::e\\nf=a::b::f\\ni=a::b::g::h\\nm=a::b::g::j::k::l\"",
   )
 }
 
@@ -52,7 +55,7 @@ test "naga_oil wb: parse_imports matches upstream quoted path grouping" {
     parse_imports_snapshot(
       "#import \"path//with\\\\ all sorts of .stuff\"::{a, b}\n",
     ),
-    content="a=\"path//with\\\\ all sorts of .stuff\"::a\nb=\"path//with\\\\ all sorts of .stuff\"::b",
+    content="\"a=\\\"path//with\\\\\\\\ all sorts of .stuff\\\"::a\\nb=\\\"path//with\\\\\\\\ all sorts of .stuff\\\"::b\"",
   )
 }
 

@@ -1027,7 +1027,15 @@ pub fn Composer::load_wgsl_source_required_raw(
       if normalized_assets_base == "" {
         raise ComposerError::MissingStartupRegisteredSource(normalized_rel)
       }
-      let full_path = join_asset_path(normalized_assets_base, normalized_rel)
+      let full_path = match
+        resolve_wgsl_source_file_path(normalized_assets_base, normalized_rel) {
+        Some(path) => path
+        None =>
+          raise ComposerError::FailedToReadShader(
+            join_asset_path(normalized_assets_base, normalized_rel),
+            "file not found",
+          )
+      }
       @fs.read_file_to_string(full_path) catch {
         err =>
           raise ComposerError::FailedToReadShader(full_path, err.to_string())

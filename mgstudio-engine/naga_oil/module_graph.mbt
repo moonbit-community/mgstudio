@@ -180,6 +180,93 @@ pub fn normalize_shader_rel_path(rel : String) -> String {
 }
 
 ///|
+fn string_push_unique(values : Array[String], value : String) -> Unit {
+  for existing in values {
+    if existing == value {
+      return
+    }
+  }
+  values.push(value)
+}
+
+///|
+fn remap_legacy_shader_rel_path(rel : String) -> String? {
+  if rel.has_prefix("shaders/bevy_render/") {
+    return Some("render/\{rel[20:rel.length()].to_string()}")
+  }
+  if rel.has_prefix("shaders/bevy_pbr/") {
+    return Some("pbr/\{rel[17:rel.length()].to_string()}")
+  }
+  if rel.has_prefix("shaders/bevy_core_pipeline/") {
+    return Some("core_pipeline/\{rel[27:rel.length()].to_string()}")
+  }
+  if rel.has_prefix("shaders/bevy_sprite_render/") {
+    return Some("sprite_render/\{rel[27:rel.length()].to_string()}")
+  }
+  if rel.has_prefix("shaders/bevy_ui_render/") {
+    return Some("ui_render/\{rel[23:rel.length()].to_string()}")
+  }
+  if rel.has_prefix("shaders/bevy_post_process/") {
+    return Some("post_process/\{rel[26:rel.length()].to_string()}")
+  }
+  if rel.has_prefix("shaders/bevy_anti_alias/") {
+    return Some("anti_alias/\{rel[24:rel.length()].to_string()}")
+  }
+  None
+}
+
+///|
+fn shader_rel_candidates(rel : String) -> Array[String] {
+  let normalized_rel = normalize_shader_rel_path(rel)
+  let candidates : Array[String] = []
+  if normalized_rel == "" {
+    return candidates
+  }
+  candidates.push(normalized_rel)
+  if remap_legacy_shader_rel_path(normalized_rel) is Some(remapped_rel) {
+    string_push_unique(candidates, remapped_rel)
+  }
+  candidates
+}
+
+///|
+fn shader_search_roots(assets_base : String) -> Array[String] {
+  let roots : Array[String] = []
+  let normalized_assets_base = assets_base.trim().to_string()
+  if normalized_assets_base == "" {
+    return roots
+  }
+  string_push_unique(roots, normalized_assets_base)
+  let raw_parent = @path.Path::normalize(normalized_assets_base)
+    .dirname()
+    .to_string()
+  let parent = if raw_parent == "" { "." } else { raw_parent }
+  string_push_unique(roots, parent)
+  roots
+}
+
+///|
+pub fn resolve_wgsl_source_file_path(
+  assets_base : String,
+  rel : String,
+) -> String? {
+  let candidates = shader_rel_candidates(rel)
+  if candidates.length() == 0 {
+    return None
+  }
+  let roots = shader_search_roots(assets_base)
+  for candidate_rel in candidates {
+    for root in roots {
+      let full_path = join_asset_path(root, candidate_rel)
+      if path_is_file_exact(full_path) {
+        return Some(full_path)
+      }
+    }
+  }
+  None
+}
+
+///|
 fn join_asset_path(base : String, rel : String) -> String {
   if base == "" {
     rel
@@ -372,6 +459,16 @@ pub fn build_wgsl_import_module_paths(
   let normalized_assets_base = assets_base.trim().to_string()
   if normalized_assets_base != "" {
     collect_wgsl_import_module_paths(normalized_assets_base, "shaders", modules)
+    let roots = shader_search_roots(normalized_assets_base)
+    for root in roots {
+      collect_wgsl_import_module_paths(root, "render", modules)
+      collect_wgsl_import_module_paths(root, "core_pipeline", modules)
+      collect_wgsl_import_module_paths(root, "pbr", modules)
+      collect_wgsl_import_module_paths(root, "sprite_render", modules)
+      collect_wgsl_import_module_paths(root, "ui_render", modules)
+      collect_wgsl_import_module_paths(root, "post_process", modules)
+      collect_wgsl_import_module_paths(root, "anti_alias", modules)
+    }
   }
   modules
 }
@@ -400,9 +497,8 @@ pub fn resolve_wgsl_import_module(
     }
     if normalized_assets_base != "" {
       let default_rel = wgsl_module_path_to_rel_path(module_path)
-      if path_is_file_exact(
-          join_asset_path(normalized_assets_base, default_rel),
-        ) {
+      if resolve_wgsl_source_file_path(normalized_assets_base, default_rel)
+        is Some(_) {
         return Some(WgslResolvedImportModule::{
           module_path,
           rel_path: default_rel,
@@ -411,9 +507,8 @@ pub fn resolve_wgsl_import_module(
       let namespace_rel = wgsl_module_path_to_rel_path_namespace(module_path)
       if namespace_rel != "" &&
         namespace_rel != default_rel &&
-        path_is_file_exact(
-          join_asset_path(normalized_assets_base, namespace_rel),
-        ) {
+        resolve_wgsl_source_file_path(normalized_assets_base, namespace_rel)
+        is Some(_) {
         return Some(WgslResolvedImportModule::{
           module_path,
           rel_path: namespace_rel,

@@ -36,19 +36,19 @@ test "naga_oil: metadata parser records only used imports like upstream" {
   debug_inspect(metadata.imports.length(), content="3")
   debug_inspect(
     metadata.imports[0].definition.import_path,
-    content="bevy_render::view",
+    content="\"bevy_render::view\"",
   )
-  debug_inspect(metadata.imports[0].definition.items[0], content="View")
+  debug_inspect(metadata.imports[0].definition.items[0], content="\"View\"")
   debug_inspect(
     metadata.imports[1].definition.import_path,
-    content="bevy_render::globals",
+    content="\"bevy_render::globals\"",
   )
-  debug_inspect(metadata.imports[1].definition.items[0], content="Globals")
+  debug_inspect(metadata.imports[1].definition.items[0], content="\"Globals\"")
   debug_inspect(
     metadata.imports[2].definition.import_path,
-    content="bevy_render::maths",
+    content="\"bevy_render::maths\"",
   )
-  debug_inspect(metadata.imports[2].definition.items[0], content="tone_map")
+  debug_inspect(metadata.imports[2].definition.items[0], content="\"tone_map\"")
   debug_inspect(metadata.cleaned_source.contains("#import"), content="true")
   debug_inspect(
     metadata.cleaned_source.contains("fn main(view: View"),
@@ -67,7 +67,7 @@ test "naga_oil: metadata parser records only used imports like upstream" {
     is Some(@naga_oil.ShaderDefValue::UInt(mode)) else {
     abort("expected TONEMAP_MODE define")
   }
-  debug_inspect(mode.to_string(), content="2")
+  debug_inspect(mode.to_string(), content="\"2\"")
 }
 
 ///|
@@ -78,12 +78,12 @@ test "naga_oil: metadata parser keeps quoted path imports and duplicate item use
   debug_inspect(imports.length(), content="1")
   debug_inspect(
     imports[0].import_path,
-    content="\"shaders/skills/shared.wgsl\"",
+    content="\"\\\"shaders/skills/shared.wgsl\\\"\"",
   )
   debug_inspect(imports[0].items.length(), content="3")
-  debug_inspect(imports[0].items[0], content="Vertex")
-  debug_inspect(imports[0].items[1], content="VertexOutput")
-  debug_inspect(imports[0].items[2], content="VertexOutput")
+  debug_inspect(imports[0].items[0], content="\"Vertex\"")
+  debug_inspect(imports[0].items[1], content="\"VertexOutput\"")
+  debug_inspect(imports[0].items[2], content="\"VertexOutput\"")
 }
 
 ///|
@@ -120,28 +120,40 @@ test "naga_oil: metadata parser matches upstream bevy path import usage shape" {
   debug_inspect(imports.length(), content="9")
   debug_inspect(
     imports[0].import_path,
-    content="\"shaders/skills/shared.wgsl\"",
+    content="\"\\\"shaders/skills/shared.wgsl\\\"\"",
   )
   debug_inspect(imports[0].items.length(), content="3")
-  debug_inspect(imports[1].import_path, content="\"shaders/skills/sound.wgsl\"")
-  debug_inspect(imports[2].import_path, content="\"shaders/skills/orb.wgsl\"")
-  debug_inspect(imports[3].import_path, content="\"shaders/skills/slash.wgsl\"")
+  debug_inspect(
+    imports[1].import_path,
+    content="\"\\\"shaders/skills/sound.wgsl\\\"\"",
+  )
+  debug_inspect(
+    imports[2].import_path,
+    content="\"\\\"shaders/skills/orb.wgsl\\\"\"",
+  )
+  debug_inspect(
+    imports[3].import_path,
+    content="\"\\\"shaders/skills/slash.wgsl\\\"\"",
+  )
   debug_inspect(
     imports[4].import_path,
-    content="\"shaders/skills/railgun_trail.wgsl\"",
+    content="\"\\\"shaders/skills/railgun_trail.wgsl\\\"\"",
   )
   debug_inspect(
     imports[5].import_path,
-    content="\"shaders/skills/magic_arrow.wgsl\"",
+    content="\"\\\"shaders/skills/magic_arrow.wgsl\\\"\"",
   )
-  debug_inspect(imports[6].import_path, content="\"shaders/skills/hit.wgsl\"")
+  debug_inspect(
+    imports[6].import_path,
+    content="\"\\\"shaders/skills/hit.wgsl\\\"\"",
+  )
   debug_inspect(
     imports[7].import_path,
-    content="\"shaders/skills/lightning_ring.wgsl\"",
+    content="\"\\\"shaders/skills/lightning_ring.wgsl\\\"\"",
   )
   debug_inspect(
     imports[8].import_path,
-    content="\"shaders/skills/lightning.wgsl\"",
+    content="\"\\\"shaders/skills/lightning.wgsl\\\"\"",
   )
 }
 
@@ -156,9 +168,9 @@ test "naga_oil: preprocess strips imports and records used import offsets" {
   debug_inspect(output.imports.length(), content="1")
   debug_inspect(
     output.imports[0].definition.import_path,
-    content="bevy_render::view",
+    content="\"bevy_render::view\"",
   )
-  debug_inspect(output.imports[0].definition.items[0], content="View")
+  debug_inspect(output.imports[0].definition.items[0], content="\"View\"")
   debug_inspect(output.preprocessed_source.contains("#import"), content="false")
   debug_inspect(
     output.preprocessed_source.contains("return view;"),

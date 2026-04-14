@@ -51,7 +51,7 @@ test "naga_oil: composer add_composable_module mirrors module bookkeeping" {
       "tests/base.wgsl", base_shader_defs,
     ),
   )
-  debug_inspect(base_definition.name, content="test::base")
+  debug_inspect(base_definition.name, content="\"test::base\"")
   debug_inspect(base_definition.all_imports.is_empty(), content="true")
 
   let child_definition = composer_test_add_or_abort(
@@ -65,7 +65,7 @@ test "naga_oil: composer add_composable_module mirrors module bookkeeping" {
 
   debug_inspect(composer.contains_module("test::base"), content="true")
   debug_inspect(composer.contains_module("test::child"), content="true")
-  debug_inspect(child_definition.name, content="test::child")
+  debug_inspect(child_definition.name, content="\"test::child\"")
   debug_inspect(
     child_definition.all_imports.contains("test::base"),
     content="true",
@@ -130,6 +130,6 @@ test "naga_oil: composer rejects modules without an import path name" {
   }
   debug_inspect(
     error_message,
-    content="shader module is missing #define_import_path: tests/no_name.wgsl",
+    content="\"shader module is missing #define_import_path: tests/no_name.wgsl\"",
   )
 }

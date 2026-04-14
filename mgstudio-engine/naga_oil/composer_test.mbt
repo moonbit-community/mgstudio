@@ -19,7 +19,11 @@ fn empty_bool_defines() -> @hashmap.HashMap[String, Bool] {
 
 ///|
 fn register_composer_test_shader_source(path : String) -> Unit {
-  let full_path = @path.Path::join("assets", path).normalize().to_string()
+  let full_path = match
+    @naga_oil.resolve_wgsl_source_file_path("assets", path) {
+    Some(v) => v
+    None => abort("failed to resolve composer test shader source: \{path}")
+  }
   let source = @fs.read_file_to_string(full_path) catch {
     _ => abort("failed to load composer test shader source: \{path}")
   }

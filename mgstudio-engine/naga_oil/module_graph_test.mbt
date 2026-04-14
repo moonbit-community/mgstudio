@@ -19,11 +19,14 @@ test "naga_oil: import target parser preserves nested group and alias shapes" {
     "bevy_render::{view::View, globals::Globals, maths as maths}", "", targets,
   )
   debug_inspect(targets.length(), content="3")
-  debug_inspect(targets[0].raw_path, content="bevy_render::view::View")
-  debug_inspect(targets[0].alias_name, content="")
-  debug_inspect(targets[1].raw_path, content="bevy_render::globals::Globals")
-  debug_inspect(targets[2].raw_path, content="bevy_render::maths")
-  debug_inspect(targets[2].alias_name, content="maths")
+  debug_inspect(targets[0].raw_path, content="\"bevy_render::view::View\"")
+  debug_inspect(targets[0].alias_name, content="\"\"")
+  debug_inspect(
+    targets[1].raw_path,
+    content="\"bevy_render::globals::Globals\"",
+  )
+  debug_inspect(targets[2].raw_path, content="\"bevy_render::maths\"")
+  debug_inspect(targets[2].alias_name, content="\"maths\"")
 }
 
 ///|
@@ -56,7 +59,7 @@ test "naga_oil: resolve import module prefers registered map entries" {
   )
   debug_inspect(
     resolved,
-    content="Some({module_path: \"bevy_sprite_render::render::sprite_view_bindings\", rel_path: \"shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl\"})",
+    content="Some(\n  {\n    module_path: \"bevy_sprite_render::render::sprite_view_bindings\",\n    rel_path: \"shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl\",\n  },\n)",
   )
   @naga_oil.clear_registered_wgsl_source_registry()
 }

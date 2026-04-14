@@ -74,8 +74,11 @@ test "shader loader stores typed shader assets and direct file dependencies" {
   debug_inspect(loaded_handle_ids.length(), content="3")
   debug_inspect(loaded_handle_ids[0] == loaded_handle_ids[1], content="false")
   debug_inspect(loaded_handle_ids[1] == loaded_handle_ids[2], content="true")
-  debug_inspect(root_paths[0], content="shader/tests/shader_loader/root.wgsl")
-  debug_inspect(dep_paths[0], content="shader/tests/shader_loader/dep.wgsl")
+  debug_inspect(
+    root_paths[0],
+    content="\"shader/tests/shader_loader/root.wgsl\"",
+  )
+  debug_inspect(dep_paths[0], content="\"shader/tests/shader_loader/dep.wgsl\"")
   debug_inspect(root_dependency_lengths[0], content="1")
   debug_inspect(dep_dependency_lengths[0], content="0")
 }

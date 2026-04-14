@@ -32,6 +32,8 @@ pub fn registered_wgsl_source_required(String) -> String raise ComposerError
 
 pub fn resolve_wgsl_import_module(String, String, @hashmap.HashMap[String, String]) -> WgslResolvedImportModule?
 
+pub fn resolve_wgsl_source_file_path(String, String) -> String?
+
 // Errors
 pub(all) suberror ComposerError {
   EmptyAssetsBase(String)

@@ -60,7 +60,7 @@ test "shader cache source keeps fully composed source variants" {
   )
   debug_inspect(
     @shader.ShaderCacheSource::SpirV(@utf8.encode("SPV")),
-    content="SpirV(b\"SPV\")",
+    content="SpirV(<Bytes: [0x53, 0x50, 0x56]>)",
   )
 }
 
@@ -159,10 +159,10 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
 test "shader cache error messages match lifecycle surface" {
   debug_inspect(
     @shader.ShaderCacheError::ShaderImportNotYetAvailable.message(),
-    content="Shader import not yet available.",
+    content="\"Shader import not yet available.\"",
   )
   debug_inspect(
     @shader.ShaderCacheError::CreateShaderModule("bad pipeline").message(),
-    content="Could not create shader module: bad pipeline",
+    content="\"Could not create shader module: bad pipeline\"",
   )
 }

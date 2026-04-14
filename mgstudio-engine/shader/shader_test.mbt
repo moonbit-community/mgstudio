@@ -18,7 +18,7 @@ test "shader: from_wgsl collects Bevy-style import metadata" {
     "#define_import_path bevy_ui::ui_node\n#import bevy_render::{view::View, globals::Globals}\nfn main(view: View, globals: Globals) -> f32 {\n  return 1.0;\n}\n",
     "shaders/bevy_ui_render/ui.wgsl",
   )
-  debug_inspect(shader.path, content="shaders/bevy_ui_render/ui.wgsl")
+  debug_inspect(shader.path, content="\"shaders/bevy_ui_render/ui.wgsl\"")
   debug_inspect(shader.import_path, content="Custom(\"bevy_ui::ui_node\")")
   debug_inspect(shader.imports.length(), content="2")
   debug_inspect(shader.imports[0], content="Custom(\"bevy_render::view\")")
@@ -35,8 +35,8 @@ test "shader: from_wgsl_with_defs preserves shader defs" {
     [@shader.shader_def("HDR"), @shader.ShaderDefVal::UInt("TONEMAP_MODE", 2U)],
   )
   debug_inspect(shader.shader_defs.length(), content="2")
-  debug_inspect(shader.shader_defs[0].value_as_string(), content="true")
-  debug_inspect(shader.shader_defs[1].value_as_string(), content="2")
+  debug_inspect(shader.shader_defs[0].value_as_string(), content="\"true\"")
+  debug_inspect(shader.shader_defs[1].value_as_string(), content="\"2\"")
 }
 
 ///|
@@ -56,5 +56,8 @@ test "shader: source language and shader type align with naga_oil surface" {
 ///|
 test "shader: asset path imports quote module names" {
   let shader_import = @shader.ShaderImport::AssetPath("shaders/demo.wgsl")
-  debug_inspect(shader_import.module_name(), content="\"shaders/demo.wgsl\"")
+  debug_inspect(
+    shader_import.module_name(),
+    content="\"\\\"shaders/demo.wgsl\\\"\"",
+  )
 }
