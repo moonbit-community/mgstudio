@@ -60,6 +60,31 @@ pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d] = @ecs.registe
 )
 
 ///|
+let meshlet_render3d_set_extract : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.extract",
+)
+
+///|
+let meshlet_render3d_set_prepare_meshes : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_meshes",
+)
+
+///|
+let meshlet_render3d_set_prepare_resources : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_resources",
+)
+
+///|
+let meshlet_render3d_set_prepare_bind_groups : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_bind_groups",
+)
+
+///|
+let meshlet_render3d_set_queue : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.queue",
+)
+
+///|
 pub fn meshlet_required_wgpu_features() -> UInt64 {
   @renderer.meshlet_required_rust_features_u64()
 }
@@ -248,16 +273,45 @@ fn meshlet_configure_render_sub_app(
   plugin : MeshletPlugin,
 ) -> @app.SubApp[@ecs.World] {
   meshlet_ensure_render_sub_app_resources(sub_app.world(), plugin)
-  sub_app.add_systems(
+  sub_app
+  .add_systems(
     @app.PostUpdate,
-    (
-      @app.system(meshlet_prepare_assets_system),
-      @app.system(meshlet_extract_entities_system),
-      @app.system(meshlet_prepare_resources_system),
-      @app.system(meshlet_prepare_view_bind_groups_system),
-      @app.system(meshlet_queue_material_meshes_system),
-    ) |> @app.chain(),
+    @app.system(meshlet_extract_entities_system).in_set(meshlet_render3d_set_extract),
   )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_prepare_assets_system).in_set(
+      meshlet_render3d_set_prepare_meshes,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_prepare_resources_system).in_set(
+      meshlet_render3d_set_prepare_resources,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_prepare_view_bind_groups_system).in_set(
+      meshlet_render3d_set_prepare_bind_groups,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_queue_material_meshes_system).in_set(meshlet_render3d_set_queue),
+  )
+  .configure_set(@app.PostUpdate, meshlet_render3d_set_extract, before=[
+    meshlet_render3d_set_prepare_resources,
+  ])
+  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_resources, before=[
+    meshlet_render3d_set_prepare_meshes,
+  ])
+  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_meshes, before=[
+    meshlet_render3d_set_prepare_bind_groups,
+  ])
+  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_bind_groups, before=[
+    meshlet_render3d_set_queue,
+  ])
 }
 
 ///|
