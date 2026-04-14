@@ -98,15 +98,31 @@ pub fn meshlet_required_features_supported() -> Bool {
       ) {
       return false
     }
-    if !backend.device.has_feature_native_subgroup_barrier() {
+    if meshlet_missing_native_subgroup_barrier() {
       return false
     }
-    if !backend.device.has_feature_native_immediates() {
+    if meshlet_missing_native_immediates() {
       return false
     }
     return true
   }
   false
+}
+
+///|
+pub fn meshlet_missing_native_subgroup_barrier() -> Bool {
+  if ensure_backend() is Some(backend) {
+    return !backend.device.has_feature_native_subgroup_barrier()
+  }
+  true
+}
+
+///|
+pub fn meshlet_missing_native_immediates() -> Bool {
+  if ensure_backend() is Some(backend) {
+    return !backend.device.has_feature_native_immediates()
+  }
+  true
 }
 
 ///|

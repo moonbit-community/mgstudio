@@ -548,6 +548,8 @@ pub impl @app.PluginReplacement for MeshletPlugin with world_plugin(self) {
 pub struct MeshletPluginState {
   runtime_status : MeshletRuntimeStatus
   missing_required_features : UInt64
+  missing_native_subgroup_barrier : Bool
+  missing_native_immediates : Bool
   adapter_supports_mesh_shader : Bool
 }
 
@@ -566,6 +568,8 @@ pub fn MeshletPluginState::from_plugin(
       meshlet_runtime_available(),
     ),
     missing_required_features: meshlet_missing_wgpu_features(),
+    missing_native_subgroup_barrier: @renderer.meshlet_missing_native_subgroup_barrier(),
+    missing_native_immediates: @renderer.meshlet_missing_native_immediates(),
     adapter_supports_mesh_shader: @renderer.meshlet_adapter_supports_mesh_shader(),
   }
 }

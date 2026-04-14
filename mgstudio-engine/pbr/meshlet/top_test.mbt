@@ -68,6 +68,16 @@ test "pbr meshlet: plugin state includes missing feature mask" {
     content="true",
   )
   inspect(
+    state.missing_native_subgroup_barrier ==
+    @renderer.meshlet_missing_native_subgroup_barrier(),
+    content="true",
+  )
+  inspect(
+    state.missing_native_immediates ==
+    @renderer.meshlet_missing_native_immediates(),
+    content="true",
+  )
+  inspect(
     state.adapter_supports_mesh_shader ==
     @renderer.meshlet_adapter_supports_mesh_shader(),
     content="true",
