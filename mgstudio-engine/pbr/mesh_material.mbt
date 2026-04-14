@@ -133,6 +133,11 @@ fn render3d_prepare_system_in_render_app(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_prepare_fog_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_prepare_fog_system(world)
+}
+
+///|
 fn render3d_prepare_resources_flush_system_in_render_app(
   world : @ecs.World,
 ) -> Unit {
@@ -182,6 +187,12 @@ fn configure_mesh_render_sub_app(
   .add_systems(
     stage,
     @app.system(render3d_prepare_system_in_render_app).in_set(
+      render3d_set_prepare_resources,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(render3d_prepare_fog_system_in_render_app).in_set(
       render3d_set_prepare_resources,
     ),
   )

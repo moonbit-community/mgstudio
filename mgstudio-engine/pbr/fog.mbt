@@ -547,6 +547,19 @@ pub fn render3d_prepare_camera_fog_uniforms(
 }
 
 ///|
+pub fn render3d_prepare_fog_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  let fog_meta_ref = @pbr_render.render3d_fog_meta_ref_or_init(world)
+  let fog_offsets = render3d_prepare_camera_fog_uniforms(
+    source_world,
+    phase_state_ref.val.prepared_camera_order,
+    fog_meta_ref.val,
+  )
+  @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
+}
+
+///|
 fn render3d_fog_channel_factor(density : Float, distance : Float) -> Float {
   @pbr_render.render3d_fog_channel_factor(density, distance)
 }

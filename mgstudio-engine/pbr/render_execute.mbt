@@ -93,13 +93,6 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   @pbr_render.render3d_prepare_skin_bindings_upload(
     source_world, phase_state_ref, world_transform_cache_ref,
   )
-  let fog_meta_ref = @pbr_render.render3d_fog_meta_ref_or_init(world)
-  let fog_offsets = render3d_prepare_camera_fog_uniforms(
-    source_world,
-    phase_state_ref.val.prepared_camera_order,
-    fog_meta_ref.val,
-  )
-  @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
 }
 
 ///|
