@@ -89,5 +89,12 @@ pub fn core2d_base_schedule() -> @app.Schedule {
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/schedule.rs` (`camera_driver` entrypoint).
 pub fn camera_driver(world : @ecs.World) -> Unit {
-  ignore(world)
+  @app.run_current_schedule_stage(
+    world,
+    @app.schedule_label(CORE_3D_SCHEDULE_LABEL),
+  )
+  @app.run_current_schedule_stage(
+    world,
+    @app.schedule_label(CORE_2D_SCHEDULE_LABEL),
+  )
 }

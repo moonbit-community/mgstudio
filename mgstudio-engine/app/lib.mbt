@@ -1242,6 +1242,15 @@ pub fn run_current_fixed_update_schedule(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn run_current_schedule_stage(
+  world : @ecs.World,
+  stage : ScheduleStage,
+) -> Unit {
+  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  run_schedule_stage(world, schedule, stage)
+}
+
+///|
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with init_state(
   world,
 ) {

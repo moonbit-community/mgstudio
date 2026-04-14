@@ -197,6 +197,8 @@ pub fn run_current_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 
+pub fn run_current_schedule_stage(@ecs.World, ScheduleStage) -> Unit
+
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
 pub fn run_fixed_main_stage(@ecs.World) -> Unit

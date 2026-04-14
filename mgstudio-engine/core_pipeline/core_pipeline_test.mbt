@@ -68,3 +68,47 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
   debug_inspect(resources.min_filter(), content="\"Linear\"")
   debug_inspect(resources.mipmap_filter(), content="\"Nearest\"")
 }
+
+///|
+priv struct CameraDriverScheduleProbe {
+  mut run_count : Int
+}
+
+///|
+let camera_driver_schedule_probe_key : @ecs.ResourceKey[
+  CameraDriverScheduleProbe,
+] = @ecs.register_resource(
+  debug_name="core_pipeline.test.camera_driver_schedule_probe",
+)
+
+///|
+fn camera_driver_probe_tick(world : @ecs.World) -> Unit {
+  if world.resource(camera_driver_schedule_probe_key).get() is Some(probe) {
+    probe.run_count = probe.run_count + 1
+  }
+}
+
+///|
+test "camera_driver runs core pipeline camera schedules" {
+  let app = @app.App::new(@ecs.World::new()).add_plugin(
+    @core_pipeline.core_pipeline_plugin,
+  )
+  if app.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
+    let render_sub_app = render_sub_app_ref.val
+    render_sub_app
+    .world()
+    .insert_resource(camera_driver_schedule_probe_key, CameraDriverScheduleProbe::{
+      run_count: 0,
+    })
+    render_sub_app_ref.val = render_sub_app.add_systems(
+      @app.schedule_label(@core_pipeline.CORE_2D_SCHEDULE_LABEL),
+      @app.system(camera_driver_probe_tick),
+    )
+  }
+  let app = app.update()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let probe = try! render_world
+    .get_resource(camera_driver_schedule_probe_key)
+    .unwrap()
+  debug_inspect(probe.run_count, content="1")
+}
