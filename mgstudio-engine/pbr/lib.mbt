@@ -143,6 +143,20 @@ fn pbr_plugin_sync_light_probe_state(
 }
 
 ///|
+fn pbr_plugin_sync_feature_plugins(
+  app : @app.App[@ecs.World],
+  _runtime_config : PbrPluginRuntimeConfig,
+) -> @app.App[@ecs.World] {
+  app
+  .add_plugin(@pbr_atmosphere.atmosphere_plugin_install)
+  .add_plugin(@lightmap.lightmap_plugin_install)
+  .add_plugin(@pbr_ssao.ssao_plugin_install)
+  .add_plugin(@pbr_ssr.ssr_plugin_install)
+  .add_plugin(@pbr_volumetric_fog.volumetric_fog_plugin_install)
+  .add_plugin(@pbr_render.gpu_mesh_preprocess_plugin_install)
+}
+
+///|
 fn pbr_plugin_sync_deferred_lighting_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
@@ -269,6 +283,7 @@ pub fn pbr_plugin_with(
   next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
   next = pbr_plugin_sync_materials_state(next, runtime_config)
   next = pbr_plugin_sync_light_probe_state(next, runtime_config)
+  next = pbr_plugin_sync_feature_plugins(next, runtime_config)
   next = pbr_plugin_sync_standard_material_state(next, runtime_config)
   next = fog_plugin(next)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
