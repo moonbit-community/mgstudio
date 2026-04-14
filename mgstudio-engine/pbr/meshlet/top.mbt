@@ -67,38 +67,26 @@ pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d] = @ecs.registe
 )
 
 ///|
-let meshlet_render3d_set_extract : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.extract",
-)
+let meshlet_render3d_set_extract : @app.SystemSet = @render.render_system_set_extract_commands
 
 ///|
-let meshlet_render3d_set_prepare_assets : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.prepare_assets",
-)
+let meshlet_render3d_set_prepare_assets : @app.SystemSet = @render.render_system_set_prepare_assets
 
 ///|
-let meshlet_render3d_set_manage_views : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.manage_views",
-)
+let meshlet_render3d_set_manage_views : @app.SystemSet = @render.render_system_set_manage_views
 
 ///|
-let meshlet_render3d_set_prepare_resources : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.prepare_resources",
-)
+let meshlet_render3d_set_prepare_resources : @app.SystemSet = @render.render_system_set_prepare_resources
 
 ///|
-let meshlet_render3d_set_prepare_bind_groups : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.prepare_bind_groups",
-)
+let meshlet_render3d_set_prepare_bind_groups : @app.SystemSet = @render.render_system_set_prepare_bind_groups
 
 ///|
-let meshlet_render3d_set_queue_meshes : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.queue_meshes",
-)
+let meshlet_render3d_set_queue_meshes : @app.SystemSet = @render.render_system_set_queue_meshes
 
 ///|
-let meshlet_render3d_set_prepare_materials : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.meshlet.prepare_materials",
+let meshlet_render3d_set_queue_meshes_prepare_materials : @app.SystemSet = @app.system_set(
+  "mgstudio.render.queue_meshes.meshlet.prepare_materials",
 )
 
 ///|
@@ -232,33 +220,8 @@ fn meshlet_instance_count_from_world(world : @ecs.World) -> Int {
 }
 
 ///|
-fn meshlet_collect_prepass_view_entities(
-  source_world : @ecs.World,
-) -> Array[@core.Entity] {
-  let prepass_views : Array[@core.Entity] = []
-  source_world.for_each_component(@core_pipeline.ecs_key_normal_prepass, fn(
-    entity,
-    _normal_prepass,
-  ) {
-    prepass_views.push(entity)
-  })
-  source_world.for_each_component(
-    @core_pipeline.ecs_key_motion_vector_prepass,
-    fn(entity, _motion_vector_prepass) { prepass_views.push(entity) },
-  )
-  source_world.for_each_component(@core_pipeline.ecs_key_deferred_prepass, fn(
-    entity,
-    _deferred_prepass,
-  ) {
-    prepass_views.push(entity)
-  })
-  prepass_views
-}
-
-///|
 fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let prepass_views = meshlet_collect_prepass_view_entities(source_world)
   let msaa_off_views : Array[@core.Entity] = []
   source_world.for_each_component(@core_pipeline.ecs_key_msaa, fn(
     entity,
@@ -274,18 +237,23 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
       ecs_key_meshlet_view_materials_main_opaque_pass,
       MeshletViewMaterialsMainOpaquePass::default(),
     )
-    let mut has_prepass = false
-    for prepass_view_entity in prepass_views {
-      if prepass_view_entity == view_entity {
-        has_prepass = true
-      }
-    }
-    if has_prepass {
+    let has_normal_prepass = try! source_world.contains_by_key(
+      view_entity, @core_pipeline.ecs_key_normal_prepass,
+    )
+    let has_motion_vector_prepass = try! source_world.contains_by_key(
+      view_entity, @core_pipeline.ecs_key_motion_vector_prepass,
+    )
+    let has_deferred_prepass = try! source_world.contains_by_key(
+      view_entity, @core_pipeline.ecs_key_deferred_prepass,
+    )
+    if has_normal_prepass || has_motion_vector_prepass {
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_prepass,
         MeshletViewMaterialsPrepass::default(),
       )
+    }
+    if has_deferred_prepass {
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
@@ -511,7 +479,7 @@ fn meshlet_configure_render_sub_app(
   .add_systems(
     stage,
     @app.system(meshlet_prepare_material_views_system).in_set(
-      meshlet_render3d_set_prepare_materials,
+      meshlet_render3d_set_queue_meshes_prepare_materials,
     ),
   )
   .add_systems(
@@ -542,41 +510,14 @@ fn meshlet_configure_render_sub_app(
       @core_3d.core_3d_set_main_pass,
     ),
   )
-  .configure_set(stage, meshlet_render3d_set_extract, before=[
-    meshlet_render3d_set_prepare_assets,
-  ])
-  .configure_set(stage, @render.render_system_set_extract_commands, before=[
-    meshlet_render3d_set_extract,
-  ])
-  .configure_set(stage, meshlet_render3d_set_prepare_assets, before=[
-    meshlet_render3d_set_manage_views,
-  ])
-  .configure_set(stage, @render.render_system_set_prepare_assets, before=[
-    meshlet_render3d_set_prepare_assets,
-  ])
   .configure_set(stage, meshlet_render3d_set_manage_views, before=[
-    meshlet_render3d_set_prepare_materials,
+    meshlet_render3d_set_queue_meshes_prepare_materials,
   ])
-  .configure_set(stage, @render.render_system_set_manage_views, before=[
-    meshlet_render3d_set_manage_views,
+  .configure_set(stage, @render.render_system_set_queue, before=[
+    meshlet_render3d_set_queue_meshes_prepare_materials,
   ])
-  .configure_set(stage, meshlet_render3d_set_prepare_materials, before=[
+  .configure_set(stage, meshlet_render3d_set_queue_meshes_prepare_materials, before=[
     meshlet_render3d_set_queue_meshes,
-  ])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
-    meshlet_render3d_set_prepare_materials,
-  ])
-  .configure_set(stage, meshlet_render3d_set_queue_meshes, before=[
-    meshlet_render3d_set_prepare_resources,
-  ])
-  .configure_set(stage, @render.render_system_set_prepare_resources, before=[
-    meshlet_render3d_set_prepare_resources,
-  ])
-  .configure_set(stage, meshlet_render3d_set_prepare_resources, before=[
-    meshlet_render3d_set_prepare_bind_groups,
-  ])
-  .configure_set(stage, @render.render_system_set_prepare_bind_groups, before=[
-    meshlet_render3d_set_prepare_bind_groups,
   ])
 }
 

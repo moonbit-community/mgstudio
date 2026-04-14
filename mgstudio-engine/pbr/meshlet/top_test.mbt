@@ -112,7 +112,7 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
 }
 
 ///|
-test "pbr meshlet: configure views inserts material components for msaa-off views" {
+test "pbr meshlet: configure views inserts prepass and deferred bins by view flags" {
   let world = @ecs.World::new()
   let view_entity = world.spawn()
   try! world.set_by_key(
@@ -124,6 +124,11 @@ test "pbr meshlet: configure views inserts material components for msaa-off view
     view_entity,
     @core_pipeline.ecs_key_normal_prepass,
     @core_pipeline.NormalPrepass::default(),
+  )
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_deferred_prepass,
+    @core_pipeline.DeferredPrepass::default(),
   )
   let app = @app.App::new(world)
     .add_plugin(@render.render_plugin)
@@ -150,6 +155,35 @@ test "pbr meshlet: configure views inserts material components for msaa-off view
       view_entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
     ))
     is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "pbr meshlet: configure views does not insert deferred bin without deferred prepass" {
+  let world = @ecs.World::new()
+  let view_entity = world.spawn()
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_msaa,
+    @core_pipeline.Msaa::Off,
+  )
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_normal_prepass,
+    @core_pipeline.NormalPrepass::default(),
+  )
+  let app = @app.App::new(world)
+    .add_plugin(@render.render_plugin)
+    .add_plugin_typed(MeshletPlugin::default())
+    .update()
+  inspect(
+    (try! app
+    .world()
+    .get_by_key(
+      view_entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+    ))
+    is None,
     content="true",
   )
 }

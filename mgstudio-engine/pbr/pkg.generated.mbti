@@ -481,8 +481,6 @@ pub fn render3d_queue_meshes_system(@ecs.World) -> Unit
 
 pub fn render3d_queue_sweep_system(@ecs.World) -> Unit
 
-pub fn render3d_queue_system(@ecs.World) -> Unit
-
 pub fn render3d_queued_visible_mesh_count(@ecs.World) -> Int?
 
 pub let render3d_set_extract : String

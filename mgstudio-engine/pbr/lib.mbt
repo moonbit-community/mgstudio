@@ -198,9 +198,7 @@ fn pbr_plugin_sync_gltf_material_handler_state(
 }
 
 ///|
-pub let render3d_set_extract : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.extract",
-)
+pub let render3d_set_extract : @app.SystemSet = @render.render_system_set_extract_commands
 
 ///|
 pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
@@ -208,42 +206,31 @@ pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub let render3d_set_prepare_resources_flush : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.prepare_resources_flush",
-)
+pub let render3d_set_prepare_resources_flush : @app.SystemSet = @render.render_system_set_prepare_resources_flush
 
 ///|
-pub let render3d_set_prepare_resources : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.prepare_resources",
-)
+pub let render3d_set_prepare_resources : @app.SystemSet = @render.render_system_set_prepare_resources
 
 ///|
-pub let render3d_set_prepare_meshes : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.prepare_meshes",
-)
+pub let render3d_set_prepare_meshes : @app.SystemSet = @render.render_system_set_prepare_meshes
 
 ///|
-pub let render3d_set_prepare_bind_groups : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.prepare_bind_groups",
-)
+pub let render3d_set_prepare_bind_groups : @app.SystemSet = @render.render_system_set_prepare_bind_groups
 
 ///|
-pub let render3d_set_queue_meshes : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.queue_meshes",
-)
+pub let render3d_set_queue_meshes : @app.SystemSet = @render.render_system_set_queue_meshes
 
 ///|
-pub let render3d_set_queue_sweep : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.queue_sweep",
-)
+pub let render3d_set_queue_sweep : @app.SystemSet = @render.render_system_set_queue_sweep
 
 ///|
-pub let render3d_set_queue : @app.SystemSet = render3d_set_queue_meshes
+pub let render3d_set_queue : @app.SystemSet = @render.render_system_set_queue
 
 ///|
-pub let render3d_set_render : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.render",
-)
+pub let render3d_set_prepare : @app.SystemSet = @render.render_system_set_prepare
+
+///|
+pub let render3d_set_render : @app.SystemSet = @render.render_system_set_render
 
 ///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
