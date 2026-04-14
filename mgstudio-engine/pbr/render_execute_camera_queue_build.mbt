@@ -120,13 +120,10 @@ fn render3d_build_camera_queue_entry(
 fn render3d_upload_camera_queue_entry(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
-  queue_build_result : Render3dExecuteCameraQueueBuildResult,
-  camera_pass_projection : @pbr_render.Render3dPassProjection,
-  viewport_state : Render3dCameraViewportState,
-  camera_exposure_value : Float,
+  prepared_queue : Render3dPreparedCameraQueue,
 ) -> Unit {
   if !render3d_camera_queue_needs_gpu_preprocess(
-      queue_build_result.draw_queue_entry,
+      prepared_queue.draw_queue_entry,
     ) {
     return
   }
@@ -138,14 +135,14 @@ fn render3d_upload_camera_queue_entry(
     camera_key_hi=camera_entity.id,
     camera_key_lo=camera_entity.generation,
     payload=render3d_host_preprocess_camera_payload(
-      queue_build_result.draw_queue_entry,
+      prepared_queue.draw_queue_entry,
       camera,
-      camera_pass_projection,
-      viewport_state.viewport_x,
-      viewport_state.viewport_y,
-      viewport_state.viewport_width,
-      viewport_state.viewport_height,
-      camera_exposure_value,
+      prepared_queue.camera_pass_projection,
+      prepared_queue.viewport_state.viewport_x,
+      prepared_queue.viewport_state.viewport_y,
+      prepared_queue.viewport_state.viewport_width,
+      prepared_queue.viewport_state.viewport_height,
+      prepared_queue.camera_exposure_value,
     ),
   )
   @app.timeline_trace_end_span(
@@ -159,10 +156,10 @@ fn render3d_upload_camera_queue_entry(
 fn render3d_dispatch_camera_queue_entry(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
-  queue_build_result : Render3dExecuteCameraQueueBuildResult,
+  prepared_queue : Render3dPreparedCameraQueue,
 ) -> Unit {
   if !render3d_camera_queue_needs_gpu_preprocess(
-      queue_build_result.draw_queue_entry,
+      prepared_queue.draw_queue_entry,
     ) {
     return
   }

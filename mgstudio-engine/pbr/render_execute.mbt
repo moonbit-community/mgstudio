@@ -212,15 +212,7 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
             render3d_upload_camera_queue_entry(
               extracted_camera.entity.main_entity,
               extracted_camera.payload,
-              Render3dExecuteCameraQueueBuildResult::{
-                draw_queue_entry: prepared_queue.draw_queue_entry,
-                opaque_alpha_draw_item_indices: prepared_queue.opaque_alpha_draw_item_indices,
-                indexed_indirect_parameter_indices: prepared_queue.indexed_indirect_parameter_indices,
-                non_indexed_indirect_parameter_indices: prepared_queue.non_indexed_indirect_parameter_indices,
-              },
-              prepared_queue.camera_pass_projection,
-              prepared_queue.viewport_state,
-              prepared_queue.camera_exposure_value,
+              prepared_queue,
             )
           None => ()
         }
@@ -263,12 +255,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
             render3d_dispatch_camera_queue_entry(
               extracted_camera.entity.main_entity,
               extracted_camera.payload,
-              Render3dExecuteCameraQueueBuildResult::{
-                draw_queue_entry: prepared_queue.draw_queue_entry,
-                opaque_alpha_draw_item_indices: prepared_queue.opaque_alpha_draw_item_indices,
-                indexed_indirect_parameter_indices: prepared_queue.indexed_indirect_parameter_indices,
-                non_indexed_indirect_parameter_indices: prepared_queue.non_indexed_indirect_parameter_indices,
-              },
+              prepared_queue,
             )
           None => ()
         }
