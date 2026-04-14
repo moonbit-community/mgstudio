@@ -309,6 +309,65 @@ pub fn meshlet_pipelines_ready(
 }
 
 ///|
+pub fn MeshletPipelines::get(
+  self : MeshletPipelines,
+) -> (
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int,
+  Int?,
+  Int,
+)? {
+  let remap_dispatch_enabled = self.remap_1d_to_2d_dispatch is Some(_)
+  if !meshlet_pipelines_ready(self, remap_dispatch_enabled~) {
+    return None
+  }
+  Some(
+    (
+      self.clear_visibility_buffer,
+      self.clear_visibility_buffer_shadow_view,
+      self.first_instance_cull,
+      self.second_instance_cull,
+      self.first_bvh_cull,
+      self.second_bvh_cull,
+      self.first_meshlet_cull,
+      self.second_meshlet_cull,
+      self.downsample_depth_first,
+      self.downsample_depth_second,
+      self.downsample_depth_first_shadow_view,
+      self.downsample_depth_second_shadow_view,
+      self.visibility_buffer_software_raster,
+      self.visibility_buffer_software_raster_shadow_view,
+      self.visibility_buffer_hardware_raster,
+      self.visibility_buffer_hardware_raster_shadow_view,
+      self.visibility_buffer_hardware_raster_shadow_view_unclipped,
+      self.resolve_depth,
+      self.resolve_depth_shadow_view,
+      self.resolve_material_depth,
+      self.remap_1d_to_2d_dispatch,
+      self.fill_counts,
+    ),
+  )
+}
+
+///|
 pub fn init_meshlet_pipelines_with_core(
   visibility_buffer_hardware_raster : Int,
   resolve_depth : Int,

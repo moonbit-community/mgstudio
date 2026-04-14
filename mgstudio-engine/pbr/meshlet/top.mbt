@@ -487,7 +487,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
   }
   let pipelines_ready = match
     (try! world.get_resource(ecs_key_meshlet_pipelines)) {
-    Some(pipelines) => meshlet_pipelines_ready(pipelines)
+    Some(pipelines) => pipelines.get() is Some(_)
     None => false
   }
   match

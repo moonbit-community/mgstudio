@@ -38,4 +38,5 @@ test "pbr/meshlet: readiness reports missing required slots" {
   debug_inspect(meshlet_pipelines_ready(pipelines), content="false")
   let missing = meshlet_missing_required_pipeline_slots(pipelines)
   debug_inspect(missing.length() > 0, content="true")
+  debug_inspect(pipelines.get() is None, content="true")
 }
