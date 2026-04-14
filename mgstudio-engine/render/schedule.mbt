@@ -97,9 +97,9 @@ pub let render_system_set_post_cleanup : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn render_schedule_stage() -> @app.ScheduleStage {
-  @app.PostUpdate
-  // MoonBit app runtime currently executes render-subapp work on this stage.
-  // Keep one canonical stage accessor to avoid per-module divergence.
+  @app.schedule_label("mgstudio.render")
+  // Keep one canonical render-subapp schedule label so all render packages
+  // target the same stage instead of relying on main-world stage names.
 }
 
 ///|
