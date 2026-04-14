@@ -381,6 +381,82 @@ fn meshlet_collect_material_inputs(
 }
 
 ///|
+fn meshlet_tonemapping_mode_key(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  match (try! source_world.get_by_key(entity, @pbr.ecs_key_tonemapping)) {
+    Some(tonemapping) =>
+      match tonemapping {
+        @pbr.Tonemapping::None => 0
+        @pbr.Tonemapping::Reinhard => 1
+        @pbr.Tonemapping::ReinhardLuminance => 2
+        @pbr.Tonemapping::AcesFitted => 3
+        @pbr.Tonemapping::AgX => 4
+        @pbr.Tonemapping::SomewhatBoringDisplayTransform => 5
+        @pbr.Tonemapping::TonyMcMapface => 6
+        @pbr.Tonemapping::BlenderFilmic => 7
+      }
+    None => 0
+  }
+}
+
+///|
+fn meshlet_deband_dither_enabled(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  match (try! source_world.get_by_key(entity, @pbr.ecs_key_deband_dither)) {
+    Some(dither) => dither is @pbr.DebandDither::Enabled
+    None => false
+  }
+}
+
+///|
+fn meshlet_projection_type_key(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  match (try! source_world.get_by_key(entity, @pbr.ecs_key_projection)) {
+    Some(projection) =>
+      match projection {
+        @pbr.Projection::Perspective(_) => 1
+        @pbr.Projection::Orthographic(_) => 2
+        @pbr.Projection::Custom(_) => 3
+      }
+    None => 0
+  }
+}
+
+///|
+fn meshlet_shadow_filter_method_key(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  let shadow_filtering = match
+    (try! source_world.get_by_key(entity, @pbr.ecs_key_shadow_filtering_method)) {
+    Some(value) => value
+    None => @pbr.ShadowFilteringMethod::default()
+  }
+  match shadow_filtering {
+    @pbr.ShadowFilteringMethod::Hardware2x2 => 1
+    @pbr.ShadowFilteringMethod::Gaussian => 2
+    @pbr.ShadowFilteringMethod::Temporal => 3
+  }
+}
+
+///|
+fn meshlet_distance_fog_enabled(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  match (try! source_world.get_by_key(entity, @pbr.ecs_key_camera3d)) {
+    Some(camera3d) => camera3d.distance_fog is Some(_)
+    None => false
+  }
+}
+
+///|
 fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let material_inputs = match
@@ -399,6 +475,7 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     let has_normal_prepass = try! source_world.contains_by_key(
       entity, @core_pipeline.ecs_key_normal_prepass,
     )
+    let has_hdr = try! source_world.contains_by_key(entity, @core_3d.ecs_key_hdr)
     let has_depth_prepass = try! source_world.contains_by_key(
       entity, @core_pipeline.ecs_key_depth_prepass,
     )
@@ -408,11 +485,48 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     let has_deferred = try! source_world.contains_by_key(
       entity, @core_pipeline.ecs_key_deferred_prepass,
     )
+    let has_temporal_jitter = try! source_world.contains_by_key(
+      entity, @pbr.ecs_key_temporal_jitter,
+    )
+    let has_ssao = try! source_world.contains_by_key(
+      entity, @pbr.ecs_key_screen_space_ambient_occlusion,
+    )
+    let has_environment_map = try! source_world.contains_by_key(
+      entity, @pbr.ecs_key_environment_map_light,
+    )
+    let has_irradiance_volume = try! source_world.contains_by_key(
+      entity, @pbr.ecs_key_irradiance_volume,
+    )
+    let projection_type = meshlet_projection_type_key(source_world, entity)
+    let shadow_filter_method = meshlet_shadow_filter_method_key(
+      source_world, entity,
+    )
+    let has_tonemapping_component = try! source_world.contains_by_key(
+      entity, @pbr.ecs_key_tonemapping,
+    )
+    let tonemapping_mode = meshlet_tonemapping_mode_key(source_world, entity)
+    let deband_dither = if !has_hdr {
+      meshlet_deband_dither_enabled(source_world, entity)
+    } else {
+      false
+    }
+    let distance_fog = meshlet_distance_fog_enabled(source_world, entity)
     let view_key = MeshletViewMaterialPipelineKey::new(
+      hdr=has_hdr,
       normal_prepass=has_normal_prepass,
       depth_prepass=has_depth_prepass,
       motion_vector_prepass=has_motion_vector_prepass,
       deferred_prepass=has_deferred,
+      temporal_jitter=has_temporal_jitter,
+      projection_type~,
+      shadow_filter_method~,
+      tonemap_in_shader=!has_hdr && has_tonemapping_component,
+      tonemapping_mode~,
+      deband_dither~,
+      environment_map=has_environment_map,
+      irradiance_volume=has_irradiance_volume,
+      ssao=has_ssao,
+      distance_fog~,
     )
     prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
       main_opaque,

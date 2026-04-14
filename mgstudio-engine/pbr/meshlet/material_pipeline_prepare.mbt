@@ -140,6 +140,13 @@ pub struct MeshletViewMaterialPipelineKey {
   motion_vector_prepass : Bool
   deferred_prepass : Bool
   temporal_jitter : Bool
+  projection_type : Int
+  shadow_filter_method : Int
+  tonemap_in_shader : Bool
+  tonemapping_mode : Int
+  deband_dither : Bool
+  environment_map : Bool
+  irradiance_volume : Bool
   ssao : Bool
   distance_fog : Bool
 }
@@ -152,9 +159,31 @@ pub fn MeshletViewMaterialPipelineKey::new(
   motion_vector_prepass? : Bool = false,
   deferred_prepass? : Bool = false,
   temporal_jitter? : Bool = false,
+  projection_type? : Int = 0,
+  shadow_filter_method? : Int = 0,
+  tonemap_in_shader? : Bool = false,
+  tonemapping_mode? : Int = 0,
+  deband_dither? : Bool = false,
+  environment_map? : Bool = false,
+  irradiance_volume? : Bool = false,
   ssao? : Bool = false,
   distance_fog? : Bool = false,
 ) -> MeshletViewMaterialPipelineKey {
+  let projection_type = if projection_type < 0 {
+    0
+  } else {
+    projection_type
+  }
+  let shadow_filter_method = if shadow_filter_method < 0 {
+    0
+  } else {
+    shadow_filter_method
+  }
+  let tonemapping_mode = if tonemapping_mode < 0 {
+    0
+  } else {
+    tonemapping_mode
+  }
   MeshletViewMaterialPipelineKey::{
     hdr,
     normal_prepass,
@@ -162,6 +191,13 @@ pub fn MeshletViewMaterialPipelineKey::new(
     motion_vector_prepass,
     deferred_prepass,
     temporal_jitter,
+    projection_type,
+    shadow_filter_method,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither,
+    environment_map,
+    irradiance_volume,
     ssao,
     distance_fog,
   }
@@ -295,12 +331,27 @@ fn meshlet_view_key_bits(view_key : MeshletViewMaterialPipelineKey) -> Int {
   if view_key.temporal_jitter {
     bits = bits | 32
   }
-  if view_key.ssao {
+  if view_key.tonemap_in_shader {
     bits = bits | 64
   }
-  if view_key.distance_fog {
+  if view_key.deband_dither {
     bits = bits | 128
   }
+  if view_key.environment_map {
+    bits = bits | 256
+  }
+  if view_key.irradiance_volume {
+    bits = bits | 512
+  }
+  if view_key.ssao {
+    bits = bits | 1024
+  }
+  if view_key.distance_fog {
+    bits = bits | 2048
+  }
+  bits = bits | (view_key.projection_type << 12)
+  bits = bits | (view_key.shadow_filter_method << 16)
+  bits = bits | (view_key.tonemapping_mode << 20)
   bits
 }
 

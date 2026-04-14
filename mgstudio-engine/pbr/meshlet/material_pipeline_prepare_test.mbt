@@ -176,3 +176,47 @@ test "pbr meshlet: prepass pipeline key ignores depth-prepass bit" {
   let pipeline_b = prepass_b.entries[0].1
   inspect(pipeline_a == pipeline_b, content="true")
 }
+
+///|
+test "pbr meshlet: main opaque pipeline key includes bevy view dimensions" {
+  let main_opaque_a = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque_b = MeshletViewMaterialsMainOpaquePass::default()
+  let inputs = [MeshletPreparedMaterialInput::new(1, 100)]
+  prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
+    main_opaque_a,
+    inputs,
+    view_key=MeshletViewMaterialPipelineKey::new(
+      hdr=false,
+      temporal_jitter=true,
+      projection_type=1,
+      shadow_filter_method=1,
+      tonemap_in_shader=true,
+      tonemapping_mode=6,
+      deband_dither=true,
+      environment_map=true,
+      irradiance_volume=true,
+      ssao=true,
+      distance_fog=true,
+    ),
+  )
+  prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
+    main_opaque_b,
+    inputs,
+    view_key=MeshletViewMaterialPipelineKey::new(
+      hdr=false,
+      temporal_jitter=false,
+      projection_type=2,
+      shadow_filter_method=2,
+      tonemap_in_shader=true,
+      tonemapping_mode=3,
+      deband_dither=false,
+      environment_map=false,
+      irradiance_volume=false,
+      ssao=false,
+      distance_fog=false,
+    ),
+  )
+  inspect(main_opaque_a.len(), content="1")
+  inspect(main_opaque_b.len(), content="1")
+  inspect(main_opaque_a.entries[0].1 != main_opaque_b.entries[0].1, content="true")
+}
