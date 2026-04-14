@@ -488,7 +488,7 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/bevy_pbr/render/reset_indirect_batch_sets.wgsl",
+      backend, "pbr/render/reset_indirect_batch_sets.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(

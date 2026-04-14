@@ -40,7 +40,6 @@ pub(all) suberror ComposerError {
   FailedToResolveImport(String)
   MissingRegisteredSource(String)
   MissingStartupRegisteredSource(String)
-  FailedToReadShader(String, String)
   NoModuleName(String)
 }
 pub fn ComposerError::message(Self) -> String

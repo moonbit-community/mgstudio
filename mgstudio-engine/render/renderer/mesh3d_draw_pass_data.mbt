@@ -400,8 +400,7 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/prepass/prepass.wgsl", defines, value_defines,
-    visited, modules,
+    assets_base, "pbr/prepass/prepass.wgsl", defines, value_defines, visited, modules,
   )
 }
 

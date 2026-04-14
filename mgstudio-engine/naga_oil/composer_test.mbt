@@ -19,13 +19,10 @@ fn empty_bool_defines() -> @hashmap.HashMap[String, Bool] {
 
 ///|
 fn register_composer_test_shader_source(path : String) -> Unit {
-  let full_path = match
-    @naga_oil.resolve_wgsl_source_file_path("assets", path) {
+  let source = match @naga_oil.registered_wgsl_source(path) {
     Some(v) => v
-    None => abort("failed to resolve composer test shader source: \{path}")
-  }
-  let source = @fs.read_file_to_string(full_path) catch {
-    _ => abort("failed to load composer test shader source: \{path}")
+    None =>
+      abort("failed to load embedded composer test shader source: \{path}")
   }
   @naga_oil.register_wgsl_source(path, source)
 }
@@ -34,12 +31,12 @@ fn register_composer_test_shader_source(path : String) -> Unit {
 fn register_composer_test_shaders() -> Unit {
   @naga_oil.clear_registered_wgsl_source_registry()
   let paths = [
-    "shaders/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "shaders/bevy_render/view/view.wgsl",
-    "shaders/bevy_render/globals.wgsl", "shaders/bevy_render/maths.wgsl",
+    "sprite_render/render/sprite.wgsl", "sprite_render/render/sprite_view_bindings.wgsl",
+    "sprite_render/mesh2d/color_material.wgsl", "sprite_render/mesh2d/mesh2d.wgsl",
+    "sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "sprite_render/mesh2d/mesh2d_bindings.wgsl",
+    "sprite_render/mesh2d/mesh2d_functions.wgsl", "sprite_render/mesh2d/mesh2d_types.wgsl",
+    "sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "render/view/view.wgsl", "render/globals.wgsl",
+    "render/maths.wgsl",
   ]
   for path in paths {
     register_composer_test_shader_source(path)
@@ -95,7 +92,7 @@ test "naga_oil: composer item imports keep dependent view declarations" {
   let sprite_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let sprite_preprocessed = @naga_oil.Composer::default().load_wgsl_preprocessed(
     "",
-    "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl",
+    "sprite_render/render/sprite_view_bindings.wgsl",
     empty_bool_defines(),
     value_defines,
     sprite_visited,
@@ -113,7 +110,7 @@ test "naga_oil: composer item imports keep dependent view declarations" {
   let mesh2d_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let mesh2d_preprocessed = @naga_oil.Composer::default().load_wgsl_preprocessed(
     "",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+    "sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
     empty_bool_defines(),
     value_defines,
     mesh2d_visited,
@@ -140,8 +137,8 @@ test "naga_oil: composer drops preprocess previous-view imports outside active b
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = @naga_oil.build_wgsl_import_module_paths("assets")
   let preprocessed = @naga_oil.Composer::default().load_wgsl_preprocessed(
-    "assets", "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
-    visited, modules,
+    "assets", "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
+    modules,
   ) catch {
     err =>
       abort(
@@ -168,20 +165,20 @@ test "naga_oil: composer drops preprocess previous-view imports outside active b
 test "naga_oil: composer registered sources satisfy strict mesh2d preprocessing" {
   @naga_oil.clear_registered_wgsl_source_registry()
   @naga_oil.register_wgsl_source(
-    "shaders/bevy_render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
+    "render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
   )
   @naga_oil.register_wgsl_source(
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
+    "sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
   )
   @naga_oil.register_wgsl_source(
-    "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
+    "sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
   )
   let value_defines = @naga_oil.default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = @naga_oil.copy_registered_wgsl_import_module_paths()
   let preprocessed = @naga_oil.Composer::default().load_wgsl_preprocessed(
     "",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    "sprite_render/mesh2d/mesh2d.wgsl",
     empty_bool_defines(),
     value_defines,
     visited,

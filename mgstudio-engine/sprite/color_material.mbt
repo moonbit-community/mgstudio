@@ -377,7 +377,7 @@ fn color_material2d_pipeline_resource() -> Material2dPipeline[
 ] {
   Material2dPipeline::new(
     Some(MESH2D_SHADER_PATH),
-    Some("shaders/bevy_sprite_render/mesh2d/color_material.wgsl"),
+    Some("sprite_render/mesh2d/color_material.wgsl"),
   )
 }
 
@@ -411,9 +411,7 @@ pub fn color_material_plugin(
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
       .with_vertex_shader(MESH2D_SHADER_PATH)
-      .with_fragment_shader(
-        "shaders/bevy_sprite_render/mesh2d/color_material.wgsl",
-      )
+      .with_fragment_shader("sprite_render/mesh2d/color_material.wgsl")
     init_default_color_material_asset(material2d_plugin(plugin)(app))
   }
 }

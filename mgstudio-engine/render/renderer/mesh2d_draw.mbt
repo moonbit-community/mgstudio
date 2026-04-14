@@ -16,13 +16,13 @@
 const MESH2D_VERTEX_STRIDE_BYTES : UInt64 = 36UL
 
 ///|
-const MESH2D_DEFAULT_VERTEX_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"
+const MESH2D_DEFAULT_VERTEX_SHADER_PATH : String = "sprite_render/mesh2d/mesh2d.wgsl"
 
 ///|
-const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/color_material.wgsl"
+const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "sprite_render/mesh2d/color_material.wgsl"
 
 ///|
-const MESH2D_WIREFRAME_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"
+const MESH2D_WIREFRAME_SHADER_PATH : String = "sprite_render/mesh2d/wireframe2d.wgsl"
 
 ///|
 const MESH2D_ALPHA_MODE_KIND_OPAQUE : Int = 0

@@ -48,7 +48,7 @@ fn ensure_motion_blur_pipeline_rgba8(
   }
   let wgsl = load_fullscreen_postprocess_wgsl_with_defines_required(
     backend,
-    "shaders/bevy_post_process/motion_blur/motion_blur.wgsl",
+    "post_process/motion_blur/motion_blur.wgsl",
     [],
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
@@ -85,7 +85,7 @@ fn ensure_motion_blur_pipeline_surface(
   }
   let wgsl = load_fullscreen_postprocess_wgsl_with_defines_required(
     backend,
-    "shaders/bevy_post_process/motion_blur/motion_blur.wgsl",
+    "post_process/motion_blur/motion_blur.wgsl",
     [],
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)

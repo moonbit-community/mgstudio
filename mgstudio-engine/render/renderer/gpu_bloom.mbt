@@ -757,37 +757,37 @@ fn ensure_bloom_pipeline_rgba8(
     }
     let downsample_first_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
     )
     let downsample_first_no_threshold_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE"],
     )
     let downsample_first_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
     )
     let downsample_first_no_threshold_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
     )
     let downsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       [],
     )
     let downsample_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       ["UNIFORM_SCALE"],
     )
     let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
       backend,
-      "shaders/bevy_post_process/bloom/bloom.wgsl",
+      "post_process/bloom/bloom.wgsl",
       [],
     )
     let downsample_first_pipeline = create_postprocess_pipeline(
@@ -905,7 +905,7 @@ fn ensure_bloom_final_composite_pipeline(
   }
   let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
     backend,
-    "shaders/bevy_post_process/bloom/bloom.wgsl",
+    "post_process/bloom/bloom.wgsl",
     [],
   )
   let energy_pipeline = create_postprocess_pipeline(

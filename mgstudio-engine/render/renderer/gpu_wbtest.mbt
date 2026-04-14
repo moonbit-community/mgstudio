@@ -305,13 +305,13 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     false,
     false,
     "0:uniform;3:uniform",
-    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
   )
   debug_inspect(key.material_layout_key, content="\"0:uniform;3:uniform\"")
   debug_inspect(
     key.vertex_shader_path,
-    content="\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\"",
+    content="\"sprite_render/mesh2d/mesh2d.wgsl\"",
   )
   debug_inspect(
     key.fragment_shader_path,
@@ -331,8 +331,8 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
     false,
     false,
     "0:uniform",
-    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
-    Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
+    Some("sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("sprite_render/mesh2d/wireframe2d.wgsl"),
   )
   let wireframe = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
@@ -344,8 +344,8 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
     false,
     true,
     "0:uniform",
-    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
-    Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
+    Some("sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("sprite_render/mesh2d/wireframe2d.wgsl"),
   )
   let ok = !fill.wireframe &&
     wireframe.wireframe &&
@@ -357,8 +357,8 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
 test "renderer: mesh2d wireframe shader matches Bevy push-constants fragment shape" {
   register_renderer_test_shaders()
   let wgsl = load_wgsl_with_defines_required_mesh2d_material(
-    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
-    Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
+    Some("sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("sprite_render/mesh2d/wireframe2d.wgsl"),
     ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
   )
   debug_inspect(wgsl.contains("struct PushConstants {"), content="true")
@@ -373,7 +373,7 @@ test "renderer: mesh2d material loader appends custom fragment shader" {
     "shaders/custom/mesh2d_checker_material.wgsl",
   )
   let wgsl = load_wgsl_with_defines_required_mesh2d_material(
-    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
     ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
   )
@@ -1083,8 +1083,7 @@ test "renderer: canonical prepass import preprocessing keeps motion-vector bindi
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths("assets")
   let preprocessed = load_wgsl_preprocessed(
-    "assets", "shaders/bevy_pbr/prepass/prepass.wgsl", defines, value_defines, visited,
-    modules,
+    "assets", "pbr/prepass/prepass.wgsl", defines, value_defines, visited, modules,
   )
   debug_inspect(
     preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
@@ -1160,7 +1159,7 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
 
   let sprite_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let sprite_preprocessed = load_wgsl_preprocessed(
-    "", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl", defines, value_defines,
+    "", "sprite_render/render/sprite_view_bindings.wgsl", defines, value_defines,
     sprite_visited, modules,
   )
   debug_inspect(
@@ -1177,7 +1176,7 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
 
   let mesh2d_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let mesh2d_preprocessed = load_wgsl_preprocessed(
-    "", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", defines, value_defines,
+    "", "sprite_render/mesh2d/mesh2d_view_bindings.wgsl", defines, value_defines,
     mesh2d_visited, modules,
   )
   debug_inspect(
@@ -1198,21 +1197,20 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
 test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(
-    "shaders/bevy_render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
+    "render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
   )
   register_wgsl_source(
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
+    "sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
   )
   register_wgsl_source(
-    "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
+    "sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = copy_registered_wgsl_import_module_paths()
   let preprocessed = load_wgsl_preprocessed(
-    "", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
-    visited, modules,
+    "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines, visited, modules,
   )
   debug_inspect(preprocessed.contains("const PI_2"), content="true")
   debug_inspect(preprocessed.contains("return twice_pi();"), content="true")
@@ -1235,13 +1233,10 @@ fn resolve_wgsl_import_module_path_for_test(
 
 ///|
 fn register_renderer_test_shader_source(path : String) -> Unit {
-  let full_path = match
-    @naga_oil.resolve_wgsl_source_file_path("assets", path) {
+  let source = match @naga_oil.registered_wgsl_source(path) {
     Some(v) => v
-    None => abort("failed to resolve renderer test shader source: \{path}")
-  }
-  let source = @fs.read_file_to_string(full_path) catch {
-    _ => abort("failed to load renderer test shader source: \{path}")
+    None =>
+      abort("failed to load embedded renderer test shader source: \{path}")
   }
   register_wgsl_source(path, source)
 }
@@ -1250,18 +1245,17 @@ fn register_renderer_test_shader_source(path : String) -> Unit {
 fn register_renderer_test_shaders() -> Unit {
   clear_registered_wgsl_source_registry()
   let paths = [
-    "shaders/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl", "shaders/bevy_post_process/bloom/bloom.wgsl",
-    "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", "shaders/bevy_core_pipeline/blit/blit.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy_render/color_operations.wgsl",
-    "shaders/bevy_render/globals.wgsl", "shaders/bevy_render/maths.wgsl", "shaders/bevy_render/view/view.wgsl",
-    "shaders/bevy_ui_render/ui.wgsl", "shaders/bevy_ui_render/ui_texture_slice.wgsl",
-    "shaders/bevy_ui_render/box_shadow.wgsl",
+    "sprite_render/render/sprite.wgsl", "sprite_render/render/sprite_view_bindings.wgsl",
+    "sprite_render/mesh2d/color_material.wgsl", "sprite_render/mesh2d/mesh2d.wgsl",
+    "sprite_render/mesh2d/wireframe2d.wgsl", "sprite_render/mesh2d/mesh2d_bindings.wgsl",
+    "sprite_render/mesh2d/mesh2d_functions.wgsl", "sprite_render/mesh2d/mesh2d_types.wgsl",
+    "sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+    "sprite_render/mesh2d/mesh2d_view_types.wgsl", "post_process/bloom/bloom.wgsl",
+    "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", "core_pipeline/blit/blit.wgsl",
+    "core_pipeline/tonemapping/tonemapping.wgsl", "core_pipeline/tonemapping/lut_bindings.wgsl",
+    "core_pipeline/tonemapping/tonemapping_shared.wgsl", "render/color_operations.wgsl",
+    "render/globals.wgsl", "render/maths.wgsl", "render/view/view.wgsl", "ui_render/ui.wgsl",
+    "ui_render/ui_texture_slice.wgsl", "ui_render/box_shadow.wgsl",
   ]
   for path in paths {
     register_renderer_test_shader_source(path)

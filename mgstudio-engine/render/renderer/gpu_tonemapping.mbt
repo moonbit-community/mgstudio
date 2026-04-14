@@ -840,25 +840,25 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
   let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
   let view_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_render/view/view.wgsl",
+    backend, "render/view/view.wgsl",
   )
   let maths_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_render/maths.wgsl",
+    backend, "render/maths.wgsl",
   )
   let color_operations_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_render/color_operations.wgsl",
+    backend, "render/color_operations.wgsl",
   )
   let tonemapping_shared_source = strip_tonemapping_shared_imports(
     load_wgsl_asset_source_required(
-      backend, "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
+      backend, "core_pipeline/tonemapping/tonemapping_shared.wgsl",
     ),
   )
   let main_source = strip_tonemapping_main_imports(
     load_wgsl_asset_source_required(
-      backend, "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
+      backend, "core_pipeline/tonemapping/tonemapping.wgsl",
     ),
   )
   let merged_source = merge_fullscreen_postprocess_source(

@@ -53,8 +53,8 @@ fn load_wgsl_required_mesh3d_preprocess_direct(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
-    visited, modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
+    modules,
   )
 }
 
@@ -70,8 +70,8 @@ fn load_wgsl_required_mesh3d_preprocess_indirect(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
-    visited, modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
+    modules,
   )
 }
 
@@ -89,8 +89,8 @@ fn load_wgsl_required_mesh3d_preprocess_indirect_early_occlusion(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   let source = load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
-    visited, modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
+    modules,
   )
   mesh3d_preprocess_specialize_late_phase_immediate(source)
 }
@@ -109,8 +109,8 @@ fn load_wgsl_required_mesh3d_preprocess_indirect_late_occlusion(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   let source = load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
-    visited, modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
+    modules,
   )
   mesh3d_preprocess_specialize_late_phase_immediate(source)
 }
@@ -125,7 +125,7 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
     visited, modules,
   )
 }
@@ -141,7 +141,7 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params_early(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
     visited, modules,
   )
 }
@@ -155,7 +155,7 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
     visited, modules,
   )
 }
@@ -170,7 +170,7 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_early(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
     visited, modules,
   )
 }
@@ -181,7 +181,7 @@ fn load_wgsl_required_mesh3d_downsample_depth(
   max_mip_level : Int,
 ) -> String raise GpuBackendError {
   let source = load_wgsl_from_assets_base_required(
-    assets_base, "shaders/bevy_core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
+    assets_base, "core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
   )
   mesh3d_preprocess_specialize_downsample_depth(source, max_mip_level)
 }

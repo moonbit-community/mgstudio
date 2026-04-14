@@ -94,7 +94,7 @@ fn load_fullscreen_postprocess_wgsl_with_defines_required(
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
   let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
   let main_source = load_wgsl_asset_source_required(backend, rel)
   let merged_source = merge_fullscreen_postprocess_source(

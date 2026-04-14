@@ -51,7 +51,7 @@ test "naga_oil: registered source registry tracks define_import_path" {
 test "naga_oil: resolve import module prefers registered map entries" {
   @naga_oil.clear_registered_wgsl_source_registry()
   @naga_oil.register_wgsl_source(
-    "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl", "#define_import_path bevy_sprite_render::render::sprite_view_bindings\nfn shade() -> f32 { return 1.0; }\n",
+    "sprite_render/render/sprite_view_bindings.wgsl", "#define_import_path bevy_sprite_render::render::sprite_view_bindings\nfn shade() -> f32 { return 1.0; }\n",
   )
   let modules = @naga_oil.build_wgsl_import_module_paths("")
   let resolved = @naga_oil.resolve_wgsl_import_module(
@@ -59,7 +59,7 @@ test "naga_oil: resolve import module prefers registered map entries" {
   )
   debug_inspect(
     resolved,
-    content="Some(\n  {\n    module_path: \"bevy_sprite_render::render::sprite_view_bindings\",\n    rel_path: \"shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl\",\n  },\n)",
+    content="Some(\n  {\n    module_path: \"bevy_sprite_render::render::sprite_view_bindings\",\n    rel_path: \"sprite_render/render/sprite_view_bindings.wgsl\",\n  },\n)",
   )
   @naga_oil.clear_registered_wgsl_source_registry()
 }

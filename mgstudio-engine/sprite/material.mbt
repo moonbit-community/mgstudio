@@ -496,9 +496,13 @@ fn render2d_register_shader_source_asset(
   world : @ecs.World,
   path : String,
 ) -> Unit {
-  let asset_server = render2d_asset_server_or_abort(world)
-  let blob = asset_server.load_bytes(path)
-  guard @asset.asset_blob_read_text(blob) is Some(source) else {
+  world |> ignore
+  let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
+    "assets", path,
+  ) catch {
+    _ => abort("failed to load render2d shader asset text: \{path}")
+  }
+  if source == "" {
     abort("failed to load render2d shader asset text: \{path}")
   }
   @render.register_wgsl_source(path, source)

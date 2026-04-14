@@ -28,7 +28,6 @@ pub(all) suberror ComposerError {
   FailedToResolveImport(String)
   MissingRegisteredSource(String)
   MissingStartupRegisteredSource(String)
-  FailedToReadShader(String, String)
   NoModuleName(String)
 }
 
@@ -41,8 +40,6 @@ pub fn ComposerError::message(self : ComposerError) -> String {
     MissingRegisteredSource(rel) => "missing registered WGSL source: \{rel}"
     MissingStartupRegisteredSource(rel) =>
       "shader source was not startup-registered: \{rel}"
-    FailedToReadShader(path, reason) =>
-      "failed to read shader: \{path}: \{reason}"
     NoModuleName(path) =>
       "shader module is missing #define_import_path: \{path}"
   }
@@ -1013,7 +1010,7 @@ pub fn registered_wgsl_source_required(
 ///|
 pub fn Composer::load_wgsl_source_required_raw(
   _self : Composer,
-  assets_base : String,
+  _assets_base : String,
   rel : String,
 ) -> String raise ComposerError {
   let normalized_rel = normalize_shader_rel_path(rel)
@@ -1022,25 +1019,7 @@ pub fn Composer::load_wgsl_source_required_raw(
   }
   match registered_wgsl_source(normalized_rel) {
     Some(source) => source
-    None => {
-      let normalized_assets_base = assets_base.trim().to_string()
-      if normalized_assets_base == "" {
-        raise ComposerError::MissingStartupRegisteredSource(normalized_rel)
-      }
-      let full_path = match
-        resolve_wgsl_source_file_path(normalized_assets_base, normalized_rel) {
-        Some(path) => path
-        None =>
-          raise ComposerError::FailedToReadShader(
-            join_asset_path(normalized_assets_base, normalized_rel),
-            "file not found",
-          )
-      }
-      @fs.read_file_to_string(full_path) catch {
-        err =>
-          raise ComposerError::FailedToReadShader(full_path, err.to_string())
-      }
-    }
+    None => raise ComposerError::MissingStartupRegisteredSource(normalized_rel)
   }
 }
 

@@ -91,7 +91,7 @@ pub impl @sprite.Material2d for CustomMaterial with bind_group(self) {
 ///|
 fn shader_material_2d_plugin() -> @app.Plugin[@ecs.World] {
   let plugin : @sprite.Material2dPlugin[CustomMaterial] = @sprite.Material2dPlugin::default()
-    .with_vertex_shader("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl")
+    .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom/custom_material_2d.wgsl")
   @sprite.material2d_plugin(plugin)
 }

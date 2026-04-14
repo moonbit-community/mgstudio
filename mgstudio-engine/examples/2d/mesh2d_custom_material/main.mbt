@@ -98,7 +98,7 @@ pub impl @sprite.Material2d for CheckerMaterialAsset with bind_group(self) {
 ///|
 fn checker_material_plugin() -> @app.Plugin[@ecs.World] {
   let plugin : @sprite.Material2dPlugin[CheckerMaterialAsset] = @sprite.Material2dPlugin::default()
-    .with_vertex_shader("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl")
+    .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
   @sprite.material2d_plugin(plugin)
 }

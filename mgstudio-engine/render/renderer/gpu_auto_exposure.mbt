@@ -142,7 +142,7 @@ fn ensure_auto_exposure_resources(
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/bevy_post_process/auto_exposure/auto_exposure.wgsl",
+      backend, "post_process/auto_exposure/auto_exposure.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -162,7 +162,7 @@ fn ensure_auto_exposure_resources(
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/bevy_post_process/auto_exposure/auto_exposure.wgsl",
+      backend, "post_process/auto_exposure/auto_exposure.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(

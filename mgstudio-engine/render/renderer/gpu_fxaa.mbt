@@ -55,14 +55,14 @@ fn load_fxaa_wgsl_with_defines_required(
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
   let main_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_anti_alias/fxaa/fxaa.wgsl",
+    backend, "anti_alias/fxaa/fxaa.wgsl",
   )
   let stripped_main_source = replace_shader_substring_all(
     main_source, "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput\n",
     "",
   )
   let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
   let merged_source = merge_fullscreen_postprocess_source(
     stripped_main_source, fullscreen_source,

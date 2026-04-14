@@ -23,17 +23,17 @@ fn load_effect_stack_wgsl_required(
   backend : GpuBackend,
 ) -> String raise GpuBackendError {
   let chromatic_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_post_process/effect_stack/chromatic_aberration.wgsl",
+    backend, "post_process/effect_stack/chromatic_aberration.wgsl",
   )
   let vignette_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_post_process/effect_stack/vignette.wgsl",
+    backend, "post_process/effect_stack/vignette.wgsl",
   )
   let stripped_vignette_source = replace_shader_substring_all(
     vignette_source, "#import bevy_post_process::effect_stack::chromatic_aberration::source_texture\n",
     "",
   )
   let post_process_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_post_process/effect_stack/post_process.wgsl",
+    backend, "post_process/effect_stack/post_process.wgsl",
   )
   let stripped_post_process_source = replace_shader_substring_all(
     replace_shader_substring_all(
@@ -48,7 +48,7 @@ fn load_effect_stack_wgsl_required(
     "",
   )
   let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
   let merged_source = merge_fullscreen_postprocess_source(
     "\{chromatic_source}\n\{stripped_vignette_source}\n\{stripped_post_process_source}",

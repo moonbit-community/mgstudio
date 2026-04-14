@@ -2692,19 +2692,19 @@ const TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface
 const TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
 
 ///|
-const MESH2D_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"
+const MESH2D_SHADER_PATH : String = "sprite_render/mesh2d/mesh2d.wgsl"
 
 ///|
-const MESH2D_SHADER_BINDINGS_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl"
+const MESH2D_SHADER_BINDINGS_PATH : String = "sprite_render/mesh2d/mesh2d_bindings.wgsl"
 
 ///|
-const MESH2D_WIREFRAME_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"
+const MESH2D_WIREFRAME_SHADER_PATH : String = "sprite_render/mesh2d/wireframe2d.wgsl"
 
 ///|
-const SPRITE_SHADER_PATH : String = "shaders/bevy_sprite_render/render/sprite.wgsl"
+const SPRITE_SHADER_PATH : String = "sprite_render/render/sprite.wgsl"
 
 ///|
-const SPRITE_VIEW_BINDINGS_PATH : String = "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl"
+const SPRITE_VIEW_BINDINGS_PATH : String = "sprite_render/render/sprite_view_bindings.wgsl"
 
 ///|
 fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
@@ -2726,35 +2726,39 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
   [
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
-    "shaders/bevy_sprite_render/mesh2d/color_material.wgsl",
+    "sprite_render/mesh2d/color_material.wgsl",
     MESH2D_WIREFRAME_SHADER_PATH,
     SPRITE_SHADER_PATH,
     SPRITE_VIEW_BINDINGS_PATH,
-    "shaders/bevy_post_process/bloom/bloom.wgsl",
-    "shaders/bevy_ui_render/ui.wgsl",
-    "shaders/bevy_ui_render/box_shadow.wgsl",
-    "shaders/bevy_ui_render/ui_texture_slice.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
-    "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
-    "shaders/bevy_render/globals.wgsl",
-    "shaders/bevy_render/maths.wgsl",
-    "shaders/bevy_render/view/view.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
+    "post_process/bloom/bloom.wgsl",
+    "ui_render/ui.wgsl",
+    "ui_render/box_shadow.wgsl",
+    "ui_render/ui_texture_slice.wgsl",
+    "sprite_render/mesh2d/mesh2d_functions.wgsl",
+    "sprite_render/mesh2d/mesh2d_types.wgsl",
+    "sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
+    "sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+    "sprite_render/mesh2d/mesh2d_view_types.wgsl",
+    "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    "core_pipeline/tonemapping/tonemapping.wgsl",
+    "core_pipeline/tonemapping/lut_bindings.wgsl",
+    "render/globals.wgsl",
+    "render/maths.wgsl",
+    "render/view/view.wgsl",
+    "core_pipeline/tonemapping/tonemapping_shared.wgsl",
   ]
 }
 
 ///|
 fn register_render2d_bevy_shader_sources(world : @ecs.World) -> Unit {
-  let asset_server = render2d_asset_server_or_abort(world)
+  world |> ignore
   for path in render2d_bevy_shader_asset_paths() {
-    let blob = asset_server.load_bytes(path)
-    guard @asset.asset_blob_read_text(blob) is Some(source) else {
+    let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
+      "assets", path,
+    ) catch {
+      _ => abort("failed to load render2d shader asset text: \{path}")
+    }
+    if source == "" {
       abort("failed to load render2d shader asset text: \{path}")
     }
     @render.register_wgsl_source(path, source)

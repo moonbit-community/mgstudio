@@ -17,14 +17,14 @@ fn load_blit_wgsl_required(
   backend : GpuBackend,
 ) -> String raise GpuBackendError {
   let main_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_core_pipeline/blit/blit.wgsl",
+    backend, "core_pipeline/blit/blit.wgsl",
   )
   let stripped_main_source = replace_shader_substring_all(
     main_source, "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput\n",
     "",
   )
   let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
   let merged_source = merge_fullscreen_postprocess_source(
     stripped_main_source, fullscreen_source,

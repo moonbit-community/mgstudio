@@ -48,7 +48,7 @@ test "shader: composable descriptor keeps asset-path as_name and shader defs" {
 test "shader: composable descriptor leaves custom import path unnamed" {
   let shader = @shader.Shader::from_wgsl(
     "#define_import_path bevy_pbr::mesh\nfn main() -> f32 {\n  return 1.0;\n}\n",
-    "shaders/bevy_pbr/mesh.wgsl",
+    "pbr/mesh.wgsl",
   )
   let descriptor = shader.composable_module_descriptor()
 
