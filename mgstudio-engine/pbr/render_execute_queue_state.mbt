@@ -28,7 +28,7 @@ priv struct Render3dQueuedFrame {
   frame_config : Render3dExecuteFrameConfig
   cameras : Array[ExtractedCamera3d]
   meshes : Array[ExtractedMesh3d]
-  mut prepared_camera_queues : Array[Render3dPreparedCameraQueue?]
+  prepared_camera_queues : Array[Render3dPreparedCameraQueue?]
 }
 
 ///|
@@ -79,13 +79,14 @@ fn render3d_queue_store_frame(
   frame_config : Render3dExecuteFrameConfig,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
+  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
 ) -> Unit {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
   state_ref.val.queued_frame = Some(Render3dQueuedFrame::{
     frame_config,
     cameras,
     meshes,
-    prepared_camera_queues: [],
+    prepared_camera_queues,
   })
 }
 
@@ -106,21 +107,6 @@ fn render3d_queue_frame_snapshot(world : @ecs.World) -> Render3dQueuedFrame? {
 fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
   state_ref.val.queued_frame = None
-}
-
-///|
-fn render3d_queue_update_prepared_camera_queues(
-  world : @ecs.World,
-  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
-) -> Unit {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  match state_ref.val.queued_frame {
-    Some(frame) => {
-      frame.prepared_camera_queues = prepared_camera_queues
-      state_ref.val.queued_frame = Some(frame)
-    }
-    None => ()
-  }
 }
 
 ///|
