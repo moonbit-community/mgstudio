@@ -7,8 +7,8 @@ This file must not exceed 200 lines.
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
 | `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
 | `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 77% | 77% | 🟡 In Progress | Base render-stage/system-set ownership is centralized, render sub-app now runs on dedicated `mgstudio.render` stage, and queue/prepare subset chains are explicit (including queue-meshes/queue-sweep callsite wiring); remaining stage-boundary behavior is still not fully equivalent. |
-| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 73% | 73% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 78% | 78% | 🟡 In Progress | Base render-stage/system-set ownership is centralized, render sub-app now runs on dedicated `mgstudio.render` stage, queue/prepare subset chains are explicit (including queue-meshes/queue-sweep callsite wiring), and render-pass trace runtime ownership is resource-first; remaining stage-boundary behavior is still not fully equivalent. |
+| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 74% | 74% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 80% | 80% | 🟡 In Progress | Core camera-driver scheduling is now on unified dedicated render-stage entry, core2d/core3d pass-set chains are wired in render sub-app, and core2d queue now follows queue-meshes/sweep subset ordering; postprocess/mip ordering still needs deeper convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
@@ -78,7 +78,7 @@ This file must not exceed 200 lines.
 - [x] `render/renderer`: collapse screenshot capture/parity globals into one owner runtime state (`ScreenshotRuntimeState`) and remove multi-Ref scattered mutation.
 - [x] `render/schedule-render-stage-label`: switch render sub-app update schedule from `Main` to dedicated `mgstudio.render` stage, make queue/prepare subset chains explicit in base render set ordering, wire core2d/core3d pass-set chains in render sub-app, and align pbr/sprite/text queue callsites to queue-meshes/queue-sweep subsets.
 - [x] `render/render_resource`: collapse 8 independent id-seed globals into single owner runtime state (`RenderResourceIdState`).
-- [x] `render/render_phase`: collapse render-pass trace active-span global into owner runtime state (`RenderPassTraceRuntimeState`).
+- [x] `render/render_phase`: collapse render-pass trace active-span global into owner runtime state (`RenderPassTraceRuntimeState`) with render-world resource-first ownership and fallback for non-system host calls.
 - [x] `render/renderer`: wrap backend singleton in `RenderContextRuntimeState` and migrate renderer whitebox tests to explicit test-set/get hooks.
 - [x] `gltf/scene`: remove `scene` package dependency on root `@gltf` forwarding layer by switching runtime/tests to owner `gltf/loader` package alias.
 - [x] `picking/mesh_picking/ray_cast`: replace wrapper forwarding with owner intersection implementation and switch `picking/backend` to this path.

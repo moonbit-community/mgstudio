@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math" @math,
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/render/renderer" @renderer,

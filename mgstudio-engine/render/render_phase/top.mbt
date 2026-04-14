@@ -31,13 +31,40 @@ fn render_pass_trace_runtime_state_default() -> RenderPassTraceRuntimeState {
 }
 
 ///|
-let render_pass_trace_runtime_state_ref : Ref[RenderPassTraceRuntimeState] = Ref::new(
+let ecs_key_render_pass_trace_runtime_state : @ecs.ResourceKey[
+  RenderPassTraceRuntimeState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render.render_phase.RenderPassTraceRuntimeState",
+)
+
+///|
+let render_pass_trace_fallback_state_ref : Ref[RenderPassTraceRuntimeState] = Ref::new(
   render_pass_trace_runtime_state_default(),
 )
 
 ///|
+fn render_pass_trace_runtime_state() -> RenderPassTraceRuntimeState {
+  match @app.current_world() {
+    Some(world) => {
+      if (try! world.get_resource(ecs_key_render_pass_trace_runtime_state))
+        is None {
+        world.insert_resource(
+          ecs_key_render_pass_trace_runtime_state,
+          render_pass_trace_runtime_state_default(),
+        )
+      }
+      match (try! world.get_resource(ecs_key_render_pass_trace_runtime_state)) {
+        Some(state) => state
+        None => render_pass_trace_fallback_state_ref.val
+      }
+    }
+    None => render_pass_trace_fallback_state_ref.val
+  }
+}
+
+///|
 pub fn render_pass_trace_end_active_span() -> Unit {
-  let state = render_pass_trace_runtime_state_ref.val
+  let state = render_pass_trace_runtime_state()
   if state.active_span is Some(active_pass) {
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderPass,
@@ -50,7 +77,7 @@ pub fn render_pass_trace_end_active_span() -> Unit {
 
 ///|
 pub fn render_pass_trace_begin_span(name : String) -> Unit {
-  let state = render_pass_trace_runtime_state_ref.val
+  let state = render_pass_trace_runtime_state()
   render_pass_trace_end_active_span()
   let ts_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderPass,
