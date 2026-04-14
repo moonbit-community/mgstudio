@@ -10,6 +10,8 @@ import {
 }
 
 // Values
+pub fn check_visibility_ranges(@ecs.World) -> Unit
+
 pub let default_layers : @sprite.RenderLayers
 
 pub fn default_visibility() -> @Milky2018/mgstudio/visibility.Visibility

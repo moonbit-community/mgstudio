@@ -41,7 +41,7 @@ pub fn visibility_range_plugin_with(
   ignore(plugin)
   app
   .init_resource(fn() { VisibleEntityRanges::default() })
-  .add_post_update_system(check_visibility_ranges_system)
+  .add_post_update_system(check_visibility_ranges)
 }
 
 ///|
@@ -106,7 +106,7 @@ pub fn VisibleEntityRanges::entity_is_in_range_of_any_view(
 }
 
 ///|
-fn check_visibility_ranges_system(world : @ecs.World) -> Unit {
+pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
   let visible_ranges_ref = (world.get_resource_ref_mut(
     ecs_key_visible_entity_ranges,
   ) catch {
