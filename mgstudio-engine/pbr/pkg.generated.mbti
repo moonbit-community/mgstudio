@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/core_3d",
-  "Milky2018/mgstudio/core_pipeline/prepass",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -114,7 +113,7 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@Milky2018/mgstud
 
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepass]
 
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.DepthPrepass]
 
 pub let ecs_key_directional_light : @ecs.ComponentKey[@light.DirectionalLight]
 
@@ -168,7 +167,7 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginStat
 
 pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
 
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@prepass.MotionVectorPrepass]
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.MotionVectorPrepass]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
@@ -176,7 +175,7 @@ pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing]
 
 pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
 
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[@prepass.NormalPrepass]
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.NormalPrepass]
 
 pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
 
@@ -197,6 +196,10 @@ pub let ecs_key_point_light : @ecs.ComponentKey[@light.PointLight]
 pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[@light.PointLightShadowMap]
 
 pub let ecs_key_point_light_texture : @ecs.ComponentKey[@light.PointLightTexture]
+
+pub let ecs_key_previous_global_transform : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/prepass.PreviousGlobalTransform]
+
+pub let ecs_key_previous_view_data : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/prepass.PreviousViewData]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
@@ -474,6 +477,10 @@ pub fn render3d_prepare_system(@ecs.World) -> Unit
 
 pub fn render3d_prepared_camera_count(@ecs.World) -> Int?
 
+pub fn render3d_queue_meshes_system(@ecs.World) -> Unit
+
+pub fn render3d_queue_sweep_system(@ecs.World) -> Unit
+
 pub fn render3d_queue_system(@ecs.World) -> Unit
 
 pub fn render3d_queued_visible_mesh_count(@ecs.World) -> Int?
@@ -491,6 +498,10 @@ pub let render3d_set_prepare_resources : String
 pub let render3d_set_prepare_resources_flush : String
 
 pub let render3d_set_queue : String
+
+pub let render3d_set_queue_meshes : String
+
+pub let render3d_set_queue_sweep : String
 
 pub let render3d_set_render : String
 
@@ -1388,7 +1399,7 @@ pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingState}
 
 pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepass}
 
-pub using @prepass {type DepthPrepass}
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type DepthPrepass}
 
 pub using @light {type DirectionalLight}
 
@@ -1440,11 +1451,11 @@ pub using @material {type MeshMaterial3d}
 
 pub using @motion_blur {type MotionBlur}
 
-pub using @prepass {type MotionVectorPrepass}
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type MotionVectorPrepass}
 
 pub using @core_3d {type Msaa}
 
-pub using @prepass {type NormalPrepass}
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 
 pub using @material {type OpaqueRendererMethod}
 

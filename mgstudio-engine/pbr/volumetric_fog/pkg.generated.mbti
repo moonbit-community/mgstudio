@@ -2,7 +2,9 @@
 package "Milky2018/mgstudio/pbr/volumetric_fog"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
@@ -25,6 +27,10 @@ pub fn volumetric_fog_bind_group_layout_index(VolumetricFogBindGroupLayoutKey) -
 pub fn volumetric_fog_default_settings() -> @light.VolumetricFog
 
 pub fn volumetric_fog_pipeline_key(Bool, Int, Bool) -> VolumetricFogPipelineKey
+
+pub fn volumetric_fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlugin) -> @app.App[@ecs.World]
 
 pub fn volumetric_fog_plugin_state_with_assets(VolumetricFogPluginState, FogAssets) -> VolumetricFogPluginState
 
@@ -91,6 +97,7 @@ pub fn VolumetricFogPipelineKeyFlags::default() -> Self
 pub struct VolumetricFogPlugin {
 }
 pub fn VolumetricFogPlugin::default() -> Self
+pub impl @app.PluginReplacement for VolumetricFogPlugin
 
 pub struct VolumetricFogPluginState {
   fog_assets : FogAssets
@@ -98,6 +105,7 @@ pub struct VolumetricFogPluginState {
   extracted_volume_count : Int
 }
 pub fn VolumetricFogPluginState::default() -> Self
+pub impl @app.Resource for VolumetricFogPluginState
 
 pub struct VolumetricFogUniform {
   clip_from_local_row_major : Array[Float]

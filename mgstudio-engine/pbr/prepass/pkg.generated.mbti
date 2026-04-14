@@ -6,6 +6,8 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr/render",
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
 }
 
@@ -29,6 +31,10 @@ pub let ecs_key_normal_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipe
 pub let ecs_key_prepass_pipeline_state : @ecs.ResourceKey[PrepassPipelineState]
 
 pub let ecs_key_prepass_view_state : @ecs.ResourceKey[@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState]
+
+pub let ecs_key_previous_global_transform : @ecs.ComponentKey[PreviousGlobalTransform]
+
+pub let ecs_key_previous_view_data : @ecs.ComponentKey[PreviousViewData]
 
 pub fn late_prepass_should_run(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
 
@@ -95,6 +101,22 @@ pub struct PrepassPluginState {
   view_count : Int
 }
 pub fn PrepassPluginState::default() -> Self
+
+pub struct PreviousGlobalTransform {
+  transform : @transform.Transform
+}
+pub fn PreviousGlobalTransform::new(@transform.Transform) -> Self
+pub fn PreviousGlobalTransform::transform(Self) -> @transform.Transform
+pub impl @ecs.Component for PreviousGlobalTransform
+
+pub struct PreviousViewData {
+  transform : @transform.Transform
+  clip_from_world : @render.ProjectionMatrix3d
+}
+pub fn PreviousViewData::clip_from_world(Self) -> @render.ProjectionMatrix3d
+pub fn PreviousViewData::new(@transform.Transform, @render.ProjectionMatrix3d) -> Self
+pub fn PreviousViewData::transform(Self) -> @transform.Transform
+pub impl @ecs.Component for PreviousViewData
 
 // Type aliases
 pub using @deferred {type DeferredPrepass}

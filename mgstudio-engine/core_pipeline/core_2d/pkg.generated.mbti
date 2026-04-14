@@ -23,6 +23,10 @@ pub fn core_2d_plugin_with(@app.App[@ecs.World], Core2dPlugin) -> @app.App[@ecs.
 
 pub let core_2d_set_extract : String
 
+pub let core_2d_set_main_pass : String
+
+pub let core_2d_set_post_process : String
+
 pub let core_2d_set_prepare : String
 
 pub let core_2d_set_queue : String

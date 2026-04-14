@@ -81,6 +81,7 @@ pub fn DownsamplingConfig::default() -> Self
 pub struct EnvironmentMapGenerationPlugin {
 }
 pub fn EnvironmentMapGenerationPlugin::default() -> Self
+pub impl @app.PluginReplacement for EnvironmentMapGenerationPlugin
 
 pub struct EnvironmentMapIds {
   diffuse : @asset.Handle[@image.Image]?

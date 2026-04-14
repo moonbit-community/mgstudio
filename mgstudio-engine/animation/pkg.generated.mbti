@@ -76,6 +76,8 @@ pub fn animation_interpolate_with_cubic_bezier_weights(Array[Float], Array[Float
 
 pub fn animation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn animation_plugin_with(@app.App[@ecs.World], AnimationPlugin) -> @app.App[@ecs.World]
+
 pub fn animation_register_clip_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
 
 pub fn animation_register_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
@@ -390,6 +392,11 @@ pub fn AnimationPlayerEntry::set_weight(Self, Float) -> Self
 pub fn AnimationPlayerEntry::speed(Self) -> Float
 pub fn AnimationPlayerEntry::unpause(Self) -> Self
 pub fn AnimationPlayerEntry::weight(Self) -> Float
+
+pub struct AnimationPlugin {
+}
+pub fn AnimationPlugin::default() -> Self
+pub impl @app.PluginReplacement for AnimationPlugin
 
 type AnimationSample
 pub fn AnimationSample::rotation(Self) -> @math.Quat?

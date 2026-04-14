@@ -130,6 +130,7 @@ pub fn GltfPlugin::default() -> Self
 pub fn GltfPlugin::with_convert_coordinates(Self, GltfConvertCoordinates) -> Self
 pub fn GltfPlugin::with_pbr_material_handler_enabled(Self, Bool) -> Self
 pub fn GltfPlugin::with_skinned_mesh_bounds_policy(Self, GltfSkinnedMeshBoundsPolicy) -> Self
+pub impl @app.PluginReplacement for GltfPlugin
 
 pub(all) enum GltfSkinnedMeshBoundsPolicy {
   BindPose

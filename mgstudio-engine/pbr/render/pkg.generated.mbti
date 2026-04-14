@@ -125,6 +125,10 @@ pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset
 
 pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
 
+pub fn gpu_mesh_preprocess_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gpu_mesh_preprocess_plugin_install_with(@app.App[@ecs.World], GpuMeshPreprocessPlugin) -> @app.App[@ecs.World]
+
 pub fn maxf(Float, Float) -> Float
 
 pub fn mesh_binding_slot_index(MeshBindingSlot3d) -> Int
@@ -385,6 +389,8 @@ pub fn render3d_standard_material_alpha_cutoff(@material.AlphaMode3d) -> Float
 
 pub fn render3d_standard_material_flags(@material.StandardMaterial, Int, Int, Int, Int, Int, Int, Int, Int, forward_decal? : Bool) -> UInt
 
+pub fn render3d_sweep_mesh_runtime_caches(@ref.Ref[Render3dPhaseState]) -> Unit
+
 pub fn render3d_system_labels() -> Array[String]
 
 pub fn render3d_target_info(@ecs.World, @sprite.RenderTarget) -> RenderTargetComputed3d?
@@ -563,6 +569,7 @@ pub struct GpuMeshPreprocessPlugin {
 }
 pub fn GpuMeshPreprocessPlugin::default() -> Self
 pub fn GpuMeshPreprocessPlugin::new(Bool) -> Self
+pub impl @app.PluginReplacement for GpuMeshPreprocessPlugin
 
 pub(all) struct GpuOcclusionCullingWorkItemBuffers3d {
   enabled : Bool
@@ -903,6 +910,7 @@ pub fn Render3dGpuPreprocessState::default() -> Self
 pub fn Render3dGpuPreprocessState::dispatch_count(Self) -> Int
 pub fn Render3dGpuPreprocessState::enabled(Self) -> Bool
 pub fn Render3dGpuPreprocessState::indirect_enabled(Self) -> Bool
+pub impl @app.Resource for Render3dGpuPreprocessState
 
 pub(all) struct Render3dLightingState {
   ambient_color : @color.Color

@@ -13,6 +13,8 @@ pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.sys
 
 pub fn ci_testing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn ci_testing_plugin_with(@app.App[@ecs.World], CiTestingPlugin) -> @app.App[@ecs.World]
+
 pub fn ci_testing_send_events_system(@ecs.World) -> Unit
 
 pub fn dev_tools_ci_testing_stage() -> String
@@ -54,6 +56,7 @@ pub fn CiTestingEventOnFrame::new(Int, CiTestingEvent) -> Self
 pub struct CiTestingPlugin {
 }
 pub fn CiTestingPlugin::default() -> Self
+pub impl @app.PluginReplacement for CiTestingPlugin
 
 pub(all) struct CiTestingRuntimeState {
   mut current_frame : Int

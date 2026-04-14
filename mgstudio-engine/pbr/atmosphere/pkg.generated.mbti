@@ -2,7 +2,9 @@
 package "Milky2018/mgstudio/pbr/atmosphere"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
@@ -11,7 +13,9 @@ import {
 // Values
 pub fn atmosphere_plugin() -> AtmospherePlugin
 
-pub fn atmosphere_plugin_id() -> String
+pub fn atmosphere_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn atmosphere_plugin_install_with(@app.App[@ecs.World], AtmospherePlugin) -> @app.App[@ecs.World]
 
 pub fn atmosphere_plugin_state_with_extracted_camera_count(AtmospherePluginState, Int) -> AtmospherePluginState
 
@@ -64,6 +68,7 @@ pub struct AtmospherePlugin {
   supports_storage_binding : Bool
 }
 pub fn AtmospherePlugin::default() -> Self
+pub impl @app.PluginReplacement for AtmospherePlugin
 
 pub struct AtmospherePluginState {
   plugin : AtmospherePlugin
@@ -71,6 +76,7 @@ pub struct AtmospherePluginState {
   lut_ready : Bool
 }
 pub fn AtmospherePluginState::default() -> Self
+pub impl @app.Resource for AtmospherePluginState
 
 pub struct AtmosphereRenderNodeState {
   luts_ready : Bool

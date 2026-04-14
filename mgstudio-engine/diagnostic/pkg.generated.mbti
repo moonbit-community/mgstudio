@@ -93,6 +93,8 @@ pub fn render_diagnostics_plugin_with(@app.App[@ecs.World], RenderDiagnosticsPlu
 
 pub fn stress_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn stress_diagnostics_plugin_with(@app.App[@ecs.World], StressDiagnosticsPlugin) -> @app.App[@ecs.World]
+
 pub let system_information_diagnostic_process_cpu_usage : DiagnosticPath
 
 pub let system_information_diagnostic_process_mem_usage : DiagnosticPath
@@ -168,6 +170,7 @@ pub impl @app.SystemParam for Diagnostics
 pub struct DiagnosticsPlugin {
 }
 pub fn DiagnosticsPlugin::default() -> Self
+pub impl @app.PluginReplacement for DiagnosticsPlugin
 
 pub struct DiagnosticsStore {
   diagnostics : @hashmap.HashMap[String, @ref.Ref[Diagnostic]]
@@ -187,6 +190,7 @@ pub struct EntityCountDiagnosticsPlugin {
 }
 pub fn EntityCountDiagnosticsPlugin::default() -> Self
 pub fn EntityCountDiagnosticsPlugin::new(Int) -> Self
+pub impl @app.PluginReplacement for EntityCountDiagnosticsPlugin
 
 pub struct FrameCount {
   mut value : Int
@@ -197,6 +201,7 @@ pub impl @app.Resource for FrameCount
 pub struct FrameCountPlugin {
 }
 pub fn FrameCountPlugin::default() -> Self
+pub impl @app.PluginReplacement for FrameCountPlugin
 
 pub struct FrameTimeDiagnosticsPlugin {
   max_history_length : Int
@@ -204,6 +209,7 @@ pub struct FrameTimeDiagnosticsPlugin {
 }
 pub fn FrameTimeDiagnosticsPlugin::default() -> Self
 pub fn FrameTimeDiagnosticsPlugin::new(Int) -> Self
+pub impl @app.PluginReplacement for FrameTimeDiagnosticsPlugin
 
 pub struct LogDiagnosticsPlugin {
   debug : Bool
@@ -212,6 +218,7 @@ pub struct LogDiagnosticsPlugin {
 }
 pub fn LogDiagnosticsPlugin::default() -> Self
 pub fn LogDiagnosticsPlugin::filtered(Array[DiagnosticPath]) -> Self
+pub impl @app.PluginReplacement for LogDiagnosticsPlugin
 
 pub struct LogDiagnosticsState {
   mut timer : @time.Timer
@@ -232,10 +239,12 @@ pub struct RenderDiagnosticsPlugin {
 }
 pub fn RenderDiagnosticsPlugin::default() -> Self
 pub fn RenderDiagnosticsPlugin::new(Int) -> Self
+pub impl @app.PluginReplacement for RenderDiagnosticsPlugin
 
 pub struct StressDiagnosticsPlugin {
 }
 pub fn StressDiagnosticsPlugin::default() -> Self
+pub impl @app.PluginReplacement for StressDiagnosticsPlugin
 
 pub struct SystemInfo {
   os : String
@@ -250,6 +259,7 @@ pub impl @app.Resource for SystemInfo
 pub struct SystemInformationDiagnosticsPlugin {
 }
 pub fn SystemInformationDiagnosticsPlugin::default() -> Self
+pub impl @app.PluginReplacement for SystemInformationDiagnosticsPlugin
 
 pub struct TimelineTraceConfig {
   enabled : Bool
@@ -268,6 +278,7 @@ pub struct TimelineTracePlugin {
 }
 pub fn TimelineTracePlugin::default() -> Self
 pub fn TimelineTracePlugin::with_config(TimelineTraceConfig) -> Self
+pub impl @app.PluginReplacement for TimelineTracePlugin
 
 // Type aliases
 

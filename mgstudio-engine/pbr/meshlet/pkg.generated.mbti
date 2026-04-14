@@ -2,6 +2,8 @@
 package "Milky2018/mgstudio/pbr/meshlet"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
 }
 
@@ -10,6 +12,8 @@ pub const MESHLET_DEFERRED_GBUFFER_PREPASS_NODE : String = "mgstudio.pbr.meshlet
 
 pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "mgstudio.pbr.meshlet.main_opaque_pass"
 
+pub const MESHLET_MAX_CLUSTER_BUFFER_SLOTS : Int = 33_554_432
+
 pub const MESHLET_MESH_ASSET_MAGIC : Int = 1717551717
 
 pub const MESHLET_MESH_ASSET_VERSION : Int = 3
@@ -17,6 +21,26 @@ pub const MESHLET_MESH_ASSET_VERSION : Int = 3
 pub const MESHLET_PREPASS_NODE : String = "mgstudio.pbr.meshlet.prepass"
 
 pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "mgstudio.pbr.meshlet.visibility_buffer_raster"
+
+pub let ecs_key_meshlet_instance_manager : @ecs.ResourceKey[InstanceManager]
+
+pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d]
+
+pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[MeshletMeshManager]
+
+pub let ecs_key_meshlet_pipelines : @ecs.ResourceKey[MeshletPipelines]
+
+pub let ecs_key_meshlet_plugin_state : @ecs.ResourceKey[MeshletPluginState]
+
+pub let ecs_key_meshlet_resource_manager : @ecs.ResourceKey[ResourceManager]
+
+pub let ecs_key_meshlet_view_materials_deferred_gbuffer_prepass : @ecs.ComponentKey[MeshletViewMaterialsDeferredGBufferPrepass]
+
+pub let ecs_key_meshlet_view_materials_main_opaque_pass : @ecs.ComponentKey[MeshletViewMaterialsMainOpaquePass]
+
+pub let ecs_key_meshlet_view_materials_prepass : @ecs.ComponentKey[MeshletViewMaterialsPrepass]
+
+pub let ecs_key_meshlet_visibility_buffer_raster_state : @ecs.ResourceKey[MeshletVisibilityBufferRasterState]
 
 pub fn extract_meshlet_mesh_entities(Int) -> InstanceManager
 
@@ -31,6 +55,10 @@ pub fn meshlet_compute_pipeline_count(MeshletPipelines) -> Int
 pub fn meshlet_conversion_error_for_counts(Int, Int, MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionError?
 
 pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversionError
+
+pub fn meshlet_deferred_gbuffer_prepass(Int) -> Int
+
+pub fn meshlet_main_opaque_pass(Int) -> Int
 
 pub fn meshlet_material_prepare_entry_count(MeshletViewMaterialsMainOpaquePass, MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass) -> Int
 
@@ -52,6 +80,8 @@ pub fn meshlet_mesh_save_or_load_error_debug_message(MeshletMeshSaveOrLoadError)
 
 pub fn meshlet_mesh_saver() -> MeshletMeshSaver
 
+pub fn meshlet_missing_wgpu_features() -> UInt64
+
 pub fn meshlet_persistent_buffer_supported_scalar_types() -> Array[String]
 
 pub fn meshlet_persistent_buffer_supports_float() -> Bool
@@ -66,17 +96,29 @@ pub fn meshlet_pipeline_count(MeshletPipelines) -> Int
 
 pub fn meshlet_plugin() -> MeshletPlugin
 
+pub fn meshlet_plugin_with(@app.App[@ecs.World], MeshletPlugin) -> @app.App[@ecs.World]
+
+pub fn meshlet_prepass(Int) -> Int
+
 pub fn meshlet_render_pipeline_count(MeshletPipelines) -> Int
+
+pub fn meshlet_required_wgpu_features() -> UInt64
 
 pub fn meshlet_runtime_available() -> Bool
 
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus
+
+pub fn meshlet_runtime_status_from_availability(Bool, Bool) -> MeshletRuntimeStatus
 
 pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionConfig
 
 pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int) -> Unit
 
 pub fn perform_pending_meshlet_mesh_writes(MeshletMeshManager) -> Int
+
+pub fn prepare_material_meshlet_meshes_main_opaque_pass(MeshletViewMaterialsMainOpaquePass, Array[Int]) -> Unit
+
+pub fn prepare_material_meshlet_meshes_prepass(MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass, Array[Int], deferred_enabled? : Bool) -> Unit
 
 pub fn prepare_meshlet_per_frame_resources(ResourceManager, Int) -> Unit
 
@@ -113,6 +155,7 @@ pub fn InstanceManager::mark_material_present_in_scene(Self, Int) -> Unit
 pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
 pub fn InstanceManager::max_bvh_depth(Self) -> Int
 pub fn InstanceManager::present_material_count(Self) -> Int
+pub fn InstanceManager::present_material_ids(Self) -> Array[Int]
 pub fn InstanceManager::reset(Self) -> Unit
 pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
 pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
@@ -206,6 +249,7 @@ pub struct MeshletMesh3d {
 }
 pub fn MeshletMesh3d::id(Self) -> Int
 pub fn MeshletMesh3d::new(Int) -> Self
+pub impl @ecs.Component for MeshletMesh3d
 
 pub struct MeshletMeshLoader {
 }
@@ -277,15 +321,23 @@ pub struct MeshletPipelines {
 pub fn MeshletPipelines::default() -> Self
 
 pub struct MeshletPlugin {
+  cluster_buffer_slots : Int
   status : MeshletRuntimeStatus
 }
+pub fn MeshletPlugin::cluster_buffer_slots(Self) -> Int
 pub fn MeshletPlugin::default() -> Self
+pub fn MeshletPlugin::new(Int) -> Self
+pub fn MeshletPlugin::required_wgpu_features() -> UInt64
+pub fn MeshletPlugin::status(Self) -> MeshletRuntimeStatus
+pub impl @app.PluginReplacement for MeshletPlugin
 
 pub struct MeshletPluginState {
   runtime_status : MeshletRuntimeStatus
+  missing_required_features : UInt64
   adapter_supports_mesh_shader : Bool
 }
 pub fn MeshletPluginState::default() -> Self
+pub fn MeshletPluginState::from_plugin(MeshletPlugin) -> Self
 
 pub(all) enum MeshletRuntimeStatus {
   Enabled
@@ -300,25 +352,31 @@ pub struct MeshletViewBindGroups {
 pub fn MeshletViewBindGroups::new(Int, Int) -> Self
 
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
-  entries : Array[(Int, Int, Int)]
+  mut entries : Array[(Int, Int, Int)]
 }
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::clear(Self) -> Unit
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> Self
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(Self) -> Int
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(Self, (Int, Int, Int)) -> Unit
+pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass
 
 pub struct MeshletViewMaterialsMainOpaquePass {
-  entries : Array[(Int, Int, Int)]
+  mut entries : Array[(Int, Int, Int)]
 }
+pub fn MeshletViewMaterialsMainOpaquePass::clear(Self) -> Unit
 pub fn MeshletViewMaterialsMainOpaquePass::default() -> Self
 pub fn MeshletViewMaterialsMainOpaquePass::len(Self) -> Int
 pub fn MeshletViewMaterialsMainOpaquePass::push(Self, (Int, Int, Int)) -> Unit
+pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass
 
 pub struct MeshletViewMaterialsPrepass {
-  entries : Array[(Int, Int, Int)]
+  mut entries : Array[(Int, Int, Int)]
 }
+pub fn MeshletViewMaterialsPrepass::clear(Self) -> Unit
 pub fn MeshletViewMaterialsPrepass::default() -> Self
 pub fn MeshletViewMaterialsPrepass::len(Self) -> Int
 pub fn MeshletViewMaterialsPrepass::push(Self, (Int, Int, Int)) -> Unit
+pub impl @ecs.Component for MeshletViewMaterialsPrepass
 
 pub struct MeshletViewResources {
   view_entity : Int

@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/pbr/lightmap"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -19,6 +20,10 @@ pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
 pub let ecs_key_render_lightmaps : @ecs.ResourceKey[RenderLightmaps]
 
 pub fn lightmap_plugin() -> LightmapPlugin
+
+pub fn lightmap_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn lightmap_plugin_install_with(@app.App[@ecs.World], LightmapPlugin) -> @app.App[@ecs.World]
 
 pub fn lightmap_plugin_state(Bool) -> LightmapPluginState
 
@@ -38,12 +43,14 @@ pub impl @ecs.Component for Lightmap
 
 pub struct LightmapPlugin {
 }
+pub impl @app.PluginReplacement for LightmapPlugin
 
 pub struct LightmapPluginState {
   bindless_supported : Bool
   lightmaps_per_slab : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn LightmapPluginState::default() -> Self
+pub impl @app.Resource for LightmapPluginState
 
 pub struct LightmapSlab {
   capacity : Int
@@ -85,6 +92,7 @@ pub fn RenderLightmaps::get(Self, @core.Entity) -> RenderLightmap?
 pub fn RenderLightmaps::insert_lightmap(Self, @core.Entity, Lightmap) -> RenderLightmap
 pub fn RenderLightmaps::remove(Self, @core.Entity) -> RenderLightmap?
 pub fn RenderLightmaps::set_bindless_supported(Self, Bool) -> Unit
+pub impl @app.Resource for RenderLightmaps
 
 // Type aliases
 

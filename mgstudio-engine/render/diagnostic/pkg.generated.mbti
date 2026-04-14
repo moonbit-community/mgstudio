@@ -48,6 +48,7 @@ pub struct ErasedRenderAssetDiagnosticPlugin {
 }
 pub fn ErasedRenderAssetDiagnosticPlugin::default() -> Self
 pub fn ErasedRenderAssetDiagnosticPlugin::new(String) -> Self
+pub impl @app.PluginReplacement for ErasedRenderAssetDiagnosticPlugin
 
 pub struct ErasedRenderAssetDiagnosticState {
   suffix : String
@@ -63,6 +64,7 @@ pub struct MeshAllocatorDiagnosticPlugin {
 }
 pub fn MeshAllocatorDiagnosticPlugin::default() -> Self
 pub fn MeshAllocatorDiagnosticPlugin::new(String) -> Self
+pub impl @app.PluginReplacement for MeshAllocatorDiagnosticPlugin
 
 pub struct MeshAllocatorDiagnosticState {
   suffix : String
@@ -78,6 +80,7 @@ pub struct RenderAssetDiagnosticPlugin {
 }
 pub fn RenderAssetDiagnosticPlugin::default() -> Self
 pub fn RenderAssetDiagnosticPlugin::new(String) -> Self
+pub impl @app.PluginReplacement for RenderAssetDiagnosticPlugin
 
 pub struct RenderAssetDiagnosticState {
   suffix : String

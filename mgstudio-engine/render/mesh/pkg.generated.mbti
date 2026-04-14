@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/render/mesh"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
@@ -31,6 +35,26 @@ pub fn mesh_allocator_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrg
 // Errors
 
 // Types and methods
+pub struct RenderMesh {
+  vertex_count : Int
+  buffer_info : RenderMeshBufferInfo
+  dimension : RenderMeshDimension
+} derive(Eq, @debug.Debug)
+pub fn RenderMesh::buffer_info(Self) -> RenderMeshBufferInfo
+pub fn RenderMesh::dimension(Self) -> RenderMeshDimension
+pub fn RenderMesh::indexed(Self) -> Bool
+pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, dimension? : RenderMeshDimension) -> Self
+pub fn RenderMesh::vertex_count(Self) -> Int
+
+pub(all) enum RenderMeshBufferInfo {
+  Indexed(Int)
+  NonIndexed
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RenderMeshDimension {
+  Dim2
+  Dim3
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

@@ -32,12 +32,16 @@ pub impl @ecs.Component for DynamicSkinnedMeshBounds
 pub struct Mesh {
   geometry : MeshGeometry
 }
+pub fn Mesh::as_2d_geometry(Self) -> Mesh2dGeometry?
 pub fn Mesh::as_3d_geometry(Self) -> Mesh3dGeometry?
 pub fn Mesh::custom_attribute_vec3(Self, String) -> Array[@math.Vec3]?
 pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
 pub fn Mesh::from_3d_geometry(Mesh3dGeometry) -> Self
 pub fn Mesh::generate_tangents(Self) -> MeshGenerateTangentsError?
+pub fn Mesh::indexed(Self) -> Bool
 pub fn Mesh::morph_target_names(Self) -> Array[String]?
+pub fn Mesh::vertex_count(Self) -> Int
+pub fn Mesh::with_2d_geometry(Self, Mesh2dGeometry) -> Self?
 pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
 
 pub struct Mesh2dGeometry {

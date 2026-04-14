@@ -177,6 +177,8 @@ pub fn host_gpu_get_queue(Int) -> Int
 
 pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
+pub fn host_gpu_prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, shader_path~ : String?, forward_decal~ : Bool) -> Unit
+
 pub fn host_gpu_register_wgsl_source(String, String) -> Unit
 
 pub fn host_gpu_request_device() -> Int
@@ -193,7 +195,13 @@ pub fn mesh3d_non_indexed_indirect_offset(Int) -> UInt64
 
 pub fn mesh3d_preprocess_disabled() -> Bool
 
+pub fn meshlet_adapter_supports_mesh_shader() -> Bool
+
+pub fn meshlet_missing_rust_features_u64() -> UInt64
+
 pub fn meshlet_required_features_supported() -> Bool
+
+pub fn meshlet_required_rust_features_u64() -> UInt64
 
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
@@ -202,6 +210,8 @@ pub fn pipeline_layout_descriptor_4_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroup
 pub fn prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
+
+pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, shader_path~ : String?, forward_decal~ : Bool) -> Unit
 
 pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBackendError
 

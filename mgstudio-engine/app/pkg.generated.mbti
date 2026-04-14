@@ -295,6 +295,8 @@ pub fn timeline_trace_begin_span(TimelineTraceCategory, String) -> Int64
 
 pub fn timeline_trace_category_label(TimelineTraceCategory) -> String
 
+pub fn timeline_trace_clear_pending_spans() -> Unit
+
 pub fn timeline_trace_emit_complete_span(TimelineTraceCategory, String, Int64, Int64) -> Unit
 
 pub fn timeline_trace_enabled() -> Bool
@@ -302,6 +304,10 @@ pub fn timeline_trace_enabled() -> Bool
 pub fn timeline_trace_end_span(TimelineTraceCategory, String, Int64) -> Unit
 
 pub fn timeline_trace_now_us() -> Int64
+
+pub fn timeline_trace_push_pending_span(TimelineTraceSpan) -> Unit
+
+pub fn timeline_trace_take_pending_spans() -> Array[TimelineTraceSpan]
 
 pub fn[C : @ecs.Component] validate_parent_has_component_plugin(ValidateParentHasComponentPlugin[C]) -> (App[@ecs.World]) -> App[@ecs.World]
 
@@ -330,6 +336,8 @@ pub(all) suberror RegisteredSystemError {
 pub struct App[W] {
   mut sub_apps : SubApps[W]
   mut plugin_names : Array[String]
+  mut plugin_registry : Array[PluginGroupEntry[W]]
+  mut plugins_state : PluginsState
   runner_builder : ((App[W]) -> (() -> Unit))?
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] App::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
@@ -465,10 +473,14 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
+pub fn[W] App::cleanup(Self[W]) -> Self[W]
+pub fn[W] App::cleanup_plugins(Self[W]) -> Self[W]
 pub fn[W] App::clear_plugin_names(Self[W]) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
+pub fn[W] App::finish(Self[W]) -> Self[W]
+pub fn[W] App::finish_plugins(Self[W]) -> Self[W]
 pub fn[W] App::get_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]?
 pub fn[T : Resource] App::init_resource(Self[@ecs.World], () -> T) -> Self[@ecs.World]
@@ -479,6 +491,7 @@ pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -
 pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W] App::plugin_names(Self[W]) -> Array[String]
+pub fn[W] App::plugins_state(Self[W]) -> PluginsState
 pub fn[T] App::remove_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn App::run(Self[@ecs.World]) -> Unit
@@ -832,6 +845,13 @@ pub struct PluginGroupEntry[W] {
   cleanup : (App[W]) -> App[W]
   mut enabled : Bool
 }
+
+pub(all) enum PluginsState {
+  Adding
+  Ready
+  Finished
+  Cleaned
+} derive(Eq, @debug.Debug)
 
 pub struct PointerClick {
 }

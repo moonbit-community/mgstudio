@@ -2,6 +2,8 @@
 package "Milky2018/mgstudio/pbr/ssao"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
 }
 
@@ -9,6 +11,10 @@ import {
 pub fn pbr_ssao_default() -> @post_process.ScreenSpaceAmbientOcclusion
 
 pub fn ssao_pipeline_key(@post_process.ScreenSpaceAmbientOcclusionQualityLevel, Bool) -> SsaoPipelineKey
+
+pub fn ssao_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ssao_plugin_install_with(@app.App[@ecs.World], ScreenSpaceAmbientOcclusionPlugin) -> @app.App[@ecs.World]
 
 pub fn ssao_quality_sample_counts(@post_process.ScreenSpaceAmbientOcclusionQualityLevel) -> (Int, Int)
 
@@ -18,12 +24,14 @@ pub fn ssao_quality_sample_counts(@post_process.ScreenSpaceAmbientOcclusionQuali
 pub struct ScreenSpaceAmbientOcclusionPlugin {
 }
 pub fn ScreenSpaceAmbientOcclusionPlugin::default() -> Self
+pub impl @app.PluginReplacement for ScreenSpaceAmbientOcclusionPlugin
 
 pub struct ScreenSpaceAmbientOcclusionPluginState {
   supported : Bool
   pipelines : SsaoPipelines
 }
 pub fn ScreenSpaceAmbientOcclusionPluginState::default() -> Self
+pub impl @app.Resource for ScreenSpaceAmbientOcclusionPluginState
 
 pub struct SsaoPipelineId {
   id : Int

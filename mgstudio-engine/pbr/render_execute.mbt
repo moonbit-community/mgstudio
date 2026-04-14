@@ -204,13 +204,7 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
         fog_meta_ref.val,
       )
       @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
-      let camera_count = if frame.cameras.length() <
-        frame.prepared_camera_queues.length() {
-        frame.cameras.length()
-      } else {
-        frame.prepared_camera_queues.length()
-      }
-      for camera_index in 0..<camera_count {
+      for camera_index in 0..<frame.prepared_camera_count {
         let extracted_camera = frame.cameras[camera_index]
         match frame.prepared_camera_queues[camera_index] {
           Some(prepared_queue) =>
@@ -247,13 +241,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
   }
   match render3d_queue_frame_snapshot(world) {
     Some(frame) => {
-      let camera_count = if frame.cameras.length() <
-        frame.prepared_camera_queues.length() {
-        frame.cameras.length()
-      } else {
-        frame.prepared_camera_queues.length()
-      }
-      for camera_index in 0..<camera_count {
+      for camera_index in 0..<frame.prepared_camera_count {
         let extracted_camera = frame.cameras[camera_index]
         match frame.prepared_camera_queues[camera_index] {
           Some(prepared_queue) =>

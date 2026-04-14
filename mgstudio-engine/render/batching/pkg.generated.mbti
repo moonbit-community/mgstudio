@@ -69,6 +69,7 @@ pub struct GpuPreprocessingPlugin {
 }
 pub fn GpuPreprocessingPlugin::default() -> Self
 pub fn GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode) -> Self
+pub impl @app.PluginReplacement for GpuPreprocessingPlugin
 
 pub struct GpuPreprocessingSupport {
   max_supported_mode : GpuPreprocessingMode

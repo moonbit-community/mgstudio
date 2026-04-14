@@ -27,7 +27,11 @@ pub fn gizmos_render_system_set_3d() -> String
 
 pub fn line_gizmo_2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn line_gizmo_2d_plugin_with(@app.App[@ecs.World], LineGizmo2dPlugin) -> @app.App[@ecs.World]
+
 pub fn line_gizmo_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -45,10 +49,12 @@ pub(all) enum GizmoRenderSystems {
 pub struct LineGizmo2dPlugin {
 }
 pub fn LineGizmo2dPlugin::default() -> Self
+pub impl @app.PluginReplacement for LineGizmo2dPlugin
 
 pub struct LineGizmo3dPlugin {
 }
 pub fn LineGizmo3dPlugin::default() -> Self
+pub impl @app.PluginReplacement for LineGizmo3dPlugin
 
 pub struct RetainedLineGizmo {
   entity : @core.Entity

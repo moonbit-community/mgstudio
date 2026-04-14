@@ -2,6 +2,8 @@
 package "Milky2018/mgstudio/pbr/ssr"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
 }
 
@@ -11,6 +13,10 @@ pub fn pbr_ssr_default() -> @post_process.ScreenSpaceReflections
 pub fn pbr_ssr_uniform_with_bisection_steps(ScreenSpaceReflectionsUniform, Int) -> ScreenSpaceReflectionsUniform
 
 pub fn pbr_ssr_uniform_with_linear_steps(ScreenSpaceReflectionsUniform, Int) -> ScreenSpaceReflectionsUniform
+
+pub fn ssr_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn ssr_plugin_install_with(@app.App[@ecs.World], ScreenSpaceReflectionsPlugin) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -30,12 +36,14 @@ pub fn ScreenSpaceReflectionsPipelineKey::default() -> Self
 pub struct ScreenSpaceReflectionsPlugin {
 }
 pub fn ScreenSpaceReflectionsPlugin::default() -> Self
+pub impl @app.PluginReplacement for ScreenSpaceReflectionsPlugin
 
 pub struct ScreenSpaceReflectionsPluginState {
   enabled : Bool
   pipeline_id : ScreenSpaceReflectionsPipelineId
 }
 pub fn ScreenSpaceReflectionsPluginState::default() -> Self
+pub impl @app.Resource for ScreenSpaceReflectionsPluginState
 
 pub struct ScreenSpaceReflectionsUniform {
   min_perceptual_roughness_start : Float

@@ -116,6 +116,8 @@ pub fn gizmos_plugin_with(@app.App[@ecs.World], GizmoPlugin) -> @app.App[@ecs.Wo
 
 pub fn global_gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn global_gizmos_plugin_with(@app.App[@ecs.World], GlobalGizmosPlugin) -> @app.App[@ecs.World]
+
 pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
 
 pub fn simplex_stroke_font_cap_height() -> Float
@@ -125,6 +127,8 @@ pub fn simplex_stroke_font_height() -> Float
 pub fn simplex_stroke_font_line_height() -> Float
 
 pub fn skinned_mesh_bounds_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn skinned_mesh_bounds_gizmo_plugin_with(@app.App[@ecs.World], SkinnedMeshBoundsGizmoPlugin) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -158,6 +162,7 @@ pub impl @app.PluginReplacement for GizmoPlugin
 pub struct GlobalGizmosPlugin {
 }
 pub fn GlobalGizmosPlugin::default() -> Self
+pub impl @app.PluginReplacement for GlobalGizmosPlugin
 
 pub struct RetainedGizmo {
   handle : GizmoAssetHandle
@@ -197,6 +202,7 @@ pub impl Default for SkinnedMeshBoundsGizmoConfigGroup
 pub struct SkinnedMeshBoundsGizmoPlugin {
 }
 pub fn SkinnedMeshBoundsGizmoPlugin::default() -> Self
+pub impl @app.PluginReplacement for SkinnedMeshBoundsGizmoPlugin
 
 // Type aliases
 pub using @sprite {type Arc2dBuilder}

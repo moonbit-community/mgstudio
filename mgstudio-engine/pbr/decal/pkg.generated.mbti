@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/pbr/decal"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -84,6 +85,7 @@ pub fn ForwardDecalPipelineKey::default() -> Self
 pub struct ForwardDecalPlugin {
 }
 pub fn ForwardDecalPlugin::default() -> Self
+pub impl @app.PluginReplacement for ForwardDecalPlugin
 
 pub struct RenderClusteredDecal {
   base_color_texture_index : Int
