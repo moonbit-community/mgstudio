@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/render/view/visibility"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/hashmap",
 }
 
@@ -35,21 +36,32 @@ pub fn visibility_ranges_should_use_uniform_buffer(Int, Bool) -> Bool
 // Errors
 
 // Types and methods
+pub(all) struct RenderVisibilityEntityInfo {
+  buffer_index : Int
+  is_abrupt : Bool
+}
+
 pub struct RenderVisibilityRangePlugin {
 }
 pub fn RenderVisibilityRangePlugin::default() -> Self
 pub impl @app.PluginReplacement for RenderVisibilityRangePlugin
 
 pub struct RenderVisibilityRanges {
+  entities : @hashmap.HashMap[Int, RenderVisibilityEntityInfo]
+  range_to_index : @hashmap.HashMap[String, Int]
+  buffer : Array[@math.Vec4]
   mut entity_count : Int
   mut range_count : Int
   mut buffer_dirty : Bool
 }
+pub fn RenderVisibilityRanges::buffer(Self) -> Array[@math.Vec4]
 pub fn RenderVisibilityRanges::buffer_dirty(Self) -> Bool
 pub fn RenderVisibilityRanges::clear(Self) -> Unit
 pub fn RenderVisibilityRanges::default() -> Self
 pub fn RenderVisibilityRanges::entity_count(Self) -> Int
+pub fn RenderVisibilityRanges::entity_has_crossfading_visibility_ranges(Self, Int) -> Bool
 pub fn RenderVisibilityRanges::insert(Self, Int, @Milky2018/mgstudio/visibility.VisibilityRange) -> Unit
+pub fn RenderVisibilityRanges::lod_index_for_entity(Self, Int) -> Int?
 pub fn RenderVisibilityRanges::mark_flushed(Self) -> Unit
 pub fn RenderVisibilityRanges::range_count(Self) -> Int
 pub impl @app.Resource for RenderVisibilityRanges

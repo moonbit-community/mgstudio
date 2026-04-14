@@ -176,3 +176,34 @@ pub fn VisibilityRange::always_visible() -> VisibilityRange {
 pub fn VisibilityRange::invisible() -> VisibilityRange {
   VisibilityRange::new(0.0F, 0.0F, 0.0F, 0.0F, false)
 }
+
+///|
+pub fn VisibilityRange::start_margin_min(self : VisibilityRange) -> Float {
+  self.start_margin_min
+}
+
+///|
+pub fn VisibilityRange::start_margin_max(self : VisibilityRange) -> Float {
+  self.start_margin_max
+}
+
+///|
+pub fn VisibilityRange::end_margin_min(self : VisibilityRange) -> Float {
+  self.end_margin_min
+}
+
+///|
+pub fn VisibilityRange::end_margin_max(self : VisibilityRange) -> Float {
+  self.end_margin_max
+}
+
+///|
+pub fn VisibilityRange::use_aabb(self : VisibilityRange) -> Bool {
+  self.use_aabb
+}
+
+///|
+pub fn VisibilityRange::is_abrupt(self : VisibilityRange) -> Bool {
+  self.start_margin_min == self.start_margin_max &&
+  self.end_margin_min == self.end_margin_max
+}

@@ -84,7 +84,16 @@ pub impl @app.PluginReplacement for RenderVisibilityRangePlugin with world_plugi
 }
 
 ///|
+pub(all) struct RenderVisibilityEntityInfo {
+  buffer_index : Int
+  is_abrupt : Bool
+}
+
+///|
 pub struct RenderVisibilityRanges {
+  entities : @hashmap.HashMap[Int, RenderVisibilityEntityInfo]
+  range_to_index : @hashmap.HashMap[String, Int]
+  buffer : Array[@math.Vec4]
   mut entity_count : Int
   mut range_count : Int
   mut buffer_dirty : Bool
@@ -93,6 +102,9 @@ pub struct RenderVisibilityRanges {
 ///|
 pub fn RenderVisibilityRanges::default() -> RenderVisibilityRanges {
   RenderVisibilityRanges::{
+    entities: @hashmap.HashMap::new(),
+    range_to_index: @hashmap.HashMap::new(),
+    buffer: [],
     entity_count: 0,
     range_count: 0,
     buffer_dirty: true,
@@ -101,19 +113,53 @@ pub fn RenderVisibilityRanges::default() -> RenderVisibilityRanges {
 
 ///|
 pub fn RenderVisibilityRanges::clear(self : RenderVisibilityRanges) -> Unit {
+  self.entities.clear()
+  self.range_to_index.clear()
+  self.buffer.clear()
   self.entity_count = 0
   self.range_count = 0
   self.buffer_dirty = true
 }
 
 ///|
+fn visibility_range_key(
+  visibility_range : @root_visibility.VisibilityRange,
+) -> String {
+  let use_aabb = if visibility_range.use_aabb() { "1" } else { "0" }
+  "\{visibility_range.start_margin_min()}|\{visibility_range.start_margin_max()}|\{visibility_range.end_margin_min()}|\{visibility_range.end_margin_max()}|\{use_aabb}"
+}
+
+///|
 pub fn RenderVisibilityRanges::insert(
   self : RenderVisibilityRanges,
-  _entity_id : Int,
-  _visibility_range : @root_visibility.VisibilityRange,
+  entity_id : Int,
+  visibility_range : @root_visibility.VisibilityRange,
 ) -> Unit {
-  self.entity_count = self.entity_count + 1
-  self.range_count = self.range_count + 1
+  if self.entities.get(entity_id) is None {
+    self.entity_count = self.entity_count + 1
+  }
+  let range_key = visibility_range_key(visibility_range)
+  let buffer_index = match self.range_to_index.get(range_key) {
+    Some(index) => index
+    None => {
+      let next_index = self.buffer.length()
+      self.buffer.push(
+        @math.Vec4::new(
+          visibility_range.start_margin_min(),
+          visibility_range.start_margin_max(),
+          visibility_range.end_margin_min(),
+          visibility_range.end_margin_max(),
+        ),
+      )
+      self.range_to_index.set(range_key, next_index)
+      self.range_count = self.range_count + 1
+      next_index
+    }
+  }
+  self.entities.set(entity_id, RenderVisibilityEntityInfo::{
+    buffer_index,
+    is_abrupt: visibility_range.is_abrupt(),
+  })
   self.buffer_dirty = true
 }
 
@@ -146,6 +192,32 @@ pub fn RenderVisibilityRanges::buffer_dirty(
 }
 
 ///|
+pub fn RenderVisibilityRanges::lod_index_for_entity(
+  self : RenderVisibilityRanges,
+  entity_id : Int,
+) -> Int? {
+  self.entities.get(entity_id).map(fn(info) { info.buffer_index })
+}
+
+///|
+pub fn RenderVisibilityRanges::entity_has_crossfading_visibility_ranges(
+  self : RenderVisibilityRanges,
+  entity_id : Int,
+) -> Bool {
+  match self.entities.get(entity_id) {
+    Some(info) => !info.is_abrupt
+    None => false
+  }
+}
+
+///|
+pub fn RenderVisibilityRanges::buffer(
+  self : RenderVisibilityRanges,
+) -> Array[@math.Vec4] {
+  self.buffer
+}
+
+///|
 fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
   if (world.get_resource(ecs_key_render_visibility_ranges) catch { _ => None })
     is None {
@@ -160,6 +232,24 @@ fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
 fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   ensure_render_visibility_ranges_resource(render_world)
   let main_world = @render.render_source_world(render_world)
+  let system_sequence = @app.current_system_sequence()
+  let changed_ranges = main_world.changed_components(
+    @root_visibility.ecs_key_visibility_range, system_sequence,
+  )
+  let removed_ranges = main_world.removed_components(
+    @root_visibility.ecs_key_visibility_range, system_sequence,
+  )
+  let ranges_ref = (render_world.get_resource_ref_mut(
+    ecs_key_render_visibility_ranges,
+  ) catch {
+    _ => None
+  }).unwrap()
+  let ranges = ranges_ref.val
+  if changed_ranges.is_empty() &&
+    removed_ranges.is_empty() &&
+    ranges.entity_count() > 0 {
+    return
+  }
   let query : @ecs.QueryState[
     @core.Entity,
     @ecs.With[@root_visibility.VisibilityRange],
@@ -167,12 +257,6 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
     @ecs.With::new(@root_visibility.ecs_key_visibility_range),
   )
   let iter = query.iter(main_world)
-  let ranges_ref = (render_world.get_resource_ref_mut(
-    ecs_key_render_visibility_ranges,
-  ) catch {
-    _ => None
-  }).unwrap()
-  let ranges = ranges_ref.val
   ranges.clear()
   while (iter.fetch_next() catch { _ => None }) is Some((entity, _)) {
     if (main_world.get_by_key(entity, @root_visibility.ecs_key_visibility_range) catch {
@@ -185,13 +269,36 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render_visibility_ranges_write(
+  ranges : RenderVisibilityRanges,
+  read_only_binding_type_uniform : Bool,
+) -> Unit {
+  if !ranges.buffer_dirty() {
+    return
+  }
+  if visibility_ranges_should_use_uniform_buffer(
+      ranges.range_count(),
+      read_only_binding_type_uniform,
+    ) {
+    while ranges.buffer.length() > VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE {
+      ranges.buffer.pop() |> ignore
+    }
+    while ranges.buffer.length() < VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE {
+      ranges.buffer.push(@math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F))
+    }
+  } else if ranges.buffer.is_empty() {
+    ranges.buffer.push(@math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F))
+  }
+  ranges.mark_flushed()
+}
+
+///|
 fn write_render_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   if (render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges) catch {
       _ => None
     })
-    is Some(ranges_ref) &&
-    ranges_ref.val.buffer_dirty() {
-    ranges_ref.val.mark_flushed()
+    is Some(ranges_ref) {
+    render_visibility_ranges_write(ranges_ref.val, false)
   }
 }
 
