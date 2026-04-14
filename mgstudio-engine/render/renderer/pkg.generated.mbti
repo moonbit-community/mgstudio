@@ -197,6 +197,10 @@ pub fn mesh3d_preprocess_disabled() -> Bool
 
 pub fn meshlet_adapter_supports_mesh_shader() -> Bool
 
+pub fn meshlet_missing_native_immediates() -> Bool
+
+pub fn meshlet_missing_native_subgroup_barrier() -> Bool
+
 pub fn meshlet_missing_rust_features_u64() -> UInt64
 
 pub fn meshlet_required_features_supported() -> Bool

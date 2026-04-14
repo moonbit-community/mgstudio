@@ -20,10 +20,23 @@ test "pbr/meshlet: mesh manager queues uploads by asset id" {
     .with_bvh_depth(6)
 
   let queued = manager.queue_upload_if_needed(1, meshlet_mesh)
-  debug_inspect(queued.0, content="65")
+  debug_inspect(queued.0, content="0")
   debug_inspect(queued.2, content="6")
   debug_inspect(manager.pending_upload_count(), content="1")
   debug_inspect(manager.buffered_asset_count(), content="1")
-  debug_inspect(perform_pending_meshlet_mesh_writes(manager), content="1")
+  perform_pending_meshlet_mesh_writes(manager)
+  debug_inspect(manager.committed_mesh_writes(), content="1")
   debug_inspect(manager.pending_upload_count(), content="0")
+}
+
+///|
+test "pbr/meshlet: mesh manager removes slices from all persistent buffers" {
+  let manager = MeshletMeshManager::default()
+  let meshlet_mesh = MeshletMesh::new(2, 1)
+    .with_vertex_buffers(4, 4, 2, 6)
+    .with_bvh_depth(2)
+  ignore(manager.queue_upload_if_needed(7, meshlet_mesh))
+  perform_pending_meshlet_mesh_writes(manager)
+  inspect(manager.remove(7), content="true")
+  inspect(manager.remove(7), content="false")
 }

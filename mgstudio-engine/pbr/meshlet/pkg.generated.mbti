@@ -3,11 +3,15 @@ package "Milky2018/mgstudio/pbr/meshlet"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/material",
   "moonbitlang/core/debug",
 }
 
 // Values
+pub const MESHLET_DEFAULT_VERTEX_POSITION_QUANTIZATION_FACTOR : Int = 4
+
 pub const MESHLET_DEFERRED_GBUFFER_PREPASS_NODE : String = "mgstudio.pbr.meshlet.deferred_gbuffer_prepass"
 
 pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "mgstudio.pbr.meshlet.main_opaque_pass"
@@ -44,6 +48,8 @@ pub let ecs_key_meshlet_visibility_buffer_raster_state : @ecs.ResourceKey[Meshle
 
 pub fn extract_meshlet_mesh_entities(Int) -> InstanceManager
 
+pub fn extract_meshlet_mesh_entities_from_instances(Array[ExtractedMeshletInstance]) -> InstanceManager
+
 pub fn init_meshlet_pipelines(Int, Int, Int) -> MeshletPipelines
 
 pub fn init_meshlet_pipelines_with_core(Int, Int, Int, Int) -> MeshletPipelines
@@ -58,7 +64,11 @@ pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversio
 
 pub fn meshlet_deferred_gbuffer_prepass(Int) -> Int
 
+pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager) -> Int
+
 pub fn meshlet_main_opaque_pass(Int) -> Int
+
+pub fn meshlet_main_opaque_pass_materials(MeshletViewMaterialsMainOpaquePass, InstanceManager) -> Int
 
 pub fn meshlet_material_prepare_entry_count(MeshletViewMaterialsMainOpaquePass, MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass) -> Int
 
@@ -80,6 +90,8 @@ pub fn meshlet_mesh_save_or_load_error_debug_message(MeshletMeshSaveOrLoadError)
 
 pub fn meshlet_mesh_saver() -> MeshletMeshSaver
 
+pub fn meshlet_missing_required_pipeline_slots(MeshletPipelines, remap_dispatch_enabled? : Bool) -> Array[String]
+
 pub fn meshlet_missing_wgpu_features() -> UInt64
 
 pub fn meshlet_persistent_buffer_supported_scalar_types() -> Array[String]
@@ -94,13 +106,21 @@ pub fn meshlet_persistent_buffer_supports_uint() -> Bool
 
 pub fn meshlet_pipeline_count(MeshletPipelines) -> Int
 
+pub fn meshlet_pipeline_slot_descriptors(remap_dispatch_enabled? : Bool) -> Array[MeshletPipelineSlotDescriptor]
+
+pub fn meshlet_pipelines_ready(MeshletPipelines, remap_dispatch_enabled? : Bool) -> Bool
+
 pub fn meshlet_plugin() -> MeshletPlugin
 
 pub fn meshlet_plugin_with(@app.App[@ecs.World], MeshletPlugin) -> @app.App[@ecs.World]
 
 pub fn meshlet_prepass(Int) -> Int
 
+pub fn meshlet_prepass_materials(MeshletViewMaterialsPrepass, InstanceManager) -> Int
+
 pub fn meshlet_render_pipeline_count(MeshletPipelines) -> Int
+
+pub fn meshlet_required_vertex_attributes() -> Array[String]
 
 pub fn meshlet_required_wgpu_features() -> UInt64
 
@@ -112,21 +132,37 @@ pub fn meshlet_runtime_status_from_availability(Bool) -> MeshletRuntimeStatus
 
 pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionConfig
 
-pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int) -> Unit
+pub fn meshlet_validate_input_mesh_summary(MeshToMeshletInputMeshSummary, MeshToMeshletMeshConversionConfig, Bool) -> MeshToMeshletMeshConversionError?
 
-pub fn perform_pending_meshlet_mesh_writes(MeshletMeshManager) -> Int
+pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, pipelines_ready? : Bool) -> Unit
+
+pub fn meshlet_visibility_buffer_raster_state_with_enabled(Bool) -> MeshletVisibilityBufferRasterState
+
+pub fn perform_pending_meshlet_mesh_writes(MeshletMeshManager) -> Unit
 
 pub fn prepare_material_meshlet_meshes_main_opaque_pass(MeshletViewMaterialsMainOpaquePass, Array[Int]) -> Unit
 
+pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(MeshletViewMaterialsMainOpaquePass, Array[MeshletPreparedMaterialInput], view_key? : MeshletViewMaterialPipelineKey) -> Unit
+
 pub fn prepare_material_meshlet_meshes_prepass(MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass, Array[Int], deferred_enabled? : Bool) -> Unit
+
+pub fn prepare_material_meshlet_meshes_prepass_with_inputs(MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass, Array[MeshletPreparedMaterialInput], view_key? : MeshletViewMaterialPipelineKey, deferred_enabled? : Bool) -> Unit
 
 pub fn prepare_meshlet_per_frame_resources(ResourceManager, Int) -> Unit
 
-pub fn prepare_meshlet_view_bind_groups(Int, Int) -> MeshletViewBindGroups
+pub fn prepare_meshlet_view_bind_groups(@core.Entity, Int) -> MeshletViewBindGroups
+
+pub fn prepare_meshlet_view_bind_groups_for_view(ResourceManager, @core.Entity, Int) -> MeshletViewBindGroups
+
+pub fn prepare_meshlet_view_resources(@core.Entity, Int) -> MeshletViewResources
+
+pub fn prepare_meshlet_view_resources_for_view(ResourceManager, @core.Entity, Int) -> MeshletViewResources
 
 pub fn queue_material_meshlet_meshes(InstanceManager) -> Int
 
 pub fn queue_material_meshlet_meshes_with_material_assets(InstanceManager, Array[Int]) -> Int
+
+pub fn queue_material_meshlet_meshes_with_present_material_assets(InstanceManager) -> Int
 
 // Errors
 
@@ -140,25 +176,64 @@ pub struct BvhNode {
 pub fn BvhNode::leaf(Int) -> Self
 pub fn BvhNode::with_children(Self, Int, Int) -> Self
 
+pub struct ExtractedMeshletInstance {
+  instance : @core.Entity
+  material_asset_id : Int
+  root_bvh_node : Int
+  aabb : MeshletAabb
+  bvh_depth : Int
+  render_layer_mask : Int
+  not_shadow_caster : Bool
+  material_slot : Int
+}
+pub fn ExtractedMeshletInstance::new(@core.Entity, Int) -> Self
+pub fn ExtractedMeshletInstance::with_aabb(Self, MeshletAabb) -> Self
+pub fn ExtractedMeshletInstance::with_bvh(Self, Int, Int) -> Self
+pub fn ExtractedMeshletInstance::with_material_slot(Self, Int) -> Self
+pub fn ExtractedMeshletInstance::with_not_shadow_caster(Self, Bool) -> Self
+pub fn ExtractedMeshletInstance::with_render_layers(Self, Int) -> Self
+
 pub struct InstanceManager {
   mut scene_instance_count : Int
   mut max_bvh_depth : Int
+  mut instances : Array[(UInt64, Int, Bool)]
+  mut instance_uniform_material_slots : Array[Int]
+  mut instance_aabbs : Array[MeshletAabb]
+  mut instance_material_ids : Array[Int]
+  mut instance_material_asset_ids : Array[Int]
+  mut instance_bvh_root_nodes : Array[Int]
+  mut view_instance_visibility : Map[UInt64, Array[Int]]
   mut next_material_id : Int
   material_id_lookup : Map[Int, Int]
   material_ids_present_in_scene : Map[Int, Bool]
 }
-pub fn InstanceManager::add_instance(Self, Int) -> Unit
+pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int) -> Unit
 pub fn InstanceManager::default() -> Self
 pub fn InstanceManager::get_material_id(Self, Int) -> Int
+pub fn InstanceManager::instance_bvh_root_nodes(Self) -> Array[Int]
 pub fn InstanceManager::instance_count(Self) -> Int
+pub fn InstanceManager::instance_material_ids(Self) -> Array[Int]
 pub fn InstanceManager::mark_material_present_in_scene(Self, Int) -> Unit
+pub fn InstanceManager::material_id_for_asset(Self, Int) -> Int?
 pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
 pub fn InstanceManager::max_bvh_depth(Self) -> Int
+pub fn InstanceManager::present_material_asset_ids(Self) -> Array[Int]
 pub fn InstanceManager::present_material_count(Self) -> Int
 pub fn InstanceManager::present_material_ids(Self) -> Array[Int]
-pub fn InstanceManager::reset(Self) -> Unit
+pub fn InstanceManager::reset(Self, active_views? : Array[@core.Entity]) -> Unit
 pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
 pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
+pub fn InstanceManager::set_view_instance_visibility(Self, @core.Entity, Array[Int]) -> Unit
+pub fn InstanceManager::view_visibility_count(Self) -> Int
+
+pub struct MeshToMeshletInputMeshSummary {
+  primitive_topology : String
+  vertex_attributes : Array[String]
+  has_indices : Bool
+  vertex_count : Int
+  triangle_count : Int
+}
+pub fn MeshToMeshletInputMeshSummary::new(primitive_topology~ : String, vertex_attributes~ : Array[String], has_indices~ : Bool, vertex_count~ : Int, triangle_count~ : Int) -> Self
 
 pub struct MeshToMeshletMeshConversionConfig {
   max_vertices : Int
@@ -168,6 +243,9 @@ pub fn MeshToMeshletMeshConversionConfig::default() -> Self
 
 pub(all) enum MeshToMeshletMeshConversionError {
   RuntimeUnavailable
+  WrongMeshPrimitiveTopology
+  WrongMeshVertexAttributes(Array[String])
+  MeshMissingIndices
   MissingPositions
   UnsupportedTopology
   TooManyVertices
@@ -255,7 +333,13 @@ pub struct MeshletMeshLoader {
 }
 
 pub struct MeshletMeshManager {
-  mut next_offset : Int
+  vertex_positions : PersistentGpuBuffer[Int]
+  vertex_normals : PersistentGpuBuffer[Int]
+  vertex_uvs : PersistentGpuBuffer[Int]
+  indices : PersistentGpuBuffer[Int]
+  bvh_nodes : PersistentGpuBuffer[Int]
+  meshlets : PersistentGpuBuffer[Int]
+  meshlet_cull_data : PersistentGpuBuffer[Int]
   mut pending_mesh_writes : Int
   mut committed_mesh_writes : Int
   pending_upload_asset_ids : Array[Int]
@@ -291,6 +375,18 @@ pub struct MeshletMeshSlices {
   meshlet_cull_data : MeshletBufferSliceRange
   aabb : MeshletAabb
   bvh_depth : Int
+}
+
+pub(all) enum MeshletPipelineKind {
+  Compute
+  Render
+}
+
+pub struct MeshletPipelineSlotDescriptor {
+  label : String
+  kind : MeshletPipelineKind
+  optional : Bool
+  enabled : Bool
 }
 
 pub struct MeshletPipelines {
@@ -332,10 +428,26 @@ pub impl @app.PluginReplacement for MeshletPlugin
 pub struct MeshletPluginState {
   runtime_status : MeshletRuntimeStatus
   missing_required_features : UInt64
+  missing_native_subgroup_barrier : Bool
+  missing_native_immediates : Bool
   adapter_supports_mesh_shader : Bool
 }
 pub fn MeshletPluginState::default() -> Self
 pub fn MeshletPluginState::from_plugin(MeshletPlugin) -> Self
+
+pub struct MeshletPreparedMaterialInput {
+  material_id : Int
+  material_asset_id : Int
+  opaque_render_method : @material.OpaqueRendererMethod
+  alpha_mode_opaque : Bool
+  reads_view_transmission_texture : Bool
+  material_bind_group_id : Int
+}
+pub fn MeshletPreparedMaterialInput::new(Int, Int) -> Self
+pub fn MeshletPreparedMaterialInput::with_alpha_mode_opaque(Self, Bool) -> Self
+pub fn MeshletPreparedMaterialInput::with_material_bind_group_id(Self, Int) -> Self
+pub fn MeshletPreparedMaterialInput::with_opaque_render_method(Self, @material.OpaqueRendererMethod) -> Self
+pub fn MeshletPreparedMaterialInput::with_reads_view_transmission_texture(Self, Bool) -> Self
 
 pub(all) enum MeshletRuntimeStatus {
   Enabled
@@ -343,10 +455,24 @@ pub(all) enum MeshletRuntimeStatus {
 }
 
 pub struct MeshletViewBindGroups {
-  view_entity : Int
+  view_entity : @core.Entity
   bind_group_count : Int
 }
-pub fn MeshletViewBindGroups::new(Int, Int) -> Self
+pub fn MeshletViewBindGroups::new(@core.Entity, Int) -> Self
+
+pub struct MeshletViewMaterialPipelineKey {
+  hdr : Bool
+  normal_prepass : Bool
+  depth_prepass : Bool
+  motion_vector_prepass : Bool
+  deferred_prepass : Bool
+  temporal_jitter : Bool
+  ssao : Bool
+  distance_fog : Bool
+}
+pub fn MeshletViewMaterialPipelineKey::default() -> Self
+pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
+pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(Self, Bool) -> Self
 
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
   mut entries : Array[(Int, Int, Int)]
@@ -376,29 +502,60 @@ pub fn MeshletViewMaterialsPrepass::push(Self, (Int, Int, Int)) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsPrepass
 
 pub struct MeshletViewResources {
-  view_entity : Int
+  view_entity : @core.Entity
   meshlet_count : Int
 }
-pub fn MeshletViewResources::new(Int, Int) -> Self
+pub fn MeshletViewResources::new(@core.Entity, Int) -> Self
 
 pub struct MeshletVisibilityBufferRasterState {
   enabled : Bool
+  mut last_view_count : Int
+  mut last_shadow_view_count : Int
+  mut last_pipeline_ready : Bool
+  mut first_pass_draw_count : Int
+  mut second_pass_draw_count : Int
+  mut resolve_depth_count : Int
+  mut resolve_material_depth_count : Int
   mut last_draw_count : Int
 }
 pub fn MeshletVisibilityBufferRasterState::default() -> Self
 pub fn MeshletVisibilityBufferRasterState::enabled(Self) -> Bool
+pub fn MeshletVisibilityBufferRasterState::first_pass_draw_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_draw_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::last_pipeline_ready(Self) -> Bool
+pub fn MeshletVisibilityBufferRasterState::last_shadow_view_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::last_view_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::resolve_depth_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::resolve_material_depth_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::second_pass_draw_count(Self) -> Int
+
+pub struct PersistentBufferSliceRange {
+  start : Int
+  end_ : Int
+} derive(Eq, @debug.Debug)
 
 pub struct PersistentGpuBuffer[T] {
+  label : String
   elements : Array[T]
+  pending_write_ranges : Array[PersistentBufferSliceRange]
+  free_ranges : Array[PersistentBufferSliceRange]
+  mut committed_write_count : Int
 }
 pub fn[T] PersistentGpuBuffer::clear(Self[T]) -> Unit
+pub fn[T] PersistentGpuBuffer::committed_write_count(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::extend(Self[T], Array[T]) -> Unit
 pub fn[T] PersistentGpuBuffer::is_empty(Self[T]) -> Bool
+pub fn[T] PersistentGpuBuffer::label(Self[T]) -> String
 pub fn[T] PersistentGpuBuffer::len(Self[T]) -> Int
-pub fn[T] PersistentGpuBuffer::new() -> Self[T]
+pub fn[T] PersistentGpuBuffer::mark_slice_unused(Self[T], PersistentBufferSliceRange) -> Unit
+pub fn[T] PersistentGpuBuffer::new(label? : String) -> Self[T]
+pub fn[T] PersistentGpuBuffer::pending_ranges_snapshot(Self[T]) -> Array[PersistentBufferSliceRange]
+pub fn[T] PersistentGpuBuffer::pending_write_count(Self[T]) -> Int
+pub fn[T] PersistentGpuBuffer::perform_writes(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::push(Self[T], T) -> Unit
+pub fn[T, M] PersistentGpuBuffer::queue_write(Self[T], Array[T], M) -> PersistentBufferSliceRange
 pub fn[T] PersistentGpuBuffer::snapshot(Self[T]) -> Array[T]
+pub fn[T] PersistentGpuBuffer::unused_slice_count(Self[T]) -> Int
 
 pub struct ResourceManager {
   mut frame_index : Int
@@ -406,6 +563,8 @@ pub struct ResourceManager {
   mut cull_queue_rightmost_slot : Int
   mut meshlet_buffer_count : Int
   previous_depth_pyramids : Map[Int, Int]
+  prepared_view_resources : Map[UInt64, MeshletViewResources]
+  prepared_view_bind_groups : Map[UInt64, MeshletViewBindGroups]
   clear_visibility_buffer_bind_group_layout_id : Int
   clear_visibility_buffer_shadow_view_bind_group_layout_id : Int
   first_instance_cull_bind_group_layout_id : Int
@@ -427,6 +586,8 @@ pub struct ResourceManager {
 }
 pub fn ResourceManager::advance_frame(Self) -> Unit
 pub fn ResourceManager::bind_group_layout_count(Self) -> Int
+pub fn ResourceManager::clear_stale_prepared_view_bind_groups(Self, Array[@core.Entity]) -> Unit
+pub fn ResourceManager::clear_stale_prepared_view_resources(Self, Array[@core.Entity]) -> Unit
 pub fn ResourceManager::clear_stale_previous_depth_pyramids(Self, Array[Int]) -> Unit
 pub fn ResourceManager::cluster_buffer_slots(Self) -> Int
 pub fn ResourceManager::cull_queue_rightmost_slot(Self) -> Int
@@ -434,9 +595,15 @@ pub fn ResourceManager::default() -> Self
 pub fn ResourceManager::frame_index(Self) -> Int
 pub fn ResourceManager::meshlet_buffer_count(Self) -> Int
 pub fn ResourceManager::new(Int) -> Self
+pub fn ResourceManager::prepared_view_bind_group_count(Self) -> Int
+pub fn ResourceManager::prepared_view_bind_groups(Self, @core.Entity) -> MeshletViewBindGroups?
+pub fn ResourceManager::prepared_view_resource_count(Self) -> Int
+pub fn ResourceManager::prepared_view_resources(Self, @core.Entity) -> MeshletViewResources?
 pub fn ResourceManager::previous_depth_pyramid(Self, Int) -> Int?
 pub fn ResourceManager::set_cluster_buffer_slots(Self, Int) -> Unit
 pub fn ResourceManager::set_meshlet_buffer_count(Self, Int) -> Unit
+pub fn ResourceManager::set_prepared_view_bind_groups(Self, MeshletViewBindGroups) -> Unit
+pub fn ResourceManager::set_prepared_view_resources(Self, MeshletViewResources) -> Unit
 pub fn ResourceManager::set_previous_depth_pyramid(Self, Int, Int) -> Unit
 
 // Type aliases

@@ -46,7 +46,13 @@ pub struct MeshletMeshSlices {
 
 ///|
 pub struct MeshletMeshManager {
-  mut next_offset : Int
+  vertex_positions : PersistentGpuBuffer[Int]
+  vertex_normals : PersistentGpuBuffer[Int]
+  vertex_uvs : PersistentGpuBuffer[Int]
+  indices : PersistentGpuBuffer[Int]
+  bvh_nodes : PersistentGpuBuffer[Int]
+  meshlets : PersistentGpuBuffer[Int]
+  meshlet_cull_data : PersistentGpuBuffer[Int]
   mut pending_mesh_writes : Int
   mut committed_mesh_writes : Int
   pending_upload_asset_ids : Array[Int]
@@ -56,7 +62,13 @@ pub struct MeshletMeshManager {
 ///|
 pub fn MeshletMeshManager::default() -> MeshletMeshManager {
   MeshletMeshManager::{
-    next_offset: 0,
+    vertex_positions: PersistentGpuBuffer::new(label="meshlet_vertex_positions"),
+    vertex_normals: PersistentGpuBuffer::new(label="meshlet_vertex_normals"),
+    vertex_uvs: PersistentGpuBuffer::new(label="meshlet_vertex_uvs"),
+    indices: PersistentGpuBuffer::new(label="meshlet_indices"),
+    bvh_nodes: PersistentGpuBuffer::new(label="meshlet_bvh_nodes"),
+    meshlets: PersistentGpuBuffer::new(label="meshlets"),
+    meshlet_cull_data: PersistentGpuBuffer::new(label="meshlet_cull_data"),
     pending_mesh_writes: 0,
     committed_mesh_writes: 0,
     pending_upload_asset_ids: [],
@@ -65,15 +77,33 @@ pub fn MeshletMeshManager::default() -> MeshletMeshManager {
 }
 
 ///|
-fn meshlet_mesh_manager_allocate_slice(
-  manager : MeshletMeshManager,
-  count : Int,
+fn meshlet_empty_words(word_count : Int) -> Array[Int] {
+  let safe_count = if word_count < 0 { 0 } else { word_count }
+  let values : Array[Int] = []
+  for _ in 0..<safe_count {
+    values.push(0)
+  }
+  values
+}
+
+///|
+fn meshlet_slice_from_persistent(
+  slice_range : PersistentBufferSliceRange,
 ) -> MeshletBufferSliceRange {
-  let safe_count = if count < 0 { 0 } else { count }
-  let start = manager.next_offset
-  let end_ = start + safe_count
-  manager.next_offset = end_
-  meshlet_buffer_slice_range_new(start, end_)
+  meshlet_buffer_slice_range_new(slice_range.start, slice_range.end_)
+}
+
+///|
+fn meshlet_slice_to_persistent(
+  slice_range : MeshletBufferSliceRange,
+) -> PersistentBufferSliceRange {
+  let safe_start = if slice_range.start < 0 { 0 } else { slice_range.start }
+  let safe_end = if slice_range.end_ < safe_start {
+    safe_start
+  } else {
+    slice_range.end_
+  }
+  PersistentBufferSliceRange::{ start: safe_start, end_: safe_end }
 }
 
 ///|
@@ -82,35 +112,42 @@ fn meshlet_mesh_manager_insert_asset_slices(
   asset_id : Int,
   meshlet_mesh : MeshletMesh,
 ) -> MeshletMeshSlices {
+  let vertex_positions = manager.vertex_positions.queue_write(
+    meshlet_empty_words(meshlet_mesh.vertex_position_word_count),
+    (),
+  )
+  let vertex_normals = manager.vertex_normals.queue_write(
+    meshlet_empty_words(meshlet_mesh.vertex_normal_word_count),
+    (),
+  )
+  let vertex_uvs = manager.vertex_uvs.queue_write(
+    meshlet_empty_words(meshlet_mesh.vertex_uv_count),
+    (),
+  )
+  let indices = manager.indices.queue_write(
+    meshlet_empty_words(meshlet_mesh.index_count),
+    (),
+  )
+  let meshlets = manager.meshlets.queue_write(
+    meshlet_empty_words(meshlet_mesh.meshlet_count),
+    (vertex_positions.start, vertex_normals.start, indices.start),
+  )
+  let bvh_nodes = manager.bvh_nodes.queue_write(
+    meshlet_empty_words(meshlet_mesh.bvh_node_count),
+    meshlets.start,
+  )
+  let meshlet_cull_data = manager.meshlet_cull_data.queue_write(
+    meshlet_empty_words(meshlet_mesh.meshlet_count),
+    (),
+  )
   let slices = MeshletMeshSlices::{
-    vertex_positions: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.vertex_position_word_count,
-    ),
-    vertex_normals: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.vertex_normal_word_count,
-    ),
-    vertex_uvs: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.vertex_uv_count,
-    ),
-    indices: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.index_count,
-    ),
-    bvh_nodes: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.bvh_node_count,
-    ),
-    meshlets: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.meshlet_count,
-    ),
-    meshlet_cull_data: meshlet_mesh_manager_allocate_slice(
-      manager,
-      meshlet_mesh.meshlet_count,
-    ),
+    vertex_positions: meshlet_slice_from_persistent(vertex_positions),
+    vertex_normals: meshlet_slice_from_persistent(vertex_normals),
+    vertex_uvs: meshlet_slice_from_persistent(vertex_uvs),
+    indices: meshlet_slice_from_persistent(indices),
+    bvh_nodes: meshlet_slice_from_persistent(bvh_nodes),
+    meshlets: meshlet_slice_from_persistent(meshlets),
+    meshlet_cull_data: meshlet_slice_from_persistent(meshlet_cull_data),
     aabb: MeshletAabb::default(),
     bvh_depth: meshlet_mesh.bvh_depth,
   }
@@ -129,7 +166,14 @@ pub fn MeshletMeshManager::queue_mesh_write(self : MeshletMeshManager) -> Unit {
 pub fn MeshletMeshManager::perform_pending_mesh_writes(
   self : MeshletMeshManager,
 ) -> Int {
-  let pending = self.pending_mesh_writes
+  let pending = self.pending_upload_asset_ids.length()
+  ignore(self.vertex_positions.perform_writes())
+  ignore(self.vertex_normals.perform_writes())
+  ignore(self.vertex_uvs.perform_writes())
+  ignore(self.indices.perform_writes())
+  ignore(self.bvh_nodes.perform_writes())
+  ignore(self.meshlets.perform_writes())
+  ignore(self.meshlet_cull_data.perform_writes())
   self.pending_mesh_writes = 0
   self.committed_mesh_writes = self.committed_mesh_writes + pending
   self.pending_upload_asset_ids.clear()
@@ -168,6 +212,32 @@ pub fn MeshletMeshManager::remove(
 ) -> Bool {
   let safe_asset_id = if asset_id < 0 { 0 } else { asset_id }
   let was_present = self.meshlet_mesh_slices.get(safe_asset_id) is Some(_)
+  match self.meshlet_mesh_slices.get(safe_asset_id) {
+    Some(slices) => {
+      self.vertex_positions.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.vertex_positions),
+      )
+      self.vertex_normals.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.vertex_normals),
+      )
+      self.vertex_uvs.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.vertex_uvs),
+      )
+      self.indices.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.indices),
+      )
+      self.bvh_nodes.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.bvh_nodes),
+      )
+      self.meshlets.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.meshlets),
+      )
+      self.meshlet_cull_data.mark_slice_unused(
+        meshlet_slice_to_persistent(slices.meshlet_cull_data),
+      )
+    }
+    None => ()
+  }
   self.meshlet_mesh_slices.remove(safe_asset_id)
   was_present
 }
@@ -187,8 +257,10 @@ pub fn MeshletMeshManager::pending_upload_count(
 }
 
 ///|
-pub fn perform_pending_meshlet_mesh_writes(manager : MeshletMeshManager) -> Int {
-  manager.perform_pending_mesh_writes()
+pub fn perform_pending_meshlet_mesh_writes(
+  manager : MeshletMeshManager,
+) -> Unit {
+  ignore(manager.perform_pending_mesh_writes())
 }
 
 ///|
