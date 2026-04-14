@@ -32,11 +32,17 @@ pub fn visibility_component_keys() -> (@ecs.ComponentKey[@Milky2018/mgstudio/vis
 
 pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn visibility_range_abrupt(Float, Float) -> @Milky2018/mgstudio/visibility.VisibilityRange
+
 pub fn visibility_range_always_visible() -> @Milky2018/mgstudio/visibility.VisibilityRange
 
 pub fn visibility_range_component_key() -> @ecs.ComponentKey[@Milky2018/mgstudio/visibility.VisibilityRange]
 
 pub fn visibility_range_invisible() -> @Milky2018/mgstudio/visibility.VisibilityRange
+
+pub fn visibility_range_is_culled(@Milky2018/mgstudio/visibility.VisibilityRange, Float) -> Bool
+
+pub fn visibility_range_is_visible_at_all(@Milky2018/mgstudio/visibility.VisibilityRange, Float) -> Bool
 
 pub fn visibility_range_new(Float, Float, Float, Float, Bool) -> @Milky2018/mgstudio/visibility.VisibilityRange
 

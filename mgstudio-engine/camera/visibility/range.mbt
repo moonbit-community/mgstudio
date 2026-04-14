@@ -39,6 +39,30 @@ pub fn visibility_range_new(
 }
 
 ///|
+pub fn visibility_range_abrupt(
+  start : Float,
+  end : Float,
+) -> @root_visibility.VisibilityRange {
+  @root_visibility.VisibilityRange::abrupt(start, end)
+}
+
+///|
+pub fn visibility_range_is_visible_at_all(
+  visibility_range : @root_visibility.VisibilityRange,
+  camera_distance : Float,
+) -> Bool {
+  visibility_range.is_visible_at_all(camera_distance)
+}
+
+///|
+pub fn visibility_range_is_culled(
+  visibility_range : @root_visibility.VisibilityRange,
+  camera_distance : Float,
+) -> Bool {
+  visibility_range.is_culled(camera_distance)
+}
+
+///|
 pub fn visibility_range_component_key() -> @ecs.ComponentKey[
   @root_visibility.VisibilityRange,
 ] {

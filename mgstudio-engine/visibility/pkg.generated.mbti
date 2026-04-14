@@ -66,11 +66,14 @@ pub struct VisibilityRange {
   end_margin_max : Float
   use_aabb : Bool
 }
+pub fn VisibilityRange::abrupt(Float, Float) -> Self
 pub fn VisibilityRange::always_visible() -> Self
 pub fn VisibilityRange::end_margin_max(Self) -> Float
 pub fn VisibilityRange::end_margin_min(Self) -> Float
 pub fn VisibilityRange::invisible() -> Self
 pub fn VisibilityRange::is_abrupt(Self) -> Bool
+pub fn VisibilityRange::is_culled(Self, Float) -> Bool
+pub fn VisibilityRange::is_visible_at_all(Self, Float) -> Bool
 pub fn VisibilityRange::new(Float, Float, Float, Float, Bool) -> Self
 pub fn VisibilityRange::start_margin_max(Self) -> Float
 pub fn VisibilityRange::start_margin_min(Self) -> Float

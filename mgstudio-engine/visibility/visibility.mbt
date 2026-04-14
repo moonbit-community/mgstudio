@@ -143,6 +143,11 @@ pub fn VisibilityRange::new(
 }
 
 ///|
+pub fn VisibilityRange::abrupt(start : Float, end : Float) -> VisibilityRange {
+  VisibilityRange::new(start, start, end, end, false)
+}
+
+///|
 pub impl ToJson for VisibilityRange with to_json(self) {
   (
     self.start_margin_min,
@@ -206,4 +211,21 @@ pub fn VisibilityRange::use_aabb(self : VisibilityRange) -> Bool {
 pub fn VisibilityRange::is_abrupt(self : VisibilityRange) -> Bool {
   self.start_margin_min == self.start_margin_max &&
   self.end_margin_min == self.end_margin_max
+}
+
+///|
+pub fn VisibilityRange::is_visible_at_all(
+  self : VisibilityRange,
+  camera_distance : Float,
+) -> Bool {
+  camera_distance >= self.start_margin_min &&
+  camera_distance < self.end_margin_max
+}
+
+///|
+pub fn VisibilityRange::is_culled(
+  self : VisibilityRange,
+  camera_distance : Float,
+) -> Bool {
+  !self.is_visible_at_all(camera_distance)
 }
