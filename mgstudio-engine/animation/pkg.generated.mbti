@@ -208,8 +208,7 @@ pub struct AnimationClip {
   mut duration_seconds : Float
   targets : Array[AnimationTargetBinding]
   target_index_by_key : Map[UInt64, Int]
-  events_root : Array[AnimationClipEvent]
-  events_targets : Array[(AnimationTargetId, Array[AnimationClipEvent])]
+  events : Array[(AnimationEventTarget, Array[AnimationClipEvent])]
 }
 pub fn AnimationClip::add_curve_to_target(Self, AnimationTargetId, AnimatableCurve, sample_count? : Int) -> Self
 pub fn AnimationClip::add_event(Self, Float, String, String) -> Self

@@ -1486,7 +1486,7 @@ fn animation_collect_players_with_target_events(
       guard graph.get(node_index) is Some(node) else { continue }
       guard node.node_type is Clip(clip_handle) else { continue }
       guard animation_clip_get(clip_handle) is Some(clip) else { continue }
-      if clip.events_targets.length() > 0 {
+      if animation_clip_has_target_events(clip) {
         player_has_target_events = true
       }
     }
@@ -1528,7 +1528,7 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
       guard node.node_type is Clip(clip_handle) else { continue }
       guard animation_clip_get(clip_handle) is Some(clip) else { continue }
       let triggered = animation_clip_collect_triggered_events(
-        clip.events_root,
+        animation_clip_events_for_root(clip),
         active,
       )
       if triggered.length() == 0 {

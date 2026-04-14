@@ -228,8 +228,7 @@ pub struct AnimationClip {
   mut duration_seconds : Float
   targets : Array[AnimationTargetBinding]
   target_index_by_key : Map[UInt64, Int]
-  events_root : Array[AnimationClipEvent]
-  events_targets : Array[(AnimationTargetId, Array[AnimationClipEvent])]
+  events : Array[(AnimationEventTarget, Array[AnimationClipEvent])]
 }
 
 ///|
@@ -238,8 +237,7 @@ pub fn AnimationClip::new() -> AnimationClip {
     duration_seconds: 0.0F,
     targets: [],
     target_index_by_key: {},
-    events_root: [],
-    events_targets: [],
+    events: [],
   }
 }
 
@@ -641,20 +639,65 @@ fn animation_clip_event_insert_sorted(
 }
 
 ///|
-fn animation_clip_target_events_get_or_insert(
+fn animation_event_target_eq(
+  lhs : AnimationEventTarget,
+  rhs : AnimationEventTarget,
+) -> Bool {
+  match (lhs, rhs) {
+    (Root, Root) => true
+    (Node(lhs_id), Node(rhs_id)) => lhs_id == rhs_id
+    (_, _) => false
+  }
+}
+
+///|
+fn animation_clip_events_get_or_insert(
   clip : AnimationClip,
-  target_id : AnimationTargetId,
+  target : AnimationEventTarget,
 ) -> Array[AnimationClipEvent] {
   let mut i = 0
-  while i < clip.events_targets.length() {
-    if clip.events_targets[i].0 == target_id {
-      return clip.events_targets[i].1
+  while i < clip.events.length() {
+    if animation_event_target_eq(clip.events[i].0, target) {
+      return clip.events[i].1
     }
     i = i + 1
   }
   let events : Array[AnimationClipEvent] = []
-  clip.events_targets.push((target_id, events))
+  clip.events.push((target, events))
   events
+}
+
+///|
+fn animation_clip_events_get(
+  clip : AnimationClip,
+  target : AnimationEventTarget,
+) -> Array[AnimationClipEvent]? {
+  for entry in clip.events {
+    if animation_event_target_eq(entry.0, target) {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn animation_clip_has_target_events(clip : AnimationClip) -> Bool {
+  for entry in clip.events {
+    if entry.0 is Node(_) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn animation_clip_events_for_root(
+  clip : AnimationClip,
+) -> Array[AnimationClipEvent] {
+  match animation_clip_events_get(clip, AnimationEventTarget::Root) {
+    Some(events) => events
+    None => []
+  }
 }
 
 ///|
@@ -665,7 +708,11 @@ pub fn AnimationClip::add_event(
   payload : String,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new(time, label, payload)
-  animation_clip_event_insert_sorted(self.events_root, event)
+  let events = animation_clip_events_get_or_insert(
+    self,
+    AnimationEventTarget::Root,
+  )
+  animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
   }
@@ -678,8 +725,14 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event(
   time : Float,
   event : T,
 ) -> AnimationClip {
-  let event = AnimationClipEvent::new_typed(time, event)
-  animation_clip_event_insert_sorted(self.events_root, event)
+  let events = animation_clip_events_get_or_insert(
+    self,
+    AnimationEventTarget::Root,
+  )
+  animation_clip_event_insert_sorted(
+    events,
+    AnimationClipEvent::new_typed(time, event),
+  )
   if time > self.duration_seconds {
     self.duration_seconds = time
   }
@@ -695,7 +748,10 @@ pub fn AnimationClip::add_event_to_target(
   payload : String,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new(time, label, payload)
-  let events = animation_clip_target_events_get_or_insert(self, target_id)
+  let events = animation_clip_events_get_or_insert(
+    self,
+    AnimationEventTarget::Node(target_id),
+  )
   animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
@@ -710,7 +766,10 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event_to
   time : Float,
   event : T,
 ) -> AnimationClip {
-  let events = animation_clip_target_events_get_or_insert(self, target_id)
+  let events = animation_clip_events_get_or_insert(
+    self,
+    AnimationEventTarget::Node(target_id),
+  )
   animation_clip_event_insert_sorted(
     events,
     AnimationClipEvent::new_typed(time, event),
@@ -728,7 +787,11 @@ pub fn AnimationClip::add_event_fn(
   callback_id : Int,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new_callback(time, callback_id)
-  animation_clip_event_insert_sorted(self.events_root, event)
+  let events = animation_clip_events_get_or_insert(
+    self,
+    AnimationEventTarget::Root,
+  )
+  animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
   }
@@ -743,7 +806,10 @@ pub fn AnimationClip::add_event_fn_to_target(
   callback_id : Int,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new_callback(time, callback_id)
-  let events = animation_clip_target_events_get_or_insert(self, target_id)
+  let events = animation_clip_events_get_or_insert(
+    self,
+    AnimationEventTarget::Node(target_id),
+  )
   animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
@@ -756,17 +822,12 @@ fn animation_clip_events_for_target(
   clip : AnimationClip,
   target_id : AnimationTargetId,
 ) -> Array[AnimationClipEvent]? {
-  for entry in clip.events_targets {
-    if entry.0 == target_id {
-      return Some(entry.1)
-    }
-  }
-  None
+  animation_clip_events_get(clip, AnimationEventTarget::Node(target_id))
 }
 
 ///|
 pub fn AnimationClip::events(self : AnimationClip) -> Array[AnimationClipEvent] {
-  self.events_root
+  animation_clip_events_for_root(self)
 }
 
 ///|
@@ -782,7 +843,10 @@ pub fn AnimationClip::triggered_root_events(
   self : AnimationClip,
   active : ActiveAnimation,
 ) -> Array[AnimationClipEvent] {
-  animation_clip_collect_triggered_events(self.events_root, active)
+  animation_clip_collect_triggered_events(
+    animation_clip_events_for_root(self),
+    active,
+  )
 }
 
 ///|
