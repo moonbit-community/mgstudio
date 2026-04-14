@@ -7,8 +7,8 @@ This file must not exceed 200 lines.
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
 | `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
 | `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 75% | 75% | 🟡 In Progress | Base render-stage/system-set ownership is centralized, render sub-app now runs on dedicated `mgstudio.render` stage, but stage-boundary behavior is still not fully equivalent. |
-| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 71% | 71% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 76% | 76% | 🟡 In Progress | Base render-stage/system-set ownership is centralized, render sub-app now runs on dedicated `mgstudio.render` stage, and queue/prepare subset chains are explicit; remaining stage-boundary behavior is still not fully equivalent. |
+| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 72% | 72% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 77% | 77% | 🟡 In Progress | Core camera-driver scheduling is now on unified dedicated render-stage entry, but postprocess/mip ordering still needs deeper convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
@@ -76,7 +76,7 @@ This file must not exceed 200 lines.
 - [x] `render/renderer`: collapse `window_surface` scattered binding globals (`surfaces/frames/id seeds`) into a single owner runtime state (`WindowSurfaceRuntimeState`), keeping behavior-local ownership.
 - [x] `render/renderer`: move `mesh2d` gizmo-line mesh-id cache from global `Ref` to `GpuBackend` owner field (`mesh2d_gizmo_line_mesh_id`).
 - [x] `render/renderer`: collapse screenshot capture/parity globals into one owner runtime state (`ScreenshotRuntimeState`) and remove multi-Ref scattered mutation.
-- [x] `render/schedule-render-stage-label`: switch render sub-app update schedule from `Main` to dedicated `mgstudio.render` stage and keep render packages on `render_schedule_stage()`.
+- [x] `render/schedule-render-stage-label`: switch render sub-app update schedule from `Main` to dedicated `mgstudio.render` stage, and make queue/prepare subset chains explicit in base render set ordering.
 - [x] `render/render_resource`: collapse 8 independent id-seed globals into single owner runtime state (`RenderResourceIdState`).
 - [x] `render/render_phase`: collapse render-pass trace active-span global into owner runtime state (`RenderPassTraceRuntimeState`).
 - [x] `render/renderer`: wrap backend singleton in `RenderContextRuntimeState` and migrate renderer whitebox tests to explicit test-set/get hooks.

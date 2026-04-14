@@ -118,6 +118,12 @@ pub fn configure_base_render_sets(
     render_system_set_queue,
   ])
   .configure_set(stage, render_system_set_queue, before=[
+    render_system_set_queue_meshes,
+  ])
+  .configure_set(stage, render_system_set_queue_meshes, after=[
+    render_system_set_prepare_assets,
+  ], before=[render_system_set_queue_sweep])
+  .configure_set(stage, render_system_set_queue_sweep, before=[
     render_system_set_phase_sort,
   ])
   .configure_set(stage, render_system_set_phase_sort, before=[
@@ -141,6 +147,9 @@ pub fn configure_base_render_sets(
   .configure_set(stage, render_system_set_prepare_resources, before=[
     render_system_set_prepare_resources_collect_phase_buffers,
   ])
+  .configure_set(stage, render_system_set_prepare, before=[
+    render_system_set_prepare_resources,
+  ])
   .configure_set(
     stage,
     render_system_set_prepare_resources_collect_phase_buffers,
@@ -148,5 +157,8 @@ pub fn configure_base_render_sets(
   )
   .configure_set(stage, render_system_set_prepare_resources_flush, before=[
     render_system_set_prepare_bind_groups,
+  ])
+  .configure_set(stage, render_system_set_prepare_bind_groups, before=[
+    render_system_set_render,
   ])
 }
