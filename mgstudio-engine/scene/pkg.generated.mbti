@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
@@ -92,6 +93,26 @@ pub struct Scene {
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
+
+pub enum SceneFilter {
+  Unset
+  Allowlist(@hashmap.HashMap[String, Bool])
+  Denylist(@hashmap.HashMap[String, Bool])
+}
+pub fn SceneFilter::allow_all() -> Self
+pub fn SceneFilter::allow_component_by_id(Self, Int) -> Self
+pub fn SceneFilter::allow_resource_by_id(Self, Int) -> Self
+pub fn SceneFilter::default() -> Self
+pub fn SceneFilter::deny_all() -> Self
+pub fn SceneFilter::deny_component_by_id(Self, Int) -> Self
+pub fn SceneFilter::deny_resource_by_id(Self, Int) -> Self
+pub fn SceneFilter::is_component_allowed_by_id(Self, Int) -> Bool
+pub fn SceneFilter::is_component_denied_by_id(Self, Int) -> Bool
+pub fn SceneFilter::is_empty(Self) -> Bool
+pub fn SceneFilter::is_resource_allowed_by_id(Self, Int) -> Bool
+pub fn SceneFilter::is_resource_denied_by_id(Self, Int) -> Bool
+pub fn SceneFilter::iter_tokens(Self) -> Array[String]
+pub fn SceneFilter::len(Self) -> Int
 
 pub struct SceneInstance {
   instance_id : Int
