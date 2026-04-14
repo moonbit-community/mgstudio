@@ -255,10 +255,27 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let view_entities : Array[@core.Entity] = []
+  source_world.for_each_component(@core_pipeline.ecs_key_msaa, fn(
+    entity,
+    _msaa,
+  ) {
+    view_entities.push(entity)
+  })
   let instance_count = meshlet_instance_count_from_world(world)
   match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
-    Some(manager) =>
+    Some(manager) => {
       prepare_meshlet_per_frame_resources(manager, instance_count)
+      manager.clear_stale_prepared_view_resources(view_entities)
+      for view_entity in view_entities {
+        ignore(
+          prepare_meshlet_view_resources_for_view(
+            manager, view_entity, instance_count,
+          ),
+        )
+      }
+    }
     None => ()
   }
 }

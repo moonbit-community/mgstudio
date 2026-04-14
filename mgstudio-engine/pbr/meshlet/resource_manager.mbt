@@ -31,6 +31,7 @@ pub struct ResourceManager {
   mut cull_queue_rightmost_slot : Int
   mut meshlet_buffer_count : Int
   previous_depth_pyramids : Map[Int, Int]
+  mut prepared_view_resources : Map[UInt64, MeshletViewResources]
   mut prepared_view_bind_groups : Map[UInt64, MeshletViewBindGroups]
   clear_visibility_buffer_bind_group_layout_id : Int
   clear_visibility_buffer_shadow_view_bind_group_layout_id : Int
@@ -70,6 +71,7 @@ pub fn ResourceManager::new(cluster_buffer_slots : Int) -> ResourceManager {
     },
     meshlet_buffer_count: 0,
     previous_depth_pyramids: {},
+    prepared_view_resources: {},
     prepared_view_bind_groups: {},
     clear_visibility_buffer_bind_group_layout_id: -1,
     clear_visibility_buffer_shadow_view_bind_group_layout_id: -1,
@@ -229,6 +231,49 @@ pub fn MeshletViewResources::new(
 }
 
 ///|
+pub fn ResourceManager::set_prepared_view_resources(
+  self : ResourceManager,
+  resources : MeshletViewResources,
+) -> Unit {
+  self.prepared_view_resources.set(resources.view_entity.to_bits(), resources)
+}
+
+///|
+pub fn ResourceManager::prepared_view_resources(
+  self : ResourceManager,
+  view_entity : @core.Entity,
+) -> MeshletViewResources? {
+  self.prepared_view_resources.get(view_entity.to_bits())
+}
+
+///|
+pub fn ResourceManager::prepared_view_resource_count(
+  self : ResourceManager,
+) -> Int {
+  self.prepared_view_resources.length()
+}
+
+///|
+pub fn ResourceManager::clear_stale_prepared_view_resources(
+  self : ResourceManager,
+  active_view_entities : Array[@core.Entity],
+) -> Unit {
+  let active : Map[UInt64, Bool] = {}
+  for view_entity in active_view_entities {
+    active.set(view_entity.to_bits(), true)
+  }
+  let stale_keys : Array[UInt64] = []
+  for key in self.prepared_view_resources.keys() {
+    if active.get(key) is None {
+      stale_keys.push(key)
+    }
+  }
+  for stale_key in stale_keys {
+    self.prepared_view_resources.remove(stale_key)
+  }
+}
+
+///|
 pub struct MeshletViewBindGroups {
   view_entity : @core.Entity
   bind_group_count : Int
@@ -309,6 +354,25 @@ pub fn prepare_meshlet_per_frame_resources(
     manager.cull_queue_rightmost_slot = limited_count - 1
   }
   manager.advance_frame()
+}
+
+///|
+pub fn prepare_meshlet_view_resources(
+  view_entity : @core.Entity,
+  meshlet_count : Int,
+) -> MeshletViewResources {
+  MeshletViewResources::new(view_entity, meshlet_count)
+}
+
+///|
+pub fn prepare_meshlet_view_resources_for_view(
+  manager : ResourceManager,
+  view_entity : @core.Entity,
+  meshlet_count : Int,
+) -> MeshletViewResources {
+  let resources = prepare_meshlet_view_resources(view_entity, meshlet_count)
+  manager.set_prepared_view_resources(resources)
+  resources
 }
 
 ///|
