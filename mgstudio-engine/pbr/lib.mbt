@@ -208,11 +208,6 @@ pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.prepare",
-)
-
-///|
 pub let render3d_set_prepare_resources_flush : @app.SystemSet = @app.system_set(
   "mgstudio.render3d.prepare_resources_flush",
 )

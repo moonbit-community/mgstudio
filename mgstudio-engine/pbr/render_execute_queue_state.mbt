@@ -82,7 +82,8 @@ fn render3d_queue_store_frame(
   meshes : Array[ExtractedMesh3d],
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
 ) -> Unit {
-  let prepared_camera_count = if cameras.length() < prepared_camera_queues.length() {
+  let prepared_camera_count = if cameras.length() <
+    prepared_camera_queues.length() {
     cameras.length()
   } else {
     prepared_camera_queues.length()
@@ -111,6 +112,7 @@ fn render3d_queue_frame_snapshot(world : @ecs.World) -> Render3dQueuedFrame? {
   state_ref.val.queued_frame
 }
 
+///|
 fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
   state_ref.val.queued_frame = None

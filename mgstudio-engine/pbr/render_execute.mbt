@@ -97,13 +97,11 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
-  render3d_queue_clear_frame(world)
+  ignore(world)
 }
 
 ///|
-fn render3d_prewarm_mesh_pipelines(
-  meshes : Array[ExtractedMesh3d],
-) -> Unit {
+fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
     let mesh = extracted_mesh.payload
@@ -133,11 +131,7 @@ fn render3d_prewarm_mesh_pipelines(
 ///|
 fn render3d_for_each_prepared_camera(
   frame : Render3dQueuedFrame,
-  f : (
-    @core.Entity,
-    Camera3dViewPayload,
-    Render3dPreparedCameraQueue,
-  ) -> Unit,
+  f : (@core.Entity, Camera3dViewPayload, Render3dPreparedCameraQueue) -> Unit,
 ) -> Unit {
   for camera_index in 0..<frame.prepared_camera_count {
     let extracted_camera = frame.cameras[camera_index]
@@ -197,11 +191,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     frame_config.gpu_culling_supported,
   )
   render3d_queue_store_frame(
-    world,
-    frame_config,
-    cameras,
-    meshes,
-    prepared_camera_queues,
+    world, frame_config, cameras, meshes, prepared_camera_queues,
   )
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,
@@ -227,16 +217,6 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
         fog_meta_ref.val,
       )
       @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
-      render3d_for_each_prepared_camera(
-        frame,
-        fn(camera_entity, camera_payload, prepared_queue) {
-          render3d_upload_camera_queue_entry(
-            camera_entity,
-            camera_payload,
-            prepared_queue,
-          )
-        },
-      )
     }
     None => ()
   }
@@ -261,19 +241,21 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
     )
   }
   match render3d_queue_frame_snapshot(world) {
-    Some(frame) => {
-      render3d_for_each_prepared_camera(
-        frame,
-        fn(camera_entity, camera_payload, prepared_queue) {
-          render3d_dispatch_camera_queue_entry(
-            camera_entity,
-            camera_payload,
-            prepared_queue,
-          )
-        },
-      )
-    }
-    None => @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
+    Some(frame) =>
+      render3d_for_each_prepared_camera(frame, fn(
+        camera_entity,
+        camera_payload,
+        prepared_queue,
+      ) {
+        render3d_upload_camera_queue_entry(
+          camera_entity, camera_payload, prepared_queue,
+        )
+        render3d_dispatch_camera_queue_entry(
+          camera_entity, camera_payload, prepared_queue,
+        )
+      })
+    None =>
+      @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
   }
   finish_queue()
 }
@@ -282,12 +264,6 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
 pub fn render3d_queue_sweep_system(world : @ecs.World) -> Unit {
   let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
   @pbr_render.render3d_sweep_mesh_runtime_caches(phase_state_ref)
-}
-
-///|
-pub fn render3d_queue_system(world : @ecs.World) -> Unit {
-  render3d_queue_meshes_system(world)
-  render3d_queue_sweep_system(world)
 }
 
 ///|

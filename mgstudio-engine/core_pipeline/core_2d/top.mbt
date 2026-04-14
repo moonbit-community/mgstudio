@@ -98,9 +98,7 @@ fn core_2d_configure_render_sub_app(
   .configure_set(stage, core_2d_set_queue, before=[
     @render.render_system_set_queue_sweep,
   ])
-  .configure_set(stage, core_2d_set_main_pass, before=[
-    core_2d_set_post_process,
-  ])
+  .configure_set(stage, core_2d_set_main_pass, before=[core_2d_set_post_process])
   .configure_set(stage, @render.render_system_set_render, before=[
     core_2d_set_main_pass,
   ])
@@ -128,9 +126,9 @@ pub fn core_2d_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let next = app
-  .init_resource(fn() { Opaque2dPhase::default() })
-  .init_resource(fn() { AlphaMask2dPhase::default() })
-  .init_resource(fn() { Transparent2dPhase::default() })
+    .init_resource(fn() { Opaque2dPhase::default() })
+    .init_resource(fn() { AlphaMask2dPhase::default() })
+    .init_resource(fn() { Transparent2dPhase::default() })
   @render.with_render_app(next, core_2d_configure_render_sub_app)
 }
 

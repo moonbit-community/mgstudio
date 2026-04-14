@@ -60,9 +60,7 @@ fn core_3d_configure_render_sub_app(
     core_3d_set_prepass,
   ])
   .configure_set(stage, core_3d_set_prepass, before=[core_3d_set_main_pass])
-  .configure_set(stage, core_3d_set_main_pass, before=[
-    core_3d_set_post_process,
-  ])
+  .configure_set(stage, core_3d_set_main_pass, before=[core_3d_set_post_process])
   .configure_set(stage, core_3d_set_post_process, before=[
     @render.render_system_set_cleanup,
   ])
@@ -87,10 +85,10 @@ pub fn core_3d_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let next = app
-  .init_resource(fn() { Opaque3dPhase::default() })
-  .init_resource(fn() { AlphaMask3dPhase::default() })
-  .init_resource(fn() { Transparent3dPhase::default() })
-  .add_plugin(@skybox.skybox_plugin)
+    .init_resource(fn() { Opaque3dPhase::default() })
+    .init_resource(fn() { AlphaMask3dPhase::default() })
+    .init_resource(fn() { Transparent3dPhase::default() })
+    .add_plugin(@skybox.skybox_plugin)
   @render.with_render_app(next, core_3d_configure_render_sub_app)
 }
 

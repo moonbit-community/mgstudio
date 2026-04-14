@@ -285,9 +285,7 @@ fn render3d_execute_collect_meshes(
 }
 
 ///|
-fn render3d_mesh_topology_kind(
-  mesh_handle : @asset.Handle[@mesh.Mesh],
-) -> Int {
+fn render3d_mesh_topology_kind(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int {
   match @sprite.render_mesh_asset_get(mesh_handle) {
     Some(mesh_asset) =>
       match mesh_asset.as_3d_geometry() {

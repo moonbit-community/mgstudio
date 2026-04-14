@@ -120,9 +120,12 @@ pub fn configure_base_render_sets(
   .configure_set(stage, render_system_set_queue, before=[
     render_system_set_queue_meshes,
   ])
-  .configure_set(stage, render_system_set_queue_meshes, after=[
-    render_system_set_prepare_assets,
-  ], before=[render_system_set_queue_sweep])
+  .configure_set(
+    stage,
+    render_system_set_queue_meshes,
+    after=[render_system_set_prepare_assets],
+    before=[render_system_set_queue_sweep],
+  )
   .configure_set(stage, render_system_set_queue_sweep, before=[
     render_system_set_phase_sort,
   ])

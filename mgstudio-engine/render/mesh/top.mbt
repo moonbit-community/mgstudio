@@ -41,11 +41,7 @@ pub fn RenderMesh::new(
   index_count? : Int = 0,
   dimension? : RenderMeshDimension = Dim3,
 ) -> RenderMesh {
-  let buffer_info = if indexed {
-    Indexed(index_count)
-  } else {
-    NonIndexed
-  }
+  let buffer_info = if indexed { Indexed(index_count) } else { NonIndexed }
   RenderMesh::{ vertex_count, buffer_info, dimension }
 }
 
