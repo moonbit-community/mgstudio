@@ -133,6 +133,125 @@ pub fn MeshletViewMaterialsDeferredGBufferPrepass::clear(
 }
 
 ///|
+pub struct MeshletViewMaterialPipelineKey {
+  hdr : Bool
+  normal_prepass : Bool
+  depth_prepass : Bool
+  motion_vector_prepass : Bool
+  deferred_prepass : Bool
+  temporal_jitter : Bool
+  ssao : Bool
+  distance_fog : Bool
+}
+
+///|
+pub fn MeshletViewMaterialPipelineKey::new(
+  hdr? : Bool = false,
+  normal_prepass? : Bool = true,
+  depth_prepass? : Bool = true,
+  motion_vector_prepass? : Bool = false,
+  deferred_prepass? : Bool = false,
+  temporal_jitter? : Bool = false,
+  ssao? : Bool = false,
+  distance_fog? : Bool = false,
+) -> MeshletViewMaterialPipelineKey {
+  MeshletViewMaterialPipelineKey::{
+    hdr,
+    normal_prepass,
+    depth_prepass,
+    motion_vector_prepass,
+    deferred_prepass,
+    temporal_jitter,
+    ssao,
+    distance_fog,
+  }
+}
+
+///|
+pub fn MeshletViewMaterialPipelineKey::default() -> MeshletViewMaterialPipelineKey {
+  MeshletViewMaterialPipelineKey::new()
+}
+
+///|
+pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(
+  self : MeshletViewMaterialPipelineKey,
+  deferred_prepass : Bool,
+) -> MeshletViewMaterialPipelineKey {
+  MeshletViewMaterialPipelineKey::{ ..self, deferred_prepass, }
+}
+
+///|
+pub struct MeshletPreparedMaterialInput {
+  material_id : Int
+  material_asset_id : Int
+  opaque_render_method : @material.OpaqueRendererMethod
+  alpha_mode_opaque : Bool
+  reads_view_transmission_texture : Bool
+  material_bind_group_id : Int
+}
+
+///|
+fn meshlet_material_non_negative(value : Int) -> Int {
+  if value < 0 {
+    0
+  } else {
+    value
+  }
+}
+
+///|
+pub fn MeshletPreparedMaterialInput::new(
+  material_id : Int,
+  material_asset_id : Int,
+) -> MeshletPreparedMaterialInput {
+  MeshletPreparedMaterialInput::{
+    material_id: meshlet_material_non_negative(material_id),
+    material_asset_id: meshlet_material_non_negative(material_asset_id),
+    opaque_render_method: @material.OpaqueRendererMethod::Forward,
+    alpha_mode_opaque: true,
+    reads_view_transmission_texture: false,
+    material_bind_group_id: meshlet_material_non_negative(material_id),
+  }
+}
+
+///|
+pub fn MeshletPreparedMaterialInput::with_opaque_render_method(
+  self : MeshletPreparedMaterialInput,
+  opaque_render_method : @material.OpaqueRendererMethod,
+) -> MeshletPreparedMaterialInput {
+  MeshletPreparedMaterialInput::{ ..self, opaque_render_method, }
+}
+
+///|
+pub fn MeshletPreparedMaterialInput::with_alpha_mode_opaque(
+  self : MeshletPreparedMaterialInput,
+  alpha_mode_opaque : Bool,
+) -> MeshletPreparedMaterialInput {
+  MeshletPreparedMaterialInput::{ ..self, alpha_mode_opaque, }
+}
+
+///|
+pub fn MeshletPreparedMaterialInput::with_reads_view_transmission_texture(
+  self : MeshletPreparedMaterialInput,
+  reads_view_transmission_texture : Bool,
+) -> MeshletPreparedMaterialInput {
+  MeshletPreparedMaterialInput::{ ..self, reads_view_transmission_texture, }
+}
+
+///|
+pub fn MeshletPreparedMaterialInput::with_material_bind_group_id(
+  self : MeshletPreparedMaterialInput,
+  material_bind_group_id : Int,
+) -> MeshletPreparedMaterialInput {
+  MeshletPreparedMaterialInput::{
+    ..self,
+    material_bind_group_id: meshlet_material_non_negative(
+      material_bind_group_id,
+    ),
+  }
+}
+
+///|
 pub fn meshlet_material_prepare_entry_count(
   main_opaque : MeshletViewMaterialsMainOpaquePass,
   prepass : MeshletViewMaterialsPrepass,
@@ -144,19 +263,95 @@ pub fn meshlet_material_prepare_entry_count(
 }
 
 ///|
-fn meshlet_build_material_bins(
-  material_ids : Array[Int],
+fn meshlet_view_key_bits(view_key : MeshletViewMaterialPipelineKey) -> Int {
+  let mut bits = 0
+  if view_key.hdr {
+    bits = bits | 1
+  }
+  if view_key.normal_prepass {
+    bits = bits | 2
+  }
+  if view_key.depth_prepass {
+    bits = bits | 4
+  }
+  if view_key.motion_vector_prepass {
+    bits = bits | 8
+  }
+  if view_key.deferred_prepass {
+    bits = bits | 16
+  }
+  if view_key.temporal_jitter {
+    bits = bits | 32
+  }
+  if view_key.ssao {
+    bits = bits | 64
+  }
+  if view_key.distance_fog {
+    bits = bits | 128
+  }
+  bits
+}
+
+///|
+fn meshlet_material_pipeline_id(
   pipeline_base : Int,
-  bind_group_base : Int,
-) -> Array[(Int, Int, Int)] {
-  let bins = []
-  for index in 0..<material_ids.length() {
-    let material_id = material_ids[index]
-    bins.push(
-      (material_id, pipeline_base + material_id, bind_group_base + index),
+  pass_variant : Int,
+  view_key : MeshletViewMaterialPipelineKey,
+  material_asset_id : Int,
+) -> Int {
+  let key_bits = meshlet_view_key_bits(view_key)
+  let safe_asset_id = meshlet_material_non_negative(material_asset_id)
+  pipeline_base +
+  pass_variant * 1_000_000 +
+  key_bits * 4_096 +
+  safe_asset_id % 4_096
+}
+
+///|
+fn meshlet_material_inputs_from_ids(
+  material_ids : Array[Int],
+) -> Array[MeshletPreparedMaterialInput] {
+  let material_inputs : Array[MeshletPreparedMaterialInput] = []
+  for material_id in material_ids {
+    material_inputs.push(
+      MeshletPreparedMaterialInput::new(material_id, material_id),
     )
   }
-  bins
+  material_inputs
+}
+
+///|
+pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
+  view_materials : MeshletViewMaterialsMainOpaquePass,
+  material_inputs : Array[MeshletPreparedMaterialInput],
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
+) -> Unit {
+  view_materials.clear()
+  for material_input in material_inputs {
+    if !material_input.alpha_mode_opaque {
+      continue
+    }
+    if material_input.reads_view_transmission_texture {
+      continue
+    }
+    if material_input.opaque_render_method !=
+      @material.OpaqueRendererMethod::Forward {
+      continue
+    }
+    let pipeline_id = meshlet_material_pipeline_id(
+      1000,
+      1,
+      view_key,
+      material_input.material_asset_id,
+    )
+    view_materials.push(
+      (
+        material_input.material_id,
+        pipeline_id,
+        material_input.material_bind_group_id,
+      ),
+    )
+  }
 }
 
 ///|
@@ -164,10 +359,63 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass(
   view_materials : MeshletViewMaterialsMainOpaquePass,
   material_ids : Array[Int],
 ) -> Unit {
-  view_materials.clear()
-  let bins = meshlet_build_material_bins(material_ids, 1000, 0)
-  for material_bin in bins {
-    view_materials.push(material_bin)
+  prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
+    view_materials,
+    meshlet_material_inputs_from_ids(material_ids),
+  )
+}
+
+///|
+pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
+  prepass_materials : MeshletViewMaterialsPrepass,
+  deferred_prepass_materials : MeshletViewMaterialsDeferredGBufferPrepass,
+  material_inputs : Array[MeshletPreparedMaterialInput],
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
+  deferred_enabled? : Bool = true,
+) -> Unit {
+  prepass_materials.clear()
+  deferred_prepass_materials.clear()
+  for material_input in material_inputs {
+    if !material_input.alpha_mode_opaque {
+      continue
+    }
+    if material_input.reads_view_transmission_texture {
+      continue
+    }
+    let material_wants_deferred = material_input.opaque_render_method
+      is @material.OpaqueRendererMethod::Deferred
+    if deferred_enabled && view_key.deferred_prepass && material_wants_deferred {
+      let pipeline_id = meshlet_material_pipeline_id(
+        3000,
+        3,
+        view_key.with_deferred_prepass(true),
+        material_input.material_asset_id,
+      )
+      deferred_prepass_materials.push(
+        (
+          material_input.material_id,
+          pipeline_id,
+          material_input.material_bind_group_id,
+        ),
+      )
+      continue
+    }
+    if !view_key.normal_prepass && !view_key.motion_vector_prepass {
+      continue
+    }
+    let pipeline_id = meshlet_material_pipeline_id(
+      2000,
+      2,
+      view_key.with_deferred_prepass(false),
+      material_input.material_asset_id,
+    )
+    prepass_materials.push(
+      (
+        material_input.material_id,
+        pipeline_id,
+        material_input.material_bind_group_id,
+      ),
+    )
   }
 }
 
@@ -178,18 +426,12 @@ pub fn prepare_material_meshlet_meshes_prepass(
   material_ids : Array[Int],
   deferred_enabled? : Bool = true,
 ) -> Unit {
-  prepass_materials.clear()
-  deferred_prepass_materials.clear()
-  let prepass_bins = meshlet_build_material_bins(material_ids, 2000, 100)
-  for material_bin in prepass_bins {
-    prepass_materials.push(material_bin)
-  }
-  if deferred_enabled {
-    let deferred_bins = meshlet_build_material_bins(material_ids, 3000, 200)
-    for material_bin in deferred_bins {
-      deferred_prepass_materials.push(material_bin)
-    }
-  }
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass_materials,
+    deferred_prepass_materials,
+    meshlet_material_inputs_from_ids(material_ids),
+    deferred_enabled~,
+  )
 }
 
 ///|

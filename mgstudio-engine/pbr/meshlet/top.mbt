@@ -299,11 +299,77 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn meshlet_material_alpha_mode_is_opaque(
+  alpha_mode : @material.AlphaMode3d,
+) -> Bool {
+  alpha_mode is @material.AlphaMode3d::Opaque
+}
+
+///|
+fn meshlet_material_reads_view_transmission_texture(
+  material : @material.StandardMaterial,
+) -> Bool {
+  material.diffuse_transmission > 0.0F || material.specular_transmission > 0.0F
+}
+
+///|
+fn meshlet_standard_material_assets(
+  source_world : @ecs.World,
+) -> @asset.Assets[@material.StandardMaterial]? {
+  let standard_material_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@material.StandardMaterial],
+  ] = @asset.assets_resource_key()
+  try! source_world.get_resource(standard_material_assets_key)
+}
+
+///|
+fn meshlet_collect_material_inputs(
+  source_world : @ecs.World,
+  instance_manager : InstanceManager,
+) -> Array[MeshletPreparedMaterialInput] {
+  let material_inputs : Array[MeshletPreparedMaterialInput] = []
+  let standard_material_assets = meshlet_standard_material_assets(source_world)
+  for material_asset_id in instance_manager.present_material_asset_ids() {
+    match instance_manager.material_id_for_asset(material_asset_id) {
+      Some(material_id) => {
+        let mut material_input = MeshletPreparedMaterialInput::new(
+          material_id, material_asset_id,
+        )
+        match standard_material_assets {
+          Some(assets) =>
+            match assets.get(@asset.Handle::new(material_asset_id)) {
+              Some(material) => {
+                material_input = material_input.with_opaque_render_method(
+                  material.opaque_render_method.resolve_runtime(
+                    @material.OpaqueRendererMethod::Forward,
+                  ),
+                )
+                material_input = material_input.with_alpha_mode_opaque(
+                  meshlet_material_alpha_mode_is_opaque(material.alpha_mode),
+                )
+                material_input = material_input.with_reads_view_transmission_texture(
+                  meshlet_material_reads_view_transmission_texture(material),
+                )
+              }
+              None => ()
+            }
+          None => ()
+        }
+        material_inputs.push(material_input)
+      }
+      None => ()
+    }
+  }
+  material_inputs
+}
+
+///|
 fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let material_ids = match
+  let material_inputs = match
     (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) => instance_manager.present_material_ids()
+    Some(instance_manager) =>
+      meshlet_collect_material_inputs(source_world, instance_manager)
     None => []
   }
   let main_opaque_entities : Array[@core.Entity] = []
@@ -313,7 +379,29 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
   )
   for entity in main_opaque_entities {
     let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
-    prepare_material_meshlet_meshes_main_opaque_pass(main_opaque, material_ids)
+    let has_normal_prepass = try! source_world.contains_by_key(
+      entity, @core_pipeline.ecs_key_normal_prepass,
+    )
+    let has_depth_prepass = try! source_world.contains_by_key(
+      entity, @core_pipeline.ecs_key_depth_prepass,
+    )
+    let has_motion_vector_prepass = try! source_world.contains_by_key(
+      entity, @core_pipeline.ecs_key_motion_vector_prepass,
+    )
+    let has_deferred = try! source_world.contains_by_key(
+      entity, @core_pipeline.ecs_key_deferred_prepass,
+    )
+    let view_key = MeshletViewMaterialPipelineKey::new(
+      normal_prepass=has_normal_prepass,
+      depth_prepass=has_depth_prepass,
+      motion_vector_prepass=has_motion_vector_prepass,
+      deferred_prepass=has_deferred,
+    )
+    prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
+      main_opaque,
+      material_inputs,
+      view_key~,
+    )
     try! source_world.set_by_key(
       entity, ecs_key_meshlet_view_materials_main_opaque_pass, main_opaque,
     )
@@ -322,7 +410,7 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     let has_prepass = try! source_world.contains_by_key(
       entity, ecs_key_meshlet_view_materials_prepass,
     )
-    let has_deferred = try! source_world.contains_by_key(
+    let has_deferred_pass = try! source_world.contains_by_key(
       entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
     )
     if has_prepass {
@@ -343,19 +431,20 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
         None => ()
       }
     }
-    if has_prepass || has_deferred {
-      prepare_material_meshlet_meshes_prepass(
+    if has_prepass || has_deferred_pass {
+      prepare_material_meshlet_meshes_prepass_with_inputs(
         prepass,
         deferred,
-        material_ids,
-        deferred_enabled=has_deferred,
+        material_inputs,
+        view_key~,
+        deferred_enabled=has_deferred_pass,
       )
       if has_prepass {
         try! source_world.set_by_key(
           entity, ecs_key_meshlet_view_materials_prepass, prepass,
         )
       }
-      if has_deferred {
+      if has_deferred_pass {
         try! source_world.set_by_key(
           entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass, deferred,
         )

@@ -45,3 +45,48 @@ test "pbr meshlet: prepare prepass respects deferred toggle" {
   inspect(prepass.len(), content="2")
   inspect(deferred.len(), content="0")
 }
+
+///|
+test "pbr meshlet: main opaque pass filters by renderer method and transmission" {
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(main_opaque, [
+    MeshletPreparedMaterialInput::new(1, 10).with_opaque_render_method(
+      @material.OpaqueRendererMethod::Forward,
+    ),
+    MeshletPreparedMaterialInput::new(2, 11).with_opaque_render_method(
+      @material.OpaqueRendererMethod::Deferred,
+    ),
+    MeshletPreparedMaterialInput::new(3, 12).with_reads_view_transmission_texture(
+      true,
+    ),
+    MeshletPreparedMaterialInput::new(4, 13).with_alpha_mode_opaque(false),
+  ])
+  inspect(main_opaque.len(), content="1")
+}
+
+///|
+test "pbr meshlet: prepass routes deferred materials to deferred bins" {
+  let prepass = MeshletViewMaterialsPrepass::default()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let view_key = MeshletViewMaterialPipelineKey::new(
+    normal_prepass=false,
+    motion_vector_prepass=false,
+    deferred_prepass=true,
+  )
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass,
+    deferred,
+    [
+      MeshletPreparedMaterialInput::new(10, 100).with_opaque_render_method(
+        @material.OpaqueRendererMethod::Deferred,
+      ),
+      MeshletPreparedMaterialInput::new(11, 101).with_opaque_render_method(
+        @material.OpaqueRendererMethod::Forward,
+      ),
+    ],
+    view_key~,
+    deferred_enabled=true,
+  )
+  inspect(prepass.len(), content="0")
+  inspect(deferred.len(), content="1")
+}

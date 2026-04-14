@@ -191,6 +191,32 @@ pub fn InstanceManager::material_present_in_scene(
 }
 
 ///|
+pub fn InstanceManager::material_id_for_asset(
+  self : InstanceManager,
+  material_asset_id : Int,
+) -> Int? {
+  self.material_id_lookup.get(non_negative(material_asset_id))
+}
+
+///|
+pub fn InstanceManager::present_material_asset_ids(
+  self : InstanceManager,
+) -> Array[Int] {
+  let ids = []
+  for material_asset_id in self.material_id_lookup.keys() {
+    match self.material_id_lookup.get(material_asset_id) {
+      Some(material_id) =>
+        if self.material_present_in_scene(material_id) {
+          ids.push(material_asset_id)
+        }
+      None => ()
+    }
+  }
+  ids.sort()
+  ids
+}
+
+///|
 pub fn InstanceManager::present_material_count(self : InstanceManager) -> Int {
   self.material_ids_present_in_scene.length()
 }
