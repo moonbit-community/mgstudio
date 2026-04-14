@@ -62,6 +62,54 @@ pub fn mip_generation_plugin_with(
 pub const REQUIRED_STORAGE_TEXTURES : Int = 12
 
 ///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/mip_generation/mod.rs`
+// (`TEXTURE_FORMATS`).
+pub fn downsample_texture_formats() -> Array[(String, String)] {
+  [
+    ("Rgba8Unorm", "rgba8unorm"),
+    ("Rgba8Snorm", "rgba8snorm"),
+    ("Rgba8Uint", "rgba8uint"),
+    ("Rgba8Sint", "rgba8sint"),
+    ("Rgba16Unorm", "rgba16unorm"),
+    ("Rgba16Snorm", "rgba16snorm"),
+    ("Rgba16Uint", "rgba16uint"),
+    ("Rgba16Sint", "rgba16sint"),
+    ("Rgba16Float", "rgba16float"),
+    ("Rg8Unorm", "rg8unorm"),
+    ("Rg8Snorm", "rg8snorm"),
+    ("Rg8Uint", "rg8uint"),
+    ("Rg8Sint", "rg8sint"),
+    ("Rg16Unorm", "rg16unorm"),
+    ("Rg16Snorm", "rg16snorm"),
+    ("Rg16Uint", "rg16uint"),
+    ("Rg16Sint", "rg16sint"),
+    ("Rg16Float", "rg16float"),
+    ("R32Uint", "r32uint"),
+    ("R32Sint", "r32sint"),
+    ("R32Float", "r32float"),
+    ("Rg32Uint", "rg32uint"),
+    ("Rg32Sint", "rg32sint"),
+    ("Rg32Float", "rg32float"),
+    ("Rgba32Uint", "rgba32uint"),
+    ("Rgba32Sint", "rgba32sint"),
+    ("Rgba32Float", "rgba32float"),
+    ("Bgra8Unorm", "bgra8unorm"),
+    ("R8Unorm", "r8unorm"),
+    ("R8Snorm", "r8snorm"),
+    ("R8Uint", "r8uint"),
+    ("R8Sint", "r8sint"),
+    ("R16Unorm", "r16unorm"),
+    ("R16Snorm", "r16snorm"),
+    ("R16Uint", "r16uint"),
+    ("R16Sint", "r16sint"),
+    ("R16Float", "r16float"),
+    ("Rgb10a2Unorm", "rgb10a2unorm"),
+    ("Rgb10a2Uint", "rgb10a2uint"),
+    ("Rg11b10Ufloat", "rg11b10ufloat"),
+  ]
+}
+
+///|
 pub struct DownsampleShaders {
   depth_shader_path : String
   general_shader_count : Int
@@ -69,7 +117,9 @@ pub struct DownsampleShaders {
 
 ///|
 pub fn DownsampleShaders::default() -> DownsampleShaders {
-  DownsampleShaders::new(general_shader_count=40)
+  DownsampleShaders::new(
+    general_shader_count=downsample_texture_formats().length(),
+  )
 }
 
 ///|

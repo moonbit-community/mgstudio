@@ -42,3 +42,14 @@ test "mip_generation plugin initializes downsample shader registry resource" {
   )
   debug_inspect(shaders.general_shader_count(), content="40")
 }
+
+///|
+test "mip_generation texture format table follows bevy list shape" {
+  let formats = @mip_generation.downsample_texture_formats()
+  debug_inspect(formats.length(), content="40")
+  debug_inspect(formats[0], content="(\"Rgba8Unorm\", \"rgba8unorm\")")
+  debug_inspect(
+    formats[formats.length() - 1],
+    content="(\"Rg11b10Ufloat\", \"rg11b10ufloat\")",
+  )
+}

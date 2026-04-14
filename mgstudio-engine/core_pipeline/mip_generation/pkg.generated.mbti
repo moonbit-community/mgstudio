@@ -12,6 +12,8 @@ import {
 // Values
 pub const REQUIRED_STORAGE_TEXTURES : Int = 12
 
+pub fn downsample_texture_formats() -> Array[(String, String)]
+
 pub let ecs_key_downsample_shaders : @ecs.ResourceKey[DownsampleShaders]
 
 pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs]
