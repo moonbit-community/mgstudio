@@ -480,12 +480,28 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
     )
   }
   let instance_count = meshlet_instance_count_from_world(world)
+  let view_count = match
+    (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+    Some(manager) => manager.prepared_view_resource_count()
+    None => 0
+  }
+  let pipelines_ready = match
+    (try! world.get_resource(ecs_key_meshlet_pipelines)) {
+    Some(pipelines) => meshlet_pipelines_ready(pipelines)
+    None => false
+  }
   match
     (try! world.get_resource_ref_mut(
       ecs_key_meshlet_visibility_buffer_raster_state,
     )) {
     Some(state_ref) =>
-      meshlet_visibility_buffer_raster(state_ref.val, instance_count)
+      meshlet_visibility_buffer_raster(
+        state_ref.val,
+        instance_count,
+        view_count~,
+        shadow_view_count=0,
+        pipelines_ready~,
+      )
     None => ()
   }
 }

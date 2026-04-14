@@ -19,3 +19,20 @@ test "pbr meshlet: visibility node keeps zero draw count when runtime unavailabl
   inspect(state.enabled(), content="false")
   inspect(state.last_draw_count(), content="0")
 }
+
+///|
+test "pbr meshlet: visibility node tracks first/second pass and resolve counters" {
+  let state = meshlet_visibility_buffer_raster_state_with_enabled(true)
+  meshlet_visibility_buffer_raster(
+    state,
+    12,
+    view_count=3,
+    shadow_view_count=4,
+    pipelines_ready=true,
+  )
+  inspect(state.last_draw_count(), content="12")
+  inspect(state.first_pass_draw_count(), content="12")
+  inspect(state.second_pass_draw_count(), content="12")
+  inspect(state.resolve_depth_count(), content="7")
+  inspect(state.resolve_material_depth_count(), content="3")
+}
