@@ -27,16 +27,18 @@ pub fn[R, F] ExtractResourcePlugin::default() -> ExtractResourcePlugin[R, F] {
 }
 
 ///|
-pub impl[R, F] @app.PluginReplacement for ExtractResourcePlugin[R, F] with plugin_name(
-  _self,
-) {
+pub impl[R : @app.Resource, F] @app.PluginReplacement for ExtractResourcePlugin[
+  R,
+  F,
+] with plugin_name(_self) {
   EXTRACT_RESOURCE_PLUGIN_NAME
 }
 
 ///|
-pub impl[R, F] @app.PluginReplacement for ExtractResourcePlugin[R, F] with world_plugin(
-  self,
-) {
+pub impl[R : @app.Resource, F] @app.PluginReplacement for ExtractResourcePlugin[
+  R,
+  F,
+] with world_plugin(self) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     extract_resource_plugin_with(app, self)
   }
@@ -73,6 +75,19 @@ pub fn[R, S] extract_resource_once(source : S, extract : (S) -> R) -> R {
 }
 
 ///|
+fn[R] extract_resource_system(
+  render_world : @ecs.World,
+  resource_key : @ecs.ResourceKey[R],
+) -> Unit {
+  let main_world = render_source_world(render_world)
+  match (main_world.get_resource(resource_key) catch { _ => None }) {
+    Some(main_resource) =>
+      render_world.insert_resource(resource_key, main_resource)
+    None => ()
+  }
+}
+
+///|
 pub fn extract_resource_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
@@ -80,12 +95,21 @@ pub fn extract_resource_plugin(
 }
 
 ///|
-pub fn[R, F] extract_resource_plugin_with(
+pub fn[R : @app.Resource, F] extract_resource_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ExtractResourcePlugin[R, F],
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  render_plugin(app)
+  let next = render_plugin(app)
+  let resource_key = R::resource()
+  with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
+    sub_app.add_systems(
+      render_schedule_stage(),
+      @app.system(fn(render_world : @ecs.World) -> Unit {
+        extract_resource_system(render_world, resource_key)
+      }).in_set(render_system_set_extract_commands),
+    )
+  })
 }
 
 ///|

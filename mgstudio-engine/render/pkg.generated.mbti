@@ -101,7 +101,7 @@ pub fn[R, S] extract_resource_once(S, (S) -> R) -> R
 
 pub fn extract_resource_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[R, F] extract_resource_plugin_with(@app.App[@ecs.World], ExtractResourcePlugin[R, F]) -> @app.App[@ecs.World]
+pub fn[R : @app.Resource, F] extract_resource_plugin_with(@app.App[@ecs.World], ExtractResourcePlugin[R, F]) -> @app.App[@ecs.World]
 
 pub fn extract_resource_source_world(@ecs.World) -> @ecs.World
 
@@ -407,7 +407,7 @@ pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugi
 pub struct ExtractResourcePlugin[_, _] {
 }
 pub fn[R, F] ExtractResourcePlugin::default() -> Self[R, F]
-pub impl[R, F] @app.PluginReplacement for ExtractResourcePlugin[R, F]
+pub impl[R : @app.Resource, F] @app.PluginReplacement for ExtractResourcePlugin[R, F]
 
 pub struct ExtractedAssets[A] {
   extracted : Array[(Int, A)]
