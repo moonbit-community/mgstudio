@@ -10,8 +10,6 @@ import {
 // Values
 pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
 
-pub let ecs_key_occlusion_culling_runtime_state : @ecs.ResourceKey[OcclusionCullingRuntimeState]
-
 pub fn occlusion_culling_mesh3d_gpu_culling_supported() -> Bool
 
 pub fn occlusion_culling_mesh3d_indirect_first_instance_supported() -> Bool
@@ -36,15 +34,6 @@ pub struct OcclusionCullingPlugin {
 }
 pub fn OcclusionCullingPlugin::default() -> Self
 pub impl @app.PluginReplacement for OcclusionCullingPlugin
-
-pub struct OcclusionCullingRuntimeState {
-  mut subview_count : Int
-  mut subview_entity_count : Int
-}
-pub fn OcclusionCullingRuntimeState::clear(Self) -> Unit
-pub fn OcclusionCullingRuntimeState::default() -> Self
-pub fn OcclusionCullingRuntimeState::record_subview(Self, entity_count~ : Int) -> Unit
-pub impl @app.Resource for OcclusionCullingRuntimeState
 
 pub struct OcclusionCullingSubview {
   depth_texture_view_id : Int

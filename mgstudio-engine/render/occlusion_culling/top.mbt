@@ -55,7 +55,7 @@ pub fn occlusion_culling_plugin_with(
   plugin : OcclusionCullingPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { OcclusionCullingRuntimeState::default() })
+  app
 }
 
 ///|
@@ -135,46 +135,6 @@ pub fn OcclusionCullingSubviewEntities::is_empty(
   self : OcclusionCullingSubviewEntities,
 ) -> Bool {
   self.entity_ids.is_empty()
-}
-
-///|
-pub struct OcclusionCullingRuntimeState {
-  mut subview_count : Int
-  mut subview_entity_count : Int
-}
-
-///|
-pub fn OcclusionCullingRuntimeState::default() -> OcclusionCullingRuntimeState {
-  OcclusionCullingRuntimeState::{ subview_count: 0, subview_entity_count: 0 }
-}
-
-///|
-pub fn OcclusionCullingRuntimeState::clear(
-  self : OcclusionCullingRuntimeState,
-) -> Unit {
-  self.subview_count = 0
-  self.subview_entity_count = 0
-}
-
-///|
-pub fn OcclusionCullingRuntimeState::record_subview(
-  self : OcclusionCullingRuntimeState,
-  entity_count~ : Int,
-) -> Unit {
-  self.subview_count = self.subview_count + 1
-  if entity_count > 0 {
-    self.subview_entity_count = self.subview_entity_count + entity_count
-  }
-}
-
-///|
-pub let ecs_key_occlusion_culling_runtime_state : @ecs.ResourceKey[
-  OcclusionCullingRuntimeState,
-] = @ecs.register_resource(debug_name="render.occlusion_culling.runtime_state")
-
-///|
-pub impl @app.Resource for OcclusionCullingRuntimeState with resource() {
-  ecs_key_occlusion_culling_runtime_state
 }
 
 ///|
