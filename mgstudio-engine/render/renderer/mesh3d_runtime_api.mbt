@@ -172,6 +172,51 @@ pub fn downsample_mesh3d_depth_pyramid(
 }
 
 ///|
+pub fn prewarm_mesh3d_pipeline_variants(
+  mesh_id~ : Int,
+  cull_mode~ : Int,
+  shader_path~ : String?,
+  forward_decal~ : Bool,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    guard find_mesh(backend, mesh_id) is Some(mesh) else {
+      return
+    }
+    let topology = mesh.primitive_topology
+    ignore(
+      mesh3d_pipeline_for_current_pass(
+        backend,
+        false,
+        forward_decal,
+        topology,
+        cull_mode,
+        shader_path,
+      ),
+    ) catch {
+      Fatal(message) =>
+        debug(
+          "[renderer] prewarm_mesh3d_pipeline_variants(opaque): Fatal(\{message})",
+        )
+    }
+    ignore(
+      mesh3d_pipeline_for_current_pass(
+        backend,
+        true,
+        forward_decal,
+        topology,
+        cull_mode,
+        shader_path,
+      ),
+    ) catch {
+      Fatal(message) =>
+        debug(
+          "[renderer] prewarm_mesh3d_pipeline_variants(transparent): Fatal(\{message})",
+        )
+    }
+  }
+}
+
+///|
 pub fn draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,

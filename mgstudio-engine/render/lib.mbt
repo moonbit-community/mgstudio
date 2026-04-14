@@ -190,6 +190,21 @@ pub fn host_gpu_downsample_mesh3d_depth_pyramid(
 }
 
 ///|
+pub fn host_gpu_prewarm_mesh3d_pipeline_variants(
+  mesh_id~ : Int,
+  cull_mode~ : Int,
+  shader_path~ : String?,
+  forward_decal~ : Bool,
+) -> Unit {
+  @renderer.host_gpu_prewarm_mesh3d_pipeline_variants(
+    mesh_id~,
+    cull_mode~,
+    shader_path~,
+    forward_decal~,
+  )
+}
+
+///|
 pub fn host_gpu_begin_pass(
   target_id~ : Int,
   width~ : Int,
