@@ -62,7 +62,7 @@ fn render3d_build_camera_queue_entry(
     gpu_culling_supported,
     camera.no_indirect_drawing,
   )
-  let draw_queue_entry = render3d_make_fallback_gpu_preprocess_queue_entry(
+  let draw_queue_entry = render3d_build_gpu_preprocess_queue_entry(
     render3d_queue_mesh_phase_items(
       meshes,
       camera.layers,

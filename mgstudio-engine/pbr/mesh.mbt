@@ -527,7 +527,7 @@ fn render3d_visibility_range_visible(
   mesh_transform : @transform.Transform,
   mesh_aabb_center_world : @math.Vec3?,
 ) -> Bool {
-  let mesh_position = if visibility_range.use_aabb {
+  let mesh_position = if visibility_range.use_aabb() {
     match mesh_aabb_center_world {
       Some(center) => center
       None => mesh_transform.translation
@@ -537,12 +537,7 @@ fn render3d_visibility_range_visible(
   }
   let to_mesh = mesh_position.sub(camera_transform.translation)
   let distance = to_mesh.length()
-  let near_bound = visibility_range.start_margin_min
-  let far_bound = visibility_range.end_margin_max
-  if far_bound < near_bound {
-    return false
-  }
-  distance >= near_bound && distance < far_bound
+  visibility_range.is_visible_at_all(distance)
 }
 
 ///|

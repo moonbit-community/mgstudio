@@ -499,7 +499,7 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
 }
 
 ///|
-fn render3d_make_fallback_gpu_preprocess_queue_entry(
+fn render3d_build_gpu_preprocess_queue_entry(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],

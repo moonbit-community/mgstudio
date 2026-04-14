@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/primitives"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+}
+
+// Values
+pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
+
+pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
+
+// Errors
+
+// Types and methods
+pub struct Aabb {
+  inner : @math.Aabb3d
+}
+pub fn Aabb::center(Self) -> @math.Vec3
+pub fn Aabb::from_math(@math.Aabb3d) -> Self
+pub fn Aabb::from_min_max(@math.Vec3, @math.Vec3) -> Self
+pub fn Aabb::half_size(Self) -> @math.Vec3
+pub fn Aabb::to_math(Self) -> @math.Aabb3d
+pub impl @ecs.Component for Aabb
+
+// Type aliases
+pub using @math {type BoundingSphere as Sphere}
+
+// Traits
+pub(open) trait MeshAabb {
+  compute_aabb(Self) -> Aabb?
+}
+pub impl MeshAabb for @mesh.Mesh
+pub impl MeshAabb for @mesh.Mesh3dGeometry
+
