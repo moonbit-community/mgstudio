@@ -181,6 +181,18 @@ pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(
 }
 
 ///|
+pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(
+  self : MeshletViewMaterialPipelineKey,
+  deferred_prepass : Bool,
+) -> MeshletViewMaterialPipelineKey {
+  MeshletViewMaterialPipelineKey::{
+    ..self,
+    depth_prepass: false,
+    deferred_prepass,
+  }
+}
+
+///|
 pub struct MeshletPreparedMaterialInput {
   material_id : Int
   material_asset_id : Int
@@ -389,6 +401,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
     let material_wants_deferred = material_input.opaque_render_method
       is @material.OpaqueRendererMethod::Deferred
     if deferred_enabled && view_key.deferred_prepass && material_wants_deferred {
+      let prepass_view_key = view_key.for_meshlet_prepass(true)
       if queued_deferred_material_ids.get(material_input.material_id) is Some(_) {
         continue
       }
@@ -396,7 +409,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
       let pipeline_id = meshlet_material_pipeline_id(
         3000,
         3,
-        view_key.with_deferred_prepass(true),
+        prepass_view_key,
         material_input.material_asset_id,
       )
       deferred_prepass_materials.push(
@@ -415,10 +428,11 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
       continue
     }
     queued_prepass_material_ids.set(material_input.material_id, true)
+    let prepass_view_key = view_key.for_meshlet_prepass(false)
     let pipeline_id = meshlet_material_pipeline_id(
       2000,
       2,
-      view_key.with_deferred_prepass(false),
+      prepass_view_key,
       material_input.material_asset_id,
     )
     prepass_materials.push(

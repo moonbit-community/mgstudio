@@ -134,3 +134,45 @@ test "pbr meshlet: prepass deduplicates material ids per pass" {
   inspect(prepass.len(), content="1")
   inspect(deferred.len(), content="1")
 }
+
+///|
+test "pbr meshlet: prepass pipeline key ignores depth-prepass bit" {
+  let prepass_a = MeshletViewMaterialsPrepass::default()
+  let deferred_a = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass_b = MeshletViewMaterialsPrepass::default()
+  let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let inputs = [
+    MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
+      @material.OpaqueRendererMethod::Forward,
+    ),
+  ]
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass_a,
+    deferred_a,
+    inputs,
+    view_key=MeshletViewMaterialPipelineKey::new(
+      normal_prepass=true,
+      depth_prepass=false,
+      motion_vector_prepass=false,
+      deferred_prepass=false,
+    ),
+    deferred_enabled=false,
+  )
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass_b,
+    deferred_b,
+    inputs,
+    view_key=MeshletViewMaterialPipelineKey::new(
+      normal_prepass=true,
+      depth_prepass=true,
+      motion_vector_prepass=false,
+      deferred_prepass=false,
+    ),
+    deferred_enabled=false,
+  )
+  inspect(prepass_a.len(), content="1")
+  inspect(prepass_b.len(), content="1")
+  let pipeline_a = prepass_a.entries[0].1
+  let pipeline_b = prepass_b.entries[0].1
+  inspect(pipeline_a == pipeline_b, content="true")
+}
