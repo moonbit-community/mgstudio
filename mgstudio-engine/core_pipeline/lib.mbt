@@ -73,6 +73,10 @@ pub using @fullscreen_vertex_shader {type FullscreenShader}
 pub using @skybox {type Skybox}
 
 ///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/tonemapping/mod.rs`.
+pub using @tonemapping {type TonemappingLuts}
+
+///|
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @deferred.ecs_key_deferred_prepass
 
 ///|
@@ -89,6 +93,16 @@ pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_3d.ecs_key_msaa
 
 ///|
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @prepass.ecs_key_normal_prepass
+
+///|
+pub let ecs_key_tonemapping_luts : @ecs.ResourceKey[TonemappingLuts] = @tonemapping.ecs_key_tonemapping_luts
+
+///|
+pub fn tonemapping_luts_from_world_or_init(
+  world : @ecs.World,
+) -> TonemappingLuts {
+  @tonemapping.tonemapping_luts_from_world_or_init(world)
+}
 
 ///|
 fn core_pipeline_configure_render_sub_app(

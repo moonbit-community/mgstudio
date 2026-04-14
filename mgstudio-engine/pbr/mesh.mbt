@@ -108,15 +108,11 @@ pub fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
 ///|
 struct Render3dInternalAssetsState {
   mut skybox_proxy_mesh : @asset.Handle[@mesh.Mesh]?
-  mut tonemapping_luts : Render3dTonemappingLutHandles?
 }
 
 ///|
 fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
-  Render3dInternalAssetsState::{
-    skybox_proxy_mesh: None,
-    tonemapping_luts: None,
-  }
+  Render3dInternalAssetsState::{ skybox_proxy_mesh: None }
 }
 
 ///|
@@ -142,21 +138,6 @@ fn render3d_internal_assets_ref_or_abort(
       abort(
         "render3d internal assets resource is missing after lazy initialization",
       )
-  }
-}
-
-///|
-fn render3d_asset_server_from_world_or_abort(
-  world : @ecs.World,
-) -> @asset.AssetServer {
-  let key : @ecs.ResourceKey[@asset.AssetServer] = @asset.asset_server_resource_key()
-  if (try! world.get_resource(key)) is None {
-    world.insert_resource(key, @asset.AssetServer::new())
-  }
-  match (try! world.get_resource(key)) {
-    Some(asset_server) => asset_server
-    None =>
-      abort("render3d failed to initialize or acquire AssetServer resource")
   }
 }
 

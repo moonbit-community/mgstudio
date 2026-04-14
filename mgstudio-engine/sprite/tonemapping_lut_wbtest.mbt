@@ -23,29 +23,28 @@ fn render2d_test_world_with_asset_server() -> @ecs.World {
 }
 
 ///|
-test "render2d: tonemapping LUT cache is stored per world render state" {
+test "render2d: tonemapping LUT handles are stored per world core_pipeline resource" {
   let world_a = render2d_test_world_with_asset_server()
   let world_b = render2d_test_world_with_asset_server()
 
-  ensure_render_state_resource(world_a)
-  ensure_render_state_resource(world_b)
   debug_inspect(
-    render_state_ref(world_a).unwrap().tonemapping_lut_handles is None,
+    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
     content="true",
   )
   debug_inspect(
-    render_state_ref(world_b).unwrap().tonemapping_lut_handles is None,
+    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
     content="true",
   )
 
-  render2d_tonemapping_lut_handles(world_a) |> ignore
+  @core_pipeline.tonemapping_luts_from_world_or_init(world_a) |> ignore
 
   debug_inspect(
-    render_state_ref(world_a).unwrap().tonemapping_lut_handles is Some(_),
+    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts))
+    is Some(_),
     content="true",
   )
   debug_inspect(
-    render_state_ref(world_b).unwrap().tonemapping_lut_handles is None,
+    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
     content="true",
   )
 }

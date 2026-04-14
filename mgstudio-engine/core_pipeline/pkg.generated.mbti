@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/core_pipeline/prepass",
   "Milky2018/mgstudio/core_pipeline/skybox",
+  "Milky2018/mgstudio/core_pipeline/tonemapping",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
 }
@@ -59,6 +60,8 @@ pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[@prepass.NormalPrepass]
 
+pub let ecs_key_tonemapping_luts : @ecs.ResourceKey[@tonemapping.TonemappingLuts]
+
 pub fn fullscreen_material_bind_group_for_source_a(FullscreenMaterialBindGroupState, source_texture_view_id~ : Int) -> Bool
 
 pub fn fullscreen_material_bind_group_for_source_b(FullscreenMaterialBindGroupState, source_texture_view_id~ : Int) -> Bool
@@ -78,6 +81,8 @@ pub fn fullscreen_material_requires_bind_group_build(FullscreenMaterialPrepareVi
 pub fn fullscreen_material_requires_bind_group_update(FullscreenMaterialPrepareViewState, FullscreenMaterialBindGroupState) -> Bool
 
 pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShader
+
+pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.TonemappingLuts
 
 // Errors
 
@@ -169,6 +174,8 @@ pub using @core_3d {type Msaa}
 pub using @prepass {type NormalPrepass}
 
 pub using @skybox {type Skybox}
+
+pub using @tonemapping {type TonemappingLuts}
 
 // Traits
 

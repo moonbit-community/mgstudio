@@ -2683,15 +2683,6 @@ pub fn render2d_draw_bloom_overlay(
 }
 
 ///|
-const TONEMAPPING_LUT_AGX_PATH : String = "textures/tonemapping/AgX-default_contrast.ktx2"
-
-///|
-const TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface.ktx2"
-
-///|
-const TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
-
-///|
 const MESH2D_SHADER_PATH : String = "sprite_render/mesh2d/mesh2d.wgsl"
 
 ///|
@@ -2705,21 +2696,6 @@ const SPRITE_SHADER_PATH : String = "sprite_render/render/sprite.wgsl"
 
 ///|
 const SPRITE_VIEW_BINDINGS_PATH : String = "sprite_render/render/sprite_view_bindings.wgsl"
-
-///|
-fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
-  let key : @ecs.ResourceKey[@asset.AssetServer] = @asset.asset_server_resource_key()
-  if (try! world.get_resource(key)) is None {
-    world.insert_resource(key, @asset.AssetServer::new())
-  }
-  match (try! world.get_resource(key)) {
-    Some(asset_server) => asset_server
-    None =>
-      abort(
-        "Render2dPlugin failed to initialize or acquire AssetServer resource",
-      )
-  }
-}
 
 ///|
 fn render2d_shader_asset_paths() -> Array[String] {
@@ -2765,13 +2741,6 @@ fn register_render2d_shader_sources(world : @ecs.World) -> Unit {
 }
 
 ///|
-priv struct TonemappingLutHandles {
-  agx : @asset.Handle[@asset.Image]
-  tony : @asset.Handle[@asset.Image]
-  blender : @asset.Handle[@asset.Image]
-}
-
-///|
 priv struct Render2dCameraPostprocessPlan {
   uses_intermediate_source : Bool
   apply_bloom_before_tonemapping : Bool
@@ -2798,29 +2767,6 @@ fn render2d_camera_postprocess_plan(
 }
 
 ///|
-fn render2d_tonemapping_lut_handles(
-  world : @ecs.World,
-) -> TonemappingLutHandles {
-  ensure_render_state_resource(world)
-  if render_state_ref(world) is Some(state) {
-    if state.tonemapping_lut_handles is Some(handles) {
-      return handles
-    }
-  }
-  let asset_server = render2d_asset_server_or_abort(world)
-  let handles = TonemappingLutHandles::{
-    agx: asset_server.load(TONEMAPPING_LUT_AGX_PATH),
-    tony: asset_server.load(TONEMAPPING_LUT_TONY_PATH),
-    blender: asset_server.load(TONEMAPPING_LUT_BLENDER_PATH),
-  }
-  render_state_update(world, fn(state) {
-    state.val.tonemapping_lut_handles = Some(handles)
-  })
-  |> ignore
-  handles
-}
-
-///|
 fn render2d_draw_camera_tonemapping(
   world : @ecs.World,
   source : @asset.Handle[@asset.Image],
@@ -2833,7 +2779,7 @@ fn render2d_draw_camera_tonemapping(
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let luts = render2d_tonemapping_lut_handles(world)
+  let luts = @core_pipeline.tonemapping_luts_from_world_or_init(world)
   let color_grading_uniform = @render.host_color_grading_from_post_process(
     color_grading,
   )
@@ -2845,8 +2791,8 @@ fn render2d_draw_camera_tonemapping(
     view_width=view_width_logical,
     view_height=view_height_logical,
     agx_lut_texture_id=luts.agx.id(),
-    tony_lut_texture_id=luts.tony.id(),
-    blender_lut_texture_id=luts.blender.id(),
+    tony_lut_texture_id=luts.tony_mc_mapface.id(),
+    blender_lut_texture_id=luts.blender_filmic.id(),
     color_grading=color_grading_uniform,
   )
 }
@@ -3150,7 +3096,6 @@ priv struct PostProcessIntermediateTargetInfo {
 struct RenderState {
   mut draw_enabled : Bool
   mut primary_camera : @core.Entity
-  mut tonemapping_lut_handles : TonemappingLutHandles?
   sprites : Array[ExtractedSprite]
   extra_sprites : Array[ExtractedSprite]
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch]
@@ -3188,7 +3133,6 @@ fn RenderState::new() -> RenderState {
   RenderState::{
     draw_enabled: false,
     primary_camera: @core.Entity::placeholder(),
-    tonemapping_lut_handles: None,
     sprites: [],
     extra_sprites: [],
     extra_sprite_slice_batches: [],

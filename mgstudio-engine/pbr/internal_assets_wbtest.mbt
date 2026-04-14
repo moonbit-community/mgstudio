@@ -38,11 +38,11 @@ test "render3d: internal assets are stored per world resource" {
     content="true",
   )
   debug_inspect(
-    render3d_internal_assets_ref(world_a).unwrap().val.tonemapping_luts is None,
+    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
     content="true",
   )
   debug_inspect(
-    render3d_internal_assets_ref(world_b).unwrap().val.tonemapping_luts is None,
+    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
     content="true",
   )
 
@@ -61,12 +61,12 @@ test "render3d: internal assets are stored per world resource" {
     content="true",
   )
   debug_inspect(
-    render3d_internal_assets_ref(world_a).unwrap().val.tonemapping_luts
+    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts))
     is Some(_),
     content="true",
   )
   debug_inspect(
-    render3d_internal_assets_ref(world_b).unwrap().val.tonemapping_luts is None,
+    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
     content="true",
   )
 }

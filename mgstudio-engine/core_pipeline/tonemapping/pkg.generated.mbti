@@ -3,7 +3,9 @@ package "Milky2018/mgstudio/core_pipeline/tonemapping"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/post_process",
   "moonbitlang/core/debug",
 }
@@ -17,6 +19,8 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
+pub let ecs_key_tonemapping_luts : @ecs.ResourceKey[TonemappingLuts]
+
 pub let ecs_key_tonemapping_pipeline_key : @ecs.ResourceKey[TonemappingPipelineKey]
 
 pub fn tonemapping_bind_group_cache_hit(TonemappingBindGroupCacheState, view_uniform_buffer_id~ : Int, source_texture_view_id~ : Int, lut_texture_view_id~ : Int, fallback_lut_texture_view_id~ : Int, String) -> Bool
@@ -26,6 +30,8 @@ pub fn tonemapping_bind_group_cache_record(TonemappingBindGroupCacheState, view_
 pub fn tonemapping_bind_group_cache_tonemapping_changed(TonemappingBindGroupCacheState, String) -> Bool
 
 pub fn tonemapping_is_enabled(@post_process.Tonemapping) -> Bool
+
+pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> TonemappingLuts
 
 pub fn tonemapping_pipeline_key_shader_defs(TonemappingPipelineKey) -> Array[String]
 
@@ -47,6 +53,14 @@ pub struct TonemappingBindGroupCacheState {
   last_tonemapping_method : String
 }
 pub fn TonemappingBindGroupCacheState::new(has_cached_bind_group? : Bool, cached_view_uniform_buffer_id? : Int, cached_source_texture_view_id? : Int, cached_lut_texture_view_id? : Int, has_last_tonemapping_method? : Bool, last_tonemapping_method? : String) -> Self
+
+pub struct TonemappingLuts {
+  blender_filmic : @asset.Handle[@image.Image]
+  agx : @asset.Handle[@image.Image]
+  tony_mc_mapface : @asset.Handle[@image.Image]
+}
+pub fn TonemappingLuts::from_asset_server(@asset.AssetServer) -> Self
+pub impl @app.Resource for TonemappingLuts
 
 pub struct TonemappingNode {
   label : String

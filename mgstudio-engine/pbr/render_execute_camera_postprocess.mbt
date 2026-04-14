@@ -623,37 +623,10 @@ fn render3d_vignette_enabled(vignette : Vignette?) -> Bool {
 }
 
 ///|
-const RENDER3D_TONEMAPPING_LUT_AGX_PATH : String = "textures/tonemapping/AgX-default_contrast.ktx2"
-
-///|
-const RENDER3D_TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface.ktx2"
-
-///|
-const RENDER3D_TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
-
-///|
-priv struct Render3dTonemappingLutHandles {
-  agx : @asset.Handle[@asset.Image]
-  tony : @asset.Handle[@asset.Image]
-  blender : @asset.Handle[@asset.Image]
-}
-
-///|
 fn render3d_tonemapping_lut_handles(
   world : @ecs.World,
-) -> Render3dTonemappingLutHandles {
-  let internal_assets = render3d_internal_assets_ref_or_abort(world)
-  if internal_assets.val.tonemapping_luts is Some(handles) {
-    return handles
-  }
-  let asset_server = render3d_asset_server_from_world_or_abort(world)
-  let handles = Render3dTonemappingLutHandles::{
-    agx: asset_server.load(RENDER3D_TONEMAPPING_LUT_AGX_PATH),
-    tony: asset_server.load(RENDER3D_TONEMAPPING_LUT_TONY_PATH),
-    blender: asset_server.load(RENDER3D_TONEMAPPING_LUT_BLENDER_PATH),
-  }
-  internal_assets.val.tonemapping_luts = Some(handles)
-  handles
+) -> @core_pipeline.TonemappingLuts {
+  @core_pipeline.tonemapping_luts_from_world_or_init(world)
 }
 
 ///|
@@ -1097,8 +1070,8 @@ fn render3d_draw_camera_tonemapping_stage(
     view_width=view_width_logical,
     view_height=view_height_logical,
     agx_lut_texture_id=luts.agx.id(),
-    tony_lut_texture_id=luts.tony.id(),
-    blender_lut_texture_id=luts.blender.id(),
+    tony_lut_texture_id=luts.tony_mc_mapface.id(),
+    blender_lut_texture_id=luts.blender_filmic.id(),
     color_grading=color_grading_uniform,
   )
 }

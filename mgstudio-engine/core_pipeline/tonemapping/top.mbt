@@ -40,6 +40,62 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @post_process.ecs
 pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
 
 ///|
+const TONEMAPPING_LUT_BLENDER_FILMIC_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
+
+///|
+const TONEMAPPING_LUT_AGX_PATH : String = "textures/tonemapping/AgX-default_contrast.ktx2"
+
+///|
+const TONEMAPPING_LUT_TONY_MC_MAPFACE_PATH : String = "textures/tonemapping/tony_mc_mapface.ktx2"
+
+///|
+pub struct TonemappingLuts {
+  blender_filmic : @asset.Handle[@asset.Image]
+  agx : @asset.Handle[@asset.Image]
+  tony_mc_mapface : @asset.Handle[@asset.Image]
+}
+
+///|
+pub fn TonemappingLuts::from_asset_server(
+  asset_server : @asset.AssetServer,
+) -> TonemappingLuts {
+  TonemappingLuts::{
+    blender_filmic: asset_server.load(TONEMAPPING_LUT_BLENDER_FILMIC_PATH),
+    agx: asset_server.load(TONEMAPPING_LUT_AGX_PATH),
+    tony_mc_mapface: asset_server.load(TONEMAPPING_LUT_TONY_MC_MAPFACE_PATH),
+  }
+}
+
+///|
+pub let ecs_key_tonemapping_luts : @ecs.ResourceKey[TonemappingLuts] = @ecs.register_resource(
+  debug_name="mgstudio_core_pipeline::TonemappingLuts",
+)
+
+///|
+pub impl @app.Resource for TonemappingLuts with resource() {
+  ecs_key_tonemapping_luts
+}
+
+///|
+pub fn tonemapping_luts_from_world_or_init(
+  world : @ecs.World,
+) -> TonemappingLuts {
+  match (try! world.get_resource(ecs_key_tonemapping_luts)) {
+    Some(luts) => luts
+    None => {
+      let luts = TonemappingLuts::from_asset_server(@asset.AssetServer::new())
+      world.insert_resource(ecs_key_tonemapping_luts, luts)
+      luts
+    }
+  }
+}
+
+///|
+fn tonemapping_ensure_luts_startup(world : @ecs.World) -> Unit {
+  tonemapping_luts_from_world_or_init(world) |> ignore
+}
+
+///|
 pub fn tonemapping_is_enabled(tonemapping : Tonemapping) -> Bool {
   tonemapping != Tonemapping::None
 }
@@ -152,7 +208,9 @@ pub fn tonemapping_plugin_with(
   plugin : TonemappingPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { TonemappingPipelineKey::default() })
+  app
+  .init_resource(fn() { TonemappingPipelineKey::default() })
+  .add_systems(@app.Startup, @app.system(tonemapping_ensure_luts_startup))
 }
 
 ///|
