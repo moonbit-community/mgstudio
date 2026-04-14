@@ -65,6 +65,11 @@ let meshlet_render3d_set_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let meshlet_render3d_set_prepare_resources_flush : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.prepare_resources_flush",
+)
+
+///|
 let meshlet_render3d_set_prepare_meshes : @app.SystemSet = @app.system_set(
   "mgstudio.render3d.prepare_meshes",
 )
@@ -199,6 +204,63 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn meshlet_collect_prepass_view_entities(
+  source_world : @ecs.World,
+) -> Array[@core.Entity] {
+  let prepass_views : Array[@core.Entity] = []
+  source_world.for_each_component(
+    @core_pipeline.ecs_key_normal_prepass,
+    fn(entity, _normal_prepass) { prepass_views.push(entity) },
+  )
+  source_world.for_each_component(
+    @core_pipeline.ecs_key_motion_vector_prepass,
+    fn(entity, _motion_vector_prepass) { prepass_views.push(entity) },
+  )
+  source_world.for_each_component(
+    @core_pipeline.ecs_key_deferred_prepass,
+    fn(entity, _deferred_prepass) { prepass_views.push(entity) },
+  )
+  prepass_views
+}
+
+///|
+fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let prepass_views = meshlet_collect_prepass_view_entities(source_world)
+  let msaa_off_views : Array[@core.Entity] = []
+  source_world.for_each_component(@core_pipeline.ecs_key_msaa, fn(entity, msaa) {
+    if msaa is @core_pipeline.Msaa::Off {
+      msaa_off_views.push(entity)
+    }
+  })
+  for view_entity in msaa_off_views {
+    try! source_world.set_by_key(
+      view_entity,
+      ecs_key_meshlet_view_materials_main_opaque_pass,
+      MeshletViewMaterialsMainOpaquePass::default(),
+    )
+    let mut has_prepass = false
+    for prepass_view_entity in prepass_views {
+      if prepass_view_entity == view_entity {
+        has_prepass = true
+      }
+    }
+    if has_prepass {
+      try! source_world.set_by_key(
+        view_entity,
+        ecs_key_meshlet_view_materials_prepass,
+        MeshletViewMaterialsPrepass::default(),
+      )
+      try! source_world.set_by_key(
+        view_entity,
+        ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+        MeshletViewMaterialsDeferredGBufferPrepass::default(),
+      )
+    }
+  }
+}
+
+///|
 fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
   let instance_count = match
     (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
@@ -286,6 +348,12 @@ fn meshlet_configure_render_sub_app(
   )
   .add_systems(
     @app.PostUpdate,
+    @app.system(meshlet_configure_views_system).in_set(
+      meshlet_render3d_set_prepare_resources_flush,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
     @app.system(meshlet_prepare_resources_system).in_set(
       meshlet_render3d_set_prepare_resources,
     ),
@@ -301,6 +369,9 @@ fn meshlet_configure_render_sub_app(
     @app.system(meshlet_queue_material_meshes_system).in_set(meshlet_render3d_set_queue),
   )
   .configure_set(@app.PostUpdate, meshlet_render3d_set_extract, before=[
+    meshlet_render3d_set_prepare_resources_flush,
+  ])
+  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_resources_flush, before=[
     meshlet_render3d_set_prepare_resources,
   ])
   .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_resources, before=[

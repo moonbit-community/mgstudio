@@ -21,6 +21,13 @@ pub struct MeshletViewMaterialsMainOpaquePass {
 }
 
 ///|
+pub let ecs_key_meshlet_view_materials_main_opaque_pass : @ecs.ComponentKey[
+  MeshletViewMaterialsMainOpaquePass,
+] = @ecs.register_component(
+  debug_name="render3d.meshlet_view_materials_main_opaque_pass",
+)
+
+///|
 pub fn MeshletViewMaterialsMainOpaquePass::default() -> MeshletViewMaterialsMainOpaquePass {
   MeshletViewMaterialsMainOpaquePass::{ entries: [] }
 }
@@ -46,6 +53,11 @@ pub struct MeshletViewMaterialsPrepass {
 }
 
 ///|
+pub let ecs_key_meshlet_view_materials_prepass : @ecs.ComponentKey[
+  MeshletViewMaterialsPrepass,
+] = @ecs.register_component(debug_name="render3d.meshlet_view_materials_prepass")
+
+///|
 pub fn MeshletViewMaterialsPrepass::default() -> MeshletViewMaterialsPrepass {
   MeshletViewMaterialsPrepass::{ entries: [] }
 }
@@ -69,6 +81,13 @@ pub fn MeshletViewMaterialsPrepass::len(
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
   entries : Array[(Int, Int, Int)]
 }
+
+///|
+pub let ecs_key_meshlet_view_materials_deferred_gbuffer_prepass : @ecs.ComponentKey[
+  MeshletViewMaterialsDeferredGBufferPrepass,
+] = @ecs.register_component(
+  debug_name="render3d.meshlet_view_materials_deferred_gbuffer_prepass",
+)
 
 ///|
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> MeshletViewMaterialsDeferredGBufferPrepass {
@@ -99,4 +118,19 @@ pub fn meshlet_material_prepare_entry_count(
   main_opaque.entries.length() +
   prepass.entries.length() +
   deferred_prepass.entries.length()
+}
+
+///|
+pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass with component() {
+  ecs_key_meshlet_view_materials_main_opaque_pass
+}
+
+///|
+pub impl @ecs.Component for MeshletViewMaterialsPrepass with component() {
+  ecs_key_meshlet_view_materials_prepass
+}
+
+///|
+pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass with component() {
+  ecs_key_meshlet_view_materials_deferred_gbuffer_prepass
 }

@@ -111,3 +111,66 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
     )
   }
 }
+
+///|
+test "pbr meshlet: configure views inserts material components for msaa-off views" {
+  let world = @ecs.World::new()
+  let view_entity = world.spawn()
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_msaa,
+    @core_pipeline.Msaa::Off,
+  )
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_normal_prepass,
+    @core_pipeline.NormalPrepass::default(),
+  )
+  let app = @app.App::new(world)
+  .add_plugin(@render.render_plugin)
+  .add_plugin_typed(MeshletPlugin::default())
+  .update()
+  inspect(
+    (try! app.world().get_by_key(
+      view_entity,
+      ecs_key_meshlet_view_materials_main_opaque_pass,
+    )) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get_by_key(
+      view_entity,
+      ecs_key_meshlet_view_materials_prepass,
+    )) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get_by_key(
+      view_entity,
+      ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+    )) is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "pbr meshlet: configure views skips msaa-enabled views" {
+  let world = @ecs.World::new()
+  let view_entity = world.spawn()
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_msaa,
+    @core_pipeline.Msaa::Sample4,
+  )
+  let app = @app.App::new(world)
+  .add_plugin(@render.render_plugin)
+  .add_plugin_typed(MeshletPlugin::default())
+  .update()
+  inspect(
+    (try! app.world().get_by_key(
+      view_entity,
+      ecs_key_meshlet_view_materials_main_opaque_pass,
+    )) is None,
+    content="true",
+  )
+}
