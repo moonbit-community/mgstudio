@@ -57,3 +57,63 @@ fn scene_init_gltf_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @asset.AssetLoader::new(["gltf", "glb"], scene_load_gltf_root_asset),
   )
 }
+
+///|
+fn scene_registry_from_world(world : @ecs.World) -> SceneAssetRegistryState? {
+  let key : @ecs.ResourceKey[SceneAssetRegistryState] = SceneAssetRegistryState::resource()
+  try! world.get_resource(key)
+}
+
+///|
+fn scene_asset_base_path(asset_path : String) -> String {
+  let (gltf_path, _label) = scene_split_gltf_asset_path(asset_path)
+  @asset.asset_canonical_path(gltf_path)
+}
+
+///|
+fn scene_reload_asset_path(
+  world : @ecs.World,
+  asset_server : @asset.AssetServer,
+  canonical_path : String,
+) -> Unit {
+  guard scene_registry_from_world(world) is Some(registry) else { return }
+
+  let scenes_to_reload : Array[(@asset.Handle[Scene], String)] = []
+  for entry in registry.scene_registry {
+    if scene_asset_base_path(entry.0) == canonical_path {
+      scenes_to_reload.push((entry.1, entry.0))
+    }
+  }
+
+  let animations_to_reload : Array[
+    (@asset.Handle[@animation.AnimationClip], String),
+  ] = []
+  for entry in registry.animation_registry {
+    if scene_asset_base_path(entry.0) == canonical_path {
+      animations_to_reload.push((entry.1, entry.0))
+    }
+  }
+
+  let meshes_to_reload : Array[(@asset.Handle[@mesh.Mesh], String)] = []
+  for entry in registry.mesh_registry {
+    if scene_asset_base_path(entry.0) == canonical_path {
+      meshes_to_reload.push((entry.1, entry.0))
+    }
+  }
+
+  if scenes_to_reload.length() == 0 &&
+    animations_to_reload.length() == 0 &&
+    meshes_to_reload.length() == 0 {
+    return
+  }
+
+  for entry in scenes_to_reload {
+    scene_queue_gltf_request(world, asset_server, entry.0, entry.1)
+  }
+  for entry in animations_to_reload {
+    scene_queue_gltf_animation_request(world, asset_server, entry.0, entry.1)
+  }
+  for entry in meshes_to_reload {
+    scene_queue_gltf_mesh_request(world, asset_server, entry.0, entry.1)
+  }
+}
