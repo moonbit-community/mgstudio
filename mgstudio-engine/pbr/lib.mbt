@@ -100,23 +100,6 @@ pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::PbrPluginRuntimeConfig")
 
 ///|
-pub struct FogPluginState {}
-
-///|
-pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::FogPluginState",
-)
-
-///|
-pub fn fog_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  if app.contains_resource(ecs_key_fog_plugin_state) {
-    app
-  } else {
-    app.insert_world_resource(ecs_key_fog_plugin_state, FogPluginState::{  })
-  }
-}
-
-///|
 fn pbr_plugin_sync_mesh_render_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
@@ -184,6 +167,14 @@ fn pbr_plugin_sync_standard_material_state(
   } else {
     app
   }
+}
+
+///|
+fn pbr_plugin_sync_fog_state(
+  app : @app.App[@ecs.World],
+  _runtime_config : PbrPluginRuntimeConfig,
+) -> @app.App[@ecs.World] {
+  app.add_plugin(@pbr_render.fog_plugin_install)
 }
 
 ///|
@@ -275,7 +266,7 @@ pub fn pbr_plugin_with(
   next = pbr_plugin_sync_light_probe_state(next, runtime_config)
   next = pbr_plugin_sync_feature_plugins(next, runtime_config)
   next = pbr_plugin_sync_standard_material_state(next, runtime_config)
-  next = fog_plugin(next)
+  next = pbr_plugin_sync_fog_state(next, runtime_config)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
   next

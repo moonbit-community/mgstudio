@@ -127,8 +127,6 @@ pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
 
 pub let ecs_key_extracted_material_instances_3d : @ecs.ResourceKey[ExtractedMaterialInstances3d]
 
-pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState]
-
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
@@ -250,8 +248,6 @@ pub let ecs_resources : Array[String]
 pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 
 pub fn extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
-
-pub fn fog_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
 
@@ -866,9 +862,6 @@ pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
 pub fn FogFalloff3d::koschmieder(Float, Float) -> Float
 pub fn FogFalloff3d::linear(Float, Float) -> Self
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
-
-pub struct FogPluginState {
-}
 
 pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)

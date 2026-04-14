@@ -396,7 +396,7 @@ pub fn render3d_prepare_skin_bindings_upload(
       phase_state_ref, entity,
     )
     if key_hi < 0 || key_lo < 0 {
-      return
+      continue
     }
     if render3d_cached_skinning_matrices(world_transform_cache_ref, entity)
       is Some(skinning_matrices) {

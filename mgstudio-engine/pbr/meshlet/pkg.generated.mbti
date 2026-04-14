@@ -64,11 +64,15 @@ pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversio
 
 pub fn meshlet_deferred_gbuffer_prepass(Int) -> Int
 
-pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager) -> Int
+pub fn meshlet_deferred_gbuffer_prepass_draw_calls(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
+
+pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
 
 pub fn meshlet_main_opaque_pass(Int) -> Int
 
-pub fn meshlet_main_opaque_pass_materials(MeshletViewMaterialsMainOpaquePass, InstanceManager) -> Int
+pub fn meshlet_main_opaque_pass_draw_calls(MeshletViewMaterialsMainOpaquePass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
+
+pub fn meshlet_main_opaque_pass_materials(MeshletViewMaterialsMainOpaquePass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
 
 pub fn meshlet_material_prepare_entry_count(MeshletViewMaterialsMainOpaquePass, MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass) -> Int
 
@@ -116,7 +120,9 @@ pub fn meshlet_plugin_with(@app.App[@ecs.World], MeshletPlugin) -> @app.App[@ecs
 
 pub fn meshlet_prepass(Int) -> Int
 
-pub fn meshlet_prepass_materials(MeshletViewMaterialsPrepass, InstanceManager) -> Int
+pub fn meshlet_prepass_draw_calls(MeshletViewMaterialsPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
+
+pub fn meshlet_prepass_materials(MeshletViewMaterialsPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
 
 pub fn meshlet_render_pipeline_count(MeshletPipelines) -> Int
 
@@ -307,6 +313,14 @@ pub struct MeshletCullData {
 }
 pub fn MeshletCullData::default() -> Self
 
+pub struct MeshletMaterialDrawCall {
+  material_id : Int
+  material_pipeline_id : Int
+  material_bind_group : Int
+  vertex_start : Int
+  vertex_end : Int
+} derive(Eq, @debug.Debug)
+
 pub struct MeshletMesh {
   meshlet_count : Int
   bvh_node_count : Int
@@ -337,9 +351,9 @@ pub struct MeshletMeshManager {
   vertex_normals : PersistentGpuBuffer[Int]
   vertex_uvs : PersistentGpuBuffer[Int]
   indices : PersistentGpuBuffer[Int]
-  bvh_nodes : PersistentGpuBuffer[Int]
-  meshlets : PersistentGpuBuffer[Int]
-  meshlet_cull_data : PersistentGpuBuffer[Int]
+  bvh_nodes : PersistentGpuBuffer[BvhNode]
+  meshlets : PersistentGpuBuffer[Meshlet]
+  meshlet_cull_data : PersistentGpuBuffer[MeshletCullData]
   mut pending_mesh_writes : Int
   mut committed_mesh_writes : Int
   pending_upload_asset_ids : Array[Int]
@@ -353,7 +367,7 @@ pub fn MeshletMeshManager::pending_upload_count(Self) -> Int
 pub fn MeshletMeshManager::perform_pending_mesh_writes(Self) -> Int
 pub fn MeshletMeshManager::queue_mesh_write(Self) -> Unit
 pub fn MeshletMeshManager::queue_upload_if_needed(Self, Int, MeshletMesh) -> (Int, MeshletAabb, Int)
-pub fn MeshletMeshManager::remove(Self, Int) -> Bool
+pub fn MeshletMeshManager::remove(Self, Int) -> Unit
 
 pub(all) enum MeshletMeshSaveOrLoadError {
   WrongFileType
@@ -412,9 +426,11 @@ pub struct MeshletPipelines {
   resolve_material_depth : Int
   remap_1d_to_2d_dispatch : Int?
   fill_counts : Int
-  meshlet_mesh_material_shader_id : Int
+  meshlet_mesh_material_shader : String
 }
 pub fn MeshletPipelines::default() -> Self
+pub fn MeshletPipelines::get(Self) -> (Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int?, Int)?
+pub fn MeshletPipelines::meshlet_mesh_material_shader(Self) -> String
 
 pub struct MeshletPlugin {
   cluster_buffer_slots : Int
@@ -457,8 +473,10 @@ pub(all) enum MeshletRuntimeStatus {
 pub struct MeshletViewBindGroups {
   view_entity : @core.Entity
   bind_group_count : Int
+  has_material_shade_bind_group : Bool
 }
-pub fn MeshletViewBindGroups::new(@core.Entity, Int) -> Self
+pub fn MeshletViewBindGroups::has_material_shade_bind_group(Self) -> Bool
+pub fn MeshletViewBindGroups::new(@core.Entity, Int, has_material_shade_bind_group? : Bool) -> Self
 
 pub struct MeshletViewMaterialPipelineKey {
   hdr : Bool
@@ -467,11 +485,19 @@ pub struct MeshletViewMaterialPipelineKey {
   motion_vector_prepass : Bool
   deferred_prepass : Bool
   temporal_jitter : Bool
+  projection_type : Int
+  shadow_filter_method : Int
+  tonemap_in_shader : Bool
+  tonemapping_mode : Int
+  deband_dither : Bool
+  environment_map : Bool
+  irradiance_volume : Bool
   ssao : Bool
   distance_fog : Bool
 }
 pub fn MeshletViewMaterialPipelineKey::default() -> Self
-pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
+pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(Self, Bool) -> Self
+pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, projection_type? : Int, shadow_filter_method? : Int, tonemap_in_shader? : Bool, tonemapping_mode? : Int, deband_dither? : Bool, environment_map? : Bool, irradiance_volume? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
 pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(Self, Bool) -> Self
 
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
@@ -504,8 +530,10 @@ pub impl @ecs.Component for MeshletViewMaterialsPrepass
 pub struct MeshletViewResources {
   view_entity : @core.Entity
   meshlet_count : Int
+  has_material_depth : Bool
 }
-pub fn MeshletViewResources::new(@core.Entity, Int) -> Self
+pub fn MeshletViewResources::has_material_depth(Self) -> Bool
+pub fn MeshletViewResources::new(@core.Entity, Int, has_material_depth? : Bool) -> Self
 
 pub struct MeshletVisibilityBufferRasterState {
   enabled : Bool

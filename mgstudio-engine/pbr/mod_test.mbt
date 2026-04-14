@@ -47,6 +47,17 @@ fn read_mesh_render_plugin_state(world : @ecs.World) -> MeshRenderPluginState {
 }
 
 ///|
+fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
+  match app.get_sub_app(@app.RenderApp) {
+    Some(render_sub_app) => {
+      let render_world = render_sub_app.world()
+      (try! render_world.get_resource(@pbr_render.FogMeta::resource())) is Some(_)
+    }
+    None => false
+  }
+}
+
+///|
 test "render3d: plugin replacement id aligns with bevy_pbr" {
   let plugin = PbrPlugin::default()
   debug_inspect(plugin.plugin_name(), content="\"mgstudio.pbr.PbrPlugin\"")
@@ -68,7 +79,7 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     app.contains_resource(ecs_key_materials_plugin_state),
     content="true",
   )
-  debug_inspect(app.contains_resource(ecs_key_fog_plugin_state), content="true")
+  debug_inspect(render_world_with_fog_meta(app), content="true")
   debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,
     content="true",

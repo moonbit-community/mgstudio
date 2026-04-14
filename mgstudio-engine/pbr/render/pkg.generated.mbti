@@ -21,6 +21,16 @@ import {
 }
 
 // Values
+pub const GPU_FOG_MODE_ATMOSPHERIC : UInt = 4
+
+pub const GPU_FOG_MODE_EXPONENTIAL : UInt = 2
+
+pub const GPU_FOG_MODE_EXPONENTIAL_SQUARED : UInt = 3
+
+pub const GPU_FOG_MODE_LINEAR : UInt = 1
+
+pub const GPU_FOG_MODE_OFF : UInt = 0
+
 pub const MAX_CASCADES_PER_LIGHT : Int = 4
 
 pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
@@ -125,6 +135,10 @@ pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset
 
 pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
 
+pub fn fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn fog_plugin_install_with(@app.App[@ecs.World], FogPlugin) -> @app.App[@ecs.World]
+
 pub fn gpu_mesh_preprocess_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gpu_mesh_preprocess_plugin_install_with(@app.App[@ecs.World], GpuMeshPreprocessPlugin) -> @app.App[@ecs.World]
@@ -140,6 +154,8 @@ pub fn mesh_view_layout_key_from_msaa(Int) -> MeshPipelineViewLayoutKey
 pub fn minf(Float, Float) -> Float
 
 pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
+
+pub fn prepare_fog(Array[(@core.Entity, Render3dViewFogData?)], FogMeta) -> Array[(@core.Entity, ViewFogUniformOffset)]
 
 pub fn preprocess_phase_pipelines_default(String) -> PreprocessPhasePipelines
 
@@ -158,10 +174,6 @@ pub fn render3d_apply_view_fog_uniform_offsets(@ecs.World, Array[(@core.Entity, 
 pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
 pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, Int, forward_decal? : Bool, shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int) -> MeshGpuDrawPayload3d
-
-pub fn render3d_build_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
-
-pub fn render3d_camera_depth_for_mesh(@transform.Transform, @transform.Transform) -> Float
 
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
@@ -247,7 +259,7 @@ pub fn render3d_fog_pow_e(Float) -> Float
 
 pub fn render3d_gpu_culling_supported() -> Bool
 
-pub fn render3d_gpu_fog_from_view_fog(Render3dViewFogData) -> GpuFog3d
+pub fn render3d_gpu_fog_from_view_fog(Render3dViewFogData) -> GpuFog
 
 pub fn render3d_gpu_preprocess_builder_enabled(Bool) -> Bool
 
@@ -321,8 +333,6 @@ pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
 
 pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
 
-pub fn render3d_plugin_state_from_diagnostics(@ecs.World) -> Render3dPluginState
-
 pub fn render3d_point_light_flags(ExtractedPointLight3d) -> UInt
 
 pub fn render3d_point_light_shadow_map_size(@ecs.World) -> Int
@@ -364,8 +374,6 @@ pub fn render3d_projection_near_from_clip_matrix(ProjectionMatrix3d) -> Float
 pub fn render3d_quat_conjugate(@math.Quat) -> @math.Quat
 
 pub fn render3d_quat_inverse(@math.Quat) -> @math.Quat
-
-pub fn render3d_queue_diagnostics_snapshot(@ecs.World) -> (Int, Int, Float, Float)
 
 pub let render3d_queue_system_label : String
 
@@ -498,14 +506,19 @@ pub struct ExtractedPointLight3d {
 }
 
 pub struct FogMeta {
-  fogs : Array[GpuFog3d]
+  gpu_fogs : Array[GpuFog]
 }
 pub fn FogMeta::clear(Self) -> Unit
 pub fn FogMeta::default() -> Self
-pub fn FogMeta::fog_at(Self, UInt) -> GpuFog3d?
+pub fn FogMeta::fog_at(Self, UInt) -> GpuFog?
 pub fn FogMeta::len(Self) -> Int
-pub fn FogMeta::push(Self, GpuFog3d) -> UInt
+pub fn FogMeta::push(Self, GpuFog) -> UInt
 pub impl @app.Resource for FogMeta
+
+pub struct FogPlugin {
+}
+pub fn FogPlugin::default() -> Self
+pub impl @app.PluginReplacement for FogPlugin
 
 pub struct Frustum {
   half_spaces : Array[@math.HalfSpace]
@@ -537,7 +550,8 @@ pub struct GpuDirectionalLight3d {
   sun_disk_intensity : Float
 }
 
-pub struct GpuFog3d {
+#alias(GpuFog3d)
+pub struct GpuFog {
   base_color : @math.Vec4
   directional_light_color : @math.Vec4
   be : @math.Vec3
@@ -545,14 +559,14 @@ pub struct GpuFog3d {
   bi : @math.Vec3
   mode : UInt
 } derive(ToJson, @json.FromJson)
-pub fn GpuFog3d::base_color(Self) -> @math.Vec4
-pub fn GpuFog3d::be(Self) -> @math.Vec3
-pub fn GpuFog3d::bi(Self) -> @math.Vec3
-pub fn GpuFog3d::default() -> Self
-pub fn GpuFog3d::directional_light_color(Self) -> @math.Vec4
-pub fn GpuFog3d::directional_light_exponent(Self) -> Float
-pub fn GpuFog3d::mode(Self) -> UInt
-pub fn GpuFog3d::off() -> Self
+pub fn GpuFog::base_color(Self) -> @math.Vec4
+pub fn GpuFog::be(Self) -> @math.Vec3
+pub fn GpuFog::bi(Self) -> @math.Vec3
+pub fn GpuFog::default() -> Self
+pub fn GpuFog::directional_light_color(Self) -> @math.Vec4
+pub fn GpuFog::directional_light_exponent(Self) -> Float
+pub fn GpuFog::mode(Self) -> UInt
+pub fn GpuFog::off() -> Self
 
 pub struct GpuLights3d {
   directional_lights : Array[GpuDirectionalLight3d]
@@ -976,14 +990,6 @@ pub(all) struct Render3dPhaseState {
 }
 pub fn Render3dPhaseState::new() -> Self
 pub impl @app.Resource for Render3dPhaseState
-
-pub struct Render3dPluginState {
-  queue_cpu_ms : Float
-  execute_cpu_ms : Float
-}
-pub fn Render3dPluginState::default() -> Self
-pub fn Render3dPluginState::execute_cpu_ms(Self) -> Float
-pub fn Render3dPluginState::queue_cpu_ms(Self) -> Float
 
 pub struct Render3dViewFogData {
   color : @color.Color
