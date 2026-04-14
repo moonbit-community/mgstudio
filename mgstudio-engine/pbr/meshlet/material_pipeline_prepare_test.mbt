@@ -278,5 +278,8 @@ test "pbr meshlet: main opaque pipeline key includes bevy view dimensions" {
   )
   inspect(main_opaque_a.len(), content="1")
   inspect(main_opaque_b.len(), content="1")
-  inspect(main_opaque_a.entries[0].1 != main_opaque_b.entries[0].1, content="true")
+  inspect(
+    main_opaque_a.entries[0].1 != main_opaque_b.entries[0].1,
+    content="true",
+  )
 }

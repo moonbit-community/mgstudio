@@ -51,7 +51,8 @@ fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
       let render_world = render_sub_app.world()
-      (try! render_world.get_resource(@pbr_render.FogMeta::resource())) is Some(_)
+      (try! render_world.get_resource(@pbr_render.FogMeta::resource()))
+      is Some(_)
     }
     None => false
   }

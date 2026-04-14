@@ -52,24 +52,19 @@ test "pbr render skin: upload skips invalid skin keys without aborting later ski
 
   ensure_skin_cache_slot(world_transform_cache_ref, valid_entity.id)
   world_transform_cache_ref.val.skinning_matrices[valid_entity.id] = Some([
-    1.0F,
-    2.0F,
-    3.0F,
-    4.0F,
+    1.0F, 2.0F, 3.0F, 4.0F,
   ])
-  world_transform_cache_ref.val.skinning_generations[valid_entity.id] =
-    valid_entity.generation
-  world_transform_cache_ref.val.skinning_stamps[valid_entity.id] =
-    world_transform_cache_ref.val.frame_stamp
+  world_transform_cache_ref.val.skinning_generations[valid_entity.id] = valid_entity.generation
+  world_transform_cache_ref.val.skinning_stamps[valid_entity.id] = world_transform_cache_ref.val.frame_stamp
 
   render3d_prepare_skin_bindings_upload(
-    world,
-    phase_state_ref,
-    world_transform_cache_ref,
+    world, phase_state_ref, world_transform_cache_ref,
   )
 
   inspect(
-    phase_state_ref.val.skin_previous_matrices.contains(skin_entity_key(valid_entity)),
+    phase_state_ref.val.skin_previous_matrices.contains(
+      skin_entity_key(valid_entity),
+    ),
     content="true",
   )
 }

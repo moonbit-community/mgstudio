@@ -169,21 +169,13 @@ pub fn MeshletViewMaterialPipelineKey::new(
   ssao? : Bool = false,
   distance_fog? : Bool = false,
 ) -> MeshletViewMaterialPipelineKey {
-  let projection_type = if projection_type < 0 {
-    0
-  } else {
-    projection_type
-  }
+  let projection_type = if projection_type < 0 { 0 } else { projection_type }
   let shadow_filter_method = if shadow_filter_method < 0 {
     0
   } else {
     shadow_filter_method
   }
-  let tonemapping_mode = if tonemapping_mode < 0 {
-    0
-  } else {
-    tonemapping_mode
-  }
+  let tonemapping_mode = if tonemapping_mode < 0 { 0 } else { tonemapping_mode }
   MeshletViewMaterialPipelineKey::{
     hdr,
     normal_prepass,

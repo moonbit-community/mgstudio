@@ -475,7 +475,9 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     let has_normal_prepass = try! source_world.contains_by_key(
       entity, @core_pipeline.ecs_key_normal_prepass,
     )
-    let has_hdr = try! source_world.contains_by_key(entity, @core_3d.ecs_key_hdr)
+    let has_hdr = try! source_world.contains_by_key(
+      entity, @core_3d.ecs_key_hdr,
+    )
     let has_depth_prepass = try! source_world.contains_by_key(
       entity, @core_pipeline.ecs_key_depth_prepass,
     )
