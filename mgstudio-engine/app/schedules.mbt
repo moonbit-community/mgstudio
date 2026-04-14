@@ -180,7 +180,10 @@ fn[W] schedule_set_executor_kind(
 }
 
 ///|
-fn[W] SubApp::add_schedule(self : SubApp[W], schedule : Schedule) -> SubApp[W] {
+pub fn[W] SubApp::add_schedule(
+  self : SubApp[W],
+  schedule : Schedule,
+) -> SubApp[W] {
   schedule_set_executor_kind(
     self.schedule,
     schedule.label(),

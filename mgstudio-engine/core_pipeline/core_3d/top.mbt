@@ -55,7 +55,10 @@ fn core_3d_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   let stage = @render.render_schedule_stage()
-  @render.configure_base_render_sets(sub_app)
+  let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
+    @app.Schedule::new(@app.schedule_label("mgstudio.core_pipeline.core_3d")),
+  )
+  sub_app
   .configure_set(stage, @render.render_system_set_render, before=[
     core_3d_set_prepass,
   ])
