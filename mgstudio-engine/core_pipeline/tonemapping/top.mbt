@@ -91,11 +91,6 @@ pub fn tonemapping_luts_from_world_or_init(
 }
 
 ///|
-fn tonemapping_ensure_luts_startup(world : @ecs.World) -> Unit {
-  tonemapping_luts_from_world_or_init(world) |> ignore
-}
-
-///|
 pub fn tonemapping_is_enabled(tonemapping : Tonemapping) -> Bool {
   tonemapping != Tonemapping::None
 }
@@ -208,9 +203,14 @@ pub fn tonemapping_plugin_with(
   plugin : TonemappingPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app
-  .init_resource(fn() { TonemappingPipelineKey::default() })
-  .add_systems(@app.Startup, @app.system(tonemapping_ensure_luts_startup))
+  let world = app.world()
+  if (try! world.get_resource(ecs_key_tonemapping_luts)) is None {
+    world.insert_resource(
+      ecs_key_tonemapping_luts,
+      TonemappingLuts::from_asset_server(@asset.AssetServer::new()),
+    )
+  }
+  app.init_resource(fn() { TonemappingPipelineKey::default() })
 }
 
 ///|

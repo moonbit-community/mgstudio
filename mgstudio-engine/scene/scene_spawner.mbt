@@ -664,17 +664,64 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
-  let roots : Array[(@core.Entity, SceneRoot)] = []
-  let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
+  let sequence = world.get_sequence_context().sequence()
+  let seen : Map[UInt64, Bool] = {}
+  let roots_to_process : Array[@core.Entity] = []
+  fn push_root_if_needed(
+    world : @ecs.World,
+    seen : Map[UInt64, Bool],
+    roots_to_process : Array[@core.Entity],
+    entity : @core.Entity,
+  ) -> Unit {
+    guard world.is_alive(entity) else { return }
+    let key = entity.to_bits()
+    if seen.contains(key) {
+      return
+    }
+    if (try! world.contains_by_key(entity, ecs_key_scene_root)) {
+      seen.set(key, true)
+      roots_to_process.push(entity)
+    }
+  }
+  for entity in world.added_components(ecs_key_scene_root, sequence).read() {
+    push_root_if_needed(world, seen, roots_to_process, entity)
+  }
+  for entity in world.changed_components(ecs_key_scene_root, sequence).read() {
+    push_root_if_needed(world, seen, roots_to_process, entity)
+  }
+  let scene_instance_query : @ecs.Query[@ecs.Comp[SceneInstance], @ecs.All] = @ecs.query(
     world,
   )
-  try! scene_root_query.view(fn(entity, root) {
-    roots.push((entity, root.value()))
+  try! scene_instance_query.view(fn(entity, scene_instance_ref) {
+    guard (try! world.get_by_key(entity, ecs_key_scene_root)) is Some(root) else {
+      return
+    }
+    let needs_retry = match
+      scene_runtime_get_instance(world, scene_instance_ref.value().instance_id) {
+      Some(instance_state) =>
+        !instance_state.ready || instance_state.scene_id != root.scene.id()
+      None => true
+    }
+    if needs_retry {
+      push_root_if_needed(world, seen, roots_to_process, entity)
+    }
   })
+  if world.component_count(ecs_key_scene_root) >
+    world.component_count(ecs_key_scene_instance) {
+    let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! scene_root_query.view(fn(entity, _root_ref) {
+      if !(try! world.contains_by_key(entity, ecs_key_scene_instance)) {
+        push_root_if_needed(world, seen, roots_to_process, entity)
+      }
+    })
+  }
 
-  for entry in roots {
-    let root_entity = entry.0
-    let root = entry.1
+  for root_entity in roots_to_process {
+    guard (try! world.get_by_key(root_entity, ecs_key_scene_root)) is Some(root) else {
+      continue
+    }
     let instance_id = match scene_instance_component(world, root_entity) {
       Some(instance) =>
         match scene_runtime_get_instance(world, instance.instance_id) {

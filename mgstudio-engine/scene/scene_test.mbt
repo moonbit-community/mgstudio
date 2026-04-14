@@ -698,6 +698,78 @@ test "scene: SceneRoot spawns children and marks ready" {
 }
 
 ///|
+test "scene: pending SceneInstance retries spawn after scene becomes ready" {
+  let has_instance_before_register = Ref::new(false)
+  let has_ready_before_register = Ref::new(false)
+  let ready_after_register = Ref::new(false)
+  let child_count_after_register = Ref::new(0)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let asset_server = @asset.AssetServer::new()
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
+      "models/Foo/Foo.gltf#pending-retry",
+    )
+    let pending_handle = @scene.scene_load_gltf_scene(asset_server, path)
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(pending_handle),
+    )
+
+    @scene.scene_spawn_roots_system(world)
+    has_instance_before_register.val = (try! world.get_by_key(
+        root, @scene.ecs_key_scene_instance,
+      ))
+      is Some(_)
+    has_ready_before_register.val = (try! world.get_by_key(
+        root, @scene.ecs_key_scene_instance_ready,
+      ))
+      is Some(_)
+
+    ignore(
+      @scene.scene_register_gltf_scene(
+        path,
+        @scene.Scene::new([
+          @scene.SceneNode3d::new(
+            @pbr.Mesh3d::new(
+              @pbr.mesh_assets_mut_or_abort().val.add(
+                @pbr.Mesh::from_3d_geometry(
+                  @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+                ),
+              ),
+            ),
+            @pbr.MeshMaterial3d::new(
+              @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+            ),
+            @transform.Transform::identity(),
+            None,
+            None,
+          ),
+        ]),
+      ),
+    )
+
+    @scene.scene_spawn_roots_system(world)
+    ready_after_register.val = (try! world.get_by_key(
+        root, @scene.ecs_key_scene_instance_ready,
+      ))
+      is Some(_)
+
+    let child_count = Ref::new(0)
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(_entity, parent) {
+      if parent.entity().id == root.id {
+        child_count.val = child_count.val + 1
+      }
+    })
+    child_count_after_register.val = child_count.val
+  })
+  debug_inspect(has_instance_before_register.val, content="true")
+  debug_inspect(has_ready_before_register.val, content="false")
+  debug_inspect(ready_after_register.val, content="true")
+  debug_inspect(child_count_after_register.val, content="1")
+}
+
+///|
 test "scene: SceneRoot propagates gltf material name" {
   let material_name = Ref::new("")
   run_scene_test_app(fn(world : @ecs.World) {
