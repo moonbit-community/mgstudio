@@ -2722,7 +2722,7 @@ fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
 }
 
 ///|
-fn render2d_bevy_shader_asset_paths() -> Array[String] {
+fn render2d_shader_asset_paths() -> Array[String] {
   [
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
@@ -2739,10 +2739,10 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
 }
 
 ///|
-fn register_render2d_bevy_shader_sources(world : @ecs.World) -> Unit {
+fn register_render2d_shader_sources(world : @ecs.World) -> Unit {
   world |> ignore
   register_embedded_mesh2d_wgsl_sources_generated()
-  for path in render2d_bevy_shader_asset_paths() {
+  for path in render2d_shader_asset_paths() {
     let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
       "assets", path,
     ) catch {
@@ -8549,7 +8549,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
       assets
     })
-    .add_startup_system(register_render2d_bevy_shader_sources)
+    .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
     )
@@ -8569,7 +8569,7 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
       assets
     })
-    .add_startup_system(register_render2d_bevy_shader_sources)
+    .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
     )
