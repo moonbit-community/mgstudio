@@ -22,8 +22,6 @@ pub const FULLSCREEN_MATERIAL_PASS_LABEL : String = "fullscreen_material_pass"
 
 pub fn camera_driver(@ecs.World) -> Unit
 
-pub fn camera_driver_prepare_state(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub fn core2d_base_schedule() -> @app.Schedule
 
 pub fn core2d_system_set_main_pass() -> String
@@ -41,10 +39,6 @@ pub fn core3d_system_set_prepass() -> String
 pub fn core_pipeline_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn core_pipeline_plugin_with(@app.App[@ecs.World], CorePipelinePlugin) -> @app.App[@ecs.World]
-
-pub fn core_pipeline_schedule_enabled() -> Bool
-
-pub let ecs_key_camera_driver_state : @ecs.ResourceKey[CameraDriverState]
 
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
@@ -87,25 +81,6 @@ pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.Tonemappi
 // Errors
 
 // Types and methods
-pub struct CameraDriverSortedCamera {
-  entity_id : Int
-  order : Int
-  schedule_label : String
-  target_window_id : Int?
-} derive(Eq, @debug.Debug)
-pub fn CameraDriverSortedCamera::new(entity_id~ : Int, order~ : Int, schedule_label~ : String, target_window_id? : Int?) -> Self
-
-pub struct CameraDriverState {
-  sorted_cameras : Array[CameraDriverSortedCamera]
-  covered_window_ids : Array[Int]
-}
-pub fn CameraDriverState::clear(Self) -> Unit
-pub fn CameraDriverState::default() -> Self
-pub fn CameraDriverState::mark_window_covered(Self, Int) -> Unit
-pub fn CameraDriverState::push_sorted_camera(Self, CameraDriverSortedCamera) -> Unit
-pub fn CameraDriverState::window_is_covered(Self, Int) -> Bool
-pub impl @app.Resource for CameraDriverState
-
 pub struct Core2d {
 }
 pub fn Core2d::default() -> Self

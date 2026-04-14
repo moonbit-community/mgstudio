@@ -32,8 +32,8 @@ test "mip_generation plugin initializes downsample shader registry resource" {
   let app = @app.App::new(@ecs.World::new()).add_plugin(
     @mip_generation.mip_generation_plugin,
   )
-  let world = app.world()
-  let shaders = try! world
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let shaders = try! render_world
     .get_resource(@mip_generation.ecs_key_downsample_shaders)
     .unwrap()
   debug_inspect(

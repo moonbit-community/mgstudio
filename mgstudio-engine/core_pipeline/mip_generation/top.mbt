@@ -51,11 +51,39 @@ pub fn mip_generation_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { DownsampleShaders::default() })
-  .init_resource(fn() { MipGenerationJobs::default() })
-  .init_resource(fn() { MipGenerationPipelines::default() })
-  .add_plugin(@experimental.experimental_mip_generation_plugin)
+  let next = app.add_plugin(@experimental.experimental_mip_generation_plugin)
+  @render.with_render_app(next, mip_generation_configure_render_sub_app)
+}
+
+///|
+fn mip_generation_configure_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  if !world.resource(ecs_key_downsample_shaders).is_present() {
+    world.insert_resource(
+      ecs_key_downsample_shaders,
+      DownsampleShaders::default(),
+    )
+  }
+  if !world.resource(ecs_key_mip_generation_jobs).is_present() {
+    world.insert_resource(
+      ecs_key_mip_generation_jobs,
+      MipGenerationJobs::default(),
+    )
+  }
+  if !world.resource(ecs_key_mip_generation_pipelines).is_present() {
+    world.insert_resource(
+      ecs_key_mip_generation_pipelines,
+      MipGenerationPipelines::default(),
+    )
+  }
+  @render.configure_base_render_sets(sub_app).add_systems(
+    @render.render_schedule_stage(),
+    @app.system(reset_mip_generation_jobs).in_set(
+      @render.render_system_set_cleanup,
+    ),
+  )
 }
 
 ///|
@@ -309,6 +337,15 @@ pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs] = @ecs
 ///|
 pub impl @app.Resource for MipGenerationJobs with resource() {
   ecs_key_mip_generation_jobs
+}
+
+///|
+fn reset_mip_generation_jobs(world : @ecs.World) -> Unit {
+  ignore(
+    world
+    .resource(ecs_key_mip_generation_jobs)
+    .update(fn(_) { MipGenerationJobs::default() }),
+  )
 }
 
 ///|

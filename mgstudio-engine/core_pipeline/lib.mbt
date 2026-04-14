@@ -118,12 +118,6 @@ fn core_pipeline_configure_render_sub_app(
       FullscreenShader::default(),
     )
   }
-  if (try! world.get_resource(ecs_key_camera_driver_state)) is None {
-    world.insert_resource(
-      ecs_key_camera_driver_state,
-      CameraDriverState::default(),
-    )
-  }
   @render.configure_base_render_sets(sub_app).add_systems(
     @render.render_schedule_stage(),
     @app.system(camera_driver).in_set(@render.render_system_set_manage_views),
