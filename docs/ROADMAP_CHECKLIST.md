@@ -7,8 +7,8 @@ This file must not exceed 200 lines.
 | `bevy_hierarchy` | `mgstudio-engine/hierarchy` | 96% | 90% | 90% | 🟡 In Progress | Large-scene edge cases still require screenshot-level parity confirmation. |
 | `bevy_reflect` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Reflection remains explicitly out of scope. |
 | `bevy_tasks` | N/A (explicit non-goal) | 0% | 0% | 0% | ⏸ Excluded | Task runtime parity remains explicitly out of scope. |
-| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 73% | 73% | 🟡 In Progress | Base render-stage/system-set ownership is centralized, but stage-boundary behavior is still not fully equivalent. |
-| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 70% | 70% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
+| `bevy_render` (topology) | `mgstudio-engine/render` | 97% | 74% | 74% | 🟡 In Progress | Base render-stage/system-set ownership is centralized and cross-package set-bridging is landed, but stage-boundary behavior is still not fully equivalent. |
+| `bevy_render::renderer` | `mgstudio-engine/render/renderer` | 96% | 71% | 71% | 🟡 In Progress | Draw/prepare responsibilities are still partially mixed in hot paths. |
 | `bevy_core_pipeline` | `mgstudio-engine/core_pipeline` | 94% | 76% | 76% | 🟡 In Progress | Core camera-driver scheduling is now on unified render-stage entry, but postprocess/mip ordering still needs deeper convergence. |
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
@@ -16,9 +16,9 @@ This file must not exceed 200 lines.
 | `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 94% | 74% | 74% | 🟡 In Progress | Runtime state semantics + render/core3d stage ownership are aligned; shader/pipeline-specialization depth is still simplified vs Bevy. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 77% | 77% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
-| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 80% | 80% | 🟡 In Progress | Render-subapp scheduling is now unified to shared render-stage entry; visual parity in stress-scale/picking still needs verification. |
-| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 83% | 83% | 🟡 In Progress | Render-subapp extraction scheduling is unified; remaining work is screenshot-level parity for complex UI/pointer edge cases. |
-| `bevy_text` | `mgstudio-engine/text` | 90% | 81% | 81% | 🟡 In Progress | Render-subapp text queue/prepare scheduling is unified; remaining work is full visual/line-break parity across script families. |
+| `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 81% | 81% | 🟡 In Progress | Render-subapp scheduling is unified and anchored to shared render sets; visual parity in stress-scale/picking still needs verification. |
+| `bevy_ui` | `mgstudio-engine/ui` + `ui_render` + `ui_widgets` | 92% | 84% | 84% | 🟡 In Progress | Render-subapp extraction scheduling is unified and bridged to base render sets; remaining work is screenshot-level parity for complex UI/pointer edge cases. |
+| `bevy_text` | `mgstudio-engine/text` | 90% | 82% | 82% | 🟡 In Progress | Render-subapp text prepare/queue scheduling is unified and bridged to base render sets; remaining work is full visual/line-break parity across script families. |
 | `bevy_gltf` | `mgstudio-engine/gltf` + `scene` | 94% | 81% | 81% | 🟡 In Progress | Loader/runtime edge cases and extension semantics are not fully closed yet. |
 | `bevy_animation` | `mgstudio-engine/animation` | 94% | 74% | 74% | 🟡 In Progress | Typed event and runtime coupling still need deeper source-level alignment. |
 | `bevy_scene` (static scene path) | `mgstudio-engine/scene` | 92% | 77% | 77% | 🟡 In Progress | Spawn/runtime integration has remaining parity-tail differences. |
@@ -70,7 +70,7 @@ This file must not exceed 200 lines.
 - [x] `pbr/plugin`: remove global plugin runtime-config `Ref`; resolve runtime config from ECS resource/default per world.
 - [x] `render/pbr` + `diagnostic/timeline_trace`: move render3d diagnostics state to world-owned resource and move timeline pending-span buffer ownership from diagnostic global `Ref` to app timeline owner queue.
 - [x] `pbr/free_camera`: move controller system-state from global `Ref` to world-owned resource.
-- [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`), remove direct state mutation from `window_surface`, merge pass-timing + draw/drop/debug/frame/snapshot refs into one owner runtime state, and centralize render-subapp stage/set wiring via `render/schedule`.
+- [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`), remove direct state mutation from `window_surface`, merge pass-timing + draw/drop/debug/frame/snapshot refs into one owner runtime state, and centralize render-subapp stage/set wiring plus cross-package set-bridging via `render/schedule`.
 - [x] `pbr/prepass`: replace queue-state camera/mesh motion-blur history caches with ECS-owned previous-frame components (`PreviousViewData`, `PreviousGlobalTransform`), move write-back into `PreUpdate` sync system, split sync flow to Bevy-shaped `update_mesh_previous_global_transforms` + `update_previous_view_data`, gate previous-data sync by standard-material prepass enablement, align camera collection/order to `camera.is_active`, and use projection `Changed` signals instead of force-updating runtime projection every frame.
 - [x] `pbr/prepass`: add wb coverage for `PreUpdate` previous-data sync (camera previous-view + mesh previous-global + active-camera gating) and keep `moon test pbr` green.
 - [x] `render/renderer`: collapse `window_surface` scattered binding globals (`surfaces/frames/id seeds`) into a single owner runtime state (`WindowSurfaceRuntimeState`), keeping behavior-local ownership.

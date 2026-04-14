@@ -628,6 +628,12 @@ pub fn[M : Material2d] material2d_plugin(
           prepare_material2d_assets_system(world, probe)
         }).in_set(render2d_set_prepare_materials),
       )
+      .configure_set(stage, @render.render_system_set_extract_commands, before=[
+        render2d_set_extract_materials,
+      ])
+      .configure_set(stage, @render.render_system_set_prepare, before=[
+        render2d_set_prepare_materials,
+      ])
     })
     if shader_paths.length() == 0 {
       configured

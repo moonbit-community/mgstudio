@@ -27,5 +27,8 @@ pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .configure_set(stage, ui_render_set_extract, before=[
       @sprite_render.render2d_set_extract,
     ])
+    .configure_set(stage, @render.render_system_set_extract_commands, before=[
+      ui_render_set_extract,
+    ])
   })
 }

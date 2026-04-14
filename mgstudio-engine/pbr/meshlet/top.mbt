@@ -545,19 +545,40 @@ fn meshlet_configure_render_sub_app(
   .configure_set(stage, meshlet_render3d_set_extract, before=[
     meshlet_render3d_set_prepare_resources_flush,
   ])
+  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+    meshlet_render3d_set_extract,
+  ])
   .configure_set(stage, meshlet_render3d_set_prepare_resources_flush, before=[
     meshlet_render3d_set_prepare_resources,
+  ])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    meshlet_render3d_set_prepare_resources_flush,
   ])
   .configure_set(stage, meshlet_render3d_set_prepare_resources, before=[
     meshlet_render3d_set_prepare_meshes,
   ])
+  .configure_set(stage, @render.render_system_set_prepare_resources, before=[
+    meshlet_render3d_set_prepare_resources,
+  ])
   .configure_set(stage, meshlet_render3d_set_prepare_meshes, before=[
     meshlet_render3d_set_prepare_bind_groups,
+  ])
+  .configure_set(stage, @render.render_system_set_prepare_meshes, before=[
+    meshlet_render3d_set_prepare_meshes,
   ])
   .configure_set(stage, meshlet_render3d_set_prepare_bind_groups, before=[
     meshlet_render3d_set_prepare_materials,
   ])
+  .configure_set(stage, @render.render_system_set_prepare_bind_groups, before=[
+    meshlet_render3d_set_prepare_bind_groups,
+  ])
   .configure_set(stage, meshlet_render3d_set_prepare_materials, before=[
+    meshlet_render3d_set_queue,
+  ])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    meshlet_render3d_set_prepare_materials,
+  ])
+  .configure_set(stage, @render.render_system_set_queue, before=[
     meshlet_render3d_set_queue,
   ])
 }

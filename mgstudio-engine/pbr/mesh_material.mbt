@@ -211,20 +211,44 @@ fn configure_mesh_render_sub_app(
   .configure_set(stage, render3d_set_extract, before=[
     render3d_set_prepare_resources_flush,
   ])
+  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+    render3d_set_extract,
+  ])
   .configure_set(stage, render3d_set_prepare_resources_flush, before=[
     render3d_set_prepare_resources,
+  ])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    render3d_set_prepare_resources_flush,
   ])
   .configure_set(stage, render3d_set_prepare_resources, before=[
     render3d_set_prepare_meshes,
   ])
+  .configure_set(stage, @render.render_system_set_prepare_resources, before=[
+    render3d_set_prepare_resources,
+  ])
   .configure_set(stage, render3d_set_prepare_meshes, before=[
     render3d_set_prepare_bind_groups,
+  ])
+  .configure_set(stage, @render.render_system_set_prepare_meshes, before=[
+    render3d_set_prepare_meshes,
   ])
   .configure_set(stage, render3d_set_prepare_bind_groups, before=[
     render3d_set_prepare,
   ])
+  .configure_set(stage, @render.render_system_set_prepare_bind_groups, before=[
+    render3d_set_prepare_bind_groups,
+  ])
   .configure_set(stage, render3d_set_prepare, before=[render3d_set_queue])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    render3d_set_prepare,
+  ])
   .configure_set(stage, render3d_set_queue, before=[render3d_set_render])
+  .configure_set(stage, @render.render_system_set_queue, before=[
+    render3d_set_queue,
+  ])
+  .configure_set(stage, @render.render_system_set_render, before=[
+    render3d_set_render,
+  ])
 }
 
 ///|

@@ -8451,14 +8451,29 @@ fn configure_render2d_render_sub_app(
   .configure_set(stage, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
+  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+    render2d_set_extract_materials,
+  ])
   .configure_set(stage, render2d_set_extract, before=[
     render2d_set_prepare_materials,
   ])
   .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    render2d_set_prepare_materials,
+  ])
   .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    render2d_set_prepare,
+  ])
   .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
+  .configure_set(stage, @render.render_system_set_queue, before=[
+    render2d_set_queue,
+  ])
+  .configure_set(stage, @render.render_system_set_render, before=[
+    render2d_set_render,
+  ])
 }
 
 ///|
@@ -8487,14 +8502,29 @@ fn configure_render2d_render_sub_app_ecs(
   .configure_set(stage, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
+  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+    render2d_set_extract_materials,
+  ])
   .configure_set(stage, render2d_set_extract, before=[
     render2d_set_prepare_materials,
   ])
   .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    render2d_set_prepare_materials,
+  ])
   .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    render2d_set_prepare,
+  ])
   .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
+  .configure_set(stage, @render.render_system_set_queue, before=[
+    render2d_set_queue,
+  ])
+  .configure_set(stage, @render.render_system_set_render, before=[
+    render2d_set_render,
+  ])
 }
 
 ///|
