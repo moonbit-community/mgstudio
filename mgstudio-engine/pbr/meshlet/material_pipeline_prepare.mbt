@@ -327,6 +327,7 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
   view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
 ) -> Unit {
   view_materials.clear()
+  let queued_material_ids : Map[Int, Bool] = {}
   for material_input in material_inputs {
     if !material_input.alpha_mode_opaque {
       continue
@@ -344,6 +345,10 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
       view_key,
       material_input.material_asset_id,
     )
+    if queued_material_ids.get(material_input.material_id) is Some(_) {
+      continue
+    }
+    queued_material_ids.set(material_input.material_id, true)
     view_materials.push(
       (
         material_input.material_id,
@@ -375,6 +380,8 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
 ) -> Unit {
   prepass_materials.clear()
   deferred_prepass_materials.clear()
+  let queued_prepass_material_ids : Map[Int, Bool] = {}
+  let queued_deferred_material_ids : Map[Int, Bool] = {}
   for material_input in material_inputs {
     if !material_input.alpha_mode_opaque {
       continue
@@ -385,6 +392,10 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
     let material_wants_deferred = material_input.opaque_render_method
       is @material.OpaqueRendererMethod::Deferred
     if deferred_enabled && view_key.deferred_prepass && material_wants_deferred {
+      if queued_deferred_material_ids.get(material_input.material_id) is Some(_) {
+        continue
+      }
+      queued_deferred_material_ids.set(material_input.material_id, true)
       let pipeline_id = meshlet_material_pipeline_id(
         3000,
         3,
@@ -403,6 +414,10 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
     if !view_key.normal_prepass && !view_key.motion_vector_prepass {
       continue
     }
+    if queued_prepass_material_ids.get(material_input.material_id) is Some(_) {
+      continue
+    }
+    queued_prepass_material_ids.set(material_input.material_id, true)
     let pipeline_id = meshlet_material_pipeline_id(
       2000,
       2,

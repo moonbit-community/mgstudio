@@ -90,3 +90,47 @@ test "pbr meshlet: prepass routes deferred materials to deferred bins" {
   inspect(prepass.len(), content="0")
   inspect(deferred.len(), content="1")
 }
+
+///|
+test "pbr meshlet: main opaque pass deduplicates material ids" {
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(main_opaque, [
+    MeshletPreparedMaterialInput::new(10, 100),
+    MeshletPreparedMaterialInput::new(10, 101),
+    MeshletPreparedMaterialInput::new(11, 102),
+  ])
+  inspect(main_opaque.len(), content="2")
+}
+
+///|
+test "pbr meshlet: prepass deduplicates material ids per pass" {
+  let prepass = MeshletViewMaterialsPrepass::default()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let view_key = MeshletViewMaterialPipelineKey::new(
+    normal_prepass=true,
+    motion_vector_prepass=false,
+    deferred_prepass=true,
+  )
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass,
+    deferred,
+    [
+      MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
+        @material.OpaqueRendererMethod::Forward,
+      ),
+      MeshletPreparedMaterialInput::new(1, 101).with_opaque_render_method(
+        @material.OpaqueRendererMethod::Forward,
+      ),
+      MeshletPreparedMaterialInput::new(2, 200).with_opaque_render_method(
+        @material.OpaqueRendererMethod::Deferred,
+      ),
+      MeshletPreparedMaterialInput::new(2, 201).with_opaque_render_method(
+        @material.OpaqueRendererMethod::Deferred,
+      ),
+    ],
+    view_key~,
+    deferred_enabled=true,
+  )
+  inspect(prepass.len(), content="1")
+  inspect(deferred.len(), content="1")
+}
