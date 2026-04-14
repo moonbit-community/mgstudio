@@ -35,6 +35,9 @@ fn render_sub_app_extract(
   main_world : @ecs.World,
   render_world : @ecs.World,
 ) -> (@ecs.World, @ecs.World) {
+  let synced = sync_world(main_world, render_world)
+  let main_world = synced.0
+  let render_world = synced.1
   render_world.insert_resource(ecs_key_render_main_world, RenderMainWorld::{
     world: main_world,
   })
