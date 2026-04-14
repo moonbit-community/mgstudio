@@ -31,10 +31,6 @@ pub fn animation_clip_add_scale_track(AnimationClip, AnimationTargetId, Array[Ke
 
 pub fn animation_clip_add_translation_track(AnimationClip, AnimationTargetId, Array[KeyframeVec3]) -> AnimationClip
 
-pub fn animation_clip_callback_event(Float, (@ecs.World, @core.Entity, Float, Float) -> Unit) -> AnimationClipEvent
-
-pub fn animation_clip_event(Float, String, String) -> AnimationClipEvent
-
 pub fn animation_clip_get(@asset.Handle[AnimationClip]) -> AnimationClip?
 
 pub fn animation_clip_sample(AnimationClip, AnimationTargetId, Float) -> AnimationSample?

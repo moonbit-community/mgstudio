@@ -416,20 +416,3 @@ fn animation_emit_triggered_events(
     })
   }
 }
-
-///|
-pub fn animation_clip_event(
-  time : Float,
-  label : String,
-  payload : String,
-) -> AnimationClipEvent {
-  AnimationClipEvent::new(time, label, payload)
-}
-
-///|
-pub fn animation_clip_callback_event(
-  time : Float,
-  callback : AnimationEventTriggerFn,
-) -> AnimationClipEvent {
-  AnimationClipEvent::new_callback(time, callback)
-}
