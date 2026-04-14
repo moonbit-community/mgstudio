@@ -310,7 +310,9 @@ pub fn render3d_apply_view_fog_uniform_offsets(
     if !world.is_alive(entity) {
       continue
     }
-    try world.set_by_key(entity, ecs_key_view_fog_uniform_offset, offset) catch {
+    try
+      world.set_by_key(entity, ecs_key_view_fog_uniform_offset, offset)
+    catch {
       _ => ()
     } noraise {
       _ => ()

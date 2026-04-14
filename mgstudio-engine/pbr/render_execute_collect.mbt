@@ -31,7 +31,10 @@ fn render3d_execute_collect_cameras(
   }
   let projection_changed_entities : Map[UInt64, Bool] = {}
   let sequence = source_world.get_sequence_context().sequence()
-  for entity in source_world.changed_components(ecs_key_projection, sequence).read() {
+  for
+    entity in source_world
+    .changed_components(ecs_key_projection, sequence)
+    .read() {
     projection_changed_entities.set(entity_key(entity), true)
   }
   let cameras : Array[ExtractedCamera3d] = []
@@ -140,8 +143,7 @@ fn render3d_execute_collect_cameras(
       source_world, entity, world_transform_cache_ref,
     )
     let previous_view_data : @pbr_prepass.PreviousViewData? = try! source_world.get_by_key(
-      entity,
-      ecs_key_previous_view_data,
+      entity, ecs_key_previous_view_data,
     )
     let previous_transform = match previous_view_data {
       Some(v) => v.transform()

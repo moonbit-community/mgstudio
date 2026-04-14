@@ -1559,10 +1559,7 @@ fn pnm_read_token(bytes : Bytes, start : Int) -> (String, Int)? {
 }
 
 ///|
-fn pnm_read_p7_header(
-  bytes : Bytes,
-  start : Int,
-) -> (Int, Int, Int, Int, Int)? {
+fn pnm_read_p7_header(bytes : Bytes, start : Int) -> (Int, Int, Int, Int, Int)? {
   let mut index = start
   let mut width_raw = -1
   let mut height_raw = -1
@@ -1570,9 +1567,7 @@ fn pnm_read_p7_header(
   let mut max_value = -1
   let mut found_end = false
   while index < bytes.length() {
-    guard pnm_read_token(bytes, index) is Some((key, next_index)) else {
-      break
-    }
+    guard pnm_read_token(bytes, index) is Some((key, next_index)) else { break }
     index = next_index
     if key == "ENDHDR" {
       found_end = true
@@ -1600,7 +1595,11 @@ fn pnm_read_p7_header(
       _ => ()
     }
   }
-  if !found_end || width_raw <= 0 || height_raw <= 0 || depth <= 0 || max_value <= 0 {
+  if !found_end ||
+    width_raw <= 0 ||
+    height_raw <= 0 ||
+    depth <= 0 ||
+    max_value <= 0 {
     return None
   }
   if index < bytes.length() && blob_u8_at(bytes, index) == 13 {
@@ -1627,7 +1626,11 @@ fn pnm_scale_channel(value : Int, max_value : Int) -> Int {
 
 ///|
 fn pnm_sample_width_bytes(max_value : Int) -> Int {
-  if max_value > 255 { 2 } else { 1 }
+  if max_value > 255 {
+    2
+  } else {
+    1
+  }
 }
 
 ///|
@@ -1796,7 +1799,11 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       return None
     }
     for i in 0..<pixel_count {
-      guard pnm_read_binary_sample(bytes, data_start + i * sample_width, max_value)
+      guard pnm_read_binary_sample(
+          bytes,
+          data_start + i * sample_width,
+          max_value,
+        )
         is Some((gray_value, _next)) else {
         return None
       }

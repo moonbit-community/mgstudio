@@ -78,7 +78,10 @@ pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo with component() {
 pub fn skinned_mesh_bounds_gizmo_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  skinned_mesh_bounds_gizmo_plugin_with(app, SkinnedMeshBoundsGizmoPlugin::default())
+  skinned_mesh_bounds_gizmo_plugin_with(
+    app,
+    SkinnedMeshBoundsGizmoPlugin::default(),
+  )
 }
 
 ///|

@@ -149,7 +149,10 @@ pub impl PluginReplacement for PluginLifecycleTestPlugin with finish(_self, app)
 }
 
 ///|
-pub impl PluginReplacement for PluginLifecycleTestPlugin with cleanup(_self, app) {
+pub impl PluginReplacement for PluginLifecycleTestPlugin with cleanup(
+  _self,
+  app,
+) {
   plugin_lifecycle_log_ref.val.push(3)
   app
 }
@@ -302,9 +305,9 @@ test "app: plugin group try_set_plugin raises when id is missing" {
 ///|
 test "app: plugin lifecycle finish/cleanup run on first update, not add_plugin" {
   plugin_lifecycle_test_reset_log()
-  let mut app = App::new(@ecs.World::new()).add_plugin_typed(
-    PluginLifecycleTestPlugin::{  },
-  )
+  let mut app = App::new(@ecs.World::new()).add_plugin_typed(PluginLifecycleTestPlugin::{
+
+  })
   debug_inspect(app.plugins_state() == Ready, content="true")
   debug_inspect(plugin_lifecycle_log_ref.val, content="[1]")
   app = app.run_once()
@@ -333,9 +336,9 @@ test "app: schedules do not run before plugin ready lifecycle finalizes" {
 ///|
 test "app: explicit finish/cleanup follow bevy lifecycle ordering" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugin_typed(
-    PluginLifecycleTestPlugin::{  },
-  )
+  let app = App::new(@ecs.World::new()).add_plugin_typed(PluginLifecycleTestPlugin::{
+
+  })
   let app = app.finish()
   debug_inspect(app.plugins_state() == Finished, content="true")
   debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2]")

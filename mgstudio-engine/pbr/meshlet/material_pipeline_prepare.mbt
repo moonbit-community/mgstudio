@@ -62,7 +62,9 @@ pub struct MeshletViewMaterialsPrepass {
 ///|
 pub let ecs_key_meshlet_view_materials_prepass : @ecs.ComponentKey[
   MeshletViewMaterialsPrepass,
-] = @ecs.register_component(debug_name="render3d.meshlet_view_materials_prepass")
+] = @ecs.register_component(
+  debug_name="render3d.meshlet_view_materials_prepass",
+)
 
 ///|
 pub fn MeshletViewMaterialsPrepass::default() -> MeshletViewMaterialsPrepass {
@@ -150,11 +152,9 @@ fn meshlet_build_material_bins(
   let bins = []
   for index in 0..<material_ids.length() {
     let material_id = material_ids[index]
-    bins.push((
-      material_id,
-      pipeline_base + material_id,
-      bind_group_base + index,
-    ))
+    bins.push(
+      (material_id, pipeline_base + material_id, bind_group_base + index),
+    )
   }
   bins
 }
@@ -176,24 +176,16 @@ pub fn prepare_material_meshlet_meshes_prepass(
   prepass_materials : MeshletViewMaterialsPrepass,
   deferred_prepass_materials : MeshletViewMaterialsDeferredGBufferPrepass,
   material_ids : Array[Int],
-  deferred_enabled~ : Bool = true,
+  deferred_enabled? : Bool = true,
 ) -> Unit {
   prepass_materials.clear()
   deferred_prepass_materials.clear()
-  let prepass_bins = meshlet_build_material_bins(
-    material_ids,
-    2000,
-    100,
-  )
+  let prepass_bins = meshlet_build_material_bins(material_ids, 2000, 100)
   for material_bin in prepass_bins {
     prepass_materials.push(material_bin)
   }
   if deferred_enabled {
-    let deferred_bins = meshlet_build_material_bins(
-      material_ids,
-      3000,
-      200,
-    )
+    let deferred_bins = meshlet_build_material_bins(material_ids, 3000, 200)
     for material_bin in deferred_bins {
       deferred_prepass_materials.push(material_bin)
     }

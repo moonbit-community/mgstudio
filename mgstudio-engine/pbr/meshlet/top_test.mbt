@@ -86,8 +86,8 @@ test "pbr meshlet: plugin state includes missing feature mask" {
 ///|
 test "pbr meshlet: plugin installs state into app and render sub-app" {
   let app = @app.App::new(@ecs.World::new())
-  .add_plugin(@render.render_plugin)
-  .add_plugin_typed(MeshletPlugin::default())
+    .add_plugin(@render.render_plugin)
+    .add_plugin_typed(MeshletPlugin::default())
   inspect(
     (try! app.world().get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
     content="true",
@@ -99,14 +99,13 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
   )
   if meshlet_runtime_available() {
     inspect(
-      (try! render_world.get_resource(ecs_key_meshlet_resource_manager)) is
-      Some(_),
+      (try! render_world.get_resource(ecs_key_meshlet_resource_manager))
+      is Some(_),
       content="true",
     )
   } else {
     inspect(
-      (try! render_world.get_resource(ecs_key_meshlet_resource_manager)) is
-      None,
+      (try! render_world.get_resource(ecs_key_meshlet_resource_manager)) is None,
       content="true",
     )
   }
@@ -127,28 +126,30 @@ test "pbr meshlet: configure views inserts material components for msaa-off view
     @core_pipeline.NormalPrepass::default(),
   )
   let app = @app.App::new(world)
-  .add_plugin(@render.render_plugin)
-  .add_plugin_typed(MeshletPlugin::default())
-  .update()
+    .add_plugin(@render.render_plugin)
+    .add_plugin_typed(MeshletPlugin::default())
+    .update()
   inspect(
-    (try! app.world().get_by_key(
-      view_entity,
-      ecs_key_meshlet_view_materials_main_opaque_pass,
-    )) is Some(_),
+    (try! app
+    .world()
+    .get_by_key(view_entity, ecs_key_meshlet_view_materials_main_opaque_pass))
+    is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get_by_key(
-      view_entity,
-      ecs_key_meshlet_view_materials_prepass,
-    )) is Some(_),
+    (try! app
+    .world()
+    .get_by_key(view_entity, ecs_key_meshlet_view_materials_prepass))
+    is Some(_),
     content="true",
   )
   inspect(
-    (try! app.world().get_by_key(
-      view_entity,
-      ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
-    )) is Some(_),
+    (try! app
+    .world()
+    .get_by_key(
+      view_entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+    ))
+    is Some(_),
     content="true",
   )
 }
@@ -163,14 +164,14 @@ test "pbr meshlet: configure views skips msaa-enabled views" {
     @core_pipeline.Msaa::Sample4,
   )
   let app = @app.App::new(world)
-  .add_plugin(@render.render_plugin)
-  .add_plugin_typed(MeshletPlugin::default())
-  .update()
+    .add_plugin(@render.render_plugin)
+    .add_plugin_typed(MeshletPlugin::default())
+    .update()
   inspect(
-    (try! app.world().get_by_key(
-      view_entity,
-      ecs_key_meshlet_view_materials_main_opaque_pass,
-    )) is None,
+    (try! app
+    .world()
+    .get_by_key(view_entity, ecs_key_meshlet_view_materials_main_opaque_pass))
+    is None,
     content="true",
   )
 }
@@ -185,16 +186,19 @@ test "pbr meshlet: material prepare system writes per-view material bins" {
     @core_pipeline.Msaa::Off,
   )
   let mesh_entity = world.spawn()
-  try! world.set_by_key(mesh_entity, ecs_key_meshlet_mesh3d, MeshletMesh3d::new(42))
+  try! world.set_by_key(
+    mesh_entity,
+    ecs_key_meshlet_mesh3d,
+    MeshletMesh3d::new(42),
+  )
   let app = @app.App::new(world)
-  .add_plugin(@render.render_plugin)
-  .add_plugin_typed(MeshletPlugin::default())
-  .update()
+    .add_plugin(@render.render_plugin)
+    .add_plugin_typed(MeshletPlugin::default())
+    .update()
   match
-    (try! app.world().get_by_key(
-      view_entity,
-      ecs_key_meshlet_view_materials_main_opaque_pass,
-    )) {
+    (try! app
+    .world()
+    .get_by_key(view_entity, ecs_key_meshlet_view_materials_main_opaque_pass)) {
     Some(main_opaque) => inspect(main_opaque.len(), content="1")
     None => inspect(false, content="true")
   }

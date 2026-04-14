@@ -38,9 +38,7 @@ priv struct Render3dExecuteQueueState {
 
 ///|
 fn render3d_execute_queue_state_default() -> Render3dExecuteQueueState {
-  Render3dExecuteQueueState::{
-    queued_frame: None,
-  }
+  Render3dExecuteQueueState::{ queued_frame: None }
 }
 
 ///|

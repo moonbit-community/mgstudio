@@ -220,7 +220,9 @@ fn winit_apply_window_mode_change(
               )
           }
         None =>
-          abort("mgstudio_winit: could not find monitor for fullscreen selection")
+          abort(
+            "mgstudio_winit: could not find monitor for fullscreen selection",
+          )
       }
   }
 }

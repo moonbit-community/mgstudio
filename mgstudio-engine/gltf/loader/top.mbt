@@ -401,9 +401,7 @@ pub fn gltf_add_custom_vertex_attribute(
     )
   } else {
     gltf_upsert_custom_vertex_attribute(
-      gltf_custom_vertex_attributes_bootstrap,
-      name,
-      mapped_name,
+      gltf_custom_vertex_attributes_bootstrap, name, mapped_name,
     )
   }
 }

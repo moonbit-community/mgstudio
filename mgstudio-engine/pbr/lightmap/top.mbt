@@ -356,12 +356,14 @@ pub fn lightmap_plugin_install_with(
   let mut next = app
   if !next.contains_resource(ecs_key_render_lightmaps) {
     next = next.insert_world_resource(
-      ecs_key_render_lightmaps, RenderLightmaps::default(),
+      ecs_key_render_lightmaps,
+      RenderLightmaps::default(),
     )
   }
   if !next.contains_resource(ecs_key_lightmap_plugin_state) {
     next = next.insert_world_resource(
-      ecs_key_lightmap_plugin_state, LightmapPluginState::default(),
+      ecs_key_lightmap_plugin_state,
+      LightmapPluginState::default(),
     )
   }
   next

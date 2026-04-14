@@ -64,7 +64,9 @@ test "app: timeline trace pending queue stores and drains spans" {
   clear_timeline_trace_span_sink()
   timeline_trace_clear_pending_spans()
 
-  set_timeline_trace_span_sink(Some(fn(span) { timeline_trace_push_pending_span(span) }))
+  set_timeline_trace_span_sink(
+    Some(fn(span) { timeline_trace_push_pending_span(span) }),
+  )
   timeline_trace_emit_complete_span(
     TimelineTraceCategory::RenderQueue,
     "queue_test",

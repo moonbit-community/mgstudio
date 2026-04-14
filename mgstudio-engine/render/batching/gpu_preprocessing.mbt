@@ -163,7 +163,9 @@ pub impl @app.PluginReplacement for GpuPreprocessingPlugin with plugin_name(
 }
 
 ///|
-pub impl @app.PluginReplacement for GpuPreprocessingPlugin with world_plugin(self) {
+pub impl @app.PluginReplacement for GpuPreprocessingPlugin with world_plugin(
+  self,
+) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     gpu_preprocessing_plugin_with(app, self)
   }

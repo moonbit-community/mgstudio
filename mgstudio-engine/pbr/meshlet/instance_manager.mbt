@@ -133,7 +133,9 @@ pub fn InstanceManager::present_material_count(self : InstanceManager) -> Int {
 }
 
 ///|
-pub fn InstanceManager::present_material_ids(self : InstanceManager) -> Array[Int] {
+pub fn InstanceManager::present_material_ids(
+  self : InstanceManager,
+) -> Array[Int] {
   let ids = []
   for material_id in self.material_ids_present_in_scene.keys() {
     ids.push(material_id)

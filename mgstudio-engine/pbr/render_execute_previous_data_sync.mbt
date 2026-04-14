@@ -64,9 +64,7 @@ fn render3d_has_active_camera(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn update_mesh_previous_global_transforms(
-  world : @ecs.World,
-) -> Unit {
+fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   guard standard_material_prepass_enabled(world) else { return }
   guard render3d_has_active_camera(world) else { return }
   world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {

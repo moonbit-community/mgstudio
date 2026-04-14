@@ -143,9 +143,7 @@ pub fn pbr_ssao_default() -> ScreenSpaceAmbientOcclusion {
 }
 
 ///|
-pub fn ssao_plugin_install(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
+pub fn ssao_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ssao_plugin_install_with(app, ScreenSpaceAmbientOcclusionPlugin::default())
 }
 

@@ -63,9 +63,7 @@ pub fn AtmospherePluginState::default() -> AtmospherePluginState {
 }
 
 ///|
-let ecs_key_atmosphere_plugin_state : @ecs.ResourceKey[
-  AtmospherePluginState,
-] = @ecs.register_resource(
+let ecs_key_atmosphere_plugin_state : @ecs.ResourceKey[AtmospherePluginState] = @ecs.register_resource(
   debug_name="mgstudio_pbr::AtmospherePluginState",
 )
 

@@ -165,9 +165,7 @@ pub fn pbr_ssr_default() -> ScreenSpaceReflections {
 }
 
 ///|
-pub fn ssr_plugin_install(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
+pub fn ssr_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ssr_plugin_install_with(app, ScreenSpaceReflectionsPlugin::default())
 }
 

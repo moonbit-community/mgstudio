@@ -96,7 +96,8 @@ pub fn input_focus_system_set_name(
   stage_set : InputFocusSystems,
 ) -> @app.SystemSet {
   match stage_set {
-    Dispatch => @app.system_set("mgstudio.input_focus.InputFocusSystems.Dispatch")
+    Dispatch =>
+      @app.system_set("mgstudio.input_focus.InputFocusSystems.Dispatch")
   }
 }
 

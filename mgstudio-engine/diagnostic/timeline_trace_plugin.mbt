@@ -128,12 +128,16 @@ pub fn StressDiagnosticsPlugin::default() -> StressDiagnosticsPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for StressDiagnosticsPlugin with plugin_name(_self) {
+pub impl @app.PluginReplacement for StressDiagnosticsPlugin with plugin_name(
+  _self,
+) {
   STRESS_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for StressDiagnosticsPlugin with world_plugin(self) {
+pub impl @app.PluginReplacement for StressDiagnosticsPlugin with world_plugin(
+  self,
+) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     stress_diagnostics_plugin_with(app, self)
   }

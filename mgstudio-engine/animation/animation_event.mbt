@@ -196,8 +196,7 @@ fn[T : AnimationEvent + @ecs.TriggerEvent] animation_typed_event_register(
       state_ref.val.typed_event_dispatchers.push((type_key, dispatch))
     }
   } else if animation_typed_event_find_dispatcher_from(
-      animation_typed_event_dispatchers_bootstrap,
-      type_key,
+      animation_typed_event_dispatchers_bootstrap, type_key,
     )
     is None {
     animation_typed_event_dispatchers_bootstrap.push((type_key, dispatch))

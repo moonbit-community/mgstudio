@@ -31,7 +31,11 @@ test "render3d preupdate sync: writes previous view and global transform" {
     @sprite.Camera::default().with_is_active(true),
   )
   |> ignore)
-  try! (world.set_by_key(camera_entity, ecs_key_projection, Projection::default())
+  try! (world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
   |> ignore)
   try! (world.set_by_key(
     camera_entity, @transform.ecs_key_transform, camera_transform,
@@ -46,38 +50,65 @@ test "render3d preupdate sync: writes previous view and global transform" {
     Mesh3d::new(@asset.Handle::new(1)),
   )
   |> ignore)
-  try! (world.set_by_key(mesh_entity, @transform.ecs_key_transform, mesh_transform)
+  try! (world.set_by_key(
+    mesh_entity, @transform.ecs_key_transform, mesh_transform,
+  )
   |> ignore)
 
   update_mesh_previous_global_transforms(world)
   update_previous_view_data(world)
 
   let previous_view_data : @pbr_prepass.PreviousViewData? = try! world.get_by_key(
-    camera_entity,
-    ecs_key_previous_view_data,
+    camera_entity, ecs_key_previous_view_data,
   )
   inspect(previous_view_data is Some(_), content="true")
   match previous_view_data {
     Some(value) => {
       let synced_transform = value.transform()
-      inspect(approx_eq(synced_transform.translation.x, camera_transform.translation.x), content="true")
-      inspect(approx_eq(synced_transform.translation.y, camera_transform.translation.y), content="true")
-      inspect(approx_eq(synced_transform.translation.z, camera_transform.translation.z), content="true")
+      inspect(
+        approx_eq(
+          synced_transform.translation.x,
+          camera_transform.translation.x,
+        ),
+        content="true",
+      )
+      inspect(
+        approx_eq(
+          synced_transform.translation.y,
+          camera_transform.translation.y,
+        ),
+        content="true",
+      )
+      inspect(
+        approx_eq(
+          synced_transform.translation.z,
+          camera_transform.translation.z,
+        ),
+        content="true",
+      )
     }
     None => ()
   }
 
   let previous_global_transform : @pbr_prepass.PreviousGlobalTransform? = try! world.get_by_key(
-    mesh_entity,
-    ecs_key_previous_global_transform,
+    mesh_entity, ecs_key_previous_global_transform,
   )
   inspect(previous_global_transform is Some(_), content="true")
   match previous_global_transform {
     Some(value) => {
       let synced_transform = value.transform()
-      inspect(approx_eq(synced_transform.translation.x, mesh_transform.translation.x), content="true")
-      inspect(approx_eq(synced_transform.translation.y, mesh_transform.translation.y), content="true")
-      inspect(approx_eq(synced_transform.translation.z, mesh_transform.translation.z), content="true")
+      inspect(
+        approx_eq(synced_transform.translation.x, mesh_transform.translation.x),
+        content="true",
+      )
+      inspect(
+        approx_eq(synced_transform.translation.y, mesh_transform.translation.y),
+        content="true",
+      )
+      inspect(
+        approx_eq(synced_transform.translation.z, mesh_transform.translation.z),
+        content="true",
+      )
     }
     None => ()
   }
@@ -95,7 +126,11 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
     @sprite.Camera::default().with_is_active(false),
   )
   |> ignore)
-  try! (world.set_by_key(camera_entity, ecs_key_projection, Projection::default())
+  try! (world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
   |> ignore)
   try! (world.set_by_key(
     camera_entity,
@@ -121,8 +156,7 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   update_mesh_previous_global_transforms(world)
   update_previous_view_data(world)
   let not_synced : @pbr_prepass.PreviousGlobalTransform? = try! world.get_by_key(
-    mesh_entity,
-    ecs_key_previous_global_transform,
+    mesh_entity, ecs_key_previous_global_transform,
   )
   inspect(not_synced is None, content="true")
 
@@ -136,8 +170,7 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   update_mesh_previous_global_transforms(world)
   update_previous_view_data(world)
   let synced : @pbr_prepass.PreviousGlobalTransform? = try! world.get_by_key(
-    mesh_entity,
-    ecs_key_previous_global_transform,
+    mesh_entity, ecs_key_previous_global_transform,
   )
   inspect(synced is Some(_), content="true")
 }

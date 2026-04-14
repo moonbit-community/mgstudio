@@ -3427,8 +3427,7 @@ fn run_systems(
     }
 
     let trace_name = system_trace_name(cfg, stage, execution_i)
-    let system_trace_start_us = if
-      timeline_enabled &&
+    let system_trace_start_us = if timeline_enabled &&
       should_trace_system(cfg, stage, systems.length()) {
       timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
     } else {

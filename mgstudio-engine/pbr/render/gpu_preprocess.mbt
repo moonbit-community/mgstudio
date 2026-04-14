@@ -190,7 +190,10 @@ pub impl @app.Resource for Render3dGpuPreprocessState with resource() {
 pub fn gpu_mesh_preprocess_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  gpu_mesh_preprocess_plugin_install_with(app, GpuMeshPreprocessPlugin::default())
+  gpu_mesh_preprocess_plugin_install_with(
+    app,
+    GpuMeshPreprocessPlugin::default(),
+  )
 }
 
 ///|

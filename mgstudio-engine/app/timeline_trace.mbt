@@ -69,8 +69,7 @@ pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 let timeline_trace_span_sink_ref : Ref[TimelineTraceSpanSink?] = Ref::new(None)
 
 ///|
-let timeline_trace_pending_spans_ref : Ref[Array[TimelineTraceSpan]] = Ref::new(
-  [],
+let timeline_trace_pending_spans_ref : Ref[Array[TimelineTraceSpan]] = Ref::new([],
 )
 
 ///|

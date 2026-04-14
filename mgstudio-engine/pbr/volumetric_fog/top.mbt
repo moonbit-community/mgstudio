@@ -74,9 +74,7 @@ pub fn VolumetricFogPluginState::default() -> VolumetricFogPluginState {
 ///|
 let ecs_key_volumetric_fog_plugin_state : @ecs.ResourceKey[
   VolumetricFogPluginState,
-] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::VolumetricFogPluginState",
-)
+] = @ecs.register_resource(debug_name="mgstudio_pbr::VolumetricFogPluginState")
 
 ///|
 pub impl @app.Resource for VolumetricFogPluginState with resource() {

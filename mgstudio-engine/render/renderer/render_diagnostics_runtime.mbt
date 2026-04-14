@@ -279,7 +279,8 @@ pub fn render_diagnostics_record_mesh2d_draw(mesh_id : Int) -> Unit {
   state.current_frame_mesh2d_draw_calls = state.current_frame_mesh2d_draw_calls +
     1
   if mesh_id <= 0 {
-    state.debug_mesh2d_invalid_id_calls = state.debug_mesh2d_invalid_id_calls + 1
+    state.debug_mesh2d_invalid_id_calls = state.debug_mesh2d_invalid_id_calls +
+      1
   }
 }
 
@@ -290,7 +291,8 @@ pub fn render_diagnostics_record_mesh3d_draw(mesh_id : Int) -> Unit {
   state.current_frame_mesh3d_draw_calls = state.current_frame_mesh3d_draw_calls +
     1
   if mesh_id <= 0 {
-    state.debug_mesh3d_invalid_id_calls = state.debug_mesh3d_invalid_id_calls + 1
+    state.debug_mesh3d_invalid_id_calls = state.debug_mesh3d_invalid_id_calls +
+      1
   }
 }
 
@@ -327,13 +329,15 @@ pub fn render_diagnostics_record_mesh2d_drop_no_pass() -> Unit {
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pass_state() -> Unit {
   let state = render_diagnostics_runtime_state_ref.val
-  state.debug_mesh2d_drop_no_pass_state = state.debug_mesh2d_drop_no_pass_state + 1
+  state.debug_mesh2d_drop_no_pass_state = state.debug_mesh2d_drop_no_pass_state +
+    1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_missing_mesh() -> Unit {
   let state = render_diagnostics_runtime_state_ref.val
-  state.debug_mesh2d_drop_missing_mesh = state.debug_mesh2d_drop_missing_mesh + 1
+  state.debug_mesh2d_drop_missing_mesh = state.debug_mesh2d_drop_missing_mesh +
+    1
 }
 
 ///|

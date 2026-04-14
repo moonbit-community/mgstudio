@@ -98,7 +98,7 @@ pub struct PreviousGlobalTransform {
 pub fn PreviousGlobalTransform::new(
   transform : @transform.Transform,
 ) -> PreviousGlobalTransform {
-  PreviousGlobalTransform::{ transform }
+  PreviousGlobalTransform::{ transform, }
 }
 
 ///|
@@ -150,9 +150,7 @@ pub let ecs_key_previous_view_data : @ecs.ComponentKey[PreviousViewData] = @ecs.
 ///|
 pub let ecs_key_previous_global_transform : @ecs.ComponentKey[
   PreviousGlobalTransform,
-] = @ecs.register_component(
-  debug_name="pbr.prepass.previous_global_transform",
-)
+] = @ecs.register_component(debug_name="pbr.prepass.previous_global_transform")
 
 ///|
 pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState] = @core_prepass.ecs_key_prepass_view_state

@@ -327,9 +327,10 @@ test "asset host io: pnm decode supports ascii P3 payload" {
 ///|
 fn test_pnm_p7_rgba_1x1_bytes() -> Bytes {
   let out : Array[Byte] = []
-  for code in @utf8.encode(
-    "P7\nWIDTH 1\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n"[:],
-  ) {
+  for
+    code in @utf8.encode(
+      "P7\nWIDTH 1\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n"[:],
+    ) {
     out.push(code)
   }
   out.push((10).to_byte())
@@ -357,9 +358,10 @@ test "asset host io: pnm decode supports pam P7 payload and dimensions" {
 ///|
 fn test_pnm_p7_rgba_16bit_1x1_bytes() -> Bytes {
   let out : Array[Byte] = []
-  for code in @utf8.encode(
-    "P7\nWIDTH 1\nHEIGHT 1\nDEPTH 4\nMAXVAL 65535\nTUPLTYPE RGB_ALPHA\nENDHDR\n"[:],
-  ) {
+  for
+    code in @utf8.encode(
+      "P7\nWIDTH 1\nHEIGHT 1\nDEPTH 4\nMAXVAL 65535\nTUPLTYPE RGB_ALPHA\nENDHDR\n"[:],
+    ) {
     out.push(code)
   }
   // RGBA16BE pixel: (65535, 0, 32768, 65535)
