@@ -236,7 +236,7 @@ pub fn SubApps::update_sub_app_by_label(
       self.main.world = worlds.0
       sub_app_ref.val = SubApp::{ ..sub_app_ref.val, world: worlds.1 }
     }
-    sub_app_ref.val = sub_app_ref.val.run_once()
+    sub_app_ref.val = sub_app_ref.val.update()
   }
   self
 }
