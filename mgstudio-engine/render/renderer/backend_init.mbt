@@ -360,6 +360,7 @@ pub fn GpuBackend::new(
     auto_exposure_curve_view: None,
     auto_exposure_active_state_buf: None,
     auto_exposure_view_states: [],
+    mesh3d_view_bg_cache: [],
     mesh3d_material_bg_cache: [],
     sampler_cache: @hashmap.HashMap::new(),
     next_id: 1,

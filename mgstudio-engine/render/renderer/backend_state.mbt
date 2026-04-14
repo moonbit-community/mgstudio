@@ -297,6 +297,7 @@ pub struct GpuBackend {
   mut auto_exposure_curve_view : @wgpu.TextureView?
   mut auto_exposure_active_state_buf : @wgpu.Buffer?
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
+  mesh3d_view_bg_cache : Array[Mesh3dViewBindGroupCacheEntry]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu.Sampler]
   mut next_id : Int

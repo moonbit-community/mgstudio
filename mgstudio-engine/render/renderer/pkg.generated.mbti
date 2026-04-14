@@ -583,6 +583,7 @@ pub struct GpuBackend {
   mut auto_exposure_curve_view : @wgpu_mbt.TextureView?
   mut auto_exposure_active_state_buf : @wgpu_mbt.Buffer?
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
+  mesh3d_view_bg_cache : Array[Mesh3dViewBindGroupCacheEntry]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
   mut next_id : Int
@@ -989,6 +990,14 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   depth_texture_id : Int
   anisotropy_texture_id : Int
   specular_tint_texture_id : Int
+  bind_group : @wgpu_mbt.BindGroup
+}
+
+pub struct Mesh3dViewBindGroupCacheEntry {
+  transmission_source_texture_id : Int
+  point_shadow_texture_id : Int
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
   bind_group : @wgpu_mbt.BindGroup
 }
 

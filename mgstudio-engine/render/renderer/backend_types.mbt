@@ -90,6 +90,15 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
 }
 
 ///|
+pub struct Mesh3dViewBindGroupCacheEntry {
+  transmission_source_texture_id : Int
+  point_shadow_texture_id : Int
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
+  bind_group : @wgpu.BindGroup
+}
+
+///|
 pub struct Mesh2dPipelineCacheEntry {
   key : String
   pipeline : @wgpu.RenderPipeline

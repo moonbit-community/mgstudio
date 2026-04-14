@@ -14,6 +14,10 @@
 
 ///|
 fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_view_bg_cache {
+    entry.bind_group.release()
+  }
+  backend.mesh3d_view_bg_cache.clear()
   for entry in backend.mesh3d_material_bg_cache {
     entry.bind_group.release()
   }
@@ -50,6 +54,14 @@ fn mesh3d_view_bg_cache_get_or_create(
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup raise GpuBackendError {
+  for entry in backend.mesh3d_view_bg_cache {
+    if entry.transmission_source_texture_id == transmission_source_texture.id &&
+      entry.point_shadow_texture_id == point_shadow_texture.id &&
+      entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
+      entry.environment_specular_texture_id == environment_specular_texture.id {
+      return entry.bind_group
+    }
+  }
   let layout = match backend.mesh3d_bgl_view {
     Some(v) => v
     None => fatal("wgpu: missing mesh3d view bind group layout")
@@ -84,6 +96,13 @@ fn mesh3d_view_bg_cache_get_or_create(
     layout,
     label="mgstudio_mesh3d_view_bg",
   )
+  backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
+    transmission_source_texture_id: transmission_source_texture.id,
+    point_shadow_texture_id: point_shadow_texture.id,
+    environment_diffuse_texture_id: environment_diffuse_texture.id,
+    environment_specular_texture_id: environment_specular_texture.id,
+    bind_group,
+  })
   bind_group
 }
 
