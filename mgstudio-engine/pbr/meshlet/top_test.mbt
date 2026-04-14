@@ -174,3 +174,28 @@ test "pbr meshlet: configure views skips msaa-enabled views" {
     content="true",
   )
 }
+
+///|
+test "pbr meshlet: material prepare system writes per-view material bins" {
+  let world = @ecs.World::new()
+  let view_entity = world.spawn()
+  try! world.set_by_key(
+    view_entity,
+    @core_pipeline.ecs_key_msaa,
+    @core_pipeline.Msaa::Off,
+  )
+  let mesh_entity = world.spawn()
+  try! world.set_by_key(mesh_entity, ecs_key_meshlet_mesh3d, MeshletMesh3d::new(42))
+  let app = @app.App::new(world)
+  .add_plugin(@render.render_plugin)
+  .add_plugin_typed(MeshletPlugin::default())
+  .update()
+  match
+    (try! app.world().get_by_key(
+      view_entity,
+      ecs_key_meshlet_view_materials_main_opaque_pass,
+    )) {
+    Some(main_opaque) => inspect(main_opaque.len(), content="1")
+    None => inspect(false, content="true")
+  }
+}

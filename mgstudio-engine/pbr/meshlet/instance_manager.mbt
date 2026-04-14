@@ -133,6 +133,16 @@ pub fn InstanceManager::present_material_count(self : InstanceManager) -> Int {
 }
 
 ///|
+pub fn InstanceManager::present_material_ids(self : InstanceManager) -> Array[Int] {
+  let ids = []
+  for material_id in self.material_ids_present_in_scene.keys() {
+    ids.push(material_id)
+  }
+  ids.sort()
+  ids
+}
+
+///|
 pub fn extract_meshlet_mesh_entities(instance_count : Int) -> InstanceManager {
   let manager = InstanceManager::default()
   manager.set_instance_count(instance_count)

@@ -17,7 +17,7 @@
 
 ///|
 pub struct MeshletViewMaterialsMainOpaquePass {
-  entries : Array[(Int, Int, Int)]
+  mut entries : Array[(Int, Int, Int)]
 }
 
 ///|
@@ -48,8 +48,15 @@ pub fn MeshletViewMaterialsMainOpaquePass::len(
 }
 
 ///|
+pub fn MeshletViewMaterialsMainOpaquePass::clear(
+  self : MeshletViewMaterialsMainOpaquePass,
+) -> Unit {
+  self.entries = []
+}
+
+///|
 pub struct MeshletViewMaterialsPrepass {
-  entries : Array[(Int, Int, Int)]
+  mut entries : Array[(Int, Int, Int)]
 }
 
 ///|
@@ -78,8 +85,15 @@ pub fn MeshletViewMaterialsPrepass::len(
 }
 
 ///|
+pub fn MeshletViewMaterialsPrepass::clear(
+  self : MeshletViewMaterialsPrepass,
+) -> Unit {
+  self.entries = []
+}
+
+///|
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
-  entries : Array[(Int, Int, Int)]
+  mut entries : Array[(Int, Int, Int)]
 }
 
 ///|
@@ -110,6 +124,13 @@ pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(
 }
 
 ///|
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::clear(
+  self : MeshletViewMaterialsDeferredGBufferPrepass,
+) -> Unit {
+  self.entries = []
+}
+
+///|
 pub fn meshlet_material_prepare_entry_count(
   main_opaque : MeshletViewMaterialsMainOpaquePass,
   prepass : MeshletViewMaterialsPrepass,
@@ -118,6 +139,65 @@ pub fn meshlet_material_prepare_entry_count(
   main_opaque.entries.length() +
   prepass.entries.length() +
   deferred_prepass.entries.length()
+}
+
+///|
+fn meshlet_build_material_bins(
+  material_ids : Array[Int],
+  pipeline_base : Int,
+  bind_group_base : Int,
+) -> Array[(Int, Int, Int)] {
+  let bins = []
+  for index in 0..<material_ids.length() {
+    let material_id = material_ids[index]
+    bins.push((
+      material_id,
+      pipeline_base + material_id,
+      bind_group_base + index,
+    ))
+  }
+  bins
+}
+
+///|
+pub fn prepare_material_meshlet_meshes_main_opaque_pass(
+  view_materials : MeshletViewMaterialsMainOpaquePass,
+  material_ids : Array[Int],
+) -> Unit {
+  view_materials.clear()
+  let bins = meshlet_build_material_bins(material_ids, 1000, 0)
+  for material_bin in bins {
+    view_materials.push(material_bin)
+  }
+}
+
+///|
+pub fn prepare_material_meshlet_meshes_prepass(
+  prepass_materials : MeshletViewMaterialsPrepass,
+  deferred_prepass_materials : MeshletViewMaterialsDeferredGBufferPrepass,
+  material_ids : Array[Int],
+  deferred_enabled~ : Bool = true,
+) -> Unit {
+  prepass_materials.clear()
+  deferred_prepass_materials.clear()
+  let prepass_bins = meshlet_build_material_bins(
+    material_ids,
+    2000,
+    100,
+  )
+  for material_bin in prepass_bins {
+    prepass_materials.push(material_bin)
+  }
+  if deferred_enabled {
+    let deferred_bins = meshlet_build_material_bins(
+      material_ids,
+      3000,
+      200,
+    )
+    for material_bin in deferred_bins {
+      deferred_prepass_materials.push(material_bin)
+    }
+  }
 }
 
 ///|

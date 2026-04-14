@@ -24,3 +24,24 @@ test "pbr meshlet: material prepare entry count aggregates all passes" {
     content="2",
   )
 }
+
+///|
+test "pbr meshlet: prepare main opaque pass fills bins from material ids" {
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  prepare_material_meshlet_meshes_main_opaque_pass(main_opaque, [10, 20, 30])
+  inspect(main_opaque.len(), content="3")
+}
+
+///|
+test "pbr meshlet: prepare prepass respects deferred toggle" {
+  let prepass = MeshletViewMaterialsPrepass::default()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  prepare_material_meshlet_meshes_prepass(
+    prepass,
+    deferred,
+    [7, 8],
+    deferred_enabled=false,
+  )
+  inspect(prepass.len(), content="2")
+  inspect(deferred.len(), content="0")
+}

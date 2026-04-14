@@ -97,6 +97,11 @@ let meshlet_render3d_set_queue : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let meshlet_render3d_set_prepare_materials : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.meshlet.prepare_materials",
+)
+
+///|
 pub fn meshlet_required_wgpu_features() -> UInt64 {
   @renderer.meshlet_required_rust_features_u64()
 }
@@ -204,10 +209,15 @@ fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
 fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let instance_count = source_world.component_count(ecs_key_meshlet_mesh3d)
-  world.insert_resource(
-    ecs_key_meshlet_instance_manager,
-    extract_meshlet_mesh_entities(instance_count),
+  let manager = extract_meshlet_mesh_entities(instance_count)
+  let material_asset_ids = []
+  source_world.for_each_component(ecs_key_meshlet_mesh3d, fn(_entity, meshlet_mesh3d) {
+    material_asset_ids.push(meshlet_mesh3d.id())
+  })
+  ignore(
+    queue_material_meshlet_meshes_with_material_assets(manager, material_asset_ids),
   )
+  world.insert_resource(ecs_key_meshlet_instance_manager, manager)
 }
 
 ///|
@@ -300,6 +310,79 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
       ignore(queue_material_meshlet_meshes(instance_manager))
     }
     None => ()
+  }
+}
+
+///|
+fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let material_ids = match
+    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) => instance_manager.present_material_ids()
+    None => []
+  }
+  let main_opaque_entities : Array[@core.Entity] = []
+  source_world.for_each_component(
+    ecs_key_meshlet_view_materials_main_opaque_pass,
+    fn(entity, _main_opaque) { main_opaque_entities.push(entity) },
+  )
+  for entity in main_opaque_entities {
+    let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+    prepare_material_meshlet_meshes_main_opaque_pass(main_opaque, material_ids)
+    try! source_world.set_by_key(
+      entity,
+      ecs_key_meshlet_view_materials_main_opaque_pass,
+      main_opaque,
+    )
+    let mut prepass = MeshletViewMaterialsPrepass::default()
+    let mut deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+    let has_prepass = try! source_world.contains_by_key(
+      entity,
+      ecs_key_meshlet_view_materials_prepass,
+    )
+    let has_deferred = try! source_world.contains_by_key(
+      entity,
+      ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+    )
+    if has_prepass {
+      match
+        (try! source_world.get_by_key(entity, ecs_key_meshlet_view_materials_prepass)) {
+        Some(value) => prepass = value
+        None => ()
+      }
+    }
+    if has_deferred {
+      match
+        (try! source_world.get_by_key(
+          entity,
+          ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+        )) {
+        Some(value) => deferred = value
+        None => ()
+      }
+    }
+    if has_prepass || has_deferred {
+      prepare_material_meshlet_meshes_prepass(
+        prepass,
+        deferred,
+        material_ids,
+        deferred_enabled=has_deferred,
+      )
+      if has_prepass {
+        try! source_world.set_by_key(
+          entity,
+          ecs_key_meshlet_view_materials_prepass,
+          prepass,
+        )
+      }
+      if has_deferred {
+        try! source_world.set_by_key(
+          entity,
+          ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+          deferred,
+        )
+      }
+    }
   }
 }
 
@@ -410,6 +493,12 @@ fn meshlet_configure_render_sub_app(
   )
   .add_systems(
     @app.PostUpdate,
+    @app.system(meshlet_prepare_material_views_system).in_set(
+      meshlet_render3d_set_prepare_materials,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
     @app.system(meshlet_queue_material_meshes_system).in_set(meshlet_render3d_set_queue),
   )
   .add_systems(
@@ -447,6 +536,9 @@ fn meshlet_configure_render_sub_app(
     meshlet_render3d_set_prepare_bind_groups,
   ])
   .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_bind_groups, before=[
+    meshlet_render3d_set_prepare_materials,
+  ])
+  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_materials, before=[
     meshlet_render3d_set_queue,
   ])
 }
