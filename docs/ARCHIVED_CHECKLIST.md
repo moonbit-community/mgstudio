@@ -55,7 +55,7 @@ Archived completed checklist items moved out of ROADMAP_CHECKLIST to keep line b
 - [x] Package `platform`.
 - [x] Package `pointer_events`.
 - [x] Package `post_process`.
-- [x] Package `ptr`.
+- [x] Package `ptr` removed; `bevy_ptr` moved to explicit parity excludes.
 - [x] Package `reflect` (policy-locked minimal boundary).
 - [x] Package `scene`.
 - [x] Package `shader`.

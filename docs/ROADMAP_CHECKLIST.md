@@ -156,7 +156,7 @@ This file must not exceed 200 lines.
 - [x] `examples/camera-shell-prune`: remove top-level stub files (`2d_on_ui.mbt`, `2d_screen_shake.mbt`, `2d_top_down_camera.mbt`) and keep only owner `*/main.mbt` entries.
 - [x] `ui_widgets/empty-file-prune`: delete unused empty `ui_widgets/ui_widgets.mbt`.
 - [x] `asset/io-dead-wrapper-prune`: remove unreferenced `asset_io_{android,wasm,web}_supported` stubs and keep source-name owner APIs.
-- [x] `asset/io-platform-exclude-prune`: delete unused `asset/io/{android,wasm,web}.mbt` shell files and exclude corresponding Bevy platform sources from parity scope.
+- [x] `asset/io+ptr-platform-exclude-prune`: delete unused `asset/io/{android,wasm,web}.mbt` + `ptr` package shells and exclude corresponding `bevy_asset` platform + `bevy_ptr` sources from parity scope.
 - [x] `dev_tools/dead-wrapper-prune`: remove unreferenced `*_available` stubs in `ci_testing`, `easy_screenshot`, `picking_debug`, `render_debug`, `states`.
 - [x] `dev_tools/ci_testing-runtime`: replace `dev_tools/ci_testing` shell package with Bevy-shaped config/events/runtime plugin (screenshot/app-exit/custom-event/camera-move flow).
 - [x] `text/error+font_loader-shape`: replace boolean availability stubs with concrete `TextError` / `FontLoader` / `FontLoaderError` owner types.

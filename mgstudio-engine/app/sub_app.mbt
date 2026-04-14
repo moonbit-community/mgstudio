@@ -204,10 +204,8 @@ pub fn[W] SubApps::list_mut(
 ///|
 pub fn SubApps::run_startup(self : SubApps[@ecs.World]) -> SubApps[@ecs.World] {
   self.main = self.main.run_startup()
-  for entry in self.sub_apps.iter() {
-    let (_key, sub_app_ref) = entry
-    sub_app_ref.val = sub_app_ref.val.run_startup()
-  }
+  // Bevy-aligned execution model: secondary sub-apps are driven only by
+  // `update` (extract + update), not by an explicit startup pass.
   self
 }
 

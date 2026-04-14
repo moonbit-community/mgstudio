@@ -82,6 +82,10 @@ export const ALWAYS_EXCLUDED_SOURCE_PREFIXES = [
     prefix: "bevy/crates/bevy_solari/",
     reason: "scope_removed_solari",
   },
+  {
+    prefix: "bevy/crates/bevy_ptr/",
+    reason: "scope_removed_ptr",
+  },
 ]
 
 function nonGoalExampleReason(exampleSub) {
