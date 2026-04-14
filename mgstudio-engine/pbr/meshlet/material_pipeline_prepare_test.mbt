@@ -178,6 +178,66 @@ test "pbr meshlet: prepass pipeline key ignores depth-prepass bit" {
 }
 
 ///|
+test "pbr meshlet: prepass pipeline key ignores main-pass-only view dimensions" {
+  let prepass_a = MeshletViewMaterialsPrepass::default()
+  let deferred_a = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass_b = MeshletViewMaterialsPrepass::default()
+  let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let inputs = [
+    MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
+      @material.OpaqueRendererMethod::Forward,
+    ),
+  ]
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass_a,
+    deferred_a,
+    inputs,
+    view_key=MeshletViewMaterialPipelineKey::new(
+      hdr=true,
+      normal_prepass=true,
+      motion_vector_prepass=false,
+      deferred_prepass=false,
+      temporal_jitter=true,
+      projection_type=3,
+      shadow_filter_method=2,
+      tonemap_in_shader=true,
+      tonemapping_mode=6,
+      deband_dither=true,
+      environment_map=true,
+      irradiance_volume=true,
+      ssao=true,
+      distance_fog=true,
+    ),
+    deferred_enabled=false,
+  )
+  prepare_material_meshlet_meshes_prepass_with_inputs(
+    prepass_b,
+    deferred_b,
+    inputs,
+    view_key=MeshletViewMaterialPipelineKey::new(
+      hdr=true,
+      normal_prepass=true,
+      motion_vector_prepass=false,
+      deferred_prepass=false,
+      temporal_jitter=false,
+      projection_type=0,
+      shadow_filter_method=0,
+      tonemap_in_shader=false,
+      tonemapping_mode=0,
+      deband_dither=false,
+      environment_map=false,
+      irradiance_volume=false,
+      ssao=false,
+      distance_fog=false,
+    ),
+    deferred_enabled=false,
+  )
+  inspect(prepass_a.len(), content="1")
+  inspect(prepass_b.len(), content="1")
+  inspect(prepass_a.entries[0].1 == prepass_b.entries[0].1, content="true")
+}
+
+///|
 test "pbr meshlet: main opaque pipeline key includes bevy view dimensions" {
   let main_opaque_a = MeshletViewMaterialsMainOpaquePass::default()
   let main_opaque_b = MeshletViewMaterialsMainOpaquePass::default()

@@ -222,9 +222,21 @@ pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(
   deferred_prepass : Bool,
 ) -> MeshletViewMaterialPipelineKey {
   MeshletViewMaterialPipelineKey::{
-    ..self,
+    hdr: self.hdr,
+    normal_prepass: self.normal_prepass,
     depth_prepass: false,
+    motion_vector_prepass: self.motion_vector_prepass,
     deferred_prepass,
+    temporal_jitter: false,
+    projection_type: 0,
+    shadow_filter_method: 0,
+    tonemap_in_shader: false,
+    tonemapping_mode: 0,
+    deband_dither: false,
+    environment_map: false,
+    irradiance_volume: false,
+    ssao: false,
+    distance_fog: false,
   }
 }
 
