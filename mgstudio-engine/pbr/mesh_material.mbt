@@ -128,8 +128,15 @@ fn render3d_extract_system_in_render_app(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn render3d_prepare_system_in_render_app(world : @ecs.World) -> Unit {
-  render3d_prepare_system(world)
+fn render3d_prepare_morphs_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_prepare_morphs_system(world)
+}
+
+///|
+fn render3d_prepare_skin_bindings_system_in_render_app(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_skin_bindings_system(world)
 }
 
 ///|
@@ -186,7 +193,13 @@ fn configure_mesh_render_sub_app(
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_system_in_render_app).in_set(
+    @app.system(render3d_prepare_morphs_system_in_render_app).in_set(
+      render3d_set_prepare_resources,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(render3d_prepare_skin_bindings_system_in_render_app).in_set(
       render3d_set_prepare_resources,
     ),
   )

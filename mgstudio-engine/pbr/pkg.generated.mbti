@@ -469,7 +469,11 @@ pub fn render3d_prepare_meshes_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_morphs(@ecs.World, @ref.Ref[@render.Render3dPhaseState]) -> Unit
 
+pub fn render3d_prepare_morphs_system(@ecs.World) -> Unit
+
 pub fn render3d_prepare_resources_flush_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_skin_bindings_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit
 
