@@ -25,34 +25,34 @@ const MESHLET_PLUGIN_NAME : String = "mgstudio.pbr.meshlet.MeshletPlugin"
 priv struct MeshletPluginMarker {}
 
 ///|
-let ecs_key_meshlet_plugin_marker : @ecs.ResourceKey[
-  MeshletPluginMarker,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletPluginMarker")
+let ecs_key_meshlet_plugin_marker : @ecs.ResourceKey[MeshletPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::MeshletPluginMarker",
+)
 
 ///|
-pub let ecs_key_meshlet_plugin_state : @ecs.ResourceKey[
-  MeshletPluginState,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletPluginState")
+pub let ecs_key_meshlet_plugin_state : @ecs.ResourceKey[MeshletPluginState] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::MeshletPluginState",
+)
 
 ///|
-pub let ecs_key_meshlet_instance_manager : @ecs.ResourceKey[
-  InstanceManager,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::InstanceManager")
+pub let ecs_key_meshlet_instance_manager : @ecs.ResourceKey[InstanceManager] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::InstanceManager",
+)
 
 ///|
-pub let ecs_key_meshlet_resource_manager : @ecs.ResourceKey[
-  ResourceManager,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::ResourceManager")
+pub let ecs_key_meshlet_resource_manager : @ecs.ResourceKey[ResourceManager] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::ResourceManager",
+)
 
 ///|
-pub let ecs_key_meshlet_pipelines : @ecs.ResourceKey[
-  MeshletPipelines,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletPipelines")
+pub let ecs_key_meshlet_pipelines : @ecs.ResourceKey[MeshletPipelines] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::MeshletPipelines",
+)
 
 ///|
-pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[
-  MeshletMeshManager,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletMeshManager")
+pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[MeshletMeshManager] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::MeshletMeshManager",
+)
 
 ///|
 pub let ecs_key_meshlet_visibility_buffer_raster_state : @ecs.ResourceKey[
@@ -198,9 +198,7 @@ pub fn meshlet_plugin() -> MeshletPlugin {
 ///|
 fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
   match (try! world.get_resource(ecs_key_meshlet_mesh_manager)) {
-    Some(manager) => {
-      ignore(perform_pending_meshlet_mesh_writes(manager))
-    }
+    Some(manager) => ignore(perform_pending_meshlet_mesh_writes(manager))
     None => ()
   }
 }
@@ -211,11 +209,16 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let instance_count = source_world.component_count(ecs_key_meshlet_mesh3d)
   let manager = extract_meshlet_mesh_entities(instance_count)
   let material_asset_ids = []
-  source_world.for_each_component(ecs_key_meshlet_mesh3d, fn(_entity, meshlet_mesh3d) {
+  source_world.for_each_component(ecs_key_meshlet_mesh3d, fn(
+    _entity,
+    meshlet_mesh3d,
+  ) {
     material_asset_ids.push(meshlet_mesh3d.id())
   })
   ignore(
-    queue_material_meshlet_meshes_with_material_assets(manager, material_asset_ids),
+    queue_material_meshlet_meshes_with_material_assets(
+      manager, material_asset_ids,
+    ),
   )
   world.insert_resource(ecs_key_meshlet_instance_manager, manager)
 }
@@ -233,18 +236,22 @@ fn meshlet_collect_prepass_view_entities(
   source_world : @ecs.World,
 ) -> Array[@core.Entity] {
   let prepass_views : Array[@core.Entity] = []
-  source_world.for_each_component(
-    @core_pipeline.ecs_key_normal_prepass,
-    fn(entity, _normal_prepass) { prepass_views.push(entity) },
-  )
+  source_world.for_each_component(@core_pipeline.ecs_key_normal_prepass, fn(
+    entity,
+    _normal_prepass,
+  ) {
+    prepass_views.push(entity)
+  })
   source_world.for_each_component(
     @core_pipeline.ecs_key_motion_vector_prepass,
     fn(entity, _motion_vector_prepass) { prepass_views.push(entity) },
   )
-  source_world.for_each_component(
-    @core_pipeline.ecs_key_deferred_prepass,
-    fn(entity, _deferred_prepass) { prepass_views.push(entity) },
-  )
+  source_world.for_each_component(@core_pipeline.ecs_key_deferred_prepass, fn(
+    entity,
+    _deferred_prepass,
+  ) {
+    prepass_views.push(entity)
+  })
   prepass_views
 }
 
@@ -253,7 +260,10 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let prepass_views = meshlet_collect_prepass_view_entities(source_world)
   let msaa_off_views : Array[@core.Entity] = []
-  source_world.for_each_component(@core_pipeline.ecs_key_msaa, fn(entity, msaa) {
+  source_world.for_each_component(@core_pipeline.ecs_key_msaa, fn(
+    entity,
+    msaa,
+  ) {
     if msaa is @core_pipeline.Msaa::Off {
       msaa_off_views.push(entity)
     }
@@ -289,7 +299,8 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
 fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
   let instance_count = meshlet_instance_count_from_world(world)
   match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
-    Some(manager) => prepare_meshlet_per_frame_resources(manager, instance_count)
+    Some(manager) =>
+      prepare_meshlet_per_frame_resources(manager, instance_count)
     None => ()
   }
 }
@@ -298,7 +309,8 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
 fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
   let instance_count = meshlet_instance_count_from_world(world)
   match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
-    Some(_manager) => ignore(prepare_meshlet_view_bind_groups(0, instance_count))
+    Some(_manager) =>
+      ignore(prepare_meshlet_view_bind_groups(0, instance_count))
     None => ()
   }
 }
@@ -306,9 +318,8 @@ fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
 ///|
 fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
   match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) => {
+    Some(instance_manager) =>
       ignore(queue_material_meshlet_meshes(instance_manager))
-    }
     None => ()
   }
 }
@@ -330,23 +341,21 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
     prepare_material_meshlet_meshes_main_opaque_pass(main_opaque, material_ids)
     try! source_world.set_by_key(
-      entity,
-      ecs_key_meshlet_view_materials_main_opaque_pass,
-      main_opaque,
+      entity, ecs_key_meshlet_view_materials_main_opaque_pass, main_opaque,
     )
     let mut prepass = MeshletViewMaterialsPrepass::default()
     let mut deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
     let has_prepass = try! source_world.contains_by_key(
-      entity,
-      ecs_key_meshlet_view_materials_prepass,
+      entity, ecs_key_meshlet_view_materials_prepass,
     )
     let has_deferred = try! source_world.contains_by_key(
-      entity,
-      ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+      entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
     )
     if has_prepass {
       match
-        (try! source_world.get_by_key(entity, ecs_key_meshlet_view_materials_prepass)) {
+        (try! source_world.get_by_key(
+          entity, ecs_key_meshlet_view_materials_prepass,
+        )) {
         Some(value) => prepass = value
         None => ()
       }
@@ -354,8 +363,7 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     if has_deferred {
       match
         (try! source_world.get_by_key(
-          entity,
-          ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
+          entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
         )) {
         Some(value) => deferred = value
         None => ()
@@ -370,16 +378,12 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
       )
       if has_prepass {
         try! source_world.set_by_key(
-          entity,
-          ecs_key_meshlet_view_materials_prepass,
-          prepass,
+          entity, ecs_key_meshlet_view_materials_prepass, prepass,
         )
       }
       if has_deferred {
         try! source_world.set_by_key(
-          entity,
-          ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
-          deferred,
+          entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass, deferred,
         )
       }
     }
@@ -388,15 +392,20 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state)) is None {
+  if (try! world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state))
+    is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
       MeshletVisibilityBufferRasterState::default(),
     )
   }
   let instance_count = meshlet_instance_count_from_world(world)
-  match (try! world.get_resource_ref_mut(ecs_key_meshlet_visibility_buffer_raster_state)) {
-    Some(state_ref) => meshlet_visibility_buffer_raster(state_ref.val, instance_count)
+  match
+    (try! world.get_resource_ref_mut(
+      ecs_key_meshlet_visibility_buffer_raster_state,
+    )) {
+    Some(state_ref) =>
+      meshlet_visibility_buffer_raster(state_ref.val, instance_count)
     None => ()
   }
 }
@@ -408,7 +417,9 @@ fn meshlet_prepass_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
-  ignore(meshlet_deferred_gbuffer_prepass(meshlet_instance_count_from_world(world)))
+  ignore(
+    meshlet_deferred_gbuffer_prepass(meshlet_instance_count_from_world(world)),
+  )
 }
 
 ///|
@@ -439,7 +450,10 @@ fn meshlet_ensure_render_sub_app_resources(
     )
   }
   if (try! world.get_resource(ecs_key_meshlet_pipelines)) is None {
-    world.insert_resource(ecs_key_meshlet_pipelines, init_meshlet_pipelines(-1, -1, -1))
+    world.insert_resource(
+      ecs_key_meshlet_pipelines,
+      init_meshlet_pipelines(-1, -1, -1),
+    )
   }
   if (try! world.get_resource(ecs_key_meshlet_mesh_manager)) is None {
     world.insert_resource(
@@ -462,83 +476,88 @@ fn meshlet_configure_render_sub_app(
   plugin : MeshletPlugin,
 ) -> @app.SubApp[@ecs.World] {
   meshlet_ensure_render_sub_app_resources(sub_app.world(), plugin)
-  sub_app
+  let stage = @render.render_schedule_stage()
+  @render.configure_base_render_sets(sub_app)
   .add_systems(
-    @app.PostUpdate,
-    @app.system(meshlet_extract_entities_system).in_set(meshlet_render3d_set_extract),
+    stage,
+    @app.system(meshlet_extract_entities_system).in_set(
+      meshlet_render3d_set_extract,
+    ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_prepare_assets_system).in_set(
       meshlet_render3d_set_prepare_meshes,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_configure_views_system).in_set(
       meshlet_render3d_set_prepare_resources_flush,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_prepare_resources_system).in_set(
       meshlet_render3d_set_prepare_resources,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_prepare_view_bind_groups_system).in_set(
       meshlet_render3d_set_prepare_bind_groups,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_prepare_material_views_system).in_set(
       meshlet_render3d_set_prepare_materials,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
-    @app.system(meshlet_queue_material_meshes_system).in_set(meshlet_render3d_set_queue),
+    stage,
+    @app.system(meshlet_queue_material_meshes_system).in_set(
+      meshlet_render3d_set_queue,
+    ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_visibility_buffer_raster_system).in_set(
       @core_3d.core_3d_set_prepass,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_prepass_system).in_set(@core_3d.core_3d_set_prepass),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_deferred_gbuffer_prepass_system).in_set(
       @core_3d.core_3d_set_prepass,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(meshlet_main_opaque_pass_system).in_set(
       @core_3d.core_3d_set_main_pass,
     ),
   )
-  .configure_set(@app.PostUpdate, meshlet_render3d_set_extract, before=[
+  .configure_set(stage, meshlet_render3d_set_extract, before=[
     meshlet_render3d_set_prepare_resources_flush,
   ])
-  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_resources_flush, before=[
+  .configure_set(stage, meshlet_render3d_set_prepare_resources_flush, before=[
     meshlet_render3d_set_prepare_resources,
   ])
-  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_resources, before=[
+  .configure_set(stage, meshlet_render3d_set_prepare_resources, before=[
     meshlet_render3d_set_prepare_meshes,
   ])
-  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_meshes, before=[
+  .configure_set(stage, meshlet_render3d_set_prepare_meshes, before=[
     meshlet_render3d_set_prepare_bind_groups,
   ])
-  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_bind_groups, before=[
+  .configure_set(stage, meshlet_render3d_set_prepare_bind_groups, before=[
     meshlet_render3d_set_prepare_materials,
   ])
-  .configure_set(@app.PostUpdate, meshlet_render3d_set_prepare_materials, before=[
+  .configure_set(stage, meshlet_render3d_set_prepare_materials, before=[
     meshlet_render3d_set_queue,
   ])
 }
@@ -549,12 +568,13 @@ pub fn meshlet_plugin_with(
   plugin : MeshletPlugin,
 ) -> @app.App[@ecs.World] {
   let plugin_state = MeshletPluginState::from_plugin(plugin)
-  let mut next = app.insert_world_resource(ecs_key_meshlet_plugin_state, plugin_state)
+  let mut next = app.insert_world_resource(
+    ecs_key_meshlet_plugin_state, plugin_state,
+  )
   if !next.contains_resource(ecs_key_meshlet_plugin_marker) {
-    next = next.insert_world_resource(
-      ecs_key_meshlet_plugin_marker,
-      MeshletPluginMarker::{  },
-    )
+    next = next.insert_world_resource(ecs_key_meshlet_plugin_marker, MeshletPluginMarker::{
+
+    })
     next = @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
       meshlet_configure_render_sub_app(sub_app, plugin)
     })

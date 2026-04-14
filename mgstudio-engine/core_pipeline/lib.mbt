@@ -95,7 +95,9 @@ fn core_pipeline_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
-  if (try! world.get_resource(@fullscreen_vertex_shader.ecs_key_fullscreen_shader))
+  if (try! world.get_resource(
+      @fullscreen_vertex_shader.ecs_key_fullscreen_shader,
+    ))
     is None {
     world.insert_resource(
       @fullscreen_vertex_shader.ecs_key_fullscreen_shader,
@@ -108,7 +110,10 @@ fn core_pipeline_configure_render_sub_app(
       CameraDriverState::default(),
     )
   }
-  sub_app.add_systems(@app.PostUpdate, @app.system(camera_driver))
+  @render.configure_base_render_sets(sub_app).add_systems(
+    @render.render_schedule_stage(),
+    @app.system(camera_driver).in_set(@render.render_system_set_manage_views),
+  )
 }
 
 ///|
@@ -134,13 +139,13 @@ pub fn core_pipeline_plugin_with(
   _plugin : CorePipelinePlugin,
 ) -> @app.App[@ecs.World] {
   let app = app
-  .add_plugin(@core_2d.core_2d_plugin)
-  .add_plugin(@core_3d.core_3d_plugin)
-  .add_plugin(@deferred.copy_deferred_lighting_id_plugin)
-  .add_plugin(@blit.blit_plugin)
-  .add_plugin(@tonemapping.tonemapping_plugin)
-  .add_plugin(@upscaling.upscaling_plugin)
-  .add_plugin(@oit.oit_plugin)
-  .add_plugin(@mip_generation.mip_generation_plugin)
+    .add_plugin(@core_2d.core_2d_plugin)
+    .add_plugin(@core_3d.core_3d_plugin)
+    .add_plugin(@deferred.copy_deferred_lighting_id_plugin)
+    .add_plugin(@blit.blit_plugin)
+    .add_plugin(@tonemapping.tonemapping_plugin)
+    .add_plugin(@upscaling.upscaling_plugin)
+    .add_plugin(@oit.oit_plugin)
+    .add_plugin(@mip_generation.mip_generation_plugin)
   core_pipeline_install_render_graph_driver(app)
 }

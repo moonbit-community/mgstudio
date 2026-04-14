@@ -8430,38 +8430,35 @@ fn configure_render2d_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   ensure_render_state_resource(sub_app.world())
-  sub_app
+  let stage = @render.render_schedule_stage()
+  @render.configure_base_render_sets(sub_app)
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_prepare_system).in_set(render2d_set_prepare),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
-  .configure_set(@app.PostUpdate, render2d_set_extract_materials, before=[
+  .configure_set(stage, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
-  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+  .configure_set(stage, render2d_set_extract, before=[
     render2d_set_prepare_materials,
   ])
-  .configure_set(@app.PostUpdate, render2d_set_prepare_materials, before=[
+  .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
-  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
-    render2d_set_queue,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
-    render2d_set_render,
-  ])
+  .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
+  .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
 }
 
 ///|
@@ -8469,38 +8466,35 @@ fn configure_render2d_render_sub_app_ecs(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   ensure_render_state_resource(sub_app.world())
-  sub_app
+  let stage = @render.render_schedule_stage()
+  @render.configure_base_render_sets(sub_app)
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_prepare_system).in_set(render2d_set_prepare),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
-  .configure_set(@app.PostUpdate, render2d_set_extract_materials, before=[
+  .configure_set(stage, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
-  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+  .configure_set(stage, render2d_set_extract, before=[
     render2d_set_prepare_materials,
   ])
-  .configure_set(@app.PostUpdate, render2d_set_prepare_materials, before=[
+  .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
-  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
-    render2d_set_queue,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
-    render2d_set_render,
-  ])
+  .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
+  .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
 }
 
 ///|

@@ -53,10 +53,11 @@ pub fn render_source_world(world : @ecs.World) -> @ecs.World {
 pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let mut next = app
   if next.get_sub_app(@app.RenderApp) is None {
-    next = next.insert_sub_app(
-      @app.RenderApp,
-      @app.SubApp::new(@ecs.World::new()).set_update_schedule(Some(@app.Main)),
+    let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
+      Some(@app.Main),
     )
+    let render_sub_app = configure_base_render_sets(render_sub_app)
+    next = next.insert_sub_app(@app.RenderApp, render_sub_app)
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
   if !next.contains_resource(ecs_key_render_plugin_marker) {

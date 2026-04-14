@@ -166,68 +166,65 @@ fn configure_mesh_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   @pbr_render.ensure_render3d_phase_state_resource(sub_app.world())
-  sub_app
+  let stage = @render.render_schedule_stage()
+  @render.configure_base_render_sets(sub_app)
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_extract_system_in_render_app).in_set(
       render3d_set_extract,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_prepare_system_in_render_app).in_set(
       render3d_set_prepare_resources,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_prepare_resources_flush_system_in_render_app).in_set(
       render3d_set_prepare_resources_flush,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_prepare_meshes_system_in_render_app).in_set(
       render3d_set_prepare_meshes,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_prepare_bind_groups_system_in_render_app).in_set(
       render3d_set_prepare_bind_groups,
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_queue_system_in_render_app).in_set(render3d_set_queue),
   )
   .add_systems(
-    @app.PostUpdate,
+    stage,
     @app.system(render3d_execute_system_in_render_app).in_set(
       render3d_set_render,
     ),
   )
-  .configure_set(@app.PostUpdate, render3d_set_extract, before=[
+  .configure_set(stage, render3d_set_extract, before=[
     render3d_set_prepare_resources_flush,
   ])
-  .configure_set(@app.PostUpdate, render3d_set_prepare_resources_flush, before=[
+  .configure_set(stage, render3d_set_prepare_resources_flush, before=[
     render3d_set_prepare_resources,
   ])
-  .configure_set(@app.PostUpdate, render3d_set_prepare_resources, before=[
+  .configure_set(stage, render3d_set_prepare_resources, before=[
     render3d_set_prepare_meshes,
   ])
-  .configure_set(@app.PostUpdate, render3d_set_prepare_meshes, before=[
+  .configure_set(stage, render3d_set_prepare_meshes, before=[
     render3d_set_prepare_bind_groups,
   ])
-  .configure_set(@app.PostUpdate, render3d_set_prepare_bind_groups, before=[
+  .configure_set(stage, render3d_set_prepare_bind_groups, before=[
     render3d_set_prepare,
   ])
-  .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
-    render3d_set_queue,
-  ])
-  .configure_set(@app.PostUpdate, render3d_set_queue, before=[
-    render3d_set_render,
-  ])
+  .configure_set(stage, render3d_set_prepare, before=[render3d_set_queue])
+  .configure_set(stage, render3d_set_queue, before=[render3d_set_render])
 }
 
 ///|

@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/core_pipeline/skybox" @skybox,
   "Milky2018/mgstudio/core_pipeline/tonemapping" @tonemapping,
   "Milky2018/mgstudio/core_pipeline/upscaling" @upscaling,
+  "Milky2018/mgstudio/render" @render,
 }
 
 supported_targets = "native"

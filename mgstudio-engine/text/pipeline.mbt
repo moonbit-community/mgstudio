@@ -2099,37 +2099,38 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       before=[@sprite_render.render2d_set_queue],
     )
   @render.with_render_app(next, fn(render_app) {
-    render_app
+    let stage = @render.render_schedule_stage()
+    @render.configure_base_render_sets(render_app)
     .add_systems(
-      @app.PostUpdate,
+      stage,
       @app.system(text_render_system).in_set(text_set_render_prepare),
     )
     .add_systems(
-      @app.PostUpdate,
+      stage,
       @app.system(text_render_transparent_2d_queue_system).in_set(
         text_set_render_transparent_2d,
       ),
     )
     .add_systems(
-      @app.PostUpdate,
+      stage,
       @app.system(text_render_transparent_ui_queue_system).in_set(
         text_set_render_transparent_ui,
       ),
     )
     .configure_set(
-      @app.PostUpdate,
+      stage,
       text_set_render_prepare,
       after=[@sprite_render.render2d_set_extract],
       before=[text_set_render_transparent_2d],
     )
     .configure_set(
-      @app.PostUpdate,
+      stage,
       text_set_render_transparent_2d,
       after=[text_set_render_prepare, @sprite_render.render2d_set_prepare],
       before=[text_set_render_transparent_ui],
     )
     .configure_set(
-      @app.PostUpdate,
+      stage,
       text_set_render_transparent_ui,
       after=[text_set_render_transparent_2d],
       before=[@sprite_render.render2d_set_queue],

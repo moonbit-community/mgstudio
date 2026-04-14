@@ -16,14 +16,15 @@
 // Bevy source: `bevy/crates/bevy_ui_render/src/lib.rs`.
 pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @render.with_render_app(app, fn(render_app) {
-    render_app
+    let stage = @render.render_schedule_stage()
+    @render.configure_base_render_sets(render_app)
     .add_systems(
-      @app.PostUpdate,
+      stage,
       @app.system(ui_render_extract_system_in_render_app).in_set(
         ui_render_set_extract,
       ),
     )
-    .configure_set(@app.PostUpdate, ui_render_set_extract, before=[
+    .configure_set(stage, ui_render_set_extract, before=[
       @sprite_render.render2d_set_extract,
     ])
   })

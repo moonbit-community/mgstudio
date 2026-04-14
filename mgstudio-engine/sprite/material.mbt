@@ -614,15 +614,16 @@ pub fn[M : Material2d] material2d_plugin(
       ensure_render_material2d_instances_resource_in_world(render_world, probe)
       ensure_material2d_runtime_registry_resource_in_world(render_world)
       register_material2d_runtime_world(render_world, probe)
-      render_app
+      let stage = @render.render_schedule_stage()
+      @render.configure_base_render_sets(render_app)
       .add_systems(
-        @app.PostUpdate,
+        stage,
         @app.system(fn(world : @ecs.World) {
           extract_material2d_mesh_instances_system(world, probe)
         }).in_set(render2d_set_extract_materials),
       )
       .add_systems(
-        @app.PostUpdate,
+        stage,
         @app.system(fn(world : @ecs.World) {
           prepare_material2d_assets_system(world, probe)
         }).in_set(render2d_set_prepare_materials),
