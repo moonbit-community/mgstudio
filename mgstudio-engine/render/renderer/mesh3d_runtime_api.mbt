@@ -68,6 +68,19 @@ pub fn mesh3d_gpu_culling_supported() -> Bool {
 }
 
 ///|
+pub fn read_only_binding_type_uniform(required_storage_buffers : Int) -> Bool {
+  if required_storage_buffers <= 0 {
+    return false
+  }
+  if ensure_backend() is Some(backend) {
+    let backend_type = backend.device.info_backend_type_u32()
+    return backend_type == @wgpu.BACKEND_TYPE_OPEN_GL ||
+      backend_type == @wgpu.BACKEND_TYPE_OPEN_GLES
+  }
+  false
+}
+
+///|
 pub fn meshlet_required_rust_features_u64() -> UInt64 {
   @wgpu.FEATURES_TEXTURE_INT64_ATOMIC |
   @wgpu.FEATURES_TEXTURE_ATOMIC |

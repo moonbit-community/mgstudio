@@ -245,9 +245,7 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
     _ => None
   }).unwrap()
   let ranges = ranges_ref.val
-  if changed_ranges.is_empty() &&
-    removed_ranges.is_empty() &&
-    ranges.entity_count() > 0 {
+  if changed_ranges.is_empty() && removed_ranges.is_empty() {
     return
   }
   let query : @ecs.QueryState[
@@ -298,7 +296,12 @@ fn write_render_visibility_ranges_system(render_world : @ecs.World) -> Unit {
       _ => None
     })
     is Some(ranges_ref) {
-    render_visibility_ranges_write(ranges_ref.val, false)
+    render_visibility_ranges_write(
+      ranges_ref.val,
+      @render.host_gpu_read_only_binding_type_uniform(
+        VISIBILITY_RANGES_STORAGE_BUFFER_COUNT,
+      ),
+    )
   }
 }
 

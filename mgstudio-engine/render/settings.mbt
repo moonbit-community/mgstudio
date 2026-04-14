@@ -148,3 +148,10 @@ pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool {
 pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool {
   @renderer.mesh3d_preprocess_disabled()
 }
+
+///|
+pub fn host_gpu_read_only_binding_type_uniform(
+  required_storage_buffers : Int,
+) -> Bool {
+  @renderer.read_only_binding_type_uniform(required_storage_buffers)
+}

@@ -223,6 +223,8 @@ pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : 
 
 pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBackendError
 
+pub fn read_only_binding_type_uniform(Int) -> Bool
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn render_context_backend_for_test() -> GpuBackend?
