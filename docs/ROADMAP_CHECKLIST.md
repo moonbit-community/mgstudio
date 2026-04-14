@@ -50,7 +50,7 @@ This file must not exceed 200 lines.
 
 - [ ] `render/wgpu_mbt` (deferred, upstream): meshlet texture-atomic rust-feature gating is wired; remaining gap is mesh-shader feature constant/capability surface in `wgpu_mbt` for Bevy-equivalent meshlet capability reporting (tracked at `moonbit-community/wgpu-mbt#11`).
 - [ ] `render/wgpu_mbt` (deferred, upstream): add explicit read-only binding-type capability query (Bevy uses `RenderDevice::get_supported_read_only_binding_type`) so visibility-range buffer mode can stop using backend-type heuristics (tracked at `moonbit-community/wgpu-mbt#12`).
-- [ ] `scene/sprite` runtime blocker: `moon test scene --target native` currently aborts in `sprite.render2d_register_shader_source_asset` (`sprite_render/mesh2d/mesh2d.wgsl` missing from startup shader registry path); resolve registration/source-of-truth loading to unblock scene package runtime validation.
+- [x] `scene/sprite` runtime blocker resolved: `moon test scene --target native` now passes after moving `render2d` shader startup registration to sprite-owned embedded WGSL sources (no cross-package fallback list).
 - [ ] `text`: keep behavior parity deltas explicit and minimized (archived: `moon_cosmic` bidi linearization starvation no longer reproducible on `0.3.0`; remaining work is visual/script-coverage parity, not startup blocker).
 - [ ] `physics2d/physics3d`: finish bevy_rapier behavior parity closure (evidence updated: `physics2d` + `physics3d` screenshots and sanity reports in `/tmp/mgstudio_physics*_visual_20260414`).
 - [ ] `stress_tests`: keep source-level convergence tracker from full-suite baseline (`/tmp/mgstudio_stress_full_20260414/results.tsv`) and per-case traces (e.g. `/tmp/mgstudio_trace_many_foxes_20260414`).

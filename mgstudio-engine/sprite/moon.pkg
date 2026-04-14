@@ -22,3 +22,68 @@ import {
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_color_material_wgsl_source",
+      "input": "../sprite_render/mesh2d/color_material.wgsl",
+      "output": "embedded_wgsl_mesh2d_color_material_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_bindings_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d_bindings.wgsl",
+      "output": "embedded_wgsl_mesh2d_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_functions_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d_functions.wgsl",
+      "output": "embedded_wgsl_mesh2d_functions_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_types_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d_types.wgsl",
+      "output": "embedded_wgsl_mesh2d_types_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_vertex_output_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
+      "output": "embedded_wgsl_mesh2d_vertex_output_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_view_bindings_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+      "output": "embedded_wgsl_mesh2d_view_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_view_types_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d_view_types.wgsl",
+      "output": "embedded_wgsl_mesh2d_view_types_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh2d_wgsl_source",
+      "input": "../sprite_render/mesh2d/mesh2d.wgsl",
+      "output": "embedded_wgsl_mesh2d_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_wireframe2d_wgsl_source",
+      "input": "../sprite_render/mesh2d/wireframe2d.wgsl",
+      "output": "embedded_wgsl_wireframe2d_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_render_sprite_wgsl_source",
+      "input": "../sprite_render/render/sprite.wgsl",
+      "output": "embedded_wgsl_sprite_render_sprite_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_render_sprite_view_bindings_wgsl_source",
+      "input": "../sprite_render/render/sprite_view_bindings.wgsl",
+      "output": "embedded_wgsl_sprite_render_sprite_view_bindings_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source",
+      "input": "../assets/shaders/custom/mesh2d_checker_material.wgsl",
+      "output": "embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl.mbt",
+    },
+  ],
+)

@@ -2727,39 +2727,38 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
     "sprite_render/mesh2d/color_material.wgsl",
-    MESH2D_WIREFRAME_SHADER_PATH,
-    SPRITE_SHADER_PATH,
-    SPRITE_VIEW_BINDINGS_PATH,
-    "post_process/bloom/bloom.wgsl",
-    "ui_render/ui.wgsl",
-    "ui_render/box_shadow.wgsl",
-    "ui_render/ui_texture_slice.wgsl",
     "sprite_render/mesh2d/mesh2d_functions.wgsl",
     "sprite_render/mesh2d/mesh2d_types.wgsl",
     "sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
     "sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
     "sprite_render/mesh2d/mesh2d_view_types.wgsl",
-    "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    "core_pipeline/tonemapping/tonemapping.wgsl",
-    "core_pipeline/tonemapping/lut_bindings.wgsl",
-    "render/globals.wgsl",
-    "render/maths.wgsl",
-    "render/view/view.wgsl",
-    "core_pipeline/tonemapping/tonemapping_shared.wgsl",
+    MESH2D_WIREFRAME_SHADER_PATH,
+    SPRITE_SHADER_PATH,
+    SPRITE_VIEW_BINDINGS_PATH,
   ]
 }
 
 ///|
 fn register_render2d_bevy_shader_sources(world : @ecs.World) -> Unit {
   world |> ignore
+  register_embedded_mesh2d_wgsl_sources_generated()
   for path in render2d_bevy_shader_asset_paths() {
     let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
       "assets", path,
     ) catch {
-      _ => abort("failed to load render2d shader asset text: \{path}")
+      _ =>
+        match render2d_embedded_shader_source(path) {
+          Some(embedded_source) => embedded_source
+          None => abort("failed to load render2d shader asset text: \{path}")
+        }
     }
     if source == "" {
-      abort("failed to load render2d shader asset text: \{path}")
+      match render2d_embedded_shader_source(path) {
+        Some(embedded_source) =>
+          @render.register_wgsl_source(path, embedded_source)
+        None => abort("failed to load render2d shader asset text: \{path}")
+      }
+      continue
     }
     @render.register_wgsl_source(path, source)
   }
