@@ -83,6 +83,11 @@ fn render3d_execute_collect_meshes(
     ),
     @ecs.All,
   ] = @ecs.query(source_world)
+  fn mesh_entity_key(entity : @core.Entity) -> UInt64 {
+    let hi = entity.id.reinterpret_as_uint().to_uint64()
+    let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+    (hi << 32) | lo
+  }
   try! mesh_extract_query.view(fn(entity, data) {
     let (
       mesh3d_comp,
@@ -130,23 +135,37 @@ fn render3d_execute_collect_meshes(
       local_transform_comp.value(),
       world_transform_cache_ref,
     )
+    let previous_global_transform = if needs_mesh_previous_transform {
+      try! source_world.get_by_key(entity, ecs_key_previous_global_transform)
+    } else {
+      None
+    }
+    let entity_key = mesh_entity_key(entity)
+    let has_previous_skin = phase_state_ref.val.skin_previous_matrices.contains(
+      entity_key,
+    )
+    let has_previous_morph = phase_state_ref.val.morph_indices_prev.get(
+        entity_key,
+      )
+      is Some(_)
     let motion_vector_enabled = if needs_mesh_previous_transform {
-      match
+      let supports_motion = match
         render3d_mesh_draw_alpha(material.alpha_mode, material.base_color.a) {
         Some(alpha) => alpha >= 0.999F
         None => false
       }
+      supports_motion &&
+      (
+        previous_global_transform is Some(_) ||
+        has_previous_skin ||
+        has_previous_morph
+      )
     } else {
       false
     }
-    let previous_transform = if motion_vector_enabled {
-      match
-        (try! source_world.get_by_key(entity, ecs_key_previous_global_transform)) {
-        Some(v) => v.transform()
-        None => transform
-      }
-    } else {
-      transform
+    let previous_transform = match previous_global_transform {
+      Some(v) => v.transform()
+      None => transform
     }
     let visibility_range = if has_visibility_range_components {
       try! source_world.get_by_key(entity, @visibility.ecs_key_visibility_range)
