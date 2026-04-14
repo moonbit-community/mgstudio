@@ -10,7 +10,6 @@ import {
   "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "tonyfettes/any",
 }
 
 // Values
@@ -32,7 +31,7 @@ pub fn animation_clip_add_scale_track(AnimationClip, AnimationTargetId, Array[Ke
 
 pub fn animation_clip_add_translation_track(AnimationClip, AnimationTargetId, Array[KeyframeVec3]) -> AnimationClip
 
-pub fn animation_clip_callback_event(Float, Int) -> AnimationClipEvent
+pub fn animation_clip_callback_event(Float, (@ecs.World, @core.Entity, Float, Float) -> Unit) -> AnimationClipEvent
 
 pub fn animation_clip_event(Float, String, String) -> AnimationClipEvent
 
@@ -41,8 +40,6 @@ pub fn animation_clip_get(@asset.Handle[AnimationClip]) -> AnimationClip?
 pub fn animation_clip_sample(AnimationClip, AnimationTargetId, Float) -> AnimationSample?
 
 pub fn animation_clip_set(@asset.Handle[AnimationClip], AnimationClip) -> Bool
-
-pub fn animation_event_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn animation_graph() -> AnimationGraph
 
@@ -78,10 +75,6 @@ pub fn animation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn animation_plugin_with(@app.App[@ecs.World], AnimationPlugin) -> @app.App[@ecs.World]
 
-pub fn animation_register_clip_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
-
-pub fn animation_register_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
-
 pub fn animation_rotation_keyframe(Float, @math.Quat) -> KeyframeQuat
 
 pub fn animation_scale_keyframe(Float, @math.Vec3) -> KeyframeVec3
@@ -115,8 +108,6 @@ pub fn animation_translation_keyframe(Float, @math.Vec3) -> KeyframeVec3
 pub fn animation_weights(Array[Float]) -> AnimationWeights
 
 pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy]
-
-pub let ecs_key_animation_event_runtime_state : @ecs.ResourceKey[AnimationEventRuntimeState]
 
 pub let ecs_key_animation_graph_handle : @ecs.ComponentKey[AnimationGraphHandle]
 
@@ -212,8 +203,8 @@ pub struct AnimationClip {
 }
 pub fn AnimationClip::add_curve_to_target(Self, AnimationTargetId, AnimatableCurve, sample_count? : Int) -> Self
 pub fn AnimationClip::add_event(Self, Float, String, String) -> Self
-pub fn AnimationClip::add_event_fn(Self, Float, Int) -> Self
-pub fn AnimationClip::add_event_fn_to_target(Self, AnimationTargetId, Float, Int) -> Self
+pub fn AnimationClip::add_event_fn(Self, Float, (@ecs.World, @core.Entity, Float, Float) -> Unit) -> Self
+pub fn AnimationClip::add_event_fn_to_target(Self, AnimationTargetId, Float, (@ecs.World, @core.Entity, Float, Float) -> Unit) -> Self
 pub fn AnimationClip::add_event_to_target(Self, AnimationTargetId, Float, String, String) -> Self
 pub fn AnimationClip::add_rotation_curve(Self, AnimationTargetId, Array[KeyframeQuat]) -> Self
 pub fn AnimationClip::add_scale_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
@@ -240,24 +231,15 @@ pub struct AnimationClipEvent {
   time : Float
   label : String
   payload : String
-  callback_id : Int?
-  typed_event_payload : @any.Any?
-  typed_event_type_key : String?
+  trigger : ((@ecs.World, @core.Entity, Float, Float) -> Unit)?
 }
-pub fn AnimationClipEvent::callback_id(Self) -> Int?
 pub fn AnimationClipEvent::label(Self) -> String
 pub fn AnimationClipEvent::new(Float, String, String) -> Self
-pub fn AnimationClipEvent::new_callback(Float, Int) -> Self
+pub fn AnimationClipEvent::new_callback(Float, (@ecs.World, @core.Entity, Float, Float) -> Unit) -> Self
 pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(Float, T) -> Self
 pub fn AnimationClipEvent::payload(Self) -> String
 pub fn AnimationClipEvent::time(Self) -> Float
-pub fn AnimationClipEvent::typed_event_payload(Self) -> @any.Any?
-
-pub struct AnimationEventRuntimeState {
-  typed_event_dispatchers : Array[(String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit)]
-  event_callbacks : Array[(@core.Entity, Float, Float) -> Unit]
-}
-pub impl @app.Resource for AnimationEventRuntimeState
+pub fn AnimationClipEvent::trigger(Self) -> ((@ecs.World, @core.Entity, Float, Float) -> Unit)?
 
 pub(all) enum AnimationEventTarget {
   Root
@@ -533,11 +515,9 @@ pub impl ToJson for RepeatAnimation
 pub impl @json.FromJson for RepeatAnimation
 
 // Type aliases
-pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
+pub type AnimationEventTriggerFn = (@ecs.World, @core.Entity, Float, Float) -> Unit
 
 pub type AnimationMask = UInt
-
-pub type AnimationTypedEventDispatcher = (String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit)
 
 // Traits
 pub(open) trait AnimationEvent {

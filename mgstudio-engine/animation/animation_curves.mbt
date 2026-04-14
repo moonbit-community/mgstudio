@@ -784,9 +784,9 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event_to
 pub fn AnimationClip::add_event_fn(
   self : AnimationClip,
   time : Float,
-  callback_id : Int,
+  callback : AnimationEventTriggerFn,
 ) -> AnimationClip {
-  let event = AnimationClipEvent::new_callback(time, callback_id)
+  let event = AnimationClipEvent::new_callback(time, callback)
   let events = animation_clip_events_get_or_insert(
     self,
     AnimationEventTarget::Root,
@@ -803,9 +803,9 @@ pub fn AnimationClip::add_event_fn_to_target(
   self : AnimationClip,
   target_id : AnimationTargetId,
   time : Float,
-  callback_id : Int,
+  callback : AnimationEventTriggerFn,
 ) -> AnimationClip {
-  let event = AnimationClipEvent::new_callback(time, callback_id)
+  let event = AnimationClipEvent::new_callback(time, callback)
   let events = animation_clip_events_get_or_insert(
     self,
     AnimationEventTarget::Node(target_id),

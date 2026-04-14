@@ -26,9 +26,7 @@ pub struct AnimationClipEvent {
   time : Float
   label : String
   payload : String
-  callback_id : Int?
-  typed_event_payload : @any.Any?
-  typed_event_type_key : String?
+  trigger : AnimationEventTriggerFn?
 }
 
 ///|
@@ -37,171 +35,18 @@ pub fn AnimationClipEvent::new(
   label : String,
   payload : String,
 ) -> AnimationClipEvent {
-  AnimationClipEvent::{
-    time,
-    label,
-    payload,
-    callback_id: None,
-    typed_event_payload: None,
-    typed_event_type_key: None,
-  }
+  AnimationClipEvent::{ time, label, payload, trigger: None }
 }
+
+///|
+pub type AnimationEventTriggerFn = (@ecs.World, @core.Entity, Float, Float) -> Unit
 
 ///|
 pub fn AnimationClipEvent::new_callback(
   time : Float,
-  callback_id : Int,
+  trigger : AnimationEventTriggerFn,
 ) -> AnimationClipEvent {
-  AnimationClipEvent::{
-    time,
-    label: "",
-    payload: "",
-    callback_id: Some(callback_id),
-    typed_event_payload: None,
-    typed_event_type_key: None,
-  }
-}
-
-///|
-let animation_typed_event_dispatchers_bootstrap : Array[
-  (String, (@ecs.World, @any.Any, @core.Entity, String?) -> Unit),
-] = []
-
-///|
-pub type AnimationTypedEventDispatcher = (
-  String,
-  (@ecs.World, @any.Any, @core.Entity, String?) -> Unit,
-)
-
-///|
-pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
-
-///|
-pub struct AnimationEventRuntimeState {
-  typed_event_dispatchers : Array[AnimationTypedEventDispatcher]
-  event_callbacks : Array[AnimationEventCallback]
-}
-
-///|
-fn AnimationEventRuntimeState::from_bootstrap() -> AnimationEventRuntimeState {
-  let typed_event_dispatchers : Array[AnimationTypedEventDispatcher] = []
-  for entry in animation_typed_event_dispatchers_bootstrap {
-    typed_event_dispatchers.push(entry)
-  }
-  let event_callbacks : Array[AnimationEventCallback] = []
-  for callback in animation_event_callbacks_bootstrap {
-    event_callbacks.push(callback)
-  }
-  AnimationEventRuntimeState::{ typed_event_dispatchers, event_callbacks }
-}
-
-///|
-pub let ecs_key_animation_event_runtime_state : @ecs.ResourceKey[
-  AnimationEventRuntimeState,
-] = @ecs.register_resource(debug_name="animation.event_runtime_state")
-
-///|
-pub impl @app.Resource for AnimationEventRuntimeState with resource() {
-  ecs_key_animation_event_runtime_state
-}
-
-///|
-pub fn animation_event_runtime_plugin(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  if app.contains_resource(ecs_key_animation_event_runtime_state) {
-    app
-  } else {
-    let next = app.insert_world_resource(
-      ecs_key_animation_event_runtime_state,
-      AnimationEventRuntimeState::from_bootstrap(),
-    )
-    animation_typed_event_dispatchers_bootstrap.clear()
-    animation_event_callbacks_bootstrap.clear()
-    next
-  }
-}
-
-///|
-fn animation_event_runtime_state_ref_if_present() -> Ref[
-  AnimationEventRuntimeState,
-]? {
-  guard @app.current_world() is Some(world) else { return None }
-  try! world.get_resource_ref_mut(ecs_key_animation_event_runtime_state)
-}
-
-///|
-fn animation_typed_event_find_dispatcher_from(
-  dispatchers : Array[AnimationTypedEventDispatcher],
-  type_key : String,
-) -> ((@ecs.World, @any.Any, @core.Entity, String?) -> Unit)? {
-  for entry in dispatchers {
-    if entry.0 == type_key {
-      return Some(entry.1)
-    }
-  }
-  None
-}
-
-///|
-fn animation_typed_event_find_dispatcher(
-  type_key : String,
-) -> ((@ecs.World, @any.Any, @core.Entity, String?) -> Unit)? {
-  if animation_event_runtime_state_ref_if_present() is Some(state_ref) {
-    if animation_typed_event_find_dispatcher_from(
-        state_ref.val.typed_event_dispatchers,
-        type_key,
-      )
-      is Some(dispatch) {
-      return Some(dispatch)
-    }
-  }
-  animation_typed_event_find_dispatcher_from(
-    animation_typed_event_dispatchers_bootstrap, type_key,
-  )
-}
-
-///|
-fn[T : AnimationEvent] animation_typed_event_type_key(event : T) -> String {
-  event.animation_event_marker()
-  @any.of(event).type_name()
-}
-
-///|
-fn[T : AnimationEvent + @ecs.TriggerEvent] animation_typed_event_register(
-  event : T,
-) -> String {
-  let type_key = animation_typed_event_type_key(event)
-  let dispatch : (@ecs.World, @any.Any, @core.Entity, String?) -> Unit = fn(
-    world : @ecs.World,
-    payload : @any.Any,
-    entity : @core.Entity,
-    caller : String?,
-  ) {
-    match payload.try_to() {
-      Some(event_value) => {
-        let event_ref : Ref[T] = Ref::new(event_value)
-        T::set_observer_entity(event_ref, entity)
-        world.trigger(event_ref.val, caller~)
-      }
-      None => abort("animation clip typed event payload type mismatch")
-    }
-  }
-  if animation_event_runtime_state_ref_if_present() is Some(state_ref) {
-    if animation_typed_event_find_dispatcher_from(
-        state_ref.val.typed_event_dispatchers,
-        type_key,
-      )
-      is None {
-      state_ref.val.typed_event_dispatchers.push((type_key, dispatch))
-    }
-  } else if animation_typed_event_find_dispatcher_from(
-      animation_typed_event_dispatchers_bootstrap, type_key,
-    )
-    is None {
-    animation_typed_event_dispatchers_bootstrap.push((type_key, dispatch))
-  }
-  type_key
+  AnimationClipEvent::{ time, label: "", payload: "", trigger: Some(trigger) }
 }
 
 ///|
@@ -209,15 +54,27 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
   time : Float,
   event : T,
 ) -> AnimationClipEvent {
-  let type_key = animation_typed_event_register(event)
-  AnimationClipEvent::{
-    time,
-    label: "",
-    payload: "",
-    callback_id: None,
-    typed_event_payload: Some(@any.of(event)),
-    typed_event_type_key: Some(type_key),
+  event.animation_event_marker()
+  let payload = @any.of(event)
+  let trigger : AnimationEventTriggerFn = fn(
+    world : @ecs.World,
+    entity : @core.Entity,
+    _time : Float,
+    _weight : Float,
+  ) {
+    match payload.try_to() {
+      Some(event_value) => {
+        let event_ref : Ref[T] = Ref::new(event_value)
+        T::set_observer_entity(event_ref, entity)
+        world.trigger(
+          event_ref.val,
+          caller=Some("mgstudio.animation.trigger_events"),
+        )
+      }
+      None => abort("animation clip typed event payload type mismatch")
+    }
   }
+  AnimationClipEvent::{ time, label: "", payload: "", trigger: Some(trigger) }
 }
 
 ///|
@@ -236,15 +93,10 @@ pub fn AnimationClipEvent::payload(self : AnimationClipEvent) -> String {
 }
 
 ///|
-pub fn AnimationClipEvent::callback_id(self : AnimationClipEvent) -> Int? {
-  self.callback_id
-}
-
-///|
-pub fn AnimationClipEvent::typed_event_payload(
+pub fn AnimationClipEvent::trigger(
   self : AnimationClipEvent,
-) -> @any.Any? {
-  self.typed_event_payload
+) -> AnimationEventTriggerFn? {
+  self.trigger
 }
 
 ///|
@@ -305,32 +157,6 @@ pub fn AnimationTriggeredEvent::payload(
   self : AnimationTriggeredEvent,
 ) -> String {
   self.payload
-}
-
-///|
-let animation_event_callbacks_bootstrap : Array[AnimationEventCallback] = []
-
-///|
-pub fn animation_register_event_callback(
-  callback : AnimationEventCallback,
-) -> Int {
-  if animation_event_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.event_callbacks.push(callback)
-    state_ref.val.event_callbacks.length() - 1
-  } else {
-    animation_event_callbacks_bootstrap.push(callback)
-    animation_event_callbacks_bootstrap.length() - 1
-  }
-}
-
-///|
-fn animation_event_callback_get(callback_id : Int) -> AnimationEventCallback? {
-  if animation_event_runtime_state_ref_if_present() is Some(state_ref) {
-    if state_ref.val.event_callbacks.get(callback_id) is Some(callback) {
-      return Some(callback)
-    }
-  }
-  animation_event_callbacks_bootstrap.get(callback_id)
 }
 
 ///|
@@ -576,17 +402,8 @@ fn animation_emit_triggered_events(
   events : Array[AnimationClipEvent],
 ) -> Unit {
   for event in events {
-    if event.callback_id is Some(callback_id) {
-      if animation_event_callback_get(callback_id) is Some(callback) {
-        callback(target_entity, event.time, active.weight())
-      }
-    }
-    if event.typed_event_type_key is Some(type_key) &&
-      event.typed_event_payload is Some(payload) {
-      guard animation_typed_event_find_dispatcher(type_key) is Some(dispatch) else {
-        abort("animation clip typed event dispatcher was not registered")
-      }
-      dispatch(world, payload, target_entity, Some("animation.trigger_events"))
+    if event.trigger is Some(trigger) {
+      trigger(world, target_entity, event.time, active.weight())
     }
     writer.write({
       player: player_entity,
@@ -612,14 +429,7 @@ pub fn animation_clip_event(
 ///|
 pub fn animation_clip_callback_event(
   time : Float,
-  callback_id : Int,
+  callback : AnimationEventTriggerFn,
 ) -> AnimationClipEvent {
-  AnimationClipEvent::new_callback(time, callback_id)
-}
-
-///|
-pub fn animation_register_clip_event_callback(
-  callback : AnimationEventCallback,
-) -> Int {
-  animation_register_event_callback(callback)
+  AnimationClipEvent::new_callback(time, callback)
 }

@@ -1653,7 +1653,6 @@ pub fn animation_plugin_with(
   plugin : AnimationPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let app = animation_event_runtime_plugin(app)
   let animation_clip_event_key : @ecs.MessageKey[
     @asset.AssetEvent[AnimationClip],
   ] = @ecs.Message::message()
