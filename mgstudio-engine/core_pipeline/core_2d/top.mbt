@@ -63,6 +63,16 @@ pub let core_2d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let core_2d_set_main_pass : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.core2d.main_pass",
+)
+
+///|
+pub let core_2d_set_post_process : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.core2d.post_process",
+)
+
+///|
 pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   core_2d_plugin_with(app, Core2dPlugin::default())
 }
@@ -84,14 +94,17 @@ fn core_2d_configure_render_sub_app(
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     core_2d_set_queue,
   ])
-  .configure_set(stage, core_2d_set_queue, before=[core_2d_set_render])
+  .configure_set(stage, core_2d_set_queue, before=[core_2d_set_main_pass])
   .configure_set(stage, core_2d_set_queue, before=[
     @render.render_system_set_queue_sweep,
   ])
-  .configure_set(stage, @render.render_system_set_render, before=[
-    core_2d_set_render,
+  .configure_set(stage, core_2d_set_main_pass, before=[
+    core_2d_set_post_process,
   ])
-  .configure_set(stage, core_2d_set_render, before=[
+  .configure_set(stage, @render.render_system_set_render, before=[
+    core_2d_set_main_pass,
+  ])
+  .configure_set(stage, core_2d_set_post_process, before=[
     @render.render_system_set_cleanup,
   ])
 }
