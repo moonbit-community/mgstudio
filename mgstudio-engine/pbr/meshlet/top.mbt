@@ -216,6 +216,10 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
   ) {
     if msaa is @core_pipeline.Msaa::Off {
       msaa_off_views.push(entity)
+    } else {
+      abort(
+        "MeshletPlugin can't be used with MSAA. Add Msaa::Off to your camera to use this plugin.",
+      )
     }
   })
   for view_entity in msaa_off_views {
