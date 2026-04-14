@@ -181,20 +181,19 @@ fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
 ///|
 fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let instance_count = source_world.component_count(ecs_key_meshlet_mesh3d)
-  let manager = extract_meshlet_mesh_entities(instance_count)
-  let material_asset_ids = []
+  let extracted_instances : Array[ExtractedMeshletInstance] = []
   source_world.for_each_component(ecs_key_meshlet_mesh3d, fn(
     _entity,
     meshlet_mesh3d,
   ) {
-    material_asset_ids.push(meshlet_mesh3d.id())
+    extracted_instances.push(
+      ExtractedMeshletInstance::new(_entity, meshlet_mesh3d.id()),
+    )
   })
-  ignore(
-    queue_material_meshlet_meshes_with_material_assets(
-      manager, material_asset_ids,
-    ),
+  let manager = extract_meshlet_mesh_entities_from_instances(
+    extracted_instances,
   )
+  ignore(queue_material_meshlet_meshes_with_material_assets(manager))
   world.insert_resource(ecs_key_meshlet_instance_manager, manager)
 }
 
