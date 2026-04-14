@@ -48,3 +48,27 @@ pub fn meshlet_material_shade_node_index(node : String) -> Int? {
   }
   None
 }
+
+///|
+fn meshlet_clamp_draw_count(draw_count : Int) -> Int {
+  if draw_count < 0 {
+    0
+  } else {
+    draw_count
+  }
+}
+
+///|
+pub fn meshlet_prepass(draw_count : Int) -> Int {
+  meshlet_clamp_draw_count(draw_count)
+}
+
+///|
+pub fn meshlet_deferred_gbuffer_prepass(draw_count : Int) -> Int {
+  meshlet_clamp_draw_count(draw_count)
+}
+
+///|
+pub fn meshlet_main_opaque_pass(draw_count : Int) -> Int {
+  meshlet_clamp_draw_count(draw_count)
+}

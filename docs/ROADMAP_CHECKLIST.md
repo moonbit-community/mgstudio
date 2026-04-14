@@ -13,7 +13,7 @@ This file must not exceed 200 lines.
 | `bevy_pbr` (overall) | `mgstudio-engine/pbr` | 95% | 95% | 95% | 🟡 In Progress | Remaining parity gaps concentrate in meshlet/deferred/advanced-pass behavior depth. |
 | `bevy_pbr::render` | `mgstudio-engine/pbr/render` | 96% | 96% | 96% | 🟡 In Progress | Core stage split is landed; remaining gaps are meshlet/advanced pass feature depth. |
 | `bevy_pbr::prepass` | `mgstudio-engine/pbr/prepass` | 95% | 95% | 95% | ✅ Mostly Done | Remaining parity work is maintenance-level drift monitoring. |
-| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 93% | 70% | 70% | 🟡 In Progress | Runtime state semantics + render3d set ownership are aligned; core pass node execution depth is still partial. |
+| `bevy_pbr::meshlet` | `mgstudio-engine/pbr/meshlet` | 94% | 72% | 72% | 🟡 In Progress | Runtime state semantics + render/core3d stage ownership are aligned; pass internals are still simplified vs Bevy. |
 | `bevy_material` | `mgstudio-engine/material` | 93% | 77% | 77% | 🟡 In Progress | Deferred/forward/decal behavior details still not fully converged. |
 | `bevy_camera` | `mgstudio-engine/camera` + `pbr/render` | 92% | 77% | 77% | 🟡 In Progress | Camera/view/projection integration still has residual divergence points. |
 | `bevy_sprite` | `mgstudio-engine/sprite` + `sprite_render` | 93% | 79% | 79% | 🟡 In Progress | Visual parity in stress-scale and edge picking cases needs more verification. |
@@ -189,7 +189,7 @@ This file must not exceed 200 lines.
 - [x] `post_process`: remove compatibility re-exports for transmission (`ScreenSpaceTransmission*` + key) after call sites switched to `pbr`.
 - [x] `pbr/atmosphere`: remove dead `atmosphere_runtime_available()` placeholder gate from plugin default path.
 - [x] `pbr/meshlet`: remove `HAS_MESHLET_RUNTIME=false` hard stub gate; switch to renderer capability-based runtime probe with Bevy-shaped required-feature mask + cluster-slot bound validation, and align runtime state transitions (`Enabled/Disabled/RuntimeUnavailable`) with deterministic tests.
-- [x] `pbr/meshlet`: align render-sub-app scheduling to Bevy-shaped stage ownership (`extract/prepare_resources_flush/prepare_meshes/prepare_resources/prepare_bind_groups/queue`) and add `configure_meshlet_views` (`Msaa::Off` + prepass/deferred markers) wiring.
+- [x] `pbr/meshlet`: align render-sub-app scheduling to Bevy-shaped stage ownership (`extract/prepare_resources_flush/prepare_meshes/prepare_resources/prepare_bind_groups/queue`), add `configure_meshlet_views` (`Msaa::Off` + prepass/deferred markers), and wire meshlet pass entry systems into `core_3d` prepass/main-pass sets.
 - [ ] `render/wgpu_mbt` (deferred, upstream): meshlet texture-atomic rust-feature gating is wired; remaining gap is mesh-shader feature constant/capability surface in `wgpu_mbt` for Bevy-equivalent meshlet capability reporting (tracked at `moonbit-community/wgpu-mbt#11`).
 - [x] `animation/gltf/scene`: ownerization convergence continued (done: scene LOD registration moved to plugin install path, animation/gltf runtime bootstrap data now clears after runtime resource initialization, and runtime-time callback/dispatcher registration is resource-first to reduce cross-app leakage).
 - [x] `ui/sprite/picking`: close camera/pointer drift baseline (done: window->sprite Y-axis/viewport-origin/rotation/scale wb tests + ui viewport pointer-boundary wb tests + `moon test picking` green).

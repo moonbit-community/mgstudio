@@ -2,6 +2,7 @@ import {
   "Milky2018/mgstudio/app" @app,
   "Milky2018/mgstudio/core" @core,
   "Milky2018/mgstudio/core_pipeline" @core_pipeline,
+  "Milky2018/mgstudio/core_pipeline/core_3d" @core_3d,
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/render/renderer" @renderer,

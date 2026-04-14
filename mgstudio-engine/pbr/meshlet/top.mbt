@@ -55,6 +55,13 @@ pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::meshlet::MeshletMeshManager")
 
 ///|
+pub let ecs_key_meshlet_visibility_buffer_raster_state : @ecs.ResourceKey[
+  MeshletVisibilityBufferRasterState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::MeshletVisibilityBufferRasterState",
+)
+
+///|
 pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d] = @ecs.register_component(
   debug_name="render3d.meshlet_mesh3d",
 )
@@ -204,6 +211,14 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn meshlet_instance_count_from_world(world : @ecs.World) -> Int {
+  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    Some(instance_manager) => instance_manager.instance_count()
+    None => 0
+  }
+}
+
+///|
 fn meshlet_collect_prepass_view_entities(
   source_world : @ecs.World,
 ) -> Array[@core.Entity] {
@@ -262,11 +277,7 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
-  let instance_count = match
-    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) => instance_manager.instance_count()
-    None => 0
-  }
+  let instance_count = meshlet_instance_count_from_world(world)
   match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
     Some(manager) => prepare_meshlet_per_frame_resources(manager, instance_count)
     None => ()
@@ -275,11 +286,7 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
-  let instance_count = match
-    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) => instance_manager.instance_count()
-    None => 0
-  }
+  let instance_count = meshlet_instance_count_from_world(world)
   match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
     Some(_manager) => ignore(prepare_meshlet_view_bind_groups(0, instance_count))
     None => ()
@@ -294,6 +301,36 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
     }
     None => ()
   }
+}
+
+///|
+fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
+  if (try! world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state)) is None {
+    world.insert_resource(
+      ecs_key_meshlet_visibility_buffer_raster_state,
+      MeshletVisibilityBufferRasterState::default(),
+    )
+  }
+  let instance_count = meshlet_instance_count_from_world(world)
+  match (try! world.get_resource_ref_mut(ecs_key_meshlet_visibility_buffer_raster_state)) {
+    Some(state_ref) => meshlet_visibility_buffer_raster(state_ref.val, instance_count)
+    None => ()
+  }
+}
+
+///|
+fn meshlet_prepass_system(world : @ecs.World) -> Unit {
+  ignore(meshlet_prepass(meshlet_instance_count_from_world(world)))
+}
+
+///|
+fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
+  ignore(meshlet_deferred_gbuffer_prepass(meshlet_instance_count_from_world(world)))
+}
+
+///|
+fn meshlet_main_opaque_pass_system(world : @ecs.World) -> Unit {
+  ignore(meshlet_main_opaque_pass(meshlet_instance_count_from_world(world)))
 }
 
 ///|
@@ -325,6 +362,13 @@ fn meshlet_ensure_render_sub_app_resources(
     world.insert_resource(
       ecs_key_meshlet_mesh_manager,
       MeshletMeshManager::default(),
+    )
+  }
+  if (try! world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state))
+    is None {
+    world.insert_resource(
+      ecs_key_meshlet_visibility_buffer_raster_state,
+      MeshletVisibilityBufferRasterState::default(),
     )
   }
 }
@@ -367,6 +411,28 @@ fn meshlet_configure_render_sub_app(
   .add_systems(
     @app.PostUpdate,
     @app.system(meshlet_queue_material_meshes_system).in_set(meshlet_render3d_set_queue),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_visibility_buffer_raster_system).in_set(
+      @core_3d.core_3d_set_prepass,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_prepass_system).in_set(@core_3d.core_3d_set_prepass),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_deferred_gbuffer_prepass_system).in_set(
+      @core_3d.core_3d_set_prepass,
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(meshlet_main_opaque_pass_system).in_set(
+      @core_3d.core_3d_set_main_pass,
+    ),
   )
   .configure_set(@app.PostUpdate, meshlet_render3d_set_extract, before=[
     meshlet_render3d_set_prepare_resources_flush,
