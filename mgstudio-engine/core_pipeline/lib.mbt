@@ -147,13 +147,13 @@ pub fn core_pipeline_plugin_with(
   _plugin : CorePipelinePlugin,
 ) -> @app.App[@ecs.World] {
   let app = app
-    .add_plugin(@core_2d.core_2d_plugin)
-    .add_plugin(@core_3d.core_3d_plugin)
-    .add_plugin(@deferred.copy_deferred_lighting_id_plugin)
-    .add_plugin(@blit.blit_plugin)
-    .add_plugin(@tonemapping.tonemapping_plugin)
-    .add_plugin(@upscaling.upscaling_plugin)
-    .add_plugin(@oit.oit_plugin)
-    .add_plugin(@mip_generation.mip_generation_plugin)
+    .add_plugin_typed(@core_2d.Core2dPlugin::default())
+    .add_plugin_typed(@core_3d.Core3dPlugin::default())
+    .add_plugin_typed(@deferred.CopyDeferredLightingIdPlugin::default())
+    .add_plugin_typed(@blit.BlitPlugin::default())
+    .add_plugin_typed(@tonemapping.TonemappingPlugin::default())
+    .add_plugin_typed(@upscaling.UpscalingPlugin::default())
+    .add_plugin_typed(@oit.OrderIndependentTransparencyPlugin::default())
+    .add_plugin_typed(@mip_generation.MipGenerationPlugin::default())
   core_pipeline_install_render_graph_driver(app)
 }

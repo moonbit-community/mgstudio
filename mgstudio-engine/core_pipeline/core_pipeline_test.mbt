@@ -53,3 +53,18 @@ test "mip_generation texture format table follows bevy list shape" {
     content="(\"Rg11b10Ufloat\", \"rg11b10ufloat\")",
   )
 }
+
+///|
+test "mip_generation plugin initializes finish-stage resources in render sub-app" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugin_typed(@mip_generation.MipGenerationPlugin::default())
+    .finish()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let resources = try! render_world
+    .get_resource(@mip_generation.ecs_key_mip_generation_resources)
+    .unwrap()
+  debug_inspect(resources.sampler_label(), content="\"mip generation sampler\"")
+  debug_inspect(resources.mag_filter(), content="\"Linear\"")
+  debug_inspect(resources.min_filter(), content="\"Linear\"")
+  debug_inspect(resources.mipmap_filter(), content="\"Nearest\"")
+}

@@ -20,6 +20,8 @@ pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs]
 
 pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[MipGenerationPipelines]
 
+pub let ecs_key_mip_generation_resources : @ecs.ResourceKey[MipGenerationResources]
+
 pub fn mip_generation_job_should_run(Int, Int) -> Bool
 
 pub fn mip_generation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -99,6 +101,19 @@ pub struct MipGenerationPlugin {
 }
 pub fn MipGenerationPlugin::default() -> Self
 pub impl @app.PluginReplacement for MipGenerationPlugin
+
+pub struct MipGenerationResources {
+  sampler_label : String
+  mag_filter : String
+  min_filter : String
+  mipmap_filter : String
+} derive(Eq, @debug.Debug)
+pub fn MipGenerationResources::default() -> Self
+pub fn MipGenerationResources::mag_filter(Self) -> String
+pub fn MipGenerationResources::min_filter(Self) -> String
+pub fn MipGenerationResources::mipmap_filter(Self) -> String
+pub fn MipGenerationResources::sampler_label(Self) -> String
+pub impl @app.Resource for MipGenerationResources
 
 // Type aliases
 

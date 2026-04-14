@@ -47,12 +47,34 @@ pub impl @app.PluginReplacement for MipGenerationPlugin with world_plugin(self) 
 }
 
 ///|
+pub impl @app.PluginReplacement for MipGenerationPlugin with finish(self, app) {
+  mip_generation_plugin_finish_with(app, self)
+}
+
+///|
 pub fn mip_generation_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {
   let next = app.add_plugin(@experimental.experimental_mip_generation_plugin)
   @render.with_render_app(next, mip_generation_configure_render_sub_app)
+}
+
+///|
+fn mip_generation_plugin_finish_with(
+  app : @app.App[@ecs.World],
+  _plugin : MipGenerationPlugin,
+) -> @app.App[@ecs.World] {
+  @render.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
+    let world = sub_app.world()
+    if !world.resource(ecs_key_mip_generation_resources).is_present() {
+      world.insert_resource(
+        ecs_key_mip_generation_resources,
+        MipGenerationResources::default(),
+      )
+    }
+    sub_app
+  })
 }
 
 ///|
@@ -88,6 +110,62 @@ fn mip_generation_configure_render_sub_app(
 
 ///|
 pub const REQUIRED_STORAGE_TEXTURES : Int = 12
+
+///|
+pub struct MipGenerationResources {
+  sampler_label : String
+  mag_filter : String
+  min_filter : String
+  mipmap_filter : String
+} derive(Eq, Debug)
+
+///|
+pub fn MipGenerationResources::default() -> MipGenerationResources {
+  MipGenerationResources::{
+    sampler_label: "mip generation sampler",
+    mag_filter: "Linear",
+    min_filter: "Linear",
+    mipmap_filter: "Nearest",
+  }
+}
+
+///|
+pub fn MipGenerationResources::sampler_label(
+  self : MipGenerationResources,
+) -> String {
+  self.sampler_label
+}
+
+///|
+pub fn MipGenerationResources::mag_filter(
+  self : MipGenerationResources,
+) -> String {
+  self.mag_filter
+}
+
+///|
+pub fn MipGenerationResources::min_filter(
+  self : MipGenerationResources,
+) -> String {
+  self.min_filter
+}
+
+///|
+pub fn MipGenerationResources::mipmap_filter(
+  self : MipGenerationResources,
+) -> String {
+  self.mipmap_filter
+}
+
+///|
+pub let ecs_key_mip_generation_resources : @ecs.ResourceKey[
+  MipGenerationResources,
+] = @ecs.register_resource(debug_name="core_pipeline.mip_generation.resources")
+
+///|
+pub impl @app.Resource for MipGenerationResources with resource() {
+  ecs_key_mip_generation_resources
+}
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/mip_generation/mod.rs`
