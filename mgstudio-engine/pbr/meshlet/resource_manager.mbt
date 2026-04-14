@@ -217,17 +217,27 @@ pub fn ResourceManager::bind_group_layout_count(self : ResourceManager) -> Int {
 pub struct MeshletViewResources {
   view_entity : @core.Entity
   meshlet_count : Int
+  has_material_depth : Bool
 }
 
 ///|
 pub fn MeshletViewResources::new(
   view_entity : @core.Entity,
   meshlet_count : Int,
+  has_material_depth? : Bool = true,
 ) -> MeshletViewResources {
   MeshletViewResources::{
     view_entity,
     meshlet_count: meshlet_resource_non_negative(meshlet_count),
+    has_material_depth,
   }
+}
+
+///|
+pub fn MeshletViewResources::has_material_depth(
+  self : MeshletViewResources,
+) -> Bool {
+  self.has_material_depth
 }
 
 ///|
@@ -277,17 +287,27 @@ pub fn ResourceManager::clear_stale_prepared_view_resources(
 pub struct MeshletViewBindGroups {
   view_entity : @core.Entity
   bind_group_count : Int
+  has_material_shade_bind_group : Bool
 }
 
 ///|
 pub fn MeshletViewBindGroups::new(
   view_entity : @core.Entity,
   bind_group_count : Int,
+  has_material_shade_bind_group? : Bool = true,
 ) -> MeshletViewBindGroups {
   MeshletViewBindGroups::{
     view_entity,
     bind_group_count: meshlet_resource_non_negative(bind_group_count),
+    has_material_shade_bind_group,
   }
+}
+
+///|
+pub fn MeshletViewBindGroups::has_material_shade_bind_group(
+  self : MeshletViewBindGroups,
+) -> Bool {
+  self.has_material_shade_bind_group
 }
 
 ///|
@@ -361,7 +381,11 @@ pub fn prepare_meshlet_view_resources(
   view_entity : @core.Entity,
   meshlet_count : Int,
 ) -> MeshletViewResources {
-  MeshletViewResources::new(view_entity, meshlet_count)
+  MeshletViewResources::new(
+    view_entity,
+    meshlet_count,
+    has_material_depth=meshlet_count > 0,
+  )
 }
 
 ///|
@@ -380,7 +404,11 @@ pub fn prepare_meshlet_view_bind_groups(
   view_entity : @core.Entity,
   bind_group_count : Int,
 ) -> MeshletViewBindGroups {
-  MeshletViewBindGroups::new(view_entity, bind_group_count)
+  MeshletViewBindGroups::new(
+    view_entity,
+    bind_group_count,
+    has_material_shade_bind_group=bind_group_count > 0,
+  )
 }
 
 ///|

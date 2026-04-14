@@ -76,7 +76,15 @@ pub struct MeshletMaterialDrawCall {
 fn meshlet_material_bin_draw_calls(
   material_bins : Array[(Int, Int, Int)],
   instance_manager : InstanceManager,
+  has_material_depth : Bool,
+  has_material_shade_bind_group : Bool,
 ) -> Array[MeshletMaterialDrawCall] {
+  if material_bins.is_empty() {
+    return []
+  }
+  if !has_material_depth || !has_material_shade_bind_group {
+    return []
+  }
   let draw_calls : Array[MeshletMaterialDrawCall] = []
   for material_bin in material_bins {
     let (material_id, material_pipeline_id, material_bind_group) = material_bin
@@ -99,56 +107,102 @@ fn meshlet_material_bin_draw_calls(
 fn meshlet_material_bin_draw_count(
   material_bins : Array[(Int, Int, Int)],
   instance_manager : InstanceManager,
+  has_material_depth : Bool,
+  has_material_shade_bind_group : Bool,
 ) -> Int {
-  meshlet_material_bin_draw_calls(material_bins, instance_manager).length()
+  meshlet_material_bin_draw_calls(
+    material_bins, instance_manager, has_material_depth, has_material_shade_bind_group,
+  ).length()
 }
 
 ///|
 pub fn meshlet_main_opaque_pass_draw_calls(
   materials : MeshletViewMaterialsMainOpaquePass,
   instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
 ) -> Array[MeshletMaterialDrawCall] {
-  meshlet_material_bin_draw_calls(materials.entries, instance_manager)
+  meshlet_material_bin_draw_calls(
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
 }
 
 ///|
 pub fn meshlet_prepass_draw_calls(
   materials : MeshletViewMaterialsPrepass,
   instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
 ) -> Array[MeshletMaterialDrawCall] {
-  meshlet_material_bin_draw_calls(materials.entries, instance_manager)
+  meshlet_material_bin_draw_calls(
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
 }
 
 ///|
 pub fn meshlet_deferred_gbuffer_prepass_draw_calls(
   materials : MeshletViewMaterialsDeferredGBufferPrepass,
   instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
 ) -> Array[MeshletMaterialDrawCall] {
-  meshlet_material_bin_draw_calls(materials.entries, instance_manager)
+  meshlet_material_bin_draw_calls(
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
 }
 
 ///|
 pub fn meshlet_main_opaque_pass_materials(
   materials : MeshletViewMaterialsMainOpaquePass,
   instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
 ) -> Int {
-  meshlet_material_bin_draw_count(materials.entries, instance_manager)
+  meshlet_material_bin_draw_count(
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
 }
 
 ///|
 pub fn meshlet_prepass_materials(
   materials : MeshletViewMaterialsPrepass,
   instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
 ) -> Int {
-  meshlet_material_bin_draw_count(materials.entries, instance_manager)
+  meshlet_material_bin_draw_count(
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
 }
 
 ///|
 pub fn meshlet_deferred_gbuffer_prepass_materials(
   materials : MeshletViewMaterialsDeferredGBufferPrepass,
   instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
 ) -> Int {
-  meshlet_material_bin_draw_count(materials.entries, instance_manager)
+  meshlet_material_bin_draw_count(
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
 }
 
 ///|

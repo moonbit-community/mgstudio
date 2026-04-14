@@ -42,7 +42,7 @@ test "pbr meshlet: prepare prepass respects deferred toggle" {
     [7, 8],
     deferred_enabled=false,
   )
-  inspect(prepass.len(), content="2")
+  inspect(prepass.len(), content="0")
   inspect(deferred.len(), content="0")
 }
 

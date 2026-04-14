@@ -147,8 +147,8 @@ pub struct MeshletViewMaterialPipelineKey {
 ///|
 pub fn MeshletViewMaterialPipelineKey::new(
   hdr? : Bool = false,
-  normal_prepass? : Bool = true,
-  depth_prepass? : Bool = true,
+  normal_prepass? : Bool = false,
+  depth_prepass? : Bool = false,
   motion_vector_prepass? : Bool = false,
   deferred_prepass? : Bool = false,
   temporal_jitter? : Bool = false,
@@ -300,11 +300,8 @@ fn meshlet_material_pipeline_id(
   material_asset_id : Int,
 ) -> Int {
   let key_bits = meshlet_view_key_bits(view_key)
-  let safe_asset_id = meshlet_material_non_negative(material_asset_id)
-  pipeline_base +
-  pass_variant * 1_000_000 +
-  key_bits * 4_096 +
-  safe_asset_id % 4_096
+  let _safe_asset_id = meshlet_material_non_negative(material_asset_id)
+  pipeline_base + pass_variant * 1_000_000 + key_bits
 }
 
 ///|

@@ -174,7 +174,7 @@ pub fn meshlet_plugin() -> MeshletPlugin {
 fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
   match (try! world.get_resource(ecs_key_meshlet_mesh_manager)) {
     Some(manager) => ignore(perform_pending_meshlet_mesh_writes(manager))
-    None => ()
+    _ => ()
   }
 }
 
@@ -276,7 +276,7 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
         )
       }
     }
-    None => ()
+    _ => ()
   }
 }
 
@@ -302,7 +302,7 @@ fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
         )
       }
     }
-    None => ()
+    _ => ()
   }
 }
 
@@ -311,7 +311,7 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
   match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
     Some(instance_manager) =>
       ignore(queue_material_meshlet_meshes(instance_manager))
-    None => ()
+    _ => ()
   }
 }
 
@@ -502,7 +502,26 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
         shadow_view_count=0,
         pipelines_ready~,
       )
-    None => ()
+    _ => ()
+  }
+}
+
+///|
+fn meshlet_view_ready_for_material_shade_pass(
+  manager : ResourceManager,
+  view_entity : @core.Entity,
+) -> (Bool, Bool) {
+  match manager.prepared_view_resources(view_entity) {
+    Some(resources) =>
+      match manager.prepared_view_bind_groups(view_entity) {
+        Some(bind_groups) =>
+          (
+            resources.has_material_depth(),
+            bind_groups.has_material_shade_bind_group(),
+          )
+        None => (false, false)
+      }
+    None => (false, false)
   }
 }
 
@@ -510,16 +529,28 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
 fn meshlet_prepass_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let mut draw_count = 0
-  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) =>
+  match
+    (
+      try! world.get_resource(ecs_key_meshlet_instance_manager),
+      try! world.get_resource(ecs_key_meshlet_resource_manager),
+    ) {
+    (Some(instance_manager), Some(resource_manager)) =>
       source_world.for_each_component(ecs_key_meshlet_view_materials_prepass, fn(
-        _entity,
+        view_entity,
         materials,
       ) {
+        let (has_material_depth, has_material_shade_bind_group) = meshlet_view_ready_for_material_shade_pass(
+          resource_manager, view_entity,
+        )
         draw_count = draw_count +
-          meshlet_prepass_materials(materials, instance_manager)
+          meshlet_prepass_materials(
+            materials,
+            instance_manager,
+            has_material_depth~,
+            has_material_shade_bind_group~,
+          )
       })
-    None => ()
+    _ => ()
   }
   ignore(meshlet_prepass(draw_count))
 }
@@ -528,18 +559,28 @@ fn meshlet_prepass_system(world : @ecs.World) -> Unit {
 fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let mut draw_count = 0
-  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) =>
+  match
+    (
+      try! world.get_resource(ecs_key_meshlet_instance_manager),
+      try! world.get_resource(ecs_key_meshlet_resource_manager),
+    ) {
+    (Some(instance_manager), Some(resource_manager)) =>
       source_world.for_each_component(
         ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
-        fn(_entity, materials) {
+        fn(view_entity, materials) {
+          let (has_material_depth, has_material_shade_bind_group) = meshlet_view_ready_for_material_shade_pass(
+            resource_manager, view_entity,
+          )
           draw_count = draw_count +
             meshlet_deferred_gbuffer_prepass_materials(
-              materials, instance_manager,
+              materials,
+              instance_manager,
+              has_material_depth~,
+              has_material_shade_bind_group~,
             )
         },
       )
-    None => ()
+    _ => ()
   }
   ignore(meshlet_deferred_gbuffer_prepass(draw_count))
 }
@@ -548,16 +589,28 @@ fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
 fn meshlet_main_opaque_pass_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let mut draw_count = 0
-  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
-    Some(instance_manager) =>
+  match
+    (
+      try! world.get_resource(ecs_key_meshlet_instance_manager),
+      try! world.get_resource(ecs_key_meshlet_resource_manager),
+    ) {
+    (Some(instance_manager), Some(resource_manager)) =>
       source_world.for_each_component(
         ecs_key_meshlet_view_materials_main_opaque_pass,
-        fn(_entity, materials) {
+        fn(view_entity, materials) {
+          let (has_material_depth, has_material_shade_bind_group) = meshlet_view_ready_for_material_shade_pass(
+            resource_manager, view_entity,
+          )
           draw_count = draw_count +
-            meshlet_main_opaque_pass_materials(materials, instance_manager)
+            meshlet_main_opaque_pass_materials(
+              materials,
+              instance_manager,
+              has_material_depth~,
+              has_material_shade_bind_group~,
+            )
         },
       )
-    None => ()
+    _ => ()
   }
   ignore(meshlet_main_opaque_pass(draw_count))
 }
