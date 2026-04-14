@@ -354,19 +354,15 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
 }
 
 ///|
-test "renderer: mesh2d wireframe shader loads dedicated uniform material" {
+test "renderer: mesh2d wireframe shader matches Bevy push-constants fragment shape" {
   register_renderer_test_shaders()
   let wgsl = load_wgsl_with_defines_required_mesh2d_material(
     Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
     ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
   )
-  debug_inspect(
-    wgsl.contains(
-      "@group(2) @binding(0) var<uniform> material: Wireframe2dMaterial;",
-    ),
-    content="true",
-  )
+  debug_inspect(wgsl.contains("struct PushConstants {"), content="true")
+  debug_inspect(wgsl.contains("return push_constants.color;"), content="true")
   clear_registered_wgsl_source_registry()
 }
 
