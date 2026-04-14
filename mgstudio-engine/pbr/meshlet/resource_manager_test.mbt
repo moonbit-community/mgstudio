@@ -33,4 +33,23 @@ test "pbr/meshlet: per-frame prepare updates counters" {
   prepare_meshlet_per_frame_resources(manager, 32)
   debug_inspect(manager.frame_index(), content="1")
   debug_inspect(manager.meshlet_buffer_count(), content="32")
+  debug_inspect(manager.cull_queue_rightmost_slot(), content="3")
+}
+
+///|
+test "pbr/meshlet: per-view bind groups are tracked by entity" {
+  let manager = ResourceManager::new(4)
+  let view_a = @core.Entity::new(0, 1)
+  let view_b = @core.Entity::new(0, 2)
+  ignore(prepare_meshlet_view_bind_groups_for_view(manager, view_a, 8))
+  ignore(prepare_meshlet_view_bind_groups_for_view(manager, view_b, 4))
+  debug_inspect(manager.prepared_view_bind_group_count(), content="2")
+  manager.clear_stale_prepared_view_bind_groups([view_b])
+  debug_inspect(manager.prepared_view_bind_groups(view_a), content="None")
+  let view_b_bind_groups = manager.prepared_view_bind_groups(view_b)
+  let bind_group_count = match view_b_bind_groups {
+    Some(bind_groups) => bind_groups.bind_group_count
+    None => -1
+  }
+  debug_inspect(bind_group_count, content="4")
 }

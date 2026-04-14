@@ -265,10 +265,26 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let view_entities : Array[@core.Entity] = []
+  source_world.for_each_component(@core_pipeline.ecs_key_msaa, fn(
+    entity,
+    _msaa,
+  ) {
+    view_entities.push(entity)
+  })
   let instance_count = meshlet_instance_count_from_world(world)
   match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
-    Some(_manager) =>
-      ignore(prepare_meshlet_view_bind_groups(0, instance_count))
+    Some(manager) => {
+      manager.clear_stale_prepared_view_bind_groups(view_entities)
+      for view_entity in view_entities {
+        ignore(
+          prepare_meshlet_view_bind_groups_for_view(
+            manager, view_entity, instance_count,
+          ),
+        )
+      }
+    }
     None => ()
   }
 }

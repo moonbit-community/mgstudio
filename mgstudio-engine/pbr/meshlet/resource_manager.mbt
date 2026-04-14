@@ -31,6 +31,7 @@ pub struct ResourceManager {
   mut cull_queue_rightmost_slot : Int
   mut meshlet_buffer_count : Int
   previous_depth_pyramids : Map[Int, Int]
+  mut prepared_view_bind_groups : Map[UInt64, MeshletViewBindGroups]
   clear_visibility_buffer_bind_group_layout_id : Int
   clear_visibility_buffer_shadow_view_bind_group_layout_id : Int
   first_instance_cull_bind_group_layout_id : Int
@@ -69,6 +70,7 @@ pub fn ResourceManager::new(cluster_buffer_slots : Int) -> ResourceManager {
     },
     meshlet_buffer_count: 0,
     previous_depth_pyramids: {},
+    prepared_view_bind_groups: {},
     clear_visibility_buffer_bind_group_layout_id: -1,
     clear_visibility_buffer_shadow_view_bind_group_layout_id: -1,
     first_instance_cull_bind_group_layout_id: -1,
@@ -211,30 +213,82 @@ pub fn ResourceManager::bind_group_layout_count(self : ResourceManager) -> Int {
 
 ///|
 pub struct MeshletViewResources {
-  view_entity : Int
+  view_entity : @core.Entity
   meshlet_count : Int
 }
 
 ///|
 pub fn MeshletViewResources::new(
-  view_entity : Int,
+  view_entity : @core.Entity,
   meshlet_count : Int,
 ) -> MeshletViewResources {
-  MeshletViewResources::{ view_entity, meshlet_count }
+  MeshletViewResources::{
+    view_entity,
+    meshlet_count: meshlet_resource_non_negative(meshlet_count),
+  }
 }
 
 ///|
 pub struct MeshletViewBindGroups {
-  view_entity : Int
+  view_entity : @core.Entity
   bind_group_count : Int
 }
 
 ///|
 pub fn MeshletViewBindGroups::new(
-  view_entity : Int,
+  view_entity : @core.Entity,
   bind_group_count : Int,
 ) -> MeshletViewBindGroups {
-  MeshletViewBindGroups::{ view_entity, bind_group_count }
+  MeshletViewBindGroups::{
+    view_entity,
+    bind_group_count: meshlet_resource_non_negative(bind_group_count),
+  }
+}
+
+///|
+pub fn ResourceManager::set_prepared_view_bind_groups(
+  self : ResourceManager,
+  bind_groups : MeshletViewBindGroups,
+) -> Unit {
+  self.prepared_view_bind_groups.set(
+    bind_groups.view_entity.to_bits(),
+    bind_groups,
+  )
+}
+
+///|
+pub fn ResourceManager::prepared_view_bind_groups(
+  self : ResourceManager,
+  view_entity : @core.Entity,
+) -> MeshletViewBindGroups? {
+  self.prepared_view_bind_groups.get(view_entity.to_bits())
+}
+
+///|
+pub fn ResourceManager::prepared_view_bind_group_count(
+  self : ResourceManager,
+) -> Int {
+  self.prepared_view_bind_groups.length()
+}
+
+///|
+pub fn ResourceManager::clear_stale_prepared_view_bind_groups(
+  self : ResourceManager,
+  active_view_entities : Array[@core.Entity],
+) -> Unit {
+  let active : Map[UInt64, Bool] = {}
+  for view_entity in active_view_entities {
+    active.set(view_entity.to_bits(), true)
+  }
+  let stale_keys : Array[UInt64] = []
+  for key in self.prepared_view_bind_groups.keys() {
+    if active.get(key) is None {
+      stale_keys.push(key)
+    }
+  }
+  for stale_key in stale_keys {
+    self.prepared_view_bind_groups.remove(stale_key)
+  }
 }
 
 ///|
@@ -243,16 +297,37 @@ pub fn prepare_meshlet_per_frame_resources(
   meshlet_buffer_count : Int,
 ) -> Unit {
   manager.set_meshlet_buffer_count(meshlet_buffer_count)
+  let slots = manager.cluster_buffer_slots()
+  if slots <= 0 || meshlet_buffer_count <= 0 {
+    manager.cull_queue_rightmost_slot = 0
+  } else {
+    let limited_count = if meshlet_buffer_count > slots {
+      slots
+    } else {
+      meshlet_buffer_count
+    }
+    manager.cull_queue_rightmost_slot = limited_count - 1
+  }
   manager.advance_frame()
 }
 
 ///|
 pub fn prepare_meshlet_view_bind_groups(
-  view_entity : Int,
+  view_entity : @core.Entity,
   bind_group_count : Int,
 ) -> MeshletViewBindGroups {
-  MeshletViewBindGroups::new(
-    meshlet_resource_non_negative(view_entity),
-    meshlet_resource_non_negative(bind_group_count),
+  MeshletViewBindGroups::new(view_entity, bind_group_count)
+}
+
+///|
+pub fn prepare_meshlet_view_bind_groups_for_view(
+  manager : ResourceManager,
+  view_entity : @core.Entity,
+  bind_group_count : Int,
+) -> MeshletViewBindGroups {
+  let bind_groups = prepare_meshlet_view_bind_groups(
+    view_entity, bind_group_count,
   )
+  manager.set_prepared_view_bind_groups(bind_groups)
+  bind_groups
 }
