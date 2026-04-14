@@ -578,7 +578,7 @@ fn meshlet_configure_render_sub_app(
   .configure_set(stage, @render.render_system_set_prepare, before=[
     meshlet_render3d_set_prepare_materials,
   ])
-  .configure_set(stage, @render.render_system_set_queue, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     meshlet_render3d_set_queue,
   ])
 }

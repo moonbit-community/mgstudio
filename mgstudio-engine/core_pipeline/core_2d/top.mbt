@@ -81,10 +81,13 @@ fn core_2d_configure_render_sub_app(
     core_2d_set_prepare,
   ])
   .configure_set(stage, core_2d_set_prepare, before=[core_2d_set_queue])
-  .configure_set(stage, @render.render_system_set_queue, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     core_2d_set_queue,
   ])
   .configure_set(stage, core_2d_set_queue, before=[core_2d_set_render])
+  .configure_set(stage, core_2d_set_queue, before=[
+    @render.render_system_set_queue_sweep,
+  ])
   .configure_set(stage, @render.render_system_set_render, before=[
     core_2d_set_render,
   ])

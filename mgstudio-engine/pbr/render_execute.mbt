@@ -210,7 +210,7 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn render3d_queue_system(world : @ecs.World) -> Unit {
+pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
   let queue_start = @time.host_time_now()
   let queue_trace_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -270,6 +270,18 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     }
   }
   finish_queue()
+}
+
+///|
+pub fn render3d_queue_sweep_system(_world : @ecs.World) -> Unit {
+  // Reserved for Bevy-shaped queue sweep pass ownership. Current queue runtime
+  // maintains per-frame queue state directly in queue-meshes pass.
+}
+
+///|
+pub fn render3d_queue_system(world : @ecs.World) -> Unit {
+  render3d_queue_meshes_system(world)
+  render3d_queue_sweep_system(world)
 }
 
 ///|

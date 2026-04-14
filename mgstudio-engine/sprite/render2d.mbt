@@ -8468,8 +8468,11 @@ fn configure_render2d_render_sub_app(
     render2d_set_prepare,
   ])
   .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
-  .configure_set(stage, @render.render_system_set_queue, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_queue,
+  ])
+  .configure_set(stage, render2d_set_queue, before=[
+    @render.render_system_set_queue_sweep,
   ])
   .configure_set(stage, @render.render_system_set_render, before=[
     render2d_set_render,
@@ -8519,8 +8522,11 @@ fn configure_render2d_render_sub_app_ecs(
     render2d_set_prepare,
   ])
   .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
-  .configure_set(stage, @render.render_system_set_queue, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_queue,
+  ])
+  .configure_set(stage, render2d_set_queue, before=[
+    @render.render_system_set_queue_sweep,
   ])
   .configure_set(stage, @render.render_system_set_render, before=[
     render2d_set_render,

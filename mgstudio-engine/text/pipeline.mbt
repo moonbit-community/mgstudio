@@ -2132,7 +2132,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       after=[text_set_render_prepare, @sprite_render.render2d_set_prepare],
       before=[text_set_render_transparent_ui],
     )
-    .configure_set(stage, @render.render_system_set_queue, before=[
+    .configure_set(stage, @render.render_system_set_queue_meshes, before=[
       text_set_render_transparent_2d,
     ])
     .configure_set(
@@ -2141,5 +2141,8 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       after=[text_set_render_transparent_2d],
       before=[@sprite_render.render2d_set_queue],
     )
+    .configure_set(stage, text_set_render_transparent_ui, before=[
+      @render.render_system_set_queue_sweep,
+    ])
   })
 }

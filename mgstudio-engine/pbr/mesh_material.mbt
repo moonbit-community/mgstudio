@@ -152,8 +152,13 @@ fn render3d_prepare_bind_groups_system_in_render_app(
 }
 
 ///|
-fn render3d_queue_system_in_render_app(world : @ecs.World) -> Unit {
-  render3d_queue_system(world)
+fn render3d_queue_meshes_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_queue_meshes_system(world)
+}
+
+///|
+fn render3d_queue_sweep_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_queue_sweep_system(world)
 }
 
 ///|
@@ -200,7 +205,15 @@ fn configure_mesh_render_sub_app(
   )
   .add_systems(
     stage,
-    @app.system(render3d_queue_system_in_render_app).in_set(render3d_set_queue),
+    @app.system(render3d_queue_meshes_system_in_render_app).in_set(
+      render3d_set_queue_meshes,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(render3d_queue_sweep_system_in_render_app).in_set(
+      render3d_set_queue_sweep,
+    ),
   )
   .add_systems(
     stage,
@@ -238,13 +251,21 @@ fn configure_mesh_render_sub_app(
   .configure_set(stage, @render.render_system_set_prepare_bind_groups, before=[
     render3d_set_prepare_bind_groups,
   ])
-  .configure_set(stage, render3d_set_prepare, before=[render3d_set_queue])
+  .configure_set(stage, render3d_set_prepare, before=[
+    render3d_set_queue_meshes,
+  ])
   .configure_set(stage, @render.render_system_set_prepare, before=[
     render3d_set_prepare,
   ])
-  .configure_set(stage, render3d_set_queue, before=[render3d_set_render])
-  .configure_set(stage, @render.render_system_set_queue, before=[
-    render3d_set_queue,
+  .configure_set(stage, render3d_set_queue_meshes, before=[
+    render3d_set_queue_sweep,
+  ])
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+    render3d_set_queue_meshes,
+  ])
+  .configure_set(stage, render3d_set_queue_sweep, before=[render3d_set_render])
+  .configure_set(stage, @render.render_system_set_queue_sweep, before=[
+    render3d_set_queue_sweep,
   ])
   .configure_set(stage, @render.render_system_set_render, before=[
     render3d_set_render,

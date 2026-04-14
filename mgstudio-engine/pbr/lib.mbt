@@ -233,9 +233,17 @@ pub let render3d_set_prepare_bind_groups : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub let render3d_set_queue : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.queue",
+pub let render3d_set_queue_meshes : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.queue_meshes",
 )
+
+///|
+pub let render3d_set_queue_sweep : @app.SystemSet = @app.system_set(
+  "mgstudio.render3d.queue_sweep",
+)
+
+///|
+pub let render3d_set_queue : @app.SystemSet = render3d_set_queue_meshes
 
 ///|
 pub let render3d_set_render : @app.SystemSet = @app.system_set(
