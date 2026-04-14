@@ -107,34 +107,27 @@ pub fn meshlet_runtime_available() -> Bool {
 ///|
 pub(all) enum MeshletRuntimeStatus {
   Enabled
-  Disabled
   RuntimeUnavailable
 }
 
 ///|
 pub fn meshlet_runtime_status_from_availability(
   runtime_available : Bool,
-  plugin_enabled : Bool,
 ) -> MeshletRuntimeStatus {
   if !runtime_available {
     return MeshletRuntimeStatus::RuntimeUnavailable
   }
-  if plugin_enabled {
-    MeshletRuntimeStatus::Enabled
-  } else {
-    MeshletRuntimeStatus::Disabled
-  }
+  MeshletRuntimeStatus::Enabled
 }
 
 ///|
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
-  meshlet_runtime_status_from_availability(meshlet_runtime_available(), true)
+  meshlet_runtime_status_from_availability(meshlet_runtime_available())
 }
 
 ///|
 pub struct MeshletPlugin {
   cluster_buffer_slots : Int
-  status : MeshletRuntimeStatus
 }
 
 ///|
@@ -154,7 +147,6 @@ pub fn MeshletPlugin::new(cluster_buffer_slots : Int) -> MeshletPlugin {
     cluster_buffer_slots: meshlet_cluster_buffer_slots_validate(
       cluster_buffer_slots,
     ),
-    status: meshlet_runtime_status(),
   }
 }
 
@@ -166,11 +158,6 @@ pub fn MeshletPlugin::required_wgpu_features() -> UInt64 {
 ///|
 pub fn MeshletPlugin::cluster_buffer_slots(self : MeshletPlugin) -> Int {
   self.cluster_buffer_slots
-}
-
-///|
-pub fn MeshletPlugin::status(self : MeshletPlugin) -> MeshletRuntimeStatus {
-  self.status
 }
 
 ///|
@@ -569,10 +556,10 @@ pub fn MeshletPluginState::default() -> MeshletPluginState {
 pub fn MeshletPluginState::from_plugin(
   plugin : MeshletPlugin,
 ) -> MeshletPluginState {
+  ignore(plugin)
   MeshletPluginState::{
     runtime_status: meshlet_runtime_status_from_availability(
       meshlet_runtime_available(),
-      plugin.status() is Enabled,
     ),
     missing_required_features: meshlet_missing_wgpu_features(),
     adapter_supports_mesh_shader: @renderer.meshlet_adapter_supports_mesh_shader(),

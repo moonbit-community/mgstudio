@@ -108,7 +108,7 @@ pub fn meshlet_runtime_available() -> Bool
 
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus
 
-pub fn meshlet_runtime_status_from_availability(Bool, Bool) -> MeshletRuntimeStatus
+pub fn meshlet_runtime_status_from_availability(Bool) -> MeshletRuntimeStatus
 
 pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionConfig
 
@@ -322,13 +322,11 @@ pub fn MeshletPipelines::default() -> Self
 
 pub struct MeshletPlugin {
   cluster_buffer_slots : Int
-  status : MeshletRuntimeStatus
 }
 pub fn MeshletPlugin::cluster_buffer_slots(Self) -> Int
 pub fn MeshletPlugin::default() -> Self
 pub fn MeshletPlugin::new(Int) -> Self
 pub fn MeshletPlugin::required_wgpu_features() -> UInt64
-pub fn MeshletPlugin::status(Self) -> MeshletRuntimeStatus
 pub impl @app.PluginReplacement for MeshletPlugin
 
 pub struct MeshletPluginState {
@@ -341,7 +339,6 @@ pub fn MeshletPluginState::from_plugin(MeshletPlugin) -> Self
 
 pub(all) enum MeshletRuntimeStatus {
   Enabled
-  Disabled
   RuntimeUnavailable
 }
 

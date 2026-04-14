@@ -17,7 +17,6 @@ test "pbr meshlet: runtime defaults to unavailable on current path" {
   let runtime_available = meshlet_runtime_available()
   match meshlet_runtime_status() {
     Enabled => inspect(runtime_available, content="true")
-    Disabled => inspect(false, content="true")
     RuntimeUnavailable => inspect(!runtime_available, content="true")
   }
 }
@@ -34,21 +33,13 @@ test "pbr meshlet: required feature mask includes texture atomics" {
 }
 
 ///|
-test "pbr meshlet: runtime status helper follows availability and enable flags" {
+test "pbr meshlet: runtime status helper follows availability" {
   inspect(
-    meshlet_runtime_status_from_availability(false, false) is RuntimeUnavailable,
+    meshlet_runtime_status_from_availability(false) is RuntimeUnavailable,
     content="true",
   )
   inspect(
-    meshlet_runtime_status_from_availability(false, true) is RuntimeUnavailable,
-    content="true",
-  )
-  inspect(
-    meshlet_runtime_status_from_availability(true, false) is Disabled,
-    content="true",
-  )
-  inspect(
-    meshlet_runtime_status_from_availability(true, true) is Enabled,
+    meshlet_runtime_status_from_availability(true) is Enabled,
     content="true",
   )
 }
