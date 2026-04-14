@@ -31,8 +31,8 @@ pub struct ResourceManager {
   mut cull_queue_rightmost_slot : Int
   mut meshlet_buffer_count : Int
   previous_depth_pyramids : Map[Int, Int]
-  mut prepared_view_resources : Map[UInt64, MeshletViewResources]
-  mut prepared_view_bind_groups : Map[UInt64, MeshletViewBindGroups]
+  prepared_view_resources : Map[UInt64, MeshletViewResources]
+  prepared_view_bind_groups : Map[UInt64, MeshletViewBindGroups]
   clear_visibility_buffer_bind_group_layout_id : Int
   clear_visibility_buffer_shadow_view_bind_group_layout_id : Int
   first_instance_cull_bind_group_layout_id : Int

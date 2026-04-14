@@ -43,6 +43,20 @@ pub struct MeshletPipelines {
 }
 
 ///|
+pub(all) enum MeshletPipelineKind {
+  Compute
+  Render
+}
+
+///|
+pub struct MeshletPipelineSlotDescriptor {
+  label : String
+  kind : MeshletPipelineKind
+  optional : Bool
+  enabled : Bool
+}
+
+///|
 pub fn MeshletPipelines::default() -> MeshletPipelines {
   MeshletPipelines::{
     clear_visibility_buffer: -1,
@@ -83,6 +97,223 @@ fn meshlet_pipeline_sanitize_id(value : Int) -> Int {
 ///|
 fn meshlet_pipeline_is_valid(value : Int) -> Bool {
   value >= 0
+}
+
+///|
+pub fn meshlet_pipeline_slot_descriptors(
+  remap_dispatch_enabled? : Bool = false,
+) -> Array[MeshletPipelineSlotDescriptor] {
+  [
+    MeshletPipelineSlotDescriptor::{
+      label: "clear_visibility_buffer",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "clear_visibility_buffer_shadow_view",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "first_instance_cull",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "second_instance_cull",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "first_bvh_cull",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "second_bvh_cull",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "first_meshlet_cull",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "second_meshlet_cull",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "downsample_depth_first",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "downsample_depth_second",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "downsample_depth_first_shadow_view",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "downsample_depth_second_shadow_view",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "visibility_buffer_software_raster",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "visibility_buffer_software_raster_shadow_view",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "visibility_buffer_hardware_raster",
+      kind: MeshletPipelineKind::Render,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "visibility_buffer_hardware_raster_shadow_view",
+      kind: MeshletPipelineKind::Render,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "visibility_buffer_hardware_raster_shadow_view_unclipped",
+      kind: MeshletPipelineKind::Render,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "resolve_depth",
+      kind: MeshletPipelineKind::Render,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "resolve_depth_shadow_view",
+      kind: MeshletPipelineKind::Render,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "resolve_material_depth",
+      kind: MeshletPipelineKind::Render,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "fill_counts",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "meshlet_mesh_material_shader",
+      kind: MeshletPipelineKind::Compute,
+      optional: false,
+      enabled: true,
+    },
+    MeshletPipelineSlotDescriptor::{
+      label: "remap_1d_to_2d_dispatch",
+      kind: MeshletPipelineKind::Compute,
+      optional: true,
+      enabled: remap_dispatch_enabled,
+    },
+  ]
+}
+
+///|
+fn meshlet_pipeline_slot_id(
+  pipelines : MeshletPipelines,
+  label : String,
+) -> Int? {
+  match label {
+    "clear_visibility_buffer" => Some(pipelines.clear_visibility_buffer)
+    "clear_visibility_buffer_shadow_view" =>
+      Some(pipelines.clear_visibility_buffer_shadow_view)
+    "first_instance_cull" => Some(pipelines.first_instance_cull)
+    "second_instance_cull" => Some(pipelines.second_instance_cull)
+    "first_bvh_cull" => Some(pipelines.first_bvh_cull)
+    "second_bvh_cull" => Some(pipelines.second_bvh_cull)
+    "first_meshlet_cull" => Some(pipelines.first_meshlet_cull)
+    "second_meshlet_cull" => Some(pipelines.second_meshlet_cull)
+    "downsample_depth_first" => Some(pipelines.downsample_depth_first)
+    "downsample_depth_second" => Some(pipelines.downsample_depth_second)
+    "downsample_depth_first_shadow_view" =>
+      Some(pipelines.downsample_depth_first_shadow_view)
+    "downsample_depth_second_shadow_view" =>
+      Some(pipelines.downsample_depth_second_shadow_view)
+    "visibility_buffer_software_raster" =>
+      Some(pipelines.visibility_buffer_software_raster)
+    "visibility_buffer_software_raster_shadow_view" =>
+      Some(pipelines.visibility_buffer_software_raster_shadow_view)
+    "visibility_buffer_hardware_raster" =>
+      Some(pipelines.visibility_buffer_hardware_raster)
+    "visibility_buffer_hardware_raster_shadow_view" =>
+      Some(pipelines.visibility_buffer_hardware_raster_shadow_view)
+    "visibility_buffer_hardware_raster_shadow_view_unclipped" =>
+      Some(pipelines.visibility_buffer_hardware_raster_shadow_view_unclipped)
+    "resolve_depth" => Some(pipelines.resolve_depth)
+    "resolve_depth_shadow_view" => Some(pipelines.resolve_depth_shadow_view)
+    "resolve_material_depth" => Some(pipelines.resolve_material_depth)
+    "fill_counts" => Some(pipelines.fill_counts)
+    "meshlet_mesh_material_shader" =>
+      Some(pipelines.meshlet_mesh_material_shader_id)
+    "remap_1d_to_2d_dispatch" => pipelines.remap_1d_to_2d_dispatch
+    _ => None
+  }
+}
+
+///|
+pub fn meshlet_missing_required_pipeline_slots(
+  pipelines : MeshletPipelines,
+  remap_dispatch_enabled? : Bool = false,
+) -> Array[String] {
+  let missing : Array[String] = []
+  for descriptor in meshlet_pipeline_slot_descriptors(remap_dispatch_enabled~) {
+    if !descriptor.enabled {
+      continue
+    }
+    match meshlet_pipeline_slot_id(pipelines, descriptor.label) {
+      Some(id) =>
+        if !meshlet_pipeline_is_valid(id) {
+          missing.push(descriptor.label)
+        }
+      None => if !descriptor.optional { missing.push(descriptor.label) }
+    }
+  }
+  missing
+}
+
+///|
+pub fn meshlet_pipelines_ready(
+  pipelines : MeshletPipelines,
+  remap_dispatch_enabled? : Bool = false,
+) -> Bool {
+  meshlet_missing_required_pipeline_slots(pipelines, remap_dispatch_enabled~).is_empty()
 }
 
 ///|

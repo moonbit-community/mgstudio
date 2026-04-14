@@ -193,7 +193,7 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let manager = extract_meshlet_mesh_entities_from_instances(
     extracted_instances,
   )
-  ignore(queue_material_meshlet_meshes_with_material_assets(manager))
+  ignore(queue_material_meshlet_meshes_with_present_material_assets(manager))
   world.insert_resource(ecs_key_meshlet_instance_manager, manager)
 }
 

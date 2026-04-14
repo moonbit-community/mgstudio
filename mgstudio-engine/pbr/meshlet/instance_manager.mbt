@@ -367,18 +367,23 @@ pub fn extract_meshlet_mesh_entities(instance_count : Int) -> InstanceManager {
 ///|
 pub fn queue_material_meshlet_meshes_with_material_assets(
   instance_manager : InstanceManager,
-  material_asset_ids? : Array[Int] = [],
+  material_asset_ids : Array[Int],
 ) -> Int {
-  let assets = if material_asset_ids.is_empty() {
-    instance_manager.instance_material_asset_ids
-  } else {
-    material_asset_ids
-  }
-  for material_asset_id in assets {
+  for material_asset_id in material_asset_ids {
     let material_id = instance_manager.get_material_id(material_asset_id)
     instance_manager.mark_material_present_in_scene(material_id)
   }
   instance_manager.present_material_count()
+}
+
+///|
+pub fn queue_material_meshlet_meshes_with_present_material_assets(
+  instance_manager : InstanceManager,
+) -> Int {
+  queue_material_meshlet_meshes_with_material_assets(
+    instance_manager,
+    instance_manager.instance_material_asset_ids,
+  )
 }
 
 ///|

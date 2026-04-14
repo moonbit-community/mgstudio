@@ -44,10 +44,10 @@ test "pbr/meshlet: instance manager tracks counts and material ids" {
 }
 
 ///|
-test "pbr/meshlet: queue helper keeps compatibility" {
+test "pbr/meshlet: queue helper requires extracted instances to mark scene usage" {
   let manager = InstanceManager::default()
   ignore(queue_material_meshlet_meshes_with_material_assets(manager, [1, 2, 1]))
-  debug_inspect(queue_material_meshlet_meshes(manager), content="2")
+  debug_inspect(queue_material_meshlet_meshes(manager), content="0")
 }
 
 ///|

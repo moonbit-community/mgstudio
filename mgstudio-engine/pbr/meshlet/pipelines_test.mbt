@@ -25,3 +25,17 @@ test "pbr/meshlet: compatibility init keeps pipeline ids active" {
   let pipelines = init_meshlet_pipelines(21, 22, 23)
   debug_inspect(meshlet_pipeline_count(pipelines), content="4")
 }
+
+///|
+test "pbr/meshlet: pipeline slot descriptors expose bevy-shaped surface" {
+  let descriptors = meshlet_pipeline_slot_descriptors()
+  debug_inspect(descriptors.length(), content="23")
+}
+
+///|
+test "pbr/meshlet: readiness reports missing required slots" {
+  let pipelines = MeshletPipelines::default()
+  debug_inspect(meshlet_pipelines_ready(pipelines), content="false")
+  let missing = meshlet_missing_required_pipeline_slots(pipelines)
+  debug_inspect(missing.length() > 0, content="true")
+}

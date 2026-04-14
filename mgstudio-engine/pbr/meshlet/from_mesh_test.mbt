@@ -56,10 +56,7 @@ test "pbr meshlet: input summary validation checks topology and attributes" {
 
 ///|
 test "pbr meshlet: input summary validation checks indices and limits" {
-  let config = MeshToMeshletMeshConversionConfig::{
-    max_vertices: 8,
-    max_triangles: 8,
-  }
+  let config = MeshToMeshletMeshConversionConfig::default()
   let missing_indices = MeshToMeshletInputMeshSummary::new(
     primitive_topology="TriangleList",
     vertex_attributes=meshlet_required_vertex_attributes(),
@@ -76,7 +73,7 @@ test "pbr meshlet: input summary validation checks indices and limits" {
     primitive_topology="TriangleList",
     vertex_attributes=meshlet_required_vertex_attributes(),
     has_indices=true,
-    vertex_count=9,
+    vertex_count=65_536,
     triangle_count=2,
   )
   inspect(

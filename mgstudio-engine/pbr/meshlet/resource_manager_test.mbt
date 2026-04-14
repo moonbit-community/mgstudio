@@ -45,12 +45,15 @@ test "pbr/meshlet: per-view bind groups are tracked by entity" {
   ignore(prepare_meshlet_view_resources_for_view(manager, view_b, 7))
   debug_inspect(manager.prepared_view_resource_count(), content="2")
   manager.clear_stale_prepared_view_resources([view_a])
-  debug_inspect(manager.prepared_view_resources(view_b), content="None")
+  debug_inspect(manager.prepared_view_resources(view_b) is None, content="true")
   ignore(prepare_meshlet_view_bind_groups_for_view(manager, view_a, 8))
   ignore(prepare_meshlet_view_bind_groups_for_view(manager, view_b, 4))
   debug_inspect(manager.prepared_view_bind_group_count(), content="2")
   manager.clear_stale_prepared_view_bind_groups([view_b])
-  debug_inspect(manager.prepared_view_bind_groups(view_a), content="None")
+  debug_inspect(
+    manager.prepared_view_bind_groups(view_a) is None,
+    content="true",
+  )
   let view_b_bind_groups = manager.prepared_view_bind_groups(view_b)
   let bind_group_count = match view_b_bind_groups {
     Some(bind_groups) => bind_groups.bind_group_count
