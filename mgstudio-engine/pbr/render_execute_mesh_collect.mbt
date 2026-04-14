@@ -166,6 +166,10 @@ fn render3d_execute_collect_meshes(
       phase_state_ref, entity,
     )
     let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh)
+    let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
+      mesh3d.mesh,
+      phase_state_ref.val.mesh_preprocess_static_cache,
+    )
     let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
       phase_state_ref,
       mesh3d.mesh,
@@ -237,10 +241,8 @@ fn render3d_execute_collect_meshes(
         mesh_handle: mesh3d.mesh,
         mesh_id,
         mesh_topology_kind,
-        mesh_is_indexed: render3d_mesh_handle_is_indexed_cached(
-          mesh3d.mesh,
-          phase_state_ref.val.mesh_preprocess_static_cache,
-        ),
+        mesh_is_indexed: mesh_preprocess_static.is_indexed,
+        mesh_preprocess_static: Some(mesh_preprocess_static),
         transform,
         previous_transform,
         visibility_range,

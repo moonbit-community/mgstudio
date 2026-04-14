@@ -105,6 +105,7 @@ priv struct Mesh3dExtractedPayload {
   mesh_id : Int
   mesh_topology_kind : Int
   mesh_is_indexed : Bool
+  mesh_preprocess_static : MeshPreprocessStatic3d?
   transform : @transform.Transform
   previous_transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?

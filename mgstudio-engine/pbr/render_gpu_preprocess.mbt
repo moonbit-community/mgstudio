@@ -26,6 +26,9 @@ fn render3d_mesh_preprocess_static_for_payload(
   payload : Mesh3dExtractedPayload,
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> MeshPreprocessStatic3d? {
+  if payload.mesh_preprocess_static is Some(metadata) {
+    return Some(metadata)
+  }
   let mesh_handle_id = payload.mesh_handle.id()
   if mesh_handle_id < 0 {
     return None
@@ -893,10 +896,11 @@ fn render3d_update_mesh_preprocess_static_cache(
     if cache.get(mesh_handle_id) is Some(_) {
       continue
     }
-    cache.set(
-      mesh_handle_id,
-      render3d_mesh_preprocess_static(mesh.payload.mesh_handle),
-    )
+    let metadata = match mesh.payload.mesh_preprocess_static {
+      Some(static_metadata) => static_metadata
+      None => render3d_mesh_preprocess_static(mesh.payload.mesh_handle)
+    }
+    cache.set(mesh_handle_id, metadata)
   }
 }
 
@@ -922,20 +926,20 @@ fn render3d_mesh_preprocess_static_for_draw_item(
 }
 
 ///|
-fn render3d_mesh_handle_is_indexed_cached(
+fn render3d_mesh_preprocess_static_cached(
   mesh_handle : @asset.Handle[@mesh.Mesh],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
-) -> Bool {
+) -> MeshPreprocessStatic3d {
   let mesh_handle_id = mesh_handle.id()
   if mesh_handle_id < 0 {
-    return false
+    return render3d_mesh_preprocess_static(mesh_handle)
   }
   match mesh_preprocess_static_cache.get(mesh_handle_id) {
-    Some(metadata) => metadata.is_indexed
+    Some(metadata) => metadata
     None => {
       let metadata = render3d_mesh_preprocess_static(mesh_handle)
       mesh_preprocess_static_cache.set(mesh_handle_id, metadata)
-      metadata.is_indexed
+      metadata
     }
   }
 }
