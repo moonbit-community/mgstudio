@@ -48,7 +48,23 @@ pub fn render_visibility_range_plugin_with(
   plugin : RenderVisibilityRangePlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { RenderVisibilityRanges::default() })
+  @render.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
+    let world = sub_app.world()
+    ensure_render_visibility_ranges_resource(world)
+    sub_app
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(extract_visibility_ranges_system).in_set(
+        @render.render_system_set_extract_commands,
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(write_render_visibility_ranges_system).in_set(
+        @render.render_system_set_prepare_resources_flush,
+      ),
+    )
+  })
 }
 
 ///|
@@ -127,6 +143,56 @@ pub fn RenderVisibilityRanges::buffer_dirty(
   self : RenderVisibilityRanges,
 ) -> Bool {
   self.buffer_dirty
+}
+
+///|
+fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
+  if (world.get_resource(ecs_key_render_visibility_ranges) catch { _ => None })
+    is None {
+    world.insert_resource(
+      ecs_key_render_visibility_ranges,
+      RenderVisibilityRanges::default(),
+    )
+  }
+}
+
+///|
+fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
+  ensure_render_visibility_ranges_resource(render_world)
+  let main_world = @render.render_source_world(render_world)
+  let query : @ecs.QueryState[
+    @core.Entity,
+    @ecs.With[@root_visibility.VisibilityRange],
+  ] = main_world.query_filtered(
+    @ecs.With::new(@root_visibility.ecs_key_visibility_range),
+  )
+  let iter = query.iter(main_world)
+  let ranges_ref = (render_world.get_resource_ref_mut(
+    ecs_key_render_visibility_ranges,
+  ) catch {
+    _ => None
+  }).unwrap()
+  let ranges = ranges_ref.val
+  ranges.clear()
+  while (iter.fetch_next() catch { _ => None }) is Some((entity, _)) {
+    if (main_world.get_by_key(entity, @root_visibility.ecs_key_visibility_range) catch {
+        _ => None
+      })
+      is Some(visibility_range) {
+      ranges.insert(entity.id, visibility_range)
+    }
+  }
+}
+
+///|
+fn write_render_visibility_ranges_system(render_world : @ecs.World) -> Unit {
+  if (render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges) catch {
+      _ => None
+    })
+    is Some(ranges_ref) &&
+    ranges_ref.val.buffer_dirty() {
+    ranges_ref.val.mark_flushed()
+  }
 }
 
 ///|
