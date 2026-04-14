@@ -48,26 +48,6 @@ This file must not exceed 200 lines.
 | Current weighted migration completion (included scope) | 95% |
 | Last updated | 2026-04-14 |
 
-- [x] `render/pbr`: close `RENDER-003` with current/previous skin matrices persistence and dual-slot upload for motion vectors.
-- [x] `render/pbr`: close `RENDER-004` with incremental mesh extract/remove and cache cleanup flow aligned to stage boundaries.
-- [x] `render/pbr`: close `RENDER-005` with per-mesh `motion_vector_enabled` data authored in extract/collect path and consumed by motion-vector pass.
-- [x] `render/pbr`: close `RENDER-006` by moving camera preprocess payload uploads into `render3d_prepare_bind_groups_system`.
-- [x] `render/pbr`: close `RENDER-007` by storing per-view prepared queue/projection/viewport state and consuming it at execute.
-- [x] `render/pbr`: close `RENDER-008` by splitting camera queue build/upload/dispatch across prepare-bind-groups/queue stages.
-- [x] `render/pbr`: close `RENDER-010` by removing execute-side queue-build/preprocess duties from camera hot path, and correct clip-matrix axis wiring in `render3d_begin_pass_3d` (unjittered/previous x-axis fields).
-- [x] `render/pbr`: close `RENDER-011` by confining depth-pyramid and late-occlusion preprocess dispatch to queue stage.
-- [x] `render/pbr`: align stage boundaries to Bevy base-chain shape by moving camera queue payload upload from `prepare_bind_groups` to `queue_meshes`, making `prepare_resources_flush` non-destructive (no queued-frame clear), rewiring mesh-render set ordering to `extract -> prepare_meshes -> queue_meshes -> queue_sweep -> prepare_resources -> prepare_resources_flush -> prepare_bind_groups -> render`, and converging meshlet sub-app sets to Bevy-shaped `prepare_assets/manage_views/prepare_resources/prepare_bind_groups/queue_meshes` ownership.
-- [x] `pbr/wireframe-ownerization`: move wireframe mesh-cache/runtime helpers from main-pass file into `pbr/wireframe.mbt` owner module.
-- [x] `pbr/material-ownerization`: add `ExtractedMaterialInstances3d` world resource and populate it from `render3d_prepare_meshes_system`.
-- [x] `pbr/render/mesh_view_bindings-depth`: add Bevy-shaped `MeshPipelineViewLayoutKey` + layout label + layout-entry generation.
-- [x] `pbr/render/gpu_preprocess-depth`: add Bevy-shaped preprocess/bind-indirect pipeline key models and pipeline prepare-id flow.
-- [x] `pbr/render/fog-prepare-shape`: align `pbr/render/fog` with Bevy `GpuFog`/mode constants/meta buffer/view offset/prepare encoding shape.
-- [x] `pbr/fog-render-bridge`: add camera-owned `DistanceFog -> pbr/render Render3dViewFogData` bridge and world prepare helper.
-- [x] `render/pbr`: replace point-light shadow sentinel entity path with `Option<Entity>` ownership flow.
-- [x] `render/pbr`: move point-shadow target cache and scene postprocess target caches from global `Ref` to render-world resources.
-- [x] `render/pbr`: move wireframe mesh cache from global `Ref` to render-world resource ownership.
-- [x] `render/pbr`: move world-transform cache from global shared `Ref` to render-world resource ownership.
-- [x] `pbr/plugin`: remove global plugin runtime-config `Ref`; resolve runtime config from ECS resource/default per world.
 - [x] `render/pbr` + `diagnostic/timeline_trace`: move render3d diagnostics state to world-owned resource and move timeline pending-span buffer ownership from diagnostic global `Ref` to app timeline owner queue.
 - [x] `pbr/free_camera`: move controller system-state from global `Ref` to world-owned resource.
 - [x] `render/renderer`: collapse duplicated frame-begin/frame-end diagnostics bookkeeping into `render_diagnostics_runtime` owner APIs (`render_diagnostics_begin_frame/end_frame`), remove direct state mutation from `window_surface`, merge pass-timing + draw/drop/debug/frame/snapshot refs into one owner runtime state, and centralize render-subapp stage/set wiring plus cross-package set-bridging via `render/schedule`.
