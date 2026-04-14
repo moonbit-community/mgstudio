@@ -195,14 +195,35 @@ fn scene_despawn_instance(world : @ecs.World, instance_id : Int) -> Unit {
 }
 
 ///|
-fn scene_unregister_root_instance(
+fn scene_clear_instance_components(
   world : @ecs.World,
   entity : @core.Entity,
+) -> Unit {
+  scene_remove_ready_component(world, entity)
+  ignore(
+    try world.remove_by_key(entity, ecs_key_scene_instance) catch {
+      _ => false
+    } noraise {
+      value => value
+    },
+  )
+}
+
+///|
+fn scene_detach_root_instance(
+  world : @ecs.World,
+  entity : @core.Entity,
+  despawn_entities? : Bool = false,
 ) -> Unit {
   guard scene_instance_component(world, entity) is Some(instance) else {
     return
   }
-  scene_unregister_instance(world, instance.instance_id)
+  if despawn_entities {
+    scene_despawn_instance(world, instance.instance_id)
+  } else {
+    scene_unregister_instance(world, instance.instance_id)
+  }
+  scene_clear_instance_components(world, entity)
 }
 
 ///|
@@ -210,7 +231,32 @@ fn scene_root_on_remove(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  scene_unregister_root_instance(world.world(), context.entity)
+  scene_detach_root_instance(
+    world.world(),
+    context.entity,
+    despawn_entities=true,
+  )
+}
+
+///|
+fn scene_root_on_insert(
+  world : @ecs.DeferredWorld,
+  context : @ecs.HookContext,
+) -> Unit {
+  if !world.contains_by_key(context.entity, @transform.ecs_key_transform) {
+    try! world.set_by_key(
+      context.entity,
+      @transform.ecs_key_transform,
+      @transform.Transform::identity(),
+    )
+  }
+  if !world.contains_by_key(context.entity, @visibility.ecs_key_visibility) {
+    try! world.set_by_key(
+      context.entity,
+      @visibility.ecs_key_visibility,
+      @visibility.Visibility::Inherited,
+    )
+  }
 }
 
 ///|
@@ -230,7 +276,11 @@ fn scene_register_component_hooks() -> Bool {
   let scene_root_hooks = @ecs.register_component_hooks_for_key(
     ecs_key_scene_root,
   )
-  ignore(try! scene_root_hooks.on_remove(scene_root_on_remove))
+  ignore(
+    try! scene_root_hooks
+    .on_insert(scene_root_on_insert)
+    .on_remove(scene_root_on_remove),
+  )
   let scene_instance_hooks = @ecs.register_component_hooks_for_key(
     ecs_key_scene_instance,
   )

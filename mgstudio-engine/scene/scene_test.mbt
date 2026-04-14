@@ -481,6 +481,95 @@ test "scene: gltf lod visibility policy set/get/reset" {
 }
 
 ///|
+test "scene: SceneRoot inserts default transform and visibility" {
+  let has_transform = Ref::new(false)
+  let has_visibility = Ref::new(false)
+  let inherited_visibility = Ref::new(false)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#scene-root-default-components",
+      @scene.Scene::new([]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    has_transform.val = try! world.contains_by_key(
+      root, @transform.ecs_key_transform,
+    )
+    has_visibility.val = try! world.contains_by_key(
+      root, @visibility.ecs_key_visibility,
+    )
+    inherited_visibility.val = match
+      (try! world.get_by_key(root, @visibility.ecs_key_visibility)) {
+      Some(@visibility.Visibility::Inherited) => true
+      _ => false
+    }
+  })
+  debug_inspect(has_transform.val, content="true")
+  debug_inspect(has_visibility.val, content="true")
+  debug_inspect(inherited_visibility.val, content="true")
+}
+
+///|
+test "scene: removing SceneRoot despawns spawned children" {
+  let child_alive_after_remove = Ref::new(true)
+  let has_instance_after_remove = Ref::new(true)
+  let has_ready_after_remove = Ref::new(true)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#scene-root-remove-despawn",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new(
+          @pbr.Mesh3d::new(
+            @pbr.mesh_assets_mut_or_abort().val.add(
+              @pbr.Mesh::from_3d_geometry(
+                @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+              ),
+            ),
+          ),
+          @pbr.MeshMaterial3d::new(
+            @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+          ),
+          @transform.Transform::identity(),
+          None,
+          None,
+        ),
+      ]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    let child_entity : Ref[@core.Entity?] = Ref::new(None)
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        child_entity.val = Some(entity)
+      }
+    })
+    guard child_entity.val is Some(child) else { return }
+    ignore(try! world.remove_by_key(root, @scene.ecs_key_scene_root))
+
+    child_alive_after_remove.val = world.is_alive(child)
+    has_instance_after_remove.val = try! world.contains_by_key(
+      root, @scene.ecs_key_scene_instance,
+    )
+    has_ready_after_remove.val = try! world.contains_by_key(
+      root, @scene.ecs_key_scene_instance_ready,
+    )
+  })
+  debug_inspect(child_alive_after_remove.val, content="false")
+  debug_inspect(has_instance_after_remove.val, content="false")
+  debug_inspect(has_ready_after_remove.val, content="false")
+}
+
+///|
 test "scene: SceneRoot spawns children and marks ready" {
   let instance_id = Ref::new(0)
   let ready_instance_id = Ref::new(0)
