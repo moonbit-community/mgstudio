@@ -16,6 +16,9 @@
 /// Minimal Bevy-aligned animation runtime core.
 
 ///|
+const ANIMATION_PLUGIN_NAME : String = "mgstudio.animation.AnimationPlugin"
+
+///|
 pub struct AnimatedBy {
   player : @core.Entity
 }
@@ -1560,7 +1563,36 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub struct AnimationPlugin {}
+
+///|
+pub fn AnimationPlugin::default() -> AnimationPlugin {
+  AnimationPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for AnimationPlugin with plugin_name(_self) {
+  ANIMATION_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for AnimationPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    animation_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  animation_plugin_with(app, AnimationPlugin::default())
+}
+
+///|
+pub fn animation_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : AnimationPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   let app = animation_event_runtime_plugin(app)
   let animation_clip_event_key : @ecs.MessageKey[
     @asset.AssetEvent[AnimationClip],
