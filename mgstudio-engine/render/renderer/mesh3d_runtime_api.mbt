@@ -173,16 +173,13 @@ pub fn downsample_mesh3d_depth_pyramid(
 
 ///|
 pub fn prewarm_mesh3d_pipeline_variants(
-  mesh_id~ : Int,
+  mesh_topology_kind~ : Int,
   cull_mode~ : Int,
   shader_path~ : String?,
   forward_decal~ : Bool,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    guard find_mesh(backend, mesh_id) is Some(mesh) else {
-      return
-    }
-    let topology = mesh.primitive_topology
+    let topology = mesh3d_topology_from_kind(mesh_topology_kind)
     ignore(
       mesh3d_pipeline_for_current_pass(
         backend,

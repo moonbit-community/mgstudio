@@ -101,13 +101,13 @@ pub fn host_gpu_downsample_mesh3d_depth_pyramid(
 
 ///|
 pub fn host_gpu_prewarm_mesh3d_pipeline_variants(
-  mesh_id~ : Int,
+  mesh_topology_kind~ : Int,
   cull_mode~ : Int,
   shader_path~ : String?,
   forward_decal~ : Bool,
 ) -> Unit {
   prewarm_mesh3d_pipeline_variants(
-    mesh_id~,
+    mesh_topology_kind~,
     cull_mode~,
     shader_path~,
     forward_decal~,

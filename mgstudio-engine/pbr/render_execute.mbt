@@ -111,7 +111,7 @@ fn render3d_prewarm_mesh_pipelines(
       None => None
     }
     @render.host_gpu_prewarm_mesh3d_pipeline_variants(
-      mesh_id=mesh.mesh_id,
+      mesh_topology_kind=mesh.mesh_topology_kind,
       cull_mode=@pbr_render.render3d_cull_mode_value(mesh.material, 0),
       shader_path~,
       forward_decal=mesh.is_forward_decal,

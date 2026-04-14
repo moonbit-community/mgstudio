@@ -165,6 +165,7 @@ fn render3d_execute_collect_meshes(
     let (skinning_key_hi, skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
       phase_state_ref, entity,
     )
+    let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh)
     let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
       phase_state_ref,
       mesh3d.mesh,
@@ -235,6 +236,7 @@ fn render3d_execute_collect_meshes(
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh,
         mesh_id,
+        mesh_topology_kind,
         mesh_is_indexed: render3d_mesh_handle_is_indexed_cached(
           mesh3d.mesh,
           phase_state_ref.val.mesh_preprocess_static_cache,
@@ -278,4 +280,18 @@ fn render3d_execute_collect_meshes(
     meshes,
   )
   meshes
+}
+
+///|
+fn render3d_mesh_topology_kind(
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Int {
+  match @sprite.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) =>
+      match mesh_asset.as_3d_geometry() {
+        Some(geometry) => geometry.primitive_topology().to_int()
+        None => 0
+      }
+    None => 0
+  }
 }

@@ -103,6 +103,7 @@ priv struct ExtractedCamera3d {
 priv struct Mesh3dExtractedPayload {
   mesh_handle : @asset.Handle[@mesh.Mesh]
   mesh_id : Int
+  mesh_topology_kind : Int
   mesh_is_indexed : Bool
   transform : @transform.Transform
   previous_transform : @transform.Transform
