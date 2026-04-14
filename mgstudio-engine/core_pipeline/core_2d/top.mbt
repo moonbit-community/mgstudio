@@ -68,6 +68,32 @@ pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+fn core_2d_configure_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let stage = @render.render_schedule_stage()
+  @render.configure_base_render_sets(sub_app)
+  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+    core_2d_set_extract,
+  ])
+  .configure_set(stage, core_2d_set_extract, before=[core_2d_set_prepare])
+  .configure_set(stage, @render.render_system_set_prepare, before=[
+    core_2d_set_prepare,
+  ])
+  .configure_set(stage, core_2d_set_prepare, before=[core_2d_set_queue])
+  .configure_set(stage, @render.render_system_set_queue, before=[
+    core_2d_set_queue,
+  ])
+  .configure_set(stage, core_2d_set_queue, before=[core_2d_set_render])
+  .configure_set(stage, @render.render_system_set_render, before=[
+    core_2d_set_render,
+  ])
+  .configure_set(stage, core_2d_set_render, before=[
+    @render.render_system_set_cleanup,
+  ])
+}
+
+///|
 pub impl @app.PluginReplacement for Core2dPlugin with plugin_name(_self) {
   CORE_2D_PLUGIN_NAME
 }
@@ -85,10 +111,11 @@ pub fn core_2d_plugin_with(
   plugin : Core2dPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app
+  let next = app
   .init_resource(fn() { Opaque2dPhase::default() })
   .init_resource(fn() { AlphaMask2dPhase::default() })
   .init_resource(fn() { Transparent2dPhase::default() })
+  @render.with_render_app(next, core_2d_configure_render_sub_app)
 }
 
 ///|
