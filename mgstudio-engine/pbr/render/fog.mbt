@@ -15,22 +15,37 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/render/fog.rs`.
 
 ///|
-pub const RENDER3D_GPU_FOG_MODE_OFF : UInt = 0U
+pub const GPU_FOG_MODE_OFF : UInt = 0U
 
 ///|
-pub const RENDER3D_GPU_FOG_MODE_LINEAR : UInt = 1U
+pub const GPU_FOG_MODE_LINEAR : UInt = 1U
 
 ///|
-pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL : UInt = 2U
+pub const GPU_FOG_MODE_EXPONENTIAL : UInt = 2U
 
 ///|
-pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL_SQUARED : UInt = 3U
+pub const GPU_FOG_MODE_EXPONENTIAL_SQUARED : UInt = 3U
 
 ///|
-pub const RENDER3D_GPU_FOG_MODE_ATMOSPHERIC : UInt = 4U
+pub const GPU_FOG_MODE_ATMOSPHERIC : UInt = 4U
 
 ///|
-pub struct GpuFog3d {
+pub const RENDER3D_GPU_FOG_MODE_OFF : UInt = GPU_FOG_MODE_OFF
+
+///|
+pub const RENDER3D_GPU_FOG_MODE_LINEAR : UInt = GPU_FOG_MODE_LINEAR
+
+///|
+pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL : UInt = GPU_FOG_MODE_EXPONENTIAL
+
+///|
+pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL_SQUARED : UInt = GPU_FOG_MODE_EXPONENTIAL_SQUARED
+
+///|
+pub const RENDER3D_GPU_FOG_MODE_ATMOSPHERIC : UInt = GPU_FOG_MODE_ATMOSPHERIC
+
+///|
+pub struct GpuFog {
   base_color : @math.Vec4
   directional_light_color : @math.Vec4
   be : @math.Vec3
@@ -40,51 +55,54 @@ pub struct GpuFog3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn GpuFog3d::default() -> GpuFog3d {
-  GpuFog3d::{
+pub fn GpuFog::default() -> GpuFog {
+  GpuFog::{
     base_color: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_color: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
     be: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     directional_light_exponent: 0.0F,
     bi: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-    mode: RENDER3D_GPU_FOG_MODE_OFF,
+    mode: GPU_FOG_MODE_OFF,
   }
 }
 
 ///|
-pub fn GpuFog3d::off() -> GpuFog3d {
-  GpuFog3d::default()
+pub fn GpuFog::off() -> GpuFog {
+  GpuFog::default()
 }
 
 ///|
-pub fn GpuFog3d::mode(self : GpuFog3d) -> UInt {
+pub fn GpuFog::mode(self : GpuFog) -> UInt {
   self.mode
 }
 
 ///|
-pub fn GpuFog3d::base_color(self : GpuFog3d) -> @math.Vec4 {
+pub fn GpuFog::base_color(self : GpuFog) -> @math.Vec4 {
   self.base_color
 }
 
 ///|
-pub fn GpuFog3d::directional_light_color(self : GpuFog3d) -> @math.Vec4 {
+pub fn GpuFog::directional_light_color(self : GpuFog) -> @math.Vec4 {
   self.directional_light_color
 }
 
 ///|
-pub fn GpuFog3d::be(self : GpuFog3d) -> @math.Vec3 {
+pub fn GpuFog::be(self : GpuFog) -> @math.Vec3 {
   self.be
 }
 
 ///|
-pub fn GpuFog3d::bi(self : GpuFog3d) -> @math.Vec3 {
+pub fn GpuFog::bi(self : GpuFog) -> @math.Vec3 {
   self.bi
 }
 
 ///|
-pub fn GpuFog3d::directional_light_exponent(self : GpuFog3d) -> Float {
+pub fn GpuFog::directional_light_exponent(self : GpuFog) -> Float {
   self.directional_light_exponent
 }
+
+///|
+pub type GpuFog3d = GpuFog
 
 ///|
 pub struct ViewFogUniformOffset {
@@ -115,7 +133,7 @@ pub impl @ecs.Component for ViewFogUniformOffset with component() {
 
 ///|
 pub struct FogMeta {
-  fogs : Array[GpuFog3d]
+  gpu_fogs : Array[GpuFog]
 }
 
 ///|
@@ -130,33 +148,33 @@ pub impl @app.Resource for FogMeta with resource() {
 
 ///|
 pub fn FogMeta::default() -> FogMeta {
-  FogMeta::{ fogs: [] }
+  FogMeta::{ gpu_fogs: [] }
 }
 
 ///|
 pub fn FogMeta::clear(self : FogMeta) -> Unit {
-  self.fogs.clear()
+  self.gpu_fogs.clear()
 }
 
 ///|
-pub fn FogMeta::push(self : FogMeta, fog : GpuFog3d) -> UInt {
-  let offset = self.fogs.length().reinterpret_as_uint()
-  self.fogs.push(fog)
+pub fn FogMeta::push(self : FogMeta, fog : GpuFog) -> UInt {
+  let offset = self.gpu_fogs.length().reinterpret_as_uint()
+  self.gpu_fogs.push(fog)
   offset
 }
 
 ///|
 pub fn FogMeta::len(self : FogMeta) -> Int {
-  self.fogs.length()
+  self.gpu_fogs.length()
 }
 
 ///|
-pub fn FogMeta::fog_at(self : FogMeta, offset : UInt) -> GpuFog3d? {
+pub fn FogMeta::fog_at(self : FogMeta, offset : UInt) -> GpuFog? {
   let index = offset.reinterpret_as_int()
-  if index < 0 || index >= self.fogs.length() {
+  if index < 0 || index >= self.gpu_fogs.length() {
     None
   } else {
-    Some(self.fogs[index])
+    Some(self.gpu_fogs[index])
   }
 }
 
@@ -225,42 +243,42 @@ pub fn Render3dViewFogData::new(
 }
 
 ///|
-pub fn render3d_gpu_fog_from_view_fog(fog : Render3dViewFogData) -> GpuFog3d {
+pub fn render3d_gpu_fog_from_view_fog(fog : Render3dViewFogData) -> GpuFog {
   let base_color = render3d_color_to_vec4(fog.color)
   let directional_light_color = render3d_color_to_vec4(
     fog.directional_light_color,
   )
   match fog.falloff {
     Render3dFogFalloff::Linear(start, end_) =>
-      GpuFog3d::{
-        ..GpuFog3d::default(),
-        mode: RENDER3D_GPU_FOG_MODE_LINEAR,
+      GpuFog::{
+        ..GpuFog::default(),
+        mode: GPU_FOG_MODE_LINEAR,
         base_color,
         directional_light_color,
         directional_light_exponent: fog.directional_light_exponent,
         be: @math.Vec3::new(start, end_, 0.0F),
       }
     Render3dFogFalloff::Exponential(density) =>
-      GpuFog3d::{
-        ..GpuFog3d::default(),
-        mode: RENDER3D_GPU_FOG_MODE_EXPONENTIAL,
+      GpuFog::{
+        ..GpuFog::default(),
+        mode: GPU_FOG_MODE_EXPONENTIAL,
         base_color,
         directional_light_color,
         directional_light_exponent: fog.directional_light_exponent,
         be: @math.Vec3::new(density, 0.0F, 0.0F),
       }
     Render3dFogFalloff::ExponentialSquared(density) =>
-      GpuFog3d::{
-        ..GpuFog3d::default(),
-        mode: RENDER3D_GPU_FOG_MODE_EXPONENTIAL_SQUARED,
+      GpuFog::{
+        ..GpuFog::default(),
+        mode: GPU_FOG_MODE_EXPONENTIAL_SQUARED,
         base_color,
         directional_light_color,
         directional_light_exponent: fog.directional_light_exponent,
         be: @math.Vec3::new(density, 0.0F, 0.0F),
       }
     Render3dFogFalloff::Atmospheric(extinction, inscattering) =>
-      GpuFog3d::{
-        mode: RENDER3D_GPU_FOG_MODE_ATMOSPHERIC,
+      GpuFog::{
+        mode: GPU_FOG_MODE_ATMOSPHERIC,
         base_color,
         directional_light_color,
         be: extinction,
@@ -275,13 +293,21 @@ pub fn render3d_prepare_fog_uniforms(
   view_fogs : Array[(@core.Entity, Render3dViewFogData?)],
   fog_meta : FogMeta,
 ) -> Array[(@core.Entity, ViewFogUniformOffset)] {
+  prepare_fog(view_fogs, fog_meta)
+}
+
+///|
+pub fn prepare_fog(
+  view_fogs : Array[(@core.Entity, Render3dViewFogData?)],
+  fog_meta : FogMeta,
+) -> Array[(@core.Entity, ViewFogUniformOffset)] {
   fog_meta.clear()
   let offsets = []
   for item in view_fogs {
     let (entity, fog) = item
     let gpu_fog = match fog {
       Some(value) => render3d_gpu_fog_from_view_fog(value)
-      None => GpuFog3d::off()
+      None => GpuFog::off()
     }
     let offset = fog_meta.push(gpu_fog)
     offsets.push((entity, ViewFogUniformOffset::new(offset)))
