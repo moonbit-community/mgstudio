@@ -17,6 +17,9 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
+const FRAME_TIME_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.FrameTimeDiagnosticsPlugin"
+
+///|
 pub struct FrameTimeDiagnosticsPlugin {
   max_history_length : Int
   smoothing_factor : Float
@@ -45,6 +48,22 @@ pub fn FrameTimeDiagnosticsPlugin::new(
 ///|
 pub fn FrameTimeDiagnosticsPlugin::default() -> FrameTimeDiagnosticsPlugin {
   FrameTimeDiagnosticsPlugin::new(DEFAULT_MAX_HISTORY_LENGTH)
+}
+
+///|
+pub impl @app.PluginReplacement for FrameTimeDiagnosticsPlugin with plugin_name(
+  _self,
+) {
+  FRAME_TIME_DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for FrameTimeDiagnosticsPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    frame_time_diagnostics_plugin_with(app, self)
+  }
 }
 
 ///|

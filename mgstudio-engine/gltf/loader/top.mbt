@@ -156,6 +156,9 @@ pub(all) enum GltfSkinnedMeshBoundsPolicy {
 } derive(Eq)
 
 ///|
+const GLTF_PLUGIN_NAME : String = "mgstudio.gltf.loader.GltfPlugin"
+
+///|
 pub fn GltfSkinnedMeshBoundsPolicy::default() -> GltfSkinnedMeshBoundsPolicy {
   Dynamic
 }
@@ -177,6 +180,18 @@ pub fn GltfPlugin::default() -> GltfPlugin {
     custom_vertex_attributes: [],
     extension_handlers: [],
     skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::default(),
+  }
+}
+
+///|
+pub impl @app.PluginReplacement for GltfPlugin with plugin_name(_self) {
+  GLTF_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for GltfPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    gltf_plugin_with(app, self)
   }
 }
 

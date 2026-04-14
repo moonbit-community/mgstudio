@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/diagnostic/mesh_allocator_diagnostic_plugin.rs`.
 
 ///|
+const MESH_ALLOCATOR_DIAGNOSTIC_PLUGIN_NAME : String = "mgstudio.render.diagnostic.MeshAllocatorDiagnosticPlugin"
+
+///|
 pub struct MeshAllocatorDiagnosticPlugin {
   suffix : String
 }
@@ -30,6 +33,22 @@ pub fn MeshAllocatorDiagnosticPlugin::new(
   suffix : String,
 ) -> MeshAllocatorDiagnosticPlugin {
   MeshAllocatorDiagnosticPlugin::{ suffix, }
+}
+
+///|
+pub impl @app.PluginReplacement for MeshAllocatorDiagnosticPlugin with plugin_name(
+  _self,
+) {
+  MESH_ALLOCATOR_DIAGNOSTIC_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for MeshAllocatorDiagnosticPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    mesh_allocator_diagnostic_plugin_with(app, self)
+  }
 }
 
 ///|

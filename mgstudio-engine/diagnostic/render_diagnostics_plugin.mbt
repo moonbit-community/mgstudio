@@ -17,6 +17,9 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
+const RENDER_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.RenderDiagnosticsPlugin"
+
+///|
 pub struct RenderDiagnosticsPlugin {
   max_history_length : Int
 }
@@ -31,6 +34,22 @@ pub fn RenderDiagnosticsPlugin::new(
 ///|
 pub fn RenderDiagnosticsPlugin::default() -> RenderDiagnosticsPlugin {
   RenderDiagnosticsPlugin::new(DEFAULT_MAX_HISTORY_LENGTH)
+}
+
+///|
+pub impl @app.PluginReplacement for RenderDiagnosticsPlugin with plugin_name(
+  _self,
+) {
+  RENDER_DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for RenderDiagnosticsPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    render_diagnostics_plugin_with(app, self)
+  }
 }
 
 ///|

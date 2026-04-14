@@ -16,11 +16,26 @@
 // Bevy source: `bevy/crates/bevy_render/src/sync_world.rs`.
 
 ///|
+const SYNC_WORLD_PLUGIN_NAME : String = "mgstudio.render.SyncWorldPlugin"
+
+///|
 pub struct SyncWorldPlugin {}
 
 ///|
 pub fn SyncWorldPlugin::default() -> SyncWorldPlugin {
   SyncWorldPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for SyncWorldPlugin with plugin_name(_self) {
+  SYNC_WORLD_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for SyncWorldPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    sync_world_plugin_with(app, self)
+  }
 }
 
 ///|
@@ -97,6 +112,15 @@ pub fn PendingSyncEntity::drain(
 
 ///|
 pub fn sync_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  sync_world_plugin_with(app, SyncWorldPlugin::default())
+}
+
+///|
+pub fn sync_world_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : SyncWorldPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   render_plugin(app)
 }
 

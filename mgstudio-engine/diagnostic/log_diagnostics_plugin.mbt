@@ -17,6 +17,9 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
+const LOG_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.LogDiagnosticsPlugin"
+
+///|
 pub struct LogDiagnosticsPlugin {
   debug : Bool
   wait_duration_seconds : Float
@@ -43,6 +46,18 @@ pub fn LogDiagnosticsPlugin::filtered(
   LogDiagnosticsPlugin::{
     ..LogDiagnosticsPlugin::default(),
     filter: Some(filter_map),
+  }
+}
+
+///|
+pub impl @app.PluginReplacement for LogDiagnosticsPlugin with plugin_name(_self) {
+  LOG_DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for LogDiagnosticsPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    log_diagnostics_plugin_with(app, self)
   }
 }
 

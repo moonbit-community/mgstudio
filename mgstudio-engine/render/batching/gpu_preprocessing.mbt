@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs`.
 
 ///|
+const GPU_PREPROCESSING_PLUGIN_NAME : String = "mgstudio.render.batching.GpuPreprocessingPlugin"
+
+///|
 pub(all) enum GpuPreprocessingMode {
   None
   PreprocessingOnly
@@ -150,6 +153,20 @@ pub fn GpuPreprocessingPlugin::with_mode(
   mode : GpuPreprocessingMode,
 ) -> GpuPreprocessingPlugin {
   GpuPreprocessingPlugin::{ mode, }
+}
+
+///|
+pub impl @app.PluginReplacement for GpuPreprocessingPlugin with plugin_name(
+  _self,
+) {
+  GPU_PREPROCESSING_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for GpuPreprocessingPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    gpu_preprocessing_plugin_with(app, self)
+  }
 }
 
 ///|

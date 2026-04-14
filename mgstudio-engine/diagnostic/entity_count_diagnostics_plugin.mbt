@@ -17,6 +17,9 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
+const ENTITY_COUNT_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.EntityCountDiagnosticsPlugin"
+
+///|
 pub struct EntityCountDiagnosticsPlugin {
   max_history_length : Int
 }
@@ -31,6 +34,22 @@ pub fn EntityCountDiagnosticsPlugin::new(
 ///|
 pub fn EntityCountDiagnosticsPlugin::default() -> EntityCountDiagnosticsPlugin {
   EntityCountDiagnosticsPlugin::new(DEFAULT_MAX_HISTORY_LENGTH)
+}
+
+///|
+pub impl @app.PluginReplacement for EntityCountDiagnosticsPlugin with plugin_name(
+  _self,
+) {
+  ENTITY_COUNT_DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for EntityCountDiagnosticsPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    entity_count_diagnostics_plugin_with(app, self)
+  }
 }
 
 ///|

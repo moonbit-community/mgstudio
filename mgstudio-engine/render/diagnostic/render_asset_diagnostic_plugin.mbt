@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/diagnostic/render_asset_diagnostic_plugin.rs`.
 
 ///|
+const RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME : String = "mgstudio.render.diagnostic.RenderAssetDiagnosticPlugin"
+
+///|
 pub struct RenderAssetDiagnosticPlugin {
   suffix : String
 }
@@ -30,6 +33,22 @@ pub fn RenderAssetDiagnosticPlugin::new(
 ///|
 pub fn RenderAssetDiagnosticPlugin::default() -> RenderAssetDiagnosticPlugin {
   RenderAssetDiagnosticPlugin::new(" assets")
+}
+
+///|
+pub impl @app.PluginReplacement for RenderAssetDiagnosticPlugin with plugin_name(
+  _self,
+) {
+  RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for RenderAssetDiagnosticPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    render_asset_diagnostic_plugin_with(app, self)
+  }
 }
 
 ///|

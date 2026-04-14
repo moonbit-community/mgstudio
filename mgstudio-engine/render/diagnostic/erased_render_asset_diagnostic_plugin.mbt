@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/diagnostic/erased_render_asset_diagnostic_plugin.rs`.
 
 ///|
+const ERASED_RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME : String = "mgstudio.render.diagnostic.ErasedRenderAssetDiagnosticPlugin"
+
+///|
 pub struct ErasedRenderAssetDiagnosticPlugin {
   suffix : String
 }
@@ -30,6 +33,22 @@ pub fn ErasedRenderAssetDiagnosticPlugin::new(
   suffix : String,
 ) -> ErasedRenderAssetDiagnosticPlugin {
   ErasedRenderAssetDiagnosticPlugin::{ suffix, }
+}
+
+///|
+pub impl @app.PluginReplacement for ErasedRenderAssetDiagnosticPlugin with plugin_name(
+  _self,
+) {
+  ERASED_RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for ErasedRenderAssetDiagnosticPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    erased_render_asset_diagnostic_plugin_with(app, self)
+  }
 }
 
 ///|

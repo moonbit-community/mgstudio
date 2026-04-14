@@ -16,11 +16,26 @@
 // Bevy source: `bevy/crates/bevy_dev_tools/src/ci_testing/mod.rs`.
 
 ///|
+const CI_TESTING_PLUGIN_NAME : String = "mgstudio.dev_tools.CiTestingPlugin"
+
+///|
 pub struct CiTestingPlugin {}
 
 ///|
 pub fn CiTestingPlugin::default() -> CiTestingPlugin {
   CiTestingPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for CiTestingPlugin with plugin_name(_self) {
+  CI_TESTING_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for CiTestingPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    ci_testing_plugin_with(app, self)
+  }
 }
 
 ///|
@@ -86,6 +101,15 @@ fn ci_testing_apply_time_update_strategy(
 
 ///|
 pub fn ci_testing_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  ci_testing_plugin_with(app, CiTestingPlugin::default())
+}
+
+///|
+pub fn ci_testing_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : CiTestingPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
   if app.contains_resource(ci_testing_plugin_marker_resource_key) {
     return app
   }

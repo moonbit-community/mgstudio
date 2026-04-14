@@ -22,6 +22,9 @@ pub struct FrameCount {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+const FRAME_COUNT_PLUGIN_NAME : String = "mgstudio.diagnostic.FrameCountPlugin"
+
+///|
 pub fn FrameCount::default() -> FrameCount {
   FrameCount::{ value: 0 }
 }
@@ -50,6 +53,18 @@ pub struct FrameCountPlugin {}
 ///|
 pub fn FrameCountPlugin::default() -> FrameCountPlugin {
   FrameCountPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for FrameCountPlugin with plugin_name(_self) {
+  FRAME_COUNT_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for FrameCountPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    frame_count_plugin_with(app, self)
+  }
 }
 
 ///|

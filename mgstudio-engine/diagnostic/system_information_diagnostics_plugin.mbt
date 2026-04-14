@@ -17,11 +17,30 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
+const SYSTEM_INFORMATION_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.SystemInformationDiagnosticsPlugin"
+
+///|
 pub struct SystemInformationDiagnosticsPlugin {}
 
 ///|
 pub fn SystemInformationDiagnosticsPlugin::default() -> SystemInformationDiagnosticsPlugin {
   SystemInformationDiagnosticsPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for SystemInformationDiagnosticsPlugin with plugin_name(
+  _self,
+) {
+  SYSTEM_INFORMATION_DIAGNOSTICS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.PluginReplacement for SystemInformationDiagnosticsPlugin with world_plugin(
+  self,
+) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    system_information_diagnostics_plugin_with(app, self)
+  }
 }
 
 ///|
