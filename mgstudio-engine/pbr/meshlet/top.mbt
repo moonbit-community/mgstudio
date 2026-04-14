@@ -393,14 +393,14 @@ fn meshlet_ensure_render_sub_app_resources(
 ) -> Unit {
   let plugin_state = MeshletPluginState::from_plugin(plugin)
   world.insert_resource(ecs_key_meshlet_plugin_state, plugin_state)
-  if plugin_state.runtime_status is RuntimeUnavailable {
-    return
-  }
   if (try! world.get_resource(ecs_key_meshlet_instance_manager)) is None {
     world.insert_resource(
       ecs_key_meshlet_instance_manager,
       InstanceManager::default(),
     )
+  }
+  if plugin_state.runtime_status is RuntimeUnavailable {
+    return
   }
   if (try! world.get_resource(ecs_key_meshlet_resource_manager)) is None {
     world.insert_resource(

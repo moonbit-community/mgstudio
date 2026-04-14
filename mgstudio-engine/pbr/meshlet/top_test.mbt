@@ -88,6 +88,11 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
     (try! render_world.get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
     content="true",
   )
+  inspect(
+    (try! render_world.get_resource(ecs_key_meshlet_instance_manager))
+    is Some(_),
+    content="true",
+  )
   if meshlet_runtime_available() {
     inspect(
       (try! render_world.get_resource(ecs_key_meshlet_resource_manager))
