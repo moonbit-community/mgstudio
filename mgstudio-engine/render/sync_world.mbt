@@ -47,6 +47,11 @@ pub fn SyncToRenderWorld::default() -> SyncToRenderWorld {
 }
 
 ///|
+pub impl Default for SyncToRenderWorld with default() {
+  SyncToRenderWorld::default()
+}
+
+///|
 pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld] = @ecs.register_component(
   debug_name="mgstudio_render::SyncToRenderWorld",
 )
@@ -128,7 +133,7 @@ pub impl @ecs.Component for TemporaryRenderEntity with component() {
 pub(all) enum EntityRecord {
   Added(@core.Entity)
   Removed(RenderEntity)
-  ComponentRemoved(@core.Entity)
+  ComponentRemoved(@core.Entity, (@ecs.World, @core.Entity) -> @ecs.World)
 }
 
 ///|
@@ -278,7 +283,18 @@ fn entity_sync_system(
             _ => ()
           }
         }
-      EntityRecord::ComponentRemoved(_main_entity) => ()
+      EntityRecord::ComponentRemoved(main_entity, removal) => {
+        guard (main_world.get_by_key(main_entity, ecs_key_render_entity) catch {
+            _ => None
+          })
+          is Some(render_entity) else {
+          continue
+        }
+        if !render_world.is_alive(render_entity.id()) {
+          continue
+        }
+        ignore(removal(render_world, render_entity.id()))
+      }
     }
   }
   (main_world, render_world)

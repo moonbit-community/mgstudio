@@ -82,18 +82,79 @@ pub fn[C, F] extract_component_only_extract_visible(
 }
 
 ///|
-pub impl[C, F] @app.PluginReplacement for ExtractComponentPlugin[C, F] with plugin_name(
-  _self,
-) {
+pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugin[
+  C,
+  F,
+] with plugin_name(_self) {
   EXTRACT_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C, F] @app.PluginReplacement for ExtractComponentPlugin[C, F] with world_plugin(
-  self,
-) {
+pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugin[
+  C,
+  F,
+] with world_plugin(self) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     extract_component_plugin_with(app, self)
+  }
+}
+
+///|
+fn[C] extract_component_apply(
+  render_world : @ecs.World,
+  main_world : @ecs.World,
+  main_entity : @core.Entity,
+  render_entity : @core.Entity,
+  component_key : @ecs.ComponentKey[C],
+) -> Unit {
+  guard (main_world.get_by_key(main_entity, component_key) catch { _ => None })
+    is Some(component) else {
+    return
+  }
+  render_world.set_by_key(render_entity, component_key, component) catch {
+    _ => ()
+  }
+}
+
+///|
+fn[C] extract_components(
+  render_world : @ecs.World,
+  only_visible : Bool,
+  component_key : @ecs.ComponentKey[C],
+) -> Unit {
+  let main_world = render_source_world(render_world)
+  let query : @ecs.QueryState[@core.Entity, @ecs.With[SyncToRenderWorld]] = main_world.query_filtered(
+    @ecs.With::new(ecs_key_sync_to_render_world),
+  )
+  let iter = query.iter(main_world)
+  while (iter.fetch_next() catch { _ => None }) is Some((main_entity, _)) {
+    guard (main_world.get(main_entity, key=ecs_key_render_entity) catch {
+        _ => None
+      })
+      is Some(render_entity) else {
+      continue
+    }
+    if only_visible {
+      guard (main_world.get(
+          main_entity,
+          key=@visibility.ecs_key_view_visibility,
+        ) catch {
+          _ => None
+        })
+        is Some(view_visibility) else {
+        continue
+      }
+      if !view_visibility.is_visible() {
+        continue
+      }
+    }
+    extract_component_apply(
+      render_world,
+      main_world,
+      main_entity,
+      render_entity.id(),
+      component_key,
+    )
   }
 }
 
@@ -105,12 +166,31 @@ pub fn extract_component_plugin(
 }
 
 ///|
-pub fn[C, F] extract_component_plugin_with(
+pub fn[C : @ecs.Component, F] extract_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ExtractComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
-  ignore(plugin)
-  render_plugin(app)
+  let sync_component : SyncComponentPlugin[C, F] = SyncComponentPlugin::default()
+  let next = sync_component_plugin_with(render_plugin(app), sync_component)
+  let component_key = C::component()
+  with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
+    let stage = render_schedule_stage()
+    if plugin.only_extract_visible {
+      sub_app.add_systems(
+        stage,
+        @app.system(fn(render_world : @ecs.World) -> Unit {
+          extract_components(render_world, true, component_key)
+        }).in_set(render_system_set_extract_commands),
+      )
+    } else {
+      sub_app.add_systems(
+        stage,
+        @app.system(fn(render_world : @ecs.World) -> Unit {
+          extract_components(render_world, false, component_key)
+        }).in_set(render_system_set_extract_commands),
+      )
+    }
+  })
 }
 
 ///|

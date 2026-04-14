@@ -85,7 +85,7 @@ pub fn[C, F] extract_component_only_extract_visible(ExtractComponentPlugin[C, F]
 
 pub fn extract_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[C, F] extract_component_plugin_with(@app.App[@ecs.World], ExtractComponentPlugin[C, F]) -> @app.App[@ecs.World]
+pub fn[C : @ecs.Component, F] extract_component_plugin_with(@app.App[@ecs.World], ExtractComponentPlugin[C, F]) -> @app.App[@ecs.World]
 
 pub fn extract_component_source_world(@ecs.World) -> @ecs.World
 
@@ -311,11 +311,11 @@ pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
 
-pub fn sync_component(@ecs.World) -> Unit
+pub fn[C] sync_component(@ecs.World, @core.Entity, @ecs.ComponentKey[C]) -> @ecs.World
 
 pub fn sync_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[C, F] sync_component_plugin_with(@app.App[@ecs.World], SyncComponentPlugin[C, F]) -> @app.App[@ecs.World]
+pub fn[C : @ecs.Component, F] sync_component_plugin_with(@app.App[@ecs.World], SyncComponentPlugin[C, F]) -> @app.App[@ecs.World]
 
 pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
 
@@ -357,7 +357,7 @@ pub fn[C] DynamicUniformIndex::new(UInt) -> Self[C]
 pub(all) enum EntityRecord {
   Added(@core.Entity)
   Removed(RenderEntity)
-  ComponentRemoved(@core.Entity)
+  ComponentRemoved(@core.Entity, (@ecs.World, @core.Entity) -> @ecs.World)
 }
 
 pub struct ErasedAssetExtractionSystems {
@@ -402,7 +402,7 @@ pub struct ExtractComponentPlugin[_, _] {
 }
 pub fn[C, F] ExtractComponentPlugin::default() -> Self[C, F]
 pub fn[C, F] ExtractComponentPlugin::extract_visible() -> Self[C, F]
-pub impl[C, F] @app.PluginReplacement for ExtractComponentPlugin[C, F]
+pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugin[C, F]
 
 pub struct ExtractResourcePlugin[_, _] {
 }
@@ -583,22 +583,16 @@ pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
 pub fn[K, V] RenderStorage::new() -> Self[K, V]
 pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
 
-pub struct SyncComponentHooksState {
-  mut removed_component_records : Int
-}
-pub fn SyncComponentHooksState::default() -> Self
-pub fn SyncComponentHooksState::record_component_removed(Self) -> Unit
-pub fn SyncComponentHooksState::removed_component_records(Self) -> Int
-
 pub struct SyncComponentPlugin[_, _] {
 }
 pub fn[C, F] SyncComponentPlugin::default() -> Self[C, F]
-pub impl[C, F] @app.PluginReplacement for SyncComponentPlugin[C, F]
+pub impl[C : @ecs.Component, F] @app.PluginReplacement for SyncComponentPlugin[C, F]
 
 pub struct SyncToRenderWorld {
 }
 pub fn SyncToRenderWorld::default() -> Self
 pub impl @ecs.Component for SyncToRenderWorld
+pub impl Default for SyncToRenderWorld
 
 pub struct SyncWorldPlugin {
 }

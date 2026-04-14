@@ -27,43 +27,80 @@ pub fn[C, F] SyncComponentPlugin::default() -> SyncComponentPlugin[C, F] {
 }
 
 ///|
-pub impl[C, F] @app.PluginReplacement for SyncComponentPlugin[C, F] with plugin_name(
-  _self,
-) {
+pub impl[C : @ecs.Component, F] @app.PluginReplacement for SyncComponentPlugin[
+  C,
+  F,
+] with plugin_name(_self) {
   SYNC_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C, F] @app.PluginReplacement for SyncComponentPlugin[C, F] with world_plugin(
-  self,
-) {
+pub impl[C : @ecs.Component, F] @app.PluginReplacement for SyncComponentPlugin[
+  C,
+  F,
+] with world_plugin(self) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     sync_component_plugin_with(app, self)
   }
 }
 
 ///|
-pub struct SyncComponentHooksState {
-  mut removed_component_records : Int
-}
-
-///|
-pub fn SyncComponentHooksState::default() -> SyncComponentHooksState {
-  SyncComponentHooksState::{ removed_component_records: 0 }
-}
-
-///|
-pub fn SyncComponentHooksState::record_component_removed(
-  self : SyncComponentHooksState,
+fn[C] sync_component_register_required_component(
+  world : @ecs.World,
+  component_key : @ecs.ComponentKey[C],
 ) -> Unit {
-  self.removed_component_records = self.removed_component_records + 1
+  world.try_register_required_components(
+    component_key, ecs_key_sync_to_render_world,
+  ) catch {
+    _ =>
+      abort(
+        "sync_component: failed to register SyncToRenderWorld as required component",
+      )
+  }
 }
 
 ///|
-pub fn SyncComponentHooksState::removed_component_records(
-  self : SyncComponentHooksState,
-) -> Int {
-  self.removed_component_records
+fn[C] sync_component_register_remove_hook(
+  world : @ecs.World,
+  component_key : @ecs.ComponentKey[C],
+) -> Unit {
+  ignore(world)
+  let hook_builder = @ecs.register_component_hooks_for_key(component_key)
+  ignore(
+    hook_builder.on_remove(fn(
+      deferred_world : @ecs.DeferredWorld,
+      context : @ecs.HookContext,
+    ) -> Unit {
+      let pending_resource = deferred_world.resource(
+        ecs_key_pending_sync_entity,
+      )
+      if !pending_resource.is_present() {
+        pending_resource.insert(PendingSyncEntity::default())
+      }
+      ignore(
+        pending_resource.update(fn(
+          pending : PendingSyncEntity,
+        ) -> PendingSyncEntity {
+          pending.push(
+            EntityRecord::ComponentRemoved(context.entity, fn(
+              render_world : @ecs.World,
+              render_entity : @core.Entity,
+            ) -> @ecs.World {
+              ignore(
+                render_world.remove_by_key(render_entity, component_key) catch {
+                  _ => false
+                },
+              )
+              render_world
+            }),
+          )
+          pending
+        }),
+      )
+    }) catch {
+      _ => abort("sync_component: failed to register on_remove hook")
+    },
+  )
 }
 
 ///|
@@ -74,15 +111,25 @@ pub fn sync_component_plugin(
 }
 
 ///|
-pub fn[C, F] sync_component_plugin_with(
+pub fn[C : @ecs.Component, F] sync_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : SyncComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  render_plugin(app)
+  let next = sync_world_plugin(app)
+  let world = next.world()
+  let component_key = C::component()
+  sync_component_register_required_component(world, component_key)
+  sync_component_register_remove_hook(world, component_key)
+  next
 }
 
 ///|
-pub fn sync_component(world : @ecs.World) -> Unit {
-  ignore(world)
+pub fn[C] sync_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  component_key : @ecs.ComponentKey[C],
+) -> @ecs.World {
+  ignore(world.remove_by_key(entity, component_key) catch { _ => false })
+  world
 }
