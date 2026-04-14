@@ -308,14 +308,14 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
   )
-  debug_inspect(key.material_layout_key, content="0:uniform;3:uniform")
+  debug_inspect(key.material_layout_key, content="\"0:uniform;3:uniform\"")
   debug_inspect(
     key.vertex_shader_path,
-    content="shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    content="\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\"",
   )
   debug_inspect(
     key.fragment_shader_path,
-    content="shaders/custom/mesh2d_checker_material.wgsl",
+    content="\"shaders/custom/mesh2d_checker_material.wgsl\"",
   )
 }
 
@@ -1020,7 +1020,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
       targets[0].raw_path,
       modules,
     ),
-    content="bevy_render::color_operations",
+    content="\"bevy_render::color_operations\"",
   )
   debug_inspect(
     resolve_wgsl_import_module_path_for_test(
@@ -1028,7 +1028,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
       targets[1].raw_path,
       modules,
     ),
-    content="bevy_render::color_operations",
+    content="\"bevy_render::color_operations\"",
   )
   debug_inspect(
     resolve_wgsl_import_module_path_for_test(
@@ -1036,7 +1036,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
       targets[2].raw_path,
       modules,
     ),
-    content="bevy_render::maths",
+    content="\"bevy_render::maths\"",
   )
   debug_inspect(
     resolve_wgsl_import_module_path_for_test(
@@ -1044,7 +1044,7 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
       targets[3].raw_path,
       modules,
     ),
-    content="bevy_render::maths",
+    content="\"bevy_render::maths\"",
   )
 }
 

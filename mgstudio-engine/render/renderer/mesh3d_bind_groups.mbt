@@ -294,3 +294,58 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
     ),
   )
 }
+
+///|
+pub fn GpuBackend::prepare_mesh3d_view_bind_group(
+  self : GpuBackend,
+  transmission_source_texture_id : Int,
+  point_shadow_texture_id : Int,
+  environment_diffuse_texture_id : Int,
+  environment_specular_texture_id : Int,
+) -> Unit raise GpuBackendError {
+  let resolved_transmission_source_texture_id = if transmission_source_texture_id <
+    0 {
+    -1
+  } else {
+    transmission_source_texture_id
+  }
+  let resolved_point_shadow_texture_id = if point_shadow_texture_id < 0 {
+    ensure_point_shadow_fallback_texture(self).id
+  } else {
+    point_shadow_texture_id
+  }
+  let resolved_environment_diffuse_texture_id = if environment_diffuse_texture_id <
+    0 {
+    -1
+  } else {
+    environment_diffuse_texture_id
+  }
+  let resolved_environment_specular_texture_id = if environment_specular_texture_id <
+    0 {
+    -1
+  } else {
+    environment_specular_texture_id
+  }
+  guard resolve_mesh3d_texture(self, resolved_transmission_source_texture_id)
+    is Some(transmission_source_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_point_shadow_texture_id)
+    is Some(point_shadow_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_environment_diffuse_texture_id)
+    is Some(environment_diffuse_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_environment_specular_texture_id)
+    is Some(environment_specular_texture) else {
+    return
+  }
+  ignore(
+    mesh3d_view_bg_cache_get_or_create(
+      self, transmission_source_texture, point_shadow_texture, environment_diffuse_texture,
+      environment_specular_texture,
+    ),
+  )
+}

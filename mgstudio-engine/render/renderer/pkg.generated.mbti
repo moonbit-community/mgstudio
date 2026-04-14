@@ -215,6 +215,8 @@ pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ 
 
 pub fn prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
 
+pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
+
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, shader_path~ : String?, forward_decal~ : Bool) -> Unit
@@ -659,6 +661,7 @@ pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_skin_binding(Self, Int, Int, Array[Float]) -> Unit
+pub fn GpuBackend::prepare_mesh3d_view_bind_group(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError

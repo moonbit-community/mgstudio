@@ -70,6 +70,21 @@ pub fn host_gpu_prepare_mesh3d_material_bind_group(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_view_bind_group(
+  transmission_source_texture_id~ : Int,
+  point_shadow_texture_id~ : Int,
+  environment_diffuse_texture_id~ : Int,
+  environment_specular_texture_id~ : Int,
+) -> Unit {
+  @renderer.prepare_mesh3d_view_bind_group(
+    transmission_source_texture_id~,
+    point_shadow_texture_id~,
+    environment_diffuse_texture_id~,
+    environment_specular_texture_id~,
+  )
+}
+
+///|
 pub type HostGpuClipMatrix = @renderer.GpuClipMatrix
 
 ///|

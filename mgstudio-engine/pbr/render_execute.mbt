@@ -182,6 +182,19 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
 }
 
 ///|
+fn render3d_prepare_extracted_camera_view_bind_group(
+  camera : ExtractedCamera3d,
+) -> Unit {
+  let environment_map_state = render3d_camera_environment_map_state(camera)
+  @render.host_gpu_prepare_mesh3d_view_bind_group(
+    transmission_source_texture_id=-1,
+    point_shadow_texture_id=-1,
+    environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
+    environment_specular_texture_id=environment_map_state.specular_texture_id,
+  )
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
@@ -285,6 +298,9 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   @pbr_prepass.prepass_update_pipeline_state(source_world)
   if render3d_queue_frame_snapshot(world) is Some(frame) {
+    for camera in frame.cameras {
+      render3d_prepare_extracted_camera_view_bind_group(camera)
+    }
     for mesh in frame.meshes {
       render3d_prepare_extracted_mesh_material_bind_group(mesh)
     }
