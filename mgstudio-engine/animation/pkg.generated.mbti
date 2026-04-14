@@ -468,13 +468,6 @@ pub fn AnimationTriggeredEvent::time(Self) -> Float
 pub fn AnimationTriggeredEvent::weight(Self) -> Float
 pub impl @core.Message for AnimationTriggeredEvent
 
-pub(all) enum AnimationTriggeredEventsDirection {
-  Forward
-  Reverse
-  ForwardLooping
-  ReverseLooping
-}
-
 pub struct AnimationWeights {
   values : Array[Float]
 }

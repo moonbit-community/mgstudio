@@ -353,7 +353,7 @@ pub impl @core.Message for AnimationTriggeredEvent with writer(
 }
 
 ///|
-pub(all) enum AnimationTriggeredEventsDirection {
+priv enum TriggeredEventsDirection {
   Forward
   Reverse
   ForwardLooping
@@ -361,89 +361,208 @@ pub(all) enum AnimationTriggeredEventsDirection {
 }
 
 ///|
+priv struct TriggeredEvents {
+  direction : TriggeredEventsDirection
+  lower_start : Int
+  lower_end : Int
+  upper_start : Int
+  upper_end : Int
+}
+
+///|
+fn animation_clip_event_partition_point(
+  events : Array[AnimationClipEvent],
+  predicate : (AnimationClipEvent) -> Bool,
+) -> Int {
+  let mut left = 0
+  let mut right = events.length()
+  while left < right {
+    let mid = left + (right - left) / 2
+    if predicate(events[mid]) {
+      left = mid + 1
+    } else {
+      right = mid
+    }
+  }
+  left
+}
+
+///|
+fn triggered_events_from_animation(
+  events : Array[AnimationClipEvent],
+  active : ActiveAnimation,
+) -> TriggeredEvents? {
+  if events.length() == 0 {
+    return None
+  }
+  let reverse = active.is_playback_reversed()
+  let is_finished = active.is_finished()
+  if is_finished && !active.just_completed() {
+    return None
+  }
+  guard active.last_seek_time is Some(last_time) else { return None }
+  let this_time = active.seek_time()
+  let looping = active.just_completed() && !is_finished
+  let direction = match (reverse, looping) {
+    (false, false) => TriggeredEventsDirection::Forward
+    (false, true) => TriggeredEventsDirection::ForwardLooping
+    (true, false) => TriggeredEventsDirection::Reverse
+    (true, true) => TriggeredEventsDirection::ReverseLooping
+  }
+
+  match direction {
+    Forward => {
+      let start = animation_clip_event_partition_point(events, fn(event) {
+        event.time < last_time
+      })
+      let end = if is_finished {
+        events.length()
+      } else {
+        animation_clip_event_partition_point(events, fn(event) {
+          event.time < this_time
+        })
+      }
+      Some(TriggeredEvents::{
+        direction,
+        lower_start: start,
+        lower_end: end,
+        upper_start: 0,
+        upper_end: 0,
+      })
+    }
+    Reverse => {
+      let end = animation_clip_event_partition_point(events, fn(event) {
+        event.time <= last_time
+      })
+      let start = if is_finished {
+        0
+      } else {
+        animation_clip_event_partition_point(events, fn(event) {
+          event.time <= this_time
+        })
+      }
+      Some(TriggeredEvents::{
+        direction,
+        lower_start: start,
+        lower_end: end,
+        upper_start: 0,
+        upper_end: 0,
+      })
+    }
+    ForwardLooping => {
+      let upper_start = animation_clip_event_partition_point(events, fn(event) {
+        event.time < last_time
+      })
+      let lower_end = animation_clip_event_partition_point(events, fn(event) {
+        event.time < this_time
+      })
+      Some(TriggeredEvents::{
+        direction,
+        lower_start: 0,
+        lower_end,
+        upper_start,
+        upper_end: events.length(),
+      })
+    }
+    ReverseLooping => {
+      let lower_end = animation_clip_event_partition_point(events, fn(event) {
+        event.time <= last_time
+      })
+      let upper_start = animation_clip_event_partition_point(events, fn(event) {
+        event.time <= this_time
+      })
+      Some(TriggeredEvents::{
+        direction,
+        lower_start: 0,
+        lower_end,
+        upper_start,
+        upper_end: events.length(),
+      })
+    }
+  }
+}
+
+///|
+fn triggered_events_is_empty(triggered : TriggeredEvents) -> Bool {
+  triggered.lower_start >= triggered.lower_end &&
+  triggered.upper_start >= triggered.upper_end
+}
+
+///|
+fn triggered_events_iter_collect(
+  events : Array[AnimationClipEvent],
+  triggered : TriggeredEvents,
+) -> Array[AnimationClipEvent] {
+  let ordered : Array[AnimationClipEvent] = []
+  match triggered.direction {
+    Forward => {
+      let mut i = triggered.lower_start
+      while i < triggered.lower_end {
+        ordered.push(events[i])
+        i = i + 1
+      }
+    }
+    Reverse =>
+      if triggered.lower_start < triggered.lower_end {
+        let mut i = triggered.lower_end - 1
+        while i >= triggered.lower_start {
+          ordered.push(events[i])
+          if i == 0 {
+            break
+          }
+          i = i - 1
+        }
+      }
+    ForwardLooping => {
+      let mut i = triggered.upper_start
+      while i < triggered.upper_end {
+        ordered.push(events[i])
+        i = i + 1
+      }
+      let mut j = triggered.lower_start
+      while j < triggered.lower_end {
+        ordered.push(events[j])
+        j = j + 1
+      }
+    }
+    ReverseLooping => {
+      if triggered.lower_start < triggered.lower_end {
+        let mut i = triggered.lower_end - 1
+        while i >= triggered.lower_start {
+          ordered.push(events[i])
+          if i == 0 {
+            break
+          }
+          i = i - 1
+        }
+      }
+      if triggered.upper_start < triggered.upper_end {
+        let mut j = triggered.upper_end - 1
+        while j >= triggered.upper_start {
+          ordered.push(events[j])
+          if j == 0 {
+            break
+          }
+          j = j - 1
+        }
+      }
+    }
+  }
+  ordered
+}
+
+///|
 fn animation_clip_collect_triggered_events(
   events : Array[AnimationClipEvent],
   active : ActiveAnimation,
 ) -> Array[AnimationClipEvent] {
-  let triggered : Array[AnimationClipEvent] = []
-  if events.length() == 0 {
-    return triggered
+  guard triggered_events_from_animation(events, active) is Some(triggered) else {
+    return []
   }
-
-  let reverse = active.is_playback_reversed()
-  let finished = active.is_finished()
-  if finished && !active.just_completed() {
-    return triggered
+  if triggered_events_is_empty(triggered) {
+    return []
   }
-  guard active.last_seek_time is Some(last_time) else { return triggered }
-  let this_time = active.seek_time()
-  let looping = active.just_completed() && !finished
-  let direction = match (reverse, looping) {
-    (false, false) => AnimationTriggeredEventsDirection::Forward
-    (false, true) => AnimationTriggeredEventsDirection::ForwardLooping
-    (true, false) => AnimationTriggeredEventsDirection::Reverse
-    (true, true) => AnimationTriggeredEventsDirection::ReverseLooping
-  }
-
-  match direction {
-    Forward =>
-      for event in events {
-        if event.time >= last_time && (finished || event.time < this_time) {
-          triggered.push(event)
-        }
-      }
-    Reverse => {
-      let mut i = events.length() - 1
-      while i < events.length() {
-        let event = events[i]
-        if event.time <= last_time && (finished || event.time > this_time) {
-          triggered.push(event)
-        }
-        if i == 0 {
-          break
-        }
-        i = i - 1
-      }
-    }
-    ForwardLooping => {
-      for event in events {
-        if event.time >= last_time {
-          triggered.push(event)
-        }
-      }
-      for event in events {
-        if event.time < this_time {
-          triggered.push(event)
-        }
-      }
-    }
-    ReverseLooping => {
-      let mut i = events.length() - 1
-      while i < events.length() {
-        let event = events[i]
-        if event.time <= last_time {
-          triggered.push(event)
-        }
-        if i == 0 {
-          break
-        }
-        i = i - 1
-      }
-      let mut j = events.length() - 1
-      while j < events.length() {
-        let event = events[j]
-        if event.time > this_time {
-          triggered.push(event)
-        }
-        if j == 0 {
-          break
-        }
-        j = j - 1
-      }
-    }
-  }
-
-  triggered
+  triggered_events_iter_collect(events, triggered)
 }
 
 ///|
