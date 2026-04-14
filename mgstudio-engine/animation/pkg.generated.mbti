@@ -96,8 +96,6 @@ pub let animation_set_expire_transitions : String
 
 pub let animation_set_thread : String
 
-pub let animation_set_trigger_events : String
-
 pub let animation_set_trigger_untargeted_events : String
 
 pub fn animation_step_bool_unclamped(Bool, Bool, Float) -> Bool
@@ -145,8 +143,6 @@ pub fn gltf_rotation_keyframes_from_samples(Array[Float], Array[@math.Vec4], Glt
 pub fn gltf_translation_keyframes_from_samples(Array[Float], Array[@math.Vec3], GltfInterpolation) -> Array[KeyframeVec3]?
 
 pub fn gltf_weight_keyframes_from_flat_samples(Array[Float], Array[Float], GltfInterpolation) -> Array[KeyframeWeights]?
-
-pub fn trigger_events(@ecs.World) -> Unit
 
 pub fn trigger_untargeted_animation_events(@ecs.World) -> Unit
 

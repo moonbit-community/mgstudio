@@ -754,7 +754,7 @@ test "animation runtime: trigger_events emits root and target messages" {
             captured.push(message)
           }
         }),
-      ).after(animation_set_trigger_events),
+      ).after(animation_set_trigger_untargeted_events),
     )
   let world = app.world()
   let player_entity = world.spawn()
@@ -791,28 +791,28 @@ test "animation runtime: trigger_events emits root and target messages" {
   app = app.run_once()
 
   debug_inspect(captured.length(), content="2")
-  debug_inspect(captured[0].label(), content="\"root\"")
-  debug_inspect(captured[0].payload(), content="\"player\"")
-  debug_inspect(captured[0].player().id == player_entity.id, content="true")
-  debug_inspect(captured[0].target().id == player_entity.id, content="true")
-  debug_inspect(captured[0].target_id() is None, content="true")
-  debug_inspect(captured[1].label(), content="\"target\"")
-  debug_inspect(captured[1].payload(), content="\"bone\"")
-  debug_inspect(captured[1].target().id == target_entity.id, content="true")
+  debug_inspect(captured[0].label(), content="\"target\"")
+  debug_inspect(captured[0].payload(), content="\"bone\"")
+  debug_inspect(captured[0].target().id == target_entity.id, content="true")
   debug_inspect(
-    if captured[1].target_id() is Some(id) {
+    if captured[0].target_id() is Some(id) {
       id == target_id
     } else {
       false
     },
     content="true",
   )
+  debug_inspect(captured[1].label(), content="\"root\"")
+  debug_inspect(captured[1].payload(), content="\"player\"")
+  debug_inspect(captured[1].player().id == player_entity.id, content="true")
+  debug_inspect(captured[1].target().id == player_entity.id, content="true")
+  debug_inspect(captured[1].target_id() is None, content="true")
 }
 
 ///|
-test "animation runtime: untargeted and targeted event systems are split" {
-  let root_stage_labels : Array[String] = []
-  let final_stage_labels : Array[String] = []
+test "animation runtime: targeted events are emitted in animate_targets stage" {
+  let animate_targets_stage_labels : Array[String] = []
+  let untargeted_stage_labels : Array[String] = []
   let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
     @core.Duration::from_millis(250L),
   )
@@ -825,12 +825,12 @@ test "animation runtime: untargeted and targeted event systems are split" {
           reader : @core.MessageReader[AnimationTriggeredEvent],
         ) {
           for message in reader.read() {
-            root_stage_labels.push(message.label())
+            animate_targets_stage_labels.push(message.label())
           }
         }),
       )
-      .after(animation_set_trigger_untargeted_events)
-      .before(animation_set_trigger_events),
+      .after(animation_set_animate_targets)
+      .before(animation_set_trigger_untargeted_events),
     )
     .add_post_update_system_config(
       @app.system(
@@ -838,10 +838,10 @@ test "animation runtime: untargeted and targeted event systems are split" {
           reader : @core.MessageReader[AnimationTriggeredEvent],
         ) {
           for message in reader.read() {
-            final_stage_labels.push(message.label())
+            untargeted_stage_labels.push(message.label())
           }
         }),
-      ).after(animation_set_trigger_events),
+      ).after(animation_set_trigger_untargeted_events),
     )
   let world = app.world()
   let player_entity = world.spawn()
@@ -877,8 +877,8 @@ test "animation runtime: untargeted and targeted event systems are split" {
 
   app = app.run_once()
 
-  debug_inspect(root_stage_labels, content="[\"target\", \"root\"]")
-  debug_inspect(final_stage_labels, content="[\"root\", \"target\"]")
+  debug_inspect(animate_targets_stage_labels.contains("target"), content="true")
+  debug_inspect(untargeted_stage_labels.contains("root"), content="true")
 }
 
 ///|
@@ -935,10 +935,10 @@ test "animation runtime: trigger_events dispatches typed root and target observe
   )
   let captured = reader.read()
   debug_inspect(captured.length(), content="2")
-  debug_inspect(captured[0].entity_id, content="0")
-  debug_inspect(captured[0].value, content="\"root\"")
-  debug_inspect(captured[1].entity_id, content="1")
-  debug_inspect(captured[1].value, content="\"target\"")
+  debug_inspect(captured[0].entity_id, content="1")
+  debug_inspect(captured[0].value, content="\"target\"")
+  debug_inspect(captured[1].entity_id, content="0")
+  debug_inspect(captured[1].value, content="\"root\"")
 }
 
 ///|

@@ -1177,11 +1177,6 @@ pub let animation_set_trigger_untargeted_events : @app.SystemSet = @app.system_s
 )
 
 ///|
-pub let animation_set_trigger_events : @app.SystemSet = @app.system_set(
-  "mgstudio.animation.trigger_events",
-)
-
-///|
 pub let animation_set_expire_transitions : @app.SystemSet = @app.system_set(
   "mgstudio.animation.expire_transitions",
 )
@@ -1434,6 +1429,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     }
   })
 
+  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
+    @app.current_system_sequence().this_run,
+  )
+  trigger_targeted_events_in_animate_targets(world, writer)
+
   for update in transform_updates {
     try! world.set_by_key(update.0, @transform.ecs_key_transform, update.1)
   }
@@ -1548,10 +1548,10 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn trigger_events(world : @ecs.World) -> Unit {
-  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    @app.current_system_sequence().this_run,
-  )
+fn trigger_targeted_events_in_animate_targets(
+  world : @ecs.World,
+  writer : @core.MessageWriter[AnimationTriggeredEvent],
+) -> Unit {
   let (players_with_target_events, has_any_target_events) = animation_collect_players_with_target_events(
     world,
   )
@@ -1695,9 +1695,6 @@ pub fn animation_plugin_with(
     ),
   )
   .add_post_update_system_config(
-    @app.system(trigger_events).in_set(animation_set_trigger_events),
-  )
-  .add_post_update_system_config(
     @app.system(expire_completed_transitions).in_set(
       animation_set_expire_transitions,
     ),
@@ -1715,12 +1712,9 @@ pub fn animation_plugin_with(
     animation_set_trigger_untargeted_events,
   ])
   .configure_set(@app.PostUpdate, animation_set_trigger_untargeted_events, before=[
-    animation_set_trigger_events,
+    animation_set_expire_transitions,
   ])
   .configure_set(@app.PostUpdate, animation_set_animate_targets, before=[
     @transform.transform_set_mark_dirty_trees,
-  ])
-  .configure_set(@app.PostUpdate, animation_set_trigger_events, before=[
-    animation_set_expire_transitions,
   ])
 }
