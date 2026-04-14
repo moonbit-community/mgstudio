@@ -73,6 +73,40 @@ pub fn render3d_clear_mesh_upload_cache(
 }
 
 ///|
+fn render3d_mesh_handle_alive(mesh_handle_id : Int) -> Bool {
+  if mesh_handle_id < 0 {
+    return false
+  }
+  @sprite.render_mesh_asset_get(@asset.Handle::new(mesh_handle_id)) is Some(_)
+}
+
+///|
+pub fn render3d_sweep_mesh_runtime_caches(
+  phase_state_ref : Ref[Render3dPhaseState],
+) -> Unit {
+  let stale_upload_cache_keys : Array[Int] = []
+  for entry in phase_state_ref.val.mesh_upload_cache.iter() {
+    let (mesh_handle_id, _mesh_id) = entry
+    if !render3d_mesh_handle_alive(mesh_handle_id) {
+      stale_upload_cache_keys.push(mesh_handle_id)
+    }
+  }
+  for mesh_handle_id in stale_upload_cache_keys {
+    phase_state_ref.val.mesh_upload_cache.remove(mesh_handle_id)
+  }
+  let stale_preprocess_cache_keys : Array[Int] = []
+  for entry in phase_state_ref.val.mesh_preprocess_static_cache.iter() {
+    let (mesh_handle_id, _metadata) = entry
+    if !render3d_mesh_handle_alive(mesh_handle_id) {
+      stale_preprocess_cache_keys.push(mesh_handle_id)
+    }
+  }
+  for mesh_handle_id in stale_preprocess_cache_keys {
+    phase_state_ref.val.mesh_preprocess_static_cache.remove(mesh_handle_id)
+  }
+}
+
+///|
 pub(all) struct MeshGpuDrawPayload3d {
   mesh_id : Int
   preprocess_camera_key_hi : Int

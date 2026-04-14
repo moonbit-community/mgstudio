@@ -280,9 +280,9 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn render3d_queue_sweep_system(_world : @ecs.World) -> Unit {
-  // Reserved for Bevy-shaped queue sweep pass ownership. Current queue runtime
-  // maintains per-frame queue state directly in queue-meshes pass.
+pub fn render3d_queue_sweep_system(world : @ecs.World) -> Unit {
+  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  @pbr_render.render3d_sweep_mesh_runtime_caches(phase_state_ref)
 }
 
 ///|
