@@ -67,13 +67,7 @@ fn default_plugins_builder(
       @winit.winit_plugin(app)
     }),
   )
-  .add_typed(
-    named_default_plugin("mgstudio.diagnostic.FrameCountPlugin", fn(
-      app : @app.App[@ecs.World],
-    ) -> @app.App[@ecs.World] {
-      @diagnostic.frame_count_plugin(app)
-    }),
-  )
+  .add_typed(@diagnostic.FrameCountPlugin::default())
   .add_typed(
     named_default_plugin("mgstudio.app.StatesPlugin", fn(
       app : @app.App[@ecs.World],
@@ -119,13 +113,7 @@ fn default_plugins_builder(
       @scene.scene_plugin(app)
     }),
   )
-  .add_typed(
-    named_default_plugin("mgstudio.animation.AnimationPlugin", fn(
-      app : @app.App[@ecs.World],
-    ) -> @app.App[@ecs.World] {
-      @animation.animation_plugin(app)
-    }),
-  )
+  .add_typed(@animation.AnimationPlugin::default())
   .add_typed(
     named_default_plugin("mgstudio.transform.TransformPlugin", fn(
       app : @app.App[@ecs.World],
@@ -133,13 +121,7 @@ fn default_plugins_builder(
       @transform.transform_plugin(app)
     }),
   )
-  .add_typed(
-    named_default_plugin("mgstudio.diagnostic.DiagnosticsPlugin", fn(
-      app : @app.App[@ecs.World],
-    ) -> @app.App[@ecs.World] {
-      @diagnostic.diagnostics_plugin(app)
-    }),
-  )
+  .add_typed(@diagnostic.DiagnosticsPlugin::default())
   .add_typed(
     named_default_plugin("mgstudio.render.RenderPlugin", fn(
       app : @app.App[@ecs.World],
@@ -182,13 +164,7 @@ fn default_plugins_builder(
       @ui_render.ui_render_plugin(app)
     }),
   )
-  .add_typed(
-    named_default_plugin("mgstudio.gltf.GltfPlugin", fn(
-      app : @app.App[@ecs.World],
-    ) -> @app.App[@ecs.World] {
-      @gltf_loader.gltf_plugin(app)
-    }),
-  )
+  .add_typed(@gltf_loader.GltfPlugin::default())
   .add_typed(
     named_default_plugin("mgstudio.text.TextPlugin", fn(
       app : @app.App[@ecs.World],
@@ -269,13 +245,7 @@ fn minimal_plugins_marker() -> MinimalPlugins {
 ///|
 fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named(MINIMAL_PLUGINS_NAME)
-  .add_typed(
-    named_default_plugin("mgstudio.diagnostic.FrameCountPlugin", fn(
-      app : @app.App[@ecs.World],
-    ) -> @app.App[@ecs.World] {
-      @diagnostic.frame_count_plugin(app)
-    }),
-  )
+  .add_typed(@diagnostic.FrameCountPlugin::default())
   .add_typed(
     named_default_plugin("mgstudio.app.StatesPlugin", fn(
       app : @app.App[@ecs.World],
