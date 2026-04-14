@@ -29,7 +29,7 @@ test "pbr/meshlet: compatibility init keeps pipeline ids active" {
 ///|
 test "pbr/meshlet: pipeline slot descriptors expose bevy-shaped surface" {
   let descriptors = meshlet_pipeline_slot_descriptors()
-  debug_inspect(descriptors.length(), content="23")
+  debug_inspect(descriptors.length(), content="22")
 }
 
 ///|

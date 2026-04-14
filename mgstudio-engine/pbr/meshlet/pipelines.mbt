@@ -39,7 +39,7 @@ pub struct MeshletPipelines {
   resolve_material_depth : Int
   remap_1d_to_2d_dispatch : Int?
   fill_counts : Int
-  meshlet_mesh_material_shader_id : Int
+  meshlet_mesh_material_shader : String
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn MeshletPipelines::default() -> MeshletPipelines {
     resolve_material_depth: -1,
     remap_1d_to_2d_dispatch: None,
     fill_counts: -1,
-    meshlet_mesh_material_shader_id: -1,
+    meshlet_mesh_material_shader: "embedded://meshlet_mesh_material.wgsl",
   }
 }
 
@@ -231,12 +231,6 @@ pub fn meshlet_pipeline_slot_descriptors(
       enabled: true,
     },
     MeshletPipelineSlotDescriptor::{
-      label: "meshlet_mesh_material_shader",
-      kind: MeshletPipelineKind::Compute,
-      optional: false,
-      enabled: true,
-    },
-    MeshletPipelineSlotDescriptor::{
       label: "remap_1d_to_2d_dispatch",
       kind: MeshletPipelineKind::Compute,
       optional: true,
@@ -280,8 +274,6 @@ fn meshlet_pipeline_slot_id(
     "resolve_depth_shadow_view" => Some(pipelines.resolve_depth_shadow_view)
     "resolve_material_depth" => Some(pipelines.resolve_material_depth)
     "fill_counts" => Some(pipelines.fill_counts)
-    "meshlet_mesh_material_shader" =>
-      Some(pipelines.meshlet_mesh_material_shader_id)
     "remap_1d_to_2d_dispatch" => pipelines.remap_1d_to_2d_dispatch
     _ => None
   }
@@ -376,7 +368,6 @@ pub fn meshlet_pipeline_count(pipelines : MeshletPipelines) -> Int {
     pipelines.resolve_depth_shadow_view,
     pipelines.resolve_material_depth,
     pipelines.fill_counts,
-    pipelines.meshlet_mesh_material_shader_id,
   ].fold(init=0, fn(acc, id) {
     if meshlet_pipeline_is_valid(id) {
       acc + 1
@@ -414,4 +405,11 @@ pub fn meshlet_render_pipeline_count(pipelines : MeshletPipelines) -> Int {
 ///|
 pub fn meshlet_compute_pipeline_count(pipelines : MeshletPipelines) -> Int {
   meshlet_pipeline_count(pipelines) - meshlet_render_pipeline_count(pipelines)
+}
+
+///|
+pub fn MeshletPipelines::meshlet_mesh_material_shader(
+  self : MeshletPipelines,
+) -> String {
+  self.meshlet_mesh_material_shader
 }
