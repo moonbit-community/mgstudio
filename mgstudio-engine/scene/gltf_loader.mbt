@@ -42,6 +42,7 @@ priv struct PendingGltfMeshRequest {
   gltf_path : String
   mesh_index : Int
   primitive_index : Int
+  loader_settings : @asset.ImageLoaderSettings
   gltf_blob : @asset.Handle[@asset.Blob]
   mut doc : ParsedGltfDocument?
   buffer_blobs : Array[@asset.Handle[@asset.Blob]?]
@@ -157,6 +158,7 @@ priv struct GltfSkinDef {
 
 ///|
 priv struct GltfSceneDef {
+  name : String
   nodes : Array[Int]
   extras : String?
 }
@@ -623,6 +625,9 @@ fn scene_queue_gltf_mesh_request(
     gltf_path,
     mesh_index,
     primitive_index,
+    loader_settings: asset_server.gltf_loader_settings_for_asset_path(
+      mesh_asset_path,
+    ),
     gltf_blob: asset_server.load_bytes(gltf_path),
     doc: None,
     buffer_blobs: [],
@@ -1536,9 +1541,13 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             }
           }
         }
-        scenes.push({ nodes: node_indices, extras: gltf_parse_extras(obj) })
+        scenes.push({
+          name: json_get_string(obj, "name").unwrap_or(""),
+          nodes: node_indices,
+          extras: gltf_parse_extras(obj),
+        })
       } else {
-        scenes.push({ nodes: [], extras: None })
+        scenes.push({ name: "", nodes: [], extras: None })
       }
     }
   }
@@ -2562,6 +2571,40 @@ fn gltf_loader_default_sampler_descriptor(
 }
 
 ///|
+fn gltf_loader_convert_coordinates(
+  settings : @asset.ImageLoaderSettings,
+) -> @gltf.GltfConvertCoordinates {
+  let default_convert_coordinates = @gltf.gltf_default_convert_coordinates()
+  @gltf.GltfConvertCoordinates::{
+    rotate_scene_entity: match
+      settings.convert_coordinates_rotate_scene_entity {
+      Some(value) => value
+      None => default_convert_coordinates.rotate_scene_entity
+    },
+    rotate_meshes: match settings.convert_coordinates_rotate_meshes {
+      Some(value) => value
+      None => default_convert_coordinates.rotate_meshes
+    },
+  }
+}
+
+///|
+fn gltf_loader_skinned_mesh_bounds_policy_from_settings(
+  settings : @asset.ImageLoaderSettings,
+) -> @gltf.GltfSkinnedMeshBoundsPolicy {
+  let default_policy = @gltf.gltf_default_skinned_mesh_bounds_policy()
+  match settings.skinned_mesh_bounds_policy {
+    // Keep enum ordinal mapping aligned with Bevy's serialized
+    // `GltfSkinnedMeshBoundsPolicy` variant order.
+    Some(0) => @gltf.GltfSkinnedMeshBoundsPolicy::BindPose
+    Some(1) => @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic
+    Some(2) => @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling
+    Some(_) => default_policy
+    None => default_policy
+  }
+}
+
+///|
 priv struct GltfNodeCameraComponents {
   camera : @sprite.Camera
   camera3d : @pbr.Camera3d
@@ -3167,6 +3210,7 @@ fn scene_build_mesh_primitive_from_gltf(
   buffer_bytes : Array[Bytes],
   mesh_index : Int,
   primitive_index : Int,
+  convert_coordinates : @gltf.GltfConvertCoordinates,
 ) -> @mesh.Mesh? {
   guard mesh_index >= 0 && mesh_index < doc.meshes.length() else { return None }
   let mesh = doc.meshes[mesh_index]
@@ -3201,7 +3245,14 @@ fn scene_build_mesh_primitive_from_gltf(
       gltf_read_accessor_indices(doc, buffer_bytes, index_accessor)
     None => None
   }
-  let mut geometry = @mesh.Mesh3dGeometry::new(positions, uvs, indices)
+  let converted_positions = if convert_coordinates.rotate_meshes {
+    positions.map(@gltf.gltf_convert_coordinates_vec3)
+  } else {
+    positions
+  }
+  let mut geometry = @mesh.Mesh3dGeometry::new(
+    converted_positions, uvs, indices,
+  )
   if primitive.joint_indices is Some(joint_indices_accessor) &&
     primitive.joint_weights is Some(joint_weights_accessor) &&
     gltf_read_accessor_joint_indices(doc, buffer_bytes, joint_indices_accessor)
@@ -3220,7 +3271,13 @@ fn scene_build_mesh_primitive_from_gltf(
         Some(accessor_index) =>
           if gltf_read_accessor_vec3(doc, buffer_bytes, accessor_index)
             is Some(values) {
-            morph_targets.push(values)
+            morph_targets.push(
+              if convert_coordinates.rotate_meshes {
+                values.map(@gltf.gltf_convert_coordinates_vec3)
+              } else {
+                values
+              },
+            )
           }
         None => ()
       }
@@ -3262,6 +3319,16 @@ fn scene_build_from_gltf(
   buffer_bytes : Array[Bytes],
 ) -> Scene {
   let selected_scene_index = gltf_select_scene_index(doc, request.scene_index)
+  let convert_coordinates = gltf_loader_convert_coordinates(
+    request.loader_settings,
+  )
+  let skinned_mesh_bounds_policy = gltf_loader_skinned_mesh_bounds_policy_from_settings(
+    request.loader_settings,
+  )
+  let mesh_entity_transform = convert_coordinates.mesh_conversion_transform_inverse()
+  let mesh_conversion_matrix = @mesh.SkinningMat4::from_transform(
+    convert_coordinates.mesh_conversion_transform(),
+  )
   let nodes : Array[SceneNode3d] = []
   let node_paths = gltf_collect_node_name_paths(doc)
   let image_cache : Array[@asset.Handle[@asset.Image]?] = []
@@ -3320,7 +3387,13 @@ fn scene_build_from_gltf(
         let normalized_values : Array[@mesh.SkinningMat4] = []
         for joint_index in 0..<skin_def.joints.length() {
           if joint_index < values.length() {
-            normalized_values.push(values[joint_index])
+            normalized_values.push(
+              if convert_coordinates.rotate_meshes {
+                values[joint_index].mul(mesh_conversion_matrix)
+              } else {
+                values[joint_index]
+              },
+            )
           } else {
             normalized_values.push(@mesh.SkinningMat4::identity())
           }
@@ -3439,6 +3512,7 @@ fn scene_build_from_gltf(
             buffer_bytes,
             mesh_index,
             primitive.primitive_index,
+            convert_coordinates,
           )
           is Some(mesh_asset) else {
           continue
@@ -3512,7 +3586,7 @@ fn scene_build_from_gltf(
               @pbr.mesh_assets_mut_or_abort().val.add(mesh_asset),
             ),
             material_component,
-            @transform.Transform::identity(),
+            mesh_entity_transform,
             visibility_range,
             None,
             parent_node_index=Some(scene_node_index),
@@ -3535,6 +3609,11 @@ fn scene_build_from_gltf(
             gltf_material_extras=material_extras,
             skinned_joint_node_indices=skin.map(fn(value) { value.joints }),
             skinned_inverse_bindposes=inverse_bindposes,
+            skinned_mesh_bounds_policy=if node.skin is Some(_) {
+              Some(skinned_mesh_bounds_policy)
+            } else {
+              None
+            },
             default_morph_weights=if mesh.weights.length() > 0 {
               Some(mesh.weights)
             } else {
@@ -3563,9 +3642,30 @@ fn scene_build_from_gltf(
     }
   }
 
+  let scene_root_node_index = if selected_scene_index >= 0 {
+    let scene = doc.scenes[selected_scene_index]
+    let scene_name = if scene.name != "" {
+      scene.name
+    } else {
+      "Scene\{selected_scene_index.to_string()}"
+    }
+    nodes.push(
+      SceneNode3d::new_empty(
+        convert_coordinates.scene_conversion_transform(),
+        None,
+        None,
+        name=Some(@ecs.Name::new(scene_name)),
+        gltf_scene_index=Some(@gltf.GltfSceneIndex::new(selected_scene_index)),
+      ),
+    )
+    Some(nodes.length() - 1)
+  } else {
+    None
+  }
+
   if selected_scene_index >= 0 {
     for root_node in doc.scenes[selected_scene_index].nodes {
-      walk_node(root_node, None, -1)
+      walk_node(root_node, scene_root_node_index, -1)
     }
   }
 
@@ -3683,6 +3783,9 @@ fn scene_try_resolve_mesh_request(
   request : PendingGltfMeshRequest,
 ) -> (PendingGltfMeshRequest, @mesh.Mesh?) {
   let updated = request
+  let convert_coordinates = gltf_loader_convert_coordinates(
+    updated.loader_settings,
+  )
 
   if updated.doc is None {
     guard @asset.asset_blob_read_bytes(updated.gltf_blob)
@@ -3719,6 +3822,7 @@ fn scene_try_resolve_mesh_request(
           resolved_buffers,
           updated.mesh_index,
           updated.primitive_index,
+          convert_coordinates,
         ),
       )
   }

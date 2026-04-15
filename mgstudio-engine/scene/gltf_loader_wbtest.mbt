@@ -380,8 +380,9 @@ test "scene gltf wb: parse KHR_texture_transform on base color texture" {
 
 ///|
 test "scene gltf wb: parse scene mesh primitive and material extras" {
-  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0],\"extras\":{\"scene\":\"root\"}}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"name\":\"NamedMesh\",\"extras\":{\"mesh\":true},\"primitives\":[{\"attributes\":{\"POSITION\":0},\"material\":0,\"extras\":{\"primitive\":1}}]}],\"materials\":[{\"name\":\"Top\",\"extras\":{\"material\":\"value\"}}],\"buffers\":[{\"byteLength\":0}],\"bufferViews\":[],\"accessors\":[{\"componentType\":5126,\"count\":0,\"type\":\"VEC3\"}]}"
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"name\":\"MainScene\",\"nodes\":[0],\"extras\":{\"scene\":\"root\"}}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"name\":\"NamedMesh\",\"extras\":{\"mesh\":true},\"primitives\":[{\"attributes\":{\"POSITION\":0},\"material\":0,\"extras\":{\"primitive\":1}}]}],\"materials\":[{\"name\":\"Top\",\"extras\":{\"material\":\"value\"}}],\"buffers\":[{\"byteLength\":0}],\"bufferViews\":[],\"accessors\":[{\"componentType\":5126,\"count\":0,\"type\":\"VEC3\"}]}"
   let doc = gltf_parse_document(source).unwrap()
+  debug_inspect(doc.scenes[0].name, content="\"MainScene\"")
   debug_inspect(
     doc.scenes[0].extras.unwrap_or(""),
     content="\"{\\\"scene\\\":\\\"root\\\"}\"",
@@ -403,6 +404,134 @@ test "scene gltf wb: parse scene mesh primitive and material extras" {
   debug_inspect(extras is Some(_), content="true")
   let missing_extras = gltf_scene_extras_for_selected_scene(doc, -1)
   debug_inspect(missing_extras is None, content="true")
+}
+
+///|
+test "scene gltf wb: loader settings resolve convert_coordinates overrides" {
+  let original_default = @gltf.gltf_default_convert_coordinates()
+  @gltf.gltf_set_default_convert_coordinates({
+    rotate_scene_entity: true,
+    rotate_meshes: false,
+  })
+
+  let inherited = gltf_loader_convert_coordinates(
+    @asset.ImageLoaderSettings::default(),
+  )
+  debug_inspect(inherited.rotate_scene_entity, content="true")
+  debug_inspect(inherited.rotate_meshes, content="false")
+
+  let settings = @asset.ImageLoaderSettings::default()
+  settings.convert_coordinates_rotate_scene_entity = Some(false)
+  settings.convert_coordinates_rotate_meshes = Some(true)
+  let overridden = gltf_loader_convert_coordinates(settings)
+  debug_inspect(overridden.rotate_scene_entity, content="false")
+  debug_inspect(overridden.rotate_meshes, content="true")
+
+  @gltf.gltf_set_default_convert_coordinates(original_default)
+}
+
+///|
+test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
+  let original_default = @gltf.gltf_default_skinned_mesh_bounds_policy()
+  @gltf.gltf_set_default_skinned_mesh_bounds_policy(
+    @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+  )
+
+  let inherited = gltf_loader_skinned_mesh_bounds_policy_from_settings(
+    @asset.ImageLoaderSettings::default(),
+  )
+  debug_inspect(
+    inherited == @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    content="true",
+  )
+
+  let bind_pose = @asset.ImageLoaderSettings::default()
+  bind_pose.skinned_mesh_bounds_policy = Some(0)
+  debug_inspect(
+    gltf_loader_skinned_mesh_bounds_policy_from_settings(bind_pose) ==
+    @gltf.GltfSkinnedMeshBoundsPolicy::BindPose,
+    content="true",
+  )
+
+  let dynamic = @asset.ImageLoaderSettings::default()
+  dynamic.skinned_mesh_bounds_policy = Some(1)
+  debug_inspect(
+    gltf_loader_skinned_mesh_bounds_policy_from_settings(dynamic) ==
+    @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic,
+    content="true",
+  )
+
+  let no_frustum = @asset.ImageLoaderSettings::default()
+  no_frustum.skinned_mesh_bounds_policy = Some(2)
+  debug_inspect(
+    gltf_loader_skinned_mesh_bounds_policy_from_settings(no_frustum) ==
+    @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    content="true",
+  )
+
+  let unknown = @asset.ImageLoaderSettings::default()
+  unknown.skinned_mesh_bounds_policy = Some(999)
+  debug_inspect(
+    gltf_loader_skinned_mesh_bounds_policy_from_settings(unknown) ==
+    @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    content="true",
+  )
+
+  @gltf.gltf_set_default_skinned_mesh_bounds_policy(original_default)
+}
+
+///|
+test "scene gltf wb: mesh primitive builder applies coordinate conversion" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0}}]}],\"buffers\":[{\"byteLength\":36}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let raw : Array[Byte] = []
+  push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 2.0F)
+  push_f32_le(raw, 3.0F)
+  push_f32_le(raw, 4.0F)
+  push_f32_le(raw, 5.0F)
+  push_f32_le(raw, 6.0F)
+  push_f32_le(raw, 7.0F)
+  push_f32_le(raw, 8.0F)
+  push_f32_le(raw, 9.0F)
+  let buffer_bytes = [Bytes::from_array(raw)]
+
+  let mesh_unconverted = scene_build_mesh_primitive_from_gltf(
+    doc,
+    buffer_bytes,
+    0,
+    0,
+    @gltf.GltfConvertCoordinates::default(),
+  ).unwrap()
+  let geometry_unconverted = mesh_unconverted.as_3d_geometry().unwrap()
+  debug_inspect(
+    (
+      geometry_unconverted.positions[0].x.to_double(),
+      geometry_unconverted.positions[0].y.to_double(),
+      geometry_unconverted.positions[0].z.to_double(),
+    ),
+    content="(1, 2, 3)",
+  )
+
+  let mesh_converted = scene_build_mesh_primitive_from_gltf(
+    doc,
+    buffer_bytes,
+    0,
+    0,
+    @gltf.GltfConvertCoordinates::{
+      rotate_scene_entity: false,
+      rotate_meshes: true,
+    },
+  ).unwrap()
+  let geometry_converted = mesh_converted.as_3d_geometry().unwrap()
+  debug_inspect(
+    (
+      geometry_converted.positions[0].x.to_double(),
+      geometry_converted.positions[0].y.to_double(),
+      geometry_converted.positions[0].z.to_double(),
+    ),
+    content="(-1, 2, -3)",
+  )
 }
 
 ///|
