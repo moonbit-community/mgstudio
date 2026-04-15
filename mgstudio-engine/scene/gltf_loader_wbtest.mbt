@@ -512,6 +512,14 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
     }
     None => abort("expected enabled camera components")
   }
+  let next_camera = gltf_scene_node_camera_components(
+    doc, node, active_camera_found,
+  )
+  match next_camera {
+    Some(camera_components) =>
+      debug_inspect(!camera_components.camera.is_active, content="true")
+    None => abort("expected second camera components")
+  }
 
   let disabled_settings = @asset.ImageLoaderSettings::default()
   disabled_settings.load_cameras = false
