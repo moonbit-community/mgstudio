@@ -19,7 +19,7 @@ const GRID_W : Int = 12
 const GRID_H : Int = 12
 
 ///|
-const SHADER_PATH : String = "shaders/custom/game_of_life_3d.wgsl"
+const SHADER_PATH : String = "shaders/game_of_life.wgsl"
 
 ///|
 struct Cell {

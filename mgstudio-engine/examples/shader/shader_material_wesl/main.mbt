@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/shader_material_wesl_3d.wgsl"
+const SHADER_PATH : String = "shaders/shader_material_wesl_3d.wgsl"
 
 ///|
 struct Spin {}

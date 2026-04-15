@@ -2,133 +2,52 @@
 
 ///|
 let embedded_wgsl_assets_shaders_custom_specialized_mesh_pipeline_3d_wgsl_source : String =
-  #|// Copyright 2026 International Digital Economy Academy
-  #|//
-  #|// Licensed under the Apache License, Version 2.0 (the "License");
-  #|// you may not use this file except in compliance with the License.
-  #|// You may obtain a copy of the License at
-  #|//
-  #|//     http://www.apache.org/licenses/LICENSE-2.0
-  #|//
-  #|// Unless required by applicable law or agreed to in writing, software
-  #|// distributed under the License is distributed on an "AS IS" BASIS,
-  #|// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  #|// See the License for the specific language governing permissions and
-  #|// limitations under the License.
+  #|//! Very simple shader used to demonstrate how to get the world position and pass data
+  #|//! between the vertex and fragment shader. Also shows the custom vertex layout.
   #|
-  #|struct VertexOut {
-  #|  @builtin(position) position : vec4<f32>,
-  #|  @location(0) uv : vec2<f32>,
-  #|  @location(1) color : vec4<f32>,
-  #|  @location(2) @interpolate(flat) draw_index : u32,
-  #|};
-  #|
-  #|struct Mesh3dViewUniform {
-  #|  world_position : vec4<f32>,
-  #|  clip_from_world : mat4x4<f32>,
-  #|  exposure : vec4<f32>,
-  #|};
-  #|
-  #|struct Mesh3dViewBindings {
-  #|  view : Mesh3dViewUniform,
-  #|};
-  #|
-  #|struct Mesh3dTransformUniform {
-  #|  model_translation : vec4<f32>,
-  #|  model_rotation : vec4<f32>,
-  #|  model_scale : vec4<f32>,
-  #|};
-  #|
-  #|struct Mesh3dMaterialUniform {
-  #|  base_color : vec4<f32>,
-  #|  emissive : vec4<f32>,
-  #|  uv_transform : mat3x3<f32>,
-  #|  reflectance : vec3<f32>,
-  #|  perceptual_roughness : f32,
-  #|  metallic : f32,
-  #|  diffuse_transmission : f32,
-  #|  specular_transmission : f32,
-  #|  thickness : f32,
-  #|  ior : f32,
-  #|  anisotropy_strength : f32,
-  #|  anisotropy_rotation : vec2<f32>,
-  #|  flags : u32,
-  #|  alpha_cutoff : f32,
-  #|  parallax_depth_scale : f32,
-  #|  max_parallax_layer_count : f32,
-  #|  max_relief_mapping_search_steps : u32,
-  #|  uv_transform_mode : f32,
-  #|  _reserved0 : u32,
-  #|  _reserved1 : u32,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniform {
-  #|  transform : Mesh3dTransformUniform,
-  #|  material : Mesh3dMaterialUniform,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniformBuffer {
-  #|  data : array<Mesh3dDrawUniform>,
-  #|};
-  #|
-  #|const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : u32 = 1u << 0u;
-  #|const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : u32 = 1u << 29u;
-  #|
-  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
-  #|@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
-  #|@group(1) @binding(2) var u_base_color_sampler : sampler;
-  #|@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-  #|
-  #|fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
-  #|  let n = max(dot(q, q), 1e-8);
-  #|  return q / sqrt(n);
+  #|// First we import everything we need from bevy_pbr
+  #|// A 2D shader would be very similar but import from bevy_sprite instead
+  #|#import bevy_pbr::{
+  #|    mesh_functions,
+  #|    view_transformations::position_world_to_clip
   #|}
   #|
-  #|fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
-  #|  let t = 2.0 * cross(q.xyz, v);
-  #|  return v + q.w * t + cross(q.xyz, t);
-  #|}
+  #|struct Vertex {
+  #|    // This is needed if you are using batching and/or gpu preprocessing
+  #|    // It's a built in so you don't need to define it in the vertex layout
+  #|    @builtin(instance_index) instance_index: u32,
+  #|    // Like we defined for the vertex layout
+  #|    // position is at location 0
+  #|    @location(0) position: vec3<f32>,
+  #|    // and color at location 1
+  #|    @location(1) color: vec4<f32>,
+  #|};
   #|
-  #|fn material_flag_enabled(flags : u32, bit : u32) -> bool {
-  #|  return (flags & bit) != 0u;
-  #|}
+  #|// This is the output of the vertex shader and we also use it as the input for the fragment shader
+  #|struct VertexOutput {
+  #|    @builtin(position) clip_position: vec4<f32>,
+  #|    @location(0) world_position: vec4<f32>,
+  #|    @location(1) color: vec3<f32>,
+  #|};
   #|
   #|@vertex
-  #|fn vs_main(
-  #|  @location(0) position : vec3<f32>,
-  #|  @location(1) _normal : vec3<f32>,
-  #|  @location(2) uv : vec2<f32>,
-  #|  @location(3) color : vec4<f32>,
-  #|  @builtin(instance_index) instance_index : u32,
-  #|) -> VertexOut {
-  #|  var out : VertexOut;
-  #|  let draw = u_draws.data[instance_index];
-  #|  let model_q = quat_normalize(draw.transform.model_rotation);
-  #|  let local_pos = position * draw.transform.model_scale.xyz;
-  #|  let world_pos = quat_rotate_vec3(model_q, local_pos) + draw.transform.model_translation.xyz;
-  #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
-  #|  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
-  #|  out.uv = transformed_uv.xy;
-  #|  out.color = color * draw.material.base_color;
-  #|  out.draw_index = instance_index;
-  #|  return out;
+  #|fn vertex(vertex: Vertex) -> VertexOutput {
+  #|    var out: VertexOutput;
+  #|    // This is how bevy computes the world position
+  #|    // The vertex.instance_index is very important. Especially if you are using batching and gpu preprocessing
+  #|    var world_from_local = mesh_functions::get_world_from_local(vertex.instance_index);
+  #|    out.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, vec4(vertex.position, 1.0));
+  #|    out.clip_position = position_world_to_clip(out.world_position.xyz);
+  #|
+  #|    // We just use the raw vertex color
+  #|    out.color = vertex.color.rgb;
+  #|
+  #|    return out;
   #|}
   #|
   #|@fragment
-  #|fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  #|  let draw = u_draws.data[in.draw_index];
-  #|  let flags = draw.material.flags;
-  #|  var sampled = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) {
-  #|    sampled = textureSample(u_base_color_texture, u_base_color_sampler, in.uv);
-  #|  }
-  #|  var out_color = in.color * sampled;
-  #|  let edge = 0.75 + 0.25 * abs(in.uv.x * 2.0 - 1.0);
-  #|  out_color = vec4<f32>(out_color.rgb * vec3<f32>(edge, 1.0, edge), out_color.a);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK) &&
-  #|    out_color.a < draw.material.alpha_cutoff {
-  #|    discard;
-  #|  }
-  #|  return out_color;
+  #|fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
+  #|    // output the color directly
+  #|    return vec4(in.color, 1.0);
   #|}
   #|

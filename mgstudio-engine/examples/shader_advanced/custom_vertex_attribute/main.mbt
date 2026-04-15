@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_ASSET_PATH : String = "shaders/custom/custom_vertex_attribute_3d.wgsl"
+const SHADER_ASSET_PATH : String = "shaders/custom_vertex_attribute.wgsl"
 
 ///|
 const ATTRIBUTE_BLEND_COLOR : String = "BlendColor"

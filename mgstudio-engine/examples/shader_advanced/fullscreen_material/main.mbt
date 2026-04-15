@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_ASSET_PATH : String = "shaders/custom/fullscreen_effect_3d.wgsl"
+const SHADER_ASSET_PATH : String = "shaders/fullscreen_effect.wgsl"
 
 ///|
 fn setup(

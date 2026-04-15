@@ -2,133 +2,111 @@
 
 ///|
 let embedded_wgsl_assets_shaders_custom_extended_material_bindless_3d_wgsl_source : String =
-  #|// Copyright 2026 International Digital Economy Academy
+  #|// The shader that goes with `extended_material_bindless.rs`.
   #|//
-  #|// Licensed under the Apache License, Version 2.0 (the "License");
-  #|// you may not use this file except in compliance with the License.
-  #|// You may obtain a copy of the License at
-  #|//
-  #|//     http://www.apache.org/licenses/LICENSE-2.0
-  #|//
-  #|// Unless required by applicable law or agreed to in writing, software
-  #|// distributed under the License is distributed on an "AS IS" BASIS,
-  #|// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  #|// See the License for the specific language governing permissions and
-  #|// limitations under the License.
+  #|// This code demonstrates how to write shaders that are compatible with both
+  #|// bindless and non-bindless mode. See the `#ifdef BINDLESS` blocks.
   #|
-  #|struct VertexOut {
-  #|  @builtin(position) position : vec4<f32>,
-  #|  @location(0) uv : vec2<f32>,
-  #|  @location(1) color : vec4<f32>,
-  #|  @location(2) @interpolate(flat) draw_index : u32,
-  #|};
+  #|#import bevy_pbr::{
+  #|    forward_io::{FragmentOutput, VertexOutput},
+  #|    mesh_bindings::mesh,
+  #|    pbr_fragment::pbr_input_from_standard_material,
+  #|    pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
+  #|}
+  #|#import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d}
   #|
-  #|struct Mesh3dViewUniform {
-  #|  world_position : vec4<f32>,
-  #|  clip_from_world : mat4x4<f32>,
-  #|  exposure : vec4<f32>,
-  #|};
+  #|#ifdef BINDLESS
+  #|#import bevy_pbr::pbr_bindings::{material_array, material_indices}
+  #|#else   // BINDLESS
+  #|#import bevy_pbr::pbr_bindings::material
+  #|#endif  // BINDLESS
   #|
-  #|struct Mesh3dViewBindings {
-  #|  view : Mesh3dViewUniform,
-  #|};
-  #|
-  #|struct Mesh3dTransformUniform {
-  #|  model_translation : vec4<f32>,
-  #|  model_rotation : vec4<f32>,
-  #|  model_scale : vec4<f32>,
-  #|};
-  #|
-  #|struct Mesh3dMaterialUniform {
-  #|  base_color : vec4<f32>,
-  #|  emissive : vec4<f32>,
-  #|  uv_transform : mat3x3<f32>,
-  #|  reflectance : vec3<f32>,
-  #|  perceptual_roughness : f32,
-  #|  metallic : f32,
-  #|  diffuse_transmission : f32,
-  #|  specular_transmission : f32,
-  #|  thickness : f32,
-  #|  ior : f32,
-  #|  anisotropy_strength : f32,
-  #|  anisotropy_rotation : vec2<f32>,
-  #|  flags : u32,
-  #|  alpha_cutoff : f32,
-  #|  parallax_depth_scale : f32,
-  #|  max_parallax_layer_count : f32,
-  #|  max_relief_mapping_search_steps : u32,
-  #|  uv_transform_mode : f32,
-  #|  _reserved0 : u32,
-  #|  _reserved1 : u32,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniform {
-  #|  transform : Mesh3dTransformUniform,
-  #|  material : Mesh3dMaterialUniform,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniformBuffer {
-  #|  data : array<Mesh3dDrawUniform>,
-  #|};
-  #|
-  #|const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : u32 = 1u << 0u;
-  #|const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : u32 = 1u << 29u;
-  #|
-  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
-  #|@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
-  #|@group(1) @binding(2) var u_base_color_sampler : sampler;
-  #|@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-  #|
-  #|fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
-  #|  let n = max(dot(q, q), 1e-8);
-  #|  return q / sqrt(n);
+  #|// Stores the indices of the bindless resources in the bindless resource arrays,
+  #|// for the `ExampleBindlessExtension` fields.
+  #|struct ExampleBindlessExtendedMaterialIndices {
+  #|    // The index of the `ExampleBindlessExtendedMaterial` data in
+  #|    // `example_extended_material`.
+  #|    material: u32,
+  #|    // The index of the texture we're going to modulate the base color with in
+  #|    // the `bindless_textures_2d` array.
+  #|    modulate_texture: u32,
+  #|    // The index of the sampler we're going to sample the modulated texture with
+  #|    // in the `bindless_samplers_filtering` array.
+  #|    modulate_texture_sampler: u32,
   #|}
   #|
-  #|fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
-  #|  let t = 2.0 * cross(q.xyz, v);
-  #|  return v + q.w * t + cross(q.xyz, t);
+  #|// Plain data associated with this example material.
+  #|struct ExampleBindlessExtendedMaterial {
+  #|    // The color that we multiply the base color, base color texture, and
+  #|    // modulated texture with.
+  #|    modulate_color: vec4<f32>,
   #|}
   #|
-  #|fn material_flag_enabled(flags : u32, bit : u32) -> bool {
-  #|  return (flags & bit) != 0u;
-  #|}
+  #|#ifdef BINDLESS
   #|
-  #|@vertex
-  #|fn vs_main(
-  #|  @location(0) position : vec3<f32>,
-  #|  @location(1) _normal : vec3<f32>,
-  #|  @location(2) uv : vec2<f32>,
-  #|  @location(3) color : vec4<f32>,
-  #|  @builtin(instance_index) instance_index : u32,
-  #|) -> VertexOut {
-  #|  var out : VertexOut;
-  #|  let draw = u_draws.data[instance_index];
-  #|  let model_q = quat_normalize(draw.transform.model_rotation);
-  #|  let local_pos = position * draw.transform.model_scale.xyz;
-  #|  let world_pos = quat_rotate_vec3(model_q, local_pos) + draw.transform.model_translation.xyz;
-  #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
-  #|  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
-  #|  out.uv = transformed_uv.xy;
-  #|  out.color = color * draw.material.base_color;
-  #|  out.draw_index = instance_index;
-  #|  return out;
-  #|}
+  #|// The indices of the bindless resources in the bindless resource arrays, for
+  #|// the `ExampleBindlessExtension` fields.
+  #|@group(#{MATERIAL_BIND_GROUP}) @binding(100) var<storage> example_extended_material_indices:
+  #|    array<ExampleBindlessExtendedMaterialIndices>;
+  #|// An array that holds the `ExampleBindlessExtendedMaterial` plain old data,
+  #|// indexed by `ExampleBindlessExtendedMaterialIndices.material`.
+  #|@group(#{MATERIAL_BIND_GROUP}) @binding(101) var<storage> example_extended_material:
+  #|    array<ExampleBindlessExtendedMaterial>;
+  #|
+  #|#else   // BINDLESS
+  #|
+  #|// In non-bindless mode, we simply use a uniform for the plain old data.
+  #|@group(#{MATERIAL_BIND_GROUP}) @binding(50) var<uniform> example_extended_material: ExampleBindlessExtendedMaterial;
+  #|@group(#{MATERIAL_BIND_GROUP}) @binding(51) var modulate_texture: texture_2d<f32>;
+  #|@group(#{MATERIAL_BIND_GROUP}) @binding(52) var modulate_sampler: sampler;
+  #|
+  #|#endif  // BINDLESS
   #|
   #|@fragment
-  #|fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  #|  let draw = u_draws.data[in.draw_index];
-  #|  let flags = draw.material.flags;
-  #|  var sampled = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) {
-  #|    sampled = textureSample(u_base_color_texture, u_base_color_sampler, in.uv);
-  #|  }
-  #|  var out_color = in.color * sampled;
-  #|  let edge = 0.75 + 0.25 * abs(in.uv.x * 2.0 - 1.0);
-  #|  out_color = vec4<f32>(out_color.rgb * vec3<f32>(edge, 1.0, edge), out_color.a);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK) &&
-  #|    out_color.a < draw.material.alpha_cutoff {
-  #|    discard;
-  #|  }
-  #|  return out_color;
+  #|fn fragment(
+  #|    in: VertexOutput,
+  #|    @builtin(front_facing) is_front: bool,
+  #|) -> FragmentOutput {
+  #|#ifdef BINDLESS
+  #|    // Fetch the material slot. We'll use this in turn to fetch the bindless
+  #|    // indices from `example_extended_material_indices`.
+  #|    let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
+  #|#endif  // BINDLESS
+  #|
+  #|    // Generate a `PbrInput` struct from the `StandardMaterial` bindings.
+  #|    var pbr_input = pbr_input_from_standard_material(in, is_front);
+  #|
+  #|    // Calculate the UV for the texture we're about to sample.
+  #|#ifdef BINDLESS
+  #|    let uv_transform = material_array[material_indices[slot].material].uv_transform;
+  #|#else   // BINDLESS
+  #|    let uv_transform = material.uv_transform;
+  #|#endif  // BINDLESS
+  #|    let uv = (uv_transform * vec3(in.uv, 1.0)).xy;
+  #|
+  #|    // Multiply the base color by the `modulate_texture` and `modulate_color`.
+  #|#ifdef BINDLESS
+  #|    // Notice how we fetch the texture, sampler, and plain extended material
+  #|    // data from the appropriate arrays.
+  #|    pbr_input.material.base_color *= textureSample(
+  #|        bindless_textures_2d[example_extended_material_indices[slot].modulate_texture],
+  #|        bindless_samplers_filtering[
+  #|            example_extended_material_indices[slot].modulate_texture_sampler
+  #|        ],
+  #|        uv
+  #|    ) * example_extended_material[example_extended_material_indices[slot].material].modulate_color;
+  #|#else   // BINDLESS
+  #|    pbr_input.material.base_color *= textureSample(modulate_texture, modulate_sampler, uv) *
+  #|        example_extended_material.modulate_color;
+  #|#endif  // BINDLESS
+  #|
+  #|    var out: FragmentOutput;
+  #|    // Apply lighting.
+  #|    out.color = apply_pbr_lighting(pbr_input);
+  #|    // Apply in-shader post processing (fog, alpha-premultiply, and also
+  #|    // tonemapping, debanding if the camera is non-HDR). Note this does not
+  #|    // include fullscreen postprocessing effects like bloom.
+  #|    out.color = main_pass_post_lighting_processing(pbr_input, out.color);
+  #|    return out;
   #|}
   #|

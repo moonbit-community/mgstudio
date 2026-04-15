@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/animate_shader_3d.wgsl"
+const SHADER_PATH : String = "shaders/animate_shader.wgsl"
 
 ///|
 struct AnimatedMaterial {}

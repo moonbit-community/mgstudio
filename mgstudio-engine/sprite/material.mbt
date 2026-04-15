@@ -505,7 +505,7 @@ fn render2d_register_shader_source_asset(
     "sprite_render/render/sprite_view_bindings.wgsl", embedded_wgsl_sprite_render_sprite_view_bindings_wgsl_source,
   )
   @naga_oil.register_wgsl_source(
-    "shaders/custom/mesh2d_checker_material.wgsl", embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source,
+    "shaders/mesh2d_checker_material.wgsl", embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source,
   )
   let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
     "assets", path,

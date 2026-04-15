@@ -306,7 +306,7 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     false,
     "0:uniform;3:uniform",
     Some("sprite_render/mesh2d/mesh2d.wgsl"),
-    Some("shaders/custom/mesh2d_checker_material.wgsl"),
+    Some("shaders/mesh2d_checker_material.wgsl"),
   )
   debug_inspect(key.material_layout_key, content="\"0:uniform;3:uniform\"")
   debug_inspect(
@@ -315,7 +315,7 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
   )
   debug_inspect(
     key.fragment_shader_path,
-    content="\"shaders/custom/mesh2d_checker_material.wgsl\"",
+    content="\"shaders/mesh2d_checker_material.wgsl\"",
   )
 }
 
@@ -369,12 +369,10 @@ test "renderer: mesh2d wireframe shader matches Bevy push-constants fragment sha
 ///|
 test "renderer: mesh2d material loader appends custom fragment shader" {
   register_renderer_test_shaders()
-  register_renderer_test_shader_source(
-    "shaders/custom/mesh2d_checker_material.wgsl",
-  )
+  register_renderer_test_shader_source("shaders/mesh2d_checker_material.wgsl")
   let wgsl = load_wgsl_with_defines_required_mesh2d_material(
     Some("sprite_render/mesh2d/mesh2d.wgsl"),
-    Some("shaders/custom/mesh2d_checker_material.wgsl"),
+    Some("shaders/mesh2d_checker_material.wgsl"),
     ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
   )
   debug_inspect(wgsl.contains("fn checker_value("), content="true")
@@ -708,7 +706,7 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
 ///|
 test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout" {
   let wgsl = load_wgsl_from_assets_base_required(
-    "assets", "shaders/custom/mesh3d_forward.wgsl",
+    "assets", "shaders/mesh3d_forward.wgsl",
   )
   debug_inspect(wgsl.contains("struct Mesh3dViewUniform {"), content="true")
   debug_inspect(wgsl.contains("struct Mesh3dLightsUniform {"), content="true")

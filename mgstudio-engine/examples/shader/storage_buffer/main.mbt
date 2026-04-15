@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/storage_buffer_3d.wgsl"
+const SHADER_PATH : String = "shaders/storage_buffer.wgsl"
 
 ///|
 const INSTANCE_COUNT : Int = 128

@@ -2,133 +2,100 @@
 
 ///|
 let embedded_wgsl_assets_shaders_custom_compute_mesh_3d_wgsl_source : String =
-  #|// Copyright 2026 International Digital Economy Academy
-  #|//
-  #|// Licensed under the Apache License, Version 2.0 (the "License");
-  #|// you may not use this file except in compliance with the License.
-  #|// You may obtain a copy of the License at
-  #|//
-  #|//     http://www.apache.org/licenses/LICENSE-2.0
-  #|//
-  #|// Unless required by applicable law or agreed to in writing, software
-  #|// distributed under the License is distributed on an "AS IS" BASIS,
-  #|// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  #|// See the License for the specific language governing permissions and
-  #|// limitations under the License.
+  #|// This shader is used for the compute_mesh example
+  #|// The actual work it does is not important for the example and
+  #|// has been hardcoded to return a cube mesh
   #|
-  #|struct VertexOut {
-  #|  @builtin(position) position : vec4<f32>,
-  #|  @location(0) uv : vec2<f32>,
-  #|  @location(1) color : vec4<f32>,
-  #|  @location(2) @interpolate(flat) draw_index : u32,
-  #|};
-  #|
-  #|struct Mesh3dViewUniform {
-  #|  world_position : vec4<f32>,
-  #|  clip_from_world : mat4x4<f32>,
-  #|  exposure : vec4<f32>,
-  #|};
-  #|
-  #|struct Mesh3dViewBindings {
-  #|  view : Mesh3dViewUniform,
-  #|};
-  #|
-  #|struct Mesh3dTransformUniform {
-  #|  model_translation : vec4<f32>,
-  #|  model_rotation : vec4<f32>,
-  #|  model_scale : vec4<f32>,
-  #|};
-  #|
-  #|struct Mesh3dMaterialUniform {
-  #|  base_color : vec4<f32>,
-  #|  emissive : vec4<f32>,
-  #|  uv_transform : mat3x3<f32>,
-  #|  reflectance : vec3<f32>,
-  #|  perceptual_roughness : f32,
-  #|  metallic : f32,
-  #|  diffuse_transmission : f32,
-  #|  specular_transmission : f32,
-  #|  thickness : f32,
-  #|  ior : f32,
-  #|  anisotropy_strength : f32,
-  #|  anisotropy_rotation : vec2<f32>,
-  #|  flags : u32,
-  #|  alpha_cutoff : f32,
-  #|  parallax_depth_scale : f32,
-  #|  max_parallax_layer_count : f32,
-  #|  max_relief_mapping_search_steps : u32,
-  #|  uv_transform_mode : f32,
-  #|  _reserved0 : u32,
-  #|  _reserved1 : u32,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniform {
-  #|  transform : Mesh3dTransformUniform,
-  #|  material : Mesh3dMaterialUniform,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniformBuffer {
-  #|  data : array<Mesh3dDrawUniform>,
-  #|};
-  #|
-  #|const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : u32 = 1u << 0u;
-  #|const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : u32 = 1u << 29u;
-  #|
-  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
-  #|@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
-  #|@group(1) @binding(2) var u_base_color_sampler : sampler;
-  #|@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-  #|
-  #|fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
-  #|  let n = max(dot(q, q), 1e-8);
-  #|  return q / sqrt(n);
+  #|// `vertex_start` is the starting offset of the mesh data in the *vertex_data* storage buffer
+  #|// `index_start` is the starting offset of the index data in the *index_data* storage buffer
+  #|struct DataRanges {
+  #|    vertex_start: u32,
+  #|    vertex_end: u32,
+  #|    index_start: u32,
+  #|    index_end: u32,
   #|}
   #|
-  #|fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
-  #|  let t = 2.0 * cross(q.xyz, v);
-  #|  return v + q.w * t + cross(q.xyz, t);
+  #|@group(0) @binding(0) var<uniform> data_range: DataRanges;
+  #|@group(0) @binding(1) var<storage, read_write> vertex_data: array<f32>;
+  #|@group(0) @binding(2) var<storage, read_write> index_data: array<u32>;
+  #|
+  #|@compute @workgroup_size(1)
+  #|fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+  #|    // this loop is iterating over the full list of (position, normal, uv)
+  #|    // data what we have in `vertices`.
+  #|    // `192` is used because arrayLength on const arrays doesn't work
+  #|    for (var i = 0u; i < 192; i++) {
+  #|        // The vertex_data buffer is bigger than just the mesh we're
+  #|        // processing because Bevy stores meshes in the mesh_allocator
+  #|        // which allocates slabs that each can contain multiple meshes.
+  #|        // This buffer is one slab, and data_range.vertex_start is the
+  #|        // starting offset for the mesh we care about.
+  #|        // So the 0 starting value in the for loop is added to 
+  #|        // data_range.vertex_start which means we start writing at the
+  #|        // correct offset.
+  #|        //
+  #|        // The "end" of the available space to write into is known by us
+  #|        // ahead of time in this example, so we know this has enough space,
+  #|        // but you may wish to also check to make sure you are not writing
+  #|        // past the end of the range *because you should not write past the
+  #|        // end of the range ever*. Doing this can overwrite a different
+  #|        // mesh's data.
+  #|        vertex_data[i + data_range.vertex_start] = vertices[i];
+  #|    }
+  #|    // `36` is the length of the `indices` array
+  #|    for (var i = 0u; i < 36; i++) {
+  #|        // This is doing the same as the vertex_data offset described above
+  #|        index_data[i + data_range.index_start] = u32(indices[i]);
+  #|    }
   #|}
   #|
-  #|fn material_flag_enabled(flags : u32, bit : u32) -> bool {
-  #|  return (flags & bit) != 0u;
-  #|}
+  #|// hardcoded compute shader data.
+  #|// half_size is half the size of the cube
+  #|const half_size = vec3(1.5);
+  #|const min = -half_size;
+  #|const max = half_size;
   #|
-  #|@vertex
-  #|fn vs_main(
-  #|  @location(0) position : vec3<f32>,
-  #|  @location(1) _normal : vec3<f32>,
-  #|  @location(2) uv : vec2<f32>,
-  #|  @location(3) color : vec4<f32>,
-  #|  @builtin(instance_index) instance_index : u32,
-  #|) -> VertexOut {
-  #|  var out : VertexOut;
-  #|  let draw = u_draws.data[instance_index];
-  #|  let model_q = quat_normalize(draw.transform.model_rotation);
-  #|  let local_pos = position * draw.transform.model_scale.xyz;
-  #|  let world_pos = quat_rotate_vec3(model_q, local_pos) + draw.transform.model_translation.xyz;
-  #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
-  #|  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
-  #|  out.uv = transformed_uv.xy;
-  #|  out.color = color * draw.material.base_color;
-  #|  out.draw_index = instance_index;
-  #|  return out;
-  #|}
+  #|// Suppose Y-up right hand, and camera look from +Z to -Z
+  #|const vertices = array(
+  #|    // xyz, normal.xyz, uv.xy
+  #|    // Front
+  #|    min.x, min.y, max.z, 0.0, 0.0, 1.0, 0.0, 0.0,
+  #|    max.x, min.y, max.z, 0.0, 0.0, 1.0, 1.0, 0.0,
+  #|    max.x, max.y, max.z, 0.0, 0.0, 1.0, 1.0, 1.0,
+  #|    min.x, max.y, max.z, 0.0, 0.0, 1.0, 0.0, 1.0,
+  #|    // Back
+  #|    min.x, max.y, min.z, 0.0, 0.0, -1.0, 1.0, 0.0,
+  #|    max.x, max.y, min.z, 0.0, 0.0, -1.0, 0.0, 0.0,
+  #|    max.x, min.y, min.z, 0.0, 0.0, -1.0, 0.0, 1.0,
+  #|    min.x, min.y, min.z, 0.0, 0.0, -1.0, 1.0, 1.0,
+  #|    // Right
+  #|    max.x, min.y, min.z, 1.0, 0.0, 0.0, 0.0, 0.0,
+  #|    max.x, max.y, min.z, 1.0, 0.0, 0.0, 1.0, 0.0,
+  #|    max.x, max.y, max.z, 1.0, 0.0, 0.0, 1.0, 1.0,
+  #|    max.x, min.y, max.z, 1.0, 0.0, 0.0, 0.0, 1.0,
+  #|    // Left
+  #|    min.x, min.y, max.z, -1.0, 0.0, 0.0, 1.0, 0.0,
+  #|    min.x, max.y, max.z, -1.0, 0.0, 0.0, 0.0, 0.0,
+  #|    min.x, max.y, min.z, -1.0, 0.0, 0.0, 0.0, 1.0,
+  #|    min.x, min.y, min.z, -1.0, 0.0, 0.0, 1.0, 1.0,
+  #|    // Top
+  #|    max.x, max.y, min.z, 0.0, 1.0, 0.0, 1.0, 0.0,
+  #|    min.x, max.y, min.z, 0.0, 1.0, 0.0, 0.0, 0.0,
+  #|    min.x, max.y, max.z, 0.0, 1.0, 0.0, 0.0, 1.0,
+  #|    max.x, max.y, max.z, 0.0, 1.0, 0.0, 1.0, 1.0,
+  #|    // Bottom
+  #|    max.x, min.y, max.z, 0.0, -1.0, 0.0, 0.0, 0.0,
+  #|    min.x, min.y, max.z, 0.0, -1.0, 0.0, 1.0, 0.0,
+  #|    min.x, min.y, min.z, 0.0, -1.0, 0.0, 1.0, 1.0,
+  #|    max.x, min.y, min.z, 0.0, -1.0, 0.0, 0.0, 1.0
+  #|);
   #|
-  #|@fragment
-  #|fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  #|  let draw = u_draws.data[in.draw_index];
-  #|  let flags = draw.material.flags;
-  #|  var sampled = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) {
-  #|    sampled = textureSample(u_base_color_texture, u_base_color_sampler, in.uv);
-  #|  }
-  #|  var out_color = in.color * sampled;
-  #|  let edge = 0.75 + 0.25 * abs(in.uv.x * 2.0 - 1.0);
-  #|  out_color = vec4<f32>(out_color.rgb * vec3<f32>(edge, 1.0, edge), out_color.a);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK) &&
-  #|    out_color.a < draw.material.alpha_cutoff {
-  #|    discard;
-  #|  }
-  #|  return out_color;
-  #|}
+  #|const indices = array(
+  #|    0, 1, 2, 2, 3, 0, // front
+  #|    4, 5, 6, 6, 7, 4, // back
+  #|    8, 9, 10, 10, 11, 8, // right
+  #|    12, 13, 14, 14, 15, 12, // left
+  #|    16, 17, 18, 18, 19, 16, // top
+  #|    20, 21, 22, 22, 23, 20, // bottom
+  #|);
   #|

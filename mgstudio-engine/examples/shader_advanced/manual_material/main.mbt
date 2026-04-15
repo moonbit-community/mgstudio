@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_ASSET_PATH : String = "shaders/custom/manual_material_3d.wgsl"
+const SHADER_ASSET_PATH : String = "shaders/manual_material.wgsl"
 
 ///|
 const IMAGE_ASSET_PATH : String = "branding/icon.png"

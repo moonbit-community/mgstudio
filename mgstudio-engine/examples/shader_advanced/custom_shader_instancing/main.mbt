@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/custom_shader_instancing_3d.wgsl"
+const SHADER_PATH : String = "shaders/custom_shader_instancing_3d.wgsl"
 
 ///|
 const INSTANCE_COUNT : Int = 256

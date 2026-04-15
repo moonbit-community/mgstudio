@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/gpu_readback_3d.wgsl"
+const SHADER_PATH : String = "shaders/gpu_readback.wgsl"
 
 ///|
 const SAMPLE_COUNT : Int = 36

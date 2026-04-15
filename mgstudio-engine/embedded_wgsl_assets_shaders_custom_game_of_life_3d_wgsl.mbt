@@ -2,133 +2,82 @@
 
 ///|
 let embedded_wgsl_assets_shaders_custom_game_of_life_3d_wgsl_source : String =
-  #|// Copyright 2026 International Digital Economy Academy
-  #|//
-  #|// Licensed under the Apache License, Version 2.0 (the "License");
-  #|// you may not use this file except in compliance with the License.
-  #|// You may obtain a copy of the License at
-  #|//
-  #|//     http://www.apache.org/licenses/LICENSE-2.0
-  #|//
-  #|// Unless required by applicable law or agreed to in writing, software
-  #|// distributed under the License is distributed on an "AS IS" BASIS,
-  #|// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  #|// See the License for the specific language governing permissions and
-  #|// limitations under the License.
+  #|// The shader reads the previous frame's state from the `input` texture, and writes the new state of
+  #|// each pixel to the `output` texture. The textures are flipped each step to progress the
+  #|// simulation.
+  #|// Two textures are needed for the game of life as each pixel of step N depends on the state of its
+  #|// neighbors at step N-1.
   #|
-  #|struct VertexOut {
-  #|  @builtin(position) position : vec4<f32>,
-  #|  @location(0) uv : vec2<f32>,
-  #|  @location(1) color : vec4<f32>,
-  #|  @location(2) @interpolate(flat) draw_index : u32,
-  #|};
+  #|@group(0) @binding(0) var input: texture_storage_2d<rgba32float, read>;
   #|
-  #|struct Mesh3dViewUniform {
-  #|  world_position : vec4<f32>,
-  #|  clip_from_world : mat4x4<f32>,
-  #|  exposure : vec4<f32>,
-  #|};
+  #|@group(0) @binding(1) var output: texture_storage_2d<rgba32float, write>;
   #|
-  #|struct Mesh3dViewBindings {
-  #|  view : Mesh3dViewUniform,
-  #|};
+  #|@group(0) @binding(2) var<uniform> config: GameOfLifeUniforms;
   #|
-  #|struct Mesh3dTransformUniform {
-  #|  model_translation : vec4<f32>,
-  #|  model_rotation : vec4<f32>,
-  #|  model_scale : vec4<f32>,
-  #|};
-  #|
-  #|struct Mesh3dMaterialUniform {
-  #|  base_color : vec4<f32>,
-  #|  emissive : vec4<f32>,
-  #|  uv_transform : mat3x3<f32>,
-  #|  reflectance : vec3<f32>,
-  #|  perceptual_roughness : f32,
-  #|  metallic : f32,
-  #|  diffuse_transmission : f32,
-  #|  specular_transmission : f32,
-  #|  thickness : f32,
-  #|  ior : f32,
-  #|  anisotropy_strength : f32,
-  #|  anisotropy_rotation : vec2<f32>,
-  #|  flags : u32,
-  #|  alpha_cutoff : f32,
-  #|  parallax_depth_scale : f32,
-  #|  max_parallax_layer_count : f32,
-  #|  max_relief_mapping_search_steps : u32,
-  #|  uv_transform_mode : f32,
-  #|  _reserved0 : u32,
-  #|  _reserved1 : u32,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniform {
-  #|  transform : Mesh3dTransformUniform,
-  #|  material : Mesh3dMaterialUniform,
-  #|};
-  #|
-  #|struct Mesh3dDrawUniformBuffer {
-  #|  data : array<Mesh3dDrawUniform>,
-  #|};
-  #|
-  #|const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : u32 = 1u << 0u;
-  #|const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : u32 = 1u << 29u;
-  #|
-  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
-  #|@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
-  #|@group(1) @binding(2) var u_base_color_sampler : sampler;
-  #|@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-  #|
-  #|fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
-  #|  let n = max(dot(q, q), 1e-8);
-  #|  return q / sqrt(n);
+  #|struct GameOfLifeUniforms {
+  #|    alive_color: vec4<f32>,
   #|}
   #|
-  #|fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
-  #|  let t = 2.0 * cross(q.xyz, v);
-  #|  return v + q.w * t + cross(q.xyz, t);
+  #|fn hash(value: u32) -> u32 {
+  #|    var state = value;
+  #|    state = state ^ 2747636419u;
+  #|    state = state * 2654435769u;
+  #|    state = state ^ (state >> 16u);
+  #|    state = state * 2654435769u;
+  #|    state = state ^ (state >> 16u);
+  #|    state = state * 2654435769u;
+  #|    return state;
   #|}
   #|
-  #|fn material_flag_enabled(flags : u32, bit : u32) -> bool {
-  #|  return (flags & bit) != 0u;
+  #|fn randomFloat(value: u32) -> f32 {
+  #|    return f32(hash(value)) / 4294967295.0;
   #|}
   #|
-  #|@vertex
-  #|fn vs_main(
-  #|  @location(0) position : vec3<f32>,
-  #|  @location(1) _normal : vec3<f32>,
-  #|  @location(2) uv : vec2<f32>,
-  #|  @location(3) color : vec4<f32>,
-  #|  @builtin(instance_index) instance_index : u32,
-  #|) -> VertexOut {
-  #|  var out : VertexOut;
-  #|  let draw = u_draws.data[instance_index];
-  #|  let model_q = quat_normalize(draw.transform.model_rotation);
-  #|  let local_pos = position * draw.transform.model_scale.xyz;
-  #|  let world_pos = quat_rotate_vec3(model_q, local_pos) + draw.transform.model_translation.xyz;
-  #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
-  #|  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
-  #|  out.uv = transformed_uv.xy;
-  #|  out.color = color * draw.material.base_color;
-  #|  out.draw_index = instance_index;
-  #|  return out;
+  #|@compute @workgroup_size(8, 8, 1)
+  #|fn init(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
+  #|    let location = vec2<i32>(i32(invocation_id.x), i32(invocation_id.y));
+  #|
+  #|    let randomNumber = randomFloat((invocation_id.y << 16u) | invocation_id.x);
+  #|    let alive = randomNumber > 0.9;
+  #|    // Use alpha channel to keep track of cell's state
+  #|    let color = vec4(config.alive_color.rgb, f32(alive));
+  #|
+  #|    textureStore(output, location, color);
   #|}
   #|
-  #|@fragment
-  #|fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  #|  let draw = u_draws.data[in.draw_index];
-  #|  let flags = draw.material.flags;
-  #|  var sampled = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) {
-  #|    sampled = textureSample(u_base_color_texture, u_base_color_sampler, in.uv);
-  #|  }
-  #|  var out_color = in.color * sampled;
-  #|  let edge = 0.75 + 0.25 * abs(in.uv.x * 2.0 - 1.0);
-  #|  out_color = vec4<f32>(out_color.rgb * vec3<f32>(edge, 1.0, edge), out_color.a);
-  #|  if material_flag_enabled(flags, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK) &&
-  #|    out_color.a < draw.material.alpha_cutoff {
-  #|    discard;
-  #|  }
-  #|  return out_color;
+  #|fn is_alive(location: vec2<i32>, offset_x: i32, offset_y: i32) -> i32 {
+  #|    let value: vec4<f32> = textureLoad(input, location + vec2<i32>(offset_x, offset_y));
+  #|    return i32(value.a);
+  #|}
+  #|
+  #|fn count_alive(location: vec2<i32>) -> i32 {
+  #|    return is_alive(location, -1, -1) +
+  #|           is_alive(location, -1,  0) +
+  #|           is_alive(location, -1,  1) +
+  #|           is_alive(location,  0, -1) +
+  #|           is_alive(location,  0,  1) +
+  #|           is_alive(location,  1, -1) +
+  #|           is_alive(location,  1,  0) +
+  #|           is_alive(location,  1,  1);
+  #|}
+  #|
+  #|@compute @workgroup_size(8, 8, 1)
+  #|fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
+  #|    let location = vec2<i32>(i32(invocation_id.x), i32(invocation_id.y));
+  #|
+  #|    let n_alive = count_alive(location);
+  #|
+  #|    var alive: bool;
+  #|    if (n_alive == 3) {
+  #|        alive = true;
+  #|    } else if (n_alive == 2) {
+  #|        let currently_alive = is_alive(location, 0, 0);
+  #|        alive = bool(currently_alive);
+  #|    } else {
+  #|        alive = false;
+  #|    }
+  #|    let color = vec4(config.alive_color.rgb, f32(alive));
+  #|
+  #|    textureStore(output, location, color);
   #|}
   #|

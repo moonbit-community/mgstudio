@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/extended_material_3d.wgsl"
+const SHADER_PATH : String = "shaders/extended_material.wgsl"
 
 ///|
 struct Rotate {}

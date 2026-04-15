@@ -48,6 +48,23 @@ This file must not exceed 200 lines.
 | Current weighted migration completion (included scope) | 95% |
 | Last updated | 2026-04-15 |
 
+### WGSL custom deletion unmatched list (2026-04-15)
+| 旧路径 | 新路径 | 判定 | 证据命令 | 备注 |
+|---|---|---|---|---|
+| `assets/shaders/custom/shader_material_glsl_3d.wgsl` | `assets/shaders/shader_material_glsl_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'shader_material_glsl_3d.wgsl'` | Bevy 全仓无同名 WGSL；按决策仅移除 `custom/` 目录层级。 |
+| `assets/shaders/custom/fallback_image_3d.wgsl` | `assets/shaders/fallback_image_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'fallback_image_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/custom_postprocess_3d.wgsl` | `assets/shaders/custom_postprocess_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'custom_postprocess_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/shader_material_wesl_3d.wgsl` | `assets/shaders/shader_material_wesl_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'shader_material_wesl_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/custom_render_phase_3d.wgsl` | `assets/shaders/custom_render_phase_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'custom_render_phase_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/custom_shader_instancing_3d.wgsl` | `assets/shaders/custom_shader_instancing_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'custom_shader_instancing_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/render_depth_to_texture_3d.wgsl` | `assets/shaders/render_depth_to_texture_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'render_depth_to_texture_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/shader_material_screenspace_texture_3d.wgsl` | `assets/shaders/shader_material_screenspace_texture_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'shader_material_screenspace_texture_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/shader_material_bindless_3d.wgsl` | `assets/shaders/shader_material_bindless_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'shader_material_bindless_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/mesh3d_forward.wgsl` | `assets/shaders/mesh3d_forward.wgsl` | UNMATCHED | `rg --files bevy -g 'mesh3d_forward.wgsl'` | Bevy 全仓无同名 WGSL；当前为 mgstudio 运行时默认 mesh3d forward 路径。 |
+| `assets/shaders/custom/shader_prepass_3d.wgsl` | `assets/shaders/shader_prepass_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'shader_prepass_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/shader_material_3d.wgsl` | `assets/shaders/shader_material_3d.wgsl` | UNMATCHED | `rg --files bevy -g 'shader_material_3d.wgsl'` | Bevy 全仓无同名 WGSL；保留原逻辑内容。 |
+| `assets/shaders/custom/mesh2d_checker_material.wgsl` | `assets/shaders/mesh2d_checker_material.wgsl` | UNMATCHED | `rg --files bevy -g 'mesh2d_checker_material.wgsl'` | Bevy 全仓无同名 WGSL；用于 2D custom material 示例路径。 |
+
 - [ ] `render/wgpu_mbt` (deferred, upstream): meshlet texture-atomic rust-feature gating is wired; remaining gap is mesh-shader feature constant/capability surface in `wgpu_mbt` for Bevy-equivalent meshlet capability reporting (tracked at `moonbit-community/wgpu-mbt#11`).
 - [ ] `render/wgpu_mbt` (deferred, upstream): add explicit read-only binding-type capability query (Bevy uses `RenderDevice::get_supported_read_only_binding_type`) so visibility-range buffer mode can stop using backend-type heuristics (tracked at `moonbit-community/wgpu-mbt#12`).
 - [x] `scene/sprite` runtime blocker resolved: `moon test scene --target native` now passes after moving `render2d` shader startup registration to sprite-owned embedded WGSL sources (no cross-package fallback list).

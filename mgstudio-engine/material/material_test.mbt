@@ -32,17 +32,17 @@ test "material boundary re-exports standard material APIs" {
 test "material boundary re-exports material metadata APIs" {
   let metadata = @material.ExtendedMaterialMetadata3d::new(7)
     .with_disable_shadows(true)
-    .with_shader_path(Some("shaders/custom/manual_material_3d.wgsl"))
+    .with_shader_path(Some("shaders/manual_material.wgsl"))
   let forward_ext = @material.ForwardDecalMaterialExt::new(0.5)
   let renderer_method = @material.DefaultOpaqueRendererMethod::forward()
   let mesh_material = @material.MeshMaterial3d::new(@asset.Handle::new(42)).with_extension_shader_path(
-    Some("shaders/custom/manual_material_3d.wgsl"),
+    Some("shaders/manual_material.wgsl"),
   )
   debug_inspect(metadata.extension_tag, content="7")
   debug_inspect(metadata.disable_shadows, content="true")
   debug_inspect(
     metadata.shader_path,
-    content="Some(\"shaders/custom/manual_material_3d.wgsl\")",
+    content="Some(\"shaders/manual_material.wgsl\")",
   )
   debug_inspect(forward_ext.depth_fade_factor.to_double(), content="0.5")
   debug_inspect(
@@ -51,7 +51,7 @@ test "material boundary re-exports material metadata APIs" {
   )
   debug_inspect(
     mesh_material.extended_material.map(fn(ext) { ext.shader_path }),
-    content="Some(Some(\"shaders/custom/manual_material_3d.wgsl\"))",
+    content="Some(Some(\"shaders/manual_material.wgsl\"))",
   )
 }
 

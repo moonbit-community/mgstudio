@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/specialized_mesh_pipeline_3d.wgsl"
+const SHADER_PATH : String = "shaders/specialized_mesh_pipeline.wgsl"
 
 ///|
 struct Spin {}

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_ASSET_PATH : String = "shaders/custom/custom_postprocess_3d.wgsl"
+const SHADER_ASSET_PATH : String = "shaders/custom_postprocess_3d.wgsl"
 
 ///|
 struct Rotates {}

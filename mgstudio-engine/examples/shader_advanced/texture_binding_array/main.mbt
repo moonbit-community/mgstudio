@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/texture_binding_array_3d.wgsl"
+const SHADER_PATH : String = "shaders/texture_binding_array.wgsl"
 
 ///|
 fn setup(

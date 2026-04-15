@@ -633,7 +633,7 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
 test "render2d: Material2dPlugin initializes generic material asset resources" {
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
-    .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
+    .with_fragment_shader("shaders/mesh2d_checker_material.wgsl")
   let app = @app.App::new(@ecs.World::new()).add_plugins(plugin)
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
@@ -672,7 +672,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   )
   debug_inspect(
     pipeline.fragment_shader,
-    content="Some(\"shaders/custom/mesh2d_checker_material.wgsl\")",
+    content="Some(\"shaders/mesh2d_checker_material.wgsl\")",
   )
   debug_inspect(registry.entry_count(), content="1")
   debug_inspect(
@@ -693,7 +693,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
 
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
-    .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
+    .with_fragment_shader("shaders/mesh2d_checker_material.wgsl")
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
     .add_plugins(plugin)

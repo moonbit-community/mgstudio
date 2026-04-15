@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/compute_mesh_3d.wgsl"
+const SHADER_PATH : String = "shaders/compute_mesh.wgsl"
 
 ///|
 const GRID_RESOLUTION : Int = 28

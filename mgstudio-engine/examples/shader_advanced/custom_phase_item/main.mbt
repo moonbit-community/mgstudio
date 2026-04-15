@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom/custom_phase_item_3d.wgsl"
+const SHADER_PATH : String = "shaders/custom_phase_item.wgsl"
 
 ///|
 struct CustomPhase {
