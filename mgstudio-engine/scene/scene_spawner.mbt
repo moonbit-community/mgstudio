@@ -202,6 +202,42 @@ fn scene_remove_ready_component(
 }
 
 ///|
+priv struct SceneRootRespawnRequested {}
+
+///|
+let ecs_key_scene_root_respawn_requested : @ecs.ComponentKey[
+  SceneRootRespawnRequested,
+] = @ecs.register_component(
+  debug_name="mgstudio_scene::SceneRootRespawnRequested",
+)
+
+///|
+fn scene_mark_root_respawn_requested(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  try! world.set_by_key(entity, ecs_key_scene_root_respawn_requested, SceneRootRespawnRequested::{
+
+  })
+}
+
+///|
+fn scene_clear_root_respawn_requested(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  ignore(
+    try
+      world.remove_by_key(entity, ecs_key_scene_root_respawn_requested)
+    catch {
+      _ => false
+    } noraise {
+      value => value
+    },
+  )
+}
+
+///|
 fn scene_unregister_instance(world : @ecs.World, instance_id : Int) -> Unit {
   scene_runtime_remove_instance(world, instance_id) |> ignore
 }
@@ -267,6 +303,7 @@ fn scene_root_on_insert(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
+  scene_mark_root_respawn_requested(world.world(), context.entity)
   if !world.contains_by_key(context.entity, @transform.ecs_key_transform) {
     try! world.set_by_key(
       context.entity,
@@ -281,6 +318,14 @@ fn scene_root_on_insert(
       @visibility.Visibility::Inherited,
     )
   }
+}
+
+///|
+fn scene_root_on_replace(
+  world : @ecs.DeferredWorld,
+  context : @ecs.HookContext,
+) -> Unit {
+  scene_mark_root_respawn_requested(world.world(), context.entity)
 }
 
 ///|
@@ -303,6 +348,7 @@ fn scene_register_component_hooks() -> Bool {
   ignore(
     try! scene_root_hooks
     .on_insert(scene_root_on_insert)
+    .on_replace(scene_root_on_replace)
     .on_remove(scene_root_on_remove),
   )
   let scene_instance_hooks = @ecs.register_component_hooks_for_key(
@@ -744,21 +790,30 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
     guard (try! world.get_by_key(root_entity, ecs_key_scene_root)) is Some(root) else {
       continue
     }
+    let force_respawn = try! world.contains_by_key(
+      root_entity, ecs_key_scene_root_respawn_requested,
+    )
     let instance_id = match scene_instance_component(world, root_entity) {
       Some(instance) =>
-        match scene_runtime_get_instance(world, instance.instance_id) {
-          Some(current) =>
-            if current.scene_id == root.scene.id() {
-              instance.instance_id
-            } else {
-              scene_despawn_instance(world, instance.instance_id)
-              scene_attach_pending_instance(world, root_entity, root)
-            }
-          None => scene_attach_pending_instance(world, root_entity, root)
+        if force_respawn {
+          scene_despawn_instance(world, instance.instance_id)
+          scene_attach_pending_instance(world, root_entity, root)
+        } else {
+          match scene_runtime_get_instance(world, instance.instance_id) {
+            Some(current) =>
+              if current.scene_id == root.scene.id() {
+                instance.instance_id
+              } else {
+                scene_despawn_instance(world, instance.instance_id)
+                scene_attach_pending_instance(world, root_entity, root)
+              }
+            None => scene_attach_pending_instance(world, root_entity, root)
+          }
         }
       None => scene_attach_pending_instance(world, root_entity, root)
     }
     scene_spawn_instance_when_ready(world, root_entity, root, instance_id)
+    scene_clear_root_respawn_requested(world, root_entity)
   }
 }
 

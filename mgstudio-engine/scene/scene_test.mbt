@@ -1257,6 +1257,84 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
 }
 
 ///|
+test "scene: changed SceneRoot with same handle still respawns instance" {
+  let old_instance_id = Ref::new(0)
+  let new_instance_id = Ref::new(0)
+  let old_child_alive = Ref::new(true)
+  let new_child_count = Ref::new(0)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_path = @gltf.GltfAssetLabel::Scene(3).from_asset(
+      "models/Foo/Foo.gltf",
+    )
+    let scene_handle = @scene.scene_register_gltf_scene(
+      scene_path,
+      @scene.Scene::new([
+        @scene.SceneNode3d::new(
+          @pbr.Mesh3d::new(
+            @pbr.mesh_assets_mut_or_abort().val.add(
+              @pbr.Mesh::from_3d_geometry(
+                @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+              ),
+            ),
+          ),
+          @pbr.MeshMaterial3d::new(
+            @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+          ),
+          @transform.Transform::identity(),
+          None,
+          None,
+        ),
+      ]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+
+    @scene.scene_spawn_roots_system(world)
+    let first_instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    old_instance_id.val = first_instance.instance_id
+
+    let first_children : Array[@core.Entity] = []
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        first_children.push(entity)
+      }
+    })
+    let first_child = first_children[0]
+
+    try! (world.replace(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    |> ignore)
+    @scene.scene_spawn_roots_system(world)
+
+    let second_instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    new_instance_id.val = second_instance.instance_id
+    old_child_alive.val = world.is_alive(first_child)
+
+    let second_children : Array[@core.Entity] = []
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        second_children.push(entity)
+      }
+    })
+    new_child_count.val = second_children.length()
+  })
+  debug_inspect(old_instance_id.val == new_instance_id.val, content="false")
+  debug_inspect(old_child_alive.val, content="false")
+  debug_inspect(new_child_count.val, content="1")
+}
+
+///|
 test "scene: modified scene asset respawns SceneRoot children" {
   let handle_stable = Ref::new(false)
   let old_child_alive = Ref::new(true)
