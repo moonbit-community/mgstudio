@@ -195,6 +195,7 @@ priv struct GltfLightDef {
 priv struct GltfMaterialDef {
   name : String
   extras : String?
+  double_sided : Bool
   base_color : @color.Color
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
@@ -701,6 +702,16 @@ fn json_get_object(obj : Map[String, Json], key : String) -> Map[String, Json]? 
 fn json_get_array(obj : Map[String, Json], key : String) -> Array[Json]? {
   guard obj.get(key) is Some(value) else { return None }
   json_array(value)
+}
+
+///|
+fn json_get_bool(obj : Map[String, Json], key : String) -> Bool? {
+  guard obj.get(key) is Some(value) else { return None }
+  match value {
+    True => Some(true)
+    False => Some(false)
+    _ => None
+  }
 }
 
 ///|
@@ -1624,6 +1635,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         materials.push({
           name: json_get_string(obj, "name").unwrap_or(""),
           extras: gltf_parse_extras(obj),
+          double_sided: json_get_bool(obj, "doubleSided").unwrap_or(false),
           base_color,
           base_color_texture,
           base_color_uv_offset,
@@ -1650,6 +1662,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         materials.push({
           name: "",
           extras: None,
+          double_sided: false,
           base_color: @color.Color::white(),
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
@@ -2892,6 +2905,7 @@ fn scene_build_material_component(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
   loader_settings : @asset.ImageLoaderSettings,
+  is_scale_inverted : Bool,
   material_index : Int,
   material_cache : Array[@pbr.MeshMaterial3d?],
   image_cache : Array[@asset.Handle[@asset.Image]?],
@@ -2928,6 +2942,10 @@ fn scene_build_material_component(
   material = material.with_perceptual_roughness(def.roughness)
   material = material.with_emissive(def.emissive)
   material = material.with_unlit(def.unlit)
+  material = material.with_double_sided(def.double_sided)
+  material = material.with_cull_mode(
+    gltf_material_cull_mode(def.double_sided, is_scale_inverted),
+  )
 
   if def.base_color_texture is Some(texture_index) {
     material = material.with_base_color_texture(
@@ -3042,6 +3060,35 @@ fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange? {
     scene_get_gltf_lod_visibility_policy(),
     lod_level,
   )
+}
+
+///|
+fn gltf_scale_is_inverted(scale : @math.Vec3) -> Bool {
+  let mut neg_count = 0
+  if scale.x < 0.0F {
+    neg_count += 1
+  }
+  if scale.y < 0.0F {
+    neg_count += 1
+  }
+  if scale.z < 0.0F {
+    neg_count += 1
+  }
+  (neg_count & 1) == 1
+}
+
+///|
+fn gltf_material_cull_mode(
+  double_sided : Bool,
+  is_scale_inverted : Bool,
+) -> @pbr.Face3d? {
+  if double_sided {
+    None
+  } else if is_scale_inverted {
+    Some(@pbr.Face3d::Front)
+  } else {
+    Some(@pbr.Face3d::Back)
+  }
 }
 
 ///|
@@ -3339,8 +3386,10 @@ fn scene_build_from_gltf(
     image_cache.push(None)
   }
   let material_cache : Array[@pbr.MeshMaterial3d?] = []
+  let material_inverted_cache : Array[@pbr.MeshMaterial3d?] = []
   for _ in doc.materials {
     material_cache.push(None)
+    material_inverted_cache.push(None)
   }
   let skin_inverse_bindposes_cache : Array[
     @asset.Handle[@mesh.SkinnedMeshInverseBindposes]?,
@@ -3419,6 +3468,7 @@ fn scene_build_from_gltf(
   fn walk_node(
     node_index : Int,
     parent_scene_node_index : Int?,
+    parent_scale_inverted : Bool,
     lod_level : Int,
   ) -> Unit {
     guard node_index >= 0 && node_index < doc.nodes.length() else { return }
@@ -3427,6 +3477,8 @@ fn scene_build_from_gltf(
     }
     visited_nodes[node_index] = true
     let node = doc.nodes[node_index]
+    let is_scale_inverted = parent_scale_inverted !=
+      gltf_scale_is_inverted(node.transform.scale)
     let effective_lod_level = if lod_level >= 0 {
       lod_level
     } else if node.lod_nodes.length() > 0 {
@@ -3530,8 +3582,13 @@ fn scene_build_from_gltf(
                   doc,
                   buffer_bytes,
                   request.loader_settings,
+                  is_scale_inverted,
                   material_index,
-                  material_cache,
+                  if is_scale_inverted {
+                    material_inverted_cache
+                  } else {
+                    material_cache
+                  },
                   image_cache,
                 ) {
                 Some(component) => component
@@ -3636,12 +3693,18 @@ fn scene_build_from_gltf(
       walk_node(
         lod_node_index,
         parent_scene_node_index,
+        parent_scale_inverted,
         lod_base_level + lod_index + 1,
       )
     }
 
     for child_index in node.children {
-      walk_node(child_index, Some(scene_node_index), effective_lod_level)
+      walk_node(
+        child_index,
+        Some(scene_node_index),
+        is_scale_inverted,
+        effective_lod_level,
+      )
     }
   }
 
@@ -3669,7 +3732,7 @@ fn scene_build_from_gltf(
 
   if selected_scene_index >= 0 {
     for root_node in doc.scenes[selected_scene_index].nodes {
-      walk_node(root_node, scene_root_node_index, -1)
+      walk_node(root_node, scene_root_node_index, false, -1)
     }
   }
 

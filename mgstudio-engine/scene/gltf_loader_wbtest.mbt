@@ -407,6 +407,44 @@ test "scene gltf wb: parse scene mesh primitive and material extras" {
 }
 
 ///|
+test "scene gltf wb: parse material doubleSided flag" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"doubleSided\":true},{\"doubleSided\":false},{}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  debug_inspect(doc.materials.length(), content="3")
+  debug_inspect(doc.materials[0].double_sided, content="true")
+  debug_inspect(doc.materials[1].double_sided, content="false")
+  debug_inspect(doc.materials[2].double_sided, content="false")
+}
+
+///|
+test "scene gltf wb: scale inversion uses odd negative axis parity" {
+  debug_inspect(
+    gltf_scale_is_inverted(@math.Vec3::new(-1.0F, 1.0F, 1.0F)),
+    content="true",
+  )
+  debug_inspect(
+    gltf_scale_is_inverted(@math.Vec3::new(-1.0F, -1.0F, 1.0F)),
+    content="false",
+  )
+  debug_inspect(
+    gltf_scale_is_inverted(@math.Vec3::new(-1.0F, -1.0F, -1.0F)),
+    content="true",
+  )
+}
+
+///|
+test "scene gltf wb: material cull mode follows Bevy inverted scale rule" {
+  let regular = gltf_material_cull_mode(false, false)
+  let inverted = gltf_material_cull_mode(false, true)
+  let double_sided_regular = gltf_material_cull_mode(true, false)
+  let double_sided_inverted = gltf_material_cull_mode(true, true)
+  debug_inspect(regular is Some(@pbr.Face3d::Back), content="true")
+  debug_inspect(inverted is Some(@pbr.Face3d::Front), content="true")
+  debug_inspect(double_sided_regular is None, content="true")
+  debug_inspect(double_sided_inverted is None, content="true")
+}
+
+///|
 test "scene gltf wb: loader settings resolve convert_coordinates overrides" {
   let original_default = @gltf.gltf_default_convert_coordinates()
   @gltf.gltf_set_default_convert_coordinates({
