@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/render_depth_to_texture_3d.wgsl"
+const SHADER_PATH : String = "shaders/show_depth_texture_material.wgsl"
 
 ///|
 struct OffscreenObject {}

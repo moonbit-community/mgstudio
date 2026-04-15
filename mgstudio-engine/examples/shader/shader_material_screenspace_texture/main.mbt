@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/shader_material_screenspace_texture_3d.wgsl"
+const SHADER_PATH : String = "shaders/custom_material_screenspace_texture.wgsl"
 
 ///|
 struct OrbitCamera {}

@@ -105,64 +105,9 @@ options(
       "output": "embedded_wgsl_assets_shaders_custom_vertex_attribute_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_custom_postprocess_3d_wgsl_source",
-      "input": "assets/shaders/custom_postprocess_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_custom_postprocess_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_custom_render_phase_3d_wgsl_source",
-      "input": "assets/shaders/custom_render_phase_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_custom_render_phase_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_custom_shader_instancing_3d_wgsl_source",
-      "input": "assets/shaders/custom_shader_instancing_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_custom_shader_instancing_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_fallback_image_3d_wgsl_source",
-      "input": "assets/shaders/fallback_image_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_fallback_image_3d_wgsl.mbt",
-    },
-    {
       "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_mesh3d_forward_wgsl_source",
       "input": "assets/shaders/mesh3d_forward.wgsl",
       "output": "embedded_wgsl_assets_shaders_custom_mesh3d_forward_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_render_depth_to_texture_3d_wgsl_source",
-      "input": "assets/shaders/render_depth_to_texture_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_render_depth_to_texture_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_shader_material_3d_wgsl_source",
-      "input": "assets/shaders/shader_material_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_shader_material_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_shader_material_bindless_3d_wgsl_source",
-      "input": "assets/shaders/shader_material_bindless_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_shader_material_bindless_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_shader_material_glsl_3d_wgsl_source",
-      "input": "assets/shaders/shader_material_glsl_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_shader_material_glsl_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_shader_material_screenspace_texture_3d_wgsl_source",
-      "input": "assets/shaders/shader_material_screenspace_texture_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_shader_material_screenspace_texture_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_shader_material_wesl_3d_wgsl_source",
-      "input": "assets/shaders/shader_material_wesl_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_shader_material_wesl_3d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_shader_prepass_3d_wgsl_source",
-      "input": "assets/shaders/shader_prepass_3d.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_shader_prepass_3d_wgsl.mbt",
     },
     {
       "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_extended_material_bindless_wgsl_source",

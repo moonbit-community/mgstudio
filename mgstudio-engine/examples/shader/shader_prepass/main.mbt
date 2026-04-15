@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/shader_prepass_3d.wgsl"
+const SHADER_PATH : String = "shaders/custom_material.wgsl"
 
 ///|
 struct Rotates {}

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/fallback_image_3d.wgsl"
+const SHADER_PATH : String = "shaders/fallback_image_test.wgsl"
 
 ///|
 fn setup(
