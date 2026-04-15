@@ -72,3 +72,32 @@ test "light plugin: automatically adds default parallax correction to reflection
     content="true",
   )
 }
+
+///|
+test "light plugin: light probe required components match bevy probe requirements" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(LightPlugin::default())
+  let world = app.world()
+
+  let probe = world.spawn()
+  try! world.set(probe, LightProbe::default())
+  debug_inspect(
+    try! (world.get_by_key(probe, @transform.ecs_key_transform) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(probe, @visibility.ecs_key_visibility) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(probe, @visibility.ecs_key_view_visibility)
+    is Some(_)),
+    content="true",
+  )
+
+  let volume = world.spawn()
+  try! world.set(volume, IrradianceVolume::default())
+  debug_inspect(
+    try! (world.get_by_key(volume, ecs_key_light_probe) is Some(_)),
+    content="true",
+  )
+}

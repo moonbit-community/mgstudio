@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
 }
 
 supported_targets = "native"

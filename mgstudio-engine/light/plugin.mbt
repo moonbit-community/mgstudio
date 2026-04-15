@@ -27,6 +27,34 @@ pub fn LightPlugin::default() -> LightPlugin {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_light/src/probe.rs` (`#[require(...)]` for
+// `LightProbe`/`IrradianceVolume`).
+fn register_light_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_light_probe,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_light_probe,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_light_probe,
+    @visibility.ecs_key_view_visibility,
+    fn() { @visibility.ViewVisibility::new(true) },
+  )
+  world.register_required_components_with(
+    ecs_key_irradiance_volume,
+    ecs_key_light_probe,
+    fn() { LightProbe::default() },
+  )
+}
+
+///|
 pub impl @app.Plugin for LightPlugin with name(_self) {
   LIGHT_PLUGIN_NAME
 }
@@ -38,6 +66,7 @@ pub impl @app.Plugin for LightPlugin with build(_self, app) {
 
 ///|
 pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_light_required_components(app.world())
   let mut next = app
   if !next.contains_resource(ecs_key_global_ambient_light) {
     next = next.insert_world_resource(
