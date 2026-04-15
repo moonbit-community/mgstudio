@@ -43,6 +43,7 @@ fn render3d_execute_camera_postprocess(
   delta_seconds : Float,
   cleared_targets_this_frame : Array[Int],
 ) -> Unit {
+  let source_world = @render.render_source_world(world)
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
     @pbr_render.render3d_pass_viewport_for_target(
       target_id,
@@ -325,6 +326,7 @@ fn render3d_execute_camera_postprocess(
             ),
           )
           render3d_draw_camera_custom_post_process_stage(
+            source_world,
             current_source_texture_id,
             camera.custom_post_process3d,
             view_width_logical,
@@ -1003,6 +1005,7 @@ fn render3d_draw_camera_effect_stack_stage(
 
 ///|
 fn render3d_draw_camera_custom_post_process_stage(
+  source_world : @ecs.World,
   scene_texture_id : Int,
   custom_post_process3d : CustomPostProcess3d?,
   view_width_logical : Int,
@@ -1012,9 +1015,18 @@ fn render3d_draw_camera_custom_post_process_stage(
     return
   }
   guard custom_post_process3d is Some(custom_post_process) else { return }
+  let shader_path = custom_post_process.shader_path.trim().to_string()
+  if @shader.shader_path_is_wesl(shader_path) {
+    @shader.shader_register_wesl_runtime_source(source_world, shader_path, []) catch {
+      err =>
+        abort(
+          "failed to compile render3d wesl postprocess shader: \{shader_path}: \{err.message()}",
+        )
+    }
+  }
   @render.host_gpu_draw_custom_postprocess3d(
     scene_texture_id~,
-    shader_path=custom_post_process.shader_path.trim().to_string(),
+    shader_path~,
     fragment_entry=if custom_post_process.fragment_entry.trim().to_string() ==
       "" {
       "fragment_main"

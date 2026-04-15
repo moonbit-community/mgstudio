@@ -156,7 +156,7 @@ fn shader_blob_read_bytes_or_error(
 ///|
 pub fn ShaderLoader::extensions(self : ShaderLoader) -> Array[String] {
   self |> ignore
-  ["spv", "wgsl", "vert", "frag", "comp"]
+  ["spv", "wgsl", "wesl", "vert", "frag", "comp"]
 }
 
 ///|
@@ -184,6 +184,11 @@ pub fn ShaderLoader::load(
         shader_blob_read_text_or_error(blob, canonical_path),
         canonical_path,
         settings.shader_defs,
+      )
+    "wesl" =>
+      Shader::from_wesl(
+        shader_blob_read_text_or_error(blob, canonical_path),
+        canonical_path,
       )
     "vert" =>
       Shader::from_glsl(
@@ -262,4 +267,5 @@ pub fn shader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     assets
   })
   .init_resource(fn() { ShaderAssetPaths::default() })
+  .init_resource(fn() { ShaderRuntimeCache::default() })
 }

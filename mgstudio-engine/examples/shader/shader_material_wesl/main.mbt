@@ -13,7 +13,10 @@
 // limitations under the License.
 
 ///|
-const SHADER_PATH : String = "shaders/custom_material.wgsl"
+const SHADER_PATH : String = "shaders/custom_material.wesl"
+
+///|
+const UTILITY_SHADER_PATH : String = "shaders/util.wesl"
 
 ///|
 struct Spin {}
@@ -26,6 +29,45 @@ let spin_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
 ///|
 pub impl @ecs.Component for Spin with component() {
   spin_key
+}
+
+///|
+struct UtilityShaderHandle {
+  handle : @asset.Handle[@shader.Shader]
+}
+
+///|
+let utility_shader_handle_key : @ecs.ResourceKey[UtilityShaderHandle] = @ecs.register_resource(
+  debug_name="examples.shader.shader_material_wesl.UtilityShaderHandle",
+)
+
+///|
+pub impl @app.Resource for UtilityShaderHandle with resource() {
+  utility_shader_handle_key
+}
+
+///|
+struct UtilityShaderPlugin {}
+
+///|
+pub fn UtilityShaderPlugin::default() -> UtilityShaderPlugin {
+  UtilityShaderPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for UtilityShaderPlugin with build(_self, app) {
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(@asset.AssetServer::resource())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort("expected AssetServer resource in shader_material_wesl example")
+  }
+  let utility_shader = UtilityShaderHandle::{
+    handle: asset_server.load(UTILITY_SHADER_PATH),
+  }
+  ignore(utility_shader.handle.id())
+  app.insert_resource(utility_shader)
 }
 
 ///|
@@ -109,6 +151,7 @@ fn spin_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(UtilityShaderPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(spin_system)))
   .run()

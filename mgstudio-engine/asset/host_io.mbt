@@ -225,6 +225,7 @@ fn loader_default_texture_extensions() -> Array[(String, Int)] {
 fn loader_default_extensions() -> Array[(String, Int)] {
   let out = loader_default_texture_extensions()
   out.push(("wgsl", LOADER_KIND_WGSL))
+  out.push(("wesl", LOADER_KIND_WGSL))
   out.push(("ttf", LOADER_KIND_FONT))
   out.push(("otf", LOADER_KIND_FONT))
   out

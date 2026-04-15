@@ -66,6 +66,39 @@ fn preprocess_shader_imports(
 }
 
 ///|
+fn shader_drop_extension(path : String) -> String {
+  let mut last_slash = -1
+  let mut last_dot = -1
+  for i in 0..<path.length() {
+    let code = path.code_unit_at(i).to_int()
+    if code == 47 { // '/'
+      last_slash = i
+      last_dot = -1
+    } else if code == 46 { // '.'
+      last_dot = i
+    }
+  }
+  if last_dot > last_slash {
+    path[:last_dot].to_string()
+  } else {
+    path
+  }
+}
+
+///|
+fn shader_wesl_asset_import_path(path : String) -> String {
+  let normalized = shader_drop_extension(path.replace_all(old="\\", new="/"))
+  if normalized == "" {
+    abort("wesl shader path cannot be empty")
+  }
+  if normalized.has_prefix("/") {
+    normalized
+  } else {
+    "/\{normalized}"
+  }
+}
+
+///|
 pub fn Shader::new(source : String) -> Shader {
   Shader::from_wgsl(source, "")
 }
@@ -93,6 +126,28 @@ pub fn Shader::from_wgsl_with_defs(
 ) -> Shader {
   let shader = Shader::from_wgsl(source, path)
   Shader::{ ..shader, shader_defs, }
+}
+
+///|
+pub fn Shader::from_wesl(source : String, path : String) -> Shader {
+  let (import_path, imports) = preprocess_shader_imports(source, path)
+  match import_path {
+    AssetPath(_) => ()
+    Custom(module_path) =>
+      abort(
+        "wesl shaders only support asset-backed import paths: \{module_path}",
+      )
+  }
+  Shader::{
+    path,
+    imports,
+    import_path: ShaderImport::AssetPath(shader_wesl_asset_import_path(path)),
+    source: Source::Wesl(source),
+    additional_imports: [],
+    shader_defs: [],
+    file_dependencies: [],
+    validate_shader: ValidateShader::Disabled,
+  }
 }
 
 ///|

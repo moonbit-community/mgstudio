@@ -40,6 +40,24 @@ test "shader: from_wgsl_with_defs preserves shader defs" {
 }
 
 ///|
+test "shader: from_wesl rewrites import path to Bevy asset module path" {
+  let shader = @shader.Shader::from_wesl(
+    "import super::util::make_polka_dots;\nfn fragment() -> f32 { return make_polka_dots(); }\n",
+    "shaders/custom_material.wesl",
+  )
+  debug_inspect(shader.path, content="\"shaders/custom_material.wesl\"")
+  debug_inspect(
+    shader.source.as_str().contains("make_polka_dots"),
+    content="true",
+  )
+  debug_inspect(
+    shader.import_path,
+    content="AssetPath(\"/shaders/custom_material\")",
+  )
+  debug_inspect(shader.file_dependencies.length(), content="0")
+}
+
+///|
 test "shader: source language and shader type align with naga_oil surface" {
   let wgsl = @shader.Source::Wgsl("fn main() {}")
   debug_inspect(wgsl.language(), content="Wgsl")
@@ -51,6 +69,16 @@ test "shader: source language and shader type align with naga_oil surface" {
   )
   debug_inspect(glsl.language(), content="Glsl")
   debug_inspect(glsl.shader_type(), content="GlslFragment")
+}
+
+///|
+test "panic shader: wesl source has no naga_oil language" {
+  ignore(@shader.Source::Wesl("fn fragment() {}").language())
+}
+
+///|
+test "panic shader: wesl source has no naga_oil shader type" {
+  ignore(@shader.Source::Wesl("fn fragment() {}").shader_type())
 }
 
 ///|

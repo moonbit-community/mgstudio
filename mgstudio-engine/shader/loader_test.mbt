@@ -24,6 +24,14 @@ test "shader plugin initializes Assets<Shader> resource" {
 }
 
 ///|
+test "shader loader exposes wesl extension through the shared shader loader" {
+  debug_inspect(
+    ShaderLoader::default().extensions().contains("wesl"),
+    content="true",
+  )
+}
+
+///|
 test "shader loader stores typed shader assets and direct file dependencies" {
   let loaded_handle_ids : Array[Int] = []
   let root_dependency_lengths : Array[Int] = []

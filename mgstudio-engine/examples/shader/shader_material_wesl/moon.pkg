@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",

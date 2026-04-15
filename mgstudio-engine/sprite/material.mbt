@@ -507,6 +507,15 @@ fn render2d_register_shader_source_asset(
   @naga_oil.register_wgsl_source(
     "shaders/mesh2d_checker_material.wgsl", embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source,
   )
+  if @shader.shader_path_is_wesl(path) {
+    @shader.shader_register_wesl_runtime_source(world, path, []) catch {
+      err =>
+        abort(
+          "failed to compile render2d wesl shader asset: \{path}: \{err.message()}",
+        )
+    }
+    return
+  }
   let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
     "assets", path,
   ) catch {

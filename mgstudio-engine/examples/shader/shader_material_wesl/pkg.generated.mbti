@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/examples/shader/shader_material_wesl"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
 }
 
@@ -12,6 +13,13 @@ import {
 // Types and methods
 type Spin
 pub impl @ecs.Component for Spin
+
+type UtilityShaderHandle
+pub impl @app.Resource for UtilityShaderHandle
+
+type UtilityShaderPlugin
+pub fn UtilityShaderPlugin::default() -> Self
+pub impl @app.Plugin for UtilityShaderPlugin
 
 // Type aliases
 

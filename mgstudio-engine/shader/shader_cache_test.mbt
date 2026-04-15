@@ -84,6 +84,14 @@ fn shader_cache_dummy_load_module(
 }
 
 ///|
+fn shader_cache_test_wesl_shader(
+  path : String,
+  source : String,
+) -> @shader.Shader {
+  @shader.Shader::from_wesl(source, path)
+}
+
+///|
 fn shader_cache_test_shader(
   import_path : @shader.ShaderImport,
   imports : Array[@shader.ShaderImport],
@@ -153,6 +161,102 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
   debug_inspect(invalidated.length(), content="1")
   debug_inspect(invalidated[0], content="7")
   debug_inspect(cache.contains_shader(base_id), content="false")
+}
+
+///|
+test "shader cache compiles wesl through loaded shader assets and bool defs" {
+  let cache : @shader.ShaderCache[String, Int] = @shader.ShaderCache::new(
+    0, shader_cache_dummy_load_module,
+  )
+  let util_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(1)
+  let root_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(2)
+
+  ignore(
+    cache.set_shader(
+      util_id,
+      shader_cache_test_wesl_shader(
+        "shaders/util.wesl", "fn make_toggle() -> f32 {\n  @if(PARTY_MODE) {\n    return 42.0;\n  } @else {\n    return 7.0;\n  }\n}\n",
+      ),
+    ),
+  )
+  ignore(
+    cache.set_shader(
+      root_id,
+      shader_cache_test_wesl_shader(
+        "shaders/custom_material.wesl", "import super::util::make_toggle;\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
+      ),
+    ),
+  )
+
+  let compiled = try! cache.get(root_id.index(), root_id, [
+    @shader.shader_def("PARTY_MODE"),
+  ])
+
+  debug_inspect(compiled.contains("42.0"), content="true")
+  debug_inspect(compiled.contains("7.0"), content="false")
+  debug_inspect(
+    compiled.contains("package_shaders_util__1make_toggle"),
+    content="true",
+  )
+}
+
+///|
+test "shader cache wesl resolver requires imported modules to be loaded as shader assets" {
+  let cache : @shader.ShaderCache[String, Int] = @shader.ShaderCache::new(
+    0, shader_cache_dummy_load_module,
+  )
+  let root_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(7)
+
+  ignore(
+    cache.set_shader(
+      root_id,
+      shader_cache_test_wesl_shader(
+        "shaders/custom_material.wesl", "import super::util::make_toggle;\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
+      ),
+    ),
+  )
+
+  let result = try? cache.get(root_id.index(), root_id, [])
+  match result {
+    Err(@shader.ShaderCacheError::ProcessShaderError(reason)) => {
+      debug_inspect(reason.contains("module not found"), content="true")
+      debug_inspect(reason.contains("package::shaders::util"), content="true")
+    }
+    _ => fail("expected resolver-backed wesl import failure")
+  }
+}
+
+///|
+test "shader cache ignores non-bool defs when compiling wesl condcomp" {
+  let cache : @shader.ShaderCache[String, Int] = @shader.ShaderCache::new(
+    0, shader_cache_dummy_load_module,
+  )
+  let util_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(11)
+  let root_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(12)
+
+  ignore(
+    cache.set_shader(
+      util_id,
+      shader_cache_test_wesl_shader(
+        "shaders/util.wesl", "fn make_toggle() -> f32 {\n  @if(PARTY_MODE) {\n    return 42.0;\n  } @else {\n    return 7.0;\n  }\n}\n",
+      ),
+    ),
+  )
+  ignore(
+    cache.set_shader(
+      root_id,
+      shader_cache_test_wesl_shader(
+        "shaders/custom_material.wesl", "import super::util::make_toggle;\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
+      ),
+    ),
+  )
+
+  let compiled = try! cache.get(root_id.index(), root_id, [
+    @shader.ShaderDefVal::UInt("PARTY_MODE", 1U),
+  ])
+
+  debug_inspect(compiled.contains("42.0"), content="false")
+  debug_inspect(compiled.contains("7.0"), content="true")
 }
 
 ///|

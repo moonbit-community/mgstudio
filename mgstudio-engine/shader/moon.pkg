@@ -2,10 +2,12 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
   "Milky2018/mgstudio/naga_oil",
+  "Milky2018/mgstudio/wesl",
 }
 
 supported_targets = "native"

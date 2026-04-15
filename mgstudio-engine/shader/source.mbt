@@ -15,6 +15,7 @@
 ///|
 pub(all) enum Source {
   Wgsl(String)
+  Wesl(String)
   Glsl(String, ShaderStage)
   SpirV(Bytes)
 }
@@ -23,6 +24,7 @@ pub(all) enum Source {
 pub fn Source::as_str(self : Source) -> String {
   match self {
     Wgsl(source) => source
+    Wesl(source) => source
     Glsl(source, _) => source
     SpirV(_) => abort("spirv source does not expose a UTF-8 source string")
   }
@@ -32,6 +34,7 @@ pub fn Source::as_str(self : Source) -> String {
 pub fn Source::language(self : Source) -> @naga_oil.ShaderLanguage {
   match self {
     Wgsl(_) => @naga_oil.ShaderLanguage::Wgsl
+    Wesl(_) => abort("wesl source does not have a naga_oil language")
     Glsl(_, _) => @naga_oil.ShaderLanguage::Glsl
     SpirV(_) => abort("spirv source does not have a composable source language")
   }
@@ -41,6 +44,7 @@ pub fn Source::language(self : Source) -> @naga_oil.ShaderLanguage {
 pub fn Source::shader_type(self : Source) -> @naga_oil.ShaderType {
   match self {
     Wgsl(_) => @naga_oil.ShaderType::Wgsl
+    Wesl(_) => abort("wesl source does not have a naga_oil shader type")
     Glsl(_, ShaderStage::Vertex) => @naga_oil.ShaderType::GlslVertex
     Glsl(_, ShaderStage::Fragment) => @naga_oil.ShaderType::GlslFragment
     Glsl(_, ShaderStage::Compute) =>

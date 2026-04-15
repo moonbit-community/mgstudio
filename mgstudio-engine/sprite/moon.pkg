@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/naga_oil",
+  "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",

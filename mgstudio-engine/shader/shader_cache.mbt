@@ -151,6 +151,10 @@ pub struct ShaderCache[ShaderModule, RenderDevice] {
     Array[@asset.AssetId[Shader]],
   ]
   composer : @naga_oil.Composer
+  module_path_to_asset_id : @hashmap.HashMap[
+    @wesl.ModulePath,
+    @asset.AssetId[Shader],
+  ]
 }
 
 ///|
@@ -167,6 +171,102 @@ fn shader_cache_copy_asset_id_array(
     copied.push(item)
   }
   copied
+}
+
+///|
+pub(all) struct ShaderResolver {
+  module_path_to_asset_id : @hashmap.HashMap[
+    @wesl.ModulePath,
+    @asset.AssetId[Shader],
+  ]
+  shaders : @hashmap.HashMap[Int, Shader]
+}
+
+///|
+fn ShaderResolver::new(
+  module_path_to_asset_id : @hashmap.HashMap[
+    @wesl.ModulePath,
+    @asset.AssetId[Shader],
+  ],
+  shaders : @hashmap.HashMap[Int, Shader],
+) -> ShaderResolver {
+  { module_path_to_asset_id, shaders }
+}
+
+///|
+pub impl @wesl.Resolver for ShaderResolver with resolve_source(self, path) {
+  match self.module_path_to_asset_id.get(path) {
+    Some(asset_id) =>
+      match self.shaders.get(shader_cache_asset_key(asset_id)) {
+        Some(shader) =>
+          match shader.source {
+            Source::Wesl(source) => source
+            _ =>
+              raise @wesl.ResolveError::ModuleNotFound(
+                path, "shader import is not a wesl asset",
+              )
+          }
+        None =>
+          raise @wesl.ResolveError::ModuleNotFound(
+            path, "shader import not yet available",
+          )
+      }
+    None =>
+      raise @wesl.ResolveError::ModuleNotFound(
+        path, "shader import not yet available",
+      )
+  }
+}
+
+///|
+fn[ShaderModule, RenderDevice] shader_cache_compiled_source(
+  cache : ShaderCache[ShaderModule, RenderDevice],
+  shader : Shader,
+  shader_defs : Array[ShaderDefVal],
+) -> ShaderCacheSource raise ShaderCacheError {
+  match shader.source {
+    Source::SpirV(data) => ShaderCacheSource::SpirV(data)
+    Source::Wgsl(text) => ShaderCacheSource::Wgsl(text)
+    Source::Glsl(_, _) =>
+      raise ShaderCacheError::ProcessShaderError(
+        "shader cache does not process glsl modules",
+      )
+    Source::Wesl(_) =>
+      match shader.import_path {
+        AssetPath(path) => {
+          let module_path = @wesl.ModulePath::from_path(path)
+          let resolver = ShaderResolver::new(
+            cache.module_path_to_asset_id,
+            cache.shaders,
+          )
+          let mut compiler_options = @wesl.CompileOptions::default()
+            .with_imports(true)
+            .with_condcomp(true)
+            .with_lower(true)
+          for shader_def in shader_defs {
+            match shader_def {
+              Bool(key, value) =>
+                compiler_options = compiler_options.with_feature(key, value)
+              Int(_, _) => ()
+              UInt(_, _) => ()
+            }
+          }
+          let compiled = @wesl.compile(
+            module_path,
+            resolver,
+            @wesl.EscapeMangler::default(),
+            compiler_options,
+          ) catch {
+            err => raise ShaderCacheError::ProcessShaderError(err.message())
+          }
+          ShaderCacheSource::Wgsl(compiled.to_string())
+        }
+        Custom(module_path) =>
+          raise ShaderCacheError::ProcessShaderError(
+            "wesl shader must use an asset import path: \{module_path}",
+          )
+      }
+  }
 }
 
 ///|
@@ -219,6 +319,7 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::new(
     import_path_shaders: @hashmap.HashMap::new(),
     waiting_on_import: @hashmap.HashMap::new(),
     composer: @naga_oil.Composer::default(),
+    module_path_to_asset_id: @hashmap.HashMap::new(),
   }
 }
 
@@ -281,8 +382,70 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::set_shader(
     }
   }
 
+  if shader.source is Source::Wesl(_) {
+    match shader.import_path {
+      AssetPath(path) =>
+        self.module_path_to_asset_id.set(
+          @wesl.ModulePath::from_path(path),
+          asset_id,
+        )
+      Custom(_) => ()
+    }
+  }
+
   self.shaders.set(shader_key, shader)
   pipelines_to_queue
+}
+
+///|
+pub fn[ShaderModule, RenderDevice] ShaderCache::get(
+  self : ShaderCache[ShaderModule, RenderDevice],
+  pipeline : CachedPipelineId,
+  asset_id : @asset.AssetId[Shader],
+  shader_defs : Array[ShaderDefVal],
+) -> ShaderModule raise ShaderCacheError {
+  let shader_key = shader_cache_asset_key(asset_id)
+  let shader = match self.shaders.get(shader_key) {
+    Some(shader) => shader
+    None => raise ShaderCacheError::ShaderNotLoaded(asset_id)
+  }
+  let shader_data = shader_cache_data_or_default(self, shader_key)
+  let mut asset_import_count = 0
+  for shader_import in shader.imports {
+    if shader_import is AssetPath(_) {
+      asset_import_count = asset_import_count + 1
+    }
+  }
+  let mut resolved_import_count = 0
+  for shader_import in shader_data.resolved_imports.keys() {
+    if shader_import is AssetPath(_) {
+      resolved_import_count = resolved_import_count + 1
+    }
+  }
+  if asset_import_count != resolved_import_count {
+    raise ShaderCacheError::ShaderImportNotYetAvailable
+  }
+
+  shader_data.track_pipeline(pipeline)
+  match shader_data.get_processed_shader(shader_defs) {
+    Some(shader_module) => {
+      self.data.set(shader_key, shader_data)
+      shader_module
+    }
+    None => {
+      let shader_source = shader_cache_compiled_source(
+        self, shader, shader_defs,
+      )
+      let shader_module = (self.load_module)(
+        self.device,
+        shader_source,
+        shader.validate_shader,
+      )
+      shader_data.cache_processed_shader(shader_defs, shader_module)
+      self.data.set(shader_key, shader_data)
+      shader_module
+    }
+  }
 }
 
 ///|
@@ -292,7 +455,20 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::remove(
 ) -> Array[CachedPipelineId] {
   let pipelines_to_queue = shader_cache_clear(self, asset_id)
   match self.shaders.get(shader_cache_asset_key(asset_id)) {
-    Some(shader) => self.import_path_shaders.remove(shader.import_path)
+    Some(shader) => {
+      self.import_path_shaders.remove(shader.import_path)
+      if shader.source is Source::Wesl(_) {
+        match shader.import_path {
+          AssetPath(path) =>
+            ignore(
+              self.module_path_to_asset_id.remove(
+                @wesl.ModulePath::from_path(path),
+              ),
+            )
+          Custom(_) => ()
+        }
+      }
+    }
     None => ()
   }
   self.shaders.remove(shader_cache_asset_key(asset_id))

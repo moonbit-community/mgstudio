@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/naga_oil",
+  "Milky2018/mgstudio/wesl",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
@@ -15,7 +16,11 @@ pub fn shader_def(String) -> ShaderDefVal
 
 pub fn shader_from_source(String) -> Shader
 
+pub fn shader_path_is_wesl(String) -> Bool
+
 pub fn shader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn shader_register_wesl_runtime_source(@ecs.World, String, Array[ShaderDefVal]) -> Unit raise ShaderCacheError
 
 // Errors
 pub(all) suberror ShaderCacheError {
@@ -46,6 +51,7 @@ pub(all) struct Shader {
 pub fn Shader::composable_module_descriptor(Self) -> @naga_oil.ComposableModuleDescriptor
 pub fn Shader::from_glsl(String, ShaderStage, String) -> Self
 pub fn Shader::from_spirv(Bytes, String) -> Self
+pub fn Shader::from_wesl(String, String) -> Self
 pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
 pub fn Shader::naga_module_descriptor(Self) -> @naga_oil.NagaModuleDescriptor
@@ -62,8 +68,10 @@ pub struct ShaderCache[ShaderModule, RenderDevice] {
   import_path_shaders : @hashmap.HashMap[ShaderImport, @asset.AssetId[Shader]]
   waiting_on_import : @hashmap.HashMap[ShaderImport, Array[@asset.AssetId[Shader]]]
   composer : @naga_oil.Composer
+  module_path_to_asset_id : @hashmap.HashMap[@wesl.ModulePath, @asset.AssetId[Shader]]
 }
 pub fn[ShaderModule, RenderDevice] ShaderCache::contains_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Bool
+pub fn[ShaderModule, RenderDevice] ShaderCache::get(Self[ShaderModule, RenderDevice], Int, @asset.AssetId[Shader], Array[ShaderDefVal]) -> ShaderModule raise ShaderCacheError
 pub fn[ShaderModule, RenderDevice] ShaderCache::new(RenderDevice, (RenderDevice, ShaderCacheSource, ValidateShader) -> ShaderModule raise ShaderCacheError) -> Self[ShaderModule, RenderDevice]
 pub fn[ShaderModule, RenderDevice] ShaderCache::remove(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Array[Int]
 pub fn[ShaderModule, RenderDevice] ShaderCache::set_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader], Shader) -> Array[Int]
@@ -117,6 +125,17 @@ pub(all) enum ShaderRef {
 }
 pub fn ShaderRef::default() -> Self
 
+pub(all) struct ShaderResolver {
+  module_path_to_asset_id : @hashmap.HashMap[@wesl.ModulePath, @asset.AssetId[Shader]]
+  shaders : @hashmap.HashMap[Int, Shader]
+}
+pub impl @wesl.Resolver for ShaderResolver
+
+pub(all) struct ShaderRuntimeCache {
+  cache : ShaderCache[String, Unit]
+}
+pub impl @app.Resource for ShaderRuntimeCache
+
 pub(all) struct ShaderSettings {
   shader_defs : Array[ShaderDefVal]
 } derive(Eq, @debug.Debug)
@@ -130,6 +149,7 @@ pub(all) enum ShaderStage {
 
 pub(all) enum Source {
   Wgsl(String)
+  Wesl(String)
   Glsl(String, ShaderStage)
   SpirV(Bytes)
 }

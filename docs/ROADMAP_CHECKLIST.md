@@ -63,6 +63,11 @@ This file must not exceed 200 lines.
 | `assets/shaders/shader_material_wesl_3d.wgsl` | `assets/shaders/custom_material.wgsl` |
 | `assets/shaders/shader_prepass_3d.wgsl` | `assets/shaders/custom_material.wgsl` |
 
+### WESL 对齐 (2026-04-15)
+- `.wesl` 现已走 Bevy 语义链路：`Shader::from_wesl` + `Source::Wesl` + shader asset loader + `ShaderCache` resolver-backed compile-to-WGSL。
+- runtime `.wesl` 路径不再回退到 `.wgsl` 文件；当前在 source-world startup/prepare 边界完成 asset-backed compile 并把结果注册回 runtime shader registry。
+- 上述“前移到 source-world”属于 render/shader 包拆分下的接线重排，不是语义 blocker；`examples/shader/shader_material_wesl` 已恢复为 `custom_material.wesl` 并显式加载 `util.wesl`。
+
 ### Remaining 非 naga_oil 定制 WGSL (显式跟踪)
 | 路径 | 状态 | 备注 |
 |---|---|---|
