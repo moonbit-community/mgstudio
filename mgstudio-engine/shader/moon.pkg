@@ -7,7 +7,7 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
   "Milky2018/moon_wgsl" @naga_oil,
-  "Milky2018/mgstudio/wesl",
+  "Milky2018/moon_wesl" @wesl,
 }
 
 supported_targets = "native"

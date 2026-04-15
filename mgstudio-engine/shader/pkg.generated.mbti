@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/wesl",
+  "Milky2018/moon_wesl",
   "Milky2018/moon_wgsl",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -68,7 +68,7 @@ pub struct ShaderCache[ShaderModule, RenderDevice] {
   import_path_shaders : @hashmap.HashMap[ShaderImport, @asset.AssetId[Shader]]
   waiting_on_import : @hashmap.HashMap[ShaderImport, Array[@asset.AssetId[Shader]]]
   composer : @moon_wgsl.Composer
-  module_path_to_asset_id : @hashmap.HashMap[@wesl.ModulePath, @asset.AssetId[Shader]]
+  module_path_to_asset_id : @hashmap.HashMap[@moon_wesl.ModulePath, @asset.AssetId[Shader]]
 }
 pub fn[ShaderModule, RenderDevice] ShaderCache::contains_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Bool
 pub fn[ShaderModule, RenderDevice] ShaderCache::get(Self[ShaderModule, RenderDevice], Int, @asset.AssetId[Shader], Array[ShaderDefVal]) -> ShaderModule raise ShaderCacheError
@@ -126,10 +126,10 @@ pub(all) enum ShaderRef {
 pub fn ShaderRef::default() -> Self
 
 pub(all) struct ShaderResolver {
-  module_path_to_asset_id : @hashmap.HashMap[@wesl.ModulePath, @asset.AssetId[Shader]]
+  module_path_to_asset_id : @hashmap.HashMap[@moon_wesl.ModulePath, @asset.AssetId[Shader]]
   shaders : @hashmap.HashMap[Int, Shader]
 }
-pub impl @wesl.Resolver for ShaderResolver
+pub impl @moon_wesl.Resolver for ShaderResolver
 
 pub(all) struct ShaderRuntimeCache {
   cache : ShaderCache[String, Unit]

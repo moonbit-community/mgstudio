@@ -71,7 +71,7 @@ This file must not exceed 200 lines.
 - `.wesl` 现已走 Bevy 语义链路：`Shader::from_wesl` + `Source::Wesl` + shader asset loader + `ShaderCache` resolver-backed compile-to-WGSL。
 - runtime `.wesl` 路径不再回退到 `.wgsl` 文件；当前在 source-world startup/prepare 边界完成 asset-backed compile 并把结果注册回 runtime shader registry。
 - 上述“前移到 source-world”属于 render/shader 包拆分下的接线重排，不是语义 blocker；`examples/shader/shader_material_wesl` 已恢复为 `custom_material.wesl` 并显式加载 `util.wesl`。
-- `mgstudio-engine/wesl` 现已补齐 Bevy 当前依赖到的关键编译语义：lazy import resolution、entrypoint-rooted stripping、`@publish` re-export 解析、以及 alias/global-const lowering；剩余差距集中在 upstream `wesl` 的更深 AST/validation/eval 能力，而不再是当前 mgstudio runtime 所需主链路。
+- `wesl` 现已拆分为外部模块 `Milky2018/moon_wesl`，并继续承载 Bevy 当前依赖到的关键编译语义：lazy import resolution、entrypoint-rooted stripping、`@publish` re-export 解析、以及 alias/global-const lowering；剩余差距集中在 upstream `wesl` 的更深 AST/validation/eval 能力，而不再是当前 mgstudio runtime 所需主链路。
 
 ### Remaining 非 naga_oil 定制 WGSL (显式跟踪)
 | 路径 | 状态 | 备注 |
