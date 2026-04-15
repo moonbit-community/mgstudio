@@ -451,6 +451,13 @@ fn scene_spawn_instance_when_ready(
         scene_index,
       )
     }
+    if node.gltf_scene_extras is Some(scene_extras) {
+      try! world.set_by_key(
+        child,
+        @gltf.GltfSceneExtras::component(),
+        scene_extras,
+      )
+    }
     if node.gltf_node_index is Some(node_index) {
       try! world.set_by_key(child, @gltf.GltfNodeIndex::component(), node_index)
     }

@@ -3319,6 +3319,9 @@ fn scene_build_from_gltf(
   buffer_bytes : Array[Bytes],
 ) -> Scene {
   let selected_scene_index = gltf_select_scene_index(doc, request.scene_index)
+  let selected_scene_extras = gltf_scene_extras_for_selected_scene(
+    doc, selected_scene_index,
+  )
   let convert_coordinates = gltf_loader_convert_coordinates(
     request.loader_settings,
   )
@@ -3656,6 +3659,7 @@ fn scene_build_from_gltf(
         None,
         name=Some(@ecs.Name::new(scene_name)),
         gltf_scene_index=Some(@gltf.GltfSceneIndex::new(selected_scene_index)),
+        gltf_scene_extras=selected_scene_extras,
       ),
     )
     Some(nodes.length() - 1)
@@ -3669,13 +3673,7 @@ fn scene_build_from_gltf(
     }
   }
 
-  Scene::{
-    nodes3d: nodes,
-    gltf_scene_extras: gltf_scene_extras_for_selected_scene(
-      doc, selected_scene_index,
-    ),
-    ready: true,
-  }
+  Scene::{ nodes3d: nodes, gltf_scene_extras: None, ready: true }
 }
 
 ///|
