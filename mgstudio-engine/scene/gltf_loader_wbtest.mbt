@@ -399,6 +399,10 @@ test "scene gltf wb: parse scene mesh primitive and material extras" {
     doc.materials[0].extras.unwrap_or(""),
     content="\"{\\\"material\\\":\\\"value\\\"}\"",
   )
+  let extras = gltf_scene_extras_for_selected_scene(doc, 0)
+  debug_inspect(extras is Some(_), content="true")
+  let missing_extras = gltf_scene_extras_for_selected_scene(doc, -1)
+  debug_inspect(missing_extras is None, content="true")
 }
 
 ///|

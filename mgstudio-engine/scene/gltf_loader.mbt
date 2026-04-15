@@ -3019,6 +3019,18 @@ fn gltf_select_scene_index(
 }
 
 ///|
+fn gltf_scene_extras_for_selected_scene(
+  doc : ParsedGltfDocument,
+  selected_scene_index : Int,
+) -> @gltf.GltfSceneExtras? {
+  if selected_scene_index >= 0 && selected_scene_index < doc.scenes.length() {
+    doc.scenes[selected_scene_index].extras.map(@gltf.GltfSceneExtras::new)
+  } else {
+    None
+  }
+}
+
+///|
 fn gltf_select_animation_index(
   doc : ParsedGltfDocument,
   requested_animation_index : Int,
@@ -3559,8 +3571,8 @@ fn scene_build_from_gltf(
 
   Scene::{
     nodes3d: nodes,
-    gltf_scene_extras: doc.scenes[selected_scene_index].extras.map(
-      @gltf.GltfSceneExtras::new,
+    gltf_scene_extras: gltf_scene_extras_for_selected_scene(
+      doc, selected_scene_index,
     ),
     ready: true,
   }
