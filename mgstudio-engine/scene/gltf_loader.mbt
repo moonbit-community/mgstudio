@@ -2805,6 +2805,12 @@ fn scene_build_from_gltf(
   for _ in doc.materials {
     material_cache.push(None)
   }
+  let skin_inverse_bindposes_cache : Array[
+    @asset.Handle[@mesh.SkinnedMeshInverseBindposes]?,
+  ] = []
+  for _ in doc.skins {
+    skin_inverse_bindposes_cache.push(None)
+  }
   let visited_nodes : Array[Bool] = []
   for _ in doc.nodes {
     visited_nodes.push(false)
@@ -2813,6 +2819,52 @@ fn scene_build_from_gltf(
   let default_material_component = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(@pbr.StandardMaterial::default()),
   )
+
+  fn skin_inverse_bindposes_handle(
+    skin_index : Int,
+  ) -> @asset.Handle[@mesh.SkinnedMeshInverseBindposes]? {
+    if skin_index < 0 || skin_index >= doc.skins.length() {
+      return None
+    }
+    if skin_inverse_bindposes_cache[skin_index] is Some(handle) {
+      return Some(handle)
+    }
+    let skin_def = doc.skins[skin_index]
+    let inverse_bindpose_values = match skin_def.inverse_bind_matrices {
+      Some(accessor_index) =>
+        gltf_read_accessor_mat4(doc, buffer_bytes, accessor_index)
+      None => {
+        let defaults : Array[@mesh.SkinningMat4] = []
+        for _ in skin_def.joints {
+          defaults.push(@mesh.SkinningMat4::identity())
+        }
+        Some(defaults)
+      }
+    }
+    let handle = match inverse_bindpose_values {
+      Some(values) => {
+        let normalized_values : Array[@mesh.SkinningMat4] = []
+        for joint_index in 0..<skin_def.joints.length() {
+          if joint_index < values.length() {
+            normalized_values.push(values[joint_index])
+          } else {
+            normalized_values.push(@mesh.SkinningMat4::identity())
+          }
+        }
+        let inverse_bindposes_assets_ref : Ref[
+          @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+        ] = @asset.asset_assets_ref_mut_or_abort()
+        Some(
+          inverse_bindposes_assets_ref.val.add(
+            @mesh.SkinnedMeshInverseBindposes::new(normalized_values),
+          ),
+        )
+      }
+      None => None
+    }
+    skin_inverse_bindposes_cache[skin_index] = handle
+    handle
+  }
 
   fn walk_node(
     node_index : Int,
@@ -2872,41 +2924,8 @@ fn scene_build_from_gltf(
           }
         None => None
       }
-      let inverse_bindposes = match skin {
-        Some(skin_def) => {
-          let inverse_bindpose_values = match skin_def.inverse_bind_matrices {
-            Some(accessor_index) =>
-              gltf_read_accessor_mat4(doc, buffer_bytes, accessor_index)
-            None => {
-              let defaults : Array[@mesh.SkinningMat4] = []
-              for _ in skin_def.joints {
-                defaults.push(@mesh.SkinningMat4::identity())
-              }
-              Some(defaults)
-            }
-          }
-          match inverse_bindpose_values {
-            Some(values) => {
-              let normalized_values : Array[@mesh.SkinningMat4] = []
-              for joint_index in 0..<skin_def.joints.length() {
-                if joint_index < values.length() {
-                  normalized_values.push(values[joint_index])
-                } else {
-                  normalized_values.push(@mesh.SkinningMat4::identity())
-                }
-              }
-              let inverse_bindposes_assets_ref : Ref[
-                @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-              ] = @asset.asset_assets_ref_mut_or_abort()
-              Some(
-                inverse_bindposes_assets_ref.val.add(
-                  @mesh.SkinnedMeshInverseBindposes::new(normalized_values),
-                ),
-              )
-            }
-            None => None
-          }
-        }
+      let inverse_bindposes = match node.skin {
+        Some(skin_index) => skin_inverse_bindposes_handle(skin_index)
         None => None
       }
 
