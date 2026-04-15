@@ -47,6 +47,7 @@ fn default_plugins_builder(
   .add(@transform.TransformPlugin::default())
   .add(@diagnostic.DiagnosticsPlugin::default())
   .add(@render.RenderPlugin::default())
+  .add(@mesh.MeshPlugin::default())
   .add(@camera.CameraPlugin::default())
   .add(@core_pipeline.CorePipelinePlugin::default())
   .add(@input.InputPlugin::default())

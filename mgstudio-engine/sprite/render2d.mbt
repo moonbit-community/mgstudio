@@ -8521,10 +8521,6 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       DefaultGizmoConfigGroup::default(),
     )
     .add_plugins(ColorMaterialPlugin::default())
-    .init_resource(fn() {
-      let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-      assets
-    })
     .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -8547,10 +8543,6 @@ fn render2d_plugin_ecs_install(
       DefaultGizmoConfigGroup::default(),
     )
     .add_plugins(ColorMaterialPlugin::default())
-    .init_resource(fn() {
-      let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-      assets
-    })
     .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

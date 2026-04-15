@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/mesh"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -20,6 +21,8 @@ pub let ecs_key_morph_target_mesh : @ecs.ComponentKey[MorphTargetMesh]
 pub let ecs_key_morph_weights : @ecs.ComponentKey[MorphWeights]
 
 pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
+
+pub fn mesh_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -202,6 +205,11 @@ pub struct MeshJointIndices {
   w : Int
 }
 pub fn MeshJointIndices::new(Int, Int, Int, Int) -> Self
+
+pub struct MeshPlugin {
+}
+pub fn MeshPlugin::default() -> Self
+pub impl @app.Plugin for MeshPlugin
 
 pub struct MorphTargetMesh {
   source_mesh : @asset.Handle[Mesh]

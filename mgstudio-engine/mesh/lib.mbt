@@ -17,6 +17,35 @@
 // Runtime owner split out of `mesh/mesh.mbt`.
 
 ///|
+const MESH_PLUGIN_NAME : String = "mgstudio.mesh.MeshPlugin"
+
+///|
+pub struct MeshPlugin {}
+
+///|
+pub fn MeshPlugin::default() -> MeshPlugin {
+  MeshPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for MeshPlugin with name(_self) {
+  MESH_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for MeshPlugin with build(_self, app) {
+  mesh_plugin(app)
+}
+
+///|
+pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.init_resource(fn() {
+    let assets : @asset.Assets[Mesh] = @asset.Assets::new()
+    assets
+  })
+}
+
+///|
 pub(all) enum MeshGeometry {
   Geometry2d(Mesh2dGeometry)
   Geometry3d(Mesh3dGeometry)
