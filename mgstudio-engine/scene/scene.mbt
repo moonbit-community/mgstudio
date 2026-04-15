@@ -38,6 +38,7 @@ pub struct SceneNode3d {
   animation_target : @animation.AnimationTargetId?
   skinned_joint_node_indices : Array[Int]?
   skinned_inverse_bindposes : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]?
+  skinned_mesh_bounds_policy : @gltf.GltfSkinnedMeshBoundsPolicy?
   default_morph_weights : Array[Float]?
 }
 
@@ -67,6 +68,7 @@ pub fn SceneNode3d::new(
   spot_light? : @light.SpotLight? = None,
   skinned_joint_node_indices? : Array[Int]? = None,
   skinned_inverse_bindposes? : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]? = None,
+  skinned_mesh_bounds_policy? : @gltf.GltfSkinnedMeshBoundsPolicy? = None,
   default_morph_weights? : Array[Float]? = None,
 ) -> SceneNode3d {
   SceneNode3d::{
@@ -94,6 +96,7 @@ pub fn SceneNode3d::new(
     animation_target,
     skinned_joint_node_indices,
     skinned_inverse_bindposes,
+    skinned_mesh_bounds_policy,
     default_morph_weights,
   }
 }
@@ -141,6 +144,7 @@ pub fn SceneNode3d::new_empty(
     animation_target,
     skinned_joint_node_indices: None,
     skinned_inverse_bindposes: None,
+    skinned_mesh_bounds_policy: None,
     default_morph_weights: None,
   }
 }

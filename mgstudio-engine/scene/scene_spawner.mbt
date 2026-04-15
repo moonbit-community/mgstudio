@@ -426,7 +426,12 @@ fn scene_spawn_instance_when_ready(
 
   let spawned_entities : Array[@core.Entity] = []
   let pending_skinned_meshes : Array[
-    (Int, Array[Int], @asset.Handle[@mesh.SkinnedMeshInverseBindposes]),
+    (
+      Int,
+      Array[Int],
+      @asset.Handle[@mesh.SkinnedMeshInverseBindposes],
+      @gltf.GltfSkinnedMeshBoundsPolicy,
+    ),
   ] = []
   let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
   let gltf_scene_asset_path = match scene_registry_find_scene_path(root.scene) {
@@ -555,8 +560,17 @@ fn scene_spawn_instance_when_ready(
       }
       if node.skinned_joint_node_indices is Some(joint_node_indices) &&
         node.skinned_inverse_bindposes is Some(inverse_bindposes) {
+        let skinned_mesh_bounds_policy = match node.skinned_mesh_bounds_policy {
+          Some(policy) => policy
+          None => @gltf.gltf_default_skinned_mesh_bounds_policy()
+        }
         pending_skinned_meshes.push(
-          (spawned_entities.length() - 1, joint_node_indices, inverse_bindposes),
+          (
+            spawned_entities.length() - 1,
+            joint_node_indices,
+            inverse_bindposes,
+            skinned_mesh_bounds_policy,
+          ),
         )
       }
     }
@@ -626,9 +640,13 @@ fn scene_spawn_instance_when_ready(
     spawned_scene_index_by_gltf_node[gltf_node] = Some(scene_index)
   }
 
-  let skinned_mesh_bounds_policy = @gltf.gltf_default_skinned_mesh_bounds_policy()
   for pending in pending_skinned_meshes {
-    let (entity_index, joint_node_indices, inverse_bindposes_handle) = pending
+    let (
+      entity_index,
+      joint_node_indices,
+      inverse_bindposes_handle,
+      skinned_mesh_bounds_policy,
+    ) = pending
     if entity_index < 0 || entity_index >= spawned_entities.length() {
       continue
     }

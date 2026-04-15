@@ -28,6 +28,9 @@ pub(all) struct ImageLoaderSettings {
   mut load_lights : Bool
   mut load_animations : Bool
   mut include_source : Bool
+  mut convert_coordinates_rotate_scene_entity : Bool?
+  mut convert_coordinates_rotate_meshes : Bool?
+  mut skinned_mesh_bounds_policy : Int?
 }
 
 ///|
@@ -46,6 +49,9 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
     load_lights: true,
     load_animations: true,
     include_source: false,
+    convert_coordinates_rotate_scene_entity: None,
+    convert_coordinates_rotate_meshes: None,
+    skinned_mesh_bounds_policy: None,
   }
 }
 

@@ -559,6 +559,9 @@ fn image_loader_settings_clone(
     load_lights: settings.load_lights,
     load_animations: settings.load_animations,
     include_source: settings.include_source,
+    convert_coordinates_rotate_scene_entity: settings.convert_coordinates_rotate_scene_entity,
+    convert_coordinates_rotate_meshes: settings.convert_coordinates_rotate_meshes,
+    skinned_mesh_bounds_policy: settings.skinned_mesh_bounds_policy,
   }
 }
 
