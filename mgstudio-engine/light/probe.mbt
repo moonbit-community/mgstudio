@@ -52,3 +52,21 @@ pub let ecs_key_irradiance_volume_component : @ecs.ComponentKey[
 pub let ecs_key_parallax_correction_component : @ecs.ComponentKey[
   ParallaxCorrectionComponent,
 ] = ecs_key_parallax_correction
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/probe.rs::automatically_add_parallax_correction_components`.
+pub fn automatically_add_parallax_correction_components(
+  commands : @app.Commands,
+  reflection_probe_query : @ecs.Query[
+    @core.Entity,
+    (
+      @ecs.With[EnvironmentMapLight],
+      @ecs.With[LightProbe],
+      @ecs.Without[ParallaxCorrection],
+    ),
+  ],
+) -> Unit {
+  try! reflection_probe_query.view(fn(_query_entity, entity) {
+    commands.entity(entity).insert_component(ParallaxCorrection::default())
+  })
+}

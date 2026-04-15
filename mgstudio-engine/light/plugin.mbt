@@ -57,5 +57,12 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       DirectionalLightShadowMap::default(),
     )
   }
-  next.add_post_update_system(validate_directional_light_shadow_map_size)
+  next
+  .add_systems(
+    @app.Update,
+    @app.system(
+      @app.system_param2(automatically_add_parallax_correction_components),
+    ),
+  )
+  .add_post_update_system(validate_directional_light_shadow_map_size)
 }

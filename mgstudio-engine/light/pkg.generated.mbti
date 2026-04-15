@@ -18,6 +18,8 @@ import {
 // Values
 pub fn ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLight]
 
+pub fn automatically_add_parallax_correction_components(@app.Commands, @ecs.Query[@core.Entity, (@ecs.With[EnvironmentMapLight], @ecs.With[LightProbe], @ecs.Without[ParallaxCorrection])]) -> Unit
+
 pub fn directional_light_validated_shadow_map_size(Int) -> Int
 
 pub fn directional_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
