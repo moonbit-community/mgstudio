@@ -15,6 +15,7 @@
 ///|
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
+  named_scenes : Array[(String, @asset.Handle[Scene])]
   default_scene : @asset.Handle[Scene]?
   animations : Array[@asset.Handle[@animation.AnimationClip]]
   named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
@@ -24,18 +25,27 @@ pub struct Gltf {
 ///|
 pub fn Gltf::new(
   scenes : Array[@asset.Handle[Scene]],
+  named_scenes? : Array[(String, @asset.Handle[Scene])] = [],
   default_scene : @asset.Handle[Scene]?,
   animations? : Array[@asset.Handle[@animation.AnimationClip]] = [],
   named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])] = [],
   source? : String? = None,
 ) -> Gltf {
-  Gltf::{ scenes, default_scene, animations, named_animations, source }
+  Gltf::{
+    scenes,
+    named_scenes,
+    default_scene,
+    animations,
+    named_animations,
+    source,
+  }
 }
 
 ///|
 fn gltf_asset_default() -> Gltf {
   Gltf::{
     scenes: [],
+    named_scenes: [],
     default_scene: None,
     animations: [],
     named_animations: [],
@@ -70,17 +80,21 @@ fn scene_load_gltf_root_asset(
   }
   let (doc, _buffer_bytes) = parsed
   let scenes : Array[@asset.Handle[Scene]] = []
+  let named_scenes : Array[(String, @asset.Handle[Scene])] = []
   let animations : Array[@asset.Handle[@animation.AnimationClip]] = []
   let named_animations : Array[
     (String, @asset.Handle[@animation.AnimationClip]),
   ] = []
   for scene_index in 0..<doc.scenes.length() {
-    scenes.push(
-      scene_load_gltf_scene(
-        asset_server,
-        scene_gltf_scene_asset_path(root_path, scene_index),
-      ),
+    let scene_handle = scene_load_gltf_scene(
+      asset_server,
+      scene_gltf_scene_asset_path(root_path, scene_index),
     )
+    scenes.push(scene_handle)
+    let scene_name = doc.scenes[scene_index].name
+    if scene_name != "" {
+      named_scenes.push((scene_name, scene_handle))
+    }
   }
   let default_scene = if scenes.length() == 0 {
     None
@@ -114,5 +128,12 @@ fn scene_load_gltf_root_asset(
   } else {
     None
   }
-  Gltf::new(scenes, default_scene, animations~, named_animations~, source~)
+  Gltf::new(
+    scenes,
+    named_scenes~,
+    default_scene,
+    animations~,
+    named_animations~,
+    source~,
+  )
 }

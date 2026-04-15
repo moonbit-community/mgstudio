@@ -74,12 +74,13 @@ pub let scene_spawner_set_spawn : String
 // Types and methods
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
+  named_scenes : Array[(String, @asset.Handle[Scene])]
   default_scene : @asset.Handle[Scene]?
   animations : Array[@asset.Handle[@animation.AnimationClip]]
   named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
   source : String?
 }
-pub fn Gltf::new(Array[@asset.Handle[Scene]], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])], source? : String?) -> Self
+pub fn Gltf::new(Array[@asset.Handle[Scene]], named_scenes? : Array[(String, @asset.Handle[Scene])], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])], source? : String?) -> Self
 
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool

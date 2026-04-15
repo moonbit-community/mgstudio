@@ -111,6 +111,8 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
 test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   let root_loaded = Ref::new(false)
   let scene_count = Ref::new(0)
+  let named_scene_count = Ref::new(0)
+  let named_scene_contains_scene = Ref::new(false)
   let has_default_scene = Ref::new(false)
   let first_scene_ready = Ref::new(false)
   let source_is_none = Ref::new(false)
@@ -151,6 +153,14 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
     if gltf_assets.get(handle) is Some(gltf) {
       root_loaded.val = true
       scene_count.val = gltf.scenes.length()
+      named_scene_count.val = gltf.named_scenes.length()
+      named_scene_contains_scene.val = false
+      for named_scene in gltf.named_scenes {
+        if named_scene.0 == "Scene" {
+          named_scene_contains_scene.val = true
+          break
+        }
+      }
       has_default_scene.val = gltf.default_scene is Some(_)
       source_is_none.val = gltf.source is None
       if gltf.scenes.length() > 0 {
@@ -165,6 +175,8 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
   debug_inspect(root_loaded.val, content="true")
   debug_inspect(scene_count.val == 1, content="true")
+  debug_inspect(named_scene_count.val == 1, content="true")
+  debug_inspect(named_scene_contains_scene.val, content="true")
   debug_inspect(has_default_scene.val, content="true")
   debug_inspect(first_scene_ready.val, content="true")
   debug_inspect(source_is_none.val, content="true")
