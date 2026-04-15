@@ -802,3 +802,51 @@ test "asset server stores gltf loader settings per asset path" {
     _ => abort("expected descriptor sampler")
   }
 }
+
+///|
+test "asset server gltf loader settings are shared across sub asset labels" {
+  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let root_path = "models/Foo/Foo.gltf"
+  let labeled_path = "models/Foo/Foo.gltf#Scene0"
+
+  let _ : Handle[Blob] = asset_with_world(world, fn() {
+    asset_server.load_with_settings(root_path, fn(settings) {
+      settings.load_meshes = RenderAssetUsages::main_world()
+      settings.load_materials = RenderAssetUsages::render_world()
+      settings.load_animations = false
+      settings.load_cameras = false
+      settings.load_lights = false
+    })
+  })
+
+  let from_label = asset_server.gltf_loader_settings_for_asset_path(
+    labeled_path,
+  )
+  debug_inspect(
+    from_label.load_meshes == RenderAssetUsages::main_world(),
+    content="true",
+  )
+  debug_inspect(
+    from_label.load_materials == RenderAssetUsages::render_world(),
+    content="true",
+  )
+  debug_inspect(!from_label.load_animations, content="true")
+  debug_inspect(!from_label.load_cameras, content="true")
+  debug_inspect(!from_label.load_lights, content="true")
+
+  let _ : Handle[Blob] = asset_with_world(world, fn() {
+    asset_server.load_with_settings(labeled_path, fn(settings) {
+      settings.include_source = true
+      settings.override_sampler = true
+    })
+  })
+  let from_root = asset_server.gltf_loader_settings_for_asset_path(root_path)
+  debug_inspect(from_root.include_source, content="true")
+  debug_inspect(from_root.override_sampler, content="true")
+}

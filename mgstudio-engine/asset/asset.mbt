@@ -568,13 +568,14 @@ fn AssetServer::set_gltf_loader_settings(
   asset_path : String,
   settings : ImageLoaderSettings,
 ) -> Unit {
+  let canonical_path = asset_canonical_path(asset_path)
   let next : Array[(String, ImageLoaderSettings)] = []
   for entry in self.gltf_loader_settings.val {
-    if entry.0 != asset_path {
+    if entry.0 != canonical_path {
       next.push(entry)
     }
   }
-  next.push((asset_path, image_loader_settings_clone(settings)))
+  next.push((canonical_path, image_loader_settings_clone(settings)))
   self.gltf_loader_settings.val = next
 }
 
@@ -583,8 +584,9 @@ pub fn AssetServer::gltf_loader_settings_for_asset_path(
   self : AssetServer,
   asset_path : String,
 ) -> ImageLoaderSettings {
+  let canonical_path = asset_canonical_path(asset_path)
   for entry in self.gltf_loader_settings.val {
-    if entry.0 == asset_path {
+    if entry.0 == canonical_path {
       return image_loader_settings_clone(entry.1)
     }
   }
