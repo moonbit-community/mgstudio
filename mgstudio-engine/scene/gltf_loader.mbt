@@ -2341,30 +2341,40 @@ fn gltf_texture_image_sampler(
     anisotropy_clamp: default_sampler.anisotropy_clamp,
     border_color: default_sampler.border_color,
   }
-  if doc.textures[texture_index].sampler is Some(sampler_index) &&
+  let sampler = if doc.textures[texture_index].sampler is Some(sampler_index) &&
     sampler_index >= 0 &&
     sampler_index < doc.samplers.length() {
-    let sampler = doc.samplers[sampler_index]
-    descriptor.address_mode_u = match sampler.wrap_s {
-      Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
-      None => @image.ImageAddressMode::Repeat
-    }
-    descriptor.address_mode_v = match sampler.wrap_t {
-      Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
-      None => @image.ImageAddressMode::Repeat
-    }
-    if descriptor.anisotropy_clamp == 1 {
-      if sampler.mag_filter is Some(mag_filter) &&
-        gltf_sampler_mag_filter(mag_filter) is Some(image_filter) {
-        descriptor.mag_filter = image_filter
+    Some(doc.samplers[sampler_index])
+  } else {
+    None
+  }
+  descriptor.address_mode_u = match sampler {
+    Some(value) =>
+      match value.wrap_s {
+        Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
+        None => @image.ImageAddressMode::Repeat
       }
-      if sampler.min_filter is Some(min_filter) {
-        if gltf_sampler_min_filter(min_filter) is Some(image_filter) {
-          descriptor.min_filter = image_filter
-        }
-        if gltf_sampler_mipmap_filter(min_filter) is Some(image_filter) {
-          descriptor.mipmap_filter = image_filter
-        }
+    None => @image.ImageAddressMode::Repeat
+  }
+  descriptor.address_mode_v = match sampler {
+    Some(value) =>
+      match value.wrap_t {
+        Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
+        None => @image.ImageAddressMode::Repeat
+      }
+    None => @image.ImageAddressMode::Repeat
+  }
+  if descriptor.anisotropy_clamp == 1 && sampler is Some(value) {
+    if value.mag_filter is Some(mag_filter) &&
+      gltf_sampler_mag_filter(mag_filter) is Some(image_filter) {
+      descriptor.mag_filter = image_filter
+    }
+    if value.min_filter is Some(min_filter) {
+      if gltf_sampler_min_filter(min_filter) is Some(image_filter) {
+        descriptor.min_filter = image_filter
+      }
+      if gltf_sampler_mipmap_filter(min_filter) is Some(image_filter) {
+        descriptor.mipmap_filter = image_filter
       }
     }
   }

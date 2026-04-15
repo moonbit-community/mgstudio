@@ -301,11 +301,11 @@ test "scene gltf wb: texture sampler fallback uses gltf default sampler" {
     gltf_texture_image_sampler(doc, 0, @gltf.gltf_default_image_sampler()),
   )
   debug_inspect(
-    descriptor.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
+    descriptor.address_mode_u == @asset.ImageAddressMode::Repeat,
     content="true",
   )
   debug_inspect(
-    descriptor.address_mode_v == @asset.ImageAddressMode::ClampToEdge,
+    descriptor.address_mode_v == @asset.ImageAddressMode::Repeat,
     content="true",
   )
   debug_inspect(
