@@ -59,9 +59,84 @@ fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
 }
 
 ///|
+fn mesh_assets_mut_or_abort(
+  world : @ecs.World,
+) -> Ref[@asset.Assets[@mesh.Mesh]] {
+  let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key)) {
+    Some(assets_ref) => assets_ref
+    None => abort("missing Assets<Mesh> resource")
+  }
+}
+
+///|
+fn pbr_app_with_mesh3d_entity() -> (
+  @app.App[@ecs.World],
+  @core.Entity,
+  @asset.Handle[@mesh.Mesh],
+) {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(PbrPlugin::default())
+  let world = app.world()
+  let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
+    @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
+  )
+  let entity = world.spawn()
+  try! world.set(entity, Mesh3d::new(mesh_handle))
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+  (app, entity, mesh_handle)
+}
+
+///|
 test "render3d: plugin replacement id aligns with bevy_pbr" {
   let plugin = PbrPlugin::default()
   debug_inspect(plugin.name(), content="\"mgstudio.pbr.PbrPlugin\"")
+}
+
+///|
+test "render3d: modified Mesh asset marks Mesh3d as changed (bevy semantics)" {
+  let (app0, entity, mesh_handle) = pbr_app_with_mesh3d_entity()
+  let mut app = app0
+  let before = app.world().read_sequence()
+
+  debug_inspect(
+    mesh_assets_mut_or_abort(app.world()).val.set(
+      mesh_handle,
+      @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(2.0F, 2.0F)),
+    ),
+    content="true",
+  )
+
+  app = app.update()
+  let after = app.world().read_sequence()
+  let changed = app
+    .world()
+    .changed_components(
+      ecs_key_mesh3d,
+      @core.SystemSequence::new(before, after),
+    )
+    .read()
+  debug_inspect(changed.contains(entity), content="true")
+}
+
+///|
+test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
+  let (app0, entity, _mesh_handle) = pbr_app_with_mesh3d_entity()
+  let mut app = app0
+  let before = app.world().read_sequence()
+  app = app.update()
+  let after = app.world().read_sequence()
+  let changed = app
+    .world()
+    .changed_components(
+      ecs_key_mesh3d,
+      @core.SystemSequence::new(before, after),
+    )
+    .read()
+  debug_inspect(changed.contains(entity), content="false")
 }
 
 ///|
