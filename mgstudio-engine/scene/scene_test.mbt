@@ -234,6 +234,80 @@ test "scene: root gltf include_source keeps source payload" {
 }
 
 ///|
+test "scene: root gltf asset collects materials and named_materials" {
+  let root_loaded = Ref::new(false)
+  let material_count = Ref::new(0)
+  let named_material_count = Ref::new(0)
+  let has_named_trunk = Ref::new(false)
+  let trunk_material_loaded = Ref::new(false)
+  let trunk_material_cull_none = Ref::new(false)
+  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
+
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(@shader.ShaderPlugin::default())
+    .add_plugins(@pbr.PbrPlugin::default())
+    .add_plugins(@animation.AnimationPlugin::default())
+    .add_plugins(@scene.ScenePlugin::default())
+    .add_plugins(@gltf.GltfPlugin::default())
+    .add_plugins(@time.TimePlugin::default())
+    .add_systems(
+      @app.Startup,
+      @app.system(fn(_world : @ecs.World) {
+        gltf_handle_ref.val = Some(
+          @asset.AssetServer::new().load("models/PalmTree/PalmTree.gltf"),
+        )
+      }),
+    )
+  let gltf_assets_key : @ecs.ResourceKey[@asset.Assets[Gltf]] = @asset.assets_resource_key()
+  let material_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@pbr.StandardMaterial],
+  ] = @asset.assets_resource_key()
+
+  for _ in 0..<180 {
+    app = app.run_once()
+    guard gltf_handle_ref.val is Some(handle) else { continue }
+    let frame_world = app.world()
+    let gltf_assets = match (try! frame_world.get_resource(gltf_assets_key)) {
+      Some(assets) => assets
+      None => abort("expected Assets<Gltf> resource")
+    }
+    let material_assets = match
+      (try! frame_world.get_resource(material_assets_key)) {
+      Some(assets) => assets
+      None => abort("expected Assets<StandardMaterial> resource")
+    }
+    if gltf_assets.get(handle) is Some(gltf) {
+      root_loaded.val = true
+      material_count.val = gltf.materials.length()
+      named_material_count.val = gltf.named_materials.length()
+      has_named_trunk.val = false
+      trunk_material_loaded.val = false
+      trunk_material_cull_none.val = false
+      for named_material in gltf.named_materials {
+        if named_material.0 == "Trunk" {
+          has_named_trunk.val = true
+          if material_assets.get(named_material.1) is Some(material) {
+            trunk_material_loaded.val = true
+            trunk_material_cull_none.val = material.cull_mode is None
+          }
+          break
+        }
+      }
+      break
+    }
+  }
+
+  debug_inspect(root_loaded.val, content="true")
+  debug_inspect(material_count.val == 4, content="true")
+  debug_inspect(named_material_count.val == 4, content="true")
+  debug_inspect(has_named_trunk.val, content="true")
+  debug_inspect(trunk_material_loaded.val, content="true")
+  debug_inspect(trunk_material_cull_none.val, content="true")
+}
+
+///|
 test "scene: register keeps stable handle" {
   let same_handle = Ref::new(false)
   let ready_scene = Ref::new(false)

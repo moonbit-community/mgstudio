@@ -16,6 +16,8 @@
 pub struct Gltf {
   scenes : Array[@asset.Handle[Scene]]
   named_scenes : Array[(String, @asset.Handle[Scene])]
+  materials : Array[@asset.Handle[@pbr.StandardMaterial]]
+  named_materials : Array[(String, @asset.Handle[@pbr.StandardMaterial])]
   default_scene : @asset.Handle[Scene]?
   animations : Array[@asset.Handle[@animation.AnimationClip]]
   named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
@@ -26,6 +28,8 @@ pub struct Gltf {
 pub fn Gltf::new(
   scenes : Array[@asset.Handle[Scene]],
   named_scenes? : Array[(String, @asset.Handle[Scene])] = [],
+  materials? : Array[@asset.Handle[@pbr.StandardMaterial]] = [],
+  named_materials? : Array[(String, @asset.Handle[@pbr.StandardMaterial])] = [],
   default_scene : @asset.Handle[Scene]?,
   animations? : Array[@asset.Handle[@animation.AnimationClip]] = [],
   named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])] = [],
@@ -34,6 +38,8 @@ pub fn Gltf::new(
   Gltf::{
     scenes,
     named_scenes,
+    materials,
+    named_materials,
     default_scene,
     animations,
     named_animations,
@@ -46,6 +52,8 @@ fn gltf_asset_default() -> Gltf {
   Gltf::{
     scenes: [],
     named_scenes: [],
+    materials: [],
+    named_materials: [],
     default_scene: None,
     animations: [],
     named_animations: [],
@@ -78,9 +86,20 @@ fn scene_load_gltf_root_asset(
     Some(parsed) => parsed
     None => abort("Failed to parse glTF asset \{formatted_path}")
   }
-  let (doc, _buffer_bytes) = parsed
+  let (doc, buffer_bytes) = parsed
+  let resolved_buffer_bytes : Array[Bytes] = []
+  for maybe_bytes in buffer_bytes {
+    resolved_buffer_bytes.push(
+      match maybe_bytes {
+        Some(blob) => blob
+        None => Bytes::from_array([])
+      },
+    )
+  }
   let scenes : Array[@asset.Handle[Scene]] = []
   let named_scenes : Array[(String, @asset.Handle[Scene])] = []
+  let materials : Array[@asset.Handle[@pbr.StandardMaterial]] = []
+  let named_materials : Array[(String, @asset.Handle[@pbr.StandardMaterial])] = []
   let animations : Array[@asset.Handle[@animation.AnimationClip]] = []
   let named_animations : Array[
     (String, @asset.Handle[@animation.AnimationClip]),
@@ -94,6 +113,30 @@ fn scene_load_gltf_root_asset(
     let scene_name = doc.scenes[scene_index].name
     if scene_name != "" {
       named_scenes.push((scene_name, scene_handle))
+    }
+  }
+  if gltf_loader_should_load_materials(loader_settings) {
+    let image_cache : Array[@asset.Handle[@asset.Image]?] = []
+    for _ in doc.images {
+      image_cache.push(None)
+    }
+    let material_cache : Array[@pbr.MeshMaterial3d?] = []
+    for _ in doc.materials {
+      material_cache.push(None)
+    }
+    for material_index, material_def in doc.materials {
+      guard scene_build_material_component(
+          asset_server, formatted_path, doc, resolved_buffer_bytes, loader_settings,
+          false, material_index, material_cache, image_cache,
+        )
+        is Some(component) else {
+        continue
+      }
+      let handle = component.material
+      materials.push(handle)
+      if material_def.name != "" {
+        named_materials.push((material_def.name, handle))
+      }
     }
   }
   let default_scene = if scenes.length() == 0 {
@@ -131,6 +174,8 @@ fn scene_load_gltf_root_asset(
   Gltf::new(
     scenes,
     named_scenes~,
+    materials~,
+    named_materials~,
     default_scene,
     animations~,
     named_animations~,
