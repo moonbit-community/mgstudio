@@ -187,7 +187,7 @@ test "scene gltf wb: parse sampler and texture mapping" {
   let default_sampler = @image.ImageSamplerDescriptor::linear()
   default_sampler.set_address_mode(@image.ImageAddressMode::Repeat) |> ignore
   let descriptor0 = sampler_descriptor_or_abort(
-    gltf_texture_image_sampler(doc, 0, default_sampler),
+    gltf_texture_image_sampler(doc, 0, default_sampler, false),
   )
   debug_inspect(
     descriptor0.address_mode_u == @asset.ImageAddressMode::Repeat,
@@ -211,7 +211,7 @@ test "scene gltf wb: parse sampler and texture mapping" {
   )
 
   let descriptor1 = sampler_descriptor_or_abort(
-    gltf_texture_image_sampler(doc, 1, default_sampler),
+    gltf_texture_image_sampler(doc, 1, default_sampler, false),
   )
   debug_inspect(
     descriptor1.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
@@ -235,7 +235,7 @@ test "scene gltf wb: parse sampler and texture mapping" {
   )
 
   let descriptor2 = sampler_descriptor_or_abort(
-    gltf_texture_image_sampler(doc, 2, default_sampler),
+    gltf_texture_image_sampler(doc, 2, default_sampler, false),
   )
   debug_inspect(
     descriptor2.address_mode_u == @asset.ImageAddressMode::Repeat,
@@ -263,7 +263,7 @@ test "scene gltf wb: anisotropic default sampler skips gltf filters" {
   default_sampler.set_address_mode(@image.ImageAddressMode::Repeat) |> ignore
   default_sampler.set_anisotropic_filter(4) |> ignore
   let descriptor = sampler_descriptor_or_abort(
-    gltf_texture_image_sampler(doc, 0, default_sampler),
+    gltf_texture_image_sampler(doc, 0, default_sampler, false),
   )
   debug_inspect(
     descriptor.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
@@ -288,6 +288,38 @@ test "scene gltf wb: anisotropic default sampler skips gltf filters" {
 }
 
 ///|
+test "scene gltf wb: override sampler ignores gltf sampler payload" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"samplers\":[{\"magFilter\":9728,\"minFilter\":9984,\"wrapS\":10497,\"wrapT\":33648}],\"textures\":[{\"sampler\":0}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let default_sampler = @image.ImageSamplerDescriptor::nearest()
+  default_sampler.set_address_mode(@image.ImageAddressMode::ClampToEdge)
+  |> ignore
+  let descriptor = sampler_descriptor_or_abort(
+    gltf_texture_image_sampler(doc, 0, default_sampler, true),
+  )
+  debug_inspect(
+    descriptor.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
+    content="true",
+  )
+  debug_inspect(
+    descriptor.address_mode_v == @asset.ImageAddressMode::ClampToEdge,
+    content="true",
+  )
+  debug_inspect(
+    descriptor.mag_filter == @asset.ImageFilterMode::Nearest,
+    content="true",
+  )
+  debug_inspect(
+    descriptor.min_filter == @asset.ImageFilterMode::Nearest,
+    content="true",
+  )
+  debug_inspect(
+    descriptor.mipmap_filter == @asset.ImageFilterMode::Nearest,
+    content="true",
+  )
+}
+
+///|
 test "scene gltf wb: texture sampler fallback uses gltf default sampler" {
   let original_default_sampler = @gltf.gltf_default_image_sampler()
   let custom_default_sampler = @image.ImageSamplerDescriptor::nearest()
@@ -298,7 +330,12 @@ test "scene gltf wb: texture sampler fallback uses gltf default sampler" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"textures\":[{}]}"
   let doc = gltf_parse_document(source).unwrap()
   let descriptor = sampler_descriptor_or_abort(
-    gltf_texture_image_sampler(doc, 0, @gltf.gltf_default_image_sampler()),
+    gltf_texture_image_sampler(
+      doc,
+      0,
+      @gltf.gltf_default_image_sampler(),
+      false,
+    ),
   )
   debug_inspect(
     descriptor.address_mode_u == @asset.ImageAddressMode::Repeat,

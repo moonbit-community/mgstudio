@@ -66,7 +66,7 @@ pub struct AssetServer {
   image_render_asset_usages : Ref[Array[(Int, RenderAssetUsages)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]
-  gltf_mesh_asset_usages : Ref[Array[(String, RenderAssetUsages)]]
+  gltf_loader_settings : Ref[Array[(String, ImageLoaderSettings)]]
   default_sampler_nearest : Ref[Bool]
   mode : Ref[AssetMode]
   processed_file_path : Ref[String?]
@@ -113,7 +113,7 @@ fn asset_server_standalone() -> AssetServer {
     image_render_asset_usages: Ref::new([]),
     image_srgb_settings: Ref::new([]),
     image_usage_settings: Ref::new([]),
-    gltf_mesh_asset_usages: Ref::new([]),
+    gltf_loader_settings: Ref::new([]),
     default_sampler_nearest: Ref::new(false),
     mode: Ref::new(AssetMode::Unprocessed),
     processed_file_path: Ref::new(None),
@@ -542,32 +542,53 @@ fn AssetServer::set_image_usage_bits(
 }
 
 ///|
-fn AssetServer::set_gltf_mesh_asset_usage(
+fn image_loader_settings_clone(
+  settings : ImageLoaderSettings,
+) -> ImageLoaderSettings {
+  ImageLoaderSettings::{
+    format: settings.format,
+    texture_format: settings.texture_format,
+    sampler: settings.sampler,
+    override_sampler: settings.override_sampler,
+    is_srgb: settings.is_srgb,
+    array_layout: settings.array_layout,
+    asset_usage: settings.asset_usage,
+    load_meshes: settings.load_meshes,
+    load_materials: settings.load_materials,
+    load_cameras: settings.load_cameras,
+    load_lights: settings.load_lights,
+    load_animations: settings.load_animations,
+    include_source: settings.include_source,
+  }
+}
+
+///|
+fn AssetServer::set_gltf_loader_settings(
   self : AssetServer,
   asset_path : String,
-  asset_usage : RenderAssetUsages,
+  settings : ImageLoaderSettings,
 ) -> Unit {
-  let next : Array[(String, RenderAssetUsages)] = []
-  for entry in self.gltf_mesh_asset_usages.val {
+  let next : Array[(String, ImageLoaderSettings)] = []
+  for entry in self.gltf_loader_settings.val {
     if entry.0 != asset_path {
       next.push(entry)
     }
   }
-  next.push((asset_path, asset_usage))
-  self.gltf_mesh_asset_usages.val = next
+  next.push((asset_path, image_loader_settings_clone(settings)))
+  self.gltf_loader_settings.val = next
 }
 
 ///|
-pub fn AssetServer::gltf_mesh_asset_usage(
+pub fn AssetServer::gltf_loader_settings_for_asset_path(
   self : AssetServer,
   asset_path : String,
-) -> RenderAssetUsages {
-  for entry in self.gltf_mesh_asset_usages.val {
+) -> ImageLoaderSettings {
+  for entry in self.gltf_loader_settings.val {
     if entry.0 == asset_path {
-      return entry.1
+      return image_loader_settings_clone(entry.1)
     }
   }
-  RenderAssetUsages::all()
+  ImageLoaderSettings::default()
 }
 
 ///|
@@ -1148,7 +1169,7 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(
   }
   let settings = ImageLoaderSettings::default()
   configure(settings)
-  self.set_gltf_mesh_asset_usage(formatted_path, settings.load_meshes)
+  self.set_gltf_loader_settings(formatted_path, settings)
   self.load(formatted_path)
 }
 

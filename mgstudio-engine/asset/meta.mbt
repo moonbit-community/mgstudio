@@ -18,10 +18,16 @@ pub(all) struct ImageLoaderSettings {
   mut format : ImageFormatSetting
   mut texture_format : TextureFormat?
   mut sampler : ImageSampler
+  mut override_sampler : Bool
   mut is_srgb : Bool
   mut array_layout : ImageArrayLayout?
   mut asset_usage : RenderAssetUsages
   mut load_meshes : RenderAssetUsages
+  mut load_materials : RenderAssetUsages
+  mut load_cameras : Bool
+  mut load_lights : Bool
+  mut load_animations : Bool
+  mut include_source : Bool
 }
 
 ///|
@@ -30,10 +36,16 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
     format: ImageFormatSetting::FromExtension,
     texture_format: None,
     sampler: ImageSampler::Default,
+    override_sampler: false,
     is_srgb: true,
     array_layout: None,
     asset_usage: RenderAssetUsages::all(),
     load_meshes: RenderAssetUsages::all(),
+    load_materials: RenderAssetUsages::all(),
+    load_cameras: true,
+    load_lights: true,
+    load_animations: true,
+    include_source: false,
   }
 }
 

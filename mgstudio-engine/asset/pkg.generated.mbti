@@ -373,14 +373,14 @@ pub struct AssetServer {
   image_render_asset_usages : @ref.Ref[Array[(Int, RenderAssetUsages)]]
   image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
   image_usage_settings : @ref.Ref[Array[(Int, Int)]]
-  gltf_mesh_asset_usages : @ref.Ref[Array[(String, RenderAssetUsages)]]
+  gltf_loader_settings : @ref.Ref[Array[(String, ImageLoaderSettings)]]
   default_sampler_nearest : @ref.Ref[Bool]
   mode : @ref.Ref[AssetMode]
   processed_file_path : @ref.Ref[String?]
 }
 pub fn[T] AssetServer::add(Self, T) -> Handle[T]
 pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
-pub fn AssetServer::gltf_mesh_asset_usage(Self, String) -> RenderAssetUsages
+pub fn AssetServer::gltf_loader_settings_for_asset_path(Self, String) -> ImageLoaderSettings
 pub fn[T, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
 pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(Self, P, G) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
@@ -464,10 +464,16 @@ pub(all) struct ImageLoaderSettings {
   mut format : @image.ImageFormatSetting
   mut texture_format : @image.TextureFormat?
   mut sampler : @image.ImageSampler
+  mut override_sampler : Bool
   mut is_srgb : Bool
   mut array_layout : @image.ImageArrayLayout?
   mut asset_usage : RenderAssetUsages
   mut load_meshes : RenderAssetUsages
+  mut load_materials : RenderAssetUsages
+  mut load_cameras : Bool
+  mut load_lights : Bool
+  mut load_animations : Bool
+  mut include_source : Bool
 }
 pub fn ImageLoaderSettings::default() -> Self
 

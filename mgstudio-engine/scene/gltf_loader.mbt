@@ -17,6 +17,7 @@ priv struct PendingGltfSceneRequest {
   scene_handle : @asset.Handle[Scene]
   gltf_path : String
   scene_index : Int
+  loader_settings : @asset.ImageLoaderSettings
   gltf_blob : @asset.Handle[@asset.Blob]
   mut doc : ParsedGltfDocument?
   buffer_blobs : Array[@asset.Handle[@asset.Blob]?]
@@ -28,6 +29,7 @@ priv struct PendingGltfAnimationRequest {
   clip_handle : @asset.Handle[@animation.AnimationClip]
   gltf_path : String
   animation_index : Int
+  loader_settings : @asset.ImageLoaderSettings
   gltf_blob : @asset.Handle[@asset.Blob]
   mut doc : ParsedGltfDocument?
   buffer_blobs : Array[@asset.Handle[@asset.Blob]?]
@@ -528,6 +530,9 @@ fn scene_queue_gltf_request(
     scene_handle,
     gltf_path,
     scene_index,
+    loader_settings: asset_server.gltf_loader_settings_for_asset_path(
+      scene_asset_path,
+    ),
     gltf_blob: asset_server.load_bytes(gltf_path),
     doc: None,
     buffer_blobs: [],
@@ -553,6 +558,9 @@ fn scene_queue_gltf_animation_request(
     clip_handle,
     gltf_path,
     animation_index,
+    loader_settings: asset_server.gltf_loader_settings_for_asset_path(
+      animation_asset_path,
+    ),
     gltf_blob: asset_server.load_bytes(gltf_path),
     doc: None,
     buffer_blobs: [],
@@ -2318,12 +2326,42 @@ fn scene_try_resolve_request_buffers(
 }
 
 ///|
+fn gltf_loader_should_load_meshes(
+  settings : @asset.ImageLoaderSettings,
+) -> Bool {
+  settings.load_meshes.contains(@asset.RenderAssetUsages::main_world()) ||
+  settings.load_meshes.contains(@asset.RenderAssetUsages::render_world())
+}
+
+///|
+fn gltf_loader_should_load_materials(
+  settings : @asset.ImageLoaderSettings,
+) -> Bool {
+  settings.load_materials.contains(@asset.RenderAssetUsages::main_world()) ||
+  settings.load_materials.contains(@asset.RenderAssetUsages::render_world())
+}
+
+///|
+fn gltf_loader_default_sampler_descriptor(
+  settings : @asset.ImageLoaderSettings,
+) -> @image.ImageSamplerDescriptor {
+  match settings.sampler {
+    @asset.ImageSampler::Descriptor(descriptor) => descriptor
+    _ => @gltf.gltf_default_image_sampler()
+  }
+}
+
+///|
 fn gltf_texture_image_sampler(
   doc : ParsedGltfDocument,
   texture_index : Int,
   default_sampler : @image.ImageSamplerDescriptor,
+  override_sampler : Bool,
 ) -> @image.ImageSampler {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
+    return @image.ImageSampler::Descriptor(default_sampler)
+  }
+  if override_sampler {
     return @image.ImageSampler::Descriptor(default_sampler)
   }
 
@@ -2410,6 +2448,8 @@ fn scene_cached_load_texture(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
   texture_index : Int,
+  default_sampler : @image.ImageSamplerDescriptor,
+  override_sampler : Bool,
   cache : Array[@asset.Handle[@asset.Image]?],
 ) -> @asset.Handle[@asset.Image]? {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
@@ -2452,9 +2492,7 @@ fn scene_cached_load_texture(
   @asset.asset_set_texture_sampler(
     handle,
     gltf_texture_image_sampler(
-      doc,
-      texture_index,
-      @gltf.gltf_default_image_sampler(),
+      doc, texture_index, default_sampler, override_sampler,
     ),
   )
   cache[image_index] = Some(handle)
@@ -2467,6 +2505,7 @@ fn scene_build_material_component(
   gltf_path : String,
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
+  loader_settings : @asset.ImageLoaderSettings,
   material_index : Int,
   material_cache : Array[@pbr.MeshMaterial3d?],
   image_cache : Array[@asset.Handle[@asset.Image]?],
@@ -2483,6 +2522,8 @@ fn scene_build_material_component(
   }
 
   let def = doc.materials[material_index]
+  let default_sampler = gltf_loader_default_sampler_descriptor(loader_settings)
+  let override_sampler = loader_settings.override_sampler
   let mut material = @pbr.StandardMaterial::default()
   material = material.with_base_color(def.base_color)
   material = material.with_alpha_mode(def.alpha_mode)
@@ -2505,63 +2546,72 @@ fn scene_build_material_component(
   if def.base_color_texture is Some(texture_index) {
     material = material.with_base_color_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.normal_texture is Some(texture_index) {
     material = material.with_normal_map_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.clearcoat_texture is Some(texture_index) {
     material = material.with_clearcoat_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.clearcoat_roughness_texture is Some(texture_index) {
     material = material.with_clearcoat_roughness_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.clearcoat_normal_texture is Some(texture_index) {
     material = material.with_clearcoat_normal_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.anisotropy_texture is Some(texture_index) {
     material = material.with_anisotropy_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.emissive_texture is Some(texture_index) {
     material = material.with_emissive_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.metallic_roughness_texture is Some(texture_index) {
     material = material.with_metallic_roughness_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
   if def.occlusion_texture is Some(texture_index) {
     material = material.with_occlusion_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
       ),
     )
   }
@@ -2951,9 +3001,13 @@ fn scene_build_from_gltf(
     } else {
       None
     }
-    let animation_target = match node_paths[node_index] {
-      Some(path) => Some(@animation.AnimationTargetId::from_names(path))
-      None => None
+    let animation_target = if request.loader_settings.load_animations {
+      match node_paths[node_index] {
+        Some(path) => Some(@animation.AnimationTargetId::from_names(path))
+        None => None
+      }
+    } else {
+      None
     }
     let scene_node_index = nodes.length()
     nodes.push(
@@ -2973,7 +3027,8 @@ fn scene_build_from_gltf(
       ),
     )
 
-    if node.mesh is Some(mesh_index) &&
+    if gltf_loader_should_load_meshes(request.loader_settings) &&
+      node.mesh is Some(mesh_index) &&
       mesh_index >= 0 &&
       mesh_index < doc.meshes.length() {
       let mesh = doc.meshes[mesh_index]
@@ -3001,22 +3056,29 @@ fn scene_build_from_gltf(
           is Some(mesh_asset) else {
           continue
         }
-        let material_component = match primitive.material {
-          Some(material_index) =>
-            match
-              scene_build_material_component(
-                asset_server,
-                request.gltf_path,
-                doc,
-                buffer_bytes,
-                material_index,
-                material_cache,
-                image_cache,
-              ) {
-              Some(component) => component
-              None => default_material_component
-            }
-          None => default_material_component
+        let material_component = if gltf_loader_should_load_materials(
+            request.loader_settings,
+          ) {
+          match primitive.material {
+            Some(material_index) =>
+              match
+                scene_build_material_component(
+                  asset_server,
+                  request.gltf_path,
+                  doc,
+                  buffer_bytes,
+                  request.loader_settings,
+                  material_index,
+                  material_cache,
+                  image_cache,
+                ) {
+                Some(component) => component
+                None => default_material_component
+              }
+            None => default_material_component
+          }
+        } else {
+          default_material_component
         }
         let material_name = match primitive.material {
           Some(material_index) =>
@@ -3171,6 +3233,9 @@ fn scene_try_resolve_animation_request(
   request : PendingGltfAnimationRequest,
 ) -> (PendingGltfAnimationRequest, @animation.AnimationClip?) {
   let updated = request
+  if !updated.loader_settings.load_animations {
+    return (updated, Some(@animation.AnimationClip::new()))
+  }
 
   if updated.doc is None {
     guard @asset.asset_blob_read_bytes(updated.gltf_blob)
