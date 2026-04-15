@@ -12,7 +12,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
-  "Milky2018/mgstudio/naga_oil" @naga_oil,
+  "Milky2018/moon_wgsl" @naga_oil,
 }
 
 supported_targets = "native"

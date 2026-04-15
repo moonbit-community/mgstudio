@@ -3,7 +3,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/internal",
   "Milky2018/mgstudio/window",
-  "Milky2018/mgstudio/naga_oil" @naga_oil,
+  "Milky2018/moon_wgsl" @naga_oil,
 }
 
 import {

@@ -99,4 +99,5 @@ Per the approved migration strategy, shader parity gates target:
 - runtime shader contract and example behavior parity
 
 They do **not** require re-implementing Bevy's internal `naga` /
-`naga_oil` toolchain inside `mgstudio-engine`.
+`naga_oil` toolchain inside `mgstudio-engine`; that toolchain is now tracked as
+the external module `Milky2018/moon_wgsl`.

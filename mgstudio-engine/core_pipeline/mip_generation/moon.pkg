@@ -4,7 +4,7 @@ import {
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/core_pipeline/mip_generation/experimental" @experimental,
-  "Milky2018/mgstudio/naga_oil" @naga_oil,
+  "Milky2018/moon_wgsl" @naga_oil,
 }
 
 supported_targets = "native"

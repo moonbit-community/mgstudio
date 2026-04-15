@@ -63,6 +63,10 @@ This file must not exceed 200 lines.
 | `assets/shaders/shader_material_wesl_3d.wgsl` | `assets/shaders/custom_material.wgsl` |
 | `assets/shaders/shader_prepass_3d.wgsl` | `assets/shaders/custom_material.wgsl` |
 
+### External shader toolchain split (2026-04-15)
+- `naga_oil` 已从 `mgstudio-engine` 拆出为外部模块 `Milky2018/moon_wgsl`；`mgstudio` 现在直接依赖该模块，不再保留本地 `mgstudio-engine/naga_oil` 包。
+- `mgstudio` 侧继续保留 `@naga_oil` import alias，仅作为调用点别名，不代表本地包仍然存在。
+
 ### WESL 对齐 (2026-04-15)
 - `.wesl` 现已走 Bevy 语义链路：`Shader::from_wesl` + `Source::Wesl` + shader asset loader + `ShaderCache` resolver-backed compile-to-WGSL。
 - runtime `.wesl` 路径不再回退到 `.wgsl` 文件；当前在 source-world startup/prepare 边界完成 asset-backed compile 并把结果注册回 runtime shader registry。

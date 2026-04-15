@@ -5,8 +5,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/naga_oil",
   "Milky2018/mgstudio/wesl",
+  "Milky2018/moon_wgsl",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
@@ -43,18 +43,18 @@ pub(all) struct Shader {
   source : Source
   import_path : ShaderImport
   imports : Array[ShaderImport]
-  additional_imports : Array[@naga_oil.ImportDefinition]
+  additional_imports : Array[@moon_wgsl.ImportDefinition]
   shader_defs : Array[ShaderDefVal]
   file_dependencies : Array[@asset.Handle[Shader]]
   validate_shader : ValidateShader
 }
-pub fn Shader::composable_module_descriptor(Self) -> @naga_oil.ComposableModuleDescriptor
+pub fn Shader::composable_module_descriptor(Self) -> @moon_wgsl.ComposableModuleDescriptor
 pub fn Shader::from_glsl(String, ShaderStage, String) -> Self
 pub fn Shader::from_spirv(Bytes, String) -> Self
 pub fn Shader::from_wesl(String, String) -> Self
 pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
-pub fn Shader::naga_module_descriptor(Self) -> @naga_oil.NagaModuleDescriptor
+pub fn Shader::naga_module_descriptor(Self) -> @moon_wgsl.NagaModuleDescriptor
 pub fn Shader::new(String) -> Self
 
 type ShaderAssetPaths
@@ -67,7 +67,7 @@ pub struct ShaderCache[ShaderModule, RenderDevice] {
   shaders : @hashmap.HashMap[Int, Shader]
   import_path_shaders : @hashmap.HashMap[ShaderImport, @asset.AssetId[Shader]]
   waiting_on_import : @hashmap.HashMap[ShaderImport, Array[@asset.AssetId[Shader]]]
-  composer : @naga_oil.Composer
+  composer : @moon_wgsl.Composer
   module_path_to_asset_id : @hashmap.HashMap[@wesl.ModulePath, @asset.AssetId[Shader]]
 }
 pub fn[ShaderModule, RenderDevice] ShaderCache::contains_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Bool
@@ -154,8 +154,8 @@ pub(all) enum Source {
   SpirV(Bytes)
 }
 pub fn Source::as_str(Self) -> String
-pub fn Source::language(Self) -> @naga_oil.ShaderLanguage
-pub fn Source::shader_type(Self) -> @naga_oil.ShaderType
+pub fn Source::language(Self) -> @moon_wgsl.ShaderLanguage
+pub fn Source::shader_type(Self) -> @moon_wgsl.ShaderType
 
 pub(all) enum ValidateShader {
   Disabled

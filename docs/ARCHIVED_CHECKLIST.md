@@ -198,7 +198,7 @@ Archived completed checklist items moved out of ROADMAP_CHECKLIST to keep line b
 - [x] Package `math`.
 - [x] Package `mesh`.
 - [x] Package `moon.pkg` (root runtime package).
-- [x] Package `naga_oil` (runtime contract path aligned; internal toolchain parity not tracked).
+- [x] Package `naga_oil` extracted to external module `Milky2018/moon_wgsl` (runtime contract path aligned; internal toolchain parity not tracked in `mgstudio-engine`).
 - [x] Package `physics2d`.
 - [x] Package `physics3d`.
 - [x] Package `picking`.

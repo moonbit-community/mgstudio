@@ -1,6 +1,6 @@
 // Canonical native GPU backend owned by the render package.
 import {
-  "Milky2018/mgstudio/naga_oil" @naga_oil,
+  "Milky2018/moon_wgsl" @naga_oil,
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "Milky2018/wgpu_mbt" @wgpu,
