@@ -81,6 +81,22 @@ pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 fn core_2d_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  if !world.resource(ecs_key_opaque2d_phase).is_present() {
+    world.insert_resource(ecs_key_opaque2d_phase, Opaque2dPhase::default())
+  }
+  if !world.resource(ecs_key_alpha_mask2d_phase).is_present() {
+    world.insert_resource(
+      ecs_key_alpha_mask2d_phase,
+      AlphaMask2dPhase::default(),
+    )
+  }
+  if !world.resource(ecs_key_transparent2d_phase).is_present() {
+    world.insert_resource(
+      ecs_key_transparent2d_phase,
+      Transparent2dPhase::default(),
+    )
+  }
   let stage = @render.render_schedule_stage()
   let core_2d_stage = @app.schedule_label("mgstudio.core_pipeline.core_2d")
   let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
@@ -133,9 +149,6 @@ pub fn core_2d_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let next = app
-    .init_resource(fn() { Opaque2dPhase::default() })
-    .init_resource(fn() { AlphaMask2dPhase::default() })
-    .init_resource(fn() { Transparent2dPhase::default() })
   @render.with_render_app(next, core_2d_configure_render_sub_app)
 }
 

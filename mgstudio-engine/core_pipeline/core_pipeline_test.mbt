@@ -70,6 +70,41 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
 }
 
 ///|
+test "core_2d plugin initializes phase resources in render sub-app only" {
+  let app = @app.App::new(@ecs.World::new()).add_plugin(
+    @core_pipeline.core_pipeline_plugin,
+  )
+  let main_world = app.world()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    (try! main_world.get_resource(@core_2d.ecs_key_opaque2d_phase)) is Some(_),
+    content="false",
+  )
+  debug_inspect(
+    (try! main_world.get_resource(@core_2d.ecs_key_alpha_mask2d_phase))
+    is Some(_),
+    content="false",
+  )
+  debug_inspect(
+    (try! main_world.get_resource(@core_2d.ecs_key_transparent2d_phase))
+    is Some(_),
+    content="false",
+  )
+  let opaque_phase = try! render_world
+    .get_resource(@core_2d.ecs_key_opaque2d_phase)
+    .unwrap()
+  let alpha_mask = try! render_world
+    .get_resource(@core_2d.ecs_key_alpha_mask2d_phase)
+    .unwrap()
+  let transparent = try! render_world
+    .get_resource(@core_2d.ecs_key_transparent2d_phase)
+    .unwrap()
+  debug_inspect(opaque_phase.is_empty(), content="true")
+  debug_inspect(alpha_mask.is_empty(), content="true")
+  debug_inspect(transparent.is_empty(), content="true")
+}
+
+///|
 priv struct CameraDriverScheduleProbe {
   mut run_count : Int
 }
