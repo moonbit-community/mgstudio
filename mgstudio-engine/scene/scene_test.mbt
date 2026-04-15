@@ -113,6 +113,7 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   let scene_count = Ref::new(0)
   let has_default_scene = Ref::new(false)
   let first_scene_ready = Ref::new(false)
+  let source_is_none = Ref::new(false)
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
 
   let mut app = @app.App::new(@ecs.World::new())
@@ -151,6 +152,7 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
       root_loaded.val = true
       scene_count.val = gltf.scenes.length()
       has_default_scene.val = gltf.default_scene is Some(_)
+      source_is_none.val = gltf.source is None
       if gltf.scenes.length() > 0 {
         first_scene_ready.val = match scene_assets.get(gltf.scenes[0]) {
           Some(scene) => scene.ready
@@ -165,6 +167,58 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   debug_inspect(scene_count.val == 1, content="true")
   debug_inspect(has_default_scene.val, content="true")
   debug_inspect(first_scene_ready.val, content="true")
+  debug_inspect(source_is_none.val, content="true")
+}
+
+///|
+test "scene: root gltf include_source keeps source payload" {
+  let root_loaded = Ref::new(false)
+  let source_included = Ref::new(false)
+  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
+
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(@shader.ShaderPlugin::default())
+    .add_plugins(@pbr.PbrPlugin::default())
+    .add_plugins(@animation.AnimationPlugin::default())
+    .add_plugins(@scene.ScenePlugin::default())
+    .add_plugins(@gltf.GltfPlugin::default())
+    .add_plugins(@time.TimePlugin::default())
+    .add_systems(
+      @app.Startup,
+      @app.system(fn(_world : @ecs.World) {
+        gltf_handle_ref.val = Some(
+          @asset.AssetServer::new().load_with_settings(
+            "models/torus/torus.gltf",
+            fn(settings : @asset.ImageLoaderSettings) {
+              settings.include_source = true
+            },
+          ),
+        )
+      }),
+    )
+  let gltf_assets_key : @ecs.ResourceKey[@asset.Assets[Gltf]] = @asset.assets_resource_key()
+  for _ in 0..<120 {
+    app = app.run_once()
+    guard gltf_handle_ref.val is Some(handle) else { continue }
+    let frame_world = app.world()
+    let gltf_assets = match (try! frame_world.get_resource(gltf_assets_key)) {
+      Some(assets) => assets
+      None => abort("expected Assets<Gltf> resource")
+    }
+    if gltf_assets.get(handle) is Some(gltf) {
+      root_loaded.val = true
+      source_included.val = match gltf.source {
+        Some(source) => source.contains("\"asset\"")
+        None => false
+      }
+      break
+    }
+  }
+
+  debug_inspect(root_loaded.val, content="true")
+  debug_inspect(source_included.val, content="true")
 }
 
 ///|

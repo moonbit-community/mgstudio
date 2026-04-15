@@ -18,6 +18,7 @@ pub struct Gltf {
   default_scene : @asset.Handle[Scene]?
   animations : Array[@asset.Handle[@animation.AnimationClip]]
   named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
+  source : String?
 }
 
 ///|
@@ -26,8 +27,9 @@ pub fn Gltf::new(
   default_scene : @asset.Handle[Scene]?,
   animations? : Array[@asset.Handle[@animation.AnimationClip]] = [],
   named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])] = [],
+  source? : String? = None,
 ) -> Gltf {
-  Gltf::{ scenes, default_scene, animations, named_animations }
+  Gltf::{ scenes, default_scene, animations, named_animations, source }
 }
 
 ///|
@@ -37,6 +39,7 @@ fn gltf_asset_default() -> Gltf {
     default_scene: None,
     animations: [],
     named_animations: [],
+    source: None,
   }
 }
 
@@ -58,6 +61,9 @@ fn scene_load_gltf_root_asset(
 ) -> Gltf {
   let root_path = path.with_label(None)
   let formatted_path = @asset.asset_format_path(root_path)
+  let loader_settings = asset_server.gltf_loader_settings_for_asset_path(
+    formatted_path,
+  )
   let parsed = match gltf_parse_source(formatted_path, bytes) {
     Some(parsed) => parsed
     None => abort("Failed to parse glTF asset \{formatted_path}")
@@ -100,5 +106,13 @@ fn scene_load_gltf_root_asset(
     named_animations,
     gltf_collect_animation_root_indices(doc),
   )
-  Gltf::new(scenes, default_scene, animations~, named_animations~)
+  let source = if loader_settings.include_source {
+    match gltf_parse_glb(bytes) {
+      Some(parsed_glb) => Some(parsed_glb.0)
+      None => Some(bytes_text(bytes))
+    }
+  } else {
+    None
+  }
+  Gltf::new(scenes, default_scene, animations~, named_animations~, source~)
 }

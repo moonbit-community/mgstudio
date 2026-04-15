@@ -76,8 +76,9 @@ pub struct Gltf {
   default_scene : @asset.Handle[Scene]?
   animations : Array[@asset.Handle[@animation.AnimationClip]]
   named_animations : Array[(String, @asset.Handle[@animation.AnimationClip])]
+  source : String?
 }
-pub fn Gltf::new(Array[@asset.Handle[Scene]], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])]) -> Self
+pub fn Gltf::new(Array[@asset.Handle[Scene]], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])], source? : String?) -> Self
 
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
