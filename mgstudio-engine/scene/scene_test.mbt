@@ -13,7 +13,10 @@
 // limitations under the License.
 
 ///|
-fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
+fn run_scene_test_app_with_gltf_plugin(
+  gltf_plugin : @gltf.GltfPlugin,
+  system : (@ecs.World) -> Unit,
+) -> Unit {
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::default())
   .add_plugins(@mesh.MeshPlugin::default())
@@ -21,11 +24,16 @@ fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   .add_plugins(@pbr.PbrPlugin::default())
   .add_plugins(@animation.AnimationPlugin::default())
   .add_plugins(@scene.ScenePlugin::default())
-  .add_plugins(@gltf.GltfPlugin::default())
+  .add_plugins(gltf_plugin)
   .add_plugins(@time.TimePlugin::default())
   .add_system(system)
   .run_once()
   |> ignore
+}
+
+///|
+fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
+  run_scene_test_app_with_gltf_plugin(@gltf.GltfPlugin::default(), system)
 }
 
 ///|
@@ -187,6 +195,8 @@ test "scene: skinned mesh joints map by gltf node index" {
   let first_joint_ok = Ref::new(false)
   let second_joint_ok = Ref::new(false)
   let inverse_bindposes_count = Ref::new(0)
+  let has_dynamic_bounds = Ref::new(false)
+  let has_no_frustum_culling = Ref::new(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
     let mesh = @pbr.Mesh3d::new(
@@ -270,6 +280,12 @@ test "scene: skinned mesh joints map by gltf node index" {
       first_joint_ok.val = joints[0].id == node7.id
       second_joint_ok.val = joints[1].id == node42.id
     }
+    has_dynamic_bounds.val = (
+        try! world.entity(mesh_node).get() : @mesh.DynamicSkinnedMeshBounds?)
+      is Some(_)
+    has_no_frustum_culling.val = (
+        try! world.entity(mesh_node).get() : @visibility.NoFrustumCulling?)
+      is Some(_)
     let inverse_bindposes_assets_key : @ecs.ResourceKey[
       @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
     ] = @asset.assets_resource_key()
@@ -288,6 +304,8 @@ test "scene: skinned mesh joints map by gltf node index" {
   debug_inspect(first_joint_ok.val, content="true")
   debug_inspect(second_joint_ok.val, content="true")
   debug_inspect(inverse_bindposes_count.val, content="2")
+  debug_inspect(has_dynamic_bounds.val, content="true")
+  debug_inspect(has_no_frustum_culling.val, content="false")
 }
 
 ///|
@@ -352,6 +370,170 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
   })
 
   debug_inspect(skinned_present.val, content="false")
+}
+
+///|
+test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" {
+  let has_dynamic_bounds = Ref::new(false)
+  let has_no_frustum_culling = Ref::new(false)
+
+  run_scene_test_app_with_gltf_plugin(
+    @gltf.GltfPlugin::default().with_skinned_mesh_bounds_policy(
+      @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    ),
+    fn(world : @ecs.World) {
+      let mesh = @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+          ),
+        ),
+      )
+      let material = @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+      )
+      let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
+        world,
+        [@mesh.SkinningMat4::identity(), @mesh.SkinningMat4::identity()],
+      )
+      let scene_handle = @scene.scene_register_gltf_scene(
+        "models/Foo/Foo.gltf#skinned-no-frustum-policy",
+        @scene.Scene::new([
+          @scene.SceneNode3d::new(
+            mesh,
+            material,
+            @transform.Transform::identity(),
+            None,
+            None,
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(5)),
+            skinned_joint_node_indices=Some([7, 42]),
+            skinned_inverse_bindposes=Some(inverse_bindposes_handle),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(0),
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(7)),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(0),
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(42)),
+          ),
+        ]),
+      )
+
+      let root = world.spawn_empty()
+      try! world.set_by_key(
+        root,
+        @scene.ecs_key_scene_root,
+        @scene.SceneRoot::new(scene_handle),
+      )
+      @scene.scene_spawn_roots_system(world)
+
+      world.for_each_component(@gltf.GltfNodeIndex::component(), fn(
+        entity,
+        node_index,
+      ) {
+        if node_index.index() == 5 {
+          has_dynamic_bounds.val = (
+              try! world.entity(entity).get() : @mesh.DynamicSkinnedMeshBounds?)
+            is Some(_)
+          has_no_frustum_culling.val = (
+              try! world.entity(entity).get() : @visibility.NoFrustumCulling?)
+            is Some(_)
+        }
+      })
+    },
+  )
+
+  debug_inspect(has_dynamic_bounds.val, content="false")
+  debug_inspect(has_no_frustum_culling.val, content="true")
+}
+
+///|
+test "scene: skinned mesh policy BindPose keeps static bounds components unset" {
+  let has_dynamic_bounds = Ref::new(false)
+  let has_no_frustum_culling = Ref::new(false)
+
+  run_scene_test_app_with_gltf_plugin(
+    @gltf.GltfPlugin::default().with_skinned_mesh_bounds_policy(
+      @gltf.GltfSkinnedMeshBoundsPolicy::BindPose,
+    ),
+    fn(world : @ecs.World) {
+      let mesh = @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+          ),
+        ),
+      )
+      let material = @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+      )
+      let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
+        world,
+        [@mesh.SkinningMat4::identity(), @mesh.SkinningMat4::identity()],
+      )
+      let scene_handle = @scene.scene_register_gltf_scene(
+        "models/Foo/Foo.gltf#skinned-bind-pose-policy",
+        @scene.Scene::new([
+          @scene.SceneNode3d::new(
+            mesh,
+            material,
+            @transform.Transform::identity(),
+            None,
+            None,
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(5)),
+            skinned_joint_node_indices=Some([7, 42]),
+            skinned_inverse_bindposes=Some(inverse_bindposes_handle),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(0),
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(7)),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(0),
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(42)),
+          ),
+        ]),
+      )
+
+      let root = world.spawn_empty()
+      try! world.set_by_key(
+        root,
+        @scene.ecs_key_scene_root,
+        @scene.SceneRoot::new(scene_handle),
+      )
+      @scene.scene_spawn_roots_system(world)
+
+      world.for_each_component(@gltf.GltfNodeIndex::component(), fn(
+        entity,
+        node_index,
+      ) {
+        if node_index.index() == 5 {
+          has_dynamic_bounds.val = (
+              try! world.entity(entity).get() : @mesh.DynamicSkinnedMeshBounds?)
+            is Some(_)
+          has_no_frustum_culling.val = (
+              try! world.entity(entity).get() : @visibility.NoFrustumCulling?)
+            is Some(_)
+        }
+      })
+    },
+  )
+
+  debug_inspect(has_dynamic_bounds.val, content="false")
+  debug_inspect(has_no_frustum_culling.val, content="false")
 }
 
 ///|

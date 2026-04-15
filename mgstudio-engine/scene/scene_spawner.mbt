@@ -534,6 +534,7 @@ fn scene_spawn_instance_when_ready(
     spawned_scene_index_by_gltf_node[gltf_node] = Some(scene_index)
   }
 
+  let skinned_mesh_bounds_policy = @gltf.gltf_default_skinned_mesh_bounds_policy()
   for pending in pending_skinned_meshes {
     let (entity_index, joint_node_indices, inverse_bindposes_handle) = pending
     if entity_index < 0 || entity_index >= spawned_entities.length() {
@@ -561,11 +562,21 @@ fn scene_spawn_instance_when_ready(
       @mesh.SkinnedMesh::component(),
       @mesh.SkinnedMesh::new(inverse_bindposes_handle, joint_entities),
     )
-    try! world.set_by_key(
-      spawned_entities[entity_index],
-      @mesh.DynamicSkinnedMeshBounds::component(),
-      @mesh.DynamicSkinnedMeshBounds::new(),
-    )
+    match skinned_mesh_bounds_policy {
+      @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic =>
+        try! world.set_by_key(
+          spawned_entities[entity_index],
+          @mesh.DynamicSkinnedMeshBounds::component(),
+          @mesh.DynamicSkinnedMeshBounds::new(),
+        )
+      @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling =>
+        try! world.set_by_key(
+          spawned_entities[entity_index],
+          @visibility.ecs_key_no_frustum_culling,
+          @visibility.NoFrustumCulling::default(),
+        )
+      @gltf.GltfSkinnedMeshBoundsPolicy::BindPose => ()
+    }
   }
 
   scene_runtime_mark_ready(world, instance_id, spawned_entities) |> ignore
