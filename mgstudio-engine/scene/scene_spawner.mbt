@@ -116,6 +116,30 @@ fn scene_runtime_get_instance(
 }
 
 ///|
+pub fn scene_instance_is_ready(world : @ecs.World, instance_id : Int) -> Bool {
+  match scene_runtime_get_instance(world, instance_id) {
+    Some(instance) => instance.ready
+    None => false
+  }
+}
+
+///|
+pub fn scene_iter_instance_entities(
+  world : @ecs.World,
+  instance_id : Int,
+) -> Array[@core.Entity] {
+  match scene_runtime_get_instance(world, instance_id) {
+    Some(instance) =>
+      if instance.ready {
+        instance.spawned_entities
+      } else {
+        []
+      }
+    None => []
+  }
+}
+
+///|
 fn scene_runtime_remove_instance(
   world : @ecs.World,
   instance_id : Int,

@@ -993,6 +993,98 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
 }
 
 ///|
+test "scene: instance readiness and entity iteration follow Bevy semantics" {
+  let ready_before_register = Ref::new(false)
+  let iter_count_before_register = Ref::new(0)
+  let ready_after_register = Ref::new(false)
+  let iter_count_after_register = Ref::new(0)
+  let iterated_entity_alive = Ref::new(false)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let asset_server = @asset.AssetServer::new()
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
+      "models/Foo/Foo.gltf#instance-iter-ready",
+    )
+    let pending_handle = @scene.scene_load_gltf_scene(asset_server, path)
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(pending_handle),
+    )
+
+    @scene.scene_spawn_roots_system(world)
+    let pending_instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    ready_before_register.val = @scene.scene_instance_is_ready(
+      world,
+      pending_instance.instance_id,
+    )
+    iter_count_before_register.val = @scene.scene_iter_instance_entities(
+      world,
+      pending_instance.instance_id,
+    ).length()
+
+    ignore(
+      @scene.scene_register_gltf_scene(
+        path,
+        @scene.Scene::new([
+          @scene.SceneNode3d::new(
+            @pbr.Mesh3d::new(
+              @pbr.mesh_assets_mut_or_abort().val.add(
+                @pbr.Mesh::from_3d_geometry(
+                  @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+                ),
+              ),
+            ),
+            @pbr.MeshMaterial3d::new(
+              @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+            ),
+            @transform.Transform::identity(),
+            None,
+            None,
+          ),
+        ]),
+      ),
+    )
+
+    @scene.scene_spawn_roots_system(world)
+    let ready_instance = try! world
+      .get_by_key(root, @scene.ecs_key_scene_instance)
+      .unwrap()
+    ready_after_register.val = @scene.scene_instance_is_ready(
+      world,
+      ready_instance.instance_id,
+    )
+    let iterated_entities = @scene.scene_iter_instance_entities(
+      world,
+      ready_instance.instance_id,
+    )
+    iter_count_after_register.val = iterated_entities.length()
+    if iterated_entities.length() > 0 {
+      iterated_entity_alive.val = world.is_alive(iterated_entities[0])
+    }
+  })
+  debug_inspect(ready_before_register.val, content="false")
+  debug_inspect(iter_count_before_register.val, content="0")
+  debug_inspect(ready_after_register.val, content="true")
+  debug_inspect(iter_count_after_register.val, content="1")
+  debug_inspect(iterated_entity_alive.val, content="true")
+}
+
+///|
+test "scene: unknown scene instance id reports not ready and empty entities" {
+  let ready = Ref::new(true)
+  let iter_count = Ref::new(-1)
+  run_scene_test_app(fn(world : @ecs.World) {
+    ready.val = @scene.scene_instance_is_ready(world, 999999)
+    iter_count.val = @scene.scene_iter_instance_entities(world, 999999).length()
+  })
+  debug_inspect(ready.val, content="false")
+  debug_inspect(iter_count.val, content="0")
+}
+
+///|
 test "scene: SceneRoot propagates gltf material name" {
   let material_name = Ref::new("")
   run_scene_test_app(fn(world : @ecs.World) {
