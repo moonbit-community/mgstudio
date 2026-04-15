@@ -2292,34 +2292,55 @@ fn scene_try_resolve_request_buffers(
 fn gltf_texture_image_sampler(
   doc : ParsedGltfDocument,
   texture_index : Int,
+  default_sampler : @image.ImageSamplerDescriptor,
 ) -> @image.ImageSampler {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
-    return @image.ImageSampler::linear()
+    return @image.ImageSampler::Descriptor(default_sampler)
   }
 
+  let descriptor = @image.ImageSamplerDescriptor::{
+    label: default_sampler.label,
+    address_mode_u: default_sampler.address_mode_u,
+    address_mode_v: default_sampler.address_mode_v,
+    address_mode_w: default_sampler.address_mode_w,
+    mag_filter: default_sampler.mag_filter,
+    min_filter: default_sampler.min_filter,
+    mipmap_filter: default_sampler.mipmap_filter,
+    lod_min_clamp: default_sampler.lod_min_clamp,
+    lod_max_clamp: default_sampler.lod_max_clamp,
+    compare: default_sampler.compare,
+    anisotropy_clamp: default_sampler.anisotropy_clamp,
+    border_color: default_sampler.border_color,
+  }
   let mut nearest = false
   let mut repeat = true
+  let mut has_sampler = false
   if doc.textures[texture_index].sampler is Some(sampler_index) &&
     sampler_index >= 0 &&
     sampler_index < doc.samplers.length() {
     let sampler = doc.samplers[sampler_index]
     nearest = sampler.nearest
     repeat = sampler.repeat
+    has_sampler = true
   }
-
-  let descriptor = if nearest {
-    @image.ImageSamplerDescriptor::nearest()
-  } else {
-    @image.ImageSamplerDescriptor::linear()
+  if has_sampler {
+    descriptor.set_filter(
+      if nearest {
+        @image.ImageFilterMode::Nearest
+      } else {
+        @image.ImageFilterMode::Linear
+      },
+    )
+    |> ignore
+    descriptor.set_address_mode(
+      if repeat {
+        @image.ImageAddressMode::Repeat
+      } else {
+        @image.ImageAddressMode::ClampToEdge
+      },
+    )
+    |> ignore
   }
-  descriptor.set_address_mode(
-    if repeat {
-      @image.ImageAddressMode::Repeat
-    } else {
-      @image.ImageAddressMode::ClampToEdge
-    },
-  )
-  |> ignore
   @image.ImageSampler::Descriptor(descriptor)
 }
 
@@ -2393,7 +2414,11 @@ fn scene_cached_load_texture(
   }
   @asset.asset_set_texture_sampler(
     handle,
-    gltf_texture_image_sampler(doc, texture_index),
+    gltf_texture_image_sampler(
+      doc,
+      texture_index,
+      @gltf.gltf_default_image_sampler(),
+    ),
   )
   cache[image_index] = Some(handle)
   Some(handle)

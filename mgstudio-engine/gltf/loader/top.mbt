@@ -166,6 +166,7 @@ pub fn GltfSkinnedMeshBoundsPolicy::default() -> GltfSkinnedMeshBoundsPolicy {
 ///|
 pub struct GltfPlugin {
   pbr_material_handler_enabled : Bool
+  default_image_sampler : @image.ImageSamplerDescriptor
   convert_coordinates : GltfConvertCoordinates
   custom_vertex_attributes : Array[GltfCustomVertexAttribute]
   extension_handlers : Array[GltfExtensionHandler]
@@ -176,6 +177,7 @@ pub struct GltfPlugin {
 pub fn GltfPlugin::default() -> GltfPlugin {
   {
     pbr_material_handler_enabled: true,
+    default_image_sampler: @image.ImageSamplerDescriptor::linear(),
     convert_coordinates: GltfConvertCoordinates::default(),
     custom_vertex_attributes: [],
     extension_handlers: [],
@@ -230,6 +232,14 @@ pub fn GltfPlugin::with_convert_coordinates(
 }
 
 ///|
+pub fn GltfPlugin::with_default_image_sampler(
+  self : GltfPlugin,
+  sampler : @image.ImageSamplerDescriptor,
+) -> GltfPlugin {
+  { ..self, default_image_sampler: sampler }
+}
+
+///|
 pub fn GltfPlugin::add_extension_handler(
   self : GltfPlugin,
   handler : GltfExtensionHandler,
@@ -261,6 +271,7 @@ fn GltfLoaderPluginRuntimeState::from_bootstrap() -> GltfLoaderPluginRuntimeStat
 
 ///|
 pub struct GltfLoaderRuntimeState {
+  mut default_image_sampler : @image.ImageSamplerDescriptor
   mut default_convert_coordinates : GltfConvertCoordinates
   mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
   custom_vertex_attributes : Array[GltfCustomVertexAttribute]
@@ -273,6 +284,7 @@ fn GltfLoaderRuntimeState::from_bootstrap() -> GltfLoaderRuntimeState {
     custom_vertex_attributes.push(attribute)
   }
   GltfLoaderRuntimeState::{
+    default_image_sampler: gltf_default_image_sampler_bootstrap_ref.val,
     default_convert_coordinates: gltf_default_convert_coordinates_bootstrap_ref.val,
     default_skinned_mesh_bounds_policy: gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val,
     custom_vertex_attributes,
@@ -289,6 +301,11 @@ let gltf_loader_registered_bootstrap_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 let gltf_custom_vertex_attributes_bootstrap : Array[GltfCustomVertexAttribute] = []
+
+///|
+let gltf_default_image_sampler_bootstrap_ref : Ref[
+  @image.ImageSamplerDescriptor,
+] = Ref::new(@image.ImageSamplerDescriptor::linear())
 
 ///|
 let gltf_default_convert_coordinates_bootstrap_ref : Ref[GltfConvertCoordinates] = Ref::new(
@@ -349,6 +366,7 @@ pub fn gltf_loader_runtime_plugin(
       GltfLoaderRuntimeState::from_bootstrap(),
     )
     gltf_custom_vertex_attributes_bootstrap.clear()
+    gltf_default_image_sampler_bootstrap_ref.val = @image.ImageSamplerDescriptor::linear()
     gltf_default_convert_coordinates_bootstrap_ref.val = GltfConvertCoordinates::default()
     gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = GltfSkinnedMeshBoundsPolicy::default()
     next
@@ -458,6 +476,7 @@ pub fn gltf_plugin_build_with(
   plugin : GltfPlugin,
 ) -> @app.App[@ecs.World] {
   gltf_set_pbr_material_handler_enabled(plugin.pbr_material_handler_enabled)
+  gltf_set_default_image_sampler(plugin.default_image_sampler)
   gltf_set_default_convert_coordinates(plugin.convert_coordinates)
   gltf_set_default_skinned_mesh_bounds_policy(plugin.skinned_mesh_bounds_policy)
   gltf_clear_custom_vertex_attributes()
@@ -505,6 +524,26 @@ pub fn gltf_resolve_custom_vertex_attribute_name(name : String) -> String? {
 ///|
 pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
   @gltf_loader_extensions.gltf_set_pbr_material_handler_enabled(enabled)
+}
+
+///|
+pub fn gltf_default_image_sampler() -> @image.ImageSamplerDescriptor {
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.default_image_sampler
+  } else {
+    gltf_default_image_sampler_bootstrap_ref.val
+  }
+}
+
+///|
+pub fn gltf_set_default_image_sampler(
+  sampler : @image.ImageSamplerDescriptor,
+) -> Unit {
+  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
+    state_ref.val.default_image_sampler = sampler
+  } else {
+    gltf_default_image_sampler_bootstrap_ref.val = sampler
+  }
 }
 
 ///|

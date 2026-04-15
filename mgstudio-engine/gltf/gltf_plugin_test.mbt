@@ -63,6 +63,24 @@ test "gltf: plugin surface can configure default coordinate conversion" {
 }
 
 ///|
+test "gltf: plugin surface can configure default image sampler" {
+  let original = gltf_default_image_sampler()
+  let nearest_clamp = @image.ImageSamplerDescriptor::nearest()
+  nearest_clamp.set_address_mode(@image.ImageAddressMode::ClampToEdge) |> ignore
+  gltf_set_default_image_sampler(nearest_clamp)
+  let configured = gltf_default_image_sampler()
+  debug_inspect(
+    configured.min_filter == @image.ImageFilterMode::Nearest,
+    content="true",
+  )
+  debug_inspect(
+    configured.address_mode_u == @image.ImageAddressMode::ClampToEdge,
+    content="true",
+  )
+  gltf_set_default_image_sampler(original)
+}
+
+///|
 test "gltf: loader registration runs in finish lifecycle and only once" {
   let registration_count = Ref::new(0)
   @gltf_loader.gltf_install_loader_registration(fn() {

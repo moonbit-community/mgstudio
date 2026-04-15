@@ -23,6 +23,18 @@ pub fn gltf_pbr_material_handler_enabled() -> Bool {
 }
 
 ///|
+pub fn gltf_set_default_image_sampler(
+  sampler : @image.ImageSamplerDescriptor,
+) -> Unit {
+  @gltf_loader.gltf_set_default_image_sampler(sampler)
+}
+
+///|
+pub fn gltf_default_image_sampler() -> @image.ImageSamplerDescriptor {
+  @gltf_loader.gltf_default_image_sampler()
+}
+
+///|
 pub fn gltf_set_default_convert_coordinates(
   convert_coordinates : GltfConvertCoordinates,
 ) -> Unit {

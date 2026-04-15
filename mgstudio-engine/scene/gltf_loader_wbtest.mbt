@@ -188,9 +188,40 @@ test "scene gltf wb: parse sampler and texture mapping" {
   debug_inspect(doc.samplers[0].repeat, content="true")
   debug_inspect(doc.samplers[1].nearest, content="true")
   debug_inspect(doc.samplers[1].repeat, content="false")
-  debug_inspect(sampler_tag(gltf_texture_image_sampler(doc, 0)), content="3")
-  debug_inspect(sampler_tag(gltf_texture_image_sampler(doc, 1)), content="2")
-  debug_inspect(sampler_tag(gltf_texture_image_sampler(doc, 2)), content="1")
+  let default_sampler = @image.ImageSamplerDescriptor::linear()
+  default_sampler.set_address_mode(@image.ImageAddressMode::Repeat) |> ignore
+  debug_inspect(
+    sampler_tag(gltf_texture_image_sampler(doc, 0, default_sampler)),
+    content="3",
+  )
+  debug_inspect(
+    sampler_tag(gltf_texture_image_sampler(doc, 1, default_sampler)),
+    content="2",
+  )
+  debug_inspect(
+    sampler_tag(gltf_texture_image_sampler(doc, 2, default_sampler)),
+    content="1",
+  )
+}
+
+///|
+test "scene gltf wb: texture sampler fallback uses gltf default sampler" {
+  let original_default_sampler = @gltf.gltf_default_image_sampler()
+  let custom_default_sampler = @image.ImageSamplerDescriptor::nearest()
+  custom_default_sampler.set_address_mode(@image.ImageAddressMode::ClampToEdge)
+  |> ignore
+  @gltf.gltf_set_default_image_sampler(custom_default_sampler)
+
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"textures\":[{}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  debug_inspect(
+    sampler_tag(
+      gltf_texture_image_sampler(doc, 0, @gltf.gltf_default_image_sampler()),
+    ),
+    content="2",
+  )
+
+  @gltf.gltf_set_default_image_sampler(original_default_sampler)
 }
 
 ///|

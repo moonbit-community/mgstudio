@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/gltf/loader",
   "Milky2018/mgstudio/gltf/loader/extensions",
   "Milky2018/mgstudio/gltf/loader/gltf_ext",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
 }
 
@@ -33,6 +34,8 @@ pub fn gltf_convert_coordinates_vec3_components((Float, Float, Float)) -> (Float
 pub fn gltf_custom_vertex_attributes() -> Array[@loader.GltfCustomVertexAttribute]
 
 pub fn gltf_default_convert_coordinates() -> @loader.GltfConvertCoordinates
+
+pub fn gltf_default_image_sampler() -> @image.ImageSamplerDescriptor
 
 pub fn gltf_default_material_asset_label() -> @gltf_ext.GltfAssetLabel
 
@@ -75,6 +78,8 @@ pub fn gltf_resolve_custom_vertex_attribute_name(String) -> String?
 pub fn gltf_scene_asset_label(@gltf_ext.GltfSceneIndex) -> @gltf_ext.GltfAssetLabel
 
 pub fn gltf_set_default_convert_coordinates(@loader.GltfConvertCoordinates) -> Unit
+
+pub fn gltf_set_default_image_sampler(@image.ImageSamplerDescriptor) -> Unit
 
 pub fn gltf_set_default_skinned_mesh_bounds_policy(@loader.GltfSkinnedMeshBoundsPolicy) -> Unit
 

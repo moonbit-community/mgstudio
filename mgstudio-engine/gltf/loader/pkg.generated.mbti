@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf/loader/extensions",
   "Milky2018/mgstudio/gltf/loader/gltf_ext",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
 }
@@ -29,6 +30,8 @@ pub fn gltf_convert_coordinates_vec3_components((Float, Float, Float)) -> (Float
 pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute]
 
 pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates
+
+pub fn gltf_default_image_sampler() -> @image.ImageSamplerDescriptor
 
 pub fn gltf_default_material_asset_label() -> @gltf_ext.GltfAssetLabel
 
@@ -84,6 +87,8 @@ pub fn gltf_scene_index(Int) -> @gltf_ext.GltfSceneIndex
 
 pub fn gltf_set_default_convert_coordinates(GltfConvertCoordinates) -> Unit
 
+pub fn gltf_set_default_image_sampler(@image.ImageSamplerDescriptor) -> Unit
+
 pub fn gltf_set_default_skinned_mesh_bounds_policy(GltfSkinnedMeshBoundsPolicy) -> Unit
 
 pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
@@ -115,6 +120,7 @@ pub fn GltfCustomVertexAttribute::mapped_name(Self) -> String
 pub fn GltfCustomVertexAttribute::new(String, String) -> Self
 
 pub struct GltfLoaderRuntimeState {
+  mut default_image_sampler : @image.ImageSamplerDescriptor
   mut default_convert_coordinates : GltfConvertCoordinates
   mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
   custom_vertex_attributes : Array[GltfCustomVertexAttribute]
@@ -123,6 +129,7 @@ pub impl @app.Resource for GltfLoaderRuntimeState
 
 pub struct GltfPlugin {
   pbr_material_handler_enabled : Bool
+  default_image_sampler : @image.ImageSamplerDescriptor
   convert_coordinates : GltfConvertCoordinates
   custom_vertex_attributes : Array[GltfCustomVertexAttribute]
   extension_handlers : Array[@extensions.GltfExtensionHandler]
@@ -132,6 +139,7 @@ pub fn GltfPlugin::add_custom_vertex_attribute(Self, String, String) -> Self
 pub fn GltfPlugin::add_extension_handler(Self, @extensions.GltfExtensionHandler) -> Self
 pub fn GltfPlugin::default() -> Self
 pub fn GltfPlugin::with_convert_coordinates(Self, GltfConvertCoordinates) -> Self
+pub fn GltfPlugin::with_default_image_sampler(Self, @image.ImageSamplerDescriptor) -> Self
 pub fn GltfPlugin::with_pbr_material_handler_enabled(Self, Bool) -> Self
 pub fn GltfPlugin::with_skinned_mesh_bounds_policy(Self, GltfSkinnedMeshBoundsPolicy) -> Self
 pub impl @app.Plugin for GltfPlugin
