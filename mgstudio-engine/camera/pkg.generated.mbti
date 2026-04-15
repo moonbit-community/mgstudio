@@ -39,6 +39,8 @@ pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
 
 pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn camera_projection_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let camera_update_systems : String
 
 pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
@@ -76,6 +78,15 @@ pub fn perspective_projection_3d_with_aspect_ratio(@render.PerspectiveProjection
 // Errors
 
 // Types and methods
+pub struct CameraPlugin {
+}
+pub fn CameraPlugin::default() -> Self
+pub impl @app.Plugin for CameraPlugin
+
+pub struct CameraProjectionPlugin {
+}
+pub fn CameraProjectionPlugin::default() -> Self
+pub impl @app.Plugin for CameraProjectionPlugin
 
 // Type aliases
 pub using @primitives {type Aabb}

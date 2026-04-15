@@ -16,13 +16,68 @@
 // Bevy source: `bevy/crates/bevy_camera/src/lib.rs`.
 
 ///|
+const CAMERA_PROJECTION_PLUGIN_NAME : String = "mgstudio.camera.CameraProjectionPlugin"
+
+///|
+const CAMERA_PLUGIN_NAME : String = "mgstudio.camera.CameraPlugin"
+
+///|
 pub let camera_update_systems : @app.SystemSet = @app.system_set(
   "mgstudio.camera.update",
 )
 
 ///|
+pub struct CameraProjectionPlugin {}
+
+///|
+pub fn CameraProjectionPlugin::default() -> CameraProjectionPlugin {
+  CameraProjectionPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for CameraProjectionPlugin with name(_self) {
+  CAMERA_PROJECTION_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for CameraProjectionPlugin with build(_self, app) {
+  camera_projection_plugin(app)
+}
+
+///|
+pub struct CameraPlugin {}
+
+///|
+pub fn CameraPlugin::default() -> CameraPlugin {
+  CameraPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for CameraPlugin with name(_self) {
+  CAMERA_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for CameraPlugin with build(_self, app) {
+  camera_plugin(app)
+}
+
+///|
+pub fn camera_projection_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app.add_post_update_system_config(
+    @app.system(@pbr.render3d_update_frusta_system)
+    .in_set(camera_update_systems)
+    .after(@transform.transform_set_propagate),
+  )
+}
+
+///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @camera_visibility.visibility_plugin(
-    app.init_resource(fn() { @sprite.ClearColor::default() }),
+    app
+    .init_resource(fn() { @sprite.ClearColor::default() })
+    .add_plugins(CameraProjectionPlugin::default()),
   )
 }
