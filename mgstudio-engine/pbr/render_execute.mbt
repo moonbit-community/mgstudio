@@ -223,7 +223,7 @@ fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
 }
 
 ///|
-fn render3d_prepare_wesl_shader_paths(
+fn render3d_prepare_shader_asset_paths(
   source_world : @ecs.World,
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
@@ -235,15 +235,19 @@ fn render3d_prepare_wesl_shader_paths(
       None => None
     }
     guard shader_path is Some(path) else { continue }
-    if !@shader.shader_path_is_wesl(path) || prepared_paths.contains(path) {
+    if prepared_paths.contains(path) {
       continue
     }
     prepared_paths.set(path, true)
-    @shader.shader_register_wesl_runtime_source(source_world, path, []) catch {
-      err =>
-        abort(
-          "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
-        )
+    if @shader.shader_path_is_wesl(path) {
+      @shader.shader_register_wesl_runtime_source(source_world, path, []) catch {
+        err =>
+          abort(
+            "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
+          )
+      }
+    } else {
+      @shader.shader_register_wgsl_runtime_source(source_world, path)
     }
   }
 }
@@ -302,7 +306,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     world, source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_extract_material_instances(world, meshes)
-  render3d_prepare_wesl_shader_paths(source_world, meshes)
+  render3d_prepare_shader_asset_paths(source_world, meshes)
   render3d_prewarm_mesh_pipelines(meshes)
   let prepared_camera_queues = render3d_prepare_camera_queue_entries(
     phase_state_ref,

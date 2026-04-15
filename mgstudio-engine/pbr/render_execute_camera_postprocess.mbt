@@ -1023,6 +1023,8 @@ fn render3d_draw_camera_custom_post_process_stage(
           "failed to compile render3d wesl postprocess shader: \{shader_path}: \{err.message()}",
         )
     }
+  } else {
+    @shader.shader_register_wgsl_runtime_source(source_world, shader_path)
   }
   @render.host_gpu_draw_custom_postprocess3d(
     scene_texture_id~,

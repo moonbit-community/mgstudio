@@ -1,0 +1,7 @@
+import {
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/ref",
+  "moonbitlang/core/encoding/utf8" @utf8,
+}
+
+supported_targets = "native"

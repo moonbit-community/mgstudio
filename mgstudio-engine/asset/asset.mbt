@@ -346,6 +346,11 @@ fn bytes_to_text(bytes : Bytes) -> String {
 }
 
 ///|
+pub fn asset_text_to_bytes(text : String) -> Bytes {
+  @utf8.encode(text[:])
+}
+
+///|
 fn load_optional_asset_text(path : String) -> String? {
   if path.length() >= 5 &&
     path[path.length() - 5:path.length()].to_string() == ".meta" {
@@ -943,7 +948,7 @@ pub fn host_asset_set_texture_sampler(
   anisotropy_clamp~ : Int,
   border_color~ : Int,
 ) -> Unit {
-  @render.asset_set_texture_sampler(
+  @render_texture.asset_set_texture_sampler(
     texture_id~,
     address_mode_u~,
     address_mode_v~,

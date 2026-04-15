@@ -79,11 +79,6 @@ let asset_source_readers_ref : Ref[@hashmap.HashMap[String, AssetReader]] = Ref:
 )
 
 ///|
-let embedded_assets_ref : Ref[@hashmap.HashMap[String, Bytes]] = Ref::new(
-  @hashmap.HashMap::new(),
-)
-
-///|
 const DEFAULT_DATA_DIR : String = "./tmp/data"
 
 ///|
@@ -450,27 +445,16 @@ fn compose_virtual_asset_path(
 }
 
 ///|
-fn canonical_virtual_asset_path(path : String) -> String {
-  let parsed = parse_virtual_asset_path(path)
-  compose_virtual_asset_path(parsed.source_name, parsed.relative_path, None)
-}
-
-///|
-fn register_embedded_asset_bytes(path : String, bytes : Bytes) -> Unit {
-  embedded_assets_ref.val.set(canonical_virtual_asset_path(path), bytes)
-}
-
-///|
 pub fn register_embedded_asset_virtual_bytes(
   path : String,
   bytes : Bytes,
 ) -> Unit {
-  register_embedded_asset_bytes(path, bytes)
+  @embedded_asset.register_embedded_asset_virtual_bytes(path, bytes)
 }
 
 ///|
 fn embedded_asset_bytes(path : String) -> Bytes? {
-  embedded_assets_ref.val.get(canonical_virtual_asset_path(path))
+  @embedded_asset.embedded_asset_virtual_bytes(path)
 }
 
 ///|
@@ -3131,7 +3115,7 @@ fn load_texture_bytes_with_container(
 ) -> Int {
   let loaded = bytes.length() > 0
   if ktx2_decode_uncompressed_3d_payload(bytes) is Some(payload) {
-    let texture_id = @render.asset_create_texture_3d_with_format(
+    let texture_id = @render_texture.asset_create_texture_3d_with_format(
       width=payload.width,
       height=payload.height,
       depth=payload.depth,
@@ -3147,7 +3131,7 @@ fn load_texture_bytes_with_container(
     payload.is_cube |> ignore
     // Current material/sprite bind-group layouts sample `texture_2d`, so KTX2
     // cubemaps are uploaded as stacked 2D textures for runtime compatibility.
-    let texture_id = @render.asset_create_texture_stacked_2d_with_format(
+    let texture_id = @render_texture.asset_create_texture_stacked_2d_with_format(
       width=payload.width,
       height_per_slice=payload.height,
       slice_count=payload.slice_count,
@@ -3172,7 +3156,7 @@ fn load_texture_bytes_with_container(
   }
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let texture_id = @render.asset_create_texture_empty(
+  let texture_id = @render_texture.asset_create_texture_empty(
     width=safe_width,
     height=safe_height,
     mip_level_count=1,
@@ -3181,7 +3165,7 @@ fn load_texture_bytes_with_container(
   if texture_id <= 0 {
     return 0
   }
-  @render.asset_write_texture_region_rgba8(
+  @render_texture.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
     y=0,
@@ -3248,7 +3232,7 @@ fn bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
 fn create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int {
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let texture_id = @render.asset_create_texture_empty(
+  let texture_id = @render_texture.asset_create_texture_empty(
     width=safe_width,
     height=safe_height,
     mip_level_count=1,
@@ -3260,7 +3244,7 @@ fn create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int {
   let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => {
     (0).to_byte()
   })
-  @render.asset_write_texture_region_rgba8(
+  @render_texture.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
     y=0,
@@ -3287,7 +3271,7 @@ fn create_dynamic_texture_mipped(
   }
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let texture_id = @render.asset_create_texture_empty(
+  let texture_id = @render_texture.asset_create_texture_empty(
     width=safe_width,
     height=safe_height,
     mip_level_count=safe_mip_level_count,
@@ -3299,7 +3283,7 @@ fn create_dynamic_texture_mipped(
   let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => {
     (0).to_byte()
   })
-  @render.asset_write_texture_region_rgba8(
+  @render_texture.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
     y=0,
@@ -3326,7 +3310,7 @@ fn create_render_target_with_formats(
     Some(raw) => raw
     None => -1
   }
-  let texture_id = @render.asset_create_render_target_with_formats(
+  let texture_id = @render_texture.asset_create_render_target_with_formats(
     width=safe_width,
     height=safe_height,
     nearest~,
@@ -3378,7 +3362,7 @@ fn update_texture_region_bytes(
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
   let upload_pixels = source_bytes_to_rgba8(bytes, safe_width, safe_height)
-  @render.asset_write_texture_region_rgba8(
+  @render_texture.asset_write_texture_region_rgba8(
     texture_id~,
     x~,
     y~,
@@ -3410,7 +3394,7 @@ fn update_texture_region_mip_bytes(
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
   let upload_pixels = source_bytes_to_rgba8(bytes, safe_width, safe_height)
-  @render.asset_write_texture_region_rgba8_mip(
+  @render_texture.asset_write_texture_region_rgba8_mip(
     texture_id~,
     x~,
     y~,
@@ -3434,13 +3418,16 @@ fn update_texture_region_mip_bytes(
 
 ///|
 fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
-  let view_id = @render.asset_create_texture_mip_view(texture_id~, mip_level~)
+  let view_id = @render_texture.asset_create_texture_mip_view(
+    texture_id~,
+    mip_level~,
+  )
   if view_id <= 0 {
     return 0
   }
-  let width = @render.asset_texture_width(texture_id=view_id)
-  let height = @render.asset_texture_height(texture_id=view_id)
-  let loaded = @render.asset_is_texture_loaded(texture_id=view_id)
+  let width = @render_texture.asset_texture_width(texture_id=view_id)
+  let height = @render_texture.asset_texture_height(texture_id=view_id)
+  let loaded = @render_texture.asset_is_texture_loaded(texture_id=view_id)
   sync_texture_record(view_id, width, height, loaded)
   if texture_pixels(texture_id) is Some(cached) {
     set_texture_pixels(
@@ -3453,10 +3440,10 @@ fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
 
 ///|
 fn texture_width(texture_id : Int) -> Int {
-  let width = @render.asset_texture_width(texture_id~)
+  let width = @render_texture.asset_texture_width(texture_id~)
   if width > 0 {
-    let height = @render.asset_texture_height(texture_id~)
-    let loaded = @render.asset_is_texture_loaded(texture_id~)
+    let height = @render_texture.asset_texture_height(texture_id~)
+    let loaded = @render_texture.asset_is_texture_loaded(texture_id~)
     sync_texture_record(texture_id, width, height, loaded)
   }
   width
@@ -3464,10 +3451,10 @@ fn texture_width(texture_id : Int) -> Int {
 
 ///|
 fn texture_height(texture_id : Int) -> Int {
-  let height = @render.asset_texture_height(texture_id~)
+  let height = @render_texture.asset_texture_height(texture_id~)
   if height > 0 {
-    let width = @render.asset_texture_width(texture_id~)
-    let loaded = @render.asset_is_texture_loaded(texture_id~)
+    let width = @render_texture.asset_texture_width(texture_id~)
+    let loaded = @render_texture.asset_is_texture_loaded(texture_id~)
     sync_texture_record(texture_id, width, height, loaded)
   }
   height
@@ -3475,9 +3462,9 @@ fn texture_height(texture_id : Int) -> Int {
 
 ///|
 fn is_texture_loaded(texture_id : Int) -> Bool {
-  let loaded = @render.asset_is_texture_loaded(texture_id~)
-  let width = @render.asset_texture_width(texture_id~)
-  let height = @render.asset_texture_height(texture_id~)
+  let loaded = @render_texture.asset_is_texture_loaded(texture_id~)
+  let width = @render_texture.asset_texture_width(texture_id~)
+  let height = @render_texture.asset_texture_height(texture_id~)
   if width > 0 && height > 0 {
     sync_texture_record(texture_id, width, height, loaded)
   }
@@ -3486,7 +3473,7 @@ fn is_texture_loaded(texture_id : Int) -> Bool {
 
 ///|
 fn supported_compressed_image_formats() -> Int {
-  @render.asset_supported_compressed_image_formats()
+  @render_texture.asset_supported_compressed_image_formats()
 }
 
 ///|
@@ -3496,7 +3483,7 @@ fn copy_texture_to_texture(
   dst_y~ : Int,
   src_texture_id~ : Int,
 ) -> Unit {
-  @render.asset_copy_texture_to_texture(
+  @render_texture.asset_copy_texture_to_texture(
     dst_texture_id~,
     dst_x~,
     dst_y~,
@@ -3524,7 +3511,7 @@ fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
   if width <= 0 || height <= 0 {
     return
   }
-  if @render.screenshot_capture_texture_sync(texture_id~) is Some(capture) {
+  if @renderer.screenshot_capture_texture_sync(texture_id~) is Some(capture) {
     save_rgba8_png(
       width=capture.width,
       height=capture.height,

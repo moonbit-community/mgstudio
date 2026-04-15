@@ -3,4 +3,8 @@
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
   @wgsl.register_wgsl_source("core_pipeline/blit/blit.wgsl", blit_wgsl_source)
+  @asset.register_embedded_asset_virtual_bytes(
+    "core_pipeline/blit/blit.wgsl",
+    @asset.asset_text_to_bytes(blit_wgsl_source),
+  )
 }

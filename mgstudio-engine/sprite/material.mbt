@@ -496,7 +496,6 @@ fn render2d_register_shader_source_asset(
   world : @ecs.World,
   path : String,
 ) -> Unit {
-  world |> ignore
   if @shader.shader_path_is_wesl(path) {
     @shader.shader_register_wesl_runtime_source(world, path, []) catch {
       err =>
@@ -506,15 +505,7 @@ fn render2d_register_shader_source_asset(
     }
     return
   }
-  let source = @wgsl.Composer::default().load_wgsl_source_required_raw(
-    "assets", path,
-  ) catch {
-    err =>
-      abort(
-        "failed to load render2d shader asset text: \{path}: \{err.message()}",
-      )
-  }
-  @render.register_wgsl_source(path, source)
+  @shader.shader_register_wgsl_runtime_source(world, path)
 }
 
 ///|

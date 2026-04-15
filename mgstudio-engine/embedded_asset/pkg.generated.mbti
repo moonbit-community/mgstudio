@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/embedded_asset"
+
+// Values
+pub fn asset_text_to_bytes(String) -> Bytes
+
+pub fn embedded_asset_virtual_bytes(String) -> Bytes?
+
+pub fn register_embedded_asset_virtual_bytes(String, Bytes) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

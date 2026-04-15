@@ -8,7 +8,6 @@ import {
 }
 
 // Values
-pub fn register_embedded_wgsl_sources() -> Unit
 
 // Errors
 

@@ -38,7 +38,6 @@ pub impl @app.Plugin for DefaultPlugins with name(_self) {
 
 ///|
 pub impl @app.Plugin for DefaultPlugins with build(_self, app) {
-  register_embedded_wgsl_sources()
   app.add_plugins(DefaultPlugins::build())
 }
 
@@ -83,6 +82,5 @@ pub impl @app.Plugin for MinimalPlugins with name(_self) {
 
 ///|
 pub impl @app.Plugin for MinimalPlugins with build(_self, app) {
-  register_embedded_wgsl_sources()
   app.add_plugins(MinimalPlugins::build())
 }
