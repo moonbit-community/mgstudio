@@ -254,11 +254,15 @@ fn scene_registry_if_present() -> SceneAssetRegistryState? {
 ///|
 priv struct SceneModifiedEventsCursorState {
   modified_event_cursor : Ref[Int]
+  debounced_scene_asset_ages : Ref[Map[Int, Int]]
 }
 
 ///|
 fn SceneModifiedEventsCursorState::default() -> SceneModifiedEventsCursorState {
-  SceneModifiedEventsCursorState::{ modified_event_cursor: Ref::new(0) }
+  SceneModifiedEventsCursorState::{
+    modified_event_cursor: Ref::new(0),
+    debounced_scene_asset_ages: Ref::new({}),
+  }
 }
 
 ///|
@@ -280,6 +284,20 @@ fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
   match
     (try! world.get_resource(scene_modified_events_cursor_state_resource_key())) {
     Some(state) => state.modified_event_cursor
+    None =>
+      abort(
+        "scene modified-events cursor resource is missing; ScenePlugin must initialize SceneModifiedEventsCursorState before running reload systems",
+      )
+  }
+}
+
+///|
+fn scene_debounced_scene_asset_ages_ref_or_abort(
+  world : @ecs.World,
+) -> Ref[Map[Int, Int]] {
+  match
+    (try! world.get_resource(scene_modified_events_cursor_state_resource_key())) {
+    Some(state) => state.debounced_scene_asset_ages
     None =>
       abort(
         "scene modified-events cursor resource is missing; ScenePlugin must initialize SceneModifiedEventsCursorState before running reload systems",

@@ -620,46 +620,64 @@ fn scene_spawn_instance_when_ready(
 
 ///|
 pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
+  let debounced_scene_asset_ages = scene_debounced_scene_asset_ages_ref_or_abort(
+    world,
+  )
   let modified_scene_ids : Array[Int] = []
   let message_key : @ecs.MessageKey[@asset.AssetEvent[Scene]] = @ecs.Message::message()
   let cursor_ref = scene_modified_events_cursor_ref_or_abort(world)
   let reader = world.message_reader(message_key, cursor_ref)
   for event in (try! reader.read()) {
     match event {
-      Modified(handle) => modified_scene_ids.push(handle.id())
+      Added(handle) => debounced_scene_asset_ages.val.set(handle.id(), 0)
+      Modified(handle) => {
+        let scene_id = handle.id()
+        if !debounced_scene_asset_ages.val.contains(scene_id) {
+          modified_scene_ids.push(scene_id)
+        }
+        debounced_scene_asset_ages.val.set(scene_id, 0)
+      }
       _ => ()
     }
   }
-  if modified_scene_ids.length() == 0 {
-    return
-  }
 
-  let roots : Array[(@core.Entity, SceneRoot)] = []
-  let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! scene_root_query.view(fn(entity, root) {
-    roots.push((entity, root.value()))
-  })
+  if modified_scene_ids.length() > 0 {
+    let roots : Array[(@core.Entity, SceneRoot)] = []
+    let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! scene_root_query.view(fn(entity, root) {
+      roots.push((entity, root.value()))
+    })
 
-  for entry in roots {
-    let root_entity = entry.0
-    let root = entry.1
-    let mut should_reload = false
-    for scene_id in modified_scene_ids {
-      if scene_id == root.scene.id() {
-        should_reload = true
-        break
+    for entry in roots {
+      let root_entity = entry.0
+      let root = entry.1
+      let mut should_reload = false
+      for scene_id in modified_scene_ids {
+        if scene_id == root.scene.id() {
+          should_reload = true
+          break
+        }
       }
+      if !should_reload {
+        continue
+      }
+      if scene_instance_component(world, root_entity) is Some(instance) {
+        scene_despawn_instance(world, instance.instance_id)
+      }
+      scene_attach_pending_instance(world, root_entity, root) |> ignore
     }
-    if !should_reload {
-      continue
-    }
-    if scene_instance_component(world, root_entity) is Some(instance) {
-      scene_despawn_instance(world, instance.instance_id)
-    }
-    scene_attach_pending_instance(world, root_entity, root) |> ignore
   }
+
+  let next_debounced_scene_asset_ages : Map[Int, Int] = {}
+  for entry in debounced_scene_asset_ages.val.iter() {
+    let (scene_id, age) = entry
+    if age <= 2 {
+      next_debounced_scene_asset_ages.set(scene_id, age + 1)
+    }
+  }
+  debounced_scene_asset_ages.val = next_debounced_scene_asset_ages
 }
 
 ///|

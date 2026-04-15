@@ -26,6 +26,13 @@ fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
 }
 
 ///|
+fn run_scene_reload_frame(world : @ecs.World) -> Unit {
+  @asset.asset_update_event_messages(world)
+  @scene.scene_reload_modified_roots_system(world)
+  @scene.scene_spawn_roots_system(world)
+}
+
+///|
 test "scene: load gltf animation keeps stable handle" {
   let same_handle = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
@@ -995,6 +1002,10 @@ test "scene: modified scene asset respawns SceneRoot children" {
 
     @scene.scene_spawn_roots_system(world)
 
+    for _ in 0..<4 {
+      run_scene_reload_frame(world)
+    }
+
     let first_children : Array[@core.Entity] = []
     world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
@@ -1006,9 +1017,7 @@ test "scene: modified scene asset respawns SceneRoot children" {
     let updated_handle = @scene.scene_register_gltf_scene(path, second_scene)
     handle_stable.val = handle.id() == updated_handle.id()
 
-    @asset.asset_update_event_messages(world)
-    @scene.scene_reload_modified_roots_system(world)
-    @scene.scene_spawn_roots_system(world)
+    run_scene_reload_frame(world)
 
     old_child_alive.val = world.is_alive(first_child)
     let second_children : Array[@core.Entity] = []
@@ -1029,4 +1038,161 @@ test "scene: modified scene asset respawns SceneRoot children" {
   debug_inspect(old_child_alive.val, content="false")
   debug_inspect(new_child_count.val, content="1")
   debug_inspect(new_child_x.val, content="9")
+}
+
+///|
+test "scene: modified scene asset debounce suppresses rapid respawns" {
+  let handle_stable = Ref::new(false)
+  let child_count_after_first_reload = Ref::new(0)
+  let child_alive_after_debounced_update = Ref::new(false)
+  let child_count_after_debounced_update = Ref::new(0)
+  let child_x_after_debounced_update = Ref::new(0.0)
+  let child_alive_after_rearmed_update = Ref::new(true)
+  let child_count_after_rearmed_update = Ref::new(0)
+  let child_x_after_rearmed_update = Ref::new(0.0)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
+      "models/Foo/Foo.gltf#debounced-reload",
+    )
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+      ),
+    )
+    let first_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+            ),
+          ),
+        ),
+        material,
+        @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+        None,
+        None,
+      ),
+    ])
+    let second_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+            ),
+          ),
+        ),
+        material,
+        @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+        None,
+        None,
+      ),
+    ])
+    let third_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(7.0F, 8.0F, 9.0F),
+            ),
+          ),
+        ),
+        material,
+        @transform.Transform::from_xyz(17.0F, 16.0F, 15.0F),
+        None,
+        None,
+      ),
+    ])
+    let fourth_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(10.0F, 11.0F, 12.0F),
+            ),
+          ),
+        ),
+        material,
+        @transform.Transform::from_xyz(25.0F, 24.0F, 23.0F),
+        None,
+        None,
+      ),
+    ])
+    let handle = @scene.scene_register_gltf_scene(path, first_scene)
+
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    for _ in 0..<4 {
+      run_scene_reload_frame(world)
+    }
+
+    let second_handle = @scene.scene_register_gltf_scene(path, second_scene)
+    handle_stable.val = handle.id() == second_handle.id()
+    run_scene_reload_frame(world)
+
+    let first_reloaded_children : Array[@core.Entity] = []
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        first_reloaded_children.push(entity)
+      }
+    })
+    child_count_after_first_reload.val = first_reloaded_children.length()
+    let first_reloaded_child = first_reloaded_children[0]
+
+    ignore(@scene.scene_register_gltf_scene(path, third_scene))
+    run_scene_reload_frame(world)
+
+    child_alive_after_debounced_update.val = world.is_alive(
+      first_reloaded_child,
+    )
+    let children_after_debounced_update : Array[@core.Entity] = []
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        children_after_debounced_update.push(entity)
+      }
+    })
+    child_count_after_debounced_update.val = children_after_debounced_update.length()
+    let debounced_child = children_after_debounced_update[0]
+    let debounced_transform = (try! world.get_by_key(
+      debounced_child, @transform.ecs_key_transform,
+    )).unwrap()
+    child_x_after_debounced_update.val = debounced_transform.translation.x.to_double()
+
+    for _ in 0..<3 {
+      run_scene_reload_frame(world)
+    }
+
+    ignore(@scene.scene_register_gltf_scene(path, fourth_scene))
+    run_scene_reload_frame(world)
+
+    child_alive_after_rearmed_update.val = world.is_alive(first_reloaded_child)
+    let children_after_rearmed_update : Array[@core.Entity] = []
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        children_after_rearmed_update.push(entity)
+      }
+    })
+    child_count_after_rearmed_update.val = children_after_rearmed_update.length()
+    let rearmed_child = children_after_rearmed_update[0]
+    let rearmed_transform = (try! world.get_by_key(
+      rearmed_child, @transform.ecs_key_transform,
+    )).unwrap()
+    child_x_after_rearmed_update.val = rearmed_transform.translation.x.to_double()
+  })
+
+  debug_inspect(handle_stable.val, content="true")
+  debug_inspect(child_count_after_first_reload.val, content="1")
+  debug_inspect(child_alive_after_debounced_update.val, content="true")
+  debug_inspect(child_count_after_debounced_update.val, content="1")
+  debug_inspect(child_x_after_debounced_update.val, content="9")
+  debug_inspect(child_alive_after_rearmed_update.val, content="false")
+  debug_inspect(child_count_after_rearmed_update.val, content="1")
+  debug_inspect(child_x_after_rearmed_update.val, content="25")
 }
