@@ -750,3 +750,55 @@ test "asset server load_direct decodes decompressed image bytes" {
     content="Some(true)",
   )
 }
+
+///|
+test "asset server stores gltf loader settings per asset path" {
+  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let path = "models/Foo/Foo.gltf#Scene0"
+  let _ : Handle[Blob] = asset_with_world(world, fn() {
+    asset_server.load_with_settings(path, fn(settings) {
+      settings.load_meshes = RenderAssetUsages::main_world()
+      settings.load_materials = RenderAssetUsages::render_world()
+      settings.load_animations = false
+      settings.override_sampler = true
+      let sampler = ImageSamplerDescriptor::nearest()
+      sampler.set_address_mode(ImageAddressMode::ClampToEdge) |> ignore
+      settings.sampler = ImageSampler::Descriptor(sampler)
+    })
+  })
+
+  let stored = asset_server.gltf_loader_settings_for_asset_path(path)
+  debug_inspect(
+    stored.load_meshes == RenderAssetUsages::main_world(),
+    content="true",
+  )
+  debug_inspect(
+    stored.load_materials == RenderAssetUsages::render_world(),
+    content="true",
+  )
+  debug_inspect(!stored.load_animations, content="true")
+  debug_inspect(stored.override_sampler, content="true")
+  match stored.sampler {
+    ImageSampler::Descriptor(descriptor) => {
+      debug_inspect(
+        descriptor.min_filter == ImageFilterMode::Nearest,
+        content="true",
+      )
+      debug_inspect(
+        descriptor.address_mode_u == ImageAddressMode::ClampToEdge,
+        content="true",
+      )
+      debug_inspect(
+        descriptor.address_mode_v == ImageAddressMode::ClampToEdge,
+        content="true",
+      )
+    }
+    _ => abort("expected descriptor sampler")
+  }
+}

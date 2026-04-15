@@ -2931,6 +2931,12 @@ fn scene_build_from_gltf(
   let default_material_component = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(@pbr.StandardMaterial::default()),
   )
+  let should_load_meshes = gltf_loader_should_load_meshes(
+    request.loader_settings,
+  )
+  let should_load_materials = gltf_loader_should_load_materials(
+    request.loader_settings,
+  )
 
   fn skin_inverse_bindposes_handle(
     skin_index : Int,
@@ -3027,7 +3033,7 @@ fn scene_build_from_gltf(
       ),
     )
 
-    if gltf_loader_should_load_meshes(request.loader_settings) &&
+    if should_load_meshes &&
       node.mesh is Some(mesh_index) &&
       mesh_index >= 0 &&
       mesh_index < doc.meshes.length() {
@@ -3056,9 +3062,7 @@ fn scene_build_from_gltf(
           is Some(mesh_asset) else {
           continue
         }
-        let material_component = if gltf_loader_should_load_materials(
-            request.loader_settings,
-          ) {
+        let material_component = if should_load_materials {
           match primitive.material {
             Some(material_index) =>
               match
@@ -3080,18 +3084,24 @@ fn scene_build_from_gltf(
         } else {
           default_material_component
         }
-        let material_name = match primitive.material {
-          Some(material_index) =>
-            if material_index >= 0 &&
-              material_index < doc.materials.length() &&
-              doc.materials[material_index].name != "" {
-              Some(
-                @gltf.GltfMaterialName::new(doc.materials[material_index].name),
-              )
-            } else {
-              None
-            }
-          None => None
+        let material_name = if should_load_materials {
+          match primitive.material {
+            Some(material_index) =>
+              if material_index >= 0 &&
+                material_index < doc.materials.length() &&
+                doc.materials[material_index].name != "" {
+                Some(
+                  @gltf.GltfMaterialName::new(
+                    doc.materials[material_index].name,
+                  ),
+                )
+              } else {
+                None
+              }
+            None => None
+          }
+        } else {
+          None
         }
         let primitive_name = gltf_primitive_display_name(
           mesh,
@@ -3099,16 +3109,20 @@ fn scene_build_from_gltf(
         )
         let primitive_extras = primitive.extras.map(@gltf.GltfExtras::new)
         let mesh_extras = mesh.extras.map(@gltf.GltfMeshExtras::new)
-        let material_extras = match primitive.material {
-          Some(material_index) =>
-            if material_index >= 0 && material_index < doc.materials.length() {
-              doc.materials[material_index].extras.map(
-                @gltf.GltfMaterialExtras::new,
-              )
-            } else {
-              None
-            }
-          None => None
+        let material_extras = if should_load_materials {
+          match primitive.material {
+            Some(material_index) =>
+              if material_index >= 0 && material_index < doc.materials.length() {
+                doc.materials[material_index].extras.map(
+                  @gltf.GltfMaterialExtras::new,
+                )
+              } else {
+                None
+              }
+            None => None
+          }
+        } else {
+          None
         }
 
         nodes.push(
