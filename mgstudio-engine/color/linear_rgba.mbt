@@ -37,6 +37,17 @@ fn color_linear_to_srgb(value : Float) -> Float {
 }
 
 ///|
+fn color_signed_cbrt(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F - @math.pow(0.0F - value, 1.0F / 3.0F)
+  } else if value == 0.0F {
+    0.0F
+  } else {
+    @math.pow(value, 1.0F / 3.0F)
+  }
+}
+
+///|
 pub fn linear_rgba(red : Float, green : Float, blue : Float) -> LinearRgba {
   Color::new(red, green, blue, 1.0F)
 }

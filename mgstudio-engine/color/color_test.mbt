@@ -88,3 +88,67 @@ test "srgba tuple converts back to authored components" {
     content="true",
   )
 }
+
+///|
+fn approx_eq(lhs : Float, rhs : Float, tolerance : Float) -> Bool {
+  let delta = if lhs >= rhs { lhs - rhs } else { rhs - lhs }
+  delta <= tolerance
+}
+
+///|
+test "xyza conversion matches bevy red constants" {
+  let red = @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
+  let xyza = @color.xyza_from_color(red)
+  debug_inspect(approx_eq(xyza.x, 0.4124564F, 0.0001F), content="true")
+  debug_inspect(approx_eq(xyza.y, 0.2126729F, 0.0001F), content="true")
+  debug_inspect(approx_eq(xyza.z, 0.0193339F, 0.0001F), content="true")
+  debug_inspect(approx_eq(xyza.alpha, 1.0F, 0.000001F), content="true")
+}
+
+///|
+test "lab and oklab round-trip from color" {
+  let samples = [
+    @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F),
+    @color.Color::srgba(0.0F, 1.0F, 0.0F, 1.0F),
+    @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F),
+    @color.Color::srgba(0.5F, 0.5F, 0.5F, 1.0F),
+    @color.Color::srgba(0.18F, 0.39F, 0.92F, 0.8F),
+  ]
+  for sample in samples {
+    let from_lab = @color.laba_to_color(@color.laba_from_color(sample))
+    debug_inspect(
+      @color.color_approx_eq(from_lab, sample, 0.003F),
+      content="true",
+    )
+    let from_lch = @color.lcha_to_color(@color.lcha_from_color(sample))
+    debug_inspect(
+      @color.color_approx_eq(from_lch, sample, 0.003F),
+      content="true",
+    )
+    let from_oklab = @color.oklaba_to_color(@color.oklaba_from_color(sample))
+    debug_inspect(
+      @color.color_approx_eq(from_oklab, sample, 0.0005F),
+      content="true",
+    )
+    let from_oklch = @color.oklcha_to_color(@color.oklcha_from_color(sample))
+    debug_inspect(
+      @color.color_approx_eq(from_oklch, sample, 0.0005F),
+      content="true",
+    )
+  }
+}
+
+///|
+test "lcha and oklcha sequential dispersed generate deterministic hues" {
+  let lcha0 = @color.Lcha::sequential_dispersed(0U)
+  let lcha1 = @color.Lcha::sequential_dispersed(1U)
+  debug_inspect(lcha0.hue >= 0.0F && lcha0.hue < 360.0F, content="true")
+  debug_inspect(lcha1.hue >= 0.0F && lcha1.hue < 360.0F, content="true")
+  debug_inspect(lcha0.hue != lcha1.hue, content="true")
+
+  let oklcha0 = @color.Oklcha::sequential_dispersed(0U)
+  let oklcha1 = @color.Oklcha::sequential_dispersed(1U)
+  debug_inspect(oklcha0.hue >= 0.0F && oklcha0.hue < 360.0F, content="true")
+  debug_inspect(oklcha1.hue >= 0.0F && oklcha1.hue < 360.0F, content="true")
+  debug_inspect(oklcha0.hue != oklcha1.hue, content="true")
+}

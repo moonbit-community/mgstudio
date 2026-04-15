@@ -30,45 +30,67 @@ pub fn color_srgb(Float, Float, Float) -> Color
 
 pub fn color_srgba(Float, Float, Float, Float) -> Color
 
-pub fn laba_from_color(Color) -> Color
+pub fn laba_from_color(Color) -> Laba
 
-pub fn laba_gray(Float) -> Color
+pub fn laba_from_lcha(Lcha) -> Laba
 
-pub fn laba_to_color(Color) -> Color
+pub fn laba_from_xyza(Xyza) -> Laba
 
-pub fn lcha_from_color(Color) -> Color
+pub fn laba_gray(Float) -> Laba
 
-pub fn lcha_gray(Float) -> Color
+pub fn laba_to_color(Laba) -> Color
 
-pub fn lcha_to_color(Color) -> Color
+pub fn lcha_from_color(Color) -> Lcha
+
+pub fn lcha_from_laba(Laba) -> Lcha
+
+pub fn lcha_gray(Float) -> Lcha
+
+pub fn lcha_to_color(Lcha) -> Color
 
 pub fn linear_rgba(Float, Float, Float) -> Color
 
 pub fn linear_rgba_from_color(Color) -> Color
 
+pub fn linear_rgba_from_oklaba(Oklaba) -> Color
+
+pub fn linear_rgba_from_xyza(Xyza) -> Color
+
 pub fn linear_rgba_to_color(Color) -> Color
 
 pub fn linear_rgba_with_alpha(Float, Float, Float, Float) -> Color
 
-pub fn oklaba_from_color(Color) -> Color
+pub fn oklaba_from_color(Color) -> Oklaba
 
-pub fn oklaba_gray(Float) -> Color
+pub fn oklaba_from_linear_rgba(Color) -> Oklaba
 
-pub fn oklaba_to_color(Color) -> Color
+pub fn oklaba_from_oklcha(Oklcha) -> Oklaba
 
-pub fn oklcha_from_color(Color) -> Color
+pub fn oklaba_gray(Float) -> Oklaba
 
-pub fn oklcha_gray(Float) -> Color
+pub fn oklaba_to_color(Oklaba) -> Color
 
-pub fn oklcha_to_color(Color) -> Color
+pub fn oklcha_from_color(Color) -> Oklcha
+
+pub fn oklcha_from_oklaba(Oklaba) -> Oklcha
+
+pub fn oklcha_gray(Float) -> Oklcha
+
+pub fn oklcha_to_color(Oklcha) -> Color
 
 pub fn test_colors() -> Array[TestColor]
 
-pub fn xyza_from_color(Color) -> Color
+pub fn xyza_d65_white() -> Xyza
 
-pub fn xyza_gray(Float) -> Color
+pub fn xyza_from_color(Color) -> Xyza
 
-pub fn xyza_to_color(Color) -> Color
+pub fn xyza_from_laba(Laba) -> Xyza
+
+pub fn xyza_from_linear_rgba(Color) -> Xyza
+
+pub fn xyza_gray(Float) -> Xyza
+
+pub fn xyza_to_color(Xyza) -> Color
 
 // Errors
 pub suberror ColorGradientError {
@@ -76,12 +98,7 @@ pub suberror ColorGradientError {
 }
 
 // Types and methods
-#alias(Laba)
-#alias(Lcha)
 #alias(LinearRgba)
-#alias(Oklaba)
-#alias(Oklcha)
-#alias(Xyza)
 pub struct Color {
   r : Float
   g : Float
@@ -169,6 +186,72 @@ pub fn Hwba::new(Float, Float, Float, Float) -> Self
 pub fn Hwba::to_color(Self) -> Color
 pub fn Hwba::to_hsva(Self) -> Hsva
 
+pub struct Laba {
+  lightness : Float
+  a : Float
+  b : Float
+  alpha : Float
+}
+pub fn Laba::darker(Self, Float) -> Self
+pub fn Laba::lab(Float, Float, Float) -> Self
+pub fn Laba::lighter(Self, Float) -> Self
+pub fn Laba::luminance(Self) -> Float
+pub fn Laba::mix(Self, Self, Float) -> Self
+pub fn Laba::new(Float, Float, Float, Float) -> Self
+pub fn Laba::with_lightness(Self, Float) -> Self
+pub fn Laba::with_luminance(Self, Float) -> Self
+
+pub struct Lcha {
+  lightness : Float
+  chroma : Float
+  hue : Float
+  alpha : Float
+}
+pub fn Lcha::darker(Self, Float) -> Self
+pub fn Lcha::lch(Float, Float, Float) -> Self
+pub fn Lcha::lighter(Self, Float) -> Self
+pub fn Lcha::luminance(Self) -> Float
+pub fn Lcha::mix(Self, Self, Float) -> Self
+pub fn Lcha::new(Float, Float, Float, Float) -> Self
+pub fn Lcha::sequential_dispersed(UInt) -> Self
+pub fn Lcha::with_chroma(Self, Float) -> Self
+pub fn Lcha::with_lightness(Self, Float) -> Self
+pub fn Lcha::with_luminance(Self, Float) -> Self
+
+pub struct Oklaba {
+  lightness : Float
+  a : Float
+  b : Float
+  alpha : Float
+}
+pub fn Oklaba::darker(Self, Float) -> Self
+pub fn Oklaba::lab(Float, Float, Float) -> Self
+pub fn Oklaba::lighter(Self, Float) -> Self
+pub fn Oklaba::luminance(Self) -> Float
+pub fn Oklaba::mix(Self, Self, Float) -> Self
+pub fn Oklaba::new(Float, Float, Float, Float) -> Self
+pub fn Oklaba::with_a(Self, Float) -> Self
+pub fn Oklaba::with_b(Self, Float) -> Self
+pub fn Oklaba::with_lightness(Self, Float) -> Self
+pub fn Oklaba::with_luminance(Self, Float) -> Self
+
+pub struct Oklcha {
+  lightness : Float
+  chroma : Float
+  hue : Float
+  alpha : Float
+}
+pub fn Oklcha::darker(Self, Float) -> Self
+pub fn Oklcha::lch(Float, Float, Float) -> Self
+pub fn Oklcha::lighter(Self, Float) -> Self
+pub fn Oklcha::luminance(Self) -> Float
+pub fn Oklcha::mix(Self, Self, Float) -> Self
+pub fn Oklcha::new(Float, Float, Float, Float) -> Self
+pub fn Oklcha::sequential_dispersed(UInt) -> Self
+pub fn Oklcha::with_chroma(Self, Float) -> Self
+pub fn Oklcha::with_lightness(Self, Float) -> Self
+pub fn Oklcha::with_luminance(Self, Float) -> Self
+
 pub struct TestColor {
   name : String
   color : Color
@@ -176,6 +259,20 @@ pub struct TestColor {
   hsva : Hsva
   hwba : Hwba
 }
+
+pub struct Xyza {
+  x : Float
+  y : Float
+  z : Float
+  alpha : Float
+}
+pub fn Xyza::darker(Self, Float) -> Self
+pub fn Xyza::lighter(Self, Float) -> Self
+pub fn Xyza::luminance(Self) -> Float
+pub fn Xyza::mix(Self, Self, Float) -> Self
+pub fn Xyza::new(Float, Float, Float, Float) -> Self
+pub fn Xyza::with_luminance(Self, Float) -> Self
+pub fn Xyza::xyz(Float, Float, Float) -> Self
 
 // Type aliases
 
