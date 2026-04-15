@@ -492,57 +492,28 @@ fn material2d_shader_asset_paths(
 }
 
 ///|
-fn render2d_embedded_shader_source(path : String) -> String? {
-  match path {
-    "sprite_render/mesh2d/color_material.wgsl" =>
-      Some(embedded_wgsl_mesh2d_color_material_wgsl_source)
-    "sprite_render/mesh2d/mesh2d_bindings.wgsl" =>
-      Some(embedded_wgsl_mesh2d_bindings_wgsl_source)
-    "sprite_render/mesh2d/mesh2d_functions.wgsl" =>
-      Some(embedded_wgsl_mesh2d_functions_wgsl_source)
-    "sprite_render/mesh2d/mesh2d_types.wgsl" =>
-      Some(embedded_wgsl_mesh2d_types_wgsl_source)
-    "sprite_render/mesh2d/mesh2d_vertex_output.wgsl" =>
-      Some(embedded_wgsl_mesh2d_vertex_output_wgsl_source)
-    "sprite_render/mesh2d/mesh2d_view_bindings.wgsl" =>
-      Some(embedded_wgsl_mesh2d_view_bindings_wgsl_source)
-    "sprite_render/mesh2d/mesh2d_view_types.wgsl" =>
-      Some(embedded_wgsl_mesh2d_view_types_wgsl_source)
-    "sprite_render/mesh2d/mesh2d.wgsl" => Some(embedded_wgsl_mesh2d_wgsl_source)
-    "sprite_render/mesh2d/wireframe2d.wgsl" =>
-      Some(embedded_wgsl_wireframe2d_wgsl_source)
-    "sprite_render/render/sprite.wgsl" =>
-      Some(embedded_wgsl_sprite_render_sprite_wgsl_source)
-    "sprite_render/render/sprite_view_bindings.wgsl" =>
-      Some(embedded_wgsl_sprite_render_sprite_view_bindings_wgsl_source)
-    "shaders/custom/mesh2d_checker_material.wgsl" =>
-      Some(embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source)
-    _ => None
-  }
-}
-
-///|
 fn render2d_register_shader_source_asset(
   world : @ecs.World,
   path : String,
 ) -> Unit {
   world |> ignore
+  register_embedded_mesh2d_wgsl_sources_generated()
+  @naga_oil.register_wgsl_source(
+    "sprite_render/render/sprite.wgsl", embedded_wgsl_sprite_render_sprite_wgsl_source,
+  )
+  @naga_oil.register_wgsl_source(
+    "sprite_render/render/sprite_view_bindings.wgsl", embedded_wgsl_sprite_render_sprite_view_bindings_wgsl_source,
+  )
+  @naga_oil.register_wgsl_source(
+    "shaders/custom/mesh2d_checker_material.wgsl", embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source,
+  )
   let source = @naga_oil.Composer::default().load_wgsl_source_required_raw(
     "assets", path,
   ) catch {
-    _ =>
-      match render2d_embedded_shader_source(path) {
-        Some(source) => source
-        None => abort("failed to load render2d shader asset text: \{path}")
-      }
-  }
-  if source == "" {
-    match render2d_embedded_shader_source(path) {
-      Some(fallback_source) =>
-        @render.register_wgsl_source(path, fallback_source)
-      None => abort("failed to load render2d shader asset text: \{path}")
-    }
-    return
+    err =>
+      abort(
+        "failed to load render2d shader asset text: \{path}: \{err.message()}",
+      )
   }
   @render.register_wgsl_source(path, source)
 }
