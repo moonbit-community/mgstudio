@@ -82,7 +82,7 @@ pub fn GpuBackend::draw_tonemapping2d(
   guard self.tonemapping_bgl is Some(final_bind_layout) else { return }
   guard self.tonemapping_view_buf is Some(view_buf) else { return }
   guard self.tonemapping_sampler is Some(tonemapping_sampler) else { return }
-  let selected_lut_view = tonemapping_selected_lut_view(
+  let selected_lut_texture = tonemapping_selected_lut_texture(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
@@ -113,8 +113,8 @@ pub fn GpuBackend::draw_tonemapping2d(
     let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
       builder.add_texture_view(1U, scene_texture.view) &&
       builder.add_sampler(2U, tonemapping_sampler) &&
-      builder.add_texture_view(3U, selected_lut_view) &&
-      builder.add_sampler(4U, tonemapping_sampler)
+      builder.add_texture_view(3U, selected_lut_texture.view) &&
+      builder.add_sampler(4U, selected_lut_texture.sampler)
     if ok {
       let final_bg = builder.finish(
         self.device,
@@ -280,7 +280,7 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
   guard self.tonemapping_bgl is Some(final_bind_layout) else { return }
   guard self.tonemapping_view_buf is Some(view_buf) else { return }
   guard self.tonemapping_sampler is Some(tonemapping_sampler) else { return }
-  let selected_lut_view = tonemapping_selected_lut_view(
+  let selected_lut_texture = tonemapping_selected_lut_texture(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = clamp_non_negative(exposure)
@@ -309,8 +309,8 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
     let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
       builder.add_texture_view(1U, scene_texture.view) &&
       builder.add_sampler(2U, tonemapping_sampler) &&
-      builder.add_texture_view(3U, selected_lut_view) &&
-      builder.add_sampler(4U, tonemapping_sampler)
+      builder.add_texture_view(3U, selected_lut_texture.view) &&
+      builder.add_sampler(4U, selected_lut_texture.sampler)
     if ok {
       let final_bg = builder.finish(
         self.device,
@@ -887,10 +887,10 @@ fn ensure_tonemapping_resources(
       builder.add_texture(
         1U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
-      builder.add_sampler(2U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_sampler(2U, frag, @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING) &&
       builder.add_texture(
         3U,
         frag,
@@ -923,7 +923,7 @@ fn ensure_tonemapping_resources(
   }
   if backend.tonemapping_sampler is None {
     backend.tonemapping_sampler = Some(
-      backend.device.create_sampler_linear_clamp(),
+      backend.device.create_sampler_nearest_clamp(),
     )
   }
 }
@@ -968,13 +968,13 @@ fn tonemapping_pipeline_for_format(
 }
 
 ///|
-fn ensure_tonemapping_fallback_lut_view(
+fn ensure_tonemapping_fallback_lut_texture(
   backend : GpuBackend,
-) -> @wgpu.TextureView raise GpuBackendError {
+) -> GpuTextureInfo raise GpuBackendError {
   if backend.tonemapping_fallback_lut_texture_id > 0 {
     if find_texture(backend, backend.tonemapping_fallback_lut_texture_id)
       is Some(texture) {
-      return texture.view
+      return texture
     }
     backend.tonemapping_fallback_lut_texture_id = -1
   }
@@ -988,7 +988,7 @@ fn ensure_tonemapping_fallback_lut_view(
   )
   backend.tonemapping_fallback_lut_texture_id = texture_id
   if find_texture(backend, texture_id) is Some(texture) {
-    texture.view
+    texture
   } else {
     fatal(
       "wgpu: tonemapping fallback LUT texture missing after creation (id=\{texture_id})",
@@ -997,13 +997,13 @@ fn ensure_tonemapping_fallback_lut_view(
 }
 
 ///|
-fn tonemapping_selected_lut_view(
+fn tonemapping_selected_lut_texture(
   backend : GpuBackend,
   tonemapping_mode : Int,
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
-) -> @wgpu.TextureView raise GpuBackendError {
+) -> GpuTextureInfo raise GpuBackendError {
   let selected_lut_texture_id = if tonemapping_mode == 4 {
     agx_lut_texture_id
   } else if tonemapping_mode == 6 {
@@ -1015,23 +1015,23 @@ fn tonemapping_selected_lut_view(
   }
   if selected_lut_texture_id >= 0 {
     if find_texture(backend, selected_lut_texture_id) is Some(lut_texture) {
-      return lut_texture.view
+      return lut_texture
     }
   }
   if agx_lut_texture_id >= 0 {
     if find_texture(backend, agx_lut_texture_id) is Some(lut_texture) {
-      return lut_texture.view
+      return lut_texture
     }
   }
   if tony_lut_texture_id >= 0 {
     if find_texture(backend, tony_lut_texture_id) is Some(lut_texture) {
-      return lut_texture.view
+      return lut_texture
     }
   }
   if blender_lut_texture_id >= 0 {
     if find_texture(backend, blender_lut_texture_id) is Some(lut_texture) {
-      return lut_texture.view
+      return lut_texture
     }
   }
-  ensure_tonemapping_fallback_lut_view(backend)
+  ensure_tonemapping_fallback_lut_texture(backend)
 }
