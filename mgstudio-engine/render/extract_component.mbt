@@ -159,7 +159,7 @@ fn[C] extract_components(
 pub fn extract_component_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_plugin(app)
+  app
 }
 
 ///|
@@ -168,7 +168,7 @@ pub fn[C : @ecs.Component, F] extract_component_plugin_with(
   plugin : ExtractComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
   let sync_component : SyncComponentPlugin[C, F] = SyncComponentPlugin::default()
-  let next = sync_component_plugin_with(render_plugin(app), sync_component)
+  let next = sync_component_plugin_with(app, sync_component)
   let component_key = C::component()
   with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     let stage = render_schedule_stage()

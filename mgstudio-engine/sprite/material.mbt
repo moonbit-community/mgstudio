@@ -497,16 +497,6 @@ fn render2d_register_shader_source_asset(
   path : String,
 ) -> Unit {
   world |> ignore
-  register_embedded_mesh2d_wgsl_sources_generated()
-  @wgsl.register_wgsl_source(
-    "sprite_render/render/sprite.wgsl", embedded_wgsl_sprite_render_sprite_wgsl_source,
-  )
-  @wgsl.register_wgsl_source(
-    "sprite_render/render/sprite_view_bindings.wgsl", embedded_wgsl_sprite_render_sprite_view_bindings_wgsl_source,
-  )
-  @wgsl.register_wgsl_source(
-    "shaders/mesh2d_checker_material.wgsl", embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source,
-  )
   if @shader.shader_path_is_wesl(path) {
     @shader.shader_register_wesl_runtime_source(world, path, []) catch {
       err =>

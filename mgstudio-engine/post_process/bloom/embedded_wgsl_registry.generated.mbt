@@ -6,6 +6,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "post_process/bloom/bloom.wgsl", embedded_wgsl_bloom_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

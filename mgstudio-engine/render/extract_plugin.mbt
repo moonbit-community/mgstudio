@@ -54,7 +54,12 @@ pub fn render_source_world(world : @ecs.World) -> @ecs.World {
 
 ///|
 pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  let mut next = app
+  app.add_plugins(RenderPlugin::default())
+}
+
+///|
+fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let mut next = app.add_plugins(SyncWorldPlugin::default())
   if next.get_sub_app(@app.RenderApp) is None {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
       Some(render_schedule_stage()),
@@ -63,7 +68,21 @@ pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     next = next.insert_sub_app(@app.RenderApp, render_sub_app)
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
+  if next.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
+    render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
+      render_schedule_stage(),
+      @app.system(despawn_temporary_render_entities).in_set(
+        render_system_set_cleanup,
+      ),
+    )
+  }
   if !next.contains_resource(ecs_key_render_plugin_marker) {
+    register_embedded_wgsl_sources()
+    @renderer.register_embedded_wgsl_sources()
+    @render_view_window.register_embedded_wgsl_sources()
+    @post_process_bloom.register_embedded_wgsl_sources()
+    @post_process_effect_stack.register_embedded_wgsl_sources()
+    @post_process_motion_blur.register_embedded_wgsl_sources()
     next = next.insert_world_resource(ecs_key_render_plugin_marker, RenderPluginMarker::{
 
     })
@@ -76,7 +95,7 @@ pub fn with_render_app(
   app : @app.App[@ecs.World],
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  let next = render_plugin(app)
+  let next = app
   if next.get_sub_app_mut(@app.RenderApp) is Some(sub_app_ref) {
     sub_app_ref.val = update(sub_app_ref.val)
   }

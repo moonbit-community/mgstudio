@@ -36,6 +36,7 @@ pub impl @app.Plugin for LightmapPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for LightmapPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   lightmap_plugin_install_with(app, self)
 }
 

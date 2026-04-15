@@ -225,6 +225,8 @@ pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBack
 
 pub fn read_only_binding_type_uniform(Int) -> Bool
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn render_context_backend_for_test() -> GpuBackend?

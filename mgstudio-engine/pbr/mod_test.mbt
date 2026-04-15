@@ -129,7 +129,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   )
   debug_inspect(
     _app.contains_resource(@pbr_prepass.ecs_key_any_prepass_plugin_loaded),
-    content="false",
+    content="true",
   )
 
   let _reset = pbr_plugin(@app.App::new(@ecs.World::new()))

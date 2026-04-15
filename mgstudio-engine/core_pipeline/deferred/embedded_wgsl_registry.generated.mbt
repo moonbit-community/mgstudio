@@ -6,6 +6,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "core_pipeline/deferred/copy_deferred_lighting_id.wgsl", embedded_wgsl_copy_deferred_lighting_id_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

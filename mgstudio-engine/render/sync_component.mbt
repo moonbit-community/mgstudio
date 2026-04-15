@@ -104,7 +104,7 @@ fn[C] sync_component_register_remove_hook(
 pub fn sync_component_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_plugin(app)
+  app
 }
 
 ///|
@@ -113,7 +113,7 @@ pub fn[C : @ecs.Component, F] sync_component_plugin_with(
   plugin : SyncComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let next = sync_build(app)
+  let next = app
   let world = next.world()
   let component_key = C::component()
   sync_component_register_required_component(world, component_key)

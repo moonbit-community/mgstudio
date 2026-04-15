@@ -10,6 +10,8 @@ import {
 // Values
 pub fn pbr_ssao_default() -> @post_process.ScreenSpaceAmbientOcclusion
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn ssao_pipeline_key(@post_process.ScreenSpaceAmbientOcclusionQualityLevel, Bool) -> SsaoPipelineKey
 
 pub fn ssao_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]

@@ -52,5 +52,5 @@ pub fn extract_param_source_world(world : @ecs.World) -> @ecs.World {
 pub fn extract_param_render_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_plugin(app)
+  app
 }

@@ -331,7 +331,7 @@ pub fn despawn_temporary_render_entities(world : @ecs.World) -> Unit {
 
 ///|
 pub fn sync_build(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  sync_world_plugin_with(app, SyncWorldPlugin::default())
+  app.add_plugins(SyncWorldPlugin::default())
 }
 
 ///|
@@ -340,20 +340,12 @@ pub fn sync_world_plugin_with(
   plugin : SyncWorldPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let mut next = render_plugin(app)
+  let mut next = app
   ensure_pending_sync_entity_resource(next.world())
   next = next
     .add_component_observer(track_sync_to_render_world_added)
     .add_component_observer(track_sync_to_render_world_removed)
-  with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
-    let stage = render_schedule_stage()
-    sub_app.add_systems(
-      stage,
-      @app.system(despawn_temporary_render_entities).in_set(
-        render_system_set_cleanup,
-      ),
-    )
-  })
+  next
 }
 
 ///|

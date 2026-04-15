@@ -44,6 +44,7 @@ pub impl @app.Plugin for LightProbePlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for LightProbePlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   light_probe_plugin_with(app, self)
 }
 

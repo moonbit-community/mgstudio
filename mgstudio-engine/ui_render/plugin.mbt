@@ -27,5 +27,6 @@ pub impl @app.Plugin for UiRenderPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for UiRenderPlugin with build(_self, app) {
-  ui_render_plugin(app)
+  register_embedded_wgsl_sources()
+  ui_render_plugin_install(app)
 }

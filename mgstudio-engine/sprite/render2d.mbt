@@ -2717,16 +2717,6 @@ fn render2d_shader_asset_paths() -> Array[String] {
 ///|
 fn register_render2d_shader_sources(world : @ecs.World) -> Unit {
   world |> ignore
-  register_embedded_mesh2d_wgsl_sources_generated()
-  @wgsl.register_wgsl_source(
-    "sprite_render/render/sprite.wgsl", embedded_wgsl_sprite_render_sprite_wgsl_source,
-  )
-  @wgsl.register_wgsl_source(
-    "sprite_render/render/sprite_view_bindings.wgsl", embedded_wgsl_sprite_render_sprite_view_bindings_wgsl_source,
-  )
-  @wgsl.register_wgsl_source(
-    "shaders/mesh2d_checker_material.wgsl", embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source,
-  )
   for path in render2d_shader_asset_paths() {
     let source = @wgsl.Composer::default().load_wgsl_source_required_raw(
       "assets", path,
@@ -8489,17 +8479,42 @@ pub fn Render2dPlugin::default() -> Render2dPlugin {
 }
 
 ///|
+pub struct Render2dEcsPlugin {}
+
+///|
+pub fn Render2dEcsPlugin::default() -> Render2dEcsPlugin {
+  Render2dEcsPlugin::{  }
+}
+
+///|
 pub impl @app.Plugin for Render2dPlugin with name(_self) {
   "mgstudio.sprite.Render2dPlugin"
 }
 
 ///|
 pub impl @app.Plugin for Render2dPlugin with build(_self, app) {
-  render2d_plugin(app)
+  register_embedded_wgsl_sources()
+  render2d_plugin_install(app)
+}
+
+///|
+pub impl @app.Plugin for Render2dEcsPlugin with name(_self) {
+  "mgstudio.sprite.Render2dEcsPlugin"
+}
+
+///|
+pub impl @app.Plugin for Render2dEcsPlugin with build(_self, app) {
+  register_embedded_wgsl_sources()
+  render2d_plugin_ecs_install(app)
 }
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_plugins(Render2dPlugin::default())
+}
+
+///|
+fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
       app.init_resource(fn() { ClearColor::default() }),
@@ -8519,6 +8534,13 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_plugins(Render2dEcsPlugin::default())
+}
+
+///|
+fn render2d_plugin_ecs_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
       app.init_resource(fn() { ClearColor::default() }),

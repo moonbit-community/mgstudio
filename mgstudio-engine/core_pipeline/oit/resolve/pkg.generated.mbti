@@ -30,6 +30,8 @@ pub fn oit_resolve_should_run(OitResolveNodeState) -> Bool
 
 pub fn oit_resolve_should_set_camera_viewport(OitResolveNodeState) -> Bool
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

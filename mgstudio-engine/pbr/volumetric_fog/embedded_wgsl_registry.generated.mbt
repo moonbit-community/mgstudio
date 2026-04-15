@@ -6,6 +6,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "pbr/volumetric_fog/volumetric_fog.wgsl", embedded_wgsl_volumetric_fog_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

@@ -57,7 +57,7 @@ pub impl @ecs.Component for OrderIndependentTransparencySettings with component(
 
 ///|
 pub fn oit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  oit_plugin_with(app, OrderIndependentTransparencyPlugin::default())
+  app.add_plugins(OrderIndependentTransparencyPlugin::default())
 }
 
 ///|
@@ -70,11 +70,20 @@ pub impl @app.Plugin for OrderIndependentTransparencyPlugin with build(
   self,
   app,
 ) {
-  oit_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  oit_plugin_install_with(app, self)
 }
 
 ///|
 pub fn oit_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : OrderIndependentTransparencyPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn oit_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : OrderIndependentTransparencyPlugin,
 ) -> @app.App[@ecs.World] {

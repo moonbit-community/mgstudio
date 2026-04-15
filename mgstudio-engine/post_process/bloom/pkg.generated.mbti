@@ -16,6 +16,8 @@ pub fn bloom_upsample_passes(@post_process.Bloom, Array[BloomDownsamplePass]) ->
 
 pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

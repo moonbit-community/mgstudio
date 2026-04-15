@@ -12,6 +12,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "core_pipeline/tonemapping/tonemapping.wgsl", embedded_wgsl_tonemapping_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

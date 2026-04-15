@@ -155,6 +155,8 @@ pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn register_render2d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
 pub fn render2d_camera_system(@ecs.World) -> Unit
@@ -736,6 +738,11 @@ pub fn Projection::orthographic_2d() -> Self
 pub impl @ecs.Component for Projection
 pub impl ToJson for Projection
 pub impl @json.FromJson for Projection
+
+pub struct Render2dEcsPlugin {
+}
+pub fn Render2dEcsPlugin::default() -> Self
+pub impl @app.Plugin for Render2dEcsPlugin
 
 pub struct Render2dPlugin {
 }

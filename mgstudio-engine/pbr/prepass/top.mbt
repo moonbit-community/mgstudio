@@ -42,7 +42,8 @@ pub impl @app.Plugin for PrepassPipelinePlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for PrepassPipelinePlugin with build(self, app) {
-  prepass_pipeline_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  prepass_pipeline_plugin_install_with(app, self)
 }
 
 ///|
@@ -183,11 +184,19 @@ pub impl @ecs.Component for PreviousGlobalTransform with component() {
 pub fn prepass_pipeline_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  prepass_pipeline_plugin_with(app, PrepassPipelinePlugin::default())
+  app.add_plugins(PrepassPipelinePlugin::default())
 }
 
 ///|
 pub fn prepass_pipeline_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : PrepassPipelinePlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn prepass_pipeline_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : PrepassPipelinePlugin,
 ) -> @app.App[@ecs.World] {

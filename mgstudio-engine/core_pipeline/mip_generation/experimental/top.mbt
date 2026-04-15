@@ -28,14 +28,19 @@ pub fn ExperimentalMipGeneration::default() -> ExperimentalMipGeneration {
 pub fn experimental_mip_generation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  experimental_mip_generation_plugin_with(
-    app,
-    ExperimentalMipGeneration::default(),
-  )
+  app.add_plugins(ExperimentalMipGeneration::default())
 }
 
 ///|
 pub fn experimental_mip_generation_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : ExperimentalMipGeneration,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn experimental_mip_generation_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : ExperimentalMipGeneration,
 ) -> @app.App[@ecs.World] {
@@ -50,7 +55,8 @@ pub impl @app.Plugin for ExperimentalMipGeneration with name(_self) {
 
 ///|
 pub impl @app.Plugin for ExperimentalMipGeneration with build(self, app) {
-  experimental_mip_generation_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  experimental_mip_generation_plugin_install_with(app, self)
 }
 
 ///|

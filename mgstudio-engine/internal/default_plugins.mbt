@@ -47,6 +47,7 @@ fn default_plugins_builder(
   .add(@transform.TransformPlugin::default())
   .add(@diagnostic.DiagnosticsPlugin::default())
   .add(@render.RenderPlugin::default())
+  .add(@core_pipeline.CorePipelinePlugin::default())
   .add(@visibility.VisibilityPlugin::default())
   .add(@input.InputPlugin::default())
   .add(@picking.PickingPlugin::default())

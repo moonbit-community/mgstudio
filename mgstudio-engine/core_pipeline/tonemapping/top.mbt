@@ -182,7 +182,7 @@ pub fn tonemapping_pipeline_key_shader_defs(
 
 ///|
 pub fn tonemapping_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  tonemapping_plugin_with(app, TonemappingPlugin::default())
+  app.add_plugins(TonemappingPlugin::default())
 }
 
 ///|
@@ -192,11 +192,20 @@ pub impl @app.Plugin for TonemappingPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for TonemappingPlugin with build(self, app) {
-  tonemapping_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  tonemapping_plugin_install_with(app, self)
 }
 
 ///|
 pub fn tonemapping_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : TonemappingPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn tonemapping_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : TonemappingPlugin,
 ) -> @app.App[@ecs.World] {

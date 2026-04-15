@@ -108,6 +108,7 @@ pub impl @app.Plugin for EnvironmentMapGenerationPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for EnvironmentMapGenerationPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   ignore(self)
   app
 }

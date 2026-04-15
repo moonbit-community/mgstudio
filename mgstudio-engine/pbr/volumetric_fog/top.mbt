@@ -39,6 +39,7 @@ pub impl @app.Plugin for VolumetricFogPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for VolumetricFogPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   volumetric_fog_plugin_install_with(app, self)
 }
 

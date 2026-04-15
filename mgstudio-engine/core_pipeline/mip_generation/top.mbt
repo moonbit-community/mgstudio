@@ -31,7 +31,7 @@ pub fn MipGenerationPlugin::default() -> MipGenerationPlugin {
 pub fn mip_generation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  mip_generation_plugin_with(app, MipGenerationPlugin::default())
+  app.add_plugins(MipGenerationPlugin::default())
 }
 
 ///|
@@ -41,7 +41,8 @@ pub impl @app.Plugin for MipGenerationPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for MipGenerationPlugin with build(self, app) {
-  mip_generation_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  mip_generation_plugin_install_with(app, self)
 }
 
 ///|
@@ -51,6 +52,14 @@ pub impl @app.Plugin for MipGenerationPlugin with finish(self, app) {
 
 ///|
 pub fn mip_generation_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : MipGenerationPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn mip_generation_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {

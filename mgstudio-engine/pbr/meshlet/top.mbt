@@ -884,6 +884,7 @@ pub impl @app.Plugin for MeshletPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for MeshletPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   meshlet_plugin_with(app, self)
 }
 

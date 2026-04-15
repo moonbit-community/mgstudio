@@ -17,6 +17,8 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[DeferredPbrLighti
 
 pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[PbrDeferredLightingDepthId]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

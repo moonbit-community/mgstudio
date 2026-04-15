@@ -53,6 +53,8 @@ pub fn pbr_gpu_atmosphere_settings_with_runtime(Float, Int, @light.AtmosphereMod
 
 pub fn pbr_validate_atmosphere_environment_map_size(@math.UVec2) -> @math.UVec2
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

@@ -18,6 +18,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "pbr/light_probe/light_probe.wgsl", embedded_wgsl_light_probe_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

@@ -6,6 +6,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "core_pipeline/oit/resolve/oit_resolve.wgsl", embedded_wgsl_oit_resolve_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

@@ -167,6 +167,8 @@ pub fn projection_from_custom(CustomProjection3d) -> Projection
 
 pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?) -> @material.StandardMaterial
 
 pub fn render3d_apply_view_fog_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewFogUniformOffset)]) -> Unit

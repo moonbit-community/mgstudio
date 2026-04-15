@@ -15,6 +15,8 @@ pub fn motion_blur_generate_samples(MotionBlur) -> Array[MotionBlurSample]
 
 pub fn motion_blur_samples(MotionBlur) -> Array[MotionBlurSample]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

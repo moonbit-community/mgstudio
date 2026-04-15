@@ -53,6 +53,7 @@ pub impl @app.Plugin for DeferredPbrLightingPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for DeferredPbrLightingPlugin with build(_self, app) {
+  register_embedded_wgsl_sources()
   deferred_pbr_lighting_plugin(app)
 }
 

@@ -40,6 +40,8 @@ pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass]
 
 pub fn late_deferred_prepass_should_run(DeferredPrepassViewState) -> Bool
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

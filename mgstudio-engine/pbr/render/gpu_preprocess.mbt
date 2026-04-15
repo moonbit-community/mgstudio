@@ -195,6 +195,7 @@ pub fn gpu_mesh_preprocess_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : GpuMeshPreprocessPlugin,
 ) -> @app.App[@ecs.World] {
+  register_embedded_wgsl_sources()
   let state = render3d_gpu_preprocess_state(
     plugin.use_gpu_instance_buffer_builder,
     false,

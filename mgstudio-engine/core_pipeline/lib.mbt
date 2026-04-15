@@ -35,7 +35,8 @@ pub impl @app.Plugin for CorePipelinePlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for CorePipelinePlugin with build(self, app) {
-  core_pipeline_plugin_with(app, self)
+  @fullscreen_vertex_shader.register_embedded_wgsl_sources()
+  core_pipeline_plugin_install_with(app, self)
 }
 
 ///|
@@ -136,11 +137,19 @@ fn core_pipeline_install_render_graph_driver(
 
 ///|
 pub fn core_pipeline_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  core_pipeline_plugin_with(app, CorePipelinePlugin::default())
+  app.add_plugins(CorePipelinePlugin::default())
 }
 
 ///|
 pub fn core_pipeline_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : CorePipelinePlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn core_pipeline_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : CorePipelinePlugin,
 ) -> @app.App[@ecs.World] {

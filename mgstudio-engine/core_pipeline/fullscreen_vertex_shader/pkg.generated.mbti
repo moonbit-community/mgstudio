@@ -13,6 +13,8 @@ pub const FULLSCREEN_SHADER_PATH : String = "core_pipeline/fullscreen_vertex_sha
 
 pub let ecs_key_fullscreen_shader : @ecs.ResourceKey[FullscreenShader]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

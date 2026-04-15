@@ -63,12 +63,17 @@ pub impl @app.Plugin for MaterialsPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for MaterialsPlugin with build(_self, app) {
-  materials_plugin(app)
+  materials_plugin_install(app)
 }
 
 ///|
 pub fn materials_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  if app.contains_resource(ecs_key_materials_plugin_state) {
+  app.add_plugins(MaterialsPlugin::default())
+}
+
+///|
+fn materials_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let app = if app.contains_resource(ecs_key_materials_plugin_state) {
     app
   } else {
     app
@@ -77,6 +82,7 @@ pub fn materials_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     })
     .add_startup_system(init_materials_resources)
   }
+  @pbr_prepass.prepass_plugin(app)
 }
 
 ///|

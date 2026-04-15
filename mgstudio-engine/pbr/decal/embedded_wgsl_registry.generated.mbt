@@ -9,6 +9,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "pbr/decal/forward_decal.wgsl", embedded_wgsl_forward_decal_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

@@ -35,6 +35,8 @@ pub fn pbr_forward_decal_shader_defs(ForwardDecalPipelineKey) -> Array[String]
 
 pub fn pbr_forward_decal_specialized_label(String) -> String
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

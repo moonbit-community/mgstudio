@@ -13,6 +13,8 @@ pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias]
 
 pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[BoxShadowSamples]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn ui_render_extract_system(@ecs.World) -> Unit
 
 pub fn ui_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

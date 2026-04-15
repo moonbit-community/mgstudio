@@ -1,17 +1,6 @@
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/sprite_render",
-  "Milky2018/moon_wgsl" @wgsl,
 }
 
 supported_targets = "native"
-
-options(
-  "pre-build": [
-    {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_material_wgsl_source",
-      "input": "sprite_material.wgsl",
-      "output": "embedded_wgsl_sprite_material_wgsl.mbt",
-    },
-  ],
-)

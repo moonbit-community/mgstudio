@@ -23,6 +23,8 @@ pub let ecs_key_tonemapping_luts : @ecs.ResourceKey[TonemappingLuts]
 
 pub let ecs_key_tonemapping_pipeline_key : @ecs.ResourceKey[TonemappingPipelineKey]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn tonemapping_bind_group_cache_hit(TonemappingBindGroupCacheState, view_uniform_buffer_id~ : Int, source_texture_view_id~ : Int, lut_texture_view_id~ : Int, fallback_lut_texture_view_id~ : Int, String) -> Bool
 
 pub fn tonemapping_bind_group_cache_record(TonemappingBindGroupCacheState, view_uniform_buffer_id~ : Int, source_texture_view_id~ : Int, lut_texture_view_id~ : Int, String) -> TonemappingBindGroupCacheState

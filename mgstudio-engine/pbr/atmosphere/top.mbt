@@ -41,6 +41,7 @@ pub impl @app.Plugin for AtmospherePlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for AtmospherePlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   atmosphere_plugin_install_with(app, self)
 }
 

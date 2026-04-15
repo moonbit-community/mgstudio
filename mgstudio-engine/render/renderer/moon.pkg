@@ -19,4 +19,11 @@ supported_targets = "native"
 
 options(
   "native-stub": [ "pipeline_layout_stub.c" ],
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh3d_forward_wgsl_source",
+      "input": "../../assets/shaders/mesh3d_forward.wgsl",
+      "output": "embedded_wgsl_mesh3d_forward_wgsl.mbt",
+    },
+  ],
 )

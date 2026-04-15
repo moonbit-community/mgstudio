@@ -12,9 +12,12 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "render/globals.wgsl", embedded_wgsl_globals_wgsl_source,
   )
   @wgsl.register_wgsl_source(
+    "render/occlusion_culling/mesh_preprocess_types.wgsl", embedded_wgsl_mesh_preprocess_types_wgsl_source,
+  )
+  @wgsl.register_wgsl_source(
     "render/maths.wgsl", embedded_wgsl_maths_wgsl_source,
   )
+  @wgsl.register_wgsl_source(
+    "render/view/view.wgsl", embedded_wgsl_view_wgsl_source,
+  )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

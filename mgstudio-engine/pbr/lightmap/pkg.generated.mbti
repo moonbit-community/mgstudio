@@ -27,6 +27,8 @@ pub fn lightmap_plugin_install_with(@app.App[@ecs.World], LightmapPlugin) -> @ap
 
 pub fn lightmap_plugin_state(Bool) -> LightmapPluginState
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

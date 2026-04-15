@@ -36,6 +36,7 @@ pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   ssr_plugin_install_with(app, self)
 }
 

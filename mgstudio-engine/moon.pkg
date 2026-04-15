@@ -105,11 +105,6 @@ options(
       "output": "embedded_wgsl_assets_shaders_custom_vertex_attribute_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_custom_mesh3d_forward_wgsl_source",
-      "input": "assets/shaders/mesh3d_forward.wgsl",
-      "output": "embedded_wgsl_assets_shaders_custom_mesh3d_forward_wgsl.mbt",
-    },
-    {
       "command": ":embed --input $input --output $output --name embedded_wgsl_assets_shaders_extended_material_bindless_wgsl_source",
       "input": "assets/shaders/extended_material_bindless.wgsl",
       "output": "embedded_wgsl_assets_shaders_extended_material_bindless_wgsl.mbt",

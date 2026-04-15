@@ -65,6 +65,8 @@ pub fn pbr_light_probe_new() -> @light.LightProbe
 
 pub fn pbr_parallax_correction_default() -> @light.ParallaxCorrection
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn render_light_probe_flags_contains(Int, Int) -> Bool
 
 pub fn render_light_probe_flags_insert(Int, Int) -> Int

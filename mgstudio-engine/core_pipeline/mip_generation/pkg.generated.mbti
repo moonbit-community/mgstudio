@@ -30,6 +30,8 @@ pub fn mip_generation_plugin_with(@app.App[@ecs.World], MipGenerationPlugin) -> 
 
 pub fn mip_generation_supports_downsample(Int) -> Bool
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

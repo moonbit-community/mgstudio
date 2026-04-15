@@ -88,7 +88,7 @@ fn[R] extract_resource_system(
 pub fn extract_resource_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_plugin(app)
+  app
 }
 
 ///|
@@ -97,7 +97,7 @@ pub fn[R : @app.Resource, F] extract_resource_plugin_with(
   plugin : ExtractResourcePlugin[R, F],
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let next = render_plugin(app)
+  let next = app
   let resource_key = R::resource()
   with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     sub_app.add_systems(

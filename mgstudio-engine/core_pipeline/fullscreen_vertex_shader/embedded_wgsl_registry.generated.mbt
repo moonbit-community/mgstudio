@@ -6,6 +6,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", embedded_wgsl_fullscreen_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

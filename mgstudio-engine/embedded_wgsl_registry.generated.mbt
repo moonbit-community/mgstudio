@@ -57,9 +57,6 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "assets/shaders/custom_vertex_attribute.wgsl", embedded_wgsl_assets_shaders_custom_vertex_attribute_wgsl_source,
   )
   @wgsl.register_wgsl_source(
-    "assets/shaders/mesh3d_forward.wgsl", embedded_wgsl_assets_shaders_custom_mesh3d_forward_wgsl_source,
-  )
-  @wgsl.register_wgsl_source(
     "assets/shaders/extended_material_bindless.wgsl", embedded_wgsl_assets_shaders_extended_material_bindless_wgsl_source,
   )
   @wgsl.register_wgsl_source(
@@ -123,6 +120,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "assets/shaders/water_material.wgsl", embedded_wgsl_assets_shaders_water_material_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

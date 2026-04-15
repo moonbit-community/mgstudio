@@ -22,6 +22,8 @@ pub fn fxaa_plugin_with(@app.App[@ecs.World], FxaaPlugin) -> @app.App[@ecs.World
 
 pub fn fxaa_update_runtime_state(@ecs.World) -> Unit
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

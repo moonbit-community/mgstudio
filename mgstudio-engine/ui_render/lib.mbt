@@ -15,6 +15,11 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/lib.rs`.
 pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_plugins(UiRenderPlugin::default())
+}
+
+///|
+fn ui_render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @render.with_render_app(app, fn(render_app) {
     let stage = @render.render_schedule_stage()
     @render.configure_base_render_sets(render_app)

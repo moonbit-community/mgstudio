@@ -245,6 +245,8 @@ pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.
 
 pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit

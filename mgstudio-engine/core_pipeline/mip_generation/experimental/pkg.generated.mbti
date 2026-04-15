@@ -32,6 +32,8 @@ pub fn experimental_mip_generation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs
 
 pub fn experimental_mip_generation_plugin_with(@app.App[@ecs.World], ExperimentalMipGeneration) -> @app.App[@ecs.World]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

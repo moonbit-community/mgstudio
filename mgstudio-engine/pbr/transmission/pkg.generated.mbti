@@ -25,6 +25,8 @@ pub fn pbr_prepare_view_transmission_texture(Int, Int, Int) -> ViewTransmissionT
 
 pub fn pbr_should_prepare_transmission_texture(Int, Int, Bool, Bool, Bool) -> Bool
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn screen_space_transmission_blur_taps(ScreenSpaceTransmissionQuality) -> Int
 
 pub fn transmissive3d_render_step_ranges(Array[Transmissive3d], ScreenSpaceTransmission) -> Array[(Int, Int)]

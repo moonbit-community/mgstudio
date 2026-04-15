@@ -26,7 +26,7 @@ pub fn DeferredPlugin::default() -> DeferredPlugin {
 
 ///|
 pub fn deferred_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  deferred_plugin_with(app, DeferredPlugin::default())
+  app.add_plugins(DeferredPlugin::default())
 }
 
 ///|
@@ -36,11 +36,20 @@ pub impl @app.Plugin for DeferredPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for DeferredPlugin with build(self, app) {
-  deferred_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  deferred_plugin_install_with(app, self)
 }
 
 ///|
 pub fn deferred_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : DeferredPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn deferred_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : DeferredPlugin,
 ) -> @app.App[@ecs.World] {

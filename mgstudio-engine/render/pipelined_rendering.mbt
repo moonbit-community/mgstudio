@@ -77,7 +77,7 @@ fn renderer_extract(
 pub fn pipelined_rendering_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  let mut next = render_plugin(app)
+  let mut next = app
   if next.get_sub_app(@app.RenderApp) is None {
     return next
   }

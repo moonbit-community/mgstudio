@@ -6,6 +6,9 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/bloom" @post_process_bloom,
+  "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,
+  "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/render/diagnostic" @render_diagnostic,
   "Milky2018/mgstudio/render/mesh" @render_mesh,
@@ -37,9 +40,19 @@ options(
       "output": "embedded_wgsl_globals_wgsl.mbt",
     },
     {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_preprocess_types_wgsl_source",
+      "input": "occlusion_culling/mesh_preprocess_types.wgsl",
+      "output": "embedded_wgsl_mesh_preprocess_types_wgsl.mbt",
+    },
+    {
       "command": ":embed --input $input --output $output --name embedded_wgsl_maths_wgsl_source",
       "input": "maths.wgsl",
       "output": "embedded_wgsl_maths_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_view_wgsl_source",
+      "input": "view/view.wgsl",
+      "output": "embedded_wgsl_view_wgsl.mbt",
     },
   ],
 )

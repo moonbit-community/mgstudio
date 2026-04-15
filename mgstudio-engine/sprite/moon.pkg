@@ -82,6 +82,16 @@ options(
       "output": "embedded_wgsl_sprite_render_sprite_view_bindings_wgsl.mbt",
     },
     {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_render_sprite_material_wgsl_source",
+      "input": "../sprite_render/sprite_mesh/sprite_material.wgsl",
+      "output": "embedded_wgsl_sprite_render_sprite_material_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_sprite_render_tilemap_chunk_material_wgsl_source",
+      "input": "../sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl",
+      "output": "embedded_wgsl_sprite_render_tilemap_chunk_material_wgsl.mbt",
+    },
+    {
       "command": ":embed --input $input --output $output --name embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl_source",
       "input": "../assets/shaders/mesh2d_checker_material.wgsl",
       "output": "embedded_wgsl_shaders_custom_mesh2d_checker_material_wgsl.mbt",

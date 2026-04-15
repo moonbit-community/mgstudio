@@ -45,6 +45,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "pbr/meshlet/visibility_buffer_software_raster.wgsl", embedded_wgsl_visibility_buffer_software_raster_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

@@ -21,6 +21,8 @@ pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
 
 pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn skybox_pipeline_key(SkyboxPrepareViewState, depth_format? : String) -> SkyboxPipelineKey
 
 pub fn skybox_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

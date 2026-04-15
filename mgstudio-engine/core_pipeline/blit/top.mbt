@@ -32,7 +32,7 @@ pub fn BlitPlugin::default() -> BlitPlugin {
 
 ///|
 pub fn blit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  blit_plugin_with(app, BlitPlugin::default())
+  app.add_plugins(BlitPlugin::default())
 }
 
 ///|
@@ -42,11 +42,20 @@ pub impl @app.Plugin for BlitPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for BlitPlugin with build(self, app) {
-  blit_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  blit_plugin_install_with(app, self)
 }
 
 ///|
 pub fn blit_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : BlitPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn blit_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : BlitPlugin,
 ) -> @app.App[@ecs.World] {

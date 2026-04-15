@@ -22,6 +22,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
   )
   @wgsl.register_wgsl_source("ui_render/ui.wgsl", embedded_wgsl_ui_wgsl_source)
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

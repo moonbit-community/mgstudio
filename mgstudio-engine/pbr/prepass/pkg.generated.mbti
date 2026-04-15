@@ -58,6 +58,8 @@ pub fn prepass_should_skip_due_to_deferred(@Milky2018/mgstudio/core_pipeline/pre
 
 pub fn prepass_update_pipeline_state(@ecs.World) -> Unit
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn render3d_prepass_any_enabled(PrepassBindings3d) -> Bool
 
 pub fn render3d_prepass_bindings(Bool, Bool, Bool, Bool) -> PrepassBindings3d

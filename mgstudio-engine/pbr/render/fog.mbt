@@ -164,6 +164,7 @@ pub impl @app.Plugin for FogPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for FogPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   fog_plugin_install_with(app, self)
 }
 

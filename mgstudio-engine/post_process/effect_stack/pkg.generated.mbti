@@ -19,6 +19,8 @@ pub fn effect_stack_build_chromatic_aberration_uniform(ChromaticAberration) -> C
 
 pub fn effect_stack_build_vignette_uniform(Vignette) -> VignetteUniform
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn vignette_screen_centered(Vignette) -> Bool
 
 // Errors

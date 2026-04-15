@@ -20,6 +20,8 @@ pub fn pbr_fog_volume_default() -> @light.FogVolume
 
 pub fn pbr_volumetric_fog_default() -> @light.VolumetricFog
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn view_volumetric_fog_pipelines(Int, Int) -> ViewVolumetricFogPipelines
 
 pub fn volumetric_fog_bind_group_layout_index(VolumetricFogBindGroupLayoutKey) -> Int

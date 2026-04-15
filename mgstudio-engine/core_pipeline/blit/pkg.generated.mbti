@@ -22,6 +22,8 @@ pub fn blit_plugin_with(@app.App[@ecs.World], BlitPlugin) -> @app.App[@ecs.World
 
 pub let ecs_key_blit_pipeline : @ecs.ResourceKey[BlitPipeline]
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

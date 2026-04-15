@@ -39,6 +39,7 @@ pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   ssao_plugin_install_with(app, self)
 }
 

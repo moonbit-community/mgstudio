@@ -73,9 +73,10 @@ pub fn read_only_binding_type_uniform(required_storage_buffers : Int) -> Bool {
     return false
   }
   if ensure_backend() is Some(backend) {
-    let backend_type = backend.device.info_backend_type_u32()
-    return backend_type == @wgpu.BACKEND_TYPE_OPEN_GL ||
-      backend_type == @wgpu.BACKEND_TYPE_OPEN_GLES
+    return backend.device.get_supported_read_only_binding_type_u32(
+        required_storage_buffers.reinterpret_as_uint(),
+      ) ==
+      @wgpu.BUFFER_BINDING_TYPE_UNIFORM
   }
   false
 }

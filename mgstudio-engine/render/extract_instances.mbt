@@ -82,5 +82,5 @@ pub fn[EI] extract_visible(
 pub fn extract_instances_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_plugin(app)
+  app
 }

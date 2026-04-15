@@ -129,5 +129,5 @@ pub fn[C] gpu_component_array_buffer_plugin(
   app : @app.App[@ecs.World],
   _plugin? : GpuComponentArrayBufferPlugin[C] = GpuComponentArrayBufferPlugin::default(),
 ) -> @app.App[@ecs.World] {
-  render_plugin(app)
+  app
 }

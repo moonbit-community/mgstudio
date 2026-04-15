@@ -145,7 +145,7 @@ pub impl @ecs.Component for Skybox with component() {
 
 ///|
 pub fn skybox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  skybox_plugin_with(app, SkyboxPlugin::default())
+  app.add_plugins(SkyboxPlugin::default())
 }
 
 ///|
@@ -155,11 +155,20 @@ pub impl @app.Plugin for SkyboxPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for SkyboxPlugin with build(self, app) {
-  skybox_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  skybox_plugin_install_with(app, self)
 }
 
 ///|
 pub fn skybox_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : SkyboxPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn skybox_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : SkyboxPlugin,
 ) -> @app.App[@ecs.World] {

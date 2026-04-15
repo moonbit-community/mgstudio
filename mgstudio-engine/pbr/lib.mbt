@@ -159,14 +159,9 @@ fn pbr_plugin_sync_standard_material_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  let app = standard_material_plugin_with(app, StandardMaterialPlugin::{
+  standard_material_plugin_with(app, StandardMaterialPlugin::{
     prepass_enabled: runtime_config.prepass_enabled,
   })
-  if runtime_config.prepass_enabled {
-    @pbr_prepass.prepass_plugin(app)
-  } else {
-    app
-  }
 }
 
 ///|
@@ -225,7 +220,7 @@ pub let render3d_set_render : @app.SystemSet = @render.render_system_set_render
 
 ///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  pbr_plugin_with(app, PbrPlugin::default())
+  app.add_plugins(PbrPlugin::default())
 }
 
 ///|
@@ -235,11 +230,21 @@ pub impl @app.Plugin for PbrPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for PbrPlugin with build(self, app) {
-  pbr_plugin_with(app, self)
+  @pbr_render.register_embedded_wgsl_sources()
+  @transmission.register_embedded_wgsl_sources()
+  pbr_plugin_install_with(app, self)
 }
 
 ///|
 pub fn pbr_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : PbrPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn pbr_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : PbrPlugin,
 ) -> @app.App[@ecs.World] {
@@ -261,9 +266,9 @@ pub fn pbr_plugin_with(
   try! register_render3d_required_components(next.world())
   next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
   next = pbr_plugin_sync_materials_state(next, runtime_config)
+  next = pbr_plugin_sync_standard_material_state(next, runtime_config)
   next = pbr_plugin_sync_light_probe_state(next, runtime_config)
   next = pbr_plugin_sync_feature_plugins(next, runtime_config)
-  next = pbr_plugin_sync_standard_material_state(next, runtime_config)
   next = pbr_plugin_sync_fog_state(next, runtime_config)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
@@ -272,5 +277,5 @@ pub fn pbr_plugin_with(
 
 ///|
 pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  pbr_plugin(app)
+  app.add_plugins(PbrPlugin::default())
 }

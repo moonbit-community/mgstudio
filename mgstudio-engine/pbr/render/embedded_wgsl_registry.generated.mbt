@@ -3,6 +3,9 @@
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
   @wgsl.register_wgsl_source(
+    "post_process/auto_exposure/auto_exposure.wgsl", embedded_wgsl_auto_exposure_wgsl_source,
+  )
+  @wgsl.register_wgsl_source(
     "pbr/render/build_indirect_params.wgsl", embedded_wgsl_build_indirect_params_wgsl_source,
   )
   @wgsl.register_wgsl_source(
@@ -96,6 +99,3 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     "pbr/render/wireframe.wgsl", embedded_wgsl_wireframe_wgsl_source,
   )
 }
-
-///|
-let _register_embedded_wgsl_sources_generated : Unit = register_embedded_wgsl_sources_generated()

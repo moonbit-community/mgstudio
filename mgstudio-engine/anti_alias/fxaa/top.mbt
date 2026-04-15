@@ -62,16 +62,25 @@ pub impl @app.Plugin for FxaaPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for FxaaPlugin with build(self, app) {
-  fxaa_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  fxaa_plugin_install_with(app, self)
 }
 
 ///|
 pub fn fxaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  fxaa_plugin_with(app, FxaaPlugin::default())
+  app.add_plugins(FxaaPlugin::default())
 }
 
 ///|
 pub fn fxaa_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : FxaaPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn fxaa_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : FxaaPlugin,
 ) -> @app.App[@ecs.World] {

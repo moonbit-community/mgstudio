@@ -27,5 +27,5 @@ pub impl @app.Plugin for RenderPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for RenderPlugin with build(_self, app) {
-  render_plugin(app)
+  render_plugin_install(app)
 }

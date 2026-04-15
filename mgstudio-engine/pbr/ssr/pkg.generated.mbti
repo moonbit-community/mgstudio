@@ -14,6 +14,8 @@ pub fn pbr_ssr_uniform_with_bisection_steps(ScreenSpaceReflectionsUniform, Int) 
 
 pub fn pbr_ssr_uniform_with_linear_steps(ScreenSpaceReflectionsUniform, Int) -> ScreenSpaceReflectionsUniform
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 pub fn ssr_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn ssr_plugin_install_with(@app.App[@ecs.World], ScreenSpaceReflectionsPlugin) -> @app.App[@ecs.World]

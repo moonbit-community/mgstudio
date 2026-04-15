@@ -170,6 +170,8 @@ pub fn queue_material_meshlet_meshes_with_material_assets(InstanceManager, Array
 
 pub fn queue_material_meshlet_meshes_with_present_material_assets(InstanceManager) -> Int
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

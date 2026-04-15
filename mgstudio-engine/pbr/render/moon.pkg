@@ -33,6 +33,11 @@ options(
       "output": "embedded_wgsl_build_indirect_params_wgsl.mbt",
     },
     {
+      "command": ":embed --input $input --output $output --name embedded_wgsl_auto_exposure_wgsl_source",
+      "input": "../../post_process/auto_exposure/auto_exposure.wgsl",
+      "output": "embedded_wgsl_auto_exposure_wgsl.mbt",
+    },
+    {
       "command": ":embed --input $input --output $output --name embedded_wgsl_clustered_forward_wgsl_source",
       "input": "clustered_forward.wgsl",
       "output": "embedded_wgsl_clustered_forward_wgsl.mbt",

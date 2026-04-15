@@ -32,11 +32,19 @@ pub fn OitResolvePlugin::default() -> OitResolvePlugin {
 
 ///|
 pub fn oit_resolve_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  oit_resolve_plugin_with(app, OitResolvePlugin::default())
+  app.add_plugins(OitResolvePlugin::default())
 }
 
 ///|
 pub fn oit_resolve_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : OitResolvePlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
+}
+
+///|
+fn oit_resolve_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : OitResolvePlugin,
 ) -> @app.App[@ecs.World] {
@@ -54,7 +62,8 @@ pub impl @app.Plugin for OitResolvePlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for OitResolvePlugin with build(self, app) {
-  oit_resolve_plugin_with(app, self)
+  register_embedded_wgsl_sources()
+  oit_resolve_plugin_install_with(app, self)
 }
 
 ///|
