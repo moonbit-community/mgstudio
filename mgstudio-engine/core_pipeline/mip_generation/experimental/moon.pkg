@@ -9,9 +9,9 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_downsample_depth_wgsl_source",
+      "command": ":embed --input $input --output $output --name downsample_depth_wgsl_source",
       "input": "downsample_depth.wgsl",
-      "output": "embedded_wgsl_downsample_depth_wgsl.mbt",
+      "output": "downsample_depth_wgsl.mbt",
     },
   ],
 )

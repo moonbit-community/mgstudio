@@ -11,19 +11,19 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_deferred_lighting_wgsl_source",
+      "command": ":embed --input $input --output $output --name deferred_lighting_wgsl_source",
       "input": "deferred_lighting.wgsl",
-      "output": "embedded_wgsl_deferred_lighting_wgsl.mbt",
+      "output": "deferred_lighting_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_deferred_functions_wgsl_source",
+      "command": ":embed --input $input --output $output --name pbr_deferred_functions_wgsl_source",
       "input": "pbr_deferred_functions.wgsl",
-      "output": "embedded_wgsl_pbr_deferred_functions_wgsl.mbt",
+      "output": "pbr_deferred_functions_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_pbr_deferred_types_wgsl_source",
+      "command": ":embed --input $input --output $output --name pbr_deferred_types_wgsl_source",
       "input": "pbr_deferred_types.wgsl",
-      "output": "embedded_wgsl_pbr_deferred_types_wgsl.mbt",
+      "output": "pbr_deferred_types_wgsl.mbt",
     },
   ],
 )

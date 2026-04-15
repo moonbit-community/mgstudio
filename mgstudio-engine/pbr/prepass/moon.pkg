@@ -14,24 +14,24 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_prepass_bindings_wgsl_source",
+      "command": ":embed --input $input --output $output --name prepass_bindings_wgsl_source",
       "input": "prepass_bindings.wgsl",
-      "output": "embedded_wgsl_prepass_bindings_wgsl.mbt",
+      "output": "prepass_bindings_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_prepass_io_wgsl_source",
+      "command": ":embed --input $input --output $output --name prepass_io_wgsl_source",
       "input": "prepass_io.wgsl",
-      "output": "embedded_wgsl_prepass_io_wgsl.mbt",
+      "output": "prepass_io_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_prepass_utils_wgsl_source",
+      "command": ":embed --input $input --output $output --name prepass_utils_wgsl_source",
       "input": "prepass_utils.wgsl",
-      "output": "embedded_wgsl_prepass_utils_wgsl.mbt",
+      "output": "prepass_utils_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_prepass_wgsl_source",
+      "command": ":embed --input $input --output $output --name prepass_wgsl_source",
       "input": "prepass.wgsl",
-      "output": "embedded_wgsl_prepass_wgsl.mbt",
+      "output": "prepass_wgsl.mbt",
     },
   ],
 )

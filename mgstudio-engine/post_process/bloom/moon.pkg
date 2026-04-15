@@ -10,9 +10,9 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_bloom_wgsl_source",
+      "command": ":embed --input $input --output $output --name bloom_wgsl_source",
       "input": "bloom.wgsl",
-      "output": "embedded_wgsl_bloom_wgsl.mbt",
+      "output": "bloom_wgsl.mbt",
     },
   ],
 )

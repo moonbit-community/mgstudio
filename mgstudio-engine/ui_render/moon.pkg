@@ -20,39 +20,39 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_box_shadow_wgsl_source",
+      "command": ":embed --input $input --output $output --name box_shadow_wgsl_source",
       "input": "box_shadow.wgsl",
-      "output": "embedded_wgsl_box_shadow_wgsl.mbt",
+      "output": "box_shadow_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_color_space_wgsl_source",
+      "command": ":embed --input $input --output $output --name color_space_wgsl_source",
       "input": "color_space.wgsl",
-      "output": "embedded_wgsl_color_space_wgsl.mbt",
+      "output": "color_space_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_gradient_wgsl_source",
+      "command": ":embed --input $input --output $output --name gradient_wgsl_source",
       "input": "gradient.wgsl",
-      "output": "embedded_wgsl_gradient_wgsl.mbt",
+      "output": "gradient_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_ui_material_wgsl_source",
+      "command": ":embed --input $input --output $output --name ui_material_wgsl_source",
       "input": "ui_material.wgsl",
-      "output": "embedded_wgsl_ui_material_wgsl.mbt",
+      "output": "ui_material_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_ui_texture_slice_wgsl_source",
+      "command": ":embed --input $input --output $output --name ui_texture_slice_wgsl_source",
       "input": "ui_texture_slice.wgsl",
-      "output": "embedded_wgsl_ui_texture_slice_wgsl.mbt",
+      "output": "ui_texture_slice_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_ui_vertex_output_wgsl_source",
+      "command": ":embed --input $input --output $output --name ui_vertex_output_wgsl_source",
       "input": "ui_vertex_output.wgsl",
-      "output": "embedded_wgsl_ui_vertex_output_wgsl.mbt",
+      "output": "ui_vertex_output_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_ui_wgsl_source",
+      "command": ":embed --input $input --output $output --name ui_wgsl_source",
       "input": "ui.wgsl",
-      "output": "embedded_wgsl_ui_wgsl.mbt",
+      "output": "ui_wgsl.mbt",
     },
   ],
 )

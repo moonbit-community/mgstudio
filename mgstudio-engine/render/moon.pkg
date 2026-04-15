@@ -25,34 +25,34 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_bindless_wgsl_source",
+      "command": ":embed --input $input --output $output --name bindless_wgsl_source",
       "input": "bindless.wgsl",
-      "output": "embedded_wgsl_bindless_wgsl.mbt",
+      "output": "bindless_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_color_operations_wgsl_source",
+      "command": ":embed --input $input --output $output --name color_operations_wgsl_source",
       "input": "color_operations.wgsl",
-      "output": "embedded_wgsl_color_operations_wgsl.mbt",
+      "output": "color_operations_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_globals_wgsl_source",
+      "command": ":embed --input $input --output $output --name globals_wgsl_source",
       "input": "globals.wgsl",
-      "output": "embedded_wgsl_globals_wgsl.mbt",
+      "output": "globals_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_mesh_preprocess_types_wgsl_source",
+      "command": ":embed --input $input --output $output --name mesh_preprocess_types_wgsl_source",
       "input": "occlusion_culling/mesh_preprocess_types.wgsl",
-      "output": "embedded_wgsl_mesh_preprocess_types_wgsl.mbt",
+      "output": "mesh_preprocess_types_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_maths_wgsl_source",
+      "command": ":embed --input $input --output $output --name maths_wgsl_source",
       "input": "maths.wgsl",
-      "output": "embedded_wgsl_maths_wgsl.mbt",
+      "output": "maths_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_view_wgsl_source",
+      "command": ":embed --input $input --output $output --name view_wgsl_source",
       "input": "view/view.wgsl",
-      "output": "embedded_wgsl_view_wgsl.mbt",
+      "output": "view_wgsl.mbt",
     },
   ],
 )

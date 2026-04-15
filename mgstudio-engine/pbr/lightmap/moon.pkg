@@ -13,9 +13,9 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_lightmap_wgsl_source",
+      "command": ":embed --input $input --output $output --name lightmap_wgsl_source",
       "input": "lightmap.wgsl",
-      "output": "embedded_wgsl_lightmap_wgsl.mbt",
+      "output": "lightmap_wgsl.mbt",
     },
   ],
 )

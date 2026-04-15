@@ -11,19 +11,19 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_chromatic_aberration_wgsl_source",
+      "command": ":embed --input $input --output $output --name chromatic_aberration_wgsl_source",
       "input": "chromatic_aberration.wgsl",
-      "output": "embedded_wgsl_chromatic_aberration_wgsl.mbt",
+      "output": "chromatic_aberration_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_post_process_wgsl_source",
+      "command": ":embed --input $input --output $output --name post_process_wgsl_source",
       "input": "post_process.wgsl",
-      "output": "embedded_wgsl_post_process_wgsl.mbt",
+      "output": "post_process_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_vignette_wgsl_source",
+      "command": ":embed --input $input --output $output --name vignette_wgsl_source",
       "input": "vignette.wgsl",
-      "output": "embedded_wgsl_vignette_wgsl.mbt",
+      "output": "vignette_wgsl.mbt",
     },
   ],
 )

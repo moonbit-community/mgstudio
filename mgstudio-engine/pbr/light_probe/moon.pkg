@@ -12,29 +12,29 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_copy_wgsl_source",
+      "command": ":embed --input $input --output $output --name copy_wgsl_source",
       "input": "copy.wgsl",
-      "output": "embedded_wgsl_copy_wgsl.mbt",
+      "output": "copy_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_environment_filter_wgsl_source",
+      "command": ":embed --input $input --output $output --name environment_filter_wgsl_source",
       "input": "environment_filter.wgsl",
-      "output": "embedded_wgsl_environment_filter_wgsl.mbt",
+      "output": "environment_filter_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_environment_map_wgsl_source",
+      "command": ":embed --input $input --output $output --name environment_map_wgsl_source",
       "input": "environment_map.wgsl",
-      "output": "embedded_wgsl_environment_map_wgsl.mbt",
+      "output": "environment_map_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_irradiance_volume_wgsl_source",
+      "command": ":embed --input $input --output $output --name irradiance_volume_wgsl_source",
       "input": "irradiance_volume.wgsl",
-      "output": "embedded_wgsl_irradiance_volume_wgsl.mbt",
+      "output": "irradiance_volume_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_light_probe_wgsl_source",
+      "command": ":embed --input $input --output $output --name light_probe_wgsl_source",
       "input": "light_probe.wgsl",
-      "output": "embedded_wgsl_light_probe_wgsl.mbt",
+      "output": "light_probe_wgsl.mbt",
     },
   ],
 )

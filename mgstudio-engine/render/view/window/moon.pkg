@@ -8,9 +8,9 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_screenshot_wgsl_source",
+      "command": ":embed --input $input --output $output --name screenshot_wgsl_source",
       "input": "screenshot.wgsl",
-      "output": "embedded_wgsl_screenshot_wgsl.mbt",
+      "output": "screenshot_wgsl.mbt",
     },
   ],
 )

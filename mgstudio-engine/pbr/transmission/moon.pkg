@@ -10,9 +10,9 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name embedded_wgsl_transmission_wgsl_source",
+      "command": ":embed --input $input --output $output --name transmission_wgsl_source",
       "input": "transmission.wgsl",
-      "output": "embedded_wgsl_transmission_wgsl.mbt",
+      "output": "transmission_wgsl.mbt",
     },
   ],
 )
