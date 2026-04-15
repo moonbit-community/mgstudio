@@ -448,6 +448,102 @@ test "scene gltf wb: parse node MSFT_lod ids" {
 }
 
 ///|
+test "scene gltf wb: parse cameras lights and node extras" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"cameras\":[{\"type\":\"perspective\",\"perspective\":{\"yfov\":1.1,\"znear\":0.2,\"zfar\":100.0,\"aspectRatio\":1.6}},{\"type\":\"orthographic\",\"orthographic\":{\"xmag\":2.0,\"ymag\":1.0,\"znear\":0.3,\"zfar\":55.0}}],\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[{\"type\":\"spot\",\"name\":\"Lamp\",\"color\":[0.25,0.5,0.75],\"intensity\":12.0,\"range\":9.0,\"spot\":{\"innerConeAngle\":0.1,\"outerConeAngle\":0.5},\"extras\":{\"light\":true}}]}},\"nodes\":[{\"name\":\"Node\",\"camera\":0,\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}},\"extras\":{\"node\":1}}],\"meshes\":[]}"
+  let doc = gltf_parse_document(source).unwrap()
+  debug_inspect(doc.cameras.length(), content="2")
+  debug_inspect(doc.lights.length(), content="1")
+  debug_inspect(doc.nodes[0].camera, content="Some(0)")
+  debug_inspect(doc.nodes[0].light, content="Some(0)")
+  debug_inspect(
+    doc.nodes[0].extras.unwrap_or(""),
+    content="\"{\\\"node\\\":1}\"",
+  )
+  match doc.cameras[0].projection {
+    Perspective(yfov, znear, zfar, aspect_ratio) => {
+      debug_inspect(yfov.to_double(), content="1.100000023841858")
+      debug_inspect(znear.to_double(), content="0.20000000298023224")
+      debug_inspect(zfar, content="Some(100)")
+      debug_inspect(aspect_ratio, content="Some(1.600000023841858)")
+    }
+    _ => abort("expected perspective camera")
+  }
+  match doc.cameras[1].projection {
+    Orthographic(xmag, znear, zfar) => {
+      debug_inspect(xmag.to_double(), content="2")
+      debug_inspect(znear.to_double(), content="0.30000001192092896")
+      debug_inspect(zfar.to_double(), content="55")
+    }
+    _ => abort("expected orthographic camera")
+  }
+  match doc.lights[0].kind {
+    Spot(inner_angle, outer_angle) => {
+      debug_inspect(inner_angle.to_double(), content="0.10000000149011612")
+      debug_inspect(outer_angle.to_double(), content="0.5")
+    }
+    _ => abort("expected spot light")
+  }
+  debug_inspect(doc.lights[0].name, content="\"Lamp\"")
+  debug_inspect(
+    doc.lights[0].extras.unwrap_or(""),
+    content="\"{\\\"light\\\":true}\"",
+  )
+}
+
+///|
+test "scene gltf wb: camera and light helpers respect loader gates" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"cameras\":[{\"type\":\"perspective\",\"perspective\":{\"yfov\":1.0,\"znear\":0.1}}],\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[{\"type\":\"point\",\"name\":\"Point\",\"intensity\":2.0,\"range\":6.0}]}} ,\"nodes\":[{\"name\":\"Root\",\"camera\":0,\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}},\"extras\":{\"node\":1}}],\"meshes\":[]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let node = doc.nodes[0]
+  let active_camera_found = Ref::new(false)
+
+  let enabled_camera = gltf_scene_node_camera_components(
+    doc, node, active_camera_found,
+  )
+  debug_inspect(enabled_camera is Some(_), content="true")
+  match enabled_camera {
+    Some(camera_components) => {
+      debug_inspect(camera_components.camera.is_active, content="true")
+      let is_perspective = match camera_components.projection {
+        @pbr.Projection::Perspective(_) => true
+        _ => false
+      }
+      debug_inspect(is_perspective, content="true")
+    }
+    None => abort("expected enabled camera components")
+  }
+
+  let disabled_settings = @asset.ImageLoaderSettings::default()
+  disabled_settings.load_cameras = false
+  disabled_settings.load_lights = false
+  let disabled_camera = if disabled_settings.load_cameras {
+    gltf_scene_node_camera_components(doc, node, active_camera_found)
+  } else {
+    None
+  }
+  debug_inspect(disabled_camera is None, content="true")
+
+  let enabled_light = gltf_scene_node_light_components(doc, node)
+  debug_inspect(enabled_light is Some(_), content="true")
+  match enabled_light {
+    Some(light_components) => {
+      debug_inspect(light_components.name is Some(_), content="true")
+      debug_inspect(light_components.point_light is Some(_), content="true")
+      debug_inspect(light_components.directional_light is None, content="true")
+      debug_inspect(light_components.spot_light is None, content="true")
+      debug_inspect(light_components.extras is None, content="true")
+    }
+    None => abort("expected enabled light components")
+  }
+  let disabled_light = if disabled_settings.load_lights {
+    gltf_scene_node_light_components(doc, node)
+  } else {
+    None
+  }
+  debug_inspect(disabled_light is None, content="true")
+}
+
+///|
 test "scene gltf wb: default visibility ranges for lod levels" {
   let policy = GltfLodVisibilityPolicy::default()
   let lod0 = gltf_lod_visibility_range_with_policy(policy, 0).unwrap()

@@ -9,9 +9,11 @@ import {
   "Milky2018/mgstudio/gltf/loader/extensions" @gltf_loader_extensions,
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/hashmap",
@@ -22,7 +24,6 @@ import {
 
 import {
   "Milky2018/mgstudio/shader",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/time",
 } for "test"

@@ -189,6 +189,101 @@ test "scene: register keeps stable handle" {
 }
 
 ///|
+test "scene: spawn applies camera and light components from scene node payload" {
+  let camera_count = Ref::new(0)
+  let camera3d_count = Ref::new(0)
+  let projection_count = Ref::new(0)
+  let directional_count = Ref::new(0)
+  let point_count = Ref::new(0)
+  let spot_count = Ref::new(0)
+
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#camera-lights",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          camera=Some(@sprite.Camera::default()),
+          camera3d=Some(@pbr.Camera3d::default()),
+          projection=Some(@pbr.Projection::default()),
+        ),
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(0),
+          directional_light=Some(@light.DirectionalLight::default()),
+        ),
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(0),
+          point_light=Some(@light.PointLight::default()),
+        ),
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(0),
+          spot_light=Some(@light.SpotLight::default()),
+        ),
+      ]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    world.for_each_component(@sprite.Camera::component(), fn(_entity, _camera) {
+      camera_count.val = camera_count.val + 1
+    })
+    world.for_each_component(@pbr.Camera3d::component(), fn(
+      _entity,
+      _camera3d,
+    ) {
+      camera3d_count.val = camera3d_count.val + 1
+    })
+    world.for_each_component(@pbr.Projection::component(), fn(
+      _entity,
+      _projection,
+    ) {
+      projection_count.val = projection_count.val + 1
+    })
+    world.for_each_component(@light.DirectionalLight::component(), fn(
+      _entity,
+      _light,
+    ) {
+      directional_count.val = directional_count.val + 1
+    })
+    world.for_each_component(@light.PointLight::component(), fn(
+      _entity,
+      _light,
+    ) {
+      point_count.val = point_count.val + 1
+    })
+    world.for_each_component(@light.SpotLight::component(), fn(
+      _entity,
+      _light,
+    ) {
+      spot_count.val = spot_count.val + 1
+    })
+  })
+
+  debug_inspect(camera_count.val == 1, content="true")
+  debug_inspect(camera3d_count.val == 1, content="true")
+  debug_inspect(projection_count.val == 1, content="true")
+  debug_inspect(directional_count.val == 1, content="true")
+  debug_inspect(point_count.val == 1, content="true")
+  debug_inspect(spot_count.val == 1, content="true")
+}
+
+///|
 test "scene: skinned mesh joints map by gltf node index" {
   let skinned_present = Ref::new(false)
   let joint_count = Ref::new(0)

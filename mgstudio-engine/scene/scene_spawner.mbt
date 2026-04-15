@@ -486,6 +486,28 @@ fn scene_spawn_instance_when_ready(
         material_extras,
       )
     }
+    if node.camera is Some(camera) {
+      try! world.set_by_key(child, @sprite.Camera::component(), camera)
+    }
+    if node.camera3d is Some(camera3d) {
+      try! world.set_by_key(child, @pbr.Camera3d::component(), camera3d)
+    }
+    if node.projection is Some(projection) {
+      try! world.set_by_key(child, @pbr.Projection::component(), projection)
+    }
+    if node.directional_light is Some(directional_light) {
+      try! world.set_by_key(
+        child,
+        @light.DirectionalLight::component(),
+        directional_light,
+      )
+    }
+    if node.point_light is Some(point_light) {
+      try! world.set_by_key(child, @light.PointLight::component(), point_light)
+    }
+    if node.spot_light is Some(spot_light) {
+      try! world.set_by_key(child, @light.SpotLight::component(), spot_light)
+    }
     if node.mesh is Some(mesh_component) {
       let source_mesh_handle = mesh_component.mesh()
       let source_mesh = mesh_assets_ref.val.get(source_mesh_handle)

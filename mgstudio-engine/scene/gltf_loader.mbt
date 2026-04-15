@@ -140,9 +140,12 @@ priv struct GltfMeshDef {
 priv struct GltfNodeDef {
   name : String
   mesh : Int?
+  camera : Int?
+  light : Int?
   skin : Int?
   children : Array[Int]
   lod_nodes : Array[Int]
+  extras : String?
   transform : @transform.Transform
 }
 
@@ -156,6 +159,34 @@ priv struct GltfSkinDef {
 priv struct GltfSceneDef {
   nodes : Array[Int]
   extras : String?
+}
+
+///|
+priv enum GltfCameraProjectionDef {
+  Perspective(Float, Float, Float?, Float?)
+  Orthographic(Float, Float, Float)
+}
+
+///|
+priv struct GltfCameraDef {
+  projection : GltfCameraProjectionDef
+}
+
+///|
+priv enum GltfLightKindDef {
+  Directional
+  Point
+  Spot(Float, Float)
+}
+
+///|
+priv struct GltfLightDef {
+  name : String
+  extras : String?
+  color : @color.Color
+  intensity : Float
+  range : Float?
+  kind : GltfLightKindDef
 }
 
 ///|
@@ -233,6 +264,8 @@ priv struct ParsedGltfDocument {
   buffers : Array[GltfBufferDef]
   buffer_views : Array[GltfBufferViewDef]
   accessors : Array[GltfAccessorDef]
+  cameras : Array[GltfCameraDef]
+  lights : Array[GltfLightDef]
   meshes : Array[GltfMeshDef]
   nodes : Array[GltfNodeDef]
   skins : Array[GltfSkinDef]
@@ -1050,6 +1083,172 @@ fn gltf_parse_animation_interpolation(
 }
 
 ///|
+fn gltf_parse_node_light_index(obj : Map[String, Json]) -> Int? {
+  guard json_get_object(obj, "extensions") is Some(extensions_obj) else {
+    return None
+  }
+  guard json_get_object(extensions_obj, "KHR_lights_punctual")
+    is Some(light_obj) else {
+    return None
+  }
+  json_get_int(light_obj, "light")
+}
+
+///|
+fn gltf_parse_camera_projection(
+  obj : Map[String, Json],
+) -> GltfCameraProjectionDef {
+  let perspective_default = @pbr.PerspectiveProjection3d::default()
+  let orthographic_default = @pbr.OrthographicProjection3d::default_3d()
+  let camera_type = json_get_string(obj, "type").unwrap_or("")
+  if camera_type == "orthographic" &&
+    json_get_object(obj, "orthographic") is Some(orthographic_obj) {
+    let xmag = match json_get_float(orthographic_obj, "xmag") {
+      Some(value) => value
+      None => 1.0F
+    }
+    let znear = match json_get_float(orthographic_obj, "znear") {
+      Some(value) => value
+      None => orthographic_default.near()
+    }
+    let zfar = match json_get_float(orthographic_obj, "zfar") {
+      Some(value) => value
+      None => orthographic_default.far()
+    }
+    return Orthographic(xmag, znear, zfar)
+  }
+  let perspective_obj = json_get_object(obj, "perspective")
+  let yfov = match perspective_obj {
+    Some(value) =>
+      match json_get_float(value, "yfov") {
+        Some(result) => result
+        None => perspective_default.fov()
+      }
+    None => perspective_default.fov()
+  }
+  let znear = match perspective_obj {
+    Some(value) =>
+      match json_get_float(value, "znear") {
+        Some(result) => result
+        None => perspective_default.near()
+      }
+    None => perspective_default.near()
+  }
+  let zfar = match perspective_obj {
+    Some(value) => json_get_float(value, "zfar")
+    None => None
+  }
+  let aspect_ratio = match perspective_obj {
+    Some(value) => json_get_float(value, "aspectRatio")
+    None => None
+  }
+  Perspective(yfov, znear, zfar, aspect_ratio)
+}
+
+///|
+fn gltf_parse_cameras(root : Map[String, Json]) -> Array[GltfCameraDef] {
+  let cameras : Array[GltfCameraDef] = []
+  if json_get_array(root, "cameras") is Some(entries) {
+    for entry in entries {
+      if json_object(entry) is Some(obj) {
+        cameras.push({ projection: gltf_parse_camera_projection(obj) })
+      } else {
+        cameras.push({
+          projection: Perspective(
+            @pbr.PerspectiveProjection3d::default().fov(),
+            @pbr.PerspectiveProjection3d::default().near(),
+            None,
+            None,
+          ),
+        })
+      }
+    }
+  }
+  cameras
+}
+
+///|
+fn gltf_parse_srgb_color(
+  value : Json,
+  default_value : @color.Color,
+) -> @color.Color {
+  guard json_array(value) is Some(values) else { return default_value }
+  guard json_array_float(values, 0) is Some(r) else { return default_value }
+  guard json_array_float(values, 1) is Some(g) else { return default_value }
+  guard json_array_float(values, 2) is Some(b) else { return default_value }
+  @color.Color::srgb(r, g, b)
+}
+
+///|
+fn gltf_parse_lights(root : Map[String, Json]) -> Array[GltfLightDef] {
+  let lights : Array[GltfLightDef] = []
+  guard json_get_object(root, "extensions") is Some(extensions_obj) else {
+    return lights
+  }
+  guard json_get_object(extensions_obj, "KHR_lights_punctual")
+    is Some(light_extensions_obj) else {
+    return lights
+  }
+  guard json_get_array(light_extensions_obj, "lights") is Some(entries) else {
+    return lights
+  }
+  for entry in entries {
+    if json_object(entry) is Some(obj) {
+      let light_type = json_get_string(obj, "type").unwrap_or("point")
+      let spot_obj = json_get_object(obj, "spot")
+      let kind = if light_type == "directional" {
+        GltfLightKindDef::Directional
+      } else if light_type == "spot" {
+        let inner_cone_angle = match spot_obj {
+          Some(value) =>
+            match json_get_float(value, "innerConeAngle") {
+              Some(result) => result
+              None => 0.0F
+            }
+          None => 0.0F
+        }
+        let outer_cone_angle = match spot_obj {
+          Some(value) =>
+            match json_get_float(value, "outerConeAngle") {
+              Some(result) => result
+              None => @math.pi() / 4.0F
+            }
+          None => @math.pi() / 4.0F
+        }
+        GltfLightKindDef::Spot(inner_cone_angle, outer_cone_angle)
+      } else {
+        GltfLightKindDef::Point
+      }
+      let color = match obj.get("color") {
+        Some(value) => gltf_parse_srgb_color(value, @color.Color::white())
+        None => @color.Color::white()
+      }
+      lights.push({
+        name: json_get_string(obj, "name").unwrap_or(""),
+        extras: gltf_parse_extras(obj),
+        color,
+        intensity: match json_get_float(obj, "intensity") {
+          Some(value) => value
+          None => 1.0F
+        },
+        range: json_get_float(obj, "range"),
+        kind,
+      })
+    } else {
+      lights.push({
+        name: "",
+        extras: None,
+        color: @color.Color::white(),
+        intensity: 1.0F,
+        range: None,
+        kind: GltfLightKindDef::Point,
+      })
+    }
+  }
+  lights
+}
+
+///|
 fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   let root_json = @json.parse(source) catch { _ => return None }
   guard json_object(root_json) is Some(root) else { return None }
@@ -1140,6 +1339,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
       }
     }
   }
+
+  let cameras = gltf_parse_cameras(root)
+  let lights = gltf_parse_lights(root)
 
   let meshes : Array[GltfMeshDef] = []
   if json_get_array(root, "meshes") is Some(entries) {
@@ -1276,18 +1478,24 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             None => ""
           },
           mesh: json_get_int(obj, "mesh"),
+          camera: json_get_int(obj, "camera"),
+          light: gltf_parse_node_light_index(obj),
           skin: json_get_int(obj, "skin"),
           children,
           lod_nodes: gltf_parse_node_lod_ids(obj),
+          extras: gltf_parse_extras(obj),
           transform: gltf_parse_node_transform(obj),
         })
       } else {
         nodes.push({
           name: "",
           mesh: None,
+          camera: None,
+          light: None,
           skin: None,
           children: [],
           lod_nodes: [],
+          extras: None,
           transform: @transform.Transform::identity(),
         })
       }
@@ -1577,6 +1785,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     buffers,
     buffer_views,
     accessors,
+    cameras,
+    lights,
     meshes,
     nodes,
     skins,
@@ -2352,6 +2562,139 @@ fn gltf_loader_default_sampler_descriptor(
 }
 
 ///|
+priv struct GltfNodeCameraComponents {
+  camera : @sprite.Camera
+  camera3d : @pbr.Camera3d
+  projection : @pbr.Projection
+}
+
+///|
+fn gltf_camera_projection_from_def(
+  definition : GltfCameraProjectionDef,
+) -> @pbr.Projection {
+  match definition {
+    Perspective(yfov, znear, zfar, aspect_ratio) => {
+      let mut projection = @pbr.PerspectiveProjection3d::default()
+        .with_fov(yfov)
+        .with_near(znear)
+      if zfar is Some(far_clip) {
+        projection = projection.with_far(far_clip)
+      }
+      if aspect_ratio is Some(aspect) {
+        projection = projection.with_aspect_ratio(aspect)
+      }
+      @pbr.Projection::Perspective(projection)
+    }
+    Orthographic(xmag, znear, zfar) =>
+      @pbr.Projection::Orthographic(
+        @pbr.OrthographicProjection3d::default_3d()
+        .with_near(znear)
+        .with_far(zfar)
+        .with_scaling_mode(
+          @pbr.OrthographicScalingMode3d::FixedHorizontal(xmag),
+        ),
+      )
+  }
+}
+
+///|
+fn gltf_scene_node_camera_components(
+  doc : ParsedGltfDocument,
+  node : GltfNodeDef,
+  active_camera_found_ref : Ref[Bool],
+) -> GltfNodeCameraComponents? {
+  guard node.camera is Some(camera_index) else { return None }
+  guard camera_index >= 0 && camera_index < doc.cameras.length() else {
+    return None
+  }
+  let camera = @sprite.Camera::default().with_is_active(
+    !active_camera_found_ref.val,
+  )
+  active_camera_found_ref.val = true
+  let camera3d = @pbr.Camera3d::default()
+  let projection = gltf_camera_projection_from_def(
+    doc.cameras[camera_index].projection,
+  )
+  Some({ camera, camera3d, projection })
+}
+
+///|
+priv struct GltfNodeLightComponents {
+  name : @ecs.Name?
+  extras : @gltf.GltfExtras?
+  directional_light : @light.DirectionalLight?
+  point_light : @light.PointLight?
+  spot_light : @light.SpotLight?
+}
+
+///|
+fn gltf_scene_node_light_components(
+  doc : ParsedGltfDocument,
+  node : GltfNodeDef,
+) -> GltfNodeLightComponents? {
+  guard node.light is Some(light_index) else { return None }
+  guard light_index >= 0 && light_index < doc.lights.length() else {
+    return None
+  }
+  let light = doc.lights[light_index]
+  let name = if light.name == "" {
+    None
+  } else {
+    Some(@ecs.Name::new(light.name))
+  }
+  let extras = light.extras.map(@gltf.GltfExtras::new)
+  match light.kind {
+    Directional =>
+      Some({
+        name,
+        extras,
+        directional_light: Some(
+          @light.DirectionalLight::new(light.color, light.intensity, false),
+        ),
+        point_light: None,
+        spot_light: None,
+      })
+    Point => {
+      let range = light.range.unwrap_or(20.0F)
+      let intensity = light.intensity * @math.pi() * 4.0F
+      Some({
+        name,
+        extras,
+        directional_light: None,
+        point_light: Some(
+          @light.PointLight::default()
+          .with_color(light.color)
+          .with_intensity(intensity)
+          .with_range(range)
+          .with_radius(0.0F),
+        ),
+        spot_light: None,
+      })
+    }
+    Spot(inner_angle, outer_angle) => {
+      let range = light.range.unwrap_or(20.0F)
+      let intensity = light.intensity * @math.pi() * 4.0F
+      Some({
+        name,
+        extras,
+        directional_light: None,
+        point_light: None,
+        spot_light: Some(
+          @light.SpotLight::new(
+            light.color,
+            intensity,
+            range,
+            inner_angle,
+            outer_angle,
+            false,
+          ).with_radius(light.range.unwrap_or(0.0F)),
+        ),
+      })
+    }
+  }
+}
+
+///|
 fn gltf_texture_image_sampler(
   doc : ParsedGltfDocument,
   texture_index : Int,
@@ -2937,6 +3280,7 @@ fn scene_build_from_gltf(
   let should_load_materials = gltf_loader_should_load_materials(
     request.loader_settings,
   )
+  let active_camera_found_ref : Ref[Bool] = Ref::new(false)
 
   fn skin_inverse_bindposes_handle(
     skin_index : Int,
@@ -3015,6 +3359,11 @@ fn scene_build_from_gltf(
     } else {
       None
     }
+    let node_camera_components = if request.loader_settings.load_cameras {
+      gltf_scene_node_camera_components(doc, node, active_camera_found_ref)
+    } else {
+      None
+    }
     let scene_node_index = nodes.length()
     nodes.push(
       SceneNode3d::new_empty(
@@ -3030,8 +3379,28 @@ fn scene_build_from_gltf(
         gltf_scene_index=Some(@gltf.GltfSceneIndex::new(selected_scene_index)),
         gltf_node_index=Some(@gltf.GltfNodeIndex::new(node_index)),
         gltf_skin_index=node.skin.map(@gltf.GltfSkinIndex::new),
+        gltf_extras=node.extras.map(@gltf.GltfExtras::new),
+        camera=node_camera_components.map(fn(value) { value.camera }),
+        camera3d=node_camera_components.map(fn(value) { value.camera3d }),
+        projection=node_camera_components.map(fn(value) { value.projection }),
       ),
     )
+    if request.loader_settings.load_lights &&
+      gltf_scene_node_light_components(doc, node) is Some(light_components) {
+      nodes.push(
+        SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(scene_node_index),
+          name=light_components.name,
+          gltf_extras=light_components.extras,
+          directional_light=light_components.directional_light,
+          point_light=light_components.point_light,
+          spot_light=light_components.spot_light,
+        ),
+      )
+    }
 
     if should_load_meshes &&
       node.mesh is Some(mesh_index) &&

@@ -18,6 +18,12 @@ pub struct SceneNode3d {
   parent_node_index : Int?
   mesh : @pbr.Mesh3d?
   material : @pbr.MeshMaterial3d?
+  camera : @sprite.Camera?
+  camera3d : @pbr.Camera3d?
+  projection : @pbr.Projection?
+  directional_light : @light.DirectionalLight?
+  point_light : @light.PointLight?
+  spot_light : @light.SpotLight?
   gltf_scene_index : @gltf.GltfSceneIndex?
   gltf_node_index : @gltf.GltfNodeIndex?
   gltf_mesh_index : @gltf.GltfMeshIndex?
@@ -53,6 +59,12 @@ pub fn SceneNode3d::new(
   gltf_extras? : @gltf.GltfExtras? = None,
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
   gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
+  camera? : @sprite.Camera? = None,
+  camera3d? : @pbr.Camera3d? = None,
+  projection? : @pbr.Projection? = None,
+  directional_light? : @light.DirectionalLight? = None,
+  point_light? : @light.PointLight? = None,
+  spot_light? : @light.SpotLight? = None,
   skinned_joint_node_indices? : Array[Int]? = None,
   skinned_inverse_bindposes? : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]? = None,
   default_morph_weights? : Array[Float]? = None,
@@ -62,6 +74,12 @@ pub fn SceneNode3d::new(
     parent_node_index,
     mesh: Some(mesh),
     material: Some(material),
+    camera,
+    camera3d,
+    projection,
+    directional_light,
+    point_light,
+    spot_light,
     gltf_scene_index,
     gltf_node_index,
     gltf_mesh_index,
@@ -91,12 +109,24 @@ pub fn SceneNode3d::new_empty(
   gltf_node_index? : @gltf.GltfNodeIndex? = None,
   gltf_skin_index? : @gltf.GltfSkinIndex? = None,
   gltf_extras? : @gltf.GltfExtras? = None,
+  camera? : @sprite.Camera? = None,
+  camera3d? : @pbr.Camera3d? = None,
+  projection? : @pbr.Projection? = None,
+  directional_light? : @light.DirectionalLight? = None,
+  point_light? : @light.PointLight? = None,
+  spot_light? : @light.SpotLight? = None,
 ) -> SceneNode3d {
   SceneNode3d::{
     name,
     parent_node_index,
     mesh: None,
     material: None,
+    camera,
+    camera3d,
+    projection,
+    directional_light,
+    point_light,
+    spot_light,
     gltf_scene_index,
     gltf_node_index,
     gltf_mesh_index: None,
