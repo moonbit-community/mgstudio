@@ -15,6 +15,9 @@
 ///|
 test "light plugin: initializes default light resources" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(LightPlugin::default())
+  let scattering_medium_assets_key : @ecs.ResourceKey[
+    @asset.Assets[ScatteringMedium],
+  ] = @asset.assets_resource_key()
   debug_inspect(
     app.contains_resource(ecs_key_global_ambient_light),
     content="true",
@@ -25,6 +28,10 @@ test "light plugin: initializes default light resources" {
   )
   debug_inspect(
     app.contains_resource(ecs_key_directional_light_shadow_map),
+    content="true",
+  )
+  debug_inspect(
+    app.contains_resource(scattering_medium_assets_key),
     content="true",
   )
 }

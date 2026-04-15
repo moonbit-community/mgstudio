@@ -67,7 +67,7 @@ pub impl @app.Plugin for LightPlugin with build(_self, app) {
 ///|
 pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_light_required_components(app.world())
-  let mut next = app
+  let mut next = @asset.init_asset(app, fn() { ScatteringMedium::default() })
   if !next.contains_resource(ecs_key_global_ambient_light) {
     next = next.insert_world_resource(
       ecs_key_global_ambient_light,
