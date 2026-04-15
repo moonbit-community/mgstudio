@@ -404,7 +404,9 @@ fn update_config(
 ///|
 fn main {
   @gizmos.init_gizmo_group(
-    @app.App::new(@ecs.World::new()).add_plugins(@mgstudio.default_plugins()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @mgstudio.DefaultPlugins::default(),
+    ),
     MyRoundGizmos::default(),
   )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))

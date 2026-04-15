@@ -25,9 +25,8 @@ let parent_entity_state : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(visibility_setup))
   .add_systems(@app.Update, @app.system(visibility_toggle_system))
   .run()

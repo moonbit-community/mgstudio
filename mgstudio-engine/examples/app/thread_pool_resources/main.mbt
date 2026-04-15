@@ -200,13 +200,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(SimulatedPool::default())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(
-    [
-      ..@mgstudio.default_plugins(),
-      @diagnostic.frame_time_diagnostics_plugin,
-      @diagnostic.log_diagnostics_plugin,
-    ],
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param(input_control)))
   .add_systems(@app.Update, @app.system(@app.system_param2(simulate_pool)))

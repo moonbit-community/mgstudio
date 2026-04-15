@@ -255,8 +255,6 @@ pub fn forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialEx
 
 pub fn forward_decal_material_extension_metadata(@material.ForwardDecalMaterialExt) -> @material.ExtendedMaterialMetadata3d
 
-pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[@material.DefaultOpaqueRendererMethod]
 
 pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.DirectionalLightShadowMap]
@@ -902,6 +900,11 @@ pub(all) struct FreeCamera {
 pub fn FreeCamera::default() -> Self
 pub impl @ecs.Component for FreeCamera
 
+pub struct FreeCameraPlugin {
+}
+pub fn FreeCameraPlugin::default() -> Self
+pub impl @app.Plugin for FreeCameraPlugin
+
 pub(all) struct FreeCameraState {
   enabled : Bool
   initialized : Bool
@@ -1042,7 +1045,7 @@ pub fn MaterialNonBindlessAllocatedBindGroup::new(Int) -> Self
 pub struct MaterialsPlugin {
 }
 pub fn MaterialsPlugin::default() -> Self
-pub impl @app.PluginReplacement for MaterialsPlugin
+pub impl @app.Plugin for MaterialsPlugin
 
 pub struct MaterialsPluginState {
 }
@@ -1096,7 +1099,7 @@ pub(all) struct MeshRenderPlugin {
   use_gpu_instance_buffer_builder : Bool
 }
 pub fn MeshRenderPlugin::default() -> Self
-pub impl @app.PluginReplacement for MeshRenderPlugin
+pub impl @app.Plugin for MeshRenderPlugin
 
 pub struct MeshRenderPluginState {
   use_gpu_instance_buffer_builder : Bool
@@ -1154,7 +1157,7 @@ pub(all) struct PbrPlugin {
   gltf_render_enabled : Bool
 }
 pub fn PbrPlugin::default() -> Self
-pub impl @app.PluginReplacement for PbrPlugin
+pub impl @app.Plugin for PbrPlugin
 
 pub struct PbrPluginRuntimeConfig {
   prepass_enabled : Bool
@@ -1217,7 +1220,7 @@ pub fn ScatteringMediumPlugin::default() -> Self
 pub fn ScatteringMediumPlugin::disabled() -> Self
 pub fn ScatteringMediumPlugin::with_lut_config(Self, ScatteringMediumLutConfig) -> Self
 pub fn ScatteringMediumPlugin::with_sampler(Self, ScatteringMediumSampler) -> Self
-pub impl @app.PluginReplacement for ScatteringMediumPlugin
+pub impl @app.Plugin for ScatteringMediumPlugin
 
 pub struct ScatteringMediumPluginState {
   enabled : Bool
@@ -1288,7 +1291,7 @@ pub(all) struct StandardMaterialPlugin {
 }
 pub fn StandardMaterialPlugin::default() -> Self
 pub fn StandardMaterialPlugin::with_prepass_enabled(Self, Bool) -> Self
-pub impl @app.PluginReplacement for StandardMaterialPlugin
+pub impl @app.Plugin for StandardMaterialPlugin
 
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
@@ -1349,7 +1352,7 @@ pub impl @app.Resource for WireframeConfig
 pub struct WireframePlugin {
 }
 pub fn WireframePlugin::default() -> Self
-pub impl @app.PluginReplacement for WireframePlugin
+pub impl @app.Plugin for WireframePlugin
 
 // Type aliases
 pub using @material {type AlphaMode3d}

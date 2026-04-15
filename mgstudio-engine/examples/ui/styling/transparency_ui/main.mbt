@@ -112,7 +112,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .insert_resource(
     @sprite.ClearColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.0F)),
   )

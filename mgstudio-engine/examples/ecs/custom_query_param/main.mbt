@@ -112,9 +112,7 @@ fn print_positions(query : @ecs.Query[@ecs.Comp[Position], @ecs.All]) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .add_plugins(@app.ScheduleRunnerPlugin::run_once())
   .add_systems(@app.Startup, @app.system(@app.system_param(spawn)))
   .add_systems(
     @app.Update,

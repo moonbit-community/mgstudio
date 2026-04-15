@@ -45,19 +45,13 @@ pub fn visibility_range_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for VisibilityRangePlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for VisibilityRangePlugin with name(_self) {
   VISIBILITY_RANGE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for VisibilityRangePlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    visibility_range_plugin_with(app, self)
-  }
+pub impl @app.Plugin for VisibilityRangePlugin with build(self, app) {
+  visibility_range_plugin_with(app, self)
 }
 
 ///|

@@ -108,15 +108,13 @@ pub fn TimelineTracePlugin::with_config(
 }
 
 ///|
-pub impl @app.PluginReplacement for TimelineTracePlugin with plugin_name(_self) {
+pub impl @app.Plugin for TimelineTracePlugin with name(_self) {
   TIMELINE_TRACE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for TimelineTracePlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    timeline_trace_plugin_with(app, self)
-  }
+pub impl @app.Plugin for TimelineTracePlugin with build(self, app) {
+  timeline_trace_plugin_with(app, self)
 }
 
 ///|
@@ -128,19 +126,13 @@ pub fn StressDiagnosticsPlugin::default() -> StressDiagnosticsPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for StressDiagnosticsPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for StressDiagnosticsPlugin with name(_self) {
   STRESS_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for StressDiagnosticsPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    stress_diagnostics_plugin_with(app, self)
-  }
+pub impl @app.Plugin for StressDiagnosticsPlugin with build(self, app) {
+  stress_diagnostics_plugin_with(app, self)
 }
 
 ///|
@@ -472,10 +464,9 @@ pub fn stress_diagnostics_plugin_with(
     ]),
     wait_duration_seconds: 1.0F,
   }
-  app.add_plugins([
-    frame_time_diagnostics_plugin,
-    render_diagnostics_plugin,
-    fn(app) { log_diagnostics_plugin_with(app, log_plugin) },
-    timeline_trace_plugin,
-  ])
+  app
+  .add_plugins(FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(RenderDiagnosticsPlugin::default())
+  .add_plugins(log_plugin)
+  .add_plugins(TimelineTracePlugin::default())
 }

@@ -105,6 +105,11 @@ pub fn ShaderLoader::default() -> Self
 pub fn ShaderLoader::extensions(Self) -> Array[String]
 pub fn ShaderLoader::load(Self, @asset.AssetServer, String, ShaderSettings) -> Shader raise ShaderLoaderError
 
+pub struct ShaderPlugin {
+}
+pub fn ShaderPlugin::default() -> Self
+pub impl @app.Plugin for ShaderPlugin
+
 pub(all) enum ShaderRef {
   Default
   Handle(@asset.Handle[Shader])

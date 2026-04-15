@@ -14,10 +14,10 @@
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([@sprite.wireframe2d_plugin])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @mgstudio.DefaultPlugins::default(),
+  )
+  @sprite.wireframe2d_plugin(app)
   .add_systems(Startup, @app.system(@app.system_param3(setup)))
   .add_systems(
     Update,

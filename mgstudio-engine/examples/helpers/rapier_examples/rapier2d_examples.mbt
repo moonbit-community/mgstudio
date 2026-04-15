@@ -42,8 +42,8 @@ pub fn rapier2d_set_gravity(world : @ecs.World, gravity : @math.Vec2) -> Unit {
 }
 
 ///|
-pub fn rapier2d_default_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  @mgstudio.default_plugins()
+pub fn rapier2d_default_plugins() -> @app.PluginGroupBuilder[@ecs.World] {
+  @mgstudio.DefaultPlugins::build()
 }
 
 ///|

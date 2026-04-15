@@ -16,6 +16,12 @@
 /// Feathers boundary aligned with Bevy's `bevy_feathers` crate.
 
 ///|
+const FEATHERS_PLUGIN_NAME : String = "mgstudio.feathers.FeathersPlugin"
+
+///|
+const FEATHERS_PLUGINS_NAME : String = "mgstudio.feathers.FeathersPlugins"
+
+///|
 pub struct FeathersPlugin {}
 
 ///|
@@ -40,6 +46,33 @@ pub fn FeathersPlugins::default() -> FeathersPlugins {
 }
 
 ///|
+pub fn FeathersPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  @app.PluginGroupBuilder::start_named("FeathersPlugins").add(
+    FeathersPlugin::default(),
+  )
+}
+
+///|
+pub impl @app.Plugin for FeathersPlugin with name(_self) {
+  FEATHERS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for FeathersPlugin with build(_self, app) {
+  feathers_plugin(app)
+}
+
+///|
+pub impl @app.Plugin for FeathersPlugins with name(_self) {
+  FEATHERS_PLUGINS_NAME
+}
+
+///|
+pub impl @app.Plugin for FeathersPlugins with build(_self, app) {
+  app.add_plugins(FeathersPlugins::build())
+}
+
+///|
 pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if app.contains_resource(feathers_plugin_marker_key) {
     app
@@ -47,19 +80,15 @@ pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     app
     .world()
     .insert_resource(feathers_plugin_marker_key, FeathersPluginMarker::{  })
-    app
-    .init_resource(fn() { UiTheme::default() })
-    .add_plugin(@ui_widgets.ui_widgets_plugin)
-    .add_plugin(alpha_pattern_plugin)
-    .add_plugin(@controls.controls_plugin)
-    .add_plugin(cursor_icon_plugin)
+    let app = app.init_resource(fn() { UiTheme::default() })
+    let app = app.add_plugins(@ui_widgets.UiWidgetsPlugins::default())
+    let app = alpha_pattern_plugin(app)
+    let app = @controls.controls_plugin(app)
+    cursor_icon_plugin(app)
   }
 }
 
 ///|
-pub fn feathers_plugins() -> @app.PluginGroup[@ecs.World] {
-  fn() {
-    let builder : @app.PluginGroupBuilder[@ecs.World] = @app.PluginGroupBuilder::start()
-    builder.add(feathers_plugin)
-  }
+pub fn feathers_plugins() -> FeathersPlugins {
+  FeathersPlugins::default()
 }

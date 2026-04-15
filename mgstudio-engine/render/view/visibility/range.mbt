@@ -68,19 +68,13 @@ pub fn render_visibility_range_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for RenderVisibilityRangePlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for RenderVisibilityRangePlugin with name(_self) {
   RENDER_VISIBILITY_RANGE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for RenderVisibilityRangePlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    render_visibility_range_plugin_with(app, self)
-  }
+pub impl @app.Plugin for RenderVisibilityRangePlugin with build(self, app) {
+  render_visibility_range_plugin_with(app, self)
 }
 
 ///|

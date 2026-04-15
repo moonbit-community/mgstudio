@@ -36,7 +36,7 @@ pub fn ScreenSpaceReflectionsPipelineKey::default() -> Self
 pub struct ScreenSpaceReflectionsPlugin {
 }
 pub fn ScreenSpaceReflectionsPlugin::default() -> Self
-pub impl @app.PluginReplacement for ScreenSpaceReflectionsPlugin
+pub impl @app.Plugin for ScreenSpaceReflectionsPlugin
 
 pub struct ScreenSpaceReflectionsPluginState {
   enabled : Bool

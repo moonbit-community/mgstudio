@@ -48,15 +48,13 @@ pub fn oit_resolve_plugin_with(
 pub const OIT_REQUIRED_STORAGE_BUFFERS : Int = 3
 
 ///|
-pub impl @app.PluginReplacement for OitResolvePlugin with plugin_name(_self) {
+pub impl @app.Plugin for OitResolvePlugin with name(_self) {
   OIT_RESOLVE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for OitResolvePlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    oit_resolve_plugin_with(app, self)
-  }
+pub impl @app.Plugin for OitResolvePlugin with build(self, app) {
+  oit_resolve_plugin_with(app, self)
 }
 
 ///|

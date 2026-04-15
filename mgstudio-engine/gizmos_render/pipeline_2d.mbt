@@ -41,13 +41,11 @@ pub fn line_gizmo_2d_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for LineGizmo2dPlugin with plugin_name(_self) {
+pub impl @app.Plugin for LineGizmo2dPlugin with name(_self) {
   LINE_GIZMO_2D_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for LineGizmo2dPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    line_gizmo_2d_plugin_with(app, self)
-  }
+pub impl @app.Plugin for LineGizmo2dPlugin with build(self, app) {
+  line_gizmo_2d_plugin_with(app, self)
 }

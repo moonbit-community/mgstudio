@@ -6,6 +6,7 @@ package "Milky2018/mgstudio/examples/asset/embedded_asset"
 // Errors
 
 // Types and methods
+type EmbeddedAssetPlugin
 
 // Type aliases
 

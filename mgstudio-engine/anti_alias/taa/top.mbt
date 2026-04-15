@@ -63,19 +63,13 @@ pub impl @app.Resource for TemporalAntiAliasRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for TemporalAntiAliasPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for TemporalAntiAliasPlugin with name(_self) {
   TEMPORAL_ANTI_ALIAS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for TemporalAntiAliasPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    temporal_anti_alias_plugin_with(app, self)
-  }
+pub impl @app.Plugin for TemporalAntiAliasPlugin with build(self, app) {
+  temporal_anti_alias_plugin_with(app, self)
 }
 
 ///|

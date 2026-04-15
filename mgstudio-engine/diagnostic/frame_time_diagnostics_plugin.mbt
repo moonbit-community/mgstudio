@@ -51,19 +51,13 @@ pub fn FrameTimeDiagnosticsPlugin::default() -> FrameTimeDiagnosticsPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for FrameTimeDiagnosticsPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for FrameTimeDiagnosticsPlugin with name(_self) {
   FRAME_TIME_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for FrameTimeDiagnosticsPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    frame_time_diagnostics_plugin_with(app, self)
-  }
+pub impl @app.Plugin for FrameTimeDiagnosticsPlugin with build(self, app) {
+  frame_time_diagnostics_plugin_with(app, self)
 }
 
 ///|

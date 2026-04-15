@@ -61,19 +61,16 @@ pub fn oit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for OrderIndependentTransparencyPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for OrderIndependentTransparencyPlugin with name(_self) {
   OIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for OrderIndependentTransparencyPlugin with world_plugin(
+pub impl @app.Plugin for OrderIndependentTransparencyPlugin with build(
   self,
+  app,
 ) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    oit_plugin_with(app, self)
-  }
+  oit_plugin_with(app, self)
 }
 
 ///|
@@ -81,5 +78,5 @@ pub fn oit_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : OrderIndependentTransparencyPlugin,
 ) -> @app.App[@ecs.World] {
-  app.add_plugin(@resolve.oit_resolve_plugin)
+  app.add_plugins(@resolve.OitResolvePlugin::default())
 }

@@ -113,7 +113,9 @@ fn decompress(
 ///|
 fn main {
   gzip_asset_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(@mgstudio.default_plugins()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @mgstudio.DefaultPlugins::default(),
+    ),
   )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param4(decompress)))

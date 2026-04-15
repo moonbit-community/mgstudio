@@ -23,7 +23,7 @@ pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[PbrDeferredLi
 pub struct DeferredPbrLightingPlugin {
 }
 pub fn DeferredPbrLightingPlugin::default() -> Self
-pub impl @app.PluginReplacement for DeferredPbrLightingPlugin
+pub impl @app.Plugin for DeferredPbrLightingPlugin
 
 pub struct DeferredPbrLightingState {
   enabled : Bool

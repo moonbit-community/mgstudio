@@ -30,19 +30,13 @@ pub fn ScreenSpaceReflectionsPlugin::default() -> ScreenSpaceReflectionsPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for ScreenSpaceReflectionsPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with name(_self) {
   SCREEN_SPACE_REFLECTIONS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ScreenSpaceReflectionsPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    ssr_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with build(self, app) {
+  ssr_plugin_install_with(app, self)
 }
 
 ///|

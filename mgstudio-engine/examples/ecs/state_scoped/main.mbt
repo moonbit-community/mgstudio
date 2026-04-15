@@ -177,11 +177,9 @@ fn toggle(
 
 ///|
 fn main {
-  let plugins = @mgstudio.default_plugins()
-  plugins.push(@app.states_plugin(@app.StatesPlugin::default()))
-
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@app.StatesPlugin::default())
   .insert_state(GameState::default())
   .insert_resource(TickTock::{
     timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),

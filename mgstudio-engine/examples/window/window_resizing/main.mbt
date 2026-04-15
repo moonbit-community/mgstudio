@@ -39,14 +39,13 @@ impl @app.Resource for ResolutionSettings with resource() {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .insert_resource(ResolutionSettings::{
     large: @math.Vec2::new(1920.0F, 1080.0F),
     medium: @math.Vec2::new(800.0F, 600.0F),
     small: @math.Vec2::new(640.0F, 360.0F),
   })
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup_camera))
   .add_systems(@app.Startup, @app.system(setup_ui))
   .add_systems(@app.Update, @app.system(@app.system_param2(toggle_resolution)))

@@ -464,7 +464,8 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let expected_transform = @transform.Transform::identity()
 
   @app.App::new(world)
-  .add_plugins([@asset.asset_plugin, render2d_plugin])
+  .add_plugins(@asset.AssetPlugin::default())
+  .add_plugins(Render2dPlugin::default())
   .add_system(fn(world : @ecs.World) {
     let mesh = test_rectangle_mesh(8.0F, 6.0F)
     let material = MeshMaterial2d::new(
@@ -521,7 +522,8 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
 ///|
 test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache component" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins([@asset.asset_plugin, render2d_plugin])
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(Render2dPlugin::default())
     .add_systems(
       @app.Startup,
       @app.system(
@@ -572,7 +574,8 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   let explicit_mesh_material_handle : Ref[Int?] = Ref::new(None)
 
   @app.App::new(@ecs.World::new())
-  .add_plugins([@asset.asset_plugin, render2d_plugin])
+  .add_plugins(@asset.AssetPlugin::default())
+  .add_plugins(Render2dPlugin::default())
   .add_system(fn(_world : @ecs.World) {
     let material_handle = test_color_material_handle(Color::white())
     let mesh_material = MeshMaterial2d::new(material_handle)
@@ -609,9 +612,9 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
 
 ///|
 test "render2d: ColorMaterialPlugin initializes the Bevy default material handle" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins([
-    color_material_plugin(ColorMaterialPlugin::default()),
-  ])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    ColorMaterialPlugin::default(),
+  )
   let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
   let assets = try! app.world().get_resource(key).unwrap()
   let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
@@ -631,9 +634,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
-  let app = @app.App::new(@ecs.World::new()).add_plugins([
-    material2d_plugin(plugin),
-  ])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(plugin)
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
@@ -693,10 +694,9 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
-    @asset.asset_plugin,
-    material2d_plugin(plugin),
-  ])
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(plugin)
   app = app.add_system(fn(world : @ecs.World) {
     let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
     handle_ref.val = Some(handle)
@@ -753,9 +753,9 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   let entity_ref : Ref[@core.Entity?] = Ref::new(None)
   let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref::new(None)
 
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
-    @asset.asset_plugin, render2d_plugin,
-  ])
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(Render2dPlugin::default())
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(7)
     handle_ref.val = Some(material_handle)
@@ -788,9 +788,9 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
 test "render2d: prepare_color_material2d_assets_system populates prepared assets" {
   let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref::new(None)
 
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
-    @asset.asset_plugin, render2d_plugin,
-  ])
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(Render2dPlugin::default())
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(11)
     handle_ref.val = Some(material_handle)
@@ -864,7 +864,8 @@ test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
   let blend_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
 
   @app.App::new(@ecs.World::new())
-  .add_plugins([@asset.asset_plugin, render2d_plugin])
+  .add_plugins(@asset.AssetPlugin::default())
+  .add_plugins(Render2dPlugin::default())
   .add_system(fn(_world : @ecs.World) {
     opaque_alpha_mode.val = Some(
       ColorMaterialAsset::from_color(Color::white()).alpha_mode(),

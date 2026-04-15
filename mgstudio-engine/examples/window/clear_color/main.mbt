@@ -14,12 +14,11 @@
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .insert_resource(
     @sprite.ClearColor::new(@sprite.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
   )
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

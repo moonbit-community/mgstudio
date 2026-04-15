@@ -31,16 +31,14 @@ pub fn ForwardDecalPlugin::default() -> ForwardDecalPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for ForwardDecalPlugin with plugin_name(_self) {
+pub impl @app.Plugin for ForwardDecalPlugin with name(_self) {
   FORWARD_DECAL_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ForwardDecalPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    ignore(self)
-    app
-  }
+pub impl @app.Plugin for ForwardDecalPlugin with build(self, app) {
+  ignore(self)
+  app
 }
 
 ///|

@@ -820,7 +820,7 @@ fn update_ui(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(setup_animation_graph_once_loaded))
   .add_systems(@app.Update, @app.system(handle_button_toggles))

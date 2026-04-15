@@ -412,9 +412,9 @@ test "web asset reader fetches remote PNG bytes" {
     return
   }
   let app = asset_plugin(
-    web_asset_plugin(WebAssetPlugin::{ silence_startup_warning: true })(
-      @app.App::new(@ecs.World::new()),
-    ),
+    web_asset_plugin(@app.App::new(@ecs.World::new()), plugin=WebAssetPlugin::{
+      silence_startup_warning: true,
+    }),
   )
   let url = "https://raw.githubusercontent.com/bevyengine/bevy/refs/heads/main/assets/branding/bevy_bird_dark.png"
   let asset_server = match

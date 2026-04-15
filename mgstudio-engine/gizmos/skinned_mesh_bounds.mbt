@@ -94,17 +94,11 @@ pub fn skinned_mesh_bounds_gizmo_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for SkinnedMeshBoundsGizmoPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin with name(_self) {
   SKINNED_MESH_BOUNDS_GIZMO_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for SkinnedMeshBoundsGizmoPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    skinned_mesh_bounds_gizmo_plugin_with(app, self)
-  }
+pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin with build(self, app) {
+  skinned_mesh_bounds_gizmo_plugin_with(app, self)
 }

@@ -46,7 +46,7 @@ pub fn late_deferred_prepass_should_run(DeferredPrepassViewState) -> Bool
 pub struct CopyDeferredLightingIdPlugin {
 }
 pub fn CopyDeferredLightingIdPlugin::default() -> Self
-pub impl @app.PluginReplacement for CopyDeferredLightingIdPlugin
+pub impl @app.Plugin for CopyDeferredLightingIdPlugin
 
 pub struct CopyDeferredLightingIdState {
   has_copy_pipeline : Bool
@@ -64,7 +64,7 @@ pub fn DeferredLightingIdDepthTexture::new(texture_id~ : Int) -> Self
 pub struct DeferredPlugin {
 }
 pub fn DeferredPlugin::default() -> Self
-pub impl @app.PluginReplacement for DeferredPlugin
+pub impl @app.Plugin for DeferredPlugin
 
 pub struct DeferredPrepass {
 } derive(ToJson, @json.FromJson)

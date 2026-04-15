@@ -35,19 +35,13 @@ pub fn fullscreen_material_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for FullscreenMaterialPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for FullscreenMaterialPlugin with name(_self) {
   FULLSCREEN_MATERIAL_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for FullscreenMaterialPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    fullscreen_material_plugin_with(app, self)
-  }
+pub impl @app.Plugin for FullscreenMaterialPlugin with build(self, app) {
+  fullscreen_material_plugin_with(app, self)
 }
 
 ///|

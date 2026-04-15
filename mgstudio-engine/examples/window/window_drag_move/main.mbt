@@ -321,7 +321,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(ResizeDir::{ index: 7 })
   .insert_resource(LeftClickAction::Move)
-  .add_plugin_group(fn() {
+  .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(
         {
@@ -333,8 +333,8 @@ fn main {
       primary_cursor_options: Some(@window.CursorOptions::default()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
-    })
-  })
+    }),
+  )
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param3(handle_input)))
   .add_systems(

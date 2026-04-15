@@ -10,7 +10,7 @@ import {
 }
 
 // Values
-pub fn camera_controller_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+pub fn camera_controller_plugins() -> CameraControllerPlugins
 
 pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
@@ -33,6 +33,12 @@ pub fn run_pancamera_controller(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
+pub struct CameraControllerPlugins {
+}
+pub fn CameraControllerPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
+pub fn CameraControllerPlugins::default() -> Self
+pub impl @app.Plugin for CameraControllerPlugins
+
 pub(all) struct FreeCamera {
   sensitivity : Float
   key_forward : @events.KeyCode
@@ -51,6 +57,11 @@ pub(all) struct FreeCamera {
 } derive(ToJson, @json.FromJson)
 pub fn FreeCamera::default() -> Self
 pub impl @ecs.Component for FreeCamera
+
+pub struct FreeCameraPlugin {
+}
+pub fn FreeCameraPlugin::default() -> Self
+pub impl @app.Plugin for FreeCameraPlugin
 
 pub(all) struct FreeCameraState {
   enabled : Bool
@@ -83,6 +94,11 @@ pub struct PanCamera {
 pub fn PanCamera::default() -> Self
 pub impl @ecs.Component for PanCamera
 pub impl Show for PanCamera
+
+pub struct PanCameraPlugin {
+}
+pub fn PanCameraPlugin::default() -> Self
+pub impl @app.Plugin for PanCameraPlugin
 
 // Type aliases
 

@@ -14,9 +14,9 @@
 
 ///|
 test "diagnostics: render snapshot records render measurements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins([
-    diagnostics_plugin, render_diagnostics_plugin,
-  ])
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(DiagnosticsPlugin::default())
+    .add_plugins(RenderDiagnosticsPlugin::default())
   let tick = 7
   ignore(tick)
   let store_ref = try! app

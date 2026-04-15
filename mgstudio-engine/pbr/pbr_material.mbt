@@ -230,19 +230,13 @@ pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.PluginReplacement for StandardMaterialPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for StandardMaterialPlugin with name(_self) {
   STANDARD_MATERIAL_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for StandardMaterialPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    standard_material_plugin_with(app, self)
-  }
+pub impl @app.Plugin for StandardMaterialPlugin with build(self, app) {
+  standard_material_plugin_with(app, self)
 }
 
 ///|

@@ -144,9 +144,7 @@ fn main {
     |> @app.chain()
 
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .add_plugins(@app.ScheduleRunnerPlugin::run_once())
   .insert_resource(Message::{ value: "42" })
   .insert_resource(OptionalWarning::{ value: Some("Got to rusty?") })
   .add_systems(@app.Update, update_chain)

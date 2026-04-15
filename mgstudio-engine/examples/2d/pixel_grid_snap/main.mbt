@@ -98,9 +98,9 @@ fn main {
     @app.system_param3(setup_mesh),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
-  })
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
+  )
   .add_systems(
     @app.Startup,
     (setup_camera_system, setup_sprite_system, setup_mesh_system)

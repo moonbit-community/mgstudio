@@ -7069,9 +7069,9 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
   let first_uv_max_y : Ref[Double] = Ref::new(-1.0)
   let second_uv_min_y : Ref[Double] = Ref::new(-1.0)
   let second_uv_max_y : Ref[Double] = Ref::new(-1.0)
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
-    @asset.asset_plugin, render2d_plugin,
-  ])
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(Render2dPlugin::default())
 
   app = app.add_system(fn(world : @ecs.World) {
     ensure_render_state_resource(world)
@@ -8481,14 +8481,31 @@ fn configure_render2d_render_sub_app_ecs(
 }
 
 ///|
+pub struct Render2dPlugin {}
+
+///|
+pub fn Render2dPlugin::default() -> Render2dPlugin {
+  Render2dPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for Render2dPlugin with name(_self) {
+  "mgstudio.sprite.Render2dPlugin"
+}
+
+///|
+pub impl @app.Plugin for Render2dPlugin with build(_self, app) {
+  render2d_plugin(app)
+}
+
+///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ensure_render2d_required_components(app.world())
-  let next = color_material_plugin(ColorMaterialPlugin::default())(
-      init_gizmo_group(
-        app.init_resource(fn() { ClearColor::default() }),
-        DefaultGizmoConfigGroup::default(),
-      ),
+  let next = init_gizmo_group(
+      app.init_resource(fn() { ClearColor::default() }),
+      DefaultGizmoConfigGroup::default(),
     )
+    .add_plugins(ColorMaterialPlugin::default())
     .init_resource(fn() {
       let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
       assets
@@ -8503,12 +8520,11 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ensure_render2d_required_components(app.world())
-  let next = color_material_plugin(ColorMaterialPlugin::default())(
-      init_gizmo_group(
-        app.init_resource(fn() { ClearColor::default() }),
-        DefaultGizmoConfigGroup::default(),
-      ),
+  let next = init_gizmo_group(
+      app.init_resource(fn() { ClearColor::default() }),
+      DefaultGizmoConfigGroup::default(),
     )
+    .add_plugins(ColorMaterialPlugin::default())
     .init_resource(fn() {
       let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
       assets

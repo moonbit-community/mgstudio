@@ -51,31 +51,32 @@ fn web_asset_source_builder(scheme : String) -> AssetSourceBuilder {
 }
 
 ///|
-pub fn web_asset_plugin(plugin : WebAssetPlugin) -> @app.Plugin[@ecs.World] {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    if !plugin.silence_startup_warning {
-      println(
-        "WebAssetPlugin is potentially insecure. Only load trusted URLs, or silence this warning with silence_startup_warning: true.",
-      )
-    }
-    register_asset_source(
-      register_asset_source(
-        app,
-        AssetSourceId::Named("http"),
-        web_asset_source_builder("http"),
-      ),
-      AssetSourceId::Named("https"),
-      web_asset_source_builder("https"),
+pub fn web_asset_plugin(
+  app : @app.App[@ecs.World],
+  plugin? : WebAssetPlugin = WebAssetPlugin::default(),
+) -> @app.App[@ecs.World] {
+  if !plugin.silence_startup_warning {
+    println(
+      "WebAssetPlugin is potentially insecure. Only load trusted URLs, or silence this warning with silence_startup_warning: true.",
     )
   }
+  register_asset_source(
+    register_asset_source(
+      app,
+      AssetSourceId::Named("http"),
+      web_asset_source_builder("http"),
+    ),
+    AssetSourceId::Named("https"),
+    web_asset_source_builder("https"),
+  )
 }
 
 ///|
-pub impl @app.PluginReplacement for WebAssetPlugin with plugin_name(_self) {
+pub impl @app.Plugin for WebAssetPlugin with name(_self) {
   WEB_ASSET_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for WebAssetPlugin with world_plugin(self) {
-  web_asset_plugin(self)
+pub impl @app.Plugin for WebAssetPlugin with build(self, app) {
+  web_asset_plugin(app, plugin=self)
 }

@@ -464,7 +464,7 @@ pub impl Default for GamepadSettings
 pub(all) struct InputPlugin {
 }
 pub fn InputPlugin::default() -> Self
-pub impl @app.PluginReplacement for InputPlugin
+pub impl @app.Plugin for InputPlugin
 
 pub struct RawGamepadAxisChangedEvent {
   gamepad : @core.Entity

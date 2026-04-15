@@ -68,7 +68,7 @@ pub impl @ecs.Component for RotateToPlayer with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .insert_resource(@time.Time::from_hz(60.0F))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(

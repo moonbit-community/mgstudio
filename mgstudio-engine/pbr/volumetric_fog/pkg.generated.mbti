@@ -97,7 +97,7 @@ pub fn VolumetricFogPipelineKeyFlags::default() -> Self
 pub struct VolumetricFogPlugin {
 }
 pub fn VolumetricFogPlugin::default() -> Self
-pub impl @app.PluginReplacement for VolumetricFogPlugin
+pub impl @app.Plugin for VolumetricFogPlugin
 
 pub struct VolumetricFogPluginState {
   fog_assets : FogAssets

@@ -346,7 +346,7 @@ fn draw_mines(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .init_resource(MineWorldState::default)
   .add_startup_system_param(setup)
   .add_system_param2(draw_mines)

@@ -17,6 +17,31 @@
 // Canonical camera-controller plugin set for mgstudio examples/tools.
 
 ///|
-pub fn camera_controller_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  [free_camera_plugin, pan_camera_plugin]
+pub struct CameraControllerPlugins {}
+
+///|
+pub fn CameraControllerPlugins::default() -> CameraControllerPlugins {
+  CameraControllerPlugins::{  }
+}
+
+///|
+pub fn CameraControllerPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  @app.PluginGroupBuilder::start_named("CameraControllerPlugins")
+  .add(FreeCameraPlugin::default())
+  .add(PanCameraPlugin::default())
+}
+
+///|
+pub impl @app.Plugin for CameraControllerPlugins with name(_self) {
+  "mgstudio.camera_controller.CameraControllerPlugins"
+}
+
+///|
+pub impl @app.Plugin for CameraControllerPlugins with build(_self, app) {
+  app.add_plugins(CameraControllerPlugins::build())
+}
+
+///|
+pub fn camera_controller_plugins() -> CameraControllerPlugins {
+  CameraControllerPlugins::default()
 }

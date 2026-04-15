@@ -49,9 +49,8 @@ let spatial_audio_2d_state : Ref[SpatialAudio2dState] = Ref::new({
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .insert_resource(
     @audio.DefaultSpatialScale::new(@audio.SpatialScale::new_2d(AUDIO_SCALE)),
   )

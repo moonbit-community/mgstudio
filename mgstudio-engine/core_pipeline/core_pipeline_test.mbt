@@ -29,8 +29,8 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
 
 ///|
 test "mip_generation plugin initializes downsample shader registry resource" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(
-    @mip_generation.mip_generation_plugin,
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @mip_generation.MipGenerationPlugin::default(),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let shaders = try! render_world
@@ -57,7 +57,7 @@ test "mip_generation texture format table follows bevy list shape" {
 ///|
 test "mip_generation plugin initializes finish-stage resources in render sub-app" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugin_typed(@mip_generation.MipGenerationPlugin::default())
+    .add_plugins(@mip_generation.MipGenerationPlugin::default())
     .finish()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let resources = try! render_world
@@ -71,8 +71,8 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
 
 ///|
 test "core_2d plugin initializes phase resources in render sub-app only" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(
-    @core_pipeline.core_pipeline_plugin,
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @core_pipeline.CorePipelinePlugin::default(),
   )
   let main_world = app.world()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
@@ -125,8 +125,8 @@ fn camera_driver_probe_tick(world : @ecs.World) -> Unit {
 
 ///|
 test "camera_driver runs core pipeline camera schedules" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(
-    @core_pipeline.core_pipeline_plugin,
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @core_pipeline.CorePipelinePlugin::default(),
   )
   if app.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
     let render_sub_app = render_sub_app_ref.val

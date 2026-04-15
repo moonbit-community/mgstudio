@@ -33,15 +33,13 @@ pub fn upscaling_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for UpscalingPlugin with plugin_name(_self) {
+pub impl @app.Plugin for UpscalingPlugin with name(_self) {
   UPSCALING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for UpscalingPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    upscaling_plugin_with(app, self)
-  }
+pub impl @app.Plugin for UpscalingPlugin with build(self, app) {
+  upscaling_plugin_with(app, self)
 }
 
 ///|

@@ -169,7 +169,7 @@ fn toggle_cube_color_on_click(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param3(setup)
   .add_pointer_observer2(fn(pointer, cubes) {
     toggle_cube_color_on_click(pointer, cubes)

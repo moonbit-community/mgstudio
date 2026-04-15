@@ -25,7 +25,7 @@ fn smaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(smaa_plugin)
+  let app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
   let camera_entity = smaa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
   try! app.world().set_by_key(camera_entity, Smaa::component(), Smaa::default())

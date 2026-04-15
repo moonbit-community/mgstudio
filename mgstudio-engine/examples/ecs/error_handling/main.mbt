@@ -46,7 +46,7 @@ fn main {
 
   let mut app = @app.App::new(@ecs.World::new())
     .set_error_handler(@app.ErrorHandlers::warn)
-    .add_plugins(@mgstudio.default_plugins())
+    .add_plugins(@mgstudio.DefaultPlugins::default())
     .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
     .add_systems(@app.Startup, @app.system(@app.system_param(failing_commands)))
     .add_systems(

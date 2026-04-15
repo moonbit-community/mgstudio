@@ -49,7 +49,7 @@ pub impl @ecs.Component for Dlss
 pub struct DlssInitPlugin {
 }
 pub fn DlssInitPlugin::default() -> Self
-pub impl @app.PluginReplacement for DlssInitPlugin
+pub impl @app.Plugin for DlssInitPlugin
 
 pub(all) enum DlssPerfQualityMode {
   Auto
@@ -64,7 +64,7 @@ pub fn DlssPerfQualityMode::default() -> Self
 pub struct DlssPlugin {
 }
 pub fn DlssPlugin::default() -> Self
-pub impl @app.PluginReplacement for DlssPlugin
+pub impl @app.Plugin for DlssPlugin
 
 pub struct DlssProjectId {
   value : String

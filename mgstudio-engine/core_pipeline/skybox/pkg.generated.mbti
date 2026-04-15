@@ -80,7 +80,7 @@ pub impl @app.Resource for SkyboxPipelineState
 pub struct SkyboxPlugin {
 }
 pub fn SkyboxPlugin::default() -> Self
-pub impl @app.PluginReplacement for SkyboxPlugin
+pub impl @app.Plugin for SkyboxPlugin
 
 pub struct SkyboxPrepareViewState {
   has_skybox : Bool

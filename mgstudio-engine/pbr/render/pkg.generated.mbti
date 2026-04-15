@@ -518,7 +518,7 @@ pub impl @app.Resource for FogMeta
 pub struct FogPlugin {
 }
 pub fn FogPlugin::default() -> Self
-pub impl @app.PluginReplacement for FogPlugin
+pub impl @app.Plugin for FogPlugin
 
 pub struct Frustum {
   half_spaces : Array[@math.HalfSpace]
@@ -583,7 +583,7 @@ pub struct GpuMeshPreprocessPlugin {
 }
 pub fn GpuMeshPreprocessPlugin::default() -> Self
 pub fn GpuMeshPreprocessPlugin::new(Bool) -> Self
-pub impl @app.PluginReplacement for GpuMeshPreprocessPlugin
+pub impl @app.Plugin for GpuMeshPreprocessPlugin
 
 pub(all) struct GpuOcclusionCullingWorkItemBuffers3d {
   enabled : Bool

@@ -22,8 +22,8 @@ test "pbr deferred: depth id clamps to byte range" {
 
 ///|
 test "pbr deferred: plugin inserts default depth id for deferred prepass entity" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugin(
-    deferred_pbr_lighting_plugin,
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    DeferredPbrLightingPlugin::default(),
   )
   let world = app.world()
   let entity = world.spawn_empty()
@@ -43,8 +43,8 @@ test "pbr deferred: plugin inserts default depth id for deferred prepass entity"
 
 ///|
 test "pbr deferred: plugin keeps explicit depth id value" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugin(
-    deferred_pbr_lighting_plugin,
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    DeferredPbrLightingPlugin::default(),
   )
   let world = app.world()
   let entity = world.spawn_empty()

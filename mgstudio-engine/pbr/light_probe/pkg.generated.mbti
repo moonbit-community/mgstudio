@@ -81,7 +81,7 @@ pub fn DownsamplingConfig::default() -> Self
 pub struct EnvironmentMapGenerationPlugin {
 }
 pub fn EnvironmentMapGenerationPlugin::default() -> Self
-pub impl @app.PluginReplacement for EnvironmentMapGenerationPlugin
+pub impl @app.Plugin for EnvironmentMapGenerationPlugin
 
 pub struct EnvironmentMapIds {
   diffuse : @asset.Handle[@image.Image]?
@@ -123,7 +123,7 @@ pub fn GeneratorSamplers::default() -> Self
 pub struct LightProbePlugin {
 }
 pub fn LightProbePlugin::default() -> Self
-pub impl @app.PluginReplacement for LightProbePlugin
+pub impl @app.Plugin for LightProbePlugin
 
 pub struct LightProbePluginState {
   binding_arrays_supported : Bool

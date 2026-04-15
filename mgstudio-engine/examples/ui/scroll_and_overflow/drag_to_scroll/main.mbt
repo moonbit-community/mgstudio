@@ -210,7 +210,7 @@ fn end_drag(drag_state : @app.ResMut[ScrollDragState]) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param(setup)
   .add_pointer_observer3(start_drag)
   .add_pointer_observer3(update_drag)

@@ -124,7 +124,9 @@ test "transform ecs world: hierarchy hooks clear stale Children components" {
 
 ///|
 test "transform plugin: sync_simple_transforms skips dead entities from removed Parent" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    TransformPlugin::default(),
+  )
   let world = app.world()
   let parent = world.spawn()
   let child = world.spawn()

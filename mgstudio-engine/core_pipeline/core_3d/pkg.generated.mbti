@@ -83,7 +83,7 @@ pub impl @app.Resource for AlphaMask3dPhase
 pub struct Core3dPlugin {
 }
 pub fn Core3dPlugin::default() -> Self
-pub impl @app.PluginReplacement for Core3dPlugin
+pub impl @app.Plugin for Core3dPlugin
 
 pub struct Hdr {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)

@@ -42,15 +42,13 @@ pub fn LdtkPlugin::default() -> LdtkPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for LdtkPlugin with plugin_name(_self) {
+pub impl @app.Plugin for LdtkPlugin with name(_self) {
   LDTK_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for LdtkPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    ldtk_plugin_with(app, self)
-  }
+pub impl @app.Plugin for LdtkPlugin with build(self, app) {
+  ldtk_plugin_with(app, self)
 }
 
 ///|

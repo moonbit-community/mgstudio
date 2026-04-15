@@ -49,9 +49,8 @@ let lighting_state : Ref[LightingState] = Ref::new({
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_exposure))
   .add_systems(@app.Update, @app.system(toggle_ambient_light))

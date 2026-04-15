@@ -38,15 +38,13 @@ pub fn LightProbePlugin::default() -> LightProbePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for LightProbePlugin with plugin_name(_self) {
+pub impl @app.Plugin for LightProbePlugin with name(_self) {
   LIGHT_PROBE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for LightProbePlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    light_probe_plugin_with(app, self)
-  }
+pub impl @app.Plugin for LightProbePlugin with build(self, app) {
+  light_probe_plugin_with(app, self)
 }
 
 ///|

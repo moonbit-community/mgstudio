@@ -341,6 +341,24 @@ pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+pub struct FreeCameraPlugin {}
+
+///|
+pub fn FreeCameraPlugin::default() -> FreeCameraPlugin {
+  FreeCameraPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for FreeCameraPlugin with name(_self) {
+  "mgstudio.camera_controller.FreeCameraPlugin"
+}
+
+///|
+pub impl @app.Plugin for FreeCameraPlugin with build(_self, app) {
+  free_camera_plugin(app)
+}
+
+///|
 pub fn run_free_camera_controller(world : @ecs.World) -> Unit {
   run_freecamera_controller(world)
 }

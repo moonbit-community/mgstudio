@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(print_keyboard_event_system)),

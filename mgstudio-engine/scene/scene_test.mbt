@@ -14,12 +14,14 @@
 
 ///|
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
-  ]
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@asset.AssetPlugin::default())
+  .add_plugins(@sprite_render.SpriteRenderPlugin::default())
+  .add_plugins(@pbr.PbrPlugin::default())
+  .add_plugins(@animation.AnimationPlugin::default())
+  .add_plugins(@scene.ScenePlugin::default())
+  .add_plugins(@gltf.GltfPlugin::default())
+  .add_plugins(@time.TimePlugin::default())
   .add_system(system)
   .run_once()
   |> ignore
@@ -86,12 +88,14 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   let first_scene_ready = Ref::new(false)
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
 
-  let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
-  ]
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(plugins)
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@sprite_render.SpriteRenderPlugin::default())
+    .add_plugins(@pbr.PbrPlugin::default())
+    .add_plugins(@animation.AnimationPlugin::default())
+    .add_plugins(@scene.ScenePlugin::default())
+    .add_plugins(@gltf.GltfPlugin::default())
+    .add_plugins(@time.TimePlugin::default())
     .add_systems(
       @app.Startup,
       @app.system(fn(_world : @ecs.World) {

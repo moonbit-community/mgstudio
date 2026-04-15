@@ -449,11 +449,10 @@ fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([
-    @camera_controller.free_camera_plugin, camera_plugin, camera_settings_plugin,
-    scene_plugin,
-  ])
-  .run()
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::default())
+    .add_plugins(@camera_controller.FreeCameraPlugin::default())
+  let app = camera_plugin(app)
+  let app = camera_settings_plugin(app)
+  scene_plugin(app).run()
 }

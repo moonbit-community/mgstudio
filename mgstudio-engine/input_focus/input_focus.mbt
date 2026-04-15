@@ -123,6 +123,16 @@ pub fn InputDispatchPlugin::default() -> InputDispatchPlugin {
 }
 
 ///|
+pub impl @app.Plugin for InputDispatchPlugin with name(_self) {
+  "mgstudio.input_focus.InputDispatchPlugin"
+}
+
+///|
+pub impl @app.Plugin for InputDispatchPlugin with build(_self, app) {
+  input_dispatch_plugin(app)
+}
+
+///|
 let input_focus_resource_key : @ecs.ResourceKey[InputFocus] = @ecs.register_resource(
   debug_name="mgstudio_input_focus::InputFocus",
 )

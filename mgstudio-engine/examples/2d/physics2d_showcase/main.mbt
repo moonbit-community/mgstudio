@@ -26,9 +26,8 @@
 /// - G: toggle physics debug rendering.
 /// - H: toggle the "no-collision" hook for a specific ball pair.
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(
     @app.FixedUpdate,
     @app.system(physics2d_showcase_player_controls_fixed),

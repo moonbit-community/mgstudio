@@ -68,7 +68,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::desktop_app())
   .insert_resource(ExampleMode::Game)
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Update, @app.system(@app.system_param2(cycle_modes)))
   .add_systems(@app.Update, @app.system(@app.system_param3(update_winit)))
   .run()

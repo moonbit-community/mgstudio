@@ -68,7 +68,7 @@ pub fn ExperimentalDepthMipGenerationNode::label(Self) -> String
 pub struct ExperimentalMipGeneration {
 }
 pub fn ExperimentalMipGeneration::default() -> Self
-pub impl @app.PluginReplacement for ExperimentalMipGeneration
+pub impl @app.Plugin for ExperimentalMipGeneration
 
 // Type aliases
 

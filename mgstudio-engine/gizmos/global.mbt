@@ -46,13 +46,11 @@ pub fn gizmo_global_init(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for GlobalGizmosPlugin with plugin_name(_self) {
+pub impl @app.Plugin for GlobalGizmosPlugin with name(_self) {
   GLOBAL_GIZMOS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for GlobalGizmosPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    global_gizmos_plugin_with(app, self)
-  }
+pub impl @app.Plugin for GlobalGizmosPlugin with build(self, app) {
+  global_gizmos_plugin_with(app, self)
 }

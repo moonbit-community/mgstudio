@@ -405,15 +405,23 @@ pub fn ColorMaterialPlugin::default() -> ColorMaterialPlugin {
 }
 
 ///|
+pub impl @app.Plugin for ColorMaterialPlugin with name(_self) {
+  "mgstudio.sprite.ColorMaterialPlugin"
+}
+
+///|
+pub impl @app.Plugin for ColorMaterialPlugin with build(_self, app) {
+  let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
+    .with_vertex_shader(MESH2D_SHADER_PATH)
+    .with_fragment_shader("sprite_render/mesh2d/color_material.wgsl")
+  init_default_color_material_asset(app.add_plugins(plugin))
+}
+
+///|
 pub fn color_material_plugin(
-  _plugin : ColorMaterialPlugin,
-) -> @app.Plugin[@ecs.World] {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
-      .with_vertex_shader(MESH2D_SHADER_PATH)
-      .with_fragment_shader("sprite_render/mesh2d/color_material.wgsl")
-    init_default_color_material_asset(material2d_plugin(plugin)(app))
-  }
+  plugin : ColorMaterialPlugin,
+) -> ColorMaterialPlugin {
+  plugin
 }
 
 ///|

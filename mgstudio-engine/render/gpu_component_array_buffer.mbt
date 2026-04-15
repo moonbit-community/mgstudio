@@ -29,19 +29,16 @@ pub fn[C] GpuComponentArrayBufferPlugin::default() -> GpuComponentArrayBufferPlu
 }
 
 ///|
-pub impl[C] @app.PluginReplacement for GpuComponentArrayBufferPlugin[C] with plugin_name(
-  _self,
-) {
+pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C] with name(_self) {
   GPU_COMPONENT_ARRAY_BUFFER_PLUGIN_NAME
 }
 
 ///|
-pub impl[C] @app.PluginReplacement for GpuComponentArrayBufferPlugin[C] with world_plugin(
+pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C] with build(
   self,
+  app,
 ) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    gpu_component_array_buffer_plugin(app, _plugin=self)
-  }
+  gpu_component_array_buffer_plugin(app, _plugin=self)
 }
 
 ///|

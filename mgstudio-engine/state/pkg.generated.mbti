@@ -16,7 +16,7 @@ pub fn[S] optional_state(S) -> @app.OptionalStateSource[S]
 
 pub fn[S : @app.States] state_app_insert(@app.App[@ecs.World], S) -> @app.App[@ecs.World]
 
-pub fn state_app_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn state_app_plugin(@app.StatesPlugin) -> @app.StatesPlugin
 
 pub fn[S : @app.States] state_changed(S) -> (@ecs.World) -> Bool
 
@@ -38,7 +38,7 @@ pub fn[S : @app.States] state_set_dependency_depth(S) -> Int
 
 pub fn[S : @app.States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[@app.StateTransitionEvent[S]]
 
-pub fn states_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn states_plugin(@app.StatesPlugin) -> @app.StatesPlugin
 
 // Errors
 

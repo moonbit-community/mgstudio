@@ -40,7 +40,7 @@ pub fn[S : @app.States] state_transition_event_resource_key(S) -> @ecs.ResourceK
 
 pub fn[S : @app.States] state_transitions_event_key(S) -> @ecs.ResourceKey[@app.StateTransitionEvent[S]]
 
-pub fn states_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn states_plugin(@app.StatesPlugin) -> @app.StatesPlugin
 
 pub fn[S] sub_state_optional_source(S) -> @app.OptionalStateSource[S]
 

@@ -18,9 +18,9 @@ const TOGGLE_INTERVAL_SECONDS : Float = 10.0F
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
-  .add_plugin(@diagnostic.log_diagnostics_plugin)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(toggle)).run_if(

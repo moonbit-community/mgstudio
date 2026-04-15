@@ -454,19 +454,13 @@ pub fn scattering_medium_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for ScatteringMediumPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for ScatteringMediumPlugin with name(_self) {
   SCATTERING_MEDIUM_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ScatteringMediumPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    scattering_medium_plugin_with(app, self)
-  }
+pub impl @app.Plugin for ScatteringMediumPlugin with build(self, app) {
+  scattering_medium_plugin_with(app, self)
 }
 
 ///|

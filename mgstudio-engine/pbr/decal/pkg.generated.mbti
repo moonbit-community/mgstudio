@@ -85,7 +85,7 @@ pub fn ForwardDecalPipelineKey::default() -> Self
 pub struct ForwardDecalPlugin {
 }
 pub fn ForwardDecalPlugin::default() -> Self
-pub impl @app.PluginReplacement for ForwardDecalPlugin
+pub impl @app.Plugin for ForwardDecalPlugin
 
 pub struct RenderClusteredDecal {
   base_color_texture_index : Int

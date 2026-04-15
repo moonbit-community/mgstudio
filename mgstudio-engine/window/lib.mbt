@@ -18,15 +18,13 @@ pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for WindowPlugin with plugin_name(_self) {
+pub impl @app.Plugin for WindowPlugin with name(_self) {
   WINDOW_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for WindowPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    window_plugin_with(app, self)
-  }
+pub impl @app.Plugin for WindowPlugin with build(self, app) {
+  window_plugin_with(app, self)
 }
 
 ///|

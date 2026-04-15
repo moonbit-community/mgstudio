@@ -208,7 +208,7 @@ fn update_outlines(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system(setup)
   .add_systems(@app.Update, @app.system(@app.system_param(update_outlines)))
   .run()

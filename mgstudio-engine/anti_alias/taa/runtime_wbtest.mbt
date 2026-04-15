@@ -25,8 +25,8 @@ fn taa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/taa: runtime state tracks camera-only and reset count" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(
-    temporal_anti_alias_plugin,
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    TemporalAntiAliasPlugin::default(),
   )
   let camera_entity = taa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()

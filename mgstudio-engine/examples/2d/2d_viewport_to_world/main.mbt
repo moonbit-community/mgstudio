@@ -31,7 +31,7 @@ fn main {
     @transform.transform_set_propagate,
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.FixedUpdate, @app.system(@app.system_param6(controls)))
   .add_systems(@app.PostUpdate, draw_cursor_system)

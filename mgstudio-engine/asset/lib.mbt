@@ -144,21 +144,19 @@ pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
 }
 
 ///|
-pub impl @app.PluginReplacement for AssetPlugin with plugin_name(_self) {
+pub impl @app.Plugin for AssetPlugin with name(_self) {
   ASSET_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for AssetPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    let asset_server = asset_server_standalone()
-    asset_server.default_sampler_nearest.val = self.default_sampler_nearest
-    asset_plugin_with_server(
-      app,
-      asset_server,
-      self.file_path,
-      self.mode,
-      self.processed_file_path,
-    )
-  }
+pub impl @app.Plugin for AssetPlugin with build(self, app) {
+  let asset_server = asset_server_standalone()
+  asset_server.default_sampler_nearest.val = self.default_sampler_nearest
+  asset_plugin_with_server(
+    app,
+    asset_server,
+    self.file_path,
+    self.mode,
+    self.processed_file_path,
+  )
 }

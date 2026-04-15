@@ -54,7 +54,7 @@ pub fn UpscalingNodeState::new(camera_output_mode_skip? : Bool, has_specialized_
 pub struct UpscalingPlugin {
 }
 pub fn UpscalingPlugin::default() -> Self
-pub impl @app.PluginReplacement for UpscalingPlugin
+pub impl @app.Plugin for UpscalingPlugin
 
 pub struct UpscalingPrepareViewState {
   out_texture_id : Int

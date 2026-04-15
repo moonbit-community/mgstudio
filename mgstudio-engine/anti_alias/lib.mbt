@@ -29,15 +29,13 @@ pub fn AntiAliasPlugin::default() -> AntiAliasPlugin {
 const ANTI_ALIAS_PLUGIN_NAME : String = "mgstudio.anti_alias.AntiAliasPlugin"
 
 ///|
-pub impl @app.PluginReplacement for AntiAliasPlugin with plugin_name(_self) {
+pub impl @app.Plugin for AntiAliasPlugin with name(_self) {
   ANTI_ALIAS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for AntiAliasPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    anti_alias_plugin_with(app, self)
-  }
+pub impl @app.Plugin for AntiAliasPlugin with build(self, app) {
+  anti_alias_plugin_with(app, self)
 }
 
 ///|
@@ -51,11 +49,11 @@ pub fn anti_alias_plugin_with(
   _plugin : AntiAliasPlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .add_plugin(@fxaa.fxaa_plugin)
-  .add_plugin(@smaa.smaa_plugin)
-  .add_plugin(@taa.temporal_anti_alias_plugin)
-  .add_plugin(@cas.cas_plugin)
-  .add_plugin(@dlss.dlss_plugin)
+  .add_plugins(@fxaa.FxaaPlugin::default())
+  .add_plugins(@smaa.SmaaPlugin::default())
+  .add_plugins(@taa.TemporalAntiAliasPlugin::default())
+  .add_plugins(@cas.CasPlugin::default())
+  .add_plugins(@dlss.DlssPlugin::default())
 }
 
 ///|

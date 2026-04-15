@@ -28,7 +28,7 @@ pub impl @ecs.Component for Smaa
 pub struct SmaaPlugin {
 }
 pub fn SmaaPlugin::default() -> Self
-pub impl @app.PluginReplacement for SmaaPlugin
+pub impl @app.Plugin for SmaaPlugin
 
 pub(all) enum SmaaPreset {
   Low

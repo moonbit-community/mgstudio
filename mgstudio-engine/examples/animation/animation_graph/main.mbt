@@ -502,7 +502,7 @@ fn sync_weights(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup_assets)))
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup_scene)))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup_ui)))

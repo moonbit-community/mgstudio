@@ -37,6 +37,11 @@ pub(all) enum UiAntiAlias {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for UiAntiAlias
 
+pub struct UiRenderPlugin {
+}
+pub fn UiRenderPlugin::default() -> Self
+pub impl @app.Plugin for UiRenderPlugin
+
 // Type aliases
 
 // Traits

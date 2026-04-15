@@ -22,6 +22,8 @@ type Text
 type TextAssets
 pub impl @app.Resource for TextAssets
 
+type TextPlugin
+
 type TextSettings
 
 // Type aliases

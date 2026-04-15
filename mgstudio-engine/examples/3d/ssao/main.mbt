@@ -468,9 +468,8 @@ fn update(
 
 ///|
 fn main {
-  let plugins = @mgstudio.DefaultPlugins::build().build()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::build())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param4(update)))
   .run()

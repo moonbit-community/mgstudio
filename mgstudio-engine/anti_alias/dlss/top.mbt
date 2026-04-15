@@ -187,27 +187,23 @@ pub impl @app.Resource for DlssRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for DlssInitPlugin with plugin_name(_self) {
+pub impl @app.Plugin for DlssInitPlugin with name(_self) {
   DLSS_INIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for DlssInitPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    dlss_init_plugin_with(app, self)
-  }
+pub impl @app.Plugin for DlssInitPlugin with build(self, app) {
+  dlss_init_plugin_with(app, self)
 }
 
 ///|
-pub impl @app.PluginReplacement for DlssPlugin with plugin_name(_self) {
+pub impl @app.Plugin for DlssPlugin with name(_self) {
   DLSS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for DlssPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    dlss_plugin_with(app, self)
-  }
+pub impl @app.Plugin for DlssPlugin with build(self, app) {
+  dlss_plugin_with(app, self)
 }
 
 ///|

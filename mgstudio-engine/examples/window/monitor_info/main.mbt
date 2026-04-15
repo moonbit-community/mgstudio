@@ -106,13 +106,13 @@ fn close_on_esc(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
+  .add_plugins(
     @mgstudio.DefaultPlugins::set_window(@window.WindowPlugin::{
       ..@window.WindowPlugin::default(),
       primary_window: None,
       exit_condition: @window.ExitCondition::DontExit,
-    })
-  })
+    }),
+  )
   .add_systems(@app.Update, @app.system(@app.system_param2(update)))
   .add_systems(@app.Update, @app.system(@app.system_param3(close_on_esc)))
   .run()

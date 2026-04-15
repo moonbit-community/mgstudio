@@ -47,17 +47,13 @@ pub fn DeferredPbrLightingPlugin::default() -> DeferredPbrLightingPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for DeferredPbrLightingPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for DeferredPbrLightingPlugin with name(_self) {
   DEFERRED_PBR_LIGHTING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for DeferredPbrLightingPlugin with world_plugin(
-  _self,
-) {
-  deferred_pbr_lighting_plugin
+pub impl @app.Plugin for DeferredPbrLightingPlugin with build(_self, app) {
+  deferred_pbr_lighting_plugin(app)
 }
 
 ///|

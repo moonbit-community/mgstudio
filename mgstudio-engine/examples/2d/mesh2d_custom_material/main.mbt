@@ -96,7 +96,7 @@ pub impl @sprite.Material2d for CheckerMaterialAsset with bind_group(self) {
 }
 
 ///|
-fn checker_material_plugin() -> @app.Plugin[@ecs.World] {
+fn checker_material_plugin() -> @sprite.Material2dPlugin[CheckerMaterialAsset] {
   let plugin : @sprite.Material2dPlugin[CheckerMaterialAsset] = @sprite.Material2dPlugin::default()
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
@@ -105,10 +105,9 @@ fn checker_material_plugin() -> @app.Plugin[@ecs.World] {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([checker_material_plugin()])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(checker_material_plugin())
   .add_systems(@app.Startup, @app.system(mesh2d_custom_material_setup))
   .run()
 }

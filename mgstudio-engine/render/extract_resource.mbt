@@ -27,21 +27,18 @@ pub fn[R, F] ExtractResourcePlugin::default() -> ExtractResourcePlugin[R, F] {
 }
 
 ///|
-pub impl[R : @app.Resource, F] @app.PluginReplacement for ExtractResourcePlugin[
-  R,
-  F,
-] with plugin_name(_self) {
+pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F] with name(
+  _self,
+) {
   EXTRACT_RESOURCE_PLUGIN_NAME
 }
 
 ///|
-pub impl[R : @app.Resource, F] @app.PluginReplacement for ExtractResourcePlugin[
-  R,
-  F,
-] with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    extract_resource_plugin_with(app, self)
-  }
+pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F] with build(
+  self,
+  app,
+) {
+  extract_resource_plugin_with(app, self)
 }
 
 ///|

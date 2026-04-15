@@ -16,10 +16,10 @@
 /// Adapted line-by-line from:
 /// https://github.com/dimforge/bevy_rapier/blob/master/bevy_rapier3d/examples/events3.rs
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([@physics3d.physics3d_debug_render_plugin])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @mgstudio.DefaultPlugins::default(),
+  )
+  @physics3d.physics3d_debug_render_plugin(app)
   .add_systems(@app.Startup, @app.system(setup_graphics))
   .add_systems(@app.Startup, @app.system(setup_physics))
   .add_systems(@app.PostUpdate, @app.system(display_events))

@@ -25,6 +25,6 @@ pub using @sprite_render {type Material2dPlugin}
 ///|
 pub fn[M : @sprite.Material2d] material2d_plugin(
   plugin : @sprite_render.Material2dPlugin[M],
-) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World] {
+) -> @sprite_render.Material2dPlugin[M] {
   @sprite_render.material2d_plugin(plugin)
 }

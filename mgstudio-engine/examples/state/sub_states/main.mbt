@@ -87,10 +87,9 @@ fn should_exist(source : AppState) -> IsPaused? {
 
 ///|
 fn main {
-  let plugins = @mgstudio.default_plugins()
-  plugins.push(@app.states_plugin(@app.StatesPlugin::default()))
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@app.StatesPlugin::default())
   .insert_state(AppState::default())
   .add_sub_state(AppState::InGame, IsPaused::Running, should_exist)
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))

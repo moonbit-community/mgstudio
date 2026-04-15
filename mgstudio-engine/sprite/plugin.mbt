@@ -32,3 +32,13 @@ pub fn sprite_plugin_with(
 pub fn SpritePlugin::default() -> SpritePlugin {
   SpritePlugin::{  }
 }
+
+///|
+pub impl @app.Plugin for SpritePlugin with name(_self) {
+  SPRITE_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for SpritePlugin with build(self, app) {
+  sprite_plugin_with(app, self)
+}

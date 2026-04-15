@@ -158,7 +158,7 @@ fn play_damage_received_particle_effect(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_message(deal_damage_key)
   .add_message(armor_blocked_damage_key)
   .add_message(damage_received_key)

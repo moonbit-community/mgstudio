@@ -34,7 +34,7 @@ fn main {
   let outside_variable = "bar"
 
   @app.App::new(@ecs.World::new())
-  .add_plugins([@app.log_plugin(@app.LogPlugin::default())])
+  .add_plugins(@app.LogPlugin::default())
   // We can use a closure as a system.
   .add_systems(@app.Update, @app.system(simple_closure))
   // Or we can use a more complex closure and pass an argument to initialize state.

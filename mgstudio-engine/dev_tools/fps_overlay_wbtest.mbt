@@ -14,10 +14,10 @@
 
 ///|
 fn overlay_test_app(config : FpsOverlayConfig) -> @app.App[@ecs.World] {
-  @app.App::new(@ecs.World::new()).add_plugins([
-    @time.time_plugin,
-    fn(app) { fps_overlay_plugin_with(app, FpsOverlayPlugin::{ config, }) },
-  ])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @time.TimePlugin::default(),
+  )
+  fps_overlay_plugin_with(app, FpsOverlayPlugin::{ config, })
 }
 
 ///|

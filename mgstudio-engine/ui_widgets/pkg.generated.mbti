@@ -80,7 +80,7 @@ pub fn ui_interaction_system(@ecs.World) -> Unit
 
 pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn ui_widgets_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
+pub fn ui_widgets_plugins() -> UiWidgetsPlugins
 
 pub let ui_widgets_set_interaction : String
 
@@ -92,6 +92,11 @@ pub struct Activate {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.TriggerEvent for Activate
 
+pub struct ButtonWidgetPlugin {
+}
+pub fn ButtonWidgetPlugin::default() -> Self
+pub impl @app.Plugin for ButtonWidgetPlugin
+
 pub struct Checkable {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Checkable
@@ -99,6 +104,11 @@ pub impl @ecs.Component for Checkable
 pub struct Checkbox {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Checkbox
+
+pub struct CheckboxWidgetPlugin {
+}
+pub fn CheckboxWidgetPlugin::default() -> Self
+pub impl @app.Plugin for CheckboxWidgetPlugin
 
 pub struct Checked {
 } derive(ToJson, @json.FromJson)
@@ -156,6 +166,11 @@ pub struct MenuPopup {
 pub fn MenuPopup::default() -> Self
 pub impl @ecs.Component for MenuPopup
 
+pub struct MenuWidgetPlugin {
+}
+pub fn MenuWidgetPlugin::default() -> Self
+pub impl @app.Plugin for MenuWidgetPlugin
+
 pub struct Popover {
   positions : Array[PopoverPlacement]
   window_margin : Float
@@ -186,6 +201,11 @@ pub(all) enum PopoverSide {
 pub fn PopoverSide::default() -> Self
 pub fn PopoverSide::mirror(Self) -> Self
 
+pub struct PopoverWidgetPlugin {
+}
+pub fn PopoverWidgetPlugin::default() -> Self
+pub impl @app.Plugin for PopoverWidgetPlugin
+
 pub struct Pressed {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Pressed
@@ -198,6 +218,11 @@ pub struct RadioGroup {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for RadioGroup
 
+pub struct RadioGroupWidgetPlugin {
+}
+pub fn RadioGroupWidgetPlugin::default() -> Self
+pub impl @app.Plugin for RadioGroupWidgetPlugin
+
 pub struct Scrollbar {
   target : @core.Entity
   orientation : ControlOrientation
@@ -205,6 +230,11 @@ pub struct Scrollbar {
 } derive(ToJson, @json.FromJson)
 pub fn Scrollbar::new(@core.Entity, ControlOrientation, Float) -> Self
 pub impl @ecs.Component for Scrollbar
+
+pub struct ScrollbarWidgetPlugin {
+}
+pub fn ScrollbarWidgetPlugin::default() -> Self
+pub impl @app.Plugin for ScrollbarWidgetPlugin
 
 pub struct SetChecked {
   mut entity : @core.Entity
@@ -266,6 +296,11 @@ pub fn SliderValue::new(Float) -> Self
 pub fn SliderValue::value(Self) -> Float
 pub impl @ecs.Component for SliderValue
 
+pub struct SliderWidgetPlugin {
+}
+pub fn SliderWidgetPlugin::default() -> Self
+pub impl @app.Plugin for SliderWidgetPlugin
+
 pub struct ToggleChecked {
   mut entity : @core.Entity
 } derive(ToJson, @json.FromJson)
@@ -286,6 +321,7 @@ pub struct UiWidgetsPlugins {
 }
 pub fn UiWidgetsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
 pub fn UiWidgetsPlugins::default() -> Self
+pub impl @app.Plugin for UiWidgetsPlugins
 
 pub struct ValueChange[T] {
   mut source : @core.Entity

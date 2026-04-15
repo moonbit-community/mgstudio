@@ -805,15 +805,13 @@ pub fn ScenePlugin::with_gltf_lod_visibility_policy(
 }
 
 ///|
-pub impl @app.PluginReplacement for ScenePlugin with plugin_name(_self) {
+pub impl @app.Plugin for ScenePlugin with name(_self) {
   SCENE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ScenePlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    scene_plugin_with(app, self)
-  }
+pub impl @app.Plugin for ScenePlugin with build(self, app) {
+  scene_plugin_with(app, self)
 }
 
 ///|

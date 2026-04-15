@@ -43,7 +43,7 @@ pub impl @ecs.Component for Lightmap
 
 pub struct LightmapPlugin {
 }
-pub impl @app.PluginReplacement for LightmapPlugin
+pub impl @app.Plugin for LightmapPlugin
 
 pub struct LightmapPluginState {
   bindless_supported : Bool

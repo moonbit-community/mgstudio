@@ -184,7 +184,7 @@ fn trigger_hooks(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .init_resource(MyComponentIndex::default)
   .add_message(my_message_key)
   .add_systems(@app.Startup, @app.system(setup))

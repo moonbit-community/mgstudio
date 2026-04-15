@@ -473,7 +473,7 @@ pub impl RawLevelAccessor for LdtkJsonWithMetadata
 pub(all) struct LdtkPlugin {
 }
 pub fn LdtkPlugin::default() -> Self
-pub impl @app.PluginReplacement for LdtkPlugin
+pub impl @app.Plugin for LdtkPlugin
 
 pub struct LdtkProject {
   data : LdtkJson

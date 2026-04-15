@@ -26,7 +26,7 @@ pub fn dev_tools_picking_debug_is_noisy(DebugPickingMode) -> Bool
 
 pub fn dev_tools_picking_debug_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn dev_tools_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+pub fn dev_tools_plugins() -> DevToolsPlugins
 
 pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay
 
@@ -54,6 +54,32 @@ pub enum DebugPickingMode {
 } derive(Eq, @debug.Debug)
 pub fn DebugPickingMode::default() -> Self
 pub impl @app.Resource for DebugPickingMode
+
+pub struct DevToolsDiagnosticsOverlayPlugin {
+}
+pub fn DevToolsDiagnosticsOverlayPlugin::default() -> Self
+pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin
+
+pub struct DevToolsEasyScreenshotPlugin {
+}
+pub fn DevToolsEasyScreenshotPlugin::default() -> Self
+pub impl @app.Plugin for DevToolsEasyScreenshotPlugin
+
+pub struct DevToolsFpsOverlayPlugin {
+}
+pub fn DevToolsFpsOverlayPlugin::default() -> Self
+pub impl @app.Plugin for DevToolsFpsOverlayPlugin
+
+pub struct DevToolsPickingDebugPlugin {
+}
+pub fn DevToolsPickingDebugPlugin::default() -> Self
+pub impl @app.Plugin for DevToolsPickingDebugPlugin
+
+pub struct DevToolsPlugins {
+}
+pub fn DevToolsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
+pub fn DevToolsPlugins::default() -> Self
+pub impl @app.Plugin for DevToolsPlugins
 
 pub struct DiagnosticsOverlay {
   title : String
@@ -114,6 +140,7 @@ pub(all) struct FpsOverlayPlugin {
   config : FpsOverlayConfig
 }
 pub fn FpsOverlayPlugin::default() -> Self
+pub impl @app.Plugin for FpsOverlayPlugin
 
 pub(all) struct FrameTimeGraphConfig {
   mut enabled : Bool

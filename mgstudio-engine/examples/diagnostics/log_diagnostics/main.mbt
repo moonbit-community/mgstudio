@@ -325,11 +325,11 @@ fn update_commands(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugin(@diagnostic.log_diagnostics_plugin)
-  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
-  .add_plugin(@diagnostic.entity_count_diagnostics_plugin)
-  .add_plugin(@diagnostic.render_diagnostics_plugin)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.EntityCountDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.RenderDiagnosticsPlugin::default())
   .insert_resource(default_filters())
   .insert_resource(LogDiagnosticsStatus::Disabled)
   .add_systems(@app.Startup, @app.system(setup))

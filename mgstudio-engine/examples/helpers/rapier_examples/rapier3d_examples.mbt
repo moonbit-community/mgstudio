@@ -13,8 +13,26 @@
 // limitations under the License.
 
 ///|
-pub fn rapier3d_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  [..@mgstudio.default_plugins(), @physics3d.physics3d_debug_render_plugin]
+pub struct Rapier3dDebugRenderPlugin {}
+
+///|
+pub fn Rapier3dDebugRenderPlugin::default() -> Rapier3dDebugRenderPlugin {
+  Rapier3dDebugRenderPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for Rapier3dDebugRenderPlugin with name(_self) {
+  "examples.helpers.rapier_examples.Rapier3dDebugRenderPlugin"
+}
+
+///|
+pub impl @app.Plugin for Rapier3dDebugRenderPlugin with build(_self, app) {
+  @physics3d.physics3d_debug_render_plugin(app)
+}
+
+///|
+pub fn rapier3d_plugins() -> @app.PluginGroupBuilder[@ecs.World] {
+  @mgstudio.DefaultPlugins::build().add(Rapier3dDebugRenderPlugin::default())
 }
 
 ///|

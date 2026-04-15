@@ -248,15 +248,16 @@ fn schedule_runner_build(
 }
 
 ///|
-pub fn schedule_runner_plugin(
-  plugin : ScheduleRunnerPlugin,
-) -> Plugin[@ecs.World] {
-  fn(app : App[@ecs.World]) -> App[@ecs.World] {
-    let mode = plugin.mode
-    app.set_runner(fn(app_with_runner : App[@ecs.World]) {
-      schedule_runner_build(app_with_runner, mode)
-    })
-  }
+pub impl Plugin for ScheduleRunnerPlugin with name(_self) {
+  "mgstudio.app.ScheduleRunnerPlugin"
+}
+
+///|
+pub impl Plugin for ScheduleRunnerPlugin with build(self, app) {
+  let mode = self.mode
+  app.set_runner(fn(app_with_runner : App[@ecs.World]) {
+    schedule_runner_build(app_with_runner, mode)
+  })
 }
 
 ///|
@@ -521,16 +522,13 @@ pub fn log_trace_once(callsite : String, message : String) -> Unit {
 }
 
 ///|
-pub fn[W] log_plugin(plugin : LogPlugin) -> Plugin[W] {
-  fn(app : App[W]) -> App[W] {
-    log_state_ref.val.config = plugin
-    log_state_ref.val.once_keys = @hashmap.HashMap::new()
-    app
-  }
+pub impl Plugin for LogPlugin with name(_self) {
+  "mgstudio.log.LogPlugin"
 }
 
 ///|
-pub fn[W] log_plugin_default(app : App[W]) -> App[W] {
-  let plugin : Plugin[W] = log_plugin(LogPlugin::default())
-  plugin(app)
+pub impl Plugin for LogPlugin with build(self, app) {
+  log_state_ref.val.config = self
+  log_state_ref.val.once_keys = @hashmap.HashMap::new()
+  app
 }

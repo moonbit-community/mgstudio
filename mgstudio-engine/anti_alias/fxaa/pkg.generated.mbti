@@ -28,7 +28,7 @@ pub fn fxaa_update_runtime_state(@ecs.World) -> Unit
 pub struct FxaaPlugin {
 }
 pub fn FxaaPlugin::default() -> Self
-pub impl @app.PluginReplacement for FxaaPlugin
+pub impl @app.Plugin for FxaaPlugin
 
 pub struct FxaaRuntimeState {
   enabled_camera_count : Int

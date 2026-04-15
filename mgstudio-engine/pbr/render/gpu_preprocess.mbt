@@ -159,19 +159,13 @@ pub fn GpuMeshPreprocessPlugin::new(
 }
 
 ///|
-pub impl @app.PluginReplacement for GpuMeshPreprocessPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for GpuMeshPreprocessPlugin with name(_self) {
   GPU_MESH_PREPROCESS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for GpuMeshPreprocessPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    gpu_mesh_preprocess_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for GpuMeshPreprocessPlugin with build(self, app) {
+  gpu_mesh_preprocess_plugin_install_with(app, self)
 }
 
 ///|

@@ -334,14 +334,14 @@ pub fn render2d_camera_world_to_viewport_2d(
 ///|
 pub fn[M : @sprite.Material2d] material2d_plugin(
   plugin : Material2dPlugin[M],
-) -> @app.Plugin[@ecs.World] {
+) -> Material2dPlugin[M] {
   @sprite.material2d_plugin(plugin)
 }
 
 ///|
 pub fn color_material_plugin(
   plugin : ColorMaterialPlugin,
-) -> @app.Plugin[@ecs.World] {
+) -> ColorMaterialPlugin {
   @sprite.color_material_plugin(plugin)
 }
 

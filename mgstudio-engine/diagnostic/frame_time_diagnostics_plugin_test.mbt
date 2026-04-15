@@ -26,9 +26,11 @@ fn read_frame_time_diagnostic_value(
 
 ///|
 test "diagnostics: frame time diagnostics use real time instead of virtual time" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
-    @time.time_plugin, diagnostics_plugin, frame_count_plugin, frame_time_diagnostics_plugin,
-  ])
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@time.TimePlugin::default())
+    .add_plugins(DiagnosticsPlugin::default())
+    .add_plugins(FrameCountPlugin::default())
+    .add_plugins(FrameTimeDiagnosticsPlugin::default())
 
   app = app
     .insert_resource(

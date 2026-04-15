@@ -113,13 +113,13 @@ pub fn WireframePlugin::default() -> WireframePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for WireframePlugin with plugin_name(_self) {
+pub impl @app.Plugin for WireframePlugin with name(_self) {
   WIREFRAME_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for WireframePlugin with world_plugin(_self) {
-  wireframe_plugin
+pub impl @app.Plugin for WireframePlugin with build(_self, app) {
+  wireframe_plugin(app)
 }
 
 ///|

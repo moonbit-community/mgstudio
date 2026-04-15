@@ -413,7 +413,7 @@ fn change_fov(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(spawn_view_model))
   .add_systems(@app.Startup, @app.system(spawn_world_model))
   .add_systems(@app.Startup, @app.system(spawn_lights))

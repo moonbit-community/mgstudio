@@ -61,7 +61,7 @@ fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
 ///|
 test "render3d: plugin replacement id aligns with bevy_pbr" {
   let plugin = PbrPlugin::default()
-  debug_inspect(plugin.plugin_name(), content="\"mgstudio.pbr.PbrPlugin\"")
+  debug_inspect(plugin.name(), content="\"mgstudio.pbr.PbrPlugin\"")
 }
 
 ///|
@@ -141,16 +141,16 @@ test "render3d: pbr plugin config updates runtime feature switches" {
 
 ///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
     @app.PluginGroupBuilder::start_named("test-pbr")
-    .add_typed(PbrPlugin::default())
+    .add(PbrPlugin::default())
     .set(PbrPlugin::{
       prepass_enabled: false,
       add_default_deferred_lighting_plugin: false,
       use_gpu_instance_buffer_builder: false,
       gltf_render_enabled: false,
-    })
-  })
+    }),
+  )
 
   let config = read_pbr_runtime_config(app.world())
   debug_inspect(config.prepass_enabled, content="false")

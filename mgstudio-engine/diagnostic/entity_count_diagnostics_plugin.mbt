@@ -37,19 +37,13 @@ pub fn EntityCountDiagnosticsPlugin::default() -> EntityCountDiagnosticsPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for EntityCountDiagnosticsPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for EntityCountDiagnosticsPlugin with name(_self) {
   ENTITY_COUNT_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for EntityCountDiagnosticsPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    entity_count_diagnostics_plugin_with(app, self)
-  }
+pub impl @app.Plugin for EntityCountDiagnosticsPlugin with build(self, app) {
+  entity_count_diagnostics_plugin_with(app, self)
 }
 
 ///|

@@ -111,9 +111,8 @@ fn animate_cells(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(
-    [..@mgstudio.default_plugins(), @diagnostic.stress_diagnostics_plugin],
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_cells)))
   .run()

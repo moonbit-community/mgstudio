@@ -36,15 +36,13 @@ pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for PrepassPlugin with plugin_name(_self) {
+pub impl @app.Plugin for PrepassPlugin with name(_self) {
   PREPASS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for PrepassPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    prepass_plugin_with(app, self)
-  }
+pub impl @app.Plugin for PrepassPlugin with build(self, app) {
+  prepass_plugin_with(app, self)
 }
 
 ///|

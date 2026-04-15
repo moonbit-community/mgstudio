@@ -56,7 +56,7 @@ pub fn CiTestingEventOnFrame::new(Int, CiTestingEvent) -> Self
 pub struct CiTestingPlugin {
 }
 pub fn CiTestingPlugin::default() -> Self
-pub impl @app.PluginReplacement for CiTestingPlugin
+pub impl @app.Plugin for CiTestingPlugin
 
 pub(all) struct CiTestingRuntimeState {
   mut current_frame : Int

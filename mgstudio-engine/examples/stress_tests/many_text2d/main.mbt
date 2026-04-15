@@ -289,15 +289,15 @@ fn main {
     .insert_resource(TextStats::default())
     .insert_resource(args)
     .insert_resource(@winit.WinitSettings::continuous())
-    .add_plugin_group(fn() {
+    .add_plugins(
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
         primary_window: Some(configured_window()),
         primary_cursor_options: None,
         exit_condition: @window.ExitCondition::OnAllClosed,
         close_when_requested: true,
-      })
-    })
-    .add_plugin(@diagnostic.stress_diagnostics_plugin)
+      }),
+    )
+    .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
     .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
     .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
     .add_systems(@app.Update, @app.system(@app.system_param4(print_counts)))

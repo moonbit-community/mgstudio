@@ -59,6 +59,11 @@ pub impl @ecs.Component for Visibility
 pub impl ToJson for Visibility
 pub impl @json.FromJson for Visibility
 
+pub struct VisibilityPlugin {
+}
+pub fn VisibilityPlugin::default() -> Self
+pub impl @app.Plugin for VisibilityPlugin
+
 pub struct VisibilityRange {
   start_margin_min : Float
   start_margin_max : Float

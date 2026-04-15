@@ -585,6 +585,14 @@ pub fn[M] Material2dPlugin::with_fragment_shader(
 }
 
 ///|
+pub impl[M : Material2d] @app.Plugin for Material2dPlugin[M] with build(
+  self,
+  app,
+) {
+  material2d_plugin_build(app, self)
+}
+
+///|
 fn[M] material2d_pipeline_resource_from_plugin(
   plugin : Material2dPlugin[M],
 ) -> Material2dPipeline[M] {
@@ -639,53 +647,59 @@ fn ensure_material2d_runtime_registry_resource_in_world(
 }
 
 ///|
+fn[M : Material2d] material2d_plugin_build(
+  app : @app.App[@ecs.World],
+  plugin : Material2dPlugin[M],
+) -> @app.App[@ecs.World] {
+  let probe : @asset.Handle[M] = @asset.Handle::new(0)
+  let shader_paths = material2d_shader_asset_paths(
+    plugin.vertex_shader,
+    plugin.fragment_shader,
+  )
+  let pipeline = material2d_pipeline_resource_from_plugin(plugin)
+  let configured = init_material2d_assets_resource(app, probe)
+  let configured = @render.with_render_app(configured, fn(render_app) {
+    let render_world = render_app.world()
+    ensure_prepared_material2d_assets_resource_in_world(render_world, probe)
+    ensure_material2d_pipeline_resource_in_world(render_world, pipeline)
+    ensure_render_material2d_instances_resource_in_world(render_world, probe)
+    ensure_material2d_runtime_registry_resource_in_world(render_world)
+    register_material2d_runtime_world(render_world, probe)
+    let stage = @render.render_schedule_stage()
+    @render.configure_base_render_sets(render_app)
+    .add_systems(
+      stage,
+      @app.system(fn(world : @ecs.World) {
+        extract_material2d_mesh_instances_system(world, probe)
+      }).in_set(render2d_set_extract_materials),
+    )
+    .add_systems(
+      stage,
+      @app.system(fn(world : @ecs.World) {
+        prepare_material2d_assets_system(world, probe)
+      }).in_set(render2d_set_prepare_materials),
+    )
+    .configure_set(stage, @render.render_system_set_extract_commands, before=[
+      render2d_set_extract_materials,
+    ])
+    .configure_set(stage, @render.render_system_set_prepare, before=[
+      render2d_set_prepare_materials,
+    ])
+  })
+  if shader_paths.length() == 0 {
+    configured
+  } else {
+    configured.add_startup_system(fn(world : @ecs.World) {
+      register_material2d_shader_sources(world, shader_paths)
+    })
+  }
+}
+
+///|
 pub fn[M : Material2d] material2d_plugin(
   plugin : Material2dPlugin[M],
-) -> @app.Plugin[@ecs.World] {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    let probe : @asset.Handle[M] = @asset.Handle::new(0)
-    let shader_paths = material2d_shader_asset_paths(
-      plugin.vertex_shader,
-      plugin.fragment_shader,
-    )
-    let pipeline = material2d_pipeline_resource_from_plugin(plugin)
-    let configured = init_material2d_assets_resource(app, probe)
-    let configured = @render.with_render_app(configured, fn(render_app) {
-      let render_world = render_app.world()
-      ensure_prepared_material2d_assets_resource_in_world(render_world, probe)
-      ensure_material2d_pipeline_resource_in_world(render_world, pipeline)
-      ensure_render_material2d_instances_resource_in_world(render_world, probe)
-      ensure_material2d_runtime_registry_resource_in_world(render_world)
-      register_material2d_runtime_world(render_world, probe)
-      let stage = @render.render_schedule_stage()
-      @render.configure_base_render_sets(render_app)
-      .add_systems(
-        stage,
-        @app.system(fn(world : @ecs.World) {
-          extract_material2d_mesh_instances_system(world, probe)
-        }).in_set(render2d_set_extract_materials),
-      )
-      .add_systems(
-        stage,
-        @app.system(fn(world : @ecs.World) {
-          prepare_material2d_assets_system(world, probe)
-        }).in_set(render2d_set_prepare_materials),
-      )
-      .configure_set(stage, @render.render_system_set_extract_commands, before=[
-        render2d_set_extract_materials,
-      ])
-      .configure_set(stage, @render.render_system_set_prepare, before=[
-        render2d_set_prepare_materials,
-      ])
-    })
-    if shader_paths.length() == 0 {
-      configured
-    } else {
-      configured.add_startup_system(fn(world : @ecs.World) {
-        register_material2d_shader_sources(world, shader_paths)
-      })
-    }
-  }
+) -> Material2dPlugin[M] {
+  plugin
 }
 
 ///|

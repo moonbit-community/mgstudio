@@ -29,7 +29,7 @@ pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState]
 pub struct CasPlugin {
 }
 pub fn CasPlugin::default() -> Self
-pub impl @app.PluginReplacement for CasPlugin
+pub impl @app.Plugin for CasPlugin
 
 pub struct CasRuntimeState {
   enabled_camera_count : Int

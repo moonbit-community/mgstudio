@@ -22,7 +22,7 @@ const DEFAULT_PLUGIN_NAME_ANTI_ALIAS : String = "mgstudio.anti_alias.AntiAliasPl
 const DEFAULT_PLUGIN_NAME_SHADER : String = "mgstudio.shader.ShaderPlugin"
 
 ///|
-const DEFAULT_PLUGIN_NAME_WEB_ASSET : String = "mgstudio.asset.WebAssetPlugin"
+const DEFAULT_PLUGIN_NAME_WEB_ASSET : String = "mgstudio.asset.io.web.WebAssetPlugin"
 
 ///|
 const DEFAULT_PLUGIN_NAME_SPRITE : String = "mgstudio.sprite.SpritePlugin"
@@ -138,11 +138,11 @@ test "default plugins: include winit plugin after window plugin" {
   debug_inspect(anti_alias_index < sprite_index, content="true")
   debug_inspect(sprite_index < sprite_render_index, content="true")
   debug_inspect(
-    plugin_contains(builder, "mgstudio.gltf.GltfPlugin"),
+    plugin_contains(builder, "mgstudio.gltf.loader.GltfPlugin"),
     content="true",
   )
   debug_inspect(
-    plugin_enabled(builder, "mgstudio.gltf.GltfPlugin"),
+    plugin_enabled(builder, "mgstudio.gltf.loader.GltfPlugin"),
     content="true",
   )
 }
@@ -155,14 +155,14 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     1.0F,
   )
 
-  let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
     DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window),
       primary_cursor_options: Some(@window.CursorOptions::default()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
-    })
-  })
+    }),
+  )
 
   let primary_window_entity = Ref::new(None)
   try! app
@@ -200,9 +200,9 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
 
 ///|
 test "default plugins: set(AssetPlugin::default_nearest()) replaces default asset plugin config" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
-    DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
-  })
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
+  )
 
   let asset_server : @asset.AssetServer = match
     (try! app.world().get_resource(@asset.AssetServer::resource())) {
@@ -215,11 +215,11 @@ test "default plugins: set(AssetPlugin::default_nearest()) replaces default asse
 
 ///|
 test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
     DefaultPlugins::set(
       @asset.AssetPlugin::default().with_file_path("examples/asset/files"),
-    )
-  })
+    ),
+  )
 
   let asset_server : @asset.AssetServer = match
     (try! app.world().get_resource(@asset.AssetServer::resource())) {
@@ -245,7 +245,7 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
     @app.App::new(@ecs.World::new()),
     @asset.AssetSourceId::Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
-  ).add_plugin_group(fn() { DefaultPlugins::build() })
+  ).add_plugins(DefaultPlugins::build())
 
   let asset_server : @asset.AssetServer = match
     (try! app.world().get_resource(@asset.AssetServer::resource())) {
@@ -302,7 +302,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
         )
       },
     ),
-  ).add_plugin_group(fn() { DefaultPlugins::build() })
+  ).add_plugins(DefaultPlugins::build())
 
   let asset_server : @asset.AssetServer = match
     (try! app.world().get_resource(@asset.AssetServer::resource())) {
@@ -367,7 +367,7 @@ test "default plugins: register_asset_source can wrap the default source reader"
         fn(path) { base_reader.is_directory(path) },
       )
     }),
-  ).add_plugin_group(fn() { DefaultPlugins::build() })
+  ).add_plugins(DefaultPlugins::build())
 
   let asset_server : @asset.AssetServer = match
     (try! app.world().get_resource(@asset.AssetServer::resource())) {

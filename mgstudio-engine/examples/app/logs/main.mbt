@@ -73,10 +73,9 @@ fn expensive_sum_message() -> String {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([@app.log_plugin(@app.LogPlugin::default())])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@app.LogPlugin::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Startup, @app.system(setup_visual))
   .add_systems(@app.Update, @app.system(log_system))

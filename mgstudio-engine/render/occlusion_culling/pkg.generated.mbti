@@ -33,7 +33,7 @@ pub impl @ecs.Component for OcclusionCulling
 pub struct OcclusionCullingPlugin {
 }
 pub fn OcclusionCullingPlugin::default() -> Self
-pub impl @app.PluginReplacement for OcclusionCullingPlugin
+pub impl @app.Plugin for OcclusionCullingPlugin
 
 pub struct OcclusionCullingSubview {
   depth_texture_view_id : Int

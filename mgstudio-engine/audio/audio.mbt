@@ -279,6 +279,16 @@ pub fn AudioPlugin::default() -> AudioPlugin {
 }
 
 ///|
+pub impl @app.Plugin for AudioPlugin with name(_self) {
+  "mgstudio.audio.AudioPlugin"
+}
+
+///|
+pub impl @app.Plugin for AudioPlugin with build(self, app) {
+  audio_plugin_with(app, self)
+}
+
+///|
 pub fn audio_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   audio_plugin_with(app, AudioPlugin::default())
 }

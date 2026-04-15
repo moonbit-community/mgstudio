@@ -308,7 +308,9 @@ fn update_config(
 ///|
 fn main {
   @gizmos.init_gizmo_group(
-    @app.App::new(@ecs.World::new()).add_plugins(@mgstudio.default_plugins()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @mgstudio.DefaultPlugins::default(),
+    ),
     @light.LightGizmoConfigGroup::default(),
   )
   .add_systems(@app.Startup, @app.system(setup_scene))

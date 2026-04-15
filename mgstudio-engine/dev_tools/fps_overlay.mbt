@@ -52,6 +52,16 @@ pub fn FpsOverlayPlugin::default() -> FpsOverlayPlugin {
 }
 
 ///|
+pub impl @app.Plugin for FpsOverlayPlugin with name(_self) {
+  "mgstudio.dev_tools.FpsOverlayPlugin"
+}
+
+///|
+pub impl @app.Plugin for FpsOverlayPlugin with build(self, app) {
+  fps_overlay_plugin_with(app, self)
+}
+
+///|
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
   mut text_color : @sprite.Color
@@ -214,7 +224,7 @@ pub fn fps_overlay_plugin_with(
   }
   let mut next = app
   if !fps_overlay_has_frame_time_diagnostics(next) {
-    next = next.add_plugin(@diagnostic.frame_time_diagnostics_plugin)
+    next = next.add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
   }
   fps_overlay_warn_on_low_interval(plugin.config)
   next

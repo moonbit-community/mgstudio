@@ -29,15 +29,13 @@ pub fn CorePipelinePlugin::default() -> CorePipelinePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for CorePipelinePlugin with plugin_name(_self) {
+pub impl @app.Plugin for CorePipelinePlugin with name(_self) {
   CORE_PIPELINE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for CorePipelinePlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    core_pipeline_plugin_with(app, self)
-  }
+pub impl @app.Plugin for CorePipelinePlugin with build(self, app) {
+  core_pipeline_plugin_with(app, self)
 }
 
 ///|
@@ -147,13 +145,13 @@ pub fn core_pipeline_plugin_with(
   _plugin : CorePipelinePlugin,
 ) -> @app.App[@ecs.World] {
   let app = app
-    .add_plugin_typed(@core_2d.Core2dPlugin::default())
-    .add_plugin_typed(@core_3d.Core3dPlugin::default())
-    .add_plugin_typed(@deferred.CopyDeferredLightingIdPlugin::default())
-    .add_plugin_typed(@blit.BlitPlugin::default())
-    .add_plugin_typed(@tonemapping.TonemappingPlugin::default())
-    .add_plugin_typed(@upscaling.UpscalingPlugin::default())
-    .add_plugin_typed(@oit.OrderIndependentTransparencyPlugin::default())
-    .add_plugin_typed(@mip_generation.MipGenerationPlugin::default())
+    .add_plugins(@core_2d.Core2dPlugin::default())
+    .add_plugins(@core_3d.Core3dPlugin::default())
+    .add_plugins(@deferred.CopyDeferredLightingIdPlugin::default())
+    .add_plugins(@blit.BlitPlugin::default())
+    .add_plugins(@tonemapping.TonemappingPlugin::default())
+    .add_plugins(@upscaling.UpscalingPlugin::default())
+    .add_plugins(@oit.OrderIndependentTransparencyPlugin::default())
+    .add_plugins(@mip_generation.MipGenerationPlugin::default())
   core_pipeline_install_render_graph_driver(app)
 }

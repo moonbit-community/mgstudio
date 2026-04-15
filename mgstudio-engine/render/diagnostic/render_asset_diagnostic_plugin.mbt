@@ -36,19 +36,13 @@ pub fn RenderAssetDiagnosticPlugin::default() -> RenderAssetDiagnosticPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for RenderAssetDiagnosticPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for RenderAssetDiagnosticPlugin with name(_self) {
   RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for RenderAssetDiagnosticPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    render_asset_diagnostic_plugin_with(app, self)
-  }
+pub impl @app.Plugin for RenderAssetDiagnosticPlugin with build(self, app) {
+  render_asset_diagnostic_plugin_with(app, self)
 }
 
 ///|

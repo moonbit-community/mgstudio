@@ -36,19 +36,13 @@ pub fn MeshAllocatorDiagnosticPlugin::new(
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshAllocatorDiagnosticPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin with name(_self) {
   MESH_ALLOCATOR_DIAGNOSTIC_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshAllocatorDiagnosticPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    mesh_allocator_diagnostic_plugin_with(app, self)
-  }
+pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin with build(self, app) {
+  mesh_allocator_diagnostic_plugin_with(app, self)
 }
 
 ///|

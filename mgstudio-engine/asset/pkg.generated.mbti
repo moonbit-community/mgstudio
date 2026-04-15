@@ -260,7 +260,7 @@ pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ec
 
 pub fn web_asset_http_runtime_supported() -> Bool
 
-pub fn web_asset_plugin(WebAssetPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn web_asset_plugin(@app.App[@ecs.World], plugin? : WebAssetPlugin) -> @app.App[@ecs.World]
 
 // Errors
 pub(all) suberror AssetProcessError {
@@ -338,7 +338,7 @@ pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
 pub fn AssetPlugin::with_file_path(Self, String) -> Self
 pub fn AssetPlugin::with_mode(Self, AssetMode) -> Self
 pub fn AssetPlugin::with_processed_file_path(Self, String) -> Self
-pub impl @app.PluginReplacement for AssetPlugin
+pub impl @app.Plugin for AssetPlugin
 
 pub struct AssetReader {
   read_fn : (String) -> Bytes?
@@ -580,7 +580,7 @@ pub(all) struct WebAssetPlugin {
 }
 pub fn WebAssetPlugin::default() -> Self
 pub fn WebAssetPlugin::with_silence_startup_warning(Self, Bool) -> Self
-pub impl @app.PluginReplacement for WebAssetPlugin
+pub impl @app.Plugin for WebAssetPlugin
 
 pub struct Writer {
   buffer : Array[Byte]

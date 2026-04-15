@@ -551,6 +551,11 @@ pub struct Physics3dHooksConfig {
 }
 pub fn Physics3dHooksConfig::default() -> Self
 
+pub struct Physics3dPlugin {
+}
+pub fn Physics3dPlugin::default() -> Self
+pub impl @app.Plugin for Physics3dPlugin
+
 pub struct PointProjection3d {
   entity : @Milky2018/mgstudio/core.Entity
   point : @math.Vec3

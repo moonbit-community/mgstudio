@@ -124,15 +124,13 @@ pub impl @app.Resource for CasRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for CasPlugin with plugin_name(_self) {
+pub impl @app.Plugin for CasPlugin with name(_self) {
   CAS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for CasPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    cas_plugin_with(app, self)
-  }
+pub impl @app.Plugin for CasPlugin with build(self, app) {
+  cas_plugin_with(app, self)
 }
 
 ///|

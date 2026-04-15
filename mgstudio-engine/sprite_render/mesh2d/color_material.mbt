@@ -28,6 +28,6 @@ pub let ecs_key_color_material : @ecs.ComponentKey[@sprite_render.ColorMaterial]
 ///|
 pub fn color_material_plugin(
   plugin : @sprite_render.ColorMaterialPlugin,
-) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World] {
+) -> @sprite_render.ColorMaterialPlugin {
   @sprite_render.color_material_plugin(plugin)
 }

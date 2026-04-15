@@ -236,7 +236,7 @@ fn on_pointer_move_drag(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param3(setup)
   .add_pointer_observer2(fn(pointer, query) { on_pointer_enter(pointer, query) })
   .add_pointer_observer2(fn(pointer, query) { on_pointer_leave(pointer, query) })

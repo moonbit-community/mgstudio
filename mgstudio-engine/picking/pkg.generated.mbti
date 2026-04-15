@@ -80,6 +80,11 @@ pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
 pub fn PickingHits::ui(Self, Int) -> @core.Entity?
 pub impl @app.Resource for PickingHits
 
+pub struct PickingPlugin {
+}
+pub fn PickingPlugin::default() -> Self
+pub impl @app.Plugin for PickingPlugin
+
 pub struct PickingState {
   hovered : Array[@core.Entity?]
   pressed : Array[@core.Entity?]

@@ -30,15 +30,13 @@ pub fn lightmap_plugin() -> LightmapPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for LightmapPlugin with plugin_name(_self) {
+pub impl @app.Plugin for LightmapPlugin with name(_self) {
   LIGHTMAP_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for LightmapPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    lightmap_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for LightmapPlugin with build(self, app) {
+  lightmap_plugin_install_with(app, self)
 }
 
 ///|

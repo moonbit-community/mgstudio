@@ -100,7 +100,7 @@ pub fn MipGenerationPipelinesState::new(texture_format_pipeline_count? : Int, bi
 pub struct MipGenerationPlugin {
 }
 pub fn MipGenerationPlugin::default() -> Self
-pub impl @app.PluginReplacement for MipGenerationPlugin
+pub impl @app.Plugin for MipGenerationPlugin
 
 pub struct MipGenerationResources {
   sampler_label : String

@@ -87,15 +87,13 @@ pub impl @app.Resource for SmaaRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for SmaaPlugin with plugin_name(_self) {
+pub impl @app.Plugin for SmaaPlugin with name(_self) {
   SMAA_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for SmaaPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    smaa_plugin_with(app, self)
-  }
+pub impl @app.Plugin for SmaaPlugin with build(self, app) {
+  smaa_plugin_with(app, self)
 }
 
 ///|

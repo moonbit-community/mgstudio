@@ -62,7 +62,7 @@ pub fn visibility_range_plugin_with(@app.App[@ecs.World], VisibilityRangePlugin)
 pub struct VisibilityRangePlugin {
 }
 pub fn VisibilityRangePlugin::default() -> Self
-pub impl @app.PluginReplacement for VisibilityRangePlugin
+pub impl @app.Plugin for VisibilityRangePlugin
 
 pub struct VisibleEntityRanges {
   views : @hashmap.HashMap[Int, Int]

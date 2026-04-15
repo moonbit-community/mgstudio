@@ -24,15 +24,13 @@ pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for AccessibilityPlugin with plugin_name(_self) {
+pub impl @app.Plugin for AccessibilityPlugin with name(_self) {
   ACCESSIBILITY_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for AccessibilityPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    accessibility_plugin_with(app, self)
-  }
+pub impl @app.Plugin for AccessibilityPlugin with build(self, app) {
+  accessibility_plugin_with(app, self)
 }
 
 ///|

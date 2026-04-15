@@ -474,7 +474,9 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
 
 ///|
 test "transform plugin: post startup populates hierarchy globals" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    TransformPlugin::default(),
+  )
   let world = app.world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
@@ -514,7 +516,9 @@ test "transform plugin: post startup populates hierarchy globals" {
 
 ///|
 test "transform plugin: queues parent validation for missing parent GlobalTransform" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    TransformPlugin::default(),
+  )
   let world = app.world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
@@ -545,7 +549,7 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 test "transform plugin: keeps preinserted static optimization resource" {
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(StaticTransformOptimizations::disabled())
-    .add_plugin(transform_plugin)
+    .add_plugins(TransformPlugin::default())
   let value = (try! app
   .world()
   .get_resource(static_transform_optimizations_resource_key())).unwrap()
@@ -555,7 +559,9 @@ test "transform plugin: keeps preinserted static optimization resource" {
 ///|
 test "transform plugin: post update reflects update stage transform writes" {
   let entity_ref = Ref::new(@core.Entity::new(0, 0))
-  let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    TransformPlugin::default(),
+  )
   let world = app.world()
   let entity = world.spawn_empty()
   entity_ref.val = entity

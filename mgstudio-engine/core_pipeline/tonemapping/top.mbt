@@ -186,15 +186,13 @@ pub fn tonemapping_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for TonemappingPlugin with plugin_name(_self) {
+pub impl @app.Plugin for TonemappingPlugin with name(_self) {
   TONEMAPPING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for TonemappingPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    tonemapping_plugin_with(app, self)
-  }
+pub impl @app.Plugin for TonemappingPlugin with build(self, app) {
+  tonemapping_plugin_with(app, self)
 }
 
 ///|

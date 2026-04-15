@@ -102,20 +102,14 @@ pub fn EnvironmentMapGenerationPlugin::default() -> EnvironmentMapGenerationPlug
 }
 
 ///|
-pub impl @app.PluginReplacement for EnvironmentMapGenerationPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for EnvironmentMapGenerationPlugin with name(_self) {
   ENVIRONMENT_MAP_GENERATION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for EnvironmentMapGenerationPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    ignore(self)
-    app
-  }
+pub impl @app.Plugin for EnvironmentMapGenerationPlugin with build(self, app) {
+  ignore(self)
+  app
 }
 
 ///|

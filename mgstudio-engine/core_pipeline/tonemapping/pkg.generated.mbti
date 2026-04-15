@@ -97,7 +97,7 @@ pub fn TonemappingPipelineKeyFlags::new(hue_rotate? : Bool, white_balance? : Boo
 pub struct TonemappingPlugin {
 }
 pub fn TonemappingPlugin::default() -> Self
-pub impl @app.PluginReplacement for TonemappingPlugin
+pub impl @app.Plugin for TonemappingPlugin
 
 // Type aliases
 pub using @post_process {type DebandDither}

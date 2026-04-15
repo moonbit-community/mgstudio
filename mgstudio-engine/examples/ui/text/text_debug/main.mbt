@@ -401,9 +401,9 @@ fn change_text_system(
 
 ///|
 fn main {
-  @diagnostic.frame_time_diagnostics_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(@mgstudio.default_plugins()),
-  )
+  @app.App::new(@ecs.World::new())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param5(change_text_system)))
   .run()

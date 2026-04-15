@@ -313,6 +313,8 @@ pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
 
+pub fn sync_build(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn[C] sync_component(@ecs.World, @core.Entity, @ecs.ComponentKey[C]) -> @ecs.World
 
 pub fn sync_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -320,8 +322,6 @@ pub fn sync_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn[C : @ecs.Component, F] sync_component_plugin_with(@app.App[@ecs.World], SyncComponentPlugin[C, F]) -> @app.App[@ecs.World]
 
 pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
-
-pub fn sync_world_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn sync_world_plugin_with(@app.App[@ecs.World], SyncWorldPlugin) -> @app.App[@ecs.World]
 
@@ -404,12 +404,12 @@ pub struct ExtractComponentPlugin[_, _] {
 }
 pub fn[C, F] ExtractComponentPlugin::default() -> Self[C, F]
 pub fn[C, F] ExtractComponentPlugin::extract_visible() -> Self[C, F]
-pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugin[C, F]
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F]
 
 pub struct ExtractResourcePlugin[_, _] {
 }
 pub fn[R, F] ExtractResourcePlugin::default() -> Self[R, F]
-pub impl[R : @app.Resource, F] @app.PluginReplacement for ExtractResourcePlugin[R, F]
+pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F]
 
 pub struct ExtractedAssets[A] {
   extracted : Array[(Int, A)]
@@ -439,7 +439,7 @@ pub fn[R] ExtractedResourceState::replace(Self[R], R) -> Unit
 pub struct GpuComponentArrayBufferPlugin[_] {
 }
 pub fn[C] GpuComponentArrayBufferPlugin::default() -> Self[C]
-pub impl[C] @app.PluginReplacement for GpuComponentArrayBufferPlugin[C]
+pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C]
 
 pub struct GpuComponentArrayBufferState[C] {
   buffer : @render_resource.GpuArrayBuffer[C]
@@ -566,6 +566,11 @@ pub fn RenderEntity::id(Self) -> @core.Entity
 pub fn RenderEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for RenderEntity
 
+pub struct RenderPlugin {
+}
+pub fn RenderPlugin::default() -> Self
+pub impl @app.Plugin for RenderPlugin
+
 pub struct RenderResources {
   device_id : Int
   queue_id : Int
@@ -588,7 +593,7 @@ pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
 pub struct SyncComponentPlugin[_, _] {
 }
 pub fn[C, F] SyncComponentPlugin::default() -> Self[C, F]
-pub impl[C : @ecs.Component, F] @app.PluginReplacement for SyncComponentPlugin[C, F]
+pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F]
 
 pub struct SyncToRenderWorld {
 }
@@ -599,7 +604,7 @@ pub impl Default for SyncToRenderWorld
 pub struct SyncWorldPlugin {
 }
 pub fn SyncWorldPlugin::default() -> Self
-pub impl @app.PluginReplacement for SyncWorldPlugin
+pub impl @app.Plugin for SyncWorldPlugin
 
 pub struct TemporaryRenderEntity {
 }

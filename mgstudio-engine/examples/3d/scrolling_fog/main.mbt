@@ -170,9 +170,8 @@ fn scroll_fog(world : @ecs.World) -> Unit {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(scroll_fog))
   .run()

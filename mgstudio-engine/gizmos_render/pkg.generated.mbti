@@ -39,7 +39,7 @@ pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @ap
 pub struct GizmoRenderPlugin {
 }
 pub fn GizmoRenderPlugin::default() -> Self
-pub impl @app.PluginReplacement for GizmoRenderPlugin
+pub impl @app.Plugin for GizmoRenderPlugin
 
 pub(all) enum GizmoRenderSystems {
   QueueLineGizmos2d
@@ -49,12 +49,12 @@ pub(all) enum GizmoRenderSystems {
 pub struct LineGizmo2dPlugin {
 }
 pub fn LineGizmo2dPlugin::default() -> Self
-pub impl @app.PluginReplacement for LineGizmo2dPlugin
+pub impl @app.Plugin for LineGizmo2dPlugin
 
 pub struct LineGizmo3dPlugin {
 }
 pub fn LineGizmo3dPlugin::default() -> Self
-pub impl @app.PluginReplacement for LineGizmo3dPlugin
+pub impl @app.Plugin for LineGizmo3dPlugin
 
 pub struct RetainedLineGizmo {
   entity : @core.Entity

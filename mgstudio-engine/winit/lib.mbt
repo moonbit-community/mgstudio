@@ -58,15 +58,13 @@ pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for WinitPlugin with plugin_name(_self) {
+pub impl @app.Plugin for WinitPlugin with name(_self) {
   WINIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for WinitPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    winit_plugin_with(app, self)
-  }
+pub impl @app.Plugin for WinitPlugin with build(self, app) {
+  winit_plugin_with(app, self)
 }
 
 ///|

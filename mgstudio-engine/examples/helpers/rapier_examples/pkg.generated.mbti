@@ -16,7 +16,7 @@ import {
 }
 
 // Values
-pub fn rapier2d_default_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+pub fn rapier2d_default_plugins() -> @app.PluginGroupBuilder[@ecs.World]
 
 pub fn rapier2d_set_clear_color(@ecs.World, @color.Color) -> Unit
 
@@ -44,7 +44,7 @@ pub fn rapier3d_camera(@ecs.World, @math.Vec3, @math.Vec3) -> Unit
 
 pub fn rapier3d_color(Int) -> @color.Color
 
-pub fn rapier3d_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+pub fn rapier3d_plugins() -> @app.PluginGroupBuilder[@ecs.World]
 
 pub fn rapier3d_spawn_ball(@ecs.World, @math.Vec3, Float, @color.Color, @physics3d.RigidBody3d?) -> @core.Entity
 
@@ -61,6 +61,10 @@ pub fn rapier3d_unlit_material(@color.Color) -> @material.MeshMaterial3d
 // Errors
 
 // Types and methods
+pub struct Rapier3dDebugRenderPlugin {
+}
+pub fn Rapier3dDebugRenderPlugin::default() -> Self
+pub impl @app.Plugin for Rapier3dDebugRenderPlugin
 
 // Type aliases
 

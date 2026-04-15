@@ -49,8 +49,13 @@ fn ensure_controls_runtime(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn controls_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ensure_controls_runtime(app).add_plugins([
-    button_plugin, checkbox_plugin, color_plane_plugin, color_slider_plugin, color_swatch_plugin,
-    radio_plugin, slider_plugin, toggle_switch_plugin,
-  ])
+  let app = ensure_controls_runtime(app)
+  let app = button_plugin(app)
+  let app = checkbox_plugin(app)
+  let app = color_plane_plugin(app)
+  let app = color_slider_plugin(app)
+  let app = color_swatch_plugin(app)
+  let app = radio_plugin(app)
+  let app = slider_plugin(app)
+  toggle_switch_plugin(app)
 }

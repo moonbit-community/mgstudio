@@ -28,19 +28,16 @@ pub fn SystemInformationDiagnosticsPlugin::default() -> SystemInformationDiagnos
 }
 
 ///|
-pub impl @app.PluginReplacement for SystemInformationDiagnosticsPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for SystemInformationDiagnosticsPlugin with name(_self) {
   SYSTEM_INFORMATION_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for SystemInformationDiagnosticsPlugin with world_plugin(
+pub impl @app.Plugin for SystemInformationDiagnosticsPlugin with build(
   self,
+  app,
 ) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    system_information_diagnostics_plugin_with(app, self)
-  }
+  system_information_diagnostics_plugin_with(app, self)
 }
 
 ///|

@@ -157,12 +157,12 @@ pub fn GizmoAssetHandle::new(id~ : Int) -> Self
 pub struct GizmoPlugin {
 }
 pub fn GizmoPlugin::default() -> Self
-pub impl @app.PluginReplacement for GizmoPlugin
+pub impl @app.Plugin for GizmoPlugin
 
 pub struct GlobalGizmosPlugin {
 }
 pub fn GlobalGizmosPlugin::default() -> Self
-pub impl @app.PluginReplacement for GlobalGizmosPlugin
+pub impl @app.Plugin for GlobalGizmosPlugin
 
 pub struct RetainedGizmo {
   handle : GizmoAssetHandle
@@ -202,7 +202,7 @@ pub impl Default for SkinnedMeshBoundsGizmoConfigGroup
 pub struct SkinnedMeshBoundsGizmoPlugin {
 }
 pub fn SkinnedMeshBoundsGizmoPlugin::default() -> Self
-pub impl @app.PluginReplacement for SkinnedMeshBoundsGizmoPlugin
+pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin
 
 // Type aliases
 pub using @sprite {type Arc2dBuilder}

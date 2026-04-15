@@ -89,7 +89,7 @@ pub impl @sprite.Material2d for CustomMaterial with bind_group(self) {
 }
 
 ///|
-fn shader_material_2d_plugin() -> @app.Plugin[@ecs.World] {
+fn shader_material_2d_plugin() -> @sprite.Material2dPlugin[CustomMaterial] {
   let plugin : @sprite.Material2dPlugin[CustomMaterial] = @sprite.Material2dPlugin::default()
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom/custom_material_2d.wgsl")
@@ -131,8 +131,8 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([shader_material_2d_plugin()])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(shader_material_2d_plugin())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }

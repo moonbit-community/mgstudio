@@ -89,6 +89,7 @@ pub impl @app.Resource for DirectionalNavigationMap
 pub struct DirectionalNavigationPlugin {
 }
 pub fn DirectionalNavigationPlugin::default() -> Self
+pub impl @app.Plugin for DirectionalNavigationPlugin
 
 pub struct FocusableArea {
   entity : @core.Entity
@@ -111,6 +112,7 @@ pub impl[M : @ecs.Message] @ecs.Message for FocusedInput[M]
 pub struct InputDispatchPlugin {
 }
 pub fn InputDispatchPlugin::default() -> Self
+pub impl @app.Plugin for InputDispatchPlugin
 
 pub struct InputFocus {
   mut focused_entity : @core.Entity?
@@ -171,6 +173,11 @@ pub struct TabIndex {
 pub fn TabIndex::new(Int) -> Self
 pub fn TabIndex::value(Self) -> Int
 pub impl @ecs.Component for TabIndex
+
+pub struct TabNavigationPlugin {
+}
+pub fn TabNavigationPlugin::default() -> Self
+pub impl @app.Plugin for TabNavigationPlugin
 
 // Type aliases
 

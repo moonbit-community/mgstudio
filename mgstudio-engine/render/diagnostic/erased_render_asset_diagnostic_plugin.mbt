@@ -36,19 +36,13 @@ pub fn ErasedRenderAssetDiagnosticPlugin::new(
 }
 
 ///|
-pub impl @app.PluginReplacement for ErasedRenderAssetDiagnosticPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin with name(_self) {
   ERASED_RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ErasedRenderAssetDiagnosticPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    erased_render_asset_diagnostic_plugin_with(app, self)
-  }
+pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin with build(self, app) {
+  erased_render_asset_diagnostic_plugin_with(app, self)
 }
 
 ///|

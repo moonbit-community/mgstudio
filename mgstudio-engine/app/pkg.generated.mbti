@@ -99,10 +99,6 @@ pub fn log_once(LogLevel, callsite~ : String, message~ : String, target? : Strin
 
 pub fn log_once_with(LogLevel, callsite~ : String, () -> String, target? : String, name? : String) -> Unit
 
-pub fn[W] log_plugin(LogPlugin) -> (App[W]) -> App[W]
-
-pub fn[W] log_plugin_default(App[W]) -> App[W]
-
 pub fn log_record(LogLevel, message~ : String, target? : String, name? : String) -> Unit
 
 pub fn log_trace(String) -> Unit
@@ -117,8 +113,6 @@ pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder]
 
 pub let message_update_system_set : String
 
-pub fn named_world_plugin(String, (App[@ecs.World]) -> App[@ecs.World]) -> NamedWorldPlugin
-
 pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
 
 pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], @ref.Ref[Json]) -> Bool
@@ -132,14 +126,6 @@ pub fn panic_handler_ignore(Error, ErrorContext) -> Unit
 pub fn panic_handler_log(Error, ErrorContext) -> Unit
 
 pub fn panic_handler_warn(Error, ErrorContext) -> Unit
-
-pub fn[W] plugin_from_system((W) -> Unit) -> (App[W]) -> App[W]
-
-pub fn[W] plugin_from_system_config(SystemConfig[W]) -> (App[W]) -> App[W]
-
-pub fn[W, P : SystemParam] plugin_from_system_param((P) -> Unit) -> (App[W]) -> App[W]
-
-pub fn[W] plugin_group_from_plugins(String, Array[(App[W]) -> App[W]]) -> PluginGroupBuilder[W]
 
 pub fn[W] plugin_group_start() -> PluginGroupBuilder[W]
 
@@ -225,13 +211,11 @@ pub fn run_world_system_once(@ecs.World, (@ecs.World) -> Unit) -> Unit raise
 
 pub fn schedule_label(String) -> ScheduleStage
 
-pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
+pub fn schedule_runner_plugin_loop(Float) -> ScheduleRunnerPlugin
 
-pub fn schedule_runner_plugin_loop(Float) -> (App[@ecs.World]) -> App[@ecs.World]
+pub fn schedule_runner_plugin_loop_hz(Float) -> ScheduleRunnerPlugin
 
-pub fn schedule_runner_plugin_loop_hz(Float) -> (App[@ecs.World]) -> App[@ecs.World]
-
-pub fn schedule_runner_plugin_once() -> (App[@ecs.World]) -> App[@ecs.World]
+pub fn schedule_runner_plugin_once() -> ScheduleRunnerPlugin
 
 pub fn set_default_error_handler(@ecs.World, (Error, ErrorContext) -> Unit) -> Unit
 
@@ -252,8 +236,6 @@ pub fn[S : States] state_resource_key(S) -> @ecs.ResourceKey[State[S]]
 pub fn[S : States] state_set_dependency_depth(S) -> Int
 
 pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[StateTransitionEvent[S]]
-
-pub fn states_plugin(StatesPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
 
 pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
@@ -311,7 +293,7 @@ pub fn timeline_trace_push_pending_span(TimelineTraceSpan) -> Unit
 
 pub fn timeline_trace_take_pending_spans() -> Array[TimelineTraceSpan]
 
-pub fn[C : @ecs.Component] validate_parent_has_component_plugin(ValidateParentHasComponentPlugin[C]) -> (App[@ecs.World]) -> App[@ecs.World]
+pub fn[C] validate_parent_has_component_plugin(ValidateParentHasComponentPlugin[C]) -> ValidateParentHasComponentPlugin[C]
 
 pub let validate_parent_has_component_system_set : String
 
@@ -415,10 +397,7 @@ pub fn[S : States] App::add_on_reexit_system(Self[@ecs.World], S, (@ecs.World) -
 pub fn[S : States] App::add_on_reexit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system(Self[@ecs.World], S, S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
-pub fn[W] App::add_plugin(Self[W], (Self[W]) -> Self[W]) -> Self[W]
-pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
-pub fn[P : PluginReplacement] App::add_plugin_typed(Self[@ecs.World], P) -> Self[@ecs.World]
-pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
+pub fn[P : Plugin] App::add_plugins(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] App::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit) -> Self[@ecs.World]
@@ -709,6 +688,7 @@ pub fn LogPlugin::with_custom_layer(Self, (LogRecord) -> Unit) -> Self
 pub fn LogPlugin::with_filter(Self, String) -> Self
 pub fn LogPlugin::with_fmt_layer(Self, (LogRecord) -> Unit) -> Self
 pub fn LogPlugin::with_level(Self, LogLevel) -> Self
+pub impl Plugin for LogPlugin
 
 pub struct LogRecord {
   level : LogLevel
@@ -731,12 +711,6 @@ pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> S
 pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
-
-pub struct NamedWorldPlugin {
-  name : String
-  plugin : (App[@ecs.World]) -> App[@ecs.World]
-}
-pub impl PluginReplacement for NamedWorldPlugin
 
 pub(all) enum NextState[S] {
   Unchanged
@@ -824,19 +798,19 @@ pub struct PluginGroupBuilder[W] {
   group_name : String
   plugins : Array[PluginGroupEntry[W]]
 }
-pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
-pub fn[P : PluginReplacement] PluginGroupBuilder::add_typed(Self[@ecs.World], P) -> Self[@ecs.World]
-pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
+pub fn[P : Plugin] PluginGroupBuilder::add(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::build_entries(Self[W]) -> Array[PluginGroupEntry[W]]
-pub fn[P : PluginReplacement] PluginGroupBuilder::contains(Self[@ecs.World], P) -> Bool
-pub fn[P : PluginReplacement] PluginGroupBuilder::disable(Self[@ecs.World], P) -> Self[@ecs.World]
-pub fn[P : PluginReplacement] PluginGroupBuilder::enable(Self[@ecs.World], P) -> Self[@ecs.World]
-pub fn[P : PluginReplacement] PluginGroupBuilder::enabled(Self[@ecs.World], P) -> Bool
-pub fn[P : PluginReplacement] PluginGroupBuilder::set(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : Plugin] PluginGroupBuilder::contains(Self[@ecs.World], P) -> Bool
+pub fn[P : Plugin] PluginGroupBuilder::disable(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : Plugin] PluginGroupBuilder::enable(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[P : Plugin] PluginGroupBuilder::enabled(Self[@ecs.World], P) -> Bool
+pub fn[P : Plugin] PluginGroupBuilder::set(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
 pub fn[W] PluginGroupBuilder::start_named(String) -> Self[W]
-pub fn[P : PluginReplacement] PluginGroupBuilder::try_disable(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
-pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
+pub fn[P : Plugin] PluginGroupBuilder::try_disable(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
+pub fn[P : Plugin] PluginGroupBuilder::try_set(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
+pub impl Plugin for PluginGroupBuilder[@ecs.World]
+pub impl PluginGroup for PluginGroupBuilder[@ecs.World]
 
 pub struct PluginGroupEntry[W] {
   id : String
@@ -955,6 +929,7 @@ pub struct ScheduleRunnerPlugin {
 }
 pub fn ScheduleRunnerPlugin::run_loop(Float) -> Self
 pub fn ScheduleRunnerPlugin::run_once() -> Self
+pub impl Plugin for ScheduleRunnerPlugin
 
 pub(all) enum ScheduleStage {
   Main
@@ -1008,6 +983,7 @@ pub(all) enum StateTransitionSystems {
 pub struct StatesPlugin {
 }
 pub fn StatesPlugin::default() -> Self
+pub impl Plugin for StatesPlugin
 
 type Stepping
 pub fn Stepping::add_schedule(Self, ScheduleStage) -> Self
@@ -1178,6 +1154,7 @@ pub struct ValidateParentHasComponentPlugin[_] {
 }
 pub fn[C] ValidateParentHasComponentPlugin::default() -> Self[C]
 pub fn[C] ValidateParentHasComponentPlugin::in_schedule(ScheduleStage) -> Self[C]
+pub impl[C : @ecs.Component] Plugin for ValidateParentHasComponentPlugin[C]
 
 // Type aliases
 pub type ErrorHandler = (Error, ErrorContext) -> Unit
@@ -1185,10 +1162,6 @@ pub type ErrorHandler = (Error, ErrorContext) -> Unit
 pub type FallibleSystemFn[W] = (W) -> Unit raise
 
 pub type LogLayer = (LogRecord) -> Unit
-
-pub type Plugin[W] = (App[W]) -> App[W]
-
-pub type PluginGroup[W] = () -> PluginGroupBuilder[W]
 
 pub type RenderErrorHandler = (RenderRuntimeError) -> RenderErrorPolicy
 
@@ -1253,13 +1226,18 @@ pub impl[T] FromWorld for Array[T]
 pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B)
 pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
 
-pub(open) trait PluginReplacement {
-  plugin_name(Self) -> String
-  world_plugin(Self) -> (App[@ecs.World]) -> App[@ecs.World]
+pub(open) trait Plugin {
+  build(Self, App[@ecs.World]) -> App[@ecs.World]
+  name(Self) -> String = _
   is_unique(Self) -> Bool = _
   ready(Self, App[@ecs.World]) -> Bool = _
   finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
   cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
+}
+
+pub(open) trait PluginGroup {
+  build(Self) -> PluginGroupBuilder[@ecs.World]
+  name(Self) -> String = _
 }
 
 pub(open) trait PointerObserverKind {

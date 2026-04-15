@@ -198,10 +198,9 @@ fn compute_tutorial(input : (TutorialState, InGame, IsPaused?)) -> Tutorial? {
 
 ///|
 fn main {
-  let plugins = @mgstudio.default_plugins()
-  plugins.push(@app.states_plugin(@app.StatesPlugin::default()))
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@app.StatesPlugin::default())
   .insert_state(AppState::default())
   .insert_state(TutorialState::default())
   .add_computed_state(AppState::Menu, InGame::{  }, compute_in_game)

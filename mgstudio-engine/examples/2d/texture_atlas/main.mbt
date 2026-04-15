@@ -47,9 +47,9 @@ pub impl @app.Resource for RpgSpriteFolder with resource() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
-  })
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
+  )
   .insert_state(AppState::default())
   .add_on_enter_system_config(
     AppState::Setup,

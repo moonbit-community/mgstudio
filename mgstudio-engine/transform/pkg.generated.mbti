@@ -153,6 +153,11 @@ pub struct TransformHelper {
 pub fn TransformHelper::compute_global_transform(Self, @ecs.World, @core.Entity) -> GlobalTransform?
 pub fn TransformHelper::default() -> Self
 
+pub struct TransformPlugin {
+}
+pub fn TransformPlugin::default() -> Self
+pub impl @app.Plugin for TransformPlugin
+
 pub struct TransformTreeChanged {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for TransformTreeChanged

@@ -38,9 +38,8 @@ fn touch_widget_button_wbtest_imports() -> Unit {
 ///|
 fn main {
   touch_widget_button_wbtest_imports()
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_system_config(@app.system(button_system).after(@ui.ui_set_focus))
   .run()

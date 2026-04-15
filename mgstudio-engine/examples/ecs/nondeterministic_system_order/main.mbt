@@ -100,9 +100,7 @@ fn main {
     |> @app.chain()
 
   @app.App::new(@ecs.World::new())
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
-  ])
+  .add_plugins(@app.ScheduleRunnerPlugin::run_once())
   .insert_resource(A::{ value: 0 })
   .insert_resource(B::{ value: 0 })
   .add_systems(@app.Update, reads_a_system)

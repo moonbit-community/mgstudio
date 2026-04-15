@@ -144,7 +144,7 @@ fn pointer_up_sprite(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param(setup)
   .add_pointer_observer2(fn(pointer, query) {
     pointer_enter_sprite(pointer, query)

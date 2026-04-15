@@ -224,7 +224,7 @@ fn main {
     @app.system_param2(instructions),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .init_resource(CameraSettings::default)
   .add_systems(
     @app.Startup,

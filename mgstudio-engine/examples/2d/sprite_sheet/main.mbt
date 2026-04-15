@@ -52,9 +52,9 @@ pub impl @ecs.Component for AnimationTimer with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
-  })
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
+  )
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_sprite)))
   .run()

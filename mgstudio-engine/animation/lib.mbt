@@ -1631,15 +1631,13 @@ pub fn AnimationPlugin::default() -> AnimationPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for AnimationPlugin with plugin_name(_self) {
+pub impl @app.Plugin for AnimationPlugin with name(_self) {
   ANIMATION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for AnimationPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    animation_plugin_with(app, self)
-  }
+pub impl @app.Plugin for AnimationPlugin with build(self, app) {
+  animation_plugin_with(app, self)
 }
 
 ///|

@@ -82,21 +82,18 @@ pub fn[C, F] extract_component_only_extract_visible(
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugin[
-  C,
-  F,
-] with plugin_name(_self) {
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with name(
+  _self,
+) {
   EXTRACT_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.PluginReplacement for ExtractComponentPlugin[
-  C,
-  F,
-] with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    extract_component_plugin_with(app, self)
-  }
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with build(
+  self,
+  app,
+) {
+  extract_component_plugin_with(app, self)
 }
 
 ///|

@@ -248,15 +248,13 @@ fn configure_mesh_render_sub_app(
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshRenderPlugin with plugin_name(_self) {
+pub impl @app.Plugin for MeshRenderPlugin with name(_self) {
   MESH_RENDER_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshRenderPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    mesh_render_plugin_with(app, self)
-  }
+pub impl @app.Plugin for MeshRenderPlugin with build(self, app) {
+  mesh_render_plugin_with(app, self)
 }
 
 ///|

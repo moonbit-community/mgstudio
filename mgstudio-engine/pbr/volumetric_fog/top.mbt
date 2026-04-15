@@ -33,15 +33,13 @@ pub fn VolumetricFogPlugin::default() -> VolumetricFogPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for VolumetricFogPlugin with plugin_name(_self) {
+pub impl @app.Plugin for VolumetricFogPlugin with name(_self) {
   VOLUMETRIC_FOG_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for VolumetricFogPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    volumetric_fog_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for VolumetricFogPlugin with build(self, app) {
+  volumetric_fog_plugin_install_with(app, self)
 }
 
 ///|

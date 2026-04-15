@@ -103,7 +103,7 @@ pub(all) enum Core3dSystems {
 pub struct CorePipelinePlugin {
 }
 pub fn CorePipelinePlugin::default() -> Self
-pub impl @app.PluginReplacement for CorePipelinePlugin
+pub impl @app.Plugin for CorePipelinePlugin
 
 pub struct FullscreenMaterialBindGroupState {
   source_a_texture_view_id : Int
@@ -124,7 +124,7 @@ pub impl @app.Resource for FullscreenMaterialPipelineState
 pub struct FullscreenMaterialPlugin {
 }
 pub fn FullscreenMaterialPlugin::default() -> Self
-pub impl @app.PluginReplacement for FullscreenMaterialPlugin
+pub impl @app.Plugin for FullscreenMaterialPlugin
 
 pub struct FullscreenMaterialPrepareViewState {
   main_texture_view_id : Int

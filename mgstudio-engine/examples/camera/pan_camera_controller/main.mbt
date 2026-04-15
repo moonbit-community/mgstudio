@@ -74,8 +74,8 @@ fn main {
     @app.system_param3(spawn_text),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([@sprite.pan_camera_plugin])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@camera_controller.PanCameraPlugin::default())
   .add_systems(@app.Startup, (setup_system, spawn_text_system) |> @app.chain())
   .run()
 }

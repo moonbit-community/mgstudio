@@ -51,8 +51,8 @@ fn format_fps(value : Float) -> String {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
   .add_startup_system(setup)
   .add_system_param2(text_update_system)
   .add_system_param2(text_color_system)

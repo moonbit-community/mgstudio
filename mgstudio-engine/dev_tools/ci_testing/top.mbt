@@ -27,15 +27,13 @@ pub fn CiTestingPlugin::default() -> CiTestingPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for CiTestingPlugin with plugin_name(_self) {
+pub impl @app.Plugin for CiTestingPlugin with name(_self) {
   CI_TESTING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for CiTestingPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    ci_testing_plugin_with(app, self)
-  }
+pub impl @app.Plugin for CiTestingPlugin with build(self, app) {
+  ci_testing_plugin_with(app, self)
 }
 
 ///|

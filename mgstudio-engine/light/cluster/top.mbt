@@ -623,15 +623,13 @@ pub impl @ecs.Component for VisibleClusterableObjects with component() {
 }
 
 ///|
-pub impl @app.PluginReplacement for ClusterLightPlugin with plugin_name(_self) {
+pub impl @app.Plugin for ClusterLightPlugin with name(_self) {
   CLUSTER_LIGHT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ClusterLightPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    cluster_light_plugin_with(app, self)
-  }
+pub impl @app.Plugin for ClusterLightPlugin with build(self, app) {
+  cluster_light_plugin_with(app, self)
 }
 
 ///|
@@ -644,7 +642,7 @@ pub fn cluster_light_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : ClusterLightPlugin,
 ) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { GlobalClusterSettings::default() })
-  .add_plugin(cluster_assign_lights)
+  cluster_assign_lights(
+    app.init_resource(fn() { GlobalClusterSettings::default() }),
+  )
 }

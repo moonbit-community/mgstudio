@@ -15,7 +15,7 @@ import {
 }
 
 // Values
-pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> @sprite.ColorMaterialPlugin
 
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
 
@@ -31,7 +31,7 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@sprite.Wireframe2dColor]
 
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
-pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> @sprite.Material2dPlugin[M]
 
 pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
@@ -96,6 +96,10 @@ pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 // Errors
 
 // Types and methods
+pub struct SpriteRenderPlugin {
+}
+pub fn SpriteRenderPlugin::default() -> Self
+pub impl @app.Plugin for SpriteRenderPlugin
 
 // Type aliases
 pub using @sprite {type AlphaMode2d}

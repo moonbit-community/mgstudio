@@ -338,7 +338,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param2(setup)
   .add_pointer_observer3(drag_active_tile)
   .add_pointer_observer4(release_active_tile)

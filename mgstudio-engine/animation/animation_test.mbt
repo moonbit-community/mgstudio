@@ -677,7 +677,7 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   let default_time : @time.Time[Unit] = @time.Time::default()
   let mut app = @app.App::new(@ecs.World::new())
     .insert_resource(default_time)
-    .add_plugins([animation_plugin])
+    .add_plugins(AnimationPlugin::default())
   let world = app.world()
   let player_entity = world.spawn()
   let target_entity = world.spawn()
@@ -743,7 +743,7 @@ test "animation runtime: trigger_events emits root and target messages" {
     @core.Duration::from_millis(250L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins([animation_plugin])
+    .add_plugins(AnimationPlugin::default())
     .insert_resource(delta_time)
     .add_post_update_system_config(
       @app.system(
@@ -817,7 +817,7 @@ test "animation runtime: targeted events are emitted in animate_targets stage" {
     @core.Duration::from_millis(250L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins([animation_plugin])
+    .add_plugins(AnimationPlugin::default())
     .insert_resource(delta_time)
     .add_post_update_system_config(
       @app.system(
@@ -887,7 +887,7 @@ test "animation runtime: trigger_events dispatches typed root and target observe
     @core.Duration::from_millis(250L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins([animation_plugin])
+    .add_plugins(AnimationPlugin::default())
     .add_observer2(observe_typed_animation_event)
     .insert_resource(delta_time)
   let world = app.world()
@@ -947,7 +947,7 @@ test "animation runtime: animate_targets updates text color" {
     @core.Duration::from_millis(500L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins([animation_plugin])
+    .add_plugins(AnimationPlugin::default())
     .insert_resource(delta_time)
   let world = app.world()
   let player_entity = world.spawn()

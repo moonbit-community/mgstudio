@@ -62,7 +62,7 @@ fn current_stage_label() -> String {
 test "app state: queued next state applies on next frame after PreUpdate" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_system_config(
       system(fn(_world : @ecs.World) {
@@ -97,7 +97,7 @@ test "app state: queued next state applies on next frame after PreUpdate" {
 test "app state: exit transition enter hooks run in bevy order" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_system_config(
       system(fn(_world : @ecs.World) { set_state(TestState::B) }).run_if(
@@ -134,7 +134,7 @@ test "app state: exit transition enter hooks run in bevy order" {
 test "app state: startup enter hook runs in state transition stage" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_on_enter_system(TestState::A, fn(_world : @ecs.World) {
       log.push("enter@\{current_stage_label()}")
@@ -184,9 +184,7 @@ test "app update: spawn scene runs between update and post update" {
 
 ///|
 test "states plugin: inserts state transition into schedule order resources" {
-  let app = App::new(@ecs.World::new()).add_plugins([
-    states_plugin(StatesPlugin::default()),
-  ])
+  let app = App::new(@ecs.World::new()).add_plugins(StatesPlugin::default())
   ignore(app)
   let order = world_main_schedule_order(app.world())
   let startup_labels = order.startup_labels.map(fn(stage : ScheduleStage) {
@@ -251,7 +249,7 @@ test "main schedule order resource drives startup and main stage execution order
 test "app state: state_changed matches bevy resource change detection" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_system_config(
       system(fn(world : @ecs.World) {

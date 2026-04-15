@@ -50,7 +50,7 @@ pub fn BlitPipelineKey::new(texture_format? : String, blend_state? : String, sam
 pub struct BlitPlugin {
 }
 pub fn BlitPlugin::default() -> Self
-pub impl @app.PluginReplacement for BlitPlugin
+pub impl @app.Plugin for BlitPlugin
 
 // Type aliases
 

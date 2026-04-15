@@ -757,7 +757,7 @@ pub(all) struct WindowPlugin {
   close_when_requested : Bool
 }
 pub fn WindowPlugin::default() -> Self
-pub impl @app.PluginReplacement for WindowPlugin
+pub impl @app.Plugin for WindowPlugin
 
 pub(all) enum WindowPosition {
   Automatic

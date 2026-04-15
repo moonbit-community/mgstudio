@@ -55,8 +55,8 @@ pub type OptionalStateSource[S] = @app.OptionalStateSource[S]
 pub type StatesPlugin = @app.StatesPlugin
 
 ///|
-pub fn states_plugin(plugin : StatesPlugin) -> @app.Plugin[@ecs.World] {
-  @app.states_plugin(plugin)
+pub fn states_plugin(plugin : StatesPlugin) -> StatesPlugin {
+  plugin
 }
 
 ///|

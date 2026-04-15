@@ -304,7 +304,7 @@ fn button_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param2(setup)
   .add_systems(@app.Update, @app.system(button_system).after(@ui.ui_set_focus))
   .run()

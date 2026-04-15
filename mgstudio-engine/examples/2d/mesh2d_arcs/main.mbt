@@ -65,7 +65,6 @@ pub impl[T] @ecs.Component for DrawBounds[T] with component() {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
     @app.system_param4(setup),
   )
@@ -77,7 +76,7 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, setup_system)
   .add_systems(
     @app.Update,

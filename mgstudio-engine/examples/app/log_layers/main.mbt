@@ -43,13 +43,12 @@ fn log_system(_world : @ecs.World) -> Unit {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   let log_plugin = @app.LogPlugin::default()
     .with_custom_layer(custom_layer)
     .with_fmt_layer(fmt_layer)
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([@app.log_plugin(log_plugin)])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(log_plugin)
   .add_systems(@app.Update, @app.system(log_system))
   .run()
 }

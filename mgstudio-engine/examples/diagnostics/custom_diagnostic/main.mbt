@@ -20,8 +20,8 @@ let system_iteration_count : @diagnostic.DiagnosticPath = @diagnostic.Diagnostic
 ///|
 fn main {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@mgstudio.default_plugins())
-    .add_plugin(@diagnostic.log_diagnostics_plugin)
+    .add_plugins(@mgstudio.DefaultPlugins::default())
+    .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
   @diagnostic.register_diagnostic(
     app,
     @diagnostic.Diagnostic::new(system_iteration_count).with_suffix(

@@ -7,15 +7,6 @@ import {
 }
 
 // Values
-pub fn default_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
-
-pub fn default_plugins_nearest() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
-
-pub fn internal_plugin_groups() -> (Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]], Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]], Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]])
-
-pub fn internal_prelude_plugin_groups() -> (Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]], Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]], Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]])
-
-pub fn minimal_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
 // Errors
 
@@ -23,7 +14,7 @@ pub fn minimal_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub struct DefaultPlugins {
 }
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn[P : @app.PluginReplacement] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
+pub fn[P : @app.Plugin] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
 
 pub struct MinimalPlugins {
 }

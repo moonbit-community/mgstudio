@@ -44,19 +44,13 @@ pub fn experimental_mip_generation_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for ExperimentalMipGeneration with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for ExperimentalMipGeneration with name(_self) {
   "mgstudio.core_pipeline.mip_generation.experimental"
 }
 
 ///|
-pub impl @app.PluginReplacement for ExperimentalMipGeneration with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    experimental_mip_generation_plugin_with(app, self)
-  }
+pub impl @app.Plugin for ExperimentalMipGeneration with build(self, app) {
+  experimental_mip_generation_plugin_with(app, self)
 }
 
 ///|

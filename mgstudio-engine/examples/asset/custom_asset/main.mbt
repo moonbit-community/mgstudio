@@ -207,7 +207,9 @@ fn print_on_load(
 ///|
 fn main {
   custom_asset_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(@mgstudio.default_plugins()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @mgstudio.DefaultPlugins::default(),
+    ),
   )
   .init_resource(fn() { State::default() })
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))

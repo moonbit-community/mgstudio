@@ -61,10 +61,9 @@ fn pressed_button_color() -> @sprite.Color {
 
 ///|
 fn main {
-  let plugins = @mgstudio.default_plugins()
-  plugins.push(@app.states_plugin(@app.StatesPlugin::default()))
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@app.StatesPlugin::default())
   .insert_state(AppState::default())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_on_enter_system(AppState::Menu, @app.system_param(setup_menu))

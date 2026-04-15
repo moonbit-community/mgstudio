@@ -25,7 +25,7 @@ fn fxaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/fxaa: runtime state counts only camera entities with Fxaa" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(fxaa_plugin)
+  let app = @app.App::new(@ecs.World::new()).add_plugins(FxaaPlugin::default())
   let camera_entity = fxaa_test_spawn_camera(app.world())
   let disabled_camera_entity = fxaa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()

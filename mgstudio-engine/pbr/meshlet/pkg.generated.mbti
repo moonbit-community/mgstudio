@@ -439,7 +439,7 @@ pub fn MeshletPlugin::cluster_buffer_slots(Self) -> Int
 pub fn MeshletPlugin::default() -> Self
 pub fn MeshletPlugin::new(Int) -> Self
 pub fn MeshletPlugin::required_wgpu_features() -> UInt64
-pub impl @app.PluginReplacement for MeshletPlugin
+pub impl @app.Plugin for MeshletPlugin
 
 pub struct MeshletPluginState {
   runtime_status : MeshletRuntimeStatus

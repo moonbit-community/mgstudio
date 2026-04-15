@@ -74,7 +74,7 @@ pub impl @ecs.Component for AccessibilityNode
 pub(all) struct AccessibilityPlugin {
 }
 pub fn AccessibilityPlugin::default() -> Self
-pub impl @app.PluginReplacement for AccessibilityPlugin
+pub impl @app.Plugin for AccessibilityPlugin
 
 pub struct AccessibilityRequested {
   requested : @ref.Ref[Bool]

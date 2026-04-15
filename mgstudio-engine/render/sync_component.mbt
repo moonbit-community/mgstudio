@@ -27,21 +27,18 @@ pub fn[C, F] SyncComponentPlugin::default() -> SyncComponentPlugin[C, F] {
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.PluginReplacement for SyncComponentPlugin[
-  C,
-  F,
-] with plugin_name(_self) {
+pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F] with name(
+  _self,
+) {
   SYNC_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.PluginReplacement for SyncComponentPlugin[
-  C,
-  F,
-] with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    sync_component_plugin_with(app, self)
-  }
+pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F] with build(
+  self,
+  app,
+) {
+  sync_component_plugin_with(app, self)
 }
 
 ///|
@@ -116,7 +113,7 @@ pub fn[C : @ecs.Component, F] sync_component_plugin_with(
   plugin : SyncComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let next = sync_world_plugin(app)
+  let next = sync_build(app)
   let world = next.world()
   let component_key = C::component()
   sync_component_register_required_component(world, component_key)

@@ -115,7 +115,7 @@ fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
 test "winit: plugin identity name is stable" {
   let plugin = WinitPlugin::default()
   debug_inspect(
-    WinitPlugin::plugin_name(plugin),
+    WinitPlugin::name(plugin),
     content="\"mgstudio.winit.WinitPlugin\"",
   )
 }

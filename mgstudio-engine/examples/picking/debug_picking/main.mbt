@@ -182,7 +182,7 @@ fn refresh_overlay(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param3(setup)
   .add_system_param(update_debug_mode)
   .add_system_param2(refresh_overlay)

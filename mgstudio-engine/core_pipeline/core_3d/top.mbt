@@ -77,15 +77,13 @@ fn core_3d_configure_render_sub_app(
 }
 
 ///|
-pub impl @app.PluginReplacement for Core3dPlugin with plugin_name(_self) {
+pub impl @app.Plugin for Core3dPlugin with name(_self) {
   CORE_3D_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for Core3dPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    core_3d_plugin_with(app, self)
-  }
+pub impl @app.Plugin for Core3dPlugin with build(self, app) {
+  core_3d_plugin_with(app, self)
 }
 
 ///|
@@ -98,7 +96,7 @@ pub fn core_3d_plugin_with(
     .init_resource(fn() { Opaque3dPhase::default() })
     .init_resource(fn() { AlphaMask3dPhase::default() })
     .init_resource(fn() { Transparent3dPhase::default() })
-    .add_plugin(@skybox.skybox_plugin)
+    .add_plugins(@skybox.SkyboxPlugin::default())
   @render.with_render_app(next, core_3d_configure_render_sub_app)
 }
 

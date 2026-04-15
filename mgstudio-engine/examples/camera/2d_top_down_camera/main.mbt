@@ -154,7 +154,6 @@ fn update_camera(
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   let move_player_system : @app.SystemConfig[@ecs.World] = @app.system(
     @app.system_param3(move_player),
   )
@@ -162,7 +161,7 @@ fn main {
     @app.system_param3(update_camera),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
   .add_systems(@app.Startup, @app.system(@app.system_param(setup_instructions)))
   .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))

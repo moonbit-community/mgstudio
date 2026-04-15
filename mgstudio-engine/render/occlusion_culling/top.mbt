@@ -34,19 +34,13 @@ pub fn occlusion_culling_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for OcclusionCullingPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for OcclusionCullingPlugin with name(_self) {
   OCCLUSION_CULLING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for OcclusionCullingPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    occlusion_culling_plugin_with(app, self)
-  }
+pub impl @app.Plugin for OcclusionCullingPlugin with build(self, app) {
+  occlusion_culling_plugin_with(app, self)
 }
 
 ///|

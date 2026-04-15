@@ -158,15 +158,13 @@ pub fn FogPlugin::default() -> FogPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for FogPlugin with plugin_name(_self) {
+pub impl @app.Plugin for FogPlugin with name(_self) {
   FOG_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for FogPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    fog_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for FogPlugin with build(self, app) {
+  fog_plugin_install_with(app, self)
 }
 
 ///|

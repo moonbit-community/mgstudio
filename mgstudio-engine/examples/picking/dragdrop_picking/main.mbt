@@ -234,7 +234,7 @@ fn on_drag_end(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param(setup)
   .add_pointer_observer4(fn(pointer, commands, drag_state, draggables) {
     on_drag_start(pointer, commands, drag_state, draggables)

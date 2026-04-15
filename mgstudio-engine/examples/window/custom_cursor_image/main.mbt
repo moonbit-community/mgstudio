@@ -319,7 +319,7 @@ fn cycle_rect(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(
     @app.Startup,
     @app.system(@app.system_param(setup_cursor_image_state)),

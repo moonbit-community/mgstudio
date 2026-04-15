@@ -2,13 +2,12 @@
 package "Milky2018/mgstudio/sprite_render/mesh2d"
 
 import {
-  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/sprite",
 }
 
 // Values
-pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> @sprite.ColorMaterialPlugin
 
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
 
@@ -24,7 +23,7 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@sprite.Wireframe2dColor]
 
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
-pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> @sprite.Material2dPlugin[M]
 
 // Errors
 

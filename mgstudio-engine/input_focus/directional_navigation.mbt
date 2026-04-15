@@ -24,6 +24,16 @@ pub fn DirectionalNavigationPlugin::default() -> DirectionalNavigationPlugin {
 }
 
 ///|
+pub impl @app.Plugin for DirectionalNavigationPlugin with name(_self) {
+  "mgstudio.input_focus.DirectionalNavigationPlugin"
+}
+
+///|
+pub impl @app.Plugin for DirectionalNavigationPlugin with build(_self, app) {
+  directional_navigation_plugin(app)
+}
+
+///|
 pub struct AutoNavigationConfig {
   min_alignment_factor : Float
   max_search_distance : Float?

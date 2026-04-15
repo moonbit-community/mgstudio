@@ -22,6 +22,12 @@ struct PluginGroupTestPlugin1Override {}
 struct PluginGroupTestPlugin2 {}
 
 ///|
+struct PluginGroupTestPlugin3 {}
+
+///|
+struct PluginGroupTestPlugin4 {}
+
+///|
 struct MissingPluginTest {}
 
 ///|
@@ -71,37 +77,57 @@ fn plugin_group_test_plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub impl PluginReplacement for PluginGroupTestPlugin1 with plugin_name(_self) {
+pub impl Plugin for PluginGroupTestPlugin1 with name(_self) {
   "mgstudio.app.test_plugin_1"
 }
 
 ///|
-pub impl PluginReplacement for PluginGroupTestPlugin1 with world_plugin(_self) {
-  plugin_group_test_plugin_1
+pub impl Plugin for PluginGroupTestPlugin1 with build(_self, app) {
+  plugin_group_test_plugin_1(app)
 }
 
 ///|
-pub impl PluginReplacement for PluginGroupTestPlugin1Override with plugin_name(
-  _self,
-) {
+pub impl Plugin for PluginGroupTestPlugin1Override with name(_self) {
   "mgstudio.app.test_plugin_1"
 }
 
 ///|
-pub impl PluginReplacement for PluginGroupTestPlugin1Override with world_plugin(
-  _self,
-) {
-  plugin_group_test_plugin_1_override
+pub impl Plugin for PluginGroupTestPlugin1Override with build(_self, app) {
+  plugin_group_test_plugin_1_override(app)
 }
 
 ///|
-pub impl PluginReplacement for PluginGroupTestPlugin2 with plugin_name(_self) {
+pub impl Plugin for PluginGroupTestPlugin2 with name(_self) {
   "mgstudio.app.test_plugin_2"
 }
 
 ///|
-pub impl PluginReplacement for PluginGroupTestPlugin2 with world_plugin(_self) {
-  plugin_group_test_plugin_2
+pub impl Plugin for PluginGroupTestPlugin2 with build(_self, app) {
+  plugin_group_test_plugin_2(app)
+}
+
+///|
+pub impl Plugin for PluginGroupTestPlugin3 with name(_self) {
+  "mgstudio.app.test_plugin_3"
+}
+
+///|
+pub impl Plugin for PluginGroupTestPlugin3 with build(_self, app) {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(3)
+  })
+}
+
+///|
+pub impl Plugin for PluginGroupTestPlugin4 with name(_self) {
+  "mgstudio.app.test_plugin_4"
+}
+
+///|
+pub impl Plugin for PluginGroupTestPlugin4 with build(_self, app) {
+  app.add_system(fn(_world : @ecs.World) {
+    plugin_group_test_log_ref.val.push(4)
+  })
 }
 
 ///|
@@ -110,13 +136,13 @@ fn missing_plugin_test(app : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub impl PluginReplacement for MissingPluginTest with plugin_name(_self) {
+pub impl Plugin for MissingPluginTest with name(_self) {
   "mgstudio.app.missing_plugin_test"
 }
 
 ///|
-pub impl PluginReplacement for MissingPluginTest with world_plugin(_self) {
-  missing_plugin_test
+pub impl Plugin for MissingPluginTest with build(_self, app) {
+  missing_plugin_test(app)
 }
 
 ///|
@@ -126,33 +152,28 @@ fn plugin_lifecycle_test_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub impl PluginReplacement for PluginLifecycleTestPlugin with plugin_name(_self) {
+pub impl Plugin for PluginLifecycleTestPlugin with name(_self) {
   "mgstudio.app.plugin_lifecycle_test"
 }
 
 ///|
-pub impl PluginReplacement for PluginLifecycleTestPlugin with world_plugin(
-  _self,
-) {
-  plugin_lifecycle_test_plugin
+pub impl Plugin for PluginLifecycleTestPlugin with build(_self, app) {
+  plugin_lifecycle_test_plugin(app)
 }
 
 ///|
-pub impl PluginReplacement for PluginLifecycleTestPlugin with ready(_self, _app) {
+pub impl Plugin for PluginLifecycleTestPlugin with ready(_self, _app) {
   plugin_lifecycle_ready_ref.val
 }
 
 ///|
-pub impl PluginReplacement for PluginLifecycleTestPlugin with finish(_self, app) {
+pub impl Plugin for PluginLifecycleTestPlugin with finish(_self, app) {
   plugin_lifecycle_log_ref.val.push(2)
   app
 }
 
 ///|
-pub impl PluginReplacement for PluginLifecycleTestPlugin with cleanup(
-  _self,
-  app,
-) {
+pub impl Plugin for PluginLifecycleTestPlugin with cleanup(_self, app) {
   plugin_lifecycle_log_ref.val.push(3)
   app
 }
@@ -247,36 +268,37 @@ test "app: repeated run_if_stateful keeps independent condition state" {
 }
 
 ///|
-test "app: add_plugin_group registers grouped plugins" {
-  let log : Array[Int] = []
-  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(1) })
-  }
-  fn plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
-    app.add_system(fn(_world : @ecs.World) { log.push(2) })
-  }
+test "app: add_plugins registers grouped plugins" {
+  plugin_group_test_reset_log()
   fn group() -> PluginGroupBuilder[@ecs.World] {
-    PluginGroupBuilder::start().add(plugin_1).add(plugin_2)
+    PluginGroupBuilder::start()
+    .add(PluginGroupTestPlugin3::{  })
+    .add(PluginGroupTestPlugin4::{  })
   }
-  let app = App::new(@ecs.World::new()).add_plugin_group(group)
+  let app = App::new(@ecs.World::new()).add_plugins(group())
   app.run_once() |> ignore
-  debug_inspect(log.length() == 2 && log[0] == 1 && log[1] == 2, content="true")
+  debug_inspect(
+    plugin_group_test_log_ref.val.length() == 2 &&
+    plugin_group_test_log_ref.val[0] == 3 &&
+    plugin_group_test_log_ref.val[1] == 4,
+    content="true",
+  )
 }
 
 ///|
 test "app: plugin group set_plugin and disable preserve configured plugins" {
   plugin_group_test_reset_log()
   let group = PluginGroupBuilder::start_named("TestPlugins")
-    .add_typed(PluginGroupTestPlugin1::{  })
-    .add_typed(PluginGroupTestPlugin2::{  })
+    .add(PluginGroupTestPlugin1::{  })
+    .add(PluginGroupTestPlugin2::{  })
   debug_inspect(group.contains(PluginGroupTestPlugin1::{  }), content="true")
   debug_inspect(group.enabled(PluginGroupTestPlugin2::{  }), content="true")
 
-  let app = App::new(@ecs.World::new()).add_plugin_group(fn() {
+  let app = App::new(@ecs.World::new()).add_plugins(
     group
     .set(PluginGroupTestPlugin1Override::{  })
-    .disable(PluginGroupTestPlugin2::{  })
-  })
+    .disable(PluginGroupTestPlugin2::{  }),
+  )
   app.run_once() |> ignore
 
   debug_inspect(plugin_group_test_log_ref.val.length(), content="1")
@@ -305,7 +327,7 @@ test "app: plugin group try_set_plugin raises when id is missing" {
 ///|
 test "app: plugin lifecycle finish/cleanup run on first update, not add_plugin" {
   plugin_lifecycle_test_reset_log()
-  let mut app = App::new(@ecs.World::new()).add_plugin_typed(PluginLifecycleTestPlugin::{
+  let mut app = App::new(@ecs.World::new()).add_plugins(PluginLifecycleTestPlugin::{
 
   })
   debug_inspect(app.plugins_state() == Ready, content="true")
@@ -321,7 +343,7 @@ test "app: schedules do not run before plugin ready lifecycle finalizes" {
   plugin_lifecycle_ready_ref.val = false
   let run_log : Array[Int] = []
   let mut app = App::new(@ecs.World::new())
-    .add_plugin_typed(PluginLifecycleTestPlugin::{  })
+    .add_plugins(PluginLifecycleTestPlugin::{  })
     .add_system(fn(_world : @ecs.World) { run_log.push(1) })
   app = app.run_once()
   debug_inspect(run_log.length(), content="0")
@@ -336,7 +358,7 @@ test "app: schedules do not run before plugin ready lifecycle finalizes" {
 ///|
 test "app: explicit finish/cleanup follow bevy lifecycle ordering" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugin_typed(PluginLifecycleTestPlugin::{
+  let app = App::new(@ecs.World::new()).add_plugins(PluginLifecycleTestPlugin::{
 
   })
   let app = app.finish()

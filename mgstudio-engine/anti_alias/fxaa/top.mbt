@@ -56,15 +56,13 @@ pub impl @app.Resource for FxaaRuntimeState with resource() {
 }
 
 ///|
-pub impl @app.PluginReplacement for FxaaPlugin with plugin_name(_self) {
+pub impl @app.Plugin for FxaaPlugin with name(_self) {
   FXAA_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for FxaaPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    fxaa_plugin_with(app, self)
-  }
+pub impl @app.Plugin for FxaaPlugin with build(self, app) {
+  fxaa_plugin_with(app, self)
 }
 
 ///|

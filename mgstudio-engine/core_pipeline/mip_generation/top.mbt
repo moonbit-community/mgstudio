@@ -35,19 +35,17 @@ pub fn mip_generation_plugin(
 }
 
 ///|
-pub impl @app.PluginReplacement for MipGenerationPlugin with plugin_name(_self) {
+pub impl @app.Plugin for MipGenerationPlugin with name(_self) {
   MIP_GENERATION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for MipGenerationPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    mip_generation_plugin_with(app, self)
-  }
+pub impl @app.Plugin for MipGenerationPlugin with build(self, app) {
+  mip_generation_plugin_with(app, self)
 }
 
 ///|
-pub impl @app.PluginReplacement for MipGenerationPlugin with finish(self, app) {
+pub impl @app.Plugin for MipGenerationPlugin with finish(self, app) {
   mip_generation_plugin_finish_with(app, self)
 }
 
@@ -56,7 +54,7 @@ pub fn mip_generation_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {
-  let next = app.add_plugin(@experimental.experimental_mip_generation_plugin)
+  let next = app.add_plugins(@experimental.ExperimentalMipGeneration::default())
   @render.with_render_app(next, mip_generation_configure_render_sub_app)
 }
 

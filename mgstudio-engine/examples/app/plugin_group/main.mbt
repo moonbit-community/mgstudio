@@ -13,23 +13,6 @@
 // limitations under the License.
 
 ///|
-fn print_hello_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_systems(@app.Update, @app.system(print_hello_system))
-}
-
-///|
-fn print_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_systems(@app.Update, @app.system(print_world_system))
-}
-
-///|
-fn hello_world_plugins() -> @app.PluginGroupBuilder[@ecs.World] {
-  @app.PluginGroupBuilder::start()
-  .add(print_hello_plugin)
-  .add(print_world_plugin)
-}
-
-///|
 fn print_hello_system(_world : @ecs.World) -> Unit {
   println("hello")
 }
@@ -40,9 +23,70 @@ fn print_world_system(_world : @ecs.World) -> Unit {
 }
 
 ///|
+struct PrintHelloPlugin {}
+
+///|
+fn PrintHelloPlugin::default() -> PrintHelloPlugin {
+  PrintHelloPlugin::{  }
+}
+
+///|
+impl @app.Plugin for PrintHelloPlugin with name(_self) {
+  "examples.app.plugin_group.PrintHelloPlugin"
+}
+
+///|
+impl @app.Plugin for PrintHelloPlugin with build(_self, app) {
+  app.add_systems(@app.Update, @app.system(print_hello_system))
+}
+
+///|
+struct PrintWorldPlugin {}
+
+///|
+fn PrintWorldPlugin::default() -> PrintWorldPlugin {
+  PrintWorldPlugin::{  }
+}
+
+///|
+impl @app.Plugin for PrintWorldPlugin with name(_self) {
+  "examples.app.plugin_group.PrintWorldPlugin"
+}
+
+///|
+impl @app.Plugin for PrintWorldPlugin with build(_self, app) {
+  app.add_systems(@app.Update, @app.system(print_world_system))
+}
+
+///|
+struct HelloWorldPlugins {}
+
+///|
+fn HelloWorldPlugins::default() -> HelloWorldPlugins {
+  HelloWorldPlugins::{  }
+}
+
+///|
+fn HelloWorldPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  @app.PluginGroupBuilder::start_named("HelloWorldPlugins")
+  .add(PrintHelloPlugin::default())
+  .add(PrintWorldPlugin::default())
+}
+
+///|
+impl @app.Plugin for HelloWorldPlugins with name(_self) {
+  "examples.app.plugin_group.HelloWorldPlugins"
+}
+
+///|
+impl @app.Plugin for HelloWorldPlugins with build(_self, app) {
+  app.add_plugins(HelloWorldPlugins::build())
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
-  .add_plugin_group(hello_world_plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(HelloWorldPlugins::default())
   .run()
 }

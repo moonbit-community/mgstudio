@@ -18,6 +18,24 @@ pub struct TabIndex {
 }
 
 ///|
+pub struct TabNavigationPlugin {}
+
+///|
+pub fn TabNavigationPlugin::default() -> TabNavigationPlugin {
+  TabNavigationPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for TabNavigationPlugin with name(_self) {
+  "mgstudio.input_focus.TabNavigationPlugin"
+}
+
+///|
+pub impl @app.Plugin for TabNavigationPlugin with build(_self, app) {
+  tab_navigation_plugin(app)
+}
+
+///|
 pub fn TabIndex::new(value : Int) -> TabIndex {
   TabIndex::{ value, }
 }

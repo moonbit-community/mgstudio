@@ -29,6 +29,6 @@ pub type LogRecord = @app.LogRecord
 pub type LogPlugin = @app.LogPlugin
 
 ///|
-pub fn[W] log_plugin(plugin : LogPlugin) -> @app.Plugin[W] {
-  @app.log_plugin(plugin)
+pub fn log_plugin(plugin : LogPlugin) -> LogPlugin {
+  plugin
 }

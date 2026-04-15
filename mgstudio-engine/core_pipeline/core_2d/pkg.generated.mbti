@@ -97,7 +97,7 @@ pub fn BatchSetKey2d::new(indexed? : Bool) -> Self
 pub struct Core2dPlugin {
 }
 pub fn Core2dPlugin::default() -> Self
-pub impl @app.PluginReplacement for Core2dPlugin
+pub impl @app.Plugin for Core2dPlugin
 
 pub struct MainOpaquePass2dNode {
   label : String

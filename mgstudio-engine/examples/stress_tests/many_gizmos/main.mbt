@@ -136,9 +136,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(Config::default())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(
-    [..@mgstudio.default_plugins(), @diagnostic.stress_diagnostics_plugin],
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param(input)))
   .add_systems(@app.Update, @app.system(@app.system_param3(draw_many_lines)))

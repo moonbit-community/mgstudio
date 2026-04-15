@@ -25,9 +25,9 @@ test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
     .with_categories([@app.TimelineTraceCategory::System])
-  let mut app = @app.App::new(@ecs.World::new()).add_plugin(fn(app_) {
-    timeline_trace_plugin_with(app_, TimelineTracePlugin::with_config(config))
-  })
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    TimelineTracePlugin::with_config(config),
+  )
   app = app.add_system_config(
     @app.system(fn(_world : @ecs.World) { ignore(()) }).named(
       "timeline_trace_test_system",
@@ -56,9 +56,9 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
     .with_categories([@app.TimelineTraceCategory::RenderQueue])
-  let mut app = @app.App::new(@ecs.World::new()).add_plugin(fn(app_) {
-    timeline_trace_plugin_with(app_, TimelineTracePlugin::with_config(config))
-  })
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    TimelineTracePlugin::with_config(config),
+  )
   app = app.add_system_config(
     @app.system(fn(_world : @ecs.World) {
       let trace_start_us = @app.timeline_trace_begin_span(
@@ -82,9 +82,9 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
 ///|
 test "diagnostics: stress diagnostics plugin installs frame and render diagnostics" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins([
-      @time.time_plugin, diagnostics_plugin, stress_diagnostics_plugin,
-    ])
+    .add_plugins(@time.TimePlugin::default())
+    .add_plugins(DiagnosticsPlugin::default())
+    .add_plugins(StressDiagnosticsPlugin::default())
     .update()
   let diagnostics_store = try! app
     .world()

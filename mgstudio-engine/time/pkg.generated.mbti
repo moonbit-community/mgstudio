@@ -206,6 +206,7 @@ pub impl[T : Default] Default for Time[T]
 pub struct TimePlugin {
 }
 pub fn TimePlugin::default() -> Self
+pub impl @app.Plugin for TimePlugin
 
 pub(all) enum TimeUpdateStrategy {
   Automatic

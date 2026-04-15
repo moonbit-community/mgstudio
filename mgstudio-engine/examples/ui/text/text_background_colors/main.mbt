@@ -34,7 +34,7 @@ fn message_text() -> Array[String] {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_startup_system_param(setup)
   .add_system_param3(cycle_text_background_colors)
   .run()

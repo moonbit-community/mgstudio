@@ -28,9 +28,9 @@ pub impl @ecs.Component for HierarchyValidationMarker with component() {
 ///|
 test "app hierarchy: validate-parent plugin queues a check when parent lacks component" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::default()
-  let app = App::new(@ecs.World::new()).add_plugins([
+  let app = App::new(@ecs.World::new()).add_plugins(
     validate_parent_has_component_plugin(plugin),
-  ])
+  )
   let world = app.world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
@@ -57,9 +57,9 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
 ///|
 test "app hierarchy: validate-parent plugin skips checks when parent already has component" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::default()
-  let app = App::new(@ecs.World::new()).add_plugins([
+  let app = App::new(@ecs.World::new()).add_plugins(
     validate_parent_has_component_plugin(plugin),
-  ])
+  )
   let world = app.world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
@@ -86,9 +86,9 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
 ///|
 test "app hierarchy: validate-parent plugin rechecks on component replace" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::default()
-  let app = App::new(@ecs.World::new()).add_plugins([
+  let app = App::new(@ecs.World::new()).add_plugins(
     validate_parent_has_component_plugin(plugin),
-  ])
+  )
   let world = app.world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()

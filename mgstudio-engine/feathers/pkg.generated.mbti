@@ -126,7 +126,7 @@ pub fn cursor_icon_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn feathers_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn feathers_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
+pub fn feathers_plugins() -> FeathersPlugins
 
 // Errors
 
@@ -172,13 +172,16 @@ pub(all) enum EntityCursor {
 pub struct FeathersPlugin {
 }
 pub fn FeathersPlugin::default() -> Self
+pub impl @app.Plugin for FeathersPlugin
 
 pub(all) struct FeathersPluginMarker {
 }
 
 pub struct FeathersPlugins {
 }
+pub fn FeathersPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
 pub fn FeathersPlugins::default() -> Self
+pub impl @app.Plugin for FeathersPlugins
 
 pub(all) enum HandleOrPath[T] {
   Handle(T)

@@ -6,6 +6,11 @@ package "Milky2018/mgstudio/examples/app/plugin_group"
 // Errors
 
 // Types and methods
+type HelloWorldPlugins
+
+type PrintHelloPlugin
+
+type PrintWorldPlugin
 
 // Type aliases
 

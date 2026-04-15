@@ -47,9 +47,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     GlobalTransform,
   ] = @app.ValidateParentHasComponentPlugin::default()
   app
-  .add_plugins([
-    @app.validate_parent_has_component_plugin(validate_parent_plugin),
-  ])
+  .add_plugins(validate_parent_plugin)
   .add_systems(
     @app.PostStartup,
     @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),

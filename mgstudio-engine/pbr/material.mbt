@@ -57,13 +57,13 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub impl @app.PluginReplacement for MaterialsPlugin with plugin_name(_self) {
+pub impl @app.Plugin for MaterialsPlugin with name(_self) {
   MATERIALS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for MaterialsPlugin with world_plugin(_self) {
-  materials_plugin
+pub impl @app.Plugin for MaterialsPlugin with build(_self, app) {
+  materials_plugin(app)
 }
 
 ///|

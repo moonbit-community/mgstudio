@@ -160,7 +160,7 @@ pub(all) struct ScenePlugin {
 }
 pub fn ScenePlugin::default() -> Self
 pub fn ScenePlugin::with_gltf_lod_visibility_policy(Self, GltfLodVisibilityPolicy) -> Self
-pub impl @app.PluginReplacement for ScenePlugin
+pub impl @app.Plugin for ScenePlugin
 
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]

@@ -35,15 +35,13 @@ pub fn AtmospherePlugin::default() -> AtmospherePlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for AtmospherePlugin with plugin_name(_self) {
+pub impl @app.Plugin for AtmospherePlugin with name(_self) {
   ATMOSPHERE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for AtmospherePlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    atmosphere_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for AtmospherePlugin with build(self, app) {
+  atmosphere_plugin_install_with(app, self)
 }
 
 ///|

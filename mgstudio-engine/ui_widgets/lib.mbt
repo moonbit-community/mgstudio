@@ -110,6 +110,156 @@ pub impl[T] @ecs.TriggerEvent for ValueChange[T] with debug_name() {
 }
 
 ///|
+const UI_WIDGETS_PLUGINS_NAME : String = "mgstudio.ui_widgets.UiWidgetsPlugins"
+
+///|
+const UI_WIDGETS_POPOVER_PLUGIN_NAME : String = "mgstudio.ui_widgets.PopoverPlugin"
+
+///|
+const UI_WIDGETS_BUTTON_PLUGIN_NAME : String = "mgstudio.ui_widgets.ButtonPlugin"
+
+///|
+const UI_WIDGETS_CHECKBOX_PLUGIN_NAME : String = "mgstudio.ui_widgets.CheckboxPlugin"
+
+///|
+const UI_WIDGETS_MENU_PLUGIN_NAME : String = "mgstudio.ui_widgets.MenuPlugin"
+
+///|
+const UI_WIDGETS_RADIO_GROUP_PLUGIN_NAME : String = "mgstudio.ui_widgets.RadioGroupPlugin"
+
+///|
+const UI_WIDGETS_SCROLLBAR_PLUGIN_NAME : String = "mgstudio.ui_widgets.ScrollbarPlugin"
+
+///|
+const UI_WIDGETS_SLIDER_PLUGIN_NAME : String = "mgstudio.ui_widgets.SliderPlugin"
+
+///|
+pub struct PopoverWidgetPlugin {}
+
+///|
+pub fn PopoverWidgetPlugin::default() -> PopoverWidgetPlugin {
+  PopoverWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for PopoverWidgetPlugin with name(_self) {
+  UI_WIDGETS_POPOVER_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for PopoverWidgetPlugin with build(_self, app) {
+  popover_plugin(app)
+}
+
+///|
+pub struct ButtonWidgetPlugin {}
+
+///|
+pub fn ButtonWidgetPlugin::default() -> ButtonWidgetPlugin {
+  ButtonWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for ButtonWidgetPlugin with name(_self) {
+  UI_WIDGETS_BUTTON_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for ButtonWidgetPlugin with build(_self, app) {
+  button_plugin(app)
+}
+
+///|
+pub struct CheckboxWidgetPlugin {}
+
+///|
+pub fn CheckboxWidgetPlugin::default() -> CheckboxWidgetPlugin {
+  CheckboxWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for CheckboxWidgetPlugin with name(_self) {
+  UI_WIDGETS_CHECKBOX_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for CheckboxWidgetPlugin with build(_self, app) {
+  checkbox_plugin(app)
+}
+
+///|
+pub struct MenuWidgetPlugin {}
+
+///|
+pub fn MenuWidgetPlugin::default() -> MenuWidgetPlugin {
+  MenuWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for MenuWidgetPlugin with name(_self) {
+  UI_WIDGETS_MENU_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for MenuWidgetPlugin with build(_self, app) {
+  menu_plugin(app)
+}
+
+///|
+pub struct RadioGroupWidgetPlugin {}
+
+///|
+pub fn RadioGroupWidgetPlugin::default() -> RadioGroupWidgetPlugin {
+  RadioGroupWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for RadioGroupWidgetPlugin with name(_self) {
+  UI_WIDGETS_RADIO_GROUP_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for RadioGroupWidgetPlugin with build(_self, app) {
+  radio_group_plugin(app)
+}
+
+///|
+pub struct ScrollbarWidgetPlugin {}
+
+///|
+pub fn ScrollbarWidgetPlugin::default() -> ScrollbarWidgetPlugin {
+  ScrollbarWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for ScrollbarWidgetPlugin with name(_self) {
+  UI_WIDGETS_SCROLLBAR_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for ScrollbarWidgetPlugin with build(_self, app) {
+  scrollbar_plugin(app)
+}
+
+///|
+pub struct SliderWidgetPlugin {}
+
+///|
+pub fn SliderWidgetPlugin::default() -> SliderWidgetPlugin {
+  SliderWidgetPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for SliderWidgetPlugin with name(_self) {
+  UI_WIDGETS_SLIDER_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for SliderWidgetPlugin with build(_self, app) {
+  slider_plugin(app)
+}
+
+///|
 pub struct UiWidgetsPlugins {}
 
 ///|
@@ -120,18 +270,28 @@ pub fn UiWidgetsPlugins::default() -> UiWidgetsPlugins {
 ///|
 pub fn UiWidgetsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named("UiWidgetsPlugins")
-  .add(popover_plugin)
-  .add(button_plugin)
-  .add(checkbox_plugin)
-  .add(menu_plugin)
-  .add(radio_group_plugin)
-  .add(scrollbar_plugin)
-  .add(slider_plugin)
+  .add(PopoverWidgetPlugin::default())
+  .add(ButtonWidgetPlugin::default())
+  .add(CheckboxWidgetPlugin::default())
+  .add(MenuWidgetPlugin::default())
+  .add(RadioGroupWidgetPlugin::default())
+  .add(ScrollbarWidgetPlugin::default())
+  .add(SliderWidgetPlugin::default())
 }
 
 ///|
-pub fn ui_widgets_plugins() -> @app.PluginGroup[@ecs.World] {
-  fn() { UiWidgetsPlugins::build() }
+pub impl @app.Plugin for UiWidgetsPlugins with name(_self) {
+  UI_WIDGETS_PLUGINS_NAME
+}
+
+///|
+pub impl @app.Plugin for UiWidgetsPlugins with build(_self, app) {
+  app.add_plugins(UiWidgetsPlugins::build())
+}
+
+///|
+pub fn ui_widgets_plugins() -> UiWidgetsPlugins {
+  UiWidgetsPlugins::default()
 }
 
 ///|
@@ -155,6 +315,6 @@ pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     app
     .world()
     .insert_resource(ui_widgets_plugin_marker_key, UiWidgetsPluginMarker::{  })
-    app.add_plugin(@ui.ui_plugin).add_plugin_group(ui_widgets_plugins())
+    @ui.ui_plugin(app).add_plugins(ui_widgets_plugins())
   }
 }

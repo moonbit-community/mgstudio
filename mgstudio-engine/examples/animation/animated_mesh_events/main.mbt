@@ -394,7 +394,7 @@ fn simulate_particles(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_component_observer4(setup_scene_once_loaded)
   .add_observer4(observe_on_step)

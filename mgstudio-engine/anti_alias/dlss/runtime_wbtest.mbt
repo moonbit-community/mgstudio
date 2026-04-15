@@ -25,7 +25,7 @@ fn dlss_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
-  let app = @app.App::new(@ecs.World::new()).add_plugin(dlss_plugin)
+  let app = @app.App::new(@ecs.World::new()).add_plugins(DlssPlugin::default())
   let camera_entity = dlss_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
   try! app

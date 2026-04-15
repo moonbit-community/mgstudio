@@ -703,6 +703,11 @@ pub struct TextPipeline {
 }
 pub fn TextPipeline::default() -> Self
 
+pub struct TextPlugin {
+}
+pub fn TextPlugin::default() -> Self
+pub impl @app.Plugin for TextPlugin
+
 pub(all) struct TextShadow {
   mut offset : @math.Vec2
   mut color : @color.Color

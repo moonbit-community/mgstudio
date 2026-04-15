@@ -122,7 +122,7 @@ fn pbr_plugin_sync_light_probe_state(
   app : @app.App[@ecs.World],
   _runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  app.add_plugin(@pbr_light_probe.light_probe_plugin)
+  app.add_plugins(@pbr_light_probe.LightProbePlugin::default())
 }
 
 ///|
@@ -131,12 +131,12 @@ fn pbr_plugin_sync_feature_plugins(
   _runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
   app
-  .add_plugin(@pbr_atmosphere.atmosphere_plugin_install)
-  .add_plugin(@lightmap.lightmap_plugin_install)
-  .add_plugin(@pbr_ssao.ssao_plugin_install)
-  .add_plugin(@pbr_ssr.ssr_plugin_install)
-  .add_plugin(@pbr_volumetric_fog.volumetric_fog_plugin_install)
-  .add_plugin(@pbr_render.gpu_mesh_preprocess_plugin_install)
+  .add_plugins(@pbr_atmosphere.AtmospherePlugin::default())
+  .add_plugins(@lightmap.lightmap_plugin())
+  .add_plugins(@pbr_ssao.ScreenSpaceAmbientOcclusionPlugin::default())
+  .add_plugins(@pbr_ssr.ScreenSpaceReflectionsPlugin::default())
+  .add_plugins(@pbr_volumetric_fog.VolumetricFogPlugin::default())
+  .add_plugins(@pbr_render.GpuMeshPreprocessPlugin::default())
 }
 
 ///|
@@ -145,7 +145,7 @@ fn pbr_plugin_sync_deferred_lighting_state(
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
   if runtime_config.add_default_deferred_lighting_plugin {
-    app.add_plugin(deferred_pbr_lighting_plugin)
+    app.add_plugins(DeferredPbrLightingPlugin::default())
   } else {
     app.insert_world_resource(
       ecs_key_deferred_pbr_lighting_state,
@@ -163,7 +163,7 @@ fn pbr_plugin_sync_standard_material_state(
     prepass_enabled: runtime_config.prepass_enabled,
   })
   if runtime_config.prepass_enabled {
-    app.add_plugin(@pbr_prepass.prepass_plugin)
+    @pbr_prepass.prepass_plugin(app)
   } else {
     app
   }
@@ -174,7 +174,7 @@ fn pbr_plugin_sync_fog_state(
   app : @app.App[@ecs.World],
   _runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  app.add_plugin(@pbr_render.fog_plugin_install)
+  app.add_plugins(@pbr_render.FogPlugin::default())
 }
 
 ///|
@@ -229,15 +229,13 @@ pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for PbrPlugin with plugin_name(_self) {
+pub impl @app.Plugin for PbrPlugin with name(_self) {
   PBR_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for PbrPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    pbr_plugin_with(app, self)
-  }
+pub impl @app.Plugin for PbrPlugin with build(self, app) {
+  pbr_plugin_with(app, self)
 }
 
 ///|

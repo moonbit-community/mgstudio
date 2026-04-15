@@ -16,7 +16,20 @@
 const EMBEDDED_CRATE_NAME : String = "embedded_asset"
 
 ///|
-fn embedded_asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+struct EmbeddedAssetPlugin {}
+
+///|
+fn EmbeddedAssetPlugin::default() -> EmbeddedAssetPlugin {
+  EmbeddedAssetPlugin::{  }
+}
+
+///|
+impl @app.Plugin for EmbeddedAssetPlugin with name(_self) {
+  "examples.asset.embedded_asset.EmbeddedAssetPlugin"
+}
+
+///|
+impl @app.Plugin for EmbeddedAssetPlugin with build(_self, app) {
   @asset.embedded_asset(
     app,
     @asset.AssetPath::from_path(
@@ -53,8 +66,8 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([embedded_asset_plugin])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(EmbeddedAssetPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

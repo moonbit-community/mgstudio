@@ -15,12 +15,3 @@
 ///|
 // Bevy source: `bevy/crates/bevy_internal/src/lib.rs`.
 // Internal package entry keeps default/minimal plugin groups colocated.
-
-///|
-pub fn internal_plugin_groups() -> (
-  Array[@app.Plugin[@ecs.World]],
-  Array[@app.Plugin[@ecs.World]],
-  Array[@app.Plugin[@ecs.World]],
-) {
-  (default_plugins(), default_plugins_nearest(), minimal_plugins())
-}

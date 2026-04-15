@@ -3,16 +3,17 @@ package "Milky2018/mgstudio/log"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
 }
 
 // Values
-pub fn[W] android_tracing_plugin(AndroidTracingPlugin) -> (@app.App[W]) -> @app.App[W]
+pub fn[W] android_tracing_plugin(@app.App[W], AndroidTracingPlugin) -> @app.App[W]
 
 pub fn info_once(String, String) -> Unit
 
 pub fn log_once(@app.LogLevel, String, String, target? : String, name? : String) -> Unit
 
-pub fn[W] log_plugin(@app.LogPlugin) -> (@app.App[W]) -> @app.App[W]
+pub fn log_plugin(@app.LogPlugin) -> @app.LogPlugin
 
 pub fn warn_once(String, String) -> Unit
 
@@ -22,6 +23,7 @@ pub fn warn_once(String, String) -> Unit
 pub struct AndroidTracingPlugin {
 }
 pub fn AndroidTracingPlugin::default() -> Self
+pub impl @app.Plugin for AndroidTracingPlugin
 
 // Type aliases
 pub type LogLayer = (@app.LogRecord) -> Unit

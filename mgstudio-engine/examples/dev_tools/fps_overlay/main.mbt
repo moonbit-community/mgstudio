@@ -39,10 +39,8 @@ fn main {
   }
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugin(fn(app) {
-    @dev_tools.fps_overlay_plugin_with(app, overlay_plugin)
-  })
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(overlay_plugin)
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param2(customize_config)))
   .run()

@@ -521,10 +521,9 @@ fn update_button_visuals(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([
-    @input_focus.input_dispatch_plugin, @input_focus.directional_navigation_plugin,
-  ])
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@input_focus.InputDispatchPlugin::default())
+  .add_plugins(@input_focus.DirectionalNavigationPlugin::default())
   .insert_resource(NavigationStatus::{ label: "Last Input: None" })
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(500.0F), true),

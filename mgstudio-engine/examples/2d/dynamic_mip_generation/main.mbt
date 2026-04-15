@@ -254,7 +254,7 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .init_resource(AppStatus::default)
   .add_message(regenerate_image_key)
   .add_message(widget_click_message_key)

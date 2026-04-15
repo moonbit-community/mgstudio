@@ -122,15 +122,15 @@ fn main {
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(args)
     .insert_resource(@winit.WinitSettings::continuous())
-    .add_plugin_group(fn() {
+    .add_plugins(
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
         primary_window: Some(configured_window()),
         primary_cursor_options: None,
         exit_condition: @window.ExitCondition::OnAllClosed,
         close_when_requested: true,
-      })
-    })
-    .add_plugin(@diagnostic.stress_diagnostics_plugin)
+      }),
+    )
+    .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
     .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   if args.recompute_text {
     app.add_systems(

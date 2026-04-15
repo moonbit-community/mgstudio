@@ -33,7 +33,7 @@ pub fn color_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[ColorMater
 
 pub fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset]
 
-pub fn color_material_plugin(ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn color_material_plugin(ColorMaterialPlugin) -> ColorMaterialPlugin
 
 pub let ecs_components : Array[String]
 
@@ -103,7 +103,7 @@ pub fn[T : GizmoConfigGroup + Default] init_gizmo_group(@app.App[@ecs.World], T)
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
-pub fn[M : Material2d] material2d_plugin(Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn[M : Material2d] material2d_plugin(Material2dPlugin[M]) -> Material2dPlugin[M]
 
 pub fn[M] material2d_runtime_type_name(@asset.Handle[M]) -> String
 
@@ -445,6 +445,7 @@ pub impl Material2d for ColorMaterialAsset
 pub struct ColorMaterialPlugin {
 }
 pub fn ColorMaterialPlugin::default() -> Self
+pub impl @app.Plugin for ColorMaterialPlugin
 
 pub struct DefaultGizmoConfigGroup {
 }
@@ -607,6 +608,7 @@ pub struct Material2dPlugin[_] {
 pub fn[M] Material2dPlugin::default() -> Self[M]
 pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
 pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
+pub impl[M : Material2d] @app.Plugin for Material2dPlugin[M]
 
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
@@ -734,6 +736,11 @@ pub fn Projection::orthographic_2d() -> Self
 pub impl @ecs.Component for Projection
 pub impl ToJson for Projection
 pub impl @json.FromJson for Projection
+
+pub struct Render2dPlugin {
+}
+pub fn Render2dPlugin::default() -> Self
+pub impl @app.Plugin for Render2dPlugin
 
 pub struct RenderLayers {
   mask : Int
@@ -864,6 +871,7 @@ pub fn SpriteImageMode::uses_slices(Self) -> Bool
 pub struct SpritePlugin {
 }
 pub fn SpritePlugin::default() -> Self
+pub impl @app.Plugin for SpritePlugin
 
 pub(all) enum SpriteScalingMode {
   FillCenter

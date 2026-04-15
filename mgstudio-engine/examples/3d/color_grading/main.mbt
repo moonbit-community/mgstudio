@@ -1108,10 +1108,9 @@ fn update_ui_state(world : @ecs.World) -> Unit {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .insert_resource(SelectedColorGradingOption::default())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

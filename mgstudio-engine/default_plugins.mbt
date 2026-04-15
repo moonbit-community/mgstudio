@@ -21,13 +21,28 @@ fn default_plugins_marker() -> DefaultPlugins {
 }
 
 ///|
+pub fn DefaultPlugins::default() -> DefaultPlugins {
+  default_plugins_marker()
+}
+
+///|
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   default_plugins_marker() |> ignore
   @internal.DefaultPlugins::build()
 }
 
 ///|
-pub fn[P : @app.PluginReplacement] DefaultPlugins::set(
+pub impl @app.Plugin for DefaultPlugins with name(_self) {
+  "mgstudio.DefaultPlugins"
+}
+
+///|
+pub impl @app.Plugin for DefaultPlugins with build(_self, app) {
+  app.add_plugins(DefaultPlugins::build())
+}
+
+///|
+pub fn[P : @app.Plugin] DefaultPlugins::set(
   replacement : P,
 ) -> @app.PluginGroupBuilder[@ecs.World] {
   default_plugins_marker() |> ignore
@@ -50,28 +65,22 @@ fn minimal_plugins_marker() -> MinimalPlugins {
 }
 
 ///|
+pub fn MinimalPlugins::default() -> MinimalPlugins {
+  minimal_plugins_marker()
+}
+
+///|
 pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   minimal_plugins_marker() |> ignore
   @internal.MinimalPlugins::build()
 }
 
 ///|
-/// Default plugin bundle, aligned with Bevy's `DefaultPlugins` concept.
-///
-/// Implementation lives in `Milky2018/mgstudio/internal` (similar to Bevy's
-/// `bevy_internal`) and is forwarded here for a stable user-facing API.
-pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  @internal.default_plugins()
+pub impl @app.Plugin for MinimalPlugins with name(_self) {
+  "mgstudio.MinimalPlugins"
 }
 
 ///|
-/// Default plugin bundle with "nearest" sampling for textures (useful for pixel art).
-pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
-  DefaultPlugins::set(@asset.AssetPlugin::default_nearest()).build()
-}
-
-///|
-/// Minimal plugin bundle, aligned with Bevy's `MinimalPlugins` concept.
-pub fn minimal_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  @internal.minimal_plugins()
+pub impl @app.Plugin for MinimalPlugins with build(_self, app) {
+  app.add_plugins(MinimalPlugins::build())
 }

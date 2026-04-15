@@ -27,15 +27,13 @@ pub fn SyncWorldPlugin::default() -> SyncWorldPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for SyncWorldPlugin with plugin_name(_self) {
+pub impl @app.Plugin for SyncWorldPlugin with name(_self) {
   SYNC_WORLD_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for SyncWorldPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    sync_world_plugin_with(app, self)
-  }
+pub impl @app.Plugin for SyncWorldPlugin with build(self, app) {
+  sync_world_plugin_with(app, self)
 }
 
 ///|
@@ -332,7 +330,7 @@ pub fn despawn_temporary_render_entities(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn sync_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+pub fn sync_build(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   sync_world_plugin_with(app, SyncWorldPlugin::default())
 }
 

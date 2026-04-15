@@ -835,7 +835,7 @@ fn update_ui(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .insert_resource(CameraTransform::default())
   .insert_resource(PerMethodSettings::default())
   .insert_resource(CurrentScene::default())

@@ -27,9 +27,8 @@ fn system(_world : @ecs.World) -> Unit {
 ///|
 fn main {
   println("Running Bevy App")
-  let plugins = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(set_title))
   .add_systems(@app.Update, @app.system(system))
   .run()

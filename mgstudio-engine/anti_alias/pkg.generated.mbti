@@ -46,7 +46,7 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter
 pub struct AntiAliasPlugin {
 }
 pub fn AntiAliasPlugin::default() -> Self
-pub impl @app.PluginReplacement for AntiAliasPlugin
+pub impl @app.Plugin for AntiAliasPlugin
 
 // Type aliases
 pub using @contrast_adaptive_sharpening {type CasPlugin}

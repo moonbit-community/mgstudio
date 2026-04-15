@@ -163,7 +163,7 @@ fn name_morph_targets(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_component_observer4(play_animation_when_ready)
   .add_systems(@app.Update, @app.system(@app.system_param3(name_morph_targets)))

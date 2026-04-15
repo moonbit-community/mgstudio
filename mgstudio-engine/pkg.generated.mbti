@@ -8,11 +8,6 @@ import {
 }
 
 // Values
-pub fn default_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
-
-pub fn default_plugins_nearest() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
-
-pub fn minimal_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
 // Errors
 
@@ -20,12 +15,16 @@ pub fn minimal_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub struct DefaultPlugins {
 }
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn[P : @app.PluginReplacement] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
+pub fn DefaultPlugins::default() -> Self
+pub fn[P : @app.Plugin] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
 pub fn DefaultPlugins::set_window(@window.WindowPlugin) -> @app.PluginGroupBuilder[@ecs.World]
+pub impl @app.Plugin for DefaultPlugins
 
 pub struct MinimalPlugins {
 }
 pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
+pub fn MinimalPlugins::default() -> Self
+pub impl @app.Plugin for MinimalPlugins
 
 // Type aliases
 

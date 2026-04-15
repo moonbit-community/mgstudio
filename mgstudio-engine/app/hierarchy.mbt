@@ -195,29 +195,35 @@ fn[C] check_parent_has_component(
 }
 
 ///|
-pub fn[C : @ecs.Component] validate_parent_has_component_plugin(
-  plugin : ValidateParentHasComponentPlugin[C],
-) -> Plugin[@ecs.World] {
-  fn(app : App[@ecs.World]) {
-    let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
-    let component_name = component_debug_name(component_key)
-    let message_key = check_parent_has_component_message_key(component_key)
-    app
-    .add_message(message_key)
-    .add_component_observer(fn(event : @ecs.ComponentOn[@ecs.Insert, C]) {
-      validate_parent_has_component(event)
-    })
-    .add_systems(
-      plugin.schedule,
-      system(
-        system_param(fn(
-          messages : @ecs.MessageReader[CheckParentHasComponent[C]],
-        ) {
-          check_parent_has_component(component_key, component_name, messages)
-        }),
-      )
-      .run_if_on_message(message_key)
-      .in_set(validate_parent_has_component_system_set),
+pub impl[C : @ecs.Component] Plugin for ValidateParentHasComponentPlugin[C] with build(
+  self,
+  app,
+) {
+  let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
+  let component_name = component_debug_name(component_key)
+  let message_key = check_parent_has_component_message_key(component_key)
+  app
+  .add_message(message_key)
+  .add_component_observer(fn(event : @ecs.ComponentOn[@ecs.Insert, C]) {
+    validate_parent_has_component(event)
+  })
+  .add_systems(
+    self.schedule,
+    system(
+      system_param(fn(
+        messages : @ecs.MessageReader[CheckParentHasComponent[C]],
+      ) {
+        check_parent_has_component(component_key, component_name, messages)
+      }),
     )
-  }
+    .run_if_on_message(message_key)
+    .in_set(validate_parent_has_component_system_set),
+  )
+}
+
+///|
+pub fn[C] validate_parent_has_component_plugin(
+  plugin : ValidateParentHasComponentPlugin[C],
+) -> ValidateParentHasComponentPlugin[C] {
+  plugin
 }

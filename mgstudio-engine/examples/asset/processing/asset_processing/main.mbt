@@ -443,7 +443,7 @@ fn cool_text_processor() -> @asset.LoadTransformAndSave[Text] {
 }
 
 ///|
-fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+fn text_plugin_build(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let processor : @asset.LoadTransformAndSave[Text] = cool_text_processor()
   @asset.set_default_asset_processor(
     @asset.register_asset_processor(
@@ -471,6 +471,24 @@ fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     ),
     "cool.ron",
   )
+}
+
+///|
+struct TextPlugin {}
+
+///|
+fn TextPlugin::default() -> TextPlugin {
+  TextPlugin::{  }
+}
+
+///|
+impl @app.Plugin for TextPlugin with name(_self) {
+  "examples.asset.processing.asset_processing.TextPlugin"
+}
+
+///|
+impl @app.Plugin for TextPlugin with build(_self, app) {
+  text_plugin_build(app)
 }
 
 ///|
@@ -529,8 +547,8 @@ fn main {
   }
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::set(asset_plugin).build())
-  .add_plugins([text_plugin])
+  .add_plugins(@mgstudio.DefaultPlugins::set(asset_plugin))
+  .add_plugins(TextPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(print_text)))
   .run()

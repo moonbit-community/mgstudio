@@ -171,9 +171,8 @@ let cubic_splines_draw_set : @app.SystemSet = @app.system_set(
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .configure_set(@app.Update, cubic_splines_curve_set, after=[
     cubic_splines_input_set,
   ])

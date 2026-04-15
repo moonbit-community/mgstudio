@@ -19,6 +19,11 @@ priv struct PrintMessagePluginConfig {
 }
 
 ///|
+priv struct PrintMessagePlugin {
+  config : PrintMessagePluginConfig
+}
+
+///|
 priv struct PrintMessageState {
   message : String
   mut timer : @time.Timer
@@ -37,21 +42,24 @@ impl @app.Resource for PrintMessageState with resource() {
 ///|
 fn print_message_plugin(
   config : PrintMessagePluginConfig,
-) -> @app.Plugin[@ecs.World] {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    app
-    .insert_resource(PrintMessageState::{
-      message: config.message,
-      timer: @time.Timer::from_seconds(
-        config.wait_duration_seconds,
-        @time.TimerMode::Repeating,
-      ),
-    })
-    .add_systems(
-      @app.Update,
-      @app.system(@app.system_param2(print_message_system)),
-    )
-  }
+) -> PrintMessagePlugin {
+  PrintMessagePlugin::{ config, }
+}
+
+///|
+impl @app.Plugin for PrintMessagePlugin with build(self, app) {
+  app
+  .insert_resource(PrintMessageState::{
+    message: self.config.message,
+    timer: @time.Timer::from_seconds(
+      self.config.wait_duration_seconds,
+      @time.TimerMode::Repeating,
+    ),
+  })
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(print_message_system)),
+  )
 }
 
 ///|
@@ -69,14 +77,13 @@ fn print_message_system(
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(
     print_message_plugin({
       wait_duration_seconds: 1.0F,
       message: "This is an example plugin",
     }),
-  ])
+  )
   .run()
 }

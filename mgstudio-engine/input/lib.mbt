@@ -2007,15 +2007,13 @@ pub fn InputPlugin::default() -> InputPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for InputPlugin with plugin_name(_self) {
+pub impl @app.Plugin for InputPlugin with name(_self) {
   INPUT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for InputPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    input_plugin_with(app, self)
-  }
+pub impl @app.Plugin for InputPlugin with build(self, app) {
+  input_plugin_with(app, self)
 }
 
 ///|

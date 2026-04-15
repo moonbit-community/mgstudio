@@ -280,16 +280,16 @@ fn setup_camera(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
+  .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: Some(@window.CursorOptions::default()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
-    })
-  })
-  .add_plugin(@diagnostic.log_diagnostics_plugin)
-  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
+    }),
+  )
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(setup_camera))
   .add_systems(@app.Startup, @app.system(init_cursor_icons))
   .add_systems(@app.Update, @app.system(@app.system_param(toggle_vsync)))

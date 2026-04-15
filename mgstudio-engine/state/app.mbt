@@ -19,8 +19,8 @@
 pub type StateAppPlugin = StatesPlugin
 
 ///|
-pub fn state_app_plugin(plugin : StateAppPlugin) -> @app.Plugin[@ecs.World] {
-  states_plugin(plugin)
+pub fn state_app_plugin(plugin : StateAppPlugin) -> StateAppPlugin {
+  plugin
 }
 
 ///|

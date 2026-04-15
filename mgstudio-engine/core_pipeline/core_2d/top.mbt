@@ -131,15 +131,13 @@ fn core_2d_configure_render_sub_app(
 }
 
 ///|
-pub impl @app.PluginReplacement for Core2dPlugin with plugin_name(_self) {
+pub impl @app.Plugin for Core2dPlugin with name(_self) {
   CORE_2D_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for Core2dPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    core_2d_plugin_with(app, self)
-  }
+pub impl @app.Plugin for Core2dPlugin with build(self, app) {
+  core_2d_plugin_with(app, self)
 }
 
 ///|

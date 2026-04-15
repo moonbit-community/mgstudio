@@ -68,7 +68,7 @@ pub struct AtmospherePlugin {
   supports_storage_binding : Bool
 }
 pub fn AtmospherePlugin::default() -> Self
-pub impl @app.PluginReplacement for AtmospherePlugin
+pub impl @app.Plugin for AtmospherePlugin
 
 pub struct AtmospherePluginState {
   plugin : AtmospherePlugin

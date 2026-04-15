@@ -14,9 +14,8 @@
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(physics3d_sanity_setup))
   .add_systems(@app.Update, @app.system(physics3d_sanity_print))
   .run()

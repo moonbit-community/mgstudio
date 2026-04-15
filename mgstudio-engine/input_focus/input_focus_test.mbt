@@ -107,7 +107,7 @@ test "input_focus runtime plugin initializes resources and focused message queue
     .add_message(@input.KeyboardInput::message())
     .add_message(@input.GamepadButtonChangedEvent::message())
     .add_message(@input.MouseWheel::message())
-    .add_plugin(@input_focus.input_dispatch_plugin)
+    .add_plugins(@input_focus.InputDispatchPlugin::default())
     .run_once()
 
   debug_inspect(read_focus_resource(app.world()).get() is None, content="true")
@@ -134,7 +134,7 @@ test "input_focus runtime sets initial focus to primary window" {
     .add_message(@input.KeyboardInput::message())
     .add_message(@input.GamepadButtonChangedEvent::message())
     .add_message(@input.MouseWheel::message())
-    .add_plugin(@input_focus.input_dispatch_plugin),
+    .add_plugins(@input_focus.InputDispatchPlugin::default()),
     @window.WindowPlugin::default(),
   ).run_once()
   let primary = match primary_window_entity(app.world()) {
@@ -162,7 +162,7 @@ test "input_focus runtime dispatches and clears stale focus" {
   let focused = world.spawn()
 
   let app = @app.App::new(world)
-    .add_plugin(@input_focus.input_dispatch_plugin)
+    .add_plugins(@input_focus.InputDispatchPlugin::default())
     .add_systems(
       @app.PreUpdate,
       @app.system(@app.system_param2(dispatch_mock_input)).in_set(
@@ -221,7 +221,7 @@ test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
   let helper_focus_visible_child : Ref[Bool] = Ref::new(false)
 
   let app = @app.App::new(world)
-    .add_plugin(@input_focus.input_dispatch_plugin)
+    .add_plugins(@input_focus.InputDispatchPlugin::default())
     .add_systems(
       @app.Update,
       @app.system(

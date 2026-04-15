@@ -24,8 +24,14 @@ pub fn AndroidTracingPlugin::default() -> AndroidTracingPlugin {
 }
 
 ///|
+pub impl @app.Plugin for AndroidTracingPlugin with build(self, app) {
+  android_tracing_plugin(app, self)
+}
+
+///|
 pub fn[W] android_tracing_plugin(
+  app : @app.App[W],
   _plugin : AndroidTracingPlugin,
-) -> @app.Plugin[W] {
-  fn(app : @app.App[W]) { app }
+) -> @app.App[W] {
+  app
 }

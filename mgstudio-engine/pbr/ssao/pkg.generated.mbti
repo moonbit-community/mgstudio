@@ -24,7 +24,7 @@ pub fn ssao_quality_sample_counts(@post_process.ScreenSpaceAmbientOcclusionQuali
 pub struct ScreenSpaceAmbientOcclusionPlugin {
 }
 pub fn ScreenSpaceAmbientOcclusionPlugin::default() -> Self
-pub impl @app.PluginReplacement for ScreenSpaceAmbientOcclusionPlugin
+pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin
 
 pub struct ScreenSpaceAmbientOcclusionPluginState {
   supported : Bool

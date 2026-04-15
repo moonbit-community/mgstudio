@@ -41,7 +41,7 @@ fn test_sub_state_should_exist(source : TestState) -> TestSubState? {
 ///|
 test "app sub state: source transition creates and removes sub state" {
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_sub_state(
       TestState::A,
@@ -81,7 +81,7 @@ test "app sub state: source transition creates and removes sub state" {
 ///|
 test "app sub state: queued next state mutates while parent still exists" {
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_sub_state(
       TestState::A,

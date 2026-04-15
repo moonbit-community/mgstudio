@@ -25,6 +25,16 @@ pub fn TimePlugin::default() -> TimePlugin {
 }
 
 ///|
+pub impl @app.Plugin for TimePlugin with name(_self) {
+  "mgstudio.time.TimePlugin"
+}
+
+///|
+pub impl @app.Plugin for TimePlugin with build(_self, app) {
+  time_plugin(app)
+}
+
+///|
 pub(all) enum TimeUpdateStrategy {
   Automatic
   ManualInstant(@core.Instant)

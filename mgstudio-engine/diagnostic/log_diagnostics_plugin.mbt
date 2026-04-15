@@ -50,15 +50,13 @@ pub fn LogDiagnosticsPlugin::filtered(
 }
 
 ///|
-pub impl @app.PluginReplacement for LogDiagnosticsPlugin with plugin_name(_self) {
+pub impl @app.Plugin for LogDiagnosticsPlugin with name(_self) {
   LOG_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for LogDiagnosticsPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    log_diagnostics_plugin_with(app, self)
-  }
+pub impl @app.Plugin for LogDiagnosticsPlugin with build(self, app) {
+  log_diagnostics_plugin_with(app, self)
 }
 
 ///|

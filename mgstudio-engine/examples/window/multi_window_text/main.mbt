@@ -180,14 +180,14 @@ fn setup_scene(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
+  .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_primary_window()),
       primary_cursor_options: Some(@window.CursorOptions::default()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
-    })
-  })
+    }),
+  )
   .add_systems(@app.Startup, @app.system(setup_scene))
   .run()
 }

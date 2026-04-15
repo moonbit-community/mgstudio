@@ -41,26 +41,28 @@ fn states_plugin_installed(world : @ecs.World) -> Bool {
 fn require_states_plugin_installed(world : @ecs.World) -> Unit {
   if !states_plugin_installed(world) {
     abort(
-      "StatesPlugin is not installed. Add @app.states_plugin(@app.StatesPlugin::default()) before installing states.",
+      "StatesPlugin is not installed. Add .add_plugins(@app.StatesPlugin::default()) before installing states.",
     )
   }
 }
 
 ///|
-pub fn states_plugin(plugin : StatesPlugin) -> Plugin[@ecs.World] {
-  ignore(plugin)
-  fn(app : App[@ecs.World]) {
-    main_schedule_insert_after_unique(app.world(), PreUpdate, StateTransition)
-    main_schedule_insert_startup_before_unique(
-      app.world(),
-      PreStartup,
-      StateTransition,
-    )
-    app
-    .world()
-    .insert_resource(states_plugin_marker_key(), StatesPluginMarker::{  })
-    app
-  }
+pub impl Plugin for StatesPlugin with name(_self) {
+  "mgstudio.app.StatesPlugin"
+}
+
+///|
+pub impl Plugin for StatesPlugin with build(_self, app) {
+  main_schedule_insert_after_unique(app.world(), PreUpdate, StateTransition)
+  main_schedule_insert_startup_before_unique(
+    app.world(),
+    PreStartup,
+    StateTransition,
+  )
+  app
+  .world()
+  .insert_resource(states_plugin_marker_key(), StatesPluginMarker::{  })
+  app
 }
 
 ///|

@@ -878,15 +878,13 @@ pub fn meshlet_plugin_with(
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshletPlugin with plugin_name(_self) {
+pub impl @app.Plugin for MeshletPlugin with name(_self) {
   MESHLET_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for MeshletPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    meshlet_plugin_with(app, self)
-  }
+pub impl @app.Plugin for MeshletPlugin with build(self, app) {
+  meshlet_plugin_with(app, self)
 }
 
 ///|

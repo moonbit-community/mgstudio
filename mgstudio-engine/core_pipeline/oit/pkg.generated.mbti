@@ -20,7 +20,7 @@ pub fn oit_plugin_with(@app.App[@ecs.World], OrderIndependentTransparencyPlugin)
 pub struct OrderIndependentTransparencyPlugin {
 }
 pub fn OrderIndependentTransparencyPlugin::default() -> Self
-pub impl @app.PluginReplacement for OrderIndependentTransparencyPlugin
+pub impl @app.Plugin for OrderIndependentTransparencyPlugin
 
 pub struct OrderIndependentTransparencySettings {
   alpha_threshold : Float

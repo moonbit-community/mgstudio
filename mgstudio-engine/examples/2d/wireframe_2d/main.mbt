@@ -27,9 +27,11 @@ pub impl @ecs.Component for WireframeHelpText with component() {
 
 ///|
 fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([@sprite.wireframe2d_plugin])
+  @sprite.wireframe2d_plugin(
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @mgstudio.DefaultPlugins::default(),
+    ),
+  )
   .insert_resource(@sprite.Wireframe2dConfig::new(true, color_default_white()))
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param4(update_colors)))

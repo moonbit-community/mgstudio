@@ -66,7 +66,7 @@ pub fn PrepassNode::late() -> Self
 pub struct PrepassPlugin {
 }
 pub fn PrepassPlugin::default() -> Self
-pub impl @app.PluginReplacement for PrepassPlugin
+pub impl @app.Plugin for PrepassPlugin
 
 pub struct PrepassViewState {
   has_deferred_prepass_component : Bool

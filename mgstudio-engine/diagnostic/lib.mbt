@@ -28,15 +28,13 @@ pub fn DiagnosticsPlugin::default() -> DiagnosticsPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for DiagnosticsPlugin with plugin_name(_self) {
+pub impl @app.Plugin for DiagnosticsPlugin with name(_self) {
   DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for DiagnosticsPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    diagnostics_plugin_with(app, self)
-  }
+pub impl @app.Plugin for DiagnosticsPlugin with build(self, app) {
+  diagnostics_plugin_with(app, self)
 }
 
 ///|

@@ -77,7 +77,7 @@ pub fn OitResolvePipelineKey::new(hdr? : Bool, sorted_fragment_max_count? : Int,
 pub struct OitResolvePlugin {
 }
 pub fn OitResolvePlugin::default() -> Self
-pub impl @app.PluginReplacement for OitResolvePlugin
+pub impl @app.Plugin for OitResolvePlugin
 
 pub struct OitSupportState {
   has_fragment_writable_storage : Bool

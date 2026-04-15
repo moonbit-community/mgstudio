@@ -156,19 +156,13 @@ pub fn GpuPreprocessingPlugin::with_mode(
 }
 
 ///|
-pub impl @app.PluginReplacement for GpuPreprocessingPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for GpuPreprocessingPlugin with name(_self) {
   GPU_PREPROCESSING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for GpuPreprocessingPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    gpu_preprocessing_plugin_with(app, self)
-  }
+pub impl @app.Plugin for GpuPreprocessingPlugin with build(self, app) {
+  gpu_preprocessing_plugin_with(app, self)
 }
 
 ///|

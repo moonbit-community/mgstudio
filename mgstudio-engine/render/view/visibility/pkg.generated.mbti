@@ -44,7 +44,7 @@ pub(all) struct RenderVisibilityEntityInfo {
 pub struct RenderVisibilityRangePlugin {
 }
 pub fn RenderVisibilityRangePlugin::default() -> Self
-pub impl @app.PluginReplacement for RenderVisibilityRangePlugin
+pub impl @app.Plugin for RenderVisibilityRangePlugin
 
 pub struct RenderVisibilityRanges {
   entities : @hashmap.HashMap[Int, RenderVisibilityEntityInfo]

@@ -92,7 +92,7 @@ fn main {
 
   @app.App::new(@ecs.World::new())
   .set_error_handler(@app.ErrorHandlers::warn)
-  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins(@mgstudio.DefaultPlugins::default())
   .insert_resource(EnemySpawnCursor::{ next: 0 })
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(

@@ -369,7 +369,7 @@ pub fn AnimationPlayerEntry::weight(Self) -> Float
 pub struct AnimationPlugin {
 }
 pub fn AnimationPlugin::default() -> Self
-pub impl @app.PluginReplacement for AnimationPlugin
+pub impl @app.Plugin for AnimationPlugin
 
 type AnimationSample
 pub fn AnimationSample::rotation(Self) -> @math.Quat?

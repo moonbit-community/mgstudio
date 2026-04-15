@@ -56,15 +56,13 @@ pub fn FrameCountPlugin::default() -> FrameCountPlugin {
 }
 
 ///|
-pub impl @app.PluginReplacement for FrameCountPlugin with plugin_name(_self) {
+pub impl @app.Plugin for FrameCountPlugin with name(_self) {
   FRAME_COUNT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for FrameCountPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    frame_count_plugin_with(app, self)
-  }
+pub impl @app.Plugin for FrameCountPlugin with build(self, app) {
+  frame_count_plugin_with(app, self)
 }
 
 ///|

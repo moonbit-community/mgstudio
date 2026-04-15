@@ -33,19 +33,13 @@ pub fn ScreenSpaceAmbientOcclusionPlugin::default() -> ScreenSpaceAmbientOcclusi
 }
 
 ///|
-pub impl @app.PluginReplacement for ScreenSpaceAmbientOcclusionPlugin with plugin_name(
-  _self,
-) {
+pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with name(_self) {
   SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for ScreenSpaceAmbientOcclusionPlugin with world_plugin(
-  self,
-) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    ssao_plugin_install_with(app, self)
-  }
+pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with build(self, app) {
+  ssao_plugin_install_with(app, self)
 }
 
 ///|

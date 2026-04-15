@@ -62,7 +62,7 @@ fn run_ui_extract_pipeline(world : @ecs.World) -> Unit {
 ///|
 test "examples ui button: seeded ui context produces queued ui draw items" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.default_plugins(),
+    @mgstudio.DefaultPlugins::default(),
   )
   let world = app.world()
   @sprite.init_render_state_system(world)
@@ -95,7 +95,7 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
 ///|
 test "examples ui button: runtime ui context also produces queued ui draw items" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.default_plugins(),
+    @mgstudio.DefaultPlugins::default(),
   )
   let world = app.world()
   @sprite.init_render_state_system(world)
@@ -123,7 +123,7 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
 ///|
 test "examples ui button: scheduled update queues ui draw items" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@mgstudio.default_plugins())
+    .add_plugins(@mgstudio.DefaultPlugins::default())
     .add_systems(@app.Startup, @app.system(setup))
   app = app.update()
 

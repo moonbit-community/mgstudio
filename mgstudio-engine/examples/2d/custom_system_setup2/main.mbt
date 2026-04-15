@@ -14,15 +14,12 @@
 
 ///|
 fn main {
-  let plugins = @mgstudio.DefaultPlugins::build()
-    .disable(
-      @app.named_world_plugin(
-        "mgstudio.physics2d.Physics2dPlugin", @physics2d.physics2d_plugin,
-      ),
-    )
-    .build()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(
+    @mgstudio.DefaultPlugins::build().disable(
+      @physics2d.Physics2dPlugin::default(),
+    ),
+  )
   .add_startup_system(@physics2d.physics2d_init_resources_system)
   .add_pre_update_system(@physics2d.physics2d_clear_events_system)
   .add_pre_update_system(@physics2d.physics2d_cleanup_despawned_system)

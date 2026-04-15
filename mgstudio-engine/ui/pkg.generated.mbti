@@ -654,6 +654,11 @@ pub fn UiLayout::rect(Self) -> @math.Rect
 pub fn UiLayout::size(Self) -> @math.Vec2
 pub impl @ecs.Component for UiLayout
 
+pub struct UiPlugin {
+}
+pub fn UiPlugin::default() -> Self
+pub impl @app.Plugin for UiPlugin
+
 pub struct UiRect {
   left : Val
   top : Val

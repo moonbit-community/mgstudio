@@ -208,7 +208,7 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.minimal_plugins())
+  .add_plugins(@mgstudio.MinimalPlugins::default())
   .insert_resource(@my_time.Time::from_max_delta(@core.Duration::from_secs(5L)))
   .insert_resource(@my_time.Time::from_duration(@core.Duration::from_secs(1L)))
   .add_systems(@app.PreUpdate, @app.system(print_real_time))

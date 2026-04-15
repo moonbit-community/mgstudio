@@ -242,7 +242,7 @@ test "app: Res exposes stable resource values across runs" {
 test "app: Res can read inserted State resource" {
   let observed : Ref[String] = Ref::new("unset")
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_system_param(fn(state : Res[State[TestState]]) {
       observed.val = to_repr(state.get().get()).to_string()
@@ -257,7 +257,7 @@ test "app: Res can read inserted State resource" {
 ///|
 test "app: ResMut can update NextState resource" {
   let app = App::new(@ecs.World::new())
-    .add_plugins([states_plugin(StatesPlugin::default())])
+    .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_system_param(fn(next_state : ResMut[NextState[TestState]]) {
       next_state.get_ref().val = NextState::Pending(TestState::B)

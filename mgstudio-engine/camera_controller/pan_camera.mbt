@@ -19,6 +19,9 @@
 const PAN_CAMERA_SCROLL_UNIT_CONVERSION_FACTOR : Float = 16.0F
 
 ///|
+const PAN_CAMERA_PLUGIN_NAME : String = "mgstudio.camera_controller.PanCameraPlugin"
+
+///|
 pub struct PanCamera {
   enabled : Bool
   mut zoom_factor : Float
@@ -257,6 +260,24 @@ pub fn pan_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       ),
     ),
   )
+}
+
+///|
+pub struct PanCameraPlugin {}
+
+///|
+pub fn PanCameraPlugin::default() -> PanCameraPlugin {
+  PanCameraPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for PanCameraPlugin with name(_self) {
+  PAN_CAMERA_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for PanCameraPlugin with build(_self, app) {
+  pan_camera_plugin(app)
 }
 
 ///|

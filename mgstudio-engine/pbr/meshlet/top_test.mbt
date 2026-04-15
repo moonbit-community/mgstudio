@@ -87,8 +87,8 @@ test "pbr meshlet: plugin state includes missing feature mask" {
 ///|
 test "pbr meshlet: plugin installs state into app and render sub-app" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugin(@render.render_plugin)
-    .add_plugin_typed(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(MeshletPlugin::default())
   inspect(
     (try! app.world().get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
     content="true",
@@ -137,8 +137,8 @@ test "pbr meshlet: configure views inserts prepass and deferred bins by view fla
     @core_pipeline.DeferredPrepass::default(),
   )
   let app = @app.App::new(world)
-    .add_plugin(@render.render_plugin)
-    .add_plugin_typed(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(MeshletPlugin::default())
     .update()
   inspect(
     (try! app
@@ -180,8 +180,8 @@ test "pbr meshlet: configure views does not insert deferred bin without deferred
     @core_pipeline.NormalPrepass::default(),
   )
   let app = @app.App::new(world)
-    .add_plugin(@render.render_plugin)
-    .add_plugin_typed(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(MeshletPlugin::default())
     .update()
   inspect(
     (try! app
@@ -205,8 +205,8 @@ test "panic pbr meshlet: configure views rejects msaa-enabled views" {
   )
   ignore(
     @app.App::new(world)
-    .add_plugin(@render.render_plugin)
-    .add_plugin_typed(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(MeshletPlugin::default())
     .update(),
   )
 }
@@ -227,8 +227,8 @@ test "pbr meshlet: material prepare system writes per-view material bins" {
     MeshletMesh3d::new(42),
   )
   let app = @app.App::new(world)
-    .add_plugin(@render.render_plugin)
-    .add_plugin_typed(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(MeshletPlugin::default())
     .update()
   match
     (try! app

@@ -151,10 +151,9 @@ let overlay_text_entity : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugin(@app.states_plugin(@app.StatesPlugin::default()))
+  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@app.StatesPlugin::default())
   .insert_state(Test::RayCast)
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_text))

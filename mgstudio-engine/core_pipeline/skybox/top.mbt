@@ -149,15 +149,13 @@ pub fn skybox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.PluginReplacement for SkyboxPlugin with plugin_name(_self) {
+pub impl @app.Plugin for SkyboxPlugin with name(_self) {
   SKYBOX_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.PluginReplacement for SkyboxPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    skybox_plugin_with(app, self)
-  }
+pub impl @app.Plugin for SkyboxPlugin with build(self, app) {
+  skybox_plugin_with(app, self)
 }
 
 ///|

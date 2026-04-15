@@ -323,9 +323,7 @@ fn main {
 
   @app.App::new(@ecs.World::new())
   .init_resource(GameState::default)
-  .add_plugins([
-    @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_loop(0.05F)),
-  ])
+  .add_plugins(@app.ScheduleRunnerPlugin::run_loop(0.05F))
   .add_systems(@app.Startup, @app.system(@app.system_param2(startup_system)))
   .add_systems(@app.Update, @app.system(print_message_system))
   .add_systems(@app.Last, @app.system(@app.system_param(print_at_end_round)))

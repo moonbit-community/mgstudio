@@ -23,14 +23,14 @@ fn configured_window() -> @window.Window {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugin_group(fn() {
+  .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: Some(@window.CursorOptions::default()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
-    })
-  })
+    }),
+  )
   .insert_resource(
     @sprite.ClearColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
   )
