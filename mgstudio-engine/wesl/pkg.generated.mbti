@@ -30,7 +30,9 @@ pub(all) suberror WeslCompileError {
   Resolve(ResolveError)
   Parse(String)
   InvalidExpression(String)
+  DuplicateSymbol(String)
   MissingDecl(ModulePath, String)
+  Private(String, ModulePath)
 }
 pub fn WeslCompileError::message(Self) -> String
 
@@ -38,14 +40,24 @@ pub fn WeslCompileError::message(Self) -> String
 pub struct CompileOptions {
   imports : Bool
   condcomp : Bool
+  strip : Bool
   lower : Bool
+  lazy_resolution : Bool
+  mangle_root : Bool
+  keep_root : Bool
+  keep : Array[String]?
   features : @hashmap.HashMap[String, Bool]
 }
 pub fn CompileOptions::default() -> Self
+pub fn CompileOptions::keep_declarations(Self, Array[String]) -> Self
 pub fn CompileOptions::with_condcomp(Self, Bool) -> Self
 pub fn CompileOptions::with_feature(Self, String, Bool) -> Self
 pub fn CompileOptions::with_imports(Self, Bool) -> Self
+pub fn CompileOptions::with_keep_root(Self, Bool) -> Self
+pub fn CompileOptions::with_lazy(Self, Bool) -> Self
 pub fn CompileOptions::with_lower(Self, Bool) -> Self
+pub fn CompileOptions::with_mangle_root(Self, Bool) -> Self
+pub fn CompileOptions::with_strip(Self, Bool) -> Self
 
 pub struct CompileResult {
   source : String

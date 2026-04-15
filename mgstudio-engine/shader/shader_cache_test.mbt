@@ -183,7 +183,7 @@ test "shader cache compiles wesl through loaded shader assets and bool defs" {
     cache.set_shader(
       root_id,
       shader_cache_test_wesl_shader(
-        "shaders/custom_material.wesl", "import super::util::make_toggle;\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
+        "shaders/custom_material.wesl", "import super::util::make_toggle;\n@fragment\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
       ),
     ),
   )
@@ -211,7 +211,7 @@ test "shader cache wesl resolver requires imported modules to be loaded as shade
     cache.set_shader(
       root_id,
       shader_cache_test_wesl_shader(
-        "shaders/custom_material.wesl", "import super::util::make_toggle;\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
+        "shaders/custom_material.wesl", "import super::util::make_toggle;\n@fragment\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
       ),
     ),
   )
@@ -246,7 +246,7 @@ test "shader cache ignores non-bool defs when compiling wesl condcomp" {
     cache.set_shader(
       root_id,
       shader_cache_test_wesl_shader(
-        "shaders/custom_material.wesl", "import super::util::make_toggle;\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
+        "shaders/custom_material.wesl", "import super::util::make_toggle;\n@fragment\nfn fragment() -> f32 {\n  return make_toggle();\n}\n",
       ),
     ),
   )
