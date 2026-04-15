@@ -185,8 +185,10 @@ priv struct GltfMaterialDef {
 
 ///|
 priv struct GltfSamplerDef {
-  nearest : Bool
-  repeat : Bool
+  mag_filter : Int?
+  min_filter : Int?
+  wrap_s : Int?
+  wrap_t : Int?
 }
 
 ///|
@@ -989,13 +991,47 @@ fn gltf_parse_material_anisotropy(
 }
 
 ///|
-fn gltf_sampler_filter_is_nearest(filter : Int) -> Bool {
-  filter == 9728 || filter == 9984 || filter == 9986
+fn gltf_sampler_mag_filter(filter : Int) -> @image.ImageFilterMode? {
+  match filter {
+    9728 => Some(@image.ImageFilterMode::Nearest)
+    9729 => Some(@image.ImageFilterMode::Linear)
+    _ => None
+  }
 }
 
 ///|
-fn gltf_sampler_wrap_is_repeat(wrap_mode : Int) -> Bool {
-  wrap_mode == 10497 || wrap_mode == 33648
+fn gltf_sampler_min_filter(filter : Int) -> @image.ImageFilterMode? {
+  match filter {
+    9728 => Some(@image.ImageFilterMode::Nearest)
+    9729 => Some(@image.ImageFilterMode::Linear)
+    9984 => Some(@image.ImageFilterMode::Nearest)
+    9985 => Some(@image.ImageFilterMode::Linear)
+    9986 => Some(@image.ImageFilterMode::Nearest)
+    9987 => Some(@image.ImageFilterMode::Linear)
+    _ => None
+  }
+}
+
+///|
+fn gltf_sampler_mipmap_filter(filter : Int) -> @image.ImageFilterMode? {
+  match filter {
+    9728 => Some(@image.ImageFilterMode::Nearest)
+    9729 => Some(@image.ImageFilterMode::Nearest)
+    9984 => Some(@image.ImageFilterMode::Nearest)
+    9985 => Some(@image.ImageFilterMode::Nearest)
+    9986 => Some(@image.ImageFilterMode::Linear)
+    9987 => Some(@image.ImageFilterMode::Linear)
+    _ => None
+  }
+}
+
+///|
+fn gltf_sampler_address_mode(wrap_mode : Int) -> @image.ImageAddressMode {
+  match wrap_mode {
+    33071 => @image.ImageAddressMode::ClampToEdge
+    33648 => @image.ImageAddressMode::MirrorRepeat
+    _ => @image.ImageAddressMode::Repeat
+  }
 }
 
 ///|
@@ -1419,26 +1455,19 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   if json_get_array(root, "samplers") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        let nearest = match json_get_int(obj, "magFilter") {
-          Some(mag_filter) => gltf_sampler_filter_is_nearest(mag_filter)
-          None =>
-            match json_get_int(obj, "minFilter") {
-              Some(min_filter) => gltf_sampler_filter_is_nearest(min_filter)
-              None => false
-            }
-        }
-        let repeat = match
-          (json_get_int(obj, "wrapS"), json_get_int(obj, "wrapT")) {
-          (Some(wrap_s), Some(wrap_t)) =>
-            gltf_sampler_wrap_is_repeat(wrap_s) &&
-            gltf_sampler_wrap_is_repeat(wrap_t)
-          (Some(wrap_s), None) => gltf_sampler_wrap_is_repeat(wrap_s)
-          (None, Some(wrap_t)) => gltf_sampler_wrap_is_repeat(wrap_t)
-          (None, None) => true
-        }
-        samplers.push({ nearest, repeat })
+        samplers.push({
+          mag_filter: json_get_int(obj, "magFilter"),
+          min_filter: json_get_int(obj, "minFilter"),
+          wrap_s: json_get_int(obj, "wrapS"),
+          wrap_t: json_get_int(obj, "wrapT"),
+        })
       } else {
-        samplers.push({ nearest: false, repeat: true })
+        samplers.push({
+          mag_filter: None,
+          min_filter: None,
+          wrap_s: None,
+          wrap_t: None,
+        })
       }
     }
   }
@@ -2312,34 +2341,32 @@ fn gltf_texture_image_sampler(
     anisotropy_clamp: default_sampler.anisotropy_clamp,
     border_color: default_sampler.border_color,
   }
-  let mut nearest = false
-  let mut repeat = true
-  let mut has_sampler = false
   if doc.textures[texture_index].sampler is Some(sampler_index) &&
     sampler_index >= 0 &&
     sampler_index < doc.samplers.length() {
     let sampler = doc.samplers[sampler_index]
-    nearest = sampler.nearest
-    repeat = sampler.repeat
-    has_sampler = true
-  }
-  if has_sampler {
-    descriptor.set_filter(
-      if nearest {
-        @image.ImageFilterMode::Nearest
-      } else {
-        @image.ImageFilterMode::Linear
-      },
-    )
-    |> ignore
-    descriptor.set_address_mode(
-      if repeat {
-        @image.ImageAddressMode::Repeat
-      } else {
-        @image.ImageAddressMode::ClampToEdge
-      },
-    )
-    |> ignore
+    descriptor.address_mode_u = match sampler.wrap_s {
+      Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
+      None => @image.ImageAddressMode::Repeat
+    }
+    descriptor.address_mode_v = match sampler.wrap_t {
+      Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
+      None => @image.ImageAddressMode::Repeat
+    }
+    if descriptor.anisotropy_clamp == 1 {
+      if sampler.mag_filter is Some(mag_filter) &&
+        gltf_sampler_mag_filter(mag_filter) is Some(image_filter) {
+        descriptor.mag_filter = image_filter
+      }
+      if sampler.min_filter is Some(min_filter) {
+        if gltf_sampler_min_filter(min_filter) is Some(image_filter) {
+          descriptor.min_filter = image_filter
+        }
+        if gltf_sampler_mipmap_filter(min_filter) is Some(image_filter) {
+          descriptor.mipmap_filter = image_filter
+        }
+      }
+    }
   }
   @image.ImageSampler::Descriptor(descriptor)
 }
