@@ -15,15 +15,13 @@
 ///|
 fn shader_defs_to_naga_oil_shader_defs(
   shader_defs : Array[ShaderDefVal],
-) -> @hashmap.HashMap[String, @naga_oil.ShaderDefValue] {
-  let mapped : @hashmap.HashMap[String, @naga_oil.ShaderDefValue] = @hashmap.HashMap::new()
+) -> @hashmap.HashMap[String, @wgsl.ShaderDefValue] {
+  let mapped : @hashmap.HashMap[String, @wgsl.ShaderDefValue] = @hashmap.HashMap::new()
   for shader_def in shader_defs {
     match shader_def {
-      Bool(name, value) =>
-        mapped.set(name, @naga_oil.ShaderDefValue::Bool(value))
-      Int(name, value) => mapped.set(name, @naga_oil.ShaderDefValue::Int(value))
-      UInt(name, value) =>
-        mapped.set(name, @naga_oil.ShaderDefValue::UInt(value))
+      Bool(name, value) => mapped.set(name, @wgsl.ShaderDefValue::Bool(value))
+      Int(name, value) => mapped.set(name, @wgsl.ShaderDefValue::Int(value))
+      UInt(name, value) => mapped.set(name, @wgsl.ShaderDefValue::UInt(value))
     }
   }
   mapped
@@ -32,12 +30,12 @@ fn shader_defs_to_naga_oil_shader_defs(
 ///|
 pub fn Shader::composable_module_descriptor(
   self : Shader,
-) -> @naga_oil.ComposableModuleDescriptor {
+) -> @wgsl.ComposableModuleDescriptor {
   let as_name = match self.import_path {
     AssetPath(asset_path) => Some("\"\{asset_path}\"")
     Custom(_) => None
   }
-  @naga_oil.ComposableModuleDescriptor::{
+  @wgsl.ComposableModuleDescriptor::{
     source: self.source.as_str(),
     file_path: self.path,
     language: self.source.language(),
@@ -50,8 +48,8 @@ pub fn Shader::composable_module_descriptor(
 ///|
 pub fn Shader::naga_module_descriptor(
   self : Shader,
-) -> @naga_oil.NagaModuleDescriptor {
-  @naga_oil.NagaModuleDescriptor::{
+) -> @wgsl.NagaModuleDescriptor {
+  @wgsl.NagaModuleDescriptor::{
     source: self.source.as_str(),
     file_path: self.path,
     shader_type: self.source.shader_type(),

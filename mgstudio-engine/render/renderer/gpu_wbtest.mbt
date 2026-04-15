@@ -1002,8 +1002,8 @@ test "renderer: composite alpha mode mapping matches wgpu native constants" {
 test "renderer: grouped wgsl imports resolve Bevy module files" {
   let assets_base = "assets"
   let modules = build_wgsl_import_module_paths(assets_base)
-  let targets : Array[@naga_oil.WgslImportTarget] = []
-  @naga_oil.collect_wgsl_import_targets(
+  let targets : Array[@wgsl.WgslImportTarget] = []
+  @wgsl.collect_wgsl_import_targets(
     "bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}",
     "", targets,
   )
@@ -1222,7 +1222,7 @@ fn resolve_wgsl_import_module_path_for_test(
   import_path : String,
   modules : @hashmap.HashMap[String, String],
 ) -> String {
-  guard @naga_oil.resolve_wgsl_import_module(assets_base, import_path, modules)
+  guard @wgsl.resolve_wgsl_import_module(assets_base, import_path, modules)
     is Some(resolved_module) else {
     return ""
   }
@@ -1231,7 +1231,7 @@ fn resolve_wgsl_import_module_path_for_test(
 
 ///|
 fn register_renderer_test_shader_source(path : String) -> Unit {
-  let source = match @naga_oil.registered_wgsl_source(path) {
+  let source = match @wgsl.registered_wgsl_source(path) {
     Some(v) => v
     None =>
       abort("failed to load embedded renderer test shader source: \{path}")

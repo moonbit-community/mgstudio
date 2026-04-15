@@ -29,7 +29,7 @@ fn load_wgsl_asset_source_required(
   if backend.assets_base.trim().to_string() == "" {
     fatal("wgpu: assets_base is empty; cannot load shader: \{rel}")
   }
-  @naga_oil.Composer::default().load_wgsl_source_required_raw(
+  @wgsl.Composer::default().load_wgsl_source_required_raw(
     backend.assets_base,
     rel,
   ) catch {

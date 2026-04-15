@@ -150,7 +150,7 @@ pub struct ShaderCache[ShaderModule, RenderDevice] {
     ShaderImport,
     Array[@asset.AssetId[Shader]],
   ]
-  composer : @naga_oil.Composer
+  composer : @wgsl.Composer
   module_path_to_asset_id : @hashmap.HashMap[
     @wesl.ModulePath,
     @asset.AssetId[Shader],
@@ -318,7 +318,7 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::new(
     shaders: @hashmap.HashMap::new(),
     import_path_shaders: @hashmap.HashMap::new(),
     waiting_on_import: @hashmap.HashMap::new(),
-    composer: @naga_oil.Composer::default(),
+    composer: @wgsl.Composer::default(),
     module_path_to_asset_id: @hashmap.HashMap::new(),
   }
 }

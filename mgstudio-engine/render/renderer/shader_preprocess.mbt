@@ -38,39 +38,39 @@ fn f32le_pack(xs : Array[Float]) -> Bytes {
 
 ///|
 fn normalize_shader_rel_path(rel : String) -> String {
-  @naga_oil.normalize_shader_rel_path(rel)
+  @wgsl.normalize_shader_rel_path(rel)
 }
 
 ///|
-type WgslComposer = @naga_oil.Composer
+type WgslComposer = @wgsl.Composer
 
 ///|
 fn wgsl_composer() -> WgslComposer {
-  @naga_oil.Composer::default()
+  @wgsl.Composer::default()
 }
 
 ///|
 fn[T] raise_composer_error(
-  err : @naga_oil.ComposerError,
+  err : @wgsl.ComposerError,
 ) -> T raise GpuBackendError {
   fatal("wgpu: \{err.message()}")
 }
 
 ///|
 pub fn clear_registered_wgsl_source_registry() -> Unit {
-  @naga_oil.clear_registered_wgsl_source_registry()
+  @wgsl.clear_registered_wgsl_source_registry()
 }
 
 ///|
 pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
-  @naga_oil.register_wgsl_source(rel_path, source)
+  @wgsl.register_wgsl_source(rel_path, source)
 }
 
 ///|
 fn registered_wgsl_source_required(
   rel_path : String,
 ) -> String raise GpuBackendError {
-  @naga_oil.registered_wgsl_source_required(rel_path) catch {
+  @wgsl.registered_wgsl_source_required(rel_path) catch {
     err => raise_composer_error(err)
   }
 }
@@ -80,14 +80,14 @@ fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
   String,
   String,
 ] {
-  @naga_oil.copy_registered_wgsl_import_module_paths()
+  @wgsl.copy_registered_wgsl_import_module_paths()
 }
 
 ///|
 fn build_wgsl_import_module_paths(
   assets_base : String,
 ) -> @hashmap.HashMap[String, String] {
-  @naga_oil.build_wgsl_import_module_paths(assets_base)
+  @wgsl.build_wgsl_import_module_paths(assets_base)
 }
 
 ///|
@@ -104,7 +104,7 @@ fn split_once_text(text : String, sep : String) -> (String, String)? {
 
 ///|
 fn default_wgsl_value_defines() -> @hashmap.HashMap[String, Int] {
-  @naga_oil.default_wgsl_value_defines()
+  @wgsl.default_wgsl_value_defines()
 }
 
 ///|

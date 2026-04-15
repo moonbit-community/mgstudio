@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/material",
   "moonbitlang/core/json",
-  "Milky2018/moon_wgsl" @naga_oil,
+  "Milky2018/moon_wgsl" @wgsl,
 }
 
 supported_targets = "native"

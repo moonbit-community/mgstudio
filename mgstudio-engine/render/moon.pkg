@@ -14,7 +14,7 @@ import {
   "Milky2018/mgstudio/render/renderer" @renderer,
   "Milky2018/mgstudio/render/view/window" @render_view_window,
   "moonbitlang/core/ref",
-  "Milky2018/moon_wgsl" @naga_oil,
+  "Milky2018/moon_wgsl" @wgsl,
 }
 
 supported_targets = "native"

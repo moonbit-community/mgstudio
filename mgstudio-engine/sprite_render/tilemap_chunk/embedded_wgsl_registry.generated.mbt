@@ -2,7 +2,7 @@
 
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
-  @naga_oil.register_wgsl_source(
+  @wgsl.register_wgsl_source(
     "sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl", embedded_wgsl_tilemap_chunk_material_wgsl_source,
   )
 }

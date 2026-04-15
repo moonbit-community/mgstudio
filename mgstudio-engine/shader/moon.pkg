@@ -6,7 +6,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
-  "Milky2018/moon_wgsl" @naga_oil,
+  "Milky2018/moon_wgsl" @wgsl,
   "Milky2018/moon_wesl" @wesl,
 }
 

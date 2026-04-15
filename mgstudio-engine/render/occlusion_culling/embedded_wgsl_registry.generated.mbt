@@ -2,7 +2,7 @@
 
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
-  @naga_oil.register_wgsl_source(
+  @wgsl.register_wgsl_source(
     "render/occlusion_culling/mesh_preprocess_types.wgsl", embedded_wgsl_mesh_preprocess_types_wgsl_source,
   )
 }

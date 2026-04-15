@@ -1,7 +1,7 @@
 import {
   "Milky2018/mgstudio/app" @app,
   "Milky2018/mgstudio/ecs" @ecs,
-  "Milky2018/moon_wgsl" @naga_oil,
+  "Milky2018/moon_wgsl" @wgsl,
 }
 
 supported_targets = "native"
