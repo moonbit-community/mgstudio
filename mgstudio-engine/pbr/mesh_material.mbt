@@ -57,22 +57,7 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
 
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {
-  let ecs_world = world
   @pbr_render.render3d_set_runtime_initialized(world, true)
-  let ambient = get_global_ambient_light_resource(ecs_world)
-  if !ambient.is_present() {
-    ambient.insert(GlobalAmbientLight::default())
-  }
-  let point_light_shadow_map = get_point_light_shadow_map_resource(ecs_world)
-  if !point_light_shadow_map.is_present() {
-    point_light_shadow_map.insert(PointLightShadowMap::default())
-  }
-  let directional_light_shadow_map = get_directional_light_shadow_map_resource(
-    ecs_world,
-  )
-  if !directional_light_shadow_map.is_present() {
-    directional_light_shadow_map.insert(DirectionalLightShadowMap::default())
-  }
   if (try! world.get_resource(ecs_key_internal_assets)) is None {
     world.insert_resource(
       ecs_key_internal_assets,

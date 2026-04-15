@@ -28,6 +28,9 @@ const DEFAULT_PLUGIN_NAME_MESH : String = "mgstudio.mesh.MeshPlugin"
 const DEFAULT_PLUGIN_NAME_CAMERA : String = "mgstudio.camera.CameraPlugin"
 
 ///|
+const DEFAULT_PLUGIN_NAME_LIGHT : String = "mgstudio.light.LightPlugin"
+
+///|
 const DEFAULT_PLUGIN_NAME_WEB_ASSET : String = "mgstudio.asset.io.web.WebAssetPlugin"
 
 ///|
@@ -115,11 +118,19 @@ test "default plugins: include winit plugin after window plugin" {
     content="true",
   )
   debug_inspect(
+    plugin_contains(builder, DEFAULT_PLUGIN_NAME_LIGHT),
+    content="true",
+  )
+  debug_inspect(
     plugin_enabled(builder, DEFAULT_PLUGIN_NAME_CAMERA),
     content="true",
   )
   debug_inspect(
     plugin_enabled(builder, DEFAULT_PLUGIN_NAME_MESH),
+    content="true",
+  )
+  debug_inspect(
+    plugin_enabled(builder, DEFAULT_PLUGIN_NAME_LIGHT),
     content="true",
   )
   debug_inspect(
@@ -148,6 +159,7 @@ test "default plugins: include winit plugin after window plugin" {
   let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS)
   let mesh_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_MESH)
   let camera_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_CAMERA)
+  let light_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_LIGHT)
   let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_SPRITE)
   let sprite_render_index = plugin_index(
     builder,
@@ -164,6 +176,8 @@ test "default plugins: include winit plugin after window plugin" {
     plugin_index(builder, "mgstudio.render.RenderPlugin") < mesh_index,
     content="true",
   )
+  debug_inspect(camera_index < light_index, content="true")
+  debug_inspect(light_index < render3d_index, content="true")
   debug_inspect(camera_index < render3d_index, content="true")
   debug_inspect(render3d_index < anti_alias_index, content="true")
   debug_inspect(anti_alias_index < sprite_index, content="true")

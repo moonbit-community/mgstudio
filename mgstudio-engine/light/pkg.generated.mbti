@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/light"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -102,6 +103,8 @@ pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAcc
 pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLight]
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
+
+pub fn light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
@@ -328,6 +331,11 @@ pub(all) struct LightGizmoConfigGroup {
 pub fn LightGizmoConfigGroup::default() -> Self
 pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup
 pub impl Default for LightGizmoConfigGroup
+
+pub struct LightPlugin {
+}
+pub fn LightPlugin::default() -> Self
+pub impl @app.Plugin for LightPlugin
 
 #alias(LightProbeComponent)
 pub struct LightProbe {

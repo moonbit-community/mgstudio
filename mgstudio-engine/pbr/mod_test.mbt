@@ -80,7 +80,7 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     app.contains_resource(ecs_key_materials_plugin_state),
     content="true",
   )
-  debug_inspect(render_world_with_fog_meta(app), content="true")
+  debug_inspect(render_world_with_fog_meta(app), content="false")
   debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,
     content="true",

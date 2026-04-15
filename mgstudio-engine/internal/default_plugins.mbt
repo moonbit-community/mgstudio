@@ -49,6 +49,7 @@ fn default_plugins_builder(
   .add(@render.RenderPlugin::default())
   .add(@mesh.MeshPlugin::default())
   .add(@camera.CameraPlugin::default())
+  .add(@light.LightPlugin::default())
   .add(@core_pipeline.CorePipelinePlugin::default())
   .add(@input.InputPlugin::default())
   .add(@picking.PickingPlugin::default())
