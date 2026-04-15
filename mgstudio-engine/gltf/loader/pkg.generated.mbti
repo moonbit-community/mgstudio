@@ -62,6 +62,10 @@ pub fn gltf_pbr_material_handler_enabled() -> Bool
 
 pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn gltf_plugin_build_with(@app.App[@ecs.World], GltfPlugin) -> @app.App[@ecs.World]
+
+pub fn gltf_plugin_finish(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn gltf_plugin_with(@app.App[@ecs.World], GltfPlugin) -> @app.App[@ecs.World]
 
 pub fn gltf_primitive_asset_label(Int, Int) -> @gltf_ext.GltfAssetLabel

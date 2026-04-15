@@ -61,3 +61,22 @@ test "gltf: plugin surface can configure default coordinate conversion" {
   )
   gltf_set_default_convert_coordinates(original)
 }
+
+///|
+test "gltf: loader registration runs in finish lifecycle and only once" {
+  let registration_count = Ref::new(0)
+  @gltf_loader.gltf_install_loader_registration(fn() {
+    registration_count.val = registration_count.val + 1
+  })
+
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    GltfPlugin::default(),
+  )
+  debug_inspect(registration_count.val, content="0")
+
+  app = app.run_once()
+  debug_inspect(registration_count.val, content="1")
+
+  app = app.run_once()
+  debug_inspect(registration_count.val, content="1")
+}

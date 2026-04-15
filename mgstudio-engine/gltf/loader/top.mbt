@@ -190,7 +190,12 @@ pub impl @app.Plugin for GltfPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for GltfPlugin with build(self, app) {
-  gltf_plugin_with(app, self)
+  gltf_plugin_build_with(app, self)
+}
+
+///|
+pub impl @app.Plugin for GltfPlugin with finish(_self, app) {
+  gltf_plugin_finish(app)
 }
 
 ///|
@@ -444,6 +449,14 @@ pub fn gltf_plugin_with(
   app : @app.App[@ecs.World],
   plugin : GltfPlugin,
 ) -> @app.App[@ecs.World] {
+  gltf_plugin_build_with(app, plugin)
+}
+
+///|
+pub fn gltf_plugin_build_with(
+  app : @app.App[@ecs.World],
+  plugin : GltfPlugin,
+) -> @app.App[@ecs.World] {
   gltf_set_pbr_material_handler_enabled(plugin.pbr_material_handler_enabled)
   gltf_set_default_convert_coordinates(plugin.convert_coordinates)
   gltf_set_default_skinned_mesh_bounds_policy(plugin.skinned_mesh_bounds_policy)
@@ -460,7 +473,11 @@ pub fn gltf_plugin_with(
   }
   let app = @gltf_loader_extensions.gltf_extension_runtime_plugin(app)
   let app = gltf_loader_plugin_runtime_plugin(app)
-  let app = gltf_loader_runtime_plugin(app)
+  gltf_loader_runtime_plugin(app)
+}
+
+///|
+pub fn gltf_plugin_finish(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   gltf_register_asset_loaders_once()
   app
 }
