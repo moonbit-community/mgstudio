@@ -32,6 +32,8 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::default())
+  .add_plugins(@mesh.MeshPlugin::default())
+  .add_plugins(@shader.ShaderPlugin::default())
   .add_plugins(@sprite_render.SpriteRenderPlugin::default())
   .add_plugins(@pbr.PbrPlugin::default())
   .add_plugins(@animation.AnimationPlugin::default())
@@ -161,6 +163,8 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::default())
+  .add_plugins(@mesh.MeshPlugin::default())
+  .add_plugins(@shader.ShaderPlugin::default())
   .add_plugins(@sprite_render.SpriteRenderPlugin::default())
   .add_plugins(@pbr.PbrPlugin::default())
   .add_plugins(@animation.AnimationPlugin::default())

@@ -2873,8 +2873,8 @@ fn scene_build_from_gltf(
         None => None
       }
       let inverse_bindposes = match skin {
-        Some(skin_def) =>
-          match skin_def.inverse_bind_matrices {
+        Some(skin_def) => {
+          let inverse_bindpose_values = match skin_def.inverse_bind_matrices {
             Some(accessor_index) =>
               gltf_read_accessor_mat4(doc, buffer_bytes, accessor_index)
             None => {
@@ -2885,6 +2885,28 @@ fn scene_build_from_gltf(
               Some(defaults)
             }
           }
+          match inverse_bindpose_values {
+            Some(values) => {
+              let normalized_values : Array[@mesh.SkinningMat4] = []
+              for joint_index in 0..<skin_def.joints.length() {
+                if joint_index < values.length() {
+                  normalized_values.push(values[joint_index])
+                } else {
+                  normalized_values.push(@mesh.SkinningMat4::identity())
+                }
+              }
+              let inverse_bindposes_assets_ref : Ref[
+                @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+              ] = @asset.asset_assets_ref_mut_or_abort()
+              Some(
+                inverse_bindposes_assets_ref.val.add(
+                  @mesh.SkinnedMeshInverseBindposes::new(normalized_values),
+                ),
+              )
+            }
+            None => None
+          }
+        }
         None => None
       }
 

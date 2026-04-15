@@ -16,7 +16,8 @@
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::default())
-  .add_plugins(@sprite_render.SpriteRenderPlugin::default())
+  .add_plugins(@mesh.MeshPlugin::default())
+  .add_plugins(@shader.ShaderPlugin::default())
   .add_plugins(@pbr.PbrPlugin::default())
   .add_plugins(@animation.AnimationPlugin::default())
   .add_plugins(@scene.ScenePlugin::default())
@@ -32,6 +33,24 @@ fn run_scene_reload_frame(world : @ecs.World) -> Unit {
   @asset.asset_update_event_messages(world)
   @scene.scene_reload_modified_roots_system(world)
   @scene.scene_spawn_roots_system(world)
+}
+
+///|
+fn scene_test_add_inverse_bindposes_asset(
+  world : @ecs.World,
+  inverse_bindposes : Array[@mesh.SkinningMat4],
+) -> @asset.Handle[@mesh.SkinnedMeshInverseBindposes] {
+  let key : @ecs.ResourceKey[@asset.Assets[@mesh.SkinnedMeshInverseBindposes]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key)) {
+    Some(assets_ref) =>
+      assets_ref.val.add(
+        @mesh.SkinnedMeshInverseBindposes::new(inverse_bindposes),
+      )
+    None =>
+      abort(
+        "scene test requires Assets<SkinnedMeshInverseBindposes>; MeshPlugin must be installed",
+      )
+  }
 }
 
 ///|
@@ -90,7 +109,8 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@sprite_render.SpriteRenderPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(@shader.ShaderPlugin::default())
     .add_plugins(@pbr.PbrPlugin::default())
     .add_plugins(@animation.AnimationPlugin::default())
     .add_plugins(@scene.ScenePlugin::default())
@@ -166,7 +186,7 @@ test "scene: skinned mesh joints map by gltf node index" {
   let joint_count = Ref::new(0)
   let first_joint_ok = Ref::new(false)
   let second_joint_ok = Ref::new(false)
-  let mesh_root_ok = Ref::new(false)
+  let inverse_bindposes_count = Ref::new(0)
 
   run_scene_test_app(fn(world : @ecs.World) {
     let mesh = @pbr.Mesh3d::new(
@@ -178,6 +198,10 @@ test "scene: skinned mesh joints map by gltf node index" {
     )
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+    )
+    let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
+      world,
+      [@mesh.SkinningMat4::identity(), @mesh.SkinningMat4::identity()],
     )
     let scene_handle = @scene.scene_register_gltf_scene(
       "models/Foo/Foo.gltf#skinned-joint-remap",
@@ -197,10 +221,7 @@ test "scene: skinned mesh joints map by gltf node index" {
           None,
           gltf_node_index=Some(@gltf.GltfNodeIndex::new(5)),
           skinned_joint_node_indices=Some([7, 42]),
-          skinned_inverse_bindposes=Some([
-            @mesh.SkinningMat4::identity(),
-            @mesh.SkinningMat4::identity(),
-          ]),
+          skinned_inverse_bindposes=Some(inverse_bindposes_handle),
         ),
         @scene.SceneNode3d::new_empty(
           @transform.Transform::identity(),
@@ -249,8 +270,16 @@ test "scene: skinned mesh joints map by gltf node index" {
       first_joint_ok.val = joints[0].id == node7.id
       second_joint_ok.val = joints[1].id == node42.id
     }
-    if skinned_mesh.mesh_root() is Some(mesh_root) {
-      mesh_root_ok.val = mesh_root.id == mesh_node.id
+    let inverse_bindposes_assets_key : @ecs.ResourceKey[
+      @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+    ] = @asset.assets_resource_key()
+    match (try! world.get_resource(inverse_bindposes_assets_key)) {
+      Some(inverse_bindposes_assets) =>
+        if inverse_bindposes_assets.get(skinned_mesh.inverse_bindposes())
+          is Some(inverse_bindposes) {
+          inverse_bindposes_count.val = inverse_bindposes.len()
+        }
+      None => ()
     }
   })
 
@@ -258,7 +287,7 @@ test "scene: skinned mesh joints map by gltf node index" {
   debug_inspect(joint_count.val, content="2")
   debug_inspect(first_joint_ok.val, content="true")
   debug_inspect(second_joint_ok.val, content="true")
-  debug_inspect(mesh_root_ok.val, content="true")
+  debug_inspect(inverse_bindposes_count.val, content="2")
 }
 
 ///|
@@ -276,6 +305,10 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::default()),
     )
+    let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
+      world,
+      [@mesh.SkinningMat4::identity(), @mesh.SkinningMat4::identity()],
+    )
     let scene_handle = @scene.scene_register_gltf_scene(
       "models/Foo/Foo.gltf#skinned-missing-joint",
       @scene.Scene::new([
@@ -287,10 +320,7 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
           None,
           gltf_node_index=Some(@gltf.GltfNodeIndex::new(5)),
           skinned_joint_node_indices=Some([7, 42]),
-          skinned_inverse_bindposes=Some([
-            @mesh.SkinningMat4::identity(),
-            @mesh.SkinningMat4::identity(),
-          ]),
+          skinned_inverse_bindposes=Some(inverse_bindposes_handle),
         ),
         @scene.SceneNode3d::new_empty(
           @transform.Transform::identity(),

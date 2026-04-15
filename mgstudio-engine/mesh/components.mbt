@@ -17,26 +17,55 @@
 // Runtime owner split out of `mesh/skinning.mbt`.
 
 ///|
+pub struct SkinnedMeshInverseBindposes {
+  values : Array[SkinningMat4]
+}
+
+///|
+pub fn SkinnedMeshInverseBindposes::new(
+  values : Array[SkinningMat4],
+) -> SkinnedMeshInverseBindposes {
+  { values, }
+}
+
+///|
+pub fn SkinnedMeshInverseBindposes::values(
+  self : SkinnedMeshInverseBindposes,
+) -> Array[SkinningMat4] {
+  self.values
+}
+
+///|
+pub fn SkinnedMeshInverseBindposes::get(
+  self : SkinnedMeshInverseBindposes,
+  index : Int,
+) -> SkinningMat4? {
+  if index < 0 || index >= self.values.length() {
+    None
+  } else {
+    Some(self.values[index])
+  }
+}
+
+///|
+pub fn SkinnedMeshInverseBindposes::len(
+  self : SkinnedMeshInverseBindposes,
+) -> Int {
+  self.values.length()
+}
+
+///|
 pub struct SkinnedMesh {
-  source_mesh : @asset.Handle[Mesh]
+  inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes]
   joints : Array[@core.Entity]
-  inverse_bindposes : Array[SkinningMat4]
-  mesh_root : @core.Entity?
 }
 
 ///|
 pub fn SkinnedMesh::new(
-  source_mesh : @asset.Handle[Mesh],
+  inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes],
   joints : Array[@core.Entity],
-  inverse_bindposes : Array[SkinningMat4],
-  mesh_root? : @core.Entity? = None,
 ) -> SkinnedMesh {
-  { source_mesh, joints, inverse_bindposes, mesh_root }
-}
-
-///|
-pub fn SkinnedMesh::source_mesh(self : SkinnedMesh) -> @asset.Handle[Mesh] {
-  self.source_mesh
+  { inverse_bindposes, joints }
 }
 
 ///|
@@ -47,13 +76,8 @@ pub fn SkinnedMesh::joints(self : SkinnedMesh) -> Array[@core.Entity] {
 ///|
 pub fn SkinnedMesh::inverse_bindposes(
   self : SkinnedMesh,
-) -> Array[SkinningMat4] {
+) -> @asset.Handle[SkinnedMeshInverseBindposes] {
   self.inverse_bindposes
-}
-
-///|
-pub fn SkinnedMesh::mesh_root(self : SkinnedMesh) -> @core.Entity? {
-  self.mesh_root
 }
 
 ///|

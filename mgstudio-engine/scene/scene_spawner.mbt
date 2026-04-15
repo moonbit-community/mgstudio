@@ -356,13 +356,7 @@ fn scene_spawn_instance_when_ready(
 
   let spawned_entities : Array[@core.Entity] = []
   let pending_skinned_meshes : Array[
-    (
-      Int,
-      @asset.Handle[@mesh.Mesh],
-      Array[Int],
-      Array[@mesh.SkinningMat4],
-      @core.Entity?,
-    ),
+    (Int, Array[Int], @asset.Handle[@mesh.SkinnedMeshInverseBindposes]),
   ] = []
   let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
   let gltf_scene_asset_path = match scene_registry_find_scene_path(root.scene) {
@@ -470,13 +464,7 @@ fn scene_spawn_instance_when_ready(
       if node.skinned_joint_node_indices is Some(joint_node_indices) &&
         node.skinned_inverse_bindposes is Some(inverse_bindposes) {
         pending_skinned_meshes.push(
-          (
-            spawned_entities.length() - 1,
-            source_mesh_handle,
-            joint_node_indices,
-            inverse_bindposes,
-            Some(child),
-          ),
+          (spawned_entities.length() - 1, joint_node_indices, inverse_bindposes),
         )
       }
     }
@@ -547,13 +535,7 @@ fn scene_spawn_instance_when_ready(
   }
 
   for pending in pending_skinned_meshes {
-    let (
-      entity_index,
-      source_mesh_handle,
-      joint_node_indices,
-      inverse_bindposes,
-      mesh_root,
-    ) = pending
+    let (entity_index, joint_node_indices, inverse_bindposes_handle) = pending
     if entity_index < 0 || entity_index >= spawned_entities.length() {
       continue
     }
@@ -574,23 +556,10 @@ fn scene_spawn_instance_when_ready(
     if !has_all_joints || joint_entities.length() == 0 {
       continue
     }
-    let resolved_inverse_bindposes : Array[@mesh.SkinningMat4] = []
-    for joint_index in 0..<joint_entities.length() {
-      if joint_index < inverse_bindposes.length() {
-        resolved_inverse_bindposes.push(inverse_bindposes[joint_index])
-      } else {
-        resolved_inverse_bindposes.push(@mesh.SkinningMat4::identity())
-      }
-    }
     try! world.set_by_key(
       spawned_entities[entity_index],
       @mesh.SkinnedMesh::component(),
-      @mesh.SkinnedMesh::new(
-        source_mesh_handle,
-        joint_entities,
-        resolved_inverse_bindposes,
-        mesh_root~,
-      ),
+      @mesh.SkinnedMesh::new(inverse_bindposes_handle, joint_entities),
     )
     try! world.set_by_key(
       spawned_entities[entity_index],

@@ -226,17 +226,21 @@ pub fn MorphWeights::values(Self) -> Array[Float]
 pub impl @ecs.Component for MorphWeights
 
 pub struct SkinnedMesh {
-  source_mesh : @asset.Handle[Mesh]
+  inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes]
   joints : Array[@core.Entity]
-  inverse_bindposes : Array[SkinningMat4]
-  mesh_root : @core.Entity?
 }
-pub fn SkinnedMesh::inverse_bindposes(Self) -> Array[SkinningMat4]
+pub fn SkinnedMesh::inverse_bindposes(Self) -> @asset.Handle[SkinnedMeshInverseBindposes]
 pub fn SkinnedMesh::joints(Self) -> Array[@core.Entity]
-pub fn SkinnedMesh::mesh_root(Self) -> @core.Entity?
-pub fn SkinnedMesh::new(@asset.Handle[Mesh], Array[@core.Entity], Array[SkinningMat4], mesh_root? : @core.Entity?) -> Self
-pub fn SkinnedMesh::source_mesh(Self) -> @asset.Handle[Mesh]
+pub fn SkinnedMesh::new(@asset.Handle[SkinnedMeshInverseBindposes], Array[@core.Entity]) -> Self
 pub impl @ecs.Component for SkinnedMesh
+
+pub struct SkinnedMeshInverseBindposes {
+  values : Array[SkinningMat4]
+}
+pub fn SkinnedMeshInverseBindposes::get(Self, Int) -> SkinningMat4?
+pub fn SkinnedMeshInverseBindposes::len(Self) -> Int
+pub fn SkinnedMeshInverseBindposes::new(Array[SkinningMat4]) -> Self
+pub fn SkinnedMeshInverseBindposes::values(Self) -> Array[SkinningMat4]
 
 pub struct SkinningMat4 {
   m00 : Float

@@ -337,8 +337,21 @@ pub fn render3d_extract_skinning_matrices(
     is Some(skinned_mesh) else {
     return None
   }
+  let inverse_bindposes_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+  ] = @asset.assets_resource_key()
+  let inverse_bindposes_assets = match
+    (try! world.get_resource(inverse_bindposes_assets_key)) {
+    Some(assets) => assets
+    None => return None
+  }
+  let inverse_bindposes_handle = skinned_mesh.inverse_bindposes()
+  let inverse_bindposes_asset = match
+    inverse_bindposes_assets.get(inverse_bindposes_handle) {
+    Some(asset) => asset
+    None => return None
+  }
   let joints = skinned_mesh.joints()
-  let inverse_bindposes = skinned_mesh.inverse_bindposes()
   if joints.length() == 0 {
     return None
   }
@@ -382,10 +395,9 @@ pub fn render3d_extract_skinning_matrices(
     let joint_world = render3d_entity_global_or_cached_transform(
       world, joint_entity, world_transform_cache_ref,
     )
-    let inverse_bindpose = if joint_index < inverse_bindposes.length() {
-      inverse_bindposes[joint_index]
-    } else {
-      identity_inverse_bindpose
+    let inverse_bindpose = match inverse_bindposes_asset.get(joint_index) {
+      Some(inverse_bindpose) => inverse_bindpose
+      None => identity_inverse_bindpose
     }
     let joint_matrix = mesh_world_inverse
       .mul(@mesh.SkinningMat4::from_transform(joint_world))

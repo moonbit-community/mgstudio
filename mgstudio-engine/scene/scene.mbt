@@ -31,7 +31,7 @@ pub struct SceneNode3d {
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
   skinned_joint_node_indices : Array[Int]?
-  skinned_inverse_bindposes : Array[@mesh.SkinningMat4]?
+  skinned_inverse_bindposes : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]?
   default_morph_weights : Array[Float]?
 }
 
@@ -54,7 +54,7 @@ pub fn SceneNode3d::new(
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
   gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
   skinned_joint_node_indices? : Array[Int]? = None,
-  skinned_inverse_bindposes? : Array[@mesh.SkinningMat4]? = None,
+  skinned_inverse_bindposes? : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]? = None,
   default_morph_weights? : Array[Float]? = None,
 ) -> SceneNode3d {
   SceneNode3d::{

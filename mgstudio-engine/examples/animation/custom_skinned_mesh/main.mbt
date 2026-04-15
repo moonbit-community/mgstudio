@@ -86,9 +86,28 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let source_mesh = @mesh.Mesh::from_3d_geometry(build_skinned_strip())
-  let source_handle = @pbr.mesh_assets_mut_or_abort().val.add(source_mesh)
+  ignore(@pbr.mesh_assets_mut_or_abort().val.add(source_mesh))
   let instance_handle = @pbr.mesh_assets_mut_or_abort().val.add(
     @mesh.Mesh::from_3d_geometry(build_skinned_strip()),
+  )
+  let inverse_bindposes_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+  ] = @asset.assets_resource_key()
+  let inverse_bindposes_assets_ref = match
+    (try! world.get_resource_ref_mut(inverse_bindposes_assets_key)) {
+    Some(assets_ref) => assets_ref
+    None =>
+      abort(
+        "missing Assets<SkinnedMeshInverseBindposes> resource; MeshPlugin must initialize it",
+      )
+  }
+  let inverse_bindposes_handle = inverse_bindposes_assets_ref.val.add(
+    @mesh.SkinnedMeshInverseBindposes::new([
+      @mesh.SkinningMat4::identity(),
+      @mesh.SkinningMat4::inverse_transform(
+        @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
+      ),
+    ]),
   )
   let material_handle = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.8F, 1.0F)),
@@ -132,17 +151,9 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(mesh_entity)
     .insert(
       (
-        @mesh.SkinnedMesh::new(
-          source_handle,
-          [first_joint, second_joint],
-          [
-            @mesh.SkinningMat4::identity(),
-            @mesh.SkinningMat4::inverse_transform(
-              @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
-            ),
-          ],
-          mesh_root=Some(root),
-        ),
+        @mesh.SkinnedMesh::new(inverse_bindposes_handle, [
+          first_joint, second_joint,
+        ]),
         @mesh.DynamicSkinnedMeshBounds::new(),
       ),
     ),
