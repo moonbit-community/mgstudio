@@ -667,7 +667,7 @@ fn[M : Material2d] material2d_plugin_build(
 }
 
 ///|
-pub fn[M : Material2d] material2d_plugin(
+pub fn[M] material2d_plugin(
   plugin : Material2dPlugin[M],
 ) -> Material2dPlugin[M] {
   plugin

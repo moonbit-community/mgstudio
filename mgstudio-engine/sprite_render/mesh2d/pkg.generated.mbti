@@ -23,7 +23,7 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@sprite.Wireframe2dColor]
 
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
-pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> @sprite.Material2dPlugin[M]
+pub fn[M] material2d_plugin(@sprite.Material2dPlugin[M]) -> @sprite.Material2dPlugin[M]
 
 // Errors
 

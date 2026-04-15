@@ -57,6 +57,13 @@ pub fn DefaultPlugins::set_window(
 }
 
 ///|
+pub fn DefaultPlugins::set_asset(
+  plugin : @asset.AssetPlugin,
+) -> @app.PluginGroupBuilder[@ecs.World] {
+  DefaultPlugins::set(plugin)
+}
+
+///|
 pub struct MinimalPlugins {}
 
 ///|

@@ -3,6 +3,7 @@ package "Milky2018/mgstudio"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/window",
 }
@@ -17,6 +18,7 @@ pub struct DefaultPlugins {
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
 pub fn DefaultPlugins::default() -> Self
 pub fn[P : @app.Plugin] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
+pub fn DefaultPlugins::set_asset(@asset.AssetPlugin) -> @app.PluginGroupBuilder[@ecs.World]
 pub fn DefaultPlugins::set_window(@window.WindowPlugin) -> @app.PluginGroupBuilder[@ecs.World]
 pub impl @app.Plugin for DefaultPlugins
 
