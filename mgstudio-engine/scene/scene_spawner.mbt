@@ -502,10 +502,10 @@ fn scene_spawn_instance_when_ready(
       try! world.set_by_key(child, @sprite.Camera::component(), camera)
     }
     if node.camera3d is Some(camera3d) {
-      try! world.set_by_key(child, @pbr.Camera3d::component(), camera3d)
+      try! world.set_by_key(child, @camera.Camera3d::component(), camera3d)
     }
     if node.projection is Some(projection) {
-      try! world.set_by_key(child, @pbr.Projection::component(), projection)
+      try! world.set_by_key(child, @camera.Projection::component(), projection)
     }
     if node.directional_light is Some(directional_light) {
       try! world.set_by_key(

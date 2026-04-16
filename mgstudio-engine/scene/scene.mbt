@@ -19,8 +19,8 @@ pub struct SceneNode3d {
   mesh : @pbr.Mesh3d?
   material : @pbr.MeshMaterial3d?
   camera : @sprite.Camera?
-  camera3d : @pbr.Camera3d?
-  projection : @pbr.Projection?
+  camera3d : @camera.Camera3d?
+  projection : @camera.Projection?
   directional_light : @light.DirectionalLight?
   point_light : @light.PointLight?
   spot_light : @light.SpotLight?
@@ -63,8 +63,8 @@ pub fn SceneNode3d::new(
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
   gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
   camera? : @sprite.Camera? = None,
-  camera3d? : @pbr.Camera3d? = None,
-  projection? : @pbr.Projection? = None,
+  camera3d? : @camera.Camera3d? = None,
+  projection? : @camera.Projection? = None,
   directional_light? : @light.DirectionalLight? = None,
   point_light? : @light.PointLight? = None,
   spot_light? : @light.SpotLight? = None,
@@ -117,8 +117,8 @@ pub fn SceneNode3d::new_empty(
   gltf_skin_index? : @gltf.GltfSkinIndex? = None,
   gltf_extras? : @gltf.GltfExtras? = None,
   camera? : @sprite.Camera? = None,
-  camera3d? : @pbr.Camera3d? = None,
-  projection? : @pbr.Projection? = None,
+  camera3d? : @camera.Camera3d? = None,
+  projection? : @camera.Projection? = None,
   directional_light? : @light.DirectionalLight? = None,
   point_light? : @light.PointLight? = None,
   spot_light? : @light.SpotLight? = None,

@@ -1114,8 +1114,8 @@ fn gltf_parse_node_light_index(obj : Map[String, Json]) -> Int? {
 fn gltf_parse_camera_projection(
   obj : Map[String, Json],
 ) -> GltfCameraProjectionDef {
-  let perspective_default = @pbr.PerspectiveProjection3d::default()
-  let orthographic_default = @pbr.OrthographicProjection3d::default_3d()
+  let perspective_default = @camera.PerspectiveProjection3d::default()
+  let orthographic_default = @camera.OrthographicProjection3d::default_3d()
   let camera_type = json_get_string(obj, "type").unwrap_or("")
   if camera_type == "orthographic" &&
     json_get_object(obj, "orthographic") is Some(orthographic_obj) {
@@ -1171,8 +1171,8 @@ fn gltf_parse_cameras(root : Map[String, Json]) -> Array[GltfCameraDef] {
       } else {
         cameras.push({
           projection: Perspective(
-            @pbr.PerspectiveProjection3d::default().fov(),
-            @pbr.PerspectiveProjection3d::default().near(),
+            @camera.PerspectiveProjection3d::default().fov(),
+            @camera.PerspectiveProjection3d::default().near(),
             None,
             None,
           ),
@@ -2620,17 +2620,17 @@ fn gltf_loader_skinned_mesh_bounds_policy_from_settings(
 ///|
 priv struct GltfNodeCameraComponents {
   camera : @sprite.Camera
-  camera3d : @pbr.Camera3d
-  projection : @pbr.Projection
+  camera3d : @camera.Camera3d
+  projection : @camera.Projection
 }
 
 ///|
 fn gltf_camera_projection_from_def(
   definition : GltfCameraProjectionDef,
-) -> @pbr.Projection {
+) -> @camera.Projection {
   match definition {
     Perspective(yfov, znear, zfar, aspect_ratio) => {
-      let mut projection = @pbr.PerspectiveProjection3d::default()
+      let mut projection = @camera.PerspectiveProjection3d::default()
         .with_fov(yfov)
         .with_near(znear)
       if zfar is Some(far_clip) {
@@ -2639,15 +2639,15 @@ fn gltf_camera_projection_from_def(
       if aspect_ratio is Some(aspect) {
         projection = projection.with_aspect_ratio(aspect)
       }
-      @pbr.Projection::Perspective(projection)
+      @camera.Projection::Perspective(projection)
     }
     Orthographic(xmag, znear, zfar) =>
-      @pbr.Projection::Orthographic(
-        @pbr.OrthographicProjection3d::default_3d()
+      @camera.Projection::Orthographic(
+        @camera.OrthographicProjection3d::default_3d()
         .with_near(znear)
         .with_far(zfar)
         .with_scaling_mode(
-          @pbr.OrthographicScalingMode3d::FixedHorizontal(xmag),
+          @camera.OrthographicScalingMode3d::FixedHorizontal(xmag),
         ),
       )
   }
@@ -2667,7 +2667,7 @@ fn gltf_scene_node_camera_components(
     !active_camera_found_ref.val,
   )
   active_camera_found_ref.val = true
-  let camera3d = @pbr.Camera3d::default()
+  let camera3d = @camera.Camera3d::default()
   let projection = gltf_camera_projection_from_def(
     doc.cameras[camera_index].projection,
   )

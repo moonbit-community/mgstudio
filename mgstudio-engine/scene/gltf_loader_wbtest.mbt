@@ -676,7 +676,7 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
     Some(camera_components) => {
       debug_inspect(camera_components.camera.is_active, content="true")
       let is_perspective = match camera_components.projection {
-        @pbr.Projection::Perspective(_) => true
+        @camera.Projection::Perspective(_) => true
         _ => false
       }
       debug_inspect(is_perspective, content="true")
