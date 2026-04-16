@@ -16,8 +16,38 @@
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs`.
 
 ///|
+const VISIBILITY_PLUGIN_NAME : String = "mgstudio.camera.visibility.VisibilityPlugin"
+
+///|
+pub struct VisibilityPlugin {}
+
+///|
+pub fn VisibilityPlugin::default() -> VisibilityPlugin {
+  VisibilityPlugin::{  }
+}
+
+///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  visibility_range_plugin(@root_visibility.visibility_plugin(app))
+  visibility_plugin_with(app, VisibilityPlugin::default())
+}
+
+///|
+pub fn visibility_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : VisibilityPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  @root_visibility.visibility_plugin(app)
+}
+
+///|
+pub impl @app.Plugin for VisibilityPlugin with name(_self) {
+  VISIBILITY_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for VisibilityPlugin with build(self, app) {
+  visibility_plugin_with(app, self)
 }
 
 ///|

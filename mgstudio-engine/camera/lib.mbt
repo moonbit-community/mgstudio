@@ -75,9 +75,9 @@ pub fn camera_projection_plugin(
 
 ///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @camera_visibility.visibility_plugin(
-    app
-    .init_resource(fn() { @sprite.ClearColor::default() })
-    .add_plugins(CameraProjectionPlugin::default()),
-  )
+  app
+  .init_resource(fn() { @sprite.ClearColor::default() })
+  .add_plugins(CameraProjectionPlugin::default())
+  .add_plugins(@camera_visibility.VisibilityPlugin::default())
+  .add_plugins(@camera_visibility.VisibilityRangePlugin::default())
 }

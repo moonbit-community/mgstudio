@@ -38,6 +38,8 @@ pub fn visibility_component_keys() -> (@ecs.ComponentKey[@Milky2018/mgstudio/vis
 
 pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn visibility_plugin_with(@app.App[@ecs.World], VisibilityPlugin) -> @app.App[@ecs.World]
+
 pub fn visibility_range_abrupt(Float, Float) -> @Milky2018/mgstudio/visibility.VisibilityRange
 
 pub fn visibility_range_always_visible() -> @Milky2018/mgstudio/visibility.VisibilityRange
@@ -59,6 +61,11 @@ pub fn visibility_range_plugin_with(@app.App[@ecs.World], VisibilityRangePlugin)
 // Errors
 
 // Types and methods
+pub struct VisibilityPlugin {
+}
+pub fn VisibilityPlugin::default() -> Self
+pub impl @app.Plugin for VisibilityPlugin
+
 pub struct VisibilityRangePlugin {
 }
 pub fn VisibilityRangePlugin::default() -> Self
