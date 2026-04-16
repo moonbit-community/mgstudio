@@ -234,7 +234,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Camera3d::default(),
+        @camera.Camera3d::default(),
         @transform.Transform::from_translation(camera_translation).looking_at(
           @math.Vec3::new(
             camera_translation.x * 0.2F,
