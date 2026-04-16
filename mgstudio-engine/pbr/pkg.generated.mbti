@@ -503,8 +503,6 @@ pub let render3d_set_queue_sweep : String
 
 pub let render3d_set_render : String
 
-pub let render3d_set_update_frusta : String
-
 pub fn render3d_should_apply_cpu_frustum_culling_flags(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit

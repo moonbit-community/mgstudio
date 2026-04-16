@@ -213,11 +213,6 @@ fn mark_3d_meshes_as_changed_if_their_assets_changed(
 pub let render3d_set_extract : @app.SystemSet = @render.render_system_set_extract_commands
 
 ///|
-pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
-  "mgstudio.render3d.update_frusta",
-)
-
-///|
 pub let render3d_set_prepare_resources_flush : @app.SystemSet = @render.render_system_set_prepare_resources_flush
 
 ///|
