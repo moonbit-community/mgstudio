@@ -43,6 +43,8 @@ pub fn camera_projection_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let camera_update_systems : String
 
+pub fn camera_viewport_clamp_to_size(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
+
 pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn camera_world_to_viewport(@math.Vec3, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
@@ -111,6 +113,8 @@ pub using @pbr {type CameraDeferredConfig3d}
 
 pub using @pbr {type CameraDeferredMode3d}
 
+pub using @sprite {type CameraTargetInfo}
+
 pub using @pbr {type DepthOfField}
 
 pub using @pbr {type DepthOfFieldMode}
@@ -141,9 +145,13 @@ pub using @pbr {type Projection}
 
 pub using @render {type ProjectionMatrix3d}
 
+pub using @sprite {type RenderTarget}
+
 pub using @math {type BoundingSphere as Sphere}
 
 pub using @render {type SubCameraView3d}
+
+pub using @sprite {type Viewport}
 
 pub using @primitives {trait MeshAabb}
 

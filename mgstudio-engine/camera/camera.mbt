@@ -17,6 +17,15 @@
 /// Runtime implementation currently lives in `Milky2018/mgstudio/pbr`.
 
 ///|
+pub type Viewport = @sprite.Viewport
+
+///|
+pub type RenderTarget = @sprite.RenderTarget
+
+///|
+pub type CameraTargetInfo = @sprite.CameraTargetInfo
+
+///|
 pub type Camera3d = @pbr.Camera3d
 
 ///|
@@ -124,4 +133,13 @@ pub fn mesh_ray_cast_from_camera_first(
     world, viewport_position, camera, projection, camera_transform, viewport_size,
     render_scale, settings,
   )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::Viewport::clamp_to_size`.
+pub fn camera_viewport_clamp_to_size(
+  viewport : Viewport,
+  target_size : @math.IVec2,
+) -> Viewport {
+  viewport.clamp_to_size(target_size)
 }
