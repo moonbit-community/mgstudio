@@ -80,6 +80,8 @@ pub impl @ecs.Component for RenderVisibleEntities
 // Type aliases
 pub using @Milky2018/mgstudio/visibility {type InheritedVisibility}
 
+pub using @Milky2018/mgstudio/visibility {type NoCpuCulling}
+
 pub using @Milky2018/mgstudio/visibility {type NoFrustumCulling}
 
 pub using @Milky2018/mgstudio/visibility {type ViewVisibility}

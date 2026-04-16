@@ -20,6 +20,8 @@ pub let ecs_key_visible_entity_ranges : @ecs.ResourceKey[VisibleEntityRanges]
 
 pub fn inherited_visibility(Bool) -> @Milky2018/mgstudio/visibility.InheritedVisibility
 
+pub fn no_cpu_culling() -> @Milky2018/mgstudio/visibility.NoCpuCulling
+
 pub fn no_frustum_culling() -> @Milky2018/mgstudio/visibility.NoFrustumCulling
 
 pub fn render_layers_default() -> @sprite.RenderLayers

@@ -91,6 +91,7 @@ priv struct Camera3dViewPayload {
   target_size : @math.IVec2
   scale_factor : Float
   layers : @sprite.RenderLayers
+  has_no_cpu_culling : Bool
 }
 
 ///|
@@ -120,6 +121,7 @@ priv struct Mesh3dExtractedPayload {
   has_not_shadow_receiver : Bool
   has_transmitted_shadow_receiver : Bool
   has_no_frustum_culling : Bool
+  has_no_cpu_culling : Bool
   layers : @sprite.RenderLayers
   has_wireframe : Bool
   has_no_wireframe : Bool

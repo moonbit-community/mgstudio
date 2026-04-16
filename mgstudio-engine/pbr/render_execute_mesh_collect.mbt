@@ -56,6 +56,10 @@ fn render3d_execute_collect_meshes(
       @visibility.ecs_key_no_frustum_culling,
     ) >
     0
+  let has_no_cpu_culling_components = source_world.component_count(
+      @visibility.ecs_key_no_cpu_culling,
+    ) >
+    0
   let has_not_shadow_receiver_components = source_world.component_count(
       ecs_key_not_shadow_receiver,
     ) >
@@ -227,6 +231,12 @@ fn render3d_execute_collect_meshes(
     } else {
       false
     }
+    let has_no_cpu_culling = if has_no_cpu_culling_components {
+      (try! source_world.get_by_key(entity, @visibility.ecs_key_no_cpu_culling))
+      is Some(_)
+    } else {
+      false
+    }
     let has_not_shadow_receiver = if has_not_shadow_receiver_components {
       (try! source_world.get_by_key(entity, ecs_key_not_shadow_receiver))
       is Some(_)
@@ -276,6 +286,7 @@ fn render3d_execute_collect_meshes(
         has_not_shadow_receiver,
         has_transmitted_shadow_receiver,
         has_no_frustum_culling,
+        has_no_cpu_culling,
         layers,
         has_wireframe,
         has_no_wireframe,

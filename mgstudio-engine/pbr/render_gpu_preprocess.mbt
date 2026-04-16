@@ -77,12 +77,28 @@ fn render3d_mesh_frustum_visible(
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
+// CPU frustum culling is applied only when all three opt-out flags are false:
+// `!no_frustum_culling && !no_cpu_culling_camera && !no_cpu_culling_entity`.
+pub fn render3d_should_apply_cpu_frustum_culling_flags(
+  has_no_frustum_culling : Bool,
+  camera_has_no_cpu_culling : Bool,
+  entity_has_no_cpu_culling : Bool,
+) -> Bool {
+  !has_no_frustum_culling &&
+  !camera_has_no_cpu_culling &&
+  !entity_has_no_cpu_culling
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  camera_has_no_cpu_culling : Bool,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -103,7 +119,12 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       ) {
       continue
     }
-    if !payload.has_no_frustum_culling &&
+    let should_apply_cpu_frustum_culling = render3d_should_apply_cpu_frustum_culling_flags(
+      payload.has_no_frustum_culling,
+      camera_has_no_cpu_culling,
+      payload.has_no_cpu_culling,
+    )
+    if should_apply_cpu_frustum_culling &&
       !render3d_mesh_frustum_visible(
         payload, camera_frustum_planes, mesh_preprocess_static_cache,
       ) {
@@ -160,6 +181,7 @@ fn render3d_collect_meshes_for_gpu_building(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  camera_has_no_cpu_culling : Bool,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
   for i in 0..<meshes.length() {
@@ -180,7 +202,12 @@ fn render3d_collect_meshes_for_gpu_building(
       ) {
       continue
     }
-    if !payload.has_no_frustum_culling &&
+    let should_apply_cpu_frustum_culling = render3d_should_apply_cpu_frustum_culling_flags(
+      payload.has_no_frustum_culling,
+      camera_has_no_cpu_culling,
+      payload.has_no_cpu_culling,
+    )
+    if should_apply_cpu_frustum_culling &&
       !render3d_mesh_frustum_visible(
         payload, camera_frustum_planes, mesh_preprocess_static_cache,
       ) {
@@ -1316,11 +1343,13 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  camera_has_no_cpu_culling : Bool,
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
   // collect mesh work items, then write batched instance work payloads.
   let work_items = render3d_collect_meshes_for_gpu_building(
     meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
+    camera_has_no_cpu_culling,
   )
   render3d_write_batched_instance_buffers(work_items)
 }
@@ -1332,14 +1361,17 @@ fn render3d_queue_mesh_phase_items(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  camera_has_no_cpu_culling : Bool,
   use_gpu_instance_buffer_builder : Bool,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
       meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
+      camera_has_no_cpu_culling,
     )
   }
   render3d_queue_mesh_phase_items_cpu_builder(
     meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
+    camera_has_no_cpu_culling,
   )
 }

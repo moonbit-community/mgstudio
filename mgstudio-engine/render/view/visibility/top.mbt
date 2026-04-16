@@ -28,6 +28,9 @@ pub type ViewVisibility = @root_visibility.ViewVisibility
 pub type NoFrustumCulling = @root_visibility.NoFrustumCulling
 
 ///|
+pub type NoCpuCulling = @root_visibility.NoCpuCulling
+
+///|
 pub type VisibilityRange = @root_visibility.VisibilityRange
 
 ///|

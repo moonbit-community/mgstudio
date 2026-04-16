@@ -33,6 +33,11 @@ pub let ecs_key_no_frustum_culling : @ecs.ComponentKey[NoFrustumCulling] = @ecs.
 )
 
 ///|
+pub let ecs_key_no_cpu_culling : @ecs.ComponentKey[NoCpuCulling] = @ecs.register_component(
+  debug_name="visibility.no_cpu_culling",
+)
+
+///|
 pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange] = @ecs.register_component(
   debug_name="visibility.visibility_range",
 )
@@ -55,6 +60,11 @@ pub impl @ecs.Component for ViewVisibility with component() {
 ///|
 pub impl @ecs.Component for NoFrustumCulling with component() {
   ecs_key_no_frustum_culling
+}
+
+///|
+pub impl @ecs.Component for NoCpuCulling with component() {
+  ecs_key_no_cpu_culling
 }
 
 ///|

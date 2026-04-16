@@ -42,6 +42,10 @@ fn render3d_execute_collect_cameras(
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
+  let has_no_cpu_culling_components = source_world.component_count(
+      @visibility.ecs_key_no_cpu_culling,
+    ) >
+    0
   source_world.for_each_component(ecs_key_camera3d, fn(entity, camera3d) {
     let camera = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
@@ -139,6 +143,12 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
+    let has_no_cpu_culling = if has_no_cpu_culling_components {
+      (try! source_world.get_by_key(entity, @visibility.ecs_key_no_cpu_culling))
+      is Some(_)
+    } else {
+      false
+    }
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_ref,
     )
@@ -226,6 +236,7 @@ fn render3d_execute_collect_cameras(
             target_size: target_info.target_size,
             scale_factor: target_info.scale_factor,
             layers,
+            has_no_cpu_culling,
           },
         })
       }

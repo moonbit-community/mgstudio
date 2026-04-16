@@ -69,6 +69,7 @@ fn render3d_build_camera_queue_entry(
       camera.transform,
       camera_frustum_planes,
       phase_state_ref.val.mesh_preprocess_static_cache,
+      camera.has_no_cpu_culling,
       camera_indirect_enabled,
     ),
     meshes,

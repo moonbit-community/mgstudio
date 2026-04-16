@@ -218,3 +218,19 @@ test "visibility: view visibility hidden/get helpers match bevy semantics" {
   debug_inspect(@visibility.ViewVisibility::new(true).get(), content="true")
   debug_inspect(@visibility.ViewVisibility::hidden().get(), content="false")
 }
+
+///|
+test "visibility: no-cpu-culling marker has stable default and ecs key" {
+  let world = @ecs.World::new()
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_no_cpu_culling,
+    @visibility.NoCpuCulling::default(),
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @visibility.ecs_key_no_cpu_culling))
+    is Some(_),
+    content="true",
+  )
+}
