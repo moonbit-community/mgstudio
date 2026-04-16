@@ -975,6 +975,7 @@ pub struct Viewport {
   depth_min : Float
   depth_max : Float
 }
+pub fn Viewport::clamp_to_size(Self, @math.IVec2) -> Self
 pub fn Viewport::default() -> Self
 pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 pub fn Viewport::new_with_depth(@math.IVec2, @math.IVec2, Float, Float) -> Self

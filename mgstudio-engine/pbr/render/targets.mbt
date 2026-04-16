@@ -132,40 +132,5 @@ pub fn render3d_clamp_viewport(
   viewport : @sprite.Viewport,
   target_size : @math.IVec2,
 ) -> @sprite.Viewport {
-  let mut position_x = viewport.physical_position.x
-  let mut position_y = viewport.physical_position.y
-  let mut size_x = viewport.physical_size.x
-  let mut size_y = viewport.physical_size.y
-  if position_x < 0 {
-    position_x = 0
-  }
-  if position_y < 0 {
-    position_y = 0
-  }
-  if size_x < 0 {
-    size_x = 0
-  }
-  if size_y < 0 {
-    size_y = 0
-  }
-  let max_width = if target_size.x - position_x < 0 {
-    0
-  } else {
-    target_size.x - position_x
-  }
-  let max_height = if target_size.y - position_y < 0 {
-    0
-  } else {
-    target_size.y - position_y
-  }
-  if size_x > max_width {
-    size_x = max_width
-  }
-  if size_y > max_height {
-    size_y = max_height
-  }
-  @sprite.Viewport::new(
-    @math.IVec2::new(position_x, position_y),
-    @math.IVec2::new(size_x, size_y),
-  ).with_depth(viewport.depth_min, viewport.depth_max)
+  viewport.clamp_to_size(target_size)
 }
