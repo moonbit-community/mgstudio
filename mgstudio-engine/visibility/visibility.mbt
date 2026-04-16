@@ -102,6 +102,21 @@ pub fn InheritedVisibility::new(visible : Bool) -> InheritedVisibility {
 }
 
 ///|
+pub fn InheritedVisibility::hidden() -> InheritedVisibility {
+  InheritedVisibility::new(false)
+}
+
+///|
+pub fn InheritedVisibility::visible() -> InheritedVisibility {
+  InheritedVisibility::new(true)
+}
+
+///|
+pub fn InheritedVisibility::get(self : InheritedVisibility) -> Bool {
+  self.visible
+}
+
+///|
 pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
   self.visible
 }
@@ -125,6 +140,16 @@ pub impl @json.FromJson for ViewVisibility with from_json(json, _path) {
 ///|
 pub fn ViewVisibility::new(visible : Bool) -> ViewVisibility {
   ViewVisibility::{ visible, }
+}
+
+///|
+pub fn ViewVisibility::hidden() -> ViewVisibility {
+  ViewVisibility::new(false)
+}
+
+///|
+pub fn ViewVisibility::get(self : ViewVisibility) -> Bool {
+  self.visible
 }
 
 ///|

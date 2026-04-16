@@ -200,3 +200,21 @@ test "visibility: toggle_visible_hidden matches bevy semantics" {
     content="Inherited",
   )
 }
+
+///|
+test "visibility: inherited visibility visible-hidden helpers match bevy semantics" {
+  debug_inspect(
+    @visibility.InheritedVisibility::visible().get(),
+    content="true",
+  )
+  debug_inspect(
+    @visibility.InheritedVisibility::hidden().get(),
+    content="false",
+  )
+}
+
+///|
+test "visibility: view visibility hidden/get helpers match bevy semantics" {
+  debug_inspect(@visibility.ViewVisibility::new(true).get(), content="true")
+  debug_inspect(@visibility.ViewVisibility::hidden().get(), content="false")
+}
