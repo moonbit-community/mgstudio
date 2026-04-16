@@ -865,11 +865,14 @@ fn text_ecs_bundle_from_entity(
     Some(y_axis) => y_axis
     None => YAxisOrientation::TopToBottom
   }
-  let no_frustum_culling = world.contains_by_key(
-    entity, @visibility.ecs_key_no_frustum_culling,
-  ) catch {
-    _ => false
-  }
+  let no_frustum_culling = (world.contains_by_key(
+      entity, @visibility.ecs_key_no_frustum_culling,
+    ) catch {
+      _ => false
+    }) ||
+    (world.contains_by_key(entity, @visibility.ecs_key_no_cpu_culling) catch {
+      _ => false
+    })
   (
     Text2dBundle::{
       text,

@@ -107,6 +107,34 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
 }
 
 ///|
+test "ecs text bridge treats NoCpuCulling as no-frustum-culling opt-out" {
+  reset_text_ecs_test_state()
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let font = TextFont::default()
+  let transform = @transform.Transform::identity()
+  try! (world.entity_mut(entity).insert_component(Text2d::new("NoCpu"))
+  |> ignore)
+  try! (world.entity_mut(entity).insert_component(font) |> ignore)
+  try! (world.entity_mut(entity).insert_component(transform) |> ignore)
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_no_cpu_culling,
+    @visibility.NoCpuCulling::default(),
+  )
+
+  let (bundle, _view_visible) = text_ecs_bundle_from_entity(
+    world,
+    entity,
+    Text2d::new("NoCpu"),
+    font,
+    transform,
+  )
+
+  debug_inspect(bundle.no_frustum_culling, content="true")
+}
+
+///|
 test "ecs text cleanup removes dead entity entries" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
