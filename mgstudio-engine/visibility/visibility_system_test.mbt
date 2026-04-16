@@ -152,3 +152,51 @@ test "visibility: VisibilityRange constructors" {
   debug_inspect(invisible.end_margin_min, content="0")
   debug_inspect(invisible.use_aabb, content="false")
 }
+
+///|
+test "visibility: toggle_inherited_visible matches bevy semantics" {
+  debug_inspect(
+    @visibility.Visibility::Inherited.toggle_inherited_visible(),
+    content="Visible",
+  )
+  debug_inspect(
+    @visibility.Visibility::Visible.toggle_inherited_visible(),
+    content="Inherited",
+  )
+  debug_inspect(
+    @visibility.Visibility::Hidden.toggle_inherited_visible(),
+    content="Hidden",
+  )
+}
+
+///|
+test "visibility: toggle_inherited_hidden matches bevy semantics" {
+  debug_inspect(
+    @visibility.Visibility::Inherited.toggle_inherited_hidden(),
+    content="Hidden",
+  )
+  debug_inspect(
+    @visibility.Visibility::Hidden.toggle_inherited_hidden(),
+    content="Inherited",
+  )
+  debug_inspect(
+    @visibility.Visibility::Visible.toggle_inherited_hidden(),
+    content="Visible",
+  )
+}
+
+///|
+test "visibility: toggle_visible_hidden matches bevy semantics" {
+  debug_inspect(
+    @visibility.Visibility::Visible.toggle_visible_hidden(),
+    content="Hidden",
+  )
+  debug_inspect(
+    @visibility.Visibility::Hidden.toggle_visible_hidden(),
+    content="Visible",
+  )
+  debug_inspect(
+    @visibility.Visibility::Inherited.toggle_visible_hidden(),
+    content="Inherited",
+  )
+}

@@ -51,6 +51,36 @@ pub fn Visibility::is_visible(self : Visibility) -> Bool {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::Visibility::toggle_inherited_visible`.
+pub fn Visibility::toggle_inherited_visible(self : Visibility) -> Visibility {
+  match self {
+    Inherited => Visible
+    Visible => Inherited
+    Hidden => Hidden
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::Visibility::toggle_inherited_hidden`.
+pub fn Visibility::toggle_inherited_hidden(self : Visibility) -> Visibility {
+  match self {
+    Inherited => Hidden
+    Hidden => Inherited
+    Visible => Visible
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::Visibility::toggle_visible_hidden`.
+pub fn Visibility::toggle_visible_hidden(self : Visibility) -> Visibility {
+  match self {
+    Visible => Hidden
+    Hidden => Visible
+    Inherited => Inherited
+  }
+}
+
+///|
 pub struct InheritedVisibility {
   visible : Bool
 } derive(Eq, Debug)
