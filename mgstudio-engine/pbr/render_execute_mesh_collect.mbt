@@ -257,7 +257,7 @@ fn render3d_extract_mesh_for_entity(
   } else {
     None
   }
-  let (skinning_key_hi, skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
+  let (skinning_key_hi, _skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
     skin_uniforms_ref, entity,
   )
   let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh())
@@ -364,7 +364,6 @@ fn render3d_extract_mesh_for_entity(
         has_no_wireframe,
         wireframe_color,
         skinning_key_hi,
-        skinning_key_lo,
         has_previous_skin,
         motion_vector_enabled,
       },

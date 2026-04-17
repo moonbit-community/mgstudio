@@ -412,7 +412,7 @@ fn render3d_execute_camera_main_pass(
       forward_decal=mesh.is_forward_decal,
       shader_path=draw_shader_path,
       skinning_key_hi=mesh.skinning_key_hi,
-      skinning_key_lo=mesh.skinning_key_lo,
+      skinning_key_lo=if mesh.skinning_key_hi >= 0 { 0 } else { -1 },
     )
     if draw_item.phase == RENDER3D_PHASE_TRANSPARENT {
       transparent_draws.push(draw_payload)
