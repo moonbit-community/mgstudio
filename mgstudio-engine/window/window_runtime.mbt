@@ -525,12 +525,95 @@ fn window_resize_constraints_has_finite_max(
 }
 
 ///|
+fn window_monitor_centered_axis(
+  monitor_extent : Int,
+  window_extent : Int,
+  monitor_origin : Int,
+) -> Int {
+  let available = monitor_extent - window_extent
+  let offset = if available <= 0 { 0 } else { available / 2 }
+  monitor_origin + offset
+}
+
+///|
+fn window_apply_centered_position_for_monitor_entity(
+  world : @ecs.World,
+  monitor_entity : @core.Entity,
+  window : HostWindow,
+  resolution : WindowResolution,
+) -> Bool {
+  guard (try! world.get_by_key(monitor_entity, ecs_key_monitor))
+    is Some(monitor) else {
+    return false
+  }
+  let resolution_scale = if resolution.scale_factor() <= 0.0F {
+    1.0F
+  } else {
+    resolution.scale_factor()
+  }
+  let monitor_scale_factor = {
+    let raw = Float::from_double(monitor.scale_factor)
+    if raw <= 0.0F {
+      1.0F
+    } else {
+      raw
+    }
+  }
+  let target_scale_factor = match resolution.scale_factor_override() {
+    Some(scale_factor_override) =>
+      if scale_factor_override <= 0.0F {
+        1.0F
+      } else {
+        scale_factor_override
+      }
+    None => monitor_scale_factor
+  }
+  let width = (Float::from_int(resolution.physical_width()) /
+  resolution_scale *
+  target_scale_factor).to_int()
+  let height = (Float::from_int(resolution.physical_height()) /
+  resolution_scale *
+  target_scale_factor).to_int()
+  let monitor_width = if monitor.physical_width < 0 {
+    0
+  } else {
+    monitor.physical_width
+  }
+  let monitor_height = if monitor.physical_height < 0 {
+    0
+  } else {
+    monitor.physical_height
+  }
+  let centered_x = window_monitor_centered_axis(
+    monitor_width,
+    width,
+    monitor.physical_position.x,
+  )
+  let centered_y = window_monitor_centered_axis(
+    monitor_height,
+    height,
+    monitor.physical_position.y,
+  )
+  host_window_set_position(window, x=centered_x, y=centered_y)
+  true
+}
+
+///|
 fn window_apply_position(
+  world : @ecs.World,
   window : HostWindow,
   position : WindowPosition,
   resolution : WindowResolution,
 ) -> Unit {
-  host_window_set_position_from(window, position, resolution)
+  match position {
+    Centered(Entity(monitor_entity)) =>
+      if !window_apply_centered_position_for_monitor_entity(
+          world, monitor_entity, window, resolution,
+        ) {
+        host_window_set_position_from(window, position, resolution)
+      }
+    _ => host_window_set_position_from(window, position, resolution)
+  }
 }
 
 ///|
@@ -659,7 +742,7 @@ fn window_create_runtime_for_entity(
     width=window.physical_width(),
     height=window.physical_height(),
   )
-  window_apply_position(host_window, window.position, window.resolution)
+  window_apply_position(world, host_window, window.position, window.resolution)
   host_window_set_resizable(host_window, resizable=window.resizable)
   host_window_set_resize_constraints(host_window, window.resize_constraints)
   host_window_set_enabled_buttons(host_window, window.enabled_buttons)
@@ -774,7 +857,12 @@ fn window_sync_requested_window_state(
     runtime_ref.val.last_applied_height = window.physical_height()
   }
   if window.position != runtime_ref.val.last_applied_position {
-    window_apply_position(host_window, window.position, window.resolution)
+    window_apply_position(
+      world,
+      host_window,
+      window.position,
+      window.resolution,
+    )
     runtime_ref.val.last_applied_position = window.position
   }
   if window.visible != runtime_ref.val.last_applied_visible {

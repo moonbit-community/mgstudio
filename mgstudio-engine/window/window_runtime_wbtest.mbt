@@ -63,6 +63,37 @@ test "window runtime: create pass is separated from prepare pass" {
 }
 
 ///|
+test "window runtime: centered monitor entity drives window position on create" {
+  window_runtime_wbtest_prepare_native_event_loop()
+  let world = @ecs.World::new()
+  let monitor_entity = world.spawn()
+  try! world.set_by_key(monitor_entity, ecs_key_monitor, Monitor::{
+    name: Some("test-monitor"),
+    physical_height: 1080,
+    physical_width: 1920,
+    physical_position: @math.IVec2::new(100, 50),
+    refresh_rate_millihertz: None,
+    scale_factor: 1.0,
+    video_modes: [],
+  })
+
+  let window_entity = world.spawn()
+  let window = Window::default()
+  window.position = Centered(Entity(monitor_entity))
+  try! world.set_by_key(window_entity, ecs_key_window, window)
+
+  window_backend_create_windows_system(world)
+  let entries = window_host_entries(world)
+  debug_inspect(entries.length(), content="1")
+  let host_window = entries[0].host_window
+  debug_inspect(host_window_get_position_x(host_window), content="420")
+  debug_inspect(host_window_get_position_y(host_window), content="230")
+
+  try! world.despawn(window_entity)
+  try! world.despawn(monitor_entity)
+}
+
+///|
 test "window runtime: minimize request is consumed during apply" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
