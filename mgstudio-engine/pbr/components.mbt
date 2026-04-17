@@ -509,6 +509,11 @@ pub impl IntoPbrMeshAsset for @math.Cuboid with into_pbr_mesh_asset(self) {
 }
 
 ///|
+pub impl IntoPbrMeshAsset for @math.Plane3d with into_pbr_mesh_asset(self) {
+  @mesh.Mesh3dGeometry::plane(self).to_mesh()
+}
+
+///|
 pub impl IntoPbrMeshAsset for @math.Sphere with into_pbr_mesh_asset(self) {
   mesh3d_geometry_sphere(self.diameter() * 0.5F).to_mesh()
 }

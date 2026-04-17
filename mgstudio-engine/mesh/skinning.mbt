@@ -203,6 +203,34 @@ pub fn SkinningMat4::from_transform(
 }
 
 ///|
+pub fn SkinningMat4::from_global_transform(
+  transform : @transform.GlobalTransform,
+) -> SkinningMat4 {
+  let affine = transform.affine()
+  let x_axis = affine.matrix3.x_axis
+  let y_axis = affine.matrix3.y_axis
+  let z_axis = affine.matrix3.z_axis
+  SkinningMat4::{
+    m00: x_axis.x,
+    m01: y_axis.x,
+    m02: z_axis.x,
+    m03: affine.translation.x,
+    m10: x_axis.y,
+    m11: y_axis.y,
+    m12: z_axis.y,
+    m13: affine.translation.y,
+    m20: x_axis.z,
+    m21: y_axis.z,
+    m22: z_axis.z,
+    m23: affine.translation.z,
+    m30: 0.0F,
+    m31: 0.0F,
+    m32: 0.0F,
+    m33: 1.0F,
+  }
+}
+
+///|
 pub fn SkinningMat4::inverse_transform(
   transform : @transform.Transform,
 ) -> SkinningMat4 {
@@ -342,6 +370,79 @@ pub fn SkinningMat4::mul(
 }
 
 ///|
+pub fn SkinningMat4::mul_write_row_major_f32(
+  self : SkinningMat4,
+  other : SkinningMat4,
+  out : Array[Float],
+  base_index : Int,
+) -> Unit {
+  out[base_index] = self.m00 * other.m00 +
+    self.m01 * other.m10 +
+    self.m02 * other.m20 +
+    self.m03 * other.m30
+  out[base_index + 1] = self.m00 * other.m01 +
+    self.m01 * other.m11 +
+    self.m02 * other.m21 +
+    self.m03 * other.m31
+  out[base_index + 2] = self.m00 * other.m02 +
+    self.m01 * other.m12 +
+    self.m02 * other.m22 +
+    self.m03 * other.m32
+  out[base_index + 3] = self.m00 * other.m03 +
+    self.m01 * other.m13 +
+    self.m02 * other.m23 +
+    self.m03 * other.m33
+  out[base_index + 4] = self.m10 * other.m00 +
+    self.m11 * other.m10 +
+    self.m12 * other.m20 +
+    self.m13 * other.m30
+  out[base_index + 5] = self.m10 * other.m01 +
+    self.m11 * other.m11 +
+    self.m12 * other.m21 +
+    self.m13 * other.m31
+  out[base_index + 6] = self.m10 * other.m02 +
+    self.m11 * other.m12 +
+    self.m12 * other.m22 +
+    self.m13 * other.m32
+  out[base_index + 7] = self.m10 * other.m03 +
+    self.m11 * other.m13 +
+    self.m12 * other.m23 +
+    self.m13 * other.m33
+  out[base_index + 8] = self.m20 * other.m00 +
+    self.m21 * other.m10 +
+    self.m22 * other.m20 +
+    self.m23 * other.m30
+  out[base_index + 9] = self.m20 * other.m01 +
+    self.m21 * other.m11 +
+    self.m22 * other.m21 +
+    self.m23 * other.m31
+  out[base_index + 10] = self.m20 * other.m02 +
+    self.m21 * other.m12 +
+    self.m22 * other.m22 +
+    self.m23 * other.m32
+  out[base_index + 11] = self.m20 * other.m03 +
+    self.m21 * other.m13 +
+    self.m22 * other.m23 +
+    self.m23 * other.m33
+  out[base_index + 12] = self.m30 * other.m00 +
+    self.m31 * other.m10 +
+    self.m32 * other.m20 +
+    self.m33 * other.m30
+  out[base_index + 13] = self.m30 * other.m01 +
+    self.m31 * other.m11 +
+    self.m32 * other.m21 +
+    self.m33 * other.m31
+  out[base_index + 14] = self.m30 * other.m02 +
+    self.m31 * other.m12 +
+    self.m32 * other.m22 +
+    self.m33 * other.m32
+  out[base_index + 15] = self.m30 * other.m03 +
+    self.m31 * other.m13 +
+    self.m32 * other.m23 +
+    self.m33 * other.m33
+}
+
+///|
 pub fn SkinningMat4::transform_point3(
   self : SkinningMat4,
   point : @math.Vec3,
@@ -396,4 +497,28 @@ pub fn SkinningMat4::append_row_major_f32(
   out.push(self.m31)
   out.push(self.m32)
   out.push(self.m33)
+}
+
+///|
+pub fn SkinningMat4::write_row_major_f32(
+  self : SkinningMat4,
+  out : Array[Float],
+  base_index : Int,
+) -> Unit {
+  out[base_index] = self.m00
+  out[base_index + 1] = self.m01
+  out[base_index + 2] = self.m02
+  out[base_index + 3] = self.m03
+  out[base_index + 4] = self.m10
+  out[base_index + 5] = self.m11
+  out[base_index + 6] = self.m12
+  out[base_index + 7] = self.m13
+  out[base_index + 8] = self.m20
+  out[base_index + 9] = self.m21
+  out[base_index + 10] = self.m22
+  out[base_index + 11] = self.m23
+  out[base_index + 12] = self.m30
+  out[base_index + 13] = self.m31
+  out[base_index + 14] = self.m32
+  out[base_index + 15] = self.m33
 }

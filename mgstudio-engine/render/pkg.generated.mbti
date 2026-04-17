@@ -29,6 +29,8 @@ pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
 
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
 
+pub const MESH3D_SKINNING_STORAGE_STRIDE_BYTES : UInt64 = 16384
+
 pub fn app_rendering_enabled() -> Bool
 
 pub fn app_rendering_resume() -> Unit
@@ -211,9 +213,11 @@ pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool
 
 pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool
 
+pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[@renderer.HostMesh3dMainPassDrawEntry]) -> Unit
+
 pub fn host_gpu_prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, anisotropy_texture_id~ : Int, specular_tint_texture_id~ : Int) -> Unit
 
-pub fn host_gpu_prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
+pub fn host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
 
@@ -238,6 +242,8 @@ pub fn host_gpu_surface_target_id_for_window(Int) -> Int
 pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
 
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : @renderer.HostMesh3dPreprocessCameraPayload) -> Unit
+
+pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, skinning_key_hi~ : Int) -> @renderer.HostMesh3dMainPassDrawEntry
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -655,6 +661,8 @@ pub using @renderer {type HostMaterial2dBindGroup}
 pub using @renderer {type HostMaterial2dBinding}
 
 pub using @renderer {type HostMaterial2dBindingValue}
+
+pub using @renderer {type HostMesh3dMainPassDrawEntry}
 
 pub using @renderer {type HostMesh3dPreprocessCameraPayload}
 

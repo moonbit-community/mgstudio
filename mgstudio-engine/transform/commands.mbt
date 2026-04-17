@@ -26,9 +26,7 @@ pub fn set_parent_in_place(
   let child_global = compute_global_transform(world, child)
   let parent_global = compute_global_transform(world, parent)
   if child_global is Some(child_global) && parent_global is Some(parent_global) {
-    let next_local = child_global
-      .reparented_to(parent_global)
-      .compute_transform()
+    let next_local = child_global.reparented_to(parent_global)
     if (try! world.contains_by_key(child, ecs_key_transform)) {
       try! (world.replace(child, ecs_key_transform, next_local) |> ignore)
     } else {

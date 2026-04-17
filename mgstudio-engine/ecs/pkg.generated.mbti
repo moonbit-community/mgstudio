@@ -153,6 +153,20 @@ pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Comp[T]
 
+pub struct ComponentColumn[T] {
+  world : World
+  key : ComponentKey[T]
+  store_ref : @ref.Ref[@core.ComponentStore[ErasedValue]]
+  changed_sequence_table : ComponentSequenceTable
+}
+pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
+pub fn[T] ComponentColumn::for_each_ref(Self[T], (@core.Entity, @ref.Ref[T]) -> Unit) -> Unit
+pub fn[T] ComponentColumn::get(Self[T], @core.Entity) -> T?
+pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Mut[T]?
+pub fn[T] ComponentColumn::get_ref(Self[T], @core.Entity) -> @ref.Ref[T]?
+pub fn[T] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
+pub fn[T] ComponentColumn::set_sequence_only(Self[T], @core.Entity, T) -> Bool
+
 pub(all) enum ComponentHookKind {
   OnAdd
   OnInsert
@@ -194,6 +208,8 @@ pub struct ComponentOn[E, C] {
   marker_component : C?
 }
 pub fn[E, C] ComponentOn::caller(Self[E, C]) -> String?
+
+type ComponentSequenceTable
 
 pub struct DefaultQueryFilters {
   disabling_component_ids : Array[Int]
@@ -575,8 +591,8 @@ pub struct World {
   used_components : Map[Int, Bool]
   added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
-  added_component_sequences : Map[Int, Map[Int, Int]]
-  changed_component_sequences : Map[Int, Map[Int, Int]]
+  added_component_sequences : Map[Int, ComponentSequenceTable]
+  changed_component_sequences : Map[Int, ComponentSequenceTable]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   resource_added_sequences : Map[Int, Int]
@@ -598,6 +614,7 @@ pub fn World::advance_sequence(Self) -> Int
 pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemSequence) -> ChangedComponents[T]
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
+pub fn[T] World::component_column(Self, ComponentKey[T]) -> ComponentColumn[T]?
 pub fn[T] World::component_count(Self, ComponentKey[T]) -> Int
 pub fn[T : Component] World::contains(Self, @core.Entity, key? : ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_by_key(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError

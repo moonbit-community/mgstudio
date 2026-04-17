@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+pub(all) struct SkinBindingFreeRange {
+  offset : Int
+  length : Int
+}
+
+///|
 pub(all) struct Render3dPhaseState {
   mut prepared_camera_order : Array[@core.Entity]
   mut camera_order_needs_refresh : Bool
@@ -24,12 +30,13 @@ pub(all) struct Render3dPhaseState {
   mut morph_weights_current : Array[Float]
   mut morph_weights_prev : Array[Float]
   prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
-  mut next_skin_binding_slot : Int
-  skin_binding_free_slots : Array[Int]
+  mut next_skin_binding_index : Int
+  mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
   skin_joint_count_by_skin : Map[UInt64, Int]
   skin_previous_matrices : Map[UInt64, Array[Float]]
+  mut skin_staging_rows : Array[Float]
   mut total_skin_joints : Int
   skin_upload_queue : Array[@core.Entity]
 }
@@ -47,12 +54,13 @@ pub fn Render3dPhaseState::new() -> Render3dPhaseState {
     morph_weights_current: [],
     morph_weights_prev: [],
     prepared_skin_bindings: {},
-    next_skin_binding_slot: 0,
-    skin_binding_free_slots: [],
+    next_skin_binding_index: 0,
+    skin_binding_free_ranges: [],
     skin_joint_to_skins: {},
     skin_joints_by_skin: {},
     skin_joint_count_by_skin: {},
     skin_previous_matrices: {},
+    skin_staging_rows: [],
     total_skin_joints: 0,
     skin_upload_queue: [],
   }

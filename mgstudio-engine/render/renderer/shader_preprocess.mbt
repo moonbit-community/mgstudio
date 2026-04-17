@@ -24,16 +24,80 @@ fn u16le_pack(xs : Array[Int]) -> Bytes {
 ///|
 fn u32le_pack(xs : Array[UInt]) -> Bytes {
   let n = xs.length()
-  Bytes::makei(n * 4, i => {
-    let word = xs[i / 4]
-    let shift = i % 4 * 8
-    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
-  })
+  let bytes = Array::make(n * 4, (0).to_byte())
+  for i in 0..<n {
+    u32le_write_into(bytes, i * 4, xs[i])
+  }
+  Bytes::from_array(bytes)
 }
 
 ///|
 fn f32le_pack(xs : Array[Float]) -> Bytes {
-  u32le_pack(xs.map(f32_bits))
+  let n = xs.length()
+  let bytes = Array::make(n * 4, (0).to_byte())
+  for i in 0..<n {
+    u32le_write_into(bytes, i * 4, f32_bits(xs[i]))
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn bytes_fixed_staging_make(len : Int) -> FixedArray[Byte] {
+  if len <= 0 {
+    return []
+  }
+  Bytes::make(len, (0).to_byte()).to_fixedarray()
+}
+
+///|
+fn bytes_fixed_staging_zero(staging : FixedArray[Byte]) -> Unit {
+  for i in 0..<staging.length() {
+    staging[i] = (0).to_byte()
+  }
+}
+
+///|
+fn u32le_write_into(
+  bytes : Array[Byte],
+  byte_offset : Int,
+  word : UInt,
+) -> Unit {
+  bytes[byte_offset] = (word & 0xFFU).reinterpret_as_int().to_byte()
+  bytes[byte_offset + 1] = ((word >> 8) & 0xFFU).reinterpret_as_int().to_byte()
+  bytes[byte_offset + 2] = ((word >> 16) & 0xFFU).reinterpret_as_int().to_byte()
+  bytes[byte_offset + 3] = ((word >> 24) & 0xFFU).reinterpret_as_int().to_byte()
+}
+
+///|
+fn u32le_write_into_fixed(
+  bytes : FixedArray[Byte],
+  byte_offset : Int,
+  word : UInt,
+) -> Unit {
+  bytes[byte_offset] = (word & 0xFFU).reinterpret_as_int().to_byte()
+  bytes[byte_offset + 1] = ((word >> 8) & 0xFFU).reinterpret_as_int().to_byte()
+  bytes[byte_offset + 2] = ((word >> 16) & 0xFFU).reinterpret_as_int().to_byte()
+  bytes[byte_offset + 3] = ((word >> 24) & 0xFFU).reinterpret_as_int().to_byte()
+}
+
+///|
+fn f32le_write_into_fixed(
+  bytes : FixedArray[Byte],
+  byte_offset : Int,
+  value : Float,
+) -> Unit {
+  u32le_write_into_fixed(bytes, byte_offset, f32_bits(value))
+}
+
+///|
+fn f32le_pack_into_fixed(
+  bytes : FixedArray[Byte],
+  byte_offset : Int,
+  xs : Array[Float],
+) -> Unit {
+  for i in 0..<xs.length() {
+    f32le_write_into_fixed(bytes, byte_offset + i * 4, xs[i])
+  }
 }
 
 ///|

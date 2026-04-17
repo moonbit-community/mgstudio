@@ -19,6 +19,8 @@ pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
 
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
 
+pub const MESH3D_SKINNING_STORAGE_STRIDE_BYTES : UInt64 = 16384
+
 pub const SURFACE_COMPOSITE_ALPHA_MODE_AUTO : Int = 0
 
 pub const SURFACE_COMPOSITE_ALPHA_MODE_INHERIT : Int = 4
@@ -185,6 +187,8 @@ pub fn host_gpu_request_device() -> Int
 
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
 
+pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, skinning_key_hi~ : Int) -> HostMesh3dMainPassDrawEntry
+
 pub fn mesh3d_gpu_culling_supported() -> Bool
 
 pub fn mesh3d_indexed_indirect_offset(Int) -> UInt64
@@ -211,9 +215,11 @@ pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroup
 
 pub fn pipeline_layout_descriptor_4_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
+pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[HostMesh3dMainPassDrawEntry]) -> Unit
+
 pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, anisotropy_texture_id~ : Int, specular_tint_texture_id~ : Int) -> Unit
 
-pub fn prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
+pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
 pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
 
@@ -454,20 +460,32 @@ pub struct GpuBackend {
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
   mut mesh3d_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_pass_view_uniform_bytes : Bytes?
+  mut mesh3d_pass_view_uniform_frame_count : UInt
+  mut mesh3d_pass_view_uniform_camera_key_hi : Int
+  mut mesh3d_pass_view_uniform_camera_key_lo : Int
+  mut mesh3d_pass_view_uniform_pass_kind : Int
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mut mesh3d_draw_slot_used : Int
-  mut mesh3d_skin_default_buf : @wgpu_mbt.Buffer?
-  mut mesh3d_skin_default_bg : @wgpu_mbt.BindGroup?
-  mesh3d_skin_slots : Array[GpuStorageSlot]
-  mesh3d_skin_slot_indices_by_key : Map[UInt64, Int]
-  mut mesh3d_skin_slot_used : Int
+  mut mesh3d_skin_current_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_skin_current_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_skin_prev_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_skin_prev_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_skin_capacity : UInt64
+  mut mesh3d_skin_staging_bytes : FixedArray[Byte]
+  mut mesh3d_skin_staging_view : Bytes
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu_mbt.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_instance_draw_capacity : UInt64
   mut mesh3d_instance_draw_used : Int
+  mut mesh3d_instance_draw_staging_bytes : FixedArray[Byte]
+  mut mesh3d_instance_draw_staging_view : Bytes
+  mut mesh3d_prepared_draw_camera_key_hi : Int
+  mut mesh3d_prepared_draw_camera_key_lo : Int
+  mut mesh3d_prepared_draw_pass_kind : Int
+  mut mesh3d_prepared_draw_count : Int
   mesh3d_preprocess_camera_upload_states : Array[GpuMesh3dPreprocessCameraUploadState]
   mesh3d_preprocess_camera_upload_state_indices : Map[UInt64, Int]
   mut mesh3d_preprocess_reset_batch_sets_bgl : @wgpu_mbt.BindGroupLayout?
@@ -663,8 +681,9 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_m
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
+pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Array[HostMesh3dMainPassDrawEntry]) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::prepare_mesh3d_skin_binding(Self, Int, Int, Array[Float]) -> Unit
+pub fn GpuBackend::prepare_mesh3d_skin_bindings(Self, Array[Float]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_view_bind_group(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
@@ -850,6 +869,63 @@ pub(all) enum HostMaterial2dBindingValue {
   Uniform(Bytes)
   Texture(Int)
   Sampler(Int)
+}
+
+pub struct HostMesh3dMainPassDrawEntry {
+  draw_storage_index : Int
+  x : Float
+  y : Float
+  z : Float
+  rotation_x : Float
+  rotation_y : Float
+  rotation_z : Float
+  rotation_w : Float
+  scale_x : Float
+  scale_y : Float
+  scale_z : Float
+  color_r : Float
+  color_g : Float
+  color_b : Float
+  color_a : Float
+  texture_id : Int
+  uv_transform_a : Float
+  uv_transform_b : Float
+  uv_transform_c : Float
+  uv_transform_d : Float
+  uv_transform_tx : Float
+  uv_transform_ty : Float
+  uv_transform_mode : Float
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  depth_texture_id : Int
+  emissive_r : Float
+  emissive_g : Float
+  emissive_b : Float
+  metallic : Float
+  roughness : Float
+  reflectance : Float
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  max_relief_mapping_search_steps : Float
+  anisotropy_texture_id : Int
+  anisotropy_strength : Float
+  anisotropy_rotation : Float
+  specular_tint_texture_id : Int
+  specular_tint_r : Float
+  specular_tint_g : Float
+  specular_tint_b : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  alpha_cutoff : Float
+  material_flags : UInt
+  point_shadow_texture_id : Int
+  point_shadow_enabled : Float
+  point_shadow_depth_bias : Float
+  skinning_key_hi : Int
 }
 
 pub(all) struct HostMesh3dPreprocessCameraPayload {

@@ -20,13 +20,376 @@ pub fn set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit {
 }
 
 ///|
-pub fn prepare_mesh3d_skin_binding(
-  key_hi~ : Int,
-  key_lo~ : Int,
-  skinning_matrices~ : Array[Float],
+pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_skin_bindings(skinning_rows)
+  }
+}
+
+///|
+pub struct HostMesh3dMainPassDrawEntry {
+  draw_storage_index : Int
+  x : Float
+  y : Float
+  z : Float
+  rotation_x : Float
+  rotation_y : Float
+  rotation_z : Float
+  rotation_w : Float
+  scale_x : Float
+  scale_y : Float
+  scale_z : Float
+  color_r : Float
+  color_g : Float
+  color_b : Float
+  color_a : Float
+  texture_id : Int
+  uv_transform_a : Float
+  uv_transform_b : Float
+  uv_transform_c : Float
+  uv_transform_d : Float
+  uv_transform_tx : Float
+  uv_transform_ty : Float
+  uv_transform_mode : Float
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  depth_texture_id : Int
+  emissive_r : Float
+  emissive_g : Float
+  emissive_b : Float
+  metallic : Float
+  roughness : Float
+  reflectance : Float
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  max_relief_mapping_search_steps : Float
+  anisotropy_texture_id : Int
+  anisotropy_strength : Float
+  anisotropy_rotation : Float
+  specular_tint_texture_id : Int
+  specular_tint_r : Float
+  specular_tint_g : Float
+  specular_tint_b : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  alpha_cutoff : Float
+  material_flags : UInt
+  point_shadow_texture_id : Int
+  point_shadow_enabled : Float
+  point_shadow_depth_bias : Float
+  skinning_key_hi : Int
+}
+
+///|
+pub fn host_mesh3d_main_pass_draw_entry(
+  draw_storage_index~ : Int,
+  x~ : Float,
+  y~ : Float,
+  z~ : Float,
+  rotation_x~ : Float,
+  rotation_y~ : Float,
+  rotation_z~ : Float,
+  rotation_w~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  scale_z~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_id~ : Int,
+  uv_transform_a~ : Float,
+  uv_transform_b~ : Float,
+  uv_transform_c~ : Float,
+  uv_transform_d~ : Float,
+  uv_transform_tx~ : Float,
+  uv_transform_ty~ : Float,
+  uv_transform_mode~ : Float,
+  normal_texture_id~ : Int,
+  emissive_texture_id~ : Int,
+  metallic_roughness_texture_id~ : Int,
+  occlusion_texture_id~ : Int,
+  depth_texture_id~ : Int,
+  emissive_r~ : Float,
+  emissive_g~ : Float,
+  emissive_b~ : Float,
+  metallic~ : Float,
+  roughness~ : Float,
+  reflectance~ : Float,
+  parallax_depth_scale~ : Float,
+  max_parallax_layer_count~ : Float,
+  max_relief_mapping_search_steps~ : Float,
+  anisotropy_texture_id~ : Int,
+  anisotropy_strength~ : Float,
+  anisotropy_rotation~ : Float,
+  specular_tint_texture_id~ : Int,
+  specular_tint_r~ : Float,
+  specular_tint_g~ : Float,
+  specular_tint_b~ : Float,
+  diffuse_transmission~ : Float,
+  specular_transmission~ : Float,
+  thickness~ : Float,
+  ior~ : Float,
+  alpha_cutoff~ : Float,
+  material_flags~ : UInt,
+  point_shadow_texture_id~ : Int,
+  point_shadow_enabled~ : Float,
+  point_shadow_depth_bias~ : Float,
+  skinning_key_hi~ : Int,
+) -> HostMesh3dMainPassDrawEntry {
+  HostMesh3dMainPassDrawEntry::{
+    draw_storage_index,
+    x,
+    y,
+    z,
+    rotation_x,
+    rotation_y,
+    rotation_z,
+    rotation_w,
+    scale_x,
+    scale_y,
+    scale_z,
+    color_r,
+    color_g,
+    color_b,
+    color_a,
+    texture_id,
+    uv_transform_a,
+    uv_transform_b,
+    uv_transform_c,
+    uv_transform_d,
+    uv_transform_tx,
+    uv_transform_ty,
+    uv_transform_mode,
+    normal_texture_id,
+    emissive_texture_id,
+    metallic_roughness_texture_id,
+    occlusion_texture_id,
+    depth_texture_id,
+    emissive_r,
+    emissive_g,
+    emissive_b,
+    metallic,
+    roughness,
+    reflectance,
+    parallax_depth_scale,
+    max_parallax_layer_count,
+    max_relief_mapping_search_steps,
+    anisotropy_texture_id,
+    anisotropy_strength,
+    anisotropy_rotation,
+    specular_tint_texture_id,
+    specular_tint_r,
+    specular_tint_g,
+    specular_tint_b,
+    diffuse_transmission,
+    specular_transmission,
+    thickness,
+    ior,
+    alpha_cutoff,
+    material_flags,
+    point_shadow_texture_id,
+    point_shadow_enabled,
+    point_shadow_depth_bias,
+    skinning_key_hi,
+  }
+}
+
+///|
+fn GpuBackend::write_mesh3d_main_pass_draw_entry(
+  self : GpuBackend,
+  packed_bytes : FixedArray[Byte],
+  byte_offset : Int,
+  entry : HostMesh3dMainPassDrawEntry,
+) -> Bool raise GpuBackendError {
+  let resolved_normal_texture_id = if entry.normal_texture_id < 0 {
+    ensure_normal_map_fallback_texture(self).id
+  } else {
+    entry.normal_texture_id
+  }
+  guard resolve_mesh3d_texture(self, resolved_normal_texture_id)
+    is Some(normal_texture) else {
+    return false
+  }
+  let textured = entry.texture_id >= 0
+  let normal_textured = entry.normal_texture_id >= 0
+  let emissive_textured = entry.emissive_texture_id >= 0
+  let metallic_roughness_textured = entry.metallic_roughness_texture_id >= 0
+  let occlusion_textured = entry.occlusion_texture_id >= 0
+  let depth_textured = entry.depth_texture_id >= 0
+  let anisotropy_textured = entry.anisotropy_texture_id >= 0
+  let specular_tint_textured = entry.specular_tint_texture_id >= 0
+  let runtime_material_flags = mesh3d_runtime_material_flags(
+    entry.material_flags,
+    entry.normal_texture_id,
+    normal_texture,
+  )
+  let uv_transform_mode = if entry.uv_transform_mode < 0.0F {
+    -1.0F
+  } else if textured ||
+    normal_textured ||
+    emissive_textured ||
+    metallic_roughness_textured ||
+    occlusion_textured ||
+    depth_textured ||
+    anisotropy_textured ||
+    specular_tint_textured {
+    1.0F
+  } else {
+    0.0F
+  }
+  let point_shadow_textured = entry.point_shadow_texture_id >= 0
+  let draw_point_shadow_enabled = if point_shadow_textured &&
+    entry.point_shadow_enabled > 0.5F {
+    1.0F
+  } else {
+    0.0F
+  }
+  let draw_point_shadow_depth_bias = if point_shadow_textured {
+    entry.point_shadow_depth_bias
+  } else {
+    0.0F
+  }
+  if byte_offset < 0 ||
+    byte_offset + MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int() >
+    packed_bytes.length() {
+    return false
+  }
+  mesh3d_draw_uniform_write(
+    packed_bytes,
+    byte_offset,
+    entry.x,
+    entry.y,
+    entry.z,
+    entry.rotation_x,
+    entry.rotation_y,
+    entry.rotation_z,
+    entry.rotation_w,
+    entry.scale_x,
+    entry.scale_y,
+    entry.scale_z,
+    entry.color_r,
+    entry.color_g,
+    entry.color_b,
+    entry.color_a,
+    entry.uv_transform_a,
+    entry.uv_transform_b,
+    entry.uv_transform_c,
+    entry.uv_transform_d,
+    entry.uv_transform_tx,
+    entry.uv_transform_ty,
+    uv_transform_mode,
+    entry.emissive_r,
+    entry.emissive_g,
+    entry.emissive_b,
+    entry.metallic,
+    entry.roughness,
+    entry.reflectance,
+    entry.parallax_depth_scale,
+    entry.max_parallax_layer_count,
+    entry.max_relief_mapping_search_steps,
+    entry.anisotropy_strength,
+    entry.anisotropy_rotation,
+    entry.specular_tint_r,
+    entry.specular_tint_g,
+    entry.specular_tint_b,
+    entry.diffuse_transmission,
+    entry.specular_transmission,
+    entry.thickness,
+    entry.ior,
+    entry.alpha_cutoff,
+    runtime_material_flags,
+    if entry.skinning_key_hi >= 0 {
+      entry.skinning_key_hi.reinterpret_as_uint()
+    } else {
+      0U
+    },
+    draw_point_shadow_enabled,
+    draw_point_shadow_depth_bias,
+  )
+  true
+}
+
+///|
+pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(
+  self : GpuBackend,
+  preprocess_camera_key_hi : Int,
+  preprocess_camera_key_lo : Int,
+  pass_kind : Int,
+  entries : Array[HostMesh3dMainPassDrawEntry],
+) -> Unit raise GpuBackendError {
+  self.mesh3d_prepared_draw_camera_key_hi = -1
+  self.mesh3d_prepared_draw_camera_key_lo = -1
+  self.mesh3d_prepared_draw_pass_kind = -1
+  self.mesh3d_prepared_draw_count = 0
+  let mut max_draw_storage_index = -1
+  for entry in entries {
+    if entry.draw_storage_index > max_draw_storage_index {
+      max_draw_storage_index = entry.draw_storage_index
+    }
+  }
+  if max_draw_storage_index < 0 {
+    return
+  }
+  let required_size = (max_draw_storage_index + 1).to_uint64() *
+    MESH3D_DRAW_STORAGE_STRIDE_BYTES
+  guard self.ensure_mesh3d_instance_draw_binding(required_size)
+    is Some((draw_buffer, _draw_bind_group)) else {
+    return
+  }
+  let packed_len = required_size.to_int()
+  if packed_len <= 0 {
+    return
+  }
+  if self.mesh3d_instance_draw_staging_bytes.length() != packed_len {
+    self.mesh3d_instance_draw_staging_bytes = bytes_fixed_staging_make(
+      packed_len,
+    )
+    self.mesh3d_instance_draw_staging_view = self.mesh3d_instance_draw_staging_bytes.unsafe_reinterpret_as_bytes()
+  }
+  bytes_fixed_staging_zero(self.mesh3d_instance_draw_staging_bytes)
+  for entry in entries {
+    if entry.draw_storage_index < 0 {
+      continue
+    }
+    let base = entry.draw_storage_index *
+      MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
+    guard self.write_mesh3d_main_pass_draw_entry(
+      self.mesh3d_instance_draw_staging_bytes,
+      base,
+      entry,
+    ) else {
+      continue
+    }
+  }
+  self.queue.write_buffer(
+    draw_buffer,
+    0UL,
+    self.mesh3d_instance_draw_staging_view,
+  )
+  self.mesh3d_prepared_draw_camera_key_hi = preprocess_camera_key_hi
+  self.mesh3d_prepared_draw_camera_key_lo = preprocess_camera_key_lo
+  self.mesh3d_prepared_draw_pass_kind = pass_kind
+  self.mesh3d_prepared_draw_count = max_draw_storage_index + 1
+}
+
+///|
+pub fn prepare_mesh3d_main_pass_draw_batch(
+  preprocess_camera_key_hi~ : Int,
+  preprocess_camera_key_lo~ : Int,
+  pass_kind~ : Int,
+  entries~ : Array[HostMesh3dMainPassDrawEntry],
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.prepare_mesh3d_skin_binding(key_hi, key_lo, skinning_matrices)
+    backend.prepare_mesh3d_main_pass_draw_batch(
+      preprocess_camera_key_hi, preprocess_camera_key_lo, pass_kind, entries,
+    ) catch {
+      err => debug_runtime_error("prepare_mesh3d_main_pass_draw_batch", err)
+    }
   }
 }
 

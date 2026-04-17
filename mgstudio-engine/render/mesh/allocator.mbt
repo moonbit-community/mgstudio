@@ -16,15 +16,6 @@
 // Bevy source: `bevy/crates/bevy_render/src/mesh/allocator.rs`.
 
 ///|
-pub fn mesh_allocator_prepare_skin_binding(
-  key_hi~ : Int,
-  key_lo~ : Int,
-  skinning_matrices~ : Array[Float],
-) -> Unit {
-  @renderer.prepare_mesh3d_skin_binding(key_hi~, key_lo~, skinning_matrices~)
-}
-
-///|
 pub fn mesh_allocator_create_mesh3d(
   vertices_xyzuvrgba_csv~ : String,
   primitive_topology~ : Int,

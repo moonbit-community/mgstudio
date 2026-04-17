@@ -37,163 +37,134 @@ fn mesh3d_identity_rows(matrix_count : Int) -> Array[Float] {
 }
 
 ///|
-fn ensure_mesh3d_skin_slot(
-  backend : GpuBackend,
-  slot_index : Int,
-) -> GpuStorageSlot? {
-  guard backend.mesh3d_bgl_skin is Some(bgl) else { return None }
-  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
-  while backend.mesh3d_skin_slots.length() <= slot_index {
-    let skin_buf = backend.device.create_buffer(
-      size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
-      usage~,
-    )
-    let matrix_count = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 64UL).to_int()
-    backend.queue.write_buffer(
-      skin_buf,
-      0UL,
-      f32le_pack(mesh3d_identity_rows(matrix_count)),
-    )
-    let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-    let ok = builder.add_buffer(
-      0U,
-      skin_buf,
-      size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
-    )
-    if !ok {
-      builder.free()
-      return None
-    }
-    let skin_bg = builder.finish(
-      backend.device,
-      bgl,
-      label="mgstudio_mesh3d_skin_slot_bg",
-    )
-    backend.mesh3d_skin_slots.push(GpuStorageSlot::{
-      buffer: skin_buf,
-      bind_group: skin_bg,
-    })
-  }
-  Some(backend.mesh3d_skin_slots[slot_index])
+fn mesh3d_skin_default_rows() -> Array[Float] {
+  mesh3d_identity_rows((MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 64UL).to_int())
 }
 
 ///|
-fn ensure_mesh3d_skin_default_binding(backend : GpuBackend) -> @wgpu.BindGroup? {
-  guard backend.mesh3d_bgl_skin is Some(bgl) else { return None }
-  if backend.mesh3d_skin_default_bg is Some(bg) {
-    return Some(bg)
+fn mesh3d_skin_bytes(
+  backend : GpuBackend,
+  skinning_rows : Array[Float],
+) -> Bytes {
+  let byte_len = skinning_rows.length() * 4
+  if backend.mesh3d_skin_staging_bytes.length() != byte_len {
+    backend.mesh3d_skin_staging_bytes = bytes_fixed_staging_make(byte_len)
+    backend.mesh3d_skin_staging_view = backend.mesh3d_skin_staging_bytes.unsafe_reinterpret_as_bytes()
   }
-  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
-  let skin_buf = backend.device.create_buffer(
-    size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
-    usage~,
-  )
-  let matrix_count = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 64UL).to_int()
-  backend.queue.write_buffer(
-    skin_buf,
-    0UL,
-    f32le_pack(mesh3d_identity_rows(matrix_count)),
-  )
+  f32le_pack_into_fixed(backend.mesh3d_skin_staging_bytes, 0, skinning_rows)
+  backend.mesh3d_skin_staging_view
+}
+
+///|
+fn create_mesh3d_skin_bind_group(
+  backend : GpuBackend,
+  bgl : @wgpu.BindGroupLayout,
+  buffer : @wgpu.Buffer,
+  size : UInt64,
+  label : String,
+) -> @wgpu.BindGroup? {
   let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-  let ok = builder.add_buffer(
-    0U,
-    skin_buf,
-    size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
-  )
+  let ok = builder.add_buffer(0U, buffer, size~)
   if !ok {
     builder.free()
     return None
   }
-  let skin_bg = builder.finish(
-    backend.device,
-    bgl,
-    label="mgstudio_mesh3d_skin_default_bg",
-  )
-  backend.mesh3d_skin_default_buf = Some(skin_buf)
-  backend.mesh3d_skin_default_bg = Some(skin_bg)
-  Some(skin_bg)
+  Some(builder.finish(backend.device, bgl, label~))
 }
 
 ///|
-fn mesh3d_skin_slot_cache_key(key_hi : Int, key_lo : Int) -> UInt64 {
-  let hi = key_hi.reinterpret_as_uint().to_uint64()
-  let lo = key_lo.reinterpret_as_uint().to_uint64() & 0xffffffffUL
-  (hi << 32) | lo
-}
-
-///|
-fn mesh3d_skin_bind_group_for_key(
+fn ensure_mesh3d_skin_buffers(
   backend : GpuBackend,
-  key_hi : Int,
-  key_lo : Int,
-) -> @wgpu.BindGroup? {
-  let key = mesh3d_skin_slot_cache_key(key_hi, key_lo)
-  guard backend.mesh3d_skin_slot_indices_by_key.get(key) is Some(slot_index) else {
-    return None
+  required_size : UInt64,
+) -> Bool {
+  guard backend.mesh3d_bgl_skin is Some(bgl) else { return false }
+  if backend.mesh3d_skin_capacity >= required_size &&
+    backend.mesh3d_skin_current_buf is Some(_) &&
+    backend.mesh3d_skin_current_bg is Some(_) &&
+    backend.mesh3d_skin_prev_buf is Some(_) &&
+    backend.mesh3d_skin_prev_bg is Some(_) {
+    return true
   }
-  guard slot_index >= 0 && slot_index < backend.mesh3d_skin_slots.length() else {
-    return None
-  }
-  Some(backend.mesh3d_skin_slots[slot_index].bind_group)
-}
-
-///|
-fn mesh3d_upload_skinning_matrices(
-  backend : GpuBackend,
-  target_buffer : @wgpu.Buffer,
-  skinning_matrices : Array[Float],
-) -> Unit {
-  let max_values = (MESH3D_SKINNING_STORAGE_STRIDE_BYTES / 4UL).to_int()
-  let upload_len = if skinning_matrices.length() < max_values {
-    skinning_matrices.length()
+  let mut next_capacity = if backend.mesh3d_skin_capacity >=
+    MESH3D_SKINNING_STORAGE_STRIDE_BYTES {
+    backend.mesh3d_skin_capacity
   } else {
-    max_values
+    MESH3D_SKINNING_STORAGE_STRIDE_BYTES
   }
-  if upload_len <= 0 {
-    return
-  }
-  let upload_values = if upload_len == skinning_matrices.length() {
-    skinning_matrices
-  } else {
-    let clipped : Array[Float] = []
-    for i in 0..<upload_len {
-      clipped.push(skinning_matrices[i])
+  while next_capacity < required_size {
+    next_capacity = next_capacity + next_capacity / 2UL
+    let remainder = next_capacity % MESH3D_SKINNING_STORAGE_STRIDE_BYTES
+    if remainder != 0UL {
+      next_capacity = next_capacity +
+        (MESH3D_SKINNING_STORAGE_STRIDE_BYTES - remainder)
     }
-    clipped
   }
-  backend.queue.write_buffer(target_buffer, 0UL, f32le_pack(upload_values))
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+  let current_buf = backend.device.create_buffer(size=next_capacity, usage~)
+  let prev_buf = backend.device.create_buffer(size=next_capacity, usage~)
+  let initial_rows = mesh3d_skin_default_rows()
+  let initial_bytes = mesh3d_skin_bytes(backend, initial_rows)
+  backend.queue.write_buffer(current_buf, 0UL, initial_bytes)
+  backend.queue.write_buffer(prev_buf, 0UL, initial_bytes)
+  guard create_mesh3d_skin_bind_group(
+      backend, bgl, current_buf, next_capacity, "mgstudio_mesh3d_skin_current_bg",
+    )
+    is Some(current_bg) else {
+    return false
+  }
+  guard create_mesh3d_skin_bind_group(
+      backend, bgl, prev_buf, next_capacity, "mgstudio_mesh3d_skin_prev_bg",
+    )
+    is Some(prev_bg) else {
+    return false
+  }
+  backend.mesh3d_skin_current_buf = Some(current_buf)
+  backend.mesh3d_skin_current_bg = Some(current_bg)
+  backend.mesh3d_skin_prev_buf = Some(prev_buf)
+  backend.mesh3d_skin_prev_bg = Some(prev_bg)
+  backend.mesh3d_skin_capacity = next_capacity
+  true
 }
 
 ///|
-pub fn GpuBackend::prepare_mesh3d_skin_binding(
+fn ensure_mesh3d_skin_current_binding(backend : GpuBackend) -> @wgpu.BindGroup? {
+  if !ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) {
+    return None
+  }
+  backend.mesh3d_skin_current_bg
+}
+
+///|
+pub fn GpuBackend::prepare_mesh3d_skin_bindings(
   self : GpuBackend,
-  key_hi : Int,
-  key_lo : Int,
-  skinning_matrices : Array[Float],
+  skinning_rows : Array[Float],
 ) -> Unit {
-  if key_hi < 0 || key_lo < 0 {
+  if skinning_rows.length() < 16 {
     return
   }
-  if skinning_matrices.length() < 16 || skinning_matrices.length() % 16 != 0 {
+  let required_size = skinning_rows.length().to_uint64() * 4UL
+  if !ensure_mesh3d_skin_buffers(
+      self,
+      if required_size < MESH3D_SKINNING_STORAGE_STRIDE_BYTES {
+        MESH3D_SKINNING_STORAGE_STRIDE_BYTES
+      } else {
+        required_size
+      },
+    ) {
     return
   }
-  let key = mesh3d_skin_slot_cache_key(key_hi, key_lo)
-  if self.mesh3d_skin_slot_indices_by_key.get(key) is Some(existing_slot_index) {
-    if existing_slot_index >= 0 &&
-      existing_slot_index < self.mesh3d_skin_slots.length() {
-      mesh3d_upload_skinning_matrices(
-        self,
-        self.mesh3d_skin_slots[existing_slot_index].buffer,
-        skinning_matrices,
-      )
-      return
-    }
-  }
-  let slot_index = self.mesh3d_skin_slot_used
-  guard ensure_mesh3d_skin_slot(self, slot_index) is Some(skin_slot) else {
-    return
-  }
-  self.mesh3d_skin_slot_used = slot_index + 1
-  mesh3d_upload_skinning_matrices(self, skin_slot.buffer, skinning_matrices)
-  self.mesh3d_skin_slot_indices_by_key.set(key, slot_index)
+  guard self.mesh3d_skin_current_buf is Some(current_buf) else { return }
+  guard self.mesh3d_skin_prev_buf is Some(prev_buf) else { return }
+  self.mesh3d_skin_current_buf = Some(prev_buf)
+  self.mesh3d_skin_prev_buf = Some(current_buf)
+  let current_bg = self.mesh3d_skin_current_bg
+  let prev_bg = self.mesh3d_skin_prev_bg
+  self.mesh3d_skin_current_bg = prev_bg
+  self.mesh3d_skin_prev_bg = current_bg
+  guard self.mesh3d_skin_current_buf is Some(active_current_buf) else { return }
+  self.queue.write_buffer(
+    active_current_buf,
+    0UL,
+    mesh3d_skin_bytes(self, skinning_rows),
+  )
 }

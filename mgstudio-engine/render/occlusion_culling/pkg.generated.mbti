@@ -22,6 +22,8 @@ pub fn occlusion_culling_plugin_with(@app.App[@ecs.World], OcclusionCullingPlugi
 
 pub fn occlusion_culling_set_mesh3d_gpu_instance_builder_enabled(Bool) -> Unit
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

@@ -32,11 +32,7 @@ pub impl TransformPoint for Transform with transform_point(self, point) {
 
 ///|
 pub impl TransformPoint for GlobalTransform with transform_point(self, point) {
-  @math.Vec3::new(
-    self.affine.a * point.x + self.affine.c * point.y + self.affine.tx,
-    self.affine.b * point.x + self.affine.d * point.y + self.affine.ty,
-    point.z + self.z,
-  )
+  self.affine().transform_point3(point)
 }
 
 ///|

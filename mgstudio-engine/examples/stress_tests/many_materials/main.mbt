@@ -47,7 +47,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Camera3d::default(),
+        @camera.Camera3d::default(),
         @transform.Transform::from_xyz(
           gridf * 1.35F,
           gridf + 1.0F,

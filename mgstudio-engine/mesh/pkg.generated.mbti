@@ -130,6 +130,7 @@ pub fn Mesh3dGeometry::new(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?) ->
 pub fn Mesh3dGeometry::new_with_colors(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors_and_topology(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::new_with_topology(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::plane(@math.Plane3d) -> Self
 pub fn Mesh3dGeometry::primitive_topology(Self) -> Mesh3dPrimitiveTopology
 pub fn Mesh3dGeometry::push_index(Self, Int) -> Bool
 pub fn Mesh3dGeometry::push_triangle_indices(Self, Int, Int, Int) -> Bool
@@ -261,13 +262,16 @@ pub struct SkinningMat4 {
   m33 : Float
 }
 pub fn SkinningMat4::append_row_major_f32(Self, Array[Float]) -> Unit
+pub fn SkinningMat4::from_global_transform(@transform.GlobalTransform) -> Self
 pub fn SkinningMat4::from_transform(@transform.Transform) -> Self
 pub fn SkinningMat4::from_values(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Self
 pub fn SkinningMat4::identity() -> Self
 pub fn SkinningMat4::inverse_transform(@transform.Transform) -> Self
 pub fn SkinningMat4::mul(Self, Self) -> Self
+pub fn SkinningMat4::mul_write_row_major_f32(Self, Self, Array[Float], Int) -> Unit
 pub fn SkinningMat4::to_row_major_f32(Self) -> Array[Float]
 pub fn SkinningMat4::transform_point3(Self, @math.Vec3) -> @math.Vec3
+pub fn SkinningMat4::write_row_major_f32(Self, Array[Float], Int) -> Unit
 
 // Type aliases
 

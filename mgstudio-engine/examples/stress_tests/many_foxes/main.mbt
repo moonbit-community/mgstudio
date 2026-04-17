@@ -30,7 +30,7 @@ const FOX_SCALE : Float = 0.01F
 ///|
 struct FoxAnimations {
   graph_handle : @asset.Handle[@animation.AnimationGraph]
-  animation : @animation.AnimationNodeIndex
+  node_indices : Array[@animation.AnimationNodeIndex]
 }
 
 ///|
@@ -99,6 +99,7 @@ fn parse_args() -> Args {
 ///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::default()
+  window.title = "🦊🦊🦊 Many Foxes! 🦊🦊🦊"
   window.present_mode = @window.PresentMode::AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
@@ -165,14 +166,26 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   foxes : @app.Res[Foxes],
 ) -> Unit {
-  let (graph, animation) = @animation.AnimationGraph::from_clip(
+  println(
+    "This is a stress test used to push mgstudio to its limit and debug performance issues. It is not representative of an actual game. It must be run in release mode using --release or it will be very slow.",
+  )
+  let animation_clips = [
     asset_server
     .get()
     .load(@gltf.GltfAssetLabel::Animation(2).from_asset(FOX_PATH)),
+    asset_server
+    .get()
+    .load(@gltf.GltfAssetLabel::Animation(1).from_asset(FOX_PATH)),
+    asset_server
+    .get()
+    .load(@gltf.GltfAssetLabel::Animation(0).from_asset(FOX_PATH)),
+  ]
+  let (graph, node_indices) = @animation.AnimationGraph::from_clips(
+    animation_clips,
   )
   commands.insert_resource(FoxAnimations::{
     graph_handle: @animation.animation_graph_add(graph),
-    animation,
+    node_indices,
   })
 
   let fox_scene = asset_server
@@ -252,7 +265,12 @@ fn setup(
       (
         @pbr.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val
-          |> @pbr.add_mesh(@math.Cuboid::new(5000.0F, 0.1F, 5000.0F)),
+          |> @pbr.add_mesh(
+            @math.Plane3d::new(
+              @math.Vec3::new(0.0F, 1.0F, 0.0F),
+              @math.Vec2::new(2500.0F, 2500.0F),
+            ),
+          ),
         ),
         @pbr.MeshMaterial3d::new(
           @pbr.standard_material_add(
@@ -283,6 +301,11 @@ fn setup(
       ),
     ),
   )
+  println("Animation controls:")
+  println("  - spacebar: play / pause")
+  println("  - arrow up / down: speed up / slow down animation playback")
+  println("  - arrow left / right: seek backward / forward")
+  println("  - return: change animation")
 }
 
 ///|
@@ -307,7 +330,7 @@ fn setup_scene_once_loaded(
   foxes : @app.Res[Foxes],
 ) -> Unit {
   let scene_entity = scene_ready.entity
-  let animation_node = animations.get().animation
+  let animation_node = animations.get().node_indices[0]
   let graph_handle = animations.get().graph_handle
   let sync = foxes.get().sync
   commands.queue(fn(world : @ecs.World) {
@@ -345,7 +368,15 @@ fn setup_scene_once_loaded(
 ///|
 fn keyboard_animation_control(
   foxes : @app.ResMut[Foxes],
-  players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
+  players : @ecs.Query[
+    (
+      @ecs.Mut[@animation.AnimationPlayer],
+      @ecs.Mut[@animation.AnimationTransitions],
+    ),
+    @ecs.All,
+  ],
+  animations : @app.Res[FoxAnimations],
+  current_animation : @app.Local[Int],
 ) -> Unit {
   let foxes_ref = foxes.get_ref()
   let space = @input.key_just_pressed(@input_events.KeyCode::Space)
@@ -353,6 +384,7 @@ fn keyboard_animation_control(
   let down = @input.key_just_pressed(@input_events.KeyCode::ArrowDown)
   let left = @input.key_just_pressed(@input_events.KeyCode::ArrowLeft)
   let right = @input.key_just_pressed(@input_events.KeyCode::ArrowRight)
+  let enter = @input.key_just_pressed(@input_events.KeyCode::Enter)
 
   if space {
     foxes_ref.val.moving = !foxes_ref.val.moving
@@ -363,8 +395,18 @@ fn keyboard_animation_control(
   if down {
     foxes_ref.val.speed *= 0.8F
   }
-  try! players.for_each(fn(_entity, player_mut) {
+  let next_animation_index = if enter {
+    let next_index = (current_animation.get() + 1) %
+      animations.get().node_indices.length()
+    current_animation.set(next_index)
+    Some(next_index)
+  } else {
+    None
+  }
+  try! players.for_each(fn(_entity, data) {
+    let (player_mut, transitions_mut) = data
     let player_ref = player_mut.get_ref()
+    let transitions_ref = transitions_mut.get_ref()
     if space {
       if player_ref.val.all_paused() {
         player_ref.val.resume_all() |> ignore
@@ -383,6 +425,14 @@ fn keyboard_animation_control(
     }
     if right {
       player_ref.val.seek_all_by(0.1F) |> ignore
+    }
+    match next_animation_index {
+      Some(next_index) =>
+        transitions_ref.val
+        .play(player_ref.val, animations.get().node_indices[next_index], 0.25F)
+        .repeat()
+        |> ignore
+      None => ()
     }
   })
 }
@@ -431,12 +481,13 @@ fn main {
       close_when_requested: true,
     }),
   )
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_component_observer4(setup_scene_once_loaded)
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(keyboard_animation_control)),
+    @app.system(@app.system_param4(keyboard_animation_control)),
   )
   .add_systems(@app.Update, @app.system(@app.system_param3(update_fox_rings)))
   .run()

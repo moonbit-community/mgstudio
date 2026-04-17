@@ -259,6 +259,7 @@ fn mesh3d_draw_uniform_bytes(
   ior : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  current_skin_index : UInt,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
 ) -> Bytes {
@@ -318,8 +319,184 @@ fn mesh3d_draw_uniform_bytes(
     f32_bits(uv_transform_mode),
     f32_bits(point_shadow_enabled),
     f32_bits(point_shadow_depth_bias),
+    current_skin_index,
+    0U,
+    0U,
+    0U,
   ]
   u32le_pack(words)
+}
+
+///|
+fn mesh3d_draw_uniform_write(
+  bytes : FixedArray[Byte],
+  byte_offset : Int,
+  x : Float,
+  y : Float,
+  z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  uv_transform_a : Float,
+  uv_transform_b : Float,
+  uv_transform_c : Float,
+  uv_transform_d : Float,
+  uv_transform_tx : Float,
+  uv_transform_ty : Float,
+  uv_transform_mode : Float,
+  emissive_r : Float,
+  emissive_g : Float,
+  emissive_b : Float,
+  metallic : Float,
+  roughness : Float,
+  reflectance : Float,
+  parallax_depth_scale : Float,
+  max_parallax_layer_count : Float,
+  max_relief_mapping_search_steps : Float,
+  anisotropy_strength : Float,
+  anisotropy_rotation : Float,
+  specular_tint_r : Float,
+  specular_tint_g : Float,
+  specular_tint_b : Float,
+  diffuse_transmission : Float,
+  specular_transmission : Float,
+  thickness : Float,
+  ior : Float,
+  alpha_cutoff : Float,
+  material_flags : UInt,
+  current_skin_index : UInt,
+  point_shadow_enabled : Float,
+  point_shadow_depth_bias : Float,
+) -> Unit {
+  let reflectance_tint_r = reflectance * specular_tint_r
+  let reflectance_tint_g = reflectance * specular_tint_g
+  let reflectance_tint_b = reflectance * specular_tint_b
+  let cos_anisotropy_rotation = cosf(anisotropy_rotation)
+  let sin_anisotropy_rotation = sinf(anisotropy_rotation)
+  let mut cursor = byte_offset
+  f32le_write_into_fixed(bytes, cursor, x)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, y)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, z)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 1.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, rotation_x)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, rotation_y)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, rotation_z)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, rotation_w)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, scale_x)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, scale_y)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, scale_z)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 1.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, color_r)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, color_g)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, color_b)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, color_a)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, emissive_r)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, emissive_g)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, emissive_b)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 1.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_a)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_b)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 0.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 0.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_c)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_d)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 0.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 0.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_tx)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_ty)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 1.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, 0.0F)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, reflectance_tint_r)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, reflectance_tint_g)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, reflectance_tint_b)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, roughness)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, metallic)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, diffuse_transmission)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, specular_transmission)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, thickness)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, ior)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, anisotropy_strength)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, cos_anisotropy_rotation)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, sin_anisotropy_rotation)
+  cursor += 4
+  u32le_write_into_fixed(bytes, cursor, material_flags)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, alpha_cutoff)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, parallax_depth_scale)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, max_parallax_layer_count)
+  cursor += 4
+  u32le_write_into_fixed(
+    bytes,
+    cursor,
+    max_relief_mapping_search_steps.to_int().reinterpret_as_uint(),
+  )
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, uv_transform_mode)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, point_shadow_enabled)
+  cursor += 4
+  f32le_write_into_fixed(bytes, cursor, point_shadow_depth_bias)
+  cursor += 4
+  u32le_write_into_fixed(bytes, cursor, current_skin_index)
+  cursor += 4
+  u32le_write_into_fixed(bytes, cursor, 0U)
+  cursor += 4
+  u32le_write_into_fixed(bytes, cursor, 0U)
+  cursor += 4
+  u32le_write_into_fixed(bytes, cursor, 0U)
 }
 
 ///|

@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
@@ -274,6 +275,8 @@ pub fn render3d_gpu_preprocess_forced_disabled() -> Bool
 pub fn render3d_gpu_preprocess_state(Bool, Bool) -> Render3dGpuPreprocessState
 
 pub fn render3d_gpu_preprocess_state_with_dispatch_count(Render3dGpuPreprocessState, Int) -> Render3dGpuPreprocessState
+
+pub fn render3d_host_main_pass_draw_entry(MeshGpuDrawPayload3d) -> @renderer.HostMesh3dMainPassDrawEntry
 
 pub fn render3d_inverse_transform_direction(@transform.Transform, @math.Vec3) -> @math.Vec3?
 
@@ -981,12 +984,13 @@ pub(all) struct Render3dPhaseState {
   mut morph_weights_current : Array[Float]
   mut morph_weights_prev : Array[Float]
   prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
-  mut next_skin_binding_slot : Int
-  skin_binding_free_slots : Array[Int]
+  mut next_skin_binding_index : Int
+  mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
   skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
   skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
   skin_joint_count_by_skin : Map[UInt64, Int]
   skin_previous_matrices : Map[UInt64, Array[Float]]
+  mut skin_staging_rows : Array[Float]
   mut total_skin_joints : Int
   skin_upload_queue : Array[@core.Entity]
 }
@@ -1030,6 +1034,11 @@ pub struct ResetIndirectBatchSetsPipeline {
   pipeline_id : Int?
 }
 pub fn ResetIndirectBatchSetsPipeline::new(String, String) -> Self
+
+pub(all) struct SkinBindingFreeRange {
+  offset : Int
+  length : Int
+}
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

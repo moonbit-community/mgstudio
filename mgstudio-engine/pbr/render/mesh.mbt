@@ -277,6 +277,68 @@ pub fn render3d_build_mesh_gpu_draw_payload(
 }
 
 ///|
+pub fn render3d_host_main_pass_draw_entry(
+  payload : MeshGpuDrawPayload3d,
+) -> @render_gpu.HostMesh3dMainPassDrawEntry {
+  @render_gpu.host_mesh3d_main_pass_draw_entry(
+    draw_storage_index=payload.draw_storage_index,
+    x=payload.transform.translation.x,
+    y=payload.transform.translation.y,
+    z=payload.transform.translation.z,
+    rotation_x=payload.transform.rotation.x,
+    rotation_y=payload.transform.rotation.y,
+    rotation_z=payload.transform.rotation.z,
+    rotation_w=payload.transform.rotation.w,
+    scale_x=payload.transform.scale.x,
+    scale_y=payload.transform.scale.y,
+    scale_z=payload.transform.scale.z,
+    color_r=payload.color_r,
+    color_g=payload.color_g,
+    color_b=payload.color_b,
+    color_a=payload.color_a,
+    texture_id=payload.texture_id,
+    uv_transform_a=payload.uv_transform.a,
+    uv_transform_b=payload.uv_transform.b,
+    uv_transform_c=payload.uv_transform.c,
+    uv_transform_d=payload.uv_transform.d,
+    uv_transform_tx=payload.uv_transform.tx,
+    uv_transform_ty=payload.uv_transform.ty,
+    uv_transform_mode=1.0F,
+    normal_texture_id=payload.normal_texture_id,
+    emissive_texture_id=payload.emissive_texture_id,
+    metallic_roughness_texture_id=payload.metallic_roughness_texture_id,
+    occlusion_texture_id=payload.occlusion_texture_id,
+    depth_texture_id=payload.depth_texture_id,
+    emissive_r=payload.emissive.r,
+    emissive_g=payload.emissive.g,
+    emissive_b=payload.emissive.b,
+    metallic=payload.metallic,
+    roughness=payload.surface_roughness,
+    reflectance=payload.reflectance,
+    parallax_depth_scale=payload.parallax_depth_scale,
+    max_parallax_layer_count=payload.max_parallax_layer_count,
+    max_relief_mapping_search_steps=payload.max_relief_mapping_search_steps,
+    anisotropy_texture_id=payload.anisotropy_texture_id,
+    anisotropy_strength=payload.anisotropy_strength,
+    anisotropy_rotation=payload.anisotropy_rotation,
+    specular_tint_texture_id=payload.specular_tint_texture_id,
+    specular_tint_r=payload.specular_tint.r,
+    specular_tint_g=payload.specular_tint.g,
+    specular_tint_b=payload.specular_tint.b,
+    diffuse_transmission=payload.diffuse_transmission,
+    specular_transmission=payload.specular_transmission,
+    thickness=payload.thickness,
+    ior=payload.ior,
+    alpha_cutoff=payload.alpha_cutoff,
+    material_flags=payload.material_flags,
+    point_shadow_texture_id=payload.point_shadow_texture_id,
+    point_shadow_enabled=payload.point_shadow_enabled,
+    point_shadow_depth_bias=payload.point_shadow_depth_bias,
+    skinning_key_hi=payload.skinning_key_hi,
+  )
+}
+
+///|
 pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
   @render_gpu.host_gpu_draw_mesh3d(
     mesh_id=payload.mesh_id,

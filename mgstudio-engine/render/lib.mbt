@@ -28,21 +28,136 @@ pub type HostMaterial2dBinding = @renderer.HostMaterial2dBinding
 pub type HostMaterial2dBindGroup = @renderer.HostMaterial2dBindGroup
 
 ///|
+pub type HostMesh3dMainPassDrawEntry = @renderer.HostMesh3dMainPassDrawEntry
+
+///|
 pub type HostMesh3dPreprocessShaderWorkItem = @renderer.HostMesh3dPreprocessShaderWorkItem
 
 ///|
 pub type HostMesh3dPreprocessMeshInput = @renderer.HostMesh3dPreprocessMeshInput
 
 ///|
-pub fn host_gpu_prepare_mesh3d_skin_binding(
-  key_hi~ : Int,
-  key_lo~ : Int,
-  skinning_matrices~ : Array[Float],
+pub const MESH3D_SKINNING_STORAGE_STRIDE_BYTES : UInt64 = @renderer.MESH3D_SKINNING_STORAGE_STRIDE_BYTES
+
+///|
+pub fn host_gpu_prepare_mesh3d_skin_bindings(
+  skinning_rows~ : Array[Float],
 ) -> Unit {
-  @render_mesh.host_gpu_prepare_mesh3d_skin_binding(
-    key_hi~,
-    key_lo~,
-    skinning_matrices~,
+  @render_mesh.host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~)
+}
+
+///|
+pub fn host_mesh3d_main_pass_draw_entry(
+  draw_storage_index~ : Int,
+  x~ : Float,
+  y~ : Float,
+  z~ : Float,
+  rotation_x~ : Float,
+  rotation_y~ : Float,
+  rotation_z~ : Float,
+  rotation_w~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  scale_z~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_id~ : Int,
+  uv_transform_a~ : Float,
+  uv_transform_b~ : Float,
+  uv_transform_c~ : Float,
+  uv_transform_d~ : Float,
+  uv_transform_tx~ : Float,
+  uv_transform_ty~ : Float,
+  uv_transform_mode~ : Float,
+  normal_texture_id~ : Int,
+  emissive_texture_id~ : Int,
+  metallic_roughness_texture_id~ : Int,
+  occlusion_texture_id~ : Int,
+  depth_texture_id~ : Int,
+  emissive_r~ : Float,
+  emissive_g~ : Float,
+  emissive_b~ : Float,
+  metallic~ : Float,
+  roughness~ : Float,
+  reflectance~ : Float,
+  parallax_depth_scale~ : Float,
+  max_parallax_layer_count~ : Float,
+  max_relief_mapping_search_steps~ : Float,
+  anisotropy_texture_id~ : Int,
+  anisotropy_strength~ : Float,
+  anisotropy_rotation~ : Float,
+  specular_tint_texture_id~ : Int,
+  specular_tint_r~ : Float,
+  specular_tint_g~ : Float,
+  specular_tint_b~ : Float,
+  diffuse_transmission~ : Float,
+  specular_transmission~ : Float,
+  thickness~ : Float,
+  ior~ : Float,
+  alpha_cutoff~ : Float,
+  material_flags~ : UInt,
+  point_shadow_texture_id~ : Int,
+  point_shadow_enabled~ : Float,
+  point_shadow_depth_bias~ : Float,
+  skinning_key_hi~ : Int,
+) -> HostMesh3dMainPassDrawEntry {
+  @renderer.host_mesh3d_main_pass_draw_entry(
+    draw_storage_index~,
+    x~,
+    y~,
+    z~,
+    rotation_x~,
+    rotation_y~,
+    rotation_z~,
+    rotation_w~,
+    scale_x~,
+    scale_y~,
+    scale_z~,
+    color_r~,
+    color_g~,
+    color_b~,
+    color_a~,
+    texture_id~,
+    uv_transform_a~,
+    uv_transform_b~,
+    uv_transform_c~,
+    uv_transform_d~,
+    uv_transform_tx~,
+    uv_transform_ty~,
+    uv_transform_mode~,
+    normal_texture_id~,
+    emissive_texture_id~,
+    metallic_roughness_texture_id~,
+    occlusion_texture_id~,
+    depth_texture_id~,
+    emissive_r~,
+    emissive_g~,
+    emissive_b~,
+    metallic~,
+    roughness~,
+    reflectance~,
+    parallax_depth_scale~,
+    max_parallax_layer_count~,
+    max_relief_mapping_search_steps~,
+    anisotropy_texture_id~,
+    anisotropy_strength~,
+    anisotropy_rotation~,
+    specular_tint_texture_id~,
+    specular_tint_r~,
+    specular_tint_g~,
+    specular_tint_b~,
+    diffuse_transmission~,
+    specular_transmission~,
+    thickness~,
+    ior~,
+    alpha_cutoff~,
+    material_flags~,
+    point_shadow_texture_id~,
+    point_shadow_enabled~,
+    point_shadow_depth_bias~,
+    skinning_key_hi~,
   )
 }
 
@@ -948,6 +1063,21 @@ pub fn host_gpu_draw_mesh_wireframe(
     color_g~,
     color_b~,
     color_a~,
+  )
+}
+
+///|
+pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(
+  preprocess_camera_key_hi~ : Int,
+  preprocess_camera_key_lo~ : Int,
+  pass_kind~ : Int,
+  entries~ : Array[@renderer.HostMesh3dMainPassDrawEntry],
+) -> Unit {
+  @renderer.prepare_mesh3d_main_pass_draw_batch(
+    preprocess_camera_key_hi~,
+    preprocess_camera_key_lo~,
+    pass_kind~,
+    entries~,
   )
 }
 

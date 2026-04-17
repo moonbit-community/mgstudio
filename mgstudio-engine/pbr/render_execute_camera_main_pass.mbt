@@ -428,6 +428,106 @@ fn render3d_execute_camera_main_pass(
     }
     main_pass_draws.push(draw_payload)
   }
+  let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
+  for draw_item_index in 0..<draw_items.length() {
+    let draw_item = draw_items[draw_item_index]
+    let extracted_mesh = meshes[draw_item.extracted_index]
+    let mesh = extracted_mesh.payload
+    if !render3d_mesh_should_draw_wireframe(extracted_mesh, wireframe_config) {
+      continue
+    }
+    guard render3d_wireframe_mesh_id(world, mesh.mesh_handle)
+      is Some(wireframe_mesh_id) else {
+      continue
+    }
+    let wireframe_color = render3d_mesh_wireframe_color(
+      extracted_mesh, wireframe_config,
+    )
+    let wireframe_material = StandardMaterial::from_color(wireframe_color)
+      .with_unlit(true)
+      .with_cull_mode(mesh.material.cull_mode)
+    guard render3d_mesh_draw_alpha(
+        wireframe_material.alpha_mode,
+        wireframe_material.base_color.a,
+      )
+      is Some(wireframe_draw_alpha) else {
+      continue
+    }
+    wireframe_draws.push(
+      @pbr_render.render3d_build_mesh_gpu_draw_payload(
+        wireframe_mesh_id,
+        camera_entity.id,
+        camera_entity.generation,
+        draw_item_index,
+        MESH3D_DRAW_INDIRECT_KIND_NONE,
+        -1,
+        wireframe_material,
+        mesh.transform,
+        mesh.previous_transform,
+        wireframe_material.base_color.r,
+        wireframe_material.base_color.g,
+        wireframe_material.base_color.b,
+        wireframe_draw_alpha,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0.5F,
+        0.5F,
+        0.0F,
+        0.0F,
+        0.0F,
+        1.5F,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        -1,
+        0.0F,
+        @math.Quat::identity(),
+        @sprite.Color::white(),
+        0.0F,
+        0.0F,
+        render3d_mesh_draw_flags(extracted_mesh),
+      ),
+    )
+  }
+  let batched_draw_entries : Array[@render.HostMesh3dMainPassDrawEntry] = []
+  for draw_payload in main_pass_draws {
+    batched_draw_entries.push(
+      @pbr_render.render3d_host_main_pass_draw_entry(draw_payload),
+    )
+  }
+  for transmissive_phase_item in transmissive_phase_items {
+    batched_draw_entries.push(
+      @pbr_render.render3d_host_main_pass_draw_entry(
+        transmissive_phase_item.payload,
+      ),
+    )
+  }
+  for draw_payload in transparent_draws {
+    batched_draw_entries.push(
+      @pbr_render.render3d_host_main_pass_draw_entry(draw_payload),
+    )
+  }
+  for wireframe_draw in wireframe_draws {
+    batched_draw_entries.push(
+      @pbr_render.render3d_host_main_pass_draw_entry(wireframe_draw),
+    )
+  }
+  @render.host_gpu_prepare_mesh3d_main_pass_draw_batch(
+    preprocess_camera_key_hi=camera_entity.id,
+    preprocess_camera_key_lo=camera_entity.generation,
+    pass_kind=scene_pass_kind,
+    entries=batched_draw_entries,
+  )
   for draw_payload in main_pass_draws {
     @pbr_render.render3d_draw_mesh_gpu_payload(draw_payload)
   }
@@ -522,77 +622,6 @@ fn render3d_execute_camera_main_pass(
       }
       @render.host_gpu_end_pass()
     }
-  }
-  let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
-  for draw_item_index in 0..<draw_items.length() {
-    let draw_item = draw_items[draw_item_index]
-    let extracted_mesh = meshes[draw_item.extracted_index]
-    let mesh = extracted_mesh.payload
-    if !render3d_mesh_should_draw_wireframe(extracted_mesh, wireframe_config) {
-      continue
-    }
-    guard render3d_wireframe_mesh_id(world, mesh.mesh_handle)
-      is Some(wireframe_mesh_id) else {
-      continue
-    }
-    let wireframe_color = render3d_mesh_wireframe_color(
-      extracted_mesh, wireframe_config,
-    )
-    let wireframe_material = StandardMaterial::from_color(wireframe_color)
-      .with_unlit(true)
-      .with_cull_mode(mesh.material.cull_mode)
-    guard render3d_mesh_draw_alpha(
-        wireframe_material.alpha_mode,
-        wireframe_material.base_color.a,
-      )
-      is Some(wireframe_draw_alpha) else {
-      continue
-    }
-    wireframe_draws.push(
-      @pbr_render.render3d_build_mesh_gpu_draw_payload(
-        wireframe_mesh_id,
-        camera_entity.id,
-        camera_entity.generation,
-        draw_item_index,
-        MESH3D_DRAW_INDIRECT_KIND_NONE,
-        -1,
-        wireframe_material,
-        mesh.transform,
-        mesh.previous_transform,
-        wireframe_material.base_color.r,
-        wireframe_material.base_color.g,
-        wireframe_material.base_color.b,
-        wireframe_draw_alpha,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        0.5F,
-        0.5F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.5F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        -1,
-        0.0F,
-        @math.Quat::identity(),
-        @sprite.Color::white(),
-        0.0F,
-        0.0F,
-        render3d_mesh_draw_flags(extracted_mesh),
-      ),
-    )
   }
   if transparent_draws.length() > 0 || wireframe_draws.length() > 0 {
     let (

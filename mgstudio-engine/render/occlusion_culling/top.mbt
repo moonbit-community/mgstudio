@@ -49,6 +49,7 @@ pub fn occlusion_culling_plugin_with(
   plugin : OcclusionCullingPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
+  register_embedded_wgsl_sources()
   app
 }
 
@@ -135,20 +136,20 @@ pub fn OcclusionCullingSubviewEntities::is_empty(
 pub fn occlusion_culling_set_mesh3d_gpu_instance_builder_enabled(
   enabled : Bool,
 ) -> Unit {
-  @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(enabled)
+  @renderer.set_mesh3d_gpu_instance_builder_enabled(enabled)
 }
 
 ///|
 pub fn occlusion_culling_mesh3d_gpu_culling_supported() -> Bool {
-  @render.host_gpu_mesh3d_gpu_culling_supported()
+  @renderer.mesh3d_gpu_culling_supported()
 }
 
 ///|
 pub fn occlusion_culling_mesh3d_preprocess_disabled() -> Bool {
-  @render.host_gpu_mesh3d_preprocess_disabled()
+  @renderer.mesh3d_preprocess_disabled()
 }
 
 ///|
 pub fn occlusion_culling_mesh3d_indirect_first_instance_supported() -> Bool {
-  @render.host_gpu_mesh3d_indirect_first_instance_supported()
+  @renderer.mesh3d_indirect_first_instance_supported()
 }

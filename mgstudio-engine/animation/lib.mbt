@@ -1382,52 +1382,63 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     )
   })
 
-  let target_query : @ecs.Query[
-    (@ecs.Comp[AnimationTargetId], @ecs.Comp[AnimatedBy]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! target_query.view(fn(entity, target_data) {
-    let (target_id_comp, animated_by_comp) = target_data
-    let animated_by = animated_by_comp.value()
-    let player_entity = animated_by.player()
-    let player_id = player_entity.id
-    if player_id < 0 {
-      return
-    }
-    let (graph_id, prepared_samples) = match
-      prepared_player_cache.get(player_id) {
-      Some(cached) => cached
-      None => return
-    }
-    if prepared_samples.length() == 0 {
-      return
-    }
-    let graph = match graph_cache.get(graph_id) {
-      Some(graph) => graph
-      None => return
-    }
-    let target_id = target_id_comp.value()
-    let target_mask = graph.target_mask(target_id)
-    let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
-      target_id,
-      target_mask,
-      prepared_samples,
-      clip_cache,
-      try! world.get_by_key(entity, @transform.ecs_key_transform),
-      try! world.get_by_key(entity, ecs_key_animation_weights),
-      try! world.get_by_key(entity, @text.ecs_key_text_color),
-    )
+  let target_id_column = world.component_column(ecs_key_animation_target_id)
+  let animated_by_column = world.component_column(ecs_key_animated_by)
+  let transform_column = world.component_column(@transform.ecs_key_transform)
+  let weights_column = world.component_column(ecs_key_animation_weights)
+  let text_color_column = world.component_column(@text.ecs_key_text_color)
+  if target_id_column is Some(target_id_column) &&
+    animated_by_column is Some(animated_by_column) {
+    animated_by_column.for_each_ref(fn(entity, animated_by_ref) {
+      guard target_id_column.get(entity) is Some(target_id) else { return }
+      let player_entity = animated_by_ref.val.player()
+      let player_id = player_entity.id
+      if player_id < 0 {
+        return
+      }
+      let (graph_id, prepared_samples) = match
+        prepared_player_cache.get(player_id) {
+        Some(cached) => cached
+        None => return
+      }
+      if prepared_samples.length() == 0 {
+        return
+      }
+      let graph = match graph_cache.get(graph_id) {
+        Some(graph) => graph
+        None => return
+      }
+      let target_mask = graph.target_mask(target_id)
+      let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
+        target_id,
+        target_mask,
+        prepared_samples,
+        clip_cache,
+        match transform_column {
+          Some(column) => column.get(entity)
+          None => None
+        },
+        match weights_column {
+          Some(column) => column.get(entity)
+          None => None
+        },
+        match text_color_column {
+          Some(column) => column.get(entity)
+          None => None
+        },
+      )
 
-    if next_transform is Some(transform) {
-      transform_updates.push((entity, transform))
-    }
-    if next_weights is Some(weights) {
-      weights_updates.push((entity, weights))
-    }
-    if next_text_color is Some(text_color) {
-      text_color_updates.push((entity, text_color))
-    }
-  })
+      if next_transform is Some(transform) {
+        transform_updates.push((entity, transform))
+      }
+      if next_weights is Some(weights) {
+        weights_updates.push((entity, weights))
+      }
+      if next_text_color is Some(text_color) {
+        text_color_updates.push((entity, text_color))
+      }
+    })
+  }
 
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
     @app.current_system_sequence().this_run,

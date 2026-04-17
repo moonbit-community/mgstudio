@@ -27,6 +27,19 @@ fn approx_eq_ecs(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn global_translation_eq_ecs(
+  global_transform : GlobalTransform,
+  x : Float,
+  y : Float,
+  z? : Float = 0.0F,
+) -> Bool {
+  let translation = global_transform.translation()
+  approx_eq_ecs(translation.x, x) &&
+  approx_eq_ecs(translation.y, y) &&
+  approx_eq_ecs(translation.z, z)
+}
+
+///|
 fn next_system_sequence_ecs(world : @ecs.World) -> Unit {
   let this_run = world.advance_sequence()
   let last_run = world.get_sequence_context().sequence().this_run
@@ -93,8 +106,7 @@ test "transform ecs world: child global uses parent and local transforms" {
 
   let child_global = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
   debug_inspect(
-    approx_eq_ecs(child_global.affine.tx, 1.0F) &&
-    approx_eq_ecs(child_global.affine.ty, 2.0F),
+    global_translation_eq_ecs(child_global, 1.0F, 2.0F),
     content="true",
   )
 }

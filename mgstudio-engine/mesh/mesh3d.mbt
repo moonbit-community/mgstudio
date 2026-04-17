@@ -723,6 +723,51 @@ pub fn Mesh3dGeometry::rectangle(
 }
 
 ///|
+pub fn Mesh3dGeometry::plane(plane : @math.Plane3d) -> Mesh3dGeometry {
+  let normal = plane.normal().as_vec3()
+  let half_size = plane.half_size()
+  let normal_y_abs = if normal.y < 0.0F { 0.0F - normal.y } else { normal.y }
+  let reference = if normal_y_abs < 0.999F {
+    @math.Vec3::new(0.0F, 1.0F, 0.0F)
+  } else {
+    @math.Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+  let tangent_axis = reference.cross(normal)
+  let tangent_length = tangent_axis.length()
+  let tangent_direction = if tangent_length <= 1.0e-6F {
+    @math.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    tangent_axis.mul_scalar(1.0F / tangent_length)
+  }
+  let tangent = tangent_direction.mul_scalar(half_size.x)
+  let bitangent_axis = normal.cross(tangent_direction)
+  let bitangent_length = bitangent_axis.length()
+  let bitangent_direction = if bitangent_length <= 1.0e-6F {
+    @math.Vec3::new(0.0F, 0.0F, 1.0F)
+  } else {
+    bitangent_axis.mul_scalar(1.0F / bitangent_length)
+  }
+  let bitangent = bitangent_direction.mul_scalar(half_size.y)
+  let positions : Array[@math.Vec3] = [
+    tangent.mul_scalar(-1.0F).sub(bitangent),
+    tangent.sub(bitangent),
+    tangent.add(bitangent),
+    tangent.mul_scalar(-1.0F).sub(bitangent),
+    tangent.add(bitangent),
+    bitangent.sub(tangent),
+  ]
+  let uvs : Array[@math.Vec2] = [
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  ]
+  Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
 pub fn Mesh3dGeometry::circle(radius : Float, segments : Int) -> Mesh3dGeometry {
   let safe_radius = if radius <= 0.0F { 1.0F } else { radius }
   let safe_segments = if segments < 3 { 3 } else { segments }

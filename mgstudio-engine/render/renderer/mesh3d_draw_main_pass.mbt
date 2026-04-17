@@ -81,6 +81,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   skinning_key_lo : Int,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
+  skinning_key_lo |> ignore
   let draw_shader_path = if pass_kind == 0 { shader_path } else { None }
   let forward_decal = (material_flags & (1U << 20)) != 0U
   guard mesh3d_pipeline_for_current_pass(
@@ -298,40 +299,93 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   } else {
     0.0F
   }
-  let view_bytes = mesh3d_view_uniform_bytes(ps)
-  let draw_bytes = mesh3d_draw_uniform_bytes(
-    x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
-    color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
-    uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
-    uv_transform_mode_value, emissive_r, emissive_g, emissive_b, metallic, roughness,
-    reflectance, parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
-    anisotropy_strength, anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b,
-    diffuse_transmission, specular_transmission, thickness, ior, alpha_cutoff, runtime_material_flags,
-    draw_point_shadow_enabled, draw_point_shadow_depth_bias,
-  )
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
-  // Bevy-aligned path: skin buffers are prepared before draw.
-  let resolved_skin_bg = if skinning_key_hi >= 0 && skinning_key_lo >= 0 {
-    match
-      mesh3d_skin_bind_group_for_key(self, skinning_key_hi, skinning_key_lo) {
-      Some(bind_group) => Some(bind_group)
-      None => ensure_mesh3d_skin_default_binding(self)
+  guard ensure_mesh3d_skin_current_binding(self) is Some(active_skin_bg) else {
+    return
+  }
+  let view_cache_hit = self.mesh3d_pass_view_uniform_bytes is Some(_) &&
+    self.mesh3d_pass_view_uniform_frame_count == self.frame_count &&
+    self.mesh3d_pass_view_uniform_camera_key_hi == preprocess_camera_key_hi &&
+    self.mesh3d_pass_view_uniform_camera_key_lo == preprocess_camera_key_lo &&
+    self.mesh3d_pass_view_uniform_pass_kind == pass_kind
+  if !view_cache_hit {
+    let view_bytes = mesh3d_view_uniform_bytes(ps)
+    let view_needs_upload = match self.mesh3d_pass_view_uniform_bytes {
+      Some(cached) => cached != view_bytes
+      None => true
     }
-  } else {
-    ensure_mesh3d_skin_default_binding(self)
+    if view_needs_upload {
+      self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
+      self.mesh3d_pass_view_uniform_bytes = Some(view_bytes)
+    }
+    self.mesh3d_pass_view_uniform_frame_count = self.frame_count
+    self.mesh3d_pass_view_uniform_camera_key_hi = preprocess_camera_key_hi
+    self.mesh3d_pass_view_uniform_camera_key_lo = preprocess_camera_key_lo
+    self.mesh3d_pass_view_uniform_pass_kind = pass_kind
   }
-  guard resolved_skin_bg is Some(active_skin_bg) else { return }
-  let view_needs_upload = match self.mesh3d_pass_view_uniform_bytes {
-    Some(cached) => cached != view_bytes
-    None => true
+  let draw_preuploaded = (
+      self.mesh3d_gpu_instance_builder_enabled || use_indirect
+    ) &&
+    draw_storage_index >= 0 &&
+    self.mesh3d_prepared_draw_pass_kind == pass_kind &&
+    self.mesh3d_prepared_draw_camera_key_hi == preprocess_camera_key_hi &&
+    self.mesh3d_prepared_draw_camera_key_lo == preprocess_camera_key_lo &&
+    draw_storage_index < self.mesh3d_prepared_draw_count
+  if !draw_preuploaded {
+    let draw_bytes = mesh3d_draw_uniform_bytes(
+      x,
+      y,
+      z,
+      rotation_x,
+      rotation_y,
+      rotation_z,
+      rotation_w,
+      scale_x,
+      scale_y,
+      scale_z,
+      color_r,
+      color_g,
+      color_b,
+      color_a,
+      uv_transform_a_value,
+      uv_transform_b_value,
+      uv_transform_c_value,
+      uv_transform_d_value,
+      uv_transform_tx_value,
+      uv_transform_ty_value,
+      uv_transform_mode_value,
+      emissive_r,
+      emissive_g,
+      emissive_b,
+      metallic,
+      roughness,
+      reflectance,
+      parallax_depth_scale,
+      max_parallax_layer_count,
+      max_relief_mapping_search_steps,
+      anisotropy_strength,
+      anisotropy_rotation,
+      specular_tint_r,
+      specular_tint_g,
+      specular_tint_b,
+      diffuse_transmission,
+      specular_transmission,
+      thickness,
+      ior,
+      alpha_cutoff,
+      runtime_material_flags,
+      if skinning_key_hi >= 0 {
+        skinning_key_hi.reinterpret_as_uint()
+      } else {
+        0U
+      },
+      draw_point_shadow_enabled,
+      draw_point_shadow_depth_bias,
+    )
+    self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
-  if view_needs_upload {
-    self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
-    self.mesh3d_pass_view_uniform_bytes = Some(view_bytes)
-  }
-  self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   let view_bg = mesh3d_view_bg_cache_get_or_create(
     self, transmission_source_texture, point_shadow_texture, environment_diffuse_texture,
     environment_specular_texture,

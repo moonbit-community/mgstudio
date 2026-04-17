@@ -171,6 +171,58 @@ struct ResourceSlot {
 }
 
 ///|
+struct ComponentSequenceTable {
+  by_entity : Array[@core.Sequence]
+}
+
+///|
+fn ComponentSequenceTable::new() -> ComponentSequenceTable {
+  { by_entity: [] }
+}
+
+///|
+fn ComponentSequenceTable::set(
+  self : ComponentSequenceTable,
+  entity_id : Int,
+  sequence : @core.Sequence,
+) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  while self.by_entity.length() <= entity_id {
+    self.by_entity.push(0)
+  }
+  self.by_entity[entity_id] = sequence
+}
+
+///|
+fn ComponentSequenceTable::get(
+  self : ComponentSequenceTable,
+  entity_id : Int,
+) -> @core.Sequence? {
+  if entity_id < 0 {
+    return None
+  }
+  match self.by_entity.get(entity_id) {
+    Some(sequence) if sequence > 0 => Some(sequence)
+    _ => None
+  }
+}
+
+///|
+fn ComponentSequenceTable::remove(
+  self : ComponentSequenceTable,
+  entity_id : Int,
+) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  if self.by_entity.get(entity_id) is Some(_) {
+    self.by_entity[entity_id] = 0
+  }
+}
+
+///|
 pub struct World {
   world_id : Int
   entities : @core.Entities
@@ -181,8 +233,8 @@ pub struct World {
   used_components : Map[Int, Bool]
   added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  added_component_sequences : Map[Int, Map[Int, @core.Sequence]]
-  changed_component_sequences : Map[Int, Map[Int, @core.Sequence]]
+  added_component_sequences : Map[Int, ComponentSequenceTable]
+  changed_component_sequences : Map[Int, ComponentSequenceTable]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   resource_added_sequences : Map[Int, @core.Sequence]
@@ -516,11 +568,11 @@ fn World::ensure_changed_component_messages(
 fn World::ensure_added_component_sequence_map(
   self : World,
   key_id : Int,
-) -> Map[Int, @core.Sequence] {
+) -> ComponentSequenceTable {
   match self.added_component_sequences.get(key_id) {
     Some(sequence_by_entity) => sequence_by_entity
     None => {
-      let sequence_by_entity : Map[Int, @core.Sequence] = {}
+      let sequence_by_entity = ComponentSequenceTable::new()
       self.added_component_sequences.set(key_id, sequence_by_entity)
       sequence_by_entity
     }
@@ -528,14 +580,14 @@ fn World::ensure_added_component_sequence_map(
 }
 
 ///|
-fn World::ensure_changed_component_sequence_map(
+fn World::ensure_changed_component_sequence_table(
   self : World,
   key_id : Int,
-) -> Map[Int, @core.Sequence] {
+) -> ComponentSequenceTable {
   match self.changed_component_sequences.get(key_id) {
     Some(sequence_by_entity) => sequence_by_entity
     None => {
-      let sequence_by_entity : Map[Int, @core.Sequence] = {}
+      let sequence_by_entity = ComponentSequenceTable::new()
       self.changed_component_sequences.set(key_id, sequence_by_entity)
       sequence_by_entity
     }
@@ -559,13 +611,22 @@ fn World::record_component_changed(
   entity : @core.Entity,
   key_id : Int,
 ) -> Unit {
-  self
-  .ensure_changed_component_sequence_map(key_id)
-  .set(entity.id, component_write_sequence(self))
+  self.record_component_changed_sequence_only(entity, key_id)
   self.ensure_changed_component_messages(key_id).val.send(
     component_write_sequence(self),
     entity,
   )
+}
+
+///|
+fn World::record_component_changed_sequence_only(
+  self : World,
+  entity : @core.Entity,
+  key_id : Int,
+) -> Unit {
+  self
+  .ensure_changed_component_sequence_table(key_id)
+  .set(entity.id, component_write_sequence(self))
 }
 
 ///|
@@ -575,10 +636,10 @@ fn World::clear_component_sequence_records(
   key_id : Int,
 ) -> Unit {
   if self.added_component_sequences.get(key_id) is Some(sequence_by_entity) {
-    ignore(sequence_by_entity.remove(entity.id))
+    sequence_by_entity.remove(entity.id)
   }
   if self.changed_component_sequences.get(key_id) is Some(sequence_by_entity) {
-    ignore(sequence_by_entity.remove(entity.id))
+    sequence_by_entity.remove(entity.id)
   }
 }
 

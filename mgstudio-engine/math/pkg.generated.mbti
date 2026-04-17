@@ -170,8 +170,13 @@ pub struct Affine3 {
   matrix3 : Mat3
   translation : Vec3
 }
+pub fn Affine3::from_mat3_translation(Mat3, Vec3) -> Self
+pub fn Affine3::from_scale_rotation_translation(Vec3, Quat, Vec3) -> Self
 pub fn Affine3::from_translation(Vec3) -> Self
 pub fn Affine3::identity() -> Self
+pub fn Affine3::inverse(Self) -> Self
+pub fn Affine3::mul(Self, Self) -> Self
+pub fn Affine3::to_scale_rotation_translation(Self) -> (Vec3, Quat, Vec3)
 pub fn Affine3::transform_point3(Self, Vec3) -> Vec3
 
 pub struct Annulus {
@@ -812,9 +817,14 @@ pub struct Mat3 {
   y_axis : Vec3
   z_axis : Vec3
 }
+pub fn Mat3::determinant(Self) -> Float
 pub fn Mat3::from_cols(Vec3, Vec3, Vec3) -> Self
 pub fn Mat3::identity() -> Self
+pub fn Mat3::inverse(Self) -> Self?
+pub fn Mat3::mul(Self, Self) -> Self
+pub fn Mat3::mul_scalar(Self, Float) -> Self
 pub fn Mat3::mul_vec3(Self, Vec3) -> Vec3
+pub fn Mat3::transpose(Self) -> Self
 
 pub struct Plane2d {
   normal : Dir2
@@ -829,7 +839,9 @@ pub struct Plane3d {
   half_size : Vec2
 }
 pub fn Plane3d::default() -> Self
+pub fn Plane3d::half_size(Self) -> Vec2
 pub fn Plane3d::new(Vec3, Vec2) -> Self
+pub fn Plane3d::normal(Self) -> Dir3
 pub impl Measured2d for Plane3d
 pub impl Primitive3d for Plane3d
 

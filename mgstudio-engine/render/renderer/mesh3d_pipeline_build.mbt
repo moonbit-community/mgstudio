@@ -373,7 +373,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     }
     mesh3d_material_cache_clear(backend)
     mesh3d_custom_pipeline_cache_clear(backend)
-    ensure_mesh3d_skin_default_binding(backend) |> ignore
+    ensure_mesh3d_skin_current_binding(backend) |> ignore
   }
   if backend.mesh3d_view_buf is None {
     backend.mesh3d_view_buf = Some(

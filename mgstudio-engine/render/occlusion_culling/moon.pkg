@@ -1,7 +1,17 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/render" @render,
+  "Milky2018/mgstudio/render/renderer" @renderer,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name mesh_preprocess_types_wgsl_source",
+      "input": "mesh_preprocess_types.wgsl",
+      "output": "mesh_preprocess_types_wgsl.mbt",
+    },
+  ],
+)

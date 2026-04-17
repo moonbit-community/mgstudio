@@ -288,12 +288,18 @@ fn mesh3d_preprocess_upload_uniform_buffer(
 fn mesh3d_preprocess_work_items_bytes(
   items : Array[HostMesh3dPreprocessShaderWorkItem],
 ) -> Bytes {
-  let words : Array[UInt] = []
+  let bytes = Array::make(items.length() * 8, b'\x00')
+  let mut byte_offset = 0
   for item in items {
-    words.push(item.input_index.reinterpret_as_uint())
-    words.push(item.output_or_indirect_parameters_index.reinterpret_as_uint())
+    u32le_write_into(bytes, byte_offset, item.input_index.reinterpret_as_uint())
+    u32le_write_into(
+      bytes,
+      byte_offset + 4,
+      item.output_or_indirect_parameters_index.reinterpret_as_uint(),
+    )
+    byte_offset = byte_offset + 8
   }
-  u32le_pack(words)
+  Bytes::from_array(bytes)
 }
 
 ///|
@@ -429,50 +435,100 @@ fn mesh3d_preprocess_mesh_inputs_bytes(
 fn mesh3d_preprocess_cpu_metadata_bytes(
   metadata : Array[HostMesh3dPreprocessIndirectParametersCpuMetadata],
 ) -> Bytes {
-  let words : Array[UInt] = []
+  let bytes = Array::make(metadata.length() * 8, b'\x00')
+  let mut byte_offset = 0
   for entry in metadata {
-    words.push(entry.base_output_index.reinterpret_as_uint())
-    words.push(entry.batch_set_index.reinterpret_as_uint())
+    u32le_write_into(
+      bytes,
+      byte_offset,
+      entry.base_output_index.reinterpret_as_uint(),
+    )
+    u32le_write_into(
+      bytes,
+      byte_offset + 4,
+      entry.batch_set_index.reinterpret_as_uint(),
+    )
+    byte_offset = byte_offset + 8
   }
-  u32le_pack(words)
+  Bytes::from_array(bytes)
 }
 
 ///|
 fn mesh3d_preprocess_gpu_metadata_bytes(
   metadata : Array[HostMesh3dPreprocessIndirectParametersGpuMetadata],
 ) -> Bytes {
-  let words : Array[UInt] = []
+  let bytes = Array::make(metadata.length() * 12, b'\x00')
+  let mut byte_offset = 0
   for entry in metadata {
-    words.push(entry.mesh_index.reinterpret_as_uint())
-    words.push(entry.early_instance_count.reinterpret_as_uint())
-    words.push(entry.late_instance_count.reinterpret_as_uint())
+    u32le_write_into(bytes, byte_offset, entry.mesh_index.reinterpret_as_uint())
+    u32le_write_into(
+      bytes,
+      byte_offset + 4,
+      entry.early_instance_count.reinterpret_as_uint(),
+    )
+    u32le_write_into(
+      bytes,
+      byte_offset + 8,
+      entry.late_instance_count.reinterpret_as_uint(),
+    )
+    byte_offset = byte_offset + 12
   }
-  u32le_pack(words)
+  Bytes::from_array(bytes)
 }
 
 ///|
 fn mesh3d_preprocess_batch_set_bytes(
   batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet],
 ) -> Bytes {
-  let words : Array[UInt] = []
+  let bytes = Array::make(batch_sets.length() * 8, b'\x00')
+  let mut byte_offset = 0
   for batch_set in batch_sets {
-    words.push(batch_set.indirect_parameters_count.reinterpret_as_uint())
-    words.push(batch_set.indirect_parameters_base.reinterpret_as_uint())
+    u32le_write_into(
+      bytes,
+      byte_offset,
+      batch_set.indirect_parameters_count.reinterpret_as_uint(),
+    )
+    u32le_write_into(
+      bytes,
+      byte_offset + 4,
+      batch_set.indirect_parameters_base.reinterpret_as_uint(),
+    )
+    byte_offset = byte_offset + 8
   }
-  u32le_pack(words)
+  Bytes::from_array(bytes)
 }
 
 ///|
 fn mesh3d_preprocess_dispatch_metadata_bytes(
   metadata : HostMesh3dPreprocessDispatchMetadata,
 ) -> Bytes {
-  u32le_pack([
+  let bytes = Array::make(20, b'\x00')
+  u32le_write_into(
+    bytes,
+    0,
     metadata.direct_workgroup_count.reinterpret_as_uint(),
+  )
+  u32le_write_into(
+    bytes,
+    4,
     metadata.indexed_workgroup_count.reinterpret_as_uint(),
+  )
+  u32le_write_into(
+    bytes,
+    8,
     metadata.non_indexed_workgroup_count.reinterpret_as_uint(),
+  )
+  u32le_write_into(
+    bytes,
+    12,
     metadata.late_indexed_workgroup_count.reinterpret_as_uint(),
+  )
+  u32le_write_into(
+    bytes,
+    16,
     metadata.late_non_indexed_workgroup_count.reinterpret_as_uint(),
-  ])
+  )
+  Bytes::from_array(bytes)
 }
 
 ///|
@@ -491,18 +547,32 @@ fn mesh3d_preprocess_frustum_plane_words(
 fn mesh3d_preprocess_mesh_culling_data_bytes(
   culling_data : Array[HostMesh3dPreprocessMeshCullingData],
 ) -> Bytes {
-  let words : Array[UInt] = []
+  let bytes = Array::make(culling_data.length() * 32, b'\x00')
+  let mut byte_offset = 0
   for entry in culling_data {
-    words.push(f32_bits(entry.aabb_center_x))
-    words.push(f32_bits(entry.aabb_center_y))
-    words.push(f32_bits(entry.aabb_center_z))
-    words.push(0U)
-    words.push(f32_bits(entry.aabb_half_extents_x))
-    words.push(f32_bits(entry.aabb_half_extents_y))
-    words.push(f32_bits(entry.aabb_half_extents_z))
-    words.push(0U)
+    u32le_write_into(bytes, byte_offset, f32_bits(entry.aabb_center_x))
+    u32le_write_into(bytes, byte_offset + 4, f32_bits(entry.aabb_center_y))
+    u32le_write_into(bytes, byte_offset + 8, f32_bits(entry.aabb_center_z))
+    u32le_write_into(bytes, byte_offset + 12, 0U)
+    u32le_write_into(
+      bytes,
+      byte_offset + 16,
+      f32_bits(entry.aabb_half_extents_x),
+    )
+    u32le_write_into(
+      bytes,
+      byte_offset + 20,
+      f32_bits(entry.aabb_half_extents_y),
+    )
+    u32le_write_into(
+      bytes,
+      byte_offset + 24,
+      f32_bits(entry.aabb_half_extents_z),
+    )
+    u32le_write_into(bytes, byte_offset + 28, 0U)
+    byte_offset = byte_offset + 32
   }
-  u32le_pack(words)
+  Bytes::from_array(bytes)
 }
 
 ///|

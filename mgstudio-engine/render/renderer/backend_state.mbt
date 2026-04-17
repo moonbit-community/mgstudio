@@ -156,20 +156,32 @@ pub struct GpuBackend {
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
   mut mesh3d_pass_view_uniform_bytes : Bytes?
+  mut mesh3d_pass_view_uniform_frame_count : UInt
+  mut mesh3d_pass_view_uniform_camera_key_hi : Int
+  mut mesh3d_pass_view_uniform_camera_key_lo : Int
+  mut mesh3d_pass_view_uniform_pass_kind : Int
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mut mesh3d_draw_slot_used : Int
-  mut mesh3d_skin_default_buf : @wgpu.Buffer?
-  mut mesh3d_skin_default_bg : @wgpu.BindGroup?
-  mesh3d_skin_slots : Array[GpuStorageSlot]
-  mesh3d_skin_slot_indices_by_key : Map[UInt64, Int]
-  mut mesh3d_skin_slot_used : Int
+  mut mesh3d_skin_current_buf : @wgpu.Buffer?
+  mut mesh3d_skin_current_bg : @wgpu.BindGroup?
+  mut mesh3d_skin_prev_buf : @wgpu.Buffer?
+  mut mesh3d_skin_prev_bg : @wgpu.BindGroup?
+  mut mesh3d_skin_capacity : UInt64
+  mut mesh3d_skin_staging_bytes : FixedArray[Byte]
+  mut mesh3d_skin_staging_view : Bytes
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu.BindGroup?
   mut mesh3d_instance_draw_capacity : UInt64
   mut mesh3d_instance_draw_used : Int
+  mut mesh3d_instance_draw_staging_bytes : FixedArray[Byte]
+  mut mesh3d_instance_draw_staging_view : Bytes
+  mut mesh3d_prepared_draw_camera_key_hi : Int
+  mut mesh3d_prepared_draw_camera_key_lo : Int
+  mut mesh3d_prepared_draw_pass_kind : Int
+  mut mesh3d_prepared_draw_count : Int
   mesh3d_preprocess_camera_upload_states : Array[
     GpuMesh3dPreprocessCameraUploadState,
   ]

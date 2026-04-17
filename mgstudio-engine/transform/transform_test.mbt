@@ -27,6 +27,19 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn global_translation_eq(
+  global_transform : GlobalTransform,
+  x : Float,
+  y : Float,
+  z? : Float = 0.0F,
+) -> Bool {
+  let translation = global_transform.translation()
+  approx_eq(translation.x, x) &&
+  approx_eq(translation.y, y) &&
+  approx_eq(translation.z, z)
+}
+
+///|
 fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
   let this_run = world.advance_sequence()
   let last_run = world.get_sequence_context().sequence().this_run
@@ -70,10 +83,7 @@ test "transform ecs: root global matches local" {
   sync_simple_transforms_world(world)
 
   let gt = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  debug_inspect(
-    approx_eq(gt.affine.tx, 1.0F) && approx_eq(gt.affine.ty, 2.0F),
-    content="true",
-  )
+  debug_inspect(global_translation_eq(gt, 1.0F, 2.0F), content="true")
 }
 
 ///|
@@ -127,10 +137,7 @@ test "transform ecs: parent translation affects child global translation" {
   sync_simple_transforms_world(world)
 
   let gt = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  debug_inspect(
-    approx_eq(gt.affine.tx, 1.0F) && approx_eq(gt.affine.ty, 2.0F),
-    content="true",
-  )
+  debug_inspect(global_translation_eq(gt, 1.0F, 2.0F), content="true")
 }
 
 ///|
@@ -154,7 +161,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let first_global = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  debug_inspect(approx_eq(first_global.affine.tx, 1.0F), content="true")
+  debug_inspect(global_translation_eq(first_global, 1.0F, 0.0F), content="true")
 
   // Second run: no local changes, the propagated value should stay stable.
   next_system_sequence(world) |> ignore
@@ -163,8 +170,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   sync_simple_transforms_world(world)
   let second_global = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
   debug_inspect(
-    approx_eq(second_global.affine.tx, first_global.affine.tx) &&
-    approx_eq(second_global.affine.ty, first_global.affine.ty),
+    second_global.to_json() == first_global.to_json(),
     content="true",
   )
 
@@ -183,7 +189,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let gt = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
-  debug_inspect(approx_eq(gt.affine.tx, 2.0F), content="true")
+  debug_inspect(global_translation_eq(gt, 2.0F, 0.0F), content="true")
 }
 
 ///|
@@ -222,7 +228,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let child_before = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  debug_inspect(approx_eq(child_before.affine.tx, 3.0F), content="true")
+  debug_inspect(global_translation_eq(child_before, 3.0F, 0.0F), content="true")
 
   next_system_sequence(world) |> ignore
   try! (world.remove_by_key(child, @hierarchy.ecs_key_parent) |> ignore)
@@ -230,7 +236,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
   let child_after = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  debug_inspect(approx_eq(child_after.affine.tx, 1.0F), content="true")
+  debug_inspect(global_translation_eq(child_after, 1.0F, 0.0F), content="true")
 }
 
 ///|
@@ -286,8 +292,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
 
   let parent_before = (try! world.get_by_key(parent, ecs_key_global_transform)).unwrap()
   debug_inspect(
-    approx_eq(parent_before.affine.tx, 7.7F) &&
-    approx_eq(parent_before.affine.ty, 7.7F),
+    global_translation_eq(parent_before, 7.7F, 7.7F),
     content="true",
   )
 
@@ -298,11 +303,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   sync_simple_transforms_world(world)
 
   let parent_after = (try! world.get_by_key(parent, ecs_key_global_transform)).unwrap()
-  debug_inspect(
-    approx_eq(parent_after.affine.tx, 4.4F) &&
-    approx_eq(parent_after.affine.ty, 4.4F),
-    content="true",
-  )
+  debug_inspect(global_translation_eq(parent_after, 4.4F, 4.4F), content="true")
 
   next_system_sequence(world) |> ignore
   try! (world.remove_by_key(child, @hierarchy.ecs_key_parent) |> ignore)
@@ -311,11 +312,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   sync_simple_transforms_world(world)
 
   let child_after = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
-  debug_inspect(
-    approx_eq(child_after.affine.tx, 5.5F) &&
-    approx_eq(child_after.affine.ty, 5.5F),
-    content="true",
-  )
+  debug_inspect(global_translation_eq(child_after, 5.5F, 5.5F), content="true")
 }
 
 ///|
@@ -508,10 +505,7 @@ test "transform plugin: post startup populates hierarchy globals" {
   app.run_startup() |> ignore
 
   let gt = (try! app.world().get_by_key(child, ecs_key_global_transform)).unwrap()
-  debug_inspect(
-    approx_eq(gt.affine.tx, 5.0F) && approx_eq(gt.affine.ty, 5.0F),
-    content="true",
-  )
+  debug_inspect(global_translation_eq(gt, 5.0F, 5.0F), content="true")
 }
 
 ///|
@@ -591,10 +585,7 @@ test "transform plugin: post update reflects update stage transform writes" {
   app.run_once() |> ignore
 
   let gt = (try! app.world().get_by_key(entity, ecs_key_global_transform)).unwrap()
-  debug_inspect(
-    approx_eq(gt.affine.tx, 7.0F) && approx_eq(gt.affine.ty, 8.0F),
-    content="true",
-  )
+  debug_inspect(global_translation_eq(gt, 7.0F, 8.0F), content="true")
 }
 
 ///|

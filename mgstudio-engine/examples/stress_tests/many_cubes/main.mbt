@@ -106,7 +106,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Camera3d::default(),
+        @camera.Camera3d::default(),
         @transform.Transform::from_xyz(20.0F, 18.0F, 20.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -132,7 +132,10 @@ fn rotate_cubes(
 ///|
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
-  cameras : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[@pbr.Camera3d]],
+  cameras : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ],
 ) -> Unit {
   let seconds = time.get().elapsed_secs()
   let radius = 26.0F

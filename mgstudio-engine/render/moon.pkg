@@ -11,8 +11,10 @@ import {
   "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,
   "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
   "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/render/batching" @batching,
   "Milky2018/mgstudio/render/diagnostic" @render_diagnostic,
   "Milky2018/mgstudio/render/mesh" @render_mesh,
+  "Milky2018/mgstudio/render/occlusion_culling" @occlusion_culling,
   "Milky2018/mgstudio/render/render_phase" @render_phase_api,
   "Milky2018/mgstudio/render/render_resource" @render_resource,
   "Milky2018/mgstudio/render/renderer" @renderer,
@@ -39,11 +41,6 @@ options(
       "command": ":embed --input $input --output $output --name globals_wgsl_source",
       "input": "globals.wgsl",
       "output": "globals_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh_preprocess_types_wgsl_source",
-      "input": "occlusion_culling/mesh_preprocess_types.wgsl",
-      "output": "mesh_preprocess_types_wgsl.mbt",
     },
     {
       "command": ":embed --input $input --output $output --name maths_wgsl_source",

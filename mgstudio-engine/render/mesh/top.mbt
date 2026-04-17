@@ -69,12 +69,10 @@ pub fn RenderMesh::buffer_info(self : RenderMesh) -> RenderMeshBufferInfo {
 }
 
 ///|
-pub fn host_gpu_prepare_mesh3d_skin_binding(
-  key_hi~ : Int,
-  key_lo~ : Int,
-  skinning_matrices~ : Array[Float],
+pub fn host_gpu_prepare_mesh3d_skin_bindings(
+  skinning_rows~ : Array[Float],
 ) -> Unit {
-  @renderer.prepare_mesh3d_skin_binding(key_hi~, key_lo~, skinning_matrices~)
+  @renderer.prepare_mesh3d_skin_bindings(skinning_rows~)
 }
 
 ///|

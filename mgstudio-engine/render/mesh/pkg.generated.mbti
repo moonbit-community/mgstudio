@@ -20,15 +20,13 @@ pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv~ : String) -> Int
 
 pub fn host_gpu_create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
 
-pub fn host_gpu_prepare_mesh3d_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
+pub fn host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
 pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
 
 pub fn mesh_allocator_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
 pub fn mesh_allocator_create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
-
-pub fn mesh_allocator_prepare_skin_binding(key_hi~ : Int, key_lo~ : Int, skinning_matrices~ : Array[Float]) -> Unit
 
 pub fn mesh_allocator_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
 

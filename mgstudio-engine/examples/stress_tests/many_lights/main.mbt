@@ -136,7 +136,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Camera3d::default(),
+        @camera.Camera3d::default(),
         @transform.Transform::from_xyz(CAMERA_RADIUS, 0.0F, 0.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -149,7 +149,10 @@ fn setup(
 ///|
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
-  camera : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[@pbr.Camera3d]],
+  camera : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ],
 ) -> Unit {
   let t = time.get().elapsed_secs() * 0.15F
   let x = @math.cos(t) * CAMERA_RADIUS

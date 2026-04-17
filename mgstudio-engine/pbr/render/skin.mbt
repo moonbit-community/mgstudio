@@ -73,33 +73,108 @@ fn render3d_has_prepared_skin_binding(
 }
 
 ///|
-fn render3d_phase_release_skin_binding_slot(
-  phase_state_ref : Ref[Render3dPhaseState],
-  slot : Int,
-) -> Unit {
-  if slot < 0 {
-    return
-  }
-  for existing in phase_state_ref.val.skin_binding_free_slots {
-    if existing == slot {
-      return
-    }
-  }
-  phase_state_ref.val.skin_binding_free_slots.push(slot)
+const RENDER3D_SKIN_ALLOCATION_UNIT_MATRICES : Int = 4
+
+///|
+fn render3d_skin_allocation_matrix_count(joint_count : Int) -> Int {
+  let clamped_joint_count = if joint_count <= 0 { 1 } else { joint_count }
+  let unit = RENDER3D_SKIN_ALLOCATION_UNIT_MATRICES
+  (clamped_joint_count + unit - 1) / unit * unit
 }
 
 ///|
-fn render3d_phase_allocate_skin_binding_slot(
+fn render3d_phase_insert_skin_free_range(
   phase_state_ref : Ref[Render3dPhaseState],
-) -> Int {
-  match phase_state_ref.val.skin_binding_free_slots.pop() {
-    Some(slot) => slot
-    None => {
-      let slot = phase_state_ref.val.next_skin_binding_slot
-      phase_state_ref.val.next_skin_binding_slot = slot + 1
-      slot
+  offset : Int,
+  length : Int,
+) -> Unit {
+  if offset < 0 || length <= 0 {
+    return
+  }
+  phase_state_ref.val.skin_binding_free_ranges.push(SkinBindingFreeRange::{
+    offset,
+    length,
+  })
+  phase_state_ref.val.skin_binding_free_ranges.sort_by(fn(lhs, rhs) {
+    lhs.offset - rhs.offset
+  })
+  if phase_state_ref.val.skin_binding_free_ranges.length() <= 1 {
+    return
+  }
+  let merged : Array[SkinBindingFreeRange] = []
+  for range in phase_state_ref.val.skin_binding_free_ranges {
+    if merged.is_empty() {
+      merged.push(range)
+      continue
+    }
+    let last_index = merged.length() - 1
+    let last = merged[last_index]
+    let last_end = last.offset + last.length
+    if range.offset <= last_end {
+      let merged_end = if last_end >= range.offset + range.length {
+        last_end
+      } else {
+        range.offset + range.length
+      }
+      merged[last_index] = SkinBindingFreeRange::{
+        offset: last.offset,
+        length: merged_end - last.offset,
+      }
+    } else {
+      merged.push(range)
     }
   }
+  phase_state_ref.val.skin_binding_free_ranges = merged
+}
+
+///|
+fn render3d_phase_trim_skin_free_ranges(
+  phase_state_ref : Ref[Render3dPhaseState],
+) -> Unit {
+  let mut changed = true
+  while changed {
+    changed = false
+    match phase_state_ref.val.skin_binding_free_ranges.last() {
+      Some(range) =>
+        if range.offset + range.length ==
+          phase_state_ref.val.next_skin_binding_index {
+          phase_state_ref.val.next_skin_binding_index = range.offset
+          phase_state_ref.val.skin_binding_free_ranges.pop() |> ignore
+          changed = true
+        }
+      None => ()
+    }
+  }
+}
+
+///|
+fn render3d_phase_allocate_skin_binding_index(
+  phase_state_ref : Ref[Render3dPhaseState],
+  joint_count : Int,
+) -> Int {
+  let allocation_matrix_count = render3d_skin_allocation_matrix_count(
+    joint_count,
+  )
+  let free_range_count = phase_state_ref.val.skin_binding_free_ranges.length()
+  for index in 0..<free_range_count {
+    let range = phase_state_ref.val.skin_binding_free_ranges[index]
+    if range.length < allocation_matrix_count {
+      continue
+    }
+    let offset = range.offset
+    if range.length == allocation_matrix_count {
+      phase_state_ref.val.skin_binding_free_ranges.remove(index) |> ignore
+    } else {
+      phase_state_ref.val.skin_binding_free_ranges[index] = SkinBindingFreeRange::{
+        offset: range.offset + allocation_matrix_count,
+        length: range.length - allocation_matrix_count,
+      }
+    }
+    return offset
+  }
+  let offset = phase_state_ref.val.next_skin_binding_index
+  phase_state_ref.val.next_skin_binding_index = offset + allocation_matrix_count
+  offset
 }
 
 ///|
@@ -107,21 +182,32 @@ fn render3d_phase_remove_skin(
   phase_state_ref : Ref[Render3dPhaseState],
   entity : @core.Entity,
 ) -> Unit {
-  let mut removed_skin_binding_slot : Int? = None
+  let skin_key = render3d_skin_entity_key(entity)
+  let mut removed_skin_binding_index : Int? = None
   match phase_state_ref.val.prepared_skin_bindings.get(entity.id) {
     Some(binding) =>
       if binding.entity_generation == entity.generation {
         phase_state_ref.val.prepared_skin_bindings.remove(entity.id) |> ignore
-        removed_skin_binding_slot = Some(binding.key_hi)
+        removed_skin_binding_index = Some(binding.key_hi)
       }
     None => ()
   }
-  match removed_skin_binding_slot {
-    Some(slot) =>
-      render3d_phase_release_skin_binding_slot(phase_state_ref, slot)
+  match removed_skin_binding_index {
+    Some(offset) => {
+      let joint_count = match
+        phase_state_ref.val.skin_joint_count_by_skin.get(skin_key) {
+        Some(count) => count
+        None => 0
+      }
+      render3d_phase_insert_skin_free_range(
+        phase_state_ref,
+        offset,
+        render3d_skin_allocation_matrix_count(joint_count),
+      )
+      render3d_phase_trim_skin_free_ranges(phase_state_ref)
+    }
     None => ()
   }
-  let skin_key = render3d_skin_entity_key(entity)
   match phase_state_ref.val.skin_joint_count_by_skin.get(skin_key) {
     Some(joint_count) =>
       if joint_count > 0 {
@@ -190,22 +276,31 @@ fn render3d_phase_mark_skin_prepared(
   phase_state_ref : Ref[Render3dPhaseState],
   entity : @core.Entity,
 ) -> Unit {
+  let skin_key = render3d_skin_entity_key(entity)
+  let joint_count = match
+    phase_state_ref.val.skin_joint_count_by_skin.get(skin_key) {
+    Some(count) => count
+    None => 0
+  }
   match phase_state_ref.val.prepared_skin_bindings.get(entity.id) {
     Some(binding) =>
       if binding.entity_generation == entity.generation {
         return
       } else {
-        render3d_phase_release_skin_binding_slot(
+        render3d_phase_insert_skin_free_range(
           phase_state_ref,
           binding.key_hi,
+          render3d_skin_allocation_matrix_count(joint_count),
         )
       }
     None => ()
   }
-  let slot = render3d_phase_allocate_skin_binding_slot(phase_state_ref)
+  let offset = render3d_phase_allocate_skin_binding_index(
+    phase_state_ref, joint_count,
+  )
   phase_state_ref.val.prepared_skin_bindings.set(entity.id, PreparedSkinBinding3d::{
     entity_generation: entity.generation,
-    key_hi: slot,
+    key_hi: offset,
     key_lo: 0,
   })
 }
@@ -247,6 +342,86 @@ fn render3d_cached_skinning_matrices(
 }
 
 ///|
+fn render3d_skin_matrix_row_offset(matrix_index : Int) -> Int {
+  if matrix_index < 0 {
+    return -1
+  }
+  matrix_index * 16
+}
+
+///|
+fn render3d_skin_identity_row_at(row_index : Int) -> Float {
+  match row_index % 16 {
+    0 => 1.0F
+    5 => 1.0F
+    10 => 1.0F
+    15 => 1.0F
+    _ => 0.0F
+  }
+}
+
+///|
+fn render3d_ensure_skin_staging_rows(
+  phase_state_ref : Ref[Render3dPhaseState],
+  required_rows : Int,
+) -> Unit {
+  if required_rows <= phase_state_ref.val.skin_staging_rows.length() {
+    return
+  }
+  while phase_state_ref.val.skin_staging_rows.length() < required_rows {
+    let row_index = phase_state_ref.val.skin_staging_rows.length()
+    phase_state_ref.val.skin_staging_rows.push(
+      render3d_skin_identity_row_at(row_index),
+    )
+  }
+}
+
+///|
+fn render3d_copy_skinning_rows_into_staging(
+  phase_state_ref : Ref[Render3dPhaseState],
+  matrix_index : Int,
+  skinning_matrices : Array[Float],
+) -> Unit {
+  let base = render3d_skin_matrix_row_offset(matrix_index)
+  if base < 0 {
+    return
+  }
+  let required_rows = base + skinning_matrices.length()
+  render3d_ensure_skin_staging_rows(phase_state_ref, required_rows)
+  for i in 0..<skinning_matrices.length() {
+    phase_state_ref.val.skin_staging_rows[base + i] = skinning_matrices[i]
+  }
+  let matrix_count = (skinning_matrices.length() + 15) / 16
+  let padded_matrix_count = render3d_skin_allocation_matrix_count(matrix_count)
+  render3d_ensure_skin_staging_rows(
+    phase_state_ref,
+    base + padded_matrix_count * 16,
+  )
+  for allocation_matrix_index in matrix_count..<padded_matrix_count {
+    let row_base = base + allocation_matrix_index * 16
+    if row_base + 15 >= phase_state_ref.val.skin_staging_rows.length() {
+      break
+    }
+    phase_state_ref.val.skin_staging_rows[row_base] = 1.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 1] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 2] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 3] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 4] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 5] = 1.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 6] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 7] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 8] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 9] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 10] = 1.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 11] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 12] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 13] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 14] = 0.0F
+    phase_state_ref.val.skin_staging_rows[row_base + 15] = 1.0F
+  }
+}
+
+///|
 pub fn render3d_extract_skin_bindings(
   source_world : @ecs.World,
   phase_state_ref : Ref[Render3dPhaseState],
@@ -255,12 +430,13 @@ pub fn render3d_extract_skin_bindings(
   phase_state_ref.val.skin_upload_queue.clear()
   if source_world.component_count(@mesh.SkinnedMesh::component()) == 0 {
     phase_state_ref.val.prepared_skin_bindings.clear()
-    phase_state_ref.val.next_skin_binding_slot = 0
-    phase_state_ref.val.skin_binding_free_slots.clear()
+    phase_state_ref.val.next_skin_binding_index = 0
+    phase_state_ref.val.skin_binding_free_ranges.clear()
     phase_state_ref.val.skin_joint_to_skins.clear()
     phase_state_ref.val.skin_joints_by_skin.clear()
     phase_state_ref.val.skin_joint_count_by_skin.clear()
     phase_state_ref.val.skin_previous_matrices.clear()
+    phase_state_ref.val.skin_staging_rows.clear()
     phase_state_ref.val.total_skin_joints = 0
     return
   }
@@ -318,14 +494,25 @@ pub fn render3d_extract_skin_bindings(
     }
     render3d_phase_remove_skin(phase_state_ref, entity)
   }
-  let changed_joint_entities = source_world
-    .changed_components(@transform.ecs_key_global_transform, sequence)
-    .read()
   if phase_state_ref.val.total_skin_joints <= 0 {
     return
   }
   let threshold = phase_state_ref.val.total_skin_joints / 4
-  let must_extract_all = changed_joint_entities.length() > threshold
+  let changed_joint_entities : Array[@core.Entity] = []
+  let mut must_extract_all = false
+  for entry in phase_state_ref.val.skin_joint_to_skins.iter() {
+    let (joint_key, _skins) = entry
+    let joint_entity = @core.Entity::from_bits(joint_key)
+    if source_world.is_changed_by_key(
+        joint_entity, @transform.ecs_key_global_transform, sequence,
+      ) {
+      changed_joint_entities.push(joint_entity)
+      if changed_joint_entities.length() > threshold {
+        must_extract_all = true
+        break
+      }
+    }
+  }
   if must_extract_all {
     source_world.for_each_component(skinned_mesh_key, fn(
       entity,
@@ -388,7 +575,7 @@ pub fn render3d_prepare_skin_bindings_upload(
   phase_state_ref : Ref[Render3dPhaseState],
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
 ) -> Unit {
-  if phase_state_ref.val.skin_upload_queue.length() == 0 {
+  if phase_state_ref.val.prepared_skin_bindings.is_empty() {
     return
   }
   for entity in phase_state_ref.val.skin_upload_queue {
@@ -401,26 +588,20 @@ pub fn render3d_prepare_skin_bindings_upload(
     if render3d_cached_skinning_matrices(world_transform_cache_ref, entity)
       is Some(skinning_matrices) {
       let skin_key = render3d_skin_entity_key(entity)
-      let previous_skinning_matrices = match
-        phase_state_ref.val.skin_previous_matrices.get(skin_key) {
-        Some(previous) => previous
-        None => skinning_matrices
-      }
-      @render_gpu.host_gpu_prepare_mesh3d_skin_binding(
-        key_hi~,
-        key_lo~,
-        skinning_matrices~,
-      )
-      @render_gpu.host_gpu_prepare_mesh3d_skin_binding(
-        key_hi~,
-        key_lo=key_lo + 1,
-        skinning_matrices=previous_skinning_matrices,
+      render3d_copy_skinning_rows_into_staging(
+        phase_state_ref, key_hi, skinning_matrices,
       )
       phase_state_ref.val.skin_previous_matrices.set(
         skin_key, skinning_matrices,
       )
     }
   }
+  if phase_state_ref.val.skin_staging_rows.is_empty() {
+    return
+  }
+  @render_gpu.host_gpu_prepare_mesh3d_skin_bindings(
+    skinning_rows=phase_state_ref.val.skin_staging_rows,
+  )
 }
 
 ///|

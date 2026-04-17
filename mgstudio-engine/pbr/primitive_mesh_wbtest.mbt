@@ -73,6 +73,7 @@ test "render3d: tetrahedron-shape helper builds valid geometry" {
 test "render3d: Assets::add accepts common primitive authoring values" {
   let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
   let cuboid = meshes |> add_mesh(@math.Cuboid::new(1.0F, 2.0F, 3.0F))
+  let plane = meshes |> add_mesh(@math.Plane3d::default())
   let sphere = meshes |> add_mesh(@math.Sphere::new(0.5F))
   let tetrahedron = meshes
     |> add_mesh(
@@ -84,14 +85,21 @@ test "render3d: Assets::add accepts common primitive authoring values" {
       ),
     )
   let ok = if meshes.get(cuboid) is Some(cuboid_mesh) {
-    if meshes.get(sphere) is Some(sphere_mesh) {
-      if meshes.get(tetrahedron) is Some(tetrahedron_mesh) {
-        cuboid_mesh.as_3d_geometry() is Some(cuboid_geometry) &&
-        cuboid_geometry.validate() is None &&
-        sphere_mesh.as_3d_geometry() is Some(sphere_geometry) &&
-        sphere_geometry.validate() is None &&
-        tetrahedron_mesh.as_3d_geometry() is Some(tetrahedron_geometry) &&
-        tetrahedron_geometry.triangle_count() == Some(4)
+    if meshes.get(plane) is Some(plane_mesh) {
+      if meshes.get(sphere) is Some(sphere_mesh) {
+        if meshes.get(tetrahedron) is Some(tetrahedron_mesh) {
+          cuboid_mesh.as_3d_geometry() is Some(cuboid_geometry) &&
+          cuboid_geometry.validate() is None &&
+          plane_mesh.as_3d_geometry() is Some(plane_geometry) &&
+          plane_geometry.validate() is None &&
+          plane_geometry.vertex_count() == 6 &&
+          sphere_mesh.as_3d_geometry() is Some(sphere_geometry) &&
+          sphere_geometry.validate() is None &&
+          tetrahedron_mesh.as_3d_geometry() is Some(tetrahedron_geometry) &&
+          tetrahedron_geometry.triangle_count() == Some(4)
+        } else {
+          false
+        }
       } else {
         false
       }

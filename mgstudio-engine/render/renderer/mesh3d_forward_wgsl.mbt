@@ -83,6 +83,10 @@ let mesh3d_forward_wgsl_source : String =
   #|struct Mesh3dDrawUniform {
   #|  transform : Mesh3dTransformUniform,
   #|  material : Mesh3dMaterialUniform,
+  #|  current_skin_index : u32,
+  #|  _reserved2 : u32,
+  #|  _reserved3 : u32,
+  #|  _reserved4 : u32,
   #|};
   #|
   #|struct Mesh3dDrawUniformBuffer {
@@ -168,8 +172,12 @@ let mesh3d_forward_wgsl_source : String =
   #|  return arrayLength(&u_skinning_rows.rows);
   #|}
   #|
-  #|fn skinning_transform_point(index : u32, local_point : vec3<f32>) -> vec3<f32> {
-  #|  let base = index * 4u;
+  #|fn skinning_transform_point(
+  #|  skin_index : u32,
+  #|  joint_index : u32,
+  #|  local_point : vec3<f32>,
+  #|) -> vec3<f32> {
+  #|  let base = (skin_index + joint_index) * 4u;
   #|  if base + 3u >= skinning_row_count() {
   #|    return local_point;
   #|  }
@@ -181,8 +189,12 @@ let mesh3d_forward_wgsl_source : String =
   #|  );
   #|}
   #|
-  #|fn skinning_transform_normal(index : u32, local_normal : vec3<f32>) -> vec3<f32> {
-  #|  let base = index * 4u;
+  #|fn skinning_transform_normal(
+  #|  skin_index : u32,
+  #|  joint_index : u32,
+  #|  local_normal : vec3<f32>,
+  #|) -> vec3<f32> {
+  #|  let base = (skin_index + joint_index) * 4u;
   #|  if base + 2u >= skinning_row_count() {
   #|    return local_normal;
   #|  }
@@ -212,32 +224,34 @@ let mesh3d_forward_wgsl_source : String =
   #|  var world_pos = vec3<f32>(0.0, 0.0, 0.0);
   #|  var world_normal = vec3<f32>(0.0, 0.0, 1.0);
   #|  if weight_sum > 1.0e-6 {
+  #|    let skin_index = draw.current_skin_index;
   #|    let i0 = u32(max(joint_indices.x, 0.0));
   #|    let i1 = u32(max(joint_indices.y, 0.0));
   #|    let i2 = u32(max(joint_indices.z, 0.0));
   #|    let i3 = u32(max(joint_indices.w, 0.0));
-  #|    local_pos =
-  #|      skinning_transform_point(i0, position) * joint_weights.x +
-  #|      skinning_transform_point(i1, position) * joint_weights.y +
-  #|      skinning_transform_point(i2, position) * joint_weights.z +
-  #|      skinning_transform_point(i3, position) * joint_weights.w;
-  #|    local_normal = normalize(
-  #|      skinning_transform_normal(i0, normal) * joint_weights.x +
-  #|      skinning_transform_normal(i1, normal) * joint_weights.y +
-  #|      skinning_transform_normal(i2, normal) * joint_weights.z +
-  #|      skinning_transform_normal(i3, normal) * joint_weights.w
+  #|    world_pos =
+  #|      skinning_transform_point(skin_index, i0, position) * joint_weights.x +
+  #|      skinning_transform_point(skin_index, i1, position) * joint_weights.y +
+  #|      skinning_transform_point(skin_index, i2, position) * joint_weights.z +
+  #|      skinning_transform_point(skin_index, i3, position) * joint_weights.w;
+  #|    world_normal = normalize(
+  #|      skinning_transform_normal(skin_index, i0, normal) * joint_weights.x +
+  #|      skinning_transform_normal(skin_index, i1, normal) * joint_weights.y +
+  #|      skinning_transform_normal(skin_index, i2, normal) * joint_weights.z +
+  #|      skinning_transform_normal(skin_index, i3, normal) * joint_weights.w
+  #|    );
+  #|  } else {
+  #|    let model_q = quat_normalize(draw.transform.model_rotation);
+  #|    world_pos = quat_rotate_vec3(
+  #|      model_q,
+  #|      local_pos * draw.transform.model_scale.xyz,
+  #|    ) + draw.transform.model_translation.xyz;
+  #|    world_normal = transform_normal_local_to_world(
+  #|      model_q,
+  #|      local_normal,
+  #|      draw.transform.model_scale.xyz,
   #|    );
   #|  }
-  #|  let model_q = quat_normalize(draw.transform.model_rotation);
-  #|  world_pos = quat_rotate_vec3(
-  #|    model_q,
-  #|    local_pos * draw.transform.model_scale.xyz,
-  #|  ) + draw.transform.model_translation.xyz;
-  #|  world_normal = transform_normal_local_to_world(
-  #|    model_q,
-  #|    local_normal,
-  #|    draw.transform.model_scale.xyz,
-  #|  );
   #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
   #|  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
   #|  out.uv = transformed_uv.xy;
@@ -1166,7 +1180,7 @@ let mesh3d_forward_wgsl_source : String =
   #|    anisotropy_strength,
   #|    anisotropy_t,
   #|    anisotropy_b,
-  #|    -safe_normalize(u_view.lights.directional_light_direction_to_light.xyz),
+  #|    safe_normalize(u_view.lights.directional_light_direction_to_light.xyz),
   #|    u_view.lights.directional_light_color.xyz,
   #|  );
   #|  let point_shadow_factor = point_light_shadow(

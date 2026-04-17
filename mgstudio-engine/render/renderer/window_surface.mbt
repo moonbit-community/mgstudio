@@ -587,9 +587,11 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh2d_instance_used = 0
   mesh2d_reset_pending_batch(self)
   self.mesh3d_draw_slot_used = 0
-  self.mesh3d_skin_slot_indices_by_key.clear()
-  self.mesh3d_skin_slot_used = 0
   self.mesh3d_instance_draw_used = 0
+  self.mesh3d_prepared_draw_camera_key_hi = -1
+  self.mesh3d_prepared_draw_camera_key_lo = -1
+  self.mesh3d_prepared_draw_pass_kind = -1
+  self.mesh3d_prepared_draw_count = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
   self.mesh3d_motion_vector_instance_mesh_used = 0
   let st = self.surfaces[index].surface.get_current_texture()

@@ -1548,6 +1548,7 @@ pub(open) trait IntoPbrMeshAsset {
 pub impl IntoPbrMeshAsset for @math.Capsule3d
 pub impl IntoPbrMeshAsset for @math.Cuboid
 pub impl IntoPbrMeshAsset for @math.Cylinder
+pub impl IntoPbrMeshAsset for @math.Plane3d
 pub impl IntoPbrMeshAsset for @math.Sphere
 pub impl IntoPbrMeshAsset for @math.Tetrahedron
 pub impl IntoPbrMeshAsset for @math.Triangle3d

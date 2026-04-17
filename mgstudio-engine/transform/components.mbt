@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Bevy-like transform propagation (2D-first).
+/// Bevy-like transform propagation.
 ///
 /// This package provides:
 /// - `GlobalTransform` component (computed world-space transform)
@@ -91,13 +91,12 @@ pub fn Affine2::transform_point2(
 
 ///|
 pub struct GlobalTransform {
-  affine : Affine2
-  z : Float
+  affine : @math.Affine3
 }
 
 ///|
 pub fn GlobalTransform::identity() -> GlobalTransform {
-  GlobalTransform::{ affine: Affine2::identity(), z: 0.0F }
+  GlobalTransform::{ affine: @math.Affine3::identity() }
 }
 
 ///|
@@ -108,19 +107,42 @@ pub impl Default for GlobalTransform with default() {
 ///|
 pub impl ToJson for GlobalTransform with to_json(self) {
   (
-    self.affine.a,
-    self.affine.b,
-    self.affine.c,
-    self.affine.d,
-    self.affine.tx,
-    self.affine.ty,
-    self.z,
+    self.affine.matrix3.x_axis.x,
+    self.affine.matrix3.x_axis.y,
+    self.affine.matrix3.x_axis.z,
+    self.affine.matrix3.y_axis.x,
+    self.affine.matrix3.y_axis.y,
+    self.affine.matrix3.y_axis.z,
+    self.affine.matrix3.z_axis.x,
+    self.affine.matrix3.z_axis.y,
+    self.affine.matrix3.z_axis.z,
+    self.affine.translation.x,
+    self.affine.translation.y,
+    self.affine.translation.z,
   ).to_json()
 }
 
 ///|
 pub impl @json.FromJson for GlobalTransform with from_json(json, path) {
-  let (a, b, c, d, tx, ty, z) : (
+  let (
+    x_axis_x,
+    x_axis_y,
+    x_axis_z,
+    y_axis_x,
+    y_axis_y,
+    y_axis_z,
+    z_axis_x,
+    z_axis_y,
+    z_axis_z,
+    tx,
+    ty,
+    tz,
+  ) : (
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
     Float,
     Float,
     Float,
@@ -129,32 +151,28 @@ pub impl @json.FromJson for GlobalTransform with from_json(json, path) {
     Float,
     Float,
   ) = @json.from_json(json, path~)
-  GlobalTransform::{ affine: Affine2::{ a, b, c, d, tx, ty }, z }
+  GlobalTransform::{
+    affine: @math.Affine3::from_mat3_translation(
+      @math.Mat3::from_cols(
+        @math.Vec3::new(x_axis_x, x_axis_y, x_axis_z),
+        @math.Vec3::new(y_axis_x, y_axis_y, y_axis_z),
+        @math.Vec3::new(z_axis_x, z_axis_y, z_axis_z),
+      ),
+      @math.Vec3::new(tx, ty, tz),
+    ),
+  }
 }
 
 ///|
 pub fn GlobalTransform::from_transform(
   transform : Transform,
 ) -> GlobalTransform {
-  let rot_z = transform.rotation_z()
-  let cosv = @math.cos(rot_z)
-  let sinv = @math.sin(rot_z)
-  let sx = transform.scale.x
-  let sy = transform.scale.y
-  let a = cosv * sx
-  let b = sinv * sx
-  let c = -sinv * sy
-  let d = cosv * sy
   GlobalTransform::{
-    affine: Affine2::{
-      a,
-      b,
-      c,
-      d,
-      tx: transform.translation.x,
-      ty: transform.translation.y,
-    },
-    z: transform.translation.z,
+    affine: @math.Affine3::from_scale_rotation_translation(
+      transform.scale,
+      transform.rotation,
+      transform.translation,
+    ),
   }
 }
 
@@ -163,56 +181,49 @@ pub fn GlobalTransform::mul(
   self : GlobalTransform,
   other : GlobalTransform,
 ) -> GlobalTransform {
-  GlobalTransform::{
-    affine: self.affine.mul(other.affine),
-    z: self.z + other.z,
-  }
+  GlobalTransform::{ affine: self.affine.mul(other.affine) }
+}
+
+///|
+pub fn GlobalTransform::affine(self : GlobalTransform) -> @math.Affine3 {
+  self.affine
+}
+
+///|
+pub fn GlobalTransform::to_scale_rotation_translation(
+  self : GlobalTransform,
+) -> (@math.Vec3, @math.Quat, @math.Vec3) {
+  self.affine.to_scale_rotation_translation()
+}
+
+///|
+pub fn GlobalTransform::translation(self : GlobalTransform) -> @math.Vec3 {
+  self.affine.translation
 }
 
 ///|
 pub fn GlobalTransform::to_transform_approx(
   self : GlobalTransform,
 ) -> Transform {
-  // Best-effort TRS decomposition for a 2D affine matrix.
-  // This ignores shear in the returned Transform, but preserves translation.
-  let a = self.affine.a
-  let b = self.affine.b
-  let c = self.affine.c
-  let d = self.affine.d
-  let scale_x = @math.sqrt(a * a + b * b)
-  let rotation = if scale_x == 0.0F { 0.0F } else { @math.atan2(b, a) }
-  let det = a * d - b * c
-  let scale_y = if scale_x == 0.0F { 0.0F } else { det / scale_x }
-  Transform::from_xy_rotation_scale(
-    @math.Vec2::new(self.affine.tx, self.affine.ty),
-    rotation,
-    @math.Vec2::new(scale_x, scale_y),
-    z=self.z,
-  )
+  let (scale, rotation, translation) = self.to_scale_rotation_translation()
+  Transform::new(translation, rotation, scale)
 }
 
 ///|
 pub fn GlobalTransform::inverse(self : GlobalTransform) -> GlobalTransform {
-  let det = self.affine.a * self.affine.d - self.affine.b * self.affine.c
-  if det <= 1.0e-12F && det >= -1.0e-12F {
-    return GlobalTransform::identity()
-  }
-  let inv_det = 1.0F / det
-  let a = self.affine.d * inv_det
-  let b = -self.affine.b * inv_det
-  let c = -self.affine.c * inv_det
-  let d = self.affine.a * inv_det
-  let tx = -(a * self.affine.tx + c * self.affine.ty)
-  let ty = -(b * self.affine.tx + d * self.affine.ty)
-  GlobalTransform::{ affine: Affine2::{ a, b, c, d, tx, ty }, z: -self.z }
+  GlobalTransform::{ affine: self.affine.inverse() }
 }
 
 ///|
 pub fn GlobalTransform::reparented_to(
   self : GlobalTransform,
   parent : GlobalTransform,
-) -> GlobalTransform {
-  parent.inverse().mul(self)
+) -> Transform {
+  let (scale, rotation, translation) = parent
+    .inverse()
+    .mul(self)
+    .to_scale_rotation_translation()
+  Transform::new(translation, rotation, scale)
 }
 
 ///|

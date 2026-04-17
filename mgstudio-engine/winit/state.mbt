@@ -123,6 +123,22 @@ fn runner_surface_desired_maximum_frame_latency(
 }
 
 ///|
+fn runner_surface_physical_width(window : @window.Window?) -> Int {
+  match window {
+    Some(value) => value.physical_width()
+    None => 0
+  }
+}
+
+///|
+fn runner_surface_physical_height(window : @window.Window?) -> Int {
+  match window {
+    Some(value) => value.physical_height()
+    None => 0
+  }
+}
+
+///|
 fn env_flag_enabled(key : String) -> Bool {
   match @sys.get_env_var(key) {
     Some("1") => true
@@ -229,10 +245,10 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     let desired_maximum_frame_latency = runner_surface_desired_maximum_frame_latency(
       window_component,
     )
+    let width = runner_surface_physical_width(window_component)
+    let height = runner_surface_physical_height(window_component)
     if runner_surface_binding_find(previous_surfaces, host_window)
       is Some(previous) {
-      let width = @window.host_window_get_width(host_window)
-      let height = @window.host_window_get_height(host_window)
       if width > 0 &&
         height > 0 &&
         (
@@ -268,8 +284,6 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
 
     let surface = @render.host_gpu_create_surface(host_window)
     let target_id = @render.host_gpu_surface_target_id(surface)
-    let width = @window.host_window_get_width(host_window)
-    let height = @window.host_window_get_height(host_window)
     if width > 0 && height > 0 {
       @render.host_gpu_configure_surface(
         device=self.device,

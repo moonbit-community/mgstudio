@@ -125,7 +125,7 @@ fn setup(
       ignore(
         commands.spawn(
           (
-            @pbr.Camera3d::default(),
+            @camera.Camera3d::default(),
             @sprite.Camera::default()
             .with_order(index)
             .with_viewport(
@@ -156,7 +156,7 @@ fn rotate_cameras(
   time : @app.Res[@time.Time[Unit]],
   cameras : @ecs.Query[
     (@ecs.Mut[OrbitCamera], @ecs.Mut[@transform.Transform]),
-    @ecs.With[@pbr.Camera3d],
+    @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
   try! cameras.for_each(fn(_entity, data) {

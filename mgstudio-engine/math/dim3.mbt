@@ -130,6 +130,16 @@ pub fn Plane3d::default() -> Plane3d {
 }
 
 ///|
+pub fn Plane3d::normal(self : Plane3d) -> Dir3 {
+  self.normal
+}
+
+///|
+pub fn Plane3d::half_size(self : Plane3d) -> Vec2 {
+  self.half_size
+}
+
+///|
 pub struct InfinitePlane3d {
   normal : Dir3
 }
