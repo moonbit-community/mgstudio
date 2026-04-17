@@ -132,7 +132,7 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
     let (entity, global_transform_component, _camera) = data
     let view_index = view_positions.length()
     visible_ranges.views.set(entity.id, view_index)
-    let view_position = global_transform_component.value().compute_transform().translation
+    let view_position = global_transform_component.value().translation()
     view_positions.push((view_index, view_position))
   })
   if view_positions.length() == 0 {
@@ -163,10 +163,10 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
     let model_position = if visibility_range.use_aabb() {
       match aabb_component {
         Some(aabb) => global_transform.transform_point(aabb.value().center())
-        None => global_transform.compute_transform().translation
+        None => global_transform.translation()
       }
     } else {
-      global_transform.compute_transform().translation
+      global_transform.translation()
     }
     let mut visibility = 0
     for index in 0..<view_positions.length() {
