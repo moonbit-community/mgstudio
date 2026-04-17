@@ -55,7 +55,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.Camera3d::default(),
+      @camera.Camera3d::default(),
       @pbr.DepthPrepass::default(),
       @pbr.NormalPrepass::default(),
       @pbr.MotionVectorPrepass::default(),

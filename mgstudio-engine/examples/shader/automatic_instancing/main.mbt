@@ -73,7 +73,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Camera3d::default(),
+      @camera.Camera3d::default(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -30,7 +30,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Camera3d::default(),
+        @camera.Camera3d::default(),
         @post_process.CustomPostProcess3d::new(SHADER_ASSET_PATH)
         .with_enabled(true)
         .with_intensity(0.005F),
