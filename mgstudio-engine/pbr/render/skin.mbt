@@ -34,6 +34,7 @@ pub struct SkinUniforms {
   mut next_skin_binding_index : Int
   mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
   joint_to_skins : Map[UInt64, Array[@core.Entity]]
+  current_skins : Map[UInt64, Bool]
   previous_skins : Map[UInt64, Bool]
   current_staging_buffer : Array[Float]
   mut total_joints : Int
@@ -47,6 +48,7 @@ pub fn SkinUniforms::new() -> SkinUniforms {
     next_skin_binding_index: 0,
     skin_binding_free_ranges: [],
     joint_to_skins: {},
+    current_skins: {},
     previous_skins: {},
     current_staging_buffer: [],
     total_joints: 0,
@@ -116,6 +118,17 @@ fn render3d_skin_entity_array_remove_all(
       entities.remove(index) |> ignore
     }
     index = index - 1
+  }
+}
+
+///|
+fn render3d_phase_begin_skin_frame(
+  skin_uniforms_ref : Ref[SkinUniforms],
+) -> Unit {
+  skin_uniforms_ref.val.previous_skins.clear()
+  for entry in skin_uniforms_ref.val.current_skins.iter() {
+    let (skin_key, exists) = entry
+    skin_uniforms_ref.val.previous_skins.set(skin_key, exists)
   }
 }
 
@@ -291,6 +304,7 @@ fn render3d_phase_remove_skin(
     None => ()
   }
   skin_uniforms_ref.val.previous_skins.remove(skin_key)
+  skin_uniforms_ref.val.current_skins.remove(skin_key)
   match removed_joints {
     Some(joints) =>
       for joint in joints {
@@ -350,7 +364,9 @@ fn render3d_phase_mark_skin_prepared(
     Some(info) => info
     None => return
   }
+  let skin_key = render3d_skin_entity_key(entity)
   if info.entity_generation == entity.generation && info.key_hi >= 0 {
+    skin_uniforms_ref.val.current_skins.set(skin_key, true)
     return
   }
   if info.key_hi >= 0 {
@@ -370,6 +386,7 @@ fn render3d_phase_mark_skin_prepared(
     key_lo: 0,
     joints: info.joints,
   })
+  skin_uniforms_ref.val.current_skins.set(skin_key, true)
 }
 
 ///|
@@ -494,12 +511,14 @@ pub fn render3d_extract_skin_bindings(
   skin_uniforms_ref : Ref[SkinUniforms],
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
 ) -> Unit {
+  render3d_phase_begin_skin_frame(skin_uniforms_ref)
   skin_uniforms_ref.val.skin_upload_queue.clear()
   if source_world.component_count(@mesh.SkinnedMesh::component()) == 0 {
     skin_uniforms_ref.val.skin_uniform_info.clear()
     skin_uniforms_ref.val.next_skin_binding_index = 0
     skin_uniforms_ref.val.skin_binding_free_ranges.clear()
     skin_uniforms_ref.val.joint_to_skins.clear()
+    skin_uniforms_ref.val.current_skins.clear()
     skin_uniforms_ref.val.previous_skins.clear()
     skin_uniforms_ref.val.current_staging_buffer.clear()
     skin_uniforms_ref.val.total_joints = 0

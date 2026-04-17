@@ -128,10 +128,22 @@ fn ensure_mesh3d_skin_buffers(
 
 ///|
 fn ensure_mesh3d_skin_current_binding(backend : GpuBackend) -> @wgpu.BindGroup? {
+  ensure_mesh3d_skin_binding(backend, 0)
+}
+
+///|
+fn ensure_mesh3d_skin_binding(
+  backend : GpuBackend,
+  skinning_key_lo : Int,
+) -> @wgpu.BindGroup? {
   if !ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) {
     return None
   }
-  backend.mesh3d_skin_current_bg
+  if skinning_key_lo > 0 {
+    backend.mesh3d_skin_prev_bg
+  } else {
+    backend.mesh3d_skin_current_bg
+  }
 }
 
 ///|

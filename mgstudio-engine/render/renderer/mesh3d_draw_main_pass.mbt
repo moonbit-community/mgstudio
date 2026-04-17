@@ -81,7 +81,6 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   skinning_key_lo : Int,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
-  skinning_key_lo |> ignore
   let draw_shader_path = if pass_kind == 0 { shader_path } else { None }
   let forward_decal = (material_flags & (1U << 20)) != 0U
   guard mesh3d_pipeline_for_current_pass(
@@ -302,7 +301,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
-  guard ensure_mesh3d_skin_current_binding(self) is Some(active_skin_bg) else {
+  guard ensure_mesh3d_skin_binding(self, skinning_key_lo)
+    is Some(active_skin_bg) else {
     return
   }
   let view_cache_hit = self.mesh3d_pass_view_uniform_bytes is Some(_) &&

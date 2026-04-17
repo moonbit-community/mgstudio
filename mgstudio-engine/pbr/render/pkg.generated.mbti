@@ -1078,6 +1078,7 @@ pub struct SkinUniforms {
   mut next_skin_binding_index : Int
   mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
   joint_to_skins : Map[UInt64, Array[@core.Entity]]
+  current_skins : Map[UInt64, Bool]
   previous_skins : Map[UInt64, Bool]
   current_staging_buffer : Array[Float]
   mut total_joints : Int
