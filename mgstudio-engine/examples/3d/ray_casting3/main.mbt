@@ -15,14 +15,14 @@
 ///|
 priv struct RayState {
   camera : @sprite.Camera
-  projection : @pbr.Projection
+  projection : @camera.Projection
   transform : @transform.Transform
 }
 
 ///|
 let ray_state : Ref[RayState] = Ref::new({
   camera: @sprite.Camera::default(),
-  projection: @pbr.Projection::default(),
+  projection: @camera.Projection::default(),
   transform: @transform.Transform::identity(),
 })
 
@@ -43,11 +43,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   ray_state.val = {
     camera: @sprite.Camera::default(),
-    projection: @pbr.Projection::default(),
+    projection: @camera.Projection::default(),
     transform: camera_transform,
   }
   @rapier_examples.rapier3d_basic_lighting(world)
-  @pbr.Camera3dBundle::new(@sprite.Camera::default(), camera_transform).spawn(
+  @camera.Camera3dBundle::new(@sprite.Camera::default(), camera_transform).spawn(
     world,
   )
   |> ignore
