@@ -69,6 +69,37 @@ pub impl @json.FromJson for Mesh3d with from_json(json, path) {
 }
 
 ///|
+pub struct MeshTag {
+  value : UInt
+}
+
+///|
+pub fn MeshTag::new(value : UInt) -> MeshTag {
+  { value, }
+}
+
+///|
+pub fn MeshTag::default() -> MeshTag {
+  MeshTag::new(0U)
+}
+
+///|
+pub fn MeshTag::value(self : MeshTag) -> UInt {
+  self.value
+}
+
+///|
+pub impl ToJson for MeshTag with to_json(self) {
+  self.value.to_json()
+}
+
+///|
+pub impl @json.FromJson for MeshTag with from_json(json, path) {
+  let value : UInt = @json.from_json(json, path~)
+  MeshTag::new(value)
+}
+
+///|
 pub struct SkinnedMeshInverseBindposes {
   values : Array[SkinningMat4]
 }
@@ -185,6 +216,11 @@ pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_mesh_tag : @ecs.ComponentKey[MeshTag] = @ecs.register_component(
+  debug_name="mgstudio_render::mesh::components::MeshTag",
+)
+
+///|
 pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh] = @ecs.register_component(
   debug_name="mgstudio_render::mesh::skinning::SkinnedMesh",
 )
@@ -214,6 +250,11 @@ pub impl @ecs.Component for Mesh2d with component() {
 ///|
 pub impl @ecs.Component for Mesh3d with component() {
   ecs_key_mesh3d
+}
+
+///|
+pub impl @ecs.Component for MeshTag with component() {
+  ecs_key_mesh_tag
 }
 
 ///|

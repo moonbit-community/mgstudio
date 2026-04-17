@@ -21,6 +21,8 @@ pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
 
 pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
 
+pub let ecs_key_mesh_tag : @ecs.ComponentKey[MeshTag]
+
 pub let ecs_key_morph_target_mesh : @ecs.ComponentKey[MorphTargetMesh]
 
 pub let ecs_key_morph_weights : @ecs.ComponentKey[MorphWeights]
@@ -234,6 +236,16 @@ pub struct MeshPlugin {
 }
 pub fn MeshPlugin::default() -> Self
 pub impl @app.Plugin for MeshPlugin
+
+pub struct MeshTag {
+  value : UInt
+}
+pub fn MeshTag::default() -> Self
+pub fn MeshTag::new(UInt) -> Self
+pub fn MeshTag::value(Self) -> UInt
+pub impl @ecs.Component for MeshTag
+pub impl ToJson for MeshTag
+pub impl @json.FromJson for MeshTag
 
 pub struct MorphTargetMesh {
   source_mesh : @asset.Handle[Mesh]
