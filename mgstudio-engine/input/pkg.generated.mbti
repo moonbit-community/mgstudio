@@ -61,6 +61,10 @@ pub fn host_input_wheel_x() -> Float
 
 pub fn host_input_wheel_y() -> Float
 
+pub fn input_accumulate_mouse_motion_system(@ecs.World) -> Unit
+
+pub fn input_accumulate_mouse_scroll_system(@ecs.World) -> Unit
+
 pub fn input_check_keyboard_focus_lost_system(@ecs.World) -> Unit
 
 pub fn[W] input_finish_system(W) -> Unit

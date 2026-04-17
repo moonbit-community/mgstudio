@@ -771,6 +771,12 @@ let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref::new(
 )
 
 ///|
+let input_mouse_motion_event_cursor_ref : Ref[Int] = Ref::new(0)
+
+///|
+let input_mouse_wheel_event_cursor_ref : Ref[Int] = Ref::new(0)
+
+///|
 let input_window_focused_event_cursor_ref : Ref[Int] = Ref::new(0)
 
 ///|
@@ -1704,7 +1710,6 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
     }
   }
 
-  let mut mouse_delta = @math.Vec2::new(0.0F, 0.0F)
   let entered_host_window = host_input_cursor_entered_window()
   if entered_host_window >= 0 {
     if @window.window_entity_for_host(world, entered_host_window)
@@ -1746,7 +1751,6 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       })
     }
     if delta_opt is Some(delta) {
-      mouse_delta = delta
       @window.window_emit_mouse_motion(world, @window.MouseMotion::{ delta, })
     }
   }
@@ -1784,18 +1788,6 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   let double_tap_gesture_event_count = host_input_double_tap_gesture_event_count()
   for _ in 0..<double_tap_gesture_event_count {
     @window.window_emit_double_tap_gesture(world, @window.DoubleTapGesture::{  })
-  }
-
-  if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource()))
-    is Some(motion_ref) {
-    motion_ref.val = AccumulatedMouseMotion::{ delta: mouse_delta }
-  }
-  if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource()))
-    is Some(scroll_ref) {
-    scroll_ref.val = AccumulatedMouseScroll::{
-      unit: MouseScrollUnit::Line,
-      delta: wheel_delta,
-    }
   }
 
   let touches = Touches::new()
@@ -1863,6 +1855,52 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   input_primary_pointer_position_ref.val = primary_pointer_position
   input_primary_pointer_delta_ref.val = primary_pointer_delta
+}
+
+///|
+pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
+  ensure_input_resources(world)
+  let reader = world.message_reader(
+    mouse_motion_message_key(),
+    input_mouse_motion_event_cursor_ref,
+  )
+  let events = try reader.read() catch {
+    _ => []
+  } noraise {
+    value => value
+  }
+  let mut delta = @math.Vec2::new(0.0F, 0.0F)
+  for event in events {
+    delta = @math.Vec2::add(delta, event.delta)
+  }
+  if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource()))
+    is Some(motion_ref) {
+    motion_ref.val = AccumulatedMouseMotion::{ delta, }
+  }
+}
+
+///|
+pub fn input_accumulate_mouse_scroll_system(world : @ecs.World) -> Unit {
+  ensure_input_resources(world)
+  let reader = world.message_reader(
+    mouse_wheel_message_key(),
+    input_mouse_wheel_event_cursor_ref,
+  )
+  let events = try reader.read() catch {
+    _ => []
+  } noraise {
+    value => value
+  }
+  let mut unit = MouseScrollUnit::Line
+  let mut delta = @math.Vec2::new(0.0F, 0.0F)
+  for event in events {
+    unit = event.unit
+    delta = @math.Vec2::add(delta, @math.Vec2::new(event.x, event.y))
+  }
+  if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource()))
+    is Some(scroll_ref) {
+    scroll_ref.val = AccumulatedMouseScroll::{ unit, delta }
+  }
 }
 
 ///|
@@ -2036,14 +2074,20 @@ pub fn input_plugin_with(
   .add_message(double_tap_gesture_message_key())
   .add_message(pan_gesture_message_key())
   .add_message(touch_input_message_key())
-  .add_pre_update_system_config(
-    @app.system(input_poll_keyboard_system).in_set(input_systems_set),
-  )
-  .add_pre_update_system_config(
-    @app.system(input_poll_drag_and_drop_system).in_set(input_systems_set),
-  )
-  .add_pre_update_system_config(
-    @app.system(input_poll_mouse_system).in_set(input_systems_set),
+  .add_systems(
+    @app.PreUpdate,
+    (
+      @app.system(input_poll_keyboard_system).in_set(input_systems_set),
+      @app.system(input_poll_drag_and_drop_system).in_set(input_systems_set),
+      @app.system(input_poll_mouse_system).in_set(input_systems_set),
+      @app.system(input_accumulate_mouse_motion_system).in_set(
+        input_systems_set,
+      ),
+      @app.system(input_accumulate_mouse_scroll_system).in_set(
+        input_systems_set,
+      ),
+    )
+    |> @app.chain(),
   )
   .add_post_update_system(input_finish_system)
 }

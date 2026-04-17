@@ -60,6 +60,8 @@ fn reset_input_runtime_state() -> Unit {
   input_active_touches_ref.val = []
   input_primary_pointer_position_ref.val = None
   input_primary_pointer_delta_ref.val = @math.Vec2::new(0.0, 0.0)
+  input_mouse_motion_event_cursor_ref.val = 0
+  input_mouse_wheel_event_cursor_ref.val = 0
   input_window_focused_event_cursor_ref.val = 0
   input_probe_before_ran_ref.val = false
   input_probe_before_stage_ref.val = "none"
@@ -254,6 +256,67 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
     }
   }
   debug_inspect(aggregate_focus_lost_count, content="1")
+}
+
+///|
+test "input: accumulated mouse resources follow bevy-style message accumulation" {
+  reset_input_runtime_state()
+  @gilrs.gamepad_test_reset_state()
+
+  let app = input_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
+  let world = app.world()
+  world.insert_resource(
+    AccumulatedMouseMotion::resource(),
+    AccumulatedMouseMotion::new(),
+  )
+  world.insert_resource(
+    AccumulatedMouseScroll::resource(),
+    AccumulatedMouseScroll::new(),
+  )
+  ignore(
+    world.send_message(mouse_motion_message_key(), MouseMotion::{
+      delta: @math.Vec2::new(1.5, -2.0),
+    }),
+  )
+  ignore(
+    world.send_message(mouse_motion_message_key(), MouseMotion::{
+      delta: @math.Vec2::new(-0.25, 3.25),
+    }),
+  )
+  ignore(
+    world.send_message(mouse_wheel_message_key(), MouseWheel::{
+      unit: MouseScrollUnit::Line,
+      x: 2.0,
+      y: -1.0,
+    }),
+  )
+  ignore(
+    world.send_message(mouse_wheel_message_key(), MouseWheel::{
+      unit: MouseScrollUnit::Pixel,
+      x: 4.5,
+      y: 8.0,
+    }),
+  )
+
+  input_accumulate_mouse_motion_system(world)
+  input_accumulate_mouse_scroll_system(world)
+
+  let motion = match
+    (try! world.get_resource(AccumulatedMouseMotion::resource())) {
+    Some(value) => value
+    None => abort("missing accumulated mouse motion resource")
+  }
+  debug_inspect(motion.delta.x, content="1.25")
+  debug_inspect(motion.delta.y, content="1.25")
+
+  let scroll = match
+    (try! world.get_resource(AccumulatedMouseScroll::resource())) {
+    Some(value) => value
+    None => abort("missing accumulated mouse scroll resource")
+  }
+  debug_inspect(scroll.unit is MouseScrollUnit::Pixel, content="true")
+  debug_inspect(scroll.delta.x, content="6.5")
+  debug_inspect(scroll.delta.y, content="7")
 }
 
 ///|
