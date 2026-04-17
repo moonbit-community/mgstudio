@@ -9,12 +9,15 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub fn[S : IntoMeshAsset] add(@asset.Assets[Mesh], S) -> @asset.Handle[Mesh]
 
 pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[DynamicSkinnedMeshBounds]
+
+pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
 
 pub let ecs_key_morph_target_mesh : @ecs.ComponentKey[MorphTargetMesh]
 
@@ -82,6 +85,15 @@ pub(all) enum Mesh2dValidationError {
   IndicesCountNotMultipleOf3(Int)
   IndexOutOfBounds(Int, Int)
 } derive(Eq, @debug.Debug)
+
+pub struct Mesh3d {
+  mesh : @asset.Handle[Mesh]
+}
+pub fn Mesh3d::mesh(Self) -> @asset.Handle[Mesh]
+pub fn Mesh3d::new(@asset.Handle[Mesh]) -> Self
+pub impl @ecs.Component for Mesh3d
+pub impl ToJson for Mesh3d
+pub impl @json.FromJson for Mesh3d
 
 pub(all) enum Mesh3dGenerateTangentsError {
   InvalidGeometry(Mesh3dValidationError)

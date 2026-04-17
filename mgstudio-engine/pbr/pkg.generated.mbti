@@ -157,7 +157,7 @@ pub let ecs_key_lightmap : @ecs.ComponentKey[@lightmap.Lightmap]
 
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
-pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
+pub let ecs_key_mesh3d : @ecs.ComponentKey[@mesh.Mesh3d]
 
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
 
@@ -1052,17 +1052,8 @@ pub struct MaterialsPluginState {
 pub fn MaterialsPluginState::default() -> Self
 pub fn MaterialsPluginState::new() -> Self
 
-pub struct Mesh3d {
-  mesh : @asset.Handle[@mesh.Mesh]
-}
-pub fn Mesh3d::mesh(Self) -> @asset.Handle[@mesh.Mesh]
-pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
-pub impl @ecs.Component for Mesh3d
-pub impl ToJson for Mesh3d
-pub impl @json.FromJson for Mesh3d
-
 pub struct MeshMaterial3dBundle {
-  mesh : Mesh3d
+  mesh : @mesh.Mesh3d
   material : @material.MeshMaterial3d
   transform : @transform.Transform
   layers : @sprite.RenderLayers
@@ -1070,7 +1061,7 @@ pub struct MeshMaterial3dBundle {
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
-pub fn MeshMaterial3dBundle::new(Mesh3d, @material.MeshMaterial3d, @transform.Transform) -> Self
+pub fn MeshMaterial3dBundle::new(@mesh.Mesh3d, @material.MeshMaterial3d, @transform.Transform) -> Self
 #callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle
@@ -1444,6 +1435,8 @@ pub using @light {type LightProbe}
 pub using @lightmap {type Lightmap}
 
 pub using @mesh {type Mesh}
+
+pub using @mesh {type Mesh3d}
 
 pub using @mesh {type Mesh3dGeometry}
 

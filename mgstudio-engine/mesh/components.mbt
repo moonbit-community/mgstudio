@@ -17,6 +17,32 @@
 // Runtime owner split out of `mesh/skinning.mbt`.
 
 ///|
+pub struct Mesh3d {
+  mesh : @asset.Handle[Mesh]
+}
+
+///|
+pub fn Mesh3d::new(mesh : @asset.Handle[Mesh]) -> Mesh3d {
+  { mesh, }
+}
+
+///|
+pub fn Mesh3d::mesh(self : Mesh3d) -> @asset.Handle[Mesh] {
+  self.mesh
+}
+
+///|
+pub impl ToJson for Mesh3d with to_json(self) {
+  self.mesh.id().to_json()
+}
+
+///|
+pub impl @json.FromJson for Mesh3d with from_json(json, path) {
+  let mesh_id : Int = @json.from_json(json, path~)
+  Mesh3d::new(@asset.Handle::new(mesh_id))
+}
+
+///|
 pub struct SkinnedMeshInverseBindposes {
   values : Array[SkinningMat4]
 }
@@ -123,6 +149,11 @@ pub fn DynamicSkinnedMeshBounds::new() -> DynamicSkinnedMeshBounds {
 }
 
 ///|
+pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
+  debug_name="mgstudio_render::mesh::components::Mesh3d",
+)
+
+///|
 pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh] = @ecs.register_component(
   debug_name="mgstudio_render::mesh::skinning::SkinnedMesh",
 )
@@ -143,6 +174,11 @@ pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[
 ] = @ecs.register_component(
   debug_name="mgstudio_render::mesh::skinning::DynamicSkinnedMeshBounds",
 )
+
+///|
+pub impl @ecs.Component for Mesh3d with component() {
+  ecs_key_mesh3d
+}
 
 ///|
 pub impl @ecs.Component for SkinnedMesh with component() {

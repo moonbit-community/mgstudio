@@ -66,6 +66,31 @@ fn mark_skinned_meshes_as_changed_if_their_assets_changed(
 }
 
 ///|
+fn mark_3d_meshes_as_changed_if_their_assets_changed(
+  commands : @app.Commands,
+  meshes_3d : @ecs.Query[@ecs.Comp[Mesh3d], @ecs.All],
+  mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
+) -> Unit {
+  let changed_asset_ids : Map[Int, Bool] = {}
+  for mesh_asset_event in (try! mesh_asset_events.read()) {
+    if mesh_asset_event is @asset.AssetEvent::Modified(handle) {
+      changed_asset_ids.set(handle.id(), true)
+    }
+  }
+
+  if changed_asset_ids.is_empty() {
+    return
+  }
+
+  try! meshes_3d.view(fn(entity, mesh_3d) {
+    let component = mesh_3d.value()
+    if changed_asset_ids.contains(component.mesh().id()) {
+      commands.entity(entity).insert_component(component)
+    }
+  })
+}
+
+///|
 pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() {
@@ -76,6 +101,9 @@ pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let assets : @asset.Assets[SkinnedMeshInverseBindposes] = @asset.Assets::new()
     assets
   })
+  .add_post_update_system(
+    @app.system_param3(mark_3d_meshes_as_changed_if_their_assets_changed),
+  )
   .add_post_update_system(
     @app.system_param3(mark_skinned_meshes_as_changed_if_their_assets_changed),
   )

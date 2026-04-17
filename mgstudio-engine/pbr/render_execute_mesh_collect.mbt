@@ -188,14 +188,14 @@ fn render3d_execute_collect_meshes(
     let (skinning_key_hi, skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
       skin_uniforms_ref, entity,
     )
-    let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh)
+    let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh())
     let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
-      mesh3d.mesh,
+      mesh3d.mesh(),
       mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
     )
     let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
       mesh_runtime_state_ref,
-      mesh3d.mesh,
+      mesh3d.mesh(),
     )
     let lightmap = if has_lightmap_components {
       try! source_world.get_by_key(entity, ecs_key_lightmap)
@@ -267,7 +267,7 @@ fn render3d_execute_collect_meshes(
     meshes.push(ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(entity),
       payload: Mesh3dExtractedPayload::{
-        mesh_handle: mesh3d.mesh,
+        mesh_handle: mesh3d.mesh(),
         mesh_id,
         mesh_topology_kind,
         mesh_is_indexed: mesh_preprocess_static.is_indexed,

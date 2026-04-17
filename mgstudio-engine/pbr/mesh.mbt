@@ -152,8 +152,8 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
           Mesh::from_3d_geometry(mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F)),
         ),
       )
-      internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh)
-      mesh.mesh
+      internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh())
+      mesh.mesh()
     }
   }
   @sprite_render.render2d_upload_mesh_handle(handle)
@@ -459,7 +459,7 @@ fn render3d_ray_local_aabb_hit(
 
 ///|
 fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
-  guard @sprite.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
+  guard @sprite.render_mesh_asset_get(mesh3d.mesh()) is Some(mesh_asset) else {
     return None
   }
   guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {

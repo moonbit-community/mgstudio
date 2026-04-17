@@ -13,9 +13,7 @@
 // limitations under the License.
 
 ///|
-pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
-  debug_name="render3d.mesh3d",
-)
+pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @mesh.ecs_key_mesh3d
 
 ///|
 pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @lightmap.ecs_key_lightmap
@@ -257,11 +255,6 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 ] = @ecs.register_component(
   debug_name="render3d.order_independent_transparency_settings",
 )
-
-///|
-pub impl @ecs.Component for Mesh3d with component() {
-  ecs_key_mesh3d
-}
 
 ///|
 pub impl @ecs.Component for Skybox with component() {

@@ -145,7 +145,7 @@ pub impl @json.FromJson for SceneInstanceReady
 pub struct SceneNode3d {
   name : @ecs.Name?
   parent_node_index : Int?
-  mesh : @pbr.Mesh3d?
+  mesh : @mesh.Mesh3d?
   material : @material.MeshMaterial3d?
   camera : @sprite.Camera?
   camera3d : @pbr.Camera3d?
@@ -171,7 +171,7 @@ pub struct SceneNode3d {
   skinned_mesh_bounds_policy : @loader.GltfSkinnedMeshBoundsPolicy?
   default_morph_weights : Array[Float]?
 }
-pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf_ext.GltfSceneIndex?, gltf_scene_extras? : @gltf_ext.GltfSceneExtras?, gltf_node_index? : @gltf_ext.GltfNodeIndex?, gltf_mesh_index? : @gltf_ext.GltfMeshIndex?, gltf_primitive_index? : @gltf_ext.GltfPrimitiveIndex?, gltf_skin_index? : @gltf_ext.GltfSkinIndex?, gltf_material_name? : @gltf_ext.GltfMaterialName?, gltf_extras? : @gltf_ext.GltfExtras?, gltf_mesh_extras? : @gltf_ext.GltfMeshExtras?, gltf_material_extras? : @gltf_ext.GltfMaterialExtras?, camera? : @sprite.Camera?, camera3d? : @pbr.Camera3d?, projection? : @pbr.Projection?, directional_light? : @light.DirectionalLight?, point_light? : @light.PointLight?, spot_light? : @light.SpotLight?, skinned_joint_node_indices? : Array[Int]?, skinned_inverse_bindposes? : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]?, skinned_mesh_bounds_policy? : @loader.GltfSkinnedMeshBoundsPolicy?, default_morph_weights? : Array[Float]?) -> Self
+pub fn SceneNode3d::new(@mesh.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf_ext.GltfSceneIndex?, gltf_scene_extras? : @gltf_ext.GltfSceneExtras?, gltf_node_index? : @gltf_ext.GltfNodeIndex?, gltf_mesh_index? : @gltf_ext.GltfMeshIndex?, gltf_primitive_index? : @gltf_ext.GltfPrimitiveIndex?, gltf_skin_index? : @gltf_ext.GltfSkinIndex?, gltf_material_name? : @gltf_ext.GltfMaterialName?, gltf_extras? : @gltf_ext.GltfExtras?, gltf_mesh_extras? : @gltf_ext.GltfMeshExtras?, gltf_material_extras? : @gltf_ext.GltfMaterialExtras?, camera? : @sprite.Camera?, camera3d? : @pbr.Camera3d?, projection? : @pbr.Projection?, directional_light? : @light.DirectionalLight?, point_light? : @light.PointLight?, spot_light? : @light.SpotLight?, skinned_joint_node_indices? : Array[Int]?, skinned_inverse_bindposes? : @asset.Handle[@mesh.SkinnedMeshInverseBindposes]?, skinned_mesh_bounds_policy? : @loader.GltfSkinnedMeshBoundsPolicy?, default_morph_weights? : Array[Float]?) -> Self
 pub fn SceneNode3d::new_empty(@transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, parent_node_index? : Int?, name? : @ecs.Name?, gltf_scene_index? : @gltf_ext.GltfSceneIndex?, gltf_scene_extras? : @gltf_ext.GltfSceneExtras?, gltf_node_index? : @gltf_ext.GltfNodeIndex?, gltf_skin_index? : @gltf_ext.GltfSkinIndex?, gltf_extras? : @gltf_ext.GltfExtras?, camera? : @sprite.Camera?, camera3d? : @pbr.Camera3d?, projection? : @pbr.Projection?, directional_light? : @light.DirectionalLight?, point_light? : @light.PointLight?, spot_light? : @light.SpotLight?) -> Self
 
 pub(all) struct ScenePlugin {

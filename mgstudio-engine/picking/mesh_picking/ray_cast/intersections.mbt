@@ -111,7 +111,7 @@ fn mesh_ray_cast_entity_in_list(
 
 ///|
 fn mesh_ray_cast_local_aabb(mesh3d : @pbr.Mesh3d) -> (@math.Vec3, @math.Vec3)? {
-  guard @sprite.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
+  guard @sprite.render_mesh_asset_get(mesh3d.mesh()) is Some(mesh_asset) else {
     return None
   }
   guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {

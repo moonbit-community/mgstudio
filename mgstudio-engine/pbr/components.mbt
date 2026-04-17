@@ -13,36 +13,13 @@
 // limitations under the License.
 
 ///|
-pub struct Mesh3d {
-  mesh : @asset.Handle[@mesh.Mesh]
-}
+pub type Mesh3d = @mesh.Mesh3d
 
 ///|
 pub type Mesh = @mesh.Mesh
 
 ///|
 pub type Mesh3dGeometry = @mesh.Mesh3dGeometry
-
-///|
-pub fn Mesh3d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh3d {
-  Mesh3d::{ mesh, }
-}
-
-///|
-pub fn Mesh3d::mesh(self : Mesh3d) -> @asset.Handle[@mesh.Mesh] {
-  self.mesh
-}
-
-///|
-pub impl ToJson for Mesh3d with to_json(self) {
-  self.mesh.id().to_json()
-}
-
-///|
-pub impl @json.FromJson for Mesh3d with from_json(json, path) {
-  let mesh_id : Int = @json.from_json(json, path~)
-  Mesh3d::new(@asset.Handle::new(mesh_id))
-}
 
 ///|
 fn mesh3d_append_quad(
