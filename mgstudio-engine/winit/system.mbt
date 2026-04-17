@@ -159,6 +159,9 @@ pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
 ///|
 pub fn winit_create_windows_system(world : @ecs.World) -> Unit {
   @window.window_backend_create_windows_system(world)
+  // Mirror Bevy create-time mode application so newly-created fullscreen
+  // windows do not wait for a later stage to apply mode.
+  winit_apply_pending_window_mode_requests(world)
 }
 
 ///|
@@ -228,12 +231,17 @@ fn winit_apply_window_mode_change(
 }
 
 ///|
-pub fn winit_changed_windows_system(world : @ecs.World) -> Unit {
-  @window.window_backend_apply_changed_windows_system(world)
+fn winit_apply_pending_window_mode_requests(world : @ecs.World) -> Unit {
   let monitors = winit_monitors_resource(world)
   for request in @window.window_take_changed_mode_requests(world) {
     winit_apply_window_mode_change(monitors, request)
   }
+}
+
+///|
+pub fn winit_changed_windows_system(world : @ecs.World) -> Unit {
+  @window.window_backend_apply_changed_windows_system(world)
+  winit_apply_pending_window_mode_requests(world)
 }
 
 ///|

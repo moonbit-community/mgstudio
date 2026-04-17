@@ -432,6 +432,29 @@ test "winit: monitor sync mirrors native monitor snapshot" {
 }
 
 ///|
+test "winit: create pass consumes initial window mode requests" {
+  @windowing.set_event_loop_any_thread(true)
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  let window = @window.Window::default()
+  window.mode = @window.WindowMode::BorderlessFullscreen(
+    @window.MonitorSelection::Current,
+  )
+  try! (world.entity_mut(window_entity).insert_component(window) |> ignore)
+
+  winit_create_monitors_system(world)
+  winit_create_windows_system(world)
+
+  debug_inspect(@window.window_host_entries(world).length(), content="1")
+  debug_inspect(
+    @window.window_take_changed_mode_requests(world).length(),
+    content="0",
+  )
+
+  try! world.despawn(window_entity)
+}
+
+///|
 test "winit: update mode constructors align with bevy settings semantics" {
   let reactive = UpdateMode::reactive(@core.Duration::from_secs(5L))
   match reactive {
