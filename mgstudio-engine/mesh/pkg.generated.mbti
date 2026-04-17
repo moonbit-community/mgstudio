@@ -17,6 +17,8 @@ pub fn[S : IntoMeshAsset] add(@asset.Assets[Mesh], S) -> @asset.Handle[Mesh]
 
 pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[DynamicSkinnedMeshBounds]
 
+pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
+
 pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
 
 pub let ecs_key_morph_target_mesh : @ecs.ComponentKey[MorphTargetMesh]
@@ -49,6 +51,15 @@ pub fn Mesh::morph_target_names(Self) -> Array[String]?
 pub fn Mesh::vertex_count(Self) -> Int
 pub fn Mesh::with_2d_geometry(Self, Mesh2dGeometry) -> Self?
 pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
+
+pub struct Mesh2d {
+  mesh : @asset.Handle[Mesh]
+}
+pub fn Mesh2d::mesh(Self) -> @asset.Handle[Mesh]
+pub fn Mesh2d::new(@asset.Handle[Mesh]) -> Self
+pub impl @ecs.Component for Mesh2d
+pub impl ToJson for Mesh2d
+pub impl @json.FromJson for Mesh2d
 
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]

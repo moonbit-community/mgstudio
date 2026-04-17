@@ -960,9 +960,7 @@ pub type CircularSectorRing = @math.CircularSectorRing
 pub type CircularSegmentRing = @math.CircularSegmentRing
 
 ///|
-pub struct Mesh2d {
-  mesh : @asset.Handle[@mesh.Mesh]
-}
+pub type Mesh2d = @mesh.Mesh2d
 
 ///|
 let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref::new(
@@ -1070,11 +1068,6 @@ fn mesh_asset_set(
   mesh : @mesh.Mesh,
 ) -> Bool {
   mesh_assets_mut_or_abort().val.set(handle, mesh)
-}
-
-///|
-pub fn Mesh2d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh2d {
-  Mesh2d::{ mesh, }
 }
 
 ///|
@@ -5098,7 +5091,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       rs.val.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
         payload: Mesh2dDrawPayload::{
-          mesh_id: render2d_upload_mesh_handle(mesh2d.mesh),
+          mesh_id: render2d_upload_mesh_handle(mesh2d.mesh()),
           transform,
           layers,
           wireframe,

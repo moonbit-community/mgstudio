@@ -55,7 +55,7 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
-pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
+pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d]
 
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]]
 
@@ -624,16 +624,8 @@ pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
 pub fn Material2dRuntimeRegistry::new() -> Self
 pub impl @app.Resource for Material2dRuntimeRegistry
 
-pub struct Mesh2d {
-  mesh : @asset.Handle[@mesh.Mesh]
-}
-pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
-pub impl @ecs.Component for Mesh2d
-pub impl ToJson for Mesh2d
-pub impl @json.FromJson for Mesh2d
-
 pub struct Mesh2dBundle {
-  mesh : Mesh2d
+  mesh : @mesh.Mesh2d
   material : MeshMaterial2d[ColorMaterialAsset]
   transform : @transform.Transform
   layers : RenderLayers
@@ -641,8 +633,8 @@ pub struct Mesh2dBundle {
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
-pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material_layers(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, RenderLayers) -> Self
 pub fn Mesh2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub impl @app.CommandSpawnComponents for Mesh2dBundle
 
@@ -1058,6 +1050,8 @@ pub using @core_3d {type Hdr}
 pub using @math {type Line2d}
 
 pub using @mesh {type Mesh}
+
+pub using @mesh {type Mesh2d}
 
 pub using @mesh {type Mesh2dGeometry}
 

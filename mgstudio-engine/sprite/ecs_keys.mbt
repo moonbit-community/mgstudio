@@ -68,9 +68,7 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
 
 ///|
-pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @ecs.register_component(
-  debug_name="render2d.mesh2d",
-)
+pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
 pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @ecs.register_component(
@@ -185,11 +183,6 @@ pub impl @ecs.Component for PanCamera with component() {
 ///|
 pub impl @ecs.Component for RenderTarget with component() {
   ecs_key_render_target
-}
-
-///|
-pub impl @ecs.Component for Mesh2d with component() {
-  ecs_key_mesh2d
 }
 
 ///|
@@ -336,11 +329,6 @@ fn encode_rect(rect : @math.Rect) -> Json {
 
 ///|
 fn encode_image_handle(handle : @asset.Handle[@asset.Image]) -> Json {
-  handle.id().to_json()
-}
-
-///|
-fn encode_mesh_handle(handle : @asset.Handle[@mesh.Mesh]) -> Json {
   handle.id().to_json()
 }
 
@@ -500,11 +488,6 @@ fn encode_render_target(target : RenderTarget) -> Json {
 }
 
 ///|
-fn encode_mesh2d(mesh2d : Mesh2d) -> Json {
-  encode_mesh_handle(mesh2d.mesh)
-}
-
-///|
 fn encode_color_material(material : ColorMaterial) -> Json {
   encode_color_material_asset_handle(material.handle)
 }
@@ -567,12 +550,6 @@ fn decode_rect(json : Json) -> @math.Rect {
 
 ///|
 fn decode_image_handle(json : Json) -> @asset.Handle[@asset.Image] {
-  let id : Int = try! @json.from_json(json)
-  @asset.Handle::new(id)
-}
-
-///|
-fn decode_mesh_handle(json : Json) -> @asset.Handle[@mesh.Mesh] {
   let id : Int = try! @json.from_json(json)
   @asset.Handle::new(id)
 }
@@ -780,11 +757,6 @@ fn decode_render_target(json : Json) -> RenderTarget {
 }
 
 ///|
-fn decode_mesh2d(json : Json) -> Mesh2d {
-  Mesh2d::new(decode_mesh_handle(json))
-}
-
-///|
 fn decode_color_material(json : Json) -> ColorMaterial {
   ColorMaterial::{ handle: decode_color_material_asset_handle(json) }
 }
@@ -939,16 +911,6 @@ pub impl ToJson for RenderTarget with to_json(self) {
 ///|
 pub impl @json.FromJson for RenderTarget with from_json(json, _path) {
   decode_render_target(json)
-}
-
-///|
-pub impl ToJson for Mesh2d with to_json(self) {
-  encode_mesh2d(self)
-}
-
-///|
-pub impl @json.FromJson for Mesh2d with from_json(json, _path) {
-  decode_mesh2d(json)
 }
 
 ///|
