@@ -191,7 +191,7 @@ fn setup(
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
 
-  @pbr.Camera3dBundle::new(
+  @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
@@ -452,7 +452,7 @@ fn handle_mouse(
   }
 
   let mut camera_entity : @core.Entity? = None
-  world.for_each_component(@pbr.Camera3d::component(), fn(entity, _camera) {
+  world.for_each_component(@camera.Camera3d::component(), fn(entity, _camera) {
     if camera_entity is None {
       camera_entity = Some(entity)
     }

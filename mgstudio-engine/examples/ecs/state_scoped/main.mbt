@@ -154,7 +154,7 @@ fn on_b_exit(commands : @app.Commands) -> Unit {
 
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@pbr.Camera3d::default()))
+  ignore(commands.spawn_component(@camera.Camera3d::default()))
 }
 
 ///|

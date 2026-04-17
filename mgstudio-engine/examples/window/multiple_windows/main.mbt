@@ -49,7 +49,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   // Camera for primary window
-  let first_window_camera = @pbr.Camera3dBundle::new(
+  let first_window_camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
       @math.Vec3::zero(),
@@ -66,7 +66,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   // Camera for secondary window
-  let second_window_camera = @pbr.Camera3dBundle::new(
+  let second_window_camera = @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),

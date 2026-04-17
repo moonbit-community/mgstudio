@@ -43,7 +43,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Camera3d::default(),
+      @camera.Camera3d::default(),
       @sprite.Camera::default().with_order(-1),
       @sprite.RenderTarget::Image(target),
       @transform.Transform::from_xyz(0.0F, 2.5F, 5.5F).looking_at(

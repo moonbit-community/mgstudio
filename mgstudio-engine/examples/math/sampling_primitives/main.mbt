@@ -713,7 +713,7 @@ fn setup(
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
 
-  let camera_entity = @pbr.Camera3dBundle::new(
+  let camera_entity = @camera.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(sky_color()),
       @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
         @math.Vec3::zero(),

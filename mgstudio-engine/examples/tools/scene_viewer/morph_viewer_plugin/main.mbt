@@ -64,7 +64,7 @@ fn setup(world : @ecs.World) -> Unit {
     printed: false,
   })
   ignore(
-    @pbr.Camera3dBundle::new(
+    @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
         @math.Vec3::zero(),
