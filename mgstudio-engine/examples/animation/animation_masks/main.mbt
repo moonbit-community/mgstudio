@@ -459,7 +459,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   ignore(
-    @pbr.Camera3dBundle::new(
+    @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(-15.0F, 10.0F, 20.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
