@@ -185,6 +185,22 @@ pub fn GlobalTransform::mul(
 }
 
 ///|
+pub fn GlobalTransform::mul_transform(
+  self : GlobalTransform,
+  transform : Transform,
+) -> GlobalTransform {
+  GlobalTransform::{
+    affine: self.affine.mul(
+      @math.Affine3::from_scale_rotation_translation(
+        transform.scale,
+        transform.rotation,
+        transform.translation,
+      ),
+    ),
+  }
+}
+
+///|
 pub fn GlobalTransform::affine(self : GlobalTransform) -> @math.Affine3 {
   self.affine
 }

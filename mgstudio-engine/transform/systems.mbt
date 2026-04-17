@@ -357,9 +357,7 @@ fn propagate_descendants(
       transform_id_flags_contains(global_added, child) ||
       transform_id_flags_contains(parent_changed, child)
     let next_global = if child_changed {
-      let computed = parent_global.mul(
-        GlobalTransform::from_transform(local_transform),
-      )
+      let computed = parent_global.mul_transform(local_transform)
       if !columns.global.set_sequence_only(child, computed) {
         continue
       }
@@ -429,7 +427,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     transform_id_flags_set(orphaned_roots, entity)
   }
   guard transform_propagation_columns(world) is Some(columns) else { return }
-  world.for_each_component(@hierarchy.ecs_key_children, fn(entity, children) {
+  columns.children.for_each_ref(fn(entity, children) {
     if columns.parent is Some(parent_column) && parent_column.contains(entity) {
       return
     }
@@ -459,7 +457,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
       columns,
       entity,
       next_root_global,
-      children,
+      children.val,
       static_optimizations.enabled,
       transform_changed,
       global_added,

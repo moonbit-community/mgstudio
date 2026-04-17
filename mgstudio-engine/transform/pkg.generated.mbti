@@ -89,6 +89,7 @@ pub fn GlobalTransform::from_transform(Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
 pub fn GlobalTransform::inverse(Self) -> Self
 pub fn GlobalTransform::mul(Self, Self) -> Self
+pub fn GlobalTransform::mul_transform(Self, Transform) -> Self
 pub fn GlobalTransform::reparented_to(Self, Self) -> Transform
 pub fn GlobalTransform::to_scale_rotation_translation(Self) -> (@math.Vec3, @math.Quat, @math.Vec3)
 pub fn GlobalTransform::to_transform_approx(Self) -> Transform

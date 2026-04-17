@@ -28,6 +28,11 @@ fn[T] ErasedValue::to_ref(self : ErasedValue) -> Ref[T] raise @any.TypeMismatch 
 }
 
 ///|
+fn[T] ErasedValue::unsafe_to_ref(self : ErasedValue) -> Ref[T] {
+  self.value.unsafe_coerce()
+}
+
+///|
 fn[T] ErasedValue::to_value(self : ErasedValue) -> T raise @any.TypeMismatch {
   self.to_ref().val
 }

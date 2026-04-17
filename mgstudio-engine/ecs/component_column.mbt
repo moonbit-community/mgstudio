@@ -22,11 +22,7 @@ pub struct ComponentColumn[T] {
 
 ///|
 fn[T] erased_value_ref_fast(payload : ErasedValue) -> Ref[T]? {
-  try payload.to_ref() catch {
-    _ => None
-  } noraise {
-    value => Some(value)
-  }
+  Some(payload.unsafe_to_ref())
 }
 
 ///|

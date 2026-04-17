@@ -212,21 +212,27 @@ pub fn[T] SparseSet::index_of(self : SparseSet[T], entity : Entity) -> Int? {
   if entity.id < 0 {
     return None
   }
-  match self.sparse.get(entity.id) {
-    Some(i) if i >= 0 && self.dense_entities.get(i) is Some(e) =>
-      if e.generation == entity.generation {
-        Some(i)
-      } else {
-        None
-      }
-    _ => None
+  let sparse_len = self.sparse.length()
+  if entity.id >= sparse_len {
+    return None
+  }
+  let i = self.sparse.unsafe_get(entity.id)
+  let dense_len = self.dense_entities.length()
+  if i < 0 || i >= dense_len {
+    return None
+  }
+  let e = self.dense_entities.unsafe_get(i)
+  if e.generation == entity.generation {
+    Some(i)
+  } else {
+    None
   }
 }
 
 ///|
 pub fn[T] SparseSet::get(self : SparseSet[T], entity : Entity) -> T? {
   match self.index_of(entity) {
-    Some(i) => self.dense_values.get(i)
+    Some(i) => Some(self.dense_values.unsafe_get(i))
     None => None
   }
 }
