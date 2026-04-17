@@ -197,8 +197,8 @@ fn picking_camera_transform(
 
 ///|
 fn picking_insert_camera_sorted(
-  cameras : Ref[Array[(@core.Entity, @sprite.Camera, @pbr.Projection)]],
-  camera : (@core.Entity, @sprite.Camera, @pbr.Projection),
+  cameras : Ref[Array[(@core.Entity, @sprite.Camera, @camera.Projection)]],
+  camera : (@core.Entity, @sprite.Camera, @camera.Projection),
 ) -> Unit {
   let mut insert_at = cameras.val.length()
   for i in 0..<cameras.val.length() {
@@ -221,9 +221,9 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
   let scale_factor = @window.window_scale_factor()
   let window_width = @window.window_width()
   let window_height = @window.window_height()
-  let cameras : Ref[Array[(@core.Entity, @sprite.Camera, @pbr.Projection)]] = Ref::new([],
+  let cameras : Ref[Array[(@core.Entity, @sprite.Camera, @camera.Projection)]] = Ref::new([],
   )
-  world.for_each_component(@pbr.ecs_key_camera3d, fn(entity, _camera3d) {
+  world.for_each_component(@camera.ecs_key_camera3d, fn(entity, _camera3d) {
     guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
       is Some(camera) else {
       return
@@ -232,9 +232,9 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
       return
     }
     let projection = match
-      (try! world.get_by_key(entity, @pbr.ecs_key_projection)) {
+      (try! world.get_by_key(entity, @camera.ecs_key_projection)) {
       Some(value) => value
-      None => @pbr.Projection::default()
+      None => @camera.Projection::default()
     }
     picking_insert_camera_sorted(cameras, (entity, camera, projection))
   })

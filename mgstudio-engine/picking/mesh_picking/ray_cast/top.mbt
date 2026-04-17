@@ -46,13 +46,13 @@ pub fn mesh_ray_cast_from_camera(
   world : @ecs.World,
   screen : @math.Vec2,
   camera : @sprite.Camera,
-  projection : @pbr.Projection,
+  projection : @camera.Projection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
   settings : MeshRayCastSettings,
 ) -> Array[(@core.Entity, MeshRayCastHit)] {
-  if @pbr.render3d_camera_viewport_to_world_ray(
+  if @camera.camera_viewport_to_world_ray(
       screen, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((origin, direction)) {
@@ -67,7 +67,7 @@ pub fn mesh_ray_cast_from_camera_first(
   world : @ecs.World,
   screen : @math.Vec2,
   camera : @sprite.Camera,
-  projection : @pbr.Projection,
+  projection : @camera.Projection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,

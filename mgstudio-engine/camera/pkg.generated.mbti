@@ -5,14 +5,12 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/pbr/render",
-  "Milky2018/mgstudio/picking/mesh_picking/ray_cast",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
@@ -58,10 +56,6 @@ pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> @primitives.Aabb?
-
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @ray_cast.MeshRayCastIntersectionSettings) -> Array[(@core.Entity, @ray_cast.MeshRayCastIntersectionHit)]
-
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, @ray_cast.MeshRayCastIntersectionSettings) -> (@core.Entity, @ray_cast.MeshRayCastIntersectionHit)?
 
 pub fn orthographic_projection_2d_default() -> @sprite.OrthographicProjection
 
@@ -124,10 +118,6 @@ pub using @pbr {type Exposure}
 pub using @render {type Frustum}
 
 pub using @core_3d {type Hdr}
-
-pub using @ray_cast {type MeshRayCastIntersectionHit as MeshRayCastHit}
-
-pub using @ray_cast {type MeshRayCastIntersectionSettings as MeshRayCastSettings}
 
 pub using @sprite {type OrthographicProjection as OrthographicProjection2d}
 

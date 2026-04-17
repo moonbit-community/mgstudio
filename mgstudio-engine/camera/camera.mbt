@@ -59,12 +59,6 @@ pub type DepthOfField = @pbr.DepthOfField
 pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
 
 ///|
-pub type MeshRayCastHit = @picking_mesh_ray_cast.MeshRayCastHit
-
-///|
-pub type MeshRayCastSettings = @picking_mesh_ray_cast.MeshRayCastSettings
-
-///|
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @pbr.ecs_key_camera3d
 
 ///|
@@ -98,40 +92,6 @@ pub fn camera_world_to_viewport(
 ) -> @math.Vec2? {
   @pbr.render3d_camera_world_to_viewport(
     world_position, camera, projection, camera_transform, viewport_size, render_scale,
-  )
-}
-
-///|
-pub fn mesh_ray_cast_from_camera(
-  world : @ecs.World,
-  viewport_position : @math.Vec2,
-  camera : @sprite.Camera,
-  projection : Projection,
-  camera_transform : @transform.Transform,
-  viewport_size : @math.IVec2,
-  render_scale : Float,
-  settings : MeshRayCastSettings,
-) -> Array[(@core.Entity, MeshRayCastHit)] {
-  @picking_mesh_ray_cast.mesh_ray_cast_from_camera(
-    world, viewport_position, camera, projection, camera_transform, viewport_size,
-    render_scale, settings,
-  )
-}
-
-///|
-pub fn mesh_ray_cast_from_camera_first(
-  world : @ecs.World,
-  viewport_position : @math.Vec2,
-  camera : @sprite.Camera,
-  projection : Projection,
-  camera_transform : @transform.Transform,
-  viewport_size : @math.IVec2,
-  render_scale : Float,
-  settings : MeshRayCastSettings,
-) -> (@core.Entity, MeshRayCastHit)? {
-  @picking_mesh_ray_cast.mesh_ray_cast_from_camera_first(
-    world, viewport_position, camera, projection, camera_transform, viewport_size,
-    render_scale, settings,
   )
 }
 
