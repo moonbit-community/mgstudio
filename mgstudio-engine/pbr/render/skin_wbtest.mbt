@@ -35,19 +35,20 @@ fn ensure_skin_cache_slot(
 ///|
 test "pbr render skin: upload skips invalid skin keys without aborting later skins" {
   let world = @ecs.World::new()
-  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
   let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
   world_transform_cache_ref.val.frame_stamp = 1
 
   let missing_binding_entity = @core.Entity::new(100, 1)
   let valid_entity = @core.Entity::new(3, 2)
-  phase_state_ref.val.skin_upload_queue.clear()
-  phase_state_ref.val.skin_upload_queue.push(missing_binding_entity)
-  phase_state_ref.val.skin_upload_queue.push(valid_entity)
-  phase_state_ref.val.prepared_skin_bindings.set(valid_entity.id, PreparedSkinBinding3d::{
+  skin_uniforms_ref.val.skin_upload_queue.clear()
+  skin_uniforms_ref.val.skin_upload_queue.push(missing_binding_entity)
+  skin_uniforms_ref.val.skin_upload_queue.push(valid_entity)
+  skin_uniforms_ref.val.skin_uniform_info.set(valid_entity.id, SkinUniformInfo::{
     entity_generation: valid_entity.generation,
     key_hi: 4,
     key_lo: 0,
+    joints: [@core.Entity::new(1, 1)],
   })
 
   ensure_skin_cache_slot(world_transform_cache_ref, valid_entity.id)
@@ -58,13 +59,11 @@ test "pbr render skin: upload skips invalid skin keys without aborting later ski
   world_transform_cache_ref.val.skinning_stamps[valid_entity.id] = world_transform_cache_ref.val.frame_stamp
 
   render3d_prepare_skin_bindings_upload(
-    world, phase_state_ref, world_transform_cache_ref,
+    world, skin_uniforms_ref, world_transform_cache_ref,
   )
 
   inspect(
-    phase_state_ref.val.skin_previous_matrices.contains(
-      skin_entity_key(valid_entity),
-    ),
+    skin_uniforms_ref.val.previous_skins.contains(skin_entity_key(valid_entity)),
     content="true",
   )
 }

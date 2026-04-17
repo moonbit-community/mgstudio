@@ -31,11 +31,9 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     )
   }
   let source_world = @render.render_source_world(world)
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
   guard render3d_queue_take_frame(world) is Some(queued_frame) else {
-    phase_state_ref.val.prepared_camera_order.clear()
-    phase_state_ref.val.last_camera3d_count = 0
-    phase_state_ref.val.camera_order_needs_refresh = true
+    @render.sorted_cameras_clear(sorted_cameras_ref)
     finish_execute()
     return
   }
@@ -53,31 +51,31 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     frame_config.wireframe_config,
     frame_config.delta_seconds,
   )
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  phase_state_ref.val.prepared_camera_order.clear()
+  @render.sorted_cameras_clear(sorted_cameras_ref)
   finish_execute()
 }
 
 ///|
 pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
+  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
+  let morph_uniforms_ref = @pbr_render.morph_uniforms_ref_or_abort(world)
+  let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
   let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
     world,
   )
   @pbr_render.render3d_world_transform_cache_begin_frame(
     world_transform_cache_ref,
   )
-  render3d_refresh_prepared_camera_order_if_needed(
-    source_world, phase_state_ref,
-  )
-  render3d_extract_morphs(source_world, phase_state_ref)
+  render3d_refresh_sorted_cameras(source_world, sorted_cameras_ref)
+  render3d_extract_morphs(source_world, morph_indices_ref, morph_uniforms_ref)
   @pbr_render.render3d_extract_skin_bindings(
-    source_world, phase_state_ref, world_transform_cache_ref,
+    source_world, skin_uniforms_ref, world_transform_cache_ref,
   )
   @pbr_render.render3d_set_diagnostic_prepared_camera_count(
     world,
-    phase_state_ref.val.prepared_camera_order.length(),
+    sorted_cameras_ref.val.entities.length(),
   )
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
 }
@@ -85,19 +83,20 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render3d_prepare_morphs_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  render3d_prepare_morphs(source_world, phase_state_ref)
+  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
+  let morph_uniforms_ref = @pbr_render.morph_uniforms_ref_or_abort(world)
+  render3d_prepare_morphs(source_world, morph_indices_ref, morph_uniforms_ref)
 }
 
 ///|
 pub fn render3d_prepare_skin_bindings_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
+  let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
   let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
     world,
   )
   @pbr_render.render3d_prepare_skin_bindings_upload(
-    source_world, phase_state_ref, world_transform_cache_ref,
+    source_world, skin_uniforms_ref, world_transform_cache_ref,
   )
 }
 
@@ -274,8 +273,13 @@ fn render3d_for_each_prepared_camera(
 ///|
 pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  if phase_state_ref.val.prepared_camera_order.length() == 0 {
+  let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
+  let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
+    world,
+  )
+  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
+  let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
+  if sorted_cameras_ref.val.entities.length() == 0 {
     render3d_queue_clear_frame(world)
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
@@ -295,21 +299,20 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     cameras,
   )
   if cameras.length() == 0 {
-    phase_state_ref.val.prepared_camera_order.clear()
-    phase_state_ref.val.last_camera3d_count = 0
-    phase_state_ref.val.camera_order_needs_refresh = true
+    @render.sorted_cameras_clear(sorted_cameras_ref)
     render3d_queue_clear_frame(world)
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
   let meshes = render3d_execute_collect_meshes(
-    world, source_world, phase_state_ref, world_transform_cache_ref, needs_mesh_previous_transform,
+    world, source_world, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,
+    world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_extract_material_instances(world, meshes)
   render3d_prepare_shader_asset_paths(source_world, meshes)
   render3d_prewarm_mesh_pipelines(meshes)
   let prepared_camera_queues = render3d_prepare_camera_queue_entries(
-    phase_state_ref,
+    mesh_runtime_state_ref,
     cameras,
     meshes,
     frame_config.gpu_instance_buffer_builder_enabled,
@@ -379,8 +382,10 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_queue_sweep_system(world : @ecs.World) -> Unit {
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  @pbr_render.render3d_sweep_mesh_runtime_caches(phase_state_ref)
+  let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
+    world,
+  )
+  @pbr_render.render3d_sweep_mesh_runtime_caches(mesh_runtime_state_ref)
 }
 
 ///|

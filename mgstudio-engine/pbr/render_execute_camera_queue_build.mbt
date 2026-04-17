@@ -42,7 +42,7 @@ fn render3d_camera_exposure_value_for_preprocess(
 
 ///|
 fn render3d_build_camera_queue_entry(
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
   camera : Camera3dViewPayload,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   meshes : Array[ExtractedMesh3d],
@@ -68,12 +68,12 @@ fn render3d_build_camera_queue_entry(
       camera.layers,
       camera.transform,
       camera_frustum_planes,
-      phase_state_ref.val.mesh_preprocess_static_cache,
+      mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
       camera.has_no_cpu_culling,
       camera_indirect_enabled,
     ),
     meshes,
-    phase_state_ref.val.mesh_preprocess_static_cache,
+    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
     camera_indirect_enabled,
     camera_indirect_enabled && camera.gpu_occlusion_culling_enabled,
   )
@@ -212,7 +212,7 @@ fn render3d_dispatch_camera_queue_entry(
 
 ///|
 fn render3d_prepare_camera_queue_entry(
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
   extracted_camera : ExtractedCamera3d,
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
@@ -234,7 +234,7 @@ fn render3d_prepare_camera_queue_entry(
     camera.transform,
   )
   let queue_build_result = render3d_build_camera_queue_entry(
-    phase_state_ref, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
+    mesh_runtime_state_ref, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
     gpu_culling_supported,
   )
   Some(Render3dPreparedCameraQueue::{
@@ -250,7 +250,7 @@ fn render3d_prepare_camera_queue_entry(
 
 ///|
 fn render3d_prepare_camera_queue_entries(
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
@@ -260,7 +260,8 @@ fn render3d_prepare_camera_queue_entries(
   for camera in cameras {
     prepared.push(
       render3d_prepare_camera_queue_entry(
-        phase_state_ref, camera, meshes, gpu_instance_buffer_builder_enabled, gpu_culling_supported,
+        mesh_runtime_state_ref, camera, meshes, gpu_instance_buffer_builder_enabled,
+        gpu_culling_supported,
       ),
     )
   }

@@ -81,6 +81,8 @@ pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld]
 
 pub let ecs_key_temporary_render_entity : @ecs.ComponentKey[TemporaryRenderEntity]
 
+pub fn ensure_sorted_cameras_resource(@ecs.World) -> Unit
+
 pub fn[EI] extract_all(Array[EI]) -> ExtractedInstances[EI]
 
 pub fn[C, F] extract_component_only_extract_visible(ExtractComponentPlugin[C, F]) -> Bool
@@ -320,6 +322,16 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
+
+pub fn sorted_cameras_clear(@ref.Ref[SortedCameras]) -> Unit
+
+pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras]
+
+pub fn sorted_cameras_or_default(@ecs.World) -> SortedCameras
+
+pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ref.Ref[SortedCameras]
+
+pub fn sorted_cameras_replace_entities(@ref.Ref[SortedCameras], Array[@core.Entity]) -> Unit
 
 pub fn sync_build(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -597,6 +609,12 @@ pub fn[K, V] RenderStorage::is_empty(Self[K, V]) -> Bool
 pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
 pub fn[K, V] RenderStorage::new() -> Self[K, V]
 pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
+
+pub struct SortedCameras {
+  mut entities : Array[@core.Entity]
+}
+pub fn SortedCameras::new() -> Self
+pub impl @app.Resource for SortedCameras
 
 pub struct SyncComponentPlugin[_, _] {
 }

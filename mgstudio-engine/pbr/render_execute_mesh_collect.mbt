@@ -16,7 +16,9 @@
 fn render3d_execute_collect_meshes(
   world : @ecs.World,
   source_world : @ecs.World,
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  morph_indices_ref : Ref[@pbr_render.MorphIndices],
+  skin_uniforms_ref : Ref[@pbr_render.SkinUniforms],
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   needs_mesh_previous_transform : Bool,
 ) -> Array[ExtractedMesh3d] {
@@ -145,12 +147,10 @@ fn render3d_execute_collect_meshes(
       None
     }
     let entity_key = mesh_entity_key(entity)
-    let has_previous_skin = phase_state_ref.val.skin_previous_matrices.contains(
+    let has_previous_skin = skin_uniforms_ref.val.previous_skins.contains(
       entity_key,
     )
-    let has_previous_morph = phase_state_ref.val.morph_indices_prev.get(
-        entity_key,
-      )
+    let has_previous_morph = morph_indices_ref.val.prev.get(entity_key)
       is Some(_)
     let motion_vector_enabled = if needs_mesh_previous_transform {
       let supports_motion = match
@@ -186,15 +186,15 @@ fn render3d_execute_collect_meshes(
       None
     }
     let (skinning_key_hi, skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
-      phase_state_ref, entity,
+      skin_uniforms_ref, entity,
     )
     let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh)
     let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
       mesh3d.mesh,
-      phase_state_ref.val.mesh_preprocess_static_cache,
+      mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
     )
     let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
-      phase_state_ref,
+      mesh_runtime_state_ref,
       mesh3d.mesh,
     )
     let lightmap = if has_lightmap_components {
@@ -308,7 +308,7 @@ fn render3d_execute_collect_meshes(
     trace_collect_meshes_start_us,
   )
   render3d_update_mesh_preprocess_static_cache(
-    phase_state_ref.val.mesh_preprocess_static_cache,
+    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
     meshes,
   )
   meshes

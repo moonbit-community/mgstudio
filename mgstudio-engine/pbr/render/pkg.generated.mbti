@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
@@ -134,7 +135,11 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
 pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset]
 
-pub fn ensure_render3d_phase_state_resource(@ecs.World) -> Unit
+pub fn ensure_morph_resources(@ecs.World) -> Unit
+
+pub fn ensure_render3d_mesh_runtime_state_resource(@ecs.World) -> Unit
+
+pub fn ensure_skin_uniforms_resource(@ecs.World) -> Unit
 
 pub fn fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -153,6 +158,18 @@ pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> M
 pub fn mesh_view_layout_key_from_msaa(Int) -> MeshPipelineViewLayoutKey
 
 pub fn minf(Float, Float) -> Float
+
+pub let morph_indices_key : @ecs.ResourceKey[MorphIndices]
+
+pub fn morph_indices_ref_or_abort(@ecs.World) -> @ref.Ref[MorphIndices]
+
+pub fn morph_indices_swap_and_reset(@ref.Ref[MorphIndices]) -> Unit
+
+pub let morph_uniforms_key : @ecs.ResourceKey[MorphUniforms]
+
+pub fn morph_uniforms_ref_or_abort(@ecs.World) -> @ref.Ref[MorphUniforms]
+
+pub fn morph_uniforms_swap_and_reset(@ref.Ref[MorphUniforms]) -> Unit
 
 pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
 
@@ -184,7 +201,7 @@ pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float)
 
 pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
 
-pub fn render3d_clear_mesh_upload_cache(@ref.Ref[Render3dPhaseState]) -> Unit
+pub fn render3d_clear_mesh_upload_cache(@ref.Ref[Render3dMeshRuntimeState]) -> Unit
 
 pub fn render3d_collect_extracted_clusterable_point_lights(@ecs.World) -> Array[ExtractedClusterablePointLight3d]
 
@@ -236,9 +253,11 @@ pub fn render3d_entity_world_transform_from_components(@ecs.World, @core.Entity,
 
 pub let render3d_execute_system_label : String
 
-pub fn render3d_extract_skin_bindings(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
+pub fn render3d_extract_skin_bindings(@ecs.World, @ref.Ref[SkinUniforms], @ref.Ref[Render3dWorldTransformCache]) -> Unit
 
-pub fn render3d_extract_skinning_matrices(@ecs.World, @core.Entity, @ref.Ref[Render3dWorldTransformCache]) -> Array[Float]?
+pub fn render3d_extract_skinning_matrices(@ecs.World, @core.Entity, @mesh.SkinnedMesh, @asset.Assets[@mesh.SkinnedMeshInverseBindposes], @ref.Ref[Render3dWorldTransformCache]) -> Array[Float]?
+
+pub fn render3d_extract_skinning_matrices_with_columns(@ecs.World, @core.Entity, @mesh.SkinnedMesh, @asset.Assets[@mesh.SkinnedMeshInverseBindposes], @ref.Ref[Render3dWorldTransformCache], Render3dTransformColumns) -> Array[Float]?
 
 pub let render3d_extract_system_label : String
 
@@ -286,6 +305,10 @@ pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
 pub fn render3d_mesh_layouts() -> MeshLayouts3d
 
+pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[Render3dMeshRuntimeState]
+
+pub fn render3d_mesh_runtime_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dMeshRuntimeState]
+
 pub fn render3d_mesh_upload_cache_state_after_clear(Render3dMeshUploadCacheState) -> Render3dMeshUploadCacheState
 
 pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
@@ -332,12 +355,6 @@ pub fn render3d_perspective_projection_matrix_for_sub(PerspectiveProjection3d, S
 
 pub fn render3d_perspective_projection_matrix_raw(Float, Float, Float) -> ProjectionMatrix3d
 
-pub let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState]
-
-pub fn render3d_phase_state_or_default(@ecs.World) -> Render3dPhaseState
-
-pub fn render3d_phase_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dPhaseState]
-
 pub fn render3d_point_light_flags(ExtractedPointLight3d) -> UInt
 
 pub fn render3d_point_light_shadow_map_size(@ecs.World) -> Int
@@ -358,13 +375,13 @@ pub fn render3d_prepare_preprocess_pipelines(PreprocessPipelines) -> PreprocessP
 
 pub fn render3d_prepare_reset_indirect_batch_sets_pipeline(ResetIndirectBatchSetsPipeline) -> ResetIndirectBatchSetsPipeline
 
-pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[Render3dPhaseState], @ref.Ref[Render3dWorldTransformCache]) -> Unit
+pub fn render3d_prepare_skin_bindings_upload(@ecs.World, @ref.Ref[SkinUniforms], @ref.Ref[Render3dWorldTransformCache]) -> Unit
 
 pub let render3d_prepare_system_label : String
 
 pub fn render3d_prepared_camera_count(@ecs.World) -> Int?
 
-pub fn render3d_prepared_skin_binding_keys(@ref.Ref[Render3dPhaseState], @core.Entity) -> (Int, Int)
+pub fn render3d_prepared_skin_binding_keys(@ref.Ref[SkinUniforms], @core.Entity) -> (Int, Int)
 
 pub fn render3d_preprocess_dispatch_workgroup_count(Int) -> Int
 
@@ -402,11 +419,13 @@ pub fn render3d_standard_material_alpha_cutoff(@material.AlphaMode3d) -> Float
 
 pub fn render3d_standard_material_flags(@material.StandardMaterial, Int, Int, Int, Int, Int, Int, Int, Int, forward_decal? : Bool) -> UInt
 
-pub fn render3d_sweep_mesh_runtime_caches(@ref.Ref[Render3dPhaseState]) -> Unit
+pub fn render3d_sweep_mesh_runtime_caches(@ref.Ref[Render3dMeshRuntimeState]) -> Unit
 
 pub fn render3d_system_labels() -> Array[String]
 
 pub fn render3d_target_info(@ecs.World, @sprite.RenderTarget) -> RenderTargetComputed3d?
+
+pub fn render3d_transform_columns(@ecs.World) -> Render3dTransformColumns
 
 pub fn render3d_transform_forward(@transform.Transform) -> @math.Vec3
 
@@ -416,7 +435,7 @@ pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
 pub fn[T] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> Frustum) -> Unit
 
-pub fn render3d_upload_mesh_handle_cached(@ref.Ref[Render3dPhaseState], @asset.Handle[@mesh.Mesh]) -> Int
+pub fn render3d_upload_mesh_handle_cached(@ref.Ref[Render3dMeshRuntimeState], @asset.Handle[@mesh.Mesh]) -> Int
 
 pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
 
@@ -427,6 +446,10 @@ pub fn render3d_view_from_world_matrix(@transform.Transform) -> ProjectionMatrix
 pub fn render3d_world_transform_cache_begin_frame(@ref.Ref[Render3dWorldTransformCache]) -> Unit
 
 pub fn render3d_world_transform_cache_ref(@ecs.World) -> @ref.Ref[Render3dWorldTransformCache]
+
+pub let skin_uniforms_key : @ecs.ResourceKey[SkinUniforms]
+
+pub fn skin_uniforms_ref_or_abort(@ecs.World) -> @ref.Ref[SkinUniforms]
 
 // Errors
 
@@ -760,6 +783,20 @@ pub struct MeshViewBindings3d {
 }
 pub fn MeshViewBindings3d::default() -> Self
 
+pub struct MorphIndices {
+  mut current : Map[UInt64, UInt]
+  mut prev : Map[UInt64, UInt]
+}
+pub fn MorphIndices::new() -> Self
+pub impl @app.Resource for MorphIndices
+
+pub struct MorphUniforms {
+  mut current_buffer : Array[Float]
+  mut prev_buffer : Array[Float]
+}
+pub fn MorphUniforms::new() -> Self
+pub impl @app.Resource for MorphUniforms
+
 pub(all) struct OrthographicProjection3d {
   mut near : Float
   mut far : Float
@@ -954,6 +991,13 @@ pub(all) struct Render3dLightingState {
   spot_outer_angle : Float
 }
 
+pub struct Render3dMeshRuntimeState {
+  mesh_upload_cache : Map[Int, Int]
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+}
+pub fn Render3dMeshRuntimeState::new() -> Self
+pub impl @app.Resource for Render3dMeshRuntimeState
+
 pub struct Render3dMeshUploadCacheState {
   clear_count : Int
 }
@@ -973,29 +1017,11 @@ pub(all) struct Render3dPassProjection {
   camera_far : Float
 }
 
-pub(all) struct Render3dPhaseState {
-  mut prepared_camera_order : Array[@core.Entity]
-  mut camera_order_needs_refresh : Bool
-  mut last_camera3d_count : Int
-  mesh_upload_cache : Map[Int, Int]
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
-  mut morph_indices_current : Map[UInt64, UInt]
-  mut morph_indices_prev : Map[UInt64, UInt]
-  mut morph_weights_current : Array[Float]
-  mut morph_weights_prev : Array[Float]
-  prepared_skin_bindings : Map[Int, PreparedSkinBinding3d]
-  mut next_skin_binding_index : Int
-  mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
-  skin_joint_to_skins : Map[UInt64, Array[@core.Entity]]
-  skin_joints_by_skin : Map[UInt64, Array[@core.Entity]]
-  skin_joint_count_by_skin : Map[UInt64, Int]
-  skin_previous_matrices : Map[UInt64, Array[Float]]
-  mut skin_staging_rows : Array[Float]
-  mut total_skin_joints : Int
-  skin_upload_queue : Array[@core.Entity]
+pub(all) struct Render3dTransformColumns {
+  transform : @ecs.ComponentColumn[@transform.Transform]?
+  global : @ecs.ComponentColumn[@transform.GlobalTransform]?
+  parent : @ecs.ComponentColumn[@hierarchy.Parent]?
 }
-pub fn Render3dPhaseState::new() -> Self
-pub impl @app.Resource for Render3dPhaseState
 
 pub struct Render3dViewFogData {
   color : @color.Color
@@ -1035,10 +1061,30 @@ pub struct ResetIndirectBatchSetsPipeline {
 }
 pub fn ResetIndirectBatchSetsPipeline::new(String, String) -> Self
 
-pub(all) struct SkinBindingFreeRange {
+pub struct SkinBindingFreeRange {
   offset : Int
   length : Int
 }
+
+pub struct SkinUniformInfo {
+  entity_generation : Int
+  key_hi : Int
+  key_lo : Int
+  joints : Array[@core.Entity]
+}
+
+pub struct SkinUniforms {
+  skin_uniform_info : Map[Int, SkinUniformInfo]
+  mut next_skin_binding_index : Int
+  mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
+  joint_to_skins : Map[UInt64, Array[@core.Entity]]
+  previous_skins : Map[UInt64, Bool]
+  current_staging_buffer : Array[Float]
+  mut total_joints : Int
+  skin_upload_queue : Array[@core.Entity]
+}
+pub fn SkinUniforms::new() -> Self
+pub impl @app.Resource for SkinUniforms
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

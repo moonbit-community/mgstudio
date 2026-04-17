@@ -15,15 +15,61 @@
 // Bevy-aligned `pbr/render/mesh` container.
 
 ///|
+pub struct Render3dMeshRuntimeState {
+  mesh_upload_cache : Map[Int, Int]
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+}
+
+///|
+pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
+  Render3dMeshRuntimeState::{
+    mesh_upload_cache: {},
+    mesh_preprocess_static_cache: {},
+  }
+}
+
+///|
+pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[
+  Render3dMeshRuntimeState,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::Render3dMeshRuntimeState")
+
+///|
+pub impl @app.Resource for Render3dMeshRuntimeState with resource() {
+  render3d_mesh_runtime_state_key
+}
+
+///|
+pub fn ensure_render3d_mesh_runtime_state_resource(world : @ecs.World) -> Unit {
+  if (try! world.get_resource(Render3dMeshRuntimeState::resource())) is None {
+    world.insert_resource(
+      Render3dMeshRuntimeState::resource(),
+      Render3dMeshRuntimeState::new(),
+    )
+  }
+}
+
+///|
+pub fn render3d_mesh_runtime_state_ref_or_abort(
+  world : @ecs.World,
+) -> Ref[Render3dMeshRuntimeState] {
+  ensure_render3d_mesh_runtime_state_resource(world)
+  match
+    (try! world.get_resource_ref_mut(Render3dMeshRuntimeState::resource())) {
+    Some(state) => state
+    None => abort("Missing Render3dMeshRuntimeState resource in render world")
+  }
+}
+
+///|
 pub fn render3d_upload_mesh_handle_cached(
-  phase_state_ref : Ref[Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[Render3dMeshRuntimeState],
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> Int {
   let mesh_handle_id = mesh_handle.id()
   if mesh_handle_id < 0 {
     return -1
   }
-  match phase_state_ref.val.mesh_upload_cache.get(mesh_handle_id) {
+  match mesh_runtime_state_ref.val.mesh_upload_cache.get(mesh_handle_id) {
     Some(mesh_id) =>
       if mesh_id > 0 {
         mesh_id
@@ -31,7 +77,7 @@ pub fn render3d_upload_mesh_handle_cached(
         let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
           mesh_handle,
         )
-        phase_state_ref.val.mesh_upload_cache.set(
+        mesh_runtime_state_ref.val.mesh_upload_cache.set(
           mesh_handle_id, uploaded_mesh_id,
         )
         uploaded_mesh_id
@@ -40,7 +86,7 @@ pub fn render3d_upload_mesh_handle_cached(
       let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
         mesh_handle,
       )
-      phase_state_ref.val.mesh_upload_cache.set(
+      mesh_runtime_state_ref.val.mesh_upload_cache.set(
         mesh_handle_id, uploaded_mesh_id,
       )
       uploaded_mesh_id
@@ -67,9 +113,9 @@ pub fn render3d_mesh_upload_cache_state_after_clear(
 
 ///|
 pub fn render3d_clear_mesh_upload_cache(
-  phase_state_ref : Ref[Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[Render3dMeshRuntimeState],
 ) -> Unit {
-  phase_state_ref.val.mesh_upload_cache.clear()
+  mesh_runtime_state_ref.val.mesh_upload_cache.clear()
 }
 
 ///|
@@ -82,27 +128,29 @@ fn render3d_mesh_handle_alive(mesh_handle_id : Int) -> Bool {
 
 ///|
 pub fn render3d_sweep_mesh_runtime_caches(
-  phase_state_ref : Ref[Render3dPhaseState],
+  mesh_runtime_state_ref : Ref[Render3dMeshRuntimeState],
 ) -> Unit {
   let stale_upload_cache_keys : Array[Int] = []
-  for entry in phase_state_ref.val.mesh_upload_cache.iter() {
+  for entry in mesh_runtime_state_ref.val.mesh_upload_cache.iter() {
     let (mesh_handle_id, _mesh_id) = entry
     if !render3d_mesh_handle_alive(mesh_handle_id) {
       stale_upload_cache_keys.push(mesh_handle_id)
     }
   }
   for mesh_handle_id in stale_upload_cache_keys {
-    phase_state_ref.val.mesh_upload_cache.remove(mesh_handle_id)
+    mesh_runtime_state_ref.val.mesh_upload_cache.remove(mesh_handle_id)
   }
   let stale_preprocess_cache_keys : Array[Int] = []
-  for entry in phase_state_ref.val.mesh_preprocess_static_cache.iter() {
+  for entry in mesh_runtime_state_ref.val.mesh_preprocess_static_cache.iter() {
     let (mesh_handle_id, _metadata) = entry
     if !render3d_mesh_handle_alive(mesh_handle_id) {
       stale_preprocess_cache_keys.push(mesh_handle_id)
     }
   }
   for mesh_handle_id in stale_preprocess_cache_keys {
-    phase_state_ref.val.mesh_preprocess_static_cache.remove(mesh_handle_id)
+    mesh_runtime_state_ref.val.mesh_preprocess_static_cache.remove(
+      mesh_handle_id,
+    )
   }
 }
 

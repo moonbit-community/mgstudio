@@ -758,12 +758,11 @@ fn render3d_apply_morph_targets(
 ///|
 pub fn render3d_extract_morphs(
   source_world : @ecs.World,
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  morph_indices_ref : Ref[@pbr_render.MorphIndices],
+  morph_uniforms_ref : Ref[@pbr_render.MorphUniforms],
 ) -> Unit {
-  phase_state_ref.val.morph_indices_prev = phase_state_ref.val.morph_indices_current
-  phase_state_ref.val.morph_weights_prev = phase_state_ref.val.morph_weights_current
-  phase_state_ref.val.morph_indices_current = {}
-  phase_state_ref.val.morph_weights_current = []
+  @pbr_render.morph_indices_swap_and_reset(morph_indices_ref)
+  @pbr_render.morph_uniforms_swap_and_reset(morph_uniforms_ref)
   if source_world.component_count(@mesh.MorphTargetMesh::component()) == 0 {
     return
   }
@@ -780,10 +779,10 @@ pub fn render3d_extract_morphs(
       source_world, entity,
     )
     let uniform_offset = render3d_push_morph_weights_to_uniform_buffer(
-      phase_state_ref.val.morph_weights_current,
+      morph_uniforms_ref.val.current_buffer,
       active_morph_weights,
     )
-    phase_state_ref.val.morph_indices_current.set(
+    morph_indices_ref.val.current.set(
       render3d_morph_entity_key(entity),
       uniform_offset,
     )
@@ -793,7 +792,8 @@ pub fn render3d_extract_morphs(
 ///|
 pub fn render3d_prepare_morphs(
   source_world : @ecs.World,
-  phase_state_ref : Ref[@pbr_render.Render3dPhaseState],
+  morph_indices_ref : Ref[@pbr_render.MorphIndices],
+  morph_uniforms_ref : Ref[@pbr_render.MorphUniforms],
 ) -> Unit {
   let mesh_query : @ecs.Query[
     (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
@@ -805,7 +805,7 @@ pub fn render3d_prepare_morphs(
     let (entity, mesh_component, morph_target_mesh_component) = data
     let entity_key = render3d_morph_entity_key(entity)
     let morph_weights_offset = match
-      phase_state_ref.val.morph_indices_current.get(entity_key) {
+      morph_indices_ref.val.current.get(entity_key) {
       Some(offset) => offset
       None => return
     }
@@ -821,7 +821,7 @@ pub fn render3d_prepare_morphs(
     }
 
     let active_morph_weights = render3d_read_morph_weights_from_uniform_buffer(
-      phase_state_ref.val.morph_weights_current,
+      morph_uniforms_ref.val.current_buffer,
       morph_weights_offset,
     )
 
@@ -844,7 +844,8 @@ pub fn render3d_prepare_morphs(
 
 ///|
 pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
-  let phase_state_ref = @pbr_render.render3d_phase_state_ref_or_abort(world)
-  render3d_extract_morphs(world, phase_state_ref)
-  render3d_prepare_morphs(world, phase_state_ref)
+  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
+  let morph_uniforms_ref = @pbr_render.morph_uniforms_ref_or_abort(world)
+  render3d_extract_morphs(world, morph_indices_ref, morph_uniforms_ref)
+  render3d_prepare_morphs(world, morph_indices_ref, morph_uniforms_ref)
 }

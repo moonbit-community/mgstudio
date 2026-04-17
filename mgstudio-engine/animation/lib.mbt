@@ -1473,10 +1473,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         None => return
       }
       let target_mask = animation_target_mask_cached(
-        target_mask_cache,
-        graph_id,
-        graph,
-        target_id,
+        target_mask_cache, graph_id, graph, target_id,
       )
       let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
         target_id,

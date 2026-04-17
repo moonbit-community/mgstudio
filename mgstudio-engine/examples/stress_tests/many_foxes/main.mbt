@@ -475,29 +475,29 @@ fn update_fox_rings(
 fn main {
   let args = parse_args()
   let app = @app.App::new(@ecs.World::new())
-  .insert_resource(Foxes::{
-    ..Foxes::default(),
-    count: args.count,
-    sync: args.sync,
-  })
-  .insert_resource(@transform.StaticTransformOptimizations::disabled())
-  .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(
-    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
-      primary_window: Some(configured_window()),
-      primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
-      close_when_requested: true,
-    }),
-  )
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_component_observer4(setup_scene_once_loaded)
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(keyboard_animation_control)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param3(update_fox_rings)))
+    .insert_resource(Foxes::{
+      ..Foxes::default(),
+      count: args.count,
+      sync: args.sync,
+    })
+    .insert_resource(@transform.StaticTransformOptimizations::disabled())
+    .insert_resource(@winit.WinitSettings::continuous())
+    .add_plugins(
+      @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+        primary_window: Some(configured_window()),
+        primary_cursor_options: None,
+        exit_condition: @window.ExitCondition::OnAllClosed,
+        close_when_requested: true,
+      }),
+    )
+    .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+    .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+    .add_component_observer4(setup_scene_once_loaded)
+    .add_systems(
+      @app.Update,
+      @app.system(@app.system_param4(keyboard_animation_control)),
+    )
+    .add_systems(@app.Update, @app.system(@app.system_param3(update_fox_rings)))
   if args.dump_postupdate_schedule {
     println(app.schedule_graph_dot(@app.PostUpdate))
     return

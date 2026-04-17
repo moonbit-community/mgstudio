@@ -128,3 +128,63 @@ pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit {
 pub fn host_gpu_set_active_surface_target(target_id : Int) -> Unit {
   @renderer.set_active_surface_target(target_id)
 }
+
+///|
+// Bevy source:
+// - `bevy/crates/bevy_render/src/camera.rs` (`SortedCameras`).
+pub struct SortedCameras {
+  mut entities : Array[@core.Entity]
+}
+
+///|
+pub fn SortedCameras::new() -> SortedCameras {
+  SortedCameras::{ entities: [] }
+}
+
+///|
+pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras] = @ecs.register_resource(
+  debug_name="mgstudio_render::SortedCameras",
+)
+
+///|
+pub impl @app.Resource for SortedCameras with resource() {
+  sorted_cameras_key
+}
+
+///|
+pub fn ensure_sorted_cameras_resource(world : @ecs.World) -> Unit {
+  if (try! world.get_resource(SortedCameras::resource())) is None {
+    world.insert_resource(SortedCameras::resource(), SortedCameras::new())
+  }
+}
+
+///|
+pub fn sorted_cameras_ref_or_abort(world : @ecs.World) -> Ref[SortedCameras] {
+  ensure_sorted_cameras_resource(world)
+  match (try! world.get_resource_ref_mut(SortedCameras::resource())) {
+    Some(state) => state
+    None => abort("Missing SortedCameras resource in render world")
+  }
+}
+
+///|
+pub fn sorted_cameras_or_default(world : @ecs.World) -> SortedCameras {
+  ensure_sorted_cameras_resource(world)
+  match (try! world.get_resource(SortedCameras::resource())) {
+    Some(state) => state
+    None => SortedCameras::new()
+  }
+}
+
+///|
+pub fn sorted_cameras_replace_entities(
+  sorted_cameras_ref : Ref[SortedCameras],
+  entities : Array[@core.Entity],
+) -> Unit {
+  sorted_cameras_ref.val.entities = entities
+}
+
+///|
+pub fn sorted_cameras_clear(sorted_cameras_ref : Ref[SortedCameras]) -> Unit {
+  sorted_cameras_ref.val.entities.clear()
+}

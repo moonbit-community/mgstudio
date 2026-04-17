@@ -169,11 +169,17 @@ pub fn Affine3::mul_transform(
     sx.z * m20 + sy.z * m21 + sz.z * m22,
   )
   let result_translation = Vec3::new(
-    sx.x * translation.x + sy.x * translation.y + sz.x * translation.z +
+    sx.x * translation.x +
+    sy.x * translation.y +
+    sz.x * translation.z +
     self.translation.x,
-    sx.y * translation.x + sy.y * translation.y + sz.y * translation.z +
+    sx.y * translation.x +
+    sy.y * translation.y +
+    sz.y * translation.z +
     self.translation.y,
-    sx.z * translation.x + sy.z * translation.y + sz.z * translation.z +
+    sx.z * translation.x +
+    sy.z * translation.y +
+    sz.z * translation.z +
     self.translation.z,
   )
   Affine3::{

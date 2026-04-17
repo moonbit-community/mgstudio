@@ -176,6 +176,7 @@ pub fn Affine3::from_translation(Vec3) -> Self
 pub fn Affine3::identity() -> Self
 pub fn Affine3::inverse(Self) -> Self
 pub fn Affine3::mul(Self, Self) -> Self
+pub fn Affine3::mul_transform(Self, Vec3, Quat, Vec3) -> Self
 pub fn Affine3::to_scale_rotation_translation(Self) -> (Vec3, Quat, Vec3)
 pub fn Affine3::transform_point3(Self, Vec3) -> Vec3
 

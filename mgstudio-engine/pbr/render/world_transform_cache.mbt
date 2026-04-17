@@ -448,11 +448,7 @@ pub fn render3d_extract_skinning_matrices(
 ) -> Array[Float]? {
   let columns = render3d_transform_columns(world)
   render3d_extract_skinning_matrices_with_columns(
-    world,
-    entity,
-    skinned_mesh,
-    inverse_bindposes_assets,
-    world_transform_cache_ref,
+    world, entity, skinned_mesh, inverse_bindposes_assets, world_transform_cache_ref,
     columns,
   )
 }

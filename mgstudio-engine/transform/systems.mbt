@@ -111,7 +111,8 @@ fn transform_propagation_scratch_ref_or_init(
   world : @ecs.World,
 ) -> Ref[TransformPropagationScratch] {
   ensure_transform_runtime_resources(world)
-  match (try! world.get_resource_ref_mut(ecs_key_transform_propagation_scratch)) {
+  match
+    (try! world.get_resource_ref_mut(ecs_key_transform_propagation_scratch)) {
     Some(scratch_ref) => scratch_ref
     None => abort("Missing TransformPropagationScratch resource")
   }
@@ -243,11 +244,7 @@ fn propagate_descendants_dense(
     match columns.children.get(child) {
       Some(grand_children) =>
         propagate_descendants_dense(
-          columns,
-          parent_column,
-          child,
-          child_global,
-          grand_children,
+          columns, parent_column, child, child_global, grand_children,
         )
       None => ()
     }
@@ -263,9 +260,7 @@ fn propagate_parent_transforms_dense(
     if parent_column.contains(entity) {
       return
     }
-    guard columns.transform.get(entity) is Some(root_transform) else {
-      return
-    }
+    guard columns.transform.get(entity) is Some(root_transform) else { return }
     let root_global = GlobalTransform::from_transform(root_transform)
     if !columns.global.set_sequence_only(entity, root_global) {
       return
@@ -518,8 +513,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   let transform_changed_entities = world
     .changed_components(ecs_key_transform, sequence)
     .read()
-  if !static_optimizations.enabled &&
-    transform_changed_entities.length() >= 256 {
+  if !static_optimizations.enabled && transform_changed_entities.length() >= 256 {
     guard transform_propagation_columns(world) is Some(columns) else { return }
     propagate_parent_transforms_dense(columns)
     return

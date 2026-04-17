@@ -103,8 +103,8 @@ fn[C] extract_components(
   component_key : @ecs.ComponentKey[C],
 ) -> Unit {
   let main_world = render_source_world(render_world)
-  guard main_world.component_column(component_key) is Some(main_component_column)
-  else {
+  guard main_world.component_column(component_key)
+    is Some(main_component_column) else {
     return
   }
   guard main_world.component_column(ecs_key_render_entity)
@@ -120,10 +120,8 @@ fn[C] extract_components(
   let render_component_column = render_world.component_column(component_key)
   let processed : Map[UInt64, Bool] = {}
   let extract_entity = fn(main_entity : @core.Entity) {
-    let key = (
-      (main_entity.id.reinterpret_as_uint().to_uint64() << 32) |
+    let key = (main_entity.id.reinterpret_as_uint().to_uint64() << 32) |
       (main_entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL)
-    )
     if processed.contains(key) {
       return
     }
@@ -143,15 +141,12 @@ fn[C] extract_components(
       return
     }
     let wrote = match render_component_column {
-      Some(column) => column.set_sequence_only(render_entity.id(), component.val)
+      Some(column) =>
+        column.set_sequence_only(render_entity.id(), component.val)
       None => false
     }
     if !wrote {
-      render_world.set_by_key(
-        render_entity.id(),
-        component_key,
-        component.val,
-      ) catch {
+      render_world.set_by_key(render_entity.id(), component_key, component.val) catch {
         _ => ()
       }
     }
@@ -163,7 +158,10 @@ fn[C] extract_components(
   for entity in main_world.changed_components(component_key, sequence).read() {
     extract_entity(entity)
   }
-  for entity in main_world.added_components(ecs_key_render_entity, sequence).read() {
+  for
+    entity in main_world
+    .added_components(ecs_key_render_entity, sequence)
+    .read() {
     extract_entity(entity)
   }
   if only_visible {
@@ -195,7 +193,8 @@ fn[C] extract_components(
         }
       }
       let wrote = match render_component_column {
-        Some(column) => column.set_sequence_only(render_entity.id(), component.val)
+        Some(column) =>
+          column.set_sequence_only(render_entity.id(), component.val)
         None => false
       }
       if !wrote {

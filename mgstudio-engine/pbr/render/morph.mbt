@@ -15,6 +15,94 @@
 // Bevy-aligned render module anchor.
 
 ///|
+// Bevy source:
+// - `bevy/crates/bevy_pbr/src/render/morph.rs` (`MorphIndices`, `MorphUniforms`).
+pub struct MorphIndices {
+  mut current : Map[UInt64, UInt]
+  mut prev : Map[UInt64, UInt]
+}
+
+///|
+pub fn MorphIndices::new() -> MorphIndices {
+  MorphIndices::{ current: {}, prev: {} }
+}
+
+///|
+pub struct MorphUniforms {
+  mut current_buffer : Array[Float]
+  mut prev_buffer : Array[Float]
+}
+
+///|
+pub fn MorphUniforms::new() -> MorphUniforms {
+  MorphUniforms::{ current_buffer: [], prev_buffer: [] }
+}
+
+///|
+pub let morph_indices_key : @ecs.ResourceKey[MorphIndices] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::MorphIndices",
+)
+
+///|
+pub let morph_uniforms_key : @ecs.ResourceKey[MorphUniforms] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::MorphUniforms",
+)
+
+///|
+pub impl @app.Resource for MorphIndices with resource() {
+  morph_indices_key
+}
+
+///|
+pub impl @app.Resource for MorphUniforms with resource() {
+  morph_uniforms_key
+}
+
+///|
+pub fn ensure_morph_resources(world : @ecs.World) -> Unit {
+  if (try! world.get_resource(MorphIndices::resource())) is None {
+    world.insert_resource(MorphIndices::resource(), MorphIndices::new())
+  }
+  if (try! world.get_resource(MorphUniforms::resource())) is None {
+    world.insert_resource(MorphUniforms::resource(), MorphUniforms::new())
+  }
+}
+
+///|
+pub fn morph_indices_ref_or_abort(world : @ecs.World) -> Ref[MorphIndices] {
+  ensure_morph_resources(world)
+  match (try! world.get_resource_ref_mut(MorphIndices::resource())) {
+    Some(state) => state
+    None => abort("Missing MorphIndices resource in render world")
+  }
+}
+
+///|
+pub fn morph_uniforms_ref_or_abort(world : @ecs.World) -> Ref[MorphUniforms] {
+  ensure_morph_resources(world)
+  match (try! world.get_resource_ref_mut(MorphUniforms::resource())) {
+    Some(state) => state
+    None => abort("Missing MorphUniforms resource in render world")
+  }
+}
+
+///|
+pub fn morph_indices_swap_and_reset(
+  morph_indices_ref : Ref[MorphIndices],
+) -> Unit {
+  morph_indices_ref.val.prev = morph_indices_ref.val.current
+  morph_indices_ref.val.current = {}
+}
+
+///|
+pub fn morph_uniforms_swap_and_reset(
+  morph_uniforms_ref : Ref[MorphUniforms],
+) -> Unit {
+  morph_uniforms_ref.val.prev_buffer = morph_uniforms_ref.val.current_buffer
+  morph_uniforms_ref.val.current_buffer = []
+}
+
+///|
 pub struct Render3dMorphState {
   weights : Array[Float]
   normalized : Bool
