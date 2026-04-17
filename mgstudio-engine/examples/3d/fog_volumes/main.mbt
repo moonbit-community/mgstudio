@@ -111,7 +111,7 @@ fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
   guard fog_volumes_state.val.camera is Some(camera) else { return }
   let camera3d = match (try! world.get_by_key(camera, @pbr.ecs_key_camera3d)) {
     Some(value) => value
-    None => @pbr.Camera3d::default()
+    None => @camera.Camera3d::default()
   }
   try! (world.replace(
     camera,
@@ -284,7 +284,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   fog_volumes_state.val.light = Some(light)
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-0.75F, 1.0F, 2.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),

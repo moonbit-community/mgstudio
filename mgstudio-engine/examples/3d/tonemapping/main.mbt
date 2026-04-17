@@ -333,7 +333,7 @@ fn setup(
   camera_transform : @app.Res[CameraTransform],
 ) -> Unit {
   let camera = commands.spawn(
-    @pbr.Camera3dBundle::new(
+    @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       camera_transform.get().transform,
     )

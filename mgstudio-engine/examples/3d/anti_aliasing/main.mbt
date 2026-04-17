@@ -205,12 +205,12 @@ fn draw_selectable_menu_item(
 fn set_camera_projection(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
   let projection = if anti_aliasing_state.val.use_orthographic {
-    @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
-      ..@pbr.OrthographicProjection3d::default_3d(),
+    @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+      ..@camera.OrthographicProjection3d::default_3d(),
       scale: 0.002F,
     })
   } else {
-    @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::default())
+    @camera.Projection::Perspective(@camera.PerspectiveProjection3d::default())
   }
   try! (world.replace(camera_entity, @pbr.ecs_key_projection, projection)
   |> ignore)
@@ -683,7 +683,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let camera_entity = @pbr.Camera3dBundle::new(
+  let camera_entity = @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),

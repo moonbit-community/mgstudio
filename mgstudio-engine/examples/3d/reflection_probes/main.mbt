@@ -332,7 +332,7 @@ fn setup(world : @ecs.World) -> Unit {
     asset_server.load(SPECULAR_REFLECTION_PROBE_ASSET),
   )
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
       @math.Vec3::zero(),

@@ -196,7 +196,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),

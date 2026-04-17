@@ -295,7 +295,7 @@ fn setup(world : @ecs.World) -> Unit {
     "environment_maps/pisa_specular_rgb9e5_zstd.ktx2",
   )
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
         @math.Vec3::new(0.0F, 0.35F, 0.0F),

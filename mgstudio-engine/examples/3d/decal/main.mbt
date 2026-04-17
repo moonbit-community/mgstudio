@@ -78,7 +78,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.ForwardDecalMaterialExt::new(1.0F),
   )
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
       @math.Vec3::zero(),

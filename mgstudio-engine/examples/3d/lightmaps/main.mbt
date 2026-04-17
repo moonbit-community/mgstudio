@@ -118,7 +118,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   lightmaps_state.val.scene_root = Some(scene_root)
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)

@@ -277,7 +277,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(2.0F, 4.0F, 2.0F),
   )
 
-  @pbr.Camera3dBundle::new(
+  @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),

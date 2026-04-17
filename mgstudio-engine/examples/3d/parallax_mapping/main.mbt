@@ -419,7 +419,7 @@ fn setup(world : @ecs.World) -> Unit {
   parallax_state.val.target_layers = 5.0F
   parallax_state.val.current_method = @pbr.ParallaxMappingMethod::Relief(4)
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     camera_view_transform(0),
   ).spawn(world)

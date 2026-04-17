@@ -54,10 +54,10 @@ fn spawn_perspective_camera(
   world : @ecs.World,
   kind : ExampleViewport,
   order : Int,
-  sub_camera_view? : @pbr.SubCameraView3d? = None,
+  sub_camera_view? : @camera.SubCameraView3d? = None,
   moving? : Bool = false,
 ) -> Unit {
-  let entity = @pbr.Camera3dBundle::new(
+  let entity = @camera.Camera3dBundle::new(
       @sprite.Camera::default().with_order(order),
       camera_sub_view_state.val.base_transform,
     )
@@ -74,13 +74,13 @@ fn spawn_orthographic_camera(
   world : @ecs.World,
   kind : ExampleViewport,
   order : Int,
-  sub_camera_view? : @pbr.SubCameraView3d? = None,
+  sub_camera_view? : @camera.SubCameraView3d? = None,
   moving? : Bool = false,
 ) -> Unit {
-  let entity = @pbr.Camera3dBundle::new_with_projection(
+  let entity = @camera.Camera3dBundle::new_with_projection(
       @sprite.Camera::default().with_order(order),
-      @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
-        ..@pbr.OrthographicProjection3d::default_3d(),
+      @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+        ..@camera.OrthographicProjection3d::default_3d(),
         scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
           ORTHOGRAPHIC_VIEWPORT_HEIGHT,
         ),
@@ -151,32 +151,32 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
 
-  let perspective_stretched_sub_view = @pbr.SubCameraView3d::new(
+  let perspective_stretched_sub_view = @camera.SubCameraView3d::new(
     @math.IVec2::new(10, 10),
     @math.Vec2::new(5.0F, 0.0F),
     @math.IVec2::new(5, 10),
   )
-  let perspective_moving_sub_view = @pbr.SubCameraView3d::new(
+  let perspective_moving_sub_view = @camera.SubCameraView3d::new(
     @math.IVec2::new(500, 500),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(100, 100),
   )
-  let perspective_control_sub_view = @pbr.SubCameraView3d::new(
+  let perspective_control_sub_view = @camera.SubCameraView3d::new(
     @math.IVec2::new(800, 800),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(800, 400),
   )
-  let orthographic_stretched_sub_view = @pbr.SubCameraView3d::new(
+  let orthographic_stretched_sub_view = @camera.SubCameraView3d::new(
     @math.IVec2::new(2, 2),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(1, 2),
   )
-  let orthographic_moving_sub_view = @pbr.SubCameraView3d::new(
+  let orthographic_moving_sub_view = @camera.SubCameraView3d::new(
     @math.IVec2::new(500, 500),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(100, 100),
   )
-  let orthographic_control_sub_view = @pbr.SubCameraView3d::new(
+  let orthographic_control_sub_view = @camera.SubCameraView3d::new(
     @math.IVec2::new(200, 200),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(200, 100),

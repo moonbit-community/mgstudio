@@ -240,7 +240,7 @@ fn apply_example_auto_exposure_to_camera(
   let camera3d = match
     (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d)) {
     Some(value) => value
-    None => @pbr.Camera3d::default()
+    None => @camera.Camera3d::default()
   }
   try! (world.replace(
     camera_entity,
@@ -268,12 +268,12 @@ fn setup(world : @ecs.World) -> Unit {
   auto_exposure_state.val.basic_compensation_curve = Some(basic_curve)
   auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
     )
     .with_camera3d(
-      @pbr.Camera3d::default().with_auto_exposure(
+      @camera.Camera3d::default().with_auto_exposure(
         Some(example_auto_exposure_settings()),
       ),
     )

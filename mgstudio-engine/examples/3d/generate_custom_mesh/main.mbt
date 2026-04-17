@@ -163,7 +163,9 @@ fn setup(
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
 
-  ignore(commands.spawn((@pbr.Camera3d::default(), camera_and_light_transform)))
+  ignore(
+    commands.spawn((@camera.Camera3d::default(), camera_and_light_transform)),
+  )
   ignore(
     commands.spawn((@pbr.PointLight::default(), camera_and_light_transform)),
   )

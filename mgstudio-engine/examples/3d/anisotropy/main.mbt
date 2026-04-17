@@ -379,7 +379,7 @@ fn setup(world : @ecs.World) -> Unit {
     asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
   )
 
-  @pbr.Camera3dBundle::new(
+  @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(
       CAMERA_INITIAL_X,

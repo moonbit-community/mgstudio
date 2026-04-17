@@ -703,7 +703,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let color_grading = @post_process.ColorGrading::default()
   color_grading.global.post_saturation = 1.2F
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @transform.Transform::from_xyz(
         CAMERA_INITIAL_X,

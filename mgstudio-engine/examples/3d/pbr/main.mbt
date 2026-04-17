@@ -225,13 +225,13 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)
 
-  let orthographic = @engine_pbr.OrthographicProjection3d::{
-    ..@engine_pbr.OrthographicProjection3d::default_3d(),
+  let orthographic = @camera.OrthographicProjection3d::{
+    ..@camera.OrthographicProjection3d::default_3d(),
     scale: 0.01F,
   }
-  let camera = @engine_pbr.Camera3dBundle::new_with_projection(
+  let camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @engine_pbr.Projection::Orthographic(orthographic),
+    @camera.Projection::Orthographic(orthographic),
     @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

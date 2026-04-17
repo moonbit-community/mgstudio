@@ -210,7 +210,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-2.0F, 0.0F, 3.5F).looking_at(
       @math.Vec3::zero(),

@@ -582,7 +582,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   clustered_decals_state.val.rotating_cube = Some(cube)
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),

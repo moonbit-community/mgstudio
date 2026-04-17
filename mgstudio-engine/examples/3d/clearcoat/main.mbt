@@ -260,10 +260,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   apply_light_mode(world)
 
-  let camera = @pbr.Camera3dBundle::new_with_projection(
+  let camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::{
-      ..@pbr.PerspectiveProjection3d::default(),
+    @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
+      ..@camera.PerspectiveProjection3d::default(),
       fov: 27.0F * PI / 180.0F,
     }),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),

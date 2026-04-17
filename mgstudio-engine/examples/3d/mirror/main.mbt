@@ -141,9 +141,9 @@ fn reflect_point(
 ///|
 fn calculate_mirror_camera_transform_and_projection(
   main_camera_transform : @transform.Transform,
-  main_camera_projection : @pbr.PerspectiveProjection3d,
+  main_camera_projection : @camera.PerspectiveProjection3d,
   mirror_transform : @transform.Transform,
-) -> (@transform.Transform, @pbr.PerspectiveProjection3d) {
+) -> (@transform.Transform, @camera.PerspectiveProjection3d) {
   let world_up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let forward_axis = @math.Vec3::new(0.0F, 0.0F, -1.0F)
   let negative_world_up = @math.Vec3::new(0.0F, -1.0F, 0.0F)
@@ -193,7 +193,7 @@ fn calculate_mirror_camera_transform_and_projection(
     ),
     forward_axis,
   )
-  let mirror_camera_projection = @pbr.PerspectiveProjection3d::{
+  let mirror_camera_projection = @camera.PerspectiveProjection3d::{
     ..main_camera_projection,
     near_clip_plane: @math.Vec4::new(
       mirror_projection_plane_normal.x,
@@ -403,7 +403,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   // Main camera.
-  let main_camera_projection = @pbr.PerspectiveProjection3d::default()
+  let main_camera_projection = @camera.PerspectiveProjection3d::default()
   let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
     .normalize_or_zero()
     .mul_scalar(CAMERA_ORBIT_DISTANCE)
@@ -412,9 +412,9 @@ fn setup(world : @ecs.World) -> Unit {
     initial_main_translation.y,
     initial_main_translation.z,
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let main_camera = @pbr.Camera3dBundle::new_with_projection(
+  let main_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @pbr.Projection::Perspective(main_camera_projection),
+    @camera.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
   try! world.set_by_key(
@@ -433,9 +433,9 @@ fn setup(world : @ecs.World) -> Unit {
   let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
     main_camera_transform, main_camera_projection, mirror_transform,
   )
-  let mirror_camera = @pbr.Camera3dBundle::new_with_projection(
+  let mirror_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::new(@sprite.Color::black()).with_order(-1),
-    @pbr.Projection::Perspective(mirror_camera_projection),
+    @camera.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
   try! world.set_by_key(
@@ -692,7 +692,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
   try! (world.replace(
     mirror_state.val.mirror_camera,
     @pbr.ecs_key_projection,
-    @pbr.Projection::Perspective(mirror_camera_projection),
+    @camera.Projection::Perspective(mirror_camera_projection),
   )
   |> ignore)
 }

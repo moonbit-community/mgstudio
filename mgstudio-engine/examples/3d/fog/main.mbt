@@ -127,7 +127,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
     @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     @pbr.FogFalloff3d::linear(5.0F, 20.0F),
   )
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),
@@ -475,7 +475,7 @@ fn update_system(world : @ecs.World) -> Unit {
 
   let camera3d = match (try! world.get_by_key(camera, @pbr.ecs_key_camera3d)) {
     Some(value) => value
-    None => @pbr.Camera3d::default()
+    None => @camera.Camera3d::default()
   }
   try! (world.replace(
     camera,

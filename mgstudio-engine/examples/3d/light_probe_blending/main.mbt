@@ -510,7 +510,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
   light_probe_blending_state.val.prism = Some(prism)
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::identity(),
   ).spawn(world)

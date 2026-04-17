@@ -123,7 +123,7 @@ fn apply_dof_settings(world : @ecs.World) -> Unit {
 
 ///|
 fn help_text() -> String {
-  let fov = @pbr.PerspectiveProjection3d::default().fov
+  let fov = @camera.PerspectiveProjection3d::default().fov
   let focal_length_mm = compute_focal_length_meters(fov) * 1000.0F
   let sensor_mm = SENSOR_HEIGHT_METERS * 1000.0F
   if dof_state.val.mode is Off {
@@ -150,7 +150,7 @@ fn setup(world : @ecs.World) -> Unit {
   }
   let asset_server = @asset.AssetServer::new()
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(0.0F, 4.5F, 8.25F).looking_at(
       @math.Vec3::zero(),

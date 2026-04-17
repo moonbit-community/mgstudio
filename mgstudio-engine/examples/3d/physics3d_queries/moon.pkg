@@ -1,6 +1,7 @@
 import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio",

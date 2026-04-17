@@ -17,14 +17,14 @@ const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let projection = @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
-    ..@pbr.OrthographicProjection3d::default_3d(),
+  let projection = @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+    ..@camera.OrthographicProjection3d::default_3d(),
     scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
       FIXED_VIEWPORT_HEIGHT,
     ),
   })
 
-  @pbr.Camera3dBundle::new_with_projection(
+  @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
     projection,
     @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(

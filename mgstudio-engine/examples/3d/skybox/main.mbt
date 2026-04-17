@@ -225,7 +225,7 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     camera_transform,
   ).spawn(world)

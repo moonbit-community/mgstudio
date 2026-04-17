@@ -194,7 +194,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.DirectionalLightShadowMap::new(4096),
   )
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),

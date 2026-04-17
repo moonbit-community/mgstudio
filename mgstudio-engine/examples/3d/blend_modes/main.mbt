@@ -558,7 +558,7 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
 
-  let camera = @pbr.Camera3dBundle::new(
+  let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
       @math.Vec3::zero(),
