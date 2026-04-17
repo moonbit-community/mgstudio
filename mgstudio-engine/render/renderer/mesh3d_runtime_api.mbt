@@ -510,6 +510,15 @@ pub fn meshlet_adapter_supports_mesh_shader() -> Bool {
 }
 
 ///|
+pub fn delete_old_mesh3d_preprocess_work_item_buffers(
+  retained_camera_keys~ : Array[UInt64],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys)
+  }
+}
+
+///|
 pub fn upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,

@@ -119,6 +119,8 @@ pub fn create_surface(Int) -> Int
 
 pub fn debug_string(value~ : String) -> Unit
 
+pub fn delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
+
 pub fn downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn draw_blit(scene_texture_id~ : Int) -> Unit
@@ -172,6 +174,8 @@ pub fn host_gpu_build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_ke
 pub fn host_gpu_clear_registered_wgsl_source_registry() -> Unit
 
 pub fn host_gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
+
+pub fn host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
 
 pub fn host_gpu_downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
@@ -660,6 +664,7 @@ pub fn GpuBackend::create_texture_cube_with_format(Self, Int, Int, UInt, Array[B
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(Self, Array[UInt64]) -> Unit
 pub fn GpuBackend::downsample_mesh3d_depth_pyramid(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_blit(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_custom_postprocess3d(Self, Int, String, String, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError

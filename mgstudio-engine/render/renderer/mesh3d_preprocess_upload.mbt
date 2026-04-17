@@ -188,6 +188,38 @@ fn mesh3d_preprocess_camera_upload_state_get_or_create(
 }
 
 ///|
+pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
+  self : GpuBackend,
+  retained_camera_keys : Array[UInt64],
+) -> Unit {
+  let retained : Map[UInt64, Bool] = {}
+  for key in retained_camera_keys {
+    retained.set(key, true)
+  }
+  let kept_states : Array[GpuMesh3dPreprocessCameraUploadState] = []
+  for state in self.mesh3d_preprocess_camera_upload_states {
+    let key = mesh3d_preprocess_camera_upload_state_key(
+      state.key_hi,
+      state.key_lo,
+    )
+    if retained.contains(key) {
+      kept_states.push(state)
+    }
+  }
+  self.mesh3d_preprocess_camera_upload_states.clear()
+  self.mesh3d_preprocess_camera_upload_state_indices.clear()
+  for state in kept_states {
+    let state_index = self.mesh3d_preprocess_camera_upload_states.length()
+    let key = mesh3d_preprocess_camera_upload_state_key(
+      state.key_hi,
+      state.key_lo,
+    )
+    self.mesh3d_preprocess_camera_upload_state_indices.set(key, state_index)
+    self.mesh3d_preprocess_camera_upload_states.push(state)
+  }
+}
+
+///|
 fn mesh3d_preprocess_ensure_storage_buffer(
   backend : GpuBackend,
   existing_buffer : @wgpu.Buffer?,

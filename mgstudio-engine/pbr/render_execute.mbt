@@ -107,8 +107,36 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_preprocess_camera_upload_state_key(entity : @core.Entity) -> UInt64 {
+  let hi = entity.id.reinterpret_as_uint().to_uint64()
+  let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+  (hi << 32) | lo
+}
+
+///|
+fn render3d_preprocess_retained_camera_keys(
+  queued_frame : Render3dQueuedFrame?,
+) -> Array[UInt64] {
+  let retained : Array[UInt64] = []
+  if queued_frame is Some(frame) {
+    for extracted_camera in frame.cameras {
+      retained.push(
+        render3d_preprocess_camera_upload_state_key(
+          extracted_camera.entity.main_entity,
+        ),
+      )
+    }
+  }
+  retained
+}
+
+///|
 pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
-  ignore(world)
+  @render.host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(
+    retained_camera_keys=render3d_preprocess_retained_camera_keys(
+      render3d_queue_frame_snapshot(world),
+    ),
+  )
 }
 
 ///|

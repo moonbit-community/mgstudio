@@ -306,6 +306,15 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
 }
 
 ///|
+pub fn host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(
+  retained_camera_keys~ : Array[UInt64],
+) -> Unit {
+  @renderer.host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(
+    retained_camera_keys~,
+  )
+}
+
+///|
 pub fn host_gpu_build_mesh3d_indirect_parameters(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,

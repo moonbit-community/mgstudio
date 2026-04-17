@@ -165,6 +165,8 @@ pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, neares
 
 pub fn host_gpu_create_surface(Int) -> Int
 
+pub fn host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
+
 pub fn host_gpu_downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn host_gpu_draw_blit(scene_texture_id~ : Int) -> Unit
