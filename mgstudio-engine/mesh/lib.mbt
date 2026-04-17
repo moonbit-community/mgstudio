@@ -20,6 +20,74 @@
 const MESH_PLUGIN_NAME : String = "mgstudio.mesh.MeshPlugin"
 
 ///|
+const BASE_MESH_PIPELINE_KEY_MORPH_TARGETS : UInt64 = 0x8000_0000_0000_0000UL
+
+///|
+const BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt64 = 0b111UL
+
+///|
+const BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 60
+
+///|
+pub let mesh_set_inherit_weight : @app.SystemSet = "mgstudio.mesh.InheritWeightSystems"
+
+///|
+pub struct BaseMeshPipelineKey {
+  bits : UInt64
+}
+
+///|
+pub fn BaseMeshPipelineKey::new(bits : UInt64) -> BaseMeshPipelineKey {
+  { bits, }
+}
+
+///|
+pub fn BaseMeshPipelineKey::bits(self : BaseMeshPipelineKey) -> UInt64 {
+  self.bits
+}
+
+///|
+pub fn BaseMeshPipelineKey::morph_targets() -> BaseMeshPipelineKey {
+  BaseMeshPipelineKey::new(BASE_MESH_PIPELINE_KEY_MORPH_TARGETS)
+}
+
+///|
+pub fn BaseMeshPipelineKey::contains_morph_targets(
+  self : BaseMeshPipelineKey,
+) -> Bool {
+  (self.bits & BASE_MESH_PIPELINE_KEY_MORPH_TARGETS) != 0UL
+}
+
+///|
+pub fn BaseMeshPipelineKey::from_primitive_topology(
+  primitive_topology : Mesh3dPrimitiveTopology,
+) -> BaseMeshPipelineKey {
+  let primitive_topology_bits = (
+      primitive_topology.to_int().to_uint64() &
+      BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS
+    ) <<
+    BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS
+  BaseMeshPipelineKey::new(primitive_topology_bits)
+}
+
+///|
+pub fn BaseMeshPipelineKey::primitive_topology(
+  self : BaseMeshPipelineKey,
+) -> Mesh3dPrimitiveTopology {
+  let primitive_topology_bits = (
+      self.bits >> BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS
+    ) &
+    BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS
+  if primitive_topology_bits == 1UL {
+    Mesh3dPrimitiveTopology::LineList
+  } else if primitive_topology_bits == 2UL {
+    Mesh3dPrimitiveTopology::LineStrip
+  } else {
+    Mesh3dPrimitiveTopology::TriangleList
+  }
+}
+
+///|
 pub struct MeshPlugin {}
 
 ///|

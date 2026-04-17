@@ -31,9 +31,21 @@ pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
 
 pub fn mesh_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub let mesh_set_inherit_weight : String
+
 // Errors
 
 // Types and methods
+pub struct BaseMeshPipelineKey {
+  bits : UInt64
+}
+pub fn BaseMeshPipelineKey::bits(Self) -> UInt64
+pub fn BaseMeshPipelineKey::contains_morph_targets(Self) -> Bool
+pub fn BaseMeshPipelineKey::from_primitive_topology(Mesh3dPrimitiveTopology) -> Self
+pub fn BaseMeshPipelineKey::morph_targets() -> Self
+pub fn BaseMeshPipelineKey::new(UInt64) -> Self
+pub fn BaseMeshPipelineKey::primitive_topology(Self) -> Mesh3dPrimitiveTopology
+
 pub struct DynamicSkinnedMeshBounds {
 }
 pub fn DynamicSkinnedMeshBounds::new() -> Self
