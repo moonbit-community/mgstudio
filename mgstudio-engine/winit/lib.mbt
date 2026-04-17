@@ -117,10 +117,10 @@ pub fn winit_plugin_with(
       .add_systems(
         @app.PreUpdate,
         (
+          @app.system(winit_create_monitors_system),
           @app.system(winit_create_windows_system),
           @app.system(winit_prepare_windows_system),
           @app.system(winit_sync_windows_resource_system),
-          @app.system(winit_create_monitors_system),
           @app.system(winit_write_raw_winit_window_events_system),
         )
         |> @app.chain(),
