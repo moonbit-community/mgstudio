@@ -719,11 +719,17 @@ fn mesh3d_motion_vector_mesh_bytes(
   previous_scale_x : Float,
   previous_scale_y : Float,
   previous_scale_z : Float,
+  skinning_key_hi : Int,
 ) -> Bytes {
   let determinant = scale_x * scale_y * scale_z
   let mut flags = 0xFFFFU
   if determinant >= 0.0F {
     flags = flags | (1U << 31)
+  }
+  let current_skin_index = if skinning_key_hi >= 0 {
+    skinning_key_hi.reinterpret_as_uint()
+  } else {
+    0xFFFFFFFFU
   }
   let inverse_transpose = mesh3d_inverse_transpose_words(
     rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
@@ -752,7 +758,7 @@ fn mesh3d_motion_vector_mesh_bytes(
   words.push(0U)
   words.push(0U)
   words.push(0U)
-  words.push(0xFFFFFFFFU)
+  words.push(current_skin_index)
   words.push(0U)
   words.push(0U)
   words.push(0U)

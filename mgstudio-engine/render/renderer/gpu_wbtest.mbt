@@ -627,7 +627,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
   }
   let mesh_bytes = mesh3d_motion_vector_mesh_bytes(
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, -1,
   )
   debug_inspect(
     mesh3d_motion_vector_view_uniform_bytes(pass_state).length(),
