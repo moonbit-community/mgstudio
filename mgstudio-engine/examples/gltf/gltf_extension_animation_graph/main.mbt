@@ -124,7 +124,7 @@ fn setup_environment(world : @ecs.World) -> Unit {
   )
 
   ignore(
-    @pbr.Camera3dBundle::new(
+    @camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
