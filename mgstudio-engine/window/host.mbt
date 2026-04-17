@@ -480,31 +480,31 @@ pub fn host_window_set_position_from(
         Some(monitor) => {
           let surface_size = monitor.surface_size()
           let monitor_position = monitor.position()
-          let resolution_scale = if resolution.scale_factor() <= 0.0F {
-            1.0F
-          } else {
-            resolution.scale_factor()
+          let monitor_scale_factor = {
+            let raw = Float::from_double(monitor.scale_factor())
+            if raw <= 0.0F {
+              1.0F
+            } else {
+              raw
+            }
           }
-          let scale_factor = match resolution.scale_factor_override() {
+          let target_scale_factor = match resolution.scale_factor_override() {
             Some(scale_factor_override) =>
               if scale_factor_override <= 0.0F {
                 1.0F
               } else {
                 scale_factor_override
               }
-            None => Float::from_double(monitor.scale_factor())
+            None => monitor_scale_factor
           }
-          let width = (Float::from_int(resolution.physical_width()) /
-          resolution_scale *
-          scale_factor).to_int()
-          let height = (Float::from_int(resolution.physical_height()) /
-          resolution_scale *
-          scale_factor).to_int()
-          let centered_x = (Float::from_int(surface_size.width() - width) / 2.0F).to_int() +
-            monitor_position.x()
-          let centered_y = (Float::from_int(surface_size.height() - height) /
-            2.0F).to_int() +
-            monitor_position.y()
+          let width = (resolution.width() * target_scale_factor).to_int()
+          let height = (resolution.height() * target_scale_factor).to_int()
+          let available_x = surface_size.width() - width
+          let available_y = surface_size.height() - height
+          let offset_x = if available_x <= 0 { 0 } else { available_x / 2 }
+          let offset_y = if available_y <= 0 { 0 } else { available_y / 2 }
+          let centered_x = monitor_position.x() + offset_x
+          let centered_y = monitor_position.y() + offset_y
           host_window_set_position(window, x=centered_x, y=centered_y)
         }
         None =>

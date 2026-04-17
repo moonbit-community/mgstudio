@@ -546,11 +546,6 @@ fn window_apply_centered_position_for_monitor_entity(
     is Some(monitor) else {
     return false
   }
-  let resolution_scale = if resolution.scale_factor() <= 0.0F {
-    1.0F
-  } else {
-    resolution.scale_factor()
-  }
   let monitor_scale_factor = {
     let raw = Float::from_double(monitor.scale_factor)
     if raw <= 0.0F {
@@ -568,11 +563,8 @@ fn window_apply_centered_position_for_monitor_entity(
       }
     None => monitor_scale_factor
   }
-  let width = (Float::from_int(resolution.physical_width()) /
-  resolution_scale *
-  target_scale_factor).to_int()
-  let height = (Float::from_int(resolution.physical_height()) /
-  resolution_scale *
+  let width = (window_resolution_logical_width(resolution) * target_scale_factor).to_int()
+  let height = (window_resolution_logical_height(resolution) *
   target_scale_factor).to_int()
   let monitor_width = if monitor.physical_width < 0 {
     0
