@@ -365,6 +365,7 @@ fn render3d_extract_mesh_for_entity(
         wireframe_color,
         skinning_key_hi,
         skinning_key_lo,
+        has_previous_skin,
         motion_vector_enabled,
       },
     }),

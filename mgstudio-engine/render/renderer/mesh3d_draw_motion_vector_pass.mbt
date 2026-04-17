@@ -44,8 +44,10 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   previous_scale_y : Float,
   previous_scale_z : Float,
   skinning_key_hi : Int,
+  skinning_key_lo : Int,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
+  skinning_key_lo |> ignore
   if mesh.primitive_topology != MESH3D_TOPOLOGY_TRIANGLE_LIST {
     return
   }

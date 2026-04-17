@@ -157,10 +157,12 @@ fn render3d_execute_camera_motion_vector_pass(
         0.0F,
         render3d_mesh_draw_flags(extracted_mesh),
         skinning_key_hi=mesh.skinning_key_hi,
-        skinning_key_lo=if mesh.skinning_key_hi >= 0 {
-          mesh.skinning_key_lo + 1
-        } else {
+        skinning_key_lo=if mesh.skinning_key_hi < 0 {
           -1
+        } else if mesh.has_previous_skin {
+          1
+        } else {
+          0
         },
       ),
     )

@@ -146,7 +146,7 @@ pub fn GpuBackend::draw_mesh3d(
       rotation_z, rotation_w, scale_x, scale_y, scale_z, previous_x, previous_y,
       previous_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
       previous_rotation_w, previous_scale_x, previous_scale_y, previous_scale_z,
-      skinning_key_hi, transparent,
+      skinning_key_hi, skinning_key_lo, transparent,
     )
     return
   }
