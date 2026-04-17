@@ -76,6 +76,18 @@ fn render3d_add_mesh_candidate(
 }
 
 ///|
+fn render3d_add_mesh_candidate_if_cached(
+  cache : Render3dExtractedMeshCache,
+  candidates : Map[UInt64, @core.Entity],
+  entity : @core.Entity,
+) -> Unit {
+  let key = render3d_mesh_entity_key(entity)
+  if cache.by_entity.contains(key) {
+    candidates.set(key, entity)
+  }
+}
+
+///|
 fn[T] render3d_collect_component_delta_entities(
   source_world : @ecs.World,
   sequence : @core.SystemSequence,
@@ -90,6 +102,25 @@ fn[T] render3d_collect_component_delta_entities(
   }
   for entity in source_world.removed_components(component_key, sequence).read() {
     render3d_add_mesh_candidate(candidates, entity)
+  }
+}
+
+///|
+fn[T] render3d_collect_component_delta_entities_if_cached(
+  source_world : @ecs.World,
+  sequence : @core.SystemSequence,
+  component_key : @ecs.ComponentKey[T],
+  cache : Render3dExtractedMeshCache,
+  candidates : Map[UInt64, @core.Entity],
+) -> Unit {
+  for entity in source_world.added_components(component_key, sequence).read() {
+    render3d_add_mesh_candidate_if_cached(cache, candidates, entity)
+  }
+  for entity in source_world.changed_components(component_key, sequence).read() {
+    render3d_add_mesh_candidate_if_cached(cache, candidates, entity)
+  }
+  for entity in source_world.removed_components(component_key, sequence).read() {
+    render3d_add_mesh_candidate_if_cached(cache, candidates, entity)
   }
 }
 
@@ -451,59 +482,131 @@ fn render3d_execute_collect_meshes(
     render3d_collect_component_delta_entities(
       source_world, sequence, @visibility.ecs_key_view_visibility, candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @transform.ecs_key_transform, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @transform.ecs_key_transform,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @transform.ecs_key_global_transform, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @transform.ecs_key_global_transform,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_previous_global_transform, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_previous_global_transform,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @mesh.ecs_key_skinned_mesh, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @mesh.ecs_key_skinned_mesh,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @sprite.ecs_key_render_layers, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @sprite.ecs_key_render_layers,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @visibility.ecs_key_visibility_range, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @visibility.ecs_key_visibility_range,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_lightmap, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_lightmap,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_forward_decal, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_forward_decal,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_forward_decal_material_ext, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_forward_decal_material_ext,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_clustered_decal, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_clustered_decal,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_not_shadow_caster, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_not_shadow_caster,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @visibility.ecs_key_no_frustum_culling, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @visibility.ecs_key_no_frustum_culling,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @visibility.ecs_key_no_cpu_culling, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      @visibility.ecs_key_no_cpu_culling,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_not_shadow_receiver, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_not_shadow_receiver,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_transmitted_shadow_receiver, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_transmitted_shadow_receiver,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_wireframe, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_wireframe,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_no_wireframe, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_no_wireframe,
+      mesh_cache_ref.val,
+      candidates,
     )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_wireframe_color, candidates,
+    render3d_collect_component_delta_entities_if_cached(
+      source_world,
+      sequence,
+      ecs_key_wireframe_color,
+      mesh_cache_ref.val,
+      candidates,
     )
     for entry in candidates.iter() {
       let (_entity_key, entity) = entry
