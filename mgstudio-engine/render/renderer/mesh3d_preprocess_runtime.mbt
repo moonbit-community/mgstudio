@@ -876,6 +876,10 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
     is Some(bind_group) {
     let indexed_pipeline = if phase_kind == MESH3D_BUILD_INDIRECT_PHASE_EARLY {
       self.mesh3d_preprocess_build_indexed_indirect_early_pipeline
+    } else if phase_kind == MESH3D_BUILD_INDIRECT_PHASE_LATE {
+      self.mesh3d_preprocess_build_indexed_indirect_late_pipeline
+    } else if phase_kind == MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN {
+      self.mesh3d_preprocess_build_indexed_indirect_main_pipeline
     } else {
       self.mesh3d_preprocess_build_indexed_indirect_pipeline
     }
@@ -911,6 +915,10 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
     let non_indexed_pipeline = if phase_kind ==
       MESH3D_BUILD_INDIRECT_PHASE_EARLY {
       self.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline
+    } else if phase_kind == MESH3D_BUILD_INDIRECT_PHASE_LATE {
+      self.mesh3d_preprocess_build_non_indexed_indirect_late_pipeline
+    } else if phase_kind == MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN {
+      self.mesh3d_preprocess_build_non_indexed_indirect_main_pipeline
     } else {
       self.mesh3d_preprocess_build_non_indexed_indirect_pipeline
     }

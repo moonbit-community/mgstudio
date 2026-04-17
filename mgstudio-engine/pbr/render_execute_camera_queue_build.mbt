@@ -191,7 +191,12 @@ fn render3d_dispatch_camera_queue_entry(
     @render.host_gpu_build_mesh3d_indirect_parameters(
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
-      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_MAIN,
+      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_LATE,
+    )
+    @render.host_gpu_build_mesh3d_indirect_parameters(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN,
     )
   } else {
     @render.host_gpu_preprocess_mesh3d(

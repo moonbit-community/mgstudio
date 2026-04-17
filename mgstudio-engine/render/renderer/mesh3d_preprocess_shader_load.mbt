@@ -136,7 +136,42 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params_early(
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("INDEXED", true)
+  defines.set("OCCLUSION_CULLING", true)
   defines.set("EARLY_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_indexed_indirect_params_late(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("INDEXED", true)
+  defines.set("OCCLUSION_CULLING", true)
+  defines.set("LATE_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_indexed_indirect_params_main(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("INDEXED", true)
+  defines.set("OCCLUSION_CULLING", true)
+  defines.set("MAIN_PHASE", true)
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
@@ -165,7 +200,40 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_early(
   assets_base : String,
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("OCCLUSION_CULLING", true)
   defines.set("EARLY_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_late(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("OCCLUSION_CULLING", true)
+  defines.set("LATE_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_main(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("OCCLUSION_CULLING", true)
+  defines.set("MAIN_PHASE", true)
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)

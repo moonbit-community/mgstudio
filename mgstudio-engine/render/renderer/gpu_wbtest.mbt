@@ -454,8 +454,17 @@ test "renderer: mesh3d preprocess indirect resources initialize canonical comput
     backend.mesh3d_preprocess_reset_batch_sets_pipeline is Some(_) &&
     backend.mesh3d_preprocess_build_indexed_indirect_bgl is Some(_) &&
     backend.mesh3d_preprocess_build_indexed_indirect_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_build_indexed_indirect_early_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_build_indexed_indirect_late_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_build_indexed_indirect_main_pipeline is Some(_) &&
     backend.mesh3d_preprocess_build_non_indexed_indirect_bgl is Some(_) &&
-    backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is Some(_)
+    backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline
+    is Some(_) &&
+    backend.mesh3d_preprocess_build_non_indexed_indirect_late_pipeline
+    is Some(_) &&
+    backend.mesh3d_preprocess_build_non_indexed_indirect_main_pipeline
+    is Some(_)
   debug_inspect(ok, content="true")
 }
 

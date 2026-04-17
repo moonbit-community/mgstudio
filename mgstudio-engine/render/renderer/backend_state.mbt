@@ -206,10 +206,14 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_build_indexed_indirect_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_build_indexed_indirect_early_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_build_indexed_indirect_late_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_build_indexed_indirect_main_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_build_non_indexed_indirect_bgl : @wgpu.BindGroupLayout?
   mut mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_build_non_indexed_indirect_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_build_non_indexed_indirect_early_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_build_non_indexed_indirect_late_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_build_non_indexed_indirect_main_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_depth_pyramid_dummy_texture : @wgpu.Texture?
   mut mesh3d_preprocess_depth_pyramid_dummy_view : @wgpu.TextureView?
   mut mesh3d_preprocess_downsample_depth_bgl : @wgpu.BindGroupLayout?

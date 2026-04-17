@@ -248,6 +248,12 @@ pub const MESH3D_BUILD_INDIRECT_PHASE_MAIN : Int = @renderer.MESH3D_BUILD_INDIRE
 pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = @renderer.MESH3D_BUILD_INDIRECT_PHASE_EARLY
 
 ///|
+pub const MESH3D_BUILD_INDIRECT_PHASE_LATE : Int = @renderer.MESH3D_BUILD_INDIRECT_PHASE_LATE
+
+///|
+pub const MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN : Int = @renderer.MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN
+
+///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
   @renderer.host_gpu_request_device()
 }

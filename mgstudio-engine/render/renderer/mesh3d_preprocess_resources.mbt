@@ -631,6 +631,52 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     )
     shader.release()
   }
+  if backend.mesh3d_preprocess_build_indexed_indirect_late_pipeline is None {
+    guard backend.mesh3d_preprocess_build_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params_late(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess indexed indirect late pipeline: \{err.message()}",
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_build_indexed_indirect_late")
+    backend.mesh3d_preprocess_build_indexed_indirect_late_pipeline = Some(
+      pipeline,
+    )
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_indexed_indirect_main_pipeline is None {
+    guard backend.mesh3d_preprocess_build_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params_main(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess indexed indirect main pipeline: \{err.message()}",
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_build_indexed_indirect_main")
+    backend.mesh3d_preprocess_build_indexed_indirect_main_pipeline = Some(
+      pipeline,
+    )
+    shader.release()
+  }
   if backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is None {
     guard backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout
       is Some(layout) else {
@@ -675,6 +721,56 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       "mgstudio_mesh3d_preprocess_build_non_indexed_indirect_early",
     )
     backend.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline = Some(
+      pipeline,
+    )
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_non_indexed_indirect_late_pipeline is None {
+    guard backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params_late(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess non-indexed indirect late pipeline: \{err.message()}",
+        )
+    }
+    pipeline.set_label(
+      "mgstudio_mesh3d_preprocess_build_non_indexed_indirect_late",
+    )
+    backend.mesh3d_preprocess_build_non_indexed_indirect_late_pipeline = Some(
+      pipeline,
+    )
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_non_indexed_indirect_main_pipeline is None {
+    guard backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params_main(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess non-indexed indirect main pipeline: \{err.message()}",
+        )
+    }
+    pipeline.set_label(
+      "mgstudio_mesh3d_preprocess_build_non_indexed_indirect_main",
+    )
+    backend.mesh3d_preprocess_build_non_indexed_indirect_main_pipeline = Some(
       pipeline,
     )
     shader.release()
