@@ -61,6 +61,7 @@ fn mesh3d_preprocess_camera_upload_state_new(
     output_capacity: 0UL,
     output_count: 0,
     motion_vector_mesh_bind_group: None,
+    motion_vector_mesh_bind_group_skin_revision: -1,
     preprocess_main_direct_bind_group: None,
     preprocess_main_indexed_bind_group: None,
     preprocess_main_non_indexed_bind_group: None,

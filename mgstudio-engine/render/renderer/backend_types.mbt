@@ -136,6 +136,7 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut output_capacity : UInt64
   mut output_count : Int
   mut motion_vector_mesh_bind_group : @wgpu.BindGroup?
+  mut motion_vector_mesh_bind_group_skin_revision : Int
   mut preprocess_main_direct_bind_group : @wgpu.BindGroup?
   mut preprocess_main_indexed_bind_group : @wgpu.BindGroup?
   mut preprocess_main_non_indexed_bind_group : @wgpu.BindGroup?

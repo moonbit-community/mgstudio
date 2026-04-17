@@ -642,7 +642,9 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
 
 ///|
 test "renderer: motion vector shader reads canonical Bevy prepass bindings" {
-  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass("assets")
+  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass(
+    "assets", false, false,
+  )
   debug_inspect(
     wgsl.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
@@ -668,6 +670,23 @@ test "renderer: motion vector shader reads canonical Bevy prepass bindings" {
     content="true",
   )
   debug_inspect(wgsl.contains("fn fragment(in: VertexOutput)"), content="true")
+  let skinned_wgsl = load_wgsl_required_mesh3d_motion_vector_prepass(
+    "assets", true, true,
+  )
+  debug_inspect(
+    skinned_wgsl.contains("@group(2) @binding(1) var<storage> joint_matrices:"),
+    content="true",
+  )
+  debug_inspect(
+    skinned_wgsl.contains(
+      "@group(2) @binding(6) var<storage> prev_joint_matrices:",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    skinned_wgsl.contains("let prev_model = skinning::skin_prev_model("),
+    content="true",
+  )
 }
 
 ///|

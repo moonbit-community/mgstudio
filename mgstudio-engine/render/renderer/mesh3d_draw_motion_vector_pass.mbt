@@ -47,7 +47,6 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   skinning_key_lo : Int,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
-  skinning_key_lo |> ignore
   if mesh.primitive_topology != MESH3D_TOPOLOGY_TRIANGLE_LIST {
     return
   }
@@ -55,7 +54,18 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     return
   }
   ensure_mesh3d_motion_vector_pipeline(self)
-  guard self.mesh3d_motion_vector_pipeline is Some(pipeline) else { return }
+  let is_skinned = skinning_key_hi >= 0
+  let has_previous_skin = is_skinned && skinning_key_lo > 0
+  let pipeline = if is_skinned {
+    if has_previous_skin {
+      self.mesh3d_motion_vector_pipeline_skinned_prev
+    } else {
+      self.mesh3d_motion_vector_pipeline_skinned
+    }
+  } else {
+    self.mesh3d_motion_vector_pipeline
+  }
+  guard pipeline is Some(pipeline) else { return }
   guard self.mesh3d_motion_vector_view_buf is Some(view_buf) else { return }
   guard self.mesh3d_motion_vector_previous_view_buf is Some(previous_view_buf) else {
     return
@@ -83,7 +93,12 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   let mut writes_motion_vector_mesh = true
   if (use_indirect || draw_storage_index >= 0) &&
     preprocess_state is Some(preprocess_state) &&
-    preprocess_state.motion_vector_mesh_bind_group is Some(preprocess_mesh_bg) {
+    preprocess_state.output_count > 0 &&
+    preprocess_state_index is Some(state_index) &&
+    mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
+      self, state_index,
+    )
+    is Some(preprocess_mesh_bg) {
     mesh_bind_group = Some(preprocess_mesh_bg)
     mesh_index = if use_indirect {
       0U

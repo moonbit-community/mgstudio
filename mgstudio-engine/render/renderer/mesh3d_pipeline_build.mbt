@@ -560,6 +560,63 @@ fn mesh3d_pipeline_for_current_pass(
 }
 
 ///|
+fn mesh3d_build_motion_vector_pipeline(
+  backend : GpuBackend,
+  pipeline_layout : @wgpu.PipelineLayout,
+  skinned : Bool,
+  has_previous_skin : Bool,
+  label : String,
+) -> @wgpu.RenderPipeline raise GpuBackendError {
+  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass(
+    backend.assets_base,
+    skinned,
+    has_previous_skin,
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(
+      sm,
+      layout=pipeline_layout,
+    )
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_color_target_count(2U)
+    builder.set_color_target_format_at(
+      0U,
+      tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    )
+    builder.set_color_target_format_at(1U, tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT))
+    builder.set_color_target_write_mask_at(0U, @wgpu.COLOR_WRITE_MASK_NONE)
+    builder.set_color_target_write_mask_at(1U, @wgpu.COLOR_WRITE_MASK_ALL)
+    builder.disable_blend()
+    builder.set_vertex_buffer_layout(
+      MESH3D_VERTEX_STRIDE_BYTES,
+      @wgpu.VERTEX_STEP_MODE_VERTEX,
+    )
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 12UL, 1U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 2U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 3U)
+    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+    builder.set_depth_stencil(
+      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+      depth_write_enabled=true,
+      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+    )
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      sm.release()
+      fatal(
+        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline: \{err.message()}",
+      )
+    }
+  }
+  pipeline.set_label(label)
+  sm.release()
+  pipeline
+}
+
+///|
 fn ensure_mesh3d_motion_vector_pipeline(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -587,13 +644,25 @@ fn ensure_mesh3d_motion_vector_pipeline(
       label="mgstudio_motion_vector_view_bgl",
     )
     let empty_bgl = backend.device.create_bind_group_layout_uniform_buffer()
-    let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+    let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
     let mesh_ok = mesh_builder.add_buffer(
-      0U,
-      ss(@wgpu.SHADER_STAGE_VERTEX),
-      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      min_binding_size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
-    )
+        0U,
+        ss(@wgpu.SHADER_STAGE_VERTEX),
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
+      ) &&
+      mesh_builder.add_buffer(
+        1U,
+        ss(@wgpu.SHADER_STAGE_VERTEX),
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+      ) &&
+      mesh_builder.add_buffer(
+        6U,
+        ss(@wgpu.SHADER_STAGE_VERTEX),
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+      )
     if !mesh_ok {
       mesh_builder.free()
       fatal("wgpu: failed to build mesh3d motion vector mesh bind group layout")
@@ -695,50 +764,27 @@ fn ensure_mesh3d_motion_vector_pipeline(
     backend.mesh3d_motion_vector_view_bg = Some(view_bg)
     backend.mesh3d_motion_vector_empty_bg = Some(empty_bg)
   }
-  if backend.mesh3d_motion_vector_pipeline is Some(_) {
+  if backend.mesh3d_motion_vector_pipeline is Some(_) &&
+    backend.mesh3d_motion_vector_pipeline_skinned is Some(_) &&
+    backend.mesh3d_motion_vector_pipeline_skinned_prev is Some(_) {
     return
   }
-  guard backend.mesh3d_motion_vector_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass(
-    backend.assets_base,
-  )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = try {
-    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout=pl)
-    builder.set_entry_points("vertex", "fragment")
-    builder.set_color_target_count(2U)
-    builder.set_color_target_format_at(
-      0U,
-      tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
-    )
-    builder.set_color_target_format_at(1U, tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT))
-    builder.set_color_target_write_mask_at(0U, @wgpu.COLOR_WRITE_MASK_NONE)
-    builder.set_color_target_write_mask_at(1U, @wgpu.COLOR_WRITE_MASK_ALL)
-    builder.disable_blend()
-    builder.set_vertex_buffer_layout(
-      MESH3D_VERTEX_STRIDE_BYTES,
-      @wgpu.VERTEX_STEP_MODE_VERTEX,
-    )
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 12UL, 1U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 2U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 3U)
-    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-    builder.set_depth_stencil(
-      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
-      depth_write_enabled=true,
-      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
-    )
-    builder.create_pipeline(backend.device)
-  } catch {
-    err => {
-      sm.release()
-      fatal(
-        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline: \{err.message()}",
-      )
-    }
+  guard backend.mesh3d_motion_vector_pipeline_layout is Some(pipeline_layout) else {
+    return
   }
-  pipeline.set_label("mgstudio_motion_vector_prepass")
-  backend.mesh3d_motion_vector_pipeline = Some(pipeline)
-  sm.release()
+  backend.mesh3d_motion_vector_pipeline = Some(
+    mesh3d_build_motion_vector_pipeline(
+      backend, pipeline_layout, false, false, "mgstudio_motion_vector_prepass",
+    ),
+  )
+  backend.mesh3d_motion_vector_pipeline_skinned = Some(
+    mesh3d_build_motion_vector_pipeline(
+      backend, pipeline_layout, true, false, "mgstudio_motion_vector_prepass_skinned",
+    ),
+  )
+  backend.mesh3d_motion_vector_pipeline_skinned_prev = Some(
+    mesh3d_build_motion_vector_pipeline(
+      backend, pipeline_layout, true, true, "mgstudio_motion_vector_prepass_skinned_previous",
+    ),
+  )
 }

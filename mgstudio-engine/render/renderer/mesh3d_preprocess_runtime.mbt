@@ -532,6 +532,13 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
     self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_main_direct_bind_group
     = None
   }
+  let motion_vector_bind_group_dirty = old_output_capacity != output_capacity
+  if motion_vector_bind_group_dirty {
+    self.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group
+    = None
+    self.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group_skin_revision
+    = -1
+  }
   let indexed_main_bind_group_dirty = old_preprocess_view_capacity !=
     preprocess_view_capacity ||
     old_mesh_input_capacity != mesh_input_capacity ||
@@ -1033,27 +1040,36 @@ fn mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
   backend : GpuBackend,
   state_index : Int,
 ) -> @wgpu.BindGroup? {
+  let cached_skin_revision = backend.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group_skin_revision
   if backend.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group
     is Some(bind_group) {
-    return Some(bind_group)
+    if cached_skin_revision == backend.mesh3d_skin_revision {
+      return Some(bind_group)
+    }
   }
   guard backend.mesh3d_motion_vector_bgl_mesh is Some(mesh_bgl) else {
     return None
   }
+  if !ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) {
+    return None
+  }
+  guard backend.mesh3d_skin_current_buf is Some(current_skin_buf) else {
+    return None
+  }
+  guard backend.mesh3d_skin_prev_buf is Some(prev_skin_buf) else { return None }
   guard backend.mesh3d_preprocess_camera_upload_states[state_index].output_buffer
     is Some(output_buffer) else {
     return None
   }
-  let output_count = backend.mesh3d_preprocess_camera_upload_states[state_index].output_count
-  if output_count <= 0 {
+  let output_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].output_capacity
+  if output_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-  if !builder.add_buffer(
-      0U,
-      output_buffer,
-      size=output_count.to_uint64() * MESH3D_PREPASS_MESH_BUFFER_SIZE,
-    ) {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = builder.add_buffer(0U, output_buffer, size=output_capacity) &&
+    builder.add_buffer(1U, current_skin_buf, size=backend.mesh3d_skin_capacity) &&
+    builder.add_buffer(6U, prev_skin_buf, size=backend.mesh3d_skin_capacity)
+  if !ok {
     builder.free()
     return None
   }
@@ -1064,6 +1080,8 @@ fn mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
   )
   backend.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group
   = Some(bind_group)
+  backend.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group_skin_revision
+  = backend.mesh3d_skin_revision
   Some(bind_group)
 }
 

@@ -123,6 +123,7 @@ fn ensure_mesh3d_skin_buffers(
   backend.mesh3d_skin_prev_buf = Some(prev_buf)
   backend.mesh3d_skin_prev_bg = Some(prev_bg)
   backend.mesh3d_skin_capacity = next_capacity
+  backend.mesh3d_skin_revision = backend.mesh3d_skin_revision + 1
   true
 }
 
@@ -179,4 +180,5 @@ pub fn GpuBackend::prepare_mesh3d_skin_bindings(
     0UL,
     mesh3d_skin_bytes(self, skinning_rows),
   )
+  self.mesh3d_skin_revision = self.mesh3d_skin_revision + 1
 }

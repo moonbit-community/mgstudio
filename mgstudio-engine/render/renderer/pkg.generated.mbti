@@ -475,6 +475,7 @@ pub struct GpuBackend {
   mut mesh3d_skin_capacity : UInt64
   mut mesh3d_skin_staging_bytes : FixedArray[Byte]
   mut mesh3d_skin_staging_view : Bytes
+  mut mesh3d_skin_revision : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu_mbt.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu_mbt.BindGroup?
@@ -523,6 +524,8 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_motion_vector_pipeline_skinned : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_motion_vector_pipeline_skinned_prev : @wgpu_mbt.RenderPipeline?
   mut mesh3d_motion_vector_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_globals_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_previous_view_buf : @wgpu_mbt.Buffer?
@@ -530,11 +533,13 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_view_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_motion_vector_empty_bg : @wgpu_mbt.BindGroup?
   mesh3d_motion_vector_mesh_slots : Array[GpuStorageSlot]
+  mesh3d_motion_vector_mesh_slot_skin_revisions : Array[Int]
   mut mesh3d_motion_vector_mesh_slot_used : Int
   mut mesh3d_motion_vector_instance_mesh_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_instance_mesh_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_motion_vector_instance_mesh_capacity : UInt64
   mut mesh3d_motion_vector_instance_mesh_used : Int
+  mut mesh3d_motion_vector_instance_mesh_skin_revision : Int
   mut motion_blur_bgl : @wgpu_mbt.BindGroupLayout?
   mut motion_blur_pipeline : @wgpu_mbt.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu_mbt.RenderPipeline?
