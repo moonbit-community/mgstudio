@@ -97,61 +97,117 @@ pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] wit
 }
 
 ///|
-fn[C] extract_component_apply(
-  render_world : @ecs.World,
-  main_world : @ecs.World,
-  main_entity : @core.Entity,
-  render_entity : @core.Entity,
-  component_key : @ecs.ComponentKey[C],
-) -> Unit {
-  guard (main_world.get_by_key(main_entity, component_key) catch { _ => None })
-    is Some(component) else {
-    return
-  }
-  render_world.set_by_key(render_entity, component_key, component) catch {
-    _ => ()
-  }
-}
-
-///|
 fn[C] extract_components(
   render_world : @ecs.World,
   only_visible : Bool,
   component_key : @ecs.ComponentKey[C],
 ) -> Unit {
   let main_world = render_source_world(render_world)
-  let query : @ecs.QueryState[@core.Entity, @ecs.With[SyncToRenderWorld]] = main_world.query_filtered(
-    @ecs.With::new(ecs_key_sync_to_render_world),
-  )
-  let iter = query.iter(main_world)
-  while (iter.fetch_next() catch { _ => None }) is Some((main_entity, _)) {
-    guard (main_world.get(main_entity, key=ecs_key_render_entity) catch {
-        _ => None
-      })
-      is Some(render_entity) else {
-      continue
+  guard main_world.component_column(component_key) is Some(main_component_column)
+  else {
+    return
+  }
+  guard main_world.component_column(ecs_key_render_entity)
+    is Some(render_entity_column) else {
+    return
+  }
+  let visibility_column = if only_visible {
+    main_world.component_column(@visibility.ecs_key_view_visibility)
+  } else {
+    None
+  }
+  let sequence = main_world.get_sequence_context().sequence()
+  let render_component_column = render_world.component_column(component_key)
+  let processed : Map[UInt64, Bool] = {}
+  let extract_entity = fn(main_entity : @core.Entity) {
+    let key = (
+      (main_entity.id.reinterpret_as_uint().to_uint64() << 32) |
+      (main_entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL)
+    )
+    if processed.contains(key) {
+      return
     }
-    if only_visible {
-      guard (main_world.get(
-          main_entity,
-          key=@visibility.ecs_key_view_visibility,
-        ) catch {
-          _ => None
-        })
-        is Some(view_visibility) else {
-        continue
+    processed.set(key, true)
+    guard render_entity_column.get(main_entity) is Some(render_entity) else {
+      return
+    }
+    if visibility_column is Some(visibility_column) {
+      guard visibility_column.get(main_entity) is Some(view_visibility) else {
+        return
       }
       if !view_visibility.is_visible() {
-        continue
+        return
       }
     }
-    extract_component_apply(
-      render_world,
-      main_world,
-      main_entity,
-      render_entity.id(),
-      component_key,
-    )
+    guard main_component_column.get_ref(main_entity) is Some(component) else {
+      return
+    }
+    let wrote = match render_component_column {
+      Some(column) => column.set_sequence_only(render_entity.id(), component.val)
+      None => false
+    }
+    if !wrote {
+      render_world.set_by_key(
+        render_entity.id(),
+        component_key,
+        component.val,
+      ) catch {
+        _ => ()
+      }
+    }
+  }
+
+  for entity in main_world.added_components(component_key, sequence).read() {
+    extract_entity(entity)
+  }
+  for entity in main_world.changed_components(component_key, sequence).read() {
+    extract_entity(entity)
+  }
+  for entity in main_world.added_components(ecs_key_render_entity, sequence).read() {
+    extract_entity(entity)
+  }
+  if only_visible {
+    for
+      entity in main_world
+      .added_components(@visibility.ecs_key_view_visibility, sequence)
+      .read() {
+      extract_entity(entity)
+    }
+    for
+      entity in main_world
+      .changed_components(@visibility.ecs_key_view_visibility, sequence)
+      .read() {
+      extract_entity(entity)
+    }
+  }
+
+  if processed.is_empty() && render_world.component_count(component_key) == 0 {
+    main_component_column.for_each_ref(fn(main_entity, component) {
+      guard render_entity_column.get(main_entity) is Some(render_entity) else {
+        return
+      }
+      if visibility_column is Some(visibility_column) {
+        guard visibility_column.get(main_entity) is Some(view_visibility) else {
+          return
+        }
+        if !view_visibility.is_visible() {
+          return
+        }
+      }
+      let wrote = match render_component_column {
+        Some(column) => column.set_sequence_only(render_entity.id(), component.val)
+        None => false
+      }
+      if !wrote {
+        render_world.set_by_key(
+          render_entity.id(),
+          component_key,
+          component.val,
+        ) catch {
+          _ => ()
+        }
+      }
+    })
   }
 }
 

@@ -894,13 +894,14 @@ fn animation_clip_cached_or_load(
 }
 
 ///|
-fn animation_prepare_player_target_samples(
+fn animation_prepare_player_target_samples_into(
   player : AnimationPlayer,
   graph : AnimationGraph,
   threaded_graph : ThreadedAnimationGraph,
   clip_cache : Map[Int, AnimationClip],
-) -> Array[AnimationPreparedTargetSample] {
-  let samples : Array[AnimationPreparedTargetSample] = []
+  samples : Array[AnimationPreparedTargetSample],
+) -> Unit {
+  samples.clear()
   for pair in player.playing_animations() {
     let node_index = pair.0
     let active = pair.1
@@ -933,7 +934,6 @@ fn animation_prepare_player_target_samples(
       computed_mask,
     })
   }
-  samples
 }
 
 ///|
@@ -986,6 +986,31 @@ fn animation_evaluation_state_new() -> AnimationEvaluationState {
     text_color_acc_b: 0.0F,
     text_color_acc_a: 0.0F,
   }
+}
+
+///|
+fn animation_evaluation_state_reset(state : AnimationEvaluationState) -> Unit {
+  state.has_translation = false
+  state.has_rotation = false
+  state.has_scale = false
+  state.has_weights = false
+  state.has_text_color = false
+  state.translation_weight = 0.0F
+  state.rotation_weight = 0.0F
+  state.scale_weight = 0.0F
+  state.weights_weight = 0.0F
+  state.text_color_weight = 0.0F
+  state.translation_acc = @math.Vec3::zero()
+  state.scale_acc = @math.Vec3::zero()
+  state.rotation_acc_x = 0.0F
+  state.rotation_acc_y = 0.0F
+  state.rotation_acc_z = 0.0F
+  state.rotation_acc_w = 0.0F
+  state.weights_acc.clear()
+  state.text_color_acc_r = 0.0F
+  state.text_color_acc_g = 0.0F
+  state.text_color_acc_b = 0.0F
+  state.text_color_acc_a = 0.0F
 }
 
 ///|
@@ -1125,11 +1150,12 @@ fn animation_apply_prepared_player_to_target(
   target_mask : AnimationMask,
   prepared_samples : Array[AnimationPreparedTargetSample],
   clip_cache : Map[Int, AnimationClip],
+  evaluation_state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
   base_weights : AnimationWeights?,
   base_text_color : @text.TextColor?,
 ) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
-  let evaluation_state = animation_evaluation_state_new()
+  animation_evaluation_state_reset(evaluation_state)
 
   for sample in prepared_samples {
     if (target_mask & sample.computed_mask) != 0U {
@@ -1186,7 +1212,9 @@ priv struct AnimationRuntimeScratch {
   transform_updates : Array[(@core.Entity, @transform.Transform)]
   weights_updates : Array[(@core.Entity, AnimationWeights)]
   text_color_updates : Array[(@core.Entity, @text.TextColor)]
-  prepared_player_cache : Map[Int, (Int, Array[AnimationPreparedTargetSample])]
+  prepared_player_cache : Map[Int, Int]
+  prepared_samples_cache : Map[Int, Array[AnimationPreparedTargetSample]]
+  target_mask_cache : Map[(Int, UInt64), AnimationMask]
   graph_cache : Map[Int, AnimationGraph]
   clip_cache : Map[Int, AnimationClip]
   threaded_graph_cache : Map[Int, ThreadedAnimationGraph]
@@ -1199,6 +1227,8 @@ fn AnimationRuntimeScratch::default() -> AnimationRuntimeScratch {
     weights_updates: [],
     text_color_updates: [],
     prepared_player_cache: {},
+    prepared_samples_cache: {},
+    target_mask_cache: {},
     graph_cache: {},
     clip_cache: {},
     threaded_graph_cache: {},
@@ -1236,9 +1266,29 @@ fn animation_runtime_scratch_clear(state : AnimationRuntimeScratch) -> Unit {
   state.weights_updates.clear()
   state.text_color_updates.clear()
   state.prepared_player_cache.clear()
+  state.target_mask_cache.clear()
   state.graph_cache.clear()
   state.clip_cache.clear()
   state.threaded_graph_cache.clear()
+}
+
+///|
+fn animation_target_mask_cached(
+  target_mask_cache : Map[(Int, UInt64), AnimationMask],
+  graph_id : Int,
+  graph : AnimationGraph,
+  target_id : AnimationTargetId,
+) -> AnimationMask {
+  let target_key = animation_target_id_lookup_key(target_id)
+  let cache_key = (graph_id, target_key)
+  match target_mask_cache.get(cache_key) {
+    Some(mask) => mask
+    None => {
+      let mask = graph.target_mask(target_id)
+      target_mask_cache.set(cache_key, mask)
+      mask
+    }
+  }
 }
 
 ///|
@@ -1300,8 +1350,15 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
     )
   })
 
+  let player_column = world.component_column(ecs_key_animation_player)
   for update in updates {
-    try! world.set_by_key(update.0, ecs_key_animation_player, update.1)
+    let wrote = match player_column {
+      Some(column) => column.set_sequence_only(update.0, update.1)
+      None => false
+    }
+    if !wrote {
+      try! world.set_by_key(update.0, ecs_key_animation_player, update.1)
+    }
   }
 }
 
@@ -1314,6 +1371,8 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let weights_updates = runtime_scratch.weights_updates
   let text_color_updates = runtime_scratch.text_color_updates
   let prepared_player_cache = runtime_scratch.prepared_player_cache
+  let prepared_samples_cache = runtime_scratch.prepared_samples_cache
+  let target_mask_cache = runtime_scratch.target_mask_cache
   let threaded_graphs = try! world.get_resource_ref(
     threaded_animation_graphs_key,
   )
@@ -1368,18 +1427,19 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           }
         }
     }
-    prepared_player_cache.set(
-      player_id,
-      (
-        graph_handle_id,
-        animation_prepare_player_target_samples(
-          player_comp.value(),
-          graph,
-          threaded_graph,
-          clip_cache,
-        ),
-      ),
+    let samples = match prepared_samples_cache.get(player_id) {
+      Some(cached_samples) => cached_samples
+      None => []
+    }
+    animation_prepare_player_target_samples_into(
+      player_comp.value(),
+      graph,
+      threaded_graph,
+      clip_cache,
+      samples,
     )
+    prepared_player_cache.set(player_id, graph_handle_id)
+    prepared_samples_cache.set(player_id, samples)
   })
 
   let target_id_column = world.component_column(ecs_key_animation_target_id)
@@ -1387,6 +1447,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let transform_column = world.component_column(@transform.ecs_key_transform)
   let weights_column = world.component_column(ecs_key_animation_weights)
   let text_color_column = world.component_column(@text.ecs_key_text_color)
+  let evaluation_state = animation_evaluation_state_new()
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
     animated_by_column.for_each_ref(fn(entity, animated_by_ref) {
@@ -1396,8 +1457,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       if player_id < 0 {
         return
       }
-      let (graph_id, prepared_samples) = match
-        prepared_player_cache.get(player_id) {
+      let graph_id = match prepared_player_cache.get(player_id) {
+        Some(cached) => cached
+        None => return
+      }
+      let prepared_samples = match prepared_samples_cache.get(player_id) {
         Some(cached) => cached
         None => return
       }
@@ -1408,12 +1472,18 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         Some(graph) => graph
         None => return
       }
-      let target_mask = graph.target_mask(target_id)
+      let target_mask = animation_target_mask_cached(
+        target_mask_cache,
+        graph_id,
+        graph,
+        target_id,
+      )
       let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
         target_id,
         target_mask,
         prepared_samples,
         clip_cache,
+        evaluation_state,
         match transform_column {
           Some(column) => column.get(entity)
           None => None
@@ -1429,13 +1499,31 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       )
 
       if next_transform is Some(transform) {
-        transform_updates.push((entity, transform))
+        let wrote = match transform_column {
+          Some(column) => column.set_sequence_only(entity, transform)
+          None => false
+        }
+        if !wrote {
+          transform_updates.push((entity, transform))
+        }
       }
       if next_weights is Some(weights) {
-        weights_updates.push((entity, weights))
+        let wrote = match weights_column {
+          Some(column) => column.set_sequence_only(entity, weights)
+          None => false
+        }
+        if !wrote {
+          weights_updates.push((entity, weights))
+        }
       }
       if next_text_color is Some(text_color) {
-        text_color_updates.push((entity, text_color))
+        let wrote = match text_color_column {
+          Some(column) => column.set_sequence_only(entity, text_color)
+          None => false
+        }
+        if !wrote {
+          text_color_updates.push((entity, text_color))
+        }
       }
     })
   }
@@ -1569,6 +1657,7 @@ fn trigger_targeted_events_in_animate_targets(
   if !has_any_target_events {
     return
   }
+  let target_mask_cache : Map[(Int, UInt64), AnimationMask] = {}
   let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
     world,
   )
@@ -1583,7 +1672,12 @@ fn trigger_targeted_events_in_animate_targets(
       return
     }
     let target_id = target_id.value()
-    let target_mask = graph.target_mask(target_id)
+    let target_mask = animation_target_mask_cached(
+      target_mask_cache,
+      player_entity.id,
+      graph,
+      target_id,
+    )
     for pair in player.playing_animations() {
       let node_index = pair.0
       let active = pair.1

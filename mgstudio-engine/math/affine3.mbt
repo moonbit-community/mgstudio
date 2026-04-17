@@ -122,6 +122,67 @@ pub fn Affine3::from_scale_rotation_translation(
 }
 
 ///|
+pub fn Affine3::mul_transform(
+  self : Affine3,
+  scale : Vec3,
+  rotation : Quat,
+  translation : Vec3,
+) -> Affine3 {
+  let x2 = rotation.x + rotation.x
+  let y2 = rotation.y + rotation.y
+  let z2 = rotation.z + rotation.z
+  let xx = rotation.x * x2
+  let xy = rotation.x * y2
+  let xz = rotation.x * z2
+  let yy = rotation.y * y2
+  let yz = rotation.y * z2
+  let zz = rotation.z * z2
+  let wx = rotation.w * x2
+  let wy = rotation.w * y2
+  let wz = rotation.w * z2
+  let m00 = (1.0F - (yy + zz)) * scale.x
+  let m01 = (xy + wz) * scale.x
+  let m02 = (xz - wy) * scale.x
+  let m10 = (xy - wz) * scale.y
+  let m11 = (1.0F - (xx + zz)) * scale.y
+  let m12 = (yz + wx) * scale.y
+  let m20 = (xz + wy) * scale.z
+  let m21 = (yz - wx) * scale.z
+  let m22 = (1.0F - (xx + yy)) * scale.z
+
+  let sx = self.matrix3.x_axis
+  let sy = self.matrix3.y_axis
+  let sz = self.matrix3.z_axis
+  let result_x_axis = Vec3::new(
+    sx.x * m00 + sy.x * m01 + sz.x * m02,
+    sx.y * m00 + sy.y * m01 + sz.y * m02,
+    sx.z * m00 + sy.z * m01 + sz.z * m02,
+  )
+  let result_y_axis = Vec3::new(
+    sx.x * m10 + sy.x * m11 + sz.x * m12,
+    sx.y * m10 + sy.y * m11 + sz.y * m12,
+    sx.z * m10 + sy.z * m11 + sz.z * m12,
+  )
+  let result_z_axis = Vec3::new(
+    sx.x * m20 + sy.x * m21 + sz.x * m22,
+    sx.y * m20 + sy.y * m21 + sz.y * m22,
+    sx.z * m20 + sy.z * m21 + sz.z * m22,
+  )
+  let result_translation = Vec3::new(
+    sx.x * translation.x + sy.x * translation.y + sz.x * translation.z +
+    self.translation.x,
+    sx.y * translation.x + sy.y * translation.y + sz.y * translation.z +
+    self.translation.y,
+    sx.z * translation.x + sy.z * translation.y + sz.z * translation.z +
+    self.translation.z,
+  )
+  Affine3::{
+    matrix3: Mat3::from_cols(result_x_axis, result_y_axis, result_z_axis),
+    translation: result_translation,
+  }
+}
+
+///|
 pub fn Affine3::mul(self : Affine3, other : Affine3) -> Affine3 {
   let translated = other.translation
   let tx = self.matrix3.x_axis.x * translated.x +

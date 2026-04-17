@@ -70,14 +70,23 @@ fn Foxes::default() -> Foxes {
 struct Args {
   mut sync : Bool
   mut count : Int
+  mut dump_postupdate_schedule : Bool
 }
 
 ///|
 fn parse_args() -> Args {
-  let args = Args::{ sync: false, count: DEFAULT_FOX_COUNT }
+  let args = Args::{
+    sync: false,
+    count: DEFAULT_FOX_COUNT,
+    dump_postupdate_schedule: false,
+  }
   for arg in @env.args() {
     if arg == "--sync" {
       args.sync = true
+      continue
+    }
+    if arg == "--dump-postupdate-schedule" {
+      args.dump_postupdate_schedule = true
       continue
     }
     if arg.has_prefix("--count=") {
@@ -465,7 +474,7 @@ fn update_fox_rings(
 ///|
 fn main {
   let args = parse_args()
-  @app.App::new(@ecs.World::new())
+  let app = @app.App::new(@ecs.World::new())
   .insert_resource(Foxes::{
     ..Foxes::default(),
     count: args.count,
@@ -481,8 +490,7 @@ fn main {
       close_when_requested: true,
     }),
   )
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_component_observer4(setup_scene_once_loaded)
   .add_systems(
@@ -490,5 +498,9 @@ fn main {
     @app.system(@app.system_param4(keyboard_animation_control)),
   )
   .add_systems(@app.Update, @app.system(@app.system_param3(update_fox_rings)))
-  .run()
+  if args.dump_postupdate_schedule {
+    println(app.schedule_graph_dot(@app.PostUpdate))
+    return
+  }
+  app.run()
 }

@@ -37,6 +37,43 @@ priv struct TransformPropagationColumns {
 }
 
 ///|
+priv struct TransformPropagationScratch {
+  transform_changed : Array[Bool]
+  transform_changed_touched : Array[Int]
+  global_added : Array[Bool]
+  global_added_touched : Array[Int]
+  parent_changed : Array[Bool]
+  parent_changed_touched : Array[Int]
+  tree_changed : Array[Bool]
+  tree_changed_touched : Array[Int]
+  orphaned_roots : Array[Bool]
+  orphaned_roots_touched : Array[Int]
+}
+
+///|
+fn transform_propagation_scratch_default() -> TransformPropagationScratch {
+  {
+    transform_changed: [],
+    transform_changed_touched: [],
+    global_added: [],
+    global_added_touched: [],
+    parent_changed: [],
+    parent_changed_touched: [],
+    tree_changed: [],
+    tree_changed_touched: [],
+    orphaned_roots: [],
+    orphaned_roots_touched: [],
+  }
+}
+
+///|
+let ecs_key_transform_propagation_scratch : @ecs.ResourceKey[
+  TransformPropagationScratch,
+] = @ecs.register_resource(
+  debug_name="mgstudio_transform::TransformPropagationScratch",
+)
+
+///|
 fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
   a.id == b.id && a.generation == b.generation
 }
@@ -60,6 +97,23 @@ fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   let key = static_transform_optimizations_resource_key()
   if !world.resource(key).is_present() {
     world.insert_resource(key, StaticTransformOptimizations::default())
+  }
+  if (try! world.get_resource(ecs_key_transform_propagation_scratch)) is None {
+    world.insert_resource(
+      ecs_key_transform_propagation_scratch,
+      transform_propagation_scratch_default(),
+    )
+  }
+}
+
+///|
+fn transform_propagation_scratch_ref_or_init(
+  world : @ecs.World,
+) -> Ref[TransformPropagationScratch] {
+  ensure_transform_runtime_resources(world)
+  match (try! world.get_resource_ref_mut(ecs_key_transform_propagation_scratch)) {
+    Some(scratch_ref) => scratch_ref
+    None => abort("Missing TransformPropagationScratch resource")
   }
 }
 
@@ -105,7 +159,11 @@ fn global_transform_eq(a : GlobalTransform, b : GlobalTransform) -> Bool {
 }
 
 ///|
-fn transform_id_flags_set(flags : Array[Bool], entity : @core.Entity) -> Unit {
+fn transform_id_flags_set_tracked(
+  flags : Array[Bool],
+  touched : Array[Int],
+  entity : @core.Entity,
+) -> Unit {
   let id = entity.id
   if id < 0 {
     return
@@ -113,7 +171,20 @@ fn transform_id_flags_set(flags : Array[Bool], entity : @core.Entity) -> Unit {
   while flags.length() <= id {
     flags.push(false)
   }
-  flags[id] = true
+  if !flags[id] {
+    flags[id] = true
+    touched.push(id)
+  }
+}
+
+///|
+fn transform_id_flags_reset(flags : Array[Bool], touched : Array[Int]) -> Unit {
+  for id in touched {
+    if id >= 0 && id < flags.length() {
+      flags[id] = false
+    }
+  }
+  touched.clear()
 }
 
 ///|
@@ -144,6 +215,69 @@ fn transform_propagation_columns(
       })
     _ => None
   }
+}
+
+///|
+fn propagate_descendants_dense(
+  columns : TransformPropagationColumns,
+  parent_column : @ecs.ComponentColumn[@hierarchy.Parent],
+  parent : @core.Entity,
+  parent_global : GlobalTransform,
+  children : @hierarchy.Children,
+) -> Unit {
+  for child in children.entities() {
+    guard columns.transform.get(child) is Some(local_transform) else {
+      continue
+    }
+    let child_parent = match parent_column.get(child) {
+      Some(child_parent) => child_parent
+      None => continue
+    }
+    if !entity_eq(child_parent.entity(), parent) {
+      transform_abort_malformed_hierarchy()
+    }
+    let child_global = parent_global.mul_transform(local_transform)
+    if !columns.global.set_sequence_only(child, child_global) {
+      continue
+    }
+    match columns.children.get(child) {
+      Some(grand_children) =>
+        propagate_descendants_dense(
+          columns,
+          parent_column,
+          child,
+          child_global,
+          grand_children,
+        )
+      None => ()
+    }
+  }
+}
+
+///|
+fn propagate_parent_transforms_dense(
+  columns : TransformPropagationColumns,
+) -> Unit {
+  guard columns.parent is Some(parent_column) else { return }
+  columns.children.for_each_ref(fn(entity, children) {
+    if parent_column.contains(entity) {
+      return
+    }
+    guard columns.transform.get(entity) is Some(root_transform) else {
+      return
+    }
+    let root_global = GlobalTransform::from_transform(root_transform)
+    if !columns.global.set_sequence_only(entity, root_global) {
+      return
+    }
+    propagate_descendants_dense(
+      columns,
+      parent_column,
+      entity,
+      root_global,
+      children.val,
+    )
+  })
 }
 
 ///|
@@ -381,42 +515,92 @@ fn propagate_descendants(
 pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   let sequence = world.get_sequence_context().sequence()
   let static_optimizations = read_static_transform_optimizations(world)
-  let transform_changed : Array[Bool] = []
-  let global_added : Array[Bool] = []
-  let parent_changed : Array[Bool] = []
-  let tree_changed : Array[Bool] = []
-  for entity in world.changed_components(ecs_key_transform, sequence).read() {
-    transform_id_flags_set(transform_changed, entity)
+  let transform_changed_entities = world
+    .changed_components(ecs_key_transform, sequence)
+    .read()
+  if !static_optimizations.enabled &&
+    transform_changed_entities.length() >= 256 {
+    guard transform_propagation_columns(world) is Some(columns) else { return }
+    propagate_parent_transforms_dense(columns)
+    return
+  }
+  let scratch_ref = transform_propagation_scratch_ref_or_init(world)
+  let scratch = scratch_ref.val
+  transform_id_flags_reset(
+    scratch.transform_changed,
+    scratch.transform_changed_touched,
+  )
+  transform_id_flags_reset(scratch.global_added, scratch.global_added_touched)
+  transform_id_flags_reset(
+    scratch.parent_changed,
+    scratch.parent_changed_touched,
+  )
+  transform_id_flags_reset(scratch.tree_changed, scratch.tree_changed_touched)
+  transform_id_flags_reset(
+    scratch.orphaned_roots,
+    scratch.orphaned_roots_touched,
+  )
+
+  let transform_changed = scratch.transform_changed
+  let global_added = scratch.global_added
+  let parent_changed = scratch.parent_changed
+  let tree_changed = scratch.tree_changed
+  let orphaned_roots = scratch.orphaned_roots
+  for entity in transform_changed_entities {
+    transform_id_flags_set_tracked(
+      transform_changed,
+      scratch.transform_changed_touched,
+      entity,
+    )
   }
   for
     entity in world.added_components(ecs_key_global_transform, sequence).read() {
-    transform_id_flags_set(global_added, entity)
+    transform_id_flags_set_tracked(
+      global_added,
+      scratch.global_added_touched,
+      entity,
+    )
   }
   for
     entity in world
     .changed_components(@hierarchy.ecs_key_parent, sequence)
     .read() {
-    transform_id_flags_set(parent_changed, entity)
+    transform_id_flags_set_tracked(
+      parent_changed,
+      scratch.parent_changed_touched,
+      entity,
+    )
   }
   for
     entity in world.added_components(@hierarchy.ecs_key_parent, sequence).read() {
-    transform_id_flags_set(parent_changed, entity)
+    transform_id_flags_set_tracked(
+      parent_changed,
+      scratch.parent_changed_touched,
+      entity,
+    )
   }
   if static_optimizations.enabled {
     for
       entity in world
       .changed_components(ecs_key_transform_tree_changed, sequence)
       .read() {
-      transform_id_flags_set(tree_changed, entity)
+      transform_id_flags_set_tracked(
+        tree_changed,
+        scratch.tree_changed_touched,
+        entity,
+      )
     }
     for
       entity in world
       .added_components(ecs_key_transform_tree_changed, sequence)
       .read() {
-      transform_id_flags_set(tree_changed, entity)
+      transform_id_flags_set_tracked(
+        tree_changed,
+        scratch.tree_changed_touched,
+        entity,
+      )
     }
   }
-  let orphaned_roots : Array[Bool] = []
   for
     entity in world
     .removed_components(@hierarchy.ecs_key_parent, sequence)
@@ -424,7 +608,11 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     if !world.is_alive(entity) {
       continue
     }
-    transform_id_flags_set(orphaned_roots, entity)
+    transform_id_flags_set_tracked(
+      orphaned_roots,
+      scratch.orphaned_roots_touched,
+      entity,
+    )
   }
   guard transform_propagation_columns(world) is Some(columns) else { return }
   columns.children.for_each_ref(fn(entity, children) {

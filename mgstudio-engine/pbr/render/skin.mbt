@@ -440,6 +440,15 @@ pub fn render3d_extract_skin_bindings(
     phase_state_ref.val.total_skin_joints = 0
     return
   }
+  let inverse_bindposes_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+  ] = @asset.assets_resource_key()
+  let inverse_bindposes_assets = match
+    (try! source_world.get_resource(inverse_bindposes_assets_key)) {
+    Some(assets) => assets
+    None => return
+  }
+  let transform_columns = render3d_transform_columns(source_world)
   let skinned_mesh_key = @mesh.SkinnedMesh::component()
   let changed_visibility_filter = @ecs.Changed::new(
     @visibility.ecs_key_view_visibility,
@@ -471,8 +480,13 @@ pub fn render3d_extract_skin_bindings(
       return
     }
     let skinned_mesh = skinned_mesh_comp.value()
-    if render3d_extract_skinning_matrices(
-        source_world, entity, world_transform_cache_ref,
+    if render3d_extract_skinning_matrices_with_columns(
+        source_world,
+        entity,
+        skinned_mesh,
+        inverse_bindposes_assets,
+        world_transform_cache_ref,
+        transform_columns,
       )
       is Some(_skinning_matrices) {
       render3d_phase_register_skin(phase_state_ref, entity, skinned_mesh)
@@ -498,27 +512,36 @@ pub fn render3d_extract_skin_bindings(
     return
   }
   let threshold = phase_state_ref.val.total_skin_joints / 4
+  let changed_transforms = source_world.changed_components(
+    @transform.ecs_key_global_transform,
+    sequence,
+  )
   let changed_joint_entities : Array[@core.Entity] = []
-  let mut must_extract_all = false
-  for entry in phase_state_ref.val.skin_joint_to_skins.iter() {
-    let (joint_key, _skins) = entry
-    let joint_entity = @core.Entity::from_bits(joint_key)
-    if source_world.is_changed_by_key(
-        joint_entity, @transform.ecs_key_global_transform, sequence,
-      ) {
-      changed_joint_entities.push(joint_entity)
-      if changed_joint_entities.length() > threshold {
-        must_extract_all = true
-        break
+  let mut must_extract_all = changed_transforms.len() > threshold
+  if !must_extract_all {
+    for entry in phase_state_ref.val.skin_joint_to_skins.iter() {
+      let (joint_key, _skins) = entry
+      let joint_entity = @core.Entity::from_bits(joint_key)
+      if source_world.is_changed_by_key(
+          joint_entity, @transform.ecs_key_global_transform, sequence,
+        ) {
+        changed_joint_entities.push(joint_entity)
+        if changed_joint_entities.length() > threshold {
+          must_extract_all = true
+          break
+        }
       }
     }
   }
   if must_extract_all {
     source_world.for_each_component(skinned_mesh_key, fn(
       entity,
-      _skinned_mesh,
+      skinned_mesh,
     ) {
       if entity.id < 0 {
+        return
+      }
+      if changed_skin_entities.contains(render3d_skin_entity_key(entity)) {
         return
       }
       if !render3d_has_prepared_skin_binding(phase_state_ref, entity) {
@@ -527,8 +550,13 @@ pub fn render3d_extract_skin_bindings(
       if !render3d_skin_is_visible(source_world, entity) {
         return
       }
-      if render3d_extract_skinning_matrices(
-          source_world, entity, world_transform_cache_ref,
+      if render3d_extract_skinning_matrices_with_columns(
+          source_world,
+          entity,
+          skinned_mesh,
+          inverse_bindposes_assets,
+          world_transform_cache_ref,
+          transform_columns,
         )
         is Some(_skinning_matrices) {
         render3d_phase_enqueue_skin_upload(phase_state_ref, upload_seen, entity)
@@ -555,8 +583,17 @@ pub fn render3d_extract_skin_bindings(
           if !render3d_skin_is_visible(source_world, skin_entity) {
             continue
           }
-          if render3d_extract_skinning_matrices(
-              source_world, skin_entity, world_transform_cache_ref,
+          guard (try! source_world.get_by_key(skin_entity, skinned_mesh_key))
+            is Some(skinned_mesh) else {
+            continue
+          }
+          if render3d_extract_skinning_matrices_with_columns(
+              source_world,
+              skin_entity,
+              skinned_mesh,
+              inverse_bindposes_assets,
+              world_transform_cache_ref,
+              transform_columns,
             )
             is Some(_skinning_matrices) {
             render3d_phase_enqueue_skin_upload(
@@ -592,7 +629,8 @@ pub fn render3d_prepare_skin_bindings_upload(
         phase_state_ref, key_hi, skinning_matrices,
       )
       phase_state_ref.val.skin_previous_matrices.set(
-        skin_key, skinning_matrices,
+        skin_key,
+        true,
       )
     }
   }

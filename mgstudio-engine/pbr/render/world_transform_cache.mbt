@@ -83,14 +83,16 @@ fn render3d_world_transform_cache_new() -> Render3dWorldTransformCache {
 }
 
 ///|
-priv struct Render3dTransformColumns {
+pub(all) struct Render3dTransformColumns {
   transform : @ecs.ComponentColumn[@transform.Transform]?
   global : @ecs.ComponentColumn[@transform.GlobalTransform]?
   parent : @ecs.ComponentColumn[@hierarchy.Parent]?
 }
 
 ///|
-fn render3d_transform_columns(world : @ecs.World) -> Render3dTransformColumns {
+pub fn render3d_transform_columns(
+  world : @ecs.World,
+) -> Render3dTransformColumns {
   {
     transform: world.component_column(@transform.ecs_key_transform),
     global: world.component_column(@transform.ecs_key_global_transform),
@@ -440,30 +442,30 @@ fn render3d_resize_skinning_rows(
 pub fn render3d_extract_skinning_matrices(
   world : @ecs.World,
   entity : @core.Entity,
+  skinned_mesh : @mesh.SkinnedMesh,
+  inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
 ) -> Array[Float]? {
-  guard (try! world.get_by_key(entity, @mesh.SkinnedMesh::component()))
-    is Some(skinned_mesh) else {
-    return None
-  }
-  let inverse_bindposes_assets_key : @ecs.ResourceKey[
-    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-  ] = @asset.assets_resource_key()
-  let inverse_bindposes_assets = match
-    (try! world.get_resource(inverse_bindposes_assets_key)) {
-    Some(assets) => assets
-    None => return None
-  }
-  let inverse_bindposes_handle = skinned_mesh.inverse_bindposes()
-  let inverse_bindposes_asset = match
-    inverse_bindposes_assets.get(inverse_bindposes_handle) {
-    Some(asset) => asset
-    None => return None
-  }
-  let joints = skinned_mesh.joints()
-  if joints.length() == 0 {
-    return None
-  }
+  let columns = render3d_transform_columns(world)
+  render3d_extract_skinning_matrices_with_columns(
+    world,
+    entity,
+    skinned_mesh,
+    inverse_bindposes_assets,
+    world_transform_cache_ref,
+    columns,
+  )
+}
+
+///|
+pub fn render3d_extract_skinning_matrices_with_columns(
+  world : @ecs.World,
+  entity : @core.Entity,
+  skinned_mesh : @mesh.SkinnedMesh,
+  inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  columns : Render3dTransformColumns,
+) -> Array[Float]? {
   if entity.id < 0 {
     return None
   }
@@ -478,11 +480,18 @@ pub fn render3d_extract_skinning_matrices(
     entity.generation {
     return world_transform_cache_ref.val.skinning_matrices[entity.id]
   }
+  let joints = skinned_mesh.joints()
+  if joints.length() == 0 {
+    return None
+  }
+  let inverse_bindposes_handle = skinned_mesh.inverse_bindposes()
+  let inverse_bindposes_asset = match
+    inverse_bindposes_assets.get(inverse_bindposes_handle) {
+    Some(asset) => asset
+    None => return None
+  }
   let out = match world_transform_cache_ref.val.skinning_matrices[entity.id] {
-    Some(values) => {
-      values.clear()
-      values
-    }
+    Some(values) => values
     None => {
       let values : Array[Float] = []
       world_transform_cache_ref.val.skinning_matrices[entity.id] = Some(values)
@@ -495,7 +504,6 @@ pub fn render3d_extract_skinning_matrices(
     RENDER3D_MAX_SKINNING_JOINTS
   }
   let identity_inverse_bindpose = @mesh.SkinningMat4::identity()
-  let columns = render3d_transform_columns(world)
   let global_column = columns.global
   let required_rows_len = capped_joint_count * 16
   render3d_resize_skinning_rows(out, required_rows_len)
