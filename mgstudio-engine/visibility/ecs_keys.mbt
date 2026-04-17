@@ -33,6 +33,11 @@ pub let ecs_key_no_frustum_culling : @ecs.ComponentKey[NoFrustumCulling] = @ecs.
 )
 
 ///|
+pub let ecs_key_no_auto_aabb : @ecs.ComponentKey[NoAutoAabb] = @ecs.register_component(
+  debug_name="visibility.no_auto_aabb",
+)
+
+///|
 pub let ecs_key_no_cpu_culling : @ecs.ComponentKey[NoCpuCulling] = @ecs.register_component(
   debug_name="visibility.no_cpu_culling",
 )
@@ -60,6 +65,11 @@ pub impl @ecs.Component for ViewVisibility with component() {
 ///|
 pub impl @ecs.Component for NoFrustumCulling with component() {
   ecs_key_no_frustum_culling
+}
+
+///|
+pub impl @ecs.Component for NoAutoAabb with component() {
+  ecs_key_no_auto_aabb
 }
 
 ///|

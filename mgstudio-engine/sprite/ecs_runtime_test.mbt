@@ -567,6 +567,104 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
 }
 
 ///|
+test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(SpritePlugin::default())
+  let world = app.world()
+  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  let mesh_assets = try! world.get_resource_ref_mut(mesh_assets_key).unwrap()
+  let mesh_handle = mesh_assets.val.add(
+    Mesh::from_2d_geometry(
+      mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+    ),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, Mesh2d::new(mesh_handle))
+
+  app = app.update()
+
+  let aabb = try! app
+    .world()
+    .get_by_key(entity, @camera_primitives.ecs_key_aabb)
+  debug_inspect(aabb is Some(_), content="true")
+  if aabb is Some(value) {
+    let center = value.center()
+    let half_size = value.half_size()
+    debug_inspect(center.x.to_double(), content="0")
+    debug_inspect(center.y.to_double(), content="0")
+    debug_inspect(center.z.to_double(), content="0")
+    debug_inspect(half_size.x.to_double(), content="4")
+    debug_inspect(half_size.y.to_double(), content="3")
+    debug_inspect(half_size.z.to_double(), content="0")
+  }
+}
+
+///|
+test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(SpritePlugin::default())
+  let world = app.world()
+  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  let mesh_assets = try! world.get_resource_ref_mut(mesh_assets_key).unwrap()
+  let mesh_handle = mesh_assets.val.add(
+    Mesh::from_2d_geometry(
+      mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+    ),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, Mesh2d::new(mesh_handle))
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_no_auto_aabb,
+    @visibility.NoAutoAabb::default(),
+  )
+
+  app = app.update()
+
+  let aabb = try! app
+    .world()
+    .get_by_key(entity, @camera_primitives.ecs_key_aabb)
+  debug_inspect(aabb is Some(_), content="false")
+}
+
+///|
+test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(SpritePlugin::default())
+  let world = app.world()
+  let image = @asset.asset_create_dynamic_texture(
+    @math.UVec2::new(40, 20),
+    true,
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(entity, ecs_key_sprite, Sprite::from_image(image))
+  try! world.set_by_key(entity, ecs_key_anchor, Anchor::center())
+
+  app = app.update()
+
+  let aabb = try! app
+    .world()
+    .get_by_key(entity, @camera_primitives.ecs_key_aabb)
+  debug_inspect(aabb is Some(_), content="true")
+  if aabb is Some(value) {
+    let center = value.center()
+    let half_size = value.half_size()
+    debug_inspect(center.x.to_double(), content="0")
+    debug_inspect(center.y.to_double(), content="0")
+    debug_inspect(center.z.to_double(), content="0")
+    debug_inspect(half_size.x.to_double(), content="20")
+    debug_inspect(half_size.y.to_double(), content="10")
+    debug_inspect(half_size.z.to_double(), content="0")
+  }
+}
+
+///|
 test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   let wrapped_material_handle : Ref[Int?] = Ref::new(None)
   let preserved_material_handle : Ref[Int?] = Ref::new(None)

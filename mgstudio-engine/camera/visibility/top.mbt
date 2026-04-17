@@ -85,6 +85,11 @@ pub fn no_frustum_culling() -> @root_visibility.NoFrustumCulling {
 }
 
 ///|
+pub fn no_auto_aabb() -> @root_visibility.NoAutoAabb {
+  @root_visibility.NoAutoAabb::default()
+}
+
+///|
 pub fn no_cpu_culling() -> @root_visibility.NoCpuCulling {
   @root_visibility.NoCpuCulling::default()
 }

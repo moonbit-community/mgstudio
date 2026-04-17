@@ -22,6 +22,11 @@ const VISIBILITY_RANGE_PLUGIN_NAME : String = "mgstudio.camera.visibility.range.
 pub struct VisibilityRangePlugin {}
 
 ///|
+pub let visibility_range_set_check : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.visibility.range.check",
+)
+
+///|
 pub fn VisibilityRangePlugin::default() -> VisibilityRangePlugin {
   VisibilityRangePlugin::{  }
 }
@@ -41,7 +46,9 @@ pub fn visibility_range_plugin_with(
   ignore(plugin)
   app
   .init_resource(fn() { VisibleEntityRanges::default() })
-  .add_post_update_system(check_visibility_ranges)
+  .add_post_update_system_config(
+    @app.system(check_visibility_ranges).in_set(visibility_range_set_check),
+  )
 }
 
 ///|

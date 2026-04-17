@@ -20,6 +20,8 @@ pub let ecs_key_visible_entity_ranges : @ecs.ResourceKey[VisibleEntityRanges]
 
 pub fn inherited_visibility(Bool) -> @Milky2018/mgstudio/visibility.InheritedVisibility
 
+pub fn no_auto_aabb() -> @Milky2018/mgstudio/visibility.NoAutoAabb
+
 pub fn no_cpu_culling() -> @Milky2018/mgstudio/visibility.NoCpuCulling
 
 pub fn no_frustum_culling() -> @Milky2018/mgstudio/visibility.NoFrustumCulling
@@ -59,6 +61,8 @@ pub fn visibility_range_new(Float, Float, Float, Float, Bool) -> @Milky2018/mgst
 pub fn visibility_range_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn visibility_range_plugin_with(@app.App[@ecs.World], VisibilityRangePlugin) -> @app.App[@ecs.World]
+
+pub let visibility_range_set_check : String
 
 // Errors
 

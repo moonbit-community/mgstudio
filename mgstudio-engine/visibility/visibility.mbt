@@ -166,6 +166,16 @@ pub fn NoFrustumCulling::default() -> NoFrustumCulling {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::NoAutoAabb`.
+// Add this marker to disable automatic AABB recomputation systems.
+pub struct NoAutoAabb {} derive(Eq, Debug)
+
+///|
+pub fn NoAutoAabb::default() -> NoAutoAabb {
+  NoAutoAabb::{  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::NoCpuCulling`.
 // This can be attached to cameras or entities to bypass CPU-side frustum
 // culling while keeping the rest of the visibility flow unchanged.

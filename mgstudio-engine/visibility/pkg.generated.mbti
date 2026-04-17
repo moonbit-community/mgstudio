@@ -11,6 +11,8 @@ import {
 // Values
 pub let ecs_key_inherited_visibility : @ecs.ComponentKey[InheritedVisibility]
 
+pub let ecs_key_no_auto_aabb : @ecs.ComponentKey[NoAutoAabb]
+
 pub let ecs_key_no_cpu_culling : @ecs.ComponentKey[NoCpuCulling]
 
 pub let ecs_key_no_frustum_culling : @ecs.ComponentKey[NoFrustumCulling]
@@ -39,6 +41,11 @@ pub fn InheritedVisibility::visible() -> Self
 pub impl @ecs.Component for InheritedVisibility
 pub impl ToJson for InheritedVisibility
 pub impl @json.FromJson for InheritedVisibility
+
+pub struct NoAutoAabb {
+} derive(Eq, @debug.Debug)
+pub fn NoAutoAabb::default() -> Self
+pub impl @ecs.Component for NoAutoAabb
 
 pub struct NoCpuCulling {
 } derive(Eq, @debug.Debug)

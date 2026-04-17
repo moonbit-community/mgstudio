@@ -17,6 +17,7 @@ import {
   "moonbitlang/core/ref",
   "tonyfettes/any",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/transform",

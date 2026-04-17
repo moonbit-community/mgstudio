@@ -24,6 +24,38 @@ fn inverse_bindposes_assets_mut_or_abort(
 }
 
 ///|
+fn mesh_assets_mut_or_abort(world : @ecs.World) -> Ref[@asset.Assets[Mesh]] {
+  let key : @ecs.ResourceKey[@asset.Assets[Mesh]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key)) {
+    Some(assets_ref) => assets_ref
+    None => abort("missing Assets<Mesh> resource")
+  }
+}
+
+///|
+fn test_mesh2d_asset(width : Float, height : Float) -> Mesh {
+  let hw = width * 0.5F
+  let hh = height * 0.5F
+  Mesh::from_2d_geometry(
+    Mesh2dGeometry::new(
+      [
+        @math.Vec2::new(-hw, -hh),
+        @math.Vec2::new(hw, -hh),
+        @math.Vec2::new(hw, hh),
+        @math.Vec2::new(-hw, hh),
+      ],
+      [
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        @math.Vec2::new(0.0F, 1.0F),
+      ],
+      Some([0, 1, 2, 0, 2, 3]),
+    ),
+  )
+}
+
+///|
 test "mesh plugin: initializes mesh and skinned-inverse-bindposes asset resources" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(MeshPlugin::default())
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[Mesh]] = @asset.assets_resource_key()
@@ -100,6 +132,68 @@ test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark Skinne
     .world()
     .changed_components(
       ecs_key_skinned_mesh,
+      @core.SystemSequence::new(before, after),
+    )
+    .read()
+  debug_inspect(changed.contains(entity), content="false")
+}
+
+///|
+test "mesh plugin: modified Mesh marks Mesh2d changed" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(MeshPlugin::default())
+  let world = app.world()
+  let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
+    test_mesh2d_asset(10.0F, 8.0F),
+  )
+  let entity = world.spawn()
+  try! world.set(entity, Mesh2d::new(mesh_handle))
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+
+  let before = world.read_sequence()
+  debug_inspect(
+    mesh_assets_mut_or_abort(world).val.set(
+      mesh_handle,
+      test_mesh2d_asset(12.0F, 8.0F),
+    ),
+    content="true",
+  )
+  app = app.update()
+
+  let after = app.world().read_sequence()
+  let changed = app
+    .world()
+    .changed_components(
+      ecs_key_mesh2d,
+      @core.SystemSequence::new(before, after),
+    )
+    .read()
+  debug_inspect(changed.contains(entity), content="true")
+}
+
+///|
+test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(MeshPlugin::default())
+  let world = app.world()
+  let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
+    test_mesh2d_asset(10.0F, 8.0F),
+  )
+  let entity = world.spawn()
+  try! world.set(entity, Mesh2d::new(mesh_handle))
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+
+  let before = world.read_sequence()
+  app = app.update()
+  let after = app.world().read_sequence()
+  let changed = app
+    .world()
+    .changed_components(
+      ecs_key_mesh2d,
       @core.SystemSequence::new(before, after),
     )
     .read()
