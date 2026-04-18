@@ -249,8 +249,13 @@ fn pbr_plugin_install_with(
   let runtime_config = PbrPluginRuntimeConfig::from_plugin(plugin)
   let mut next = app
   if !next.contains_resource(ecs_key_pbr_plugin_marker) {
-    let camera_extract_plugin : @render.ExtractComponentPlugin[Camera3d, Unit] = @render.ExtractComponentPlugin::default()
-    next = @render.extract_component_plugin_with(next, camera_extract_plugin)
+    let distance_fog_extract_plugin : @render.ExtractComponentPlugin[
+      DistanceFog,
+      Unit,
+    ] = @render.ExtractComponentPlugin::default()
+    next = @render.extract_component_plugin_with(
+      next, distance_fog_extract_plugin,
+    )
     next = next
       .insert_world_resource(ecs_key_pbr_plugin_marker, PbrPluginMarker::{  })
       .insert_world_resource(ecs_key_pbr_plugin_runtime_config, runtime_config)

@@ -109,16 +109,7 @@ fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
     .with_directional_light_exponent(24.0F)
     .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
-  let camera3d = match (try! world.get_by_key(camera, @pbr.ecs_key_camera3d)) {
-    Some(value) => value
-    None => @camera.Camera3d::default()
-  }
-  try! (world.replace(
-    camera,
-    @pbr.ecs_key_camera3d,
-    camera3d.with_distance_fog(Some(fog)),
-  )
-  |> ignore)
+  try! (world.set_by_key(camera, @pbr.ecs_key_distance_fog, fog) |> ignore)
 }
 
 ///|

@@ -29,6 +29,7 @@ pub struct Camera3dBundle {
   exposure : Exposure?
   color_grading : ColorGrading?
   camera3d : Camera3d
+  distance_fog : DistanceFog?
   transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
@@ -55,6 +56,7 @@ pub fn Camera3dBundle::new(
     exposure: Some(Exposure::default()),
     color_grading: None,
     camera3d: Camera3d::default(),
+    distance_fog: None,
     transform,
     target: @sprite.RenderTarget::Screen,
     layers: @sprite.RenderLayers::default(),
@@ -83,6 +85,7 @@ pub fn Camera3dBundle::new_with_projection(
     exposure: Some(Exposure::default()),
     color_grading: None,
     camera3d: Camera3d::default(),
+    distance_fog: None,
     transform,
     target: @sprite.RenderTarget::Screen,
     layers: @sprite.RenderLayers::default(),
@@ -228,10 +231,7 @@ pub fn Camera3dBundle::with_distance_fog(
   self : Camera3dBundle,
   distance_fog : DistanceFog?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_distance_fog(distance_fog),
-  }
+  Camera3dBundle::{ ..self, distance_fog, }
 }
 
 ///|
@@ -325,6 +325,9 @@ fn camera3d_bundle_insert(
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
   world.set_by_key(entity, ecs_key_camera3d, bundle.camera3d, loc~)
+  if bundle.distance_fog is Some(distance_fog) {
+    world.set_by_key(entity, ecs_key_distance_fog, distance_fog, loc~)
+  }
   world.set_by_key(entity, ecs_key_projection, bundle.projection, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {
     world.set_by_key(entity, ecs_key_sub_camera_view3d, sub_camera_view, loc~)

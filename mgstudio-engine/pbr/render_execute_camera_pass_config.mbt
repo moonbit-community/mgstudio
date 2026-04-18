@@ -81,7 +81,7 @@ fn render3d_execute_camera_pass_config(
     Some(value) => value.exposure()
     None => Exposure::default().exposure()
   }
-  let camera_base_fog = match camera.camera3d.distance_fog {
+  let camera_base_fog = match camera.distance_fog {
     Some(value) => value
     None =>
       DistanceFog::new(

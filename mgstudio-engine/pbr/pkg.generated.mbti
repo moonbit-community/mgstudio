@@ -126,6 +126,8 @@ pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[@light.Direction
 
 pub let ecs_key_directional_light_texture : @ecs.ComponentKey[@light.DirectionalLightTexture]
 
+pub let ecs_key_distance_fog : @ecs.ComponentKey[DistanceFog]
+
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapLight]
 
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
@@ -602,7 +604,6 @@ pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::f
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
   deferred_config : CameraDeferredConfig3d
-  distance_fog : DistanceFog?
   volumetric_fog : @light.VolumetricFog?
   atmosphere : @light.Atmosphere?
   atmosphere_settings : @light.AtmosphereSettings?
@@ -616,7 +617,6 @@ pub fn Camera3d::with_auto_exposure(Self, AutoExposure?) -> Self
 pub fn Camera3d::with_decal_config(Self, CameraDecalConfig3d) -> Self
 pub fn Camera3d::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
-pub fn Camera3d::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @ecs.Component for Camera3d
 
@@ -636,6 +636,7 @@ pub struct Camera3dBundle {
   exposure : Exposure?
   color_grading : @post_process.ColorGrading?
   camera3d : Camera3d
+  distance_fog : DistanceFog?
   transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
@@ -815,6 +816,7 @@ pub fn DistanceFog::with_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
+pub impl @ecs.Component for DistanceFog
 
 pub struct Exposure {
   ev100 : Float

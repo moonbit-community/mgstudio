@@ -68,6 +68,9 @@ fn render3d_execute_collect_cameras(
     let sub_camera_view = try! source_world.get_by_key(
       entity, ecs_key_sub_camera_view3d,
     )
+    let distance_fog = try! source_world.get_by_key(
+      entity, ecs_key_distance_fog,
+    )
     let oit_settings = try! source_world.get_by_key(
       entity, ecs_key_order_independent_transparency_settings,
     )
@@ -198,6 +201,7 @@ fn render3d_execute_collect_cameras(
           entity: phase_entity_ref3d_for_world_main(source_world, entity),
           payload: Camera3dViewPayload::{
             camera3d,
+            distance_fog,
             camera: camera_clamped,
             projection,
             sub_camera_view,

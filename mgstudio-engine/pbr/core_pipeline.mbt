@@ -291,7 +291,6 @@ pub fn DepthOfField::from_physical_camera(
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
   deferred_config : CameraDeferredConfig3d
-  distance_fog : DistanceFog?
   volumetric_fog : VolumetricFog?
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
@@ -304,7 +303,6 @@ pub fn Camera3d::default() -> Camera3d {
   Camera3d::{
     decal_config: CameraDecalConfig3d::default(),
     deferred_config: CameraDeferredConfig3d::default(),
-    distance_fog: None,
     volumetric_fog: None,
     atmosphere: None,
     atmosphere_settings: None,
@@ -327,14 +325,6 @@ pub fn Camera3d::with_deferred_config(
   deferred_config : CameraDeferredConfig3d,
 ) -> Camera3d {
   Camera3d::{ ..self, deferred_config, }
-}
-
-///|
-pub fn Camera3d::with_distance_fog(
-  self : Camera3d,
-  distance_fog : DistanceFog?,
-) -> Camera3d {
-  Camera3d::{ ..self, distance_fog, }
 }
 
 ///|

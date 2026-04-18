@@ -75,6 +75,7 @@ fn phase_entity_ref3d_cmp(
 ///|
 priv struct Camera3dViewPayload {
   camera3d : Camera3d
+  distance_fog : DistanceFog?
   camera : @sprite.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?

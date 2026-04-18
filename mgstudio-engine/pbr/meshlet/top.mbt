@@ -459,10 +459,7 @@ fn meshlet_distance_fog_enabled(
   source_world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  match (try! source_world.get_by_key(entity, @camera.ecs_key_camera3d)) {
-    Some(camera3d) => camera3d.distance_fog is Some(_)
-    None => false
-  }
+  (try! source_world.get_by_key(entity, @pbr.ecs_key_distance_fog)) is Some(_)
 }
 
 ///|

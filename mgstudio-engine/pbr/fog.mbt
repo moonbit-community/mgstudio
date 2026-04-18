@@ -536,12 +536,8 @@ pub fn render3d_prepare_camera_fog_uniforms(
     if !world.is_alive(entity) {
       continue
     }
-    let view_fog = match (try! world.get_by_key(entity, ecs_key_camera3d)) {
-      Some(camera3d) =>
-        match camera3d.distance_fog {
-          Some(fog) => Some(render3d_view_fog_data(fog))
-          None => None
-        }
+    let view_fog = match (try! world.get_by_key(entity, ecs_key_distance_fog)) {
+      Some(fog) => Some(render3d_view_fog_data(fog))
       None => None
     }
     view_fogs.push((entity, view_fog))

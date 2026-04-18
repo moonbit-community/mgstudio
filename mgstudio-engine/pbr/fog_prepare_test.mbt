@@ -13,21 +13,14 @@
 // limitations under the License.
 
 ///|
-test "pbr fog: bridge prepares view fog uniforms from Camera3d" {
+test "pbr fog: bridge prepares view fog uniforms from DistanceFog component" {
   let world = @ecs.World::new()
   let with_fog = world.spawn()
   let without_fog = world.spawn()
   try! (world.set_by_key(
     with_fog,
-    ecs_key_camera3d,
-    Camera3d::default().with_distance_fog(
-      Some(
-        DistanceFog::new(
-          @sprite.Color::white(),
-          FogFalloff3d::exponential(0.1F),
-        ),
-      ),
-    ),
+    ecs_key_distance_fog,
+    DistanceFog::new(@sprite.Color::white(), FogFalloff3d::exponential(0.1F)),
   )
   |> ignore)
 
