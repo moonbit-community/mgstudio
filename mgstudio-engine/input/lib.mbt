@@ -1536,9 +1536,18 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
     @window.window_emit_keyboard_focus_lost(world, @window.KeyboardFocusLost::{
 
     })
-    // Bevy parity:
-    // keyboard focus-loss clears pressed-state snapshots without emitting
-    // synthetic KeyboardInput released events.
+    // Bevy winit parity:
+    // synthesize released events for currently-pressed keys when keyboard
+    // focus is lost to avoid stuck key state across window focus transitions.
+    for key_code in read_keycode_button_input().get_pressed() {
+      @window.window_emit_keyboard_input(world, @window.KeyboardInput::{
+        key_code,
+        logical_key: logical_key_from_keycode(key_code),
+        state: ButtonState::Released,
+        repeat: false,
+        text: None,
+      })
+    }
     host_input_clear_all_keys()
   }
 }
