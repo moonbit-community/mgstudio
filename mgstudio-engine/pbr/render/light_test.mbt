@@ -644,16 +644,18 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     0.1F, 1000.0F, 24.0F, false,
   )
+  let expected_factor_x = 16.0F / 1280.0F
+  let expected_factor_y = 9.0F / 720.0F
   inspect(gpu_lights.cluster_dimensions.0, content="16")
   inspect(gpu_lights.cluster_dimensions.1, content="9")
   inspect(gpu_lights.cluster_dimensions.2, content="24")
   inspect(gpu_lights.cluster_dimensions.3, content="3456")
   inspect(
-    approx_eq(gpu_lights.cluster_factors.x, 0.0F, 1.0e-6F),
+    approx_eq(gpu_lights.cluster_factors.x, expected_factor_x, 1.0e-6F),
     content="true",
   )
   inspect(
-    approx_eq(gpu_lights.cluster_factors.y, 0.0F, 1.0e-6F),
+    approx_eq(gpu_lights.cluster_factors.y, expected_factor_y, 1.0e-6F),
     content="true",
   )
   inspect(
@@ -767,11 +769,21 @@ test "pbr render light: cluster payload prefers runtime clusters component" {
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     1.0F, 81.0F, 8.0F, false,
   )
+  let expected_factor_x = 12.0F / 1280.0F
+  let expected_factor_y = 6.0F / 720.0F
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.cluster_dimensions.0, content="12")
   inspect(gpu_lights.cluster_dimensions.1, content="6")
   inspect(gpu_lights.cluster_dimensions.2, content="8")
   inspect(gpu_lights.cluster_dimensions.3, content="576")
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.x, expected_factor_x, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.y, expected_factor_y, 1.0e-6F),
+    content="true",
+  )
   inspect(
     approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
     content="true",

@@ -881,6 +881,17 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let n_clusters = cluster_dimensions_x *
     cluster_dimensions_y *
     cluster_dimensions_z
+  let cluster_factors_xy = if cluster_screen_width <= 0 ||
+    cluster_screen_height <= 0 {
+    @math.Vec2::new(0.0F, 0.0F)
+  } else {
+    @math.Vec2::new(
+      Float::from_double(cluster_dimensions_x.to_double()) /
+      Float::from_double(cluster_screen_width.to_double()),
+      Float::from_double(cluster_dimensions_y.to_double()) /
+      Float::from_double(cluster_screen_height.to_double()),
+    )
+  }
   let cluster_factors_zw = if n_clusters <= 0 {
     @math.Vec2::new(0.0F, 0.0F)
   } else {
@@ -944,8 +955,8 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       cluster_dimensions_x, cluster_dimensions_y, cluster_dimensions_z, n_clusters,
     ),
     cluster_factors: @math.Vec4::new(
-      0.0F,
-      0.0F,
+      cluster_factors_xy.x,
+      cluster_factors_xy.y,
       cluster_factors_zw.x,
       cluster_factors_zw.y,
     ),
