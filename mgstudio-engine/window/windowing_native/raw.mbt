@@ -1700,13 +1700,79 @@ pub fn set_cursor_visible(window : Int, visible~ : Bool) -> Unit {
 }
 
 ///|
+pub fn set_cursor_hittest(window : Int, hittest~ : Bool) -> Bool {
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      try {
+        window_ref.val.set_cursor_hittest(hittest)
+        true
+      } catch {
+        _ => false
+      }
+    None => false
+  }
+}
+
+///|
+pub fn cursor_hittest(window : Int) -> Bool {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.is_cursor_hittest()
+    None => true
+  }
+}
+
+///|
+fn set_cursor_grab_mode_once(
+  window_ref : Ref[@window_macos.Window],
+  mode : @window_core.CursorGrabMode,
+) -> Bool {
+  try {
+    window_ref.val.set_cursor_grab(mode)
+    true
+  } catch {
+    _ => false
+  }
+}
+
+///|
 pub fn set_cursor_grab_mode(
   window : Int,
   mode~ : @window_core.CursorGrabMode,
-) -> Unit {
+) -> Bool {
   match native_window_ref(window) {
-    Some(window_ref) => window_ref.val.set_cursor_grab(mode) catch { _ => () }
-    None => ()
+    Some(window_ref) =>
+      match mode {
+        @window_core.CursorGrabMode::None =>
+          set_cursor_grab_mode_once(
+            window_ref,
+            @window_core.CursorGrabMode::None,
+          )
+        @window_core.CursorGrabMode::Confined =>
+          if set_cursor_grab_mode_once(
+              window_ref,
+              @window_core.CursorGrabMode::Confined,
+            ) {
+            true
+          } else {
+            set_cursor_grab_mode_once(
+              window_ref,
+              @window_core.CursorGrabMode::Locked,
+            )
+          }
+        @window_core.CursorGrabMode::Locked =>
+          if set_cursor_grab_mode_once(
+              window_ref,
+              @window_core.CursorGrabMode::Locked,
+            ) {
+            true
+          } else {
+            set_cursor_grab_mode_once(
+              window_ref,
+              @window_core.CursorGrabMode::Confined,
+            )
+          }
+      }
+    None => false
   }
 }
 

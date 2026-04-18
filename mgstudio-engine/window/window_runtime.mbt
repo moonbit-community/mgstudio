@@ -42,6 +42,7 @@ priv struct WindowRuntime {
   mut last_applied_ime_position : @math.Vec2
   mut last_applied_cursor_visible : Bool
   mut last_applied_cursor_grab_mode : CursorGrabMode
+  mut last_applied_cursor_hit_test : Bool
   mut last_applied_cursor_icon : CursorIcon?
   mut last_observed_width : Int
   mut last_observed_height : Int
@@ -759,7 +760,24 @@ fn window_create_runtime_for_entity(
     window.ime_position,
   )
   host_window_set_cursor_visible(host_window, visible=cursor_options.visible)
-  host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
+  // Match Bevy create-time behavior: skip explicit grab call when mode is None.
+  if cursor_options.grab_mode != GrabNone {
+    host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
+    |> ignore
+  }
+  let mut cursor_hit_test = true
+  // Match Bevy create-time behavior: only apply explicit `false` hit-testing.
+  if !cursor_options.hit_test {
+    if host_window_set_cursor_hit_test(host_window, hit_test=false) {
+      cursor_hit_test = false
+    } else {
+      window_set_cursor_options_component(world, entity, CursorOptions::{
+        visible: cursor_options.visible,
+        grab_mode: cursor_options.grab_mode,
+        hit_test: true,
+      })
+    }
+  }
   if cursor_icon is Some(cursor_icon0) {
     host_window_set_cursor_icon(host_window, icon=cursor_icon0)
   }
@@ -797,6 +815,7 @@ fn window_create_runtime_for_entity(
     last_applied_ime_position: window.ime_position,
     last_applied_cursor_visible: cursor_options.visible,
     last_applied_cursor_grab_mode: cursor_options.grab_mode,
+    last_applied_cursor_hit_test: cursor_hit_test,
     last_applied_cursor_icon: cursor_icon,
     last_observed_width: observed_width,
     last_observed_height: observed_height,
@@ -1025,14 +1044,61 @@ fn window_sync_requested_cursor_state(
   runtime_ref : Ref[WindowRuntime],
 ) -> Unit {
   let host_window = runtime_ref.val.window
-  let cursor_options = window_current_cursor_options(world, entity)
-  if cursor_options.visible != runtime_ref.val.last_applied_cursor_visible {
-    host_window_set_cursor_visible(host_window, visible=cursor_options.visible)
-    runtime_ref.val.last_applied_cursor_visible = cursor_options.visible
+  let requested_cursor_options = window_current_cursor_options(world, entity)
+  let window_title = match window_component(world, entity) {
+    Some(window) => window.title
+    None => "<unknown-window>"
   }
-  if cursor_options.grab_mode != runtime_ref.val.last_applied_cursor_grab_mode {
-    host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
-    runtime_ref.val.last_applied_cursor_grab_mode = cursor_options.grab_mode
+  let mut restore_grab_mode : CursorGrabMode? = None
+  let mut restore_hit_test : Bool? = None
+  if requested_cursor_options.visible !=
+    runtime_ref.val.last_applied_cursor_visible {
+    host_window_set_cursor_visible(
+      host_window,
+      visible=requested_cursor_options.visible,
+    )
+    runtime_ref.val.last_applied_cursor_visible = requested_cursor_options.visible
+  }
+  if requested_cursor_options.grab_mode !=
+    runtime_ref.val.last_applied_cursor_grab_mode {
+    if host_window_set_cursor_grab_mode(
+        host_window,
+        mode=requested_cursor_options.grab_mode,
+      ) {
+      runtime_ref.val.last_applied_cursor_grab_mode = requested_cursor_options.grab_mode
+    } else {
+      host_debug_string(
+        value="mgstudio_winit: could not set cursor grab mode for window \{window_title}",
+      )
+      restore_grab_mode = Some(runtime_ref.val.last_applied_cursor_grab_mode)
+    }
+  }
+  if requested_cursor_options.hit_test !=
+    runtime_ref.val.last_applied_cursor_hit_test {
+    if host_window_set_cursor_hit_test(
+        host_window,
+        hit_test=requested_cursor_options.hit_test,
+      ) {
+      runtime_ref.val.last_applied_cursor_hit_test = requested_cursor_options.hit_test
+    } else {
+      host_debug_string(
+        value="mgstudio_winit: could not set cursor hit-test for window \{window_title}",
+      )
+      restore_hit_test = Some(runtime_ref.val.last_applied_cursor_hit_test)
+    }
+  }
+  if restore_grab_mode is Some(_) || restore_hit_test is Some(_) {
+    window_set_cursor_options_component(world, entity, CursorOptions::{
+      visible: requested_cursor_options.visible,
+      grab_mode: match restore_grab_mode {
+        Some(mode) => mode
+        None => requested_cursor_options.grab_mode
+      },
+      hit_test: match restore_hit_test {
+        Some(hit_test) => hit_test
+        None => requested_cursor_options.hit_test
+      },
+    })
   }
   let cursor_icon = window_current_cursor_icon(world, entity)
   if !window_cursor_icon_option_eq(

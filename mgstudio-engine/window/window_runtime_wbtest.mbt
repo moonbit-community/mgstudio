@@ -121,6 +121,35 @@ test "window runtime: minimize request is consumed during apply" {
 }
 
 ///|
+test "window runtime: cursor hit-test options are applied on create and update" {
+  window_runtime_wbtest_prepare_native_event_loop()
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world
+  .entity_mut(entity)
+  .insert_component(CursorOptions::{
+    visible: true,
+    grab_mode: GrabNone,
+    hit_test: false,
+  })
+  |> ignore)
+
+  window_backend_create_windows_system(world)
+  let entries = window_host_entries(world)
+  debug_inspect(entries.length(), content="1")
+  let host_window = entries[0].host_window
+  debug_inspect(host_window_get_cursor_hit_test(host_window), content="false")
+
+  try! (world.entity_mut(entity).insert_component(CursorOptions::default())
+  |> ignore)
+  window_backend_apply_changed_cursor_options_system(world)
+  debug_inspect(host_window_get_cursor_hit_test(host_window), content="true")
+
+  try! world.despawn(entity)
+}
+
+///|
 test "window runtime: unsupported transparent and canvas updates are reverted" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()

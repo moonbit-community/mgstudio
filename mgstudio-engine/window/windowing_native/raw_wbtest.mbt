@@ -46,6 +46,18 @@ test "windowing_native wbtest: gesture event queues expose host deltas and clear
 }
 
 ///|
+test "windowing_native wbtest: cursor grab mode setter reports unknown window failure" {
+  debug_inspect(
+    set_cursor_grab_mode(-1, mode=@window_core.CursorGrabMode::Locked),
+    content="false",
+  )
+  debug_inspect(
+    set_cursor_grab_mode(-1, mode=@window_core.CursorGrabMode::Confined),
+    content="false",
+  )
+}
+
+///|
 test "windowing_native wbtest: raw winit event snapshots preserve typed payloads" {
   ignore(take_raw_winit_window_events())
 
@@ -83,13 +95,13 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
 
   assert_eq(events[1].window_id, 9)
   match events[1].event {
-    HoveredFile(path) => debug_inspect(path, content="/tmp/winit_a.txt")
+    HoveredFile(path) => debug_inspect(path, content="\"/tmp/winit_a.txt\"")
     _ => abort("expected first HoveredFile snapshot")
   }
 
   assert_eq(events[2].window_id, 9)
   match events[2].event {
-    HoveredFile(path) => debug_inspect(path, content="/tmp/winit_b.txt")
+    HoveredFile(path) => debug_inspect(path, content="\"/tmp/winit_b.txt\"")
     _ => abort("expected second HoveredFile snapshot")
   }
 

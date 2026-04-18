@@ -209,6 +209,19 @@ pub fn host_window_set_cursor_visible(
 }
 
 ///|
+pub fn host_window_set_cursor_hit_test(
+  window : HostWindow,
+  hit_test~ : Bool,
+) -> Bool {
+  @windowing.set_cursor_hittest(window, hittest=hit_test)
+}
+
+///|
+pub fn host_window_get_cursor_hit_test(window : HostWindow) -> Bool {
+  @windowing.cursor_hittest(window)
+}
+
+///|
 fn cursor_grab_mode_to_native(
   mode : CursorGrabMode,
 ) -> @window_core.CursorGrabMode {
@@ -231,7 +244,7 @@ fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
 pub fn host_window_set_cursor_grab_mode(
   window : HostWindow,
   mode~ : CursorGrabMode,
-) -> Unit {
+) -> Bool {
   @windowing.set_cursor_grab_mode(window, mode=cursor_grab_mode_to_native(mode))
 }
 

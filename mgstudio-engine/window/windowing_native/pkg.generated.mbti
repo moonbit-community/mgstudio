@@ -32,6 +32,8 @@ pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bytes?, Bool, Bool, 
 
 pub fn current_monitor(Int) -> @core.MonitorHandle?
 
+pub fn cursor_hittest(Int) -> Bool
+
 pub fn drag_resize_window(Int, direction~ : @core.ResizeDirection) -> Bool
 
 pub fn drag_window(Int) -> Bool
@@ -224,7 +226,9 @@ pub fn scale_factor(Int) -> Float
 
 pub fn set_accessibility_requested(Bool) -> Unit
 
-pub fn set_cursor_grab_mode(Int, mode~ : @core.CursorGrabMode) -> Unit
+pub fn set_cursor_grab_mode(Int, mode~ : @core.CursorGrabMode) -> Bool
+
+pub fn set_cursor_hittest(Int, hittest~ : Bool) -> Bool
 
 pub fn set_cursor_icon(Int, icon~ : @core.CursorIcon) -> Unit
 
