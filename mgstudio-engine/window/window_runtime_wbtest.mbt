@@ -40,6 +40,18 @@ test "window runtime: create forces physical request only when override exists" 
 }
 
 ///|
+test "window runtime: scale-factor change detection follows relative-epsilon semantics" {
+  debug_inspect(
+    window_scale_factor_significantly_changed(1.0F, 1.0000005F),
+    content="false",
+  )
+  debug_inspect(
+    window_scale_factor_significantly_changed(1.0F, 1.00001F),
+    content="true",
+  )
+}
+
+///|
 fn window_runtime_wbtest_prepare_native_event_loop() -> Unit {
   // Whitebox tests are not guaranteed to run on the main thread.
   @windowing.set_event_loop_any_thread(true)

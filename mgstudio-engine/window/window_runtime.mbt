@@ -518,6 +518,41 @@ fn window_vec2_eq(a : @math.Vec2, b : @math.Vec2) -> Bool {
 }
 
 ///|
+fn window_absf(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn window_maxf(a : Float, b : Float) -> Float {
+  if a >= b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn window_scale_factor_significantly_changed(
+  previous_scale_factor : Float,
+  next_scale_factor : Float,
+) -> Bool {
+  let delta = window_absf(previous_scale_factor - next_scale_factor)
+  if delta <= 0.000001F {
+    return false
+  }
+  let relative_limit = window_maxf(
+      window_absf(previous_scale_factor),
+      window_absf(next_scale_factor),
+    ) *
+    0.000001F
+  delta > relative_limit
+}
+
+///|
 fn window_resize_constraints_has_finite_max(
   constraints : WindowResizeConstraints,
 ) -> Bool {
@@ -1179,7 +1214,9 @@ fn window_sync_observed_state(
         }
       None => observed_scale_factor
     }
-    if old_scale_factor != next_scale_factor {
+    if window_scale_factor_significantly_changed(
+        old_scale_factor, next_scale_factor,
+      ) {
       if world.contains_message(ecs_key_window_scale_factor_changed) {
         window_emit_window_scale_factor_changed(world, WindowScaleFactorChanged::{
           window: entity,
