@@ -111,14 +111,31 @@ fn cluster_assign_viewport_size(camera : @sprite.Camera) -> (Int, Int) {
 }
 
 ///|
+fn cluster_assign_is_view_visible(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+    Some(view_visibility) => view_visibility.is_visible()
+    None => true
+  }
+}
+
+///|
 fn cluster_assign_max_clusterable_object_range(world : @ecs.World) -> Float {
   let max_range_ref : Ref[Float] = Ref::new(0.0F)
-  world.for_each_component(@light.ecs_key_point_light, fn(_entity, light) {
+  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
+    if !cluster_assign_is_view_visible(world, entity) {
+      return
+    }
     if light.range > max_range_ref.val {
       max_range_ref.val = light.range
     }
   })
-  world.for_each_component(@light.ecs_key_spot_light, fn(_entity, light) {
+  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
+    if !cluster_assign_is_view_visible(world, entity) {
+      return
+    }
     if light.range > max_range_ref.val {
       max_range_ref.val = light.range
     }
@@ -155,9 +172,15 @@ fn cluster_assign_cluster_objects(
 pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
   let point_and_spot_lights : Array[@core.Entity] = []
   world.for_each_component(@light.ecs_key_point_light, fn(entity, _light) {
+    if !cluster_assign_is_view_visible(world, entity) {
+      return
+    }
     point_and_spot_lights.push(entity)
   })
   world.for_each_component(@light.ecs_key_spot_light, fn(entity, _light) {
+    if !cluster_assign_is_view_visible(world, entity) {
+      return
+    }
     point_and_spot_lights.push(entity)
   })
   let reflection_probes : Array[@core.Entity] = []
@@ -165,6 +188,9 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     entity,
     _probe,
   ) {
+    if !cluster_assign_is_view_visible(world, entity) {
+      return
+    }
     reflection_probes.push(entity)
   })
   let irradiance_volumes : Array[@core.Entity] = []
@@ -172,6 +198,9 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     entity,
     _probe,
   ) {
+    if !cluster_assign_is_view_visible(world, entity) {
+      return
+    }
     irradiance_volumes.push(entity)
   })
   let max_clusterable_object_range = cluster_assign_max_clusterable_object_range(
