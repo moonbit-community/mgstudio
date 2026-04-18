@@ -733,26 +733,14 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
 }
 
 ///|
-fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
-  let preferred_view_ref : Ref[(Int, Int)?] = Ref::new(None)
-  let fallback_view_ref : Ref[(Int, Int)?] = Ref::new(None)
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, camera) {
-    let camera_viewport = match camera.physical_viewport_size() {
-      Some(viewport_size) => {
-        let width = if viewport_size.x <= 0 { 0 } else { viewport_size.x }
-        let height = if viewport_size.y <= 0 { 0 } else { viewport_size.y }
-        if width <= 0 || height <= 0 {
-          None
-        } else {
-          Some((width, height))
-        }
-      }
-      None => None
+fn render3d_cluster_camera_entity(world : @ecs.World) -> @core.Entity? {
+  let preferred_ref : Ref[@core.Entity?] = Ref::new(None)
+  let fallback_ref : Ref[@core.Entity?] = Ref::new(None)
+  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+    if fallback_ref.val is None {
+      fallback_ref.val = Some(entity)
     }
-    if fallback_view_ref.val is None && camera_viewport is Some(viewport) {
-      fallback_view_ref.val = Some(viewport)
-    }
-    if preferred_view_ref.val is Some(_) {
+    if preferred_ref.val is Some(_) {
       return
     }
     let has_cluster_components = (try! world.contains_by_key(
@@ -763,16 +751,40 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
         entity,
         @light_cluster.ClusterConfig::component(),
       ))
-    if !has_cluster_components {
-      return
-    }
-    if camera_viewport is Some(viewport) {
-      preferred_view_ref.val = Some(viewport)
+    if has_cluster_components {
+      preferred_ref.val = Some(entity)
     }
   })
-  if preferred_view_ref.val is Some(view) {
-    return view
+  match preferred_ref.val {
+    Some(entity) => Some(entity)
+    None => fallback_ref.val
   }
+}
+
+///|
+fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
+  if render3d_cluster_camera_entity(world) is Some(entity) &&
+    (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) &&
+    camera.physical_viewport_size() is Some(viewport_size) {
+    let width = if viewport_size.x <= 0 { 0 } else { viewport_size.x }
+    let height = if viewport_size.y <= 0 { 0 } else { viewport_size.y }
+    if width > 0 && height > 0 {
+      return (width, height)
+    }
+  }
+  let fallback_view_ref : Ref[(Int, Int)?] = Ref::new(None)
+  world.for_each_component(@sprite.ecs_key_camera, fn(_entity, camera) {
+    if fallback_view_ref.val is Some(_) {
+      return
+    }
+    if camera.physical_viewport_size() is Some(viewport_size) {
+      let width = if viewport_size.x <= 0 { 0 } else { viewport_size.x }
+      let height = if viewport_size.y <= 0 { 0 } else { viewport_size.y }
+      if width > 0 && height > 0 {
+        fallback_view_ref.val = Some((width, height))
+      }
+    }
+  })
   if fallback_view_ref.val is Some(view) {
     return view
   }
@@ -795,87 +807,38 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
 fn render3d_cluster_projection_runtime(
   world : @ecs.World,
 ) -> ProjectionRuntime3d? {
-  let preferred_ref : Ref[ProjectionRuntime3d?] = Ref::new(None)
+  if render3d_cluster_camera_entity(world) is Some(entity) &&
+    (try! world.get_by_key(entity, ecs_key_projection_runtime3d))
+    is Some(runtime) {
+    return Some(runtime)
+  }
   let fallback_ref : Ref[ProjectionRuntime3d?] = Ref::new(None)
   world.for_each_component(ecs_key_projection_runtime3d, fn(entity, runtime) {
-    if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    if fallback_ref.val is Some(_) {
       return
     }
-    if fallback_ref.val is None {
+    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
       fallback_ref.val = Some(runtime)
     }
-    if preferred_ref.val is Some(_) {
-      return
-    }
-    let has_cluster_components = (try! world.contains_by_key(
-        entity,
-        @light_cluster.Clusters::component(),
-      )) ||
-      (try! world.contains_by_key(
-        entity,
-        @light_cluster.ClusterConfig::component(),
-      ))
-    if has_cluster_components {
-      preferred_ref.val = Some(runtime)
-    }
   })
-  match preferred_ref.val {
-    Some(runtime) => Some(runtime)
-    None => fallback_ref.val
-  }
+  fallback_ref.val
 }
 
 ///|
 fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
-  let config_ref : Ref[@light_cluster.ClusterConfig?] = Ref::new(None)
-  world.for_each_component(@light_cluster.ClusterConfig::component(), fn(
-    entity,
-    config,
-  ) {
-    if config_ref.val is Some(_) {
-      return
-    }
-    if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
-      return
-    }
-    config_ref.val = Some(config)
-  })
-  match config_ref.val {
-    Some(config) => config
-    None => @light_cluster.ClusterConfig::default()
+  if render3d_cluster_camera_entity(world) is Some(entity) &&
+    (try! world.get_by_key(entity, @light_cluster.ClusterConfig::component()))
+    is Some(config) {
+    return config
   }
+  @light_cluster.ClusterConfig::default()
 }
 
 ///|
 fn render3d_cluster_camera_depth_context(
   world : @ecs.World,
 ) -> (@math.Vec3, @math.Vec3, Float)? {
-  let preferred_ref : Ref[@core.Entity?] = Ref::new(None)
-  let fallback_ref : Ref[@core.Entity?] = Ref::new(None)
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
-    if fallback_ref.val is None {
-      fallback_ref.val = Some(entity)
-    }
-    if preferred_ref.val is Some(_) {
-      return
-    }
-    let has_cluster_components = (try! world.contains_by_key(
-        entity,
-        @light_cluster.Clusters::component(),
-      )) ||
-      (try! world.contains_by_key(
-        entity,
-        @light_cluster.ClusterConfig::component(),
-      ))
-    if has_cluster_components {
-      preferred_ref.val = Some(entity)
-    }
-  })
-  let camera_entity = match preferred_ref.val {
-    Some(entity) => Some(entity)
-    None => fallback_ref.val
-  }
-  match camera_entity {
+  match render3d_cluster_camera_entity(world) {
     Some(entity) => {
       let transform = render3d_extract_light_transform(world, entity)
       let view_scale_z = if transform.scale.z == 0.0F {
@@ -982,18 +945,10 @@ fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
 fn render3d_cluster_runtime(
   world : @ecs.World,
 ) -> (Int, Int, Int, Float, Float)? {
-  let runtime_ref : Ref[(Int, Int, Int, Float, Float)?] = Ref::new(None)
-  world.for_each_component(@light_cluster.Clusters::component(), fn(
-    entity,
-    clusters,
-  ) {
-    if runtime_ref.val is Some(_) {
-      return
-    }
-    if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
-      return
-    }
-    runtime_ref.val = Some(
+  if render3d_cluster_camera_entity(world) is Some(entity) &&
+    (try! world.get_by_key(entity, @light_cluster.Clusters::component()))
+    is Some(clusters) {
+    return Some(
       (
         clusters.dimensions_x,
         clusters.dimensions_y,
@@ -1002,37 +957,65 @@ fn render3d_cluster_runtime(
         clusters.far,
       ),
     )
+  }
+  let fallback_ref : Ref[(Int, Int, Int, Float, Float)?] = Ref::new(None)
+  world.for_each_component(@light_cluster.Clusters::component(), fn(
+    entity,
+    clusters,
+  ) {
+    if fallback_ref.val is Some(_) {
+      return
+    }
+    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+      fallback_ref.val = Some(
+        (
+          clusters.dimensions_x,
+          clusters.dimensions_y,
+          clusters.dimensions_z,
+          clusters.near,
+          clusters.far,
+        ),
+      )
+    }
   })
-  runtime_ref.val
+  fallback_ref.val
 }
 
 ///|
 fn render3d_visible_clusterable_objects(
   world : @ecs.World,
 ) -> @light_cluster.VisibleClusterableObjects? {
-  let camera_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
+  if render3d_cluster_camera_entity(world) is Some(entity) &&
+    (try! world.get_by_key(
+      entity,
+      @light_cluster.VisibleClusterableObjects::component(),
+    ))
+    is Some(visible) {
+    return Some(visible)
+  }
+  let camera_fallback_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
     None,
   )
-  let any_visible_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
+  let any_fallback_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
     None,
   )
   world.for_each_component(
     @light_cluster.VisibleClusterableObjects::component(),
     fn(entity, visible) {
-      if any_visible_ref.val is None {
-        any_visible_ref.val = Some(visible)
+      if any_fallback_ref.val is None {
+        any_fallback_ref.val = Some(visible)
       }
-      if camera_visible_ref.val is Some(_) {
+      if camera_fallback_ref.val is Some(_) {
         return
       }
       if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
-        camera_visible_ref.val = Some(visible)
+        camera_fallback_ref.val = Some(visible)
       }
     },
   )
-  match camera_visible_ref.val {
+  match camera_fallback_ref.val {
     Some(visible) => Some(visible)
-    None => any_visible_ref.val
+    None => any_fallback_ref.val
   }
 }
 
