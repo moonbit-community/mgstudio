@@ -642,7 +642,7 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
   let world = @ecs.World::new()
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
-    5.0F, 1000.0F, 24.0F, false,
+    5.0F, 5.0F, 24.0F, false,
   )
   let expected_factor_x = 16.0F / 1280.0F
   let expected_factor_y = 9.0F / 720.0F
@@ -692,7 +692,7 @@ test "pbr render light: cluster factors zw follow orthographic projection runtim
   |> ignore)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
-    5.0F, 1000.0F, 24.0F, true,
+    5.0F, 5.0F, 24.0F, true,
   )
   inspect(
     approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
@@ -790,6 +790,65 @@ test "pbr render light: cluster far fallback prefers camera visible cluster list
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     5.0F, 20.0F, 24.0F, false,
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
+test "pbr render light: cluster far fallback includes camera view depth" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity().with_translation(
+      @math.Vec3::new(0.0F, 0.0F, 10.0F),
+    ),
+  )
+  |> ignore)
+  let light_entity = world.spawn()
+  try! (world.set_by_key(
+    light_entity,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_range(5.0F),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    light_entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity().with_translation(
+      @math.Vec3::new(0.0F, 0.0F, -20.0F),
+    ),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.VisibleClusterableObjects::component(),
+    @light_cluster.VisibleClusterableObjects::from_lists([light_entity], [], []),
+  )
+  |> ignore)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  let expected_factors_zw = @light_cluster.calculate_cluster_factors(
+    5.0F, 35.0F, 24.0F, false,
   )
   inspect(
     approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),

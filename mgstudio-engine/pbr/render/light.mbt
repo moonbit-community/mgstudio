@@ -850,21 +850,98 @@ fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
 }
 
 ///|
+fn render3d_cluster_camera_depth_context(
+  world : @ecs.World,
+) -> (@math.Vec3, @math.Vec3, Float)? {
+  let preferred_ref : Ref[@core.Entity?] = Ref::new(None)
+  let fallback_ref : Ref[@core.Entity?] = Ref::new(None)
+  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+    if fallback_ref.val is None {
+      fallback_ref.val = Some(entity)
+    }
+    if preferred_ref.val is Some(_) {
+      return
+    }
+    let has_cluster_components = (try! world.contains_by_key(
+        entity,
+        @light_cluster.Clusters::component(),
+      )) ||
+      (try! world.contains_by_key(
+        entity,
+        @light_cluster.ClusterConfig::component(),
+      ))
+    if has_cluster_components {
+      preferred_ref.val = Some(entity)
+    }
+  })
+  let camera_entity = match preferred_ref.val {
+    Some(entity) => Some(entity)
+    None => fallback_ref.val
+  }
+  match camera_entity {
+    Some(entity) => {
+      let transform = render3d_extract_light_transform(world, entity)
+      let view_scale_z = if transform.scale.z == 0.0F {
+        1.0F
+      } else {
+        1.0F / transform.scale.z
+      }
+      Some(
+        (
+          transform.translation,
+          render3d_transform_back(transform),
+          view_scale_z,
+        ),
+      )
+    }
+    None => None
+  }
+}
+
+///|
+fn render3d_clusterable_object_view_range(
+  world : @ecs.World,
+  entity : @core.Entity,
+  object_range : Float,
+  depth_context : (@math.Vec3, @math.Vec3, Float)?,
+) -> Float {
+  match depth_context {
+    Some((camera_position, camera_back, view_scale_z)) => {
+      let object_transform = render3d_extract_light_transform(world, entity)
+      let camera_to_object = object_transform.translation.sub(camera_position)
+      let view_depth = -camera_back.dot(camera_to_object)
+      view_depth + object_range * view_scale_z
+    }
+    None => object_range
+  }
+}
+
+///|
+fn render3d_clusterable_light_range(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Float? {
+  if (try! world.get_by_key(entity, @light.ecs_key_point_light)) is Some(light) {
+    return Some(light.range)
+  }
+  if (try! world.get_by_key(entity, @light.ecs_key_spot_light)) is Some(light) {
+    return Some(light.range)
+  }
+  None
+}
+
+///|
 fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
+  let depth_context = render3d_cluster_camera_depth_context(world)
   if render3d_visible_clusterable_objects(world) is Some(visible) {
     let max_range_ref : Ref[Float] = Ref::new(0.0F)
     for entity in visible.point_and_spot_entities() {
-      if (try! world.get_by_key(entity, @light.ecs_key_point_light))
-        is Some(light) {
-        if light.range > max_range_ref.val {
-          max_range_ref.val = light.range
-        }
-        continue
-      }
-      if (try! world.get_by_key(entity, @light.ecs_key_spot_light))
-        is Some(light) {
-        if light.range > max_range_ref.val {
-          max_range_ref.val = light.range
+      if render3d_clusterable_light_range(world, entity) is Some(light_range) {
+        let view_range = render3d_clusterable_object_view_range(
+          world, entity, light_range, depth_context,
+        )
+        if view_range > max_range_ref.val {
+          max_range_ref.val = view_range
         }
       }
     }
@@ -877,16 +954,28 @@ fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
     if !render3d_light_is_view_visible(world, entity) {
       return
     }
-    if light.range > max_range_ref.val {
-      max_range_ref.val = light.range
+    let view_range = render3d_clusterable_object_view_range(
+      world,
+      entity,
+      light.range,
+      depth_context,
+    )
+    if view_range > max_range_ref.val {
+      max_range_ref.val = view_range
     }
   })
   world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
     if !render3d_light_is_view_visible(world, entity) {
       return
     }
-    if light.range > max_range_ref.val {
-      max_range_ref.val = light.range
+    let view_range = render3d_clusterable_object_view_range(
+      world,
+      entity,
+      light.range,
+      depth_context,
+    )
+    if view_range > max_range_ref.val {
+      max_range_ref.val = view_range
     }
   })
   max_range_ref.val
@@ -1005,14 +1094,8 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     cluster_far = match
       @light_cluster.cluster_config_far_z_mode(cluster_config) {
       @light_cluster.ClusterFarZMode::Constant(far) => far
-      @light_cluster.ClusterFarZMode::MaxClusterableObjectRange => {
-        let object_max_range = render3d_clusterable_object_max_range(world)
-        if object_max_range > 0.0F {
-          object_max_range
-        } else {
-          1000.0F
-        }
-      }
+      @light_cluster.ClusterFarZMode::MaxClusterableObjectRange =>
+        render3d_clusterable_object_max_range(world)
     }
     if cluster_far < cluster_near {
       cluster_far = cluster_near
