@@ -245,14 +245,39 @@ fn render3d_prepare_extracted_camera_view_bind_group(
 }
 
 ///|
-fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
+fn render3d_material_shader_path_for_extracted_mesh(
+  world : @ecs.World,
+  extracted_mesh : ExtractedMesh3d,
+) -> String? {
+  let fallback_shader_path = match extracted_mesh.payload.material_extension {
+    Some(extension) => extension.shader_path
+    None => None
+  }
+  match
+    render3d_material_instance_for_entity(
+      world,
+      extracted_mesh.entity.main_entity,
+    ) {
+    Some(instance) =>
+      match instance.properties.get_shader("material.fragment") {
+        Some(path) => Some(path)
+        None => fallback_shader_path
+      }
+    None => fallback_shader_path
+  }
+}
+
+///|
+fn render3d_prewarm_mesh_pipelines(
+  world : @ecs.World,
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
     let mesh = extracted_mesh.payload
-    let shader_path = match mesh.material_extension {
-      Some(extension) => extension.shader_path
-      None => None
-    }
+    let shader_path = render3d_material_shader_path_for_extracted_mesh(
+      world, extracted_mesh,
+    )
     let shader_key = match shader_path {
       Some(path) => path
       None => ""
@@ -274,16 +299,15 @@ fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
 
 ///|
 fn render3d_prepare_shader_asset_paths(
+  world : @ecs.World,
   source_world : @ecs.World,
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
   let prepared_paths : Map[String, Bool] = {}
   for extracted_mesh in meshes {
-    let mesh = extracted_mesh.payload
-    let shader_path = match mesh.material_extension {
-      Some(extension) => extension.shader_path
-      None => None
-    }
+    let shader_path = render3d_material_shader_path_for_extracted_mesh(
+      world, extracted_mesh,
+    )
     guard shader_path is Some(path) else { continue }
     if prepared_paths.contains(path) {
       continue
@@ -360,8 +384,8 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_extract_material_instances(world, meshes)
-  render3d_prepare_shader_asset_paths(source_world, meshes)
-  render3d_prewarm_mesh_pipelines(meshes)
+  render3d_prepare_shader_asset_paths(world, source_world, meshes)
+  render3d_prewarm_mesh_pipelines(world, meshes)
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,

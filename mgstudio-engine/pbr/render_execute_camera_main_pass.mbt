@@ -384,9 +384,14 @@ fn render3d_execute_camera_main_pass(
     } else {
       non_indexed_indirect_parameter_indices[draw_item_index]
     }
-    let draw_shader_path = match mesh.material_extension {
-      Some(extension) => extension.shader_path
-      None => None
+    let draw_shader_path = match
+      material_properties.get_shader("material.fragment") {
+      Some(shader_path) => Some(shader_path)
+      None =>
+        match mesh.material_extension {
+          Some(extension) => extension.shader_path
+          None => None
+        }
     }
     let draw_payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
       mesh.mesh_id,
