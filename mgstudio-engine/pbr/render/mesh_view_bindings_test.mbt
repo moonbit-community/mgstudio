@@ -83,3 +83,31 @@ test "pbr/render: mesh_view layout disables optional bind arrays when unusable" 
   debug_inspect(has_binding(binding_array_entries, 3), content="false")
   debug_inspect(has_binding(binding_array_entries, 5), content="false")
 }
+
+///|
+test "pbr/render: mesh_view layout table builds all key variants" {
+  let layouts = render3d_mesh_pipeline_view_layouts(true, true)
+  debug_inspect(layouts.layouts.length(), content="256")
+
+  let default_layout = layouts.get_view_layout(
+    MeshPipelineViewLayoutKey::default(),
+  )
+  debug_inspect(
+    default_layout.main_layout_label,
+    content="\"mesh_view_layout\"",
+  )
+  debug_inspect(
+    default_layout.empty_layout_label,
+    content="\"mesh_view_layout_empty\"",
+  )
+
+  let flagged_key = mesh_view_layout_key(
+    true, false, false, false, false, false, true, false,
+  )
+  let flagged_layout = layouts.get_view_layout(flagged_key)
+  debug_inspect(
+    flagged_layout.main_layout_label,
+    content="\"mesh_view_layout_multisampled_atmosphere\"",
+  )
+  debug_inspect(flagged_layout.texture_count > 0, content="true")
+}

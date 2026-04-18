@@ -37,6 +37,8 @@ pub const MAX_CASCADES_PER_LIGHT : Int = 4
 
 pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
 
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 256
+
 pub const RENDER3D_GPU_FOG_MODE_ATMOSPHERIC : UInt = 4
 
 pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL : UInt = 2
@@ -154,6 +156,8 @@ pub fn maxf(Float, Float) -> Float
 pub fn mesh_binding_slot_index(MeshBindingSlot3d) -> Int
 
 pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> MeshPipelineViewLayoutKey
+
+pub fn mesh_view_layout_key_from_bits_truncate(UInt) -> MeshPipelineViewLayoutKey
 
 pub fn mesh_view_layout_key_from_msaa(Int) -> MeshPipelineViewLayoutKey
 
@@ -304,6 +308,10 @@ pub fn render3d_inverse_transform_point(@transform.Transform, @math.Vec3) -> @ma
 pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
 pub fn render3d_mesh_layouts() -> MeshLayouts3d
+
+pub fn render3d_mesh_pipeline_view_layout(Bool, Bool, MeshPipelineViewLayoutKey, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayout
+
+pub fn render3d_mesh_pipeline_view_layouts(Bool, Bool, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayouts
 
 pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[Render3dMeshRuntimeState]
 
@@ -749,12 +757,27 @@ pub struct MeshLayouts3d {
   morphed_skinned_motion : MeshBindingLayout3d
 }
 
+pub struct MeshPipelineViewLayout {
+  main_layout_label : String
+  binding_array_layout_label : String
+  empty_layout_label : String
+  main_entries : Array[MeshViewBindGroupLayoutEntry]
+  binding_array_entries : Array[MeshViewBindGroupLayoutEntry]
+  texture_count : Int
+}
+
 pub struct MeshPipelineViewLayoutKey {
   bits : UInt
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MeshPipelineViewLayoutKey::bits(Self) -> UInt
 pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
 pub fn MeshPipelineViewLayoutKey::default() -> Self
 pub fn MeshPipelineViewLayoutKey::label(Self) -> String
+
+pub struct MeshPipelineViewLayouts {
+  layouts : Array[MeshPipelineViewLayout]
+}
+pub fn MeshPipelineViewLayouts::get_view_layout(Self, MeshPipelineViewLayoutKey) -> MeshPipelineViewLayout
 
 pub(all) struct MeshPreprocessStatic3d {
   is_indexed : Bool

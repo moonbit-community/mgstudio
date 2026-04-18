@@ -39,6 +39,9 @@ const MESH_VIEW_LAYOUT_ATMOSPHERE : UInt = 1U << 6
 const MESH_VIEW_LAYOUT_STBN : UInt = 1U << 7
 
 ///|
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 256
+
+///|
 pub struct MeshPipelineViewLayoutKey {
   bits : UInt
 } derive(Eq, Debug, ToJson, FromJson)
@@ -46,6 +49,20 @@ pub struct MeshPipelineViewLayoutKey {
 ///|
 pub fn MeshPipelineViewLayoutKey::default() -> MeshPipelineViewLayoutKey {
   MeshPipelineViewLayoutKey::{ bits: 0U }
+}
+
+///|
+pub fn MeshPipelineViewLayoutKey::bits(
+  self : MeshPipelineViewLayoutKey,
+) -> UInt {
+  self.bits
+}
+
+///|
+pub fn mesh_view_layout_key_from_bits_truncate(
+  bits : UInt,
+) -> MeshPipelineViewLayoutKey {
+  MeshPipelineViewLayoutKey::{ bits: bits & 0xFFU }
 }
 
 ///|
@@ -140,6 +157,34 @@ pub fn MeshPipelineViewLayoutKey::label(
 }
 
 ///|
+pub struct MeshPipelineViewLayout {
+  main_layout_label : String
+  binding_array_layout_label : String
+  empty_layout_label : String
+  main_entries : Array[MeshViewBindGroupLayoutEntry]
+  binding_array_entries : Array[MeshViewBindGroupLayoutEntry]
+  texture_count : Int
+}
+
+///|
+pub struct MeshPipelineViewLayouts {
+  layouts : Array[MeshPipelineViewLayout]
+}
+
+///|
+pub fn MeshPipelineViewLayouts::get_view_layout(
+  self : MeshPipelineViewLayouts,
+  layout_key : MeshPipelineViewLayoutKey,
+) -> MeshPipelineViewLayout {
+  let index = layout_key.bits().reinterpret_as_int()
+  if index >= 0 && index < self.layouts.length() {
+    self.layouts[index]
+  } else {
+    self.layouts[0]
+  }
+}
+
+///|
 pub struct MeshViewBindGroupLayoutEntry {
   binding : Int
   name : String
@@ -184,6 +229,82 @@ pub enum MeshViewTextureDimension {
 pub enum MeshViewSamplerBindingType {
   Filtering
   Comparison
+}
+
+///|
+fn mesh_view_layout_texture_count(
+  main_entries : Array[MeshViewBindGroupLayoutEntry],
+  binding_array_entries : Array[MeshViewBindGroupLayoutEntry],
+) -> Int {
+  let mut count = 0
+  for entry in main_entries {
+    if entry.entry_type is MeshViewBindGroupLayoutEntryType::Texture(_, _, _, _) {
+      count = count + 1
+    }
+  }
+  for entry in binding_array_entries {
+    if entry.entry_type is MeshViewBindGroupLayoutEntryType::Texture(_, _, _, _) {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn render3d_mesh_pipeline_view_layout(
+  clustered_forward_buffer_read_only : Bool,
+  visibility_ranges_buffer_read_only : Bool,
+  layout_key : MeshPipelineViewLayoutKey,
+  clustered_decals_usable? : Bool = true,
+  irradiance_volumes_usable? : Bool = true,
+  oit_supported? : Bool = true,
+) -> MeshPipelineViewLayout {
+  let (main_entries, binding_array_entries) = render3d_mesh_view_layout_entries(
+    clustered_forward_buffer_read_only,
+    visibility_ranges_buffer_read_only,
+    layout_key,
+    clustered_decals_usable~,
+    irradiance_volumes_usable~,
+    oit_supported~,
+  )
+  let label = layout_key.label()
+  MeshPipelineViewLayout::{
+    main_layout_label: label,
+    binding_array_layout_label: "\{label}_binding_array",
+    empty_layout_label: "\{label}_empty",
+    main_entries,
+    binding_array_entries,
+    texture_count: mesh_view_layout_texture_count(
+      main_entries, binding_array_entries,
+    ),
+  }
+}
+
+///|
+pub fn render3d_mesh_pipeline_view_layouts(
+  clustered_forward_buffer_read_only : Bool,
+  visibility_ranges_buffer_read_only : Bool,
+  clustered_decals_usable? : Bool = true,
+  irradiance_volumes_usable? : Bool = true,
+  oit_supported? : Bool = true,
+) -> MeshPipelineViewLayouts {
+  let layouts : Array[MeshPipelineViewLayout] = []
+  for i in 0..<MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT {
+    let layout_key = mesh_view_layout_key_from_bits_truncate(
+      i.reinterpret_as_uint(),
+    )
+    layouts.push(
+      render3d_mesh_pipeline_view_layout(
+        clustered_forward_buffer_read_only,
+        visibility_ranges_buffer_read_only,
+        layout_key,
+        clustered_decals_usable~,
+        irradiance_volumes_usable~,
+        oit_supported~,
+      ),
+    )
+  }
+  MeshPipelineViewLayouts::{ layouts, }
 }
 
 ///|
