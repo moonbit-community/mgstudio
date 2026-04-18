@@ -52,6 +52,18 @@ test "window runtime: scale-factor change detection follows relative-epsilon sem
 }
 
 ///|
+test "window runtime: scale-factor changed event respects override gating" {
+  debug_inspect(
+    window_should_emit_scale_factor_changed_event(1.0F, 1.5F, Some(1.5F)),
+    content="false",
+  )
+  debug_inspect(
+    window_should_emit_scale_factor_changed_event(1.0F, 1.5F, None),
+    content="true",
+  )
+}
+
+///|
 fn window_runtime_wbtest_prepare_native_event_loop() -> Unit {
   // Whitebox tests are not guaranteed to run on the main thread.
   @windowing.set_event_loop_any_thread(true)

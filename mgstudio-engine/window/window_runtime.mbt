@@ -553,6 +553,23 @@ fn window_scale_factor_significantly_changed(
 }
 
 ///|
+fn window_should_emit_scale_factor_changed_event(
+  previous_scale_factor : Float,
+  next_scale_factor : Float,
+  scale_factor_override : Float?,
+) -> Bool {
+  // Bevy parity:
+  // WindowScaleFactorChanged is emitted only when no scale-factor override is
+  // active and the effective scale factor actually changed (relative-epsilon).
+  if scale_factor_override is Some(_) {
+    return false
+  }
+  window_scale_factor_significantly_changed(
+    previous_scale_factor, next_scale_factor,
+  )
+}
+
+///|
 fn window_resize_constraints_has_finite_max(
   constraints : WindowResizeConstraints,
 ) -> Bool {
@@ -1205,7 +1222,8 @@ fn window_sync_observed_state(
   }
   if window_component(world, entity) is Some(window) {
     let old_scale_factor = window.scale_factor()
-    let next_scale_factor = match window.resolution.scale_factor_override() {
+    let scale_factor_override = window.resolution.scale_factor_override()
+    let next_scale_factor = match scale_factor_override {
       Some(scale_factor_override) =>
         if scale_factor_override <= 0.0F {
           1.0F
@@ -1214,8 +1232,8 @@ fn window_sync_observed_state(
         }
       None => observed_scale_factor
     }
-    if window_scale_factor_significantly_changed(
-        old_scale_factor, next_scale_factor,
+    if window_should_emit_scale_factor_changed_event(
+        old_scale_factor, next_scale_factor, scale_factor_override,
       ) {
       if world.contains_message(ecs_key_window_scale_factor_changed) {
         window_emit_window_scale_factor_changed(world, WindowScaleFactorChanged::{
