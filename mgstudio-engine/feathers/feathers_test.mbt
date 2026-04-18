@@ -17,5 +17,5 @@ test "feathers boundary exposes plugin and plugin-group entries" {
   let app = @app.App::new(@ecs.World::new())
   let _ = @feathers.feathers_plugin(app)
   let _group = @feathers.feathers_plugins()
-  debug_inspect("ok", content="ok")
+  debug_inspect("ok", content="\"ok\"")
 }

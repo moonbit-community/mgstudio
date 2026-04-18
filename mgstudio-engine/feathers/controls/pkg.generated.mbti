@@ -151,9 +151,6 @@ pub struct ControlsPlugin {
 }
 pub fn ControlsPlugin::default() -> Self
 
-pub(all) struct ControlsRuntimePluginMarker {
-}
-
 pub struct RadioButton {
   props : RadioProps
   label : String

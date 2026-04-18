@@ -47,9 +47,11 @@ pub fn FeathersPlugins::default() -> FeathersPlugins {
 
 ///|
 pub fn FeathersPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
-  @app.PluginGroupBuilder::start_named("FeathersPlugins").add(
-    FeathersPlugin::default(),
-  )
+  @app.PluginGroupBuilder::start_named("FeathersPlugins")
+  .add(@ui_widgets.UiWidgetsPlugins::default())
+  .add(@input_focus.InputDispatchPlugin::default())
+  .add(@input_focus.TabNavigationPlugin::default())
+  .add(FeathersPlugin::default())
 }
 
 ///|
@@ -81,7 +83,6 @@ pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .world()
     .insert_resource(feathers_plugin_marker_key, FeathersPluginMarker::{  })
     let app = app.init_resource(fn() { UiTheme::default() })
-    let app = app.add_plugins(@ui_widgets.UiWidgetsPlugins::default())
     let app = alpha_pattern_plugin(app)
     let app = @controls.controls_plugin(app)
     cursor_icon_plugin(app)

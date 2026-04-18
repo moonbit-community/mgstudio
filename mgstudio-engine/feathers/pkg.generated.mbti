@@ -50,15 +50,15 @@ pub const COLOR_PLANE_BG : String = "feathers.colorplane.bg"
 
 pub const FOCUS_RING : String = "feathers.focus"
 
-pub const FONT_BOLD : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Bold.ttf"
+pub const FONT_BOLD : String = "fonts/FiraSans-Bold.ttf"
 
-pub const FONT_BOLD_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-BoldItalic.ttf"
+pub const FONT_BOLD_ITALIC : String = "fonts/FiraSans-BoldItalic.ttf"
 
-pub const FONT_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Italic.ttf"
+pub const FONT_ITALIC : String = "fonts/FiraSans-Italic.ttf"
 
-pub const FONT_MONO : String = "embedded://bevy_feathers/assets/fonts/FiraMono-Medium.ttf"
+pub const FONT_MONO : String = "fonts/FiraMono-Medium.ttf"
 
-pub const FONT_REGULAR : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Regular.ttf"
+pub const FONT_REGULAR : String = "fonts/FiraSans-Regular.ttf"
 
 pub const GRAY_0 : String = "#1F1F24"
 

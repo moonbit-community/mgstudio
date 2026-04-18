@@ -16,19 +16,19 @@
 // Bevy source: `bevy/crates/bevy_feathers/src/constants.rs`.
 
 ///|
-pub const FONT_REGULAR : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Regular.ttf"
+pub const FONT_REGULAR : String = "fonts/FiraSans-Regular.ttf"
 
 ///|
-pub const FONT_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Italic.ttf"
+pub const FONT_ITALIC : String = "fonts/FiraSans-Italic.ttf"
 
 ///|
-pub const FONT_BOLD : String = "embedded://bevy_feathers/assets/fonts/FiraSans-Bold.ttf"
+pub const FONT_BOLD : String = "fonts/FiraSans-Bold.ttf"
 
 ///|
-pub const FONT_BOLD_ITALIC : String = "embedded://bevy_feathers/assets/fonts/FiraSans-BoldItalic.ttf"
+pub const FONT_BOLD_ITALIC : String = "fonts/FiraSans-BoldItalic.ttf"
 
 ///|
-pub const FONT_MONO : String = "embedded://bevy_feathers/assets/fonts/FiraMono-Medium.ttf"
+pub const FONT_MONO : String = "fonts/FiraMono-Medium.ttf"
 
 ///|
 pub const ROW_HEIGHT_PX : Float = 24.0
