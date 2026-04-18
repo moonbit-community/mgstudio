@@ -628,6 +628,13 @@ fn text_sync_font_assets_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn text_trim_shape_run_cache_system(_world : @ecs.World) -> Unit {
+  // Bevy parity intent (`trim_source_cache`):
+  // keep recently used shaping cache entries and prune stale runs each frame.
+  cosmic_font_system_state.val.font_system.shape_run_cache.trim(2UL)
+}
+
+///|
 fn text_pipeline_resolve_default_font(
   font : @asset.Handle[@asset.Font],
 ) -> @asset.Handle[@asset.Font] {
@@ -2128,6 +2135,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .insert_resource(FontCx::default())
     .insert_resource(FontAtlasSet::default())
     .add_system(text_update_system)
+    .add_last_system(text_trim_shape_run_cache_system)
     .add_post_update_system_config(
       @app.system(text_sync_font_assets_system).in_set(text_set_sync_ecs),
     )
