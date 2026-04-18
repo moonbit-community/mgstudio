@@ -23,6 +23,17 @@ pub fn close_when_requested(
   } noraise {
     value => value
   }
+  let closing_entities : Array[@core.Entity] = []
+  try! world
+  .query_entities_filtered(@ecs.With::new(ecs_key_closing_window))
+  .view(fn(_query_entity, entity) { closing_entities.push(entity) })
+  // Mirror Bevy close lifecycle: entities already marked ClosingWindow are
+  // despawned now, while newly-requested closes are only marked this frame.
+  for entity in closing_entities {
+    if world.is_alive(entity) {
+      try! world.despawn(entity)
+    }
+  }
   for event in events {
     if !world.is_alive(event.window) {
       continue
@@ -49,7 +60,6 @@ pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
       continue
     }
     window_emit_window_closing(world, WindowClosing::{ window: entity })
-    try! world.despawn(entity)
   }
 }
 

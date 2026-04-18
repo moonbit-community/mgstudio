@@ -561,7 +561,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
 }
 
 ///|
-test "winit: close request is despawned by Last-stage winit system" {
+test "winit: close request follows bevy two-frame close lifecycle" {
   let world = @ecs.World::new()
   let window_entity = world.spawn()
   try! (world
@@ -588,8 +588,14 @@ test "winit: close request is despawned by Last-stage winit system" {
 
   app = app.run_once()
 
-  debug_inspect(app.world().is_alive(window_entity), content="false")
+  debug_inspect(app.world().is_alive(window_entity), content="true")
   debug_inspect(read_window_closing(app.world()).length(), content="1")
+  debug_inspect(read_window_closed(app.world()).length(), content="0")
+  debug_inspect(read_window_destroyed(app.world()).length(), content="0")
+
+  app = app.run_once()
+
+  debug_inspect(app.world().is_alive(window_entity), content="false")
   debug_inspect(read_window_closed(app.world()).length(), content="1")
   debug_inspect(read_window_destroyed(app.world()).length(), content="1")
 }
