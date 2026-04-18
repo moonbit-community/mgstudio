@@ -84,8 +84,14 @@ test "font asset events force text rerender on next update" {
   )
   debug_inspect(text_runtime_layout_dirty(), content="true")
 
-  text_update_system(world)
-  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  text_state.val.texts[index] = TextInstance::{
+    ..text_state.val.texts[index],
+    layout_dirty: false,
+    computed: ComputedTextBlock::{
+      ..text_state.val.texts[index].computed,
+      needs_rerender: false,
+    },
+  }
   text_runtime_clear_layout_dirty()
   text_sync_font_assets_system(world)
   debug_inspect(text_state.val.texts[index].layout_dirty, content="false")

@@ -599,7 +599,7 @@ fn text_mark_all_instances_for_rerender() -> Unit {
 }
 
 ///|
-fn text_font_asset_events_require_reload(world : @ecs.World) -> Bool {
+fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
   let message_key : @ecs.MessageKey[@asset.AssetEvent[@asset.Font]] = @ecs.Message::message()
   if !world.contains_message(message_key) {
     world.init_message(message_key)
@@ -607,24 +607,46 @@ fn text_font_asset_events_require_reload(world : @ecs.World) -> Bool {
   let reader = world.message_reader(
     message_key, text_font_asset_events_cursor_ref,
   )
+  let preload_font_ids : Map[Int, Bool] = {}
+  let mut requires_reset = false
+  let mut has_event = false
   for event in (try! reader.read()) {
     match event {
-      @asset.AssetEvent::Added(_)
-      | @asset.AssetEvent::Modified(_)
-      | @asset.AssetEvent::Removed(_)
-      | @asset.AssetEvent::LoadedWithDependencies(_) => return true
+      @asset.AssetEvent::Added(handle)
+      | @asset.AssetEvent::LoadedWithDependencies(handle) => {
+        has_event = true
+        preload_font_ids.set(handle.id(), true)
+      }
+      @asset.AssetEvent::Modified(handle) => {
+        has_event = true
+        requires_reset = true
+        preload_font_ids.set(handle.id(), true)
+      }
+      @asset.AssetEvent::Removed(_handle) => {
+        has_event = true
+        requires_reset = true
+      }
     }
   }
-  false
+  if !has_event {
+    return false
+  }
+  if requires_reset {
+    text_reset_font_runtime_state()
+  }
+  for entry in preload_font_ids.to_array() {
+    let handle_id = entry.0
+    cosmic_get_or_load_font_id(@asset.Handle::new(handle_id)) |> ignore
+  }
+  text_mark_all_instances_for_rerender()
+  true
 }
 
 ///|
 fn text_sync_font_assets_system(world : @ecs.World) -> Unit {
-  if !text_font_asset_events_require_reload(world) {
+  if !text_sync_font_assets_from_events(world) {
     return
   }
-  text_reset_font_runtime_state()
-  text_mark_all_instances_for_rerender()
 }
 
 ///|
