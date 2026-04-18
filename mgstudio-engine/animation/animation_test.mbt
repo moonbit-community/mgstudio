@@ -429,6 +429,52 @@ test "animation transitions: zero-duration switch expires via transition systems
 }
 
 ///|
+test "animation transitions: remaining weight is not clamped like bevy" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  fn set_delta(delta_seconds : Float) -> Unit {
+    let time = @time.Time::new_with(()).advance_by(
+      @core.Duration::from_secs_f32(delta_seconds),
+    )
+    world.insert_resource(@time.default_time_resource_key(), time)
+  }
+
+  let node_a = AnimationNodeIndex::new(1)
+  let node_b = AnimationNodeIndex::new(2)
+  let player = AnimationPlayer::default()
+  let transitions = AnimationTransitions::new()
+  transitions.play(player, node_a, 0.2F).repeat() |> ignore
+  player.set_weight(node_a, 2.0F) |> ignore
+  transitions.play(player, node_b, 1.0F).repeat() |> ignore
+
+  let entity = world.spawn_empty()
+  try! world.set_by_key(entity, ecs_key_animation_player, player)
+  try! world.set_by_key(entity, ecs_key_animation_transitions, transitions)
+
+  set_delta(0.0F)
+  advance_transitions(world)
+  let after_player = (try! world.get_by_key(entity, ecs_key_animation_player)).unwrap_or(
+    AnimationPlayer::default(),
+  )
+  debug_inspect(
+    if after_player.animation(node_a) is Some(active_a) {
+      approx_eq_animation(active_a.weight(), 2.0F)
+    } else {
+      false
+    },
+    content="true",
+  )
+  debug_inspect(
+    if after_player.animation(node_b) is Some(active_b) {
+      approx_eq_animation(active_b.weight(), -1.0F)
+    } else {
+      false
+    },
+    content="true",
+  )
+}
+
+///|
 test "animation transitions: advance/expire keep frame-snapshot weight decline semantics" {
   let world = @ecs.World::new()
   ignore(world.advance_sequence())

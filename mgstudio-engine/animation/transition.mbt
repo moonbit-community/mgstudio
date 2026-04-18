@@ -153,9 +153,6 @@ fn animation_transitions_advance(
         active.set_weight(weight),
       )
       remaining_weight = remaining_weight - weight
-      if remaining_weight < 0.0F {
-        remaining_weight = 0.0F
-      }
     }
 
     if i == 0 {
