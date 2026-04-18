@@ -21,6 +21,14 @@ pub fn PickingPlugin::default() -> PickingPlugin {
 }
 
 ///|
+pub struct DefaultPickingPlugins {}
+
+///|
+pub fn DefaultPickingPlugins::default() -> DefaultPickingPlugins {
+  DefaultPickingPlugins::{  }
+}
+
+///|
 pub impl @app.Plugin for PickingPlugin with name(_self) {
   "mgstudio.picking.PickingPlugin"
 }
@@ -28,4 +36,16 @@ pub impl @app.Plugin for PickingPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for PickingPlugin with build(_self, app) {
   picking_plugin(app)
+}
+
+///|
+pub impl @app.PluginGroup for DefaultPickingPlugins with name(_self) {
+  "mgstudio.picking.DefaultPickingPlugins"
+}
+
+///|
+pub impl @app.PluginGroup for DefaultPickingPlugins with build(_self) {
+  @app.PluginGroupBuilder::start_named("mgstudio.picking.DefaultPickingPlugins").add(
+    PickingPlugin::default(),
+  )
 }

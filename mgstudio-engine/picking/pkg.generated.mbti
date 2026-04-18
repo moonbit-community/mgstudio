@@ -81,6 +81,11 @@ pub fn picking_window_picking_should_run(@ecs.World) -> Bool
 // Errors
 
 // Types and methods
+pub struct DefaultPickingPlugins {
+}
+pub fn DefaultPickingPlugins::default() -> Self
+pub impl @app.PluginGroup for DefaultPickingPlugins
+
 pub struct Pickable {
   should_block_lower : Bool
   is_hoverable : Bool
