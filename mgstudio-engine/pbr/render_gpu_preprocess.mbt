@@ -131,10 +131,10 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       continue
     }
     let alpha = payload.material.base_color.a
-    if render3d_mesh_phase_kind(payload.material.alpha_mode, alpha) is None {
+    if render3d_mesh_phase_kind(payload.material, alpha) is None {
       continue
     }
-    let phase = render3d_mesh_phase_kind(payload.material.alpha_mode, alpha).unwrap()
+    let phase = render3d_mesh_phase_kind(payload.material, alpha).unwrap()
     items.push(MeshPhaseItem3d::{
       entity: mesh.entity,
       extracted_index: i,
@@ -214,8 +214,7 @@ fn render3d_collect_meshes_for_gpu_building(
       continue
     }
     let alpha = payload.material.base_color.a
-    guard render3d_mesh_phase_kind(payload.material.alpha_mode, alpha)
-      is Some(phase) else {
+    guard render3d_mesh_phase_kind(payload.material, alpha) is Some(phase) else {
       continue
     }
     work_items.push(GpuPreprocessWorkItem3d::{

@@ -109,6 +109,7 @@ pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
 pub struct ExtractedMaterialInstance3d {
   entity : @core.Entity
   alpha_mode : AlphaMode3d
+  render_phase_type : @material.RenderPhaseType
   opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   extension_tag : Int?
@@ -160,15 +161,17 @@ fn render3d_extracted_material_extension_shader_path(
 ///|
 fn render3d_extracted_material_instance_for_mesh(
   mesh : ExtractedMesh3d,
+  default_opaque_renderer_method : OpaqueRendererMethod,
 ) -> ExtractedMaterialInstance3d {
   let material = mesh.payload.material
   let extension = mesh.payload.material_extension
-  let opaque_render_method = material.opaque_render_method.resolve_runtime(
-    OpaqueRendererMethod::Forward,
+  let opaque_render_method = standard_material_opaque_render_method(
+    material, default_opaque_renderer_method,
   )
   ExtractedMaterialInstance3d::{
     entity: mesh.entity.main_entity,
     alpha_mode: material.alpha_mode,
+    render_phase_type: standard_material_render_phase_type(material),
     opaque_render_method,
     unlit: material.unlit,
     extension_tag: render3d_extracted_material_extension_tag(extension),
@@ -201,14 +204,29 @@ fn render3d_extracted_material_instances_ref_or_init(
 }
 
 ///|
+fn render3d_material_default_opaque_renderer_method(
+  world : @ecs.World,
+) -> OpaqueRendererMethod {
+  match (try! world.get_resource(ecs_key_default_opaque_renderer_method)) {
+    Some(default_method) => default_method.renderer_method()
+    None => OpaqueRendererMethod::Forward
+  }
+}
+
+///|
 fn render3d_extract_material_instances(
   world : @ecs.World,
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
   let extracted_ref = render3d_extracted_material_instances_ref_or_init(world)
+  let default_opaque_renderer_method = render3d_material_default_opaque_renderer_method(
+    world,
+  )
   let next : Map[Int, ExtractedMaterialInstance3d] = {}
   for mesh in meshes {
-    let instance = render3d_extracted_material_instance_for_mesh(mesh)
+    let instance = render3d_extracted_material_instance_for_mesh(
+      mesh, default_opaque_renderer_method,
+    )
     let entity_id = render3d_extracted_material_entity_id(instance.entity)
     next.set(entity_id, instance)
   }

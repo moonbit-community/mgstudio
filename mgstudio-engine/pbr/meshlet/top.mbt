@@ -319,14 +319,31 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 fn meshlet_material_alpha_mode_is_opaque(
   alpha_mode : @material.AlphaMode3d,
 ) -> Bool {
-  alpha_mode is @material.AlphaMode3d::Opaque
+  match alpha_mode {
+    @material.AlphaMode3d::Opaque => true
+    @material.AlphaMode3d::AlphaToCoverage => true
+    _ => false
+  }
 }
 
 ///|
 fn meshlet_material_reads_view_transmission_texture(
   material : @material.StandardMaterial,
 ) -> Bool {
-  material.diffuse_transmission > 0.0F || material.specular_transmission > 0.0F
+  @pbr.standard_material_reads_view_transmission_texture(material)
+}
+
+///|
+fn meshlet_default_opaque_renderer_method(
+  source_world : @ecs.World,
+) -> @material.OpaqueRendererMethod {
+  match
+    (try! source_world.get_resource(
+      @material.ecs_key_default_opaque_renderer_method,
+    )) {
+    Some(default_method) => default_method.renderer_method()
+    None => @material.OpaqueRendererMethod::Forward
+  }
 }
 
 ///|
@@ -346,6 +363,9 @@ fn meshlet_collect_material_inputs(
 ) -> Array[MeshletPreparedMaterialInput] {
   let material_inputs : Array[MeshletPreparedMaterialInput] = []
   let standard_material_assets = meshlet_standard_material_assets(source_world)
+  let default_opaque_renderer_method = meshlet_default_opaque_renderer_method(
+    source_world,
+  )
   for material_asset_id in instance_manager.present_material_asset_ids() {
     match instance_manager.material_id_for_asset(material_asset_id) {
       Some(material_id) => {
@@ -357,8 +377,8 @@ fn meshlet_collect_material_inputs(
             match assets.get(@asset.Handle::new(material_asset_id)) {
               Some(material) => {
                 material_input = material_input.with_opaque_render_method(
-                  material.opaque_render_method.resolve_runtime(
-                    @material.OpaqueRendererMethod::Forward,
+                  @pbr.standard_material_opaque_render_method(
+                    material, default_opaque_renderer_method,
                   ),
                 )
                 material_input = material_input.with_alpha_mode_opaque(

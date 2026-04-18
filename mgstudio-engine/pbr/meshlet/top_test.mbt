@@ -238,3 +238,29 @@ test "pbr meshlet: material prepare system writes per-view material bins" {
     None => inspect(false, content="true")
   }
 }
+
+///|
+test "pbr meshlet: transmission and alpha-mode helpers follow bevy standard material semantics" {
+  let diffuse_only = @material.StandardMaterial::default().with_diffuse_transmission(
+    0.8F,
+  )
+  let specular_only = @material.StandardMaterial::default().with_specular_transmission(
+    0.8F,
+  )
+  inspect(
+    !@pbr.standard_material_reads_view_transmission_texture(diffuse_only),
+    content="true",
+  )
+  inspect(
+    @pbr.standard_material_reads_view_transmission_texture(specular_only),
+    content="true",
+  )
+  let alpha_to_coverage_material = @material.StandardMaterial::default().with_alpha_mode(
+    @material.AlphaMode3d::AlphaToCoverage,
+  )
+  inspect(
+    @pbr.standard_material_render_phase_type(alpha_to_coverage_material)
+    is @material.RenderPhaseType::Opaque,
+    content="true",
+  )
+}

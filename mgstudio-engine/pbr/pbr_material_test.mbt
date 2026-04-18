@@ -42,3 +42,76 @@ test "pbr material: key depth bias roundtrips" {
   let key = StandardMaterialKey::empty().with_depth_bias(42U)
   inspect(key.depth_bias(), content="42")
 }
+
+///|
+test "pbr material: auto opaque renderer method follows bevy diffuse transmission override" {
+  let deferred_default = @material.OpaqueRendererMethod::Deferred
+  let auto_material = StandardMaterial::default()
+  let auto_deferred = standard_material_opaque_render_method(
+    auto_material, deferred_default,
+  )
+  inspect(
+    auto_deferred is @material.OpaqueRendererMethod::Deferred,
+    content="true",
+  )
+  let diffuse_transmissive_auto = StandardMaterial::default().with_diffuse_transmission(
+    0.5F,
+  )
+  let auto_forced_forward = standard_material_opaque_render_method(
+    diffuse_transmissive_auto, deferred_default,
+  )
+  inspect(
+    auto_forced_forward is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+}
+
+///|
+test "pbr material: reads_view_transmission_texture follows specular transmission only" {
+  let diffuse_only = StandardMaterial::default().with_diffuse_transmission(0.7F)
+  let specular_only = StandardMaterial::default().with_specular_transmission(
+    0.2F,
+  )
+  inspect(
+    standard_material_reads_view_transmission_texture(diffuse_only),
+    content="false",
+  )
+  inspect(
+    standard_material_reads_view_transmission_texture(specular_only),
+    content="true",
+  )
+}
+
+///|
+test "pbr material: render phase type matches bevy ordering" {
+  let transparent = StandardMaterial::default()
+    .with_alpha_mode(@material.AlphaMode3d::Blend)
+    .with_specular_transmission(1.0F)
+  let transmissive = StandardMaterial::default().with_specular_transmission(
+    1.0F,
+  )
+  let alpha_mask = StandardMaterial::default().with_alpha_mode(
+    @material.AlphaMode3d::Mask(0.5F),
+  )
+  let opaque_material = StandardMaterial::default()
+  inspect(
+    standard_material_render_phase_type(transparent)
+    is @material.RenderPhaseType::Transparent,
+    content="true",
+  )
+  inspect(
+    standard_material_render_phase_type(transmissive)
+    is @material.RenderPhaseType::Transmissive,
+    content="true",
+  )
+  inspect(
+    standard_material_render_phase_type(alpha_mask)
+    is @material.RenderPhaseType::AlphaMask,
+    content="true",
+  )
+  inspect(
+    standard_material_render_phase_type(opaque_material)
+    is @material.RenderPhaseType::Opaque,
+    content="true",
+  )
+}

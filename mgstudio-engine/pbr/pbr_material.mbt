@@ -192,6 +192,60 @@ pub fn standard_material_key_from_material(
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_pbr/src/pbr_material.rs::impl Material for StandardMaterial`.
+// `reads_view_transmission_texture()` checks only `specular_transmission > 0.0`.
+pub fn standard_material_reads_view_transmission_texture(
+  material : StandardMaterial,
+) -> Bool {
+  material.specular_transmission > 0.0F
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_pbr/src/pbr_material.rs::opaque_render_method()`.
+// `Auto + diffuse_transmission` forces `Forward` before resolving runtime default.
+pub fn standard_material_opaque_render_method(
+  material : StandardMaterial,
+  default_opaque_renderer_method : OpaqueRendererMethod,
+) -> OpaqueRendererMethod {
+  let material_opaque_method = match material.opaque_render_method {
+    OpaqueRendererMethod::Auto if material.diffuse_transmission > 0.0F =>
+      OpaqueRendererMethod::Forward
+    opaque_method => opaque_method
+  }
+  material_opaque_method.resolve_runtime(default_opaque_renderer_method)
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_pbr/src/material.rs` render-phase selection:
+// transparent alpha modes first, then transmissive, then opaque/alpha-mask.
+pub fn standard_material_render_phase_type(
+  material : StandardMaterial,
+) -> @material.RenderPhaseType {
+  match material.alpha_mode {
+    @material.AlphaMode3d::Blend => @material.RenderPhaseType::Transparent
+    @material.AlphaMode3d::Premultiplied =>
+      @material.RenderPhaseType::Transparent
+    @material.AlphaMode3d::Add => @material.RenderPhaseType::Transparent
+    @material.AlphaMode3d::Multiply => @material.RenderPhaseType::Transparent
+    _ =>
+      if standard_material_reads_view_transmission_texture(material) {
+        @material.RenderPhaseType::Transmissive
+      } else {
+        match material.alpha_mode {
+          @material.AlphaMode3d::Opaque => @material.RenderPhaseType::Opaque
+          @material.AlphaMode3d::AlphaToCoverage =>
+            @material.RenderPhaseType::Opaque
+          @material.AlphaMode3d::Mask(_) => @material.RenderPhaseType::AlphaMask
+          _ => @material.RenderPhaseType::Opaque
+        }
+      }
+  }
+}
+
+///|
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
 }

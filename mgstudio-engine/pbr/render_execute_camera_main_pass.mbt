@@ -194,7 +194,8 @@ fn render3d_execute_camera_main_pass(
         continue
       }
     }
-    let mesh_opaque_mode = mesh.material.opaque_render_method.resolve_runtime(
+    let mesh_opaque_mode = standard_material_opaque_render_method(
+      mesh.material,
       default_opaque_renderer_method,
     )
     if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
@@ -344,6 +345,9 @@ fn render3d_execute_camera_main_pass(
     let draw_specular_transmission = @pbr_render.clamp01(
       draw_material.specular_transmission,
     )
+    let draw_render_phase_type = standard_material_render_phase_type(
+      draw_material,
+    )
     let draw_thickness = @pbr_render.maxf(0.0F, draw_material.thickness)
     let draw_ior = @pbr_render.maxf(1.0F, draw_material.ior)
     if draw_item.phase == RENDER3D_PHASE_TRANSPARENT &&
@@ -426,11 +430,12 @@ fn render3d_execute_camera_main_pass(
       skinning_key_hi=mesh.skinning_key_hi,
       skinning_key_lo=if mesh.skinning_key_hi >= 0 { 0 } else { -1 },
     )
-    if draw_item.phase == RENDER3D_PHASE_TRANSPARENT {
+    if draw_render_phase_type is @material.RenderPhaseType::Transparent {
       transparent_draws.push(draw_payload)
       continue
     }
-    if transmission_enabled && draw_specular_transmission > 0.0F {
+    if transmission_enabled &&
+      draw_render_phase_type is @material.RenderPhaseType::Transmissive {
       transmissive_phase_items.push(TransmissivePhaseItem3d::{
         entity: extracted_mesh.entity,
         distance: draw_item.distance,

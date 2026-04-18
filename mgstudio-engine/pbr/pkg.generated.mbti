@@ -542,11 +542,17 @@ pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @mate
 
 pub fn standard_material_key_from_material(@material.StandardMaterial) -> StandardMaterialKey
 
+pub fn standard_material_opaque_render_method(@material.StandardMaterial, @material.OpaqueRendererMethod) -> @material.OpaqueRendererMethod
+
 pub fn standard_material_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn standard_material_plugin_with(@app.App[@ecs.World], StandardMaterialPlugin) -> @app.App[@ecs.World]
 
 pub fn standard_material_prepass_enabled(@ecs.World) -> Bool
+
+pub fn standard_material_reads_view_transmission_texture(@material.StandardMaterial) -> Bool
+
+pub fn standard_material_render_phase_type(@material.StandardMaterial) -> @material.RenderPhaseType
 
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
@@ -841,6 +847,7 @@ pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
 pub struct ExtractedMaterialInstance3d {
   entity : @core.Entity
   alpha_mode : @material.AlphaMode3d
+  render_phase_type : @material.RenderPhaseType
   opaque_render_method : @material.OpaqueRendererMethod
   unlit : Bool
   extension_tag : Int?

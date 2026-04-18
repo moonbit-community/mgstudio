@@ -224,20 +224,30 @@ fn render3d_queue_camera_phase_items(
 }
 
 ///|
-fn render3d_mesh_phase_kind(alpha_mode : AlphaMode3d, alpha : Float) -> Int? {
-  match alpha_mode {
-    Opaque => Some(RENDER3D_PHASE_OPAQUE)
-    AlphaToCoverage => Some(RENDER3D_PHASE_OPAQUE)
-    Mask(cutoff) =>
-      if alpha >= cutoff {
-        Some(RENDER3D_PHASE_ALPHA_MASK)
-      } else {
-        None
+fn render3d_mesh_phase_kind(material : StandardMaterial, alpha : Float) -> Int? {
+  match standard_material_render_phase_type(material) {
+    @material.RenderPhaseType::Opaque => Some(RENDER3D_PHASE_OPAQUE)
+    @material.RenderPhaseType::AlphaMask =>
+      match material.alpha_mode {
+        Mask(cutoff) =>
+          if alpha >= cutoff {
+            Some(RENDER3D_PHASE_ALPHA_MASK)
+          } else {
+            None
+          }
+        _ => Some(RENDER3D_PHASE_ALPHA_MASK)
       }
-    Blend => Some(RENDER3D_PHASE_TRANSPARENT)
-    Premultiplied => Some(RENDER3D_PHASE_TRANSPARENT)
-    Add => Some(RENDER3D_PHASE_TRANSPARENT)
-    Multiply => Some(RENDER3D_PHASE_TRANSPARENT)
+    @material.RenderPhaseType::Transmissive =>
+      match material.alpha_mode {
+        Mask(cutoff) =>
+          if alpha >= cutoff {
+            Some(RENDER3D_PHASE_ALPHA_MASK)
+          } else {
+            None
+          }
+        _ => Some(RENDER3D_PHASE_OPAQUE)
+      }
+    @material.RenderPhaseType::Transparent => Some(RENDER3D_PHASE_TRANSPARENT)
   }
 }
 
