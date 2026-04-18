@@ -364,6 +364,9 @@ fn render3d_execute_camera_main_pass(
       continue
     }
     let mut draw_point_shadow_enabled = point_shadow_enabled
+    if !material_properties.shadows_enabled {
+      draw_point_shadow_enabled = 0.0F
+    }
     if mesh.has_not_shadow_receiver {
       draw_point_shadow_enabled = 0.0F
     }
