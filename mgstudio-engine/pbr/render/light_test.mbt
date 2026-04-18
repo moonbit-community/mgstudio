@@ -194,12 +194,7 @@ test "pbr render light: point extraction prefers visible clusterable entity list
   try! (world.set_by_key(
     list_owner,
     @light_cluster.VisibleClusterableObjects::component(),
-    @light_cluster.VisibleClusterableObjects::from_lists(
-      [point_visible],
-      [],
-      [],
-      [],
-    ),
+    @light_cluster.VisibleClusterableObjects::from_lists([point_visible], [], []),
   )
   |> ignore)
 
@@ -234,12 +229,7 @@ test "pbr render light: spot extraction prefers visible clusterable entity list 
   try! (world.set_by_key(
     list_owner,
     @light_cluster.VisibleClusterableObjects::component(),
-    @light_cluster.VisibleClusterableObjects::from_lists(
-      [spot_visible],
-      [],
-      [],
-      [],
-    ),
+    @light_cluster.VisibleClusterableObjects::from_lists([spot_visible], [], []),
   )
   |> ignore)
 

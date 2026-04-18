@@ -119,14 +119,11 @@ pub struct VisibleClusterableObjects {
   point_and_spot_lights : Array[@core.Entity]
   reflection_probes : Array[@core.Entity]
   irradiance_volumes : Array[@core.Entity]
-  decals : Array[@core.Entity]
 } derive(Eq, @debug.Debug)
 pub fn VisibleClusterableObjects::add(Self, @core.Entity, ClusterableObjectType) -> Unit
 pub fn VisibleClusterableObjects::clear(Self) -> Unit
-pub fn VisibleClusterableObjects::decal_count(Self) -> Int
-pub fn VisibleClusterableObjects::decal_entities(Self) -> Array[@core.Entity]
 pub fn VisibleClusterableObjects::default() -> Self
-pub fn VisibleClusterableObjects::from_lists(Array[@core.Entity], Array[@core.Entity], Array[@core.Entity], Array[@core.Entity]) -> Self
+pub fn VisibleClusterableObjects::from_lists(Array[@core.Entity], Array[@core.Entity], Array[@core.Entity]) -> Self
 pub fn VisibleClusterableObjects::irradiance_volume_count(Self) -> Int
 pub fn VisibleClusterableObjects::irradiance_volume_entities(Self) -> Array[@core.Entity]
 pub fn VisibleClusterableObjects::new() -> Self

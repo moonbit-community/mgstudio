@@ -222,12 +222,10 @@ test "light cluster: runtime container helpers follow bevy-style semantics" {
   inspect(visible.point_and_spot_light_count(), content="2")
   inspect(visible.reflection_probe_count(), content="1")
   inspect(visible.irradiance_volume_count(), content="1")
-  inspect(visible.decal_count(), content="0")
   visible.clear()
   inspect(visible.point_and_spot_light_count(), content="0")
   inspect(visible.reflection_probe_count(), content="0")
   inspect(visible.irradiance_volume_count(), content="0")
-  inspect(visible.decal_count(), content="0")
 
   let in_cluster = ObjectsInCluster::default()
   in_cluster.add_point_light(entity0)

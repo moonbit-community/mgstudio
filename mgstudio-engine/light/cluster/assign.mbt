@@ -212,7 +212,6 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       point_and_spot_lights: point_and_spot_lights.copy(),
       reflection_probes: reflection_probes.copy(),
       irradiance_volumes: irradiance_volumes.copy(),
-      decals: [],
     }
     try! world.set_by_key(entity, Clusters::component(), clusters)
     try! world.set_by_key(
@@ -234,7 +233,6 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       point_and_spot_lights: point_and_spot_lights.copy(),
       reflection_probes: reflection_probes.copy(),
       irradiance_volumes: irradiance_volumes.copy(),
-      decals: [],
     }
     if next != existing {
       try! world.set_by_key(
