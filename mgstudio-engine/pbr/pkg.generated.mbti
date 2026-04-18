@@ -471,6 +471,8 @@ pub fn render3d_prepare_morphs_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_resources_cleanup_system(@ecs.World) -> Unit
 
+pub fn render3d_prepare_resources_flush_system(@ecs.World) -> Unit
+
 pub fn render3d_prepare_skin_bindings_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit

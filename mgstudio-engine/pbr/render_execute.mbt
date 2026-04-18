@@ -140,6 +140,23 @@ pub fn render3d_prepare_resources_cleanup_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
+  match render3d_queue_frame_snapshot(world) {
+    Some(frame) =>
+      render3d_for_each_prepared_camera(frame, fn(
+        camera_entity,
+        camera_payload,
+        prepared_queue,
+      ) {
+        render3d_upload_camera_queue_entry(
+          camera_entity, camera_payload, prepared_queue,
+        )
+      })
+    None => ()
+  }
+}
+
+///|
 fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
 ) -> Unit {
@@ -388,19 +405,8 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       queue_trace_start_us,
     )
   }
-  match render3d_queue_frame_snapshot(world) {
-    Some(frame) =>
-      render3d_for_each_prepared_camera(frame, fn(
-        camera_entity,
-        camera_payload,
-        prepared_queue,
-      ) {
-        render3d_upload_camera_queue_entry(
-          camera_entity, camera_payload, prepared_queue,
-        )
-      })
-    None =>
-      @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
+  if render3d_queue_frame_snapshot(world) is None {
+    @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
   }
   finish_queue()
 }
