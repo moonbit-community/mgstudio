@@ -52,40 +52,5 @@ options(
       "input": "view/view.wgsl",
       "output": "view_wgsl.mbt",
     },
-    {
-      "command": ":embed --input $input --output $output --name renderer_mesh3d_forward_wgsl_source",
-      "input": "../assets/shaders/mesh3d_forward.wgsl",
-      "output": "renderer_mesh3d_forward_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name render_view_window_screenshot_wgsl_source",
-      "input": "view/window/screenshot.wgsl",
-      "output": "render_view_window_screenshot_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name post_process_bloom_bloom_wgsl_source",
-      "input": "../post_process/bloom/bloom.wgsl",
-      "output": "post_process_bloom_bloom_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name post_process_effect_stack_chromatic_aberration_wgsl_source",
-      "input": "../post_process/effect_stack/chromatic_aberration.wgsl",
-      "output": "post_process_effect_stack_chromatic_aberration_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name post_process_effect_stack_post_process_wgsl_source",
-      "input": "../post_process/effect_stack/post_process.wgsl",
-      "output": "post_process_effect_stack_post_process_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name post_process_effect_stack_vignette_wgsl_source",
-      "input": "../post_process/effect_stack/vignette.wgsl",
-      "output": "post_process_effect_stack_vignette_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name post_process_motion_blur_motion_blur_wgsl_source",
-      "input": "../post_process/motion_blur/motion_blur.wgsl",
-      "output": "post_process_motion_blur_motion_blur_wgsl.mbt",
-    },
   ],
 )
