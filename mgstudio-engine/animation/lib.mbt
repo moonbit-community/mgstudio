@@ -362,7 +362,7 @@ pub fn ActiveAnimation::update(
   out.elapsed = out.elapsed + delta_seconds
   out.seek_time = out.seek_time + delta_seconds * out.speed
 
-  let passed_end = out.speed >= 0.0F && out.seek_time >= clip_duration_seconds
+  let passed_end = out.speed > 0.0F && out.seek_time >= clip_duration_seconds
   let passed_start = out.speed < 0.0F && out.seek_time < 0.0F
 
   if passed_end || passed_start {

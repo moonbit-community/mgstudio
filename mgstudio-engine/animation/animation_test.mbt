@@ -365,6 +365,18 @@ test "active animation: replay and weight semantics match bevy" {
 }
 
 ///|
+test "active animation: zero-speed at clip end does not complete" {
+  let stationary = ActiveAnimation::default()
+    .set_speed(0.0F)
+    .seek_to(1.0F)
+    .set_repeat(RepeatAnimation::Never)
+    .update(0.25F, 1.0F)
+  debug_inspect(stationary.just_completed(), content="false")
+  debug_inspect(stationary.completions(), content="0")
+  debug_inspect(stationary.is_finished(), content="false")
+}
+
+///|
 test "animation transitions: play updates main animation and starts new clip" {
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
