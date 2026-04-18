@@ -576,20 +576,38 @@ fn render3d_projection_runtime_update(
       camera, target_size, scale_factor,
     ) {
     Some((_, _, viewport_width, viewport_height)) => {
-      let is_orthographic = !projection.is_perspective()
+      let updated_projection = projection.update(
+        viewport_width, viewport_height,
+      )
+      let is_orthographic = !updated_projection.is_perspective()
+      let orthographic_first_slice_depth = if is_orthographic {
+        let clip_from_view = updated_projection.get_clip_from_view()
+        let row_two = clip_from_view.row(2)
+        let safe_row_two_z = if row_two.z.abs() <= 1.0e-6F {
+          1.0e-6F
+        } else {
+          row_two.z
+        }
+        (row_two.w - 1.0F) / safe_row_two_z
+      } else {
+        0.0F
+      }
       let next_runtime = ProjectionRuntime3d::{
         last_view_width: viewport_width,
         last_view_height: viewport_height,
         is_orthographic,
+        orthographic_first_slice_depth,
       }
       if runtime is Some(previous_runtime) &&
         previous_runtime.last_view_width == viewport_width &&
         previous_runtime.last_view_height == viewport_height &&
         previous_runtime.is_orthographic == is_orthographic &&
+        previous_runtime.orthographic_first_slice_depth ==
+        orthographic_first_slice_depth &&
         !force_update {
         (projection, None)
       } else {
-        (projection.update(viewport_width, viewport_height), Some(next_runtime))
+        (updated_projection, Some(next_runtime))
       }
     }
     None => (projection, None)

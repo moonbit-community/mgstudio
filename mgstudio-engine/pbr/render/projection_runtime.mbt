@@ -638,6 +638,7 @@ pub(all) struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
   is_orthographic : Bool
+  orthographic_first_slice_depth : Float
 }
 
 ///|

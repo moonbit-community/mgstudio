@@ -205,6 +205,7 @@ test "render3d: projection runtime updates changed orthographic projection at st
       last_view_width: 800.0F,
       last_view_height: 400.0F,
       is_orthographic: true,
+      orthographic_first_slice_depth: 0.0F,
     }),
     true,
     @sprite.Camera::default(),
@@ -215,14 +216,28 @@ test "render3d: projection runtime updates changed orthographic projection at st
     Some(update) => update.is_orthographic
     None => false
   }
+  let runtime_first_slice_depth = match runtime_update {
+    Some(update) => update.orthographic_first_slice_depth
+    None => 0.0F
+  }
   let ok = match runtime_projection {
     Projection::Orthographic(orthographic) => {
       let area = orthographic.area()
+      let clip_from_view = orthographic.get_clip_from_view()
+      let row_two = clip_from_view.row(2)
+      let expected_first_slice_depth = if row_two.z.abs() <= 1.0e-6F {
+        (row_two.w - 1.0F) / 1.0e-6F
+      } else {
+        (row_two.w - 1.0F) / row_two.z
+      }
       projection_approx_eq_wb(area.min.x, -12.0F) &&
       projection_approx_eq_wb(area.max.x, 12.0F) &&
       projection_approx_eq_wb(area.min.y, -6.0F) &&
       projection_approx_eq_wb(area.max.y, 6.0F) &&
-      runtime_is_orthographic
+      runtime_is_orthographic &&
+      projection_approx_eq_wb(
+        runtime_first_slice_depth, expected_first_slice_depth,
+      )
     }
     Projection::Perspective(_) => false
     Projection::Custom(_) => false

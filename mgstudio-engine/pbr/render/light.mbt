@@ -792,15 +792,17 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
 }
 
 ///|
-fn render3d_cluster_is_orthographic(world : @ecs.World) -> Bool {
-  let preferred_ref : Ref[Bool?] = Ref::new(None)
-  let fallback_ref : Ref[Bool?] = Ref::new(None)
+fn render3d_cluster_projection_runtime(
+  world : @ecs.World,
+) -> ProjectionRuntime3d? {
+  let preferred_ref : Ref[ProjectionRuntime3d?] = Ref::new(None)
+  let fallback_ref : Ref[ProjectionRuntime3d?] = Ref::new(None)
   world.for_each_component(ecs_key_projection_runtime3d, fn(entity, runtime) {
     if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
       return
     }
     if fallback_ref.val is None {
-      fallback_ref.val = Some(runtime.is_orthographic)
+      fallback_ref.val = Some(runtime)
     }
     if preferred_ref.val is Some(_) {
       return
@@ -813,18 +815,13 @@ fn render3d_cluster_is_orthographic(world : @ecs.World) -> Bool {
         entity,
         @light_cluster.ClusterConfig::component(),
       ))
-    if !has_cluster_components {
-      return
+    if has_cluster_components {
+      preferred_ref.val = Some(runtime)
     }
-    preferred_ref.val = Some(runtime.is_orthographic)
   })
   match preferred_ref.val {
-    Some(is_orthographic) => is_orthographic
-    None =>
-      match fallback_ref.val {
-        Some(is_orthographic) => is_orthographic
-        None => false
-      }
+    Some(runtime) => Some(runtime)
+    None => fallback_ref.val
   }
 }
 
@@ -1060,6 +1057,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let (cluster_screen_width, cluster_screen_height) = render3d_cluster_view_info(
     world,
   )
+  let cluster_projection_runtime = render3d_cluster_projection_runtime(world)
   let mut cluster_dimensions_x = 16
   let mut cluster_dimensions_y = 9
   let mut cluster_dimensions_z = 24
@@ -1091,6 +1089,9 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     cluster_near = @light_cluster.cluster_config_first_slice_depth(
       cluster_config,
     )
+    if cluster_projection_runtime is Some(runtime) && runtime.is_orthographic {
+      cluster_near = runtime.orthographic_first_slice_depth
+    }
     cluster_far = match
       @light_cluster.cluster_config_far_z_mode(cluster_config) {
       @light_cluster.ClusterFarZMode::Constant(far) => far
@@ -1104,7 +1105,11 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let n_clusters = cluster_dimensions_x *
     cluster_dimensions_y *
     cluster_dimensions_z
-  let cluster_is_orthographic = render3d_cluster_is_orthographic(world)
+  let cluster_is_orthographic = if cluster_projection_runtime is Some(runtime) {
+    runtime.is_orthographic
+  } else {
+    false
+  }
   let cluster_factors_xy = if cluster_screen_width <= 0 ||
     cluster_screen_height <= 0 {
     @math.Vec2::new(0.0F, 0.0F)

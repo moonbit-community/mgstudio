@@ -688,11 +688,12 @@ test "pbr render light: cluster factors zw follow orthographic projection runtim
     last_view_width: 1280.0F,
     last_view_height: 720.0F,
     is_orthographic: true,
+    orthographic_first_slice_depth: 2.0F,
   })
   |> ignore)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
-    5.0F, 5.0F, 24.0F, true,
+    2.0F, 2.0F, 24.0F, true,
   )
   inspect(
     approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
