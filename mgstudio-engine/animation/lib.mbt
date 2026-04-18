@@ -354,10 +354,6 @@ pub fn ActiveAnimation::update(
   if out.is_finished() {
     return out
   }
-  if clip_duration_seconds <= 0.0F {
-    out.elapsed = out.elapsed + delta_seconds
-    return out
-  }
 
   out.elapsed = out.elapsed + delta_seconds
   out.seek_time = out.seek_time + delta_seconds * out.speed

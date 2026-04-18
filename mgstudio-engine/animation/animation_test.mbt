@@ -377,6 +377,16 @@ test "active animation: zero-speed at clip end does not complete" {
 }
 
 ///|
+test "active animation: zero-duration clip completes for non-repeating playback" {
+  let completed = ActiveAnimation::default()
+    .set_repeat(RepeatAnimation::Never)
+    .update(0.1F, 0.0F)
+  debug_inspect(completed.just_completed(), content="true")
+  debug_inspect(completed.completions(), content="1")
+  debug_inspect(completed.is_finished(), content="true")
+}
+
+///|
 test "animation transitions: play updates main animation and starts new clip" {
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
