@@ -120,15 +120,20 @@ pub fn ClusteredDecal::emissive_texture_id(self : ClusteredDecal) -> Int? {
 
 ///|
 pub struct RenderClusteredDecal {
+  local_from_world : @math.Affine3
   base_color_texture_index : Int
   normal_map_texture_index : Int
   metallic_roughness_texture_index : Int
   emissive_texture_index : Int
   tag : Int
-} derive(Eq, Debug, ToJson, FromJson)
+  pad_a : Int
+  pad_b : Int
+  pad_c : Int
+}
 
 ///|
 pub fn RenderClusteredDecal::new(
+  local_from_world : @math.Affine3,
   base_color_texture_index : Int,
   normal_map_texture_index : Int,
   metallic_roughness_texture_index : Int,
@@ -136,12 +141,21 @@ pub fn RenderClusteredDecal::new(
   tag : Int,
 ) -> RenderClusteredDecal {
   RenderClusteredDecal::{
+    local_from_world,
     base_color_texture_index,
     normal_map_texture_index,
     metallic_roughness_texture_index,
     emissive_texture_index,
     tag: clustered_decal_tag_safe(tag),
+    pad_a: 0,
+    pad_b: 0,
+    pad_c: 0,
   }
+}
+
+///|
+pub fn RenderClusteredDecal::default() -> RenderClusteredDecal {
+  RenderClusteredDecal::new(@math.Affine3::identity(), -1, -1, -1, -1, 0)
 }
 
 ///|
@@ -192,6 +206,20 @@ pub fn RenderClusteredDecals::insert_decal(
   entity : @core.Entity,
   decal : ClusteredDecal,
 ) -> Int {
+  self.insert_decal_with_local_from_world(
+    entity,
+    decal,
+    @math.Affine3::identity(),
+  )
+}
+
+///|
+pub fn RenderClusteredDecals::insert_decal_with_local_from_world(
+  self : RenderClusteredDecals,
+  entity : @core.Entity,
+  decal : ClusteredDecal,
+  local_from_world : @math.Affine3,
+) -> Int {
   let base_color_texture_index = match decal.base_color_texture_id() {
     Some(texture_id) => self.get_or_insert_texture(texture_id)
     None => -1
@@ -212,6 +240,7 @@ pub fn RenderClusteredDecals::insert_decal(
   let decal_index = self.decals.length()
   self.decals.push(
     RenderClusteredDecal::new(
+      local_from_world,
       base_color_texture_index,
       normal_map_texture_index,
       metallic_roughness_texture_index,
@@ -288,6 +317,17 @@ fn clustered_decal_is_view_visible(
 }
 
 ///|
+fn clustered_decal_local_from_world(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @math.Affine3 {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => global_transform.affine().inverse()
+    None => @math.Affine3::identity()
+  }
+}
+
+///|
 fn clustered_decal_extract_scene_decals(
   source_world : @ecs.World,
   render_decals : RenderClusteredDecals,
@@ -296,7 +336,13 @@ fn clustered_decal_extract_scene_decals(
     if !clustered_decal_is_view_visible(source_world, entity) {
       return
     }
-    ignore(render_decals.insert_decal(entity, decal))
+    ignore(
+      render_decals.insert_decal_with_local_from_world(
+        entity,
+        decal,
+        clustered_decal_local_from_world(source_world, entity),
+      ),
+    )
   })
 }
 
@@ -313,9 +359,10 @@ fn clustered_decal_extract_spot_light_textures(
       return
     }
     ignore(
-      render_decals.insert_decal(
+      render_decals.insert_decal_with_local_from_world(
         entity,
         ClusteredDecal::default().with_base_color_texture(texture.image),
+        clustered_decal_local_from_world(source_world, entity),
       ),
     )
   })
@@ -334,11 +381,12 @@ fn clustered_decal_extract_point_light_textures(
       return
     }
     ignore(
-      render_decals.insert_decal(
+      render_decals.insert_decal_with_local_from_world(
         entity,
         ClusteredDecal::default()
         .with_base_color_texture(texture.image)
         .with_tag(clustered_decal_cubemap_layout_tag(texture.cubemap_layout)),
+        clustered_decal_local_from_world(source_world, entity),
       ),
     )
   })
@@ -357,11 +405,12 @@ fn clustered_decal_extract_directional_light_textures(
       return
     }
     ignore(
-      render_decals.insert_decal(
+      render_decals.insert_decal_with_local_from_world(
         entity,
         ClusteredDecal::default()
         .with_base_color_texture(texture.image)
         .with_tag(if texture.tiled { 1 } else { 0 }),
+        clustered_decal_local_from_world(source_world, entity),
       ),
     )
   })

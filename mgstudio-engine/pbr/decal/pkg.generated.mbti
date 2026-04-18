@@ -8,7 +8,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/material",
-  "moonbitlang/core/debug",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -106,13 +106,18 @@ pub fn ForwardDecalPlugin::default() -> Self
 pub impl @app.Plugin for ForwardDecalPlugin
 
 pub struct RenderClusteredDecal {
+  local_from_world : @math.Affine3
   base_color_texture_index : Int
   normal_map_texture_index : Int
   metallic_roughness_texture_index : Int
   emissive_texture_index : Int
   tag : Int
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn RenderClusteredDecal::new(Int, Int, Int, Int, Int) -> Self
+  pad_a : Int
+  pad_b : Int
+  pad_c : Int
+}
+pub fn RenderClusteredDecal::default() -> Self
+pub fn RenderClusteredDecal::new(@math.Affine3, Int, Int, Int, Int, Int) -> Self
 
 pub struct RenderClusteredDecals {
   binding_index_to_textures : Array[Int]
@@ -125,6 +130,7 @@ pub fn RenderClusteredDecals::default() -> Self
 pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, ClusteredDecal) -> Int
+pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, ClusteredDecal, @math.Affine3) -> Int
 pub impl @app.Resource for RenderClusteredDecals
 
 // Type aliases
