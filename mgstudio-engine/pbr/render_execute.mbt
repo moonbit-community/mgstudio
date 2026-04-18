@@ -131,7 +131,7 @@ fn render3d_preprocess_retained_camera_keys(
 }
 
 ///|
-pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
+pub fn render3d_prepare_resources_cleanup_system(world : @ecs.World) -> Unit {
   @render.host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(
     retained_camera_keys=render3d_preprocess_retained_camera_keys(
       render3d_queue_frame_snapshot(world),
