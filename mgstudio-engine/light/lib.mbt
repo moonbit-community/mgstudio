@@ -39,6 +39,15 @@ fn light_clamp01(value : Float) -> Float {
 }
 
 ///|
+fn light_clustered_decal_tag_safe(tag : Int) -> Int {
+  if tag < 0 {
+    0
+  } else {
+    tag
+  }
+}
+
+///|
 /// Bevy-aligned marker component for directional volumetric lighting.
 pub struct VolumetricLight {}
 
@@ -1542,6 +1551,94 @@ pub fn IrradianceVolume::with_intensity(
 }
 
 ///|
+/// Bevy source: `bevy/crates/bevy_light/src/cluster/mod.rs` (`ClusteredDecal`).
+pub struct ClusteredDecal {
+  base_color_texture : @asset.Handle[@asset.Image]?
+  normal_map_texture : @asset.Handle[@asset.Image]?
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?
+  emissive_texture : @asset.Handle[@asset.Image]?
+  tag : Int
+} derive(ToJson, FromJson)
+
+///|
+pub fn ClusteredDecal::default() -> ClusteredDecal {
+  ClusteredDecal::{
+    base_color_texture: None,
+    normal_map_texture: None,
+    metallic_roughness_texture: None,
+    emissive_texture: None,
+    tag: 0,
+  }
+}
+
+///|
+pub fn ClusteredDecal::new() -> ClusteredDecal {
+  ClusteredDecal::default()
+}
+
+///|
+pub fn ClusteredDecal::with_base_color_texture(
+  self : ClusteredDecal,
+  base_color_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, base_color_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_normal_map_texture(
+  self : ClusteredDecal,
+  normal_map_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, normal_map_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_metallic_roughness_texture(
+  self : ClusteredDecal,
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, metallic_roughness_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_emissive_texture(
+  self : ClusteredDecal,
+  emissive_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, emissive_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_tag(
+  self : ClusteredDecal,
+  tag : Int,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, tag: light_clustered_decal_tag_safe(tag) }
+}
+
+///|
+pub fn ClusteredDecal::base_color_texture_id(self : ClusteredDecal) -> Int? {
+  self.base_color_texture.map(fn(handle) { handle.id() })
+}
+
+///|
+pub fn ClusteredDecal::normal_map_texture_id(self : ClusteredDecal) -> Int? {
+  self.normal_map_texture.map(fn(handle) { handle.id() })
+}
+
+///|
+pub fn ClusteredDecal::metallic_roughness_texture_id(
+  self : ClusteredDecal,
+) -> Int? {
+  self.metallic_roughness_texture.map(fn(handle) { handle.id() })
+}
+
+///|
+pub fn ClusteredDecal::emissive_texture_id(self : ClusteredDecal) -> Int? {
+  self.emissive_texture.map(fn(handle) { handle.id() })
+}
+
+///|
 pub struct GlobalAmbientLight {
   color : @sprite.Color
   brightness : Float
@@ -1629,6 +1726,11 @@ pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @ecs.r
 )
 
 ///|
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
+  debug_name="render3d.clustered_decal",
+)
+
+///|
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @ecs.register_component(
   debug_name="render3d.parallax_correction",
 )
@@ -1705,6 +1807,11 @@ pub impl @ecs.Component for LightProbe with component() {
 ///|
 pub impl @ecs.Component for IrradianceVolume with component() {
   ecs_key_irradiance_volume
+}
+
+///|
+pub impl @ecs.Component for ClusteredDecal with component() {
+  ecs_key_clustered_decal
 }
 
 ///|

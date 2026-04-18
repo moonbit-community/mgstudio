@@ -13,110 +13,13 @@
 // limitations under the License.
 
 ///|
-fn clustered_decal_tag_safe(tag : Int) -> Int {
-  if tag < 0 {
-    0
-  } else {
-    tag
-  }
-}
-
-///|
 pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
 ///|
 const CLUSTERED_DECAL_PLUGIN_NAME : String = "mgstudio.pbr.decal.ClusteredDecalPlugin"
 
 ///|
-/// Clustered decal parameters aligned with Bevy's `ClusteredDecal`.
-///
-/// The decal volume follows Bevy semantics: a transformed unit cube that
-/// projects textures along local `-Z`.
-pub struct ClusteredDecal {
-  base_color_texture : @asset.Handle[@asset.Image]?
-  normal_map_texture : @asset.Handle[@asset.Image]?
-  metallic_roughness_texture : @asset.Handle[@asset.Image]?
-  emissive_texture : @asset.Handle[@asset.Image]?
-  tag : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn ClusteredDecal::default() -> ClusteredDecal {
-  ClusteredDecal::{
-    base_color_texture: None,
-    normal_map_texture: None,
-    metallic_roughness_texture: None,
-    emissive_texture: None,
-    tag: 0,
-  }
-}
-
-///|
-pub fn ClusteredDecal::new() -> ClusteredDecal {
-  ClusteredDecal::default()
-}
-
-///|
-pub fn ClusteredDecal::with_base_color_texture(
-  self : ClusteredDecal,
-  base_color_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, base_color_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_normal_map_texture(
-  self : ClusteredDecal,
-  normal_map_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, normal_map_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_metallic_roughness_texture(
-  self : ClusteredDecal,
-  metallic_roughness_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, metallic_roughness_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_emissive_texture(
-  self : ClusteredDecal,
-  emissive_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, emissive_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_tag(
-  self : ClusteredDecal,
-  tag : Int,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, tag: clustered_decal_tag_safe(tag) }
-}
-
-///|
-pub fn ClusteredDecal::base_color_texture_id(self : ClusteredDecal) -> Int? {
-  self.base_color_texture.map(fn(handle) { handle.id() })
-}
-
-///|
-pub fn ClusteredDecal::normal_map_texture_id(self : ClusteredDecal) -> Int? {
-  self.normal_map_texture.map(fn(handle) { handle.id() })
-}
-
-///|
-pub fn ClusteredDecal::metallic_roughness_texture_id(
-  self : ClusteredDecal,
-) -> Int? {
-  self.metallic_roughness_texture.map(fn(handle) { handle.id() })
-}
-
-///|
-pub fn ClusteredDecal::emissive_texture_id(self : ClusteredDecal) -> Int? {
-  self.emissive_texture.map(fn(handle) { handle.id() })
-}
+pub type ClusteredDecal = @light.ClusteredDecal
 
 ///|
 pub struct RenderClusteredDecal {
@@ -146,7 +49,11 @@ pub fn RenderClusteredDecal::new(
     normal_map_texture_index,
     metallic_roughness_texture_index,
     emissive_texture_index,
-    tag: clustered_decal_tag_safe(tag),
+    tag: if tag < 0 {
+      0
+    } else {
+      tag
+    },
     pad_a: 0,
     pad_b: 0,
     pad_c: 0,
@@ -261,14 +168,7 @@ pub fn RenderClusteredDecals::get_decal_index(
 }
 
 ///|
-pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
-  debug_name="render3d.clustered_decal",
-)
-
-///|
-pub impl @ecs.Component for ClusteredDecal with component() {
-  ecs_key_clustered_decal
-}
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @light.ecs_key_clustered_decal
 
 ///|
 pub let ecs_key_render_clustered_decals : @ecs.ResourceKey[

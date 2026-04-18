@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
@@ -16,7 +17,7 @@ import {
 // Values
 pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
-pub fn clustered_decal() -> ClusteredDecal
+pub fn clustered_decal() -> @light.ClusteredDecal
 
 pub fn clustered_decal_bind_group_layout_entries(Int, decals_supported? : Bool) -> Array[ClusteredDecalBindGroupLayoutEntry]?
 
@@ -26,11 +27,11 @@ pub fn clustered_decal_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.Wor
 
 pub fn clustered_decal_plugin_install_with(@app.App[@ecs.World], ClusteredDecalPlugin) -> @app.App[@ecs.World]
 
-pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> ClusteredDecal
+pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> @light.ClusteredDecal
 
-pub fn clustered_decal_with_tag(Int) -> ClusteredDecal
+pub fn clustered_decal_with_tag(Int) -> @light.ClusteredDecal
 
-pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[@light.ClusteredDecal]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
 
@@ -61,26 +62,6 @@ pub fn render3d_upload_decals(RenderClusteredDecals, DecalsBuffer) -> Unit
 // Errors
 
 // Types and methods
-pub struct ClusteredDecal {
-  base_color_texture : @asset.Handle[@image.Image]?
-  normal_map_texture : @asset.Handle[@image.Image]?
-  metallic_roughness_texture : @asset.Handle[@image.Image]?
-  emissive_texture : @asset.Handle[@image.Image]?
-  tag : Int
-} derive(ToJson, @json.FromJson)
-pub fn ClusteredDecal::base_color_texture_id(Self) -> Int?
-pub fn ClusteredDecal::default() -> Self
-pub fn ClusteredDecal::emissive_texture_id(Self) -> Int?
-pub fn ClusteredDecal::metallic_roughness_texture_id(Self) -> Int?
-pub fn ClusteredDecal::new() -> Self
-pub fn ClusteredDecal::normal_map_texture_id(Self) -> Int?
-pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_tag(Self, Int) -> Self
-pub impl @ecs.Component for ClusteredDecal
-
 pub struct ClusteredDecalBindGroupLayoutEntry {
   binding : Int
   name : String
@@ -160,8 +141,8 @@ pub fn RenderClusteredDecals::clear(Self) -> Unit
 pub fn RenderClusteredDecals::default() -> Self
 pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
-pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, ClusteredDecal) -> Int
-pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, ClusteredDecal, @math.Affine3) -> Int
+pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, @light.ClusteredDecal) -> Int
+pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, @light.ClusteredDecal, @math.Affine3) -> Int
 pub impl @app.Resource for RenderClusteredDecals
 
 pub struct RenderViewClusteredDecalBindGroupEntries {
@@ -172,6 +153,8 @@ pub struct RenderViewClusteredDecalBindGroupEntries {
 pub fn RenderViewClusteredDecalBindGroupEntries::get(RenderClusteredDecals, DecalsBuffer, Int, partially_bound_binding_array? : Bool, decals_supported? : Bool) -> Self?
 
 // Type aliases
+pub using @light {type ClusteredDecal}
+
 pub using @material {type ForwardDecalMaterialExt}
 
 // Traits

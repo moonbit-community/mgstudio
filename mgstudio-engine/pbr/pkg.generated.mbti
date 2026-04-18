@@ -102,7 +102,7 @@ pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
-pub let ecs_key_clustered_decal : @ecs.ComponentKey[@decal.ClusteredDecal]
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[@light.ClusteredDecal]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
@@ -1371,7 +1371,7 @@ pub using @light {type CascadeShadowConfigBuilder}
 
 pub using @effect_stack {type ChromaticAberration}
 
-pub using @decal {type ClusteredDecal}
+pub using @light {type ClusteredDecal}
 
 pub using @post_process {type ColorGrading}
 

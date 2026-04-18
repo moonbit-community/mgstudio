@@ -34,6 +34,8 @@ pub let ecs_key_atmosphere_env_map_light : @ecs.ComponentKey[AtmosphereEnvironme
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
 
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
+
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight]
 
 pub let ecs_key_directional_light_component : @ecs.ComponentKey[DirectionalLight]
@@ -183,6 +185,26 @@ pub fn CascadeShadowConfigBuilder::with_maximum_distance(Self, Float) -> Self
 pub fn CascadeShadowConfigBuilder::with_minimum_distance(Self, Float) -> Self
 pub fn CascadeShadowConfigBuilder::with_num_cascades(Self, Int) -> Self
 pub fn CascadeShadowConfigBuilder::with_overlap_proportion(Self, Float) -> Self
+
+pub struct ClusteredDecal {
+  base_color_texture : @asset.Handle[@image.Image]?
+  normal_map_texture : @asset.Handle[@image.Image]?
+  metallic_roughness_texture : @asset.Handle[@image.Image]?
+  emissive_texture : @asset.Handle[@image.Image]?
+  tag : Int
+} derive(ToJson, @json.FromJson)
+pub fn ClusteredDecal::base_color_texture_id(Self) -> Int?
+pub fn ClusteredDecal::default() -> Self
+pub fn ClusteredDecal::emissive_texture_id(Self) -> Int?
+pub fn ClusteredDecal::metallic_roughness_texture_id(Self) -> Int?
+pub fn ClusteredDecal::new() -> Self
+pub fn ClusteredDecal::normal_map_texture_id(Self) -> Int?
+pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_tag(Self, Int) -> Self
+pub impl @ecs.Component for ClusteredDecal
 
 pub(all) enum CubemapLayout3d {
   CrossVertical
