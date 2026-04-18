@@ -633,6 +633,8 @@ pub type TouchInput = @input_events.TouchInput
 ///|
 pub struct Touch {
   id : Int
+  start_position : @math.Vec2
+  previous_position : @math.Vec2
   position : @math.Vec2
 }
 
@@ -644,6 +646,26 @@ pub fn Touch::id(self : Touch) -> Int {
 ///|
 pub fn Touch::position(self : Touch) -> @math.Vec2 {
   self.position
+}
+
+///|
+pub fn Touch::start_position(self : Touch) -> @math.Vec2 {
+  self.start_position
+}
+
+///|
+pub fn Touch::previous_position(self : Touch) -> @math.Vec2 {
+  self.previous_position
+}
+
+///|
+pub fn Touch::delta(self : Touch) -> @math.Vec2 {
+  @math.Vec2::sub(self.position, self.previous_position)
+}
+
+///|
+pub fn Touch::distance(self : Touch) -> @math.Vec2 {
+  @math.Vec2::sub(self.position, self.start_position)
 }
 
 ///|
@@ -692,6 +714,36 @@ pub fn Touches::just_pressed(self : Touches, id : Int) -> Bool {
 ///|
 pub fn Touches::any_just_pressed(self : Touches) -> Bool {
   self.just_pressed.length() > 0
+}
+
+///|
+pub fn Touches::any_just_released(self : Touches) -> Bool {
+  self.just_released.length() > 0
+}
+
+///|
+pub fn Touches::any_just_canceled(self : Touches) -> Bool {
+  self.just_canceled.length() > 0
+}
+
+///|
+pub fn Touches::just_released(self : Touches, id : Int) -> Bool {
+  for touch in self.just_released {
+    if touch.id == id {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn Touches::just_canceled(self : Touches, id : Int) -> Bool {
+  for touch in self.just_canceled {
+    if touch.id == id {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -1656,7 +1708,13 @@ fn active_touches_upsert(active : Array[Touch], touch : Touch) -> Unit {
   let n = active.length()
   for i in 0..<n {
     if active[i].id == touch.id {
-      active[i] = touch
+      let previous = active[i]
+      active[i] = Touch::{
+        id: previous.id,
+        start_position: previous.start_position,
+        previous_position: previous.position,
+        position: touch.position,
+      }
       return
     }
   }
@@ -1664,18 +1722,20 @@ fn active_touches_upsert(active : Array[Touch], touch : Touch) -> Unit {
 }
 
 ///|
-fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
+fn active_touches_take(active : Array[Touch], id : Int) -> Touch? {
   let n = active.length()
   for i in 0..<n {
     if active[i].id == id {
+      let removed = active[i]
       let last = n - 1
       if i != last {
         active[i] = active[last]
       }
       active.pop() |> ignore
-      return
+      return Some(removed)
     }
   }
+  None
 }
 
 ///|
@@ -1795,21 +1855,40 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       host_input_touch_event_x(index=i),
       host_input_touch_event_y(index=i),
     )
-    let touch = Touch::{ id: touch_id, position }
+    let touch = Touch::{
+      id: touch_id,
+      start_position: position,
+      previous_position: position,
+      position,
+    }
     match touch_phase {
       TouchPhase::Started => {
         active_touches_upsert(active_touches, touch)
         touches.just_pressed.push(touch)
       }
       TouchPhase::Moved => active_touches_upsert(active_touches, touch)
-      TouchPhase::Ended => {
-        active_touches_remove(active_touches, touch_id)
-        touches.just_released.push(touch)
-      }
-      TouchPhase::Canceled => {
-        active_touches_remove(active_touches, touch_id)
-        touches.just_canceled.push(touch)
-      }
+      TouchPhase::Ended =>
+        match active_touches_take(active_touches, touch_id) {
+          Some(active_touch) =>
+            touches.just_released.push(Touch::{
+              id: active_touch.id,
+              start_position: active_touch.start_position,
+              previous_position: active_touch.position,
+              position,
+            })
+          None => touches.just_released.push(touch)
+        }
+      TouchPhase::Canceled =>
+        match active_touches_take(active_touches, touch_id) {
+          Some(active_touch) =>
+            touches.just_canceled.push(Touch::{
+              id: active_touch.id,
+              start_position: active_touch.start_position,
+              previous_position: active_touch.position,
+              position,
+            })
+          None => touches.just_canceled.push(touch)
+        }
     }
     @window.window_emit_touch_input(world, @window.TouchInput::{
       id: touch_id,

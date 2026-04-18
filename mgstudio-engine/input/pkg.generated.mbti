@@ -498,10 +498,16 @@ pub impl @app.Resource for RunningRumbleEffects
 
 pub struct Touch {
   id : Int
+  start_position : @math.Vec2
+  previous_position : @math.Vec2
   position : @math.Vec2
 }
+pub fn Touch::delta(Self) -> @math.Vec2
+pub fn Touch::distance(Self) -> @math.Vec2
 pub fn Touch::id(Self) -> Int
 pub fn Touch::position(Self) -> @math.Vec2
+pub fn Touch::previous_position(Self) -> @math.Vec2
+pub fn Touch::start_position(Self) -> @math.Vec2
 
 pub struct Touches {
   active : Array[Touch]
@@ -509,12 +515,16 @@ pub struct Touches {
   just_released : Array[Touch]
   just_canceled : Array[Touch]
 }
+pub fn Touches::any_just_canceled(Self) -> Bool
 pub fn Touches::any_just_pressed(Self) -> Bool
+pub fn Touches::any_just_released(Self) -> Bool
 pub fn Touches::iter(Self) -> Array[Touch]
 pub fn Touches::iter_just_canceled(Self) -> Array[Touch]
 pub fn Touches::iter_just_pressed(Self) -> Array[Touch]
 pub fn Touches::iter_just_released(Self) -> Array[Touch]
+pub fn Touches::just_canceled(Self, Int) -> Bool
 pub fn Touches::just_pressed(Self, Int) -> Bool
+pub fn Touches::just_released(Self, Int) -> Bool
 pub fn Touches::new() -> Self
 pub impl @app.Resource for Touches
 

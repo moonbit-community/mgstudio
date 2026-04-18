@@ -434,3 +434,27 @@ test "input: input_toggle_active keeps independent state across frames" {
   debug_inspect(other(world), content="false")
   debug_inspect(toggle(world), content="false")
 }
+
+///|
+test "input: touch state keeps bevy-style start/previous position snapshots" {
+  let touch = Touch::{
+    id: 7,
+    start_position: @math.Vec2::new(1.0, 2.0),
+    previous_position: @math.Vec2::new(2.0, 4.0),
+    position: @math.Vec2::new(5.0, 9.0),
+  }
+  let delta = touch.delta()
+  let distance = touch.distance()
+  debug_inspect(delta.x, content="3")
+  debug_inspect(delta.y, content="5")
+  debug_inspect(distance.x, content="4")
+  debug_inspect(distance.y, content="7")
+
+  let touches = Touches::new()
+  touches.just_released.push(touch)
+  touches.just_canceled.push(touch)
+  debug_inspect(touches.any_just_released(), content="true")
+  debug_inspect(touches.any_just_canceled(), content="true")
+  debug_inspect(touches.just_released(7), content="true")
+  debug_inspect(touches.just_canceled(7), content="true")
+}
