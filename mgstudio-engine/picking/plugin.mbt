@@ -21,6 +21,22 @@ pub fn PickingPlugin::default() -> PickingPlugin {
 }
 
 ///|
+pub struct PointerInputPlugin {}
+
+///|
+pub fn PointerInputPlugin::default() -> PointerInputPlugin {
+  PointerInputPlugin::{  }
+}
+
+///|
+pub struct InteractionPlugin {}
+
+///|
+pub fn InteractionPlugin::default() -> InteractionPlugin {
+  InteractionPlugin::{  }
+}
+
+///|
 pub struct DefaultPickingPlugins {}
 
 ///|
@@ -39,13 +55,34 @@ pub impl @app.Plugin for PickingPlugin with build(_self, app) {
 }
 
 ///|
+pub impl @app.Plugin for PointerInputPlugin with name(_self) {
+  "mgstudio.picking.PointerInputPlugin"
+}
+
+///|
+pub impl @app.Plugin for PointerInputPlugin with build(_self, app) {
+  picking_input_plugin(app)
+}
+
+///|
+pub impl @app.Plugin for InteractionPlugin with name(_self) {
+  "mgstudio.picking.InteractionPlugin"
+}
+
+///|
+pub impl @app.Plugin for InteractionPlugin with build(_self, app) {
+  picking_interaction_plugin(app)
+}
+
+///|
 pub impl @app.PluginGroup for DefaultPickingPlugins with name(_self) {
   "mgstudio.picking.DefaultPickingPlugins"
 }
 
 ///|
 pub impl @app.PluginGroup for DefaultPickingPlugins with build(_self) {
-  @app.PluginGroupBuilder::start_named("mgstudio.picking.DefaultPickingPlugins").add(
-    PickingPlugin::default(),
-  )
+  @app.PluginGroupBuilder::start_named("mgstudio.picking.DefaultPickingPlugins")
+  .add(PointerInputPlugin::default())
+  .add(PickingPlugin::default())
+  .add(InteractionPlugin::default())
 }

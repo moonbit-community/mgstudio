@@ -58,7 +58,11 @@ pub fn picking_generate_events_system(@ecs.World) -> Unit
 
 pub fn picking_hover_should_run(@ecs.World) -> Bool
 
+pub fn picking_input_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn picking_input_should_run(@ecs.World) -> Bool
+
+pub fn picking_interaction_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn picking_mesh3d_hit_test_system(@ecs.World) -> Unit
 
@@ -91,6 +95,11 @@ pub struct DefaultPickingPlugins {
 }
 pub fn DefaultPickingPlugins::default() -> Self
 pub impl @app.PluginGroup for DefaultPickingPlugins
+
+pub struct InteractionPlugin {
+}
+pub fn InteractionPlugin::default() -> Self
+pub impl @app.Plugin for InteractionPlugin
 
 pub struct Pickable {
   should_block_lower : Bool
@@ -160,6 +169,11 @@ pub struct PointerInput {
   just_released : Bool
 } derive(ToJson, @json.FromJson)
 pub fn PointerInput::new(Int, @math.Vec2?, Bool, Bool, Bool) -> Self
+
+pub struct PointerInputPlugin {
+}
+pub fn PointerInputPlugin::default() -> Self
+pub impl @app.Plugin for PointerInputPlugin
 
 pub struct PointerInputSettings {
   is_touch_enabled : Bool

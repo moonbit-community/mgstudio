@@ -119,18 +119,8 @@ pub fn picking_clear_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+pub fn picking_input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .init_resource(() => PickingSettings::default())
-  .add_pre_update_system_config(
-    @app.system(picking_clear_system).in_set(picking_set_input),
-  )
-  .add_pre_update_system_config(
-    @app.system(ensure_picking_state_system).in_set(picking_set_input),
-  )
-  .add_pre_update_system_config(
-    @app.system(ensure_picking_hits_system).in_set(picking_set_input),
-  )
   .add_pre_update_system_config(
     @app.system(ensure_pointer_inputs_system).in_set(picking_set_input),
   )
@@ -141,6 +131,18 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(picking_collect_mouse_system)
     .run_if(picking_input_should_run)
     .in_set(picking_set_input),
+  )
+}
+
+///|
+pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
+  .init_resource(() => PickingSettings::default())
+  .add_pre_update_system_config(
+    @app.system(picking_clear_system).in_set(picking_set_input),
+  )
+  .add_pre_update_system_config(
+    @app.system(ensure_picking_hits_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
     @app.system(picking_ui_hit_test_system).in_set(picking_set_hits),
@@ -157,19 +159,7 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .in_set(picking_set_hits),
   )
   .add_pre_update_system_config(
-    @app.system(picking_apply_a11y_actions_system)
-    .run_if(picking_hover_should_run)
-    .in_set(picking_set_events),
-  )
-  .add_pre_update_system_config(
-    @app.system(picking_generate_events_system)
-    .run_if(picking_hover_should_run)
-    .in_set(picking_set_events),
-  )
-  .add_pre_update_system_config(
-    @app.system(@app.dispatch_pointer_observers_system).after(
-      picking_set_events,
-    ),
+    @app.system(ensure_picking_state_system).in_set(picking_set_events),
   )
   .configure_set(
     @app.PreUpdate,
@@ -186,4 +176,26 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .configure_set(@app.PreUpdate, picking_set_events, after=[
     picking_set_hits, @a11y.a11y_set, @ui.ui_set_focus,
   ])
+}
+
+///|
+pub fn picking_interaction_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
+  .add_pre_update_system_config(
+    @app.system(picking_apply_a11y_actions_system)
+    .run_if(picking_hover_should_run)
+    .in_set(picking_set_events),
+  )
+  .add_pre_update_system_config(
+    @app.system(picking_generate_events_system)
+    .run_if(picking_hover_should_run)
+    .in_set(picking_set_events),
+  )
+  .add_pre_update_system_config(
+    @app.system(@app.dispatch_pointer_observers_system).after(
+      picking_set_events,
+    ),
+  )
 }
