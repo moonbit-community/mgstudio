@@ -72,6 +72,30 @@ test "material boundary resolves auto opaque render method at runtime" {
 }
 
 ///|
+test "material boundary exposes bevy-shaped render phase type" {
+  let default_phase = @material.RenderPhaseType::default()
+  let alpha_mask_phase : @material.MaterialRenderPhaseType = @material.RenderPhaseType::AlphaMask
+  let transmissive_phase : @material.MaterialRenderPhaseType = @material.RenderPhaseType::Transmissive
+  let transparent_phase : @material.MaterialRenderPhaseType = @material.RenderPhaseType::Transparent
+  debug_inspect(
+    default_phase is @material.RenderPhaseType::Opaque,
+    content="true",
+  )
+  debug_inspect(
+    alpha_mask_phase is @material.RenderPhaseType::AlphaMask,
+    content="true",
+  )
+  debug_inspect(
+    transmissive_phase is @material.RenderPhaseType::Transmissive,
+    content="true",
+  )
+  debug_inspect(
+    transparent_phase is @material.RenderPhaseType::Transparent,
+    content="true",
+  )
+}
+
+///|
 test "material boundary Assets::add accepts Color and Image handle inputs" {
   let materials : @asset.Assets[@material.StandardMaterial] = @asset.Assets::new()
   let expected_color = @sprite.Color::srgb(0.1F, 0.2F, 0.3F)

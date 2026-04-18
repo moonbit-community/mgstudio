@@ -178,6 +178,15 @@ pub fn ParallaxMappingMethod::default() -> Self
 pub fn ParallaxMappingMethod::max_steps(Self) -> Int
 pub fn ParallaxMappingMethod::relief_default() -> Self
 
+#alias(MaterialRenderPhaseType)
+pub(all) enum RenderPhaseType {
+  Opaque
+  AlphaMask
+  Transmissive
+  Transparent
+}
+pub fn RenderPhaseType::default() -> Self
+
 #alias(MaterialDescriptor)
 pub struct StandardMaterial {
   base_color : @color.Color

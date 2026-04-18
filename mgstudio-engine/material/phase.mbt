@@ -16,6 +16,22 @@
 // Bevy source: `bevy/crates/bevy_material/src/phase.rs`.
 
 ///|
+pub(all) enum RenderPhaseType {
+  Opaque
+  AlphaMask
+  Transmissive
+  Transparent
+}
+
+///|
+pub fn RenderPhaseType::default() -> RenderPhaseType {
+  RenderPhaseType::Opaque
+}
+
+///|
+pub type MaterialRenderPhaseType = RenderPhaseType
+
+///|
 pub type MaterialMesh3dComponent = MeshMaterial3d
 
 ///|
