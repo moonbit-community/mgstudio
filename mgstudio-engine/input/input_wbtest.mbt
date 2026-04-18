@@ -244,6 +244,10 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
     .world()
     .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
   debug_inspect((try! focus_lost_reader.read()).length(), content="1")
+  let keyboard_input_reader = app
+    .world()
+    .message_reader(keyboard_input_message_key(), Ref::new(0))
+  debug_inspect((try! keyboard_input_reader.read()).length(), content="0")
 
   let window_event_reader = app
     .world()
@@ -296,6 +300,10 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
     .world()
     .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
   debug_inspect((try! focus_lost_reader.read()).length(), content="0")
+  let keyboard_input_reader = app
+    .world()
+    .message_reader(keyboard_input_message_key(), Ref::new(0))
+  debug_inspect((try! keyboard_input_reader.read()).length(), content="0")
 
   let window_event_reader = app
     .world()
