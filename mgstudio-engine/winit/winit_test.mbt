@@ -533,6 +533,28 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
     .add_message(@window.ecs_key_keyboard_focus_lost)
     .add_message(@window.WindowFocused::message())
     .run_once()
+  let host_window = match
+    @window.window_host_window_for_ref(
+      app.world(),
+      @window.WindowRef::Entity(window_entity),
+    ) {
+    Some(host_window) => host_window
+    None => abort("missing host window for keyboard focus-loss test")
+  }
+  let key_event = @window_core.KeyEvent::new(
+    @window_core.PhysicalKey::from_key_code(@window_core.KeyCode::KeyA),
+    @window_core.Key::Character("a"),
+    @window_core.Key::Character("a"),
+    @window_core.KeyLocation::Standard,
+    @window_core.ElementState::Pressed,
+    false,
+    Some("a"),
+    Some("a"),
+  )
+  @windowing.runner_process_window_event(
+    host_window,
+    @window_core.WindowEvent::KeyboardInput(None, key_event, false),
+  )
 
   ignore(
     app
@@ -558,6 +580,21 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
     }
   }
   debug_inspect(focus_lost_count, content="1")
+  let mut released_count = 0
+  for event in window_events {
+    match event {
+      @window.WindowEvent::KeyboardInput(keyboard_event) =>
+        if keyboard_event.state is @window.ButtonState::Released {
+          released_count = released_count + 1
+        }
+      _ => ()
+    }
+  }
+  debug_inspect(released_count > 0, content="true")
+  debug_inspect(
+    @input.keyboard_keycode_pressed(@window.KeyCode::KeyA),
+    content="false",
+  )
 }
 
 ///|

@@ -1550,6 +1550,15 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
     @window.window_emit_keyboard_focus_lost(world, @window.KeyboardFocusLost::{
 
     })
+    for key_code in read_keycode_button_input().get_pressed() {
+      @window.window_emit_keyboard_input(world, @window.KeyboardInput::{
+        key_code,
+        logical_key: logical_key_from_keycode(key_code),
+        state: ButtonState::Released,
+        repeat: false,
+        text: None,
+      })
+    }
     host_input_clear_all_keys()
   }
 }
