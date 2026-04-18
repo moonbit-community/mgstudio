@@ -10,12 +10,17 @@ import {
   "Milky2018/mgstudio/material",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
 pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
 pub fn clustered_decal() -> ClusteredDecal
+
+pub fn clustered_decal_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn clustered_decal_plugin_install_with(@app.App[@ecs.World], ClusteredDecalPlugin) -> @app.App[@ecs.World]
 
 pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> ClusteredDecal
 
@@ -36,6 +41,12 @@ pub fn pbr_forward_decal_shader_defs(ForwardDecalPipelineKey) -> Array[String]
 pub fn pbr_forward_decal_specialized_label(String) -> String
 
 pub fn register_embedded_wgsl_sources() -> Unit
+
+pub fn render3d_extract_clustered_decals_system(@ecs.World) -> Unit
+
+pub fn render3d_render_clustered_decals_ref(@ecs.World) -> @ref.Ref[RenderClusteredDecals]?
+
+pub fn render3d_render_clustered_decals_ref_or_init(@ecs.World) -> @ref.Ref[RenderClusteredDecals]
 
 // Errors
 
@@ -59,6 +70,11 @@ pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@imag
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
 pub impl @ecs.Component for ClusteredDecal
+
+pub struct ClusteredDecalPlugin {
+}
+pub fn ClusteredDecalPlugin::default() -> Self
+pub impl @app.Plugin for ClusteredDecalPlugin
 
 pub struct DecalPluginState {
   forward_enabled : Bool
@@ -109,6 +125,7 @@ pub fn RenderClusteredDecals::default() -> Self
 pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, ClusteredDecal) -> Int
+pub impl @app.Resource for RenderClusteredDecals
 
 // Type aliases
 pub using @material {type ForwardDecalMaterialExt}

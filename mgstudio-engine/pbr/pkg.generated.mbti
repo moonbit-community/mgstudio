@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr/decal",
   "Milky2018/mgstudio/pbr/lightmap",
   "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/pbr/transmission",
@@ -83,6 +84,10 @@ pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMa
 
 pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]
 
+pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn contact_shadows_plugin_install_with(@app.App[@ecs.World], ContactShadowsPlugin) -> @app.App[@ecs.World]
+
 pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
 pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -97,7 +102,7 @@ pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
-pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[@decal.ClusteredDecal]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
@@ -129,7 +134,7 @@ pub let ecs_key_extracted_material_instances_3d : @ecs.ResourceKey[ExtractedMate
 
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
 
-pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
+pub let ecs_key_forward_decal : @ecs.ComponentKey[@decal.ForwardDecal]
 
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[@material.ForwardDecalMaterialExt]
 
@@ -232,6 +237,8 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter
 pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+
+pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[ViewContactShadowsUniformOffset]
 
 pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
 
@@ -415,9 +422,15 @@ pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacke
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
+pub fn render3d_apply_view_contact_shadows_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewContactShadowsUniformOffset)]) -> Unit
+
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render3d_contact_shadows_buffer_ref(@ecs.World) -> @ref.Ref[ContactShadowsBuffer]?
+
+pub fn render3d_contact_shadows_buffer_ref_or_init(@ecs.World) -> @ref.Ref[ContactShadowsBuffer]
 
 pub fn render3d_diagnostic_execute_cpu_ms(@ecs.World) -> Float
 
@@ -460,6 +473,8 @@ pub fn render3d_prepare_bind_groups_system(@ecs.World) -> Unit
 pub fn render3d_prepare_camera_fog_uniforms(@ecs.World, Array[@core.Entity], @render.FogMeta) -> Array[(@core.Entity, @render.ViewFogUniformOffset)]
 
 pub fn render3d_prepare_contact_shadows_settings(@ecs.World, Array[@core.Entity], ContactShadowsBuffer) -> Array[(@core.Entity, ViewContactShadowsUniformOffset)]
+
+pub fn render3d_prepare_contact_shadows_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_fog_system(@ecs.World) -> Unit
 
@@ -705,22 +720,6 @@ pub fn ClusterableObjectCounts3d::point_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::spot_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::total(Self) -> UInt
 
-pub struct ClusteredDecal {
-  base_color_texture : @asset.Handle[@image.Image]?
-  normal_map_texture : @asset.Handle[@image.Image]?
-  metallic_roughness_texture : @asset.Handle[@image.Image]?
-  emissive_texture : @asset.Handle[@image.Image]?
-  tag : Int
-} derive(ToJson, @json.FromJson)
-pub fn ClusteredDecal::default() -> Self
-pub fn ClusteredDecal::new() -> Self
-pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_tag(Self, Int) -> Self
-pub impl @ecs.Component for ClusteredDecal
-
 pub struct ContactShadows {
   linear_steps : Int
   thickness : Float
@@ -741,6 +740,12 @@ pub fn ContactShadowsBuffer::default() -> Self
 pub fn ContactShadowsBuffer::len(Self) -> Int
 pub fn ContactShadowsBuffer::push(Self, ContactShadowsUniform) -> UInt
 pub fn ContactShadowsBuffer::uniform_at(Self, UInt) -> ContactShadowsUniform?
+pub impl @app.Resource for ContactShadowsBuffer
+
+pub struct ContactShadowsPlugin {
+}
+pub fn ContactShadowsPlugin::default() -> Self
+pub impl @app.Plugin for ContactShadowsPlugin
 
 pub struct ContactShadowsUniform {
   linear_steps : UInt
@@ -868,11 +873,6 @@ pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
 pub fn FogFalloff3d::koschmieder(Float, Float) -> Float
 pub fn FogFalloff3d::linear(Float, Float) -> Self
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
-
-pub struct ForwardDecal {
-} derive(ToJson, @json.FromJson)
-pub fn ForwardDecal::default() -> Self
-pub impl @ecs.Component for ForwardDecal
 
 #alias(ForwardDecalMaterialExtension3d)
 pub struct ForwardDecalMaterialExtension {
@@ -1318,6 +1318,7 @@ pub struct ViewContactShadowsUniformOffset {
 } derive(ToJson, @json.FromJson)
 pub fn ViewContactShadowsUniformOffset::new(UInt) -> Self
 pub fn ViewContactShadowsUniformOffset::offset(Self) -> UInt
+pub impl @ecs.Component for ViewContactShadowsUniformOffset
 
 pub struct Wireframe {
 } derive(ToJson, @json.FromJson)
@@ -1370,6 +1371,8 @@ pub using @light {type CascadeShadowConfigBuilder}
 
 pub using @effect_stack {type ChromaticAberration}
 
+pub using @decal {type ClusteredDecal}
+
 pub using @post_process {type ColorGrading}
 
 pub using @post_process {type ColorGradingGlobal}
@@ -1409,6 +1412,8 @@ pub using @material {type ExtendedMaterialMetadata3d}
 pub using @material {type Face3d}
 
 pub using @light {type FogVolume}
+
+pub using @decal {type ForwardDecal}
 
 pub using @material {type ForwardDecalMaterialExt}
 

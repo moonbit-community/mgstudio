@@ -94,17 +94,13 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @pbr_prepass.ecs_key_depth_prepass
 
 ///|
-pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_component(
-  debug_name="render3d.forward_decal",
-)
+pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @pbr_decal.ecs_key_forward_decal
 
 ///|
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @pbr_prepass.ecs_key_normal_prepass
 
 ///|
-pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
-  debug_name="render3d.clustered_decal",
-)
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @pbr_decal.ecs_key_clustered_decal
 
 ///|
 pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows] = @ecs.register_component(
@@ -284,16 +280,6 @@ pub impl @ecs.Component for FreeCamera with component() {
 ///|
 pub impl @ecs.Component for NoWireframe with component() {
   ecs_key_no_wireframe
-}
-
-///|
-pub impl @ecs.Component for ForwardDecal with component() {
-  ecs_key_forward_decal
-}
-
-///|
-pub impl @ecs.Component for ClusteredDecal with component() {
-  ecs_key_clustered_decal
 }
 
 ///|

@@ -15,6 +15,7 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr/atmosphere" @pbr_atmosphere,
+  "Milky2018/mgstudio/pbr/decal" @pbr_decal,
   "Milky2018/mgstudio/pbr/deferred" @pbr_deferred,
   "Milky2018/mgstudio/pbr/light_probe" @pbr_light_probe,
   "Milky2018/mgstudio/pbr/lightmap" @lightmap,

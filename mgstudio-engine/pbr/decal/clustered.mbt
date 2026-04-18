@@ -25,6 +25,9 @@ fn clustered_decal_tag_safe(tag : Int) -> Int {
 pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
 ///|
+const CLUSTERED_DECAL_PLUGIN_NAME : String = "mgstudio.pbr.decal.ClusteredDecalPlugin"
+
+///|
 /// Clustered decal parameters aligned with Bevy's `ClusteredDecal`.
 ///
 /// The decal volume follows Bevy semantics: a transformed unit cube that
@@ -242,3 +245,212 @@ pub impl @ecs.Component for ClusteredDecal with component() {
 pub let ecs_key_render_clustered_decals : @ecs.ResourceKey[
   RenderClusteredDecals,
 ] = @ecs.register_resource(debug_name="render3d.clustered_decals")
+
+///|
+pub impl @app.Resource for RenderClusteredDecals with resource() {
+  ecs_key_render_clustered_decals
+}
+
+///|
+pub struct ClusteredDecalPlugin {}
+
+///|
+pub fn ClusteredDecalPlugin::default() -> ClusteredDecalPlugin {
+  ClusteredDecalPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for ClusteredDecalPlugin with name(_self) {
+  CLUSTERED_DECAL_PLUGIN_NAME
+}
+
+///|
+fn clustered_decal_cubemap_layout_tag(layout : @light.CubemapLayout3d) -> Int {
+  match layout {
+    @light.CubemapLayout3d::CrossVertical => 0
+    @light.CubemapLayout3d::CrossHorizontal => 1
+    @light.CubemapLayout3d::LineVertical => 2
+    @light.CubemapLayout3d::LineHorizontal => 3
+    @light.CubemapLayout3d::Equirectangular => 4
+    @light.CubemapLayout3d::Faces => 5
+  }
+}
+
+///|
+fn clustered_decal_is_view_visible(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+    Some(view_visibility) => view_visibility.is_visible()
+    None => true
+  }
+}
+
+///|
+fn clustered_decal_extract_scene_decals(
+  source_world : @ecs.World,
+  render_decals : RenderClusteredDecals,
+) -> Unit {
+  source_world.for_each_component(ecs_key_clustered_decal, fn(entity, decal) {
+    if !clustered_decal_is_view_visible(source_world, entity) {
+      return
+    }
+    ignore(render_decals.insert_decal(entity, decal))
+  })
+}
+
+///|
+fn clustered_decal_extract_spot_light_textures(
+  source_world : @ecs.World,
+  render_decals : RenderClusteredDecals,
+) -> Unit {
+  source_world.for_each_component(@light.ecs_key_spot_light_texture, fn(
+    entity,
+    texture,
+  ) {
+    if !clustered_decal_is_view_visible(source_world, entity) {
+      return
+    }
+    ignore(
+      render_decals.insert_decal(
+        entity,
+        ClusteredDecal::default().with_base_color_texture(texture.image),
+      ),
+    )
+  })
+}
+
+///|
+fn clustered_decal_extract_point_light_textures(
+  source_world : @ecs.World,
+  render_decals : RenderClusteredDecals,
+) -> Unit {
+  source_world.for_each_component(@light.ecs_key_point_light_texture, fn(
+    entity,
+    texture,
+  ) {
+    if !clustered_decal_is_view_visible(source_world, entity) {
+      return
+    }
+    ignore(
+      render_decals.insert_decal(
+        entity,
+        ClusteredDecal::default()
+        .with_base_color_texture(texture.image)
+        .with_tag(clustered_decal_cubemap_layout_tag(texture.cubemap_layout)),
+      ),
+    )
+  })
+}
+
+///|
+fn clustered_decal_extract_directional_light_textures(
+  source_world : @ecs.World,
+  render_decals : RenderClusteredDecals,
+) -> Unit {
+  source_world.for_each_component(@light.ecs_key_directional_light_texture, fn(
+    entity,
+    texture,
+  ) {
+    if !clustered_decal_is_view_visible(source_world, entity) {
+      return
+    }
+    ignore(
+      render_decals.insert_decal(
+        entity,
+        ClusteredDecal::default()
+        .with_base_color_texture(texture.image)
+        .with_tag(if texture.tiled { 1 } else { 0 }),
+      ),
+    )
+  })
+}
+
+///|
+pub fn render3d_extract_clustered_decals_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let render_decals_ref = render3d_render_clustered_decals_ref_or_init(world)
+  render_decals_ref.val.clear()
+  clustered_decal_extract_scene_decals(source_world, render_decals_ref.val)
+  clustered_decal_extract_spot_light_textures(
+    source_world,
+    render_decals_ref.val,
+  )
+  clustered_decal_extract_point_light_textures(
+    source_world,
+    render_decals_ref.val,
+  )
+  clustered_decal_extract_directional_light_textures(
+    source_world,
+    render_decals_ref.val,
+  )
+}
+
+///|
+fn render3d_extract_clustered_decals_system_in_render_app(
+  world : @ecs.World,
+) -> Unit {
+  render3d_extract_clustered_decals_system(world)
+}
+
+///|
+pub fn render3d_render_clustered_decals_ref(
+  world : @ecs.World,
+) -> Ref[RenderClusteredDecals]? {
+  try! world.get_resource_ref_mut(ecs_key_render_clustered_decals)
+}
+
+///|
+pub fn render3d_render_clustered_decals_ref_or_init(
+  world : @ecs.World,
+) -> Ref[RenderClusteredDecals] {
+  if render3d_render_clustered_decals_ref(world) is None {
+    world.insert_resource(
+      ecs_key_render_clustered_decals,
+      RenderClusteredDecals::default(),
+    )
+  }
+  match render3d_render_clustered_decals_ref(world) {
+    Some(render_decals) => render_decals
+    None =>
+      abort(
+        "render clustered decals resource is missing after lazy initialization",
+      )
+  }
+}
+
+///|
+pub impl @app.Plugin for ClusteredDecalPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
+  clustered_decal_plugin_install_with(app, self)
+}
+
+///|
+pub fn clustered_decal_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  clustered_decal_plugin_install_with(app, ClusteredDecalPlugin::default())
+}
+
+///|
+pub fn clustered_decal_plugin_install_with(
+  app : @app.App[@ecs.World],
+  _plugin : ClusteredDecalPlugin,
+) -> @app.App[@ecs.World] {
+  @render.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
+    let world = sub_app.world()
+    if (try! world.get_resource(ecs_key_render_clustered_decals)) is None {
+      world.insert_resource(
+        ecs_key_render_clustered_decals,
+        RenderClusteredDecals::default(),
+      )
+    }
+    sub_app.add_systems(
+      @render.render_schedule_stage(),
+      @app.system(render3d_extract_clustered_decals_system_in_render_app).in_set(
+        @render.render_system_set_extract_commands,
+      ),
+    )
+  })
+}

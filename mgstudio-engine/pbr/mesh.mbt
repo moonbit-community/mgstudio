@@ -160,91 +160,10 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
 }
 
 ///|
-/// Marker component aligned with Bevy's `ForwardDecal`.
-pub struct ForwardDecal {} derive(ToJson, FromJson)
+pub type ForwardDecal = @pbr_decal.ForwardDecal
 
 ///|
-pub fn ForwardDecal::default() -> ForwardDecal {
-  ForwardDecal::{  }
-}
-
-///|
-fn clustered_decal_tag_safe(tag : Int) -> Int {
-  if tag < 0 {
-    0
-  } else {
-    tag
-  }
-}
-
-///|
-/// Clustered decal parameters aligned with Bevy's `ClusteredDecal`.
-///
-/// The decal volume follows Bevy semantics: a transformed unit cube that
-/// projects textures along local `-Z`.
-pub struct ClusteredDecal {
-  base_color_texture : @asset.Handle[@asset.Image]?
-  normal_map_texture : @asset.Handle[@asset.Image]?
-  metallic_roughness_texture : @asset.Handle[@asset.Image]?
-  emissive_texture : @asset.Handle[@asset.Image]?
-  tag : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn ClusteredDecal::default() -> ClusteredDecal {
-  ClusteredDecal::{
-    base_color_texture: None,
-    normal_map_texture: None,
-    metallic_roughness_texture: None,
-    emissive_texture: None,
-    tag: 0,
-  }
-}
-
-///|
-pub fn ClusteredDecal::new() -> ClusteredDecal {
-  ClusteredDecal::default()
-}
-
-///|
-pub fn ClusteredDecal::with_base_color_texture(
-  self : ClusteredDecal,
-  base_color_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, base_color_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_normal_map_texture(
-  self : ClusteredDecal,
-  normal_map_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, normal_map_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_metallic_roughness_texture(
-  self : ClusteredDecal,
-  metallic_roughness_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, metallic_roughness_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_emissive_texture(
-  self : ClusteredDecal,
-  emissive_texture : @asset.Handle[@asset.Image]?,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, emissive_texture, }
-}
-
-///|
-pub fn ClusteredDecal::with_tag(
-  self : ClusteredDecal,
-  tag : Int,
-) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, tag: clustered_decal_tag_safe(tag) }
-}
+pub type ClusteredDecal = @pbr_decal.ClusteredDecal
 
 ///|
 /// Light-facing ownership lives in `Milky2018/mgstudio/light`.

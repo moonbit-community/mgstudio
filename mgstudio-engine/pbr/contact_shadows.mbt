@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+const CONTACT_SHADOWS_PLUGIN_NAME : String = "mgstudio.pbr.ContactShadowsPlugin"
+
+///|
 /// Camera contact shadow settings aligned with Bevy's `ContactShadows`.
 pub struct ContactShadows {
   linear_steps : Int
@@ -137,6 +140,13 @@ pub struct ViewContactShadowsUniformOffset {
 } derive(ToJson, FromJson)
 
 ///|
+pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[
+  ViewContactShadowsUniformOffset,
+] = @ecs.register_component(
+  debug_name="render3d.view_contact_shadows_uniform_offset",
+)
+
+///|
 pub fn ViewContactShadowsUniformOffset::new(
   offset : UInt,
 ) -> ViewContactShadowsUniformOffset {
@@ -151,8 +161,23 @@ pub fn ViewContactShadowsUniformOffset::offset(
 }
 
 ///|
+pub impl @ecs.Component for ViewContactShadowsUniformOffset with component() {
+  ecs_key_view_contact_shadows_uniform_offset
+}
+
+///|
 pub struct ContactShadowsBuffer {
   uniforms : Array[ContactShadowsUniform]
+}
+
+///|
+let contact_shadows_buffer_resource_key : @ecs.ResourceKey[ContactShadowsBuffer] = @ecs.register_resource(
+  debug_name="render3d.contact_shadows_buffer",
+)
+
+///|
+pub impl @app.Resource for ContactShadowsBuffer with resource() {
+  contact_shadows_buffer_resource_key
 }
 
 ///|
@@ -194,6 +219,87 @@ pub fn ContactShadowsBuffer::uniform_at(
 }
 
 ///|
+pub struct ContactShadowsPlugin {}
+
+///|
+pub fn ContactShadowsPlugin::default() -> ContactShadowsPlugin {
+  ContactShadowsPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for ContactShadowsPlugin with name(_self) {
+  CONTACT_SHADOWS_PLUGIN_NAME
+}
+
+///|
+fn render3d_prepare_contact_shadows_system_in_render_app(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_contact_shadows_system(world)
+}
+
+///|
+pub impl @app.Plugin for ContactShadowsPlugin with build(self, app) {
+  contact_shadows_plugin_install_with(app, self)
+}
+
+///|
+pub fn contact_shadows_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  contact_shadows_plugin_install_with(app, ContactShadowsPlugin::default())
+}
+
+///|
+pub fn contact_shadows_plugin_install_with(
+  app : @app.App[@ecs.World],
+  _plugin : ContactShadowsPlugin,
+) -> @app.App[@ecs.World] {
+  let next = app
+  @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
+    let world = sub_app.world()
+    if (try! world.get_resource(ContactShadowsBuffer::resource())) is None {
+      world.insert_resource(
+        ContactShadowsBuffer::resource(),
+        ContactShadowsBuffer::default(),
+      )
+    }
+    sub_app.add_systems(
+      @render.render_schedule_stage(),
+      @app.system(render3d_prepare_contact_shadows_system_in_render_app).in_set(
+        @render.render_system_set_prepare_resources,
+      ),
+    )
+  })
+}
+
+///|
+pub fn render3d_contact_shadows_buffer_ref(
+  world : @ecs.World,
+) -> Ref[ContactShadowsBuffer]? {
+  try! world.get_resource_ref_mut(ContactShadowsBuffer::resource())
+}
+
+///|
+pub fn render3d_contact_shadows_buffer_ref_or_init(
+  world : @ecs.World,
+) -> Ref[ContactShadowsBuffer] {
+  if render3d_contact_shadows_buffer_ref(world) is None {
+    world.insert_resource(
+      ContactShadowsBuffer::resource(),
+      ContactShadowsBuffer::default(),
+    )
+  }
+  match render3d_contact_shadows_buffer_ref(world) {
+    Some(buffer) => buffer
+    None =>
+      abort(
+        "contact shadows buffer resource is missing after lazy initialization",
+      )
+  }
+}
+
+///|
 pub fn render3d_prepare_contact_shadows_settings(
   world : @ecs.World,
   view_entities : Array[@core.Entity],
@@ -211,4 +317,31 @@ pub fn render3d_prepare_contact_shadows_settings(
     offsets.push((entity, ViewContactShadowsUniformOffset::new(offset)))
   }
   offsets
+}
+
+///|
+pub fn render3d_apply_view_contact_shadows_uniform_offsets(
+  world : @ecs.World,
+  offsets : Array[(@core.Entity, ViewContactShadowsUniformOffset)],
+) -> Unit {
+  for entry in offsets {
+    let entity = entry.0
+    let offset = entry.1
+    try! world.set_by_key(
+      entity, ecs_key_view_contact_shadows_uniform_offset, offset,
+    )
+  }
+}
+
+///|
+pub fn render3d_prepare_contact_shadows_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let sorted_cameras = @render.sorted_cameras_or_default(world)
+  let buffer_ref = render3d_contact_shadows_buffer_ref_or_init(world)
+  let offsets = render3d_prepare_contact_shadows_settings(
+    source_world,
+    sorted_cameras.entities,
+    buffer_ref.val,
+  )
+  render3d_apply_view_contact_shadows_uniform_offsets(world, offsets)
 }

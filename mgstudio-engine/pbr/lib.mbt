@@ -137,6 +137,9 @@ fn pbr_plugin_sync_feature_plugins(
   .add_plugins(@pbr_ssr.ScreenSpaceReflectionsPlugin::default())
   .add_plugins(@pbr_volumetric_fog.VolumetricFogPlugin::default())
   .add_plugins(@pbr_render.GpuMeshPreprocessPlugin::default())
+  .add_plugins(@pbr_decal.ClusteredDecalPlugin::default())
+  .add_plugins(ContactShadowsPlugin::default())
+  .add_plugins(@pbr_decal.ForwardDecalPlugin::default())
 }
 
 ///|
