@@ -366,6 +366,9 @@ let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontS
 })
 
 ///|
+let text_font_asset_events_cursor_ref : Ref[Int] = Ref::new(0)
+
+///|
 let text_diagnostic_update_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
 
 ///|
@@ -565,6 +568,63 @@ fn text_pipeline_ensure_default_font_handle() -> @asset.Handle[@asset.Font] {
       loaded
     }
   }
+}
+
+///|
+fn text_reset_font_runtime_state() -> Unit {
+  cosmic_font_system_state.val = CosmicFontSystemState::{
+    font_system: @cosmic.FontSystem::new(),
+    handle_to_font_id: [],
+    font_id_to_handle_id: [],
+    handle_to_family: [],
+  }
+  font_atlas_set_state.val = FontAtlasSet::default()
+}
+
+///|
+fn text_mark_all_instances_for_rerender() -> Unit {
+  let count = text_state.val.texts.length()
+  if count <= 0 {
+    return
+  }
+  for i in 0..<count {
+    let instance = text_state.val.texts[i]
+    text_state.val.texts[i] = TextInstance::{
+      ..instance,
+      layout_dirty: true,
+      computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    }
+  }
+  text_runtime_mark_layout_dirty()
+}
+
+///|
+fn text_font_asset_events_require_reload(world : @ecs.World) -> Bool {
+  let message_key : @ecs.MessageKey[@asset.AssetEvent[@asset.Font]] = @ecs.Message::message()
+  if !world.contains_message(message_key) {
+    world.init_message(message_key)
+  }
+  let reader = world.message_reader(
+    message_key, text_font_asset_events_cursor_ref,
+  )
+  for event in (try! reader.read()) {
+    match event {
+      @asset.AssetEvent::Added(_)
+      | @asset.AssetEvent::Modified(_)
+      | @asset.AssetEvent::Removed(_)
+      | @asset.AssetEvent::LoadedWithDependencies(_) => return true
+    }
+  }
+  false
+}
+
+///|
+fn text_sync_font_assets_system(world : @ecs.World) -> Unit {
+  if !text_font_asset_events_require_reload(world) {
+    return
+  }
+  text_reset_font_runtime_state()
+  text_mark_all_instances_for_rerender()
 }
 
 ///|
@@ -2068,6 +2128,9 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .insert_resource(FontCx::default())
     .insert_resource(FontAtlasSet::default())
     .add_system(text_update_system)
+    .add_post_update_system_config(
+      @app.system(text_sync_font_assets_system).in_set(text_set_sync_ecs),
+    )
     .add_post_update_system_config(
       @app.system(text_sync_ecs_system).in_set(text_set_sync_ecs),
     )

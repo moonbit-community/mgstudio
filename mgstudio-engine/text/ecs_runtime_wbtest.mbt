@@ -17,10 +17,13 @@ fn reset_text_ecs_test_state() -> Unit {
   text_ecs_entries.clear()
   ui_text_ecs_entries.clear()
   text_runtime_world_id_ref.val = None
+  text_font_asset_events_cursor_ref.val = 0
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
   text_state_clear_instances()
+  text_reset_font_runtime_state()
   text_runtime_rem_size_ref.val = RemSize::default().value()
+  text_runtime_mark_layout_dirty()
   text_debug_frame_state.val.draws.clear()
 }
 
@@ -41,6 +44,51 @@ test "text plugin inserts text runtime resources" {
   debug_inspect(app.contains_resource(RemSize::resource()), content="true")
   debug_inspect(app.contains_resource(FontCx::resource()), content="true")
   debug_inspect(app.contains_resource(FontAtlasSet::resource()), content="true")
+}
+
+///|
+test "font asset events force text rerender on next update" {
+  reset_text_ecs_test_state()
+  let world = @ecs.World::new()
+  let text_handle = text_spawn(
+    Text2dBundle::new(
+      Text2d::new("Font Event"),
+      TextFont::{ ..TextFont::default(), font: FontSource::UiSansSerif },
+      @transform.Transform::identity(),
+    ),
+  )
+  let index = if text_state_find_index_by_id(text_handle.id()) is Some(i) {
+    i
+  } else {
+    panic()
+  }
+
+  text_state.val.texts[index] = text_update_layout(text_state.val.texts[index])
+  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  text_runtime_clear_layout_dirty()
+
+  let message_key : @ecs.MessageKey[@asset.AssetEvent[@asset.Font]] = @ecs.Message::message()
+  world.init_message(message_key)
+  ignore(
+    world.send_message(
+      message_key,
+      @asset.AssetEvent::Modified(@asset.Handle::new(1)),
+    ),
+  )
+
+  text_sync_font_assets_system(world)
+  debug_inspect(text_state.val.texts[index].layout_dirty, content="true")
+  debug_inspect(
+    text_state.val.texts[index].computed.needs_rerender,
+    content="true",
+  )
+  debug_inspect(text_runtime_layout_dirty(), content="true")
+
+  text_update_system(world)
+  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  text_runtime_clear_layout_dirty()
+  text_sync_font_assets_system(world)
+  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
 }
 
 ///|
