@@ -362,13 +362,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   render3d_extract_material_instances(world, meshes)
   render3d_prepare_shader_asset_paths(source_world, meshes)
   render3d_prewarm_mesh_pipelines(meshes)
-  let prepared_camera_queues : Array[Render3dPreparedCameraQueue?] = []
-  for _ in cameras {
-    prepared_camera_queues.push(None)
-  }
-  render3d_queue_store_frame(
-    world, frame_config, cameras, meshes, prepared_camera_queues,
-  )
+  render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,
     meshes.length(),
@@ -409,7 +403,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       queue_trace_start_us,
     )
   }
-  match render3d_queue_frame_snapshot(world) {
+  match render3d_queue_take_pending_frame(world) {
     Some(frame) => {
       let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
         world,

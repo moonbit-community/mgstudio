@@ -13,6 +13,13 @@
 // limitations under the License.
 
 ///|
+priv struct Render3dPendingFrame {
+  frame_config : Render3dExecuteFrameConfig
+  cameras : Array[ExtractedCamera3d]
+  meshes : Array[ExtractedMesh3d]
+}
+
+///|
 priv struct Render3dPreparedCameraQueue {
   draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d
   opaque_alpha_draw_item_indices : Array[Int]
@@ -34,12 +41,38 @@ priv struct Render3dQueuedFrame {
 
 ///|
 priv struct Render3dExecuteQueueState {
+  mut pending_frame : Render3dPendingFrame?
   mut queued_frame : Render3dQueuedFrame?
 }
 
 ///|
 fn render3d_execute_queue_state_default() -> Render3dExecuteQueueState {
-  Render3dExecuteQueueState::{ queued_frame: None }
+  Render3dExecuteQueueState::{ pending_frame: None, queued_frame: None }
+}
+
+///|
+fn render3d_queue_store_pending_frame(
+  world : @ecs.World,
+  frame_config : Render3dExecuteFrameConfig,
+  cameras : Array[ExtractedCamera3d],
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  state_ref.val.pending_frame = Some(Render3dPendingFrame::{
+    frame_config,
+    cameras,
+    meshes,
+  })
+}
+
+///|
+fn render3d_queue_take_pending_frame(
+  world : @ecs.World,
+) -> Render3dPendingFrame? {
+  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  let pending = state_ref.val.pending_frame
+  state_ref.val.pending_frame = None
+  pending
 }
 
 ///|
@@ -115,6 +148,7 @@ fn render3d_queue_frame_snapshot(world : @ecs.World) -> Render3dQueuedFrame? {
 ///|
 fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
+  state_ref.val.pending_frame = None
   state_ref.val.queued_frame = None
 }
 
