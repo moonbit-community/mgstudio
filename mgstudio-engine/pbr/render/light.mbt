@@ -734,6 +734,48 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
 
 ///|
 fn render3d_cluster_screen_size(world : @ecs.World) -> (Int, Int) {
+  let preferred_viewport_ref : Ref[(Int, Int)?] = Ref::new(None)
+  let fallback_viewport_ref : Ref[(Int, Int)?] = Ref::new(None)
+  world.for_each_component(@sprite.ecs_key_camera, fn(entity, camera) {
+    let camera_viewport = match camera.physical_viewport_size() {
+      Some(viewport_size) => {
+        let width = if viewport_size.x <= 0 { 0 } else { viewport_size.x }
+        let height = if viewport_size.y <= 0 { 0 } else { viewport_size.y }
+        if width <= 0 || height <= 0 {
+          None
+        } else {
+          Some((width, height))
+        }
+      }
+      None => None
+    }
+    if fallback_viewport_ref.val is None && camera_viewport is Some(viewport) {
+      fallback_viewport_ref.val = Some(viewport)
+    }
+    if preferred_viewport_ref.val is Some(_) {
+      return
+    }
+    let has_cluster_components = (try! world.contains_by_key(
+        entity,
+        @light_cluster.Clusters::component(),
+      )) ||
+      (try! world.contains_by_key(
+        entity,
+        @light_cluster.ClusterConfig::component(),
+      ))
+    if !has_cluster_components {
+      return
+    }
+    if camera_viewport is Some(viewport) {
+      preferred_viewport_ref.val = Some(viewport)
+    }
+  })
+  if preferred_viewport_ref.val is Some(viewport) {
+    return viewport
+  }
+  if fallback_viewport_ref.val is Some(viewport) {
+    return viewport
+  }
   let width = @window.window_physical_width_for(
     world,
     @window.WindowRef::Primary,

@@ -795,6 +795,41 @@ test "pbr render light: cluster payload prefers runtime clusters component" {
 }
 
 ///|
+test "pbr render light: cluster factors xy prefer camera viewport size when present" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default().with_viewport(
+      @sprite.Viewport::new(@math.IVec2::new(0, 0), @math.IVec2::new(640, 360)),
+    ),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::XYZ(
+      16,
+      9,
+      24,
+      @light_cluster.ClusterZConfig::default(),
+      false,
+    ),
+  )
+  |> ignore)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.x, 16.0F / 640.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.y, 9.0F / 360.0F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: volumetric flags require shadow maps for point and directional lights" {
   let world = @ecs.World::new()
 
