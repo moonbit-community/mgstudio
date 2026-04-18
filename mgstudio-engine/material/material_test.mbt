@@ -66,6 +66,32 @@ test "standard material defaults align with bevy clearcoat and alpha threshold" 
 }
 
 ///|
+test "standard material flip helpers keep bevy uv left-multiply semantics" {
+  let sample = @math.Vec2::new(0.25F, 0.6F)
+  let horizontal = @material.StandardMaterial::default().flip(true, false)
+  let horizontal_uv = horizontal.uv_transform.transform_point2(sample)
+  debug_inspect(
+    material_test_nearly_equal(horizontal_uv.x, 0.75F),
+    content="true",
+  )
+  debug_inspect(
+    material_test_nearly_equal(horizontal_uv.y, 0.6F),
+    content="true",
+  )
+  let vertical = @material.StandardMaterial::default().flip(false, true)
+  let vertical_uv = vertical.uv_transform.transform_point2(sample)
+  debug_inspect(
+    material_test_nearly_equal(vertical_uv.x, 0.25F),
+    content="true",
+  )
+  debug_inspect(material_test_nearly_equal(vertical_uv.y, 0.4F), content="true")
+  let hv = @material.StandardMaterial::default().flipped(true, true)
+  let hv_uv = hv.uv_transform.transform_point2(sample)
+  debug_inspect(material_test_nearly_equal(hv_uv.x, 0.75F), content="true")
+  debug_inspect(material_test_nearly_equal(hv_uv.y, 0.4F), content="true")
+}
+
+///|
 test "material boundary re-exports material metadata APIs" {
   let metadata = @material.ExtendedMaterialMetadata3d::new(7)
     .with_disable_shadows(true)
@@ -312,4 +338,18 @@ test "material boundary Assets::add accepts Color and Image handle inputs" {
     false
   }
   debug_inspect(ok, content="true")
+}
+
+///|
+fn material_test_abs(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn material_test_nearly_equal(lhs : Float, rhs : Float) -> Bool {
+  material_test_abs(lhs - rhs) <= 1.0e-5F
 }

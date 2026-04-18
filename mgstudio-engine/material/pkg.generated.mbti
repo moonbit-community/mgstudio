@@ -394,6 +394,8 @@ pub struct StandardMaterial {
   cull_mode : Face3d?
 }
 pub fn StandardMaterial::default() -> Self
+pub fn StandardMaterial::flip(Self, Bool, Bool) -> Self
+pub fn StandardMaterial::flipped(Self, Bool, Bool) -> Self
 pub fn StandardMaterial::from_color(@color.Color) -> Self
 pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
 pub fn StandardMaterial::with_anisotropy_rotation(Self, Float) -> Self

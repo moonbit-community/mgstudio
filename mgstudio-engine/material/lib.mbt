@@ -484,6 +484,52 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
 }
 
 ///|
+fn standard_material_flip_horizontal_uv_transform() -> @transform.Affine2 {
+  @transform.Affine2::from_scale_translation(
+    @math.Vec2::new(-1.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+}
+
+///|
+fn standard_material_flip_vertical_uv_transform() -> @transform.Affine2 {
+  @transform.Affine2::from_scale_translation(
+    @math.Vec2::new(1.0F, -1.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+}
+
+///|
+pub fn StandardMaterial::flip(
+  self : StandardMaterial,
+  horizontal : Bool,
+  vertical : Bool,
+) -> StandardMaterial {
+  let mut uv_transform = self.uv_transform
+  if horizontal {
+    // Keep Bevy's left-multiplication order for composed UV transforms.
+    uv_transform = standard_material_flip_horizontal_uv_transform().mul(
+      uv_transform,
+    )
+  }
+  if vertical {
+    uv_transform = standard_material_flip_vertical_uv_transform().mul(
+      uv_transform,
+    )
+  }
+  StandardMaterial::{ ..self, uv_transform, }
+}
+
+///|
+pub fn StandardMaterial::flipped(
+  self : StandardMaterial,
+  horizontal : Bool,
+  vertical : Bool,
+) -> StandardMaterial {
+  self.flip(horizontal, vertical)
+}
+
+///|
 pub impl IntoStandardMaterialAsset for @sprite.Color with into_standard_material_asset(
   self,
 ) {

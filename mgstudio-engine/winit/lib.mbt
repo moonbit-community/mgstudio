@@ -45,14 +45,6 @@ pub fn WinitPlugin::default() -> WinitPlugin {
 }
 
 ///|
-priv struct WinitPluginMarker {}
-
-///|
-let ecs_key_winit_plugin_marker : @ecs.ResourceKey[WinitPluginMarker] = @ecs.register_resource(
-  debug_name="mgstudio_winit::WinitPluginMarker",
-)
-
-///|
 pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   winit_plugin_with(app, WinitPlugin::default())
 }
@@ -73,59 +65,50 @@ pub fn winit_plugin_with(
   plugin : WinitPlugin,
 ) -> @app.App[@ecs.World] {
   @windowing.set_event_loop_any_thread(plugin.run_on_any_thread)
-  let mut next = app
-  if !next.contains_resource(ecs_key_winit_plugin_marker) {
-    next = next
-      .insert_world_resource(ecs_key_winit_plugin_marker, WinitPluginMarker::{
-
-      })
-      .init_resource(WinitWindows::default)
-      .init_resource(WinitMonitors::default)
-      .init_resource(WinitSettings::default)
-      .add_message(ecs_key_raw_winit_window_event)
-      .add_message(@a11y.ecs_msg_key_action_request)
-      .add_pre_update_system_config(
-        @app.system(winit_bind_accessibility_requested_system).in_set(
-          @a11y.a11y_set,
-        ),
-      )
-      .add_post_update_system_config(
-        @app.system(winit_poll_accessibility_actions_system).in_set(
-          @a11y.a11y_set,
-        ),
-      )
-      .add_post_update_system_config(
-        @app.system(winit_update_accessibility_nodes_system)
-        .in_set(@a11y.a11y_set)
-        .run_if(winit_should_update_accessibility_nodes),
-      )
-      .add_last_system_config(
-        @app.system(winit_commit_pending_accessibility_update_system).in_set(
-          @a11y.a11y_set,
-        ),
-      )
-      .add_systems(
-        @app.Last,
-        (
-          @app.system(winit_changed_windows_system),
-          @app.system(@winit_cursor.winit_changed_cursor_options_system),
-          @app.system(winit_despawn_windows_system),
-          @app.system(winit_check_keyboard_focus_lost_system),
-        )
-        |> @app.chain(),
-      )
-      .add_systems(
-        @app.PreUpdate,
-        (
-          @app.system(winit_create_monitors_system),
-          @app.system(winit_create_windows_system),
-          @app.system(winit_prepare_windows_system),
-          @app.system(winit_sync_windows_resource_system),
-          @app.system(winit_write_raw_winit_window_events_system),
-        )
-        |> @app.chain(),
-      )
-      .set_runner(winit_runner)
-  }
-  next
+  app
+  .init_resource(WinitWindows::default)
+  .init_resource(WinitMonitors::default)
+  .init_resource(WinitSettings::default)
+  .add_message(ecs_key_raw_winit_window_event)
+  .add_message(@a11y.ecs_msg_key_action_request)
+  .add_pre_update_system_config(
+    @app.system(winit_bind_accessibility_requested_system).in_set(
+      @a11y.a11y_set,
+    ),
+  )
+  .add_post_update_system_config(
+    @app.system(winit_poll_accessibility_actions_system).in_set(@a11y.a11y_set),
+  )
+  .add_post_update_system_config(
+    @app.system(winit_update_accessibility_nodes_system)
+    .in_set(@a11y.a11y_set)
+    .run_if(winit_should_update_accessibility_nodes),
+  )
+  .add_last_system_config(
+    @app.system(winit_commit_pending_accessibility_update_system).in_set(
+      @a11y.a11y_set,
+    ),
+  )
+  .add_systems(
+    @app.Last,
+    (
+      @app.system(winit_changed_windows_system),
+      @app.system(@winit_cursor.winit_changed_cursor_options_system),
+      @app.system(winit_despawn_windows_system),
+      @app.system(winit_check_keyboard_focus_lost_system),
+    )
+    |> @app.chain(),
+  )
+  .add_systems(
+    @app.PreUpdate,
+    (
+      @app.system(winit_create_monitors_system),
+      @app.system(winit_create_windows_system),
+      @app.system(winit_prepare_windows_system),
+      @app.system(winit_sync_windows_resource_system),
+      @app.system(winit_write_raw_winit_window_events_system),
+    )
+    |> @app.chain(),
+  )
+  .set_runner(winit_runner)
 }
