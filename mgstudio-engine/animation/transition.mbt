@@ -111,21 +111,15 @@ pub fn AnimationTransitions::play(
   transition_duration_seconds : Float,
 ) -> AnimationPlayerEntry {
   if self.main_animation is Some(old_animation) {
-    if old_animation != new_animation {
-      if player.animation(old_animation) is Some(old_active) {
-        if !old_active.is_paused() {
-          if transition_duration_seconds <= 0.0F {
-            player.stop(old_animation) |> ignore
-          } else {
-            self.transitions.push(
-              animation_transition_new(
-                old_active.weight(),
-                1.0F / transition_duration_seconds,
-                old_animation,
-              ),
-            )
-          }
-        }
+    if player.animation(old_animation) is Some(old_active) {
+      if !old_active.is_paused() {
+        self.transitions.push(
+          animation_transition_new(
+            old_active.weight(),
+            1.0F / transition_duration_seconds,
+            old_animation,
+          ),
+        )
       }
     }
   }
