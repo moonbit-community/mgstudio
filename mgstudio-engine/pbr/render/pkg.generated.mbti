@@ -315,7 +315,7 @@ pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform)
 
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
 
-pub fn render3d_mesh_view_layout_entries(Bool, Bool, MeshPipelineViewLayoutKey) -> (Array[MeshViewBindGroupLayoutEntry], Array[MeshViewBindGroupLayoutEntry])
+pub fn render3d_mesh_view_layout_entries(Bool, Bool, MeshPipelineViewLayoutKey, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> (Array[MeshViewBindGroupLayoutEntry], Array[MeshViewBindGroupLayoutEntry])
 
 pub fn render3d_morph_non_zero_weight_count(Array[Float]) -> Int
 
@@ -769,9 +769,22 @@ pub(all) struct MeshPreprocessStatic3d {
 pub struct MeshViewBindGroupLayoutEntry {
   binding : Int
   name : String
-  is_storage : Bool
-  read_only : Bool
+  entry_type : MeshViewBindGroupLayoutEntryType
+  stage : MeshViewBindGroupLayoutEntryStage
   has_dynamic_offset : Bool
+}
+
+pub enum MeshViewBindGroupLayoutEntryStage {
+  Vertex
+  Fragment
+  VertexFragment
+}
+
+pub enum MeshViewBindGroupLayoutEntryType {
+  UniformBuffer
+  StorageBuffer(Bool)
+  Texture(MeshViewTextureSampleType, MeshViewTextureDimension, Bool, Int)
+  Sampler(MeshViewSamplerBindingType)
 }
 
 pub struct MeshViewBindings3d {
@@ -782,6 +795,26 @@ pub struct MeshViewBindings3d {
   layout_key : MeshPipelineViewLayoutKey
 }
 pub fn MeshViewBindings3d::default() -> Self
+
+pub enum MeshViewSamplerBindingType {
+  Filtering
+  Comparison
+}
+
+pub enum MeshViewTextureDimension {
+  D2
+  D2Array
+  D3
+  Cube
+  CubeArray
+}
+
+pub enum MeshViewTextureSampleType {
+  FloatFilterable
+  FloatNonFilterable
+  Depth
+  UInt
+}
 
 pub struct MorphIndices {
   mut current : Map[UInt64, UInt]

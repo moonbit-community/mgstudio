@@ -18,6 +18,8 @@ pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
 pub fn clustered_decal() -> ClusteredDecal
 
+pub fn clustered_decal_max_view_decals(partially_bound_binding_array? : Bool) -> Int
+
 pub fn clustered_decal_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn clustered_decal_plugin_install_with(@app.App[@ecs.World], ClusteredDecalPlugin) -> @app.App[@ecs.World]
@@ -42,11 +44,17 @@ pub fn pbr_forward_decal_specialized_label(String) -> String
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
+pub fn render3d_decals_buffer_ref(@ecs.World) -> @ref.Ref[DecalsBuffer]?
+
+pub fn render3d_decals_buffer_ref_or_init(@ecs.World) -> @ref.Ref[DecalsBuffer]
+
 pub fn render3d_extract_clustered_decals_system(@ecs.World) -> Unit
 
 pub fn render3d_render_clustered_decals_ref(@ecs.World) -> @ref.Ref[RenderClusteredDecals]?
 
 pub fn render3d_render_clustered_decals_ref_or_init(@ecs.World) -> @ref.Ref[RenderClusteredDecals]
+
+pub fn render3d_upload_decals(RenderClusteredDecals, DecalsBuffer) -> Unit
 
 // Errors
 
@@ -83,6 +91,15 @@ pub struct DecalPluginState {
 pub fn DecalPluginState::clustered_enabled(Self) -> Bool
 pub fn DecalPluginState::default() -> Self
 pub fn DecalPluginState::forward_enabled(Self) -> Bool
+
+pub struct DecalsBuffer {
+  decals : Array[RenderClusteredDecal]
+}
+pub fn DecalsBuffer::clear(Self) -> Unit
+pub fn DecalsBuffer::default() -> Self
+pub fn DecalsBuffer::is_empty(Self) -> Bool
+pub fn DecalsBuffer::push(Self, RenderClusteredDecal) -> Unit
+pub impl @app.Resource for DecalsBuffer
 
 pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)
@@ -132,6 +149,13 @@ pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, ClusteredDecal) -> Int
 pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, ClusteredDecal, @math.Affine3) -> Int
 pub impl @app.Resource for RenderClusteredDecals
+
+pub struct RenderViewClusteredDecalBindGroupEntries {
+  decals : Array[RenderClusteredDecal]
+  texture_ids : Array[Int]
+  sampler_texture_id : Int
+}
+pub fn RenderViewClusteredDecalBindGroupEntries::get(RenderClusteredDecals, DecalsBuffer, Int, partially_bound_binding_array? : Bool, decals_supported? : Bool) -> Self?
 
 // Type aliases
 pub using @material {type ForwardDecalMaterialExt}

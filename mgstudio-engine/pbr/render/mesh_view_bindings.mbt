@@ -143,39 +143,116 @@ pub fn MeshPipelineViewLayoutKey::label(
 pub struct MeshViewBindGroupLayoutEntry {
   binding : Int
   name : String
-  is_storage : Bool
-  read_only : Bool
+  entry_type : MeshViewBindGroupLayoutEntryType
+  stage : MeshViewBindGroupLayoutEntryStage
   has_dynamic_offset : Bool
 }
 
 ///|
-fn mesh_view_uniform_entry(
+pub enum MeshViewBindGroupLayoutEntryStage {
+  Vertex
+  Fragment
+  VertexFragment
+}
+
+///|
+pub enum MeshViewBindGroupLayoutEntryType {
+  UniformBuffer
+  StorageBuffer(Bool)
+  Texture(MeshViewTextureSampleType, MeshViewTextureDimension, Bool, Int)
+  Sampler(MeshViewSamplerBindingType)
+}
+
+///|
+pub enum MeshViewTextureSampleType {
+  FloatFilterable
+  FloatNonFilterable
+  Depth
+  UInt
+}
+
+///|
+pub enum MeshViewTextureDimension {
+  D2
+  D2Array
+  D3
+  Cube
+  CubeArray
+}
+
+///|
+pub enum MeshViewSamplerBindingType {
+  Filtering
+  Comparison
+}
+
+///|
+fn mesh_view_uniform_buffer_entry(
   binding : Int,
   name : String,
+  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
   has_dynamic_offset? : Bool = false,
 ) -> MeshViewBindGroupLayoutEntry {
   MeshViewBindGroupLayoutEntry::{
     binding,
     name,
-    is_storage: false,
-    read_only: true,
+    entry_type: MeshViewBindGroupLayoutEntryType::UniformBuffer,
+    stage,
     has_dynamic_offset,
   }
 }
 
 ///|
-fn mesh_view_storage_entry(
+fn mesh_view_storage_buffer_entry(
   binding : Int,
   name : String,
   read_only : Bool,
+  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
   has_dynamic_offset? : Bool = false,
 ) -> MeshViewBindGroupLayoutEntry {
   MeshViewBindGroupLayoutEntry::{
     binding,
     name,
-    is_storage: true,
-    read_only,
+    entry_type: MeshViewBindGroupLayoutEntryType::StorageBuffer(read_only),
+    stage,
     has_dynamic_offset,
+  }
+}
+
+///|
+fn mesh_view_texture_entry(
+  binding : Int,
+  name : String,
+  sample_type : MeshViewTextureSampleType,
+  dimension : MeshViewTextureDimension,
+  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
+  multisampled? : Bool = false,
+  array_count? : Int = 0,
+) -> MeshViewBindGroupLayoutEntry {
+  MeshViewBindGroupLayoutEntry::{
+    binding,
+    name,
+    entry_type: MeshViewBindGroupLayoutEntryType::Texture(
+      sample_type, dimension, multisampled, array_count,
+    ),
+    stage,
+    has_dynamic_offset: false,
+  }
+}
+
+///|
+fn mesh_view_sampler_entry(
+  binding : Int,
+  name : String,
+  sampler_type : MeshViewSamplerBindingType,
+  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
+) -> MeshViewBindGroupLayoutEntry {
+  MeshViewBindGroupLayoutEntry::{
+    binding,
+    name,
+    entry_type: MeshViewBindGroupLayoutEntryType::Sampler(sampler_type),
+    stage,
+    has_dynamic_offset: false,
   }
 }
 
@@ -184,55 +261,251 @@ pub fn render3d_mesh_view_layout_entries(
   clustered_forward_buffer_read_only : Bool,
   visibility_ranges_buffer_read_only : Bool,
   layout_key : MeshPipelineViewLayoutKey,
+  clustered_decals_usable? : Bool = true,
+  irradiance_volumes_usable? : Bool = true,
+  oit_supported? : Bool = true,
 ) -> (Array[MeshViewBindGroupLayoutEntry], Array[MeshViewBindGroupLayoutEntry]) {
+  // Bevy source: `bevy_pbr/src/render/mesh_view_bindings.rs::layout_entries`.
   let main_entries : Array[MeshViewBindGroupLayoutEntry] = [
-    mesh_view_uniform_entry(0, "view", has_dynamic_offset=true),
-    mesh_view_uniform_entry(1, "lights", has_dynamic_offset=true),
-    mesh_view_uniform_entry(2, "point_shadow_textures"),
-    mesh_view_uniform_entry(3, "point_shadow_sampler"),
-    mesh_view_uniform_entry(4, "directional_shadow_textures"),
-    mesh_view_uniform_entry(5, "directional_shadow_sampler"),
-    mesh_view_storage_entry(
-      6, "clusterable_object_meta", clustered_forward_buffer_read_only,
+    mesh_view_uniform_buffer_entry(
+      0,
+      "view",
+      stage=MeshViewBindGroupLayoutEntryStage::VertexFragment,
+      has_dynamic_offset=true,
     ),
-    mesh_view_storage_entry(
-      7, "visibility_ranges", visibility_ranges_buffer_read_only,
+    mesh_view_uniform_buffer_entry(1, "lights", has_dynamic_offset=true),
+    mesh_view_texture_entry(
+      2,
+      "point_shadow_textures",
+      MeshViewTextureSampleType::Depth,
+      MeshViewTextureDimension::CubeArray,
     ),
-    mesh_view_uniform_entry(8, "globals", has_dynamic_offset=true),
-    mesh_view_uniform_entry(9, "light_probes", has_dynamic_offset=true),
-    mesh_view_uniform_entry(10, "fog", has_dynamic_offset=true),
+    mesh_view_sampler_entry(
+      3,
+      "point_shadow_textures_comparison_sampler",
+      MeshViewSamplerBindingType::Comparison,
+    ),
+    mesh_view_texture_entry(
+      5,
+      "directional_shadow_textures",
+      MeshViewTextureSampleType::Depth,
+      MeshViewTextureDimension::D2Array,
+    ),
+    mesh_view_sampler_entry(
+      6,
+      "directional_shadow_textures_comparison_sampler",
+      MeshViewSamplerBindingType::Comparison,
+    ),
+    mesh_view_storage_buffer_entry(
+      8, "clustered_lights", clustered_forward_buffer_read_only,
+    ),
+    mesh_view_storage_buffer_entry(
+      9, "clusterable_object_index_lists", clustered_forward_buffer_read_only,
+    ),
+    mesh_view_storage_buffer_entry(
+      10, "cluster_offsets_and_counts", clustered_forward_buffer_read_only,
+    ),
+    mesh_view_uniform_buffer_entry(
+      11,
+      "globals",
+      stage=MeshViewBindGroupLayoutEntryStage::VertexFragment,
+    ),
+    mesh_view_uniform_buffer_entry(12, "fog", has_dynamic_offset=true),
+    mesh_view_uniform_buffer_entry(13, "light_probes", has_dynamic_offset=true),
+    mesh_view_storage_buffer_entry(
+      14,
+      "visibility_ranges",
+      visibility_ranges_buffer_read_only,
+      stage=MeshViewBindGroupLayoutEntryStage::Vertex,
+    ),
+    mesh_view_uniform_buffer_entry(15, "ssr_settings", has_dynamic_offset=true),
+    mesh_view_uniform_buffer_entry(
+      16,
+      "contact_shadows_settings",
+      has_dynamic_offset=true,
+    ),
+    mesh_view_texture_entry(
+      17,
+      "screen_space_ambient_occlusion_texture",
+      MeshViewTextureSampleType::FloatNonFilterable,
+      MeshViewTextureDimension::D2,
+    ),
+    mesh_view_uniform_buffer_entry(
+      18,
+      "environment_map_uniform",
+      has_dynamic_offset=true,
+    ),
+    mesh_view_texture_entry(
+      19,
+      "dt_lut_texture",
+      MeshViewTextureSampleType::FloatFilterable,
+      MeshViewTextureDimension::D3,
+    ),
+    mesh_view_sampler_entry(
+      20,
+      "dt_lut_sampler",
+      MeshViewSamplerBindingType::Filtering,
+    ),
+    mesh_view_texture_entry(
+      25,
+      "view_transmission_texture",
+      MeshViewTextureSampleType::FloatFilterable,
+      MeshViewTextureDimension::D2,
+    ),
+    mesh_view_sampler_entry(
+      26,
+      "view_transmission_sampler",
+      MeshViewSamplerBindingType::Filtering,
+    ),
   ]
   if layout_key.contains(MESH_VIEW_LAYOUT_DEPTH_PREPASS) {
-    main_entries.push(mesh_view_uniform_entry(11, "depth_prepass_texture"))
+    main_entries.push(
+      mesh_view_texture_entry(
+        21,
+        "depth_prepass_texture",
+        MeshViewTextureSampleType::Depth,
+        MeshViewTextureDimension::D2,
+        multisampled=layout_key.contains(MESH_VIEW_LAYOUT_MULTISAMPLED),
+      ),
+    )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_NORMAL_PREPASS) {
-    main_entries.push(mesh_view_uniform_entry(12, "normal_prepass_texture"))
+    main_entries.push(
+      mesh_view_texture_entry(
+        22,
+        "normal_prepass_texture",
+        MeshViewTextureSampleType::FloatNonFilterable,
+        MeshViewTextureDimension::D2,
+        multisampled=layout_key.contains(MESH_VIEW_LAYOUT_MULTISAMPLED),
+      ),
+    )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_MOTION_VECTOR_PREPASS) {
     main_entries.push(
-      mesh_view_uniform_entry(13, "motion_vector_prepass_texture"),
+      mesh_view_texture_entry(
+        23,
+        "motion_vector_prepass_texture",
+        MeshViewTextureSampleType::FloatNonFilterable,
+        MeshViewTextureDimension::D2,
+        multisampled=layout_key.contains(MESH_VIEW_LAYOUT_MULTISAMPLED),
+      ),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_DEFERRED_PREPASS) {
-    main_entries.push(mesh_view_uniform_entry(14, "deferred_prepass_texture"))
-  }
-  if layout_key.contains(MESH_VIEW_LAYOUT_OIT_ENABLED) {
     main_entries.push(
-      mesh_view_storage_entry(15, "oit_layers", false, has_dynamic_offset=true),
+      mesh_view_texture_entry(
+        24,
+        "deferred_prepass_texture",
+        MeshViewTextureSampleType::UInt,
+        MeshViewTextureDimension::D2,
+      ),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_OIT_ENABLED) && oit_supported {
+    main_entries.push(
+      mesh_view_uniform_buffer_entry(
+        27,
+        "oit_settings",
+        has_dynamic_offset=true,
+      ),
+    )
+    main_entries.push(mesh_view_uniform_buffer_entry(28, "oit_nodes_capacity"))
+    main_entries.push(mesh_view_storage_buffer_entry(29, "oit_nodes", false))
+    main_entries.push(mesh_view_storage_buffer_entry(30, "oit_heads", false))
+    main_entries.push(
+      mesh_view_storage_buffer_entry(31, "oit_atomic_counter", false),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_ATMOSPHERE) {
     main_entries.push(
-      mesh_view_uniform_entry(16, "atmosphere", has_dynamic_offset=true),
+      mesh_view_texture_entry(
+        32,
+        "atmosphere_transmittance_texture",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::D2,
+      ),
+    )
+    main_entries.push(
+      mesh_view_sampler_entry(
+        33,
+        "atmosphere_transmittance_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+    main_entries.push(
+      mesh_view_storage_buffer_entry(34, "atmosphere_data", true),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_STBN) {
-    main_entries.push(mesh_view_uniform_entry(17, "stbn_texture"))
+    main_entries.push(
+      mesh_view_texture_entry(
+        35,
+        "blue_noise_texture",
+        MeshViewTextureSampleType::FloatNonFilterable,
+        MeshViewTextureDimension::D2Array,
+      ),
+    )
   }
   let binding_array_entries : Array[MeshViewBindGroupLayoutEntry] = [
-    mesh_view_uniform_entry(0, "point_shadow_textures_array"),
-    mesh_view_uniform_entry(1, "directional_shadow_textures_array"),
+    mesh_view_texture_entry(
+      0,
+      "diffuse_environment_maps",
+      MeshViewTextureSampleType::FloatFilterable,
+      MeshViewTextureDimension::Cube,
+      array_count=8,
+    ),
+    mesh_view_texture_entry(
+      1,
+      "specular_environment_maps",
+      MeshViewTextureSampleType::FloatFilterable,
+      MeshViewTextureDimension::Cube,
+      array_count=8,
+    ),
+    mesh_view_sampler_entry(
+      2,
+      "environment_map_sampler",
+      MeshViewSamplerBindingType::Filtering,
+    ),
   ]
+  if irradiance_volumes_usable {
+    binding_array_entries.push(
+      mesh_view_texture_entry(
+        3,
+        "irradiance_volumes",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::D3,
+        array_count=8,
+      ),
+    )
+    binding_array_entries.push(
+      mesh_view_sampler_entry(
+        4,
+        "irradiance_volume_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+  }
+  if clustered_decals_usable {
+    binding_array_entries.push(
+      mesh_view_storage_buffer_entry(5, "clustered_decals", true),
+    )
+    binding_array_entries.push(
+      mesh_view_texture_entry(
+        6,
+        "clustered_decal_textures",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::D2,
+        array_count=8,
+      ),
+    )
+    binding_array_entries.push(
+      mesh_view_sampler_entry(
+        7,
+        "clustered_decal_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+  }
   (main_entries, binding_array_entries)
 }
 

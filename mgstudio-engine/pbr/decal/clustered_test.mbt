@@ -39,3 +39,52 @@ test "pbr/decal: clustered tag is clamped to non-negative" {
   let decal = ClusteredDecal::new().with_tag(-5)
   debug_inspect(decal.tag, content="0")
 }
+
+///|
+test "pbr/decal: upload_decals keeps gpu buffer non-empty" {
+  let render_decals = RenderClusteredDecals::default()
+  let decals_buffer = DecalsBuffer::default()
+
+  render3d_upload_decals(render_decals, decals_buffer)
+  debug_inspect(decals_buffer.is_empty(), content="false")
+
+  let entity = @core.Entity::new(99, 1)
+  ignore(
+    render_decals.insert_decal(
+      entity,
+      ClusteredDecal::new().with_base_color_texture(
+        Some(@asset.Handle::new(123)),
+      ),
+    ),
+  )
+  render3d_upload_decals(render_decals, decals_buffer)
+  debug_inspect(decals_buffer.decals.length(), content="1")
+}
+
+///|
+test "pbr/decal: bind-group entries pad textures when partial binding is unavailable" {
+  let render_decals = RenderClusteredDecals::default()
+  let decals_buffer = DecalsBuffer::default()
+  let entity = @core.Entity::new(42, 1)
+
+  ignore(
+    render_decals.insert_decal(
+      entity,
+      ClusteredDecal::new().with_base_color_texture(Some(@asset.Handle::new(7))),
+    ),
+  )
+  render3d_upload_decals(render_decals, decals_buffer)
+
+  guard RenderViewClusteredDecalBindGroupEntries::get(
+      render_decals,
+      decals_buffer,
+      -1,
+      partially_bound_binding_array=false,
+      decals_supported=true,
+    )
+    is Some(entries) else {
+    abort("expected clustered decal bind-group entries")
+  }
+  debug_inspect(entries.texture_ids.length(), content="8")
+  debug_inspect(entries.sampler_texture_id, content="7")
+}

@@ -281,6 +281,136 @@ pub impl @app.Resource for RenderClusteredDecals with resource() {
 }
 
 ///|
+pub struct RenderViewClusteredDecalBindGroupEntries {
+  decals : Array[RenderClusteredDecal]
+  texture_ids : Array[Int]
+  sampler_texture_id : Int
+}
+
+///|
+pub struct DecalsBuffer {
+  decals : Array[RenderClusteredDecal]
+}
+
+///|
+pub fn DecalsBuffer::default() -> DecalsBuffer {
+  DecalsBuffer::{ decals: [] }
+}
+
+///|
+pub fn DecalsBuffer::clear(self : DecalsBuffer) -> Unit {
+  self.decals.clear()
+}
+
+///|
+pub fn DecalsBuffer::push(
+  self : DecalsBuffer,
+  decal : RenderClusteredDecal,
+) -> Unit {
+  self.decals.push(decal)
+}
+
+///|
+pub fn DecalsBuffer::is_empty(self : DecalsBuffer) -> Bool {
+  self.decals.length() == 0
+}
+
+///|
+let ecs_key_decals_buffer : @ecs.ResourceKey[DecalsBuffer] = @ecs.register_resource(
+  debug_name="render3d.decals_buffer",
+)
+
+///|
+pub impl @app.Resource for DecalsBuffer with resource() {
+  ecs_key_decals_buffer
+}
+
+///|
+pub fn clustered_decal_max_view_decals(
+  partially_bound_binding_array? : Bool = true,
+) -> Int {
+  if partially_bound_binding_array {
+    1024
+  } else {
+    8
+  }
+}
+
+///|
+pub fn RenderViewClusteredDecalBindGroupEntries::get(
+  render_decals : RenderClusteredDecals,
+  decals_buffer : DecalsBuffer,
+  fallback_texture_id : Int,
+  partially_bound_binding_array? : Bool = true,
+  decals_supported? : Bool = true,
+) -> RenderViewClusteredDecalBindGroupEntries? {
+  if !decals_supported {
+    return None
+  }
+  let texture_ids = render_decals.binding_index_to_textures.copy()
+  if !partially_bound_binding_array {
+    let max_view_decals = clustered_decal_max_view_decals(
+      partially_bound_binding_array~,
+    )
+    while texture_ids.length() < max_view_decals {
+      texture_ids.push(fallback_texture_id)
+    }
+  } else if texture_ids.length() == 0 {
+    texture_ids.push(fallback_texture_id)
+  }
+  let sampler_texture_id = if render_decals.binding_index_to_textures.length() ==
+    0 {
+    fallback_texture_id
+  } else {
+    render_decals.binding_index_to_textures[0]
+  }
+  Some(RenderViewClusteredDecalBindGroupEntries::{
+    decals: decals_buffer.decals.copy(),
+    texture_ids,
+    sampler_texture_id,
+  })
+}
+
+///|
+pub fn render3d_upload_decals(
+  render_decals : RenderClusteredDecals,
+  decals_buffer : DecalsBuffer,
+) -> Unit {
+  decals_buffer.clear()
+  for decal in render_decals.decals {
+    decals_buffer.push(decal)
+  }
+  if decals_buffer.is_empty() {
+    decals_buffer.push(RenderClusteredDecal::default())
+  }
+}
+
+///|
+fn render3d_upload_decals_system(world : @ecs.World) -> Unit {
+  let render_decals_ref = render3d_render_clustered_decals_ref_or_init(world)
+  let decals_buffer_ref = render3d_decals_buffer_ref_or_init(world)
+  render3d_upload_decals(render_decals_ref.val, decals_buffer_ref.val)
+}
+
+///|
+pub fn render3d_decals_buffer_ref(world : @ecs.World) -> Ref[DecalsBuffer]? {
+  try! world.get_resource_ref_mut(ecs_key_decals_buffer)
+}
+
+///|
+pub fn render3d_decals_buffer_ref_or_init(
+  world : @ecs.World,
+) -> Ref[DecalsBuffer] {
+  if render3d_decals_buffer_ref(world) is None {
+    world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::default())
+  }
+  match render3d_decals_buffer_ref(world) {
+    Some(decals_buffer) => decals_buffer
+    None => abort("missing decals buffer after lazy initialization")
+  }
+}
+
+///|
 pub struct ClusteredDecalPlugin {}
 
 ///|
@@ -495,10 +625,20 @@ pub fn clustered_decal_plugin_install_with(
         RenderClusteredDecals::default(),
       )
     }
-    sub_app.add_systems(
+    if (try! world.get_resource(ecs_key_decals_buffer)) is None {
+      world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::default())
+    }
+    sub_app
+    .add_systems(
       @render.render_schedule_stage(),
       @app.system(render3d_extract_clustered_decals_system_in_render_app).in_set(
         @render.render_system_set_extract_commands,
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(render3d_upload_decals_system).in_set(
+        @render.render_system_set_prepare_resources,
       ),
     )
   })
