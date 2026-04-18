@@ -94,7 +94,11 @@ pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World
 
 pub let ecs_components : Array[String]
 
+pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
+
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
+
+pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[@light.AtmosphereSettings]
 
 pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure]
 
@@ -251,6 +255,8 @@ pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShado
 pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[ViewContactShadowsUniformOffset]
 
 pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
+
+pub let ecs_key_volumetric_fog : @ecs.ComponentKey[@light.VolumetricFog]
 
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[@light.VolumetricLight]
 
@@ -611,14 +617,8 @@ pub fn AutoExposureCompensationCurve::default() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
 
 pub struct Camera3d {
-  volumetric_fog : @light.VolumetricFog?
-  atmosphere : @light.Atmosphere?
-  atmosphere_settings : @light.AtmosphereSettings?
 } derive(ToJson, @json.FromJson)
 pub fn Camera3d::default() -> Self
-pub fn Camera3d::with_atmosphere(Self, @light.Atmosphere?) -> Self
-pub fn Camera3d::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
-pub fn Camera3d::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @ecs.Component for Camera3d
 
 pub struct Camera3dBundle {
@@ -642,6 +642,9 @@ pub struct Camera3dBundle {
   distance_fog : DistanceFog?
   auto_exposure : AutoExposure?
   depth_of_field : DepthOfField?
+  volumetric_fog : @light.VolumetricFog?
+  atmosphere : @light.Atmosphere?
+  atmosphere_settings : @light.AtmosphereSettings?
   transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers

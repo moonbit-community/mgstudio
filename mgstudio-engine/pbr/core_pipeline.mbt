@@ -285,46 +285,11 @@ pub fn DepthOfField::from_physical_camera(
 
 ///|
 /// Camera component aligned with Bevy's `Camera3d`.
-///
-/// This stores feature toggles and per-camera overrides that influence how the
-/// current renderer approximates deferred/decal/volumetric/post-process APIs.
-pub struct Camera3d {
-  volumetric_fog : VolumetricFog?
-  atmosphere : Atmosphere?
-  atmosphere_settings : AtmosphereSettings?
-} derive(ToJson, FromJson)
+pub struct Camera3d {} derive(ToJson, FromJson)
 
 ///|
 pub fn Camera3d::default() -> Camera3d {
-  Camera3d::{
-    volumetric_fog: None,
-    atmosphere: None,
-    atmosphere_settings: None,
-  }
-}
-
-///|
-pub fn Camera3d::with_volumetric_fog(
-  self : Camera3d,
-  volumetric_fog : VolumetricFog?,
-) -> Camera3d {
-  Camera3d::{ ..self, volumetric_fog, }
-}
-
-///|
-pub fn Camera3d::with_atmosphere(
-  self : Camera3d,
-  atmosphere : Atmosphere?,
-) -> Camera3d {
-  Camera3d::{ ..self, atmosphere, }
-}
-
-///|
-pub fn Camera3d::with_atmosphere_settings(
-  self : Camera3d,
-  atmosphere_settings : AtmosphereSettings?,
-) -> Camera3d {
-  Camera3d::{ ..self, atmosphere_settings, }
+  Camera3d::{  }
 }
 
 ///|

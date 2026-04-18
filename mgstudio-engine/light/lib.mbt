@@ -1706,6 +1706,21 @@ pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @ecs.reg
 )
 
 ///|
+pub let ecs_key_volumetric_fog : @ecs.ComponentKey[VolumetricFog] = @ecs.register_component(
+  debug_name="render3d.volumetric_fog",
+)
+
+///|
+pub let ecs_key_atmosphere : @ecs.ComponentKey[Atmosphere] = @ecs.register_component(
+  debug_name="render3d.atmosphere",
+)
+
+///|
+pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[AtmosphereSettings] = @ecs.register_component(
+  debug_name="render3d.atmosphere_settings",
+)
+
+///|
 pub let ecs_key_fog_volume : @ecs.ComponentKey[FogVolume] = @ecs.register_component(
   debug_name="render3d.fog_volume",
 )
@@ -1787,6 +1802,21 @@ pub impl @ecs.Component for SunDisk with component() {
 ///|
 pub impl @ecs.Component for VolumetricLight with component() {
   ecs_key_volumetric_light
+}
+
+///|
+pub impl @ecs.Component for VolumetricFog with component() {
+  ecs_key_volumetric_fog
+}
+
+///|
+pub impl @ecs.Component for Atmosphere with component() {
+  ecs_key_atmosphere
+}
+
+///|
+pub impl @ecs.Component for AtmosphereSettings with component() {
+  ecs_key_atmosphere_settings
 }
 
 ///|

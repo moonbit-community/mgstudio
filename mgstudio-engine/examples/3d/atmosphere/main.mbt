@@ -121,15 +121,19 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn apply_atmosphere(world : @ecs.World) -> Unit {
   let state = atmosphere_state.val
   if state.camera is Some(camera_entity) {
-    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d))
-      is Some(camera3d) {
-      try! (world.replace(
+    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d)) is Some(_) {
+      try! (world.set_by_key(camera_entity, @pbr.ecs_key_atmosphere, state.atmosphere)
+      |> ignore)
+      try! (world.set_by_key(
         camera_entity,
-        @pbr.ecs_key_camera3d,
-        camera3d
-        .with_atmosphere(Some(state.atmosphere))
-        .with_atmosphere_settings(Some(state.atmosphere_settings))
-        .with_volumetric_fog(Some(state.volumetric_fog)),
+        @pbr.ecs_key_atmosphere_settings,
+        state.atmosphere_settings,
+      )
+      |> ignore)
+      try! (world.set_by_key(
+        camera_entity,
+        @pbr.ecs_key_volumetric_fog,
+        state.volumetric_fog,
       )
       |> ignore)
     }

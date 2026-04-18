@@ -74,11 +74,13 @@ fn phase_entity_ref3d_cmp(
 
 ///|
 priv struct Camera3dViewPayload {
-  camera3d : Camera3d
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
   auto_exposure : AutoExposure?
+  volumetric_fog : VolumetricFog?
+  atmosphere : Atmosphere?
+  atmosphere_settings : AtmosphereSettings?
   camera : @sprite.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?

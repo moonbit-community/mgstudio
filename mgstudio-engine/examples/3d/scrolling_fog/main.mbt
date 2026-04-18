@@ -35,13 +35,11 @@ fn setup(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_camera3d(
-      @camera.Camera3d::default().with_volumetric_fog(
-        Some(
-          @pbr.VolumetricFog::default()
-          .with_ambient_intensity(0.0F)
-          .with_jitter(0.5F),
-        ),
+    .with_volumetric_fog(
+      Some(
+        @pbr.VolumetricFog::default()
+        .with_ambient_intensity(0.0F)
+        .with_jitter(0.5F),
       ),
     )
     .spawn(world)

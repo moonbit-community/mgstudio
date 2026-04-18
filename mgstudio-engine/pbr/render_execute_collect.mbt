@@ -46,7 +46,7 @@ fn render3d_execute_collect_cameras(
       @visibility.ecs_key_no_cpu_culling,
     ) >
     0
-  source_world.for_each_component(ecs_key_camera3d, fn(entity, camera3d) {
+  source_world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
     let camera = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
       Some(v) => v
@@ -79,6 +79,13 @@ fn render3d_execute_collect_cameras(
     )
     let auto_exposure = try! source_world.get_by_key(
       entity, ecs_key_auto_exposure,
+    )
+    let volumetric_fog = try! source_world.get_by_key(
+      entity, ecs_key_volumetric_fog,
+    )
+    let atmosphere = try! source_world.get_by_key(entity, ecs_key_atmosphere)
+    let atmosphere_settings = try! source_world.get_by_key(
+      entity, ecs_key_atmosphere_settings,
     )
     let oit_settings = try! source_world.get_by_key(
       entity, ecs_key_order_independent_transparency_settings,
@@ -209,11 +216,13 @@ fn render3d_execute_collect_cameras(
         cameras.push(ExtractedCamera3d::{
           entity: phase_entity_ref3d_for_world_main(source_world, entity),
           payload: Camera3dViewPayload::{
-            camera3d,
             decal_config,
             deferred_config,
             distance_fog,
             auto_exposure,
+            volumetric_fog,
+            atmosphere,
+            atmosphere_settings,
             camera: camera_clamped,
             projection,
             sub_camera_view,

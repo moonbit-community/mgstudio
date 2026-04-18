@@ -99,9 +99,9 @@ fn render3d_execute_camera_pass_config(
   }
   let distance_fog = render3d_camera_distance_fog(
     camera_base_fog,
-    camera.camera3d.volumetric_fog,
-    camera.camera3d.atmosphere,
-    camera.camera3d.atmosphere_settings,
+    camera.volumetric_fog,
+    camera.atmosphere,
+    camera.atmosphere_settings,
   )
   let (clear_enabled, resolved_clear_color) = camera.camera.clear_color.resolve()
   let clear_color = resolved_clear_color

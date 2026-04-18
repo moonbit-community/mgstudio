@@ -30,9 +30,13 @@ pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.C
 
 pub let ecs_key_ambient_light_resource : @ecs.ResourceKey[GlobalAmbientLight]
 
+pub let ecs_key_atmosphere : @ecs.ComponentKey[Atmosphere]
+
 pub let ecs_key_atmosphere_env_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
+
+pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[AtmosphereSettings]
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
 
@@ -98,6 +102,8 @@ pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk]
 
 pub let ecs_key_sun_disk_component : @ecs.ComponentKey[SunDisk]
 
+pub let ecs_key_volumetric_fog : @ecs.ComponentKey[VolumetricFog]
+
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight]
 
 pub let ecs_key_volumetric_light_component : @ecs.ComponentKey[VolumetricLight]
@@ -129,6 +135,7 @@ pub fn Atmosphere::earthlike(ScatteringMedium) -> Self
 pub fn Atmosphere::with_ground_albedo(Self, @math.Vec3) -> Self
 pub fn Atmosphere::with_medium(Self, ScatteringMedium) -> Self
 pub fn Atmosphere::with_radii(Self, Float, Float) -> Self
+pub impl @ecs.Component for Atmosphere
 
 #alias(AtmosphereEnvMapLight)
 pub struct AtmosphereEnvironmentMapLight {
@@ -160,6 +167,7 @@ pub fn AtmosphereSettings::default() -> Self
 pub fn AtmosphereSettings::with_rendering_method(Self, AtmosphereMode) -> Self
 pub fn AtmosphereSettings::with_scene_units_to_m(Self, Float) -> Self
 pub fn AtmosphereSettings::with_sky_max_samples(Self, Int) -> Self
+pub impl @ecs.Component for AtmosphereSettings
 
 #alias(CascadeConfig)
 pub struct CascadeShadowConfig {
@@ -507,6 +515,7 @@ pub fn VolumetricFog::with_ambient_color(Self, @color.Color) -> Self
 pub fn VolumetricFog::with_ambient_intensity(Self, Float) -> Self
 pub fn VolumetricFog::with_jitter(Self, Float) -> Self
 pub fn VolumetricFog::with_step_count(Self, Int) -> Self
+pub impl @ecs.Component for VolumetricFog
 
 #alias(VolumetricLightComponent)
 pub struct VolumetricLight {

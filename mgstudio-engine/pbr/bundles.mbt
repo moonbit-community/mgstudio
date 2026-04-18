@@ -34,6 +34,9 @@ pub struct Camera3dBundle {
   distance_fog : DistanceFog?
   auto_exposure : AutoExposure?
   depth_of_field : DepthOfField?
+  volumetric_fog : VolumetricFog?
+  atmosphere : Atmosphere?
+  atmosphere_settings : AtmosphereSettings?
   transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
@@ -65,6 +68,9 @@ pub fn Camera3dBundle::new(
     distance_fog: None,
     auto_exposure: None,
     depth_of_field: None,
+    volumetric_fog: None,
+    atmosphere: None,
+    atmosphere_settings: None,
     transform,
     target: @sprite.RenderTarget::Screen,
     layers: @sprite.RenderLayers::default(),
@@ -98,6 +104,9 @@ pub fn Camera3dBundle::new_with_projection(
     distance_fog: None,
     auto_exposure: None,
     depth_of_field: None,
+    volumetric_fog: None,
+    atmosphere: None,
+    atmosphere_settings: None,
     transform,
     target: @sprite.RenderTarget::Screen,
     layers: @sprite.RenderLayers::default(),
@@ -245,10 +254,7 @@ pub fn Camera3dBundle::with_volumetric_fog(
   self : Camera3dBundle,
   volumetric_fog : VolumetricFog?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_volumetric_fog(volumetric_fog),
-  }
+  Camera3dBundle::{ ..self, volumetric_fog, }
 }
 
 ///|
@@ -256,10 +262,7 @@ pub fn Camera3dBundle::with_atmosphere(
   self : Camera3dBundle,
   atmosphere : Atmosphere?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_atmosphere(atmosphere),
-  }
+  Camera3dBundle::{ ..self, atmosphere, }
 }
 
 ///|
@@ -267,10 +270,7 @@ pub fn Camera3dBundle::with_atmosphere_settings(
   self : Camera3dBundle,
   atmosphere_settings : AtmosphereSettings?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_atmosphere_settings(atmosphere_settings),
-  }
+  Camera3dBundle::{ ..self, atmosphere_settings, }
 }
 
 ///|
@@ -344,6 +344,20 @@ fn camera3d_bundle_insert(
   }
   if bundle.depth_of_field is Some(depth_of_field) {
     world.set_by_key(entity, ecs_key_depth_of_field, depth_of_field, loc~)
+  }
+  if bundle.volumetric_fog is Some(volumetric_fog) {
+    world.set_by_key(entity, ecs_key_volumetric_fog, volumetric_fog, loc~)
+  }
+  if bundle.atmosphere is Some(atmosphere) {
+    world.set_by_key(entity, ecs_key_atmosphere, atmosphere, loc~)
+  }
+  if bundle.atmosphere_settings is Some(atmosphere_settings) {
+    world.set_by_key(
+      entity,
+      ecs_key_atmosphere_settings,
+      atmosphere_settings,
+      loc~,
+    )
   }
   world.set_by_key(entity, ecs_key_projection, bundle.projection, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {
