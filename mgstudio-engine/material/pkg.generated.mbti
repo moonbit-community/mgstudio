@@ -244,6 +244,9 @@ pub struct MaterialProperties {
   draw_functions : Array[(String, DrawFunctionId)]
   shaders : Array[(String, String)]
   bindless : Bool
+  base_specialize : ((@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?
+  prepass_specialize : ((@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?
+  user_specialize : ((String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?
   material_key : ErasedMaterialKey
   shadows_enabled : Bool
   prepass_enabled : Bool
@@ -254,14 +257,17 @@ pub fn MaterialProperties::default() -> Self
 pub fn MaterialProperties::get_draw_function(Self, String) -> DrawFunctionId?
 pub fn MaterialProperties::get_shader(Self, String) -> String?
 pub fn MaterialProperties::with_alpha_mode(Self, AlphaMode3d) -> Self
+pub fn MaterialProperties::with_base_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, Int, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
 pub fn MaterialProperties::with_depth_bias(Self, Float) -> Self
 pub fn MaterialProperties::with_material_key(Self, ErasedMaterialKey) -> Self
 pub fn MaterialProperties::with_mesh_pipeline_key_bits(Self, ErasedMeshPipelineKey) -> Self
 pub fn MaterialProperties::with_prepass_enabled(Self, Bool) -> Self
+pub fn MaterialProperties::with_prepass_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, Int, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
 pub fn MaterialProperties::with_reads_view_transmission_texture(Self, Bool) -> Self
 pub fn MaterialProperties::with_render_method(Self, OpaqueRendererMethod) -> Self
 pub fn MaterialProperties::with_render_phase_type(Self, RenderPhaseType) -> Self
 pub fn MaterialProperties::with_shadows_enabled(Self, Bool) -> Self
+pub fn MaterialProperties::with_user_specialize(Self, ((String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?) -> Self
 
 #alias(MaterialMesh3dComponent)
 pub struct MeshMaterial3d {

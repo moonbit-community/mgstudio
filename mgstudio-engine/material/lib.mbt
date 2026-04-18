@@ -159,6 +159,9 @@ pub struct MaterialProperties {
   draw_functions : Array[(InternedDrawFunctionLabel, DrawFunctionId)]
   shaders : Array[(InternedShaderLabel, String)]
   bindless : Bool
+  base_specialize : BaseSpecializeFn?
+  prepass_specialize : PrepassSpecializeFn?
+  user_specialize : UserSpecializeFn?
   material_key : ErasedMaterialKey
   shadows_enabled : Bool
   prepass_enabled : Bool
@@ -177,6 +180,9 @@ pub fn MaterialProperties::default() -> MaterialProperties {
     draw_functions: [],
     shaders: [],
     bindless: false,
+    base_specialize: None,
+    prepass_specialize: None,
+    user_specialize: None,
     material_key: ErasedMaterialKey::default(),
     shadows_enabled: true,
     prepass_enabled: true,
@@ -287,6 +293,30 @@ pub fn MaterialProperties::with_material_key(
   material_key : ErasedMaterialKey,
 ) -> MaterialProperties {
   MaterialProperties::{ ..self, material_key, }
+}
+
+///|
+pub fn MaterialProperties::with_base_specialize(
+  self : MaterialProperties,
+  base_specialize : BaseSpecializeFn?,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, base_specialize, }
+}
+
+///|
+pub fn MaterialProperties::with_prepass_specialize(
+  self : MaterialProperties,
+  prepass_specialize : PrepassSpecializeFn?,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, prepass_specialize, }
+}
+
+///|
+pub fn MaterialProperties::with_user_specialize(
+  self : MaterialProperties,
+  user_specialize : UserSpecializeFn?,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, user_specialize, }
 }
 
 ///|

@@ -160,6 +160,95 @@ test "material boundary exposes bevy-shaped erased key + properties helpers" {
 }
 
 ///|
+fn material_test_base_specialize(
+  _world : @ecs.World,
+  _key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+  _properties : @material.MaterialProperties,
+) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  if layout < 0 {
+    raise @material.missing_vertex_attribute_error("layout")
+  }
+  @material.CachedRenderPipelineId::new(11UL)
+}
+
+///|
+fn material_test_prepass_specialize(
+  _world : @ecs.World,
+  _key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+  _properties : @material.MaterialProperties,
+) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  if layout < 0 {
+    raise @material.missing_vertex_attribute_error("layout")
+  }
+  @material.CachedRenderPipelineId::new(12UL)
+}
+
+///|
+fn material_test_user_specialize(
+  user_key : String,
+  descriptor : @material.RenderPipelineDescriptor,
+  layout : @material.MaterialMeshVertexLayout,
+  _key : @material.ErasedMaterialPipelineKey,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  if layout < 0 {
+    raise @material.missing_vertex_attribute_error("layout")
+  }
+  let entry = @render_resource.BindGroupLayoutEntry::new(
+    0,
+    @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+    @render_resource.BindingType::Texture,
+  )
+  descriptor.set_layout(
+    0,
+    @material.BindGroupLayoutDescriptor::new(user_key, [entry]),
+  )
+}
+
+///|
+test "material boundary carries bevy specialize callbacks in material properties" {
+  let mesh_key = @material.ErasedMeshPipelineKey::new(9UL, "MeshKey")
+  let material_key = @material.ErasedMaterialKey::new(3, "MaterialKey")
+  let pipeline_key = @material.ErasedMaterialPipelineKey::new(
+    mesh_key, material_key, "PipelineKey",
+  )
+  let world = @ecs.World::new()
+  let properties = @material.MaterialProperties::default()
+    .with_base_specialize(Some(material_test_base_specialize))
+    .with_prepass_specialize(Some(material_test_prepass_specialize))
+    .with_user_specialize(Some(material_test_user_specialize))
+  let base_id = match properties.base_specialize {
+    Some(base_specialize) =>
+      (try! @material.material_specialize_base(
+        base_specialize, world, pipeline_key, 0, properties,
+      )).id()
+    None => 0UL
+  }
+  let prepass_id = match properties.prepass_specialize {
+    Some(prepass_specialize) =>
+      (try! @material.material_specialize_prepass(
+        prepass_specialize, world, pipeline_key, 0, properties,
+      )).id()
+    None => 0UL
+  }
+  let user_layout_label : String = match properties.user_specialize {
+    Some(user_specialize) =>
+      (try! @material.material_specialize_user(
+        user_specialize,
+        "user.specialize",
+        @material.RenderPipelineDescriptor::default(),
+        0,
+        pipeline_key,
+      )).layout[0].label
+    None => ""
+  }
+  inspect(base_id, content="11")
+  inspect(prepass_id, content="12")
+  inspect(user_layout_label, content="user.specialize")
+}
+
+///|
 test "material boundary Assets::add accepts Color and Image handle inputs" {
   let materials : @asset.Assets[@material.StandardMaterial] = @asset.Assets::new()
   let expected_color = @sprite.Color::srgb(0.1F, 0.2F, 0.3F)
