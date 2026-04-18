@@ -508,3 +508,27 @@ test "input: touches helper api matches bevy touch state operations" {
   debug_inspect(touches.active.length(), content="0")
   debug_inspect(touches.any_just_pressed(), content="false")
 }
+
+///|
+test "input: touch moved events keep previous_position at frame boundary snapshot" {
+  let active : Array[Touch] = [
+    Touch::{
+      id: 42,
+      start_position: @math.Vec2::new(1.0, 1.0),
+      previous_position: @math.Vec2::new(1.0, 1.0),
+      position: @math.Vec2::new(3.0, 5.0),
+    },
+  ]
+  active_touches_begin_frame(active)
+  active_touches_move(active, 42, @math.Vec2::new(6.0, 8.0))
+  active_touches_move(active, 42, @math.Vec2::new(9.0, 13.0))
+  debug_inspect(active.length(), content="1")
+  debug_inspect(active[0].previous_position.x, content="3")
+  debug_inspect(active[0].previous_position.y, content="5")
+  debug_inspect(active[0].position.x, content="9")
+  debug_inspect(active[0].position.y, content="13")
+  let removed = active_touches_take(active, 42)
+  debug_inspect(removed is Some(_), content="true")
+  debug_inspect(removed.unwrap().previous_position.x, content="3")
+  debug_inspect(removed.unwrap().position.x, content="9")
+}

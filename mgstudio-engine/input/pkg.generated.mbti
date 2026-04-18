@@ -171,15 +171,41 @@ pub fn touches_any_just_pressed(Touches) -> Bool
 
 pub fn touches_any_just_released(Touches) -> Bool
 
+pub fn touches_clear(Touches) -> Unit
+
+pub fn touches_clear_just_canceled(Touches, Int) -> Bool
+
+pub fn touches_clear_just_pressed(Touches, Int) -> Bool
+
+pub fn touches_clear_just_released(Touches, Int) -> Bool
+
 pub fn touches_first_pressed_position(Touches) -> @math.Vec2?
 
+pub fn touches_get_pressed(Touches, Int) -> Touch?
+
+pub fn touches_get_released(Touches, Int) -> Touch?
+
 pub fn touches_iter_active(Touches) -> Array[Touch]
+
+pub fn touches_iter_just_canceled(Touches) -> Array[Touch]
 
 pub fn touches_iter_just_pressed(Touches) -> Array[Touch]
 
 pub fn touches_iter_just_released(Touches) -> Array[Touch]
 
+pub fn touches_just_canceled(Touches, Int) -> Bool
+
+pub fn touches_just_pressed(Touches, Int) -> Bool
+
+pub fn touches_just_released(Touches, Int) -> Bool
+
 pub fn touches_new() -> Touches
+
+pub fn touches_release(Touches, Int) -> Unit
+
+pub fn touches_release_all(Touches) -> Unit
+
+pub fn touches_reset_all(Touches) -> Unit
 
 // Errors
 pub(all) suberror AxisSettingsError {

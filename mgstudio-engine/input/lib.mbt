@@ -1826,21 +1826,48 @@ fn touch_phase_from_host(value : Int) -> TouchPhase {
 }
 
 ///|
-fn active_touches_upsert(active : Array[Touch], touch : Touch) -> Unit {
+fn active_touches_begin_frame(active : Array[Touch]) -> Unit {
+  for i in 0..<active.length() {
+    let touch = active[i]
+    active[i] = Touch::{
+      id: touch.id,
+      start_position: touch.start_position,
+      previous_position: touch.position,
+      position: touch.position,
+    }
+  }
+}
+
+///|
+fn active_touches_start(active : Array[Touch], touch : Touch) -> Unit {
   let n = active.length()
   for i in 0..<n {
     if active[i].id == touch.id {
-      let previous = active[i]
-      active[i] = Touch::{
-        id: previous.id,
-        start_position: previous.start_position,
-        previous_position: previous.position,
-        position: touch.position,
-      }
+      active[i] = touch
       return
     }
   }
   active.push(touch)
+}
+
+///|
+fn active_touches_move(
+  active : Array[Touch],
+  id : Int,
+  position : @math.Vec2,
+) -> Unit {
+  for i in 0..<active.length() {
+    if active[i].id == id {
+      let touch = active[i]
+      active[i] = Touch::{
+        id: touch.id,
+        start_position: touch.start_position,
+        previous_position: touch.previous_position,
+        position,
+      }
+      return
+    }
+  }
 }
 
 ///|
@@ -1965,6 +1992,9 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
     active_touches.push(touch)
   }
   let touch_event_count = host_input_touch_event_count()
+  if touch_event_count > 0 {
+    active_touches_begin_frame(active_touches)
+  }
   for i in 0..<touch_event_count {
     let touch_id = host_input_touch_event_id(index=i)
     if touch_id < 0 {
@@ -1985,30 +2015,19 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
     }
     match touch_phase {
       TouchPhase::Started => {
-        active_touches_upsert(active_touches, touch)
+        active_touches_start(active_touches, touch)
         touches.just_pressed.push(touch)
       }
-      TouchPhase::Moved => active_touches_upsert(active_touches, touch)
+      TouchPhase::Moved =>
+        active_touches_move(active_touches, touch_id, position)
       TouchPhase::Ended =>
         match active_touches_take(active_touches, touch_id) {
-          Some(active_touch) =>
-            touches.just_released.push(Touch::{
-              id: active_touch.id,
-              start_position: active_touch.start_position,
-              previous_position: active_touch.position,
-              position,
-            })
+          Some(active_touch) => touches.just_released.push(active_touch)
           None => touches.just_released.push(touch)
         }
       TouchPhase::Canceled =>
         match active_touches_take(active_touches, touch_id) {
-          Some(active_touch) =>
-            touches.just_canceled.push(Touch::{
-              id: active_touch.id,
-              start_position: active_touch.start_position,
-              previous_position: active_touch.position,
-              position,
-            })
+          Some(active_touch) => touches.just_canceled.push(active_touch)
           None => touches.just_canceled.push(touch)
         }
     }
