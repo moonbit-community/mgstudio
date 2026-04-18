@@ -319,11 +319,7 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 fn meshlet_material_alpha_mode_is_opaque(
   alpha_mode : @material.AlphaMode3d,
 ) -> Bool {
-  match alpha_mode {
-    @material.AlphaMode3d::Opaque => true
-    @material.AlphaMode3d::AlphaToCoverage => true
-    _ => false
-  }
+  alpha_mode is @material.AlphaMode3d::Opaque
 }
 
 ///|
