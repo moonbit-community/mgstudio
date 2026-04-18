@@ -129,8 +129,8 @@ fn hook_test_record(
 }
 
 ///|
-fn hook_test_install_hooks() -> Unit {
-  let hooks = register_component_hooks_for_key(hook_test_component_key)
+fn hook_test_install_hooks(world : World) -> Unit {
+  let hooks = world.register_component_hooks_for_key(hook_test_component_key)
   ignore(
     try! hooks
     .on_add(fn(world, context) { hook_test_record("add", world, context) })
@@ -146,8 +146,10 @@ fn hook_test_install_hooks() -> Unit {
 }
 
 ///|
-fn hook_commands_test_install_hooks() -> Unit {
-  let hooks = register_component_hooks_for_key(hook_commands_test_component_key)
+fn hook_commands_test_install_hooks(world : World) -> Unit {
+  let hooks = world.register_component_hooks_for_key(
+    hook_commands_test_component_key,
+  )
   ignore(
     try! hooks.on_remove(fn(world, context) {
       world.commands().entity(context.entity).despawn()
@@ -156,15 +158,10 @@ fn hook_commands_test_install_hooks() -> Unit {
 }
 
 ///|
-fn init {
-  hook_test_install_hooks()
-  hook_commands_test_install_hooks()
-}
-
-///|
 test "ecs component hooks: first insert fires add then insert with readable payload" {
   hook_test_reset()
   let world = World::new()
+  hook_test_install_hooks(world)
   let entity = world.spawn()
 
   try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
@@ -182,6 +179,7 @@ test "ecs component hooks: first insert fires add then insert with readable payl
 test "ecs component hooks: replace fires replace then insert around the new payload" {
   hook_test_reset()
   let world = World::new()
+  hook_test_install_hooks(world)
   let entity = world.spawn()
 
   try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
@@ -204,6 +202,7 @@ test "ecs component hooks: replace fires replace then insert around the new payl
 test "ecs component hooks: remove keeps the old payload visible through replace and remove" {
   hook_test_reset()
   let world = World::new()
+  hook_test_install_hooks(world)
   let entity = world.spawn()
 
   try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
@@ -230,6 +229,7 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
 test "ecs component hooks: despawn fires despawn replace remove before entity teardown" {
   hook_test_reset()
   let world = World::new()
+  hook_test_install_hooks(world)
   let entity = world.spawn()
 
   try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
@@ -254,6 +254,7 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
 test "ecs component hooks: component access mutation paths preserve caller provenance" {
   hook_test_reset()
   let world = World::new()
+  hook_test_install_hooks(world)
   let entity = world.spawn()
 
   try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
@@ -274,6 +275,7 @@ test "ecs component hooks: component access mutation paths preserve caller prove
 ///|
 test "ecs component hooks: deferred hook commands flush after callback" {
   let world = World::new()
+  hook_commands_test_install_hooks(world)
   let entity = world.spawn()
 
   try! world.set_by_key(entity, hook_commands_test_component_key, HookCommandsTestComponent::{
@@ -288,7 +290,8 @@ test "ecs component hooks: deferred hook commands flush after callback" {
 ///|
 test "ecs component hooks: duplicate builder registration fails per hook kind" {
   ignore(DuplicateHookTestComponent::{  })
-  let builder = register_component_hooks_for_key(
+  let world = World::new()
+  let builder = world.register_component_hooks_for_key(
     duplicate_hook_test_component_key,
   )
   ignore(try! builder.on_add(fn(_world, _context) { () }))
@@ -296,13 +299,9 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
   let duplicate_result : Result[
     ComponentHooksBuilder[DuplicateHookTestComponent],
     ComponentHooksError,
-  ] = try? register_component_hooks_for_key(duplicate_hook_test_component_key).on_add(fn(
-      _world,
-      _context,
-    ) {
-      ()
-    },
-  )
+  ] = try? world
+    .register_component_hooks_for_key(duplicate_hook_test_component_key)
+    .on_add(fn(_world, _context) { () })
 
   guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
     fail("expected duplicate on_add registration failure")
@@ -314,7 +313,7 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
 }
 
 ///|
-test "ecs component hooks: world-scoped registration rejects components already in use" {
+test "ecs component hooks: world-scoped registration allows late hooks and keeps worlds isolated" {
   ignore(LateRegistrationHookTestComponent::{  })
   let world0 = World::new()
   let world1 = World::new()
@@ -324,14 +323,19 @@ test "ecs component hooks: world-scoped registration rejects components already 
 
   })
 
-  let late_result : Result[
+  let late_builder = World::register_component_hooks_for_key(
+    world0, late_registration_hook_test_component_key,
+  )
+  ignore(try! late_builder.on_add(fn(_world, _context) { () }))
+
+  let duplicate_result : Result[
     ComponentHooksBuilder[LateRegistrationHookTestComponent],
     ComponentHooksError,
   ] = try? World::register_component_hooks_for_key(
     world0, late_registration_hook_test_component_key,
-  )
-  guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
-    fail("expected late component hook registration to be rejected")
+  ).on_add(fn(_world, _context) { () })
+  guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
+    fail("expected duplicate on_add registration in same world to fail")
   }
   debug_inspect(
     component_id == late_registration_hook_test_component_key.id(),
@@ -343,6 +347,8 @@ test "ecs component hooks: world-scoped registration rejects components already 
     ComponentHooksError,
   ] = try? World::register_component_hooks_for_key(
     world1, late_registration_hook_test_component_key,
-  )
-  debug_inspect(fresh_result is Ok(_), content="true")
+  ).on_add(fn(_world, _context) { () })
+  guard fresh_result is Ok(_) else {
+    fail("expected independent world hook registration to succeed")
+  }
 }

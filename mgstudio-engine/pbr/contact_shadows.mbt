@@ -255,7 +255,8 @@ pub fn contact_shadows_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : ContactShadowsPlugin,
 ) -> @app.App[@ecs.World] {
-  let next = app
+  let extract_plugin : @render.ExtractComponentPlugin[ContactShadows, Unit] = @render.ExtractComponentPlugin::default()
+  let next = @render.extract_component_plugin_with(app, extract_plugin)
   @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
     if (try! world.get_resource(ContactShadowsBuffer::resource())) is None {
@@ -308,6 +309,9 @@ pub fn render3d_prepare_contact_shadows_settings(
   buffer.clear()
   let offsets = []
   for entity in view_entities {
+    if !world.is_alive(entity) {
+      continue
+    }
     let maybe_settings = try! world.get_by_key(entity, ecs_key_contact_shadows)
     let uniform = match maybe_settings {
       Some(settings) => ContactShadowsUniform::from_settings(settings)
@@ -327,19 +331,23 @@ pub fn render3d_apply_view_contact_shadows_uniform_offsets(
   for entry in offsets {
     let entity = entry.0
     let offset = entry.1
-    try! world.set_by_key(
+    if !world.is_alive(entity) {
+      continue
+    }
+    world.set_by_key(
       entity, ecs_key_view_contact_shadows_uniform_offset, offset,
-    )
+    ) catch {
+      _ => ()
+    }
   }
 }
 
 ///|
 pub fn render3d_prepare_contact_shadows_system(world : @ecs.World) -> Unit {
-  let source_world = @render.render_source_world(world)
   let sorted_cameras = @render.sorted_cameras_or_default(world)
   let buffer_ref = render3d_contact_shadows_buffer_ref_or_init(world)
   let offsets = render3d_prepare_contact_shadows_settings(
-    source_world,
+    world,
     sorted_cameras.entities,
     buffer_ref.val,
   )

@@ -45,12 +45,6 @@ pub fn[D, F] query_filtered(World, F) -> Query[D, F]
 
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
-pub fn[T] register_component_hooks(ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
-
-pub fn[T : Component] register_component_hooks_for() -> ComponentHooksBuilder[T]
-
-pub fn[T] register_component_hooks_for_key(ComponentKey[T]) -> ComponentHooksBuilder[T]
-
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
 
 pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
@@ -185,6 +179,7 @@ pub struct ComponentHooks {
 pub fn ComponentHooks::new(on_add? : ((DeferredWorld, HookContext) -> Unit)?, on_insert? : ((DeferredWorld, HookContext) -> Unit)?, on_replace? : ((DeferredWorld, HookContext) -> Unit)?, on_remove? : ((DeferredWorld, HookContext) -> Unit)?, on_despawn? : ((DeferredWorld, HookContext) -> Unit)?) -> Self
 
 pub struct ComponentHooksBuilder[T] {
+  world : World
   key : ComponentKey[T]
 }
 pub fn[T] ComponentHooksBuilder::on_add(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
@@ -594,6 +589,7 @@ pub struct World {
   added_component_sequences : Map[Int, ComponentSequenceTable]
   changed_component_sequences : Map[Int, ComponentSequenceTable]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
+  component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
   resource_added_sequences : Map[Int, Int]
   resource_changed_sequences : Map[Int, Int]
@@ -648,8 +644,9 @@ pub fn[F] World::query_entities_filtered(Self, F) -> Query[@core.Entity, F]
 pub fn[D, F] World::query_filtered(Self, F) -> QueryState[D, F]
 pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn World::read_sequence(Self) -> Int
-pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T] raise ComponentHooksError
-pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T] raise ComponentHooksError
+pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T]
+pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T]
+pub fn[T] World::register_component_hooks_with(Self, ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
 pub fn[T] World::register_disabling_component(Self, ComponentKey[T]) -> Unit raise EcsError
 pub fn[T, R : Default] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
 pub fn[T, R] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError

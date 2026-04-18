@@ -533,6 +533,9 @@ pub fn render3d_prepare_camera_fog_uniforms(
 ) -> Array[(@core.Entity, @pbr_render.ViewFogUniformOffset)] {
   let view_fogs : Array[(@core.Entity, @pbr_render.Render3dViewFogData?)] = []
   for entity in view_entities {
+    if !world.is_alive(entity) {
+      continue
+    }
     let view_fog = match (try! world.get_by_key(entity, ecs_key_camera3d)) {
       Some(camera3d) =>
         match camera3d.distance_fog {
@@ -548,11 +551,10 @@ pub fn render3d_prepare_camera_fog_uniforms(
 
 ///|
 pub fn render3d_prepare_fog_system(world : @ecs.World) -> Unit {
-  let source_world = @render.render_source_world(world)
   let sorted_cameras = @render.sorted_cameras_or_default(world)
   let fog_meta_ref = @pbr_render.render3d_fog_meta_ref_or_init(world)
   let fog_offsets = render3d_prepare_camera_fog_uniforms(
-    source_world,
+    world,
     sorted_cameras.entities,
     fog_meta_ref.val,
   )

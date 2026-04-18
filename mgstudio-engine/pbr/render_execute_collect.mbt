@@ -195,7 +195,7 @@ fn render3d_execute_collect_cameras(
             )
         }
         cameras.push(ExtractedCamera3d::{
-          entity: phase_entity_ref3d_for_main(entity),
+          entity: phase_entity_ref3d_for_world_main(source_world, entity),
           payload: Camera3dViewPayload::{
             camera3d,
             camera: camera_clamped,

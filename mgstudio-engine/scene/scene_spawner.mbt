@@ -341,8 +341,8 @@ fn scene_instance_on_remove(
 }
 
 ///|
-fn scene_register_component_hooks() -> Bool {
-  let scene_root_hooks = @ecs.register_component_hooks_for_key(
+fn scene_register_component_hooks(world : @ecs.World) -> Bool {
+  let scene_root_hooks = world.register_component_hooks_for_key(
     ecs_key_scene_root,
   )
   ignore(
@@ -351,7 +351,7 @@ fn scene_register_component_hooks() -> Bool {
     .on_replace(scene_root_on_replace)
     .on_remove(scene_root_on_remove),
   )
-  let scene_instance_hooks = @ecs.register_component_hooks_for_key(
+  let scene_instance_hooks = world.register_component_hooks_for_key(
     ecs_key_scene_instance,
   )
   ignore(try! scene_instance_hooks.on_remove(scene_instance_on_remove))
@@ -931,6 +931,8 @@ pub fn scene_plugin_with(
   plugin : ScenePlugin,
 ) -> @app.App[@ecs.World] {
   @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
+  @hierarchy.hierarchy_install(app.world())
+  scene_register_component_hooks(app.world()) |> ignore
   scene_runtime_plugin_base(
     scene_init_gltf_assets(app)
     .init_resource(fn() {

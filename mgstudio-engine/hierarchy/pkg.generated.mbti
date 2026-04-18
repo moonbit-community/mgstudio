@@ -12,6 +12,10 @@ pub let ecs_key_children : @ecs.ComponentKey[Children]
 
 pub let ecs_key_parent : @ecs.ComponentKey[Parent]
 
+pub fn hierarchy_install(@ecs.World) -> Unit
+
+pub fn hierarchy_register_component_hooks(@ecs.World, @ecs.ComponentKey[Parent], @ecs.ComponentKey[Children]) -> Bool
+
 // Errors
 
 // Types and methods

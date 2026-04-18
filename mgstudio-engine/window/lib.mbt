@@ -34,6 +34,7 @@ pub fn window_plugin_with(
 ) -> @app.App[@ecs.World] {
   let mut next = app
   if !next.contains_resource(window_plugin_marker_key()) {
+    window_register_component_hooks(next.world())
     next = next
       .insert_world_resource(window_plugin_marker_key(), WindowPluginMarker::{
 

@@ -447,5 +447,4 @@ pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
 fn init {
   @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
   @asset.asset_register_reload_hook(scene_reload_asset_path)
-  scene_register_component_hooks() |> ignore
 }

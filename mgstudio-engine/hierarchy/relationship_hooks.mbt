@@ -155,11 +155,12 @@ fn hierarchy_parent_on_remove(
 }
 
 ///|
-fn hierarchy_register_component_hooks(
+pub fn hierarchy_register_component_hooks(
+  world : @ecs.World,
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
 ) -> Bool {
-  let parent_hooks = @ecs.register_component_hooks_for_key(parent_key)
+  let parent_hooks = world.register_component_hooks_for_key(parent_key)
   ignore(
     try! parent_hooks
     .on_insert(fn(world, context) {
@@ -187,7 +188,7 @@ fn hierarchy_register_component_hooks(
       )
     }),
   )
-  let children_hooks = @ecs.register_component_hooks_for_key(children_key)
+  let children_hooks = world.register_component_hooks_for_key(children_key)
   ignore(
     try! children_hooks.on_despawn(fn(world, context) {
       guard (try! world.get_by_key(context.entity, children_key))

@@ -236,6 +236,7 @@ pub struct World {
   added_component_sequences : Map[Int, ComponentSequenceTable]
   changed_component_sequences : Map[Int, ComponentSequenceTable]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
   resource_added_sequences : Map[Int, @core.Sequence]
   resource_changed_sequences : Map[Int, @core.Sequence]
@@ -262,6 +263,7 @@ pub fn World::new() -> World {
     added_component_sequences: {},
     changed_component_sequences: {},
     removed_components: {},
+    component_hooks_registry: {},
     resources: {},
     resource_added_sequences: {},
     resource_changed_sequences: {},

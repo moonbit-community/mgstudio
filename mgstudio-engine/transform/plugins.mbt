@@ -42,6 +42,7 @@ pub fn register_transform_required_components(
 ///|
 pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_transform_required_components(app.world())
+  @hierarchy.hierarchy_install(app.world())
   ensure_transform_runtime_resources(app.world())
   let validate_parent_plugin : @app.ValidateParentHasComponentPlugin[
     GlobalTransform,

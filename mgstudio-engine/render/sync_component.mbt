@@ -61,8 +61,7 @@ fn[C] sync_component_register_remove_hook(
   world : @ecs.World,
   component_key : @ecs.ComponentKey[C],
 ) -> Unit {
-  ignore(world)
-  let hook_builder = @ecs.register_component_hooks_for_key(component_key)
+  let hook_builder = world.register_component_hooks_for_key(component_key)
   ignore(
     hook_builder.on_remove(fn(
       deferred_world : @ecs.DeferredWorld,
@@ -95,7 +94,7 @@ fn[C] sync_component_register_remove_hook(
         }),
       )
     }) catch {
-      _ => abort("sync_component: failed to register on_remove hook")
+      _ => abort("sync_component: failed to register remove hook")
     },
   )
 }

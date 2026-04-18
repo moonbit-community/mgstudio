@@ -23,8 +23,27 @@ priv struct PhaseEntityRef3d {
 }
 
 ///|
+fn phase_entity_ref3d(
+  main_entity : @core.Entity,
+  render_entity : @core.Entity,
+) -> PhaseEntityRef3d {
+  PhaseEntityRef3d::{ render_entity, main_entity }
+}
+
+///|
 fn phase_entity_ref3d_for_main(main_entity : @core.Entity) -> PhaseEntityRef3d {
-  PhaseEntityRef3d::{ render_entity: main_entity, main_entity }
+  phase_entity_ref3d(main_entity, main_entity)
+}
+
+///|
+fn phase_entity_ref3d_for_world_main(
+  world : @ecs.World,
+  main_entity : @core.Entity,
+) -> PhaseEntityRef3d {
+  match (try! world.get_by_key(main_entity, @render.ecs_key_render_entity)) {
+    Some(value) => phase_entity_ref3d(main_entity, value.id())
+    None => phase_entity_ref3d_for_main(main_entity)
+  }
 }
 
 ///|

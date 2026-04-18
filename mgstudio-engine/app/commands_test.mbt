@@ -166,8 +166,10 @@ fn commands_hook_test_reset() -> Unit {
 }
 
 ///|
-fn commands_install_hook_test_hooks() -> Unit {
-  let hooks = @ecs.register_component_hooks_for_key(commands_hook_component_key)
+fn commands_install_hook_test_hooks(world : @ecs.World) -> Unit {
+  let hooks = world.register_component_hooks_for_key(
+    commands_hook_component_key,
+  )
   ignore(
     try! hooks
     .on_add(fn(_world, context) {
@@ -185,11 +187,6 @@ fn commands_install_hook_test_hooks() -> Unit {
       }
     }),
   )
-}
-
-///|
-fn init {
-  commands_install_hook_test_hooks()
 }
 
 ///|
@@ -566,9 +563,9 @@ test "app: Commands entity remove and remove_component defer component removal u
 test "app: Commands preserve hook caller provenance across deferred spawn and remove" {
   commands_hook_test_reset()
   let spawned : Ref[@core.Entity?] = Ref::new(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
-    commands : Commands,
-  ) {
+  let mut app = App::new(@ecs.World::new())
+  commands_install_hook_test_hooks(app.world())
+  app = app.add_system_param(fn(commands : Commands) {
     let entity = commands.spawn(
       (CommandsHookComponent::{ value: 1 }, CommandsMarker::{  }),
     )

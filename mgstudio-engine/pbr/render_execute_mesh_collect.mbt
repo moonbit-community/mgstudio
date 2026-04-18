@@ -337,7 +337,7 @@ fn render3d_extract_mesh_for_entity(
   }
   (
     Some(ExtractedMesh3d::{
-      entity: phase_entity_ref3d_for_main(entity),
+      entity: phase_entity_ref3d_for_world_main(source_world, entity),
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh(),
         mesh_id,

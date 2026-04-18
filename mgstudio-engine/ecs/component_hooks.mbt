@@ -65,6 +65,7 @@ pub struct ComponentHooks {
 
 ///|
 pub struct ComponentHooksBuilder[T] {
+  world : World
   key : ComponentKey[T]
 }
 
@@ -277,55 +278,38 @@ pub fn ComponentHooks::new(
 }
 
 ///|
-let component_hooks_registry : @hashmap.HashMap[Int, ComponentHooks] = @hashmap.HashMap::new()
-
-///|
-pub fn[T] register_component_hooks_for_key(
-  key : ComponentKey[T],
-) -> ComponentHooksBuilder[T] {
-  if component_hooks_registry.get(key.id()) is None {
-    component_hooks_registry.set(key.id(), ComponentHooks::new())
-  }
-  ComponentHooksBuilder::{ key, }
-}
-
-///|
-pub fn[T : Component] register_component_hooks_for() -> ComponentHooksBuilder[T] {
-  register_component_hooks_for_key(Component::component())
-}
-
-///|
 pub fn[T] World::register_component_hooks_for_key(
   self : World,
   key : ComponentKey[T],
-) -> ComponentHooksBuilder[T] raise ComponentHooksError {
-  if self.component_has_been_used(key.id()) {
-    raise ComponentAlreadyInUse(key.id())
+) -> ComponentHooksBuilder[T] {
+  if self.component_hooks_registry.get(key.id()) is None {
+    self.component_hooks_registry.set(key.id(), ComponentHooks::new())
   }
-  register_component_hooks_for_key(key)
+  ComponentHooksBuilder::{ world: self, key }
 }
 
 ///|
 pub fn[T : Component] World::register_component_hooks(
   self : World,
-) -> ComponentHooksBuilder[T] raise ComponentHooksError {
+) -> ComponentHooksBuilder[T] {
   self.register_component_hooks_for_key(Component::component())
 }
 
 ///|
-pub fn[T] register_component_hooks(
+pub fn[T] World::register_component_hooks_with(
+  self : World,
   key : ComponentKey[T],
   hooks : ComponentHooks,
 ) -> Unit raise ComponentHooksError {
-  if component_hooks_registry.contains(key.id()) {
+  if self.component_hooks_registry.contains(key.id()) {
     raise DuplicateRegistration(key.id())
   }
-  component_hooks_registry.set(key.id(), hooks)
+  self.component_hooks_registry.set(key.id(), hooks)
 }
 
 ///|
-fn component_hooks(component_id : Int) -> ComponentHooks? {
-  component_hooks_registry.get(component_id)
+fn World::component_hooks(self : World, component_id : Int) -> ComponentHooks? {
+  self.component_hooks_registry.get(component_id)
 }
 
 ///|
@@ -358,11 +342,14 @@ fn component_hooks_kind_registered(
 
 ///|
 fn component_hooks_register_kind(
+  world : World,
   component_id : Int,
   kind : ComponentHookKind,
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit raise ComponentHooksError {
-  let hooks = component_hooks(component_id).unwrap_or(ComponentHooks::new())
+  let hooks = world
+    .component_hooks(component_id)
+    .unwrap_or(ComponentHooks::new())
   if component_hooks_kind_registered(hooks, kind) {
     raise DuplicateHookRegistration(component_id, kind)
   }
@@ -373,7 +360,7 @@ fn component_hooks_register_kind(
     OnRemove => ComponentHooks::{ ..hooks, on_remove: Some(hook) }
     OnDespawn => ComponentHooks::{ ..hooks, on_despawn: Some(hook) }
   }
-  component_hooks_registry.set(component_id, updated)
+  world.component_hooks_registry.set(component_id, updated)
 }
 
 ///|
@@ -381,7 +368,7 @@ pub fn[T] ComponentHooksBuilder::on_add(
   self : ComponentHooksBuilder[T],
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
-  component_hooks_register_kind(self.key.id(), OnAdd, hook)
+  component_hooks_register_kind(self.world, self.key.id(), OnAdd, hook)
   self
 }
 
@@ -390,7 +377,7 @@ pub fn[T] ComponentHooksBuilder::on_insert(
   self : ComponentHooksBuilder[T],
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
-  component_hooks_register_kind(self.key.id(), OnInsert, hook)
+  component_hooks_register_kind(self.world, self.key.id(), OnInsert, hook)
   self
 }
 
@@ -399,7 +386,7 @@ pub fn[T] ComponentHooksBuilder::on_replace(
   self : ComponentHooksBuilder[T],
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
-  component_hooks_register_kind(self.key.id(), OnReplace, hook)
+  component_hooks_register_kind(self.world, self.key.id(), OnReplace, hook)
   self
 }
 
@@ -408,7 +395,7 @@ pub fn[T] ComponentHooksBuilder::on_remove(
   self : ComponentHooksBuilder[T],
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
-  component_hooks_register_kind(self.key.id(), OnRemove, hook)
+  component_hooks_register_kind(self.world, self.key.id(), OnRemove, hook)
   self
 }
 
@@ -417,7 +404,7 @@ pub fn[T] ComponentHooksBuilder::on_despawn(
   self : ComponentHooksBuilder[T],
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
-  component_hooks_register_kind(self.key.id(), OnDespawn, hook)
+  component_hooks_register_kind(self.world, self.key.id(), OnDespawn, hook)
   self
 }
 
@@ -479,7 +466,7 @@ fn World::run_component_add_hooks(
   component_id : Int,
   caller? : String? = None,
 ) -> Unit {
-  guard component_hooks(component_id) is Some(hooks) else { return }
+  guard self.component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_add is Some(on_add) {
     self.run_component_hook(entity, component_id, caller~, on_add)
   }
@@ -492,7 +479,7 @@ fn World::run_component_insert_hooks(
   component_id : Int,
   caller? : String? = None,
 ) -> Unit {
-  guard component_hooks(component_id) is Some(hooks) else { return }
+  guard self.component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_insert is Some(on_insert) {
     self.run_component_hook(entity, component_id, caller~, on_insert)
   }
@@ -505,7 +492,7 @@ fn World::run_component_replace_hooks(
   component_id : Int,
   caller? : String? = None,
 ) -> Unit {
-  guard component_hooks(component_id) is Some(hooks) else { return }
+  guard self.component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_replace is Some(on_replace) {
     self.run_component_hook(entity, component_id, caller~, on_replace)
   }
@@ -518,7 +505,7 @@ fn World::run_component_remove_hooks(
   component_id : Int,
   caller? : String? = None,
 ) -> Unit {
-  guard component_hooks(component_id) is Some(hooks) else { return }
+  guard self.component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_remove is Some(on_remove) {
     self.run_component_hook(entity, component_id, caller~, on_remove)
   }
@@ -531,7 +518,7 @@ fn World::run_component_despawn_hooks(
   component_id : Int,
   caller? : String? = None,
 ) -> Unit {
-  guard component_hooks(component_id) is Some(hooks) else { return }
+  guard self.component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_despawn is Some(on_despawn) {
     self.run_component_hook(entity, component_id, caller~, on_despawn)
   }

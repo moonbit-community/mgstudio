@@ -69,8 +69,12 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
     if !camera.is_active {
       return
     }
+    guard (try! world.get_by_key(entity, @render.ecs_key_render_entity))
+      is Some(render_entity) else {
+      return
+    }
     let order = camera.order
-    entries.push(Render3dCameraOrderEntry::{ entity, order })
+    entries.push(Render3dCameraOrderEntry::{ entity: render_entity.id(), order })
   })
   entries.sort_by(fn(a, b) {
     let order_cmp = @pbr_render.cmp_int(a.order, b.order)
@@ -115,8 +119,8 @@ fn render3d_prepared_camera_phase_items(
     let mut found_index = -1
     for i in 0..<cameras.length() {
       let camera = cameras[i]
-      if camera.entity.main_entity.id == entity.id &&
-        camera.entity.main_entity.generation == entity.generation {
+      if camera.entity.render_entity.id == entity.id &&
+        camera.entity.render_entity.generation == entity.generation {
         found_index = i
         break
       }

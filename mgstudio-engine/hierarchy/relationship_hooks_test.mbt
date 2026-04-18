@@ -22,8 +22,15 @@ fn hierarchy_child_ids(children : Children) -> Array[Int] {
 }
 
 ///|
-test "hierarchy: inserting Parent immediately inserts Children on target" {
+fn hierarchy_test_world() -> @ecs.World {
   let world = @ecs.World::new()
+  hierarchy_install(world)
+  world
+}
+
+///|
+test "hierarchy: inserting Parent immediately inserts Children on target" {
+  let world = hierarchy_test_world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
@@ -35,7 +42,7 @@ test "hierarchy: inserting Parent immediately inserts Children on target" {
 
 ///|
 test "hierarchy: replacing Parent moves child between parents" {
-  let world = @ecs.World::new()
+  let world = hierarchy_test_world()
   let parent_a = world.spawn_empty()
   let parent_b = world.spawn_empty()
   let child = world.spawn_empty()
@@ -53,7 +60,7 @@ test "hierarchy: replacing Parent moves child between parents" {
 
 ///|
 test "hierarchy: removing Parent removes child from Children" {
-  let world = @ecs.World::new()
+  let world = hierarchy_test_world()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
@@ -68,7 +75,7 @@ test "hierarchy: removing Parent removes child from Children" {
 
 ///|
 test "hierarchy: despawning parent recursively despawns descendants" {
-  let world = @ecs.World::new()
+  let world = hierarchy_test_world()
   let root = world.spawn_empty()
   let child = world.spawn_empty()
   let grandchild = world.spawn_empty()
@@ -84,7 +91,7 @@ test "hierarchy: despawning parent recursively despawns descendants" {
 
 ///|
 test "hierarchy: invalid self parent is removed immediately" {
-  let world = @ecs.World::new()
+  let world = hierarchy_test_world()
   let entity = world.spawn_empty()
 
   try! world.set_by_key(entity, ecs_key_parent, Parent::new(entity))
@@ -97,7 +104,7 @@ test "hierarchy: invalid self parent is removed immediately" {
 
 ///|
 test "hierarchy: missing parent target is removed immediately" {
-  let world = @ecs.World::new()
+  let world = hierarchy_test_world()
   let child = world.spawn_empty()
   let missing_parent = @core.Entity::new(999, 1)
 
