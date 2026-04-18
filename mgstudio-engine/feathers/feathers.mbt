@@ -84,7 +84,7 @@ pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .insert_resource(feathers_plugin_marker_key, FeathersPluginMarker::{  })
     let app = app.init_resource(fn() { UiTheme::default() })
     let app = alpha_pattern_plugin(app)
-    let app = @controls.controls_plugin(app)
+    let app = app.add_plugins(@controls.ControlsPlugin::default())
     cursor_icon_plugin(app)
   }
 }

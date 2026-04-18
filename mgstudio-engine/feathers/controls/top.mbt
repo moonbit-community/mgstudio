@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/mod.rs`.
 
 ///|
+const CONTROLS_PLUGIN_NAME : String = "mgstudio.feathers.controls.ControlsPlugin"
+
+///|
 pub struct ControlsPlugin {}
 
 ///|
@@ -26,6 +29,16 @@ pub fn ControlsPlugin::default() -> ControlsPlugin {
 ///|
 fn ensure_controls_runtime(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
+}
+
+///|
+pub impl @app.Plugin for ControlsPlugin with name(_self) {
+  CONTROLS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for ControlsPlugin with build(_self, app) {
+  controls_plugin(app)
 }
 
 ///|

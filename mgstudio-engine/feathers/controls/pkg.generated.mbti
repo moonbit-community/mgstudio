@@ -150,6 +150,7 @@ pub fn ColorSwatchValue::new(String) -> Self
 pub struct ControlsPlugin {
 }
 pub fn ControlsPlugin::default() -> Self
+pub impl @app.Plugin for ControlsPlugin
 
 pub struct RadioButton {
   props : RadioProps
