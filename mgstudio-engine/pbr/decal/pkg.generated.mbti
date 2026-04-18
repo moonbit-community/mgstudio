@@ -18,6 +18,8 @@ pub const CLUSTERED_DECAL_IMAGES_PER_DECAL : Int = 4
 
 pub fn clustered_decal() -> ClusteredDecal
 
+pub fn clustered_decal_bind_group_layout_entries(Int, decals_supported? : Bool) -> Array[ClusteredDecalBindGroupLayoutEntry]?
+
 pub fn clustered_decal_max_view_decals(partially_bound_binding_array? : Bool) -> Int
 
 pub fn clustered_decal_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -78,6 +80,18 @@ pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@imag
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
 pub impl @ecs.Component for ClusteredDecal
+
+pub struct ClusteredDecalBindGroupLayoutEntry {
+  binding : Int
+  name : String
+  entry_type : ClusteredDecalBindGroupLayoutEntryType
+}
+
+pub enum ClusteredDecalBindGroupLayoutEntryType {
+  StorageBufferReadOnly
+  Texture2dBindingArray(Int)
+  SamplerFiltering
+}
 
 pub struct ClusteredDecalPlugin {
 }

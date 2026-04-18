@@ -88,3 +88,19 @@ test "pbr/decal: bind-group entries pad textures when partial binding is unavail
   debug_inspect(entries.texture_ids.length(), content="8")
   debug_inspect(entries.sampler_texture_id, content="7")
 }
+
+///|
+test "pbr/decal: clustered decal bind-group layout entries follow bevy trio" {
+  guard clustered_decal_bind_group_layout_entries(64) is Some(entries) else {
+    abort("expected clustered decal bind-group layout entries")
+  }
+  debug_inspect(entries.length(), content="3")
+  debug_inspect(entries[0].binding, content="0")
+  debug_inspect(entries[1].binding, content="1")
+  debug_inspect(entries[2].binding, content="2")
+  let disabled_entries = clustered_decal_bind_group_layout_entries(
+    64,
+    decals_supported=false,
+  )
+  debug_inspect(disabled_entries is None, content="true")
+}

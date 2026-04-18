@@ -288,6 +288,49 @@ pub struct RenderViewClusteredDecalBindGroupEntries {
 }
 
 ///|
+pub enum ClusteredDecalBindGroupLayoutEntryType {
+  StorageBufferReadOnly
+  Texture2dBindingArray(Int)
+  SamplerFiltering
+}
+
+///|
+pub struct ClusteredDecalBindGroupLayoutEntry {
+  binding : Int
+  name : String
+  entry_type : ClusteredDecalBindGroupLayoutEntryType
+}
+
+///|
+pub fn clustered_decal_bind_group_layout_entries(
+  max_view_decals : Int,
+  decals_supported? : Bool = true,
+) -> Array[ClusteredDecalBindGroupLayoutEntry]? {
+  if !decals_supported {
+    return None
+  }
+  Some([
+    ClusteredDecalBindGroupLayoutEntry::{
+      binding: 0,
+      name: "decals",
+      entry_type: ClusteredDecalBindGroupLayoutEntryType::StorageBufferReadOnly,
+    },
+    ClusteredDecalBindGroupLayoutEntry::{
+      binding: 1,
+      name: "decal_textures",
+      entry_type: ClusteredDecalBindGroupLayoutEntryType::Texture2dBindingArray(
+        max_view_decals,
+      ),
+    },
+    ClusteredDecalBindGroupLayoutEntry::{
+      binding: 2,
+      name: "decal_sampler",
+      entry_type: ClusteredDecalBindGroupLayoutEntryType::SamplerFiltering,
+    },
+  ])
+}
+
+///|
 pub struct DecalsBuffer {
   decals : Array[RenderClusteredDecal]
 }
