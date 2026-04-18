@@ -408,7 +408,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     max_parallax_layer_count: 16.0F,
     parallax_mapping_method: ParallaxMappingMethod::Occlusion,
     clearcoat: 0.0F,
-    clearcoat_perceptual_roughness: 0.0F,
+    clearcoat_perceptual_roughness: 0.5F,
     clearcoat_texture: None,
     clearcoat_roughness_texture: None,
     clearcoat_normal_texture: None,
@@ -438,7 +438,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
 
 ///|
 pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
-  let alpha_mode = if color.a < 0.999F {
+  let alpha_mode = if color.a < 1.0F {
     AlphaMode3d::Blend
   } else {
     AlphaMode3d::Opaque

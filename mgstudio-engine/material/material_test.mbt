@@ -43,6 +43,29 @@ test "material boundary re-exports standard material APIs" {
 }
 
 ///|
+test "standard material defaults align with bevy clearcoat and alpha threshold" {
+  let default_material = @material.StandardMaterial::default()
+  debug_inspect(
+    default_material.clearcoat_perceptual_roughness.to_double(),
+    content="0.5",
+  )
+  let blend_material = @material.StandardMaterial::from_color(
+    @sprite.Color::new(1.0F, 1.0F, 1.0F, 0.9999F),
+  )
+  let opaque_material = @material.StandardMaterial::from_color(
+    @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+  )
+  debug_inspect(
+    blend_material.alpha_mode is @material.AlphaMode::Blend,
+    content="true",
+  )
+  debug_inspect(
+    opaque_material.alpha_mode is @material.AlphaMode::Opaque,
+    content="true",
+  )
+}
+
+///|
 test "material boundary re-exports material metadata APIs" {
   let metadata = @material.ExtendedMaterialMetadata3d::new(7)
     .with_disable_shadows(true)
