@@ -457,12 +457,12 @@ pub struct MeshletPreparedMaterialInput {
   material_id : Int
   material_asset_id : Int
   opaque_render_method : @material.OpaqueRendererMethod
-  alpha_mode_opaque : Bool
+  alpha_mode : @material.AlphaMode3d
   reads_view_transmission_texture : Bool
   material_bind_group_id : Int
 }
 pub fn MeshletPreparedMaterialInput::new(Int, Int) -> Self
-pub fn MeshletPreparedMaterialInput::with_alpha_mode_opaque(Self, Bool) -> Self
+pub fn MeshletPreparedMaterialInput::with_alpha_mode(Self, @material.AlphaMode3d) -> Self
 pub fn MeshletPreparedMaterialInput::with_material_bind_group_id(Self, Int) -> Self
 pub fn MeshletPreparedMaterialInput::with_opaque_render_method(Self, @material.OpaqueRendererMethod) -> Self
 pub fn MeshletPreparedMaterialInput::with_reads_view_transmission_texture(Self, Bool) -> Self

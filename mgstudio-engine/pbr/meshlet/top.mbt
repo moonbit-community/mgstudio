@@ -316,13 +316,6 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn meshlet_material_alpha_mode_is_opaque(
-  alpha_mode : @material.AlphaMode3d,
-) -> Bool {
-  alpha_mode is @material.AlphaMode3d::Opaque
-}
-
-///|
 fn meshlet_material_reads_view_transmission_texture(
   material : @material.StandardMaterial,
 ) -> Bool {
@@ -377,8 +370,8 @@ fn meshlet_collect_material_inputs(
                     material, default_opaque_renderer_method,
                   ),
                 )
-                material_input = material_input.with_alpha_mode_opaque(
-                  meshlet_material_alpha_mode_is_opaque(material.alpha_mode),
+                material_input = material_input.with_alpha_mode(
+                  material.alpha_mode,
                 )
                 material_input = material_input.with_reads_view_transmission_texture(
                   meshlet_material_reads_view_transmission_texture(material),

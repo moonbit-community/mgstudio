@@ -237,7 +237,7 @@ pub struct MeshletPreparedMaterialInput {
   material_id : Int
   material_asset_id : Int
   opaque_render_method : @material.OpaqueRendererMethod
-  alpha_mode_opaque : Bool
+  alpha_mode : @material.AlphaMode3d
   reads_view_transmission_texture : Bool
   material_bind_group_id : Int
 }
@@ -260,7 +260,7 @@ pub fn MeshletPreparedMaterialInput::new(
     material_id: meshlet_material_non_negative(material_id),
     material_asset_id: meshlet_material_non_negative(material_asset_id),
     opaque_render_method: @material.OpaqueRendererMethod::Forward,
-    alpha_mode_opaque: true,
+    alpha_mode: @material.AlphaMode3d::Opaque,
     reads_view_transmission_texture: false,
     material_bind_group_id: meshlet_material_non_negative(material_id),
   }
@@ -275,11 +275,11 @@ pub fn MeshletPreparedMaterialInput::with_opaque_render_method(
 }
 
 ///|
-pub fn MeshletPreparedMaterialInput::with_alpha_mode_opaque(
+pub fn MeshletPreparedMaterialInput::with_alpha_mode(
   self : MeshletPreparedMaterialInput,
-  alpha_mode_opaque : Bool,
+  alpha_mode : @material.AlphaMode3d,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{ ..self, alpha_mode_opaque, }
+  MeshletPreparedMaterialInput::{ ..self, alpha_mode, }
 }
 
 ///|
@@ -393,7 +393,7 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
   view_materials.clear()
   let queued_material_ids : Map[Int, Bool] = {}
   for material_input in material_inputs {
-    if !material_input.alpha_mode_opaque {
+    if !(material_input.alpha_mode is @material.AlphaMode3d::Opaque) {
       continue
     }
     if material_input.reads_view_transmission_texture {
@@ -447,7 +447,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
   let queued_prepass_material_ids : Map[Int, Bool] = {}
   let queued_deferred_material_ids : Map[Int, Bool] = {}
   for material_input in material_inputs {
-    if !material_input.alpha_mode_opaque {
+    if !(material_input.alpha_mode is @material.AlphaMode3d::Opaque) {
       continue
     }
     if material_input.reads_view_transmission_texture {

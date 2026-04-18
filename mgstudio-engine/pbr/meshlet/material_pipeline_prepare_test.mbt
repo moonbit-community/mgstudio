@@ -59,7 +59,9 @@ test "pbr meshlet: main opaque pass filters by renderer method and transmission"
     MeshletPreparedMaterialInput::new(3, 12).with_reads_view_transmission_texture(
       true,
     ),
-    MeshletPreparedMaterialInput::new(4, 13).with_alpha_mode_opaque(false),
+    MeshletPreparedMaterialInput::new(4, 13).with_alpha_mode(
+      @material.AlphaMode3d::Blend,
+    ),
   ])
   inspect(main_opaque.len(), content="1")
 }
