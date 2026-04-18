@@ -17,7 +17,7 @@ pub let ecs_components : Array[String] = ["Pickable"]
 
 ///|
 pub let ecs_resources : Array[String] = [
-  "PickingHits", "PickingSettings", "PickingState", "PointerInputs",
+  "PickingHits", "PickingSettings", "PickingState", "PointerInputSettings", "PointerInputs",
 ]
 
 ///|
@@ -46,6 +46,11 @@ pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[PointerInputs] = @ecs.regi
 )
 
 ///|
+pub let ecs_res_key_pointer_input_settings : @ecs.ResourceKey[
+  PointerInputSettings,
+] = @ecs.register_resource(debug_name="picking.pointer_input_settings")
+
+///|
 pub fn get_picking_hits_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingHits] {
@@ -71,4 +76,11 @@ pub fn get_pointer_inputs_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PointerInputs] {
   world.resource(ecs_res_key_pointer_inputs)
+}
+
+///|
+pub fn get_pointer_input_settings_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PointerInputSettings] {
+  world.resource(ecs_res_key_pointer_input_settings)
 }

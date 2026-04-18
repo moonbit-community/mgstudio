@@ -135,6 +135,9 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(ensure_pointer_inputs_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
+    @app.system(ensure_pointer_input_settings_system).in_set(picking_set_input),
+  )
+  .add_pre_update_system_config(
     @app.system(picking_collect_mouse_system)
     .run_if(picking_input_should_run)
     .in_set(picking_set_input),
@@ -168,7 +171,12 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       picking_set_events,
     ),
   )
-  .configure_set(@app.PreUpdate, picking_set_input, before=[picking_set_hits])
+  .configure_set(
+    @app.PreUpdate,
+    picking_set_input,
+    after=[@input.input_systems_set],
+    before=[picking_set_hits],
+  )
   .configure_set(
     @app.PreUpdate,
     picking_set_hits,

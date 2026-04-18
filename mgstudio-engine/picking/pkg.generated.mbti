@@ -22,6 +22,8 @@ pub let ecs_res_key_picking_settings : @ecs.ResourceKey[PickingSettings]
 
 pub let ecs_res_key_picking_state : @ecs.ResourceKey[PickingState]
 
+pub let ecs_res_key_pointer_input_settings : @ecs.ResourceKey[PointerInputSettings]
+
 pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[PointerInputs]
 
 pub let ecs_resources : Array[String]
@@ -30,6 +32,8 @@ pub fn ensure_picking_hits_system(@ecs.World) -> Unit
 
 pub fn ensure_picking_state_system(@ecs.World) -> Unit
 
+pub fn ensure_pointer_input_settings_system(@ecs.World) -> Unit
+
 pub fn ensure_pointer_inputs_system(@ecs.World) -> Unit
 
 pub fn get_picking_hits_resource(@ecs.World) -> @ecs.ResourceAccess[PickingHits]
@@ -37,6 +41,8 @@ pub fn get_picking_hits_resource(@ecs.World) -> @ecs.ResourceAccess[PickingHits]
 pub fn get_picking_settings_resource(@ecs.World) -> @ecs.ResourceAccess[PickingSettings]
 
 pub fn get_picking_state_resource(@ecs.World) -> @ecs.ResourceAccess[PickingState]
+
+pub fn get_pointer_input_settings_resource(@ecs.World) -> @ecs.ResourceAccess[PointerInputSettings]
 
 pub fn get_pointer_inputs_resource(@ecs.World) -> @ecs.ResourceAccess[PointerInputs]
 
@@ -155,6 +161,14 @@ pub struct PointerInput {
 } derive(ToJson, @json.FromJson)
 pub fn PointerInput::new(Int, @math.Vec2?, Bool, Bool, Bool) -> Self
 
+pub struct PointerInputSettings {
+  is_touch_enabled : Bool
+  is_mouse_enabled : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PointerInputSettings::default() -> Self
+pub fn PointerInputSettings::new(Bool, Bool) -> Self
+pub impl @app.Resource for PointerInputSettings
+
 pub struct PointerInputs {
   mut pointers : Array[PointerInput]
 } derive(ToJson, @json.FromJson)
@@ -162,6 +176,7 @@ pub fn PointerInputs::clear(@ref.Ref[Self]) -> Unit
 pub fn PointerInputs::default() -> Self
 pub fn PointerInputs::from_array(Array[PointerInput]) -> Self
 pub fn PointerInputs::push(@ref.Ref[Self], PointerInput) -> Unit
+pub fn PointerInputs::set(@ref.Ref[Self], PointerInput) -> Unit
 pub impl @app.Resource for PointerInputs
 
 // Type aliases

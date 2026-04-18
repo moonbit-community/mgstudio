@@ -68,6 +68,30 @@ pub fn PointerInputs::push(
 }
 
 ///|
+fn pointer_inputs_find_index(
+  pointers : Array[PointerInput],
+  pointer : @pointer_events.PointerId,
+) -> Int? {
+  for i in 0..<pointers.length() {
+    if pointers[i].pointer == pointer {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+pub fn PointerInputs::set(
+  self : Ref[PointerInputs],
+  input : PointerInput,
+) -> Unit {
+  match pointer_inputs_find_index(self.val.pointers, input.pointer) {
+    Some(index) => self.val.pointers[index] = input
+    None => self.val.pointers.push(input)
+  }
+}
+
+///|
 pub(all) enum PointerButton {
   Primary
   Secondary
