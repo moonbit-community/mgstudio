@@ -421,8 +421,12 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         frame.frame_config.gpu_instance_buffer_builder_enabled,
         frame.frame_config.gpu_culling_supported,
       )
-      render3d_queue_update_prepared_camera_queues(
-        world, prepared_camera_queues,
+      render3d_queue_store_frame(
+        world,
+        frame.frame_config,
+        frame.cameras,
+        frame.meshes,
+        prepared_camera_queues,
       )
     }
     None =>

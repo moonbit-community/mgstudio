@@ -99,30 +99,6 @@ fn render3d_queue_store_frame(
 }
 
 ///|
-fn render3d_queue_update_prepared_camera_queues(
-  world : @ecs.World,
-  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
-) -> Unit {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  match state_ref.val.queued_frame {
-    Some(queued_frame) => {
-      let prepared_camera_count = if queued_frame.cameras.length() <
-        prepared_camera_queues.length() {
-        queued_frame.cameras.length()
-      } else {
-        prepared_camera_queues.length()
-      }
-      state_ref.val.queued_frame = Some(Render3dQueuedFrame::{
-        ..queued_frame,
-        prepared_camera_queues,
-        prepared_camera_count,
-      })
-    }
-    None => ()
-  }
-}
-
-///|
 fn render3d_queue_take_frame(world : @ecs.World) -> Render3dQueuedFrame? {
   let state_ref = render3d_execute_queue_state_ref_or_abort(world)
   let queued = state_ref.val.queued_frame
