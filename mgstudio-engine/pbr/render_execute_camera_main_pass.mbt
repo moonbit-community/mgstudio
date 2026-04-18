@@ -123,7 +123,10 @@ fn render3d_execute_camera_main_pass(
       environment_specular_texture_id=environment_map_state.specular_texture_id,
     )
   }
-  prepare_view_bind_group(-1)
+  let scene_view_bind_group_prepared = point_shadow_texture_id >= 0
+  if scene_view_bind_group_prepared {
+    prepare_view_bind_group(-1)
+  }
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
     @pbr_render.render3d_pass_viewport_for_target(
       target_id,
@@ -558,7 +561,9 @@ fn render3d_execute_camera_main_pass(
     } else {
       -1
     }
-    prepare_view_bind_group(transmission_source_texture_id)
+    if transmission_source_texture_id >= 0 {
+      prepare_view_bind_group(transmission_source_texture_id)
+    }
     let transmission_ranges = if transmission_steps > 0 {
       render3d_split_phase_ranges(
         transmissive_draws.length(),
