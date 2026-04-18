@@ -642,7 +642,7 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
   let world = @ecs.World::new()
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
-    0.1F, 1000.0F, 24.0F, false,
+    5.0F, 1000.0F, 24.0F, false,
   )
   let expected_factor_x = 16.0F / 1280.0F
   let expected_factor_y = 9.0F / 720.0F
@@ -657,6 +657,53 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
   inspect(
     approx_eq(gpu_lights.cluster_factors.y, expected_factor_y, 1.0e-6F),
     content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
+test "pbr render light: cluster far fallback follows max visible clusterable range" {
+  let world = @ecs.World::new()
+  let visible_point = world.spawn()
+  try! (world.set_by_key(
+    visible_point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_range(40.0F),
+  )
+  |> ignore)
+  let hidden_spot = world.spawn()
+  try! (world.set_by_key(
+    hidden_spot,
+    @light.ecs_key_spot_light,
+    {
+      let default_spot = @light.SpotLight::default()
+      @light.SpotLight::new(
+        default_spot.color,
+        default_spot.intensity,
+        80.0F,
+        default_spot.inner_angle,
+        default_spot.outer_angle,
+        default_spot.shadow_maps_enabled,
+      )
+    },
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    hidden_spot,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  |> ignore)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  let expected_factors_zw = @light_cluster.calculate_cluster_factors(
+    5.0F, 40.0F, 24.0F, false,
   )
   inspect(
     approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),

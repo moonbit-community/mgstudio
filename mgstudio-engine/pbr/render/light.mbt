@@ -813,6 +813,28 @@ fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
 }
 
 ///|
+fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
+  let max_range_ref : Ref[Float] = Ref::new(0.0F)
+  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
+    if !render3d_light_is_view_visible(world, entity) {
+      return
+    }
+    if light.range > max_range_ref.val {
+      max_range_ref.val = light.range
+    }
+  })
+  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
+    if !render3d_light_is_view_visible(world, entity) {
+      return
+    }
+    if light.range > max_range_ref.val {
+      max_range_ref.val = light.range
+    }
+  })
+  max_range_ref.val
+}
+
+///|
 fn render3d_cluster_runtime(
   world : @ecs.World,
 ) -> (Int, Int, Int, Float, Float)? {
@@ -919,6 +941,24 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     cluster_dimensions_x = config_dimensions_x
     cluster_dimensions_y = config_dimensions_y
     cluster_dimensions_z = config_dimensions_z
+    cluster_near = @light_cluster.cluster_config_first_slice_depth(
+      cluster_config,
+    )
+    cluster_far = match
+      @light_cluster.cluster_config_far_z_mode(cluster_config) {
+      @light_cluster.ClusterFarZMode::Constant(far) => far
+      @light_cluster.ClusterFarZMode::MaxClusterableObjectRange => {
+        let object_max_range = render3d_clusterable_object_max_range(world)
+        if object_max_range > 0.0F {
+          object_max_range
+        } else {
+          1000.0F
+        }
+      }
+    }
+    if cluster_far < cluster_near {
+      cluster_far = cluster_near
+    }
   }
   let n_clusters = cluster_dimensions_x *
     cluster_dimensions_y *
