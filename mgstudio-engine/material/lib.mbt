@@ -288,6 +288,22 @@ pub fn MaterialProperties::with_render_phase_type(
 }
 
 ///|
+pub fn MaterialProperties::with_material_layout(
+  self : MaterialProperties,
+  material_layout : BindGroupLayoutDescriptor?,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, material_layout, }
+}
+
+///|
+pub fn MaterialProperties::with_bindless(
+  self : MaterialProperties,
+  bindless : Bool,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, bindless, }
+}
+
+///|
 pub fn MaterialProperties::with_material_key(
   self : MaterialProperties,
   material_key : ErasedMaterialKey,

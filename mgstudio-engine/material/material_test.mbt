@@ -134,6 +134,26 @@ test "material boundary descriptor helpers match bevy layout/target behavior" {
 }
 
 ///|
+test "material boundary includes material layout and bindless property builders" {
+  let layout_entry = @render_resource.BindGroupLayoutEntry::new(
+    0,
+    @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+    @render_resource.BindingType::Texture,
+  )
+  let layout = @material.BindGroupLayoutDescriptor::new("material.layout", [
+    layout_entry,
+  ])
+  let properties = @material.MaterialProperties::default()
+    .with_material_layout(Some(layout))
+    .with_bindless(true)
+  inspect(
+    properties.material_layout.map(fn(layout0) { layout0.label }),
+    content="Some(\"material.layout\")",
+  )
+  inspect(properties.bindless, content="true")
+}
+
+///|
 test "material boundary exposes bevy-shaped erased key + properties helpers" {
   let mesh_key = @material.ErasedMeshPipelineKey::new(7UL, "MeshKey")
   let material_key = @material.ErasedMaterialKey::new(

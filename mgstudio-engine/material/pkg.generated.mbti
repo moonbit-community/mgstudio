@@ -258,8 +258,10 @@ pub fn MaterialProperties::get_draw_function(Self, String) -> DrawFunctionId?
 pub fn MaterialProperties::get_shader(Self, String) -> String?
 pub fn MaterialProperties::with_alpha_mode(Self, AlphaMode3d) -> Self
 pub fn MaterialProperties::with_base_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, Int, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
+pub fn MaterialProperties::with_bindless(Self, Bool) -> Self
 pub fn MaterialProperties::with_depth_bias(Self, Float) -> Self
 pub fn MaterialProperties::with_material_key(Self, ErasedMaterialKey) -> Self
+pub fn MaterialProperties::with_material_layout(Self, BindGroupLayoutDescriptor?) -> Self
 pub fn MaterialProperties::with_mesh_pipeline_key_bits(Self, ErasedMeshPipelineKey) -> Self
 pub fn MaterialProperties::with_prepass_enabled(Self, Bool) -> Self
 pub fn MaterialProperties::with_prepass_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, Int, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
