@@ -148,6 +148,92 @@ pub fn OpaqueRendererMethod::resolve_runtime(
 }
 
 ///|
+pub struct MaterialProperties {
+  render_method : OpaqueRendererMethod
+  alpha_mode : AlphaMode3d
+  mesh_pipeline_key_bits : ErasedMeshPipelineKey
+  depth_bias : Float
+  reads_view_transmission_texture : Bool
+  render_phase_type : RenderPhaseType
+  material_layout : BindGroupLayoutDescriptor?
+  draw_functions : Array[(InternedDrawFunctionLabel, DrawFunctionId)]
+  shaders : Array[(InternedShaderLabel, String)]
+  bindless : Bool
+  material_key : ErasedMaterialKey
+  shadows_enabled : Bool
+  prepass_enabled : Bool
+}
+
+///|
+pub fn MaterialProperties::default() -> MaterialProperties {
+  MaterialProperties::{
+    render_method: OpaqueRendererMethod::Forward,
+    alpha_mode: AlphaMode3d::Opaque,
+    mesh_pipeline_key_bits: ErasedMeshPipelineKey::default(),
+    depth_bias: 0.0F,
+    reads_view_transmission_texture: false,
+    render_phase_type: RenderPhaseType::Opaque,
+    material_layout: None,
+    draw_functions: [],
+    shaders: [],
+    bindless: false,
+    material_key: ErasedMaterialKey::default(),
+    shadows_enabled: true,
+    prepass_enabled: true,
+  }
+}
+
+///|
+pub fn MaterialProperties::get_shader(
+  self : MaterialProperties,
+  label : ShaderLabel,
+) -> String? {
+  for shader in self.shaders {
+    let (entry_label, entry_shader) = shader
+    if entry_label == label {
+      return Some(entry_shader)
+    }
+  }
+  None
+}
+
+///|
+pub fn MaterialProperties::add_shader(
+  self : MaterialProperties,
+  label : ShaderLabel,
+  shader : String,
+) -> MaterialProperties {
+  let shaders = self.shaders
+  shaders.push((label, shader))
+  MaterialProperties::{ ..self, shaders, }
+}
+
+///|
+pub fn MaterialProperties::get_draw_function(
+  self : MaterialProperties,
+  label : DrawFunctionLabel,
+) -> DrawFunctionId? {
+  for draw_function in self.draw_functions {
+    let (entry_label, entry_draw_function) = draw_function
+    if entry_label == label {
+      return Some(entry_draw_function)
+    }
+  }
+  None
+}
+
+///|
+pub fn MaterialProperties::add_draw_function(
+  self : MaterialProperties,
+  label : DrawFunctionLabel,
+  draw_function : DrawFunctionId,
+) -> MaterialProperties {
+  let draw_functions = self.draw_functions
+  draw_functions.push((label, draw_function))
+  MaterialProperties::{ ..self, draw_functions, }
+}
+
+///|
 pub struct StandardMaterial {
   base_color : @sprite.Color
   base_color_texture : @asset.Handle[@asset.Image]?

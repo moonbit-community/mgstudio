@@ -110,6 +110,56 @@ test "material boundary exposes bevy-shaped render phase type" {
 }
 
 ///|
+test "material boundary descriptor helpers match bevy layout/target behavior" {
+  let entry = @render_resource.BindGroupLayoutEntry::new(
+    0,
+    @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+    @render_resource.BindingType::Texture,
+  )
+  let layout = @material.BindGroupLayoutDescriptor::new("material.layout", [
+    entry,
+  ])
+  let descriptor = @material.RenderPipelineDescriptor::default().set_layout(
+    2, layout,
+  )
+  inspect(descriptor.layout.length(), content="3")
+  let fragment = @material.FragmentState::default().set_target(
+    1,
+    @material.ColorTargetState::new(
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+      @wgpu.COLOR_WRITE_MASK_ALL,
+    ),
+  )
+  inspect(fragment.targets.length(), content="2")
+}
+
+///|
+test "material boundary exposes bevy-shaped erased key + properties helpers" {
+  let mesh_key = @material.ErasedMeshPipelineKey::new(7UL, "MeshKey")
+  let material_key = @material.ErasedMaterialKey::new(
+    ("albedo", 1),
+    "MaterialKey",
+  )
+  let pipeline_key = @material.ErasedMaterialPipelineKey::new(
+    mesh_key, material_key, "PipelineKey",
+  )
+  let properties = @material.MaterialProperties::default()
+    .add_shader("main.fragment", "shaders/pbr.wgsl")
+    .add_draw_function("main.opaque", @material.DrawFunctionId::new(3U))
+  inspect(mesh_key.downcast_u64("MeshKey"), content="7")
+  inspect(pipeline_key.type_tag, content="PipelineKey")
+  inspect(material_key.type_tag(), content="MaterialKey")
+  inspect(
+    properties.get_shader("main.fragment"),
+    content="Some(\"shaders/pbr.wgsl\")",
+  )
+  inspect(
+    properties.get_draw_function("main.opaque").map(fn(draw) { draw.id() }),
+    content="Some(3)",
+  )
+}
+
+///|
 test "material boundary Assets::add accepts Color and Image handle inputs" {
   let materials : @asset.Assets[@material.StandardMaterial] = @asset.Assets::new()
   let expected_color = @sprite.Color::srgb(0.1F, 0.2F, 0.3F)

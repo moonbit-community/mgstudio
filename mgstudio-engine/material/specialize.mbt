@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
 
 ///|
-pub type MaterialPipelineKey = String
-
-///|
 pub type MaterialMeshVertexLayout = Int
 
 ///|
@@ -29,12 +26,26 @@ pub suberror SpecializedMeshPipelineError {
 ///|
 pub type BaseSpecializeFn = (
   @ecs.World,
-  MaterialPipelineKey,
+  ErasedMaterialPipelineKey,
   MaterialMeshVertexLayout,
-) -> @render_resource.RenderPipelineId raise
+  MaterialProperties,
+) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
 
 ///|
-pub type UserSpecializeFn = (MaterialPipelineKey, MaterialMeshVertexLayout) -> Unit raise
+pub type PrepassSpecializeFn = (
+  @ecs.World,
+  ErasedMaterialPipelineKey,
+  MaterialMeshVertexLayout,
+  MaterialProperties,
+) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
+
+///|
+pub type UserSpecializeFn = (
+  String,
+  RenderPipelineDescriptor,
+  MaterialMeshVertexLayout,
+  ErasedMaterialPipelineKey,
+) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError
 
 ///|
 pub fn missing_vertex_attribute_error(
@@ -47,17 +58,31 @@ pub fn missing_vertex_attribute_error(
 pub fn material_specialize_base(
   specialize : BaseSpecializeFn,
   world : @ecs.World,
-  key : MaterialPipelineKey,
+  key : ErasedMaterialPipelineKey,
   layout : MaterialMeshVertexLayout,
-) -> @render_resource.RenderPipelineId raise {
-  specialize(world, key, layout)
+  properties : MaterialProperties,
+) -> CachedRenderPipelineId raise {
+  specialize(world, key, layout, properties)
+}
+
+///|
+pub fn material_specialize_prepass(
+  specialize : PrepassSpecializeFn,
+  world : @ecs.World,
+  key : ErasedMaterialPipelineKey,
+  layout : MaterialMeshVertexLayout,
+  properties : MaterialProperties,
+) -> CachedRenderPipelineId raise {
+  specialize(world, key, layout, properties)
 }
 
 ///|
 pub fn material_specialize_user(
   specialize : UserSpecializeFn,
-  key : MaterialPipelineKey,
+  user_key : String,
+  descriptor : RenderPipelineDescriptor,
   layout : MaterialMeshVertexLayout,
-) -> Unit raise {
-  specialize(key, layout)
+  key : ErasedMaterialPipelineKey,
+) -> RenderPipelineDescriptor raise {
+  specialize(user_key, descriptor, layout, key)
 }

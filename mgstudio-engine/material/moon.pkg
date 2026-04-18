@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/render_resource" @render_resource,
+  "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
 }
