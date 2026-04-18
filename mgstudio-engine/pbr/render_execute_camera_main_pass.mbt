@@ -115,6 +115,15 @@ fn render3d_execute_camera_main_pass(
   wireframe_config : WireframeConfig?,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
+  fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {
+    @render.host_gpu_prepare_mesh3d_view_bind_group(
+      transmission_source_texture_id~,
+      point_shadow_texture_id~,
+      environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
+      environment_specular_texture_id=environment_map_state.specular_texture_id,
+    )
+  }
+  prepare_view_bind_group(-1)
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
     @pbr_render.render3d_pass_viewport_for_target(
       target_id,
@@ -544,6 +553,12 @@ fn render3d_execute_camera_main_pass(
     let transmission_source_target_id = render3d_transmission_source_target_get_or_create(
       world, camera_entity, view_width, view_height,
     )
+    let transmission_source_texture_id = if transmission_steps > 0 {
+      transmission_source_target_id
+    } else {
+      -1
+    }
+    prepare_view_bind_group(transmission_source_texture_id)
     let transmission_ranges = if transmission_steps > 0 {
       render3d_split_phase_ranges(
         transmissive_draws.length(),
@@ -588,11 +603,7 @@ fn render3d_execute_camera_main_pass(
         point_shadow_texture_id~,
         point_shadow_enabled~,
         point_shadow_depth_bias~,
-        transmission_source_texture_id=if transmission_steps > 0 {
-          transmission_source_target_id
-        } else {
-          -1
-        },
+        transmission_source_texture_id~,
         environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
         environment_specular_texture_id=environment_map_state.specular_texture_id,
         environment_map_intensity=environment_map_state.intensity,
@@ -606,11 +617,7 @@ fn render3d_execute_camera_main_pass(
         transmissive_draw.entity |> ignore
         @pbr_render.render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
           ..transmissive_draw.payload,
-          transmission_source_texture_id: if transmission_steps > 0 {
-            transmission_source_target_id
-          } else {
-            -1
-          },
+          transmission_source_texture_id,
           transmission_blur_taps: Float::from_double(
             transmission_blur_taps.to_double(),
           ),
