@@ -234,6 +234,78 @@ pub fn MaterialProperties::add_draw_function(
 }
 
 ///|
+pub fn MaterialProperties::with_render_method(
+  self : MaterialProperties,
+  render_method : OpaqueRendererMethod,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, render_method, }
+}
+
+///|
+pub fn MaterialProperties::with_alpha_mode(
+  self : MaterialProperties,
+  alpha_mode : AlphaMode3d,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, alpha_mode, }
+}
+
+///|
+pub fn MaterialProperties::with_mesh_pipeline_key_bits(
+  self : MaterialProperties,
+  mesh_pipeline_key_bits : ErasedMeshPipelineKey,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, mesh_pipeline_key_bits, }
+}
+
+///|
+pub fn MaterialProperties::with_depth_bias(
+  self : MaterialProperties,
+  depth_bias : Float,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, depth_bias, }
+}
+
+///|
+pub fn MaterialProperties::with_reads_view_transmission_texture(
+  self : MaterialProperties,
+  reads_view_transmission_texture : Bool,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, reads_view_transmission_texture, }
+}
+
+///|
+pub fn MaterialProperties::with_render_phase_type(
+  self : MaterialProperties,
+  render_phase_type : RenderPhaseType,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, render_phase_type, }
+}
+
+///|
+pub fn MaterialProperties::with_material_key(
+  self : MaterialProperties,
+  material_key : ErasedMaterialKey,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, material_key, }
+}
+
+///|
+pub fn MaterialProperties::with_shadows_enabled(
+  self : MaterialProperties,
+  shadows_enabled : Bool,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, shadows_enabled, }
+}
+
+///|
+pub fn MaterialProperties::with_prepass_enabled(
+  self : MaterialProperties,
+  prepass_enabled : Bool,
+) -> MaterialProperties {
+  MaterialProperties::{ ..self, prepass_enabled, }
+}
+
+///|
 pub struct StandardMaterial {
   base_color : @sprite.Color
   base_color_texture : @asset.Handle[@asset.Image]?

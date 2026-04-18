@@ -108,12 +108,7 @@ pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
 ///|
 pub struct ExtractedMaterialInstance3d {
   entity : @core.Entity
-  alpha_mode : AlphaMode3d
-  render_phase_type : @material.RenderPhaseType
-  opaque_render_method : OpaqueRendererMethod
-  unlit : Bool
-  extension_tag : Int?
-  extension_shader_path : String?
+  properties : @material.MaterialProperties
 }
 
 ///|
@@ -139,23 +134,50 @@ pub impl @app.Resource for ExtractedMaterialInstances3d with resource() {
 }
 
 ///|
-fn render3d_extracted_material_extension_tag(
-  extension : ExtendedMaterialMetadata3d?,
-) -> Int? {
-  match extension {
-    Some(metadata) => Some(metadata.extension_tag)
-    None => None
-  }
-}
+pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001UL
 
 ///|
-fn render3d_extracted_material_extension_shader_path(
+fn render3d_material_properties_for_standard_material(
+  material : StandardMaterial,
   extension : ExtendedMaterialMetadata3d?,
-) -> String? {
-  match extension {
-    Some(metadata) => metadata.shader_path
-    None => None
+  default_opaque_renderer_method : OpaqueRendererMethod,
+) -> @material.MaterialProperties {
+  let render_method = standard_material_opaque_render_method(
+    material, default_opaque_renderer_method,
+  )
+  let reads_view_transmission_texture = standard_material_reads_view_transmission_texture(
+    material,
+  )
+  let mut mesh_pipeline_key_bits : UInt64 = 0UL
+  if reads_view_transmission_texture {
+    mesh_pipeline_key_bits = mesh_pipeline_key_bits |
+      MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE
   }
+  let shadows_enabled = match extension {
+    Some(metadata) => !metadata.disable_shadows
+    None => true
+  }
+  let prepass_enabled = true
+  let standard_material_key = standard_material_key_from_material(material)
+  @material.MaterialProperties::default()
+  .with_render_method(render_method)
+  .with_alpha_mode(material.alpha_mode)
+  .with_mesh_pipeline_key_bits(
+    @material.ErasedMeshPipelineKey::new(
+      mesh_pipeline_key_bits, "MeshPipelineKey",
+    ),
+  )
+  .with_depth_bias(material.depth_bias)
+  .with_reads_view_transmission_texture(reads_view_transmission_texture)
+  .with_render_phase_type(standard_material_render_phase_type(material))
+  .with_material_key(
+    @material.ErasedMaterialKey::new(
+      standard_material_key.bits(),
+      "StandardMaterialKey",
+    ),
+  )
+  .with_shadows_enabled(shadows_enabled)
+  .with_prepass_enabled(prepass_enabled)
 }
 
 ///|
@@ -165,20 +187,10 @@ fn render3d_extracted_material_instance_for_mesh(
 ) -> ExtractedMaterialInstance3d {
   let material = mesh.payload.material
   let extension = mesh.payload.material_extension
-  let opaque_render_method = standard_material_opaque_render_method(
-    material, default_opaque_renderer_method,
+  let properties = render3d_material_properties_for_standard_material(
+    material, extension, default_opaque_renderer_method,
   )
-  ExtractedMaterialInstance3d::{
-    entity: mesh.entity.main_entity,
-    alpha_mode: material.alpha_mode,
-    render_phase_type: standard_material_render_phase_type(material),
-    opaque_render_method,
-    unlit: material.unlit,
-    extension_tag: render3d_extracted_material_extension_tag(extension),
-    extension_shader_path: render3d_extracted_material_extension_shader_path(
-      extension,
-    ),
-  }
+  ExtractedMaterialInstance3d::{ entity: mesh.entity.main_entity, properties }
 }
 
 ///|

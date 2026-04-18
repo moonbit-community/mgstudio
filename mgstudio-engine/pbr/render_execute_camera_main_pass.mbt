@@ -198,14 +198,16 @@ fn render3d_execute_camera_main_pass(
         continue
       }
     }
-    let mesh_opaque_mode = match extracted_material_instance {
-      Some(instance) => instance.opaque_render_method
+    let material_properties = match extracted_material_instance {
+      Some(instance) => instance.properties
       None =>
-        standard_material_opaque_render_method(
+        render3d_material_properties_for_standard_material(
           mesh.material,
+          mesh.material_extension,
           default_opaque_renderer_method,
         )
     }
+    let mesh_opaque_mode = material_properties.render_method
     if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
       !camera_deferred_enabled {
       continue
@@ -353,10 +355,7 @@ fn render3d_execute_camera_main_pass(
     let draw_specular_transmission = @pbr_render.clamp01(
       draw_material.specular_transmission,
     )
-    let draw_render_phase_type = match extracted_material_instance {
-      Some(instance) => instance.render_phase_type
-      None => standard_material_render_phase_type(draw_material)
-    }
+    let draw_render_phase_type = material_properties.render_phase_type
     let draw_thickness = @pbr_render.maxf(0.0F, draw_material.thickness)
     let draw_ior = @pbr_render.maxf(1.0F, draw_material.ior)
     if draw_render_phase_type is @material.RenderPhaseType::Transparent &&

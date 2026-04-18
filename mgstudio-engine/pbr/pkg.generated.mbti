@@ -40,6 +40,8 @@ pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
 pub const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
 
+pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001
+
 pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100
 
 pub const STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE : UInt64 = 0x000200
@@ -872,12 +874,7 @@ pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
 
 pub struct ExtractedMaterialInstance3d {
   entity : @core.Entity
-  alpha_mode : @material.AlphaMode3d
-  render_phase_type : @material.RenderPhaseType
-  opaque_render_method : @material.OpaqueRendererMethod
-  unlit : Bool
-  extension_tag : Int?
-  extension_shader_path : String?
+  properties : @material.MaterialProperties
 }
 
 pub struct ExtractedMaterialInstances3d {
