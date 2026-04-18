@@ -637,6 +637,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with get_frustum_corner
 pub(all) struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
+  is_orthographic : Bool
 }
 
 ///|

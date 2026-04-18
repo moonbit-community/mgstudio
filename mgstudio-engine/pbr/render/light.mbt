@@ -792,6 +792,43 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
 }
 
 ///|
+fn render3d_cluster_is_orthographic(world : @ecs.World) -> Bool {
+  let preferred_ref : Ref[Bool?] = Ref::new(None)
+  let fallback_ref : Ref[Bool?] = Ref::new(None)
+  world.for_each_component(ecs_key_projection_runtime3d, fn(entity, runtime) {
+    if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+      return
+    }
+    if fallback_ref.val is None {
+      fallback_ref.val = Some(runtime.is_orthographic)
+    }
+    if preferred_ref.val is Some(_) {
+      return
+    }
+    let has_cluster_components = (try! world.contains_by_key(
+        entity,
+        @light_cluster.Clusters::component(),
+      )) ||
+      (try! world.contains_by_key(
+        entity,
+        @light_cluster.ClusterConfig::component(),
+      ))
+    if !has_cluster_components {
+      return
+    }
+    preferred_ref.val = Some(runtime.is_orthographic)
+  })
+  match preferred_ref.val {
+    Some(is_orthographic) => is_orthographic
+    None =>
+      match fallback_ref.val {
+        Some(is_orthographic) => is_orthographic
+        None => false
+      }
+  }
+}
+
+///|
 fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
   let config_ref : Ref[@light_cluster.ClusterConfig?] = Ref::new(None)
   world.for_each_component(@light_cluster.ClusterConfig::component(), fn(
@@ -963,6 +1000,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let n_clusters = cluster_dimensions_x *
     cluster_dimensions_y *
     cluster_dimensions_z
+  let cluster_is_orthographic = render3d_cluster_is_orthographic(world)
   let cluster_factors_xy = if cluster_screen_width <= 0 ||
     cluster_screen_height <= 0 {
     @math.Vec2::new(0.0F, 0.0F)
@@ -981,7 +1019,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       cluster_near,
       cluster_far,
       Float::from_double(cluster_dimensions_z.to_double()),
-      false,
+      cluster_is_orthographic,
     )
   }
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []

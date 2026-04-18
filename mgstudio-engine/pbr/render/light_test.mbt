@@ -669,6 +669,42 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
 }
 
 ///|
+test "pbr render light: cluster factors zw follow orthographic projection runtime" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(camera, ecs_key_projection_runtime3d, ProjectionRuntime3d::{
+    last_view_width: 1280.0F,
+    last_view_height: 720.0F,
+    is_orthographic: true,
+  })
+  |> ignore)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  let expected_factors_zw = @light_cluster.calculate_cluster_factors(
+    5.0F, 1000.0F, 24.0F, true,
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: cluster far fallback follows max visible clusterable range" {
   let world = @ecs.World::new()
   let visible_point = world.spawn()

@@ -991,6 +991,7 @@ pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
 pub(all) struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
+  is_orthographic : Bool
 }
 
 pub struct Render3dDiagnosticsState {

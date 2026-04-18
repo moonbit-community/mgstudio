@@ -204,12 +204,17 @@ test "render3d: projection runtime updates changed orthographic projection at st
     Some(ProjectionRuntime3d::{
       last_view_width: 800.0F,
       last_view_height: 400.0F,
+      is_orthographic: true,
     }),
     true,
     @sprite.Camera::default(),
     @math.IVec2::new(800, 400),
     1.0F,
   )
+  let runtime_is_orthographic = match runtime_update {
+    Some(update) => update.is_orthographic
+    None => false
+  }
   let ok = match runtime_projection {
     Projection::Orthographic(orthographic) => {
       let area = orthographic.area()
@@ -217,7 +222,7 @@ test "render3d: projection runtime updates changed orthographic projection at st
       projection_approx_eq_wb(area.max.x, 12.0F) &&
       projection_approx_eq_wb(area.min.y, -6.0F) &&
       projection_approx_eq_wb(area.max.y, 6.0F) &&
-      runtime_update is Some(_)
+      runtime_is_orthographic
     }
     Projection::Perspective(_) => false
     Projection::Custom(_) => false

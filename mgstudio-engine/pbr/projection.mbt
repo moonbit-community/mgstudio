@@ -576,13 +576,16 @@ fn render3d_projection_runtime_update(
       camera, target_size, scale_factor,
     ) {
     Some((_, _, viewport_width, viewport_height)) => {
+      let is_orthographic = !projection.is_perspective()
       let next_runtime = ProjectionRuntime3d::{
         last_view_width: viewport_width,
         last_view_height: viewport_height,
+        is_orthographic,
       }
       if runtime is Some(previous_runtime) &&
         previous_runtime.last_view_width == viewport_width &&
         previous_runtime.last_view_height == viewport_height &&
+        previous_runtime.is_orthographic == is_orthographic &&
         !force_update {
         (projection, None)
       } else {
