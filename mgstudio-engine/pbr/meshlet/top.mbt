@@ -426,12 +426,12 @@ fn meshlet_projection_type_key(
   source_world : @ecs.World,
   entity : @core.Entity,
 ) -> Int {
-  match (try! source_world.get_by_key(entity, @pbr.ecs_key_projection)) {
+  match (try! source_world.get_by_key(entity, @camera.ecs_key_projection)) {
     Some(projection) =>
       match projection {
-        @pbr.Projection::Perspective(_) => 1
-        @pbr.Projection::Orthographic(_) => 2
-        @pbr.Projection::Custom(_) => 3
+        @camera.Projection::Perspective(_) => 1
+        @camera.Projection::Orthographic(_) => 2
+        @camera.Projection::Custom(_) => 3
       }
     None => 0
   }
@@ -459,7 +459,7 @@ fn meshlet_distance_fog_enabled(
   source_world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  match (try! source_world.get_by_key(entity, @pbr.ecs_key_camera3d)) {
+  match (try! source_world.get_by_key(entity, @camera.ecs_key_camera3d)) {
     Some(camera3d) => camera3d.distance_fog is Some(_)
     None => false
   }
