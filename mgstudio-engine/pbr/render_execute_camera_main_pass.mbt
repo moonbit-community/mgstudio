@@ -350,7 +350,7 @@ fn render3d_execute_camera_main_pass(
     )
     let draw_thickness = @pbr_render.maxf(0.0F, draw_material.thickness)
     let draw_ior = @pbr_render.maxf(1.0F, draw_material.ior)
-    if draw_item.phase == RENDER3D_PHASE_TRANSPARENT &&
+    if draw_render_phase_type is @material.RenderPhaseType::Transparent &&
       camera.oit_settings is Some(oit_settings) &&
       draw_alpha < oit_settings.alpha_threshold {
       continue
