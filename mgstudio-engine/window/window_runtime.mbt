@@ -62,14 +62,6 @@ impl @ecs.Component for WindowRuntime with component() {
 }
 
 ///|
-priv struct WindowPluginMarker {}
-
-///|
-fn window_plugin_marker_key() -> @ecs.ResourceKey[WindowPluginMarker] {
-  @ecs.register_resource(debug_name="mgstudio_window::WindowPluginMarker")
-}
-
-///|
 fn[T] window_remove_component(
   world : @ecs.World,
   entity : @core.Entity,

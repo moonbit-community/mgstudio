@@ -159,7 +159,7 @@ pub fn hierarchy_register_component_hooks(
   world : @ecs.World,
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
-) -> Bool {
+) -> Unit {
   let parent_hooks = world.register_component_hooks_for_key(parent_key)
   ignore(
     try! parent_hooks
@@ -204,5 +204,4 @@ pub fn hierarchy_register_component_hooks(
       }
     }),
   )
-  true
 }

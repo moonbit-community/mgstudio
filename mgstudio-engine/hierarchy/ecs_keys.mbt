@@ -25,7 +25,6 @@ pub let ecs_key_children : @ecs.ComponentKey[Children] = @ecs.register_component
 ///|
 pub fn hierarchy_install(world : @ecs.World) -> Unit {
   hierarchy_register_component_hooks(world, ecs_key_parent, ecs_key_children)
-  |> ignore
   @ecs.set_observer_parent_lookup(fn(world, entity) {
     match (try! world.get_by_key(entity, ecs_key_parent)) {
       Some(parent) => Some(parent.entity())
