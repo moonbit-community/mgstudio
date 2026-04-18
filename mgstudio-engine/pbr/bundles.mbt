@@ -29,6 +29,8 @@ pub struct Camera3dBundle {
   exposure : Exposure?
   color_grading : ColorGrading?
   camera3d : Camera3d
+  decal_config : CameraDecalConfig3d?
+  deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
   transform : @transform.Transform
   target : @sprite.RenderTarget
@@ -56,6 +58,8 @@ pub fn Camera3dBundle::new(
     exposure: Some(Exposure::default()),
     color_grading: None,
     camera3d: Camera3d::default(),
+    decal_config: None,
+    deferred_config: None,
     distance_fog: None,
     transform,
     target: @sprite.RenderTarget::Screen,
@@ -85,6 +89,8 @@ pub fn Camera3dBundle::new_with_projection(
     exposure: Some(Exposure::default()),
     color_grading: None,
     camera3d: Camera3d::default(),
+    decal_config: None,
+    deferred_config: None,
     distance_fog: None,
     transform,
     target: @sprite.RenderTarget::Screen,
@@ -209,10 +215,7 @@ pub fn Camera3dBundle::with_decal_config(
   self : Camera3dBundle,
   decal_config : CameraDecalConfig3d,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_decal_config(decal_config),
-  }
+  Camera3dBundle::{ ..self, decal_config: Some(decal_config) }
 }
 
 ///|
@@ -220,10 +223,7 @@ pub fn Camera3dBundle::with_deferred_config(
   self : Camera3dBundle,
   deferred_config : CameraDeferredConfig3d,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_deferred_config(deferred_config),
-  }
+  Camera3dBundle::{ ..self, deferred_config: Some(deferred_config) }
 }
 
 ///|
@@ -325,6 +325,17 @@ fn camera3d_bundle_insert(
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
   world.set_by_key(entity, ecs_key_camera3d, bundle.camera3d, loc~)
+  if bundle.decal_config is Some(decal_config) {
+    world.set_by_key(entity, ecs_key_camera_decal_config3d, decal_config, loc~)
+  }
+  if bundle.deferred_config is Some(deferred_config) {
+    world.set_by_key(
+      entity,
+      ecs_key_camera_deferred_config3d,
+      deferred_config,
+      loc~,
+    )
+  }
   if bundle.distance_fog is Some(distance_fog) {
     world.set_by_key(entity, ecs_key_distance_fog, distance_fog, loc~)
   }

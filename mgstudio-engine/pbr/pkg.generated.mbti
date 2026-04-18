@@ -100,6 +100,10 @@ pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
+pub let ecs_key_camera_decal_config3d : @ecs.ComponentKey[CameraDecalConfig3d]
+
+pub let ecs_key_camera_deferred_config3d : @ecs.ComponentKey[CameraDeferredConfig3d]
+
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[@light.ClusteredDecal]
@@ -602,8 +606,6 @@ pub fn AutoExposureCompensationCurve::default() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
 
 pub struct Camera3d {
-  decal_config : CameraDecalConfig3d
-  deferred_config : CameraDeferredConfig3d
   volumetric_fog : @light.VolumetricFog?
   atmosphere : @light.Atmosphere?
   atmosphere_settings : @light.AtmosphereSettings?
@@ -614,8 +616,6 @@ pub fn Camera3d::default() -> Self
 pub fn Camera3d::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3d::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
 pub fn Camera3d::with_auto_exposure(Self, AutoExposure?) -> Self
-pub fn Camera3d::with_decal_config(Self, CameraDecalConfig3d) -> Self
-pub fn Camera3d::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @ecs.Component for Camera3d
@@ -636,6 +636,8 @@ pub struct Camera3dBundle {
   exposure : Exposure?
   color_grading : @post_process.ColorGrading?
   camera3d : Camera3d
+  decal_config : CameraDecalConfig3d?
+  deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
   transform : @transform.Transform
   target : @sprite.RenderTarget
@@ -678,6 +680,7 @@ pub fn CameraDecalConfig3d::default() -> Self
 pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(Self, Bool) -> Self
 pub fn CameraDecalConfig3d::with_mode(Self, DecalRenderMode3d) -> Self
 pub fn CameraDecalConfig3d::with_requires_depth_prepass(Self, Bool) -> Self
+pub impl @ecs.Component for CameraDecalConfig3d
 
 pub struct CameraDeferredConfig3d {
   mode : CameraDeferredMode3d
@@ -686,6 +689,7 @@ pub struct CameraDeferredConfig3d {
 pub fn CameraDeferredConfig3d::default() -> Self
 pub fn CameraDeferredConfig3d::with_mode(Self, CameraDeferredMode3d) -> Self
 pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(Self, Bool) -> Self
+pub impl @ecs.Component for CameraDeferredConfig3d
 
 pub(all) enum CameraDeferredMode3d {
   Auto

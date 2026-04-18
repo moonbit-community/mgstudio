@@ -289,8 +289,6 @@ pub fn DepthOfField::from_physical_camera(
 /// This stores feature toggles and per-camera overrides that influence how the
 /// current renderer approximates deferred/decal/volumetric/post-process APIs.
 pub struct Camera3d {
-  decal_config : CameraDecalConfig3d
-  deferred_config : CameraDeferredConfig3d
   volumetric_fog : VolumetricFog?
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
@@ -301,30 +299,12 @@ pub struct Camera3d {
 ///|
 pub fn Camera3d::default() -> Camera3d {
   Camera3d::{
-    decal_config: CameraDecalConfig3d::default(),
-    deferred_config: CameraDeferredConfig3d::default(),
     volumetric_fog: None,
     atmosphere: None,
     atmosphere_settings: None,
     auto_exposure: None,
     depth_of_field: None,
   }
-}
-
-///|
-pub fn Camera3d::with_decal_config(
-  self : Camera3d,
-  decal_config : CameraDecalConfig3d,
-) -> Camera3d {
-  Camera3d::{ ..self, decal_config, }
-}
-
-///|
-pub fn Camera3d::with_deferred_config(
-  self : Camera3d,
-  deferred_config : CameraDeferredConfig3d,
-) -> Camera3d {
-  Camera3d::{ ..self, deferred_config, }
 }
 
 ///|

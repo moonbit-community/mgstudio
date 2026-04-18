@@ -71,6 +71,12 @@ fn render3d_execute_collect_cameras(
     let distance_fog = try! source_world.get_by_key(
       entity, ecs_key_distance_fog,
     )
+    let decal_config = try! source_world.get_by_key(
+      entity, ecs_key_camera_decal_config3d,
+    )
+    let deferred_config = try! source_world.get_by_key(
+      entity, ecs_key_camera_deferred_config3d,
+    )
     let oit_settings = try! source_world.get_by_key(
       entity, ecs_key_order_independent_transparency_settings,
     )
@@ -201,6 +207,8 @@ fn render3d_execute_collect_cameras(
           entity: phase_entity_ref3d_for_world_main(source_world, entity),
           payload: Camera3dViewPayload::{
             camera3d,
+            decal_config,
+            deferred_config,
             distance_fog,
             camera: camera_clamped,
             projection,

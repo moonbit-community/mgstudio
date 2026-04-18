@@ -50,11 +50,19 @@ fn render3d_execute_camera_pass_config(
   temporal_aa_enabled : Bool,
   pass_lighting : Render3dLightingState,
 ) -> Render3dExecuteCameraPassConfig {
+  let camera_deferred_config = match camera.deferred_config {
+    Some(value) => value
+    None => CameraDeferredConfig3d::default()
+  }
+  let camera_decal_config = match camera.decal_config {
+    Some(value) => value
+    None => CameraDecalConfig3d::default()
+  }
   let camera_deferred_enabled = deferred_lighting_enabled &&
     prepass_enabled &&
     (
       camera.deferred_prepass_enabled ||
-      camera.camera3d.deferred_config.requires_deferred_prepass ||
+      camera_deferred_config.requires_deferred_prepass ||
       camera_deferred_mode is OpaqueRendererMethod::Deferred
     )
   let camera_msaa_allows_forward_decals = match camera.msaa {
@@ -62,18 +70,18 @@ fn render3d_execute_camera_pass_config(
     None => true
   }
   let camera_forward_decal_enabled = render3d_decal_mode_allows_forward(
-      camera.camera3d.decal_config.mode,
+      camera_decal_config.mode,
     ) &&
     camera_msaa_allows_forward_decals &&
     (
-      !camera.camera3d.decal_config.requires_depth_prepass ||
+      !camera_decal_config.requires_depth_prepass ||
       camera.depth_prepass_enabled
     )
   let camera_clustered_decal_enabled = render3d_decal_mode_allows_clustered(
-      camera.camera3d.decal_config.mode,
+      camera_decal_config.mode,
     ) &&
     (
-      !camera.camera3d.decal_config.clustered_requires_deferred_prepass ||
+      !camera_decal_config.clustered_requires_deferred_prepass ||
       camera_deferred_enabled
     )
   let effective_exposure = camera.exposure

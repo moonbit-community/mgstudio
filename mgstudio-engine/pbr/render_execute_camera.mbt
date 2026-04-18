@@ -55,10 +55,12 @@ fn render3d_execute_camera(
   let environment_map_state = render3d_camera_environment_map_state(
     extracted_camera,
   )
+  let camera_deferred_config = match camera.deferred_config {
+    Some(value) => value
+    None => CameraDeferredConfig3d::default()
+  }
   let camera_deferred_mode = render3d_camera_deferred_mode(
-    camera.camera3d.deferred_config,
-    default_opaque_renderer_method,
-    deferred_lighting_enabled,
+    camera_deferred_config, default_opaque_renderer_method, deferred_lighting_enabled,
   )
   let pass_config = render3d_execute_camera_pass_config(
     camera, camera_deferred_mode, deferred_lighting_enabled, prepass_enabled, temporal_aa_enabled,
