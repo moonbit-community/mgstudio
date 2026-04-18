@@ -617,6 +617,8 @@ pub fn AutoExposureCompensationCurve::default() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
 
 pub struct Camera3d {
+  depth_load_op : Camera3dDepthLoadOp
+  depth_texture_usages : Camera3dDepthTextureUsage
 } derive(ToJson, @json.FromJson)
 pub fn Camera3d::default() -> Self
 pub impl @ecs.Component for Camera3d
@@ -676,6 +678,17 @@ pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Sel
 pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @app.CommandSpawnComponents for Camera3dBundle
+
+pub enum Camera3dDepthLoadOp {
+  Clear(Float)
+  Load
+} derive(ToJson, @json.FromJson)
+pub fn Camera3dDepthLoadOp::default() -> Self
+
+pub struct Camera3dDepthTextureUsage {
+  bits : UInt
+} derive(ToJson, @json.FromJson)
+pub fn Camera3dDepthTextureUsage::default() -> Self
 
 pub struct CameraDecalConfig3d {
   mode : DecalRenderMode3d

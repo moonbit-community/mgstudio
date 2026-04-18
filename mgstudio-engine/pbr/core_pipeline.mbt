@@ -285,11 +285,40 @@ pub fn DepthOfField::from_physical_camera(
 
 ///|
 /// Camera component aligned with Bevy's `Camera3d`.
-pub struct Camera3d {} derive(ToJson, FromJson)
+pub enum Camera3dDepthLoadOp {
+  Clear(Float)
+  Load
+} derive(ToJson, FromJson)
+
+///|
+pub fn Camera3dDepthLoadOp::default() -> Camera3dDepthLoadOp {
+  Camera3dDepthLoadOp::Clear(0.0F)
+}
+
+///|
+pub struct Camera3dDepthTextureUsage {
+  bits : UInt
+} derive(ToJson, FromJson)
+
+///|
+pub fn Camera3dDepthTextureUsage::default() -> Camera3dDepthTextureUsage {
+  Camera3dDepthTextureUsage::{
+    bits: @asset.IMAGE_USAGE_RENDER_ATTACHMENT.reinterpret_as_uint(),
+  }
+}
+
+///|
+pub struct Camera3d {
+  depth_load_op : Camera3dDepthLoadOp
+  depth_texture_usages : Camera3dDepthTextureUsage
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Camera3d::default() -> Camera3d {
-  Camera3d::{  }
+  Camera3d::{
+    depth_load_op: Camera3dDepthLoadOp::default(),
+    depth_texture_usages: Camera3dDepthTextureUsage::default(),
+  }
 }
 
 ///|

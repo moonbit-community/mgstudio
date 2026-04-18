@@ -122,7 +122,11 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   let state = atmosphere_state.val
   if state.camera is Some(camera_entity) {
     if (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d)) is Some(_) {
-      try! (world.set_by_key(camera_entity, @pbr.ecs_key_atmosphere, state.atmosphere)
+      try! (world.set_by_key(
+        camera_entity,
+        @pbr.ecs_key_atmosphere,
+        state.atmosphere,
+      )
       |> ignore)
       try! (world.set_by_key(
         camera_entity,
