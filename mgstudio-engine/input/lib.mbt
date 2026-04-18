@@ -682,8 +682,27 @@ pub fn Touches::new() -> Touches {
 }
 
 ///|
+fn touches_touch_index(touches : Array[Touch], id : Int) -> Int? {
+  let n = touches.length()
+  for i in 0..<n {
+    if touches[i].id == id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
 pub fn Touches::iter(self : Touches) -> Array[Touch] {
   self.active
+}
+
+///|
+pub fn Touches::get_pressed(self : Touches, id : Int) -> Touch? {
+  match touches_touch_index(self.active, id) {
+    Some(index) => Some(self.active[index])
+    None => None
+  }
 }
 
 ///|
@@ -692,8 +711,40 @@ pub fn Touches::iter_just_pressed(self : Touches) -> Array[Touch] {
 }
 
 ///|
+pub fn Touches::release(self : Touches, id : Int) -> Unit {
+  match touches_touch_index(self.active, id) {
+    Some(index) => {
+      let touch = self.active[index]
+      let last = self.active.length() - 1
+      if index != last {
+        self.active[index] = self.active[last]
+      }
+      self.active.pop() |> ignore
+      self.just_released.push(touch)
+    }
+    None => ()
+  }
+}
+
+///|
+pub fn Touches::release_all(self : Touches) -> Unit {
+  for touch in self.active {
+    self.just_released.push(touch)
+  }
+  self.active.clear()
+}
+
+///|
 pub fn Touches::iter_just_released(self : Touches) -> Array[Touch] {
   self.just_released
+}
+
+///|
+pub fn Touches::get_released(self : Touches, id : Int) -> Touch? {
+  match touches_touch_index(self.just_released, id) {
+    Some(index) => Some(self.just_released[index])
+    None => None
+  }
 }
 
 ///|
@@ -714,6 +765,21 @@ pub fn Touches::just_pressed(self : Touches, id : Int) -> Bool {
 ///|
 pub fn Touches::any_just_pressed(self : Touches) -> Bool {
   self.just_pressed.length() > 0
+}
+
+///|
+pub fn Touches::clear_just_pressed(self : Touches, id : Int) -> Bool {
+  match touches_touch_index(self.just_pressed, id) {
+    Some(index) => {
+      let last = self.just_pressed.length() - 1
+      if index != last {
+        self.just_pressed[index] = self.just_pressed[last]
+      }
+      self.just_pressed.pop() |> ignore
+      true
+    }
+    None => false
+  }
 }
 
 ///|
@@ -744,6 +810,62 @@ pub fn Touches::just_canceled(self : Touches, id : Int) -> Bool {
     }
   }
   false
+}
+
+///|
+pub fn Touches::clear_just_released(self : Touches, id : Int) -> Bool {
+  match touches_touch_index(self.just_released, id) {
+    Some(index) => {
+      let last = self.just_released.length() - 1
+      if index != last {
+        self.just_released[index] = self.just_released[last]
+      }
+      self.just_released.pop() |> ignore
+      true
+    }
+    None => false
+  }
+}
+
+///|
+pub fn Touches::clear_just_canceled(self : Touches, id : Int) -> Bool {
+  match touches_touch_index(self.just_canceled, id) {
+    Some(index) => {
+      let last = self.just_canceled.length() - 1
+      if index != last {
+        self.just_canceled[index] = self.just_canceled[last]
+      }
+      self.just_canceled.pop() |> ignore
+      true
+    }
+    None => false
+  }
+}
+
+///|
+pub fn Touches::first_pressed_position(self : Touches) -> @math.Vec2? {
+  if self.active.length() > 0 {
+    Some(self.active[0].position)
+  } else if self.just_pressed.length() > 0 {
+    Some(self.just_pressed[0].position)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn Touches::clear(self : Touches) -> Unit {
+  self.just_pressed.clear()
+  self.just_released.clear()
+  self.just_canceled.clear()
+}
+
+///|
+pub fn Touches::reset_all(self : Touches) -> Unit {
+  self.active.clear()
+  self.just_pressed.clear()
+  self.just_released.clear()
+  self.just_canceled.clear()
 }
 
 ///|

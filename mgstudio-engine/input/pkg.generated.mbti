@@ -165,7 +165,13 @@ pub fn rotation_gesture_message_key() -> @ecs.MessageKey[@events.RotationGesture
 
 pub fn touch_input_message_key() -> @ecs.MessageKey[@events.TouchInput]
 
+pub fn touches_any_just_canceled(Touches) -> Bool
+
 pub fn touches_any_just_pressed(Touches) -> Bool
+
+pub fn touches_any_just_released(Touches) -> Bool
+
+pub fn touches_first_pressed_position(Touches) -> @math.Vec2?
 
 pub fn touches_iter_active(Touches) -> Array[Touch]
 
@@ -518,6 +524,13 @@ pub struct Touches {
 pub fn Touches::any_just_canceled(Self) -> Bool
 pub fn Touches::any_just_pressed(Self) -> Bool
 pub fn Touches::any_just_released(Self) -> Bool
+pub fn Touches::clear(Self) -> Unit
+pub fn Touches::clear_just_canceled(Self, Int) -> Bool
+pub fn Touches::clear_just_pressed(Self, Int) -> Bool
+pub fn Touches::clear_just_released(Self, Int) -> Bool
+pub fn Touches::first_pressed_position(Self) -> @math.Vec2?
+pub fn Touches::get_pressed(Self, Int) -> Touch?
+pub fn Touches::get_released(Self, Int) -> Touch?
 pub fn Touches::iter(Self) -> Array[Touch]
 pub fn Touches::iter_just_canceled(Self) -> Array[Touch]
 pub fn Touches::iter_just_pressed(Self) -> Array[Touch]
@@ -526,6 +539,9 @@ pub fn Touches::just_canceled(Self, Int) -> Bool
 pub fn Touches::just_pressed(Self, Int) -> Bool
 pub fn Touches::just_released(Self, Int) -> Bool
 pub fn Touches::new() -> Self
+pub fn Touches::release(Self, Int) -> Unit
+pub fn Touches::release_all(Self) -> Unit
+pub fn Touches::reset_all(Self) -> Unit
 pub impl @app.Resource for Touches
 
 // Type aliases

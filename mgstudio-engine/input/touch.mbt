@@ -31,6 +31,16 @@ pub fn touches_any_just_pressed(touches : Touches) -> Bool {
 }
 
 ///|
+pub fn touches_any_just_released(touches : Touches) -> Bool {
+  touches.any_just_released()
+}
+
+///|
+pub fn touches_any_just_canceled(touches : Touches) -> Bool {
+  touches.any_just_canceled()
+}
+
+///|
 pub fn touches_iter_active(touches : Touches) -> Array[Touch] {
   touches.iter()
 }
@@ -43,4 +53,9 @@ pub fn touches_iter_just_pressed(touches : Touches) -> Array[Touch] {
 ///|
 pub fn touches_iter_just_released(touches : Touches) -> Array[Touch] {
   touches.iter_just_released()
+}
+
+///|
+pub fn touches_first_pressed_position(touches : Touches) -> @math.Vec2? {
+  touches.first_pressed_position()
 }

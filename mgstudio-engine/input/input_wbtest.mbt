@@ -458,3 +458,53 @@ test "input: touch state keeps bevy-style start/previous position snapshots" {
   debug_inspect(touches.just_released(7), content="true")
   debug_inspect(touches.just_canceled(7), content="true")
 }
+
+///|
+test "input: touches helper api matches bevy touch state operations" {
+  let touches = Touches::new()
+  let touch0 = Touch::{
+    id: 1,
+    start_position: @math.Vec2::new(10.0, 20.0),
+    previous_position: @math.Vec2::new(10.0, 20.0),
+    position: @math.Vec2::new(15.0, 25.0),
+  }
+  touches.active.push(touch0)
+  debug_inspect(touches.get_pressed(1) is Some(_), content="true")
+  debug_inspect(
+    touches.first_pressed_position() is Some(position) &&
+    position.x == 15.0 &&
+    position.y == 25.0,
+    content="true",
+  )
+
+  touches.release(1)
+  debug_inspect(touches.any_just_released(), content="true")
+  debug_inspect(touches.just_released(1), content="true")
+  debug_inspect(touches.get_released(1) is Some(_), content="true")
+  debug_inspect(touches.clear_just_released(1), content="true")
+  debug_inspect(touches.any_just_released(), content="false")
+
+  let touch1 = Touch::{
+    id: 2,
+    start_position: @math.Vec2::new(3.0, 4.0),
+    previous_position: @math.Vec2::new(3.0, 4.0),
+    position: @math.Vec2::new(3.0, 4.0),
+  }
+  touches.just_pressed.push(touch1)
+  touches.just_canceled.push(touch1)
+  debug_inspect(touches.clear_just_pressed(2), content="true")
+  debug_inspect(touches.clear_just_canceled(2), content="true")
+  debug_inspect(touches.any_just_pressed(), content="false")
+  debug_inspect(touches.any_just_canceled(), content="false")
+
+  touches.active.push(touch1)
+  touches.release_all()
+  debug_inspect(touches.active.length(), content="0")
+  debug_inspect(touches.any_just_released(), content="true")
+  touches.clear()
+  debug_inspect(touches.any_just_released(), content="false")
+  touches.active.push(touch1)
+  touches.reset_all()
+  debug_inspect(touches.active.length(), content="0")
+  debug_inspect(touches.any_just_pressed(), content="false")
+}
