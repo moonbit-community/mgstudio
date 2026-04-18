@@ -31,6 +31,9 @@ fn render3d_execute_camera(
   let camera = extracted_camera.payload
   guard prepared_camera_queue is Some(prepared_queue) else { return }
   @render.host_gpu_set_active_surface_target(camera.target_id)
+  render3d_dispatch_camera_preprocess_early(
+    camera_entity, camera, prepared_queue,
+  )
   let viewport_state = prepared_queue.viewport_state
   let viewport_x = viewport_state.viewport_x
   let viewport_y = viewport_state.viewport_y
@@ -117,6 +120,9 @@ fn render3d_execute_camera(
   point_shadow_texture_id = point_shadow_texture_id_value
   point_shadow_enabled = point_shadow_enabled_value
   point_shadow_depth_bias = point_shadow_depth_bias_value
+  render3d_dispatch_camera_preprocess_late(
+    camera_entity, camera, prepared_queue,
+  )
   if !motion_blur_active &&
     (
       transmission_enabled ||
@@ -138,6 +144,9 @@ fn render3d_execute_camera(
   let trace_camera_main_pass_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_camera_main_pass",
+  )
+  render3d_dispatch_camera_preprocess_main(
+    camera_entity, camera, prepared_queue,
   )
   render3d_execute_camera_main_pass(
     world, camera_entity, extracted_camera, camera, draw_queue_entry, meshes, indexed_indirect_parameter_indices,

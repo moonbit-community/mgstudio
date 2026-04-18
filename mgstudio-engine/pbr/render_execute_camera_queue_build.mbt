@@ -154,7 +154,7 @@ fn render3d_upload_camera_queue_entry(
 }
 
 ///|
-fn render3d_dispatch_camera_queue_entry(
+fn render3d_dispatch_camera_preprocess_early(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   prepared_queue : Render3dPreparedCameraQueue,
@@ -166,7 +166,7 @@ fn render3d_dispatch_camera_queue_entry(
   }
   let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "queue_3d_camera_preprocess",
+    "execute_3d_camera_preprocess_early",
   )
   if camera.gpu_occlusion_culling_enabled {
     @render.host_gpu_preprocess_mesh3d(
@@ -178,25 +178,6 @@ fn render3d_dispatch_camera_queue_entry(
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
       phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
-    )
-    @render.host_gpu_downsample_mesh3d_depth_pyramid(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-    )
-    @render.host_gpu_preprocess_mesh3d(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      phase_kind=@render.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION,
-    )
-    @render.host_gpu_build_mesh3d_indirect_parameters(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_LATE,
-    )
-    @render.host_gpu_build_mesh3d_indirect_parameters(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-      phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN,
     )
   } else {
     @render.host_gpu_preprocess_mesh3d(
@@ -210,7 +191,72 @@ fn render3d_dispatch_camera_queue_entry(
   }
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "queue_3d_camera_preprocess",
+    "execute_3d_camera_preprocess_early",
+    trace_camera_queue_preprocess_start_us,
+  )
+}
+
+///|
+fn render3d_dispatch_camera_preprocess_late(
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  prepared_queue : Render3dPreparedCameraQueue,
+) -> Unit {
+  if !render3d_camera_queue_needs_gpu_preprocess(
+      prepared_queue.draw_queue_entry,
+    ) ||
+    !camera.gpu_occlusion_culling_enabled {
+    return
+  }
+  let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_camera_preprocess_late",
+  )
+  @render.host_gpu_downsample_mesh3d_depth_pyramid(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+  )
+  @render.host_gpu_preprocess_mesh3d(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+    phase_kind=@render.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION,
+  )
+  @render.host_gpu_build_mesh3d_indirect_parameters(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+    phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_LATE,
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_camera_preprocess_late",
+    trace_camera_queue_preprocess_start_us,
+  )
+}
+
+///|
+fn render3d_dispatch_camera_preprocess_main(
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  prepared_queue : Render3dPreparedCameraQueue,
+) -> Unit {
+  if !render3d_camera_queue_needs_gpu_preprocess(
+      prepared_queue.draw_queue_entry,
+    ) ||
+    !camera.gpu_occlusion_culling_enabled {
+    return
+  }
+  let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_camera_preprocess_main",
+  )
+  @render.host_gpu_build_mesh3d_indirect_parameters(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+    phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN,
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_camera_preprocess_main",
     trace_camera_queue_preprocess_start_us,
   )
 }

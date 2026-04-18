@@ -398,9 +398,6 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         render3d_upload_camera_queue_entry(
           camera_entity, camera_payload, prepared_queue,
         )
-        render3d_dispatch_camera_queue_entry(
-          camera_entity, camera_payload, prepared_queue,
-        )
       })
     None =>
       @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
