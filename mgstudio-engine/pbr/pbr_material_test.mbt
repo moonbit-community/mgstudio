@@ -20,6 +20,7 @@ test "pbr material: key encodes common standard material toggles" {
     .with_normal_map_texture(Some(@asset.Handle::new(3)))
     .with_diffuse_transmission(0.4)
     .with_specular_transmission(0.2)
+    .with_depth_bias(7.0)
   let key = standard_material_key_from_material(material)
   inspect(
     key.contains(STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE),
@@ -35,6 +36,7 @@ test "pbr material: key encodes common standard material toggles" {
     key.contains(STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION),
     content="true",
   )
+  inspect(key.depth_bias(), content="7")
 }
 
 ///|

@@ -188,6 +188,12 @@ pub fn standard_material_key_from_material(
   if material.occlusion_texture is Some(_) {
     bits = bits | STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE
   }
+  let depth_bias_bits = (
+      material.depth_bias.to_int().to_uint64() <<
+      STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT
+    ) &
+    STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK
+  bits = bits | depth_bias_bits
   StandardMaterialKey::{ bits, }
 }
 

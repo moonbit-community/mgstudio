@@ -63,14 +63,14 @@ pub fn ParallaxMappingMethod::max_steps(self : ParallaxMappingMethod) -> Int {
 ///|
 /// Opaque render path preference aligned with Bevy's `OpaqueRendererMethod`.
 pub(all) enum OpaqueRendererMethod {
-  Auto
   Forward
   Deferred
+  Auto
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
-  OpaqueRendererMethod::Auto
+  OpaqueRendererMethod::Forward
 }
 
 ///|
@@ -80,7 +80,9 @@ pub struct DefaultOpaqueRendererMethod {
 
 ///|
 pub fn DefaultOpaqueRendererMethod::default() -> DefaultOpaqueRendererMethod {
-  DefaultOpaqueRendererMethod::{ renderer_method: OpaqueRendererMethod::Auto }
+  DefaultOpaqueRendererMethod::{
+    renderer_method: OpaqueRendererMethod::Forward,
+  }
 }
 
 ///|
@@ -178,6 +180,7 @@ pub struct StandardMaterial {
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
+  depth_bias : Float
   opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   cull_mode : Face3d?
@@ -222,6 +225,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     specular_tint_texture: None,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
+    depth_bias: 0.0F,
     opaque_render_method: OpaqueRendererMethod::Auto,
     unlit: false,
     cull_mode: Some(Face3d::Back),
@@ -268,6 +272,7 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
     specular_tint_texture: default_value.specular_tint_texture,
     occlusion_texture: default_value.occlusion_texture,
     alpha_mode,
+    depth_bias: default_value.depth_bias,
     opaque_render_method: default_value.opaque_render_method,
     unlit: default_value.unlit,
     cull_mode: default_value.cull_mode,
@@ -310,6 +315,14 @@ pub fn StandardMaterial::with_alpha_mode(
   alpha_mode : AlphaMode3d,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, alpha_mode, }
+}
+
+///|
+pub fn StandardMaterial::with_depth_bias(
+  self : StandardMaterial,
+  depth_bias : Float,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, depth_bias, }
 }
 
 ///|

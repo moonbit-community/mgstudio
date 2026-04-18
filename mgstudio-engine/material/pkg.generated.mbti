@@ -162,9 +162,9 @@ pub impl @json.FromJson for MeshMaterial3d
 
 #alias(MaterialOpaqueRendererMethod)
 pub(all) enum OpaqueRendererMethod {
-  Auto
   Forward
   Deferred
+  Auto
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn OpaqueRendererMethod::default() -> Self
 pub fn OpaqueRendererMethod::resolve_runtime(Self, Self) -> Self
@@ -220,6 +220,7 @@ pub struct StandardMaterial {
   specular_tint_texture : @asset.Handle[@image.Image]?
   occlusion_texture : @asset.Handle[@image.Image]?
   alpha_mode : AlphaMode3d
+  depth_bias : Float
   opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   cull_mode : Face3d?
@@ -238,6 +239,7 @@ pub fn StandardMaterial::with_clearcoat_perceptual_roughness(Self, Float) -> Sel
 pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_cull_mode(Self, Face3d?) -> Self
+pub fn StandardMaterial::with_depth_bias(Self, Float) -> Self
 pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_diffuse_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_double_sided(Self, Bool) -> Self

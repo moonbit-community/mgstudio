@@ -13,6 +13,20 @@
 // limitations under the License.
 
 ///|
+test "material boundary matches bevy opaque renderer defaults" {
+  inspect(
+    @material.OpaqueRendererMethod::default()
+    is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+  inspect(
+    @material.DefaultOpaqueRendererMethod::default().renderer_method()
+    is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+}
+
+///|
 test "material boundary re-exports standard material APIs" {
   let material = @material.StandardMaterial::default()
     .with_metallic(0.25)
