@@ -159,6 +159,7 @@ pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
 ///|
 fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
+  prepared_material_bind_groups : Map[String, Bool],
 ) -> Unit {
   let mut draw_material = mesh.payload.material
   if mesh.payload.lightmap is Some(lightmap) && lightmap.image.id() > 0 {
@@ -213,6 +214,11 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
       emissive_texture_id = texture.id()
     }
   }
+  let key = "\{texture_id}|\{normal_texture_id}|\{emissive_texture_id}|\{metallic_roughness_texture_id}|\{occlusion_texture_id}|\{depth_texture_id}|\{anisotropy_texture_id}|\{specular_tint_texture_id}"
+  if prepared_material_bind_groups.contains(key) {
+    return
+  }
+  prepared_material_bind_groups.set(key, true)
   @render.host_gpu_prepare_mesh3d_material_bind_group(
     texture_id~,
     normal_texture_id~,
@@ -374,11 +380,14 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   @pbr_prepass.prepass_update_pipeline_state(source_world)
   if render3d_queue_frame_snapshot(world) is Some(frame) {
+    let prepared_material_bind_groups : Map[String, Bool] = {}
     for camera in frame.cameras {
       render3d_prepare_extracted_camera_view_bind_group(camera)
     }
     for mesh in frame.meshes {
-      render3d_prepare_extracted_mesh_material_bind_group(mesh)
+      render3d_prepare_extracted_mesh_material_bind_group(
+        mesh, prepared_material_bind_groups,
+      )
     }
   }
   ignore(@pbr_render.render3d_mesh_layouts())
