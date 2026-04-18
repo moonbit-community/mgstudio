@@ -32,6 +32,8 @@ pub struct Camera3dBundle {
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
+  auto_exposure : AutoExposure?
+  depth_of_field : DepthOfField?
   transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
@@ -61,6 +63,8 @@ pub fn Camera3dBundle::new(
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
+    auto_exposure: None,
+    depth_of_field: None,
     transform,
     target: @sprite.RenderTarget::Screen,
     layers: @sprite.RenderLayers::default(),
@@ -92,6 +96,8 @@ pub fn Camera3dBundle::new_with_projection(
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
+    auto_exposure: None,
+    depth_of_field: None,
     transform,
     target: @sprite.RenderTarget::Screen,
     layers: @sprite.RenderLayers::default(),
@@ -272,10 +278,7 @@ pub fn Camera3dBundle::with_auto_exposure(
   self : Camera3dBundle,
   auto_exposure : AutoExposure?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_auto_exposure(auto_exposure),
-  }
+  Camera3dBundle::{ ..self, auto_exposure, }
 }
 
 ///|
@@ -283,10 +286,7 @@ pub fn Camera3dBundle::with_depth_of_field(
   self : Camera3dBundle,
   depth_of_field : DepthOfField?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
-    ..self,
-    camera3d: self.camera3d.with_depth_of_field(depth_of_field),
-  }
+  Camera3dBundle::{ ..self, depth_of_field, }
 }
 
 ///|
@@ -338,6 +338,12 @@ fn camera3d_bundle_insert(
   }
   if bundle.distance_fog is Some(distance_fog) {
     world.set_by_key(entity, ecs_key_distance_fog, distance_fog, loc~)
+  }
+  if bundle.auto_exposure is Some(auto_exposure) {
+    world.set_by_key(entity, ecs_key_auto_exposure, auto_exposure, loc~)
+  }
+  if bundle.depth_of_field is Some(depth_of_field) {
+    world.set_by_key(entity, ecs_key_depth_of_field, depth_of_field, loc~)
   }
   world.set_by_key(entity, ecs_key_projection, bundle.projection, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {

@@ -292,8 +292,6 @@ pub struct Camera3d {
   volumetric_fog : VolumetricFog?
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
-  auto_exposure : AutoExposure?
-  depth_of_field : DepthOfField?
 } derive(ToJson, FromJson)
 
 ///|
@@ -302,8 +300,6 @@ pub fn Camera3d::default() -> Camera3d {
     volumetric_fog: None,
     atmosphere: None,
     atmosphere_settings: None,
-    auto_exposure: None,
-    depth_of_field: None,
   }
 }
 
@@ -329,22 +325,6 @@ pub fn Camera3d::with_atmosphere_settings(
   atmosphere_settings : AtmosphereSettings?,
 ) -> Camera3d {
   Camera3d::{ ..self, atmosphere_settings, }
-}
-
-///|
-pub fn Camera3d::with_auto_exposure(
-  self : Camera3d,
-  auto_exposure : AutoExposure?,
-) -> Camera3d {
-  Camera3d::{ ..self, auto_exposure, }
-}
-
-///|
-pub fn Camera3d::with_depth_of_field(
-  self : Camera3d,
-  depth_of_field : DepthOfField?,
-) -> Camera3d {
-  Camera3d::{ ..self, depth_of_field, }
 }
 
 ///|

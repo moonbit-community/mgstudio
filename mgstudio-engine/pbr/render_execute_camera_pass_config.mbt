@@ -143,7 +143,7 @@ fn render3d_execute_camera_pass_config(
     effect_stack_postprocess_enabled ||
     custom_post_process_enabled ||
     fxaa_postprocess_enabled
-  let auto_exposure_enabled = camera.camera3d.auto_exposure is Some(_)
+  let auto_exposure_enabled = camera.auto_exposure is Some(_)
   let motion_vector_prepass_enabled = prepass_enabled &&
     (
       motion_blur_active ||

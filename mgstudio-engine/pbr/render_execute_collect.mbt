@@ -77,6 +77,9 @@ fn render3d_execute_collect_cameras(
     let deferred_config = try! source_world.get_by_key(
       entity, ecs_key_camera_deferred_config3d,
     )
+    let auto_exposure = try! source_world.get_by_key(
+      entity, ecs_key_auto_exposure,
+    )
     let oit_settings = try! source_world.get_by_key(
       entity, ecs_key_order_independent_transparency_settings,
     )
@@ -210,6 +213,7 @@ fn render3d_execute_collect_cameras(
             decal_config,
             deferred_config,
             distance_fog,
+            auto_exposure,
             camera: camera_clamped,
             projection,
             sub_camera_view,

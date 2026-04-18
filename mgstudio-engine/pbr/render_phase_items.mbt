@@ -78,6 +78,7 @@ priv struct Camera3dViewPayload {
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
+  auto_exposure : AutoExposure?
   camera : @sprite.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?

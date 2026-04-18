@@ -96,6 +96,8 @@ pub let ecs_components : Array[String]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
 
+pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure]
+
 pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
@@ -121,6 +123,8 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.Defa
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@Milky2018/mgstudio/pbr/deferred.DeferredPbrLightingState]
 
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepass]
+
+pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.DepthPrepass]
 
@@ -594,6 +598,7 @@ pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@image.Image]?) -> S
 pub fn AutoExposure::with_range(Self, Float, Float) -> Self
 pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
 pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
+pub impl @ecs.Component for AutoExposure
 
 pub struct AutoExposureCompensationCurve {
   min_log_lum : Float
@@ -609,14 +614,10 @@ pub struct Camera3d {
   volumetric_fog : @light.VolumetricFog?
   atmosphere : @light.Atmosphere?
   atmosphere_settings : @light.AtmosphereSettings?
-  auto_exposure : AutoExposure?
-  depth_of_field : DepthOfField?
 } derive(ToJson, @json.FromJson)
 pub fn Camera3d::default() -> Self
 pub fn Camera3d::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3d::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
-pub fn Camera3d::with_auto_exposure(Self, AutoExposure?) -> Self
-pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @ecs.Component for Camera3d
 
@@ -639,6 +640,8 @@ pub struct Camera3dBundle {
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
+  auto_exposure : AutoExposure?
+  depth_of_field : DepthOfField?
   transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
@@ -801,6 +804,7 @@ pub(all) struct DepthOfField {
 } derive(ToJson, @json.FromJson)
 pub fn DepthOfField::default() -> Self
 pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
+pub impl @ecs.Component for DepthOfField
 
 pub(all) enum DepthOfFieldMode {
   Bokeh

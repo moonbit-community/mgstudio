@@ -62,6 +62,16 @@ pub let ecs_key_distance_fog : @ecs.ComponentKey[DistanceFog] = @ecs.register_co
 )
 
 ///|
+pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure] = @ecs.register_component(
+  debug_name="render3d.auto_exposure",
+)
+
+///|
+pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField] = @ecs.register_component(
+  debug_name="render3d.depth_of_field",
+)
+
+///|
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure] = @ecs.register_component(
   debug_name="render3d.exposure",
 )
@@ -293,6 +303,16 @@ pub impl @ecs.Component for DistanceFog with component() {
 }
 
 ///|
+pub impl @ecs.Component for AutoExposure with component() {
+  ecs_key_auto_exposure
+}
+
+///|
+pub impl @ecs.Component for DepthOfField with component() {
+  ecs_key_depth_of_field
+}
+
+///|
 pub impl @ecs.Component for Exposure with component() {
   ecs_key_exposure
 }
@@ -396,18 +416,18 @@ pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] 
 ///|
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "CustomPostProcess3d", "Mesh3d", "Skybox", "Camera3d",
-  "CameraDecalConfig3d", "CameraDeferredConfig3d", "DistanceFog", "Exposure", "Vignette",
-  "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur", "PointLight",
-  "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass", "ForwardDecal",
-  "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d", "Lightmap",
-  "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster",
-  "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
-  "NoIndirectDrawing", "SunDisk", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
-  "Projection", "Frustum", "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight",
-  "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections",
-  "DirectionalLightTexture", "ForwardDecalMaterialExt", "ScreenSpaceTransmission",
-  "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
-  "OrderIndependentTransparencySettings",
+  "CameraDecalConfig3d", "CameraDeferredConfig3d", "DistanceFog", "AutoExposure",
+  "DepthOfField", "Exposure", "Vignette", "SpotLight", "Wireframe", "FreeCamera",
+  "LightProbe", "MotionBlur", "PointLight", "NoWireframe", "Tonemapping", "ColorGrading",
+  "DebandDither", "DepthPrepass", "ForwardDecal", "NormalPrepass", "ClusteredDecal",
+  "ContactShadows", "MeshMaterial3d", "Lightmap", "TemporalJitter", "WireframeColor",
+  "DeferredPrepass", "FreeCameraState", "NotShadowCaster", "SubCameraView3d", "DirectionalLight",
+  "IrradianceVolume", "OcclusionCulling", "NoIndirectDrawing", "SunDisk", "SpotLightTexture",
+  "NotShadowReceiver", "PointLightTexture", "Projection", "Frustum", "ParallaxCorrection",
+  "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing",
+  "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
+  "ScreenSpaceTransmission", "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion",
+  "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
 ]
 
 ///|

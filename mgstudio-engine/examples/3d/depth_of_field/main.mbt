@@ -109,16 +109,15 @@ fn dof_component() -> @pbr.DepthOfField? {
 ///|
 fn apply_dof_settings(world : @ecs.World) -> Unit {
   guard dof_state.val.camera is Some(camera_entity) else { return }
-  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d))
-    is Some(camera3d) else {
-    return
+  match dof_component() {
+    Some(depth_of_field) =>
+      try! (world.set_by_key(
+        camera_entity, @pbr.ecs_key_depth_of_field, depth_of_field,
+      )
+      |> ignore)
+    None =>
+      try! (world.take(camera_entity, @pbr.ecs_key_depth_of_field) |> ignore)
   }
-  try! (world.replace(
-    camera_entity,
-    @pbr.ecs_key_camera3d,
-    camera3d.with_depth_of_field(dof_component()),
-  )
-  |> ignore)
 }
 
 ///|

@@ -237,15 +237,10 @@ fn apply_example_auto_exposure_to_camera(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  let camera3d = match
-    (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d)) {
-    Some(value) => value
-    None => @camera.Camera3d::default()
-  }
-  try! (world.replace(
+  try! (world.set_by_key(
     camera_entity,
-    @pbr.ecs_key_camera3d,
-    camera3d.with_auto_exposure(Some(example_auto_exposure_settings())),
+    @pbr.ecs_key_auto_exposure,
+    example_auto_exposure_settings(),
   )
   |> ignore)
 }
@@ -272,11 +267,7 @@ fn setup(world : @ecs.World) -> Unit {
       @sprite.Camera::default(),
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
     )
-    .with_camera3d(
-      @camera.Camera3d::default().with_auto_exposure(
-        Some(example_auto_exposure_settings()),
-      ),
-    )
+    .with_auto_exposure(Some(example_auto_exposure_settings()))
     .spawn(world)
   try! world.set_by_key(
     camera,

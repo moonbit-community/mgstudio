@@ -147,7 +147,7 @@ fn render3d_execute_camera_postprocess(
       scene_target_id
     }
     if postprocess_source_texture_id >= 0 {
-      if camera.camera3d.auto_exposure is Some(auto_exposure_settings) {
+      if camera.auto_exposure is Some(auto_exposure_settings) {
         let (
           auto_exposure_viewport_x,
           auto_exposure_viewport_y,
@@ -373,7 +373,7 @@ fn render3d_execute_camera_postprocess(
               cleared_targets_this_frame, stage_target_id, clear_enabled,
             ),
           )
-          if camera.camera3d.auto_exposure is Some(_) {
+          if camera.auto_exposure is Some(_) {
             @render.host_gpu_activate_auto_exposure_view_state(
               view_key_hi=camera_entity.id,
               view_key_lo=camera_entity.generation,
