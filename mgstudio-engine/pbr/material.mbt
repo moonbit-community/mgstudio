@@ -159,25 +159,31 @@ fn render3d_material_properties_for_standard_material(
   }
   let prepass_enabled = true
   let standard_material_key = standard_material_key_from_material(material)
-  @material.MaterialProperties::default()
-  .with_render_method(render_method)
-  .with_alpha_mode(material.alpha_mode)
-  .with_mesh_pipeline_key_bits(
-    @material.ErasedMeshPipelineKey::new(
-      mesh_pipeline_key_bits, "MeshPipelineKey",
-    ),
-  )
-  .with_depth_bias(material.depth_bias)
-  .with_reads_view_transmission_texture(reads_view_transmission_texture)
-  .with_render_phase_type(standard_material_render_phase_type(material))
-  .with_material_key(
-    @material.ErasedMaterialKey::new(
-      standard_material_key.bits(),
-      "StandardMaterialKey",
-    ),
-  )
-  .with_shadows_enabled(shadows_enabled)
-  .with_prepass_enabled(prepass_enabled)
+  let mut properties = @material.MaterialProperties::default()
+    .with_render_method(render_method)
+    .with_alpha_mode(material.alpha_mode)
+    .with_mesh_pipeline_key_bits(
+      @material.ErasedMeshPipelineKey::new(
+        mesh_pipeline_key_bits, "MeshPipelineKey",
+      ),
+    )
+    .with_depth_bias(material.depth_bias)
+    .with_reads_view_transmission_texture(reads_view_transmission_texture)
+    .with_render_phase_type(standard_material_render_phase_type(material))
+    .with_material_key(
+      @material.ErasedMaterialKey::new(
+        standard_material_key.bits(),
+        "StandardMaterialKey",
+      ),
+    )
+    .with_shadows_enabled(shadows_enabled)
+    .with_prepass_enabled(prepass_enabled)
+  if extension is Some(metadata) {
+    if metadata.shader_path is Some(shader_path) {
+      properties = properties.add_shader("material.fragment", shader_path)
+    }
+  }
+  properties
 }
 
 ///|
