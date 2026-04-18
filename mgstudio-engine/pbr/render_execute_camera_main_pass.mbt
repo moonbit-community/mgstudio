@@ -508,6 +508,42 @@ fn render3d_execute_camera_main_pass(
       ),
     )
   }
+  fn prepare_material_bind_group(
+    draw_payload : MeshGpuDrawPayload3d,
+    prepared_material_bind_groups : Map[String, Bool],
+  ) -> Unit {
+    let key = "\{draw_payload.texture_id}|\{draw_payload.normal_texture_id}|\{draw_payload.emissive_texture_id}|\{draw_payload.metallic_roughness_texture_id}|\{draw_payload.occlusion_texture_id}|\{draw_payload.depth_texture_id}|\{draw_payload.anisotropy_texture_id}|\{draw_payload.specular_tint_texture_id}"
+    if prepared_material_bind_groups.contains(key) {
+      return
+    }
+    prepared_material_bind_groups.set(key, true)
+    @render.host_gpu_prepare_mesh3d_material_bind_group(
+      texture_id=draw_payload.texture_id,
+      normal_texture_id=draw_payload.normal_texture_id,
+      emissive_texture_id=draw_payload.emissive_texture_id,
+      metallic_roughness_texture_id=draw_payload.metallic_roughness_texture_id,
+      occlusion_texture_id=draw_payload.occlusion_texture_id,
+      depth_texture_id=draw_payload.depth_texture_id,
+      anisotropy_texture_id=draw_payload.anisotropy_texture_id,
+      specular_tint_texture_id=draw_payload.specular_tint_texture_id,
+    )
+  }
+  let prepared_material_bind_groups : Map[String, Bool] = {}
+  for draw_payload in main_pass_draws {
+    prepare_material_bind_group(draw_payload, prepared_material_bind_groups)
+  }
+  for transmissive_phase_item in transmissive_phase_items {
+    prepare_material_bind_group(
+      transmissive_phase_item.payload,
+      prepared_material_bind_groups,
+    )
+  }
+  for draw_payload in transparent_draws {
+    prepare_material_bind_group(draw_payload, prepared_material_bind_groups)
+  }
+  for draw_payload in wireframe_draws {
+    prepare_material_bind_group(draw_payload, prepared_material_bind_groups)
+  }
   let batched_draw_entries : Array[@render.HostMesh3dMainPassDrawEntry] = []
   for draw_payload in main_pass_draws {
     batched_draw_entries.push(
