@@ -553,7 +553,7 @@ fn find_str_pair_value(pairs : Array[(Int, String)], key : Int) -> String? {
 }
 
 ///|
-const DEFAULT_TEXT_FONT_PATH : String = "fonts/FiraMono-Medium.ttf"
+const DEFAULT_TEXT_FONT_PATH : String = "fonts/FiraMono-subset.ttf"
 
 ///|
 fn text_pipeline_ensure_default_font_handle() -> @asset.Handle[@asset.Font] {
