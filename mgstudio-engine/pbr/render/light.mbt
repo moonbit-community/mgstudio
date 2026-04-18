@@ -851,6 +851,27 @@ fn render3d_cluster_config(world : @ecs.World) -> @light_cluster.ClusterConfig {
 
 ///|
 fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
+  if render3d_visible_clusterable_objects(world) is Some(visible) {
+    let max_range_ref : Ref[Float] = Ref::new(0.0F)
+    for entity in visible.point_and_spot_entities() {
+      if (try! world.get_by_key(entity, @light.ecs_key_point_light))
+        is Some(light) {
+        if light.range > max_range_ref.val {
+          max_range_ref.val = light.range
+        }
+        continue
+      }
+      if (try! world.get_by_key(entity, @light.ecs_key_spot_light))
+        is Some(light) {
+        if light.range > max_range_ref.val {
+          max_range_ref.val = light.range
+        }
+      }
+    }
+    if max_range_ref.val > 0.0F {
+      return max_range_ref.val
+    }
+  }
   let max_range_ref : Ref[Float] = Ref::new(0.0F)
   world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
     if !render3d_light_is_view_visible(world, entity) {
