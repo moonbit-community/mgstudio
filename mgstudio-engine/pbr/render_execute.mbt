@@ -356,13 +356,10 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   render3d_extract_material_instances(world, meshes)
   render3d_prepare_shader_asset_paths(source_world, meshes)
   render3d_prewarm_mesh_pipelines(meshes)
-  let prepared_camera_queues = render3d_prepare_camera_queue_entries(
-    mesh_runtime_state_ref,
-    cameras,
-    meshes,
-    frame_config.gpu_instance_buffer_builder_enabled,
-    frame_config.gpu_culling_supported,
-  )
+  let prepared_camera_queues : Array[Render3dPreparedCameraQueue?] = []
+  for _ in cameras {
+    prepared_camera_queues.push(None)
+  }
   render3d_queue_store_frame(
     world, frame_config, cameras, meshes, prepared_camera_queues,
   )
@@ -405,8 +402,24 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       queue_trace_start_us,
     )
   }
-  if render3d_queue_frame_snapshot(world) is None {
-    @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
+  match render3d_queue_frame_snapshot(world) {
+    Some(frame) => {
+      let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
+        world,
+      )
+      let prepared_camera_queues = render3d_prepare_camera_queue_entries(
+        mesh_runtime_state_ref,
+        frame.cameras,
+        frame.meshes,
+        frame.frame_config.gpu_instance_buffer_builder_enabled,
+        frame.frame_config.gpu_culling_supported,
+      )
+      render3d_queue_update_prepared_camera_queues(
+        world, prepared_camera_queues,
+      )
+    }
+    None =>
+      @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
   }
   finish_queue()
 }
