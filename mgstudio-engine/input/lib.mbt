@@ -1510,23 +1510,6 @@ fn input_drag_and_drop_event_at(
 }
 
 ///|
-fn input_has_focused_window(world : @ecs.World) -> Bool {
-  let entities : Array[@core.Entity] = []
-  try! world
-  .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
-  .view(fn(_query_entity, entity) { entities.push(entity) })
-  for entity in entities {
-    if (world.entity(entity).get() catch { _ => None } : @window.Window?)
-      is Some(window) {
-      if window.focused {
-        return true
-      }
-    }
-  }
-  false
-}
-
-///|
 pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
   if !world.contains_message(@window.WindowFocused::message()) {
     return
@@ -1540,13 +1523,16 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
   } noraise {
     value => value
   }
-  let mut saw_focus_loss = false
+  let mut focus_gained = false
+  let mut focus_lost = false
   for event in focused_events {
-    if !event.focused {
-      saw_focus_loss = true
+    if event.focused {
+      focus_gained = true
+    } else {
+      focus_lost = true
     }
   }
-  if saw_focus_loss && !input_has_focused_window(world) {
+  if !focus_gained && focus_lost {
     @window.window_emit_keyboard_focus_lost(world, @window.KeyboardFocusLost::{
 
     })

@@ -259,6 +259,58 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
 }
 
 ///|
+test "input: keyboard focus-loss helper ignores loss when focus is regained in same frame" {
+  reset_input_runtime_state()
+  @gilrs.gamepad_test_reset_state()
+
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.Window::default())
+  |> ignore)
+
+  let app = input_plugin(@time.time_plugin(@app.App::new(world)))
+    .add_message(@window.WindowFocused::message())
+    .add_message(@window.WindowEvent::message())
+  ignore(
+    app
+    .world()
+    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+      window: window_entity,
+      focused: false,
+    }),
+  )
+  ignore(
+    app
+    .world()
+    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+      window: window_entity,
+      focused: true,
+    }),
+  )
+
+  input_check_keyboard_focus_lost_system(app.world())
+
+  let focus_lost_reader = app
+    .world()
+    .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
+  debug_inspect((try! focus_lost_reader.read()).length(), content="0")
+
+  let window_event_reader = app
+    .world()
+    .message_reader(@window.WindowEvent::message(), Ref::new(0))
+  let mut aggregate_focus_lost_count = 0
+  let window_events = try! window_event_reader.read()
+  for event in window_events {
+    if event is @window.WindowEvent::KeyboardFocusLost(_) {
+      aggregate_focus_lost_count = aggregate_focus_lost_count + 1
+    }
+  }
+  debug_inspect(aggregate_focus_lost_count, content="0")
+}
+
+///|
 test "input: accumulated mouse resources follow bevy-style message accumulation" {
   reset_input_runtime_state()
   @gilrs.gamepad_test_reset_state()
