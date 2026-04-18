@@ -157,7 +157,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
 }
 
 ///|
-test "picking: primary target priority is ui > sprite2d > mesh3d" {
+test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
   ignore(tick)
@@ -168,6 +168,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
   let ui_entity = @core.Entity::new(11, 0)
   let sprite_entity = @core.Entity::new(12, 0)
   let mesh_entity = @core.Entity::new(13, 0)
+  let window_entity = @core.Entity::new(14, 0)
   let pos = @math.Vec2::new(10.0F, 10.0F)
 
   set_frame(
@@ -175,9 +176,12 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     PointerInputs::from_array([
       PointerInput::new(0, Some(pos), false, false, false),
     ]),
-    PickingHits::from_arrays([Some(ui_entity)], [Some(sprite_entity)], mesh3d=[
-      Some(mesh_entity),
-    ]),
+    PickingHits::from_arrays(
+      [Some(ui_entity)],
+      [Some(sprite_entity)],
+      mesh3d=[Some(mesh_entity)],
+      window=[Some(window_entity)],
+    ),
   )
   let ui_events = drain_events(world)
   debug_inspect(ui_events.length(), content="2")
@@ -188,9 +192,12 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     PointerInputs::from_array([
       PointerInput::new(0, Some(pos), false, false, false),
     ]),
-    PickingHits::from_arrays([None], [Some(sprite_entity)], mesh3d=[
-      Some(mesh_entity),
-    ]),
+    PickingHits::from_arrays(
+      [None],
+      [Some(sprite_entity)],
+      mesh3d=[Some(mesh_entity)],
+      window=[Some(window_entity)],
+    ),
   )
   let sprite_events = drain_events(world)
   debug_inspect(sprite_events.length(), content="2")
@@ -212,7 +219,9 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     PointerInputs::from_array([
       PointerInput::new(0, Some(pos), false, false, false),
     ]),
-    PickingHits::from_arrays([None], [None], mesh3d=[Some(mesh_entity)]),
+    PickingHits::from_arrays([None], [None], mesh3d=[Some(mesh_entity)], window=[
+      Some(window_entity),
+    ]),
   )
   let mesh_events = drain_events(world)
   debug_inspect(mesh_events.length(), content="2")
@@ -228,6 +237,123 @@ test "picking: primary target priority is ui > sprite2d > mesh3d" {
     mesh_events[1].target.unwrap().id == mesh_entity.id,
     content="true",
   )
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([None], [None], mesh3d=[None], window=[
+      Some(window_entity),
+    ]),
+  )
+  let window_events = drain_events(world)
+  debug_inspect(window_events.length(), content="2")
+  debug_inspect(
+    window_events[0].kind == @pointer_events.PointerEventKind::Leave,
+    content="true",
+  )
+  debug_inspect(
+    window_events[0].target.unwrap().id == mesh_entity.id,
+    content="true",
+  )
+  debug_inspect(
+    window_events[1].target.unwrap().id == window_entity.id,
+    content="true",
+  )
+}
+
+///|
+test "picking: non-hoverable non-blocking Pickable allows lower hit" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  get_picking_state_resource(world).insert(PickingState::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_pointer_inputs_resource(world).insert(PointerInputs::default())
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  let top = world.spawn_empty()
+  try! world.set_by_key(top, ecs_key_pickable, pickable_ignore)
+  let lower = world.spawn_empty()
+  let pos = @math.Vec2::new(20.0F, 20.0F)
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([Some(top)], [Some(lower)]),
+  )
+  let events = drain_events(world)
+  debug_inspect(events.length(), content="2")
+  debug_inspect(
+    events[1].kind == @pointer_events.PointerEventKind::Enter,
+    content="true",
+  )
+  debug_inspect(events[1].target.unwrap().id == lower.id, content="true")
+}
+
+///|
+test "picking: non-hoverable blocking Pickable suppresses lower hits" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  get_picking_state_resource(world).insert(PickingState::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_pointer_inputs_resource(world).insert(PointerInputs::default())
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  let top = world.spawn_empty()
+  try! world.set_by_key(top, ecs_key_pickable, Pickable::new(true, false))
+  let lower = world.spawn_empty()
+  let pos = @math.Vec2::new(20.0F, 20.0F)
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([Some(top)], [Some(lower)]),
+  )
+  let events = drain_events(world)
+  debug_inspect(events.length(), content="1")
+  debug_inspect(
+    events[0].kind == @pointer_events.PointerEventKind::Move,
+    content="true",
+  )
+  debug_inspect(events[0].target is None, content="true")
+}
+
+///|
+test "picking: window backend populates fallback hit for active pointers" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  get_pointer_inputs_resource(world).insert(
+    PointerInputs::from_array([
+      PointerInput::new(
+        0,
+        Some(@math.Vec2::new(1.0F, 2.0F)),
+        false,
+        false,
+        false,
+      ),
+      PointerInput::new(1, None, false, false, false),
+    ]),
+  )
+  get_picking_hits_resource(world).insert(PickingHits::default())
+  let window_entity = world.spawn_empty()
+  try! world.set_by_key(
+    window_entity,
+    @window.ecs_key_window,
+    @window.Window::default(),
+  )
+  try! world.set_by_key(window_entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
+
+  })
+  picking_window_hit_test_system(world)
+  let hits = get_picking_hits_resource(world)
+    .get()
+    .unwrap_or(PickingHits::default())
+  debug_inspect(
+    hits.window(0) is Some(hit) && hit.id == window_entity.id,
+    content="true",
+  )
+  debug_inspect(hits.window(1) is None, content="true")
 }
 
 ///|
@@ -349,66 +475,38 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
       false,
     ),
   )
-  let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
-  try! world.set_by_key(
-    root,
-    @ui.ecs_key_node,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_display(@ui.Display::Grid)
-    .with_grid_template_columns([
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Fr(1.0F),
-      ]),
-    ])
-    .with_grid_template_rows([
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
-        @ui.GridTrack::Fr(1.0F),
-      ]),
-    ]),
-  )
   let top = world.spawn_empty()
-  try! world.set_by_key(
-    top,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
   try! world.set_by_key(top, @ui.ecs_key_button, @ui.Button::default())
   try! world.set_by_key(
     top,
-    @ui.ecs_key_node,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.ecs_key_ui_layout,
+    @ui.UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(120.0F, 80.0F),
+        @math.Vec2::new(320.0F, 180.0F),
+      ),
+    ),
   )
   let bottom = world.spawn_empty()
-  try! world.set_by_key(
-    bottom,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
   try! world.set_by_key(bottom, @ui.ecs_key_button, @ui.Button::default())
   try! world.set_by_key(
     bottom,
-    @ui.ecs_key_node,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.ecs_key_ui_layout,
+    @ui.UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(120.0F, 260.0F),
+        @math.Vec2::new(320.0F, 360.0F),
+      ),
+    ),
   )
-  @ui.ui_layout_system(world)
+  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
   @ui.ui_stack_system(world)
+  let top_center = @math.Vec2::new(220.0F, 130.0F)
+  let bottom_center = @math.Vec2::new(220.0F, 310.0F)
 
   get_pointer_inputs_resource(world).insert(
     PointerInputs::from_array([
-      PointerInput::new(
-        0,
-        Some(@math.Vec2::new(400.0F, 120.0F)),
-        false,
-        false,
-        false,
-      ),
+      PointerInput::new(0, Some(top_center), false, false, false),
     ]),
   )
   picking_ui_hit_test_system(world)
@@ -419,13 +517,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
 
   get_pointer_inputs_resource(world).insert(
     PointerInputs::from_array([
-      PointerInput::new(
-        0,
-        Some(@math.Vec2::new(400.0F, 480.0F)),
-        false,
-        false,
-        false,
-      ),
+      PointerInput::new(0, Some(bottom_center), false, false, false),
     ]),
   )
   picking_ui_hit_test_system(world)

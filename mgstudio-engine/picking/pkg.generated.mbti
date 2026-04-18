@@ -14,7 +14,11 @@ import {
 // Values
 pub let ecs_components : Array[String]
 
+pub let ecs_key_pickable : @ecs.ComponentKey[Pickable]
+
 pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits]
+
+pub let ecs_res_key_picking_settings : @ecs.ResourceKey[PickingSettings]
 
 pub let ecs_res_key_picking_state : @ecs.ResourceKey[PickingState]
 
@@ -30,9 +34,13 @@ pub fn ensure_pointer_inputs_system(@ecs.World) -> Unit
 
 pub fn get_picking_hits_resource(@ecs.World) -> @ecs.ResourceAccess[PickingHits]
 
+pub fn get_picking_settings_resource(@ecs.World) -> @ecs.ResourceAccess[PickingSettings]
+
 pub fn get_picking_state_resource(@ecs.World) -> @ecs.ResourceAccess[PickingState]
 
 pub fn get_pointer_inputs_resource(@ecs.World) -> @ecs.ResourceAccess[PointerInputs]
+
+pub let pickable_ignore : Pickable
 
 pub fn picking_apply_a11y_actions_system(@ecs.World) -> Unit
 
@@ -41,6 +49,10 @@ pub fn picking_clear_system(@ecs.World) -> Unit
 pub fn picking_collect_mouse_system(@ecs.World) -> Unit
 
 pub fn picking_generate_events_system(@ecs.World) -> Unit
+
+pub fn picking_hover_should_run(@ecs.World) -> Bool
+
+pub fn picking_input_should_run(@ecs.World) -> Bool
 
 pub fn picking_mesh3d_hit_test_system(@ecs.World) -> Unit
 
@@ -62,28 +74,52 @@ pub fn picking_sprite2d_hit_test_system(@ecs.World) -> Unit
 
 pub fn picking_ui_hit_test_system(@ecs.World) -> Unit
 
+pub fn picking_window_hit_test_system(@ecs.World) -> Unit
+
+pub fn picking_window_picking_should_run(@ecs.World) -> Bool
+
 // Errors
 
 // Types and methods
+pub struct Pickable {
+  should_block_lower : Bool
+  is_hoverable : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn Pickable::default() -> Self
+pub fn Pickable::new(Bool, Bool) -> Self
+pub impl @ecs.Component for Pickable
+
 pub struct PickingHits {
   ui : Array[@core.Entity?]
   sprite2d : Array[@core.Entity?]
   mesh3d : Array[@core.Entity?]
+  window : Array[@core.Entity?]
 } derive(ToJson, @json.FromJson)
 pub fn PickingHits::default() -> Self
-pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?], mesh3d? : Array[@core.Entity?]) -> Self
+pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?], mesh3d? : Array[@core.Entity?], window? : Array[@core.Entity?]) -> Self
 pub fn PickingHits::mesh3d(Self, Int) -> @core.Entity?
 pub fn PickingHits::set_mesh3d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::set_sprite2d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::set_ui(@ref.Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingHits::set_window(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
 pub fn PickingHits::ui(Self, Int) -> @core.Entity?
+pub fn PickingHits::window(Self, Int) -> @core.Entity?
 pub impl @app.Resource for PickingHits
 
 pub struct PickingPlugin {
 }
 pub fn PickingPlugin::default() -> Self
 pub impl @app.Plugin for PickingPlugin
+
+pub struct PickingSettings {
+  is_enabled : Bool
+  is_input_enabled : Bool
+  is_hover_enabled : Bool
+  is_window_picking_enabled : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PickingSettings::default() -> Self
+pub impl @app.Resource for PickingSettings
 
 pub struct PickingState {
   hovered : Array[@core.Entity?]

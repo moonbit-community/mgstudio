@@ -292,7 +292,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   for input in inputs0.pointers {
     let pointer_id = input.pointer
     let pos_opt = input.window_position
-    let hit_top = picking_primary_hit(hits0, pointer_id)
+    let hit_top = picking_primary_hit(world, hits0, pointer_id)
 
     // Move.
     match pos_opt {

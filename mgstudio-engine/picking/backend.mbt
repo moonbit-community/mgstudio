@@ -22,11 +22,12 @@ pub struct PickingHits {
   ui : Array[@core.Entity?]
   sprite2d : Array[@core.Entity?]
   mesh3d : Array[@core.Entity?]
+  window : Array[@core.Entity?]
 } derive(ToJson, FromJson)
 
 ///|
 pub fn PickingHits::default() -> PickingHits {
-  PickingHits::{ ui: [], sprite2d: [], mesh3d: [] }
+  PickingHits::{ ui: [], sprite2d: [], mesh3d: [], window: [] }
 }
 
 ///|
@@ -34,8 +35,9 @@ pub fn PickingHits::from_arrays(
   ui : Array[@core.Entity?],
   sprite2d : Array[@core.Entity?],
   mesh3d? : Array[@core.Entity?] = [],
+  window? : Array[@core.Entity?] = [],
 ) -> PickingHits {
-  PickingHits::{ ui, sprite2d, mesh3d }
+  PickingHits::{ ui, sprite2d, mesh3d, window }
 }
 
 ///|
@@ -55,6 +57,9 @@ fn PickingHits::ensure_capacity(
   }
   while self.val.mesh3d.length() < need {
     self.val.mesh3d.push(None)
+  }
+  while self.val.window.length() < need {
+    self.val.window.push(None)
   }
 }
 
@@ -121,6 +126,28 @@ pub fn PickingHits::mesh3d(
     None
   } else {
     self.mesh3d[pointer]
+  }
+}
+
+///|
+pub fn PickingHits::set_window(
+  self : Ref[PickingHits],
+  pointer : @pointer_events.PointerId,
+  entity : @core.Entity?,
+) -> Unit {
+  PickingHits::ensure_capacity(self, pointer)
+  self.val.window[pointer] = entity
+}
+
+///|
+pub fn PickingHits::window(
+  self : PickingHits,
+  pointer : @pointer_events.PointerId,
+) -> @core.Entity? {
+  if pointer < 0 || pointer >= self.window.length() {
+    None
+  } else {
+    self.window[pointer]
   }
 }
 
@@ -415,6 +442,41 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
       }
     }
     PickingHits::set_ui(hits, pointer_id, hit_top)
+  }
+  hits_res.insert(hits.val)
+}
+
+///|
+/// Window hit backend (`bevy_picking::window::update_window_hits` shape).
+pub fn picking_window_hit_test_system(world : @ecs.World) -> Unit {
+  let inputs_res = get_pointer_inputs_resource(world)
+  let hits_res = get_picking_hits_resource(world)
+  guard inputs_res.get() is Some(inputs0) else { return }
+  guard hits_res.get() is Some(hits_value) else { return }
+  let hits = Ref::new(hits_value)
+  let primary_window_entity : Ref[@core.Entity?] = Ref::new(None)
+  world.for_each_component(@window.ecs_key_primary_window, fn(
+    entity,
+    _primary,
+  ) {
+    if primary_window_entity.val is None {
+      primary_window_entity.val = Some(entity)
+    }
+  })
+  if primary_window_entity.val is None {
+    world.for_each_component(@window.ecs_key_window, fn(entity, _window) {
+      if primary_window_entity.val is None {
+        primary_window_entity.val = Some(entity)
+      }
+    })
+  }
+  for input in inputs0.pointers {
+    let pointer_id = input.pointer
+    let hit_window = match input.window_position {
+      Some(_) => primary_window_entity.val
+      None => None
+    }
+    PickingHits::set_window(hits, pointer_id, hit_window)
   }
   hits_res.insert(hits.val)
 }

@@ -13,16 +13,26 @@
 // limitations under the License.
 
 ///|
-pub let ecs_components : Array[String] = []
+pub let ecs_components : Array[String] = ["Pickable"]
 
 ///|
 pub let ecs_resources : Array[String] = [
-  "PickingHits", "PickingState", "PointerInputs",
+  "PickingHits", "PickingSettings", "PickingState", "PointerInputs",
 ]
+
+///|
+pub let ecs_key_pickable : @ecs.ComponentKey[Pickable] = @ecs.register_component(
+  debug_name="picking.pickable",
+)
 
 ///|
 pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits] = @ecs.register_resource(
   debug_name="picking.picking_hits",
+)
+
+///|
+pub let ecs_res_key_picking_settings : @ecs.ResourceKey[PickingSettings] = @ecs.register_resource(
+  debug_name="picking.picking_settings",
 )
 
 ///|
@@ -40,6 +50,13 @@ pub fn get_picking_hits_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingHits] {
   world.resource(ecs_res_key_picking_hits)
+}
+
+///|
+pub fn get_picking_settings_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PickingSettings] {
+  world.resource(ecs_res_key_picking_settings)
 }
 
 ///|

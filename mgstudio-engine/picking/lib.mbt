@@ -17,6 +17,85 @@
 /// Package-level plugin and system-set wiring.
 
 ///|
+pub struct Pickable {
+  should_block_lower : Bool
+  is_hoverable : Bool
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub let pickable_ignore : Pickable = Pickable::{
+  should_block_lower: false,
+  is_hoverable: false,
+}
+
+///|
+pub fn Pickable::default() -> Pickable {
+  Pickable::{ should_block_lower: true, is_hoverable: true }
+}
+
+///|
+pub fn Pickable::new(
+  should_block_lower : Bool,
+  is_hoverable : Bool,
+) -> Pickable {
+  Pickable::{ should_block_lower, is_hoverable }
+}
+
+///|
+pub impl @ecs.Component for Pickable with component() {
+  ecs_key_pickable
+}
+
+///|
+pub struct PickingSettings {
+  is_enabled : Bool
+  is_input_enabled : Bool
+  is_hover_enabled : Bool
+  is_window_picking_enabled : Bool
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub fn PickingSettings::default() -> PickingSettings {
+  PickingSettings::{
+    is_enabled: true,
+    is_input_enabled: true,
+    is_hover_enabled: true,
+    is_window_picking_enabled: true,
+  }
+}
+
+///|
+pub impl @app.Resource for PickingSettings with resource() {
+  ecs_res_key_picking_settings
+}
+
+///|
+fn current_picking_settings(world : @ecs.World) -> PickingSettings {
+  match get_picking_settings_resource(world).get() {
+    Some(settings) => settings
+    None => PickingSettings::default()
+  }
+}
+
+///|
+pub fn picking_input_should_run(world : @ecs.World) -> Bool {
+  let settings = current_picking_settings(world)
+  settings.is_enabled && settings.is_input_enabled
+}
+
+///|
+pub fn picking_hover_should_run(world : @ecs.World) -> Bool {
+  let settings = current_picking_settings(world)
+  settings.is_enabled && settings.is_hover_enabled
+}
+
+///|
+pub fn picking_window_picking_should_run(world : @ecs.World) -> Bool {
+  let settings = current_picking_settings(world)
+  settings.is_enabled && settings.is_window_picking_enabled
+}
+
+///|
 pub let picking_set : @app.SystemSet = @app.system_set("mgstudio.picking")
 
 ///|
@@ -42,6 +121,7 @@ pub fn picking_clear_system(world : @ecs.World) -> Unit {
 ///|
 pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
+  .init_resource(() => PickingSettings::default())
   .add_pre_update_system_config(
     @app.system(picking_clear_system).in_set(picking_set_input),
   )
@@ -55,7 +135,9 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(ensure_pointer_inputs_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
-    @app.system(picking_collect_mouse_system).in_set(picking_set_input),
+    @app.system(picking_collect_mouse_system)
+    .run_if(picking_input_should_run)
+    .in_set(picking_set_input),
   )
   .add_pre_update_system_config(
     @app.system(picking_ui_hit_test_system).in_set(picking_set_hits),
@@ -67,10 +149,19 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(picking_mesh3d_hit_test_system).in_set(picking_set_hits),
   )
   .add_pre_update_system_config(
-    @app.system(picking_apply_a11y_actions_system).in_set(picking_set_events),
+    @app.system(picking_window_hit_test_system)
+    .run_if(picking_window_picking_should_run)
+    .in_set(picking_set_hits),
   )
   .add_pre_update_system_config(
-    @app.system(picking_generate_events_system).in_set(picking_set_events),
+    @app.system(picking_apply_a11y_actions_system)
+    .run_if(picking_hover_should_run)
+    .in_set(picking_set_events),
+  )
+  .add_pre_update_system_config(
+    @app.system(picking_generate_events_system)
+    .run_if(picking_hover_should_run)
+    .in_set(picking_set_events),
   )
   .add_pre_update_system_config(
     @app.system(@app.dispatch_pointer_observers_system).after(

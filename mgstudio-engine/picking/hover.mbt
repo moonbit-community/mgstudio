@@ -143,16 +143,50 @@ fn picking_option_entity_eq(a : @core.Entity?, b : @core.Entity?) -> Bool {
 }
 
 ///|
+fn picking_resolve_hit_candidate(
+  world : @ecs.World,
+  candidate : @core.Entity,
+) -> (@core.Entity?, Bool) {
+  let pickable_opt = try world.get_by_key(candidate, ecs_key_pickable) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+  match pickable_opt {
+    Some(pickable) =>
+      if pickable.is_hoverable {
+        (Some(candidate), true)
+      } else if pickable.should_block_lower {
+        (None, true)
+      } else {
+        (None, false)
+      }
+    None => (Some(candidate), true)
+  }
+}
+
+///|
 fn picking_primary_hit(
+  world : @ecs.World,
   hits : PickingHits,
   pointer : @pointer_events.PointerId,
 ) -> @core.Entity? {
-  match PickingHits::ui(hits, pointer) {
-    Some(e) => Some(e)
-    None =>
-      match PickingHits::sprite2d(hits, pointer) {
-        Some(e) => Some(e)
-        None => PickingHits::mesh3d(hits, pointer)
+  let candidates : Array[@core.Entity?] = [
+    PickingHits::ui(hits, pointer),
+    PickingHits::sprite2d(hits, pointer),
+    PickingHits::mesh3d(hits, pointer),
+    PickingHits::window(hits, pointer),
+  ]
+  for candidate in candidates {
+    match candidate {
+      Some(entity) => {
+        let (target, should_stop) = picking_resolve_hit_candidate(world, entity)
+        if should_stop {
+          return target
+        }
       }
+      None => ()
+    }
   }
+  None
 }
