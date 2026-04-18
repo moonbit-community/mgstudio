@@ -638,6 +638,36 @@ test "winit: close request follows bevy two-frame close lifecycle" {
 }
 
 ///|
+test "winit: app exit emits WindowClosing for all open windows" {
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.Window::default())
+  |> ignore)
+
+  let mut app = winit_plugin(
+      @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{
+        primary_window: None,
+        primary_cursor_options: None,
+        exit_condition: @window.ExitCondition::DontExit,
+        close_when_requested: false,
+      }),
+    )
+    .add_message(@app.AppExit::message())
+    .run_once()
+
+  ignore(
+    app.world().send_message(@app.AppExit::message(), @app.AppExit::Success),
+  )
+
+  app = app.run_once()
+
+  debug_inspect(read_window_closing(app.world()).length(), content="1")
+  debug_inspect(app.world().is_alive(window_entity), content="true")
+}
+
+///|
 test "winit: plugin owns accessibility action propagation" {
   @windowing.set_accessibility_requested(false)
   ignore(@windowing.take_accessibility_actions())
