@@ -377,8 +377,6 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
-  let source_world = @render.render_source_world(world)
-  @pbr_prepass.prepass_update_pipeline_state(source_world)
   if render3d_queue_frame_snapshot(world) is Some(frame) {
     let prepared_material_bind_groups : Map[String, Bool] = {}
     for camera in frame.cameras {
