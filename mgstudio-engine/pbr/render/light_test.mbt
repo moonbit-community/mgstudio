@@ -862,6 +862,44 @@ test "pbr render light: cluster far fallback includes camera view depth" {
 }
 
 ///|
+test "pbr render light: single-z perspective cluster near pins to far" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::Single,
+  )
+  |> ignore)
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_range(10.0F),
+  )
+  |> ignore)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  let expected_factors_zw = @light_cluster.calculate_cluster_factors(
+    10.0F, 10.0F, 1.0F, false,
+  )
+  inspect(gpu_lights.cluster_dimensions.2, content="1")
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: gpu lights cluster dimensions follow cluster config component" {
   let world = @ecs.World::new()
   let entity = world.spawn()

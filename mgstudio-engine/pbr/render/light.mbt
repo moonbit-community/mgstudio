@@ -1041,6 +1041,11 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     world,
   )
   let cluster_projection_runtime = render3d_cluster_projection_runtime(world)
+  let cluster_is_orthographic = if cluster_projection_runtime is Some(runtime) {
+    runtime.is_orthographic
+  } else {
+    false
+  }
   let mut cluster_dimensions_x = 16
   let mut cluster_dimensions_y = 9
   let mut cluster_dimensions_z = 24
@@ -1081,6 +1086,11 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       @light_cluster.ClusterFarZMode::MaxClusterableObjectRange =>
         render3d_clusterable_object_max_range(world)
     }
+    if !cluster_is_orthographic &&
+      cluster_dimensions_z == 1 &&
+      cluster_far > cluster_near {
+      cluster_near = cluster_far
+    }
     if cluster_far < cluster_near {
       cluster_far = cluster_near
     }
@@ -1088,11 +1098,6 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let n_clusters = cluster_dimensions_x *
     cluster_dimensions_y *
     cluster_dimensions_z
-  let cluster_is_orthographic = if cluster_projection_runtime is Some(runtime) {
-    runtime.is_orthographic
-  } else {
-    false
-  }
   let cluster_factors_xy = if cluster_screen_width <= 0 ||
     cluster_screen_height <= 0 {
     @math.Vec2::new(0.0F, 0.0F)
