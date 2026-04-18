@@ -115,6 +115,7 @@ fn render3d_execute_camera_main_pass(
   wireframe_config : WireframeConfig?,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
+  let material_prepass_enabled = standard_material_prepass_enabled(world)
   fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {
     @render.host_gpu_prepare_mesh3d_view_bind_group(
       transmission_source_texture_id~,
@@ -205,6 +206,7 @@ fn render3d_execute_camera_main_pass(
           mesh.material,
           mesh.material_extension,
           default_opaque_renderer_method,
+          material_prepass_enabled,
         )
     }
     let mesh_opaque_mode = material_properties.render_method

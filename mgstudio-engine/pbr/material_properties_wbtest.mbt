@@ -22,6 +22,7 @@ test "render3d: extracted material properties carry core bevy runtime fields" {
     material,
     None,
     OpaqueRendererMethod::Deferred,
+    true,
   )
   debug_inspect(
     props.render_method is OpaqueRendererMethod::Deferred,
@@ -49,10 +50,30 @@ test "render3d: extended material metadata is reflected into extracted propertie
     material,
     Some(extension),
     OpaqueRendererMethod::Forward,
+    true,
   )
   debug_inspect(!props.shadows_enabled, content="true")
   debug_inspect(
     props.get_shader("material.fragment"),
     content="Some(\"shaders/extended_material.wgsl\")",
   )
+}
+
+///|
+test "render3d: extracted material properties prepass flag follows plugin runtime state" {
+  let material = StandardMaterial::default()
+  let enabled_props = render3d_material_properties_for_standard_material(
+    material,
+    None,
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  let disabled_props = render3d_material_properties_for_standard_material(
+    material,
+    None,
+    OpaqueRendererMethod::Forward,
+    false,
+  )
+  debug_inspect(enabled_props.prepass_enabled, content="true")
+  debug_inspect(disabled_props.prepass_enabled, content="false")
 }

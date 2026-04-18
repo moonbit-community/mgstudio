@@ -141,6 +141,7 @@ fn render3d_material_properties_for_standard_material(
   material : StandardMaterial,
   extension : ExtendedMaterialMetadata3d?,
   default_opaque_renderer_method : OpaqueRendererMethod,
+  prepass_enabled : Bool,
 ) -> @material.MaterialProperties {
   let render_method = standard_material_opaque_render_method(
     material, default_opaque_renderer_method,
@@ -157,7 +158,6 @@ fn render3d_material_properties_for_standard_material(
     Some(metadata) => !metadata.disable_shadows
     None => true
   }
-  let prepass_enabled = true
   let standard_material_key = standard_material_key_from_material(material)
   let mut properties = @material.MaterialProperties::default()
     .with_render_method(render_method)
@@ -190,11 +190,12 @@ fn render3d_material_properties_for_standard_material(
 fn render3d_extracted_material_instance_for_mesh(
   mesh : ExtractedMesh3d,
   default_opaque_renderer_method : OpaqueRendererMethod,
+  prepass_enabled : Bool,
 ) -> ExtractedMaterialInstance3d {
   let material = mesh.payload.material
   let extension = mesh.payload.material_extension
   let properties = render3d_material_properties_for_standard_material(
-    material, extension, default_opaque_renderer_method,
+    material, extension, default_opaque_renderer_method, prepass_enabled,
   )
   ExtractedMaterialInstance3d::{ entity: mesh.entity.main_entity, properties }
 }
@@ -240,10 +241,11 @@ fn render3d_extract_material_instances(
   let default_opaque_renderer_method = render3d_material_default_opaque_renderer_method(
     world,
   )
+  let prepass_enabled = standard_material_prepass_enabled(world)
   let next : Map[Int, ExtractedMaterialInstance3d] = {}
   for mesh in meshes {
     let instance = render3d_extracted_material_instance_for_mesh(
-      mesh, default_opaque_renderer_method,
+      mesh, default_opaque_renderer_method, prepass_enabled,
     )
     let entity_id = render3d_extracted_material_entity_id(instance.entity)
     next.set(entity_id, instance)
