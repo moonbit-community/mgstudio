@@ -41,3 +41,24 @@ pub impl @ecs.Component for SceneInstance with component() {
 pub impl @ecs.Component for SceneInstanceReady with component() {
   ecs_key_scene_instance_ready
 }
+
+///|
+fn init {
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_scene_root)
+    .on_insert(scene_root_on_insert)
+    .on_replace(scene_root_on_replace)
+    .on_remove(scene_root_on_remove)
+    .require_with(@transform.ecs_key_transform, fn() {
+      @transform.Transform::identity()
+    })
+    .require_with(@visibility.ecs_key_visibility, fn() {
+      @visibility.Visibility::Inherited
+    }),
+  )
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_scene_instance).on_remove(
+      scene_instance_on_remove,
+    ),
+  )
+}

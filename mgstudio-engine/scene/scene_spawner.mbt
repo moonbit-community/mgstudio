@@ -304,20 +304,6 @@ fn scene_root_on_insert(
   context : @ecs.HookContext,
 ) -> Unit {
   scene_mark_root_respawn_requested(world.world(), context.entity)
-  if !world.contains_by_key(context.entity, @transform.ecs_key_transform) {
-    try! world.set_by_key(
-      context.entity,
-      @transform.ecs_key_transform,
-      @transform.Transform::identity(),
-    )
-  }
-  if !world.contains_by_key(context.entity, @visibility.ecs_key_visibility) {
-    try! world.set_by_key(
-      context.entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Inherited,
-    )
-  }
 }
 
 ///|
@@ -338,23 +324,6 @@ fn scene_instance_on_remove(
     return
   }
   scene_unregister_instance(world.world(), instance.instance_id)
-}
-
-///|
-fn scene_register_component_hooks(world : @ecs.World) -> Unit {
-  let scene_root_hooks = world.register_component_hooks_for_key(
-    ecs_key_scene_root,
-  )
-  ignore(
-    try! scene_root_hooks
-    .on_insert(scene_root_on_insert)
-    .on_replace(scene_root_on_replace)
-    .on_remove(scene_root_on_remove),
-  )
-  let scene_instance_hooks = world.register_component_hooks_for_key(
-    ecs_key_scene_instance,
-  )
-  ignore(try! scene_instance_hooks.on_remove(scene_instance_on_remove))
 }
 
 ///|
@@ -930,8 +899,6 @@ pub fn scene_plugin_with(
   plugin : ScenePlugin,
 ) -> @app.App[@ecs.World] {
   @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
-  @hierarchy.hierarchy_install(app.world())
-  scene_register_component_hooks(app.world())
   scene_runtime_plugin_base(
     scene_init_gltf_assets(app)
     .init_resource(fn() {

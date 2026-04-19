@@ -23,9 +23,7 @@ fn hierarchy_child_ids(children : Children) -> Array[Int] {
 
 ///|
 fn hierarchy_test_world() -> @ecs.World {
-  let world = @ecs.World::new()
-  hierarchy_install(world)
-  world
+  @ecs.World::new()
 }
 
 ///|

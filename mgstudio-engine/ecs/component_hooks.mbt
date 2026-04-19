@@ -282,6 +282,7 @@ pub fn[T] World::register_component_hooks_for_key(
   self : World,
   key : ComponentKey[T],
 ) -> ComponentHooksBuilder[T] {
+  ignore(self.ensure_component_registered(key.id()))
   if self.component_hooks_registry.get(key.id()) is None {
     self.component_hooks_registry.set(key.id(), ComponentHooks::new())
   }
@@ -301,6 +302,10 @@ pub fn[T] World::register_component_hooks_with(
   key : ComponentKey[T],
   hooks : ComponentHooks,
 ) -> Unit raise ComponentHooksError {
+  ignore(self.ensure_component_registered(key.id()))
+  if self.component_has_been_used(key.id()) {
+    raise ComponentAlreadyInUse(key.id())
+  }
   if self.component_hooks_registry.contains(key.id()) {
     raise DuplicateRegistration(key.id())
   }
@@ -347,6 +352,9 @@ fn component_hooks_register_kind(
   kind : ComponentHookKind,
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit raise ComponentHooksError {
+  if world.component_has_been_used(component_id) {
+    raise ComponentAlreadyInUse(component_id)
+  }
   let hooks = world
     .component_hooks(component_id)
     .unwrap_or(ComponentHooks::new())

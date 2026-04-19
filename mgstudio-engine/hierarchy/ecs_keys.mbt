@@ -23,17 +23,6 @@ pub let ecs_key_children : @ecs.ComponentKey[Children] = @ecs.register_component
 )
 
 ///|
-pub fn hierarchy_install(world : @ecs.World) -> Unit {
-  hierarchy_register_component_hooks(world, ecs_key_parent, ecs_key_children)
-  @ecs.set_observer_parent_lookup(fn(world, entity) {
-    match (try! world.get_by_key(entity, ecs_key_parent)) {
-      Some(parent) => Some(parent.entity())
-      None => None
-    }
-  })
-}
-
-///|
 pub impl @ecs.Component for Parent with component() {
   ecs_key_parent
 }
@@ -41,4 +30,61 @@ pub impl @ecs.Component for Parent with component() {
 ///|
 pub impl @ecs.Component for Children with component() {
   ecs_key_children
+}
+
+///|
+fn init {
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_parent)
+    .on_insert(fn(world, context) {
+      hierarchy_parent_on_insert(
+        world,
+        ecs_key_parent,
+        ecs_key_children,
+        context.entity,
+      )
+    })
+    .on_replace(fn(world, context) {
+      hierarchy_parent_on_replace(
+        world,
+        ecs_key_parent,
+        ecs_key_children,
+        context.entity,
+      )
+    })
+    .on_remove(fn(world, context) {
+      hierarchy_parent_on_remove(
+        world,
+        ecs_key_parent,
+        ecs_key_children,
+        context.entity,
+      )
+    })
+    .relationship_source(
+      fn(world, entity) {
+        match (try! world.get_by_key(entity, ecs_key_parent)) {
+          Some(parent) => Some(parent.entity())
+          None => None
+        }
+      },
+      observer_parent_lookup=true,
+    ),
+  )
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_children)
+    .on_despawn(fn(world, context) {
+      guard (try! world.get_by_key(context.entity, ecs_key_children))
+        is Some(children) else {
+        return
+      }
+      // Snapshot descendants before recursive despawn mutates the hierarchy.
+      let child_entities = children.entities().copy()
+      for child in child_entities {
+        if world.is_alive(child) {
+          try! world.despawn(child)
+        }
+      }
+    })
+    .relationship_target(linked_spawn=true),
+  )
 }

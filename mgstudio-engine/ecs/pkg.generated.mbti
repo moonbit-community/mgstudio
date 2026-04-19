@@ -11,6 +11,8 @@ import {
 // Values
 pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
+pub fn[T] component_metadata_builder(ComponentKey[T]) -> ComponentMetadataBuilder[T]
+
 pub fn[E : ComponentObserverEvent, C : Component] current_component_observer() -> ComponentOn[E, C]
 
 pub fn[C : Component] current_insert_observer() -> ComponentOn[Insert, C]
@@ -52,8 +54,6 @@ pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
 pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
 
 pub fn[T] resource_key_from_id(Int, debug_name? : String) -> ResourceKey[T]
-
-pub fn set_observer_parent_lookup((World, @core.Entity) -> @core.Entity?) -> Unit
 
 // Errors
 pub(all) suberror ComponentHooksError {
@@ -196,6 +196,19 @@ pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
 pub fn[T] ComponentKey::debug_name(Self[T]) -> String
 pub fn[T] ComponentKey::id(Self[T]) -> Int
 
+pub struct ComponentMetadataBuilder[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] ComponentMetadataBuilder::on_add(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::on_despawn(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::on_insert(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::on_remove(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::on_replace(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::relationship_source(Self[T], (World, @core.Entity) -> @core.Entity?, observer_parent_lookup? : Bool) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? : Bool) -> Self[T]
+pub fn[T, R : Default] ComponentMetadataBuilder::require_default(Self[T], ComponentKey[R]) -> Self[T]
+pub fn[T, R] ComponentMetadataBuilder::require_with(Self[T], ComponentKey[R], () -> R) -> Self[T]
+
 pub struct ComponentOn[E, C] {
   entity : @core.Entity
   caller : String?
@@ -203,6 +216,15 @@ pub struct ComponentOn[E, C] {
   marker_component : C?
 }
 pub fn[E, C] ComponentOn::caller(Self[E, C]) -> String?
+
+pub(all) struct ComponentRelationshipSourceMetadata {
+  target_entity : (World, @core.Entity) -> @core.Entity?
+  observer_parent_lookup : Bool
+}
+
+pub(all) struct ComponentRelationshipTargetMetadata {
+  linked_spawn : Bool
+}
 
 type ComponentSequenceTable
 
@@ -578,6 +600,10 @@ pub impl[T] QueryFilter for Without[T]
 
 pub struct World {
   world_id : Int
+  mut next_local_component_id : Int
+  component_local_ids_by_definition_id : Map[Int, Int]
+  component_definition_ids_by_local_id : Map[Int, Int]
+  observer_parent_lookup_component_ids : Array[Int]
   entities : @core.Entities
   mut sequence : Int
   mut system_context : @core.SystemSequenceContext

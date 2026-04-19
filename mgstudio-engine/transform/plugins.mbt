@@ -28,21 +28,7 @@ pub let transform_set_sync_simple_transforms : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn register_transform_required_components(
-  world : @ecs.World,
-) -> Unit raise @ecs.RequiredComponentsError {
-  world.register_required_components(
-    ecs_key_transform, ecs_key_global_transform,
-  )
-  world.register_required_components(
-    ecs_key_transform, ecs_key_transform_tree_changed,
-  )
-}
-
-///|
 pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_transform_required_components(app.world())
-  @hierarchy.hierarchy_install(app.world())
   ensure_transform_runtime_resources(app.world())
   let validate_parent_plugin : @app.ValidateParentHasComponentPlugin[
     GlobalTransform,

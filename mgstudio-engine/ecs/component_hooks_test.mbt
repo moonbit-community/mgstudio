@@ -313,7 +313,7 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
 }
 
 ///|
-test "ecs component hooks: world-scoped registration allows late hooks and keeps worlds isolated" {
+test "ecs component hooks: world-scoped registration rejects late hooks and keeps worlds isolated" {
   ignore(LateRegistrationHookTestComponent::{  })
   let world0 = World::new()
   let world1 = World::new()
@@ -323,10 +323,19 @@ test "ecs component hooks: world-scoped registration allows late hooks and keeps
 
   })
 
-  let late_builder = World::register_component_hooks_for_key(
+  let late_result : Result[
+    ComponentHooksBuilder[LateRegistrationHookTestComponent],
+    ComponentHooksError,
+  ] = try? World::register_component_hooks_for_key(
     world0, late_registration_hook_test_component_key,
+  ).on_add(fn(_world, _context) { () })
+  guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
+    fail("expected late hook registration in same world to fail")
+  }
+  debug_inspect(
+    component_id == late_registration_hook_test_component_key.id(),
+    content="true",
   )
-  ignore(try! late_builder.on_add(fn(_world, _context) { () }))
 
   let duplicate_result : Result[
     ComponentHooksBuilder[LateRegistrationHookTestComponent],
@@ -334,8 +343,8 @@ test "ecs component hooks: world-scoped registration allows late hooks and keeps
   ] = try? World::register_component_hooks_for_key(
     world0, late_registration_hook_test_component_key,
   ).on_add(fn(_world, _context) { () })
-  guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
-    fail("expected duplicate on_add registration in same world to fail")
+  guard duplicate_result is Err(ComponentAlreadyInUse(component_id)) else {
+    fail("expected repeated late hook registration in same world to fail")
   }
   debug_inspect(
     component_id == late_registration_hook_test_component_key.id(),

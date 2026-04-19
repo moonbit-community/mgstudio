@@ -1,0 +1,266 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+priv struct ComponentRequiredMetadata {
+  required_component_id : Int
+  init_value : () -> ErasedValue
+}
+
+///|
+pub(all) struct ComponentRelationshipSourceMetadata {
+  target_entity : (World, @core.Entity) -> @core.Entity?
+  observer_parent_lookup : Bool
+}
+
+///|
+pub(all) struct ComponentRelationshipTargetMetadata {
+  linked_spawn : Bool
+}
+
+///|
+priv struct ComponentMetadata {
+  debug_name : String
+  hooks : ComponentHooks
+  required_components : Array[ComponentRequiredMetadata]
+  relationship_source : ComponentRelationshipSourceMetadata?
+  relationship_target : ComponentRelationshipTargetMetadata?
+}
+
+///|
+pub struct ComponentMetadataBuilder[T] {
+  key : ComponentKey[T]
+}
+
+///|
+let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] = @hashmap.HashMap::new()
+
+///|
+fn component_metadata_default(debug_name : String) -> ComponentMetadata {
+  {
+    debug_name,
+    hooks: ComponentHooks::new(),
+    required_components: [],
+    relationship_source: None,
+    relationship_target: None,
+  }
+}
+
+///|
+fn component_metadata_ref(
+  component_id : Int,
+  debug_name? : String = "",
+) -> Ref[ComponentMetadata] {
+  component_metadata_registry.get_or_init(component_id, fn() {
+    Ref::new(component_metadata_default(debug_name))
+  })
+}
+
+///|
+fn component_metadata(
+  component_id : Int,
+  debug_name? : String = "",
+) -> ComponentMetadata {
+  component_metadata_ref(component_id, debug_name~).val
+}
+
+///|
+pub fn[T] component_metadata_builder(
+  key : ComponentKey[T],
+) -> ComponentMetadataBuilder[T] {
+  ignore(component_metadata_ref(key.id(), debug_name=key.debug_name()))
+  ComponentMetadataBuilder::{ key, }
+}
+
+///|
+fn component_metadata_require_index(
+  entries : Array[ComponentRequiredMetadata],
+  required_component_id : Int,
+) -> Int? {
+  for i in 0..<entries.length() {
+    if entries[i].required_component_id == required_component_id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn component_metadata_register_hook(
+  component_id : Int,
+  debug_name : String,
+  kind : ComponentHookKind,
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> Unit {
+  let metadata_ref = component_metadata_ref(component_id, debug_name~)
+  let hooks = metadata_ref.val.hooks
+  if component_hooks_kind_registered(hooks, kind) {
+    abort(
+      "Duplicate static component hook registration for component `\{debug_name}` (\{component_id.to_string()})",
+    )
+  }
+  let updated_hooks = match kind {
+    OnAdd => ComponentHooks::{ ..hooks, on_add: Some(hook) }
+    OnInsert => ComponentHooks::{ ..hooks, on_insert: Some(hook) }
+    OnReplace => ComponentHooks::{ ..hooks, on_replace: Some(hook) }
+    OnRemove => ComponentHooks::{ ..hooks, on_remove: Some(hook) }
+    OnDespawn => ComponentHooks::{ ..hooks, on_despawn: Some(hook) }
+  }
+  metadata_ref.val = ComponentMetadata::{
+    ..metadata_ref.val,
+    hooks: updated_hooks,
+  }
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::on_add(
+  self : ComponentMetadataBuilder[T],
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> ComponentMetadataBuilder[T] {
+  component_metadata_register_hook(
+    self.key.id(),
+    self.key.debug_name(),
+    OnAdd,
+    hook,
+  )
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::on_insert(
+  self : ComponentMetadataBuilder[T],
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> ComponentMetadataBuilder[T] {
+  component_metadata_register_hook(
+    self.key.id(),
+    self.key.debug_name(),
+    OnInsert,
+    hook,
+  )
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::on_replace(
+  self : ComponentMetadataBuilder[T],
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> ComponentMetadataBuilder[T] {
+  component_metadata_register_hook(
+    self.key.id(),
+    self.key.debug_name(),
+    OnReplace,
+    hook,
+  )
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::on_remove(
+  self : ComponentMetadataBuilder[T],
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> ComponentMetadataBuilder[T] {
+  component_metadata_register_hook(
+    self.key.id(),
+    self.key.debug_name(),
+    OnRemove,
+    hook,
+  )
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::on_despawn(
+  self : ComponentMetadataBuilder[T],
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> ComponentMetadataBuilder[T] {
+  component_metadata_register_hook(
+    self.key.id(),
+    self.key.debug_name(),
+    OnDespawn,
+    hook,
+  )
+  self
+}
+
+///|
+pub fn[T, R : Default] ComponentMetadataBuilder::require_default(
+  self : ComponentMetadataBuilder[T],
+  required_key : ComponentKey[R],
+) -> ComponentMetadataBuilder[T] {
+  self.require_with(required_key, fn() { R::default() })
+}
+
+///|
+pub fn[T, R] ComponentMetadataBuilder::require_with(
+  self : ComponentMetadataBuilder[T],
+  required_key : ComponentKey[R],
+  init : () -> R,
+) -> ComponentMetadataBuilder[T] {
+  let metadata_ref = component_metadata_ref(
+    self.key.id(),
+    debug_name=self.key.debug_name(),
+  )
+  if component_metadata_require_index(
+      metadata_ref.val.required_components,
+      required_key.id(),
+    )
+    is Some(_) {
+    abort(
+      "Duplicate static required-component registration for component `\{self.key.debug_name()}`",
+    )
+  }
+  let entries = metadata_ref.val.required_components
+  entries.push({
+    required_component_id: required_key.id(),
+    init_value: fn() { erased_value(init()) },
+  })
+  metadata_ref.val = ComponentMetadata::{
+    ..metadata_ref.val,
+    required_components: entries,
+  }
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::relationship_source(
+  self : ComponentMetadataBuilder[T],
+  target_entity : (World, @core.Entity) -> @core.Entity?,
+  observer_parent_lookup? : Bool = false,
+) -> ComponentMetadataBuilder[T] {
+  let metadata_ref = component_metadata_ref(
+    self.key.id(),
+    debug_name=self.key.debug_name(),
+  )
+  metadata_ref.val = ComponentMetadata::{
+    ..metadata_ref.val,
+    relationship_source: Some({ target_entity, observer_parent_lookup }),
+  }
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::relationship_target(
+  self : ComponentMetadataBuilder[T],
+  linked_spawn? : Bool = false,
+) -> ComponentMetadataBuilder[T] {
+  let metadata_ref = component_metadata_ref(
+    self.key.id(),
+    debug_name=self.key.debug_name(),
+  )
+  metadata_ref.val = ComponentMetadata::{
+    ..metadata_ref.val,
+    relationship_target: Some({ linked_spawn, }),
+  }
+  self
+}

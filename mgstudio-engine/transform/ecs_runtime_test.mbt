@@ -51,8 +51,6 @@ fn next_system_sequence_ecs(world : @ecs.World) -> Unit {
 
 ///|
 fn prepare_transform_world_ecs(world : @ecs.World) -> Unit {
-  @hierarchy.hierarchy_install(world)
-  try! register_transform_required_components(world)
   if !world.resource(static_transform_optimizations_resource_key()).is_present() {
     world.insert_resource(
       static_transform_optimizations_resource_key(),
@@ -115,7 +113,6 @@ test "transform ecs world: child global uses parent and local transforms" {
 ///|
 test "transform ecs world: hierarchy hooks clear stale Children components" {
   let world = @ecs.World::new()
-  @hierarchy.hierarchy_install(world)
   let parent = world.spawn()
   let child = world.spawn()
 

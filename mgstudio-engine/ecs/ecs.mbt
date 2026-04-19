@@ -108,6 +108,7 @@ let resource_ids_by_debug_name : @hashmap.HashMap[String, Int] = @hashmap.HashMa
 pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
+  ignore(component_metadata_ref(id, debug_name~))
   ComponentKey::{ id, debug_name }
 }
 
@@ -116,6 +117,7 @@ pub fn[T] component_key_from_id(
   id : Int,
   debug_name? : String = "",
 ) -> ComponentKey[T] {
+  ignore(component_metadata_ref(id, debug_name~))
   ComponentKey::{ id, debug_name }
 }
 
@@ -225,6 +227,10 @@ fn ComponentSequenceTable::remove(
 ///|
 pub struct World {
   world_id : Int
+  mut next_local_component_id : Int
+  component_local_ids_by_definition_id : Map[Int, Int]
+  component_definition_ids_by_local_id : Map[Int, Int]
+  observer_parent_lookup_component_ids : Array[Int]
   entities : @core.Entities
   mut sequence : @core.Sequence
   mut system_context : @core.SystemSequenceContext
@@ -252,6 +258,10 @@ pub fn World::new() -> World {
   next_world_id_ref.val = world_id + 1
   let world = World::{
     world_id,
+    next_local_component_id: 1,
+    component_local_ids_by_definition_id: {},
+    component_definition_ids_by_local_id: {},
+    observer_parent_lookup_component_ids: [],
     entities: @core.Entities::new(),
     sequence: 0,
     system_context: @core.SystemSequenceContext::new(),
@@ -316,7 +326,10 @@ pub fn World::despawn(
   let caller = hook_caller_from_loc(loc)
   let removed_components : Array[(Int, ErasedValue)] = []
   for entry in self.component_columns.iter() {
-    let (key_id, store_ref) = entry
+    let (local_id, store_ref) = entry
+    guard self.definition_component_id(local_id) is Some(key_id) else {
+      continue
+    }
     if store_ref.val.get(entity) is Some(payload) {
       removed_components.push((key_id, payload))
     }
@@ -333,7 +346,7 @@ pub fn World::despawn(
   }
   for entry in removed_components {
     let key_id = entry.0
-    if self.component_columns.get(key_id) is Some(store_ref) &&
+    if self.component_store(key_id) is Some(store_ref) &&
       store_ref.val.remove(entity) is Some(_) {
       self.run_remove_observers(entity, key_id)
       self.ensure_removed_component_messages(key_id).val.send(
@@ -370,9 +383,7 @@ pub fn[T] World::get_by_key(
   key : ComponentKey[T],
 ) -> T? raise EcsError {
   self.ensure_entity_alive(entity)
-  guard self.component_columns.get(key.id()) is Some(store_ref) else {
-    return None
-  }
+  guard self.component_store(key.id()) is Some(store_ref) else { return None }
   match store_ref.val.get(entity) {
     Some(payload) => Some(self.component_value(key, entity, payload))
     None => None
@@ -390,7 +401,7 @@ pub fn[T] World::update_by_key(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
-  guard self.component_columns.get(key.id()) is Some(store_ref) else {
+  guard self.component_store(key.id()) is Some(store_ref) else {
     self.end_deferred_hook_command_scope(outermost)
     return false
   }
@@ -421,7 +432,7 @@ pub fn[T] World::remove_by_key(
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  match self.component_columns.get(key.id()) {
+  match self.component_store(key.id()) {
     Some(store_ref) =>
       match store_ref.val.get(entity) {
         Some(_) => {
@@ -508,7 +519,8 @@ fn World::ensure_component_store(
   self : World,
   key_id : Int,
 ) -> Ref[@core.ComponentStore[ErasedValue]] {
-  self.component_columns.get_or_init(key_id, fn() {
+  let local_id = self.ensure_component_registered(key_id)
+  self.component_columns.get_or_init(local_id, fn() {
     Ref::new(@core.ComponentStore::new())
   })
 }
@@ -518,7 +530,10 @@ fn World::component_store(
   self : World,
   key_id : Int,
 ) -> Ref[@core.ComponentStore[ErasedValue]]? {
-  self.component_columns.get(key_id)
+  match self.local_component_id(key_id) {
+    Some(local_id) => self.component_columns.get(local_id)
+    None => None
+  }
 }
 
 ///|

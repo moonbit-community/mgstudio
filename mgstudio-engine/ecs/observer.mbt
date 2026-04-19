@@ -174,11 +174,6 @@ let current_trigger_observer_context_ref : Ref[TriggerObserverContext?] = Ref::n
 let current_observer_world_ref : Ref[World?] = Ref::new(None)
 
 ///|
-let observer_parent_lookup_ref : Ref[((World, @core.Entity) -> @core.Entity?)?] = Ref::new(
-  None,
-)
-
-///|
 fn observer_registry_ref(world : World) -> Ref[WorldObserverRegistry] {
   world_observer_registries.get_or_init(world.world_id(), fn() {
     Ref::new(world_observer_registry_new())
@@ -188,13 +183,6 @@ fn observer_registry_ref(world : World) -> Ref[WorldObserverRegistry] {
 ///|
 fn[T] erased_ref(value_ref : Ref[T]) -> ErasedValue {
   { value: @any.of(value_ref) }
-}
-
-///|
-pub fn set_observer_parent_lookup(
-  lookup : (World, @core.Entity) -> @core.Entity?,
-) -> Unit {
-  observer_parent_lookup_ref.val = Some(lookup)
 }
 
 ///|
@@ -503,10 +491,17 @@ fn observer_parent_entity(
   world : World,
   entity : @core.Entity,
 ) -> @core.Entity? {
-  match observer_parent_lookup_ref.val {
-    Some(lookup) => lookup(world, entity)
-    None => None
+  for component_id in world.observer_parent_lookup_component_ids {
+    match component_metadata(component_id).relationship_source {
+      Some(source) if source.observer_parent_lookup =>
+        match (source.target_entity)(world, entity) {
+          Some(parent) => return Some(parent)
+          None => ()
+        }
+      _ => ()
+    }
   }
+  None
 }
 
 ///|

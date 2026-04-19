@@ -28,6 +28,41 @@ pub impl Component for ObserverMarker with component() {
 }
 
 ///|
+struct ObserverParentLink {
+  parent : @core.Entity
+} derive(Eq, Debug)
+
+///|
+let observer_parent_link_key : ComponentKey[ObserverParentLink] = register_component(
+  debug_name="tests.ecs.observer.parent_link",
+)
+
+///|
+pub impl Component for ObserverParentLink with component() {
+  observer_parent_link_key
+}
+
+///|
+fn init {
+  ignore(
+    component_metadata_builder(observer_parent_link_key).relationship_source(
+      fn(world, entity) {
+        match
+          (try world.get_by_key(entity, observer_parent_link_key) catch {
+            _ => None
+          } noraise {
+            value => value
+          }) {
+          Some(link) => Some(link.parent)
+          None => None
+        }
+      },
+      observer_parent_lookup=true,
+    ),
+  )
+}
+
+///|
 struct ObserverDetonate {
   mut entity : @core.Entity
   radius : Int
@@ -254,13 +289,8 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
   let parent = world.spawn()
   let child = world.spawn()
   let order : Array[String] = []
-
-  set_observer_parent_lookup(fn(_world, entity) {
-    if entity == child {
-      Some(parent)
-    } else {
-      None
-    }
+  try! world.set_by_key(child, observer_parent_link_key, ObserverParentLink::{
+    parent,
   })
 
   ignore(
@@ -277,7 +307,6 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
   )
 
   world.trigger(ObserverAttack::{ damage: 10, entity: child })
-  set_observer_parent_lookup(fn(_world, _entity) { None })
 
   debug_inspect(order, content="[\"child\", \"parent:7\"]")
 }
@@ -288,13 +317,8 @@ test "ecs observer: trigger propagation can be halted early" {
   let parent = world.spawn()
   let child = world.spawn()
   let order : Array[String] = []
-
-  set_observer_parent_lookup(fn(_world, entity) {
-    if entity == child {
-      Some(parent)
-    } else {
-      None
-    }
+  try! world.set_by_key(child, observer_parent_link_key, ObserverParentLink::{
+    parent,
   })
 
   ignore(
@@ -311,7 +335,6 @@ test "ecs observer: trigger propagation can be halted early" {
   )
 
   world.trigger(ObserverAttack::{ damage: 4, entity: child })
-  set_observer_parent_lookup(fn(_world, _entity) { None })
 
   debug_inspect(order, content="[\"child\"]")
 }

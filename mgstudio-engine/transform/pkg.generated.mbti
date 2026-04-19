@@ -34,8 +34,6 @@ pub fn propagate_transforms_system(@ecs.World) -> Unit
 
 pub fn propagate_transforms_system_ecs(@ecs.World) -> Unit
 
-pub fn register_transform_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
-
 pub fn remove_parent_in_place(@ecs.World, @core.Entity) -> Unit
 
 pub fn remove_parent_preserving_global_transform(@ecs.World, @core.Entity) -> Unit

@@ -43,6 +43,15 @@ pub impl @ecs.Component for TransformTreeChanged with component() {
 }
 
 ///|
+fn init {
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_transform)
+    .require_default(ecs_key_global_transform)
+    .require_default(ecs_key_transform_tree_changed),
+  )
+}
+
+///|
 pub fn mark_dirty_trees_ecs(world : @ecs.World) -> Unit {
   mark_dirty_trees(world)
 }
