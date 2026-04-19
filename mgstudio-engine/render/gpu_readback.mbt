@@ -43,3 +43,8 @@ pub fn screenshot_capture_texture_sync(
 ) -> @renderer.ScreenshotCaptureResult? {
   @render_view_window.screenshot_capture_texture_sync(texture_id~)
 }
+
+///|
+pub fn screenshot_parity_capture_completed() -> Bool {
+  @render_view_window.screenshot_parity_capture_completed()
+}

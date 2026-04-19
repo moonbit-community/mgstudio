@@ -676,6 +676,13 @@ pub fn screenshot_capture_texture_sync(
 }
 
 ///|
+pub fn screenshot_parity_capture_completed() -> Bool {
+  parity_capture_load_config()
+  let state = screenshot_runtime_state_ref.val
+  state.parity_capture_blob_path is Some(_) && state.parity_capture_written
+}
+
+///|
 pub fn screenshot_resource_id_upper_bound() -> Int {
   guard ensure_backend() is Some(backend) else { return 0 }
   backend.next_id - 1

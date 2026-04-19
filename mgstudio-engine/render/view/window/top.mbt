@@ -50,6 +50,11 @@ pub fn window_screenshot_capture_texture_sync(
 }
 
 ///|
+pub fn window_screenshot_parity_capture_completed() -> Bool {
+  screenshot_parity_capture_completed()
+}
+
+///|
 pub fn window_manual_texture_view_handle(
   texture_id~ : Int,
   mip_level~ : Int,

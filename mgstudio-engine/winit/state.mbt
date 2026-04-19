@@ -384,6 +384,10 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
         }
       }
     }
+    if @render.screenshot_parity_capture_completed() {
+      @window.window_request_close_all_hosts(self.app_ref.val.world())
+      return
+    }
   } else {
     self.app_ref.val = self.app_ref.val.run_once()
   }
