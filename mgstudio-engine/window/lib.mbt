@@ -33,7 +33,6 @@ pub fn window_plugin_with(
   plugin : WindowPlugin,
 ) -> @app.App[@ecs.World] {
   let mut next = app
-  window_register_component_hooks(next.world())
   next = next
     .add_message(ecs_key_window_event)
     .add_message(ecs_key_window_resized)

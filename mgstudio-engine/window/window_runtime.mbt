@@ -701,9 +701,12 @@ fn window_runtime_on_remove(
 }
 
 ///|
-fn window_register_component_hooks(world : @ecs.World) -> Unit {
-  let window_hooks = world.register_component_hooks_for_key(ecs_key_window)
-  ignore(try! window_hooks.on_remove(window_runtime_on_remove))
+fn init {
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_window).on_remove(
+      window_runtime_on_remove,
+    ),
+  )
 }
 
 ///|
