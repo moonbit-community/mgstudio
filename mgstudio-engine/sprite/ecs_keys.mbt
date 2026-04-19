@@ -234,6 +234,11 @@ pub impl @ecs.Component for TilemapChunkTileData with component() {
 pub fn register_render2d_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_camera,
+    @render.ecs_key_sync_to_render_world,
+    fn() { @render.SyncToRenderWorld::default() },
+  )
   world.register_required_components_with(ecs_key_camera2d, ecs_key_camera, fn() {
     Camera::default()
   })

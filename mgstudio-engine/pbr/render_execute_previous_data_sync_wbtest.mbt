@@ -41,6 +41,12 @@ test "render3d preupdate sync: writes previous view and global transform" {
     camera_entity, @transform.ecs_key_transform, camera_transform,
   )
   |> ignore)
+  try! (world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(camera_transform),
+  )
+  |> ignore)
 
   let mesh_entity = world.spawn()
   let mesh_transform = @transform.Transform::from_xyz(4.0F, 5.0F, 6.0F)
@@ -52,6 +58,12 @@ test "render3d preupdate sync: writes previous view and global transform" {
   |> ignore)
   try! (world.set_by_key(
     mesh_entity, @transform.ecs_key_transform, mesh_transform,
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    mesh_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(mesh_transform),
   )
   |> ignore)
 
@@ -138,6 +150,14 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
   |> ignore)
+  try! (world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    ),
+  )
+  |> ignore)
 
   let mesh_entity = world.spawn()
   try! (world.set_by_key(
@@ -150,6 +170,14 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
     mesh_entity,
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    mesh_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+    ),
   )
   |> ignore)
 

@@ -13,14 +13,15 @@
 // limitations under the License.
 
 ///|
-fn render3d_entity_world_transform_from_main_world(
+fn render3d_entity_global_transform_from_main_world(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @transform.Transform? {
-  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
-    Some(global_transform) => Some(global_transform.compute_transform())
-    None => try! world.get_by_key(entity, @transform.ecs_key_transform)
-  }
+  (try! world.get_by_key(entity, @transform.ecs_key_global_transform)).map(fn(
+    global_transform,
+  ) {
+    global_transform.compute_transform()
+  })
 }
 
 ///|
@@ -28,7 +29,7 @@ fn update_previous_view_data(world : @ecs.World) -> Unit {
   guard standard_material_prepass_enabled(world) else { return }
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
     let world_transform = match
-      render3d_entity_world_transform_from_main_world(world, entity) {
+      render3d_entity_global_transform_from_main_world(world, entity) {
       Some(value) => value
       None => return
     }
@@ -69,7 +70,7 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   guard render3d_has_active_camera(world) else { return }
   world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
     let world_transform = match
-      render3d_entity_world_transform_from_main_world(world, entity) {
+      render3d_entity_global_transform_from_main_world(world, entity) {
       Some(value) => value
       None => return
     }
