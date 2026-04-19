@@ -77,9 +77,36 @@ fn World::install_component_metadata(
   metadata : ComponentMetadata,
 ) -> Unit {
   let component_debug_name = metadata.debug_name
-  if !component_hooks_is_empty(metadata.hooks) &&
+  let mut hooks = metadata.hooks
+  match metadata.relationship_target {
+    Some(target) if target.linked_spawn => {
+      guard target.linked_entities is Some(linked_entities) else {
+        abort(
+          "relationship_target(linked_spawn=true) requires linked_entities for component `\{component_debug_name}`",
+        )
+      }
+      if hooks.on_despawn is Some(_) {
+        abort(
+          "Duplicate static on_despawn hook registration for linked-spawn relationship target `\{component_debug_name}`",
+        )
+      }
+      hooks = ComponentHooks::{
+        ..hooks,
+        on_despawn: Some(fn(world, context) {
+          let source_entities = linked_entities(world, context.entity).copy()
+          for source_entity in source_entities {
+            if world.is_alive(source_entity) {
+              try! world.despawn(source_entity)
+            }
+          }
+        }),
+      }
+    }
+    _ => ()
+  }
+  if !component_hooks_is_empty(hooks) &&
     self.component_hooks_registry.get(component_id) is None {
-    self.component_hooks_registry.set(component_id, metadata.hooks)
+    self.component_hooks_registry.set(component_id, hooks)
   }
   for required in metadata.required_components {
     self.install_required_component_metadata(component_id, required)
@@ -87,10 +114,6 @@ fn World::install_component_metadata(
   match metadata.relationship_source {
     Some(source) if source.observer_parent_lookup =>
       self.register_observer_parent_lookup_component(component_id)
-    _ => ()
-  }
-  match metadata.relationship_target {
-    Some(target) if target.linked_spawn => ()
     _ => ()
   }
   ignore(component_debug_name)

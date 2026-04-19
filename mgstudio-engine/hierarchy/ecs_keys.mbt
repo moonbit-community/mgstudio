@@ -71,20 +71,9 @@ fn init {
     ),
   )
   ignore(
-    @ecs.component_metadata_builder(ecs_key_children)
-    .on_despawn(fn(world, context) {
-      guard (try! world.get_by_key(context.entity, ecs_key_children))
-        is Some(children) else {
-        return
-      }
-      // Snapshot descendants before recursive despawn mutates the hierarchy.
-      let child_entities = children.entities().copy()
-      for child in child_entities {
-        if world.is_alive(child) {
-          try! world.despawn(child)
-        }
-      }
-    })
-    .relationship_target(linked_spawn=true),
+    @ecs.component_metadata_builder(ecs_key_children).relationship_target(
+      linked_spawn=true,
+      linked_entities=Some(fn(children : Children) { children.entities() }),
+    ),
   )
 }

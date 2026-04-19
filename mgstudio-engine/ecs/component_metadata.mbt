@@ -27,6 +27,7 @@ pub(all) struct ComponentRelationshipSourceMetadata {
 ///|
 pub(all) struct ComponentRelationshipTargetMetadata {
   linked_spawn : Bool
+  linked_entities : ((DeferredWorld, @core.Entity) -> Array[@core.Entity])?
 }
 
 ///|
@@ -253,14 +254,33 @@ pub fn[T] ComponentMetadataBuilder::relationship_source(
 pub fn[T] ComponentMetadataBuilder::relationship_target(
   self : ComponentMetadataBuilder[T],
   linked_spawn? : Bool = false,
+  linked_entities? : ((T) -> Array[@core.Entity])? = None,
 ) -> ComponentMetadataBuilder[T] {
   let metadata_ref = component_metadata_ref(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
+  let linked_entities_accessor = match linked_entities {
+    Some(entities_from_component) =>
+      Some(fn(world : DeferredWorld, entity : @core.Entity) {
+        match (try! world.get_by_key(entity, self.key)) {
+          Some(component) => entities_from_component(component)
+          None => []
+        }
+      })
+    None => None
+  }
+  if linked_spawn && linked_entities_accessor is None {
+    abort(
+      "relationship_target(linked_spawn=true) requires linked_entities for component `\{self.key.debug_name()}`",
+    )
+  }
   metadata_ref.val = ComponentMetadata::{
     ..metadata_ref.val,
-    relationship_target: Some({ linked_spawn, }),
+    relationship_target: Some({
+      linked_spawn,
+      linked_entities: linked_entities_accessor,
+    }),
   }
   self
 }

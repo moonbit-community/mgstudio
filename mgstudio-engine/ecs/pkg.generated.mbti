@@ -205,7 +205,7 @@ pub fn[T] ComponentMetadataBuilder::on_insert(Self[T], (DeferredWorld, HookConte
 pub fn[T] ComponentMetadataBuilder::on_remove(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::on_replace(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::relationship_source(Self[T], (World, @core.Entity) -> @core.Entity?, observer_parent_lookup? : Bool) -> Self[T]
-pub fn[T] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? : Bool) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? : Bool, linked_entities? : ((T) -> Array[@core.Entity])?) -> Self[T]
 pub fn[T, R : Default] ComponentMetadataBuilder::require_default(Self[T], ComponentKey[R]) -> Self[T]
 pub fn[T, R] ComponentMetadataBuilder::require_with(Self[T], ComponentKey[R], () -> R) -> Self[T]
 
@@ -226,6 +226,7 @@ pub(all) struct ComponentRelationshipSourceMetadata {
 
 pub(all) struct ComponentRelationshipTargetMetadata {
   linked_spawn : Bool
+  linked_entities : ((DeferredWorld, @core.Entity) -> Array[@core.Entity])?
 }
 
 type ComponentSequenceTable
