@@ -104,13 +104,13 @@ pub fn ObserverHandle::world_id(self : ObserverHandle) -> Int {
 }
 
 ///|
-priv struct ComponentObserverContext {
+struct ComponentObserverContext {
   entity : @core.Entity
   component_id : Int
 }
 
 ///|
-priv struct TriggerObserverContext {
+struct TriggerObserverContext {
   event_key_id : Int
   entity : @core.Entity?
   payload : ErasedValue
@@ -137,7 +137,7 @@ priv struct TriggerObserver {
 }
 
 ///|
-priv struct WorldObserverRegistry {
+struct WorldObserverRegistry {
   mut next_observer_id : Int
   insert_observers : @hashmap.HashMap[Int, Array[InsertObserver]]
   remove_observers : @hashmap.HashMap[Int, Array[RemoveObserver]]
@@ -155,29 +155,11 @@ fn world_observer_registry_new() -> WorldObserverRegistry {
 }
 
 ///|
-let world_observer_registries : @hashmap.HashMap[
-  Int,
-  Ref[WorldObserverRegistry],
-] = @hashmap.HashMap::new()
-
-///|
-let current_component_observer_context_ref : Ref[ComponentObserverContext?] = Ref::new(
-  None,
-)
-
-///|
-let current_trigger_observer_context_ref : Ref[TriggerObserverContext?] = Ref::new(
-  None,
-)
-
-///|
 let current_observer_world_ref : Ref[World?] = Ref::new(None)
 
 ///|
 fn observer_registry_ref(world : World) -> Ref[WorldObserverRegistry] {
-  world_observer_registries.get_or_init(world.world_id(), fn() {
-    Ref::new(world_observer_registry_new())
-  })
+  world.observer_registry
 }
 
 ///|
@@ -200,7 +182,8 @@ pub fn current_observer_world_abort_missing() -> World {
 
 ///|
 fn current_component_observer_context_abort_missing() -> ComponentObserverContext {
-  match current_component_observer_context_ref.val {
+  let world = current_observer_world_abort_missing()
+  match world.current_component_observer_context {
     Some(context) => context
     None => abort("Missing current component observer context")
   }
@@ -208,7 +191,8 @@ fn current_component_observer_context_abort_missing() -> ComponentObserverContex
 
 ///|
 fn current_trigger_observer_context_abort_missing() -> TriggerObserverContext {
-  match current_trigger_observer_context_ref.val {
+  let world = current_observer_world_abort_missing()
+  match world.current_trigger_observer_context {
     Some(context) => context
     None => abort("Missing current trigger observer context")
   }
@@ -458,10 +442,7 @@ fn World::insert_observers_for_component(
   self : World,
   component_id : Int,
 ) -> Array[InsertObserver]? {
-  match world_observer_registries.get(self.world_id()) {
-    Some(registry_ref) => registry_ref.val.insert_observers.get(component_id)
-    None => None
-  }
+  self.observer_registry.val.insert_observers.get(component_id)
 }
 
 ///|
@@ -469,10 +450,7 @@ fn World::remove_observers_for_component(
   self : World,
   component_id : Int,
 ) -> Array[RemoveObserver]? {
-  match world_observer_registries.get(self.world_id()) {
-    Some(registry_ref) => registry_ref.val.remove_observers.get(component_id)
-    None => None
-  }
+  self.observer_registry.val.remove_observers.get(component_id)
 }
 
 ///|
@@ -480,10 +458,7 @@ fn World::trigger_observers_for_event(
   self : World,
   event_key_id : Int,
 ) -> Array[TriggerObserver]? {
-  match world_observer_registries.get(self.world_id()) {
-    Some(registry_ref) => registry_ref.val.trigger_observers.get(event_key_id)
-    None => None
-  }
+  self.observer_registry.val.trigger_observers.get(event_key_id)
 }
 
 ///|
@@ -514,12 +489,12 @@ pub fn[E : TriggerEvent] World::trigger(
   let event_ref : Ref[E] = Ref::new(event)
   let payload = erased_ref(event_ref)
   let propagate_ref : Ref[Bool] = Ref::new(E::auto_propagate(event_ref.val))
-  let previous_context = current_trigger_observer_context_ref.val
+  let previous_context = self.current_trigger_observer_context
   let previous_world = current_observer_world_ref.val
   current_observer_world_ref.val = Some(self)
   while true {
     let entity = E::observer_entity(event_ref.val)
-    current_trigger_observer_context_ref.val = Some({
+    self.current_trigger_observer_context = Some({
       event_key_id: event_key.id(),
       entity,
       payload,
@@ -537,7 +512,7 @@ pub fn[E : TriggerEvent] World::trigger(
     E::set_observer_entity(event_ref, parent)
   }
   current_observer_world_ref.val = previous_world
-  current_trigger_observer_context_ref.val = previous_context
+  self.current_trigger_observer_context = previous_context
 }
 
 ///|
@@ -556,9 +531,9 @@ fn World::run_insert_observers(
     }
     pending.push(observer)
   }
-  let previous_context = current_component_observer_context_ref.val
+  let previous_context = self.current_component_observer_context
   let previous_world = current_observer_world_ref.val
-  current_component_observer_context_ref.val = Some({ entity, component_id })
+  self.current_component_observer_context = Some({ entity, component_id })
   current_observer_world_ref.val = Some(self)
   let count = pending.length()
   for i in 0..<count {
@@ -566,7 +541,7 @@ fn World::run_insert_observers(
     (observer.run)(self)
   }
   current_observer_world_ref.val = previous_world
-  current_component_observer_context_ref.val = previous_context
+  self.current_component_observer_context = previous_context
 }
 
 ///|
@@ -585,9 +560,9 @@ fn World::run_remove_observers(
     }
     pending.push(observer)
   }
-  let previous_context = current_component_observer_context_ref.val
+  let previous_context = self.current_component_observer_context
   let previous_world = current_observer_world_ref.val
-  current_component_observer_context_ref.val = Some({ entity, component_id })
+  self.current_component_observer_context = Some({ entity, component_id })
   current_observer_world_ref.val = Some(self)
   let count = pending.length()
   for i in 0..<count {
@@ -595,7 +570,7 @@ fn World::run_remove_observers(
     (observer.run)(self)
   }
   current_observer_world_ref.val = previous_world
-  current_component_observer_context_ref.val = previous_context
+  self.current_component_observer_context = previous_context
 }
 
 ///|

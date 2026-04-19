@@ -209,6 +209,8 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? :
 pub fn[T, R : Default] ComponentMetadataBuilder::require_default(Self[T], ComponentKey[R]) -> Self[T]
 pub fn[T, R] ComponentMetadataBuilder::require_with(Self[T], ComponentKey[R], () -> R) -> Self[T]
 
+type ComponentObserverContext
+
 pub struct ComponentOn[E, C] {
   entity : @core.Entity
   caller : String?
@@ -586,6 +588,8 @@ pub fn[T] ResourceKey::id(Self[T]) -> Int
 
 type ResourceSlot
 
+type TriggerObserverContext
+
 pub struct With[T] {
   key : ComponentKey[T]
 }
@@ -604,6 +608,9 @@ pub struct World {
   component_local_ids_by_definition_id : Map[Int, Int]
   component_definition_ids_by_local_id : Map[Int, Int]
   observer_parent_lookup_component_ids : Array[Int]
+  observer_registry : @ref.Ref[WorldObserverRegistry]
+  mut current_component_observer_context : ComponentObserverContext?
+  mut current_trigger_observer_context : TriggerObserverContext?
   entities : @core.Entities
   mut sequence : Int
   mut system_context : @core.SystemSequenceContext
@@ -709,6 +716,8 @@ pub fn[T] World::update_by_key(Self, @core.Entity, ComponentKey[T], (T) -> T, lo
 pub fn World::update_messages(Self) -> Unit
 pub fn[T] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
 pub fn World::world_id(Self) -> Int
+
+type WorldObserverRegistry
 
 // Type aliases
 

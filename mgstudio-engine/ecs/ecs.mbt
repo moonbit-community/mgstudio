@@ -231,6 +231,9 @@ pub struct World {
   component_local_ids_by_definition_id : Map[Int, Int]
   component_definition_ids_by_local_id : Map[Int, Int]
   observer_parent_lookup_component_ids : Array[Int]
+  observer_registry : Ref[WorldObserverRegistry]
+  mut current_component_observer_context : ComponentObserverContext?
+  mut current_trigger_observer_context : TriggerObserverContext?
   entities : @core.Entities
   mut sequence : @core.Sequence
   mut system_context : @core.SystemSequenceContext
@@ -262,6 +265,9 @@ pub fn World::new() -> World {
     component_local_ids_by_definition_id: {},
     component_definition_ids_by_local_id: {},
     observer_parent_lookup_component_ids: [],
+    observer_registry: Ref::new(world_observer_registry_new()),
+    current_component_observer_context: None,
+    current_trigger_observer_context: None,
     entities: @core.Entities::new(),
     sequence: 0,
     system_context: @core.SystemSequenceContext::new(),
