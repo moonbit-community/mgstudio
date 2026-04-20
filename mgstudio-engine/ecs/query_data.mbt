@@ -538,8 +538,8 @@ pub impl[T : Component] QueryData for Has[T] with requires_entity_check() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with is_dense(_world) {
-  true
+pub impl[T : Component] QueryData for Has[T] with is_dense(world) {
+  query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
@@ -587,8 +587,8 @@ pub impl[T : Component] QueryData for Optional[T] with requires_entity_check() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with is_dense(_world) {
-  true
+pub impl[T : Component] QueryData for Optional[T] with is_dense(world) {
+  query_data_component_is_dense(world, T::component().id())
 }
 
 ///|

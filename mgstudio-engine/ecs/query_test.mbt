@@ -31,6 +31,9 @@ struct Acceleration {
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
+struct SparseTag {} derive(Debug, Eq, ToJson, FromJson)
+
+///|
 let position_key : ComponentKey[Position] = register_component(
   debug_name="tests.ecs.Position",
 )
@@ -46,6 +49,11 @@ let acceleration_key : ComponentKey[Acceleration] = register_component(
 )
 
 ///|
+let sparse_tag_key : ComponentKey[SparseTag] = register_component(
+  debug_name="tests.ecs.SparseTag",
+)
+
+///|
 pub impl Component for Position with component() {
   position_key
 }
@@ -58,6 +66,23 @@ pub impl Component for Velocity with component() {
 ///|
 pub impl Component for Acceleration with component() {
   acceleration_key
+}
+
+///|
+pub impl Component for SparseTag with component() {
+  sparse_tag_key
+}
+
+///|
+let sparse_tag_metadata_initialized : Ref[Bool] = Ref::new(false)
+
+///|
+fn ensure_sparse_tag_metadata_registered() -> Unit {
+  if sparse_tag_metadata_initialized.val {
+    return
+  }
+  ignore(component_metadata_builder(sparse_tag_key).storage_sparse_set())
+  sparse_tag_metadata_initialized.val = true
 }
 
 ///|
@@ -797,10 +822,12 @@ test "ecs query cache: entity-check path materializes entity cache" {
 ///|
 test "ecs query cache: dense mode tracks matched tables cache" {
   let world = World::new()
+  ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   let e1 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
   try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
 
   let query : Query[Comp[Position], All] = query_filtered_with_cache(
     world,
@@ -811,6 +838,16 @@ test "ecs query cache: dense mode tracks matched tables cache" {
   debug_inspect(query.count(), content="2")
   let cache = query.cache_snapshot()
   debug_inspect(cache.cached_is_dense, content="true")
+  debug_inspect(cache.cached_matching_archetypes.length(), content="2")
+  debug_inspect(cache.cached_matching_tables.length(), content="1")
+  debug_inspect(
+    cache.cached_matching_table_archetype_groups.length(),
+    content="1",
+  )
+  debug_inspect(
+    cache.cached_matching_table_archetype_groups[0].length(),
+    content="2",
+  )
   debug_inspect(cache.cached_matching_tables.length() > 0, content="true")
   debug_inspect(cache.cached_matching_entities_valid, content="false")
 }
@@ -836,6 +873,35 @@ test "ecs query cache: non-dense mode keeps matched tables cache empty" {
   let cache = query.cache_snapshot()
   debug_inspect(cache.cached_is_dense, content="false")
   debug_inspect(cache.cached_matching_tables.length(), content="0")
+}
+
+///|
+test "ecs query cache: optional sparse data disables dense mode" {
+  let world = World::new()
+  ensure_sparse_tag_metadata_registered()
+  let e0 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, sparse_tag_key, SparseTag::{  })
+
+  let optional_query : Query[Optional[SparseTag], All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    QueryCache::new(),
+  )
+  debug_inspect(optional_query.count(), content="1")
+  let optional_cache = optional_query.cache_snapshot()
+  debug_inspect(optional_cache.cached_is_dense, content="false")
+  debug_inspect(optional_cache.cached_matching_tables.length(), content="0")
+
+  let has_query : Query[Has[SparseTag], All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    QueryCache::new(),
+  )
+  debug_inspect(has_query.count(), content="1")
+  let has_cache = has_query.cache_snapshot()
+  debug_inspect(has_cache.cached_is_dense, content="false")
+  debug_inspect(has_cache.cached_matching_tables.length(), content="0")
 }
 
 ///|
@@ -883,11 +949,34 @@ test "ecs query access validation: detects query data and filter conflicts" {
   data_access2.add_write_component(position_key.id())
   let filter_access = QueryFilterAccess::new()
   filter_access.add_read_component(position_key.id())
-  guard query_validate_data_filter_access(data_access2, filter_access)
-    is Some(error1) else {
-    fail("expected filter read conflict")
-  }
-  debug_inspect(error1.is_invalid(), content="true")
+  debug_inspect(
+    query_validate_data_filter_access(data_access2, filter_access) is None,
+    content="true",
+  )
+
+  let lhs_data = QueryDataAccess::new()
+  lhs_data.add_write_component(position_key.id())
+  let lhs_filter = QueryFilterAccess::new()
+  lhs_filter.add_with_component(velocity_key.id())
+
+  let rhs_data = QueryDataAccess::new()
+  rhs_data.add_write_component(position_key.id())
+  let rhs_filter = QueryFilterAccess::new()
+  rhs_filter.add_without_component(velocity_key.id())
+  debug_inspect(
+    query_validate_data_data_compatibility(
+      lhs_data, lhs_filter, rhs_data, rhs_filter,
+    ),
+    content="true",
+  )
+
+  let overlap_filter = QueryFilterAccess::new()
+  debug_inspect(
+    query_validate_data_data_compatibility(
+      lhs_data, overlap_filter, rhs_data, overlap_filter,
+    ),
+    content="false",
+  )
 }
 
 ///|

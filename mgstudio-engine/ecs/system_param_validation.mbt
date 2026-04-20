@@ -56,10 +56,31 @@ fn query_access_component_overlap(lhs : Array[Int], rhs : Array[Int]) -> Int? {
 }
 
 ///|
+fn query_access_components_overlap(lhs : Array[Int], rhs : Array[Int]) -> Bool {
+  query_access_component_overlap(lhs, rhs) is Some(_)
+}
+
+///|
+fn query_filter_accesses_rule_out_each_other(
+  lhs_filter_access : QueryFilterAccess,
+  rhs_filter_access : QueryFilterAccess,
+) -> Bool {
+  query_access_components_overlap(
+    lhs_filter_access.with_components(),
+    rhs_filter_access.without_components(),
+  ) ||
+  query_access_components_overlap(
+    lhs_filter_access.without_components(),
+    rhs_filter_access.with_components(),
+  )
+}
+
+///|
 pub fn query_validate_data_filter_access(
   data_access : QueryDataAccess,
   filter_access : QueryFilterAccess,
 ) -> SystemParamValidationError? {
+  ignore(filter_access)
   if data_access.has_conflict() {
     return Some(
       Invalid(
@@ -67,16 +88,32 @@ pub fn query_validate_data_filter_access(
       ),
     )
   }
-  if query_access_component_overlap(
-      data_access.write_components(),
-      filter_access.read_components(),
-    )
-    is Some(component_id) {
-    return Some(
-      Invalid(
-        "Query filter reads component \{component_id} while query data mutably accesses it",
-      ),
-    )
-  }
   None
+}
+
+///|
+pub fn query_validate_data_data_compatibility(
+  lhs_data_access : QueryDataAccess,
+  lhs_filter_access : QueryFilterAccess,
+  rhs_data_access : QueryDataAccess,
+  rhs_filter_access : QueryFilterAccess,
+) -> Bool {
+  let has_component_conflict = query_access_components_overlap(
+      lhs_data_access.write_components(),
+      rhs_data_access.read_components(),
+    ) ||
+    query_access_components_overlap(
+      lhs_data_access.write_components(),
+      rhs_data_access.write_components(),
+    ) ||
+    query_access_components_overlap(
+      lhs_data_access.read_components(),
+      rhs_data_access.write_components(),
+    )
+  if !has_component_conflict {
+    return true
+  }
+  query_filter_accesses_rule_out_each_other(
+    lhs_filter_access, rhs_filter_access,
+  )
 }
