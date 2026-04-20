@@ -120,9 +120,9 @@ pub fn[T] ComponentColumn::set(
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  match self.get_ref(entity) {
-    Some(value_ref) => {
-      value_ref.val = value
+  let payload = erased_value(value)
+  match component_store_replace_column_value(self.store_ref, entity, payload) {
+    Some(_) => {
       let sequence = component_write_sequence(self.world)
       self.changed_sequence_table.set(entity.id, sequence)
       self.world.ensure_changed_component_messages(self.key.id()).val.send(
@@ -140,9 +140,9 @@ pub fn[T] ComponentColumn::set_sequence_only(
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  match self.get_ref(entity) {
-    Some(value_ref) => {
-      value_ref.val = value
+  let payload = erased_value(value)
+  match component_store_replace_column_value(self.store_ref, entity, payload) {
+    Some(_) => {
       self.changed_sequence_table.set(
         entity.id,
         component_write_sequence(self.world),

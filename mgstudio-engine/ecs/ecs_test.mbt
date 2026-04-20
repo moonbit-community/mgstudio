@@ -81,6 +81,11 @@ struct StorageModeProbe {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+struct QueuedOrderProbe {
+  value : Int
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
 let world_local_probe_key : ComponentKey[WorldLocalProbe] = register_component(
   debug_name="world_local_probe",
 )
@@ -108,6 +113,11 @@ let sparse_storage_counter_key : ComponentKey[SparseStorageCounter] = register_c
 ///|
 let storage_mode_probe_key : ComponentKey[StorageModeProbe] = register_component(
   debug_name="storage_mode_probe",
+)
+
+///|
+let queued_order_probe_key : ComponentKey[QueuedOrderProbe] = register_component(
+  debug_name="queued_order_probe",
 )
 
 ///|
@@ -139,6 +149,36 @@ fn ensure_sparse_storage_metadata_registered() -> Unit {
     component_metadata_builder(sparse_storage_counter_key).storage_sparse_set(),
   )
   sparse_storage_metadata_initialized.val = true
+}
+
+///|
+fn int_array_set_equals(lhs : Array[Int], rhs : Array[Int]) -> Bool {
+  if lhs.length() != rhs.length() {
+    return false
+  }
+  let lhs_sorted = lhs.copy()
+  let rhs_sorted = rhs.copy()
+  lhs_sorted.sort()
+  rhs_sorted.sort()
+  for index in 0..<lhs_sorted.length() {
+    if lhs_sorted[index] != rhs_sorted[index] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn entity_snapshot_contains(
+  entities : Array[@core.Entity],
+  target : @core.Entity,
+) -> Bool {
+  for entity in entities {
+    if entity.id == target.id && entity.generation == target.generation {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -182,6 +222,11 @@ pub impl Component for StorageModeProbe with component() {
 }
 
 ///|
+pub impl Component for QueuedOrderProbe with component() {
+  queued_order_probe_key
+}
+
+///|
 test "ecs: register key ids are monotonic" {
   let comp_a : ComponentKey[Counter] = register_component(debug_name="counter")
   let comp_b : ComponentKey[Counter] = register_component(
@@ -196,6 +241,53 @@ test "ecs: register key ids are monotonic" {
   let event_a : EventKey[TickEvent] = register_event(debug_name="tick")
   let event_b : EventKey[TickEvent] = register_event(debug_name="tick_b")
   debug_inspect(event_b.id() > event_a.id(), content="true")
+}
+
+///|
+test "ecs: world bootstrap ordering for lifecycle pseudo-components is fixed" {
+  let world = World::new()
+  let add_key : ComponentKey[Add] = component_key_from_id(
+    ecs_builtin_component_definition_add,
+  )
+  let insert_key : ComponentKey[Insert] = component_key_from_id(
+    ecs_builtin_component_definition_insert,
+  )
+  let replace_key : ComponentKey[Replace] = component_key_from_id(
+    ecs_builtin_component_definition_replace,
+  )
+  let remove_key : ComponentKey[Remove] = component_key_from_id(
+    ecs_builtin_component_definition_remove,
+  )
+  let despawn_key : ComponentKey[Despawn] = component_key_from_id(
+    ecs_builtin_component_definition_despawn,
+  )
+  let is_resource_key : ComponentKey[Unit] = component_key_from_id(
+    ecs_builtin_component_definition_is_resource,
+  )
+  debug_inspect(
+    world.component_id_by_key(add_key).unwrap_or(-1) == 1,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(insert_key).unwrap_or(-1) == 2,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(replace_key).unwrap_or(-1) == 3,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(remove_key).unwrap_or(-1) == 4,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(despawn_key).unwrap_or(-1) == 5,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(is_resource_key).unwrap_or(-1) == 6,
+    content="true",
+  )
 }
 
 ///|
@@ -348,6 +440,227 @@ test "ecs: typed component api uses component ownership" {
 }
 
 ///|
+test "ecs: bundle migration paths follow archetype/table topology" {
+  ensure_sparse_storage_metadata_registered()
+  let world = World::new()
+  let entity = world.spawn()
+
+  let empty_archetype_id = world.entity_archetype_id(entity).unwrap_or(-1)
+  debug_inspect(world.archetype_table_id(empty_archetype_id), content="Some(0)")
+
+  try! world.set(entity, TypedCounter::{ value: 1 })
+  let counter_archetype_id = world.entity_archetype_id(entity).unwrap_or(-1)
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      empty_archetype_id, counter_archetype_id,
+    ) ==
+    "new-archetype-new-table",
+    content="true",
+  )
+
+  let counter_table_id = world
+    .archetype_table_id(counter_archetype_id)
+    .unwrap_or(-1)
+  debug_inspect(counter_table_id >= 0, content="true")
+
+  try! world.set_by_key(entity, sparse_storage_counter_key, SparseStorageCounter::{
+    value: 7,
+  })
+  let counter_sparse_archetype_id = world
+    .entity_archetype_id(entity)
+    .unwrap_or(-1)
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      counter_archetype_id, counter_sparse_archetype_id,
+    ) ==
+    "new-archetype-same-table",
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_table_id(counter_sparse_archetype_id).unwrap_or(-1) ==
+    counter_table_id,
+    content="true",
+  )
+
+  try! (world.remove_by_key(entity, sparse_storage_counter_key) |> ignore)
+  let back_to_counter_archetype_id = world
+    .entity_archetype_id(entity)
+    .unwrap_or(-1)
+  debug_inspect(
+    back_to_counter_archetype_id == counter_archetype_id,
+    content="true",
+  )
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      counter_archetype_id, counter_archetype_id,
+    ) ==
+    "same-archetype",
+    content="true",
+  )
+}
+
+///|
+test "ecs: structural mutations keep archetype membership deterministic" {
+  ensure_sparse_storage_metadata_registered()
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  let empty_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
+  debug_inspect(world.archetype_count() == 1, content="true")
+  debug_inspect(
+    world.archetype_entity_count(empty_archetype_id) == 2,
+    content="true",
+  )
+  debug_inspect(
+    int_array_set_equals(
+      world.archetype_component_ids(empty_archetype_id).unwrap_or([]),
+      [],
+    ),
+    content="true",
+  )
+
+  try! world.set(e0, TypedCounter::{ value: 1 })
+  let counter_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
+  let counter_local_id = world
+    .component_id_by_key(typed_counter_key)
+    .unwrap_or(-1)
+  debug_inspect(world.archetype_count() == 2, content="true")
+  debug_inspect(
+    world.archetype_entity_count(empty_archetype_id) == 1,
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_entity_count(counter_archetype_id) == 1,
+    content="true",
+  )
+  debug_inspect(
+    int_array_set_equals(
+      world.archetype_component_ids(counter_archetype_id).unwrap_or([]),
+      [typed_counter_key.id()],
+    ),
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_component_local_index(
+      counter_archetype_id, counter_local_id,
+    ) ==
+    Some(0),
+    content="true",
+  )
+  let counter_entities_after_first_add = world.archetype_entities_snapshot(
+    counter_archetype_id,
+  )
+  debug_inspect(
+    entity_snapshot_contains(counter_entities_after_first_add, e0),
+    content="true",
+  )
+  debug_inspect(
+    !entity_snapshot_contains(counter_entities_after_first_add, e1),
+    content="true",
+  )
+
+  try! world.set(e1, TypedCounter::{ value: 2 })
+  debug_inspect(
+    world.archetype_entity_count(counter_archetype_id) == 2,
+    content="true",
+  )
+
+  try! world.set(e0, TypedMarker::{ enabled: true })
+  let counter_marker_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
+  debug_inspect(
+    world.archetype_entity_count(counter_archetype_id) == 1,
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_entity_count(counter_marker_archetype_id) == 1,
+    content="true",
+  )
+  debug_inspect(
+    int_array_set_equals(
+      world.archetype_component_ids(counter_marker_archetype_id).unwrap_or([]),
+      [typed_counter_key.id(), typed_marker_key.id()],
+    ),
+    content="true",
+  )
+
+  try! world.set_by_key(e0, sparse_storage_counter_key, SparseStorageCounter::{
+    value: 9,
+  })
+  let counter_marker_sparse_archetype_id = world
+    .entity_archetype_id(e0)
+    .unwrap_or(-1)
+  debug_inspect(
+    world.archetype_entity_count(counter_marker_archetype_id) == 0,
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_entity_count(counter_marker_sparse_archetype_id) == 1,
+    content="true",
+  )
+  debug_inspect(
+    int_array_set_equals(
+      world
+      .archetype_component_ids(counter_marker_sparse_archetype_id)
+      .unwrap_or([]),
+      [
+        typed_counter_key.id(),
+        typed_marker_key.id(),
+        sparse_storage_counter_key.id(),
+      ],
+    ),
+    content="true",
+  )
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      counter_marker_archetype_id, counter_marker_sparse_archetype_id,
+    ) ==
+    "new-archetype-same-table",
+    content="true",
+  )
+
+  try! (world.remove_by_key(e0, typed_marker_key) |> ignore)
+  let counter_sparse_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
+  debug_inspect(
+    world.archetype_entity_count(counter_marker_sparse_archetype_id) == 0,
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_entity_count(counter_sparse_archetype_id) == 1,
+    content="true",
+  )
+  debug_inspect(
+    int_array_set_equals(
+      world.archetype_component_ids(counter_sparse_archetype_id).unwrap_or([]),
+      [typed_counter_key.id(), sparse_storage_counter_key.id()],
+    ),
+    content="true",
+  )
+
+  try! world.despawn(e0)
+  debug_inspect(world.entity_archetype_id(e0) == None, content="true")
+  debug_inspect(
+    world.archetype_entity_count(counter_sparse_archetype_id) == 0,
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_entity_count(counter_archetype_id) == 1,
+    content="true",
+  )
+  let counter_entities_after_despawn = world.archetype_entities_snapshot(
+    counter_archetype_id,
+  )
+  debug_inspect(
+    !entity_snapshot_contains(counter_entities_after_despawn, e0),
+    content="true",
+  )
+  debug_inspect(
+    entity_snapshot_contains(counter_entities_after_despawn, e1),
+    content="true",
+  )
+}
+
+///|
 test "ecs: archetype tracking follows structural mutations" {
   let world = World::new()
   let e0 = world.spawn()
@@ -485,6 +798,79 @@ test "ecs: component runtime ids are world-local and isolated" {
     .unwrap_or(-1)
   debug_inspect(world0_id > 0 && world1_id > 0, content="true")
   debug_inspect(world0_id != world1_id, content="true")
+}
+
+///|
+test "ecs: queued registration flush preserves deterministic queue order and local ids" {
+  ensure_queued_require_metadata_registered()
+  let world = World::new()
+  let registrator = world.components_registrator()
+  let queued = registrator.as_queued()
+
+  let queued_a_id = queued.register_component_by_key(queued_require_a_key)
+  let queued_probe_id = queued.register_component_by_key(queued_order_probe_key)
+  let queued_b_id = queued.register_component_by_key(queued_require_b_key)
+
+  debug_inspect(queued_a_id < queued_probe_id, content="true")
+  debug_inspect(queued_probe_id < queued_b_id, content="true")
+  debug_inspect(world.queued_component_registration_count(), content="3")
+
+  registrator.apply_queued_registrations()
+  debug_inspect(world.queued_component_registration_count(), content="0")
+  debug_inspect(
+    world.component_id_by_key(queued_require_a_key).unwrap_or(-1) == queued_a_id,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(queued_order_probe_key).unwrap_or(-1) ==
+    queued_probe_id,
+    content="true",
+  )
+  debug_inspect(
+    world.component_id_by_key(queued_require_b_key).unwrap_or(-1) == queued_b_id,
+    content="true",
+  )
+}
+
+///|
+test "ecs: queued registration ids stay stable across worlds with identical queue order" {
+  ensure_queued_require_metadata_registered()
+  let world0 = World::new()
+  let world1 = World::new()
+
+  let registrator0 = world0.components_registrator()
+  let registrator1 = world1.components_registrator()
+  let queued0 = registrator0.as_queued()
+  let queued1 = registrator1.as_queued()
+
+  let world0_a_id = queued0.register_component_by_key(queued_require_a_key)
+  let world0_probe_id = queued0.register_component_by_key(
+    queued_order_probe_key,
+  )
+  let world0_b_id = queued0.register_component_by_key(queued_require_b_key)
+
+  let world1_a_id = queued1.register_component_by_key(queued_require_a_key)
+  let world1_probe_id = queued1.register_component_by_key(
+    queued_order_probe_key,
+  )
+  let world1_b_id = queued1.register_component_by_key(queued_require_b_key)
+
+  debug_inspect(world0_a_id == world1_a_id, content="true")
+  debug_inspect(world0_probe_id == world1_probe_id, content="true")
+  debug_inspect(world0_b_id == world1_b_id, content="true")
+
+  registrator0.apply_queued_registrations()
+  registrator1.apply_queued_registrations()
+  debug_inspect(
+    world0.component_id_by_key(queued_require_a_key).unwrap_or(-1) ==
+    world0_a_id,
+    content="true",
+  )
+  debug_inspect(
+    world1.component_id_by_key(queued_require_a_key).unwrap_or(-1) ==
+    world1_a_id,
+    content="true",
+  )
 }
 
 ///|
