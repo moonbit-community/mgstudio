@@ -86,6 +86,18 @@ struct QueuedOrderProbe {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+struct ParityHookRegistrationProbe {} derive(Eq, Debug)
+
+///|
+struct ParityRequiredA {} derive(Eq, Debug)
+
+///|
+struct ParityRequiredB {} derive(Eq, Debug)
+
+///|
+struct ParityRequiredC {} derive(Eq, Debug)
+
+///|
 let world_local_probe_key : ComponentKey[WorldLocalProbe] = register_component(
   debug_name="world_local_probe",
 )
@@ -118,6 +130,26 @@ let storage_mode_probe_key : ComponentKey[StorageModeProbe] = register_component
 ///|
 let queued_order_probe_key : ComponentKey[QueuedOrderProbe] = register_component(
   debug_name="queued_order_probe",
+)
+
+///|
+let parity_hook_registration_probe_key : ComponentKey[
+  ParityHookRegistrationProbe,
+] = register_component(debug_name="parity_hook_registration_probe")
+
+///|
+let parity_required_a_key : ComponentKey[ParityRequiredA] = register_component(
+  debug_name="parity_required_a",
+)
+
+///|
+let parity_required_b_key : ComponentKey[ParityRequiredB] = register_component(
+  debug_name="parity_required_b",
+)
+
+///|
+let parity_required_c_key : ComponentKey[ParityRequiredC] = register_component(
+  debug_name="parity_required_c",
 )
 
 ///|
@@ -224,6 +256,26 @@ pub impl Component for StorageModeProbe with component() {
 ///|
 pub impl Component for QueuedOrderProbe with component() {
   queued_order_probe_key
+}
+
+///|
+pub impl Component for ParityHookRegistrationProbe with component() {
+  parity_hook_registration_probe_key
+}
+
+///|
+pub impl Component for ParityRequiredA with component() {
+  parity_required_a_key
+}
+
+///|
+pub impl Component for ParityRequiredB with component() {
+  parity_required_b_key
+}
+
+///|
+pub impl Component for ParityRequiredC with component() {
+  parity_required_c_key
 }
 
 ///|
@@ -1003,4 +1055,91 @@ test "ecs: world-local storage type remains stable after metadata mutation" {
     try! world1.remove_by_key(entity1, storage_mode_probe_key),
     content="true",
   )
+}
+
+///|
+test "ecs parity wave2: duplicate hook kind registration fails in-world" {
+  let world = World::new()
+  let builder = world.register_component_hooks_for_key(
+    parity_hook_registration_probe_key,
+  )
+  ignore(try! builder.on_insert(fn(_world, _context) { () }))
+
+  let duplicate_result : Result[
+    ComponentHooksBuilder[ParityHookRegistrationProbe],
+    ComponentHooksError,
+  ] = try? world
+    .register_component_hooks_for_key(parity_hook_registration_probe_key)
+    .on_insert(fn(_world, _context) { () })
+
+  guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnInsert)) else {
+    fail("expected duplicate hook kind registration to fail")
+  }
+  let expected_component_id = world
+    .component_id_by_key(parity_hook_registration_probe_key)
+    .unwrap_or(-1)
+  debug_inspect(component_id == expected_component_id, content="true")
+}
+
+///|
+test "ecs parity wave2: late hook registration after archetype use fails" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    parity_hook_registration_probe_key,
+    ParityHookRegistrationProbe::{  },
+  )
+
+  let late_result : Result[
+    ComponentHooksBuilder[ParityHookRegistrationProbe],
+    ComponentHooksError,
+  ] = try? world
+    .register_component_hooks_for_key(parity_hook_registration_probe_key)
+    .on_add(fn(_world, _context) { () })
+  guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
+    fail("expected late hook registration to fail")
+  }
+  let expected_component_id = world
+    .component_id_by_key(parity_hook_registration_probe_key)
+    .unwrap_or(-1)
+  debug_inspect(component_id == expected_component_id, content="true")
+}
+
+///|
+test "ecs parity wave2: required_by tracks transitive closure and cycle registration fails" {
+  let world = World::new()
+
+  try! world.register_required_components_with(
+    parity_required_a_key,
+    parity_required_b_key,
+    fn() { ParityRequiredB::{  } },
+  )
+  try! world.register_required_components_with(
+    parity_required_b_key,
+    parity_required_c_key,
+    fn() { ParityRequiredC::{  } },
+  )
+
+  let required_by_c = world.get_required_by_components(parity_required_c_key).unwrap()
+  debug_inspect(required_by_c.len(), content="2")
+  debug_inspect(required_by_c.contains(parity_required_a_key.id()), content="true")
+  debug_inspect(required_by_c.contains(parity_required_b_key.id()), content="true")
+
+  let cycle_result : Result[Unit, RequiredComponentsError] = try? world.register_required_components_with(
+    parity_required_c_key,
+    parity_required_a_key,
+    fn() { ParityRequiredA::{  } },
+  )
+  guard cycle_result is Err(CyclicRequirement(requiree_id, required_id)) else {
+    fail("expected cycle registration to fail")
+  }
+  let expected_requiree_id = world
+    .component_id_by_key(parity_required_c_key)
+    .unwrap_or(-1)
+  let expected_required_id = world
+    .component_id_by_key(parity_required_a_key)
+    .unwrap_or(-1)
+  debug_inspect(requiree_id == expected_requiree_id, content="true")
+  debug_inspect(required_id == expected_required_id, content="true")
 }

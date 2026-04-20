@@ -905,6 +905,150 @@ test "ecs query cache: optional sparse data disables dense mode" {
 }
 
 ///|
+test "ecs query cache: tuple data anchors choose minimal membership candidate" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+  let e3 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
+  try! world.set_by_key(e3, position_key, Position::{ x: 4, y: 4 })
+  try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 9, dy: 9 })
+
+  let query : Query[(Comp[Position], Comp[Velocity]), All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    QueryCache::new(),
+  )
+  debug_inspect(query.count(), content="1")
+  let cache = query.cache_snapshot()
+  debug_inspect(
+    cache.cached_anchor_component_id == Some(velocity_key.id()),
+    content="true",
+  )
+  debug_inspect(
+    cache.cached_candidate_anchor_component_id == Some(velocity_key.id()),
+    content="true",
+  )
+  debug_inspect(cache.cached_candidate_archetypes.length(), content="1")
+}
+
+///|
+test "ecs query cache: tuple filter anchors choose minimal membership candidate" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+  let e3 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
+  try! world.set_by_key(e3, position_key, Position::{ x: 4, y: 4 })
+  try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 9, dy: 9 })
+
+  let query : Query[@core.Entity, (With[Position], With[Velocity])] = query_filtered_with_cache(
+    world,
+    (With::new(position_key), With::new(velocity_key)),
+    QueryCache::new(),
+  )
+  debug_inspect(query.count(), content="1")
+  let cache = query.cache_snapshot()
+  debug_inspect(
+    cache.cached_filter_anchor_component_id == Some(velocity_key.id()),
+    content="true",
+  )
+  debug_inspect(
+    cache.cached_candidate_anchor_component_id == Some(velocity_key.id()),
+    content="true",
+  )
+  debug_inspect(cache.cached_candidate_archetypes.length(), content="1")
+}
+
+///|
+test "ecs query_state cache: dependency generation invalidates entity cache without archetype generation change" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
+  try! world.set_by_key(e2, velocity_key, Velocity::{ dx: 7, dy: 7 })
+
+  let state : QueryState[Comp[Position], Without[Velocity]] = world.query_filtered(
+    Without::new(velocity_key),
+  )
+  let combinations0 = state.iter_combinations(world)
+  let pairs0 : Array[(Int, Int)] = []
+  while true {
+    if (try! combinations0.fetch_next()) is Some((left, right)) {
+      pairs0.push((left.value().x, right.value().x))
+    } else {
+      break
+    }
+  }
+  debug_inspect(pairs0.length(), content="1")
+  debug_inspect(state.cached_matching_entities_valid, content="true")
+  let initial_entities_generation = state.cached_matching_entities_generation
+  let initial_archetype_generation = state.cached_matching_archetype_generation
+
+  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 8, dy: 8 })
+
+  let combinations1 = state.iter_combinations(world)
+  let pairs1 : Array[(Int, Int)] = []
+  while true {
+    if (try! combinations1.fetch_next()) is Some((left, right)) {
+      pairs1.push((left.value().x, right.value().x))
+    } else {
+      break
+    }
+  }
+  debug_inspect(pairs1.length(), content="0")
+  debug_inspect(
+    state.cached_matching_entities_generation > initial_entities_generation,
+    content="true",
+  )
+  debug_inspect(
+    state.cached_matching_archetype_generation == initial_archetype_generation,
+    content="true",
+  )
+}
+
+///|
+test "ecs query_state cache: sequence-dependent filters invalidate entity cache across runs" {
+  let world = World::new()
+  let e0 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+
+  let ctx0 = @core.SystemSequenceContext::new()
+  ctx0.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx0)
+
+  let state : QueryState[Comp[Position], Added[Position]] = world.query_filtered(
+    Added::new(position_key),
+  )
+  debug_inspect(state.count(world), content="1")
+  debug_inspect(state.cached_matching_entities_valid, content="true")
+  debug_inspect(state.cached_matching_entities_sequence, content="1")
+  let first_entities_generation = state.cached_matching_entities_generation
+
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+  let ctx1 = @core.SystemSequenceContext::new()
+  ctx1.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(ctx1)
+
+  debug_inspect(state.count(world), content="0")
+  debug_inspect(
+    state.cached_matching_entities_generation == first_entities_generation,
+    content="true",
+  )
+  debug_inspect(state.cached_matching_entities_sequence, content="1000005")
+}
+
+///|
 test "ecs query_state cache: archetype matching updates incrementally and keeps iter archetype-driven" {
   let world = World::new()
   let e0 = world.spawn()
@@ -914,6 +1058,7 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
   debug_inspect(state.count(world), content="1")
   debug_inspect(state.cached_matching_archetypes.length(), content="1")
   debug_inspect(state.cached_matching_entities_valid, content="false")
+  let initial_tables_generation = state.cached_matching_tables_generation
 
   let iter0 = state.iter(world)
   guard (try! iter0.fetch_next()) is Some((entity0, _)) else {
@@ -930,6 +1075,10 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
   debug_inspect(state.cached_matching_archetypes.length(), content="2")
   debug_inspect(state.cached_is_dense, content="true")
   debug_inspect(state.cached_matching_tables.length() > 0, content="true")
+  debug_inspect(
+    state.cached_matching_tables_generation > initial_tables_generation,
+    content="true",
+  )
   debug_inspect(state.cached_matching_entities_valid, content="false")
 }
 

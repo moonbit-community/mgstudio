@@ -282,10 +282,7 @@ pub fn[T] World::register_component_hooks_for_key(
   self : World,
   key : ComponentKey[T],
 ) -> ComponentHooksBuilder[T] {
-  let local_component_id = self.ensure_component_registered(key.id())
-  if self.component_hooks_registry.get(local_component_id) is None {
-    self.component_hooks_registry.set(local_component_id, ComponentHooks::new())
-  }
+  ignore(self.ensure_component_registered(key.id()))
   ComponentHooksBuilder::{ world: self, key }
 }
 

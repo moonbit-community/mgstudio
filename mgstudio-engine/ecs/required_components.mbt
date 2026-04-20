@@ -149,6 +149,38 @@ fn required_components_push_unique(
 }
 
 ///|
+fn World::required_components_reaches(
+  self : World,
+  from_component_id : Int,
+  target_component_id : Int,
+  visited : Map[Int, Bool],
+) -> Bool {
+  if from_component_id == target_component_id {
+    return true
+  }
+  if visited.get(from_component_id).unwrap_or(false) {
+    return false
+  }
+  visited.set(from_component_id, true)
+  guard self.required_components_state(from_component_id) is Some(state_ref) else {
+    return false
+  }
+  for required_id in state_ref.val.direct_order {
+    guard state_ref.val.direct.get(required_id) is Some(_) else {
+      continue
+    }
+    if self.required_components_reaches(
+        required_id,
+        target_component_id,
+        visited,
+      ) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn World::rebuild_required_components_for(
   self : World,
   component_id : Int,
@@ -260,11 +292,11 @@ fn World::register_required_components_by_keys(
     raise CyclicRequirement(requiree_local_id, required_local_id)
   }
 
-  if self.required_components_state(required_local_id)
-    is Some(required_state_ref) &&
-    required_components_contains_registration(
-      required_state_ref.val.all,
+  let visited : Map[Int, Bool] = {}
+  if self.required_components_reaches(
+      required_local_id,
       requiree_local_id,
+      visited,
     ) {
     raise CyclicRequirement(requiree_local_id, required_local_id)
   }

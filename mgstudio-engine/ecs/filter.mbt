@@ -21,6 +21,7 @@ pub(open) trait QueryFilter {
   requires_entity_check(self : Self) -> Bool
   is_dense(self : Self, world : World) -> Bool = _
   iteration_anchor_component(self : Self) -> Int?
+  iteration_anchor_components(self : Self) -> Array[Int] = _
   depends_on_sequence(self : Self) -> Bool
 }
 
@@ -43,6 +44,14 @@ impl QueryFilter with collect_access(_self, _access) {
 ///|
 impl QueryFilter with is_dense(_self, _world) {
   false
+}
+
+///|
+impl QueryFilter with iteration_anchor_components(self) {
+  match QueryFilter::iteration_anchor_component(self) {
+    Some(component_id) => [component_id]
+    None => []
+  }
 }
 
 ///|
@@ -127,6 +136,18 @@ fn query_filter_component_is_dense(world : World, component_id : Int) -> Bool {
     Some(Table) => true
     Some(SparseSet) => false
     None => true
+  }
+}
+
+///|
+fn query_filter_append_unique_anchor_components(
+  out : Array[Int],
+  component_ids : Array[Int],
+) -> Unit {
+  for component_id in component_ids {
+    if !out.contains(component_id) {
+      out.push(component_id)
+    }
   }
 }
 
@@ -623,6 +644,22 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with iteration
 }
 
 ///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with iteration_anchor_components(
+  self,
+) {
+  let component_ids : Array[Int] = []
+  query_filter_append_unique_anchor_components(
+    component_ids,
+    QueryFilter::iteration_anchor_components(self.0),
+  )
+  query_filter_append_unique_anchor_components(
+    component_ids,
+    QueryFilter::iteration_anchor_components(self.1),
+  )
+  component_ids
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with depends_on_sequence(
   self,
 ) {
@@ -710,6 +747,28 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
         None => QueryFilter::iteration_anchor_component(self.2)
       }
   }
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
+) with iteration_anchor_components(self) {
+  let component_ids : Array[Int] = []
+  query_filter_append_unique_anchor_components(
+    component_ids,
+    QueryFilter::iteration_anchor_components(self.0),
+  )
+  query_filter_append_unique_anchor_components(
+    component_ids,
+    QueryFilter::iteration_anchor_components(self.1),
+  )
+  query_filter_append_unique_anchor_components(
+    component_ids,
+    QueryFilter::iteration_anchor_components(self.2),
+  )
+  component_ids
 }
 
 ///|

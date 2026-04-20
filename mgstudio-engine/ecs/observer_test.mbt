@@ -73,6 +73,69 @@ pub impl Component for ObserverParentLinkLate with component() {
 }
 
 ///|
+struct ObserverParentLookupProbe {
+  parent : @core.Entity
+} derive(Eq, Debug)
+
+///|
+let observer_parent_lookup_probe_key : ComponentKey[ObserverParentLookupProbe] = register_component(
+  debug_name="tests.ecs.observer.parent_link_probe",
+)
+
+///|
+let observer_parent_lookup_probe_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let observer_parent_lookup_probe_world0_id_ref : Ref[Int] = Ref::new(-1)
+
+///|
+let observer_parent_lookup_probe_world1_id_ref : Ref[Int] = Ref::new(-1)
+
+///|
+let observer_parent_lookup_probe_world0_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let observer_parent_lookup_probe_world1_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+fn reset_observer_parent_lookup_probe_counters(
+  world0_id : Int,
+  world1_id : Int,
+) -> Unit {
+  observer_parent_lookup_probe_calls_ref.val = 0
+  observer_parent_lookup_probe_world0_calls_ref.val = 0
+  observer_parent_lookup_probe_world1_calls_ref.val = 0
+  observer_parent_lookup_probe_world0_id_ref.val = world0_id
+  observer_parent_lookup_probe_world1_id_ref.val = world1_id
+}
+
+///|
+fn observer_parent_lookup_probe_target_entity(
+  world : World,
+  entity : @core.Entity,
+) -> @core.Entity? {
+  observer_parent_lookup_probe_calls_ref.val = observer_parent_lookup_probe_calls_ref.val +
+    1
+  let world_id = world.world_id()
+  if world_id == observer_parent_lookup_probe_world0_id_ref.val {
+    observer_parent_lookup_probe_world0_calls_ref.val = observer_parent_lookup_probe_world0_calls_ref.val +
+      1
+  } else if world_id == observer_parent_lookup_probe_world1_id_ref.val {
+    observer_parent_lookup_probe_world1_calls_ref.val = observer_parent_lookup_probe_world1_calls_ref.val +
+      1
+  }
+  match
+    (try world.get_by_key(entity, observer_parent_lookup_probe_key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(link) => Some(link.parent)
+    None => None
+  }
+}
+
+///|
 fn observer_parent_link_stable_target_entity(
   world : World,
   entity : @core.Entity,
@@ -125,6 +188,12 @@ fn init {
   ignore(
     component_metadata_builder(observer_parent_link_late_key).relationship_source(
       observer_parent_link_late_target_entity,
+      observer_parent_lookup=true,
+    ),
+  )
+  ignore(
+    component_metadata_builder(observer_parent_lookup_probe_key).relationship_source(
+      observer_parent_lookup_probe_target_entity,
       observer_parent_lookup=true,
     ),
   )
@@ -397,6 +466,119 @@ test "ecs observer: despawn observers fire only during despawn" {
 }
 
 ///|
+test "ecs observer: lifecycle observer ordering is deterministic" {
+  let world = World::new()
+  let entity = world.spawn()
+  let add_order : Array[String] = []
+  let insert_order : Array[String] = []
+  let replace_order : Array[String] = []
+  let remove_order : Array[String] = []
+  let despawn_order : Array[String] = []
+
+  ignore(
+    world.add_add_component_observer(fn(
+      _event : ComponentOn[Add, ObserverMarker],
+    ) {
+      add_order.push("first")
+    }),
+  )
+  ignore(
+    world.add_add_component_observer(fn(
+      _event : ComponentOn[Add, ObserverMarker],
+    ) {
+      add_order.push("second")
+    }),
+  )
+
+  ignore(
+    world.add_component_observer(fn(
+      _event : ComponentOn[Insert, ObserverMarker],
+    ) {
+      insert_order.push("first")
+    }),
+  )
+  ignore(
+    world.add_component_observer(fn(
+      _event : ComponentOn[Insert, ObserverMarker],
+    ) {
+      insert_order.push("second")
+    }),
+  )
+
+  ignore(
+    world.add_replace_component_observer(fn(
+      _event : ComponentOn[Replace, ObserverMarker],
+    ) {
+      replace_order.push("first")
+    }),
+  )
+  ignore(
+    world.add_replace_component_observer(fn(
+      _event : ComponentOn[Replace, ObserverMarker],
+    ) {
+      replace_order.push("second")
+    }),
+  )
+
+  ignore(
+    world.add_remove_component_observer(fn(
+      _event : ComponentOn[Remove, ObserverMarker],
+    ) {
+      remove_order.push("first")
+    }),
+  )
+  ignore(
+    world.add_remove_component_observer(fn(
+      _event : ComponentOn[Remove, ObserverMarker],
+    ) {
+      remove_order.push("second")
+    }),
+  )
+
+  ignore(
+    world.add_despawn_component_observer(fn(
+      _event : ComponentOn[Despawn, ObserverMarker],
+    ) {
+      despawn_order.push("first")
+    }),
+  )
+  ignore(
+    world.add_despawn_component_observer(fn(
+      _event : ComponentOn[Despawn, ObserverMarker],
+    ) {
+      despawn_order.push("second")
+    }),
+  )
+
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{ value: 1 })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{ value: 2 })
+  debug_inspect(
+    try! world.remove_by_key(entity, observer_marker_key),
+    content="true",
+  )
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{ value: 3 })
+  try! world.despawn(entity)
+
+  debug_inspect(
+    add_order,
+    content="[\"second\", \"first\", \"second\", \"first\"]",
+  )
+  debug_inspect(
+    insert_order,
+    content="[\"second\", \"first\", \"second\", \"first\", \"second\", \"first\"]",
+  )
+  debug_inspect(
+    replace_order,
+    content="[\"second\", \"first\", \"second\", \"first\", \"second\", \"first\"]",
+  )
+  debug_inspect(
+    remove_order,
+    content="[\"second\", \"first\", \"second\", \"first\"]",
+  )
+  debug_inspect(despawn_order, content="[\"second\", \"first\"]")
+}
+
+///|
 test "ecs observer: world add_observer and add_entity_observer handle custom events" {
   let world = World::new()
   let entity0 = world.spawn()
@@ -568,6 +750,97 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
       observer_parent_lookup=true,
     ),
   )
+}
+
+///|
+test "ecs observer: parent lookup cache tracks archetype register and unregister transitions" {
+  let world = World::new()
+  let parent = world.spawn()
+  let child = world.spawn()
+  let parent_hits : Ref[Int] = Ref::new(0)
+  reset_observer_parent_lookup_probe_counters(world.world_id(), -1)
+
+  ignore(
+    world.components_registrator().register_component_by_key(
+      observer_parent_lookup_probe_key,
+    ),
+  )
+  ignore(
+    world.add_entity_observer(parent, fn(_event : On[ObserverAttack]) {
+      parent_hits.val = parent_hits.val + 1
+    }),
+  )
+
+  world.trigger(ObserverAttack::{ damage: 10, entity: child })
+  debug_inspect(observer_parent_lookup_probe_calls_ref.val, content="0")
+  debug_inspect(parent_hits.val, content="0")
+
+  try! world.set_by_key(child, observer_parent_lookup_probe_key, ObserverParentLookupProbe::{
+    parent,
+  })
+  world.trigger(ObserverAttack::{ damage: 10, entity: child })
+  debug_inspect(observer_parent_lookup_probe_calls_ref.val, content="1")
+  debug_inspect(parent_hits.val, content="1")
+
+  debug_inspect(
+    try! world.remove_by_key(child, observer_parent_lookup_probe_key),
+    content="true",
+  )
+  world.trigger(ObserverAttack::{ damage: 10, entity: child })
+  debug_inspect(observer_parent_lookup_probe_calls_ref.val, content="1")
+  debug_inspect(parent_hits.val, content="1")
+}
+
+///|
+test "ecs observer: parent lookup cache isolates archetype activity per world" {
+  let world0 = World::new()
+  let world1 = World::new()
+  reset_observer_parent_lookup_probe_counters(
+    world0.world_id(),
+    world1.world_id(),
+  )
+
+  ignore(
+    world0.components_registrator().register_component_by_key(
+      observer_parent_lookup_probe_key,
+    ),
+  )
+  ignore(
+    world1.components_registrator().register_component_by_key(
+      observer_parent_lookup_probe_key,
+    ),
+  )
+
+  let parent0 = world0.spawn()
+  let child0 = world0.spawn()
+  let parent1 = world1.spawn()
+  let child1 = world1.spawn()
+  let world0_hits : Ref[Int] = Ref::new(0)
+  let world1_hits : Ref[Int] = Ref::new(0)
+
+  try! world0.set_by_key(child0, observer_parent_lookup_probe_key, ObserverParentLookupProbe::{
+    parent: parent0,
+  })
+
+  ignore(
+    world0.add_entity_observer(parent0, fn(_event : On[ObserverAttack]) {
+      world0_hits.val = world0_hits.val + 1
+    }),
+  )
+  ignore(
+    world1.add_entity_observer(parent1, fn(_event : On[ObserverAttack]) {
+      world1_hits.val = world1_hits.val + 1
+    }),
+  )
+
+  world0.trigger(ObserverAttack::{ damage: 7, entity: child0 })
+  world1.trigger(ObserverAttack::{ damage: 7, entity: child1 })
+
+  debug_inspect(observer_parent_lookup_probe_world0_calls_ref.val, content="1")
+  debug_inspect(observer_parent_lookup_probe_world1_calls_ref.val, content="0")
+  debug_inspect(observer_parent_lookup_probe_calls_ref.val, content="1")
+  debug_inspect(world0_hits.val, content="1")
+  debug_inspect(world1_hits.val, content="0")
 }
 
 ///|

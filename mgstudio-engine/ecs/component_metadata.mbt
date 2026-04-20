@@ -330,12 +330,17 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
+  let component_key = self.key
+  let component_debug_name = self.key.debug_name()
   let linked_entities_accessor = match linked_entities {
     Some(entities_from_component) =>
       Some(fn(world : DeferredWorld, entity : @core.Entity) {
-        match (try! world.get_by_key(entity, self.key)) {
+        match (try! world.get_by_key(entity, component_key)) {
           Some(component) => entities_from_component(component)
-          None => []
+          None =>
+            abort(
+              "relationship_target linked_entities accessor missing component `\{component_debug_name}` on entity \{entity.id.to_string()}",
+            )
         }
       })
     None => None

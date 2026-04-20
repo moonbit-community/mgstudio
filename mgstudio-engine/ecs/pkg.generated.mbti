@@ -31,6 +31,20 @@ pub fn[C : Component] current_remove_observer() -> ComponentOn[Remove, C]
 
 pub fn[C : Component] current_replace_observer() -> ComponentOn[Replace, C]
 
+pub let ecs_builtin_component_definition_add : Int
+
+pub let ecs_builtin_component_definition_count : Int
+
+pub let ecs_builtin_component_definition_despawn : Int
+
+pub let ecs_builtin_component_definition_insert : Int
+
+pub let ecs_builtin_component_definition_is_resource : Int
+
+pub let ecs_builtin_component_definition_remove : Int
+
+pub let ecs_builtin_component_definition_replace : Int
+
 pub let ecs_key_default_query_filters : ResourceKey[DefaultQueryFilters]
 
 pub let ecs_key_disabled : ComponentKey[Disabled]
@@ -127,6 +141,12 @@ pub struct Allow[T] {
 }
 pub fn[T] Allow::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for Allow[T]
+
+pub enum ArchetypeBundleMigrationPath {
+  SameArchetype
+  NewArchetypeSameTable
+  NewArchetypeNewTable
+} derive(Eq)
 
 pub struct BatchingStrategy {
   min_batch_size : Int
@@ -765,8 +785,13 @@ pub struct World {
   sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   component_store_cache_by_definition_id : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   mut next_archetype_id : Int
+  mut next_table_id : Int
   archetype_ids_by_signature : Map[String, Int]
+  table_ids_by_signature : Map[String, Int]
+  table_component_local_ids : Map[Int, Array[Int]]
+  archetype_table_ids : Map[Int, Int]
   archetype_component_local_ids : Map[Int, Array[Int]]
+  archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
   archetype_component_local_id_presence : Map[Int, Map[Int, Bool]]
   archetype_component_definition_ids : Map[Int, Array[Int]]
   archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
@@ -815,10 +840,14 @@ pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::advance_sequence(Self) -> Int
 pub fn World::apply_queued_component_registrations(Self) -> Unit
 pub fn World::archetype_component_ids(Self, Int) -> Array[Int]?
+pub fn World::archetype_component_local_index(Self, Int, Int) -> Int?
 pub fn World::archetype_count(Self) -> Int
 pub fn World::archetype_entities_snapshot(Self, Int) -> Array[@core.Entity]
 pub fn World::archetype_entity_count(Self, Int) -> Int
 pub fn World::archetype_generation(Self) -> Int
+pub fn World::archetype_table_id(Self, Int) -> Int?
+pub fn World::bundle_migration_path_for_archetypes(Self, Int, Int) -> ArchetypeBundleMigrationPath
+pub fn World::bundle_migration_path_label_for_archetypes(Self, Int, Int) -> String
 pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemSequence) -> ChangedComponents[T]
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
