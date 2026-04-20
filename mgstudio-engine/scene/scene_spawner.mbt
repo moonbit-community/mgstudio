@@ -728,10 +728,8 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
       if !modified_scene_id_set.contains(root.scene.id()) {
         continue
       }
-      if scene_instance_component(world, root_entity) is Some(instance) {
-        scene_despawn_instance(world, instance.instance_id)
-      }
-      scene_attach_pending_instance(world, root_entity, root) |> ignore
+      scene_mark_root_respawn_requested(world, root_entity)
+      scene_remove_ready_component(world, root_entity)
     }
   }
 
@@ -748,6 +746,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
 ///|
 pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   let seen : Map[UInt64, Bool] = {}
+  let force_respawn_map : Map[UInt64, Bool] = {}
   let roots_to_process : Array[(@core.Entity, SceneRoot)] = []
   fn push_root_if_needed(
     world : @ecs.World,
@@ -755,14 +754,15 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
     roots_to_process : Array[(@core.Entity, SceneRoot)],
     entity : @core.Entity,
     root : SceneRoot,
-  ) -> Unit {
-    guard world.is_alive(entity) else { return }
+  ) -> UInt64? {
+    guard world.is_alive(entity) else { return None }
     let key = entity.to_bits()
     if seen.contains(key) {
-      return
+      return Some(key)
     }
     seen.set(key, true)
     roots_to_process.push((entity, root))
+    Some(key)
   }
 
   let changed_query : SceneRootChangedQuery = @ecs.query_filtered(
@@ -770,7 +770,15 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
     @ecs.Changed::new(ecs_key_scene_root),
   )
   try! changed_query.view(fn(entity, root_ref) {
-    push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
+    ignore(
+      push_root_if_needed(
+        world,
+        seen,
+        roots_to_process,
+        entity,
+        root_ref.value(),
+      ),
+    )
   })
 
   let respawn_query : SceneRootRespawnQuery = @ecs.query_filtered(
@@ -778,7 +786,17 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
     @ecs.With::new(ecs_key_scene_root_respawn_requested),
   )
   try! respawn_query.view(fn(entity, root_ref) {
-    push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
+    match
+      push_root_if_needed(
+        world,
+        seen,
+        roots_to_process,
+        entity,
+        root_ref.value(),
+      ) {
+      Some(key) => force_respawn_map.set(key, true)
+      None => ()
+    }
   })
 
   let pending_query : SceneRootPendingQuery = @ecs.query_filtered(
@@ -787,16 +805,22 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   )
   try! pending_query.view(fn(entity, data) {
     let (root_ref, _scene_instance_ref) = data
-    push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
+    ignore(
+      push_root_if_needed(
+        world,
+        seen,
+        roots_to_process,
+        entity,
+        root_ref.value(),
+      ),
+    )
   })
 
   for entry in roots_to_process {
     let root_entity = entry.0
     guard world.is_alive(root_entity) else { continue }
     let root = entry.1
-    let force_respawn = try! world.contains_by_key(
-      root_entity, ecs_key_scene_root_respawn_requested,
-    )
+    let force_respawn = force_respawn_map.contains(root_entity.to_bits())
     let instance_id = match scene_instance_component(world, root_entity) {
       Some(instance) =>
         if force_respawn {
@@ -841,7 +865,7 @@ fn scene_runtime_plugin_base(
     |> @app.chain(),
   )
   .configure_set(@app.PreUpdate, scene_spawner_set_spawn, before=[
-    @transform.transform_set_mark_dirty_trees,
+    @transform.transform_set_propagate,
   ])
 }
 

@@ -37,38 +37,26 @@ pub fn compute_global_transform(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> GlobalTransform? {
-  let entity_ref = try! world.entity(entity)
+  if !world.is_alive(entity) {
+    return None
+  }
   let local_transform = match
-    (
-      try entity_ref.get() catch {
-        _ => None
-      } noraise {
-        value => value
-      } : Transform?) {
+    (try! world.get_by_key(entity, ecs_key_transform)) {
     Some(transform) => transform
     None => return None
   }
   let mut global = GlobalTransform::from_transform(local_transform)
   let mut current = entity
   while true {
-    let current_ref = try! world.entity(current)
-    guard (
-        try current_ref.get() catch {
-          _ => None
-        } noraise {
-          value => value
-        } : @hierarchy.Parent?)
+    guard (try! world.get_by_key(current, @hierarchy.ecs_key_parent))
       is Some(parent) else {
       break
     }
     current = parent.entity()
-    let parent_ref = try! world.entity(current)
-    guard (
-        try parent_ref.get() catch {
-          _ => None
-        } noraise {
-          value => value
-        } : Transform?)
+    if !world.is_alive(current) {
+      return None
+    }
+    guard (try! world.get_by_key(current, ecs_key_transform))
       is Some(parent_local) else {
       return None
     }
@@ -82,13 +70,10 @@ pub fn compute_parent_global_transform(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> GlobalTransform? {
-  let entity_ref = try! world.entity(entity)
-  guard (
-      try entity_ref.get() catch {
-        _ => None
-      } noraise {
-        value => value
-      } : @hierarchy.Parent?)
+  if !world.is_alive(entity) {
+    return None
+  }
+  guard (try! world.get_by_key(entity, @hierarchy.ecs_key_parent))
     is Some(parent) else {
     return None
   }
