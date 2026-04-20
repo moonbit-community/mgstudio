@@ -58,12 +58,43 @@ pub impl Component for ObserverParentLinkStable with component() {
 }
 
 ///|
+struct ObserverParentLinkLate {
+  parent : @core.Entity
+} derive(Eq, Debug)
+
+///|
+let observer_parent_link_late_key : ComponentKey[ObserverParentLinkLate] = register_component(
+  debug_name="tests.ecs.observer.parent_link_late",
+)
+
+///|
+pub impl Component for ObserverParentLinkLate with component() {
+  observer_parent_link_late_key
+}
+
+///|
 fn observer_parent_link_stable_target_entity(
   world : World,
   entity : @core.Entity,
 ) -> @core.Entity? {
   match
     (try world.get_by_key(entity, observer_parent_link_stable_key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(link) => Some(link.parent)
+    None => None
+  }
+}
+
+///|
+fn observer_parent_link_late_target_entity(
+  world : World,
+  entity : @core.Entity,
+) -> @core.Entity? {
+  match
+    (try world.get_by_key(entity, observer_parent_link_late_key) catch {
       _ => None
     } noraise {
       value => value
@@ -88,6 +119,12 @@ fn init {
           None => None
         }
       },
+      observer_parent_lookup=true,
+    ),
+  )
+  ignore(
+    component_metadata_builder(observer_parent_link_late_key).relationship_source(
+      observer_parent_link_late_target_entity,
       observer_parent_lookup=true,
     ),
   )
@@ -448,6 +485,29 @@ test "ecs observer: trigger propagation can be halted early" {
   world.trigger(ObserverAttack::{ damage: 4, entity: child })
 
   debug_inspect(order, content="[\"child\"]")
+}
+
+///|
+test "ecs observer: parent lookup cache refreshes after late relationship registration" {
+  let world = World::new()
+  let parent = world.spawn()
+  let child = world.spawn()
+  let parent_hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_entity_observer(parent, fn(_event : On[ObserverAttack]) {
+      parent_hits.val = parent_hits.val + 1
+    }),
+  )
+
+  world.trigger(ObserverAttack::{ damage: 10, entity: child })
+  debug_inspect(parent_hits.val, content="0")
+
+  try! world.set_by_key(child, observer_parent_link_late_key, ObserverParentLinkLate::{
+    parent,
+  })
+  world.trigger(ObserverAttack::{ damage: 10, entity: child })
+  debug_inspect(parent_hits.val, content="1")
 }
 
 ///|

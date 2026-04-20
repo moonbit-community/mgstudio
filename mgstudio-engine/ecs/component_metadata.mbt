@@ -55,6 +55,20 @@ pub struct ComponentMetadataBuilder[T] {
 let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] = @hashmap.HashMap::new()
 
 ///|
+let component_relationship_metadata_generation_ref : Ref[Int] = Ref::new(0)
+
+///|
+fn component_relationship_metadata_generation() -> Int {
+  component_relationship_metadata_generation_ref.val
+}
+
+///|
+fn bump_component_relationship_metadata_generation() -> Unit {
+  component_relationship_metadata_generation_ref.val = component_relationship_metadata_generation_ref.val +
+    1
+}
+
+///|
 fn component_metadata_default(debug_name : String) -> ComponentMetadata {
   {
     debug_name,
@@ -255,6 +269,7 @@ pub fn[T] ComponentMetadataBuilder::relationship_source(
     ..metadata_ref.val,
     relationship_source: Some({ target_entity, observer_parent_lookup }),
   }
+  bump_component_relationship_metadata_generation()
   self
 }
 
@@ -290,6 +305,7 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
       linked_entities: linked_entities_accessor,
     }),
   }
+  bump_component_relationship_metadata_generation()
   self
 }
 
